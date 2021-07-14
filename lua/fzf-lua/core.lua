@@ -50,7 +50,7 @@ M.build_fzf_cli = function(opts)
     [[ --preview-window='%s%s' --preview=%s]] ..
     [[ --expect=%s --ansi --info=inline]] ..
     [[ %s %s]],
-    cfg.fzf_layout,
+    opts.fzf_layout or cfg.fzf_layout,
     utils._if(opts.fzf_binds, opts.fzf_binds,
       vim.fn.shellescape(table.concat(cfg.fzf_binds, ','))),
     vim.fn.shellescape(opts.prompt),
@@ -168,7 +168,8 @@ M.fzf_files = function(opts)
     end
 
     local selected = fzf.fzf(opts.fzf_fn,
-      M.build_fzf_cli(opts), config.winopts(opts.winopts))
+      M.build_fzf_cli(opts),
+      config.winopts(opts.winopts))
 
     if not selected then return end
 

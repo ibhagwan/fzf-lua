@@ -122,14 +122,14 @@ M.buffers = function(opts)
       table.insert(items, item_str)
     end
 
+    opts.preview = act
+    opts.cli_args = utils._if(
+      header_line and not opts.ignore_current_buffer,
+      '--header-lines=1', ''
+    )
+
     local selected = require("fzf").fzf(items,
-      core.build_fzf_cli({
-        prompt = opts.prompt,
-        preview = act,
-        actions = opts.actions,
-        cli_args = utils._if(header_line and not opts.ignore_current_buffer,
-          '--header-lines=1', '')
-      }),
+      core.build_fzf_cli(opts),
       config.winopts(opts))
 
     if not selected then return end

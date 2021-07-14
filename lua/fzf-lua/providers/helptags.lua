@@ -103,15 +103,12 @@ M.helptags = function(opts)
 
     -- local prev_act = action(function (args) end)
 
+    opts.cli_args = opts.cli_args or "--nth 1"
+    opts.preview_window = opts.preview_window or 'right:0'
+    opts.nomulti = utils._if(opts.nomulti~=nil, opts.nomulti, true)
+
     local selected = fzf.fzf(fzf_function,
-      core.build_fzf_cli({
-        prompt = opts.prompt,
-        -- preview = prev_act,
-        preview_window = 'right:0',
-        actions = opts.actions,
-        cli_args = "--nth 1",
-        nomulti = true,
-      }),
+      core.build_fzf_cli(opts),
       config.winopts(opts.winopts))
 
     if not selected then return end
