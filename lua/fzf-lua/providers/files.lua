@@ -21,7 +21,7 @@ local get_files_cmd = function(opts)
       command = string.format('fd %s', opts.fd_opts)
     else
       command = string.format('fd %s . %s', opts.fd_opts,
-        vim.fn.shellescape(opts.cwd))
+        vim.fn.shellescape(vim.fn.expand(opts.cwd)))
     end
   else
     command = string.format('find %s %s',
