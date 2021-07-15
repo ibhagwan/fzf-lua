@@ -6,12 +6,19 @@ local actions = require "fzf-lua.actions"
 
 local M = {}
 
+-- invisible unicode char as icon|git separator
+-- this way we can split our string by space
+nbsp = "\u{00a0}"
+
 M.get_devicon = function(file, ext)
-  local icon = nil
-  if #file > 0 and pcall(require, "nvim-web-devicons") then
+  local icon = nbsp
+  if not file or  #file == 0 then return icon end
+  if config._has_devicons then
     icon = require'nvim-web-devicons'.get_icon(file, ext)
+  else
+    icon = utils._if(icon == nil, '', icon)
   end
-  return utils._if(icon == nil, '', icon)
+  return icon
 end
 
 M.preview_cmd = function(opts, cfg)
@@ -64,10 +71,6 @@ M.build_fzf_cli = function(opts)
   -- print(cli)
   return cli
 end
-
--- invisible unicode char as icon|git separator
--- this way we can split our string by space
-local nbsp = "\u{00a0}"
 
 local get_diff_files = function()
     local diff_files = {}

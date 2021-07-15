@@ -57,6 +57,7 @@ function M.setup(opts)
     preview_cmd         = "string",
     preview_border      = "string",
     preview_wrap        = "string",
+    preview_opts        = "string",
     preview_vertical    = "string",
     preview_horizontal  = "string",
     preview_layout      = "string",

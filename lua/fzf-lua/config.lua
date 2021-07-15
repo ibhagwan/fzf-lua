@@ -6,6 +6,8 @@ vim.env.FZF_DEFAULT_OPTS = ''
 
 local M = {}
 
+M._has_devicons = pcall(require, "nvim-web-devicons")
+
 M.win_height          = 0.85
 M.win_width           = 0.80
 M.win_row             = 0.30
@@ -16,6 +18,7 @@ M.fzf_layout          = 'reverse'
 M.preview_cmd         = nil   -- auto detect head|bat
 M.preview_border      = 'border'
 M.preview_wrap        = 'nowrap'
+M.preview_opts        = 'nohidden'
 M.preview_vertical    = 'down:45%'
 M.preview_horizontal  = 'right:60%'
 M.preview_layout      = 'flex'
@@ -26,7 +29,7 @@ M.bat_opts            = "--italic-text=always --style=numbers,changes --color al
 M.files = {
   prompt              = '> ',
   cmd                 = nil,  -- default: auto detect find|fd
-  file_icons          = true and pcall(require, "nvim-web-devicons"),
+  file_icons          = true and M._has_devicons,
   color_icons         = true,
   git_icons           = true,
   git_diff_cmd        = "git diff --name-status --relative HEAD",
@@ -48,7 +51,7 @@ M.grep = {
   prompt              = 'Rg> ',
   input_prompt        = 'Grep For> ',
   cmd                 = nil,  -- default: auto detect rg|grep
-  file_icons          = true and pcall(require, "nvim-web-devicons"),
+  file_icons          = true and M._has_devicons,
   color_icons         = true,
   git_icons           = true,
   git_diff_cmd        = M.files.git_diff_cmd,
@@ -66,7 +69,7 @@ M.grep = {
 
 M.oldfiles = {
   prompt              = 'History> ',
-  file_icons          = true and pcall(require, "nvim-web-devicons"),
+  file_icons          = true and M._has_devicons,
   color_icons         = true,
   git_icons           = false,
   git_diff_cmd        = M.files.git_diff_cmd,
@@ -83,7 +86,7 @@ M.oldfiles = {
 M.quickfix = {
   prompt              = 'Quickfix> ',
   separator           = '▏',
-  file_icons          = true and pcall(require, "nvim-web-devicons"),
+  file_icons          = true and M._has_devicons,
   color_icons         = true,
   git_icons           = false,
   git_diff_cmd        = M.files.git_diff_cmd,
@@ -100,7 +103,7 @@ M.quickfix = {
 M.loclist = {
   prompt              = 'Locations> ',
   separator           = '▏',
-  file_icons          = true and pcall(require, "nvim-web-devicons"),
+  file_icons          = true and M._has_devicons,
   color_icons         = true,
   git_icons           = false,
   git_diff_cmd        = M.files.git_diff_cmd,
@@ -117,7 +120,7 @@ M.loclist = {
 M.git = {
   prompt              = 'GitFiles> ',
   cmd                 = "git ls-files --exclude-standard",
-  file_icons          = true and pcall(require, "nvim-web-devicons"),
+  file_icons          = true and M._has_devicons,
   color_icons         = true,
   git_icons           = true,
   actions             = M.files.actions,
@@ -125,7 +128,7 @@ M.git = {
 
 M.buffers = {
   prompt                = 'Buffers> ',
-  file_icons            = true and pcall(require, "nvim-web-devicons"),
+  file_icons            = true and M._has_devicons,
   color_icons           = true,
   sort_lastused         = true,
   show_all_buffers      = true,
@@ -249,7 +252,7 @@ M.winopts = function(opts)
 
   opts = M.getopts(opts, M, {
     "win_height", "win_width",
-    "win_row", "win_col", "border",
+    "win_row", "win_col", "win_border",
     "window_on_create",
   })
 
@@ -267,8 +270,10 @@ M.winopts = function(opts)
 end
 
 M.preview_window = function()
-  local preview_veritcal = string.format('%s:%s:%s', M.preview_border, M.preview_wrap, M.preview_vertical)
-  local preview_horizontal = string.format('%s:%s:%s', M.preview_border, M.preview_wrap, M.preview_horizontal)
+  local preview_veritcal = string.format('%s:%s:%s:%s',
+    M.preview_opts, M.preview_border, M.preview_wrap, M.preview_vertical)
+  local preview_horizontal = string.format('%s:%s:%s:%s',
+    M.preview_opts, M.preview_border, M.preview_wrap, M.preview_horizontal)
   if M.preview_layout == "vertical" then
     return preview_veritcal
   elseif M.preview_layout == "flex" then

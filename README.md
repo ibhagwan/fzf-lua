@@ -143,6 +143,7 @@ require'fzf-lua'.setup {
   preview_cmd         = '',           -- 'head -n $FZF_PREVIEW_LINES',
   preview_border      = 'border',     -- border|noborder
   preview_wrap        = 'nowrap',     -- wrap|nowrap
+  preview_opts        = 'nohidden',   -- hidden|nohidden
   preview_vertical    = 'down:45%',   -- up|down:size
   preview_horizontal  = 'right:60%',  -- right|left:size
   preview_layout      = 'flex',       -- horizontal|vertical|flex
