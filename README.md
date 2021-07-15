@@ -307,3 +307,19 @@ EOF
 Big thank you to all those I borrowed code/ideas from, I read so many configs
 and plugin codes that I probably forgot where I found some samples from so if
 I missed your name feel free to contact me and I'll add it below:
+
+- [@vijaymarupudi](https://github.com/vijaymarupudi/) for his wonderful
+  [nvim-fzf](https://github.com/vijaymarupudi/nvim-fzf) plugin which is in the
+  core of this plugin
+- [@tjdevries](https://github.com/tjdevries/) for too many great things to
+  list here and for borrowing some of his
+  [nvim-telescope](https://github.com/nvim-telescope/telescope.nvim) provider
+  code
+- [@lukas-reineke](https://github.com/lukas-reineke) for inspiring the
+  solution after browsing his
+  [dotfiles](https://github.com/lukas-reineke/dotfiles) and coming across his
+  [fuzzy.lua](https://github.com/lukas-reineke/dotfiles/blob/master/vim/lua/fuzzy.lua)
+  , and while we're, also here for his great lua plugin
+  [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim)
+- [@sindrets](https://github.com/sindrets) for borrowing utilities from his
+  fantastic lua plugin [diffview.nvim](https://github.com/sindrets/diffview.nvim)
