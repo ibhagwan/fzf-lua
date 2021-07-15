@@ -10,7 +10,7 @@ local M = {}
 
 local getopt = function(opts, key, expected_type, default)
   if opts and opts[key] ~= nil then
-    if type(opts[key]) == expected_type then
+    if expected_type == "any" or type(opts[key]) == expected_type then
         return opts[key]
     else
       utils.info(
@@ -50,7 +50,7 @@ function M.setup(opts)
     win_width           = "number",
     win_row             = "number",
     win_col             = "number",
-    win_border          = "boolean",
+    win_border          = "any",    -- boolean|table (borderchars)
     default_prompt      = "string",
     fzf_args            = "string",
     fzf_layout          = "string",
