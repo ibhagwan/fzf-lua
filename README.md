@@ -58,7 +58,7 @@ Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
 Plug 'kyazdani42/nvim-web-devicons'
-Plug 'ibhagwan/fzf.lua'
+Plug 'ibhagwan/fzf-lua'
 ```
 
 Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
