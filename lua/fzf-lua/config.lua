@@ -257,20 +257,21 @@ M.winopts = function(opts)
     "winopts_raw",
   })
 
+  local raw = {}
   if opts.winopts_raw and type(opts.winopts_raw) == "function" then
-    return opts.winopts_raw()
+    raw = opts.winopts_raw()
   end
 
-  local height = math.floor(vim.o.lines * opts.win_height)
-  local width = math.floor(vim.o.columns * opts.win_width)
-  local row = math.floor((vim.o.lines - height) * opts.win_row)
-  local col = math.floor((vim.o.columns - width) * opts.win_col)
+  local height = raw.height or math.floor(vim.o.lines * opts.win_height)
+  local width = raw.width or math.floor(vim.o.columns * opts.win_width)
+  local row = raw.row or math.floor((vim.o.lines - height) * opts.win_row)
+  local col = raw.col or math.floor((vim.o.columns - width) * opts.win_col)
 
   return {
     -- style = 'minimal',
     height = height, width = width, row = row, col = col,
-    border = opts.win_border,
-    window_on_create = opts.window_on_create
+    border = raw.border or opts.win_border,
+    window_on_create = raw.window_on_create or opts.window_on_create
   }
 end
 
