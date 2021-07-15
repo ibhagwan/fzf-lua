@@ -8,15 +8,14 @@ local M = {}
 
 -- invisible unicode char as icon|git separator
 -- this way we can split our string by space
-nbsp = "\u{00a0}"
+local nbsp = "\u{00a0}"
 
 M.get_devicon = function(file, ext)
-  local icon = nbsp
+  local icon = ''
   if not file or  #file == 0 then return icon end
   if config._has_devicons then
-    icon = require'nvim-web-devicons'.get_icon(file, ext)
-  else
-    icon = utils._if(icon == nil, '', icon)
+    local devicon = require'nvim-web-devicons'.get_icon(file, ext)
+    if devicon then icon = devicon end
   end
   return icon
 end
