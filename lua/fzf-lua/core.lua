@@ -52,10 +52,11 @@ M.build_fzf_cli = function(opts)
   opts.prompt = opts.prompt or cfg.default_prompt
   opts.preview_offset = opts.preview_offset or ''
   local cli = string.format(
-    [[ --layout=%s --bind=%s --prompt=%s]] ..
+    [[ %s --layout=%s --bind=%s --prompt=%s]] ..
     [[ --preview-window='%s%s' --preview=%s]] ..
     [[ --expect=%s --ansi --info=inline]] ..
     [[ %s %s]],
+    opts.fzf_args or cfg.fzf_args or '',
     opts.fzf_layout or cfg.fzf_layout,
     utils._if(opts.fzf_binds, opts.fzf_binds,
       vim.fn.shellescape(table.concat(cfg.fzf_binds, ','))),

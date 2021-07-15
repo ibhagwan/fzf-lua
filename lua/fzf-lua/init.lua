@@ -52,6 +52,7 @@ function M.setup(opts)
     win_col             = "number",
     win_border          = "boolean",
     default_prompt      = "string",
+    fzf_args            = "string",
     fzf_layout          = "string",
     fzf_binds           = "table",
     preview_cmd         = "string",

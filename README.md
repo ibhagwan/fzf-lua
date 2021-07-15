@@ -139,6 +139,7 @@ require'fzf-lua'.setup {
   win_row             = 0.30,         -- window row position (0=top, 1=bottom)
   win_col             = 0.50,         -- window col position (0=left, 1=right)
   win_border          = true,         -- window border?
+  fzf_args            = '',           -- adv: fzf extra args, empty unless adv
   fzf_layout          = 'reverse',    -- fzf '--layout='
   preview_cmd         = '',           -- 'head -n $FZF_PREVIEW_LINES',
   preview_border      = 'border',     -- border|noborder
