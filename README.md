@@ -301,3 +301,9 @@ EOF
     + [ ] git commits
     + [ ] git branches
     + [ ] LSP (refs, symbols, etc)
+
+### Credits
+
+Big thank you to all those I borrowed code/ideas from, I read so many configs
+and plugin codes that I probably forgot where I found some samples from so if
+I missed your name feel free to contact me and I'll add it below:

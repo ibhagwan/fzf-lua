@@ -51,6 +51,7 @@ function M.setup(opts)
     win_row             = "number",
     win_col             = "number",
     win_border          = "any",    -- boolean|table (borderchars)
+    winopts_raw         = "function",
     default_prompt      = "string",
     fzf_args            = "string",
     fzf_layout          = "string",

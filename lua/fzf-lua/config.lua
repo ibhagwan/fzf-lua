@@ -254,7 +254,12 @@ M.winopts = function(opts)
     "win_height", "win_width",
     "win_row", "win_col", "win_border",
     "window_on_create",
+    "winopts_raw",
   })
+
+  if opts.winopts_raw and type(opts.winopts_raw) == "function" then
+    return opts.winopts_raw()
+  end
 
   local height = math.floor(vim.o.lines * opts.win_height)
   local width = math.floor(vim.o.columns * opts.win_width)
