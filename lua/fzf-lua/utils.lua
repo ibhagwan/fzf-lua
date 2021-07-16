@@ -48,6 +48,14 @@ function M.is_git_repo()
   return M._if(M.shell_error(), false, true)
 end
 
+function M.rg_escape(str)
+  --  [(~'"\/$?'`*&&||;[]<>)]
+  --  escape "\~$?*|[()"
+  return str:gsub("[\\~$?*|\\[()]", function(x)
+    return '\\' .. x
+  end)
+end
+
 M.read_file = function(filepath)
   local fd = vim.loop.fs_open(filepath, "r", 438)
   if fd == nil then return '' end

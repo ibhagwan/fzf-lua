@@ -46,6 +46,10 @@ M.grep = function(opts)
     "rg_opts", "grep_opts",
   })
 
+  if opts.search and #opts.search>0 then
+    opts.search = utils.rg_escape(opts.search)
+  end
+
   if opts.repeat_last_search == true then
     opts.search = config.grep.last_search
   end
@@ -102,6 +106,10 @@ M.live_grep = function(opts)
     "search", "input_prompt",
     "rg_opts", "grep_opts",
   })
+
+  if opts.search and #opts.search>0 then
+    opts.search = utils.rg_escape(opts.search)
+  end
 
   -- resetting last_search will return
   -- {q} placeholder in our command
