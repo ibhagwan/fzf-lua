@@ -195,7 +195,7 @@ M.fzf_binds = {
   'ctrl-f:page-down',
   'ctrl-b:page-up',
   'ctrl-a:toggle-all',
-  'ctrl-u:clear-query',
+  'ctrl-l:clear-query',
 }
 
 M.file_icon_colors = {
