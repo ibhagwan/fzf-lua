@@ -141,18 +141,21 @@ end
 
 M.ansi_codes = {}
 M.ansi_colors = {
-    clear       = "\x1b[0m",
-    bold        = "\x1b[1m",
-    black       = "\x1b[0;30m",
-    red         = "\x1b[0;31m",
-    green       = "\x1b[0;32m",
-    yellow      = "\x1b[0;33m",
-    blue        = "\x1b[0;34m",
-    magenta     = "\x1b[0;35m",
-    cyan        = "\x1b[0;36m",
-    grey        = "\x1b[0;90m",
-    dark_grey   = "\x1b[0;97m",
-    white       = "\x1b[0;98m",
+    -- the "\x1b" esc sequence causes issues
+    -- with older Lua versions
+    -- clear    = "\x1b[0m",
+    clear       = "[0m",
+    bold        = "[1m",
+    black       = "[0;30m",
+    red         = "[0;31m",
+    green       = "[0;32m",
+    yellow      = "[0;33m",
+    blue        = "[0;34m",
+    magenta     = "[0;35m",
+    cyan        = "[0;36m",
+    grey        = "[0;90m",
+    dark_grey   = "[0;97m",
+    white       = "[0;98m",
 }
 
 for color, escseq in pairs(M.ansi_colors) do
