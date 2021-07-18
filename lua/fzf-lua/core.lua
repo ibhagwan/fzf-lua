@@ -8,7 +8,9 @@ local M = {}
 
 -- invisible unicode char as icon|git separator
 -- this way we can split our string by space
-local nbsp = "\u{00a0}"
+-- this causes "invalid escape sequence" error
+-- local nbsp = "\u{00a0}"
+local nbsp = " "
 
 M.get_devicon = function(file, ext)
   local icon = ''
@@ -115,6 +117,18 @@ local get_git_icon = function(file, diff_files, untracked_files)
     return nbsp
 end
 
+
+M.make_entry_lcol = function(_, entry)
+  if not entry then return nil end
+  local filename = entry.filename or vim.api.nvim_buf_get_name(entry.bufnr)
+  return string.format("%s:%s:%s:%s%s",
+    filename, --utils.ansi_codes.magenta(filename),
+    utils.ansi_codes.green(tostring(entry.lnum)),
+    utils.ansi_codes.blue(tostring(entry.col)),
+    utils._if(entry.text and entry.text:find("^\t"), "", "\t"),
+    entry.text)
+end
+
 M.make_entry_file = function(opts, x)
   local icon
   local prefix = ''
@@ -128,7 +142,8 @@ M.make_entry_file = function(opts, x)
     prefix = prefix .. icon
   end
   if opts.git_icons then
-    icon = get_git_icon(x, opts.diff_files, opts.untracked_files)
+    local filepath = x:match("^[^:]+")
+    icon = get_git_icon(filepath, opts.diff_files, opts.untracked_files)
     if opts.color_icons then icon = color_icon(icon) end
     prefix = prefix .. utils._if(#prefix>0, nbsp, '') .. icon
   end
@@ -167,7 +182,7 @@ M.fzf_files = function(opts)
 
     local has_prefix = opts.file_icons or opts.git_icons
     if not opts.filespec then
-      opts.filespec = utils._if(has_prefix, "{2}", "{}")
+      opts.filespec = utils._if(has_prefix, "{2}", "{1}")
     end
 
     local selected = fzf.fzf(opts.fzf_fn,
@@ -181,7 +196,8 @@ M.fzf_files = function(opts)
         if has_prefix then
           selected[i] = trim_entry(selected[i])
         end
-        if opts.cwd and #opts.cwd > 0 then
+        if opts.cwd and #opts.cwd>0 and
+            not path.starts_with_separator(selected[i]) then
           selected[i] = path.join({opts.cwd, selected[i]})
         end
         if opts.cb_selected then

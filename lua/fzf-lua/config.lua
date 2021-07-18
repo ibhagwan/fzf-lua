@@ -176,6 +176,15 @@ M.manpages = {
     },
 }
 
+M.lsp = {
+    prompt              = 'LSP> ',
+    timeout             = 1000,
+    file_icons          = true and M._has_devicons,
+    color_icons         = true,
+    git_icons           = false,
+    actions             = M.files.actions,
+}
+
 -- <F2>        toggle preview
 -- <F3>        toggle preview text wrap
 -- <C-f>|<C-b> page down|up

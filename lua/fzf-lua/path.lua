@@ -4,6 +4,10 @@ M.separator = function()
   return '/'
 end
 
+M.starts_with_separator = function(path)
+  return path:match("^[^"..M.separator().."]+")
+end
+
 M.tail = (function()
   local os_sep = M.separator()
   local match_string = '[^' .. os_sep .. ']*$'

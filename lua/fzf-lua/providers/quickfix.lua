@@ -3,7 +3,7 @@ if not pcall(require, "fzf") then
 end
 
 -- local fzf = require "fzf"
-local fzf_helpers = require("fzf.helpers")
+-- local fzf_helpers = require("fzf.helpers")
 -- local path = require "fzf-lua.path"
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
@@ -15,12 +15,7 @@ local quickfix_run = function(opts, cfg, locations)
   if not locations then return {} end
   local results = {}
   for _, entry in ipairs(locations) do
-    local filename = entry.filename or vim.api.nvim_buf_get_name(entry.bufnr)
-    table.insert(results, string.format("%s:%s:%s:\t%s",
-      filename, --utils.ansi_codes.magenta(filename),
-      utils.ansi_codes.green(tostring(entry.lnum)),
-      utils.ansi_codes.blue(tostring(entry.col)),
-      entry.text))
+    table.insert(results, core.make_entry_lcol(opts, entry))
   end
 
   opts = config.getopts(opts, cfg, {
@@ -44,8 +39,13 @@ local quickfix_run = function(opts, cfg, locations)
     return x
   end ]]
 
-  opts.cli_args = "--delimiter='[: \\t]'"
-  opts.preview_args = "--highlight-line={3}"    -- bat higlight
+  local line_placeholder = 2
+  if opts.file_icons == true or opts.git_icons == true then
+    line_placeholder = 3
+  end
+
+  opts.cli_args = "--nth=3 --delimiter='[: \\t]'"
+  opts.preview_args = string.format("--highlight-line={%d}", line_placeholder)
   --[[
     # Preview with bat, matching line in the middle of the window below
     # the fixed header of the top 3 lines
@@ -57,7 +57,7 @@ local quickfix_run = function(opts, cfg, locations)
     #
     '--preview-window '~3:+{2}+3/2''
   ]]
-  opts.preview_offset = "+{3}-/2"
+  opts.preview_offset = string.format("+{%d}-/2", line_placeholder)
   return core.fzf_files(opts)
 end
 

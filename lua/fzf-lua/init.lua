@@ -121,6 +121,16 @@ function M.setup(opts)
     git_diff_cmd            = "string",
     git_untracked_cmd       = "string",
   })
+  setopts(config.lsp, opts.lsp, {
+    prompt                  = "string",
+    cwd                     = "string",
+    timeout                 = "number",
+    git_icons               = "boolean",
+    file_icons              = "boolean",
+    color_icons             = "boolean",
+    git_diff_cmd            = "string",
+    git_untracked_cmd       = "string",
+  })
   setopts(config.git, opts.git, {
     prompt              = "string",
     cmd                 = "string",
@@ -191,5 +201,7 @@ M.buffers = require'fzf-lua.providers.buffers'.buffers
 M.help_tags = require'fzf-lua.providers.helptags'.helptags
 M.man_pages = require'fzf-lua.providers.manpages'.manpages
 M.colorschemes = require'fzf-lua.providers.colorschemes'.colorschemes
+
+M.lsp_refs = require'fzf-lua.providers.lsp'.refs_async
 
 return M
