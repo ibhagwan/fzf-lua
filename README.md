@@ -2,7 +2,7 @@
 
 ![screenshot](https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/screenshots/main.png)
 
-[fzf](https://github.com/junegunn/fzf) changed my life, it can change yours too if you allow it.
+[fzf](https://github.com/junegunn/fzf) changed my life, it can change yours too, if you allow it.
 
 ### Rationale
 
@@ -70,6 +70,13 @@ use { 'ibhagwan/fzf-lua',
     'vijaymarupudi/nvim-fzf' }
 }
 ```
+>**There's currently an issue with [nvim-fzf and some neovim 0.5
+>releases](https://github.com/vijaymarupudi/nvim-fzf/pull/15), I already fixed
+>it my fork and waiting for the PR to be merged, for now you can replace
+>`vijaymarupudi/nvim-fzf` with `ibhagwan/nvim-fzf`**
+>```lua
+>use { 'ibhagwan/fzf-lua', requires = { 'ibhagwan/nvim-fzf' } }
+>```
 
 > **Note** if you already have fzf installed you do not need to install `fzf`
 > or `fzf.vim`, however if you do not have it installed, **you only need** fzf
