@@ -56,7 +56,6 @@ M.grep = function(opts)
   -- save the next search as last_search so we
   -- let the caller have an option to run the
   -- same search again
-  -- print("1", opts.last_search, opts.search)
   if not opts.search or #opts.search == 0 then
     config.grep.last_search = vim.fn.input(opts.input_prompt)
   else

@@ -47,7 +47,6 @@ M.manpages = function(opts)
     if #selected > 1 then
       for i = 2, #selected do
         selected[i] = getmanpage(selected[i])
-        print(selected[i])
       end
     end
 

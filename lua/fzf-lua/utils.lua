@@ -7,6 +7,12 @@ end
 
 local M = {}
 
+-- invisible unicode char as icon|git separator
+-- this way we can split our string by space
+-- this causes "invalid escape sequence" error
+-- local nbsp = "\u{00a0}"
+M.nbsp = " "
+
 M._if = function(bool, a, b)
     if bool then
         return a
@@ -180,6 +186,11 @@ function M.get_visual_selection()
     lines[1] = string.sub(lines[1], cscol)
     print(n, csrow, cscol, cerow, cecol, table.concat(lines, "\n"))
     return table.concat(lines, "\n")
+end
+
+function M.send_ctrl_c()
+  vim.api.nvim_feedkeys(
+    vim.api.nvim_replace_termcodes("<C-c>", true, false, true), 'n', true)
 end
 
 return M

@@ -24,6 +24,8 @@ local quickfix_run = function(opts, cfg, locations)
     "separator"
   })
 
+  if not opts.cwd then opts.cwd = vim.loop.cwd() end
+
   opts.fzf_fn = function (cb)
     for _, x in ipairs(results) do
       x = core.make_entry_file(opts, x)
@@ -41,10 +43,11 @@ local quickfix_run = function(opts, cfg, locations)
 
   local line_placeholder = 2
   if opts.file_icons == true or opts.git_icons == true then
-    line_placeholder = 3
+    line_placeholder = line_placeholder+1
   end
 
-  opts.cli_args = "--nth=3 --delimiter='[: \\t]'"
+  opts.cli_args = "--delimiter='[: \\t]'"
+  opts.filespec = string.format("{%d}", line_placeholder-1)
   opts.preview_args = string.format("--highlight-line={%d}", line_placeholder)
   --[[
     # Preview with bat, matching line in the middle of the window below

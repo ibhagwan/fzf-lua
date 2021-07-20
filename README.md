@@ -70,14 +70,6 @@ use { 'ibhagwan/fzf-lua',
     'vijaymarupudi/nvim-fzf' }
 }
 ```
->**There's currently an issue with [nvim-fzf and some neovim 0.5
->releases](https://github.com/vijaymarupudi/nvim-fzf/pull/15), I already fixed
->it my fork and waiting for the PR to be merged, for now you can replace
->`vijaymarupudi/nvim-fzf` with `ibhagwan/nvim-fzf`**
->```lua
->use { 'ibhagwan/fzf-lua', requires = { 'ibhagwan/nvim-fzf' } }
->```
-
 > **Note** if you already have fzf installed you do not need to install `fzf`
 > or `fzf.vim`, however if you do not have it installed, **you only need** fzf
 > which can be installed with (fzf.vim is not a requirement nor conflict):
@@ -129,6 +121,21 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 |`man_pages`|man pages|
 |`colorschemes`|color schemes|
 
+## LSP Commands
+
+| Command | List |
+| --- | --- |
+|`lsp_references`|References|
+|`lsp_definitions`|Definitions|
+|`lsp_declarations`|Declarations|
+|`lsp_typedefs`|Type Definitions|
+|`lsp_implementations`|Implementations|
+|`lsp_document_symbols`|Document Symbols|
+|`lsp_workspace_symbols`|Workspace Symbols|
+|`lsp_code_actions`|Code Actions|
+|`lsp_document_diagnostics`|Document Diagnostics|
+|`lsp_workspace_diagnostics`|Workspace Diagnostics|
+
 ## Customization
 
 I tried to make it as customizable as possible, if you find you need to change something that isn’t below, open an issue and I’ll do my best to add it.
@@ -147,8 +154,8 @@ require'fzf-lua'.setup {
   win_col             = 0.50,         -- window col position (0=left, 1=right)
   -- win_border          = false,         -- window border? or borderchars?
   win_border          = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
-  fzf_args            = '',           -- adv: fzf extra args, empty unless adv
   fzf_layout          = 'reverse',    -- fzf '--layout='
+  fzf_args            = '',           -- adv: fzf extra args, empty unless adv
   preview_cmd         = '',           -- 'head -n $FZF_PREVIEW_LINES',
   preview_border      = 'border',     -- border|noborder
   preview_wrap        = 'nowrap',     -- wrap|nowrap
@@ -174,10 +181,27 @@ require'fzf-lua'.setup {
       ["ctrl-y"]      = function(selected) print(selected[2]) end,
     }
   },
+  git = {
+    prompt            = 'GitFiles❯ ',
+    cmd               = 'git ls-files --exclude-standard',
+    git_icons         = true,         -- show git icons?
+    file_icons        = true,         -- show file icons?
+    color_icons       = true,         -- colorize file|git icons
+    icons = {
+        ["M"]     = { icon = "M", color = "yellow" },
+        ["D"]     = { icon = "D", color = "red" },
+        ["A"]     = { icon = "A", color = "green" },
+        ["?"]     = { icon = "?", color = "magenta" },
+        -- ["M"]     = { icon = "★", color = "red" },
+        -- ["D"]     = { icon = "✗", color = "red" },
+        -- ["A"]     = { icon = "+", color = "green" },
+    },
+  },
   grep = {
     prompt            = 'Rg❯ ',
     input_prompt      = 'Grep For❯ ',
     -- cmd               = "rg --vimgrep",
+    rg_opts           = "--hidden --column --line-number --no-heading --color=always --smart-case -g '!{.git,node_modules}/*'",
     git_icons         = true,         -- show git icons?
     file_icons        = true,         -- show file icons?
     color_icons       = true,         -- colorize file|git icons
@@ -193,13 +217,6 @@ require'fzf-lua'.setup {
   oldfiles = {
     prompt            = 'History❯ ',
     cwd_only          = false,
-  },
-  git = {
-    prompt            = 'GitFiles❯ ',
-    cmd               = 'git ls-files --exclude-standard',
-    git_icons         = true,         -- show git icons?
-    file_icons        = true,         -- show file icons?
-    color_icons       = true,         -- colorize file|git icons
   },
   buffers = {
     prompt            = 'Buffers❯ ',
@@ -233,8 +250,23 @@ require'fzf-lua'.setup {
     end,
   },
   quickfix = {
-    cwd               = vim.loop.cwd(),
+    -- cwd               = vim.loop.cwd(),
     file_icons        = true,
+    git_icons         = true,
+  },
+  lsp = {
+    prompt            = '❯ ',
+    -- cwd               = vim.loop.cwd(),
+    file_icons        = true,
+    git_icons         = false,
+    lsp_icons         = true,
+    severity          = "hint",
+    icons = {
+      ["Error"]       = { icon = "", color = "red" },       -- error
+      ["Warning"]     = { icon = "", color = "yellow" },    -- warning
+      ["Information"] = { icon = "", color = "blue" },      -- info
+      ["Hint"]        = { icon = "", color = "magenta" },   -- hint
+    },
   },
   -- placeholders for additional user customizations
   loclist = {},
@@ -242,18 +274,6 @@ require'fzf-lua'.setup {
   manpages = {},
   file_icon_colors = {                -- override colors for extensions
     ["lua"]   = "blue",
-  },
-  git_icons = {                       -- override colors for git icons
-    ["M"]     = "M", --"★",
-    ["D"]     = "D", --"✗",
-    ["A"]     = "A", --"+",
-    ["?"]     = "?"
-  },
-  git_icon_colors = {                 -- override colors for git icon colors
-    ["M"]     = "yellow",
-    ["D"]     = "red",
-    ["A"]     = "green",
-    ["?"]     = "magenta"
   },
   fzf_binds           = {             -- fzf '--bind=' options
     'f2:toggle-preview',
@@ -265,11 +285,11 @@ require'fzf-lua'.setup {
     'ctrl-f:page-down',
     'ctrl-b:page-up',
     'ctrl-a:toggle-all',
-    'ctrl-u:clear-query',
+    'ctrl-l:clear-query',
   },
   window_on_create = function()         -- nvim window options override
     vim.cmd("set winhl=Normal:Normal")  -- popup bg match normal windows
-  end
+  end,
 }
 ```
 
@@ -292,22 +312,22 @@ EOF
 
 ## TODO
 
-- [ ] Add built-in plugin documentation
-- [ ] Add "hidden" options documentation
-- [ ] Add FAQ
 - Add more providers
+    + [x] ~~LSP (refs, symbols, etc)~~ (2021-07-20)
+    + [ ] git commits
+    + [ ] git branches
     + [ ] vim commands
     + [ ] vim command history
     + [ ] vim keymaps
     + [ ] vim options
-    + [ ] search terms history
+    + [ ] search history
     + [ ] tags
     + [ ] marks
     + [ ] registers
     + [ ] spelling suggestions
-    + [ ] git commits
-    + [ ] git branches
-    + [ ] LSP (refs, symbols, etc)
+- [ ] Add built-in plugin documentation
+- [ ] Add "hidden" options documentation
+- [ ] Add FAQ
 
 ### Credits
 

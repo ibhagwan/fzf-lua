@@ -124,7 +124,10 @@ function M.setup(opts)
   setopts(config.lsp, opts.lsp, {
     prompt                  = "string",
     cwd                     = "string",
-    timeout                 = "number",
+    severity                = "string",
+    severity_exact          = "string",
+    severity_bound          = "string",
+    lsp_icons               = "boolean",
     git_icons               = "boolean",
     file_icons              = "boolean",
     color_icons             = "boolean",
@@ -169,8 +172,8 @@ function M.setup(opts)
     setopt_tbl(config[k], opts[k], "actions")
     setopt_tbl(config[k], opts[k], "winopts")
   end
-  setopt_tbl(config, opts, "git_icons")
-  setopt_tbl(config, opts, "git_icon_colors")
+  setopt_tbl(config.git, opts.git, "icons")
+  setopt_tbl(config.lsp, opts.lsp, "icons")
   setopt_tbl(config, opts, "file_icon_colors")
   -- override the bat preview theme if set by caller
   if config.bat_theme and #config.bat_theme > 0 then
@@ -202,6 +205,15 @@ M.help_tags = require'fzf-lua.providers.helptags'.helptags
 M.man_pages = require'fzf-lua.providers.manpages'.manpages
 M.colorschemes = require'fzf-lua.providers.colorschemes'.colorschemes
 
-M.lsp_refs = require'fzf-lua.providers.lsp'.refs_async
+M.lsp_typedefs = require'fzf-lua.providers.lsp'.typedefs
+M.lsp_references = require'fzf-lua.providers.lsp'.references
+M.lsp_definitions = require'fzf-lua.providers.lsp'.definitions
+M.lsp_declarations = require'fzf-lua.providers.lsp'.declarations
+M.lsp_implementations = require'fzf-lua.providers.lsp'.implementations
+M.lsp_document_symbols = require'fzf-lua.providers.lsp'.document_symbols
+M.lsp_workspace_symbols = require'fzf-lua.providers.lsp'.workspace_symbols
+M.lsp_code_actions = require'fzf-lua.providers.lsp'.code_actions
+M.lsp_document_diagnostics = require'fzf-lua.providers.lsp'.diagnostics
+M.lsp_workspace_diagnostics = require'fzf-lua.providers.lsp'.workspace_diagnostics
 
 return M

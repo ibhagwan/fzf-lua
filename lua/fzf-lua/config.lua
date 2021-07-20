@@ -124,6 +124,12 @@ M.git = {
   color_icons         = true,
   git_icons           = true,
   actions             = M.files.actions,
+  icons = {
+      ["M"]     = { icon = "M", color = "yellow" },
+      ["D"]     = { icon = "D", color = "red" },
+      ["A"]     = { icon = "A", color = "green" },
+      ["?"]     = { icon = "?", color = "magenta" },
+  },
 }
 
 M.buffers = {
@@ -177,12 +183,19 @@ M.manpages = {
 }
 
 M.lsp = {
-    prompt              = 'LSP> ',
-    timeout             = 1000,
+    prompt              = '> ',
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = false,
+    lsp_icons           = true,
+    severity            = "hint",
     actions             = M.files.actions,
+    icons = {
+        ["Error"]       = { icon = "", color = "red" },       -- error
+        ["Warning"]     = { icon = "", color = "yellow" },    -- warning
+        ["Information"] = { icon = "", color = "blue" },      -- info
+        ["Hint"]        = { icon = "", color = "magenta" },   -- hint
+    },
 }
 
 -- <F2>        toggle preview
@@ -238,19 +251,6 @@ M.file_icon_colors = {
   ["desktop"]   = "magenta",
 }
 
-M.git_icons = {
-    ["M"]     = "M",
-    ["D"]     = "D",
-    ["A"]     = "A",
-    ["?"]     = "?"
-}
-
-M.git_icon_colors = {
-  ["M"]     = "yellow",
-  ["D"]     = "red",
-  ["A"]     = "green",
-  ["?"]     = "magenta"
-}
 
 M.window_on_create = function()
   -- Set popup background same as normal windows

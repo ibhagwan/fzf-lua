@@ -6,12 +6,6 @@ local actions = require "fzf-lua.actions"
 
 local M = {}
 
--- invisible unicode char as icon|git separator
--- this way we can split our string by space
--- this causes "invalid escape sequence" error
--- local nbsp = "\u{00a0}"
-local nbsp = " "
-
 M.get_devicon = function(file, ext)
   local icon = ''
   if not file or  #file == 0 then return icon end
@@ -99,22 +93,14 @@ local get_untracked_files = function()
     return untracked_files
 end
 
-local color_icon = function(icon, ext)
-  if ext then
-    return utils.ansi_codes[config.file_icon_colors[ext] or "dark_grey"](icon)
-  else
-    return utils.ansi_codes[config.git_icon_colors[icon] or "green"](icon)
-  end
-end
-
-local get_git_icon = function(file, diff_files, untracked_files)
+local get_git_indicator = function(file, diff_files, untracked_files)
     if diff_files and diff_files[file] then
-        return config.git_icons[diff_files[file]]
+        return diff_files[file]
     end
     if untracked_files and untracked_files[file] then
-        return config.git_icons[untracked_files[file]]
+        return untracked_files[file]
     end
-    return nbsp
+    return utils.nbsp
 end
 
 
@@ -136,16 +122,24 @@ M.make_entry_file = function(opts, x)
     x = path.relative(x, opts.cwd)
   end
   if opts.file_icons then
-    local extension = path.extension(x)
-    icon = M.get_devicon(x, extension)
-    if opts.color_icons then icon = color_icon(icon, extension) end
+    local ext = path.extension(x)
+    icon = M.get_devicon(x, ext)
+    if opts.color_icons then
+      icon = utils.ansi_codes[config.file_icon_colors[ext] or "dark_grey"](icon)
+    end
     prefix = prefix .. icon
   end
   if opts.git_icons then
     local filepath = x:match("^[^:]+")
-    icon = get_git_icon(filepath, opts.diff_files, opts.untracked_files)
-    if opts.color_icons then icon = color_icon(icon) end
-    prefix = prefix .. utils._if(#prefix>0, nbsp, '') .. icon
+    local indicator = get_git_indicator(filepath, opts.diff_files, opts.untracked_files)
+    icon = indicator
+    if config.git.icons[indicator] then
+      icon = config.git.icons[indicator].icon
+      if opts.color_icons then
+        icon = utils.ansi_codes[config.git.icons[indicator].color or "dark_grey"](icon)
+      end
+    end
+    prefix = prefix .. utils._if(#prefix>0, utils.nbsp, '') .. icon
   end
   if #prefix > 0 then
     x = prefix .. " " .. x
@@ -180,7 +174,7 @@ M.fzf_files = function(opts)
       opts.untracked_files = get_untracked_files()
     end
 
-    local has_prefix = opts.file_icons or opts.git_icons
+    local has_prefix = opts.file_icons or opts.git_icons or opts.lsp_icons
     if not opts.filespec then
       opts.filespec = utils._if(has_prefix, "{2}", "{1}")
     end
@@ -188,6 +182,10 @@ M.fzf_files = function(opts)
     local selected = fzf.fzf(opts.fzf_fn,
       M.build_fzf_cli(opts),
       config.winopts(opts.winopts))
+
+    if opts.post_select_cb then
+      opts.post_select_cb()
+    end
 
     if not selected then return end
 
