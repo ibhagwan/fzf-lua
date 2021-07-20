@@ -50,8 +50,8 @@ M.build_fzf_cli = function(opts)
   local cli = string.format(
     [[ %s --layout=%s --bind=%s --prompt=%s]] ..
     [[ --preview-window='%s%s' --preview=%s]] ..
-    [[ --expect=%s --ansi --info=inline]] ..
-    [[ %s %s]],
+    [[ --height=100%% --ansi --info=inline]] ..
+    [[ --expect=%s %s %s]],
     opts.fzf_args or cfg.fzf_args or '',
     opts.fzf_layout or cfg.fzf_layout,
     utils._if(opts.fzf_binds, opts.fzf_binds,

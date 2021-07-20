@@ -2,7 +2,9 @@ local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
 
 -- Clear the default command or it would interfere with our options
-vim.env.FZF_DEFAULT_OPTS = ''
+-- not needed anymore, we are pretty much overriding all options
+-- with our cli args, in addition this could conflict with fzf.vim
+-- vim.env.FZF_DEFAULT_OPTS = ''
 
 local M = {}
 
