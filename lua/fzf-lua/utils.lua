@@ -184,7 +184,6 @@ function M.get_visual_selection()
     if n <= 0 then return '' end
     lines[n] = string.sub(lines[n], 1, cecol)
     lines[1] = string.sub(lines[1], cscol)
-    print(n, csrow, cscol, cerow, cecol, table.concat(lines, "\n"))
     return table.concat(lines, "\n")
 end
 

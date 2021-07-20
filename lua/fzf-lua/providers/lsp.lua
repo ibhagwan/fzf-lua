@@ -213,7 +213,11 @@ M.document_symbols = function(opts)
 end
 
 M.workspace_symbols = function(opts)
-  return fzf_lsp_locations(opts)
+  opts = normalize_lsp_opts(opts, config.lsp)
+  opts.lsp_params = {query = ''}
+  opts = set_fzf_files_args(opts)
+  opts = set_lsp_fzf_fn(opts)
+  return core.fzf_files(opts)
 end
 
 M.code_actions = function(opts)
