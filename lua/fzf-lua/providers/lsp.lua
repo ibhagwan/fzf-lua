@@ -12,18 +12,22 @@ local actions = require "fzf-lua.actions"
 
 local M = {}
 
+local jump_to_location = function(opts, result)
+
+  local winid = vim.api.nvim_get_current_win()
+  if opts.winid ~= winid then
+    -- utils.send_ctrl_c()
+    vim.api.nvim_win_close(0, false)
+  end
+  return vim.lsp.util.jump_to_location(result)
+end
+
 local function location_handler(opts, cb, _, result)
   result = vim.tbl_islist(result) and result or {result}
   -- Jump immediately if there is only one location
-  -- TODO: we can't preform the jump due to fzf already
-  -- being open resulting in:
-  -- Error executing vim.schedule lua callback:
-  --    /usr/share/nvim/runtime/lua/vim/lsp/util.lua:976:
-  --    Vim(normal):Can't re-enter normal mode from terminal mode
-  --[[ if #result == 1 then
-    utils.send_ctrl_c()
-    return vim.lsp.util.jump_to_location(result[1])
-  end ]]
+  if opts.jump_to_single_result and #result == 1 then
+    jump_to_location(opts, result[1])
+  end
   local items = vim.lsp.util.locations_to_items(result)
   for _, entry in ipairs(items) do
     entry = core.make_entry_lcol(opts, entry)
@@ -103,6 +107,7 @@ local function set_lsp_fzf_fn(opts)
   -- our current buffer window, anything inside
   -- fzf_fn is run while fzf term is open
   opts.bufnr = vim.api.nvim_get_current_buf()
+  opts.winid = vim.api.nvim_get_current_win()
   opts.filename = vim.api.nvim_buf_get_name(opts.bufnr)
   if not opts.lsp_params then
     opts.lsp_params = vim.lsp.util.make_position_params()
@@ -167,6 +172,7 @@ local normalize_lsp_opts = function(opts, cfg)
 
   opts.cfg = nil
   opts.bufnr = nil
+  opts.winid = nil
   opts.filename = nil
   opts.lsp_params = nil
   opts.code_actions = nil
