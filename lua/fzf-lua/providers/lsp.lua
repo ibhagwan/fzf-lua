@@ -71,10 +71,8 @@ local function diagnostics_handler(opts, cb, _, entry)
       icon = utils.ansi_codes[severity.color or "dark_grey"](icon)
     end
     if opts.file_icons or opts.git_icons then
-      -- entry = icon .. utils.nbsp .. utils.nbsp .. entry
       entry = icon .. utils.nbsp .. utils.nbsp .. entry
     else
-      -- entry = icon .. utils.nbsp .. " " .. entry
       entry = icon .. utils.nbsp .. " " .. entry
     end
   end

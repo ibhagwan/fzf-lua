@@ -5,7 +5,7 @@ M.separator = function()
 end
 
 M.starts_with_separator = function(path)
-  return path:match("^[^"..M.separator().."]+")
+  return path:find(M.separator()) == 1
 end
 
 M.tail = (function()
