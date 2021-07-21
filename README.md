@@ -147,6 +147,7 @@ customization can be achieved by calling the `setup()` function or individually 
 
 Consult the list below for available settings:
 ```lua
+local actions = require "fzf-lua.actions"
 require'fzf-lua'.setup {
   win_height          = 0.85,         -- window height
   win_width           = 0.80,         -- window width
