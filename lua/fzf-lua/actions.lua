@@ -60,7 +60,7 @@ M.file_vsplit = function(selected)
 end
 
 M.file_tabedit = function(selected)
-  local vimcmd = "tanbew"
+  local vimcmd = "tabnew"
   M.vimcmd_file(vimcmd, selected)
 end
 
