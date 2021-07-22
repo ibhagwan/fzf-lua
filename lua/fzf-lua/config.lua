@@ -200,6 +200,17 @@ M.lsp = {
     },
 }
 
+M.builtin = {
+    prompt              = 'Builtin> ',
+    winopts = {
+      win_height       = 0.65,
+      win_width        = 0.50,
+    },
+    actions = {
+      ["default"]       = actions.run_builtin,
+    },
+}
+
 -- <F2>        toggle preview
 -- <F3>        toggle preview text wrap
 -- <C-f>|<C-b> page down|up

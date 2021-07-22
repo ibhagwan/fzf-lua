@@ -129,6 +129,7 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 |`help_tags`|help tags|
 |`man_pages`|man pages|
 |`colorschemes`|color schemes|
+|`builtin`|fzf-lua builtin methods|
 
 ## LSP Commands
 

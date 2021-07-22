@@ -163,11 +163,15 @@ function M.setup(opts)
   setopts(config.helptags, opts.helptags, {
     prompt                = "string",
   })
+  setopts(config.builtin, opts.builtin, {
+    prompt                = "string",
+  })
   -- table overrides without losing defaults
   for _, k in ipairs({
     "git", "files", "oldfiles", "buffers",
-    "grep", "quickfix", "loclist",
+    "grep", "quickfix", "loclist", "lsp",
     "colorschemes", "helptags", "manpages",
+    "builtin",
   }) do
     setopt_tbl(config[k], opts[k], "actions")
     setopt_tbl(config[k], opts[k], "winopts")
@@ -215,5 +219,12 @@ M.lsp_workspace_symbols = require'fzf-lua.providers.lsp'.workspace_symbols
 M.lsp_code_actions = require'fzf-lua.providers.lsp'.code_actions
 M.lsp_document_diagnostics = require'fzf-lua.providers.lsp'.diagnostics
 M.lsp_workspace_diagnostics = require'fzf-lua.providers.lsp'.workspace_diagnostics
+
+M.builtin = function(self)
+  return require'fzf-lua.providers.module'.metatable({
+    metatable = M,
+    metatable_exclude = { ["setup"]=0, ["fzf_files"]=0 },
+  })
+end
 
 return M

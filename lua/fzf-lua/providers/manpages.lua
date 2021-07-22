@@ -50,7 +50,7 @@ M.manpages = function(opts)
       end
     end
 
-    actions.act(opts.actions, selected[1], selected)
+    actions.act(opts.actions, selected)
 
   end)()
 

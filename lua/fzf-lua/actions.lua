@@ -10,14 +10,19 @@ M.expect = function(actions)
     end
   end
   if #keys > 0 then
-    return table.concat(keys, ',')
+    return string.format("--expect=%s", table.concat(keys, ','))
   end
   return nil
 end
 
-M.act = function(actions, action, selected)
-  if not actions or not action then return end
-  if #action == 0 then action = "default" end
+M.act = function(actions, selected)
+  if not actions or not selected then return end
+  local action = "default"
+  -- if there are no actions besides default
+  -- the table will contain the results directly
+  -- otherwise 'selected[1]` will contain the keybind
+  -- empty string in selected[1] represents default
+  if #selected>1 and #selected[1]>0 then action = selected[1] end
   if actions[action] then
     actions[action](selected)
   end
@@ -107,8 +112,17 @@ M.buf_del = function(selected)
 end
 
 M.colorscheme = function(selected)
-  if not selected or #selected < 2 then return end
-  vim.cmd("colorscheme " .. selected[2])
+  if not selected then return end
+  local colorscheme = selected[1]
+  if #selected>1 then colorscheme = selected[2] end
+  vim.cmd("colorscheme " .. colorscheme)
+end
+
+M.run_builtin = function(selected)
+  if not selected then return end
+  local method = selected[1]
+  if #selected>1 then method = selected[2] end
+  vim.cmd(string.format("lua require'fzf-lua'.%s()", method))
 end
 
 M.help = function(selected)
