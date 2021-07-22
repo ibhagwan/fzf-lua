@@ -1,8 +1,16 @@
+<div align="center">
+
 # fzf :heart: lua
+
+![Neovim version](https://img.shields.io/badge/Neovim-0.5-57A143?style=flat-square&logo=neovim)
+
+[Installation](#installation) • [Usage](#usage) • [Commands](#commands) • [Customization](#customization)
 
 ![screenshot](https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/screenshots/main.png)
 
 [fzf](https://github.com/junegunn/fzf) changed my life, it can change yours too, if you allow it.
+
+  </div>
 
 ### Rationale
 
