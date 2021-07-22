@@ -220,11 +220,11 @@ M.lsp_code_actions = require'fzf-lua.providers.lsp'.code_actions
 M.lsp_document_diagnostics = require'fzf-lua.providers.lsp'.diagnostics
 M.lsp_workspace_diagnostics = require'fzf-lua.providers.lsp'.workspace_diagnostics
 
-M.builtin = function(self)
-  return require'fzf-lua.providers.module'.metatable({
-    metatable = M,
-    metatable_exclude = { ["setup"]=0, ["fzf_files"]=0 },
-  })
+M.builtin = function(opts)
+  if not opts then opts = {} end
+  opts.metatable = M
+  opts.metatable_exclude = { ["setup"] = false, ["fzf_files"] = false }
+  return require'fzf-lua.providers.module'.metatable(opts)
 end
 
 return M
