@@ -4,7 +4,7 @@
 
 ![Neovim version](https://img.shields.io/badge/Neovim-0.5-57A143?style=flat-square&logo=neovim)
 
-[Installation](#nstallation) • [Usage](#usage) • [Commands](#commands) • [Customization](#customization)
+[Installation](#installation) • [Usage](#usage) • [Commands](#commands) • [Customization](#customization)
 
 ![screenshot](https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/screenshots/main.png)
 
