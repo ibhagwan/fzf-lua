@@ -53,6 +53,7 @@ function M.setup(opts)
     win_border          = "any",    -- boolean|table (borderchars)
     winopts_raw         = "function",
     default_prompt      = "string",
+    fzf_bin             = "string",
     fzf_args            = "string",
     fzf_layout          = "string",
     fzf_binds           = "table",
@@ -185,6 +186,8 @@ function M.setup(opts)
   end
   -- reset default window opts if set by user
   fzf.default_window_options = config.winopts()
+  -- set the fzf binary if set by the user
+  if config.fzf_bin then fzf.fzf_binary = config.fzf_bin end
 end
 
 -- we usually send winopts with every fzf.fzf call

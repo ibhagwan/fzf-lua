@@ -47,11 +47,12 @@ M.build_fzf_cli = function(opts)
   local cfg = require'fzf-lua.config'
   opts.prompt = opts.prompt or cfg.default_prompt
   opts.preview_offset = opts.preview_offset or ''
+  opts.fzf_bin = opts.fzf_bin or cfg.fzf_bin
   local cli = string.format(
     [[ %s --layout=%s --bind=%s --prompt=%s]] ..
     [[ --preview-window='%s%s' --preview=%s]] ..
-    [[ --height=100%% --ansi --info=inline]] ..
-    [[ %s %s %s]],
+    [[ --height=100%% --ansi]] ..
+    [[ %s %s %s %s]],
     opts.fzf_args or cfg.fzf_args or '',
     opts.fzf_layout or cfg.fzf_layout,
     utils._if(opts.fzf_binds, opts.fzf_binds,
@@ -60,6 +61,8 @@ M.build_fzf_cli = function(opts)
     utils._if(opts.preview_window, opts.preview_window, cfg.preview_window()),
     utils._if(#opts.preview_offset>0, ":"..opts.preview_offset, ''),
     utils._if(opts.preview, opts.preview, M.preview_cmd(opts, cfg)),
+    -- HACK: support skim (rust version of fzf)
+    utils._if(opts.fzf_bin and opts.fzf_bin:find('sk')~=nil, "--inline-info", "--info=inline"),
     utils._if(actions.expect(opts.actions), actions.expect(opts.actions), ''),
     utils._if(opts.nomulti, '--no-multi', '--multi'),
     utils._if(opts.cli_args, opts.cli_args, '')
@@ -153,11 +156,6 @@ local function trim_entry(string)
 end
 
 M.fzf_files = function(opts)
-
-  if not opts or not opts.fzf_fn then
-    utils.warn("Core.fzf_files(opts) cannot run without callback fn")
-    return
-  end
 
   -- reset git tracking
   opts.diff_files, opts.untracked_files = nil, nil

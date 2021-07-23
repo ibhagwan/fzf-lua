@@ -122,7 +122,11 @@ local function set_lsp_fzf_fn(opts)
       -- we use this passthrough so we can send the
       -- coroutine variable (not used rn but who knows?)
       opts.lsp_handler.target = function(_, _, result)
-        return opts.lsp_handler.handler(opts, cb, co, result)
+        opts.lsp_handler.handler(opts, cb, co, result)
+        -- close the pipe to fzf, this
+        -- removes the loading indicator in fzf
+        cb(nil, function() end)
+        return
       end
 
       local _, cancel_all = vim.lsp.buf_request(opts.bufnr,
@@ -375,6 +379,9 @@ M.diagnostics = function(opts)
         end
       end
       -- coroutine.yield()
+      -- close the pipe to fzf, this
+      -- removes the loading indicator in fzf
+      cb(nil, function() end)
     end)()
   end
 

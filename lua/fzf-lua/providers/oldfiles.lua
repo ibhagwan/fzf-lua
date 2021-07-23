@@ -54,10 +54,12 @@ M.oldfiles = function(opts)
       x = core.make_entry_file(opts, x)
       cb(x, function(err)
         if err then return end
-        -- cb(nil) -- to close the pipe to fzf, this removes the loading
-                   -- indicator in fzf
+          -- close the pipe to fzf, this
+          -- removes the loading indicator in fzf
+          cb(nil, function() end)
       end)
     end
+    cb(nil, function() end)
   end
 
   --[[ opts.cb_selected = function(_, x)

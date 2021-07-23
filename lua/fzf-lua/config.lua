@@ -16,6 +16,7 @@ M.win_row             = 0.30
 M.win_col             = 0.50
 M.win_border          = true
 M.default_prompt      = '> '
+M.fzf_bin             = nil
 M.fzf_layout          = 'reverse'
 M.preview_cmd         = nil   -- auto detect head|bat
 M.preview_border      = 'border'

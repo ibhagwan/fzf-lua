@@ -88,7 +88,7 @@ local fzf_function = function (cb)
       end
     end
     -- done
-    -- cb(nil)
+    cb(nil, function() end)
   end)()
 end
 

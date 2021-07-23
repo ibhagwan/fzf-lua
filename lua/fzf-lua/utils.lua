@@ -55,9 +55,10 @@ function M.is_git_repo()
 end
 
 function M.rg_escape(str)
+  if not str then return str end
   --  [(~'"\/$?'`*&&||;[]<>)]
   --  escape "\~$?*|[()"
-  return str:gsub("[\\~$?*|\\[()]", function(x)
+  return str:gsub("[\\~$?*|{\\[()]", function(x)
     return '\\' .. x
   end)
 end

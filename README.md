@@ -165,6 +165,7 @@ require'fzf-lua'.setup {
   win_col             = 0.50,         -- window col position (0=left, 1=right)
   -- win_border          = false,         -- window border? or borderchars?
   win_border          = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
+  -- fzf_bin             = 'sk',         -- use skim instead of fzf?
   fzf_layout          = 'reverse',    -- fzf '--layout='
   fzf_args            = '',           -- adv: fzf extra args, empty unless adv
   preview_cmd         = '',           -- 'head -n $FZF_PREVIEW_LINES',
