@@ -8,7 +8,15 @@ local actions = require "fzf-lua.actions"
 
 local M = {}
 
-M._has_devicons = pcall(require, "nvim-web-devicons")
+M._has_devicons, M._devicons = pcall(require, "nvim-web-devicons")
+
+-- if the caller has devicons lazy loaded
+-- this will generate an error
+--  nvim-web-devicons.lua:972: E5560:
+--  nvim_command must not be called in a lua loop callback
+if M._has_devicons and not M._devicons.has_loaded() then
+  M._devicons.setup()
+end
 
 M.win_height          = 0.85
 M.win_width           = 0.80

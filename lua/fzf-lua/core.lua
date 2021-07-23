@@ -8,9 +8,9 @@ local M = {}
 
 M.get_devicon = function(file, ext)
   local icon = ''
-  if not file or  #file == 0 then return icon end
-  if config._has_devicons then
-    local devicon = require'nvim-web-devicons'.get_icon(file, ext)
+  if not file or #file == 0 then return icon end
+  if config._has_devicons and config._devicons then
+    local devicon = config._devicons.get_icon(file, ext)
     if devicon then icon = devicon end
   end
   return icon
