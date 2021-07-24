@@ -101,6 +101,25 @@ local function wrap_handler(handler)
   end
 end
 
+local function wrap_request_all(handler)
+  return function(result)
+    local ret
+    local flattened_results = {}
+    for _, server_results in pairs(result) do
+      if server_results.result then
+        vim.list_extend(flattened_results, server_results.result)
+      end
+    end
+    if #flattened_results == 0 then
+      ret = utils.info(string.format('No %s found', string.lower(handler.label)))
+      utils.send_ctrl_c()
+    else
+      ret = handler.target(nil, nil, flattened_results)
+    end
+    return ret
+  end
+end
+
 local function set_lsp_fzf_fn(opts)
 
   -- we must make the params here while we're on
@@ -125,9 +144,16 @@ local function set_lsp_fzf_fn(opts)
         opts.lsp_handler.handler(opts, cb, co, result)
         -- close the pipe to fzf, this
         -- removes the loading indicator in fzf
+        -- HACK: slight delay to prevent missing results
+        -- otherwise the input stream closes too fast
+        vim.cmd("sleep! 10m")
         cb(nil, function() end)
         return
       end
+
+      -- local cancel_all = vim.lsp.buf_request_all(opts.bufnr,
+        -- opts.lsp_handler.method, opts.lsp_params,
+        -- wrap_request_all(opts.lsp_handler))
 
       local _, cancel_all = vim.lsp.buf_request(opts.bufnr,
         opts.lsp_handler.method, opts.lsp_params,
@@ -381,6 +407,7 @@ M.diagnostics = function(opts)
       -- coroutine.yield()
       -- close the pipe to fzf, this
       -- removes the loading indicator in fzf
+        vim.cmd("sleep! 10m")
       cb(nil, function() end)
     end)()
   end
