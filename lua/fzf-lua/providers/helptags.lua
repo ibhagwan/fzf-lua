@@ -87,7 +87,8 @@ local fzf_function = function (cb)
         end
       end
     end
-    -- done
+    -- done, we can't call utils.delayed_cb here
+    -- because sleep() messes up the coroutine
     cb(nil, function() end)
   end)()
 end

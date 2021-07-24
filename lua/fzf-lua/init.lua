@@ -187,7 +187,14 @@ function M.setup(opts)
   -- reset default window opts if set by user
   fzf.default_window_options = config.winopts()
   -- set the fzf binary if set by the user
-  if config.fzf_bin then fzf.fzf_binary = config.fzf_bin end
+  if config.fzf_bin then
+    if fzf.default_options ~= nil and
+      vim.fn.executable(config.fzf_bin) == 1 then
+      fzf.default_options.fzf_binary = config.fzf_bin
+    else
+      config.fzf_bin = nil
+    end
+  end
 end
 
 -- we usually send winopts with every fzf.fzf call

@@ -59,7 +59,7 @@ M.oldfiles = function(opts)
           cb(nil, function() end)
       end)
     end
-    cb(nil, function() end)
+    utils.delayed_cb(cb)
   end
 
   --[[ opts.cb_selected = function(_, x)

@@ -193,4 +193,11 @@ function M.send_ctrl_c()
     vim.api.nvim_replace_termcodes("<C-c>", true, false, true), 'n', true)
 end
 
+function M.delayed_cb(cb)
+  -- HACK: slight delay to prevent missing results
+  -- otherwise the input stream closes too fast
+  vim.cmd("sleep! 10m")
+  cb(nil, function() end)
+end
+
 return M

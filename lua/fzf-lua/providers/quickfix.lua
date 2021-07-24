@@ -36,7 +36,7 @@ local quickfix_run = function(opts, cfg, locations)
           cb(nil, function() end)
       end)
     end
-    cb(nil, function() end)
+    utils.delayed_cb(cb)
   end
 
   --[[ opts.cb_selected = function(_, x)

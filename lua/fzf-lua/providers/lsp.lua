@@ -144,10 +144,7 @@ local function set_lsp_fzf_fn(opts)
         opts.lsp_handler.handler(opts, cb, co, result)
         -- close the pipe to fzf, this
         -- removes the loading indicator in fzf
-        -- HACK: slight delay to prevent missing results
-        -- otherwise the input stream closes too fast
-        vim.cmd("sleep! 10m")
-        cb(nil, function() end)
+        utils.delayed_cb(cb)
         return
       end
 
@@ -407,8 +404,7 @@ M.diagnostics = function(opts)
       -- coroutine.yield()
       -- close the pipe to fzf, this
       -- removes the loading indicator in fzf
-        vim.cmd("sleep! 10m")
-      cb(nil, function() end)
+      utils.delayed_cb(cb)
     end)()
   end
 
