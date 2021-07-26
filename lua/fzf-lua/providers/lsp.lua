@@ -404,7 +404,11 @@ M.diagnostics = function(opts)
       -- coroutine.yield()
       -- close the pipe to fzf, this
       -- removes the loading indicator in fzf
-      utils.delayed_cb(cb)
+      -- TODO: why is this causing a bug with
+      -- 'glepnir/dashboard-nvim'??? (issue #23)
+      -- utils.delayed_cb(cb)
+      cb(nil, function() coroutine.resume(co) end)
+      coroutine.yield()
     end)()
   end
 
