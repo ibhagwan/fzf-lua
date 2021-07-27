@@ -12,11 +12,7 @@ local config = require "fzf-lua.config"
 local M = {}
 
 M.oldfiles = function(opts)
-  opts = config.getopts(opts, config.oldfiles, {
-    "prompt", "actions", "winopts",
-    "file_icons", "color_icons", "git_icons",
-    "include_current_session", "cwd_only",
-  })
+  opts = config.normalize_opts(opts, config.globals.oldfiles)
 
   local current_buffer = vim.api.nvim_get_current_buf()
   local current_file = vim.api.nvim_buf_get_name(current_buffer)

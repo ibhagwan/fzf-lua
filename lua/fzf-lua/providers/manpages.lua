@@ -19,9 +19,7 @@ end
 
 M.manpages = function(opts)
 
-  opts = config.getopts(opts, config.manpages, {
-    "prompt", "actions", "winopts", "cmd",
-  })
+  opts = config.normalize_opts(opts, config.globals.manpages)
 
   coroutine.wrap(function ()
 
@@ -40,7 +38,7 @@ M.manpages = function(opts)
 
     local selected = fzf.fzf(fzf_fn,
       core.build_fzf_cli(opts),
-      config.winopts(opts.winopts))
+      config.winopts(opts))
 
     if not selected then return end
 

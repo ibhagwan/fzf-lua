@@ -32,12 +32,9 @@ local get_files_cmd = function(opts)
 end
 
 M.files = function(opts)
-  opts = config.getopts(opts, config.files, {
-    "cmd", "prompt", "actions", "winopts",
-    "file_icons", "color_icons", "git_icons",
-    "fd_opts", "find_opts",
-  })
 
+  opts = config.normalize_opts(opts, config.globals.files)
+  -- _G.dump(opts)
 
   local command = get_files_cmd(opts)
 
@@ -55,10 +52,7 @@ M.git_files = function(opts)
     utils.info(unpack(output))
     return
   end
-  opts = config.getopts(opts, config.git, {
-    "cmd", "prompt", "actions", "winopts",
-    "file_icons", "color_icons", "git_icons",
-  })
+  opts = config.normalize_opts(opts, config.globals.git)
   -- opts.cmd sets this to "git ls-files"
   return M.files(opts)
 end

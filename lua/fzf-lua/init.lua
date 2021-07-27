@@ -3,198 +3,36 @@ if not pcall(require, "fzf") then
 end
 
 local fzf = require "fzf"
-local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
 local M = {}
 
-local getopt = function(opts, key, expected_type, default)
-  if opts and opts[key] ~= nil then
-    if expected_type == "any" or type(opts[key]) == expected_type then
-        return opts[key]
-    else
-      utils.info(
-        string.format("Expected '%s' for config option '%s', got '%s'",
-        expected_type, key, type(opts[key]))
-      )
-    end
-  elseif default ~= nil then
-      return default
-  else
-      return nil
-  end
-end
-
-local setopt = function(cfg, opts, key, type)
-  cfg[tostring(key)] = getopt(opts, key, type, cfg[tostring(key)])
-end
-
-local setopts = function(cfg, opts, tbl)
-  for k, v in pairs(tbl) do
-    setopt(cfg, opts, k, v)
-  end
-end
-
-local setopt_tbl = function(cfg, opts, key)
-  if opts and opts[key] then
-    for k, v in pairs(opts[key]) do
-      if not cfg[key] then cfg[key] = {} end
-      cfg[key][k] = v
-    end
-  end
-end
-
 function M.setup(opts)
-  setopts(config, opts, {
-    win_height          = "number",
-    win_width           = "number",
-    win_row             = "number",
-    win_col             = "number",
-    win_border          = "any",    -- boolean|table (borderchars)
-    winopts_raw         = "function",
-    default_prompt      = "string",
-    fzf_bin             = "string",
-    fzf_args            = "string",
-    fzf_layout          = "string",
-    fzf_binds           = "table",
-    preview_cmd         = "string",
-    preview_border      = "string",
-    preview_wrap        = "string",
-    preview_opts        = "string",
-    preview_vertical    = "string",
-    preview_horizontal  = "string",
-    preview_layout      = "string",
-    flip_columns        = "number",
-    window_on_create    = "function",
-    bat_theme           = "string",
-    bat_opts            = "string",
-  })
-  setopts(config.files, opts.files, {
-    prompt              = "string",
-    cmd                 = "string",
-    git_icons           = "boolean",
-    file_icons          = "boolean",
-    color_icons         = "boolean",
-    fd_opts             = "string",
-    find_opts           = "string",
-    git_diff_cmd        = "string",
-    git_untracked_cmd   = "string",
-  })
-  setopts(config.grep, opts.grep, {
-    prompt              = "string",
-    input_prompt        = "string",
-    cmd                 = "string",
-    git_icons           = "boolean",
-    file_icons          = "boolean",
-    color_icons         = "boolean",
-    rg_opts             = "string",
-    grep_opts           = "string",
-    git_diff_cmd        = "string",
-    git_untracked_cmd   = "string",
-  })
-  setopts(config.oldfiles, opts.oldfiles, {
-    prompt                  = "string",
-    git_icons               = "boolean",
-    file_icons              = "boolean",
-    color_icons             = "boolean",
-    git_diff_cmd            = "string",
-    git_untracked_cmd       = "string",
-    cwd_only                = "boolean",
-    include_current_session = "boolean",
-  })
-  setopts(config.quickfix, opts.quickfix, {
-    prompt                  = "string",
-    cwd                     = "string",
-    separator               = "string",
-    git_icons               = "boolean",
-    file_icons              = "boolean",
-    color_icons             = "boolean",
-    git_diff_cmd            = "string",
-    git_untracked_cmd       = "string",
-  })
-  setopts(config.loclist, opts.loclist, {
-    prompt                  = "string",
-    cwd                     = "string",
-    separator               = "string",
-    git_icons               = "boolean",
-    file_icons              = "boolean",
-    color_icons             = "boolean",
-    git_diff_cmd            = "string",
-    git_untracked_cmd       = "string",
-  })
-  setopts(config.lsp, opts.lsp, {
-    prompt                  = "string",
-    cwd                     = "string",
-    severity                = "string",
-    severity_exact          = "string",
-    severity_bound          = "string",
-    lsp_icons               = "boolean",
-    git_icons               = "boolean",
-    file_icons              = "boolean",
-    color_icons             = "boolean",
-    git_diff_cmd            = "string",
-    git_untracked_cmd       = "string",
-  })
-  setopts(config.git, opts.git, {
-    prompt              = "string",
-    cmd                 = "string",
-    git_icons           = "boolean",
-    file_icons          = "boolean",
-    color_icons         = "boolean",
-  })
-  setopts(config.buffers, opts.buffers, {
-    prompt                = "string",
-    git_prompt            = "string",
-    file_icons            = "boolean",
-    color_icons           = "boolean",
-    sort_lastused         = "boolean",
-    show_all_buffers      = "boolean",
-    ignore_current_buffer = "boolean",
-    cwd_only              = "boolean",
-  })
-  setopts(config.colorschemes, opts.colorschemes, {
-    prompt                = "string",
-    live_preview          = "boolean",
-    post_reset_cb         = "function",
-  })
-  setopts(config.manpages, opts.manpages, {
-    prompt                = "string",
-    cmd                   = "string",
-  })
-  setopts(config.helptags, opts.helptags, {
-    prompt                = "string",
-  })
-  setopts(config.builtin, opts.builtin, {
-    prompt                = "string",
-  })
-  -- table overrides without losing defaults
-  for _, k in ipairs({
-    "git", "files", "oldfiles", "buffers",
-    "grep", "quickfix", "loclist", "lsp",
-    "colorschemes", "helptags", "manpages",
-    "builtin",
-  }) do
-    setopt_tbl(config[k], opts[k], "actions")
-    setopt_tbl(config[k], opts[k], "winopts")
+  local globals = vim.tbl_deep_extend("keep", opts, config.globals)
+  -- backward compatibility before winopts was it's own struct
+  for k, _ in pairs(globals.winopts) do
+    if opts[k] ~= nil then globals.winopts[k] = opts[k] end
   end
-  setopt_tbl(config.git, opts.git, "icons")
-  setopt_tbl(config.lsp, opts.lsp, "icons")
-  setopt_tbl(config, opts, "file_icon_colors")
   -- override the bat preview theme if set by caller
-  if config.bat_theme and #config.bat_theme > 0 then
-    vim.env.BAT_THEME = config.bat_theme
+  if globals.bat_theme and #globals.bat_theme > 0 then
+    vim.env.BAT_THEME = globals.bat_theme
   end
   -- reset default window opts if set by user
   fzf.default_window_options = config.winopts()
   -- set the fzf binary if set by the user
-  if config.fzf_bin then
+  if globals.fzf_bin ~= nil then
     if fzf.default_options ~= nil and
-      vim.fn.executable(config.fzf_bin) == 1 then
-      fzf.default_options.fzf_binary = config.fzf_bin
+      vim.fn.executable(globals.fzf_bin) == 1 then
+      fzf.default_options.fzf_binary = globals.fzf_bin
     else
-      config.fzf_bin = nil
+      globals.fzf_bin = nil
     end
   end
+  -- reset our globals based on user opts
+  -- this doesn't happen automatically
+  config.globals = globals
+  globals = nil
+  -- _G.dump(config.globals)
 end
 
 -- we usually send winopts with every fzf.fzf call

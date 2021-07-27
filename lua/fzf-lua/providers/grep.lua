@@ -40,15 +40,10 @@ end
 
 M.grep = function(opts)
 
-  opts = config.getopts(opts, config.grep, {
-    "cmd", "prompt", "actions", "winopts",
-    "file_icons", "color_icons", "git_icons",
-    "search", "input_prompt",
-    "rg_opts", "grep_opts",
-  })
+  opts = config.normalize_opts(opts, config.globals.grep)
 
   if opts.continue_last_search or opts.repeat_last_search then
-    opts.search = config.grep.last_search
+    opts.search = config._grep_last_search
   end
 
   -- if user did not provide a search term
@@ -64,7 +59,7 @@ M.grep = function(opts)
 
   -- save the search query so the use can
   -- call the same search again
-  config.grep.last_search = opts.search
+  config._grep_last_search = opts.search
 
   local command = get_grep_cmd(opts, opts.search)
 
@@ -124,25 +119,20 @@ end
 
 M.live_grep = function(opts)
 
-  opts = config.getopts(opts, config.grep, {
-    "cmd", "prompt", "actions", "winopts",
-    "file_icons", "color_icons", "git_icons",
-    "search", "input_prompt",
-    "rg_opts", "grep_opts",
-  })
+  opts = config.normalize_opts(opts, config.globals.grep)
 
   if opts.continue_last_search or opts.repeat_last_search then
-    opts.search = config.grep.last_search
+    opts.search = config._grep_last_search
   end
 
   if opts.search and #opts.search>0 then
     -- save the search query so the use can
     -- call the same search again
-    config.grep.last_search = opts.search
+    config._grep_last_search = opts.search
   end
 
   -- HACK: support skim (rust version of fzf)
-  opts.fzf_bin = opts.fzf_bin or config.fzf_bin
+  opts.fzf_bin = opts.fzf_bin or config.globals.fzf_bin
   if opts.fzf_bin and opts.fzf_bin:find('sk')~=nil then
     return M.live_grep_sk(opts)
   end
@@ -204,7 +194,7 @@ end
 
 M.grep_curbuf = function(opts)
   if not opts then opts = {} end
-  opts.rg_opts = config.grep.rg_opts .. " --with-filename"
+  opts.rg_opts = config.globals.grep.rg_opts .. " --with-filename"
   opts.filename = vim.api.nvim_buf_get_name(0)
   if #opts.filename > 0 then
     opts.filename = path.relative(opts.filename, vim.loop.cwd())

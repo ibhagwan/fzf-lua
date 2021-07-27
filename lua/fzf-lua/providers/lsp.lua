@@ -185,12 +185,7 @@ local set_fzf_files_args = function(opts)
 end
 
 local normalize_lsp_opts = function(opts, cfg)
-  opts = config.getopts(opts, cfg, {
-    "cwd", "actions", "winopts",
-    "file_icons", "color_icons",
-    "git_icons", "lsp_icons", "severity",
-    "severity_exact", "severity_bound",
-  })
+  opts = config.normalize_opts(opts, cfg)
 
   if not opts.cwd then opts.cwd = vim.loop.cwd() end
   if not opts.prompt then
@@ -208,7 +203,7 @@ local normalize_lsp_opts = function(opts, cfg)
 end
 
 local function fzf_lsp_locations(opts)
-  opts = normalize_lsp_opts(opts, config.lsp)
+  opts = normalize_lsp_opts(opts, config.globals.lsp)
   opts = set_fzf_files_args(opts)
   opts = set_lsp_fzf_fn(opts)
   return core.fzf_files(opts)
@@ -244,7 +239,7 @@ M.document_symbols = function(opts)
 end
 
 M.workspace_symbols = function(opts)
-  opts = normalize_lsp_opts(opts, config.lsp)
+  opts = normalize_lsp_opts(opts, config.globals.lsp)
   opts.lsp_params = {query = ''}
   opts = set_fzf_files_args(opts)
   opts = set_lsp_fzf_fn(opts)
@@ -252,7 +247,7 @@ M.workspace_symbols = function(opts)
 end
 
 M.code_actions = function(opts)
-  opts = normalize_lsp_opts(opts, config.lsp)
+  opts = normalize_lsp_opts(opts, config.globals.lsp)
   opts.lsp_params = vim.lsp.util.make_range_params()
   opts.lsp_params.context = {
     diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
@@ -285,7 +280,7 @@ M.code_actions = function(opts)
 
     local selected = fzf.fzf(opts.fzf_fn,
       core.build_fzf_cli(opts),
-      config.winopts(opts.winopts))
+      config.winopts(opts))
 
     if opts.post_select_cb then
       opts.post_select_cb()
@@ -323,7 +318,7 @@ local filter_diag_severity = function(opts, severity)
 end
 
 M.diagnostics = function(opts)
-  opts = normalize_lsp_opts(opts, config.lsp)
+  opts = normalize_lsp_opts(opts, config.globals.lsp)
 
   local lsp_clients = vim.lsp.buf_get_clients(0)
   if #lsp_clients == 0 then
@@ -331,11 +326,12 @@ M.diagnostics = function(opts)
     return
   end
 
+  opts.winid = vim.api.nvim_get_current_win()
   local lsp_type_diagnostic = vim.lsp.protocol.DiagnosticSeverity
   local current_buf = vim.api.nvim_get_current_buf()
 
   -- save this so handler can get the lsp icon
-  opts.cfg = config.lsp
+  opts.cfg = config.globals.lsp
 
   -- hint         = 4
   -- information  = 3
@@ -386,9 +382,21 @@ M.diagnostics = function(opts)
 
       local buffer_diags = opts.diag_all and vim.lsp.diagnostic.get_all() or
         {[current_buf] = vim.lsp.diagnostic.get(current_buf, opts.client_id)}
-      if #buffer_diags == 0 then
+      local has_diags = false
+      for _, diags in pairs(buffer_diags) do
+        if #diags > 0 then has_diags = true end
+      end
+      if not has_diags then
         utils.info(string.format('No %s found', string.lower(opts.lsp_handler.label)))
-        utils.send_ctrl_c()
+        local winid = vim.api.nvim_get_current_win()
+        if opts.winid ~= winid then
+          -- TODO: why does it go into insert mode after
+          -- 'nvim_win_close()?
+          -- vim.api.nvim_win_close(0, {force=true})
+          -- utils.feed_key("<C-c>")
+          -- utils.feed_key("<Esc>")
+          utils.send_ctrl_c()
+        end
       end
       for bufnr, diags in pairs(buffer_diags) do
         for _, diag in ipairs(diags) do

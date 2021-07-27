@@ -16,12 +16,12 @@ M.get_devicon = function(file, ext)
   return icon
 end
 
-M.preview_cmd = function(opts, cfg)
+M.preview_cmd = function(opts)
   opts = opts or {}
   opts.filespec = opts.filespec or '{}'
-  opts.preview_cmd = opts.preview_cmd or cfg.preview_cmd
+  opts.preview_cmd = opts.preview_cmd or config.globals.preview_cmd
   opts.preview_args = opts.preview_args or ''
-  opts.bat_opts = opts.bat_opts or cfg.bat_opts
+  opts.bat_opts = opts.bat_opts or config.globals.bat_opts
   local preview = nil
   if not opts.cwd then opts.cwd = ''
   elseif #opts.cwd > 0 then
@@ -44,23 +44,22 @@ M.preview_cmd = function(opts, cfg)
 end
 
 M.build_fzf_cli = function(opts)
-  local cfg = require'fzf-lua.config'
-  opts.prompt = opts.prompt or cfg.default_prompt
+  opts.prompt = opts.prompt or config.globals.default_prompt
   opts.preview_offset = opts.preview_offset or ''
-  opts.fzf_bin = opts.fzf_bin or cfg.fzf_bin
+  opts.fzf_bin = opts.fzf_bin or config.globals.fzf_bin
   local cli = string.format(
     [[ %s --layout=%s --bind=%s --prompt=%s]] ..
     [[ --preview-window='%s%s' --preview=%s]] ..
     [[ --height=100%% --ansi]] ..
     [[ %s %s %s %s]],
-    opts.fzf_args or cfg.fzf_args or '',
-    opts.fzf_layout or cfg.fzf_layout,
+    opts.fzf_args or config.globals.fzf_args or '',
+    opts.fzf_layout or config.globals.fzf_layout,
     utils._if(opts.fzf_binds, opts.fzf_binds,
-      vim.fn.shellescape(table.concat(cfg.fzf_binds, ','))),
+      vim.fn.shellescape(table.concat(config.globals.fzf_binds, ','))),
     vim.fn.shellescape(opts.prompt),
-    utils._if(opts.preview_window, opts.preview_window, cfg.preview_window()),
+    utils._if(opts.preview_window, opts.preview_window, config.preview_window()),
     utils._if(#opts.preview_offset>0, ":"..opts.preview_offset, ''),
-    utils._if(opts.preview, opts.preview, M.preview_cmd(opts, cfg)),
+    utils._if(opts.preview, opts.preview, M.preview_cmd(opts)),
     -- HACK: support skim (rust version of fzf)
     utils._if(opts.fzf_bin and opts.fzf_bin:find('sk')~=nil, "--inline-info", "--info=inline"),
     utils._if(actions.expect(opts.actions), actions.expect(opts.actions), ''),
@@ -73,7 +72,7 @@ end
 
 local get_diff_files = function()
     local diff_files = {}
-    local status = vim.fn.systemlist(config.files.git_diff_cmd)
+    local status = vim.fn.systemlist(config.globals.files.git_diff_cmd)
     if not utils.shell_error() then
         for i = 1, #status do
             local split = vim.split(status[i], "	")
@@ -86,7 +85,7 @@ end
 
 local get_untracked_files = function()
     local untracked_files = {}
-    local status = vim.fn.systemlist(config.files.git_untracked_cmd)
+    local status = vim.fn.systemlist(config.globals.files.git_untracked_cmd)
     if vim.v.shell_error == 0 then
         for i = 1, #status do
             untracked_files[status[i]] = "?"
@@ -128,7 +127,7 @@ M.make_entry_file = function(opts, x)
     local ext = path.extension(x)
     icon = M.get_devicon(x, ext)
     if opts.color_icons then
-      icon = utils.ansi_codes[config.file_icon_colors[ext] or "dark_grey"](icon)
+      icon = utils.ansi_codes[config.globals.file_icon_colors[ext] or "dark_grey"](icon)
     end
     prefix = prefix .. icon
   end
@@ -136,10 +135,10 @@ M.make_entry_file = function(opts, x)
     local filepath = x:match("^[^:]+")
     local indicator = get_git_indicator(filepath, opts.diff_files, opts.untracked_files)
     icon = indicator
-    if config.git.icons[indicator] then
-      icon = config.git.icons[indicator].icon
+    if config.globals.git.icons[indicator] then
+      icon = config.globals.git.icons[indicator].icon
       if opts.color_icons then
-        icon = utils.ansi_codes[config.git.icons[indicator].color or "dark_grey"](icon)
+        icon = utils.ansi_codes[config.globals.git.icons[indicator].color or "dark_grey"](icon)
       end
     end
     prefix = prefix .. utils._if(#prefix>0, utils.nbsp, '') .. icon
@@ -179,7 +178,7 @@ M.fzf_files = function(opts)
 
     local selected = fzf.fzf(opts.fzf_fn,
       M.build_fzf_cli(opts),
-      config.winopts(opts.winopts))
+      config.winopts(opts))
 
     if opts.post_select_cb then
       opts.post_select_cb()

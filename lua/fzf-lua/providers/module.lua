@@ -12,9 +12,7 @@ local M = {}
 
 M.metatable = function(opts)
 
-  opts = config.getopts(opts, config.builtin, {
-    "prompt", "winopts", "actions",
-  })
+  opts = config.normalize_opts(opts, config.globals.builtin)
 
   if not opts.metatable then opts.metatable = getmetatable('').__index end
 
@@ -41,7 +39,7 @@ M.metatable = function(opts)
 
     local selected = fzf.fzf(methods,
       core.build_fzf_cli(opts),
-      config.winopts(opts.winopts))
+      config.winopts(opts))
 
     if not selected then return end
 

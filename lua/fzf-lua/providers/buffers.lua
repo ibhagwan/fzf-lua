@@ -22,12 +22,7 @@ end
 
 M.buffers = function(opts)
 
-    opts = config.getopts(opts, config.buffers, {
-      "prompt", "actions", "winopts",
-      "file_icons", "color_icons", "sort_lastused",
-      "show_all_buffers", "ignore_current_buffer",
-      "cwd_only",
-    })
+  opts = config.normalize_opts(opts, config.globals.buffers)
 
     local act = action(function (items, fzf_lines, _)
       -- only preview first item
@@ -113,7 +108,7 @@ M.buffers = function(opts)
         local extension = path.extension(buf.info.name)
         buficon = core.get_devicon(buf.info.name, extension)
         if opts.color_icons then
-          buficon = utils.ansi_codes[config.file_icon_colors[extension] or "dark_grey"](buficon) .. " "
+          buficon = utils.ansi_codes[config.globals.file_icon_colors[extension] or "dark_grey"](buficon) .. " "
         end
       end
       local item_str = string.format("%s%s %s %s%s",

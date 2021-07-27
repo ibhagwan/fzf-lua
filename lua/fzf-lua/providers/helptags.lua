@@ -14,8 +14,8 @@ local M = {}
 
 local fzf_function = function (cb)
   local opts = {}
-  opts.lang = config.helptags.lang or vim.o.helplang
-  opts.fallback = utils._if(config.helptags.fallback ~= nil, config.helptags.fallback, true)
+  opts.lang = config.globals.helptags.lang or vim.o.helplang
+  opts.fallback = utils._if(config.globals.helptags.fallback ~= nil, config.globals.helptags.fallback, true)
 
   local langs = vim.split(opts.lang, ',', true)
   if opts.fallback and not vim.tbl_contains(langs, 'en') then
@@ -97,9 +97,7 @@ end
 
 M.helptags = function(opts)
 
-  opts = config.getopts(opts, config.helptags, {
-    "prompt", "actions", "winopts",
-  })
+  opts = config.normalize_opts(opts, config.globals.helptags)
 
   coroutine.wrap(function ()
 
@@ -111,7 +109,7 @@ M.helptags = function(opts)
 
     local selected = fzf.fzf(fzf_function,
       core.build_fzf_cli(opts),
-      config.winopts(opts.winopts))
+      config.winopts(opts))
 
     if not selected then return end
 

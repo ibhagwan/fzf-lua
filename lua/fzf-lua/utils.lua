@@ -76,7 +76,7 @@ end
 M.read_file_async = function(filepath, callback)
   vim.loop.fs_open(filepath, "r", 438, function(err_open, fd)
     if err_open then
-      print("We tried to open this file but couldn't. We failed with following error message: " .. err_open)
+      M.warn("We tried to open this file but couldn't. We failed with following error message: " .. err_open)
       return
     end
     vim.loop.fs_fstat(fd, function(err_fstat, stat)
@@ -191,6 +191,11 @@ end
 function M.send_ctrl_c()
   vim.api.nvim_feedkeys(
     vim.api.nvim_replace_termcodes("<C-c>", true, false, true), 'n', true)
+end
+
+function M.feed_key(key)
+  vim.api.nvim_feedkeys(
+    vim.api.nvim_replace_termcodes(key, true, false, true), 'n', true)
 end
 
 function M.delayed_cb(cb)

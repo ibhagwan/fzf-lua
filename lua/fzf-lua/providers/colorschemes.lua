@@ -21,9 +21,7 @@ local M = {}
 
 M.colorschemes = function(opts)
 
-  opts = config.getopts(opts, config.colorschemes, {
-    "prompt", "actions", "winopts", "live_preview", "post_reset_cb",
-  })
+  opts = config.normalize_opts(opts, config.globals.colorschemes)
 
   coroutine.wrap(function ()
     local prev_act = action(function (args)
@@ -45,7 +43,7 @@ M.colorschemes = function(opts)
 
     local selected = fzf.fzf(colors,
       core.build_fzf_cli(opts),
-      config.winopts(opts.winopts))
+      config.winopts(opts))
 
     -- reset color scheme if live_preview is enabled
     -- and nothing or non-default action was selected

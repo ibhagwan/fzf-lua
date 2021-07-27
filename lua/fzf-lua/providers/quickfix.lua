@@ -18,11 +18,7 @@ local quickfix_run = function(opts, cfg, locations)
     table.insert(results, core.make_entry_lcol(opts, entry))
   end
 
-  opts = config.getopts(opts, cfg, {
-    "cwd", "prompt", "actions", "winopts",
-    "file_icons", "color_icons", "git_icons",
-    "separator"
-  })
+  opts = config.normalize_opts(opts, cfg)
 
   if not opts.cwd then opts.cwd = vim.loop.cwd() end
 
@@ -73,7 +69,7 @@ M.quickfix = function(opts)
     return
   end
 
-  return quickfix_run(opts, config.quickfix, locations)
+  return quickfix_run(opts, config.globals.quickfix, locations)
 end
 
 M.loclist = function(opts)
@@ -88,7 +84,7 @@ M.loclist = function(opts)
     return
   end
 
-  return quickfix_run(opts, config.loclist, locations)
+  return quickfix_run(opts, config.globals.loclist, locations)
 end
 
 return M
