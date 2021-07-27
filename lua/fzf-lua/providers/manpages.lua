@@ -13,8 +13,17 @@ local actions = require "fzf-lua.actions"
 local M = {}
 
 local function getmanpage(line)
-  -- match until comma or space
-  return string.match(line, "[^, ]+")
+  -- extract section from the last pair of parentheses
+  local name, section = line:match("^(.*)%((.-)%)[^()]-$")
+  if name:sub(-1) == " " then
+    -- man-db
+    name = name:sub(1, -2)
+  else
+    -- mandoc
+    name = name:match("^[^, ]+")
+    section = section:match("^[^, ]+")
+  end
+  return name .. "(" .. section .. ")"
 end
 
 M.manpages = function(opts)
