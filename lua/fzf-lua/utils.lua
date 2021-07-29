@@ -198,11 +198,16 @@ function M.feed_key(key)
     vim.api.nvim_replace_termcodes(key, true, false, true), 'n', true)
 end
 
-function M.delayed_cb(cb)
+function M.delayed_cb(cb, fn)
   -- HACK: slight delay to prevent missing results
   -- otherwise the input stream closes too fast
-  vim.cmd("sleep! 10m")
-  cb(nil, function() end)
+  -- sleep was causing all sorts of issues
+  -- vim.cmd("sleep! 10m")
+  if fn == nil then fn = function() end end
+  vim.defer_fn(function()
+    cb(nil, fn)
+  end, 20)
+
 end
 
 return M

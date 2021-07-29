@@ -414,8 +414,10 @@ M.diagnostics = function(opts)
       -- removes the loading indicator in fzf
       -- TODO: why is this causing a bug with
       -- 'glepnir/dashboard-nvim'??? (issue #23)
-      -- utils.delayed_cb(cb)
-      cb(nil, function() coroutine.resume(co) end)
+      -- vim.defer_fn(function()
+        -- cb(nil, function() coroutine.resume(co) end)
+      -- end, 20)
+      utils.delayed_cb(cb, function() coroutine.resume(co) end)
       coroutine.yield()
     end)()
   end

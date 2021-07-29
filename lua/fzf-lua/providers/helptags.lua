@@ -89,7 +89,8 @@ local fzf_function = function (cb)
     end
     -- done, we can't call utils.delayed_cb here
     -- because sleep() messes up the coroutine
-    cb(nil, function() coroutine.resume(co) end)
+    -- cb(nil, function() coroutine.resume(co) end)
+    utils.delayed_cb(cb, function() coroutine.resume(co) end)
     coroutine.yield()
   end)()
 end
