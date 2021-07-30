@@ -5,6 +5,7 @@ end
 local fzf = require "fzf"
 local config = require "fzf-lua.config"
 
+
 local M = {}
 
 function M.setup(opts)
@@ -13,6 +14,9 @@ function M.setup(opts)
   for k, _ in pairs(globals.winopts) do
     if opts[k] ~= nil then globals.winopts[k] = opts[k] end
   end
+  -- empty BAT_CONFIG_PATH so we don't conflict
+  -- with '$XDG_DATA_HOME/bat/config'
+  vim.env.BAT_CONFIG_PATH = ''
   -- override the bat preview theme if set by caller
   if globals.bat_theme and #globals.bat_theme > 0 then
     vim.env.BAT_THEME = globals.bat_theme

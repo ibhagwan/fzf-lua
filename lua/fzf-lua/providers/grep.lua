@@ -168,6 +168,16 @@ M.live_grep = function(opts)
   opts.search = nil
 end
 
+local function set_search_header(opts)
+  if not opts then opts = {} end
+  if opts.no_header then return opts end
+  if not opts.search_header then opts.search_header = "Seaching for:" end
+  opts.fzf_cli_args = opts.fzf_cli_args or ''
+  opts.fzf_cli_args = string.format([[%s --header="%s '%s'"]],
+    opts.fzf_cli_args, opts.search_header, opts.search)
+  return opts
+end
+
 M.grep_last = function(opts)
   if not opts then opts = {} end
   opts.continue_last_search = true
@@ -177,18 +187,21 @@ end
 M.grep_cword = function(opts)
   if not opts then opts = {} end
   opts.search = vim.fn.expand("<cword>")
+  opts = set_search_header(opts)
   return M.grep(opts)
 end
 
 M.grep_cWORD = function(opts)
   if not opts then opts = {} end
   opts.search = vim.fn.expand("<cWORD>")
+  opts = set_search_header(opts)
   return M.grep(opts)
 end
 
 M.grep_visual = function(opts)
   if not opts then opts = {} end
   opts.search = utils.get_visual_selection()
+  opts = set_search_header(opts)
   return M.grep(opts)
 end
 

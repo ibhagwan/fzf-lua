@@ -51,7 +51,7 @@ M.build_fzf_cli = function(opts)
     [[ %s --layout=%s --bind=%s --prompt=%s]] ..
     [[ --preview-window='%s%s' --preview=%s]] ..
     [[ --height=100%% --ansi]] ..
-    [[ %s %s %s %s]],
+    [[ %s %s %s %s %s]],
     opts.fzf_args or config.globals.fzf_args or '',
     opts.fzf_layout or config.globals.fzf_layout,
     utils._if(opts.fzf_binds, opts.fzf_binds,
@@ -64,6 +64,7 @@ M.build_fzf_cli = function(opts)
     utils._if(opts.fzf_bin and opts.fzf_bin:find('sk')~=nil, "--inline-info", "--info=inline"),
     utils._if(actions.expect(opts.actions), actions.expect(opts.actions), ''),
     utils._if(opts.nomulti, '--no-multi', '--multi'),
+    utils._if(opts.fzf_cli_args, opts.fzf_cli_args, ''),
     utils._if(opts.cli_args, opts.cli_args, '')
   )
   -- print(cli)
