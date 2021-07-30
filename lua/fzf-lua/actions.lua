@@ -69,6 +69,11 @@ M.file_tabedit = function(selected)
   M.vimcmd_file(vimcmd, selected)
 end
 
+M.file_open_in_background = function(selected)
+  local vimcmd = "badd"
+  M.vimcmd_file(vimcmd, selected)
+end
+
 M.file_sel_to_qf = function(selected)
   if not selected or #selected < 2 then return end
   local qf_list = {}
