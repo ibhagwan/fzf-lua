@@ -41,7 +41,7 @@ M.manpages = function(opts)
         utils.ansi_codes.red(man), desc)
     end)
 
-    opts.cli_args = opts.cli_args or "--tiebreak begin --nth 1,2"
+    opts._fzf_cli_args = "--tiebreak begin --nth 1,2"
     opts.preview_window = opts.preview_window or 'right:0'
     opts.nomulti = utils._if(opts.nomulti~=nil, opts.nomulti, true)
 

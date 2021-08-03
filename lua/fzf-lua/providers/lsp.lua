@@ -74,11 +74,7 @@ local function diagnostics_handler(opts, cb, _, entry)
     if opts.color_icons then
       icon = utils.ansi_codes[severity.color or "dark_grey"](icon)
     end
-    if opts.file_icons or opts.git_icons then
-      entry = icon .. utils.nbsp .. utils.nbsp .. entry
-    else
-      entry = icon .. utils.nbsp .. " " .. entry
-    end
+    entry = icon .. utils.nbsp .. utils.nbsp .. entry
   end
   cb(entry, function(err)
     if err then return end
@@ -171,19 +167,6 @@ local function set_lsp_fzf_fn(opts)
   return opts
 end
 
-local set_fzf_files_args = function(opts)
-  local line_placeholder = 2
-  if opts.file_icons or opts.git_icons or opts.lsp_icons then
-    line_placeholder = line_placeholder+1
-  end
-
-  opts.cli_args = opts.cli_args or "--delimiter='[: \\t]'"
-  opts.filespec = string.format("{%d}", line_placeholder-1)
-  opts.preview_args = string.format("--highlight-line={%d}", line_placeholder)
-  opts.preview_offset = string.format("+{%d}-/2", line_placeholder)
-  return opts
-end
-
 local normalize_lsp_opts = function(opts, cfg)
   opts = config.normalize_opts(opts, cfg)
 
@@ -204,7 +187,7 @@ end
 
 local function fzf_lsp_locations(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
-  opts = set_fzf_files_args(opts)
+  opts = core.set_fzf_line_args(opts)
   opts = set_lsp_fzf_fn(opts)
   return core.fzf_files(opts)
 end
@@ -241,7 +224,7 @@ end
 M.workspace_symbols = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   opts.lsp_params = {query = ''}
-  opts = set_fzf_files_args(opts)
+  opts = core.set_fzf_line_args(opts)
   opts = set_lsp_fzf_fn(opts)
   return core.fzf_files(opts)
 end
@@ -273,7 +256,7 @@ M.code_actions = function(opts)
 
   opts.nomulti = true
   opts.preview_window = 'right:0'
-  opts.cli_args = "--delimiter=':'"
+  opts._fzf_cli_args = "--delimiter=':'"
   opts = set_lsp_fzf_fn(opts)
 
   coroutine.wrap(function ()
@@ -422,7 +405,7 @@ M.diagnostics = function(opts)
     end)()
   end
 
-  opts = set_fzf_files_args(opts)
+  opts = core.set_fzf_line_args(opts)
   return core.fzf_files(opts)
 end
 

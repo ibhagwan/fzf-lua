@@ -2,9 +2,9 @@ if not pcall(require, "fzf") then
   return
 end
 
+
 -- local fzf = require "fzf"
 -- local fzf_helpers = require("fzf.helpers")
--- local path = require "fzf-lua.path"
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
@@ -39,26 +39,7 @@ local quickfix_run = function(opts, cfg, locations)
     return x
   end ]]
 
-  local line_placeholder = 2
-  if opts.file_icons == true or opts.git_icons == true then
-    line_placeholder = line_placeholder+1
-  end
-
-  opts.cli_args = "--delimiter='[: \\t]'"
-  opts.filespec = string.format("{%d}", line_placeholder-1)
-  opts.preview_args = string.format("--highlight-line={%d}", line_placeholder)
-  --[[
-    # Preview with bat, matching line in the middle of the window below
-    # the fixed header of the top 3 lines
-    #
-    #   ~3    Top 3 lines as the fixed header
-    #   +{2}  Base scroll offset extracted from the second field
-    #   +3    Extra offset to compensate for the 3-line header
-    #   /2    Put in the middle of the preview area
-    #
-    '--preview-window '~3:+{2}+3/2''
-  ]]
-  opts.preview_offset = string.format("+{%d}-/2", line_placeholder)
+  opts = core.set_fzf_line_args(opts)
   return core.fzf_files(opts)
 end
 

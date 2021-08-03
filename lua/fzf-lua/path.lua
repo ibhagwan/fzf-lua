@@ -1,3 +1,5 @@
+local utils = require "fzf-lua.utils"
+
 local M = {}
 
 M.separator = function()
@@ -98,6 +100,47 @@ function M.shorten(path, max_length)
   else
     return path
   end
+end
+
+local function strsplit(inputstr, sep)
+  local t={}
+  for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+    table.insert(t, str)
+  end
+  return t
+end
+
+--[[ local function lastIndexOf(haystack, needle)
+    local i, j
+    local k = 0
+    repeat
+        i = j
+        j, k = string.find(haystack, needle, k + 1, true)
+    until j == nil
+    return i
+end ]]
+
+local function lastIndexOf(haystack, needle)
+    local i=haystack:match(".*"..needle.."()")
+    if i==nil then return nil else return i-1 end
+end
+
+function M.entry_to_file(entry, cwd)
+  local sep = ":"
+  local s = strsplit(entry, sep)
+  local file = s[1]:match("[^"..utils.nbsp.."]*$")
+  local idx = lastIndexOf(s[1], utils.nbsp) or 0
+  local line = s[2]
+  local col  = s[3]
+  if cwd and #cwd>0 and not M.starts_with_separator(file) then
+    file = M.join({cwd, file})
+  end
+  return {
+    noicons = string.sub(entry, idx+1),
+    path = file,
+    line = line or 1,
+    col  = col or 1,
+  }
 end
 
 return M

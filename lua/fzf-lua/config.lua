@@ -54,7 +54,6 @@ M.globals = {
     'ctrl-a:toggle-all',
     'ctrl-l:clear-query',
   },
-  preview_cmd         = nil,   -- auto detect head|bat
   preview_border      = 'border',
   preview_wrap        = 'nowrap',
   preview_opts        = 'nohidden',
@@ -62,8 +61,33 @@ M.globals = {
   preview_horizontal  = 'right:60%',
   preview_layout      = 'flex',
   flip_columns        = 120,
-  bat_theme           = nil,
-  bat_opts            = "--italic-text=always --style=numbers,changes --color always",
+  default_previewer   = utils._if(vim.fn.executable("bat")==1, "bat", "cat"),
+  previewers = {
+    cat = {
+      cmd             = "cat",
+      args            = "--number",
+                      -- we use function here instead of the object due to
+                      -- vim.tbl_deep_extend not copying metatables and
+                      -- metamethods (__index and __call)
+      _new            = function() return require 'fzf-lua.previewer'.cmd end,
+    },
+    bat = {
+      cmd             = "bat",
+      args            = "--italic-text=always --style=numbers,changes --color always",
+      theme           = nil,
+      config          = nil,
+      _new            = function() return require 'fzf-lua.previewer'.bat end,
+    },
+    head = {
+      cmd             = "head",
+      args            = nil,
+      _new            = function() return require 'fzf-lua.previewer'.head end,
+    },
+    builtin = {
+      treesitter      = true,
+      _new            = function() return require 'fzf-lua.previewer'.builtin end,
+    },
+  },
   files = {
     prompt              = '> ',
     cmd                 = nil,  -- default: auto detect find|fd
@@ -316,6 +340,9 @@ function M.normalize_opts(opts, defaults)
   if defaults.winopts then
     if not opts.winopts then opts.winopts = {} end
     opts.winopts = vim.tbl_deep_extend("keep", opts.winopts, defaults.winopts)
+  end
+  if not opts.previewer or not M.globals.previewers[opts.previewer] then
+      opts.previewer = M.globals.default_previewer
   end
   return opts
 end

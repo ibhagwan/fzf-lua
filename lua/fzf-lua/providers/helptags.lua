@@ -104,7 +104,7 @@ M.helptags = function(opts)
 
     -- local prev_act = action(function (args) end)
 
-    opts.cli_args = opts.cli_args or "--nth 1"
+    opts._fzf_cli_args = "--nth 1"
     opts.preview_window = opts.preview_window or 'right:0'
     opts.nomulti = utils._if(opts.nomulti~=nil, opts.nomulti, true)
 

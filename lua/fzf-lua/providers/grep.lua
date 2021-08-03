@@ -73,20 +73,7 @@ M.grep = function(opts)
     return x
   end ]]
 
-  opts.cli_args = "--delimiter='[: ]'"
-  opts.preview_args = "--highlight-line={3}"    -- bat higlight
-  --[[
-    # Preview with bat, matching line in the middle of the window below
-    # the fixed header of the top 3 lines
-    #
-    #   ~3    Top 3 lines as the fixed header
-    #   +{2}  Base scroll offset extracted from the second field
-    #   +3    Extra offset to compensate for the 3-line header
-    #   /2    Put in the middle of the preview area
-    #
-    '--preview-window '~3:+{2}+3/2''
-  ]]
-  opts.preview_offset = "+{3}-/2"
+  opts = core.set_fzf_line_args(opts)
   core.fzf_files(opts)
   opts.search = nil
 end
@@ -100,20 +87,15 @@ M.live_grep_sk = function(opts)
   -- TODO: how to open without a query with special char support
   local sk_args = get_grep_cmd(opts , "'{}'", true)
 
-  opts.cli_args = "--delimiter='[: ]' " ..
-    string.format("--cmd-prompt='%s' -i -c %s",
+  opts._fzf_cli_args = string.format("--cmd-prompt='%s' -i -c %s",
       opts.prompt,
       vim.fn.shellescape(sk_args))
 
   opts.git_icons = false
   opts.file_icons = false
-  opts.filespec = '{1}'
-  opts.preview_offset = "+{2}-/2"
-  opts.preview_args = "--highlight-line={2}"
-
   opts.fzf_fn = nil --function(_) end
+  opts = core.set_fzf_line_args(opts)
   core.fzf_files(opts)
-
   opts.search = nil
 end
 
@@ -141,8 +123,7 @@ M.live_grep = function(opts)
   local initial_command = get_grep_cmd(opts, opts.search)
   local reload_command = get_grep_cmd(opts, "{q}", true) .. " || true"
 
-  opts.cli_args = "--delimiter='[: ]' " ..
-    string.format("--phony --query=%s --bind=%s",
+  opts._fzf_cli_args = string.format("--phony --query=%s --bind=%s",
       utils._if(opts.search and #opts.search>0,
         vim.fn.shellescape(utils.rg_escape(opts.search)),
         [['']]),
@@ -154,9 +135,6 @@ M.live_grep = function(opts)
   -- with the extension parsing
   opts.git_icons = false
   opts.file_icons = false
-  opts.filespec = '{1}'
-  opts.preview_offset = "+{2}-/2"
-  opts.preview_args = "--highlight-line={2}"    -- bat higlight
 
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(
     initial_command,
@@ -164,6 +142,7 @@ M.live_grep = function(opts)
       return core.make_entry_file(opts, x)
     end)
 
+  opts = core.set_fzf_line_args(opts)
   core.fzf_files(opts)
   opts.search = nil
 end

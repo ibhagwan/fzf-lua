@@ -207,7 +207,6 @@ function M.delayed_cb(cb, fn)
   vim.defer_fn(function()
     cb(nil, fn)
   end, 20)
-
 end
 
 return M

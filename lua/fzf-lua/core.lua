@@ -16,40 +16,13 @@ M.get_devicon = function(file, ext)
   return icon
 end
 
-M.preview_cmd = function(opts)
-  opts = opts or {}
-  opts.filespec = opts.filespec or '{}'
-  opts.preview_cmd = opts.preview_cmd or config.globals.preview_cmd
-  opts.preview_args = opts.preview_args or ''
-  opts.bat_opts = opts.bat_opts or config.globals.bat_opts
-  local preview = nil
-  if not opts.cwd then opts.cwd = ''
-  elseif #opts.cwd > 0 then
-    opts.cwd = path.add_trailing(opts.cwd)
-  end
-  if opts.preview_cmd and #opts.preview_cmd > 0 then
-    preview = string.format("%s %s -- %s%s", opts.preview_cmd, opts.preview_args, opts.cwd, opts.filespec)
-  elseif vim.fn.executable("bat") == 1 then
-    preview = string.format("bat %s %s -- %s%s", opts.bat_opts, opts.preview_args, opts.cwd, opts.filespec)
-  else
-    preview = string.format("head -n $FZF_PREVIEW_LINES %s -- %s%s", opts.preview_args, opts.cwd, opts.filespec)
-  end
-  if preview ~= nil then
-    -- We use bash to do math on the environment variable, so
-    -- let's make sure this command runs in bash
-    -- preview = "bash -c " .. vim.fn.shellescape(preview)
-    preview = vim.fn.shellescape(preview)
-  end
-  return preview
-end
-
 M.build_fzf_cli = function(opts)
   opts.prompt = opts.prompt or config.globals.default_prompt
   opts.preview_offset = opts.preview_offset or ''
   opts.fzf_bin = opts.fzf_bin or config.globals.fzf_bin
   local cli = string.format(
     [[ %s --layout=%s --bind=%s --prompt=%s]] ..
-    [[ --preview-window='%s%s' --preview=%s]] ..
+    [[ --preview-window=%s%s --preview=%s]] ..
     [[ --height=100%% --ansi]] ..
     [[ %s %s %s %s %s]],
     opts.fzf_args or config.globals.fzf_args or '',
@@ -59,13 +32,13 @@ M.build_fzf_cli = function(opts)
     vim.fn.shellescape(opts.prompt),
     utils._if(opts.preview_window, opts.preview_window, config.preview_window()),
     utils._if(#opts.preview_offset>0, ":"..opts.preview_offset, ''),
-    utils._if(opts.preview, opts.preview, M.preview_cmd(opts)),
+    utils._if(opts.preview, vim.fn.shellescape(opts.preview), "''"),
     -- HACK: support skim (rust version of fzf)
     utils._if(opts.fzf_bin and opts.fzf_bin:find('sk')~=nil, "--inline-info", "--info=inline"),
     utils._if(actions.expect(opts.actions), actions.expect(opts.actions), ''),
     utils._if(opts.nomulti, '--no-multi', '--multi'),
     utils._if(opts.fzf_cli_args, opts.fzf_cli_args, ''),
-    utils._if(opts.cli_args, opts.cli_args, '')
+    utils._if(opts._fzf_cli_args, opts._fzf_cli_args, '')
   )
   -- print(cli)
   return cli
@@ -145,14 +118,28 @@ M.make_entry_file = function(opts, x)
     prefix = prefix .. utils._if(#prefix>0, utils.nbsp, '') .. icon
   end
   if #prefix > 0 then
-    x = prefix .. " " .. x
+    x = prefix .. utils.nbsp .. x
   end
   return x
 end
 
-local function trim_entry(string)
-  string = string:gsub("^[^ ]* ", "")
-  return string
+M.set_fzf_line_args = function(opts)
+  opts._line_placeholder = 2
+  -- delimiters are ':' and <tab>
+  opts._fzf_cli_args = (opts._fzf_cli_args or '') .. " --delimiter='[:\\t]'"
+  --[[
+    #
+    #   Explanation of the fzf preview offset options:
+    #
+    #   ~3    Top 3 lines as the fixed header
+    #   +{2}  Base scroll offset extracted from the second field
+    #   +3    Extra offset to compensate for the 3-line header
+    #   /2    Put in the middle of the preview area
+    #
+    '--preview-window '~3:+{2}+3/2''
+  ]]
+  opts.preview_offset = string.format("+{%d}-/2", opts._line_placeholder)
+  return opts
 end
 
 M.fzf_files = function(opts)
@@ -177,6 +164,14 @@ M.fzf_files = function(opts)
       opts.filespec = utils._if(has_prefix, "{2}", "{1}")
     end
 
+
+    local preview_opts = config.globals.previewers[opts.previewer]
+    if preview_opts then
+      local preview = preview_opts._new()(preview_opts, opts)
+      opts.preview = preview:cmdline()
+      -- opts.preview = preview:action()
+    end
+
     local selected = fzf.fzf(opts.fzf_fn,
       M.build_fzf_cli(opts),
       config.winopts(opts))
@@ -189,13 +184,7 @@ M.fzf_files = function(opts)
 
     if #selected > 1 then
       for i = 2, #selected do
-        if has_prefix then
-          selected[i] = trim_entry(selected[i])
-        end
-        if opts.cwd and #opts.cwd>0 and
-            not path.starts_with_separator(selected[i]) then
-          selected[i] = path.join({opts.cwd, selected[i]})
-        end
+        selected[i] = path.entry_to_file(selected[i], opts.cwd).noicons
         if opts.cb_selected then
           local cb_ret = opts.cb_selected(opts, selected[i])
           if cb_ret then selected[i] = cb_ret end

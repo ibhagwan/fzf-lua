@@ -185,7 +185,6 @@ require'fzf-lua'.setup {
       'ctrl-a:toggle-all',
       'ctrl-l:clear-query',
   },
-  preview_cmd         = '',             -- 'head -n $FZF_PREVIEW_LINES',
   preview_border      = 'border',       -- border|noborder
   preview_wrap        = 'nowrap',       -- wrap|nowrap
   preview_opts        = 'nohidden',     -- hidden|nohidden
@@ -193,9 +192,27 @@ require'fzf-lua'.setup {
   preview_horizontal  = 'right:60%',    -- right|left:size
   preview_layout      = 'flex',         -- horizontal|vertical|flex
   flip_columns        = 120,            -- #cols to switch to horizontal on flex
-  bat_theme           = 'Coldark-Dark', -- bat preview theme (bat --list-themes)
+  -- default_previewer   = "bat",       -- override the default previewer?
+                                        -- by default auto-detect bat|cat
+  previewers = {
+    cat = {
+      cmd             = "cat",
+      args            = "--number",
+    },
+    bat = {
+      cmd             = "bat",
+      args            = "--style=numbers,changes --color always",
+      theme           = 'Coldark-Dark', -- bat preview theme (bat --list-themes)
+      config          = nil,            -- nil uses $BAT_CONFIG_PATH
+    },
+    head = {
+      cmd             = "head",
+      args            = nil,
+    },
+  },
   -- provider setup
   files = {
+    -- previewer         = "cat",       -- uncomment to override previewer
     prompt            = 'Files❯ ',
     cmd               = '',             -- "find . -type f -printf '%P\n'",
     git_icons         = true,           -- show git icons?

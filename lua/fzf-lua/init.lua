@@ -14,23 +14,26 @@ function M.setup(opts)
   for k, _ in pairs(globals.winopts) do
     if opts[k] ~= nil then globals.winopts[k] = opts[k] end
   end
-  -- empty BAT_CONFIG_PATH so we don't conflict
-  -- with '$XDG_DATA_HOME/bat/config'
-  vim.env.BAT_CONFIG_PATH = ''
+  -- override BAT_CONFIG_PATH to prevent a
+  -- conflct with '$XDG_DATA_HOME/bat/config'
+  if globals.previewers.bat.config then
+    vim.env.BAT_CONFIG_PATH = vim.fn.expand(globals.previewers.bat.config)
+  end
   -- override the bat preview theme if set by caller
-  if globals.bat_theme and #globals.bat_theme > 0 then
-    vim.env.BAT_THEME = globals.bat_theme
+  if globals.previewers.bat.theme and #globals.previewers.bat.theme > 0 then
+    vim.env.BAT_THEME = globals.previewers.bat.theme
   end
   -- reset default window opts if set by user
   fzf.default_window_options = config.winopts()
   -- set the fzf binary if set by the user
-  if globals.fzf_bin ~= nil then
-    if fzf.default_options ~= nil and
-      vim.fn.executable(globals.fzf_bin) == 1 then
-      fzf.default_options.fzf_binary = globals.fzf_bin
-    else
-      globals.fzf_bin = nil
-    end
+  if globals.fzf_bin ~= nil and vim.fn.executable(globals.fzf_bin) ~= 1 then
+    globals.fzf_bin = nil
+  end
+  -- ignore if using an older version of nvim-fzf
+  if fzf.default_options ~= nil then
+    fzf.default_options.fzf_binary = globals.fzf_bin
+  else
+    globals.fzf_bin = nil
   end
   -- reset our globals based on user opts
   -- this doesn't happen automatically

@@ -2,7 +2,7 @@ if not pcall(require, "fzf") then
   return
 end
 
-local action = require("fzf.actions").action
+local action = require("fzf.actions").raw_action
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -118,7 +118,7 @@ M.buffers = function(opts)
     end
 
     opts.preview = act
-    opts.cli_args = utils._if(
+    opts._fzf_cli_args = utils._if(
       header_line and not opts.ignore_current_buffer,
       '--header-lines=1', ''
     )
