@@ -82,7 +82,7 @@ function Previewer.bat:cmdline(o)
   if self.opts._line_placeholder then
     highlight_line = string.format("--highlight-line={%d}", self.opts._line_placeholder)
   end
-  return string.format("%s %s %s -- `%s`",
+  return string.format('sh -c "%s %s %s -- `%s`"',
     self.cmd, self.args, highlight_line, self:action(o))
   --[[ return string.format("%s %s `%s` -- `%s`",
     self.cmd, self.args, self:action_line(), o.action) ]]
@@ -115,7 +115,7 @@ function Previewer.head:cmdline(o)
   if self.opts._line_placeholder then
     lines = string.format("--lines={%d}", self.opts._line_placeholder)
   end
-  return string.format("%s %s %s -- `%s`",
+  return string.format('sh -c "%s %s %s -- `%s`"',
     self.cmd, self.args, lines, self:action(o))
   --[[ return string.format("%s %s `%s` -- `%s`",
     self.cmd, self.args, self:action_line(), o.action) ]]
