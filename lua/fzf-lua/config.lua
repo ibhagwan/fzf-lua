@@ -63,19 +63,30 @@ M.globals = {
   flip_columns        = 120,
   default_previewer   = utils._if(vim.fn.executable("bat")==1, "bat", "cat"),
   previewers = {
-    cat = {
-      cmd             = "cat",
-      args            = "--number",
+    cmd = {
+      -- custom previewer to be overidden by the user
+      cmd             = "",
+      args            = "",
                       -- we use function here instead of the object due to
                       -- vim.tbl_deep_extend not copying metatables and
                       -- metamethods (__index and __call)
-      _new            = function() return require 'fzf-lua.previewer'.cmd end,
+      _new            = function() return require 'fzf-lua.previewer'.cmd_async end,
+    },
+    cat = {
+      cmd             = "cat",
+      args            = "--number",
+      _new            = function() return require 'fzf-lua.previewer'.cmd_async end,
     },
     bat = {
       cmd             = "bat",
       args            = "--italic-text=always --style=numbers,changes --color always",
       theme           = nil,
       config          = nil,
+      _new            = function() return require 'fzf-lua.previewer'.bat_async end,
+    },
+    bat_native = {
+      cmd             = "bat",
+      args            = "--italic-text=always --style=numbers,changes --color always",
       _new            = function() return require 'fzf-lua.previewer'.bat end,
     },
     head = {

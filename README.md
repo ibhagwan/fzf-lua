@@ -76,17 +76,11 @@ Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
 ```lua
 use { 'ibhagwan/fzf-lua',
   requires = {
-    'vijaymarupudi/nvim-fzf',        -- read note #1 below
+    'vijaymarupudi/nvim-fzf',
     'kyazdani42/nvim-web-devicons' } -- optional for icons
 }
 ```
-> **Note 1:** if you're having issues previewing grep or LSP matches that contain
-> special characters (back-tick especially) you need to replace `vijaymarupudi/nvim-fzf` with
-> my fork, `ibhagwan/nvim-fzf`. This is due to the issue described in [`nvim-fzf`
-> PR#18](https://github.com/vijaymarupudi/nvim-fzf/pull/18/).
-
-
-> **Note 2:** if you already have fzf installed you do not need to install `fzf`
+> **Note:** if you already have fzf installed you do not need to install `fzf`
 > or `fzf.vim`, however if you do not have it installed, **you only need** fzf
 > which can be installed with (fzf.vim is not a requirement nor conflict):
 > ```vim
@@ -202,6 +196,12 @@ require'fzf-lua'.setup {
   -- default_previewer   = "bat",       -- override the default previewer?
                                         -- by default auto-detect bat|cat
   previewers = {
+    cmd = {
+      -- custom previewer, will execute:
+      -- `<cmd> <args> <filename>`
+      cmd             = "echo",
+      args            = "",
+    },
     cat = {
       cmd             = "cat",
       args            = "--number",

@@ -1,5 +1,6 @@
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local helpers = require("fzf.helpers")
 local raw_action = require("fzf.actions").raw_action
 
 local Previewer = {}
@@ -7,6 +8,8 @@ Previewer.base = {}
 Previewer.head = {}
 Previewer.cmd = {}
 Previewer.bat = {}
+Previewer.cmd_async = {}
+Previewer.bat_async = {}
 Previewer.buffer = {}
 
 -- Constructors call on Previewer.<o>()
@@ -29,12 +32,6 @@ function Previewer.base:new(o, opts)
   return self
 end
 
-function Previewer.base:filespec(entry)
-  local file = path.entry_to_file(entry, nil, true)
-  print(file.file, file.line, file.col)
-  return file
-end
-
 -- Generic shell command previewer
 function Previewer.cmd:new(o, opts)
   self = setmetatable(Previewer.base(o, opts), {
@@ -44,11 +41,11 @@ function Previewer.cmd:new(o, opts)
   return self
 end
 
-
 function Previewer.cmd:cmdline(o)
   o = o or {}
   o.action = o.action or self:action(o)
-  return string.format("%s %s `%s`", self.cmd, self.args, o.action)
+  return vim.fn.shellescape(string.format('sh -c "%s %s `%s`"',
+    self.cmd, self.args, o.action))
 end
 
 function Previewer.cmd:action(o)
@@ -82,20 +79,8 @@ function Previewer.bat:cmdline(o)
   if self.opts._line_placeholder then
     highlight_line = string.format("--highlight-line={%d}", self.opts._line_placeholder)
   end
-  return string.format('sh -c "%s %s %s -- `%s`"',
-    self.cmd, self.args, highlight_line, self:action(o))
-  --[[ return string.format("%s %s `%s` -- `%s`",
-    self.cmd, self.args, self:action_line(), o.action) ]]
-end
-
--- not in use
-function Previewer.bat:action_line(o)
-  o = o or {}
-  local act = raw_action(function (items, _, _)
-    local file = path.entry_to_file(items[1], self.opts.cwd)
-    return string.format("--highlight-line=%s", tostring(file.line))
-  end)
-  return act
+  return vim.fn.shellescape(string.format('sh -c "%s %s %s `%s`"',
+    self.cmd, self.args, highlight_line, self:action(o)))
 end
 
 -- Specialized head previewer
@@ -115,10 +100,58 @@ function Previewer.head:cmdline(o)
   if self.opts._line_placeholder then
     lines = string.format("--lines={%d}", self.opts._line_placeholder)
   end
-  return string.format('sh -c "%s %s %s -- `%s`"',
-    self.cmd, self.args, lines, self:action(o))
-  --[[ return string.format("%s %s `%s` -- `%s`",
-    self.cmd, self.args, self:action_line(), o.action) ]]
+  return vim.fn.shellescape(string.format('sh -c "%s %s %s `%s`"',
+    self.cmd, self.args, lines, self:action(o)))
+end
+
+-- new async_action from nvim-fzf
+function Previewer.cmd_async:new(o, opts)
+  self = setmetatable(Previewer.base(o, opts), {
+    __index = vim.tbl_deep_extend("keep",
+      self, Previewer.base
+    )})
+  return self
+end
+
+function Previewer.cmd_async:cmdline(o)
+  o = o or {}
+  local act = helpers.choices_to_shell_cmd_previewer(function(items)
+    local file = path.entry_to_file(items[1], self.opts.cwd)
+    local cmd = string.format("%s %s %s", self.cmd, self.args, file.path)
+    -- uncomment to see the command in the preview window
+    -- cmd = vim.fn.shellescape(cmd)
+    return cmd
+  end)
+  return act
+end
+
+function Previewer.bat_async:new(o, opts)
+  self = setmetatable(Previewer.cmd(o, opts), {
+    __index = vim.tbl_deep_extend("keep",
+      self, Previewer.cmd, Previewer.base
+    )})
+  self.theme = o.theme
+  return self
+end
+
+function Previewer.bat_async:cmdline(o)
+  o = o or {}
+  local highlight_line = ""
+  if self.opts._line_placeholder then
+    highlight_line = string.format("--highlight-line=", self.opts._line_placeholder)
+  end
+  local act = helpers.choices_to_shell_cmd_previewer(function(items)
+    local file = path.entry_to_file(items[1], self.opts.cwd)
+    local cmd = string.format("%s %s %s%s %s",
+      self.cmd, self.args,
+      highlight_line,
+      utils._if(#highlight_line>0, tostring(file.line), ""),
+      file.path)
+    -- uncomment to see the command in the preview window
+    -- cmd = vim.fn.shellescape(cmd)
+    return cmd
+  end)
+  return act
 end
 
 return Previewer

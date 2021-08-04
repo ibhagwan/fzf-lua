@@ -2,7 +2,7 @@ if not pcall(require, "fzf") then
   return
 end
 
-local action = require("fzf.actions").raw_action
+local action = require("fzf.actions").action
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
