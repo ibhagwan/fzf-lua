@@ -49,7 +49,8 @@ at it. That, **and colorful file icons and git indicators!**.
 
 - `Linux` or `MacOS` only, see [nvim-fzf's How it
   works](https://github.com/vijaymarupudi/nvim-fzf#How-it-works) section
-- [`fzf`](https://github.com/junegunn/fzf) binary installed
+- [`fzf`](https://github.com/junegunn/fzf) or
+  [`skim`](https://github.com/lotabout/skim) binary installed
 - [nvim-fzf](https://github.com/vijaymarupudi/nvim-fzf)
 - [nvim-web-devicons](https://github.com/kyazdani42/nvim-web-devicons)
   (optional)
@@ -75,11 +76,17 @@ Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
 ```lua
 use { 'ibhagwan/fzf-lua',
   requires = {
-    'vijaymarupudi/nvim-fzf',
+    'vijaymarupudi/nvim-fzf',        -- read note #1 below
     'kyazdani42/nvim-web-devicons' } -- optional for icons
 }
 ```
-> **Note** if you already have fzf installed you do not need to install `fzf`
+> **Note 1:** if you're having issues previewing grep or LSP matches that contain
+> special characters (back-tick especially) you need to replace `vijaymarupudi/nvim-fzf` with
+> my fork, `ibhagwan/nvim-fzf`. This is due to the issue described in [`nvim-fzf`
+> PR#18](https://github.com/vijaymarupudi/nvim-fzf/pull/18/).
+
+
+> **Note 2:** if you already have fzf installed you do not need to install `fzf`
 > or `fzf.vim`, however if you do not have it installed, **you only need** fzf
 > which can be installed with (fzf.vim is not a requirement nor conflict):
 > ```vim

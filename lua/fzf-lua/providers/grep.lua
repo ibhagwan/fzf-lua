@@ -35,7 +35,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     search_query = vim.fn.shellescape(utils.rg_escape(search_query))
   end
 
-  return string.format("%s -- %s %s", command, search_query, search_path)
+  return string.format("%s %s %s", command, search_query, search_path)
 end
 
 M.grep = function(opts)
