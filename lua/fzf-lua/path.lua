@@ -130,13 +130,15 @@ function M.entry_to_file(entry, cwd)
   local s = strsplit(entry, sep)
   local file = s[1]:match("[^"..utils.nbsp.."]*$")
   local idx = lastIndexOf(s[1], utils.nbsp) or 0
+  local noicons = string.sub(entry, idx+1)
   local line = s[2]
   local col  = s[3]
   if cwd and #cwd>0 and not M.starts_with_separator(file) then
     file = M.join({cwd, file})
+    noicons = M.join({cwd, noicons})
   end
   return {
-    noicons = string.sub(entry, idx+1),
+    noicons = noicons,
     path = file,
     line = line or 1,
     col  = col or 1,
