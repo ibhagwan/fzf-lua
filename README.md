@@ -98,11 +98,15 @@ run any fzf-lua command like this:
 
 ```lua
 :lua require('fzf-lua').files()
+-- or using the `FzfLua` vim command:
+:FzfLua files
 ```
 
 or with arguments:
 ```lua
 :lua require('fzf-lua').files({ cwd = '~/.config' })
+-- or using the `FzfLua` vim command:
+:FzfLua files cwd=~/.config
 ```
 
 which can be easily mapped to:
