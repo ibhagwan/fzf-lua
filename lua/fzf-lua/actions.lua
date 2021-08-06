@@ -1,3 +1,5 @@
+local utils = require "fzf-lua.utils"
+
 local M = {}
 
 -- return fzf '--expect=' string from actions keyval tbl
@@ -158,6 +160,22 @@ end
 M.man_tab = function(selected)
   local vimcmd = "tab Man"
   M.vimcmd(vimcmd, selected)
+end
+
+M.git_switch = function(selected)
+  -- remove anything past space
+  local branch = selected[1]:match("[^ ]+")
+  -- do nothing for active branch
+  if branch:find("%*") ~= nil then return end
+  local args = ""
+  if branch:find("/") ~= nil then args = "--detach " end
+  local output = vim.fn.systemlist("git switch " .. args .. branch)
+  if utils.shell_error() then
+    utils.err(unpack(output))
+  else
+    utils.info(unpack(output))
+    vim.cmd("edit!")
+  end
 end
 
 return M

@@ -16,7 +16,7 @@ M.get_devicon = function(file, ext)
   return icon
 end
 
-M.build_fzf_cli = function(opts)
+M.build_fzf_cli = function(opts, debug_print)
   opts.prompt = opts.prompt or config.globals.default_prompt
   opts.preview_offset = opts.preview_offset or ''
   opts.fzf_bin = opts.fzf_bin or config.globals.fzf_bin
@@ -32,7 +32,7 @@ M.build_fzf_cli = function(opts)
     vim.fn.shellescape(opts.prompt),
     utils._if(opts.preview_window, opts.preview_window, config.preview_window()),
     utils._if(#opts.preview_offset>0, ":"..opts.preview_offset, ''),
-    utils._if(opts.preview, opts.preview, "''"),
+    utils._if(opts.preview and #opts.preview>0, opts.preview, "''"),
     -- HACK: support skim (rust version of fzf)
     utils._if(opts.fzf_bin and opts.fzf_bin:find('sk')~=nil, "--inline-info", "--info=inline"),
     utils._if(actions.expect(opts.actions), actions.expect(opts.actions), ''),
@@ -40,7 +40,7 @@ M.build_fzf_cli = function(opts)
     utils._if(opts.fzf_cli_args, opts.fzf_cli_args, ''),
     utils._if(opts._fzf_cli_args, opts._fzf_cli_args, '')
   )
-  -- print(cli)
+  if debug_print then print(cli) end
   return cli
 end
 

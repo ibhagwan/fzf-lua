@@ -46,15 +46,4 @@ M.files = function(opts)
   return core.fzf_files(opts)
 end
 
-M.git_files = function(opts)
-  local output = vim.fn.systemlist("git status")
-  if utils.shell_error() then
-    utils.info(unpack(output))
-    return
-  end
-  opts = config.normalize_opts(opts, config.globals.git)
-  -- opts.cmd sets this to "git ls-files"
-  return M.files(opts)
-end
-
 return M

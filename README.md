@@ -120,7 +120,6 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 | --- | --- |
 |`buffers`|open buffers|
 |`files`|`find` or `fd` on a path|
-|`git_files`|`git ls-files`|
 |`oldfiles`|opened files history|
 |`quickfix`|quickfix list|
 |`loclist`|location list|
@@ -135,6 +134,10 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 |`man_pages`|man pages|
 |`colorschemes`|color schemes|
 |`builtin`|fzf-lua builtin methods|
+|`git_files`|`git ls-files`|
+|`git_commits`|git commit log (project)|
+|`git_bcommits`|git commit log (buffer)|
+|`git_branch`|git branches|
 
 ## LSP Commands
 
@@ -239,11 +242,37 @@ require'fzf-lua'.setup {
     }
   },
   git = {
-    prompt            = 'GitFiles❯ ',
-    cmd               = 'git ls-files --exclude-standard',
-    git_icons         = true,           -- show git icons?
-    file_icons        = true,           -- show file icons?
-    color_icons       = true,           -- colorize file|git icons
+    files = {
+      prompt          = 'GitFiles❯ ',
+      cmd             = 'git ls-files --exclude-standard',
+      git_icons       = true,           -- show git icons?
+      file_icons      = true,           -- show file icons?
+      color_icons     = true,           -- colorize file|git icons
+    },
+    commits = {
+      prompt          = 'Commits❯ ',
+      cmd             = "git log --pretty=oneline --abbrev-commit --color",
+      preview         = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
+      actions = {
+        ["default"] = nil,
+      },
+    },
+    bcommits = {
+      prompt          = 'BCommits❯ ',
+      cmd             = "git log --pretty=oneline --abbrev-commit --color --",
+      preview         = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
+      actions = {
+        ["default"] = nil,
+      },
+    },
+    branches = {
+      prompt          = 'Branches❯ ',
+      cmd             = "git branch --all --color",
+      preview         = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
+      actions = {
+        ["default"] = actions.git_switch,
+      },
+    },
     icons = {
       ["M"]           = { icon = "M", color = "yellow" },
       ["D"]           = { icon = "D", color = "red" },
@@ -363,8 +392,8 @@ EOF
 
 - Add more providers
     + [x] ~~LSP (refs, symbols, etc)~~ (2021-07-20)
-    + [ ] git commits
-    + [ ] git branches
+    + [x] ~~git commits~~ (2021-08-05)
+    + [x] ~~git branches~~ (2021-08-05)
     + [ ] vim commands
     + [ ] vim command history
     + [ ] vim keymaps

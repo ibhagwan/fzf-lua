@@ -123,17 +123,43 @@ M.globals = {
 -- Must construct our opts table in stages
 -- so we can reference 'M.globals.files'
 M.globals.git = {
-    prompt              = 'GitFiles> ',
-    cmd                 = "git ls-files --exclude-standard",
-    file_icons          = true and M._has_devicons,
-    color_icons         = true,
-    git_icons           = true,
-    actions             = M.globals.files.actions,
+    files = {
+      prompt        = 'GitFiles> ',
+      cmd           = "git ls-files --exclude-standard",
+      file_icons    = true and M._has_devicons,
+      color_icons   = true,
+      git_icons     = true,
+      actions       = M.globals.files.actions,
+    },
+    commits = {
+      prompt        = 'Commits> ',
+      cmd           = "git log --pretty=oneline --abbrev-commit --color",
+      preview       = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
+      actions = {
+        ["default"] = nil,
+      },
+    },
+    bcommits = {
+      prompt        = 'BCommits> ',
+      cmd           = "git log --pretty=oneline --abbrev-commit --color --",
+      preview       = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
+      actions = {
+        ["default"] = nil,
+      },
+    },
+    branches = {
+      prompt        = 'Branches> ',
+      cmd           = "git branch --all --color",
+      preview       = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
+      actions = {
+        ["default"] = actions.git_switch,
+      },
+    },
     icons = {
-        ["M"]     = { icon = "M", color = "yellow" },
-        ["D"]     = { icon = "D", color = "red" },
-        ["A"]     = { icon = "A", color = "green" },
-        ["?"]     = { icon = "?", color = "magenta" },
+      ["M"]         = { icon = "M", color = "yellow" },
+      ["D"]         = { icon = "D", color = "red" },
+      ["A"]         = { icon = "A", color = "green" },
+      ["?"]         = { icon = "?", color = "magenta" },
     },
   }
 M.globals.grep = {
