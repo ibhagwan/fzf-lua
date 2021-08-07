@@ -30,7 +30,7 @@ M.build_fzf_cli = function(opts, debug_print)
     utils._if(opts.fzf_binds, opts.fzf_binds,
       vim.fn.shellescape(table.concat(config.globals.fzf_binds, ','))),
     vim.fn.shellescape(opts.prompt),
-    utils._if(opts.preview_window, opts.preview_window, config.preview_window()),
+    utils._if(opts.preview_window, opts.preview_window, config.preview_window(opts)),
     utils._if(#opts.preview_offset>0, ":"..opts.preview_offset, ''),
     utils._if(opts.preview and #opts.preview>0, opts.preview, "''"),
     -- HACK: support skim (rust version of fzf)
@@ -167,10 +167,12 @@ M.fzf_files = function(opts)
     end
 
 
-    local preview_opts = config.globals.previewers[opts.previewer]
-    if preview_opts then
-      local preview = preview_opts._new()(preview_opts, opts)
-      opts.preview = preview:cmdline()
+    if not opts.preview then
+      local preview_opts = config.globals.previewers[opts.previewer]
+      if preview_opts then
+        local preview = preview_opts._new()(preview_opts, opts)
+        opts.preview = preview:cmdline()
+      end
     end
 
     local selected = fzf.fzf(opts.fzf_fn,

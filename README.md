@@ -135,6 +135,7 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 |`colorschemes`|color schemes|
 |`builtin`|fzf-lua builtin methods|
 |`git_files`|`git ls-files`|
+|`git_status`|`git status`|
 |`git_commits`|git commit log (project)|
 |`git_bcommits`|git commit log (buffer)|
 |`git_branch`|git branches|
@@ -223,6 +224,10 @@ require'fzf-lua'.setup {
       cmd             = "head",
       args            = nil,
     },
+    git_diff = {
+      cmd             = "git diff",
+      args            = "--color",
+    },
   },
   -- provider setup
   files = {
@@ -248,6 +253,14 @@ require'fzf-lua'.setup {
       git_icons       = true,           -- show git icons?
       file_icons      = true,           -- show file icons?
       color_icons     = true,           -- colorize file|git icons
+    },
+    status = {
+      prompt        = 'GitStatus❯ ',
+      cmd           = "git status -s",
+      previewer     = "git_diff",
+      file_icons    = true,
+      git_icons     = true,
+      color_icons   = true,
     },
     commits = {
       prompt          = 'Commits❯ ',

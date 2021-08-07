@@ -30,6 +30,19 @@ M.files = function(opts)
   return core.fzf_files(opts)
 end
 
+M.status = function(opts)
+  if not git_status() then return end
+  opts = config.normalize_opts(opts, config.globals.git.status)
+  if opts.preview then opts.preview = vim.fn.shellescape(opts.preview) end
+  opts.fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd,
+    function(x)
+      -- greedy match anything after last space
+      x = x:match("[^ ]*$")
+      return core.make_entry_file(opts, x)
+    end)
+  return core.fzf_files(opts)
+end
+
 local function git_cmd(opts)
   if not git_status() then return end
   coroutine.wrap(function ()

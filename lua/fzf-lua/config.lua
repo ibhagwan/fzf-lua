@@ -94,6 +94,11 @@ M.globals = {
       args            = nil,
       _new            = function() return require 'fzf-lua.previewer'.head end,
     },
+    git_diff = {
+      cmd             = "git diff",
+      args            = "--color",
+      _new            = function() return require 'fzf-lua.previewer'.cmd_async end,
+    },
     builtin = {
       treesitter      = true,
       _new            = function() return require 'fzf-lua.previewer'.builtin end,
@@ -126,6 +131,15 @@ M.globals.git = {
     files = {
       prompt        = 'GitFiles> ',
       cmd           = "git ls-files --exclude-standard",
+      file_icons    = true and M._has_devicons,
+      color_icons   = true,
+      git_icons     = true,
+      actions       = M.globals.files.actions,
+    },
+    status = {
+      prompt        = 'GitStatus> ',
+      cmd           = "git status -s",
+      previewer     = "git_diff",
       file_icons    = true and M._has_devicons,
       color_icons   = true,
       git_icons     = true,
@@ -356,8 +370,8 @@ M.winopts = function(opts)
   }
 end
 
-M.preview_window = function()
-  local o = M.globals
+M.preview_window = function(opts)
+  local o = vim.tbl_deep_extend("keep", opts, M.globals)
   local preview_veritcal = string.format('%s:%s:%s:%s',
     o.preview_opts, o.preview_border, o.preview_wrap, o.preview_vertical)
   local preview_horizontal = string.format('%s:%s:%s:%s',
