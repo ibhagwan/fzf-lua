@@ -42,7 +42,9 @@ local function symbol_handler(opts, cb, _, result)
   result = vim.tbl_islist(result) and result or {result}
   local items = vim.lsp.util.symbols_to_items(result)
   for _, entry in ipairs(items) do
-    entry.filename = opts.filename
+    if opts.ignore_filename then
+      entry.filename = opts.filename
+    end
     entry = core.make_entry_lcol(opts, entry)
     entry = core.make_entry_file(opts, entry)
     cb(entry, function(err)

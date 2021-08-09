@@ -117,7 +117,7 @@ function Previewer.cmd_async:cmdline(o)
   o = o or {}
   local act = helpers.choices_to_shell_cmd_previewer(function(items)
     local file = path.entry_to_file(items[1], self.opts.cwd)
-    local cmd = string.format("%s %s %s", self.cmd, self.args, file.path)
+    local cmd = string.format('%s %s "%s"', self.cmd, self.args, file.path)
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
@@ -142,7 +142,7 @@ function Previewer.bat_async:cmdline(o)
   end
   local act = helpers.choices_to_shell_cmd_previewer(function(items)
     local file = path.entry_to_file(items[1], self.opts.cwd)
-    local cmd = string.format("%s %s %s%s %s",
+    local cmd = string.format('%s %s %s%s "%s"',
       self.cmd, self.args,
       highlight_line,
       utils._if(#highlight_line>0, tostring(file.line), ""),
