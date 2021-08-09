@@ -384,12 +384,14 @@ M.diagnostics = function(opts)
         end
       end
       for bufnr, diags in pairs(buffer_diags) do
-        for _, diag in ipairs(diags) do
-          -- workspace diagnostics may include empty tables for unused bufnr
-          if not vim.tbl_isempty(diag) then
-            if filter_diag_severity(opts, diag.severity) then
-              diagnostics_handler(opts, cb, co,
-                preprocess_diag(diag, bufnr))
+        if not opts.workspace_diag_only_cwd or (opts.workspace_diag_only_cwd and string.find(vim.api.nvim_buf_get_name(bufnr), vim.loop.cwd(), 1, true) ) then
+          for _, diag in ipairs(diags) do
+            -- workspace diagnostics may include empty tables for unused bufnr
+            if not vim.tbl_isempty(diag) then
+              if filter_diag_severity(opts, diag.severity) then
+                diagnostics_handler(opts, cb, co,
+                  preprocess_diag(diag, bufnr))
+              end
             end
           end
         end
