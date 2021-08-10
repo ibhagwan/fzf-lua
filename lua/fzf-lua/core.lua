@@ -166,7 +166,7 @@ M.fzf_files = function(opts)
 
   -- reset git tracking
   opts.diff_files, opts.untracked_files = nil, nil
-  if not utils.is_git_repo() then opts.git_icons = false end
+  if opts.git_icons and not utils.is_git_repo() then opts.git_icons = false end
 
   if opts.cwd and #opts.cwd > 0 then
     opts.cwd = vim.fn.expand(opts.cwd)

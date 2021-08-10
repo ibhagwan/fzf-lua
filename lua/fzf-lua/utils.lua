@@ -50,7 +50,7 @@ function M.shell_error()
 end
 
 function M.is_git_repo()
-  vim.fn.system("git status")
+  vim.fn.system("git rev-parse --git-dir")
   return M._if(M.shell_error(), false, true)
 end
 
