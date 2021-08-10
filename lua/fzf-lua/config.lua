@@ -302,7 +302,7 @@ M.globals.lsp = {
           ["Information"] = { icon = "", color = "blue" },      -- info
           ["Hint"]        = { icon = "", color = "magenta" },   -- hint
       },
-      workspace_diag_only_cwd = false,
+      cwd_only = false,
   }
 M.globals.builtin = {
       prompt              = 'Builtin> ',

@@ -360,6 +360,7 @@ require'fzf-lua'.setup {
   lsp = {
     prompt            = '❯ ',
     -- cwd               = vim.loop.cwd(),
+    cwd_only          = false, -- show workspace diagnostics only for the files in cwd
     file_icons        = true,
     git_icons         = false,
     lsp_icons         = true,
