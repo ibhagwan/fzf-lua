@@ -6,6 +6,24 @@ local actions = require "fzf-lua.actions"
 
 local M = {}
 
+M.fzf = function(o, contents, fzf_cli_args, options)
+  if o.winopts and o.winopts.split then
+    vim.cmd(o.winopts.split)
+    local bufnr = vim.api.nvim_get_current_buf()
+    local winid = vim.api.nvim_get_current_win()
+    local selected = fzf.raw_fzf(contents, fzf_cli_args, options)
+    if vim.api.nvim_win_is_valid(winid) then
+      vim.api.nvim_win_close(winid, {force=true})
+    end
+    if vim.api.nvim_buf_is_valid(bufnr) then
+      vim.api.nvim_buf_delete(bufnr, {force=true})
+    end
+    return selected
+  else
+    return fzf.fzf(contents, fzf_cli_args, options)
+  end
+end
+
 M.get_devicon = function(file, ext)
   local icon = ''
   if not file or #file == 0 then return icon end
@@ -175,7 +193,7 @@ M.fzf_files = function(opts)
       end
     end
 
-    local selected = fzf.fzf(opts.fzf_fn,
+    local selected = M.fzf(opts, opts.fzf_fn,
       M.build_fzf_cli(opts),
       config.winopts(opts))
 

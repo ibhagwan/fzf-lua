@@ -263,7 +263,7 @@ M.code_actions = function(opts)
 
   coroutine.wrap(function ()
 
-    local selected = fzf.fzf(opts.fzf_fn,
+    local selected = core.fzf(opts, opts.fzf_fn,
       core.build_fzf_cli(opts),
       config.winopts(opts))
 

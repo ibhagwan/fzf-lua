@@ -45,7 +45,7 @@ M.manpages = function(opts)
     opts.preview_window = opts.preview_window or 'right:0'
     opts.nomulti = utils._if(opts.nomulti~=nil, opts.nomulti, true)
 
-    local selected = fzf.fzf(fzf_fn,
+    local selected = core.fzf(opts, fzf_fn,
       core.build_fzf_cli(opts),
       config.winopts(opts))
 

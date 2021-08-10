@@ -41,7 +41,7 @@ M.colorschemes = function(opts)
     opts.preview_window = opts.preview_window or 'nohidden:right:0'
     opts.nomulti = utils._if(opts.nomulti~=nil, opts.nomulti, true)
 
-    local selected = fzf.fzf(colors,
+    local selected = core.fzf(opts, colors,
       core.build_fzf_cli(opts),
       config.winopts(opts))
 
