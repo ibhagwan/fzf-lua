@@ -295,6 +295,8 @@ M.globals.lsp = {
       git_icons           = false,
       lsp_icons           = true,
       severity            = "hint",
+      cwd_only            = false,
+      async_or_timeout    = true,
       actions             = M.globals.files.actions,
       icons = {
           ["Error"]       = { icon = "", color = "red" },       -- error

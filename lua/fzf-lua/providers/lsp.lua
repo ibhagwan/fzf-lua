@@ -87,7 +87,9 @@ local function wrap_handler(handler)
   return function(err, method, result, client_id, bufnr, lspcfg)
     local ret
     if err then
-      ret = utils.err(err.message)
+      ret = err.message
+      utils.err(string.format("Error executing '%s': %s",
+        handler.method, err.message or "nil"))
       utils.send_ctrl_c()
     elseif not result or vim.tbl_isempty(result) then
       ret = utils.info(string.format('No %s found', string.lower(handler.label)))
@@ -129,6 +131,39 @@ local function set_lsp_fzf_fn(opts)
   if not opts.lsp_params then
     opts.lsp_params = vim.lsp.util.make_position_params()
     opts.lsp_params.context = { includeDeclaration = true }
+  end
+
+  -- function async params override global config
+  if opts.async == nil and opts.sync == nil
+    and opts.async_or_timeout ~= true then
+      opts.async = false
+  end
+
+  if opts.sync or opts.async == false then
+    local timeout = 5000
+    if type(opts.async_or_timeout) == "number" then
+      timeout = opts.async_or_timeout
+    end
+    local lsp_results, err = vim.lsp.buf_request_sync(opts.bufnr,
+        opts.lsp_handler.method, opts.lsp_params, timeout)
+    if err then
+      utils.err(string.format("Error executing '%s': %s",
+        opts.lsp_handler.method, err.message or "nil"))
+    else
+      local results = {}
+      local cb = function(text) table.insert(results, text) end
+      for _, v in pairs(lsp_results) do
+        if v.result then
+          opts.lsp_handler.handler(opts, cb, opts.lsp_handler.method, v.result)
+        end
+      end
+      if vim.tbl_isempty(results) then
+        utils.info(string.format('No %s found', string.lower(opts.lsp_handler.label)))
+      elseif not (opts.jump_to_single_result and #results == 1) then
+        opts.fzf_fn = results
+      end
+    end
+    return opts
   end
 
   opts.fzf_fn = function (cb)
@@ -191,6 +226,7 @@ local function fzf_lsp_locations(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   opts = core.set_fzf_line_args(opts)
   opts = set_lsp_fzf_fn(opts)
+  if not opts.fzf_fn then return end
   return core.fzf_files(opts)
 end
 
@@ -228,6 +264,7 @@ M.workspace_symbols = function(opts)
   opts.lsp_params = {query = ''}
   opts = core.set_fzf_line_args(opts)
   opts = set_lsp_fzf_fn(opts)
+  if not opts.fzf_fn then return end
   return core.fzf_files(opts)
 end
 
@@ -260,6 +297,9 @@ M.code_actions = function(opts)
   opts.preview_window = 'right:0'
   opts._fzf_cli_args = "--delimiter=':'"
   opts = set_lsp_fzf_fn(opts)
+
+  -- error or no sync request no results
+  if not opts.fzf_fn then return end
 
   coroutine.wrap(function ()
 
