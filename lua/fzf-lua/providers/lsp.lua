@@ -32,9 +32,11 @@ local function location_handler(opts, cb, _, result)
   for _, entry in ipairs(items) do
     entry = core.make_entry_lcol(opts, entry)
     entry = core.make_entry_file(opts, entry)
-    cb(entry, function(err)
-      if err then return end
-    end)
+    if entry then
+      cb(entry, function(err)
+        if err then return end
+      end)
+    end
   end
 end
 
@@ -47,9 +49,11 @@ local function symbol_handler(opts, cb, _, result)
     end
     entry = core.make_entry_lcol(opts, entry)
     entry = core.make_entry_file(opts, entry)
-    cb(entry, function(err)
-      if err then return end
-    end)
+    if entry then
+      cb(entry, function(err)
+        if err then return end
+      end)
+    end
   end
 end
 
@@ -70,6 +74,7 @@ local function diagnostics_handler(opts, cb, _, entry)
   local type = entry.type
   entry = core.make_entry_lcol(opts, entry)
   entry = core.make_entry_file(opts, entry)
+  if not entry then return end
   if opts.lsp_icons and opts.cfg.icons[type] then
     local severity = opts.cfg.icons[type]
     local icon = severity.icon
@@ -424,14 +429,12 @@ M.diagnostics = function(opts)
         end
       end
       for bufnr, diags in pairs(buffer_diags) do
-        if not opts.cwd_only or (opts.cwd_only and string.find(vim.api.nvim_buf_get_name(bufnr), vim.loop.cwd(), 1, true) ) then
-          for _, diag in ipairs(diags) do
-            -- workspace diagnostics may include empty tables for unused bufnr
-            if not vim.tbl_isempty(diag) then
-              if filter_diag_severity(opts, diag.severity) then
-                diagnostics_handler(opts, cb, co,
-                  preprocess_diag(diag, bufnr))
-              end
+        for _, diag in ipairs(diags) do
+          -- workspace diagnostics may include empty tables for unused bufnr
+          if not vim.tbl_isempty(diag) then
+            if filter_diag_severity(opts, diag.severity) then
+              diagnostics_handler(opts, cb, co,
+                preprocess_diag(diag, bufnr))
             end
           end
         end

@@ -53,7 +53,7 @@ M.buffers = function(opts)
       if opts.ignore_current_buffer and b == vim.api.nvim_get_current_buf() then
         return false
       end
-      if opts.cwd_only and not string.find(vim.api.nvim_buf_get_name(b), vim.loop.cwd(), 1, true) then
+      if opts.cwd_only and not path.is_relative(vim.api.nvim_buf_get_name(b), vim.loop.cwd()) then
         return false
       end
       return true

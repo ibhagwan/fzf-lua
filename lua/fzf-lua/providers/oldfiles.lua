@@ -36,24 +36,17 @@ M.oldfiles = function(opts)
     end
   end
 
-  if opts.cwd_only then
-    opts.cwd = vim.loop.cwd()
-    local cwd = opts.cwd
-    cwd = cwd:gsub([[\]],[[\\]])
-    results = vim.tbl_filter(function(file)
-      return vim.fn.matchstrpos(file, cwd)[2] ~= -1
-    end, results)
-  end
-
   opts.fzf_fn = function (cb)
     for _, x in ipairs(results) do
       x = core.make_entry_file(opts, x)
-      cb(x, function(err)
-        if err then return end
+      if x then
+        cb(x, function(err)
+          if err then return end
           -- close the pipe to fzf, this
           -- removes the loading indicator in fzf
           cb(nil, function() end)
-      end)
+        end)
+      end
     end
     utils.delayed_cb(cb)
   end

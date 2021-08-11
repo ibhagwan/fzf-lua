@@ -114,6 +114,12 @@ end
 M.make_entry_file = function(opts, x)
   local icon
   local prefix = ''
+  if opts.cwd_only and path.starts_with_separator(x) then
+    local cwd = opts.cwd or vim.loop.cwd()
+    if not path.is_relative(x, cwd) then
+      return nil
+    end
+  end
   if opts.cwd and #opts.cwd > 0 then
     x = path.relative(x, opts.cwd)
   end
@@ -173,6 +179,10 @@ M.fzf_files = function(opts)
   end
 
   coroutine.wrap(function ()
+
+    if opts.cwd_only and not opts.cwd then
+      opts.cwd = vim.loop.cwd()
+    end
 
     if opts.git_icons then
       opts.diff_files = get_diff_files()

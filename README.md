@@ -360,8 +360,8 @@ require'fzf-lua'.setup {
   lsp = {
     prompt            = '❯ ',
     -- cwd               = vim.loop.cwd(),
-    cwd_only          = false,      -- workspace diagnostics for cwd only?
-    async_or_timeout  = true,       -- set to timeout|false for blocking calls
+    cwd_only          = false,      -- LSP/diagnostics for cwd only?
+    async_or_timeout  = true,       -- timeout(ms) or false for blocking calls
     file_icons        = true,
     git_icons         = false,
     lsp_icons         = true,

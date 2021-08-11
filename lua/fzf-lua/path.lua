@@ -76,6 +76,11 @@ function M.relative(path, relative_to)
   return p
 end
 
+function M.is_relative(path, relative_to)
+  local p = path:match("^" .. M.to_matching_str(M.add_trailing(relative_to)))
+  return p ~= nil
+end
+
 function M.add_trailing(path)
   if path:sub(-1) == M.separator() then
     return path
