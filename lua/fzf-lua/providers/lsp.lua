@@ -305,12 +305,6 @@ end
 M.diagnostics = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
 
-  local lsp_clients = vim.lsp.buf_get_clients(0)
-  if #lsp_clients == 0 then
-    utils.info("LSP: no client attached")
-    return
-  end
-
   opts.winid = vim.api.nvim_get_current_win()
   local lsp_type_diagnostic = vim.lsp.protocol.DiagnosticSeverity
   local current_buf = vim.api.nvim_get_current_buf()
