@@ -58,8 +58,9 @@ local function symbol_handler(opts, cb, _, result)
 end
 
 local function code_action_handler(opts, cb, _, code_actions)
-  opts.code_actions = {}
-  for i, action in ipairs(code_actions) do
+  if not opts.code_actions then opts.code_actions = {} end
+  local i = utils.tbl_length(opts.code_actions) + 1
+  for _, action in ipairs(code_actions) do
     local text = string.format("%s %s",
       utils.ansi_codes.magenta(string.format("%d:", i)),
       action.title)
@@ -67,6 +68,7 @@ local function code_action_handler(opts, cb, _, code_actions)
     cb(text, function(err)
       if err then return end
     end)
+    i = i + 1
   end
 end
 
