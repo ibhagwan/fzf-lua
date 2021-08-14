@@ -194,7 +194,7 @@ function M.send_ctrl_c()
     vim.api.nvim_replace_termcodes("<C-c>", true, false, true), 'n', true)
 end
 
-function M.feed_key(key)
+function M.feed_keys_termcodes(key)
   vim.api.nvim_feedkeys(
     vim.api.nvim_replace_termcodes(key, true, false, true), 'n', true)
 end

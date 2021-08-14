@@ -2,9 +2,7 @@ if not pcall(require, "fzf") then
   return
 end
 
--- local fzf = require "fzf"
 local fzf_helpers = require("fzf.helpers")
--- local path = require "fzf-lua.path"
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"

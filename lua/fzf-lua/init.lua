@@ -68,6 +68,13 @@ M.help_tags = require'fzf-lua.providers.helptags'.helptags
 M.man_pages = require'fzf-lua.providers.manpages'.manpages
 M.colorschemes = require'fzf-lua.providers.colorschemes'.colorschemes
 
+M.keymaps = require'fzf-lua.providers.nvim'.keymaps
+M.registers = require'fzf-lua.providers.nvim'.registers
+M.commands = require'fzf-lua.providers.nvim'.commands
+M.command_history = require'fzf-lua.providers.nvim'.command_history
+M.search_history = require'fzf-lua.providers.nvim'.search_history
+M.spell_suggest = require'fzf-lua.providers.nvim'.spell_suggest
+
 M.lsp_typedefs = require'fzf-lua.providers.lsp'.typedefs
 M.lsp_references = require'fzf-lua.providers.lsp'.references
 M.lsp_definitions = require'fzf-lua.providers.lsp'.definitions

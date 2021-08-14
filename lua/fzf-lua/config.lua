@@ -308,12 +308,45 @@ M.globals.lsp = {
 M.globals.builtin = {
       prompt              = 'Builtin> ',
       winopts = {
-        win_height       = 0.65,
-        win_width        = 0.50,
+        win_height        = 0.65,
+        win_width         = 0.50,
       },
       actions = {
         ["default"]       = actions.run_builtin,
       },
+  }
+M.globals.nvim = {
+    commands = {
+      prompt              = 'Commands> ',
+      actions = {
+        ["default"]       = actions.ex_run,
+      },
+    },
+    command_history = {
+      prompt              = 'Command History> ',
+      actions = {
+        ["default"]       = actions.ex_run,
+      },
+    },
+    search_history = {
+      prompt              = 'Search History> ',
+      actions = {
+        ["default"]       = actions.search,
+      },
+    },
+    registers = {
+      prompt              = 'Registers> ',
+      ignore_empty        = true,
+    },
+    keymaps = {
+      prompt              = 'Keymaps> ',
+    },
+    spell_suggest = {
+      prompt              = 'Spelling Suggestions> ',
+      actions = {
+        ["default"]       = actions.spell_apply,
+      },
+    },
   }
 M.globals.file_icon_colors = {
     ["lua"]       = "blue",

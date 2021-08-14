@@ -132,6 +132,30 @@ M.run_builtin = function(selected)
   vim.cmd(string.format("lua require'fzf-lua'.%s()", method))
 end
 
+M.ex_run = function(selected)
+  if not selected then return end
+  local cmd = selected[1]
+  if #selected>1 then cmd = selected[2] end
+  vim.cmd("stopinsert")
+  vim.fn.feedkeys(string.format(":%s ", cmd))
+end
+
+M.search = function(selected)
+  if not selected then return end
+  local query = selected[1]
+  if #selected>1 then query = selected[2] end
+  vim.cmd("stopinsert")
+  utils.feed_keys_termcodes(string.format("/%s<CR>", query))
+end
+
+M.spell_apply = function(selected)
+  if not selected then return end
+  local word = selected[1]
+  if #selected>1 then word = selected[2] end
+  vim.cmd("normal! ciw" .. word)
+  vim.cmd("stopinsert")
+end
+
 M.help = function(selected)
   local vimcmd = "help"
   M.vimcmd(vimcmd, selected)

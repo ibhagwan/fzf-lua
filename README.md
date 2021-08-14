@@ -116,6 +116,7 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 
 ## Commands
 
+### Buffers & Files
 | Command | List |
 | --- | --- |
 |`buffers`|open buffers|
@@ -123,6 +124,10 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 |`oldfiles`|opened files history|
 |`quickfix`|quickfix list|
 |`loclist`|location list|
+
+### Search
+| Command | List |
+| --- | --- |
 |`grep`|search for a pattern with `grep` or `rg`|
 |`grep_last`|run search again with the last pattern|
 |`grep_cword`|search word under cursor|
@@ -130,18 +135,18 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 |`grep_visual`|search visual selection|
 |`grep_curbuf`|live grep current buffer|
 |`live_grep`|live grep current project|
-|`help_tags`|help tags|
-|`man_pages`|man pages|
-|`colorschemes`|color schemes|
-|`builtin`|fzf-lua builtin methods|
+
+
+### Git
+| Command | List |
+| --- | --- |
 |`git_files`|`git ls-files`|
 |`git_status`|`git status`|
 |`git_commits`|git commit log (project)|
 |`git_bcommits`|git commit log (buffer)|
 |`git_branch`|git branches|
 
-## LSP Commands
-
+### LSP
 | Command | List |
 | --- | --- |
 |`lsp_references`|References|
@@ -154,6 +159,21 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 |`lsp_code_actions`|Code Actions|
 |`lsp_document_diagnostics`|Document Diagnostics|
 |`lsp_workspace_diagnostics`|Workspace Diagnostics|
+
+### Misc
+| Command | List |
+| --- | --- |
+|`builtin`|fzf-lua builtin methods|
+|`help_tags`|help tags|
+|`man_pages`|man pages|
+|`colorschemes`|color schemes|
+|`commands`|neovim commands|
+|`command_history`|command history|
+|`search_history`|search history|
+|`registers`|:registers|
+|`keymaps`|key mappings|
+|`spell_suggest`|spelling suggestions|
+
 
 ## Customization
 
@@ -397,31 +417,24 @@ require('fzf-lua').setup{
 EOF
 ```
 
-### Known issues
-
-- [ ] `live_grep` has icons disabled until I find a solution for fzf's
-  `change:reload` event
-- [ ] Tested mostly with both `rg`, `fd` and `bat` installed, there might be
-  issues with the default `grep`, `find` and `head` alternatives
-
 ## TODO
 
-- Add more providers
+- [ ] Add more providers
     + [x] ~~LSP (refs, symbols, etc)~~ (2021-07-20)
     + [x] ~~git commits~~ (2021-08-05)
     + [x] ~~git branches~~ (2021-08-05)
-    + [ ] vim commands
-    + [ ] vim command history
-    + [ ] vim keymaps
-    + [ ] vim options
-    + [ ] search history
-    + [ ] tags
+    + [x] nvim builtin:
+        * [x] ~~commands~~ (2021-08-14)
+        * [x] ~~command history~~ (2021-08-14)
+        * [x] ~~search history~~ (2021-08-14)
+        * [x] ~~registers~~ (2021-08-14)
+        * [x] ~~keymaps~~ (2021-08-14)
+        * [x] ~~spelling suggestions~~ (2021-08-14)
     + [ ] marks
-    + [ ] registers
-    + [ ] spelling suggestions
+    + [ ] tags
+- [ ] Built-in previewer with treesitter support
 - [ ] Add built-in plugin documentation
-- [ ] Add "hidden" options documentation
-- [ ] Add FAQ
+- [ ] Complete the Wiki
 
 ### Credits
 
