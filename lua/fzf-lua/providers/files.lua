@@ -24,8 +24,9 @@ local get_files_cmd = function(opts)
         vim.fn.shellescape(vim.fn.expand(opts.cwd)))
     end
   else
-    command = string.format('find %s %s',
-      utils._if(opts.cwd and #opts.cwd>0, vim.fn.shellescape(opts.cwd), '.'),
+    command = string.format('find -L %s %s',
+      utils._if(opts.cwd and #opts.cwd>0,
+      vim.fn.shellescape(vim.fn.expand(opts.cwd)), '.'),
       opts.find_opts)
   end
   return command
