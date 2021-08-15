@@ -316,6 +316,12 @@ M.globals.builtin = {
       },
   }
 M.globals.nvim = {
+    marks = {
+      prompt              = 'Marks> ',
+      actions = {
+        ["default"]       = actions.goto_mark,
+      },
+    },
     commands = {
       prompt              = 'Commands> ',
       actions = {

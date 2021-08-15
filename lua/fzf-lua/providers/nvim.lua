@@ -84,6 +84,53 @@ M.search_history = function(opts)
   history(opts, "search")
 end
 
+M.marks = function(opts)
+  opts = config.normalize_opts(opts, config.globals.nvim.marks)
+  coroutine.wrap(function ()
+
+    local marks = vim.fn.execute("marks")
+    marks = vim.split(marks, "\n")
+
+    local prev_act = action(function (args, fzf_lines, _)
+      local mark = args[1]:match("[^ ]+")
+      local bufnr, lnum, _, _ = unpack(vim.fn.getpos("'"..mark))
+      if vim.api.nvim_buf_is_loaded(bufnr) then
+        return vim.api.nvim_buf_get_lines(bufnr, lnum, fzf_lines+lnum, false)
+      else
+        local name = vim.fn.expand(args[1]:match(".* (.*)"))
+        if vim.fn.filereadable(name) ~= 0 then
+          return vim.fn.readfile(name, "", fzf_lines)
+        end
+        return "UNLOADED: " .. name
+      end
+    end)
+
+    local entries = {}
+    for i = #marks, 3, -1 do
+      local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
+      table.insert(entries, string.format("%-15s %-15s %-15s %s",
+        utils.ansi_codes.yellow(mark),
+        utils.ansi_codes.blue(line),
+        utils.ansi_codes.green(col),
+        text))
+    end
+
+    table.sort(entries, function(a, b) return a<b end)
+
+    opts.nomulti = true
+    opts.preview = prev_act
+    -- opts.preview_window = 'hidden:down:0'
+
+    local selected = core.fzf(opts, entries,
+      core.build_fzf_cli(opts),
+      config.winopts(opts))
+
+    if not selected then return end
+    actions.act(opts.actions, selected)
+
+  end)()
+end
+
 M.registers = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.nvim.registers)

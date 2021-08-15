@@ -68,6 +68,7 @@ M.help_tags = require'fzf-lua.providers.helptags'.helptags
 M.man_pages = require'fzf-lua.providers.manpages'.manpages
 M.colorschemes = require'fzf-lua.providers.colorschemes'.colorschemes
 
+M.marks = require'fzf-lua.providers.nvim'.marks
 M.keymaps = require'fzf-lua.providers.nvim'.keymaps
 M.registers = require'fzf-lua.providers.nvim'.registers
 M.commands = require'fzf-lua.providers.nvim'.commands

@@ -170,6 +170,7 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 |`commands`|neovim commands|
 |`command_history`|command history|
 |`search_history`|search history|
+|`marks`|:marks|
 |`registers`|:registers|
 |`keymaps`|key mappings|
 |`spell_suggest`|spelling suggestions|
@@ -423,15 +424,16 @@ EOF
     + [x] ~~LSP (refs, symbols, etc)~~ (2021-07-20)
     + [x] ~~git commits~~ (2021-08-05)
     + [x] ~~git branches~~ (2021-08-05)
-    + [x] nvim builtin:
+    + [x] nvim built-in:
         * [x] ~~commands~~ (2021-08-14)
         * [x] ~~command history~~ (2021-08-14)
         * [x] ~~search history~~ (2021-08-14)
         * [x] ~~registers~~ (2021-08-14)
         * [x] ~~keymaps~~ (2021-08-14)
         * [x] ~~spelling suggestions~~ (2021-08-14)
-    + [ ] marks
+        * [x] ~~marks~~ (2021-08-14)
     + [ ] tags
+- [ ] Improve previewer for `buffers`, `marks`
 - [ ] Built-in previewer with treesitter support
 - [ ] Add built-in plugin documentation
 - [ ] Complete the Wiki

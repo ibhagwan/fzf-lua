@@ -148,6 +148,16 @@ M.search = function(selected)
   utils.feed_keys_termcodes(string.format("/%s<CR>", query))
 end
 
+M.goto_mark = function(selected)
+  if not selected then return end
+  local mark = selected[1]
+  if #selected>1 then mark = selected[2] end
+  mark = mark:match("[^ ]+")
+  vim.cmd("stopinsert")
+  vim.cmd("normal! '" .. mark)
+  -- vim.fn.feedkeys(string.format("'%s", mark))
+end
+
 M.spell_apply = function(selected)
   if not selected then return end
   local word = selected[1]
