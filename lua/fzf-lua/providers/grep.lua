@@ -24,8 +24,12 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   end
 
   -- filename takes precedence over directory
+  -- filespec takes precedence over all and doesn't shellescape
+  -- this is so user can send a file populating command instead
   local search_path = ''
-  if opts.filename and #opts.filename>0 then
+  if opts.filespec and #opts.filespec>0 then
+    search_path = opts.filespec
+  elseif opts.filename and #opts.filename>0 then
     search_path = vim.fn.shellescape(opts.filename)
   elseif opts.cwd and #opts.cwd>0 then
     search_path = vim.fn.shellescape(opts.cwd)
