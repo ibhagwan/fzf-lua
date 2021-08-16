@@ -11,7 +11,9 @@ local config = require "fzf-lua.config"
 local M = {}
 
 local get_grep_cmd = function(opts, search_query, no_esc)
-
+  if opts.raw_cmd and #opts.raw_cmd>0 then
+    return opts.raw_cmd
+  end
   local command = nil
   if opts.cmd and #opts.cmd > 0 then
     command = opts.cmd

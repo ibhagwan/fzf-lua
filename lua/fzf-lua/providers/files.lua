@@ -10,6 +10,9 @@ local config = require "fzf-lua.config"
 local M = {}
 
 local get_files_cmd = function(opts)
+  if opts.raw_cmd and #opts.raw_cmd>0 then
+    return opts.raw_cmd
+  end
   if opts.cmd and #opts.cmd>0 then
     return opts.cmd
   end
