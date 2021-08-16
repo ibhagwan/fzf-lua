@@ -174,6 +174,8 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 |`registers`|:registers|
 |`keymaps`|key mappings|
 |`spell_suggest`|spelling suggestions|
+|`tags`|project tags|
+|`btags`|buffer tags|
 
 
 ## Customization
@@ -432,7 +434,8 @@ EOF
         * [x] ~~keymaps~~ (2021-08-14)
         * [x] ~~spelling suggestions~~ (2021-08-14)
         * [x] ~~marks~~ (2021-08-14)
-    + [ ] tags
+    + [x] ~~tags~~ (2021-08-15)
+- [ ] Fix previewer for `tags`, `btags` (WIP)
 - [ ] Improve previewer for `buffers`, `marks`
 - [ ] Built-in previewer with treesitter support
 - [ ] Add built-in plugin documentation

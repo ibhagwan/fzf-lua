@@ -258,6 +258,34 @@ M.globals.buffers = {
         ["ctrl-x"]        = actions.buf_del,
     },
   }
+M.globals.tags = {
+    prompt                = 'Tags> ',
+    ctags_file            = "tags",
+    file_icons            = true and M._has_devicons,
+    git_icons             = true,
+    color_icons           = true,
+    actions = {
+        ["default"]       = actions.file_edit,
+        ["ctrl-s"]        = actions.file_split,
+        ["ctrl-v"]        = actions.file_vsplit,
+        ["ctrl-t"]        = actions.file_tabedit,
+        ["ctrl-q"]        = actions.file_sel_to_qf,
+    },
+  }
+M.globals.btags = {
+    prompt                = 'BTags> ',
+    ctags_file            = "tags",
+    file_icons            = true and M._has_devicons,
+    git_icons             = true,
+    color_icons           = true,
+    actions = {
+        ["default"]       = actions.file_edit,
+        ["ctrl-s"]        = actions.file_split,
+        ["ctrl-v"]        = actions.file_vsplit,
+        ["ctrl-t"]        = actions.file_tabedit,
+        ["ctrl-q"]        = actions.file_sel_to_qf,
+    },
+  }
 M.globals.colorschemes = {
       prompt              = 'Colorschemes> ',
       live_preview        = true,
