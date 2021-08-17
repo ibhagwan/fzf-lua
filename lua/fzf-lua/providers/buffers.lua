@@ -93,9 +93,10 @@ M.buffers = function(opts)
         utils._if(buf.info.lnum>0, buf.info.lnum, ""))
       if buf.flag == '%' then
         flags = utils.ansi_codes.red(buf.flag) .. flags
-        leftbr = utils.ansi_codes.green('[')
-        rightbr = utils.ansi_codes.green(']')
+        leftbr, rightbr = '[', ']'
         if not header_line then
+          leftbr = utils.ansi_codes.green(leftbr)
+          rightbr = utils.ansi_codes.green(rightbr)
           bufname = utils.ansi_codes.green(bufname)
         end
       elseif buf.flag == '#' then
