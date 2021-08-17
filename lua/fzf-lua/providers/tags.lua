@@ -41,17 +41,14 @@ local fzf_tags = function(opts)
       -- as ctags uses '$' at the end of short patterns
       pattern = pattern:gsub("\\%$$", "%$")
       if not pattern or not filepath then return line end
-      local cmd = string.format('%s "%s" "%s"',
-        grep_cmd,
-        pattern,
-        filepath)
-        -- TODO: why is this causing the function to crash?
-        -- vim.fn.shellescape(filepath or ""))
-      --[[ local out = vim.fn.system(cmd)
+      local cmd = string.format('%s "%s" %s',
+        grep_cmd, pattern,
+        vim.fn.shellescape(filepath))
+      local out = vim.fn.system(cmd)
       if not utils.shell_error() then
         line = out:match("[^:]+")
-      end ]]
-      -- print(line, cmd)
+      end
+      -- if line == 1 then print(cmd) end
       return line
     end
 
@@ -77,11 +74,15 @@ local fzf_tags = function(opts)
           if #fields >= 3 then
             if not opts.current_buffer_only or
               current_file == path.join({cwd, fields[2]}) then
-              add_tag({
-                name = fields[1],
-                file = fields[2],
-                text = fields[3],
-              }, cb, co)
+              -- without vim.schedule `add_tag` would crash
+              -- at any `vim.fn...` call
+              vim.schedule(function()
+                add_tag({
+                  name = fields[1],
+                  file = fields[2],
+                  text = fields[3],
+                }, cb, co)
+              end)
               -- pause here until we call coroutine.resume()
               coroutine.yield()
             end
@@ -96,6 +97,7 @@ local fzf_tags = function(opts)
     end)()
   end
 
+  opts = core.set_fzf_line_args(opts)
   opts.fzf_fn = fzf_function
   return core.fzf_files(opts)
 end

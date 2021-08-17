@@ -37,10 +37,21 @@ local get_grep_cmd = function(opts, search_query, no_esc)
 
   if search_query == nil then search_query = ''
   elseif not no_esc then
-    search_query = vim.fn.shellescape(utils.rg_escape(search_query))
+    search_query = '"' .. utils.rg_escape(search_query) .. '"'
   end
 
-  return string.format("%s %s %s", command, search_query, search_path)
+  return string.format('%s %s %s', command, search_query, search_path)
+end
+
+local function set_search_header(opts)
+  if not opts then opts = {} end
+  if opts.no_header then return opts end
+  if not opts.search or #opts.search==0 then return opts end
+  if not opts.search_header then opts.search_header = "Searching for:" end
+  opts.fzf_cli_args = opts.fzf_cli_args or ''
+  opts.fzf_cli_args = string.format([[%s --header="%s %s"]],
+    opts.fzf_cli_args, opts.search_header, opts.search:gsub('"', '\\"'))
+  return opts
 end
 
 M.grep = function(opts)
@@ -61,6 +72,9 @@ M.grep = function(opts)
     utils.info("Please provide a valid search string")
     return
   end
+
+  -- search query in header line
+  opts = set_search_header(opts)
 
   -- save the search query so the use can
   -- call the same search again
@@ -128,10 +142,9 @@ M.live_grep = function(opts)
   local initial_command = get_grep_cmd(opts, opts.search)
   local reload_command = get_grep_cmd(opts, "{q}", true) .. " || true"
 
-  opts._fzf_cli_args = string.format("--phony --query=%s --bind=%s",
+  opts._fzf_cli_args = string.format('--phony --query="%s" --bind=%s',
       utils._if(opts.search and #opts.search>0,
-        vim.fn.shellescape(utils.rg_escape(opts.search)),
-        [['']]),
+        utils.rg_escape(opts.search), ''),
       vim.fn.shellescape(string.format("change:reload:%s", reload_command)))
 
   -- TODO:
@@ -152,15 +165,6 @@ M.live_grep = function(opts)
   opts.search = nil
 end
 
-local function set_search_header(opts)
-  if not opts then opts = {} end
-  if opts.no_header then return opts end
-  if not opts.search_header then opts.search_header = "Seaching for:" end
-  opts.fzf_cli_args = opts.fzf_cli_args or ''
-  opts.fzf_cli_args = string.format([[%s --header="%s '%s'"]],
-    opts.fzf_cli_args, opts.search_header, opts.search)
-  return opts
-end
 
 M.grep_last = function(opts)
   if not opts then opts = {} end
@@ -171,21 +175,18 @@ end
 M.grep_cword = function(opts)
   if not opts then opts = {} end
   opts.search = vim.fn.expand("<cword>")
-  opts = set_search_header(opts)
   return M.grep(opts)
 end
 
 M.grep_cWORD = function(opts)
   if not opts then opts = {} end
   opts.search = vim.fn.expand("<cWORD>")
-  opts = set_search_header(opts)
   return M.grep(opts)
 end
 
 M.grep_visual = function(opts)
   if not opts then opts = {} end
   opts.search = utils.get_visual_selection()
-  opts = set_search_header(opts)
   return M.grep(opts)
 end
 

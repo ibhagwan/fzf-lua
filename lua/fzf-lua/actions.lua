@@ -41,7 +41,7 @@ M.vimcmd_file = function(vimcmd, selected)
   if not selected or #selected < 2 then return end
   for i = 2, #selected do
     -- check if the file contains line
-    local file, line = selected[i]:match("^([^ :]+):(%d+)")
+    local file, line = selected[i]:match("^([^:]+):(%d+)")
     if file and line then
       vim.cmd(string.format("%s +%s %s", vimcmd, line, vim.fn.fnameescape(file)))
     else
