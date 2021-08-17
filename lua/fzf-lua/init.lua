@@ -85,6 +85,7 @@ M.lsp_declarations = require'fzf-lua.providers.lsp'.declarations
 M.lsp_implementations = require'fzf-lua.providers.lsp'.implementations
 M.lsp_document_symbols = require'fzf-lua.providers.lsp'.document_symbols
 M.lsp_workspace_symbols = require'fzf-lua.providers.lsp'.workspace_symbols
+M.lsp_live_workspace_symbols = require'fzf-lua.providers.lsp'.live_workspace_symbols
 M.lsp_code_actions = require'fzf-lua.providers.lsp'.code_actions
 M.lsp_document_diagnostics = require'fzf-lua.providers.lsp'.diagnostics
 M.lsp_workspace_diagnostics = require'fzf-lua.providers.lsp'.workspace_diagnostics

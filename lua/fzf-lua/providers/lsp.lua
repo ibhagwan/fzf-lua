@@ -2,6 +2,7 @@ if not pcall(require, "fzf") then
   return
 end
 
+local raw_action = require("fzf.actions").raw_action
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
@@ -129,8 +130,8 @@ local function set_lsp_fzf_fn(opts)
   -- we must make the params here while we're on
   -- our current buffer window, anything inside
   -- fzf_fn is run while fzf term is open
-  opts.bufnr = vim.api.nvim_get_current_buf()
-  opts.winid = vim.api.nvim_get_current_win()
+  opts.bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
+  opts.winid = opts.winid or vim.api.nvim_get_current_win()
   opts.filename = vim.api.nvim_buf_get_name(opts.bufnr)
   if not opts.lsp_params then
     opts.lsp_params = vim.lsp.util.make_position_params()
@@ -461,6 +462,74 @@ M.workspace_diagnostics = function(opts)
   return M.diagnostics(opts)
 end
 
+local live_workspace_symbols_sk = function(opts)
+
+  -- "'{}'" opens sk with an empty search_query showing all files
+  --  "{}"  opens sk without executing an empty string query
+  --  the problem is the latter doesn't support escaped chars
+  -- TODO: how to open without a query with special char support
+  local sk_args = string.format("%s '{}'", opts._action)
+
+  opts._fzf_cli_args = string.format("--cmd-prompt='%s' -i -c %s",
+      opts.prompt,
+      vim.fn.shellescape(sk_args))
+
+  opts.git_icons = false
+  opts.file_icons = false
+  opts.fzf_fn = nil --function(_) end
+  opts = core.set_fzf_line_args(opts)
+  core.fzf_files(opts)
+  opts.search = nil
+end
+
+M.live_workspace_symbols = function(opts)
+
+  opts = normalize_lsp_opts(opts, config.globals.lsp)
+  opts.lsp_params = {query = ''}
+
+  -- must get those here, otherwise we get the
+  -- fzf terminal buffer and window IDs
+  opts.bufnr = vim.api.nvim_get_current_buf()
+  opts.winid = vim.api.nvim_get_current_win()
+
+  local act_lsp = raw_action(function(args)
+    --[[ local results = {}
+    local cb = function(item)
+      table.insert(results, item)
+    end ]]
+    -- TODO: how to support the async version?
+    -- probably needs nvim-fzf code change
+    opts.async = false
+    opts.lsp_params = {query = args[2] or ''}
+    opts = set_lsp_fzf_fn(opts)
+    return opts.fzf_fn
+  end)
+
+  -- HACK: support skim (rust version of fzf)
+  opts.fzf_bin = opts.fzf_bin or config.globals.fzf_bin
+  if opts.fzf_bin and opts.fzf_bin:find('sk')~=nil then
+    opts._action = act_lsp
+    return live_workspace_symbols_sk(opts)
+  end
+
+  -- use {q} as a placeholder for fzf
+  local reload_command = act_lsp .. " {q}"
+
+  opts._fzf_cli_args = string.format('--phony --query="" --bind=%s',
+    vim.fn.shellescape(string.format("change:reload:%s", reload_command)))
+
+  -- TODO:
+  -- this is not getting called past the initial command
+  -- until we fix that we cannot use icons as they interfere
+  -- with the extension parsing
+  opts.git_icons = false
+  opts.file_icons = false
+
+  opts.fzf_fn = {}
+  opts = core.set_fzf_line_args(opts)
+  core.fzf_files(opts)
+  opts.search = nil
+end
 
 local function check_capabilities(feature)
   local clients = vim.lsp.buf_get_clients(0)
@@ -520,6 +589,11 @@ local handlers = {
     method = "textDocument/documentSymbol",
     handler = symbol_handler },
   ["workspace_symbols"] = {
+    label = "Workspace Symbols",
+    capability = "workspace_symbol",
+    method = "workspace/symbol",
+    handler = symbol_handler },
+  ["live_workspace_symbols"] = {
     label = "Workspace Symbols",
     capability = "workspace_symbol",
     method = "workspace/symbol",
