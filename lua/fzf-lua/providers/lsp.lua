@@ -3,10 +3,12 @@ if not pcall(require, "fzf") then
 end
 
 local raw_action = require("fzf.actions").raw_action
+local raw_async_action = require("fzf.actions").raw_async_action
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
+local uv = vim.loop
 
 local M = {}
 
@@ -106,25 +108,6 @@ local function wrap_handler(handler)
   end
 end
 
-local function wrap_request_all(handler)
-  return function(result)
-    local ret
-    local flattened_results = {}
-    for _, server_results in pairs(result) do
-      if server_results.result then
-        vim.list_extend(flattened_results, server_results.result)
-      end
-    end
-    if #flattened_results == 0 then
-      ret = utils.info(string.format('No %s found', string.lower(handler.label)))
-      utils.send_ctrl_c()
-    else
-      ret = handler.target(nil, nil, flattened_results)
-    end
-    return ret
-  end
-end
-
 local function set_lsp_fzf_fn(opts)
 
   -- we must make the params here while we're on
@@ -136,12 +119,6 @@ local function set_lsp_fzf_fn(opts)
   if not opts.lsp_params then
     opts.lsp_params = vim.lsp.util.make_position_params()
     opts.lsp_params.context = { includeDeclaration = true }
-  end
-
-  -- function async params override global config
-  if opts.async == nil and opts.sync == nil
-    and opts.async_or_timeout ~= true then
-      opts.async = false
   end
 
   if opts.sync or opts.async == false then
@@ -186,6 +163,13 @@ local function set_lsp_fzf_fn(opts)
         return
       end
 
+      -- cancel all currently running requests
+      -- can happen when using `live_ws_symbols`
+      if opts._cancel_all then
+        opts._cancel_all()
+        opts._cancel_all = nil
+      end
+
       -- local cancel_all = vim.lsp.buf_request_all(opts.bufnr,
         -- opts.lsp_handler.method, opts.lsp_params,
         -- wrap_request_all(opts.lsp_handler))
@@ -194,11 +178,18 @@ local function set_lsp_fzf_fn(opts)
         opts.lsp_handler.method, opts.lsp_params,
         wrap_handler(opts.lsp_handler))
 
+      -- save this so we can cancel all requests
+      -- when using `live_ws_symbols`
+      opts._cancel_all = cancel_all
+
       -- cancel all remaining LSP requests
       -- once the user made their selection
       -- or closed the fzf popup
       opts.post_select_cb = function()
-        if cancel_all then cancel_all() end
+        if opts._cancel_all then
+          opts._cancel_all()
+          opts._cancel_all = nil
+        end
       end
 
       -- coroutine.yield()
@@ -211,6 +202,12 @@ end
 
 local normalize_lsp_opts = function(opts, cfg)
   opts = config.normalize_opts(opts, cfg)
+
+  -- function async params override global config
+  if opts.async == nil and opts.sync == nil
+    and opts.async_or_timeout ~= true then
+      opts.async = false
+  end
 
   if not opts.cwd then opts.cwd = vim.loop.cwd() end
   if not opts.prompt then
@@ -492,18 +489,46 @@ M.live_workspace_symbols = function(opts)
   opts.bufnr = vim.api.nvim_get_current_buf()
   opts.winid = vim.api.nvim_get_current_win()
 
-  local act_lsp = raw_action(function(args)
-    --[[ local results = {}
-    local cb = function(item)
-      table.insert(results, item)
-    end ]]
-    -- TODO: how to support the async version?
-    -- probably needs nvim-fzf code change
+  local raw_act = raw_action(function(args)
+    opts.sync = true
     opts.async = false
     opts.lsp_params = {query = args[2] or ''}
     opts = set_lsp_fzf_fn(opts)
     return opts.fzf_fn
   end)
+
+  local raw_async_act = raw_async_action(function(pipe, args)
+    coroutine.wrap(function ()
+      local co = coroutine.running()
+      local cb = function(item)
+        -- only close the pipe when nil is sent
+        if not item then
+          print("closing pipe")
+          uv.close(pipe)
+          coroutine.resume(co)
+        else
+          print(item)
+          uv.write(pipe, item, function(err)
+            assert(not err)
+          end)
+        end
+      end
+      opts.sync = false
+      opts.async = true
+      opts.lsp_params = {query = args[2] or ''}
+      opts = set_lsp_fzf_fn(opts)
+      opts.fzf_fn(cb)
+      -- wait for the request to be completed
+      coroutine.yield()
+    end)()
+  end)
+
+  -- TODO: async not working properly
+  -- use sync as default action
+  local act_lsp = raw_act
+  if opts.async or opts.sync == false then
+    act_lsp = raw_async_act
+  end
 
   -- HACK: support skim (rust version of fzf)
   opts.fzf_bin = opts.fzf_bin or config.globals.fzf_bin
