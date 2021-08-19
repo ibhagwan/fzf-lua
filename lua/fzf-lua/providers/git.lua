@@ -4,14 +4,17 @@ end
 
 local fzf_helpers = require("fzf.helpers")
 local core = require "fzf-lua.core"
+local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 
 local M = {}
 
-local function git_status()
-  local output = vim.fn.systemlist("git status")
+-- code duplication, we don't use the utils version of this
+-- as it doesn't print the "not in a git repo" error
+local function is_git_repo()
+  local output = vim.fn.systemlist("git rev-parse --is-inside-work-tree")
   if utils.shell_error() then
     utils.info(unpack(output))
     return false
@@ -19,8 +22,13 @@ local function git_status()
   return true
 end
 
+local function git_version()
+  local out = vim.fn.system("git --version")
+  return out:match("(%d+.%d+).")
+end
+
 M.files = function(opts)
-  if not git_status() then return end
+  if not is_git_repo() then return end
   opts = config.normalize_opts(opts, config.globals.git.files)
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd,
     function(x)
@@ -30,7 +38,7 @@ M.files = function(opts)
 end
 
 M.status = function(opts)
-  if not git_status() then return end
+  if not is_git_repo() then return end
   opts = config.normalize_opts(opts, config.globals.git.status)
   if opts.preview then opts.preview = vim.fn.shellescape(opts.preview) end
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd,
@@ -43,7 +51,7 @@ M.status = function(opts)
 end
 
 local function git_cmd(opts)
-  if not git_status() then return end
+  if not is_git_repo() then return end
   coroutine.wrap(function ()
     opts.fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd,
       function(x) return x end)
@@ -63,9 +71,13 @@ end
 
 M.bcommits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.bcommits)
-  local file = vim.fn.shellescape(vim.fn.expand("%"))
+  local file = path.relative(vim.fn.expand("%"), vim.loop.cwd())
   opts.cmd = opts.cmd .. " " .. file
-  opts.preview = opts.preview .. " --rotate-to=" .. file
+  local git_ver = git_version()
+  -- rotate-to first appeared with git version 2.31
+  if git_ver and tonumber(git_ver) >= 2.31 then
+    opts.preview = opts.preview .. " --rotate-to=" .. vim.fn.shellescape(file)
+  end
   opts.preview = vim.fn.shellescape(opts.preview)
   return git_cmd(opts)
 end
