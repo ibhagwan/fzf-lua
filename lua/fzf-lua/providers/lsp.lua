@@ -263,7 +263,7 @@ end
 
 M.workspace_symbols = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
-  opts.lsp_params = {query = ''}
+  opts.lsp_params = {query = opts.query or ''}
   opts = core.set_fzf_line_args(opts)
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
