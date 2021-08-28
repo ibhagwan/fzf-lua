@@ -216,14 +216,16 @@ end
 
 M.git_checkout = function(selected)
   local commit_hash = selected[1]:match("[^ ]+")
-  local current_commit = vim.fn.systemlist("git rev-parse --short HEAD")
-  if(commit_hash == current_commit) then return end
-  local output = vim.fn.systemlist("git checkout " .. commit_hash)
-  if utils.shell_error() then
-    utils.err(unpack(output))
-  else
-    utils.info(unpack(output))
-    vim.cmd("edit!")
+  if vim.fn.input("Checkout commit " .. commit_hash .. "? ") == "y" then
+    local current_commit = vim.fn.systemlist("git rev-parse --short HEAD")
+    if(commit_hash == current_commit) then return end
+    local output = vim.fn.systemlist("git checkout " .. commit_hash)
+    if utils.shell_error() then
+      utils.err(unpack(output))
+    else
+      utils.info(unpack(output))
+      vim.cmd("edit!")
+    end
   end
 end
 
