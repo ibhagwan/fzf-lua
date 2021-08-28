@@ -21,6 +21,14 @@ M._if = function(bool, a, b)
     end
 end
 
+function M.round(num, limit)
+  if not num then return nil end
+  if not limit then limit = 0.5 end
+  local fraction = num - math.floor(num)
+  if fraction > limit then return math.ceil(num) end
+  return math.floor(num)
+end
+
 function M._echo_multiline(msg)
   for _, s in ipairs(vim.fn.split(msg, "\n")) do
     vim.cmd("echom '" .. s:gsub("'", "''").."'")
@@ -178,6 +186,7 @@ function M.get_visual_selection()
     -- :visual leaves ex-mode back to normal mode
     -- use 'gv' to reselect the text
     vim.cmd[[visual]]
+    -- M.feed_keys_termcodes("<CR>")
     local _, csrow, cscol, _ = unpack(vim.fn.getpos("'<"))
     local _, cerow, cecol, _ = unpack(vim.fn.getpos("'>"))
     local lines = vim.fn.getline(csrow, cerow)
@@ -208,6 +217,48 @@ function M.delayed_cb(cb, fn)
   vim.defer_fn(function()
     cb(nil, fn)
   end, 20)
+end
+
+function M.zz()
+  local lnum1 = vim.api.nvim_win_get_cursor(0)[1]
+  local lcount = vim.api.nvim_buf_line_count(0)
+  local zb = 'keepj norm! %dzb'
+  if lnum1 == lcount then
+    vim.fn.execute(zb:format(lnum1))
+    return
+  end
+  vim.cmd('norm! zvzz')
+  lnum1 = vim.api.nvim_win_get_cursor(0)[1]
+  vim.cmd('norm! L')
+  local lnum2 = vim.api.nvim_win_get_cursor(0)[1]
+  if lnum2 + vim.fn.getwinvar(0, '&scrolloff') >= lcount then
+    vim.fn.execute(zb:format(lnum2))
+  end
+  if lnum1 ~= lnum2 then
+    vim.cmd('keepj norm! ``')
+  end
+end
+
+function M.win_execute(winid, func)
+  vim.validate({
+    winid = {
+      winid, function(w)
+        return w and vim.api.nvim_win_is_valid(w)
+      end, 'a valid window'
+    },
+    func = {func, 'function'}
+  })
+
+  local cur_winid = vim.api.nvim_get_current_win()
+  local noa_set_win = 'noa call nvim_set_current_win(%d)'
+  if cur_winid ~= winid then
+    vim.cmd(noa_set_win:format(winid))
+  end
+  local ret = func()
+  if cur_winid ~= winid then
+    vim.cmd(noa_set_win:format(cur_winid))
+  end
+  return ret
 end
 
 return M

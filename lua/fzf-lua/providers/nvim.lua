@@ -36,9 +36,7 @@ M.commands = function(opts)
     opts.nomulti = true
     opts.preview = prev_act
 
-    local selected = core.fzf(opts, entries,
-      core.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = core.fzf(opts, entries)
 
     if not selected then return end
     actions.act(opts.actions, selected)
@@ -64,9 +62,7 @@ local history = function(opts, str)
     opts.preview = nil
     opts.preview_window = 'hidden:down:0'
 
-    local selected = core.fzf(opts, entries,
-      core.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = core.fzf(opts, entries)
 
     if not selected then return end
     actions.act(opts.actions, selected)
@@ -121,9 +117,7 @@ M.marks = function(opts)
     opts.preview = prev_act
     -- opts.preview_window = 'hidden:down:0'
 
-    local selected = core.fzf(opts, entries,
-      core.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = core.fzf(opts, entries)
 
     if not selected then return end
     actions.act(opts.actions, selected)
@@ -166,9 +160,7 @@ M.registers = function(opts)
     opts.nomulti = true
     opts.preview = prev_act
 
-    local selected = core.fzf(opts, entries,
-      core.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = core.fzf(opts, entries)
 
     if not selected then return end
     actions.act(opts.actions, selected)
@@ -227,9 +219,7 @@ M.keymaps = function(opts)
     opts.nomulti = true
     opts.preview = prev_act
 
-    local selected = core.fzf(opts, entries,
-      core.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = core.fzf(opts, entries)
 
     if not selected then return end
     actions.act(opts.actions, selected)
@@ -253,9 +243,7 @@ M.spell_suggest = function(opts)
     opts.preview = nil
     opts.preview_window = 'hidden:down:0'
 
-    local selected = core.fzf(opts, entries,
-      core.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = core.fzf(opts, entries)
 
     if not selected then return end
     actions.act(opts.actions, selected)

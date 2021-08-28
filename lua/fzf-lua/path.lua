@@ -134,6 +134,8 @@ function M.entry_to_file(entry, cwd)
   local sep = ":"
   local s = strsplit(entry, sep)
   local file = s[1]:match("[^"..utils.nbsp.."]*$")
+  -- entries from 'buffers'
+  local bufnr = s[1]:match("%[(%d+)")
   local idx = lastIndexOf(s[1], utils.nbsp) or 0
   local noicons = string.sub(entry, idx+1)
   local line = s[2]
@@ -143,6 +145,7 @@ function M.entry_to_file(entry, cwd)
     noicons = M.join({cwd, noicons})
   end
   return {
+    bufnr = bufnr,
     noicons = noicons,
     path = file,
     line = line or 1,

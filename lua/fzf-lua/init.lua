@@ -3,6 +3,7 @@ if not pcall(require, "fzf") then
 end
 
 local fzf = require "fzf"
+local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
 
@@ -14,6 +15,12 @@ function M.setup(opts)
   for k, _ in pairs(globals.winopts) do
     if opts[k] ~= nil then globals.winopts[k] = opts[k] end
   end
+  -- deprecate message for window_on_create
+  if globals.winopts.window_on_create then
+    utils.warn(
+      "setting highlights using 'window_on_create' is " ..
+      "deprecated, use 'winopts.hl_xxx' instead.")
+  end
   -- override BAT_CONFIG_PATH to prevent a
   -- conflct with '$XDG_DATA_HOME/bat/config'
   if globals.previewers.bat.config then
@@ -23,8 +30,6 @@ function M.setup(opts)
   if globals.previewers.bat.theme and #globals.previewers.bat.theme > 0 then
     vim.env.BAT_THEME = globals.previewers.bat.theme
   end
-  -- reset default window opts if set by user
-  fzf.default_window_options = config.winopts()
   -- set the fzf binary if set by the user
   if globals.fzf_bin ~= nil and vim.fn.executable(globals.fzf_bin) ~= 1 then
     globals.fzf_bin = nil
@@ -41,10 +46,6 @@ function M.setup(opts)
   globals = nil
   -- _G.dump(config.globals)
 end
-
--- we usually send winopts with every fzf.fzf call
--- but set default window options just in case
-fzf.default_window_options = config.winopts()
 
 M.fzf_files = require'fzf-lua.core'.fzf_files
 M.files = require'fzf-lua.providers.files'.files

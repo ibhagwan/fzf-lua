@@ -3,25 +3,37 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
+local win = require "fzf-lua.win"
 
 local M = {}
 
-M.fzf = function(o, contents, fzf_cli_args, options)
-  if o.winopts and o.winopts.split then
-    vim.cmd(o.winopts.split)
-    local bufnr = vim.api.nvim_get_current_buf()
-    local winid = vim.api.nvim_get_current_win()
-    local selected = fzf.raw_fzf(contents, fzf_cli_args, options)
-    if vim.api.nvim_win_is_valid(winid) then
-      vim.api.nvim_win_close(winid, {force=true})
+M.fzf = function(opts, contents, previewer)
+  -- setup the fzf window and preview layout
+  local fzf_win = win(opts)
+  -- instantiate the previewer
+  -- if not opts.preview and not previewer and
+  if not previewer and
+    opts.previewer and type(opts.previewer) == 'string' then
+    local preview_opts = config.globals.previewers[opts.previewer]
+    if preview_opts then
+      previewer = preview_opts._new()(preview_opts, opts, fzf_win)
+      opts.preview = previewer:cmdline()
+      if type(previewer.override_fzf_preview_window) == 'function' then
+        -- do we need to override the preview_window args?
+        -- this can happen with the builtin previewer
+        -- (1) when using a split we use the previewer as placeholder
+        -- (2) we use 'right:0' to call the previewer function only
+        if previewer:override_fzf_preview_window() then
+          opts.preview_window = previewer:preview_window()
+        end
+      end
     end
-    if vim.api.nvim_buf_is_valid(bufnr) then
-      vim.api.nvim_buf_delete(bufnr, {force=true})
-    end
-    return selected
-  else
-    return fzf.fzf(contents, fzf_cli_args, options)
   end
+  fzf_win:attach_previewer(previewer)
+  fzf_win:create()
+  local selected = fzf.raw_fzf(contents, M.build_fzf_cli(opts))
+  fzf_win:close()
+  return selected
 end
 
 M.get_devicon = function(file, ext)
@@ -32,6 +44,21 @@ M.get_devicon = function(file, ext)
     if devicon then icon = devicon end
   end
   return icon
+end
+
+M.preview_window = function(opts)
+  local o = vim.tbl_deep_extend("keep", opts, config.globals)
+  local preview_vertical = string.format('%s:%s:%s:%s',
+    o.preview_opts, o.preview_border, o.preview_wrap, o.preview_vertical)
+  local preview_horizontal = string.format('%s:%s:%s:%s',
+    o.preview_opts, o.preview_border, o.preview_wrap, o.preview_horizontal)
+  if o.preview_layout == "vertical" then
+    return preview_vertical
+  elseif o.preview_layout == "flex" then
+    return utils._if(vim.o.columns>o.flip_columns, preview_horizontal, preview_vertical)
+  else
+    return preview_horizontal
+  end
 end
 
 M.build_fzf_cli = function(opts, debug_print)
@@ -48,7 +75,7 @@ M.build_fzf_cli = function(opts, debug_print)
     utils._if(opts.fzf_binds, opts.fzf_binds,
       vim.fn.shellescape(table.concat(config.globals.fzf_binds, ','))),
     vim.fn.shellescape(opts.prompt),
-    utils._if(opts.preview_window, opts.preview_window, config.preview_window(opts)),
+    utils._if(opts.preview_window, opts.preview_window, M.preview_window(opts)),
     utils._if(#opts.preview_offset>0, ":"..opts.preview_offset, ''),
     utils._if(opts.preview and #opts.preview>0, opts.preview, "''"),
     -- HACK: support skim (rust version of fzf)
@@ -195,17 +222,7 @@ M.fzf_files = function(opts)
     end
 
 
-    if not opts.preview then
-      local preview_opts = config.globals.previewers[opts.previewer]
-      if preview_opts then
-        local preview = preview_opts._new()(preview_opts, opts)
-        opts.preview = preview:cmdline()
-      end
-    end
-
-    local selected = M.fzf(opts, opts.fzf_fn,
-      M.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = M.fzf(opts, opts.fzf_fn)
 
     if opts.post_select_cb then
       opts.post_select_cb()

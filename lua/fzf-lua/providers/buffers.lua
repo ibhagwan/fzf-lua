@@ -17,7 +17,9 @@ local function getbufnumber(line)
 end
 
 local function getfilename(line)
-  return string.match(line, "%[.*%] (.+)")
+  -- return string.match(line, "%[.*%] (.+)")
+  -- greedy match anything after last nbsp
+  return line:match("[^" .. utils.nbsp .. "]*$")
 end
 
 M.buffers = function(opts)
@@ -102,7 +104,7 @@ M.buffers = function(opts)
       elseif buf.flag == '#' then
         flags = utils.ansi_codes.cyan(buf.flag) .. flags
       else
-        flags = " " .. flags
+        flags = utils.nbsp .. flags
       end
       local bufnrstr = string.format("%s%s%s", leftbr,
         utils.ansi_codes.yellow(string.format(buf.bufnr)), rightbr)
@@ -111,12 +113,19 @@ M.buffers = function(opts)
         local extension = path.extension(buf.info.name)
         buficon = core.get_devicon(buf.info.name, extension)
         if opts.color_icons then
-          buficon = utils.ansi_codes[config.globals.file_icon_colors[extension] or "dark_grey"](buficon) .. " "
+          buficon = utils.ansi_codes[config.globals.file_icon_colors[extension] or "dark_grey"](buficon)
         end
       end
-      local item_str = string.format("%s%s %s %s%s",
-        utils._if(buf.bufnr>9, '' , ' '),
-        bufnrstr, flags, buficon, bufname)
+      local item_str = string.format("%s%s%s%s%s%s%s",
+        utils._if(header_line and vim.tbl_isempty(items),
+          string.format("%-16s", bufnrstr),
+          string.format("%-32s", bufnrstr)),
+        utils.nbsp,
+        flags,
+        utils.nbsp,
+        buficon,
+        utils.nbsp,
+        bufname)
       table.insert(items, item_str)
     end
 
@@ -126,9 +135,7 @@ M.buffers = function(opts)
       '--header-lines=1', ''
     )
 
-    local selected = require("fzf").fzf(items,
-      core.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = core.fzf(opts, items)
 
     if not selected then return end
 

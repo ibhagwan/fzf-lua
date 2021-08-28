@@ -55,9 +55,7 @@ local function git_cmd(opts)
   coroutine.wrap(function ()
     opts.fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd,
       function(x) return x end)
-    local selected = core.fzf(opts, opts.fzf_fn,
-      core.build_fzf_cli(opts, false),
-      config.winopts(opts))
+    local selected = core.fzf(opts, opts.fzf_fn)
     if not selected then return end
     actions.act(opts.actions, selected)
   end)()

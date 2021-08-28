@@ -40,9 +40,7 @@ M.colorschemes = function(opts)
     opts.preview_window = opts.preview_window or 'nohidden:right:0'
     opts.nomulti = utils._if(opts.nomulti~=nil, opts.nomulti, true)
 
-    local selected = core.fzf(opts, colors,
-      core.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = core.fzf(opts, colors)
 
     -- reset color scheme if live_preview is enabled
     -- and nothing or non-default action was selected

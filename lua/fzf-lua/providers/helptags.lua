@@ -107,9 +107,7 @@ M.helptags = function(opts)
     opts.preview_window = opts.preview_window or 'right:0'
     opts.nomulti = utils._if(opts.nomulti~=nil, opts.nomulti, true)
 
-    local selected = core.fzf(opts, fzf_function,
-      core.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = core.fzf(opts, fzf_function)
 
     if not selected then return end
 

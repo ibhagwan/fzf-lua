@@ -296,6 +296,7 @@ M.code_actions = function(opts)
   end)
 
   opts.nomulti = true
+  opts.previewer = false
   opts.preview_window = 'right:0'
   opts._fzf_cli_args = "--delimiter=':'"
   opts = set_lsp_fzf_fn(opts)
@@ -305,9 +306,7 @@ M.code_actions = function(opts)
 
   coroutine.wrap(function ()
 
-    local selected = core.fzf(opts, opts.fzf_fn,
-      core.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = core.fzf(opts, opts.fzf_fn)
 
     if opts.post_select_cb then
       opts.post_select_cb()

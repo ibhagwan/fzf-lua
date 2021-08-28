@@ -199,9 +199,8 @@ require'fzf-lua'.setup {
     win_col          = 0.50,            -- window col position (0=left, 1=right)
     -- win_border    = false,           -- window border? or borderchars?
     win_border       = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
-    window_on_create = function()         -- nvim window options override
-      vim.cmd("set winhl=Normal:Normal")  -- popup bg match normal windows
-    end,
+    hl_normal        = 'Normal',        -- window normal color
+    hl_border        = 'FloatBorder',   -- window border color
   },
   -- fzf_bin             = 'sk',        -- use skim instead of fzf?
   fzf_layout          = 'reverse',      -- fzf '--layout='
@@ -226,7 +225,7 @@ require'fzf-lua'.setup {
   preview_layout      = 'flex',         -- horizontal|vertical|flex
   flip_columns        = 120,            -- #cols to switch to horizontal on flex
   -- default_previewer   = "bat",       -- override the default previewer?
-                                        -- by default auto-detect bat|cat
+                                        -- by default uses the builtin previewer
   previewers = {
     cmd = {
       -- custom previewer, will execute:
@@ -251,6 +250,24 @@ require'fzf-lua'.setup {
     git_diff = {
       cmd             = "git diff",
       args            = "--color",
+    },
+    builtin = {
+      title           = true,         -- preview title?
+      scrollbar       = true,         -- scrollbar?
+      scrollchar      = '█',          -- scrollbar character
+      wrap            = false,        -- wrap lines?
+      syntax          = true,         -- preview syntax highlight?
+      fullscreen      = false,        -- preview max size?
+      hl_cursor       = 'Cursor',     -- cursor highlight
+      hl_range        = 'IncSearch',  -- ranger highlight (not yet in use)
+      keymap = {
+        toggle_full   = '<F2>',       -- toggle full screen
+        toggle_wrap   = '<F3>',       -- toggle line wrap
+        toggle_hide   = '<F4>',       -- toggle on/off (not yet in use)
+        page_up       = '<S-up>',     -- preview scroll up
+        page_down     = '<S-down>',   -- preview scroll down
+        page_reset    = '<S-left>',      -- reset scroll to orig pos
+      },
     },
   },
   -- provider setup
@@ -365,9 +382,6 @@ require'fzf-lua'.setup {
     winopts = {
       win_height        = 0.55,
       win_width         = 0.30,
-      window_on_create  = function()
-        vim.cmd("set winhl=Normal:Normal")
-      end,
     },
     post_reset_cb     = function()
       -- reset statusline highlights after
@@ -422,7 +436,7 @@ EOF
 
 ## TODO
 
-- [ ] Add more providers
+- [x] Add more providers
     + [x] ~~LSP (refs, symbols, etc)~~ (2021-07-20)
     + [x] ~~git commits~~ (2021-08-05)
     + [x] ~~git branches~~ (2021-08-05)
@@ -435,8 +449,9 @@ EOF
         * [x] ~~spelling suggestions~~ (2021-08-14)
         * [x] ~~marks~~ (2021-08-14)
     + [x] ~~tags~~ (2021-08-15)
-- [ ] Improve previewer for `buffers`, `marks`
-- [ ] Built-in previewer with treesitter support
+- [x] ~~Built-in previewer with treesitter support~~ (2021-08-29)
+- [x] ~~Improve previewer for `buffers`~~ (2021-08-29)
+- [ ] Add support for `marks` in the builtin previewer
 - [ ] Add built-in plugin documentation
 - [ ] Complete the Wiki
 

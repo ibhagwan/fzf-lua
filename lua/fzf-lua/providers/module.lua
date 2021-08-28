@@ -36,9 +36,7 @@ M.metatable = function(opts)
     opts.preview_window = 'hidden:down:10'
     opts.nomulti = true
 
-    local selected = core.fzf(opts, methods,
-      core.build_fzf_cli(opts),
-      config.winopts(opts))
+    local selected = core.fzf(opts, methods)
 
     if not selected then return end
 

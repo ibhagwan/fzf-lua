@@ -25,10 +25,13 @@ M.globals = {
     win_row             = 0.30,
     win_col             = 0.50,
     win_border          = true,
-    window_on_create = function()
+    borderchars         = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
+    hl_normal           = 'Normal',
+    hl_border           = 'FloatBorder',
+    --[[ window_on_create = function()
       -- Set popup background same as normal windows
-      vim.cmd("set winhl=Normal:Normal")
-    end,
+      vim.cmd("set winhl=Normal:Normal,FloatBorder:FloatBorder")
+    end, ]]
   },
   default_prompt      = '> ',
   fzf_bin             = nil,
@@ -61,7 +64,7 @@ M.globals = {
   preview_horizontal  = 'right:60%',
   preview_layout      = 'flex',
   flip_columns        = 120,
-  default_previewer   = utils._if(vim.fn.executable("bat")==1, "bat", "cat"),
+  default_previewer   = "builtin",
   previewers = {
     cmd = {
       -- custom previewer to be overidden by the user
@@ -100,11 +103,29 @@ M.globals = {
       _new            = function() return require 'fzf-lua.previewer'.cmd_async end,
     },
     builtin = {
-      treesitter      = true,
-      _new            = function() return require 'fzf-lua.previewer'.builtin end,
+      title           = true,
+      scrollbar       = true,
+      scrollchar      = '█',
+      wrap            = false,
+      syntax          = true,
+      syntax_delay    = 0,
+      fullscreen      = false,
+      hl_cursor       = 'Cursor',
+      hl_range        = 'IncSearch',
+      keymap = {
+        toggle_full   = '<F2>',       -- toggle full screen
+        toggle_wrap   = '<F3>',       -- toggle line wrap
+        toggle_hide   = '<F4>',       -- toggle on/off (not yet in use)
+        page_up       = '<S-up>',     -- preview scroll up
+        page_down     = '<S-down>',   -- preview scroll down
+        page_reset    = '<S-left>',   -- reset scroll to orig pos
+      },
+      _new            = function() return require 'fzf-lua.previewer.builtin' end,
     },
   },
-  files = {
+}
+M.globals.files = {
+    previewer           = function() return M.globals.default_previewer end,
     prompt              = '> ',
     cmd                 = nil,  -- default: auto detect find|fd
     file_icons          = true and M._has_devicons,
@@ -124,11 +145,11 @@ M.globals = {
       ["ctrl-q"]        = actions.file_sel_to_qf,
     },
   }
-}
 -- Must construct our opts table in stages
 -- so we can reference 'M.globals.files'
 M.globals.git = {
     files = {
+      previewer     = function() return M.globals.default_previewer end,
       prompt        = 'GitFiles> ',
       cmd           = "git ls-files --exclude-standard",
       file_icons    = true and M._has_devicons,
@@ -177,6 +198,7 @@ M.globals.git = {
     },
   }
 M.globals.grep = {
+    previewer           = function() return M.globals.default_previewer end,
     prompt              = 'Rg> ',
     input_prompt        = 'Grep For> ',
     cmd                 = nil,  -- default: auto detect rg|grep
@@ -196,6 +218,7 @@ M.globals.grep = {
     },
   }
 M.globals.oldfiles = {
+    previewer           = function() return M.globals.default_previewer end,
     prompt              = 'History> ',
     file_icons          = true and M._has_devicons,
     color_icons         = true,
@@ -211,6 +234,7 @@ M.globals.oldfiles = {
     },
   }
 M.globals.quickfix = {
+    previewer           = function() return M.globals.default_previewer end,
     prompt              = 'Quickfix> ',
     separator           = '▏',
     file_icons          = true and M._has_devicons,
@@ -227,6 +251,7 @@ M.globals.quickfix = {
     },
   }
 M.globals.loclist = {
+    previewer           = function() return M.globals.default_previewer end,
     prompt              = 'Locations> ',
     separator           = '▏',
     file_icons          = true and M._has_devicons,
@@ -243,6 +268,7 @@ M.globals.loclist = {
     },
   }
 M.globals.buffers = {
+    previewer             = "builtin",
     prompt                = 'Buffers> ',
     file_icons            = true and M._has_devicons,
     color_icons           = true,
@@ -259,6 +285,7 @@ M.globals.buffers = {
     },
   }
 M.globals.tags = {
+    previewer             = function() return M.globals.default_previewer end,
     prompt                = 'Tags> ',
     ctags_file            = "tags",
     file_icons            = true and M._has_devicons,
@@ -273,6 +300,7 @@ M.globals.tags = {
     },
   }
 M.globals.btags = {
+    previewer             = function() return M.globals.default_previewer end,
     prompt                = 'BTags> ',
     ctags_file            = "tags",
     file_icons            = true and M._has_devicons,
@@ -317,6 +345,7 @@ M.globals.manpages = {
       },
   }
 M.globals.lsp = {
+      previewer           = function() return M.globals.default_previewer end,
       prompt              = '> ',
       file_icons          = true and M._has_devicons,
       color_icons         = true,
@@ -413,47 +442,6 @@ M.globals.file_icon_colors = {
     ["desktop"]   = "magenta",
 }
 
-M.winopts = function(opts)
-
-  if not opts then opts = {} end
-  if not opts.winopts then opts.winopts = {} end
-  opts.winopts = vim.tbl_deep_extend("keep", opts.winopts, M.globals.winopts)
-  opts.winopts_raw = opts.winopts_raw or M.globals.winopts_raw
-
-  local raw = {}
-  if opts.winopts_raw and type(opts.winopts_raw) == "function" then
-    raw = opts.winopts_raw()
-  end
-
-  local winopts = opts.winopts
-  local height = raw.height or math.floor(vim.o.lines * winopts.win_height)
-  local width = raw.width or math.floor(vim.o.columns * winopts.win_width)
-  local row = raw.row or math.floor((vim.o.lines - height) * winopts.win_row)
-  local col = raw.col or math.floor((vim.o.columns - width) * winopts.win_col)
-
-  return {
-    -- style = 'minimal',
-    height = height, width = width, row = row, col = col,
-    border = raw.border or winopts.win_border,
-    window_on_create = raw.window_on_create or winopts.window_on_create
-  }
-end
-
-M.preview_window = function(opts)
-  local o = vim.tbl_deep_extend("keep", opts, M.globals)
-  local preview_veritcal = string.format('%s:%s:%s:%s',
-    o.preview_opts, o.preview_border, o.preview_wrap, o.preview_vertical)
-  local preview_horizontal = string.format('%s:%s:%s:%s',
-    o.preview_opts, o.preview_border, o.preview_wrap, o.preview_horizontal)
-  if o.preview_layout == "vertical" then
-    return preview_veritcal
-  elseif o.preview_layout == "flex" then
-    return utils._if(vim.o.columns>o.flip_columns, preview_horizontal, preview_veritcal)
-  else
-    return preview_horizontal
-  end
-end
-
 function M.normalize_opts(opts, defaults)
   if not opts then opts = {} end
   opts = vim.tbl_deep_extend("keep", opts, defaults)
@@ -461,8 +449,10 @@ function M.normalize_opts(opts, defaults)
     if not opts.winopts then opts.winopts = {} end
     opts.winopts = vim.tbl_deep_extend("keep", opts.winopts, defaults.winopts)
   end
-  if not opts.previewer or not M.globals.previewers[opts.previewer] then
-      opts.previewer = M.globals.default_previewer
+  if type(opts.previewer) == 'function' then
+    -- we use a function so the user can override
+    -- globals.default_previewer
+    opts.previewer = opts.previewer()
   end
   return opts
 end
