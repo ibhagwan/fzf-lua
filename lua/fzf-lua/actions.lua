@@ -1,4 +1,5 @@
 local utils = require "fzf-lua.utils"
+local path = require "fzf-lua.path"
 
 local M = {}
 
@@ -196,6 +197,7 @@ M.man_tab = function(selected)
   M.vimcmd(vimcmd, selected)
 end
 
+
 M.git_switch = function(selected)
   -- remove anything past space
   local branch = selected[1]:match("[^ ]+")
@@ -210,6 +212,53 @@ M.git_switch = function(selected)
     utils.info(unpack(output))
     vim.cmd("edit!")
   end
+end
+
+M.git_checkout = function(selected)
+  local commit_hash = selected[1]:match("[^ ]+")
+  if vim.fn.input("Checkout commit " .. commit_hash .. "? [y/n] ") == "y" then
+    local current_commit = vim.fn.systemlist("git rev-parse --short HEAD")
+    if(commit_hash == current_commit) then return end
+    local output = vim.fn.systemlist("git checkout " .. commit_hash)
+    if utils.shell_error() then
+      utils.err(unpack(output))
+    else
+      utils.info(unpack(output))
+      vim.cmd("edit!")
+    end
+  end
+end
+
+M.git_buf_edit = function(selected)
+  -- there's an empty string in position 1 for some reason?
+  table.remove(selected,1)
+  local win = vim.api.nvim_get_current_win()
+  local buffer_filetype = vim.bo.filetype
+  local file = path.relative(vim.fn.expand("%"), vim.loop.cwd())
+  local commit_hash = selected[1]:match("[^ ]+")
+  local git_file_contents = vim.fn.systemlist("git show " .. commit_hash .. ":" .. file)
+  local buf = vim.api.nvim_create_buf(true, false) 
+  local file_name = string.gsub(file,"%.","[" .. commit_hash .. "]%.")
+  vim.api.nvim_buf_set_lines(buf,0,0,true,git_file_contents)
+  vim.api.nvim_buf_set_name(buf,file_name)
+  vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile')
+  vim.api.nvim_buf_set_option(buf, 'filetype',buffer_filetype)
+  vim.api.nvim_win_set_buf(win, buf)
+end
+
+M.git_buf_tabedit = function(selected)
+  vim.cmd('tab split')
+  M.git_buf_edit(selected)
+end
+
+M.git_buf_split = function(selected)
+  vim.cmd('split')
+  M.git_buf_edit(selected)
+end
+
+M.git_buf_vsplit = function(selected)
+  vim.cmd('vsplit')
+  M.git_buf_edit(selected)
 end
 
 return M
