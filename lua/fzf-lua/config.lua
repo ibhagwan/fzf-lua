@@ -150,7 +150,7 @@ M.globals.git = {
       cmd           = "git log --pretty=oneline --abbrev-commit --color",
       preview       = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
       actions = {
-        ["default"] = nil,
+        ["default"] = actions.git_checkout,
       },
     },
     bcommits = {
@@ -158,7 +158,10 @@ M.globals.git = {
       cmd           = "git log --pretty=oneline --abbrev-commit --color --",
       preview       = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
       actions = {
-        ["default"] = nil,
+        ["default"] = actions.git_buf_edit,
+        ["ctrl-s"]  = actions.git_buf_split,
+        ["ctrl-v"]  = actions.git_buf_vsplit,
+        ["ctrl-t"]  = actions.git_buf_tabedit,
       },
     },
     branches = {
