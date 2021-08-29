@@ -292,6 +292,11 @@ function FzfWin:update_border_buf()
   local border_buf = self.border_buf
   local border_winopts = self.border_winopts
   local border_chars = self.winopts.border
+  if type(border_chars) == 'string' then
+    -- backward compatibility:
+    -- happens with 'winopts.win_border = false'
+    border_chars = config.globals.winopts.borderchars
+  end
   local width, height = border_winopts.width, border_winopts.height
   local top = border_chars[1] .. border_chars[2]:rep(width - 2) .. border_chars[3]
   local mid = border_chars[8] .. (' '):rep(width - 2) .. border_chars[4]
