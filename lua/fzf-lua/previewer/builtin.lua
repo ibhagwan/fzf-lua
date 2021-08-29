@@ -173,7 +173,8 @@ function Previewer:do_syntax(entry)
       if bytes / lcount < 1000 then
         -- nvim_buf_call is less side-effects than changing window
         -- make sure that buffer in preview window must not in normal window
-        local ext = path.extension(entry.path)
+        -- greedy match anything after last dot
+        local ext = entry.path:match("[^.]*$")
         api.nvim_buf_call(bufnr, function()
           if ext then vim.cmd('set ft=' .. ext) end
           vim.cmd('filetype detect')
