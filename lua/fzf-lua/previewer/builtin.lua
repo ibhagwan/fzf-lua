@@ -175,8 +175,10 @@ function Previewer:do_syntax(entry)
         -- make sure that buffer in preview window must not in normal window
         -- greedy match anything after last dot
         local ext = entry.path:match("[^.]*$")
+        if ext then
+          pcall(api.nvim_buf_set_option, bufnr, 'filetype', ext)
+        end
         api.nvim_buf_call(bufnr, function()
-          if ext then vim.cmd('set ft=' .. ext) end
           vim.cmd('filetype detect')
         end)
       end
