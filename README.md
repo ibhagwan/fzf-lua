@@ -113,6 +113,12 @@ which can be easily mapped to:
 ```vim
 nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 ```
+or for lua:
+```lua
+-- init.lua file
+vim.api.nvim_set_keymap('n', '<c-P>', "<cmd>lua require('fzf-lua').files()<CR>", opts)
+vim.api.nvim_set_keymap('n', '<c-H>', "<cmd>lua require('fzf-lua').help_tags()<CR>", opts)
+```
 
 ## Commands
 
