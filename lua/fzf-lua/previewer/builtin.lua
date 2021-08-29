@@ -98,6 +98,7 @@ function Previewer:gen_winopts()
     number          = true,
     relativenumber  = false,
     cursorline      = true,
+    cursorlineopt   = 'both',
     cursorcolumn    = false,
     signcolumn      = 'no',
     foldenable      = false,
