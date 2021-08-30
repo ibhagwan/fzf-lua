@@ -217,7 +217,8 @@ require'fzf-lua'.setup {
     hl_border        = 'FloatBorder',   -- window border color
   },
   -- fzf_bin             = 'sk',        -- use skim instead of fzf?
-  fzf_layout          = 'reverse',      -- fzf '--layout='
+  fzf_colors          = nil,            -- fzf '--color=' options
+  fzf_layout          = 'reverse',      -- fzf '--layout=' options
   fzf_args            = '',             -- adv: fzf extra args, empty unless adv
   fzf_binds           = {               -- fzf '--bind=' options
       'f2:toggle-preview',
