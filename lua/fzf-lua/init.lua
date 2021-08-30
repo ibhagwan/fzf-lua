@@ -78,6 +78,7 @@ M.commands = require'fzf-lua.providers.nvim'.commands
 M.command_history = require'fzf-lua.providers.nvim'.command_history
 M.search_history = require'fzf-lua.providers.nvim'.search_history
 M.spell_suggest = require'fzf-lua.providers.nvim'.spell_suggest
+M.packadd = require'fzf-lua.providers.nvim'.packadd
 
 M.lsp_typedefs = require'fzf-lua.providers.lsp'.typedefs
 M.lsp_references = require'fzf-lua.providers.lsp'.references

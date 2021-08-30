@@ -417,6 +417,12 @@ M.globals.nvim = {
         ["default"]       = actions.spell_apply,
       },
     },
+    packadd = {
+      prompt              = 'packadd> ',
+      actions = {
+        ["default"]       = actions.packadd,
+      },
+    },
   }
 M.globals.file_icon_colors = {
     ["lua"]       = "blue",

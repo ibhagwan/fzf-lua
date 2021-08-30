@@ -176,6 +176,7 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 |`spell_suggest`|spelling suggestions|
 |`tags`|project tags|
 |`btags`|buffer tags|
+|`packadd`|:packadd <package>|
 
 
 ## Customization

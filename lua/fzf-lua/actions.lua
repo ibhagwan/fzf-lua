@@ -25,7 +25,8 @@ M.act = function(actions, selected)
   -- the table will contain the results directly
   -- otherwise 'selected[1]` will contain the keybind
   -- empty string in selected[1] represents default
-  if #selected>1 and #selected[1]>0 then action = selected[1] end
+  if actions and utils.tbl_length(actions) > 1 and
+    #selected>1 and #selected[1]>0 then action = selected[1] end
   if actions[action] then
     actions[action](selected)
   end
@@ -165,6 +166,13 @@ M.spell_apply = function(selected)
   if #selected>1 then word = selected[2] end
   vim.cmd("normal! ciw" .. word)
   vim.cmd("stopinsert")
+end
+
+M.packadd = function(selected)
+  if not selected then return end
+  for i = 1, #selected do
+    vim.cmd("packadd " .. selected[i])
+  end
 end
 
 M.help = function(selected)
