@@ -94,8 +94,8 @@ local get_diff_files = function()
     local status = vim.fn.systemlist(config.globals.files.git_diff_cmd)
     if not utils.shell_error() then
         for i = 1, #status do
-            local split = vim.split(status[i], "	")
-            diff_files[split[2]] = split[1]
+          local icon, file = status[i]:match("^([MUDAR])%s+(.*)")
+          if icon and file then diff_files[file] = icon end
         end
     end
 
