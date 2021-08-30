@@ -160,6 +160,9 @@ end
 function FzfWin:reset_win_highlights(win, is_border)
   local hl = ("Normal:%s,FloatBorder:%s"):format(
     self.winopts.hl_normal, self.winopts.hl_border)
+  if self._previewer and self._previewer.hl_cursorline then
+    hl = hl .. (",CursorLine:%s"):format(self._previewer.hl_cursorline)
+  end
   if is_border then
     -- our border is manuually drawn so we need
     -- to replace Normal with the border color
@@ -322,10 +325,10 @@ function FzfWin:redraw_preview()
       return -1, -1
   end
 
-  -- fullscreen preview only if set by the previewer
-  if self._previewer and self._previewer.fullscreen then
+  -- expand preview only if set by the previewer
+  if self._previewer and self._previewer.expand then
     self.prev_winopts, self.border_winopts =
-      self:fs_preview_layout(self._previewer.fullscreen)
+      self:fs_preview_layout(self._previewer.expand)
   end
 
   if self:validate_preview() then
@@ -387,7 +390,8 @@ function FzfWin:create()
   end
 
   -- create or redraw the preview win
-  self:redraw_preview()
+  local hidden = self._previewer and self._previewer.hidden
+  if not hidden then self:redraw_preview() end
 
   -- setup the keybinds for the builtin previewer
   if self._previewer and self._previewer.setup_keybinds then

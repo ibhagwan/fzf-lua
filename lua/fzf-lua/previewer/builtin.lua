@@ -53,10 +53,12 @@ function Previewer:new(o, opts, fzf_win)
   if o.scrollchar then
     self.win.winopts.scrollchar = o.scrollchar
   end
-  self.fullscreen = o.fullscreen
+  self.expand = o.expand or o.fullscreen
+  self.hidden = o.hidden
   self.syntax = o.syntax
   self.syntax_delay = o.syntax_delay
   self.hl_cursor = o.hl_cursor
+  self.hl_cursorline = o.hl_cursorline
   self.hl_range = o.hl_range
   self.keymap = o.keymap
   self.backups = {}
@@ -108,7 +110,9 @@ function Previewer:backup_winopts(key, win)
   if not win or not api.nvim_win_is_valid(win) then return end
   self.backups[key] = {}
   for opt, _ in pairs(self:gen_winopts()) do
-    self.backups[key][opt] = api.nvim_win_get_option(win, opt)
+    if utils.nvim_has_option(opt) then
+      self.backups[key][opt] = api.nvim_win_get_option(win, opt)
+    end
   end
 end
 
@@ -116,7 +120,9 @@ function Previewer:restore_winopts(key, win)
   if not self.backups[key] then return end
   if not win or not api.nvim_win_is_valid(win) then return end
   for opt, v in pairs(self.backups[key]) do
-    api.nvim_win_set_option(win, opt, v)
+    if utils.nvim_has_option(opt) then
+      api.nvim_win_set_option(win, opt, v)
+    end
   end
   self.backups[key] = nil
 end
@@ -124,7 +130,9 @@ end
 function Previewer:set_winopts(win)
   if not win or not api.nvim_win_is_valid(win) then return end
   for opt, v in pairs(self:gen_winopts()) do
-    api.nvim_win_set_option(win, opt, v)
+    if utils.nvim_has_option(opt) then
+      api.nvim_win_set_option(win, opt, v)
+    end
     --[[ api.nvim_win_call(win, function()
       api.nvim_win_set_option(0, opt, v)
     end) ]]
@@ -351,7 +359,7 @@ end
 function Previewer.toggle_full()
   if not _self then return end
   local self = _self
-  self.fullscreen = not self.fullscreen
+  self.expand = not self.expand
   if self.win and self.win:validate_preview() then
     self.win:redraw_preview()
   end

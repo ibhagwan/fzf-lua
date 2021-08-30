@@ -257,8 +257,9 @@ require'fzf-lua'.setup {
       scrollchar      = '█',          -- scrollbar character
       wrap            = false,        -- wrap lines?
       syntax          = true,         -- preview syntax highlight?
-      fullscreen      = false,        -- preview max size?
+      expand          = false,        -- preview max size?
       hl_cursor       = 'Cursor',     -- cursor highlight
+      hl_cursorline   = 'CursorLine', -- cursor line highlight
       hl_range        = 'IncSearch',  -- ranger highlight (not yet in use)
       keymap = {
         toggle_full   = '<F2>',       -- toggle full screen

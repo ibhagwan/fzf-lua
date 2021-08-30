@@ -29,6 +29,10 @@ function M.round(num, limit)
   return math.floor(num)
 end
 
+function M.nvim_has_option(option)
+  return vim.fn.exists('&' .. option) == 1
+end
+
 function M._echo_multiline(msg)
   for _, s in ipairs(vim.fn.split(msg, "\n")) do
     vim.cmd("echom '" .. s:gsub("'", "''").."'")
