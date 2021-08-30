@@ -57,6 +57,8 @@ function Previewer:new(o, opts, fzf_win)
   self.hidden = o.hidden
   self.syntax = o.syntax
   self.syntax_delay = o.syntax_delay
+  self.syntax_limit_b = o.syntax_limit_b
+  self.syntax_limit_l = o.syntax_limit_l
   self.hl_cursor = o.hl_cursor
   self.hl_cursorline = o.hl_cursorline
   self.hl_range = o.hl_range
@@ -174,12 +176,29 @@ function Previewer:do_syntax(entry)
   local preview_winid = self.win.preview_winid
   if self.preview_bufloaded and vim.bo[bufnr].filetype == '' then
     if fn.bufwinid(bufnr) == preview_winid then
-      -- do not enable for lage files, treesitter still has perf issues:
+      -- do not enable for large files, treesitter still has perf issues:
       -- https://github.com/nvim-treesitter/nvim-treesitter/issues/556
       -- https://github.com/nvim-treesitter/nvim-treesitter/issues/898
       local lcount = api.nvim_buf_line_count(bufnr)
       local bytes = api.nvim_buf_get_offset(bufnr, lcount)
-      if bytes / lcount < 1000 then
+      local syntax_limit_reached = 0
+      if self.syntax_limit_l > 0 and lcount > self.syntax_limit_l then
+        syntax_limit_reached = 1
+      end
+      if self.syntax_limit_b > 0 and bytes > self.syntax_limit_b then
+        syntax_limit_reached = 2
+      end
+      if syntax_limit_reached > 0 then
+        utils.info(string.format(
+          "syntax disabled for '%s' (%s), consider increasing '%s(%d)'", entry.path,
+          utils._if(syntax_limit_reached==1,
+            ("%d lines"):format(lcount),
+            ("%db"):format(bytes)),
+          utils._if(syntax_limit_reached==1, 'syntax_limit_l', 'syntax_limit_b'),
+          utils._if(syntax_limit_reached==1, self.syntax_limit_l, self.syntax_limit_b)
+        ))
+      end
+      if syntax_limit_reached == 0 then
         -- nvim_buf_call is less side-effects than changing window
         -- make sure that buffer in preview window must not in normal window
         -- greedy match anything after last dot
