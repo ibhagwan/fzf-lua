@@ -242,7 +242,9 @@ function Previewer:preview_buf_post(entry)
   end)
 
   -- set preview window options
-  self:set_winopts(preview_winid)
+  if not utils.is_term_buffer(bufnr) then
+    self:set_winopts(preview_winid)
+  end
 
   -- reset the preview window highlights
   self.win:reset_win_highlights(preview_winid)
@@ -332,7 +334,17 @@ function Previewer.scroll(direction)
   if preview_winid < 0 or not direction then
     return
   end
-  local fzf_winid = self.win.fzf_winid
+  if utils.is_term_buffer(self.preview_bufnr) then
+    local input = direction > 0 and [[]] or [[]]
+    local count = math.abs(direction)
+    vim.api.nvim_win_call(preview_winid, function()
+      -- TODO: why does this cause an error?
+      -- 'Vim(normal):Can't re-enter normal mode from terminal mode'
+      -- vim.cmd([[normal! ]] .. count .. input)
+      print([[normal! ]] .. count .. input)
+    end)
+    return
+  end
   utils.win_execute(preview_winid, function()
     if direction == 0 then
       api.nvim_win_set_cursor(preview_winid, self.orig_pos)
@@ -341,7 +353,7 @@ function Previewer.scroll(direction)
       fn.execute(('norm! %c'):format(direction > 0 and 0x04 or 0x15))
     end
     utils.zz()
-    cmd(('noa call nvim_set_current_win(%d)'):format(fzf_winid))
+    cmd(('noa call nvim_set_current_win(%d)'):format(self.win.fzf_winid))
   end)
   if self.scrollbar then
     self.win:update_scrollbar()

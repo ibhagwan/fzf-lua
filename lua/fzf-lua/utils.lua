@@ -223,7 +223,15 @@ function M.delayed_cb(cb, fn)
   end, 20)
 end
 
+function M.is_term_buffer(bufnr)
+  local bufname = vim.api.nvim_buf_get_name(bufnr or 0)
+  if bufname and bufname:match("term://") then return true end
+  return false
+end
+
 function M.zz()
+  -- skip for terminal buffers
+  if M.is_term_buffer() then return end
   local lnum1 = vim.api.nvim_win_get_cursor(0)[1]
   local lcount = vim.api.nvim_buf_line_count(0)
   local zb = 'keepj norm! %dzb'
