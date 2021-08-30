@@ -23,12 +23,14 @@ function M.setup(opts)
   end
   -- override BAT_CONFIG_PATH to prevent a
   -- conflct with '$XDG_DATA_HOME/bat/config'
-  if globals.previewers.bat.config then
-    vim.env.BAT_CONFIG_PATH = vim.fn.expand(globals.previewers.bat.config)
+  local bat_theme = globals.previewers.bat.theme or globals.previewers.bat_native.theme
+  local bat_config = globals.previewers.bat.config or globals.previewers.bat_native.config
+  if bat_config then
+    vim.env.BAT_CONFIG_PATH = vim.fn.expand(bat_config)
   end
   -- override the bat preview theme if set by caller
-  if globals.previewers.bat.theme and #globals.previewers.bat.theme > 0 then
-    vim.env.BAT_THEME = globals.previewers.bat.theme
+  if bat_theme and #bat_theme > 0 then
+    vim.env.BAT_THEME = bat_theme
   end
   -- set the fzf binary if set by the user
   if globals.fzf_bin ~= nil and vim.fn.executable(globals.fzf_bin) ~= 1 then
