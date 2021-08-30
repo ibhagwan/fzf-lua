@@ -29,6 +29,7 @@ M.fzf = function(opts, contents, previewer)
       end
     end
   end
+
   fzf_win:attach_previewer(previewer)
   fzf_win:create()
   local selected = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
@@ -69,6 +70,29 @@ M.preview_window = function(opts)
   end
 end
 
+M.get_color = function(hl_group, what)
+  return vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl_group)), what)
+end
+
+-- Create fzf --color arguments from a table of vim highlight groups.
+M.create_fzf_colors = function(colors)
+  if not colors then
+    return ""
+  end
+
+  local tbl = {}
+  for highlight, list in pairs(colors) do
+    local value = M.get_color(list[2], list[1])
+    if string.match(value, "#[0-9a-f]+") or string.match(value, "[0-9]+") then
+      local hl_code = string.format("%s:%s", highlight, value)
+      table.insert(tbl, hl_code)
+    end
+  end
+
+  local colors = table.concat(tbl, ",")
+  return string.format("--color=%s", colors)
+end
+
 M.build_fzf_cli = function(opts, debug_print)
   opts.prompt = opts.prompt or config.globals.default_prompt
   opts.preview_offset = opts.preview_offset or ''
@@ -79,12 +103,15 @@ M.build_fzf_cli = function(opts, debug_print)
     -- support the '--info=' flag
     opts.fzf_info = utils._if(opts._is_skim, "--inline-info", "--info=inline")
   end
+  opts.fzf_colors = M.create_fzf_colors(config.globals.fzf_colors)
+
   local cli = string.format(
-    [[ %s --layout=%s --bind=%s --prompt=%s]] ..
+    [[ %s %s --layout=%s --bind=%s --prompt=%s]] ..
     [[ --preview-window=%s%s --preview=%s]] ..
     [[ --height=100%%]] ..
     [[ %s %s %s %s %s %s]],
     opts.fzf_args or config.globals.fzf_args or '',
+    opts.fzf_colors,
     opts.fzf_layout or config.globals.fzf_layout,
     utils._if(opts.fzf_binds, opts.fzf_binds,
       vim.fn.shellescape(table.concat(config.globals.fzf_binds, ','))),

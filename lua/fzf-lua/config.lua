@@ -35,6 +35,7 @@ M.globals = {
   },
   default_prompt      = '> ',
   fzf_bin             = nil,
+  fzf_colors          = nil,
   fzf_layout          = 'reverse',
   fzf_binds = {
     -- <F2>        toggle preview
