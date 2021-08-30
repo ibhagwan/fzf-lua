@@ -314,7 +314,16 @@ function Previewer:display_entry(entry)
       if not vim.api.nvim_buf_is_valid(bufnr) then
         return
       end
-      local ok = pcall(vim.api.nvim_buf_set_lines, bufnr, 0, -1, false, vim.split(data, "[\r]?\n"))
+
+      local lines = vim.split(data, "[\r]?\n")
+
+      -- if file ends in new line, don't write an empty string as the last
+      -- line.
+      if data:sub(#data, #data) == "\n" or data:sub(#data-1,#data) == "\r\n" then
+        table.remove(lines)
+      end
+
+      local ok = pcall(vim.api.nvim_buf_set_lines, bufnr, 0, -1, false, lines)
       if not ok then
         return
       end
