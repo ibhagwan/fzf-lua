@@ -290,4 +290,22 @@ function M.win_execute(winid, func)
   return ret
 end
 
+function M.ft_detect(ext)
+  local ft = ''
+  if not ext then return ft end
+  local tmp_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_option(tmp_buf, 'bufhidden', 'wipe')
+  pcall(vim.api.nvim_buf_call, tmp_buf, function()
+    local filename = (vim.fn.tempname() .. '.' .. ext)
+    vim.cmd("file " .. filename)
+    vim.cmd("doautocmd BufEnter")
+    vim.cmd("filetype detect")
+    ft = vim.api.nvim_buf_get_option(tmp_buf, 'filetype')
+  end)
+  if vim.api.nvim_buf_is_valid(tmp_buf) then
+    vim.api.nvim_buf_delete(tmp_buf, {force=true})
+  end
+  return ft
+end
+
 return M
