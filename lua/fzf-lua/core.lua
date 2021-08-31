@@ -65,11 +65,20 @@ M.build_fzf_cli = function(opts, debug_print)
   opts.prompt = opts.prompt or config.globals.default_prompt
   opts.preview_offset = opts.preview_offset or ''
   opts.fzf_bin = opts.fzf_bin or config.globals.fzf_bin
+  opts.fzf_info = opts.fzf_info or config.globals.fzf_info
+  opts.fzf_ansi = opts.fzf_ansi or config.globals.fzf_ansi
+  if not opts.fzf_info then
+    -- HACK: support skim (rust version of fzf)
+    -- which doesn't support the '--info=' flag
+    opts.fzf_info = utils._if(opts.fzf_bin and opts.fzf_bin:find('sk')~=nil,
+      "--inline-info",
+      "--info=inline")
+  end
   local cli = string.format(
     [[ %s --layout=%s --bind=%s --prompt=%s]] ..
     [[ --preview-window=%s%s --preview=%s]] ..
-    [[ --height=100%% --ansi]] ..
-    [[ %s %s %s %s %s]],
+    [[ --height=100%%]] ..
+    [[ %s %s %s %s %s %s]],
     opts.fzf_args or config.globals.fzf_args or '',
     opts.fzf_layout or config.globals.fzf_layout,
     utils._if(opts.fzf_binds, opts.fzf_binds,
@@ -78,8 +87,7 @@ M.build_fzf_cli = function(opts, debug_print)
     utils._if(opts.preview_window, opts.preview_window, M.preview_window(opts)),
     utils._if(#opts.preview_offset>0, ":"..opts.preview_offset, ''),
     utils._if(opts.preview and #opts.preview>0, opts.preview, "''"),
-    -- HACK: support skim (rust version of fzf)
-    utils._if(opts.fzf_bin and opts.fzf_bin:find('sk')~=nil, "--inline-info", "--info=inline"),
+    opts.fzf_ansi or '--ansi', opts.fzf_info or '',
     utils._if(actions.expect(opts.actions), actions.expect(opts.actions), ''),
     utils._if(opts.nomulti, '--no-multi', '--multi'),
     utils._if(opts.fzf_cli_args, opts.fzf_cli_args, ''),
