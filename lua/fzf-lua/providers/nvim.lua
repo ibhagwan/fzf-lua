@@ -70,13 +70,21 @@ local history = function(opts, str)
   end)()
 end
 
+local arg_header = function(sel_key, edit_key, text)
+  sel_key = utils.ansi_codes.yellow(sel_key)
+  edit_key = utils.ansi_codes.yellow(edit_key)
+  return ('--header=":: %s to %s, %s to edit"'):format(sel_key, text, edit_key)
+end
+
 M.command_history = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.command_history)
+  opts._fzf_cli_args = arg_header("<CR>", "<Ctrl-e>", "execute")
   history(opts, "cmd")
 end
 
 M.search_history = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.search_history)
+  opts._fzf_cli_args = arg_header("<CR>", "<Ctrl-e>", "search")
   history(opts, "search")
 end
 

@@ -405,13 +405,15 @@ M.globals.nvim = {
     command_history = {
       prompt              = 'Command History> ',
       actions = {
-        ["default"]       = actions.ex_run,
+        ["default"]       = actions.ex_run_cr,
+        ["ctrl-e"]        = actions.ex_run,
       },
     },
     search_history = {
       prompt              = 'Search History> ',
       actions = {
-        ["default"]       = actions.search,
+        ["default"]       = actions.search_cr,
+        ["ctrl-e"]        = actions.search,
       },
     },
     registers = {

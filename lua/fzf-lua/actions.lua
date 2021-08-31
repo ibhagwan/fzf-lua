@@ -139,7 +139,12 @@ M.ex_run = function(selected)
   local cmd = selected[1]
   if #selected>1 then cmd = selected[2] end
   vim.cmd("stopinsert")
-  vim.fn.feedkeys(string.format(":%s ", cmd))
+  vim.fn.feedkeys(string.format(":%s", cmd))
+end
+
+M.ex_run_cr = function(selected)
+  M.ex_run(selected)
+  utils.feed_keys_termcodes("<CR>")
 end
 
 M.search = function(selected)
@@ -147,7 +152,12 @@ M.search = function(selected)
   local query = selected[1]
   if #selected>1 then query = selected[2] end
   vim.cmd("stopinsert")
-  utils.feed_keys_termcodes(string.format("/%s<CR>", query))
+  vim.fn.feedkeys(string.format("/%s", query))
+end
+
+M.search_cr = function(selected)
+  M.search(selected)
+  utils.feed_keys_termcodes("<CR>")
 end
 
 M.goto_mark = function(selected)
