@@ -35,7 +35,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     search_path = vim.fn.shellescape(opts.cwd)
   end
 
-  if search_query == nil then search_query = ''
+  if search_query == nil then search_query = '""'
   elseif not no_esc then
     search_query = '"' .. utils.rg_escape(search_query) .. '"'
   end
