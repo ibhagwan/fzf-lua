@@ -193,6 +193,7 @@ end
 M.grep_curbuf = function(opts)
   if not opts then opts = {} end
   opts.rg_opts = config.globals.grep.rg_opts .. " --with-filename"
+  opts.grep_opts = config.globals.grep.grep_opts .. " --with-filename"
   opts.filename = vim.api.nvim_buf_get_name(0)
   if #opts.filename > 0 then
     opts.filename = path.relative(opts.filename, vim.loop.cwd())

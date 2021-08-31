@@ -143,7 +143,7 @@ function Previewer:set_winopts(win)
 end
 
 local function set_cursor_hl(self, entry)
-    local lnum, col = tonumber(entry.line), tonumber(entry.col)
+    local lnum, col = tonumber(entry.line), tonumber(entry.col) or 1
     local pattern = entry.pattern or entry.text
 
     if not lnum or lnum < 1 then
@@ -309,6 +309,8 @@ function Previewer:display_entry(entry)
   else
     -- mark the buffer for unloading the next call
     self.preview_bufloaded = true
+    -- make sure the file is readable (or bad entry.path)
+    if not vim.loop.fs_stat(entry.path) then return end
     -- read the file into the buffer
     utils.read_file_async(entry.path, vim.schedule_wrap(function(data)
       if not vim.api.nvim_buf_is_valid(bufnr) then
