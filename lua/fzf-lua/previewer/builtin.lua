@@ -204,7 +204,7 @@ function Previewer:do_syntax(entry)
       if syntax_limit_reached == 0 then
         -- greedy match anything after last dot
         -- local ext = entry.path:match("[^.]*$")
-        local ext = entry.path:match("%.(.*)$")
+        --[[ local ext = entry.path:match("%.(.*)$")
         if ext and #ext > 0 then
           local ft = ext_to_ft[ext]
           if not ft then
@@ -214,13 +214,18 @@ function Previewer:do_syntax(entry)
           if ft then
             pcall(api.nvim_buf_set_option, bufnr, 'filetype', ft)
           end
-        else
+        else ]]
+          -- prepend the buffer number to the path and
+          -- set as buffer name, this makes sure 'filetype detect'
+          -- gets the right filetype which enables the syntax
+          local tempname = path.join({tostring(bufnr), entry.path})
+          pcall(api.nvim_buf_set_name, bufnr, tempname)
           -- no extension try to detect the filetype nontheless
           -- nvim_buf_call has less side-effects than window switch
           api.nvim_buf_call(bufnr, function()
             vim.cmd('filetype detect')
           end)
-        end
+        -- end
       end
     end
   end
