@@ -150,4 +150,49 @@ M.buffers = function(opts)
   end)()
 end
 
+M.blines = function(opts)
+
+  opts = config.normalize_opts(opts, config.globals.blines)
+
+  local bufnr = vim.api.nvim_get_current_buf()
+  local bufnrstr = utils.ansi_codes.magenta(tostring(bufnr))
+
+  coroutine.wrap(function()
+    local items = {}
+
+    if api.nvim_buf_is_loaded(bufnr) then
+      local data = api.nvim_buf_get_lines(bufnr, 0, -1, false)
+      for l, text in ipairs(data) do
+        table.insert(items, ("[%s]:%s: %s"):format(
+          bufnrstr,
+          utils.ansi_codes.green(tostring(l)),
+          text))
+      end
+    end
+
+    -- ignore bufnr when searching
+    -- disable multi-select
+    opts.nomulti = true
+    opts._fzf_cli_args = "--delimiter=':' --nth 2,-1"
+
+    local selected = core.fzf(opts, items)
+
+    if not selected then return end
+
+    -- get the line number
+    local line = tonumber(selected[2]:match(":(%d+):"))
+
+    if #selected > 1 then
+      for i = 2, #selected do
+          selected[i] = tostring(getbufnumber(selected[i]))
+      end
+    end
+
+    actions.act(opts.actions, selected)
+
+    if line then vim.api.nvim_win_set_cursor(0, {line, 0}) end
+
+  end)()
+end
+
 return M

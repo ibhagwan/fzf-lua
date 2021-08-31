@@ -120,6 +120,7 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 | Command | List |
 | --- | --- |
 |`buffers`|open buffers|
+|`blines`|current buffer lines|
 |`files`|`find` or `fd` on a path|
 |`oldfiles`|opened files history|
 |`quickfix`|quickfix list|
@@ -367,6 +368,7 @@ require'fzf-lua'.setup {
     cwd_only          = false,
   },
   buffers = {
+    -- previewer      = false,        -- disable the builtin previewer?
     prompt            = 'Buffers❯ ',
     file_icons        = true,         -- show file icons?
     color_icons       = true,         -- colorize file|git icons
@@ -377,6 +379,16 @@ require'fzf-lua'.setup {
       ["ctrl-v"]      = actions.buf_vsplit,
       ["ctrl-t"]      = actions.buf_tabedit,
       ["ctrl-x"]      = actions.buf_del,
+    }
+  },
+  blines = {
+    previewer         = "builtin",    -- set to 'false' to disable
+    prompt            = 'BLines❯ ',
+    actions = {
+      ["default"]     = actions.buf_edit,
+      ["ctrl-s"]      = actions.buf_split,
+      ["ctrl-v"]      = actions.buf_vsplit,
+      ["ctrl-t"]      = actions.buf_tabedit,
     }
   },
   colorschemes = {
