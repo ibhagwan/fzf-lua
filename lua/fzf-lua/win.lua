@@ -169,11 +169,6 @@ function FzfWin:reset_win_highlights(win, is_border)
     hl = ("Normal:%s"):format(self.winopts.hl_border)
   end
   vim.api.nvim_win_set_option(win, 'winhighlight', hl)
-  --[[ if self.winopts.window_on_create then
-    utils.win_execute(win, function()
-      self.winopts.window_on_create()
-    end)
-  end ]]
 end
 
 function FzfWin:new(o)
@@ -352,15 +347,14 @@ function FzfWin:redraw_preview()
   return self.preview_winid, self.border_winid
 end
 
-function FzfWin:create()
-  -- save sending bufnr/winid
-  self.src_bufnr = vim.api.nvim_get_current_buf()
-  self.src_winid = vim.api.nvim_get_current_win()
-  if self.winopts.split then
-    vim.cmd(self.winopts.split)
-    self.fzf_bufnr = vim.api.nvim_get_current_buf()
-    self.fzf_winid = vim.api.nvim_get_current_win()
-  else
+function FzfWin:validate()
+  return self.fzf_winid and self.fzf_winid > 0
+    and api.nvim_win_is_valid(self.fzf_winid)
+end
+
+function FzfWin:redraw()
+    if self.winopts.split then return end
+    local hidden = self._previewer and self._previewer.hidden
     local relative = self.winopts.relative or 'editor'
     local columns, lines = vim.o.columns, vim.o.lines
     if relative == 'win' then
@@ -368,7 +362,7 @@ function FzfWin:create()
     end
 
     local winopts = self.winopts
-    if self.layout then winopts = self.layout.fzf end
+    if self.layout and not hidden then winopts = self.layout.fzf end
     local win_opts = {
       width = winopts.width or math.min(columns - 4, math.max(80, columns - 20)),
       height = winopts.height or math.min(lines - 4, math.max(20, lines - 10)),
@@ -379,13 +373,31 @@ function FzfWin:create()
     win_opts.row = winopts.row or math.floor(((lines - win_opts.height) / 2) - 1)
     win_opts.col = winopts.col or math.floor((columns - win_opts.width) / 2)
 
-    self.fzf_bufnr = vim.api.nvim_create_buf(false, true)
-    self.fzf_winid = vim.api.nvim_open_win(self.fzf_bufnr, true, win_opts)
+    if self:validate() then
+      api.nvim_win_set_config(self.fzf_winid, win_opts)
+    else
+      self.fzf_bufnr = vim.api.nvim_create_buf(false, true)
+      self.fzf_winid = vim.api.nvim_open_win(self.fzf_bufnr, true, win_opts)
+    end
+end
+
+function FzfWin:create()
+  -- save sending bufnr/winid
+  self.src_bufnr = vim.api.nvim_get_current_buf()
+  self.src_winid = vim.api.nvim_get_current_win()
+  if self.winopts.split then
+    vim.cmd(self.winopts.split)
+    self.fzf_bufnr = vim.api.nvim_get_current_buf()
+    self.fzf_winid = vim.api.nvim_get_current_win()
+  else
+    -- draw the main window
+    self:redraw()
   end
 
   self:reset_win_highlights(self.fzf_winid)
 
-  if self.winopts.window_on_create then
+  if self.winopts.window_on_create and
+      type(self.winopts.window_on_create) == 'function' then
     self.winopts.window_on_create()
   end
 

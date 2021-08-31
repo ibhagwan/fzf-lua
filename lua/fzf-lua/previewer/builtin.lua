@@ -409,10 +409,13 @@ end
 function Previewer.toggle_hide()
   if not _self then return end
   local self = _self
+  self.hidden = not self.hidden
   if self.win then
     if self.win:validate_preview() then
       self.win:close_preview()
+      self.win:redraw()
     else
+      self.win:redraw()
       self.win:redraw_preview()
       self:display_last_entry()
     end
