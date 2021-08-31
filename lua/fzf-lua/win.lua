@@ -290,7 +290,7 @@ function FzfWin:update_border_buf()
   local border_buf = self.border_buf
   local border_winopts = self.border_winopts
   local border_chars = self.winopts.border
-  if type(border_chars) == 'string' or type(border_chars[1]) ~= string then
+  if type(border_chars) == 'string' or type(border_chars[1]) ~= 'string' then
     -- backward compatibility:
     -- happens with 'winopts.win_border = false'
     border_chars = config.globals.winopts.borderchars
