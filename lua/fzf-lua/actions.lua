@@ -42,12 +42,23 @@ end
 M.vimcmd_file = function(vimcmd, selected)
   if not selected or #selected < 2 then return end
   for i = 2, #selected do
-    -- check if the file contains line
-    local file, line = selected[i]:match("^([^:]+):(%d+)")
-    if file and line then
-      vim.cmd(string.format("%s +%s %s", vimcmd, line, vim.fn.fnameescape(file)))
+    -- check if the file contains line and col or just line.
+    local file, line, col = selected[i]:match("^([^:]+):(%d+):(%d+):")
+    if not file then
+      file, line = selected[i]:match("^([^:]+):(%d+):")
+      if file then
+        col = 1
+      else
+        file = selected[i]
+      end
+    end
+
+    file = vim.fn.fnameescape(file)
+    print(file, line, col)
+    if line and col then
+      vim.cmd(string.format([[%s +call\ cursor(%d,\ %d) %s]], vimcmd, tonumber(line), tonumber(col), file))
     else
-      vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(selected[i]))
+      vim.cmd(vimcmd .. " " .. file)
     end
   end
 end
