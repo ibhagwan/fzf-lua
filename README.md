@@ -2,31 +2,40 @@
 
 # fzf :heart: lua
 
+</div>
+
+<!-- panvimdoc-ignore-start -->
+<div align="center">
+
 ![Neovim version](https://img.shields.io/badge/Neovim-0.5-57A143?style=flat-square&logo=neovim)
 
-[Installation](#installation) • [Usage](#usage) • [Commands](#commands) • [Customization](#customization) • [Wiki](https://github.com/ibhagwan/fzf-lua/wiki)
+[Installation](#installation) • [Usage](#usage) • [Commands](#commands) •
+[Customization](#customization) •
+[Wiki](https://github.com/ibhagwan/fzf-lua/wiki)
 
 ![screenshot](https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/screenshots/main.png)
 
-[fzf](https://github.com/junegunn/fzf) changed my life, it can change yours too, if you allow it.
+[fzf](https://github.com/junegunn/fzf) changed my life, it can change yours too,
+if you allow it.
 
-  </div>
+</div>
+<!-- panvimdoc-ignore-end -->
 
 ### Rationale
 
 What more can be said about [fzf](https://github.com/junegunn/fzf)? It is the
 single most impactful tool for my command line workflow, once I started using
 fzf I couldn’t see myself living without it.
-> **To understand fzf properly I highly recommended [fzf
-> screencast](https://www.youtube.com/watch?v=qgG5Jhi_Els) by
+
+> **To understand fzf properly I highly recommended
+> [fzf screencast](https://www.youtube.com/watch?v=qgG5Jhi_Els) by
 > [@samoshkin](https://github.com/samoshkin)**
 
-This is my take on the original
-[fzf.vim](https://github.com/junegunn/fzf.vim), written in lua for neovim 0.5,
-it builds on the elegant
+This is my take on the original [fzf.vim](https://github.com/junegunn/fzf.vim),
+written in lua for neovim 0.5, it builds on the elegant
 [nvim-fzf](https://github.com/vijaymarupudi/nvim-fzf) as an async interface to
-create a performant and lightweight fzf client for neovim that rivals any of
-the new shiny fuzzy finders for neovim.
+create a performant and lightweight fzf client for neovim that rivals any of the
+new shiny fuzzy finders for neovim.
 
 ### Why use this plug-in?
 
@@ -34,8 +43,8 @@ the new shiny fuzzy finders for neovim.
 [telescope](https://github.com/nvim-telescope/telescope.nvim) or
 [vim-clap](https://github.com/liuchengxu/vim-clap)?
 
-As [@junegunn](https://github.com/junegunn) himself put it, “because you can
-and you love `fzf`”.
+As [@junegunn](https://github.com/junegunn) himself put it, “because you can and
+you love `fzf`”.
 
 If you’re happy with your current setup there is absolutely no reason to switch.
 
@@ -47,8 +56,9 @@ at it. That, **and colorful file icons and git indicators!**.
 
 ### Dependencies
 
-- `Linux` or `MacOS` only, see [nvim-fzf's How it
-  works](https://github.com/vijaymarupudi/nvim-fzf#How-it-works) section
+- `Linux` or `MacOS` only, see
+  [nvim-fzf's How it works](https://github.com/vijaymarupudi/nvim-fzf#How-it-works)
+  section
 - [`fzf`](https://github.com/junegunn/fzf) or
   [`skim`](https://github.com/lotabout/skim) binary installed
 - [nvim-fzf](https://github.com/vijaymarupudi/nvim-fzf)
@@ -58,8 +68,10 @@ at it. That, **and colorful file icons and git indicators!**.
 ### Optional dependencies (recommended)
 
 - [fd](https://github.com/sharkdp/fd) - better performance `find` utility
-- [bat](https://github.com/sharkdp/bat) - for colorful syntax highlighted previews
-- [ripgrep](https://github.com/BurntSushi/ripgrep) - for better grep-like searches
+- [bat](https://github.com/sharkdp/bat) - for colorful syntax highlighted
+  previews
+- [ripgrep](https://github.com/BurntSushi/ripgrep) - for better grep-like
+  searches
 
 ### Installation
 
@@ -80,21 +92,25 @@ use { 'ibhagwan/fzf-lua',
     'kyazdani42/nvim-web-devicons' } -- optional for icons
 }
 ```
+
 > **Note:** if you already have fzf installed you do not need to install `fzf`
 > or `fzf.vim`, however if you do not have it installed, **you only need** fzf
 > which can be installed with (fzf.vim is not a requirement nor conflict):
+>
 > ```vim
 > Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 > ```
+>
 > or with [packer.nvim](https://github.com/wbthomason/packer.nvim):
->```lua
->use = { 'junegunn/fzf', run = './install --bin', }
->```
+>
+> ```lua
+> use = { 'junegunn/fzf', run = './install --bin', }
+> ```
 
 ## Usage
 
-Fzf-lua aims to be as plug and play as possible with sane defaults, you can
-run any fzf-lua command like this:
+Fzf-lua aims to be as plug and play as possible with sane defaults, you can run
+any fzf-lua command like this:
 
 ```lua
 :lua require('fzf-lua').files()
@@ -103,6 +119,7 @@ run any fzf-lua command like this:
 ```
 
 or with arguments:
+
 ```lua
 :lua require('fzf-lua').files({ cwd = '~/.config' })
 -- or using the `FzfLua` vim command:
@@ -110,11 +127,13 @@ or with arguments:
 ```
 
 which can be easily mapped to:
+
 ```vim
 nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 ```
 
 or if using `init.lua`:
+
 ```lua
 vim.api.nvim_set_keymap('n', '<c-P>',
     "<cmd>lua require('fzf-lua').files()<CR>",
@@ -124,83 +143,100 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 ## Commands
 
 ### Buffers & Files
-| Command | List |
-| --- | --- |
-|`buffers`|open buffers|
-|`blines`|current buffer lines|
-|`files`|`find` or `fd` on a path|
-|`files_resume`|continious query find|
-|`oldfiles`|opened files history|
-|`quickfix`|quickfix list|
-|`loclist`|location list|
+
+| Command        | List                     |
+| -------------- | ------------------------ |
+| `buffers`      | open buffers             |
+| `blines`       | current buffer lines     |
+| `files`        | `find` or `fd` on a path |
+| `files_resume` | continious query find    |
+| `oldfiles`     | opened files history     |
+| `quickfix`     | quickfix list            |
+| `loclist`      | location list            |
 
 ### Search
-| Command | List |
-| --- | --- |
-|`grep`|search for a pattern with `grep` or `rg`|
-|`grep_last`|run search again with the last pattern|
-|`grep_cword`|search word under cursor|
-|`grep_cWORD`|search WORD under cursor|
-|`grep_visual`|search visual selection|
-|`grep_curbuf`|live grep current buffer|
-|`live_grep`|live grep current project|
-|`live_grep_resume`|live grep continue last search|
 
+| Command            | List                                     |
+| ------------------ | ---------------------------------------- |
+| `grep`             | search for a pattern with `grep` or `rg` |
+| `grep_last`        | run search again with the last pattern   |
+| `grep_cword`       | search word under cursor                 |
+| `grep_cWORD`       | search WORD under cursor                 |
+| `grep_visual`      | search visual selection                  |
+| `grep_curbuf`      | live grep current buffer                 |
+| `live_grep`        | live grep current project                |
+| `live_grep_resume` | live grep continue last search           |
+
+| Command       | List                                     |
+| ------------- | ---------------------------------------- |
+| `grep`        | search for a pattern with `grep` or `rg` |
+| `grep_last`   | run search again with the last pattern   |
+| `grep_cword`  | search word under cursor                 |
+| `grep_cWORD`  | search WORD under cursor                 |
+| `grep_visual` | search visual selection                  |
+| `grep_curbuf` | live grep current buffer                 |
+| `live_grep`   | live grep current project                |
 
 ### Git
-| Command | List |
-| --- | --- |
-|`git_files`|`git ls-files`|
-|`git_status`|`git status`|
-|`git_commits`|git commit log (project)|
-|`git_bcommits`|git commit log (buffer)|
-|`git_branches`|git branches|
+
+| Command        | List                     |
+| -------------- | ------------------------ |
+| `git_files`    | `git ls-files`           |
+| `git_status`   | `git status`             |
+| `git_commits`  | git commit log (project) |
+| `git_bcommits` | git commit log (buffer)  |
+| `git_branches` | git branches             |
 
 ### LSP
-| Command | List |
-| --- | --- |
-|`lsp_references`|References|
-|`lsp_definitions`|Definitions|
-|`lsp_declarations`|Declarations|
-|`lsp_typedefs`|Type Definitions|
-|`lsp_implementations`|Implementations|
-|`lsp_document_symbols`|Document Symbols|
-|`lsp_workspace_symbols`|Workspace Symbols|
-|`lsp_live_workspace_symbols`|Workspace Symbols (live query)|
-|`lsp_code_actions`|Code Actions|
-|`lsp_document_diagnostics`|Document Diagnostics|
-|`lsp_workspace_diagnostics`|Workspace Diagnostics|
+
+| Command                      | List                           |
+| ---------------------------- | ------------------------------ |
+| `lsp_references`             | References                     |
+| `lsp_definitions`            | Definitions                    |
+| `lsp_declarations`           | Declarations                   |
+| `lsp_typedefs`               | Type Definitions               |
+| `lsp_implementations`        | Implementations                |
+| `lsp_document_symbols`       | Document Symbols               |
+| `lsp_workspace_symbols`      | Workspace Symbols              |
+| `lsp_live_workspace_symbols` | Workspace Symbols (live query) |
+| `lsp_code_actions`           | Code Actions                   |
+| `lsp_document_diagnostics`   | Document Diagnostics           |
+| `lsp_workspace_diagnostics`  | Workspace Diagnostics          |
 
 ### Misc
-| Command | List |
-| --- | --- |
-|`builtin`|fzf-lua builtin methods|
-|`help_tags`|help tags|
-|`man_pages`|man pages|
-|`colorschemes`|color schemes|
-|`commands`|neovim commands|
-|`command_history`|command history|
-|`search_history`|search history|
-|`marks`|:marks|
-|`registers`|:registers|
-|`keymaps`|key mappings|
-|`spell_suggest`|spelling suggestions|
-|`tags`|project tags|
-|`btags`|buffer tags|
-|`filetypes`|neovim filetypes|
-|`packadd`|:packadd <package>|
 
+| Command           | List                    |
+| ----------------- | ----------------------- |
+| `builtin`         | fzf-lua builtin methods |
+| `help_tags`       | help tags               |
+| `man_pages`       | man pages               |
+| `colorschemes`    | color schemes           |
+| `commands`        | neovim commands         |
+| `command_history` | command history         |
+| `search_history`  | search history          |
+| `marks`           | :marks                  |
+| `registers`       | :registers              |
+| `keymaps`         | key mappings            |
+| `spell_suggest`   | spelling suggestions    |
+| `tags`            | project tags            |
+| `btags`           | buffer tags             |
+| `filetypes`       | neovim filetypes        |
+| `packadd`         | :packadd <package>      |
 
 ## Customization
 
-I tried to make it as customizable as possible, if you find you need to change something that isn’t below, open an issue and I’ll do my best to add it.
+I tried to make it as customizable as possible, if you find you need to change
+something that isn’t below, open an issue and I’ll do my best to add it.
 
-customization can be achieved by calling the `setup()` function or individually sending parameters to a builtin command, for exmaple:
+customization can be achieved by calling the `setup()` function or individually
+sending parameters to a builtin command, for exmaple:
+
 ```lua
 :lua require('fzf-lua').files({ fzf_layout = 'reverse-list' })
 ```
 
 Consult the list below for available settings:
+
 ```lua
 local actions = require "fzf-lua.actions"
 require'fzf-lua'.setup {
@@ -467,45 +503,50 @@ require('fzf-lua').setup{
 EOF
 ```
 
+<!-- panvimdoc-ignore-start -->
+
 ## TODO
 
 - [x] Add more providers
-    + [x] ~~LSP (refs, symbols, etc)~~ (2021-07-20)
-    + [x] ~~git commits~~ (2021-08-05)
-    + [x] ~~git branches~~ (2021-08-05)
-    + [x] nvim built-in:
-        * [x] ~~commands~~ (2021-08-14)
-        * [x] ~~command history~~ (2021-08-14)
-        * [x] ~~search history~~ (2021-08-14)
-        * [x] ~~registers~~ (2021-08-14)
-        * [x] ~~keymaps~~ (2021-08-14)
-        * [x] ~~spelling suggestions~~ (2021-08-14)
-        * [x] ~~marks~~ (2021-08-14)
-    + [x] ~~tags~~ (2021-08-15)
+  - [x] ~~LSP (refs, symbols, etc)~~ (2021-07-20)
+  - [x] ~~git commits~~ (2021-08-05)
+  - [x] ~~git branches~~ (2021-08-05)
+  - [x] nvim built-in:
+    - [x] ~~commands~~ (2021-08-14)
+    - [x] ~~command history~~ (2021-08-14)
+    - [x] ~~search history~~ (2021-08-14)
+    - [x] ~~registers~~ (2021-08-14)
+    - [x] ~~keymaps~~ (2021-08-14)
+    - [x] ~~spelling suggestions~~ (2021-08-14)
+    - [x] ~~marks~~ (2021-08-14)
+  - [x] ~~tags~~ (2021-08-15)
 - [x] ~~Built-in previewer with treesitter support~~ (2021-08-29)
 - [x] ~~Improve previewer for `buffers`~~ (2021-08-29)
 - [ ] Add support for `marks` in the builtin previewer
 - [ ] Add built-in plugin documentation
 - [ ] Complete the Wiki
 
+<!-- panvimdoc-ignore-end -->
+
 ### Credits
 
 Big thank you to all those I borrowed code/ideas from, I read so many configs
-and plugin codes that I probably forgot where I found some samples from so if
-I missed your name feel free to contact me and I'll add it below:
+and plugin codes that I probably forgot where I found some samples from so if I
+missed your name feel free to contact me and I'll add it below:
 
 - [@vijaymarupudi](https://github.com/vijaymarupudi/) for his wonderful
   [nvim-fzf](https://github.com/vijaymarupudi/nvim-fzf) plugin which is in the
   core of this plugin
-- [@tjdevries](https://github.com/tjdevries/) for too many great things to
-  list here and for borrowing some of his
+- [@tjdevries](https://github.com/tjdevries/) for too many great things to list
+  here and for borrowing some of his
   [nvim-telescope](https://github.com/nvim-telescope/telescope.nvim) provider
   code
-- [@lukas-reineke](https://github.com/lukas-reineke) for inspiring the
-  solution after browsing his
-  [dotfiles](https://github.com/lukas-reineke/dotfiles) and coming across his
+- [@lukas-reineke](https://github.com/lukas-reineke) for inspiring the solution
+  after browsing his [dotfiles](https://github.com/lukas-reineke/dotfiles) and
+  coming across his
   [fuzzy.lua](https://github.com/lukas-reineke/dotfiles/blob/master/vim/lua/fuzzy.lua)
   , and while we're, also here for his great lua plugin
   [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim)
 - [@sindrets](https://github.com/sindrets) for borrowing utilities from his
-  fantastic lua plugin [diffview.nvim](https://github.com/sindrets/diffview.nvim)
+  fantastic lua plugin
+  [diffview.nvim](https://github.com/sindrets/diffview.nvim)
