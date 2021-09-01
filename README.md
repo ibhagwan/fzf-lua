@@ -157,6 +157,7 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 |`lsp_implementations`|Implementations|
 |`lsp_document_symbols`|Document Symbols|
 |`lsp_workspace_symbols`|Workspace Symbols|
+|`lsp_live_workspace_symbols`|Workspace Symbols (live query)|
 |`lsp_code_actions`|Code Actions|
 |`lsp_document_diagnostics`|Document Diagnostics|
 |`lsp_workspace_diagnostics`|Workspace Diagnostics|

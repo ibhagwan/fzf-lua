@@ -61,12 +61,6 @@ function M.shell_error()
   return vim.v.shell_error ~= 0
 end
 
-function M.is_git_repo()
-  -- can also use: "git rev-parse is-inside-work-tree"
-  vim.fn.system("git rev-parse --git-dir")
-  return M._if(M.shell_error(), false, true)
-end
-
 function M.rg_escape(str)
   if not str then return str end
   --  [(~'"\/$?'`*&&||;[]<>)]

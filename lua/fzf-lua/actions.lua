@@ -18,7 +18,7 @@ M.expect = function(actions)
   return nil
 end
 
-M.act = function(actions, selected)
+M.act = function(actions, selected, opts)
   if not actions or not selected then return end
   local action = "default"
   -- if there are no actions besides default
@@ -28,7 +28,7 @@ M.act = function(actions, selected)
   if actions and utils.tbl_length(actions) > 1 and
     #selected>1 and #selected[1]>0 then action = selected[1] end
   if actions[action] then
-    actions[action](selected)
+    actions[action](selected, opts)
   end
 end
 
@@ -216,14 +216,15 @@ M.man_tab = function(selected)
 end
 
 
-M.git_switch = function(selected)
+M.git_switch = function(selected, opts)
+  local cmd = path.git_cwd("git switch ", opts.cwd)
   -- remove anything past space
   local branch = selected[1]:match("[^ ]+")
   -- do nothing for active branch
   if branch:find("%*") ~= nil then return end
   local args = ""
   if branch:find("/") ~= nil then args = "--detach " end
-  local output = vim.fn.systemlist("git switch " .. args .. branch)
+  local output = vim.fn.systemlist(cmd .. args .. branch)
   if utils.shell_error() then
     utils.err(unpack(output))
   else
@@ -232,12 +233,14 @@ M.git_switch = function(selected)
   end
 end
 
-M.git_checkout = function(selected)
+M.git_checkout = function(selected, opts)
+  local cmd_checkout = path.git_cwd("git checkout ", opts.cwd)
+  local cmd_cur_commit = path.git_cwd("git rev-parse --short HEAD", opts.cwd)
   local commit_hash = selected[1]:match("[^ ]+")
   if vim.fn.input("Checkout commit " .. commit_hash .. "? [y/n] ") == "y" then
-    local current_commit = vim.fn.systemlist("git rev-parse --short HEAD")
+    local current_commit = vim.fn.systemlist(cmd_cur_commit)
     if(commit_hash == current_commit) then return end
-    local output = vim.fn.systemlist("git checkout " .. commit_hash)
+    local output = vim.fn.systemlist(cmd_checkout .. commit_hash)
     if utils.shell_error() then
       utils.err(unpack(output))
     else
@@ -247,14 +250,15 @@ M.git_checkout = function(selected)
   end
 end
 
-M.git_buf_edit = function(selected)
+M.git_buf_edit = function(selected, opts)
+  local cmd = path.git_cwd("git show ", opts.cwd)
   -- there's an empty string in position 1 for some reason?
   table.remove(selected,1)
   local win = vim.api.nvim_get_current_win()
   local buffer_filetype = vim.bo.filetype
   local file = path.relative(vim.fn.expand("%"), vim.loop.cwd())
   local commit_hash = selected[1]:match("[^ ]+")
-  local git_file_contents = vim.fn.systemlist("git show " .. commit_hash .. ":" .. file)
+  local git_file_contents = vim.fn.systemlist(cmd .. commit_hash .. ":" .. file)
   local buf = vim.api.nvim_create_buf(true, false)
   local file_name = string.gsub(file,"%.","[" .. commit_hash .. "]%.")
   vim.api.nvim_buf_set_lines(buf,0,0,true,git_file_contents)
@@ -265,19 +269,19 @@ M.git_buf_edit = function(selected)
   vim.api.nvim_win_set_buf(win, buf)
 end
 
-M.git_buf_tabedit = function(selected)
+M.git_buf_tabedit = function(selected, opts)
   vim.cmd('tab split')
-  M.git_buf_edit(selected)
+  M.git_buf_edit(selected, opts)
 end
 
-M.git_buf_split = function(selected)
+M.git_buf_split = function(selected, opts)
   vim.cmd('split')
-  M.git_buf_edit(selected)
+  M.git_buf_edit(selected, opts)
 end
 
-M.git_buf_vsplit = function(selected)
+M.git_buf_vsplit = function(selected, opts)
   vim.cmd('vsplit')
-  M.git_buf_edit(selected)
+  M.git_buf_edit(selected, opts)
 end
 
 return M

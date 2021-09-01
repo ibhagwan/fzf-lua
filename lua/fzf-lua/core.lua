@@ -97,9 +97,10 @@ M.build_fzf_cli = function(opts, debug_print)
   return cli
 end
 
-local get_diff_files = function()
+local get_diff_files = function(opts)
     local diff_files = {}
-    local status = vim.fn.systemlist(config.globals.files.git_diff_cmd)
+    local status = vim.fn.systemlist(path.git_cwd(
+      config.globals.files.git_diff_cmd, opts.cwd))
     if not utils.shell_error() then
         for i = 1, #status do
           local icon, file = status[i]:match("^([MUDAR])%s+(.*)")
@@ -110,12 +111,14 @@ local get_diff_files = function()
     return diff_files
 end
 
-local get_untracked_files = function()
+local get_untracked_files = function(opts)
     local untracked_files = {}
-    local status = vim.fn.systemlist(config.globals.files.git_untracked_cmd)
+    local status = vim.fn.systemlist(path.git_cwd(
+      config.globals.files.git_untracked_cmd, opts.cwd))
     if vim.v.shell_error == 0 then
         for i = 1, #status do
-            untracked_files[status[i]] = "?"
+            local file = status[i]
+            untracked_files[file] = "?"
         end
     end
 
@@ -207,7 +210,7 @@ M.fzf_files = function(opts)
 
   -- reset git tracking
   opts.diff_files, opts.untracked_files = nil, nil
-  if opts.git_icons and not utils.is_git_repo() then opts.git_icons = false end
+  if opts.git_icons and not path.is_git_repo(opts.cwd, true) then opts.git_icons = false end
 
   if opts.cwd and #opts.cwd > 0 then
     opts.cwd = vim.fn.expand(opts.cwd)
@@ -220,8 +223,8 @@ M.fzf_files = function(opts)
     end
 
     if opts.git_icons then
-      opts.diff_files = get_diff_files()
-      opts.untracked_files = get_untracked_files()
+      opts.diff_files = get_diff_files(opts)
+      opts.untracked_files = get_untracked_files(opts)
     end
 
     local has_prefix = opts.file_icons or opts.git_icons or opts.lsp_icons

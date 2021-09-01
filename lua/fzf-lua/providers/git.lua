@@ -11,25 +11,15 @@ local actions = require "fzf-lua.actions"
 
 local M = {}
 
--- code duplication, we don't use the utils version of this
--- as it doesn't print the "not in a git repo" error
-local function is_git_repo()
-  local output = vim.fn.systemlist("git rev-parse --is-inside-work-tree")
-  if utils.shell_error() then
-    utils.info(unpack(output))
-    return false
-  end
-  return true
-end
-
 local function git_version()
   local out = vim.fn.system("git --version")
   return out:match("(%d+.%d+).")
 end
 
 M.files = function(opts)
-  if not is_git_repo() then return end
   opts = config.normalize_opts(opts, config.globals.git.files)
+  if not path.is_git_repo(opts.cwd) then return end
+  opts.cmd = path.git_cwd(opts.cmd, opts.cwd)
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd,
     function(x)
       return core.make_entry_file(opts, x)
@@ -38,9 +28,12 @@ M.files = function(opts)
 end
 
 M.status = function(opts)
-  if not is_git_repo() then return end
   opts = config.normalize_opts(opts, config.globals.git.status)
-  if opts.preview then opts.preview = vim.fn.shellescape(opts.preview) end
+  if not path.is_git_repo(opts.cwd) then return end
+  if opts.preview then
+    opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
+  end
+  opts.cmd = path.git_cwd(opts.cmd, opts.cwd)
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd,
     function(x)
       -- greedy match anything after last space
@@ -51,19 +44,20 @@ M.status = function(opts)
 end
 
 local function git_cmd(opts)
-  if not is_git_repo() then return end
+  if not path.is_git_repo(opts.cwd) then return end
+  opts.cmd = path.git_cwd(opts.cmd, opts.cwd)
   coroutine.wrap(function ()
     opts.fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd,
       function(x) return x end)
     local selected = core.fzf(opts, opts.fzf_fn)
     if not selected then return end
-    actions.act(opts.actions, selected)
+    actions.act(opts.actions, selected, opts)
   end)()
 end
 
 M.commits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.commits)
-  opts.preview = vim.fn.shellescape(opts.preview)
+  opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
   return git_cmd(opts)
 end
 
@@ -76,13 +70,13 @@ M.bcommits = function(opts)
   if git_ver and tonumber(git_ver) >= 2.31 then
     opts.preview = opts.preview .. " --rotate-to=" .. vim.fn.shellescape(file)
   end
-  opts.preview = vim.fn.shellescape(opts.preview)
+  opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
   return git_cmd(opts)
 end
 
 M.branches = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.branches)
-  opts._preview = opts.preview
+  opts._preview = path.git_cwd(opts.preview, opts.cwd)
   opts.preview = fzf_helpers.choices_to_shell_cmd_previewer(function(items)
     local branch = items[1]:gsub("%*", "")  -- remove the * from current branch
     if branch:find("%)") ~= nil then

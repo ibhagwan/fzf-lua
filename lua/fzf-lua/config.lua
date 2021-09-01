@@ -1,4 +1,3 @@
-local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
 
 -- Clear the default command or it would interfere with our options
@@ -100,7 +99,7 @@ M.globals = {
     git_diff = {
       cmd             = "git diff",
       args            = "--color",
-      _new            = function() return require 'fzf-lua.previewer'.cmd_async end,
+      _new            = function() return require 'fzf-lua.previewer'.git_diff end,
     },
     builtin = {
       title           = true,

@@ -10,6 +10,7 @@ Previewer.cmd = {}
 Previewer.bat = {}
 Previewer.cmd_async = {}
 Previewer.bat_async = {}
+Previewer.git_diff = {}
 Previewer.buffer = {}
 
 -- Constructors call on Previewer.<o>()
@@ -152,6 +153,15 @@ function Previewer.bat_async:cmdline(o)
     return cmd
   end)
   return act
+end
+
+function Previewer.git_diff:new(o, opts)
+  self = setmetatable(Previewer.cmd(o, opts), {
+    __index = vim.tbl_deep_extend("keep",
+      self, Previewer.cmd_async, Previewer.base
+    )})
+  self.cmd = path.git_cwd(self.cmd, opts.cwd)
+  return self
 end
 
 return Previewer
