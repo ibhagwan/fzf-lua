@@ -30,12 +30,15 @@ local function location_handler(opts, cb, _, result)
   end
   local items = vim.lsp.util.locations_to_items(result)
   for _, entry in ipairs(items) do
-    entry = core.make_entry_lcol(opts, entry)
-    entry = core.make_entry_file(opts, entry)
-    if entry then
-      cb(entry, function(err)
-        if err then return end
-      end)
+    if not opts.current_buffer_only or
+      vim.api.nvim_buf_get_name(opts.bufnr) == entry.filename then
+      entry = core.make_entry_lcol(opts, entry)
+      entry = core.make_entry_file(opts, entry)
+      if entry then
+        cb(entry, function(err)
+          if err then return end
+        end)
+      end
     end
   end
 end
@@ -47,12 +50,15 @@ local function symbol_handler(opts, cb, _, result)
     if opts.ignore_filename then
       entry.filename = opts.filename
     end
-    entry = core.make_entry_lcol(opts, entry)
-    entry = core.make_entry_file(opts, entry)
-    if entry then
-      cb(entry, function(err)
-        if err then return end
-      end)
+    if not opts.current_buffer_only or
+      vim.api.nvim_buf_get_name(opts.bufnr) == entry.filename then
+      entry = core.make_entry_lcol(opts, entry)
+      entry = core.make_entry_file(opts, entry)
+      if entry then
+        cb(entry, function(err)
+          if err then return end
+        end)
+      end
     end
   end
 end
