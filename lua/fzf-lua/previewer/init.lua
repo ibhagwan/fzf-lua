@@ -164,4 +164,26 @@ function Previewer.git_diff:new(o, opts)
   return self
 end
 
+function Previewer.git_diff:cmdline(o)
+  o = o or {}
+  local act = helpers.choices_to_shell_cmd_previewer(function(items)
+    local is_deleted = items[1]:match("D"..utils.nbsp) ~= nil
+    local is_untracked = items[1]:match("?"..utils.nbsp) ~= nil
+    local file = path.entry_to_file(items[1], self.opts.cwd)
+    local cmd = self.cmd
+    local args = self.args
+    if is_untracked then args = args .. " --no-index /dev/null" end
+    if is_deleted then
+      cmd = self.cmd:gsub("diff", "show HEAD:")
+      cmd = string.format('%s"%s"', cmd, path.relative(file.path, self.opts.cwd))
+    else
+      cmd = string.format('%s %s "%s"', cmd, args, file.path)
+    end
+    -- uncomment to see the command in the preview window
+    -- cmd = vim.fn.shellescape(cmd)
+    return cmd
+  end)
+  return act
+end
+
 return Previewer
