@@ -252,20 +252,22 @@ end
 
 M.git_buf_edit = function(selected, opts)
   local cmd = path.git_cwd("git show ", opts.cwd)
+  local git_root = path.git_root(opts.cwd, true)
   -- there's an empty string in position 1 for some reason?
   table.remove(selected,1)
   local win = vim.api.nvim_get_current_win()
   local buffer_filetype = vim.bo.filetype
-  local file = path.relative(vim.fn.expand("%"), vim.loop.cwd())
+  local file = path.relative(vim.fn.expand("%:p"), git_root)
   local commit_hash = selected[1]:match("[^ ]+")
   local git_file_contents = vim.fn.systemlist(cmd .. commit_hash .. ":" .. file)
-  local buf = vim.api.nvim_create_buf(true, false)
-  local file_name = string.gsub(file,"%.","[" .. commit_hash .. "]%.")
+  local buf = vim.api.nvim_create_buf(true, true)
+  local file_name = string.gsub(file,"$","[" .. commit_hash .. "]")
   vim.api.nvim_buf_set_lines(buf,0,0,true,git_file_contents)
   vim.api.nvim_buf_set_name(buf,file_name)
   vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile')
   vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-  vim.api.nvim_buf_set_option(buf, 'filetype',buffer_filetype)
+  vim.api.nvim_buf_set_option(buf, 'filetype', buffer_filetype)
+  vim.api.nvim_buf_set_option(buf, 'modifiable', false)
   vim.api.nvim_win_set_buf(win, buf)
 end
 

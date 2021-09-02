@@ -156,20 +156,23 @@ end
 function M.git_cwd(cmd, cwd)
   if not cwd then return cmd end
   cwd = vim.fn.expand(cwd)
-  local arg_cwd = (" --git-dir=%s --work-tree=%s "):format(
-    vim.fn.shellescape(M.join({cwd, ".git"})),
-    vim.fn.shellescape(cwd))
-  return cmd:gsub("^git ", "git " ..  arg_cwd)
+  local arg_cwd = ("-C %s "):format(vim.fn.shellescape(cwd))
+  cmd = cmd:gsub("^git ", "git " ..  arg_cwd)
+  return cmd
 end
 
 function M.is_git_repo(cwd, noerr)
-  local cmd = M.git_cwd("git rev-parse --is-inside-work-tree", cwd)
-  local output = vim.fn.systemlist(cmd)
-  if utils.shell_error() then
-    if not noerr then utils.info(unpack(output)) end
-    return false
-  end
-  return true
+    return not not M.git_root(cwd, noerr)
+end
+
+function M.git_root(cwd, noerr)
+    local cmd = M.git_cwd("git rev-parse --show-toplevel", cwd)
+    local output = vim.fn.systemlist(cmd)
+    if utils.shell_error() then
+        if not noerr then utils.info(unpack(output)) end
+        return nil
+    end
+    return output[1]
 end
 
 return M

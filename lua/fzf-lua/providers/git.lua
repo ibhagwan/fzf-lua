@@ -18,9 +18,10 @@ end
 
 M.files = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.files)
-  if not path.is_git_repo(opts.cwd) then return end
-  opts.cmd = path.git_cwd(opts.cmd, opts.cwd)
-  opts.fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd,
+  opts.cwd = path.git_root(opts.cwd)
+  if not opts.cwd then return end
+  opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+    {cmd = opts.cmd, cwd = opts.cwd},
     function(x)
       return core.make_entry_file(opts, x)
     end)
@@ -29,12 +30,13 @@ end
 
 M.status = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.status)
-  if not path.is_git_repo(opts.cwd) then return end
+  opts.cwd = path.git_root(opts.cwd)
+  if not opts.cwd then return end
   if opts.preview then
     opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
   end
-  opts.cmd = path.git_cwd(opts.cmd, opts.cwd)
-  opts.fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd,
+  opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+    {cmd = opts.cmd, cwd = opts.cwd},
     function(x)
       -- greedy match anything after last space
       x = x:match("[^ ]*$")
@@ -44,10 +46,11 @@ M.status = function(opts)
 end
 
 local function git_cmd(opts)
-  if not path.is_git_repo(opts.cwd) then return end
-  opts.cmd = path.git_cwd(opts.cmd, opts.cwd)
+  opts.cwd = path.git_root(opts.cwd)
+  if not opts.cwd then return end
   coroutine.wrap(function ()
-    opts.fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd,
+    opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+      {cmd = opts.cmd, cwd = opts.cwd},
       function(x) return x end)
     local selected = core.fzf(opts, opts.fzf_fn)
     if not selected then return end
@@ -63,7 +66,9 @@ end
 
 M.bcommits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.bcommits)
-  local file = path.relative(vim.fn.expand("%"), vim.loop.cwd())
+  local git_root = path.git_root(opts.cwd)
+  if not git_root then return end
+  local file = path.relative(vim.fn.expand("%:p"), git_root)
   opts.cmd = opts.cmd .. " " .. file
   local git_ver = git_version()
   -- rotate-to first appeared with git version 2.31
