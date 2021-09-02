@@ -428,6 +428,12 @@ M.globals.nvim = {
         ["default"]       = actions.spell_apply,
       },
     },
+    filetypes = {
+      prompt              = 'Filetypes> ',
+      actions = {
+        ["default"]       = actions.set_filetype,
+      },
+    },
     packadd = {
       prompt              = 'packadd> ',
       actions = {

@@ -260,6 +260,27 @@ M.spell_suggest = function(opts)
 
 end
 
+M.filetypes = function(opts)
+
+  opts = config.normalize_opts(opts, config.globals.nvim.filetypes)
+
+  coroutine.wrap(function ()
+
+    local entries = vim.fn.getcompletion('', 'filetype')
+    if vim.tbl_isempty(entries) then return end
+
+    opts.nomulti = true
+    opts.preview = nil
+    opts.preview_window = 'hidden:down:0'
+
+    local selected = core.fzf(opts, entries)
+
+    if not selected then return end
+    actions.act(opts.actions, selected)
+
+  end)()
+
+end
 
 M.packadd = function(opts)
 

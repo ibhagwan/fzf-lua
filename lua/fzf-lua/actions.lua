@@ -178,6 +178,11 @@ M.spell_apply = function(selected)
   vim.cmd("stopinsert")
 end
 
+M.set_filetype = function(selected)
+  if not selected then return end
+  vim.api.nvim_buf_set_option(0, 'filetype', selected[1])
+end
+
 M.packadd = function(selected)
   if not selected then return end
   for i = 1, #selected do
