@@ -36,7 +36,6 @@ end
 M.files = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.files)
-  -- _G.dump(opts)
 
   local command = get_files_cmd(opts)
 

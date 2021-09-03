@@ -251,9 +251,6 @@ M.fzf_files = function(opts)
       end
     end
 
-    -- dump fails after fzf for some odd reason
-    -- functions are still valid as can seen by pairs
-    -- _G.dump(opts.actions)
     actions.act(opts.actions, selected)
 
   end)()

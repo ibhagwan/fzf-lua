@@ -46,7 +46,6 @@ function M.setup(opts)
   -- this doesn't happen automatically
   config.globals = globals
   globals = nil
-  -- _G.dump(config.globals)
 end
 
 M.fzf_files = require'fzf-lua.core'.fzf_files

@@ -1,5 +1,6 @@
 -- help to inspect results, e.g.:
 -- ':lua _G.dump(vim.fn.getwininfo())'
+-- use ':messages' to see the dump
 function _G.dump(...)
   local objects = vim.tbl_map(vim.inspect, { ... })
   print(unpack(objects))

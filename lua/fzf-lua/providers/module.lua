@@ -42,8 +42,6 @@ M.metatable = function(opts)
 
     actions.act(opts.actions, selected)
 
-    -- _G.dump(methods)
-
   end)()
 
 end

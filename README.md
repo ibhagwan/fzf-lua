@@ -114,6 +114,13 @@ which can be easily mapped to:
 nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 ```
 
+or if using `init.lua`:
+```lua
+vim.api.nvim_set_keymap('n', '<c-P>',
+    "<cmd>lua require('fzf-lua').files()<CR>",
+    { noremap = true, silent = true })
+```
+
 ## Commands
 
 ### Buffers & Files
