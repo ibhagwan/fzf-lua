@@ -387,6 +387,7 @@ function FzfWin:create()
   -- save sending bufnr/winid
   self.src_bufnr = vim.api.nvim_get_current_buf()
   self.src_winid = vim.api.nvim_get_current_win()
+
   if self.winopts.split then
     vim.cmd(self.winopts.split)
     self.fzf_bufnr = vim.api.nvim_get_current_buf()
