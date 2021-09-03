@@ -341,6 +341,8 @@ function FzfWin:redraw_preview()
     self.border_buf = self:update_border_buf()
     self.preview_winid = api.nvim_open_win(tmp_buf, false, self.prev_winopts)
     self.border_winid = api.nvim_open_win(self.border_buf, false, self.border_winopts)
+    -- nowrap border or long filenames will mess things up
+    api.nvim_win_set_option(self.border_winid, 'wrap', false)
   end
   self:reset_win_highlights(self.border_winid, true)
   self:reset_win_highlights(self.preview_winid)
@@ -485,8 +487,13 @@ end
 
 function FzfWin:update_title(title)
   self:update_border_buf()
+  local right_pad = 7
   local border_buf = api.nvim_win_get_buf(self.border_winid)
   local top = api.nvim_buf_get_lines(border_buf, 0, 1, 0)[1]
+  local width = fn.strwidth(top)
+  if #title > width-right_pad then
+    title = title:sub(1, width-right_pad) .. " "
+  end
   local prefix = fn.strcharpart(top, 0, 3)
   local suffix = fn.strcharpart(top, fn.strwidth(title) + 3, fn.strwidth(top))
   title = ('%s%s%s'):format(prefix, title, suffix)

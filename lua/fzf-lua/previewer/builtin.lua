@@ -84,6 +84,9 @@ end
 
 function Previewer:update_border(entry)
   if self.title then
+    if self.opts.cwd then
+      entry.path = path.relative(entry.path, self.opts.cwd)
+    end
     local title = (' %s '):format(entry.path)
     if entry.bufnr then
       -- local border_width = api.nvim_win_get_width(self.win.preview_winid)

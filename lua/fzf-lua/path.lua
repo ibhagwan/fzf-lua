@@ -24,7 +24,9 @@ function M.to_matching_str(path)
 end
 
 function M.join(paths)
-  return table.concat(paths, M.separator())
+  -- gsub to remove double separator
+  return table.concat(paths, M.separator()):gsub(
+    M.separator()..M.separator(), M.separator())
 end
 
 function M.split(path)
