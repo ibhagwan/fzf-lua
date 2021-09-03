@@ -72,11 +72,7 @@ function Previewer:new(o, opts, fzf_win)
 end
 
 function Previewer:close()
-  -- restore winopts backup for those that weren't restored
-  -- (usually the last previewed loaded buffer)
-  for bufnr, _ in pairs(self.backups) do
-    self:restore_winopts(bufnr, self.win.preview_winid)
-  end
+  self:restore_winopts(self.win.preview_winid)
   self:clear_preview_buf()
   self.backups = {}
   _self = nil
@@ -109,31 +105,26 @@ function Previewer:gen_winopts()
     cursorlineopt   = 'both',
     cursorcolumn    = false,
     signcolumn      = 'no',
+    list            = false,
     foldenable      = false,
     foldmethod      = 'manual',
   }
 end
 
-function Previewer:backup_winopts(key, win)
-  if not key then return end
+function Previewer:backup_winopts(win)
   if not win or not api.nvim_win_is_valid(win) then return end
-  self.backups[key] = {}
   for opt, _ in pairs(self:gen_winopts()) do
     if utils.nvim_has_option(opt) then
-      self.backups[key][opt] = api.nvim_win_get_option(win, opt)
+      self.backups[opt] = api.nvim_win_get_option(win, opt)
     end
   end
 end
 
-function Previewer:restore_winopts(key, win)
-  if not self.backups[key] then return end
+function Previewer:restore_winopts(win)
   if not win or not api.nvim_win_is_valid(win) then return end
-  for opt, v in pairs(self.backups[key]) do
-    if utils.nvim_has_option(opt) then
-      api.nvim_win_set_option(win, opt, v)
+    for opt, value in pairs(self.backups) do
+      vim.api.nvim_win_set_option(win, opt, value)
     end
-  end
-  self.backups[key] = nil
 end
 
 function Previewer:set_winopts(win)
@@ -269,10 +260,8 @@ function Previewer:display_last_entry()
 end
 
 function Previewer:preview_buf_post(entry)
-  -- backup window options
   local bufnr = self.preview_bufnr
   local preview_winid = self.win.preview_winid
-  self:backup_winopts(bufnr, preview_winid)
 
   -- set preview win options or load the file
   -- if not already loaded from buffer
@@ -308,11 +297,12 @@ function Previewer:display_entry(entry)
     self.last_entry = entry
   end
   if not self.win or not self.win:validate_preview() then return end
+  if rawequal(next(self.backups), nil) then
+      self:backup_winopts(self.win.src_winid)
+  end
   local preview_winid = self.win.preview_winid
   local previous_bufnr = api.nvim_win_get_buf(preview_winid)
   assert(not self.preview_bufnr or previous_bufnr == self.preview_bufnr)
-  -- restore settings for the buffer we were previously viewing
-  self:restore_winopts(previous_bufnr, preview_winid)
   -- clear the current preview buffer
   local bufnr = self:clear_preview_buf()
   -- store the preview buffer
