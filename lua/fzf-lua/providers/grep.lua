@@ -139,12 +139,16 @@ M.live_grep = function(opts)
   end
 
   -- use {q} as a placeholder for fzf
-  local initial_command = get_grep_cmd(opts, opts.search)
+  local query = opts.search or ''
+  local initial_command = "true"
   local reload_command = get_grep_cmd(opts, "{q}", true) .. " || true"
 
-  opts._fzf_cli_args = string.format('--phony --query="%s" --bind=%s',
-      utils._if(opts.search and #opts.search>0,
-        utils.rg_escape(opts.search), ''),
+  if opts.search and #opts.search>0 then
+    initial_command = get_grep_cmd(opts, opts.search)
+    if not opts.no_esc then query = utils.rg_escape(opts.search) end
+  end
+
+  opts._fzf_cli_args = string.format('--phony --query="%s" --bind=%s', query,
       vim.fn.shellescape(string.format("change:reload:%s", reload_command)))
 
   -- TODO:
