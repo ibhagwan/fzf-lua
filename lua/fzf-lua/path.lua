@@ -46,11 +46,10 @@ end
 function M.extension(path)
   -- path = M.basename(path)
   -- return path:match(".+%.(.*)")
-  -- search for the first dotten string part up to space
-  -- then match anything after the dot up to ':/\.'
-  path = path:match("(%.[^ :\t\x1b]+)")
-  if not path then return path end
-  return path:match("^.*%.([^ :\\/]+)")
+  -- 1. match anything before the first ':'
+  -- 2. greedy match anything after the last dot
+  -- 3. remove coloring escape sequence
+  return utils.strip_ansi_coloring(path:match("[^:]+"):match("[^.]*$"))
 end
 
 ---Get the path to the parent directory of the given path. Returns `nil` if the
@@ -133,6 +132,7 @@ local function lastIndexOf(haystack, needle)
 end
 
 function M.entry_to_file(entry, cwd)
+  entry = utils.strip_ansi_coloring(entry)
   local sep = ":"
   local s = strsplit(entry, sep)
   local file = s[1]:match("[^"..utils.nbsp.."]*$")

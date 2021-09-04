@@ -127,7 +127,7 @@ end
 
 local get_git_indicator = function(file, diff_files, untracked_files)
     -- remove colors from `rg` output
-    file = file:gsub("%[%d+m", "")
+    file = utils.strip_ansi_coloring(file)
     if diff_files and diff_files[file] then
         return diff_files[file]
     end

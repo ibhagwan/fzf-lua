@@ -44,8 +44,10 @@ M.vimcmd_file = function(vimcmd, selected)
   for i = 2, #selected do
     local entry = path.entry_to_file(selected[i])
     vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
-    vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
-    vim.cmd("norm! zz")
+    if entry.line > 1 or entry.col > 1 then
+      vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+      vim.cmd("norm! zz")
+    end
   end
 end
 

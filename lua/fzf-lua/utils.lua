@@ -180,6 +180,14 @@ for color, escseq in pairs(M.ansi_colors) do
     end
 end
 
+function M.strip_ansi_coloring(str)
+  if not str then return str end
+  -- remove escape sequences of the following formats:
+  -- 1. ^[[34m
+  -- 2. ^[[0;34m
+  return str:gsub("%[[%d;]+m", "")
+end
+
 function M.get_visual_selection()
     -- this will exit visual mode
     -- use 'gv' to reselect the text
