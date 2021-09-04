@@ -100,15 +100,20 @@ end
 
 M.live_grep_sk = function(opts)
 
-  -- "'{}'" opens sk with an empty search_query showing all files
-  --  "{}"  opens sk without executing an empty string query
-  --  the problem is the latter doesn't support escaped chars
-  -- TODO: how to open without a query with special char support
   local sk_args = get_grep_cmd(opts , "'{}'", true)
 
-  opts._fzf_cli_args = string.format("--cmd-prompt='%s' -i -c %s",
-      opts.prompt,
-      vim.fn.shellescape(sk_args))
+  -- do not run an empty string query
+  sk_args = "[ -z '{}' ] || " .. sk_args
+
+  local query = opts.search or ''
+  if opts.search and #opts.search>0 then
+    if not opts.no_esc then query = utils.rg_escape(opts.search) end
+  end
+
+  opts._fzf_cli_args = string.format(
+    "--prompt='*%s' --cmd-prompt='%s' --cmd-query='%s' -i -c %s",
+    opts.prompt, opts.prompt, query,
+    vim.fn.shellescape(sk_args))
 
   opts.git_icons = false
   opts.file_icons = false
@@ -142,6 +147,9 @@ M.live_grep = function(opts)
   local query = opts.search or ''
   local initial_command = "true"
   local reload_command = get_grep_cmd(opts, "{q}", true) .. " || true"
+
+  -- do not run an empty string query
+  reload_command = "[ -z '{q}' ] || " .. reload_command
 
   if opts.search and #opts.search>0 then
     initial_command = get_grep_cmd(opts, opts.search)
