@@ -243,10 +243,14 @@ function M.delayed_cb(cb, fn)
   end, 20)
 end
 
-function M.is_term_buffer(bufnr)
-  local bufname = vim.api.nvim_buf_get_name(bufnr or 0)
+function M.is_term_bufname(bufname)
   if bufname and bufname:match("term://") then return true end
   return false
+end
+
+function M.is_term_buffer(bufnr)
+  local bufname = vim.api.nvim_buf_get_name(bufnr or 0)
+  return M.is_term_bufname(bufname)
 end
 
 function M.zz()

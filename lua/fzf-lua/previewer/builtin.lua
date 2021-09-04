@@ -5,7 +5,6 @@ local raw_action = require("fzf.actions").raw_action
 
 local api = vim.api
 local fn = vim.fn
-local cmd = vim.cmd
 
 local Previewer = {}
 
@@ -157,8 +156,6 @@ local function set_cursor_hl(self, entry)
     if lnum and lnum > 0 and col and col > 1 then
       fn.matchaddpos(self.hl_cursor, {{lnum, math.max(1, col)}}, 11)
     end
-
-    cmd(('noa call nvim_set_current_win(%d)'):format(self.win.preview_winid))
 end
 
 function Previewer:do_syntax(entry)
@@ -244,7 +241,7 @@ function Previewer:preview_buf_post(entry)
 
   -- set preview win options or load the file
   -- if not already loaded from buffer
-  utils.win_execute(preview_winid, function()
+  vim.api.nvim_win_call(preview_winid, function()
     set_cursor_hl(self, entry)
   end)
 
@@ -350,30 +347,42 @@ function Previewer.scroll(direction)
   if not _self then return end
   local self = _self
   local preview_winid = self.win.preview_winid
-  if preview_winid < 0 or not direction then
-    return
-  end
-  if utils.is_term_buffer(self.preview_bufnr) then
-    local input = direction > 0 and [[]] or [[]]
-    local count = math.abs(direction)
+  if preview_winid < 0 or not direction then return end
+
+  if direction == 0 then
     vim.api.nvim_win_call(preview_winid, function()
-      -- TODO: why does this cause an error?
-      -- 'Vim(normal):Can't re-enter normal mode from terminal mode'
-      -- vim.cmd([[normal! ]] .. count .. input)
-      print([[normal! ]] .. count .. input)
+      -- for some reason 'nvim_win_set_cursor'
+      -- only moves forward, so set to (1,0) first
+      api.nvim_win_set_cursor(0, {1, 0})
+      api.nvim_win_set_cursor(0, self.orig_pos)
+      utils.zz()
     end)
-    return
-  end
-  utils.win_execute(preview_winid, function()
-    if direction == 0 then
-      api.nvim_win_set_cursor(preview_winid, self.orig_pos)
+  else
+    if utils.is_term_buffer(self.preview_bufnr) then
+      -- can't use ":norm!" with terminal buffers due to:
+      -- 'Vim(normal):Can't re-enter normal mode from terminal mode'
+      -- TODO: this is hacky and disgusting figure
+      -- out why it's failing or at the very least
+      -- hide the typed command from the user
+      local input = direction > 0 and "<C-d>" or "<C-u>"
+      utils.feed_keys_termcodes(('<C-\\><C-n>:noa lua vim.api.nvim_win_call(' ..
+        '%d, function() vim.cmd("norm! <C-v>%s") end)<CR>i'):
+        format(tonumber(preview_winid), input))
+      --[[ local input = ('%c'):format(utils._if(direction>0, 0x04, 0x15))
+      vim.cmd(('noa lua vim.api.nvim_win_call(' ..
+        '%d, function() vim.cmd("norm! %s") end)'):
+        format(tonumber(preview_winid), input)) ]]
     else
-      -- ^D = 0x04, ^U = 0x15
-      fn.execute(('norm! %c'):format(direction > 0 and 0x04 or 0x15))
+      -- local input = direction > 0 and [[]] or [[]]
+      -- local input = direction > 0 and [[]] or [[]]
+      -- ^D = 0x04, ^U = 0x15 ('g8' on char to display)
+      local input = ('%c'):format(utils._if(direction>0, 0x04, 0x15))
+      vim.api.nvim_win_call(preview_winid, function()
+        vim.cmd([[norm! ]] .. input)
+        utils.zz()
+      end)
     end
-    utils.zz()
-    cmd(('noa call nvim_set_current_win(%d)'):format(self.win.fzf_winid))
-  end)
+  end
   if self.scrollbar then
     self.win:update_scrollbar()
   end

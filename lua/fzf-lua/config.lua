@@ -450,6 +450,7 @@ M.globals.file_icon_colors = {
     ["zsh"]       = "cyan",
     ["bash"]      = "cyan",
     ["bat"]       = "cyan",
+    ["term"]      = "green",
     ["py"]        = "green",
     ["md"]        = "yellow",
     ["go"]        = "magenta",
