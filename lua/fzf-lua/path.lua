@@ -44,12 +44,8 @@ function M.basename(path)
 end
 
 function M.extension(path)
-  -- path = M.basename(path)
-  -- return path:match(".+%.(.*)")
-  -- 1. match anything before the first ':'
-  -- 2. greedy match anything after the last dot
-  -- 3. remove coloring escape sequence
-  return utils.strip_ansi_coloring(path:match("[^:]+"):match("[^.]*$"))
+  _, _, ext = string.find(path, "[^.]*%.([^.:]*):?")
+  return utils.strip_ansi_coloring(ext)
 end
 
 ---Get the path to the parent directory of the given path. Returns `nil` if the
