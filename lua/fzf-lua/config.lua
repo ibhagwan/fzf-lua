@@ -213,7 +213,7 @@ M.globals.grep = {
     git_icons           = true,
     git_diff_cmd        = M.globals.files.git_diff_cmd,
     git_untracked_cmd   = M.globals.files.git_untracked_cmd,
-    grep_opts           = "--line-number --recursive --color=auto",
+    grep_opts           = "--line-number --recursive --color=auto --perl-regexp",
     rg_opts             = "--column --line-number --no-heading --color=always --smart-case",
     actions = {
       ["default"]       = actions.file_edit,
