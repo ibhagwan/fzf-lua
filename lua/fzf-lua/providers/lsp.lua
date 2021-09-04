@@ -278,6 +278,9 @@ end
 
 M.code_actions = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
+  -- irrelevant for code actions and can cause
+  -- single results to be skipped with 'async = false'
+  opts.jump_to_single_result = false
   opts.lsp_params = vim.lsp.util.make_range_params()
   opts.lsp_params.context = {
     diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
