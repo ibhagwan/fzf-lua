@@ -140,8 +140,8 @@ function M.entry_to_file(entry, cwd)
   local bufnr = s[1]:match("%[(%d+)")
   local idx = lastIndexOf(s[1], utils.nbsp) or 0
   local noicons = string.sub(entry, idx+1)
-  local line = s[2]
-  local col  = s[3]
+  local line = tonumber(s[2])
+  local col  = tonumber(s[3])
   if cwd and #cwd>0 and not M.starts_with_separator(file) then
     file = M.join({cwd, file})
     noicons = M.join({cwd, noicons})
