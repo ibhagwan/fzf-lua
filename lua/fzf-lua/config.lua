@@ -1,3 +1,4 @@
+local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
 
 -- Clear the default command or it would interfere with our options
@@ -504,6 +505,28 @@ function M.normalize_opts(opts, defaults)
     -- globals.default_previewer
     opts.previewer = opts.previewer()
   end
+
+  local executable = function(binary, fncerr,  strerr)
+    if binary and vim.fn.executable(binary) ~= 1 then
+      fncerr(("'%s' is not a valid executable, %s"):format(binary, strerr))
+      return false
+    end
+    return true
+  end
+
+  opts.fzf_bin = opts.fzf_bin or M.globals.fzf_bin
+  if not opts.fzf_bin or
+     not executable(opts.fzf_bin, utils.warn, "fallback to 'fzf'.") then
+    -- default|fallback to fzf
+    opts.fzf_bin = "fzf"
+    if not executable(opts.fzf_bin, utils.err, "aborting.") then
+      return nil
+    end
+  end
+
+  -- are we using skim?
+  opts._is_skim = opts.fzf_bin:find('sk') ~= nil
+
   return opts
 end
 

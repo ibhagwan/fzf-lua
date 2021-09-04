@@ -21,6 +21,7 @@ local M = {}
 M.colorschemes = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.colorschemes)
+  if not opts then return end
 
   coroutine.wrap(function ()
     local prev_act = action(function (args)

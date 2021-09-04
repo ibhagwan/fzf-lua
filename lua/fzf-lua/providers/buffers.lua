@@ -25,6 +25,7 @@ end
 M.buffers = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.buffers)
+  if not opts then return end
 
     local act = action(function (items, fzf_lines, _)
       -- only preview first item
@@ -158,6 +159,7 @@ end
 M.blines = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.blines)
+  if not opts then return end
 
   local bufnr = vim.api.nvim_get_current_buf()
   local bufnrstr = utils.ansi_codes.magenta(tostring(bufnr))

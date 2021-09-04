@@ -12,6 +12,7 @@ local M = {}
 M.metatable = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.builtin)
+  if not opts then return end
 
   if not opts.metatable then opts.metatable = getmetatable('').__index end
 

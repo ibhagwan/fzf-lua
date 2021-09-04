@@ -104,11 +104,13 @@ end
 
 M.tags = function(opts)
   opts = config.normalize_opts(opts, config.globals.tags)
+  if not opts then return end
   return fzf_tags(opts)
 end
 
 M.btags = function(opts)
   opts = config.normalize_opts(opts, config.globals.btags)
+  if not opts then return end
   opts.current_buffer_only = true
   return fzf_tags(opts)
 end

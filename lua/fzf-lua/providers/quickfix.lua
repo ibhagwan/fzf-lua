@@ -17,6 +17,7 @@ local quickfix_run = function(opts, cfg, locations)
   end
 
   opts = config.normalize_opts(opts, cfg)
+  if not opts then return end
 
   if not opts.cwd then opts.cwd = vim.loop.cwd() end
 

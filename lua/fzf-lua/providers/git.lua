@@ -18,6 +18,7 @@ end
 
 M.files = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.files)
+  if not opts then return end
   opts.cwd = path.git_root(opts.cwd)
   if not opts.cwd then return end
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(
@@ -30,6 +31,7 @@ end
 
 M.status = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.status)
+  if not opts then return end
   opts.cwd = path.git_root(opts.cwd)
   if not opts.cwd then return end
   if opts.preview then
@@ -60,12 +62,14 @@ end
 
 M.commits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.commits)
+  if not opts then return end
   opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
   return git_cmd(opts)
 end
 
 M.bcommits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.bcommits)
+  if not opts then return end
   local git_root = path.git_root(opts.cwd)
   if not git_root then return end
   local file = path.relative(vim.fn.expand("%:p"), git_root)
@@ -81,6 +85,7 @@ end
 
 M.branches = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.branches)
+  if not opts then return end
   opts._preview = path.git_cwd(opts.preview, opts.cwd)
   opts.preview = fzf_helpers.choices_to_shell_cmd_previewer(function(items)
     local branch = items[1]:gsub("%*", "")  -- remove the * from current branch

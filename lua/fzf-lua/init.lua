@@ -32,16 +32,6 @@ function M.setup(opts)
   if bat_theme and #bat_theme > 0 then
     vim.env.BAT_THEME = bat_theme
   end
-  -- set the fzf binary if set by the user
-  if globals.fzf_bin ~= nil and vim.fn.executable(globals.fzf_bin) ~= 1 then
-    globals.fzf_bin = nil
-  end
-  -- ignore if using an older version of nvim-fzf
-  if fzf.default_options ~= nil then
-    fzf.default_options.fzf_binary = globals.fzf_bin
-  else
-    globals.fzf_bin = nil
-  end
   -- reset our globals based on user opts
   -- this doesn't happen automatically
   config.globals = globals

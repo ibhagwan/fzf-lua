@@ -31,7 +31,8 @@ M.fzf = function(opts, contents, previewer)
   end
   fzf_win:attach_previewer(previewer)
   fzf_win:create()
-  local selected = fzf.raw_fzf(contents, M.build_fzf_cli(opts))
+  local selected = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
+    { fzf_binary = opts.fzf_bin })
   fzf_win:close()
   return selected
 end
@@ -64,15 +65,12 @@ end
 M.build_fzf_cli = function(opts, debug_print)
   opts.prompt = opts.prompt or config.globals.default_prompt
   opts.preview_offset = opts.preview_offset or ''
-  opts.fzf_bin = opts.fzf_bin or config.globals.fzf_bin
   opts.fzf_info = opts.fzf_info or config.globals.fzf_info
   opts.fzf_ansi = opts.fzf_ansi or config.globals.fzf_ansi
   if not opts.fzf_info then
-    -- HACK: support skim (rust version of fzf)
-    -- which doesn't support the '--info=' flag
-    opts.fzf_info = utils._if(opts.fzf_bin and opts.fzf_bin:find('sk')~=nil,
-      "--inline-info",
-      "--info=inline")
+    -- skim (rust version of fzf) doesn't
+    -- support the '--info=' flag
+    opts.fzf_info = utils._if(opts._is_skim, "--inline-info", "--info=inline")
   end
   local cli = string.format(
     [[ %s --layout=%s --bind=%s --prompt=%s]] ..

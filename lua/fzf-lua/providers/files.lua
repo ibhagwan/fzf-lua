@@ -36,6 +36,7 @@ end
 M.files = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.files)
+  if not opts then return end
 
   local command = get_files_cmd(opts)
 

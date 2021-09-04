@@ -98,6 +98,7 @@ end
 M.helptags = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.helptags)
+  if not opts then return end
 
   coroutine.wrap(function ()
 

@@ -57,6 +57,7 @@ end
 M.grep = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.grep)
+  if not opts then return end
 
   if opts.continue_last_search or opts.repeat_last_search then
     opts.search = config._grep_last_search
@@ -97,86 +98,81 @@ M.grep = function(opts)
   opts.search = nil
 end
 
-
-M.live_grep_sk = function(opts)
-
-  local sk_args = get_grep_cmd(opts , "'{}'", true)
-
-  -- do not run an empty string query
-  sk_args = "[ -z '{}' ] || " .. sk_args
-
-  local query = opts.search or ''
-  if opts.search and #opts.search>0 then
-    if not opts.no_esc then query = utils.rg_escape(opts.search) end
-  end
-
-  opts._fzf_cli_args = string.format(
-    "--prompt='*%s' --cmd-prompt='%s' --cmd-query='%s' -i -c %s",
-    opts.prompt, opts.prompt, query,
-    vim.fn.shellescape(sk_args))
-
-  opts.git_icons = false
-  opts.file_icons = false
-  opts.fzf_fn = nil --function(_) end
-  opts = core.set_fzf_line_args(opts)
-  core.fzf_files(opts)
-  opts.search = nil
-end
-
 M.live_grep = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.grep)
+  if not opts then return end
 
   if opts.continue_last_search or opts.repeat_last_search then
     opts.search = config._grep_last_search
   end
 
+  local query = opts.search or ''
   if opts.search and #opts.search>0 then
     -- save the search query so the use can
     -- call the same search again
     config._grep_last_search = opts.search
-  end
-
-  -- HACK: support skim (rust version of fzf)
-  opts.fzf_bin = opts.fzf_bin or config.globals.fzf_bin
-  if opts.fzf_bin and opts.fzf_bin:find('sk')~=nil then
-    return M.live_grep_sk(opts)
-  end
-
-  -- use {q} as a placeholder for fzf
-  local query = opts.search or ''
-  local initial_command = "true"
-  local reload_command = get_grep_cmd(opts, "{q}", true) .. " || true"
-
-  -- do not run an empty string query
-  reload_command = "[ -z '{q}' ] || " .. reload_command
-
-  if opts.search and #opts.search>0 then
-    initial_command = get_grep_cmd(opts, opts.search)
+    -- escape unless the user requested not to
     if not opts.no_esc then query = utils.rg_escape(opts.search) end
   end
 
-  opts._fzf_cli_args = string.format('--phony --query="%s" --bind=%s', query,
-      vim.fn.shellescape(string.format("change:reload:%s", reload_command)))
+  local placeholder
+  local reload_command
+  local initial_command = "true"
+  if opts._is_skim then
+    placeholder = '"{}"'
+    reload_command = get_grep_cmd(opts , placeholder, true)
+    -- do not run an empty string query unless the user requested
+    if not opts.exec_empty_query then
+      reload_command = "sh -c " .. vim.fn.shellescape(
+        ("[ -z %s ] || %s"):format(placeholder, reload_command))
+    else
+      reload_command = vim.fn.shellescape(reload_command)
+    end
+    -- skim interactive mode does not need a piped command
+    opts.fzf_fn = nil
+    opts._fzf_cli_args = string.format(
+        "--prompt='*%s' --cmd-prompt='%s' --cmd-query='%s' -i -c %s",
+        opts.prompt, opts.prompt, query, reload_command)
+  else
+    -- fzf already adds single quotes
+    -- around the place holder
+    placeholder = '{q}'
+    reload_command = get_grep_cmd(opts, placeholder, true) .. " || true"
+    if opts.exec_empty_query or (opts.search and #opts.search > 0) then
+      initial_command = get_grep_cmd(opts, opts.search)
+    end
+    opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+        initial_command,
+        function(x)
+        return core.make_entry_file(opts, x)
+        end)
+    opts._fzf_cli_args = string.format('--phony --query="%s" --bind=%s', query,
+        vim.fn.shellescape(string.format("change:reload:%s", reload_command)))
+  end
 
-  -- TODO:
-  -- this is not getting called past the initial command
-  -- until we fix that we cannot use icons as they interfere
-  -- with the extension parsing
+  -- we cannot parse any entries as they're not getting called
+  -- past the initial command, until I can find a solution for
+  -- that icons must be disabled
   opts.git_icons = false
   opts.file_icons = false
-
-  opts.fzf_fn = fzf_helpers.cmd_line_transformer(
-    initial_command,
-    function(x)
-      return core.make_entry_file(opts, x)
-    end)
 
   opts = core.set_fzf_line_args(opts)
   core.fzf_files(opts)
   opts.search = nil
 end
 
+M.live_grep_sk = function(opts)
+  if not opts then opts = {} end
+  opts.fzf_bin = "sk"
+  M.live_grep(opts)
+end
+
+M.live_grep_fzf = function(opts)
+  if not opts then opts = {} end
+  opts.fzf_bin = "fzf"
+  M.live_grep(opts)
+end
 
 M.grep_last = function(opts)
   if not opts then opts = {} end

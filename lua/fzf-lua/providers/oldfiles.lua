@@ -10,6 +10,7 @@ local M = {}
 
 M.oldfiles = function(opts)
   opts = config.normalize_opts(opts, config.globals.oldfiles)
+  if not opts then return end
 
   local current_buffer = vim.api.nvim_get_current_buf()
   local current_file = vim.api.nvim_buf_get_name(current_buffer)

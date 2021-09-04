@@ -13,6 +13,7 @@ local M = {}
 M.commands = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.nvim.commands)
+  if not opts then return end
 
   coroutine.wrap(function ()
 
@@ -78,18 +79,22 @@ end
 
 M.command_history = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.command_history)
+  if not opts then return end
   opts._fzf_cli_args = arg_header("<CR>", "<Ctrl-e>", "execute")
   history(opts, "cmd")
 end
 
 M.search_history = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.search_history)
+  if not opts then return end
   opts._fzf_cli_args = arg_header("<CR>", "<Ctrl-e>", "search")
   history(opts, "search")
 end
 
 M.marks = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.marks)
+  if not opts then return end
+
   coroutine.wrap(function ()
 
     local marks = vim.fn.execute("marks")
@@ -136,6 +141,7 @@ end
 M.registers = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.nvim.registers)
+  if not opts then return end
 
   coroutine.wrap(function ()
 
@@ -179,6 +185,7 @@ end
 M.keymaps = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.nvim.keymaps)
+  if not opts then return end
 
   coroutine.wrap(function ()
 
@@ -239,6 +246,7 @@ M.spell_suggest = function(opts)
 
   -- if not vim.wo.spell then return false end
   opts = config.normalize_opts(opts, config.globals.nvim.spell_suggest)
+  if not opts then return end
 
   coroutine.wrap(function ()
 
@@ -263,6 +271,7 @@ end
 M.filetypes = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.nvim.filetypes)
+  if not opts then return end
 
   coroutine.wrap(function ()
 
@@ -285,6 +294,7 @@ end
 M.packadd = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.nvim.packadd)
+  if not opts then return end
 
   coroutine.wrap(function ()
 

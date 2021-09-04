@@ -208,6 +208,7 @@ end
 
 local normalize_lsp_opts = function(opts, cfg)
   opts = config.normalize_opts(opts, cfg)
+  if not opts then return end
 
   -- function async params override global config
   if opts.async == nil and opts.sync == nil
@@ -538,9 +539,8 @@ M.live_workspace_symbols = function(opts)
     act_lsp = raw_async_act
   end
 
-  -- HACK: support skim (rust version of fzf)
-  opts.fzf_bin = opts.fzf_bin or config.globals.fzf_bin
-  if opts.fzf_bin and opts.fzf_bin:find('sk')~=nil then
+  -- skim (rust version of fzf)
+  if opts._is_skim then
     opts._action = act_lsp
     return live_workspace_symbols_sk(opts)
   end
