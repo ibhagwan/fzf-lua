@@ -442,8 +442,24 @@ M.globals.nvim = {
       },
     },
   }
+
 M.globals.file_icon_padding = ''
-M.globals.file_icon_colors = {
+
+if M._has_devicons then
+  M.globals.file_icon_colors = {}
+
+  local function hex(hex)
+    local r,g,b = hex:match('.(..)(..)(..)')
+    r, g, b = tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
+    return r, g, b
+  end
+
+  for ext, info in pairs(M._devicons.get_icons()) do
+    local r, g, b = hex(info.color)
+    utils.add_ansi_code('DevIcon' .. info.name, string.format('[38;2;%s;%s;%sm', r, g, b))
+  end
+else
+  M.globals.file_icon_colors = {
     ["lua"]       = "blue",
     ["rockspec"]  = "magenta",
     ["vim"]       = "green",
@@ -492,7 +508,8 @@ M.globals.file_icon_colors = {
     ["svg"]       = "green",
     ["otf"]       = "green",
     ["ttf"]       = "green",
-}
+  }
+end
 
 function M.normalize_opts(opts, defaults)
   if not opts then opts = {} end

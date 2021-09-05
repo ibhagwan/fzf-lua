@@ -173,12 +173,17 @@ M.ansi_colors = {
     white       = "[0;98m",
 }
 
-for color, escseq in pairs(M.ansi_colors) do
-    M.ansi_codes[color] = function(string)
-        if string == nil or #string == 0 then return '' end
-        return escseq .. string .. M.ansi_colors.clear
-    end
+M.add_ansi_code = function(name, escseq)
+  M.ansi_codes[name] = function(string)
+    if string == nil or #string == 0 then return '' end
+    return escseq .. string .. M.ansi_colors.clear
+  end
 end
+
+for color, escseq in pairs(M.ansi_colors) do
+  M.add_ansi_code(color, escseq)
+end
+
 
 function M.strip_ansi_coloring(str)
   if not str then return str end

@@ -110,16 +110,17 @@ M.buffers = function(opts)
       local bufnrstr = string.format("%s%s%s", leftbr,
         utils.ansi_codes.yellow(string.format(buf.bufnr)), rightbr)
       local buficon = ''
+      local hl = ''
       if opts.file_icons then
-        local extension = path.extension(buf.info.name)
         if utils.is_term_bufname(buf.info.name) then
           -- get shell-like icon for terminal buffers
-          buficon = core.get_devicon(buf.info.name, "sh")
+          buficon, hl = core.get_devicon(buf.info.name, "sh")
         else
-          buficon = core.get_devicon(buf.info.name, extension)
+          local extension = path.extension(buf.info.name)
+          buficon, hl = core.get_devicon(buf.info.name, extension)
         end
         if opts.color_icons then
-          buficon = utils.ansi_codes[config.globals.file_icon_colors[extension] or "dark_grey"](buficon)
+          buficon = utils.ansi_codes[hl](buficon)
         end
       end
       local item_str = string.format("%s%s%s%s%s%s%s",
