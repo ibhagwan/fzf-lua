@@ -143,6 +143,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 |`grep_visual`|search visual selection|
 |`grep_curbuf`|live grep current buffer|
 |`live_grep`|live grep current project|
+|`live_grep_resume`|live grep continue last search|
 
 
 ### Git

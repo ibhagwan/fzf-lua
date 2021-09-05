@@ -231,6 +231,12 @@ M.live_grep_fzf = function(opts)
   M.live_grep(opts)
 end
 
+M.live_grep_resume = function(opts)
+  if not opts then opts = {} end
+  opts.continue_last_search = true
+  return M.live_grep(opts)
+end
+
 M.grep_last = function(opts)
   if not opts then opts = {} end
   opts.continue_last_search = true
