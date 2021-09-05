@@ -206,6 +206,8 @@ end
 
 M.fzf_files = function(opts)
 
+  if not opts then return end
+
   -- reset git tracking
   opts.diff_files, opts.untracked_files = nil, nil
   if opts.git_icons and not path.is_git_repo(opts.cwd, true) then opts.git_icons = false end
@@ -253,6 +255,109 @@ M.fzf_files = function(opts)
 
   end)()
 
+end
+
+
+M.fzf_files_interactive = function(opts)
+
+  opts = opts or config.normalize_opts(opts, config.globals.files)
+  if not opts then return end
+
+  local uv = vim.loop
+  local raw_async_act = require("fzf.actions").raw_async_action(function(pipe, args)
+    local shell_cmd = opts._cb_live_cmd(args[1])
+    local output_pipe = uv.new_pipe(false)
+    local error_pipe = uv.new_pipe(false)
+
+    local shell = vim.env.SHELL or "sh"
+
+    uv.spawn(shell, {
+      args = { "-c", shell_cmd },
+      stdio = { nil, output_pipe, error_pipe }
+    }, function(code, signal)
+
+    end)
+
+    local cleaned_up = false
+    local cleanup = function()
+      if not cleaned_up then
+        cleaned_up = true
+        uv.read_stop(output_pipe)
+        uv.read_stop(error_pipe)
+        uv.close(output_pipe)
+        uv.close(error_pipe)
+        uv.close(pipe)
+      end
+    end
+
+    local read_cb = function(err, data)
+
+      if err then
+        cleanup()
+        assert(not err)
+      end
+      if not data then
+        cleanup()
+        return
+      end
+
+      uv.write(pipe, data, function(err)
+        if err then
+          cleanup()
+        end
+      end)
+    end
+
+    output_pipe:read_start(read_cb)
+    error_pipe:read_start(read_cb)
+  end)
+
+  local act_cmd = raw_async_act
+
+  -- cannot be nil
+  local query = opts._live_query or ''
+  local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
+
+  -- HACK: nvim-fzf action rg assumes preview placeholder '{+}'
+  -- replace it with the correct query placeholder
+  act_cmd = act_cmd:gsub("{%+}", placeholder)
+
+  if opts._is_skim then
+    -- do not run an empty string query unless the user requested
+    if not opts.exec_empty_query then
+      act_cmd = "sh -c " .. vim.fn.shellescape(
+        ("[ -z %s ] || %s"):format(placeholder, act_cmd))
+    else
+      act_cmd = vim.fn.shellescape(act_cmd)
+    end
+    -- skim interactive mode does not need a piped command
+    opts.fzf_fn = nil
+    opts._fzf_cli_args = string.format(
+        "--prompt='*%s' --cmd-prompt='%s' --cmd-query='%s' -i -c %s",
+        opts.prompt, opts.prompt, query, act_cmd)
+  else
+    -- fzf already adds single quotes
+    -- around the place holder
+    opts.fzf_fn = {}
+    if opts.exec_empty_query or (query and #query>0) then
+      opts.fzf_fn = require("fzf.helpers").cmd_line_transformer(
+        act_cmd:gsub(placeholder, ('"%s"'):format(query)),
+        function(x)
+          return M.make_entry_file(opts, x)
+        end)
+    end
+    opts._fzf_cli_args = string.format('--phony --query="%s" --bind=%s', query,
+        vim.fn.shellescape(string.format("change:reload:%s || true", act_cmd)))
+  end
+
+  -- we cannot parse any entries as they're not getting called
+  -- past the initial command, until I can find a solution for
+  -- that icons must be disabled
+  opts.git_icons = false
+  opts.file_icons = false
+
+  opts = M.set_fzf_line_args(opts)
+  M.fzf_files(opts)
 end
 
 return M

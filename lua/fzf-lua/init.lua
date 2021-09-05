@@ -42,6 +42,7 @@ M.fzf_files = require'fzf-lua.core'.fzf_files
 M.files = require'fzf-lua.providers.files'.files
 M.grep = require'fzf-lua.providers.grep'.grep
 M.live_grep = require'fzf-lua.providers.grep'.live_grep
+M.live_grep_old = require'fzf-lua.providers.grep'.live_grep_old
 M.grep_last = require'fzf-lua.providers.grep'.grep_last
 M.grep_cword = require'fzf-lua.providers.grep'.grep_cword
 M.grep_cWORD = require'fzf-lua.providers.grep'.grep_cWORD

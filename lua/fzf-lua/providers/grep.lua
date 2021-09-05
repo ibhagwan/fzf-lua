@@ -8,6 +8,8 @@ local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
+local last_search = {}
+
 local M = {}
 
 local get_grep_cmd = function(opts, search_query, no_esc)
@@ -59,8 +61,10 @@ M.grep = function(opts)
   opts = config.normalize_opts(opts, config.globals.grep)
   if not opts then return end
 
+  local no_esc = false
   if opts.continue_last_search or opts.repeat_last_search then
-    opts.search = config._grep_last_search
+    no_esc = last_search.no_esc
+    opts.search = last_search.query
   end
 
   -- if user did not provide a search term
@@ -79,9 +83,13 @@ M.grep = function(opts)
 
   -- save the search query so the use can
   -- call the same search again
-  config._grep_last_search = opts.search
+  last_search = {}
+  last_search.no_esc = no_esc or opts.no_esc
+  last_search.query = opts.search
 
-  local command = get_grep_cmd(opts, opts.search)
+  local command = get_grep_cmd(opts,
+    utils._if(no_esc, vim.fn.shellescape(opts.search), opts.search),
+    no_esc)
 
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(
     command,
@@ -103,17 +111,65 @@ M.live_grep = function(opts)
   opts = config.normalize_opts(opts, config.globals.grep)
   if not opts then return end
 
+  local no_esc = false
   if opts.continue_last_search or opts.repeat_last_search then
-    opts.search = config._grep_last_search
+    no_esc = last_search.no_esc
+    opts.search = last_search.query
+  end
+
+  opts._live_query = opts.search or ''
+  if opts.search and #opts.search>0 then
+    -- save the search query so the use can
+    -- call the same search again
+    last_search = {}
+    last_search.no_esc = true
+    last_search.query = opts.search
+    -- escape unless the user requested not to
+    if not no_esc and not opts.no_esc then
+      opts._live_query = utils.rg_escape(opts.search)
+    end
+  end
+
+  opts._cb_live_cmd = function(query)
+    if query and #query>0 and not opts.do_not_save_last_search then
+      last_search = {}
+      last_search.no_esc = true
+      last_search.query = query
+    end
+    -- can be nill when called as fzf initial command
+    query = query or ''
+    -- TODO: need to empty filespec
+    -- fix this collision, rename to _filespec
+    opts.no_esc = nil
+    opts.filespec = nil
+    return get_grep_cmd(opts, vim.fn.shellescape(query), true)
+  end
+
+  core.fzf_files_interactive(opts)
+end
+
+M.live_grep_old = function(opts)
+
+  opts = config.normalize_opts(opts, config.globals.grep)
+  if not opts then return end
+
+  local no_esc = false
+  if opts.continue_last_search or opts.repeat_last_search then
+    no_esc = last_search.no_esc
+    opts.search = last_search.query
   end
 
   local query = opts.search or ''
   if opts.search and #opts.search>0 then
     -- save the search query so the use can
     -- call the same search again
-    config._grep_last_search = opts.search
+    last_search = {}
+    last_search.no_esc = true
+    last_search.query = opts.search
     -- escape unless the user requested not to
-    if not opts.no_esc then query = utils.rg_escape(opts.search) end
+    if not no_esc and not opts.no_esc then
+      query = utils.rg_escape(opts.search)
+    end
   end
 
   local placeholder
