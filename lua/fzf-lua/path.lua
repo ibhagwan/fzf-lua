@@ -49,7 +49,7 @@ function M.extension(path)
   -- 1. match anything before the first ':'
   -- 2. greedy match anything after the last dot
   -- 3. remove coloring escape sequence
-  return utils.strip_ansi_coloring(path:match("[^:]+"):match("[^.]*$"))
+  return utils.strip_ansi_coloring(path:match("[^:]*"):match("[^.]*$"))
 end
 
 ---Get the path to the parent directory of the given path. Returns `nil` if the

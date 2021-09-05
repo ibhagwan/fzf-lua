@@ -233,6 +233,7 @@ end
 
 local function fzf_lsp_locations(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
+  if not opts then return end
   opts = core.set_fzf_line_args(opts)
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
@@ -270,6 +271,7 @@ end
 
 M.workspace_symbols = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
+  if not opts then return end
   opts.lsp_params = {query = opts.query or ''}
   opts = core.set_fzf_line_args(opts)
   opts = set_lsp_fzf_fn(opts)
@@ -279,6 +281,7 @@ end
 
 M.code_actions = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
+  if not opts then return end
   -- irrelevant for code actions and can cause
   -- single results to be skipped with 'async = false'
   opts.jump_to_single_result = false
@@ -355,6 +358,7 @@ end
 
 M.diagnostics = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
+  if not opts then return end
 
   local lsp_clients = vim.lsp.buf_get_clients(0)
   if #lsp_clients == 0 then
@@ -491,6 +495,7 @@ end
 M.live_workspace_symbols = function(opts)
 
   opts = normalize_lsp_opts(opts, config.globals.lsp)
+  if not opts then return end
   opts.lsp_params = {query = ''}
 
   -- must get those here, otherwise we get the

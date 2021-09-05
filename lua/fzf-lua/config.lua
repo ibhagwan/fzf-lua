@@ -519,7 +519,8 @@ function M.normalize_opts(opts, defaults)
      not executable(opts.fzf_bin, utils.warn, "fallback to 'fzf'.") then
     -- default|fallback to fzf
     opts.fzf_bin = "fzf"
-    if not executable(opts.fzf_bin, utils.err, "aborting.") then
+    if not executable(opts.fzf_bin, utils.err,
+      "aborting. Please make sure 'fzf' is in installed.") then
       return nil
     end
   end

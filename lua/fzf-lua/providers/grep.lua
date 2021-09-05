@@ -118,7 +118,7 @@ M.live_grep = function(opts)
 
   local placeholder
   local reload_command
-  local initial_command = "true"
+  local initial_command = nil
   if opts._is_skim then
     placeholder = '"{}"'
     reload_command = get_grep_cmd(opts , placeholder, true)
@@ -139,14 +139,15 @@ M.live_grep = function(opts)
     -- around the place holder
     placeholder = '{q}'
     reload_command = get_grep_cmd(opts, placeholder, true) .. " || true"
+    opts.fzf_fn = {}
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
       initial_command = get_grep_cmd(opts, opts.search)
-    end
-    opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+      opts.fzf_fn = fzf_helpers.cmd_line_transformer(
         initial_command,
         function(x)
-        return core.make_entry_file(opts, x)
+          return core.make_entry_file(opts, x)
         end)
+    end
     opts._fzf_cli_args = string.format('--phony --query="%s" --bind=%s', query,
         vim.fn.shellescape(string.format("change:reload:%s", reload_command)))
   end
@@ -202,6 +203,9 @@ M.grep_curbuf = function(opts)
   if not opts then opts = {} end
   opts.rg_opts = config.globals.grep.rg_opts .. " --with-filename"
   opts.grep_opts = config.globals.grep.grep_opts .. " --with-filename"
+  if opts.exec_empty_query == nil then
+    opts.exec_empty_query = true
+  end
   opts.filename = vim.api.nvim_buf_get_name(0)
   if #opts.filename > 0 then
     opts.filename = path.relative(opts.filename, vim.loop.cwd())
