@@ -38,13 +38,20 @@ M.fzf = function(opts, contents, previewer)
 end
 
 M.get_devicon = function(file, ext)
-  local icon = ''
-  if not file or #file == 0 then return icon end
+  local icon, hl
   if config._has_devicons and config._devicons then
-    local devicon = config._devicons.get_icon(file, ext)
-    if devicon then icon = devicon end
+    icon, hl  = config._devicons.get_icon(file, ext, {default = true})
+  else
+    icon, hl = '', 'dark_grey'
   end
-  return icon..config.globals.file_icon_padding:gsub(" ", utils.nbsp)
+
+  -- allow user override of the color
+  local override = config.globals.file_icon_colors[ext]
+  if override then
+      hl = override
+  end
+
+  return icon..config.globals.file_icon_padding:gsub(" ", utils.nbsp), hl
 end
 
 M.preview_window = function(opts)
@@ -124,8 +131,6 @@ local get_untracked_files = function(opts)
 end
 
 local get_git_indicator = function(file, diff_files, untracked_files)
-    -- remove colors from `rg` output
-    file = utils.strip_ansi_coloring(file)
     if diff_files and diff_files[file] then
         return diff_files[file]
     end
@@ -148,41 +153,44 @@ M.make_entry_lcol = function(_, entry)
 end
 
 M.make_entry_file = function(opts, x)
-  local icon
-  local prefix = ''
-  if opts.cwd_only and path.starts_with_separator(x) then
+  local icon, hl
+  local ret = {}
+  local file = utils.strip_ansi_coloring(string.match(x, '[^:]*'))
+  if opts.cwd_only and path.starts_with_separator(file) then
     local cwd = opts.cwd or vim.loop.cwd()
-    if not path.is_relative(x, cwd) then
+    if not path.is_relative(file, cwd) then
       return nil
     end
   end
   if opts.cwd and #opts.cwd > 0 then
+    -- TODO: does this work if there are ANSI escape codes in x?
     x = path.relative(x, opts.cwd)
   end
   if opts.file_icons then
-    local ext = path.extension(x)
-    icon = M.get_devicon(x, ext)
+    local filename = path.tail(file)
+    local ext = path.extension(filename)
+    icon, hl = M.get_devicon(filename, ext)
     if opts.color_icons then
-      icon = utils.ansi_codes[config.globals.file_icon_colors[ext] or "dark_grey"](icon)
+      icon = utils.ansi_codes[hl](icon)
     end
-    prefix = prefix .. icon
+    ret[#ret+1] = icon
+    ret[#ret+1] = utils.nbsp
   end
   if opts.git_icons then
-    local filepath = x:match("^[^:]+")
-    local indicator = get_git_indicator(filepath, opts.diff_files, opts.untracked_files)
+    local indicator = get_git_indicator(file, opts.diff_files, opts.untracked_files)
     icon = indicator
-    if config.globals.git.icons[indicator] then
-      icon = config.globals.git.icons[indicator].icon
+    local git_icon = config.globals.git.icons[indicator]
+    if git_icon then
+      icon = git_icon.icon
       if opts.color_icons then
-        icon = utils.ansi_codes[config.globals.git.icons[indicator].color or "dark_grey"](icon)
+        icon = utils.ansi_codes[git_icon.color or "dark_grey"](icon)
       end
     end
-    prefix = prefix .. utils._if(#prefix>0, utils.nbsp, '') .. icon
+    ret[#ret+1] = icon
+    ret[#ret+1] = utils.nbsp
   end
-  if #prefix > 0 then
-    x = prefix .. utils.nbsp .. x
-  end
-  return x
+  ret[#ret+1] = x
+  return table.concat(ret)
 end
 
 M.set_fzf_line_args = function(opts)

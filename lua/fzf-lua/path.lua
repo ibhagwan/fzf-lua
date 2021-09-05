@@ -10,14 +10,16 @@ M.starts_with_separator = function(path)
   return path:find(M.separator()) == 1
 end
 
-M.tail = (function()
+function M.tail(path)
   local os_sep = M.separator()
   local match_string = '[^' .. os_sep .. ']*$'
 
-  return function(path)
-    return string.match(path, match_string)
-  end
-end)()
+  return string.match(path, match_string)
+end
+
+function M.extension(path)
+  return string.match(path, '[%w_+$]*$')
+end
 
 function M.to_matching_str(path)
   return path:gsub('(%-)', '(%%-)'):gsub('(%.)', '(%%.)'):gsub('(%_)', '(%%_)')
@@ -41,15 +43,6 @@ function M.basename(path)
   local i = path:match("^.*()" .. M.separator())
   if not i then return path end
   return path:sub(i + 1, #path)
-end
-
-function M.extension(path)
-  -- path = M.basename(path)
-  -- return path:match(".+%.(.*)")
-  -- 1. match anything before the first ':'
-  -- 2. greedy match anything after the last dot
-  -- 3. remove coloring escape sequence
-  return utils.strip_ansi_coloring(path:match("[^:]*"):match("[^.]*$"))
 end
 
 ---Get the path to the parent directory of the given path. Returns `nil` if the
