@@ -447,10 +447,12 @@ require'fzf-lua'.setup {
   -- available colors (terminal):
   --    clear, bold, black, red, green, yellow
   --    blue, magenta, cyan, grey, dark_grey, white
+  -- padding can help kitty term users with
+  -- double-width icon rendering
+  file_icon_padding = '',
   file_icon_colors = {
     ["lua"]   = "blue",
   },
-  file_icon_padding = '',
 }
 ```
 

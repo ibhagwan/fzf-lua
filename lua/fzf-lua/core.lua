@@ -44,7 +44,7 @@ M.get_devicon = function(file, ext)
     local devicon = config._devicons.get_icon(file, ext)
     if devicon then icon = devicon end
   end
-  return icon..config.globals.file_icon_padding
+  return icon..config.globals.file_icon_padding:gsub(" ", utils.nbsp)
 end
 
 M.preview_window = function(opts)

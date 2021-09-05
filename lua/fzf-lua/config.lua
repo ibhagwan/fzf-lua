@@ -442,6 +442,7 @@ M.globals.nvim = {
       },
     },
   }
+M.globals.file_icon_padding = ''
 M.globals.file_icon_colors = {
     ["lua"]       = "blue",
     ["rockspec"]  = "magenta",
@@ -492,7 +493,6 @@ M.globals.file_icon_colors = {
     ["otf"]       = "green",
     ["ttf"]       = "green",
 }
-M.globals.file_icon_padding = ''
 
 function M.normalize_opts(opts, defaults)
   if not opts then opts = {} end
