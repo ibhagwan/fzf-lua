@@ -153,7 +153,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 |`git_status`|`git status`|
 |`git_commits`|git commit log (project)|
 |`git_bcommits`|git commit log (buffer)|
-|`git_branch`|git branches|
+|`git_branches`|git branches|
 
 ### LSP
 | Command | List |
