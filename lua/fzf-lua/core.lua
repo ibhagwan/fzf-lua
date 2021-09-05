@@ -263,6 +263,10 @@ M.fzf_files_interactive = function(opts)
   opts = opts or config.normalize_opts(opts, config.globals.files)
   if not opts then return end
 
+  -- cannot be nil
+  local query = opts._live_query or ''
+  local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
+
   local uv = vim.loop
   local raw_async_act = require("fzf.actions").raw_async_action(function(pipe, args)
     local shell_cmd = opts._cb_live_cmd(args[1])
@@ -310,17 +314,9 @@ M.fzf_files_interactive = function(opts)
 
     output_pipe:read_start(read_cb)
     error_pipe:read_start(read_cb)
-  end)
+  end, placeholder)
 
   local act_cmd = raw_async_act
-
-  -- cannot be nil
-  local query = opts._live_query or ''
-  local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
-
-  -- HACK: nvim-fzf action rg assumes preview placeholder '{+}'
-  -- replace it with the correct query placeholder
-  act_cmd = act_cmd:gsub("{%+}", placeholder)
 
   if opts._is_skim then
     -- do not run an empty string query unless the user requested

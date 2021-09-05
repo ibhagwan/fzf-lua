@@ -51,7 +51,7 @@ end
 
 function Previewer.cmd:action(o)
   o = o or {}
-  local filespec = "{+}"
+  local filespec = "{}"
   if self.opts._line_placeholder then
     filespec = "{1}"
   end
@@ -122,7 +122,7 @@ function Previewer.cmd_async:cmdline(o)
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
-  end)
+  end, "{}")
   return act
 end
 
@@ -151,7 +151,7 @@ function Previewer.bat_async:cmdline(o)
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
-  end)
+  end, "{}")
   return act
 end
 
@@ -182,7 +182,7 @@ function Previewer.git_diff:cmdline(o)
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
-  end)
+  end, "{}")
   return act
 end
 

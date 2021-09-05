@@ -326,7 +326,7 @@ function Previewer:action(_)
     local entry = path.entry_to_file(items[1], self.opts.cwd)
     self:display_entry(entry)
     return ""
-  end)
+  end, "{}")
   return act
 end
 
