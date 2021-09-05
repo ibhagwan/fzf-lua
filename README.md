@@ -450,6 +450,7 @@ require'fzf-lua'.setup {
   file_icon_colors = {
     ["lua"]   = "blue",
   },
+  file_icon_padding = '',
 }
 ```
 
