@@ -65,7 +65,7 @@ M.files_resume = function(opts)
 
   local command = get_files_cmd(opts)
 
-  opts._fzf_cli_args = ('--query="%s" --bind=change:execute:%s'):
+  opts._fzf_cli_args = ('--query="%s" --bind=change:execute-silent:%s'):
     format(last_query, vim.fn.shellescape(raw_act))
 
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(command,
