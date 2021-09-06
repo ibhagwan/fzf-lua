@@ -155,7 +155,12 @@ end
 M.make_entry_file = function(opts, x)
   local icon, hl
   local ret = {}
-  local file = utils.strip_ansi_coloring(string.match(x, '[^:]*'))
+  local file = x
+  for s in string.gmatch(x, '[^:]+') do
+    file = s
+    break
+  end
+  file = utils.strip_ansi_coloring(file)
   if opts.cwd_only and path.starts_with_separator(file) then
     local cwd = opts.cwd or vim.loop.cwd()
     if not path.is_relative(file, cwd) then

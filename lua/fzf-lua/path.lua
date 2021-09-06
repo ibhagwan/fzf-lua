@@ -12,13 +12,21 @@ end
 
 function M.tail(path)
   local os_sep = M.separator()
-  local match_string = '[^' .. os_sep .. ']*$'
+  local match_string = '[^' .. os_sep .. ']+'
 
-  return string.match(path, match_string)
+  local tail = path
+  for s in string.gmatch(path, match_string) do
+      tail = s
+  end
+  return tail
 end
 
 function M.extension(path)
-  return string.match(path, '[%w_+$]*$')
+  local ext = path
+  for s in string.gmatch(path, '[^.]+') do
+      ext = s
+  end
+  return ext
 end
 
 function M.to_matching_str(path)
