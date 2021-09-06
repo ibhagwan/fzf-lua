@@ -96,8 +96,29 @@ local function diagnostics_handler(opts, cb, _, entry)
   end)
 end
 
+-- see neovim #15504
+-- https://github.com/neovim/neovim/pull/15504#discussion_r698424017
+local mk_handler = function(fn)
+  return function(...)
+    local is_new = not select(4, ...) or type(select(4, ...)) ~= 'number'
+    if is_new then
+      -- function(err, result, context, config)
+      fn(...)
+    else
+      -- function(err, method, params, client_id, bufnr, config)
+      local err = select(1, ...)
+      local method = select(2, ...)
+      local result = select(3, ...)
+      local client_id = select(4, ...)
+      local bufnr = select(5, ...)
+      local lspcfg = select(6, ...)
+      fn(err, result, { method = method, client_id = client_id, bufnr = bufnr }, lspcfg)
+    end
+  end
+end
+
 local function wrap_handler(handler)
-  return function(err, method, result, client_id, bufnr, lspcfg)
+  return mk_handler(function(err, result, context, lspcfg)
     local ret
     if err then
       ret = err.message
@@ -108,10 +129,10 @@ local function wrap_handler(handler)
       ret = utils.info(string.format('No %s found', string.lower(handler.label)))
       utils.send_ctrl_c()
     else
-      ret = handler.target(err, method, result, client_id, bufnr, lspcfg)
+      ret = handler.target(err, result, context, lspcfg)
     end
     return ret
-  end
+  end)
 end
 
 local function set_lsp_fzf_fn(opts)
@@ -161,7 +182,7 @@ local function set_lsp_fzf_fn(opts)
       -- callback when a location is found
       -- we use this passthrough so we can send the
       -- coroutine variable (not used rn but who knows?)
-      opts.lsp_handler.target = function(_, _, result)
+      opts.lsp_handler.target = function(_, result, _, _)
         opts.lsp_handler.handler(opts, cb, co, result)
         -- close the pipe to fzf, this
         -- removes the loading indicator in fzf
