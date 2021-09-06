@@ -127,12 +127,13 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | Command | List |
 | --- | --- |
 |`buffers`|open buffers|
-|`blines`|current buffer lines|
 |`files`|`find` or `fd` on a path|
 |`files_resume`|continious query find|
 |`oldfiles`|opened files history|
 |`quickfix`|quickfix list|
 |`loclist`|location list|
+|`lines`|open buffers lines|
+|`blines`|current buffer lines|
 
 ### Search
 | Command | List |

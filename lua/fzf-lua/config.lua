@@ -291,6 +291,16 @@ M.globals.buffers = {
         ["ctrl-x"]        = actions.buf_del,
     },
   }
+M.globals.lines = {
+    previewer             = "builtin",
+    prompt                = 'Lines> ',
+    actions = {
+        ["default"]       = actions.buf_edit,
+        ["ctrl-s"]        = actions.buf_split,
+        ["ctrl-v"]        = actions.buf_vsplit,
+        ["ctrl-t"]        = actions.buf_tabedit,
+    },
+  }
 M.globals.blines = {
     previewer             = "builtin",
     prompt                = 'BLines> ',

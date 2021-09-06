@@ -156,31 +156,65 @@ M.buffers = function(opts)
   end)()
 end
 
-M.blines = function(opts)
+M.lines = function(opts)
+  opts = config.normalize_opts(opts, config.globals.lines)
+  M.buffer_lines(opts)
+end
 
+M.blines = function(opts)
   opts = config.normalize_opts(opts, config.globals.blines)
+  opts.current_buffer_only = true
+  M.buffer_lines(opts)
+end
+
+
+M.buffer_lines = function(opts)
   if not opts then return end
 
-  local bufnr = vim.api.nvim_get_current_buf()
-  local bufnrstr = utils.ansi_codes.magenta(tostring(bufnr))
+  local buffers = {}
+  if opts.current_buffer_only then
+    table.insert(buffers, vim.api.nvim_get_current_buf())
+  else
+    buffers = vim.tbl_filter(function(b)
+      if 1 ~= vim.fn.buflisted(b) then
+          return false
+      end
+      -- only hide unloaded buffers if opts.show_all_buffers is false, keep them listed if true or nil
+      if opts.show_all_buffers == false and not vim.api.nvim_buf_is_loaded(b) then
+        return false
+      end
+      if opts.ignore_current_buffer and b == vim.api.nvim_get_current_buf() then
+        return false
+      end
+      if opts.cwd_only and not path.is_relative(vim.api.nvim_buf_get_name(b), vim.loop.cwd()) then
+        return false
+      end
+      return true
+    end, vim.api.nvim_list_bufs())
+  end
 
   coroutine.wrap(function()
     local items = {}
 
-    if api.nvim_buf_is_loaded(bufnr) then
-      local data = api.nvim_buf_get_lines(bufnr, 0, -1, false)
-      for l, text in ipairs(data) do
-        table.insert(items, ("[%s]:%s: %s"):format(
-          bufnrstr,
-          utils.ansi_codes.green(tostring(l)),
-          text))
+    for _, bufnr in ipairs(buffers) do
+      if api.nvim_buf_is_loaded(bufnr) then
+        local bufname = path.basename(api.nvim_buf_get_name(bufnr))
+        local data = api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        for l, text in ipairs(data) do
+          table.insert(items, ("[%s]%s%s:%s: %s"):format(
+            utils.ansi_codes.yellow(tostring(bufnr)),
+            utils.nbsp,
+            utils.ansi_codes.magenta(bufname),
+            utils.ansi_codes.green(tostring(l)),
+            text))
+        end
       end
     end
 
     -- ignore bufnr when searching
     -- disable multi-select
     opts.nomulti = true
-    opts._fzf_cli_args = "--delimiter=':' --nth 2,-1"
+    opts._fzf_cli_args = "--delimiter=']' --nth 2,-1"
 
     local selected = core.fzf(opts, items)
 
