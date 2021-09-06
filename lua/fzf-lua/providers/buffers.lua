@@ -116,8 +116,9 @@ M.buffers = function(opts)
           -- get shell-like icon for terminal buffers
           buficon, hl = core.get_devicon(buf.info.name, "sh")
         else
-          local extension = path.extension(buf.info.name)
-          buficon, hl = core.get_devicon(buf.info.name, extension)
+          local filename = path.tail(buf.info.name)
+          local extension = path.extension(filename)
+          buficon, hl = core.get_devicon(filename, extension)
         end
         if opts.color_icons then
           buficon = utils.ansi_codes[hl](buficon)
