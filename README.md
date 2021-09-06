@@ -341,8 +341,8 @@ require'fzf-lua'.setup {
     },
     branches = {
       prompt          = 'Branches❯ ',
-      cmd             = "git branch --all --color --reflog",
-      preview         = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
+      cmd             = "git branch --all --color",
+      preview         = "git log --graph --pretty=oneline --abbrev-commit --reflog --color {1}",
       actions = {
         ["default"] = actions.git_switch,
       },
