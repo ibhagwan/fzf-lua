@@ -178,7 +178,7 @@ M.buffer_lines = function(opts)
     table.insert(buffers, vim.api.nvim_get_current_buf())
   else
     buffers = vim.tbl_filter(function(b)
-      if 1 ~= vim.fn.buflisted(b) then
+      if 1 ~= vim.fn.buflisted(b) or utils.is_term_buffer(b) then
           return false
       end
       -- only hide unloaded buffers if opts.show_all_buffers is false, keep them listed if true or nil
@@ -202,10 +202,21 @@ M.buffer_lines = function(opts)
       if api.nvim_buf_is_loaded(bufnr) then
         local bufname = path.basename(api.nvim_buf_get_name(bufnr))
         local data = api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        local buficon, hl
+        if opts.file_icons then
+          local filename = path.tail(bufname)
+          local extension = path.extension(filename)
+          buficon, hl = core.get_devicon(filename, extension)
+          if opts.color_icons then
+            buficon = utils.ansi_codes[hl](buficon)
+          end
+        end
         for l, text in ipairs(data) do
-          table.insert(items, ("[%s]%s%s:%s: %s"):format(
+          table.insert(items, ("[%s]%s%s%s%s:%s: %s"):format(
             utils.ansi_codes.yellow(tostring(bufnr)),
             utils.nbsp,
+            buficon or '',
+            buficon and utils.nbsp or '',
             utils.ansi_codes.magenta(bufname),
             utils.ansi_codes.green(tostring(l)),
             text))
