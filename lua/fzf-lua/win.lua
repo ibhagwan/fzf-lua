@@ -6,6 +6,9 @@ local fn = vim.fn
 
 local FzfWin = {}
 
+-- signgleton instance used in win_leave
+local _self = nil
+
 setmetatable(FzfWin, {
   __call = function (cls, ...)
     return cls:new(...)
@@ -183,6 +186,7 @@ function FzfWin:new(o)
   if not self.winopts.split and self.previewer_is_builtin then
     self.layout = generate_layout(self.winopts)
   end
+  _self = self
   return self
 end
 
@@ -397,6 +401,13 @@ function FzfWin:create()
     self:redraw()
   end
 
+  -- verify the preview is closed, this can happen
+  -- when running async LSP with 'jump_to_single_result'
+  -- should also close issue #105
+  -- https://github.com/ibhagwan/fzf-lua/issues/105
+  vim.cmd(('au WinLeave <buffer> %s'):format(
+    [[lua require('fzf-lua.win').win_leave()]]))
+
   self:reset_win_highlights(self.fzf_winid)
 
   if self.winopts.window_on_create and
@@ -442,6 +453,8 @@ function FzfWin:close_preview()
 end
 
 function FzfWin:close()
+  -- prevents race condition with 'win_leave'
+  self.closing = true
   self:close_preview()
   if vim.api.nvim_win_is_valid(self.fzf_winid) then
     vim.api.nvim_win_close(self.fzf_winid, {force=true})
@@ -452,6 +465,13 @@ function FzfWin:close()
   if vim.api.nvim_win_is_valid(self.src_winid) then
     vim.api.nvim_set_current_win(self.src_winid)
   end
+  self.closing = nil
+  _self = nil
+end
+
+function FzfWin.win_leave()
+  if not _self or _self.closing then return end
+  _self:close()
 end
 
 function FzfWin:update_scrollbar()
