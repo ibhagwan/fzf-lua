@@ -37,10 +37,11 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     search_path = vim.fn.shellescape(opts.cwd)
   end
 
-  if search_query == nil then search_query = '""'
-  elseif not no_esc and not opts.no_esc then
-    search_query = '"' .. utils.rg_escape(search_query) .. '"'
+  search_query = search_query or ''
+  if not (no_esc or opts.no_esc) then
+    search_query = utils.rg_escape(search_query)
   end
+  search_query = vim.fn.shellescape(search_query)
 
   return string.format('%s %s %s', command, search_query, search_path)
 end
@@ -50,9 +51,10 @@ local function set_search_header(opts)
   if opts.no_header then return opts end
   if not opts.search or #opts.search==0 then return opts end
   if not opts.search_header then opts.search_header = "Searching for:" end
-  opts.fzf_cli_args = opts.fzf_cli_args or ''
-  opts.fzf_cli_args = string.format([[%s --header="%s %s"]],
-    opts.fzf_cli_args, opts.search_header, opts.search:gsub('"', '\\"'))
+  opts._fzf_cli_args = opts._fzf_cli_args or ''
+  opts._fzf_cli_args = string.format([[%s --header=%s]],
+    opts._fzf_cli_args,
+    vim.fn.shellescape(("%s %s"):format(opts.search_header, opts.search)))
   return opts
 end
 
@@ -87,9 +89,7 @@ M.grep = function(opts)
   last_search.no_esc = no_esc or opts.no_esc
   last_search.query = opts.search
 
-  local command = get_grep_cmd(opts,
-    utils._if(no_esc, vim.fn.shellescape(opts.search), opts.search),
-    no_esc)
+  local command = get_grep_cmd(opts, opts.search, no_esc)
 
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(
     command,
@@ -125,7 +125,7 @@ M.live_grep = function(opts)
     last_search.no_esc = true
     last_search.query = opts.search
     -- escape unless the user requested not to
-    if not no_esc and not opts.no_esc then
+    if not (no_esc or opts.no_esc) then
       opts._live_query = utils.rg_escape(opts.search)
     end
   end
@@ -142,7 +142,7 @@ M.live_grep = function(opts)
     -- fix this collision, rename to _filespec
     opts.no_esc = nil
     opts.filespec = nil
-    return get_grep_cmd(opts, vim.fn.shellescape(query), true)
+    return get_grep_cmd(opts, query, true)
   end
 
   core.fzf_files_interactive(opts)
@@ -167,45 +167,49 @@ M.live_grep_old = function(opts)
     last_search.no_esc = true
     last_search.query = opts.search
     -- escape unless the user requested not to
-    if not no_esc and not opts.no_esc then
+    if not (no_esc or opts.no_esc) then
       query = utils.rg_escape(opts.search)
     end
   end
 
   local placeholder
   local reload_command
-  local initial_command = nil
   if opts._is_skim then
-    placeholder = '"{}"'
+    placeholder = "{}"
     reload_command = get_grep_cmd(opts , placeholder, true)
     -- do not run an empty string query unless the user requested
     if not opts.exec_empty_query then
       reload_command = "sh -c " .. vim.fn.shellescape(
-        ("[ -z %s ] || %s"):format(placeholder, reload_command))
+        ("[ -z '%s' ] || %s"):format(placeholder, reload_command))
     else
       reload_command = vim.fn.shellescape(reload_command)
     end
     -- skim interactive mode does not need a piped command
     opts.fzf_fn = nil
     opts._fzf_cli_args = string.format(
-        "--prompt='*%s' --cmd-prompt='%s' --cmd-query='%s' -i -c %s",
-        opts.prompt, opts.prompt, query, reload_command)
+        "--prompt='*%s' --cmd-prompt='%s' --cmd-query=%s -i -c %s",
+        opts.prompt, opts.prompt,
+        vim.fn.shellescape(query),
+        reload_command)
   else
-    -- fzf already adds single quotes
-    -- around the place holder
+    -- fzf already adds single quotes around
+    -- the place holder (on query), delete those
+    -- added by 'get_grep_cmd'
     placeholder = '{q}'
-    reload_command = get_grep_cmd(opts, placeholder, true) .. " || true"
+    reload_command = get_grep_cmd(opts, placeholder, true):
+      gsub(("'%s'"):format(placeholder), placeholder)
     opts.fzf_fn = {}
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
-      initial_command = get_grep_cmd(opts, opts.search)
       opts.fzf_fn = fzf_helpers.cmd_line_transformer(
-        initial_command,
+        reload_command:gsub(placeholder, vim.fn.shellescape(query)),
         function(x)
           return core.make_entry_file(opts, x)
         end)
     end
-    opts._fzf_cli_args = string.format('--phony --query="%s" --bind=%s', query,
-        vim.fn.shellescape(string.format("change:reload:%s", reload_command)))
+    opts._fzf_cli_args = string.format('--phony --query=%s --bind=%s',
+        vim.fn.shellescape(query),
+        vim.fn.shellescape(("change:reload:%s"):format(
+          ("%s || true"):format(reload_command))))
   end
 
   -- we cannot parse any entries as they're not getting called

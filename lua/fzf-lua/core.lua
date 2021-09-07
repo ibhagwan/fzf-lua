@@ -273,7 +273,7 @@ M.fzf_files_interactive = function(opts)
 
   -- cannot be nil
   local query = opts._live_query or ''
-  local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
+  local placeholder = utils._if(opts._is_skim, "'{}'", '{q}')
 
   local uv = vim.loop
   local raw_async_act = require("fzf.actions").raw_async_action(function(pipe, args)
@@ -337,20 +337,23 @@ M.fzf_files_interactive = function(opts)
     -- skim interactive mode does not need a piped command
     opts.fzf_fn = nil
     opts._fzf_cli_args = string.format(
-        "--prompt='*%s' --cmd-prompt='%s' --cmd-query='%s' -i -c %s",
-        opts.prompt, opts.prompt, query, act_cmd)
+        "--prompt='*%s' --cmd-prompt='%s' --cmd-query=%s -i -c %s",
+        opts.prompt, opts.prompt,
+        vim.fn.shellescape(query),
+        act_cmd)
   else
     -- fzf already adds single quotes
     -- around the place holder
     opts.fzf_fn = {}
     if opts.exec_empty_query or (query and #query>0) then
       opts.fzf_fn = require("fzf.helpers").cmd_line_transformer(
-        act_cmd:gsub(placeholder, ('"%s"'):format(query)),
+        act_cmd:gsub(placeholder, vim.fn.shellescape(query)),
         function(x)
           return M.make_entry_file(opts, x)
         end)
     end
-    opts._fzf_cli_args = string.format('--phony --query="%s" --bind=%s', query,
+    opts._fzf_cli_args = string.format('--phony --query=%s --bind=%s',
+        vim.fn.shellescape(query),
         vim.fn.shellescape(string.format("change:reload:%s || true", act_cmd)))
   end
 
