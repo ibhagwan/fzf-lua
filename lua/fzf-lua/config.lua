@@ -539,6 +539,10 @@ function M.normalize_opts(opts, defaults)
     opts.previewer = opts.previewer()
   end
 
+  if opts.cwd and #opts.cwd > 0 then
+    opts.cwd = vim.fn.expand(opts.cwd)
+  end
+
   local executable = function(binary, fncerr,  strerr)
     if binary and vim.fn.executable(binary) ~= 1 then
       fncerr(("'%s' is not a valid executable, %s"):format(binary, strerr))

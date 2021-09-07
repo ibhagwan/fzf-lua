@@ -246,10 +246,6 @@ M.fzf_files = function(opts)
   opts.diff_files, opts.untracked_files = nil, nil
   if opts.git_icons and not path.is_git_repo(opts.cwd, true) then opts.git_icons = false end
 
-  if opts.cwd and #opts.cwd > 0 then
-    opts.cwd = vim.fn.expand(opts.cwd)
-  end
-
   coroutine.wrap(function ()
 
     if opts.cwd_only and not opts.cwd then
@@ -313,7 +309,8 @@ M.fzf_files_interactive = function(opts)
 
     uv.spawn(shell, {
       args = { "-c", shell_cmd },
-      stdio = { nil, output_pipe, error_pipe }
+      stdio = { nil, output_pipe, error_pipe },
+      cwd = opts.cwd
     }, function(code, signal)
 
     end)
