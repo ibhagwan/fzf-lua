@@ -273,7 +273,9 @@ M.fzf_files_interactive = function(opts)
 
   -- cannot be nil
   local query = opts._live_query or ''
-  local placeholder = utils._if(opts._is_skim, "'{}'", '{q}')
+  -- fzf already adds single quotes around the placeholder when expanding
+  -- for skim we surround it with double quotes or single quote searches fail
+  local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
 
   local uv = vim.loop
   local raw_async_act = require("fzf.actions").raw_async_action(function(pipe, args)
@@ -339,7 +341,9 @@ M.fzf_files_interactive = function(opts)
     opts._fzf_cli_args = string.format(
         "--prompt='*%s' --cmd-prompt='%s' --cmd-query=%s -i -c %s",
         opts.prompt, opts.prompt,
-        vim.fn.shellescape(query),
+        -- since we surrounded the skim placeholder with quotes
+        -- we need to escape them in the initial query
+        vim.fn.shellescape(query:gsub([["]], [[\"]])),
         act_cmd)
   else
     -- fzf already adds single quotes

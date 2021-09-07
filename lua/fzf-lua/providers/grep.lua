@@ -41,7 +41,11 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   if not (no_esc or opts.no_esc) then
     search_query = utils.rg_escape(search_query)
   end
-  search_query = vim.fn.shellescape(search_query)
+
+  -- do not escape at all
+  if not (no_esc == 2 or opts.no_esc == 2) then
+    search_query = vim.fn.shellescape(search_query)
+  end
 
   return string.format('%s %s %s', command, search_query, search_path)
 end
@@ -175,12 +179,14 @@ M.live_grep_old = function(opts)
   local placeholder
   local reload_command
   if opts._is_skim then
-    placeholder = "{}"
-    reload_command = get_grep_cmd(opts , placeholder, true)
+    placeholder = '"{}"'
+    -- skim placeholder must be double quotes
+    -- otherwise, single quote searches will fail
+    reload_command = get_grep_cmd(opts , placeholder, 2)
     -- do not run an empty string query unless the user requested
     if not opts.exec_empty_query then
       reload_command = "sh -c " .. vim.fn.shellescape(
-        ("[ -z '%s' ] || %s"):format(placeholder, reload_command))
+        ('[ -z %s ] || %s'):format(placeholder, reload_command))
     else
       reload_command = vim.fn.shellescape(reload_command)
     end
@@ -189,15 +195,16 @@ M.live_grep_old = function(opts)
     opts._fzf_cli_args = string.format(
         "--prompt='*%s' --cmd-prompt='%s' --cmd-query=%s -i -c %s",
         opts.prompt, opts.prompt,
-        vim.fn.shellescape(query),
+        -- since we surrounded the skim placeholder with quotes
+        -- we need to escape them in the initial query
+        vim.fn.shellescape(query:gsub([["]], [[\"]])),
         reload_command)
   else
     -- fzf already adds single quotes around
     -- the place holder (on query), delete those
     -- added by 'get_grep_cmd'
     placeholder = '{q}'
-    reload_command = get_grep_cmd(opts, placeholder, true):
-      gsub(("'%s'"):format(placeholder), placeholder)
+    reload_command = get_grep_cmd(opts, placeholder, 2)
     opts.fzf_fn = {}
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
       opts.fzf_fn = fzf_helpers.cmd_line_transformer(
