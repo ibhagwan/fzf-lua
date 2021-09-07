@@ -103,7 +103,6 @@ M.build_fzf_cli = function(opts, debug_print)
     -- support the '--info=' flag
     opts.fzf_info = utils._if(opts._is_skim, "--inline-info", "--info=inline")
   end
-  opts.fzf_colors = M.create_fzf_colors(config.globals.fzf_colors)
 
   local cli = string.format(
     [[ %s %s --layout=%s --bind=%s --prompt=%s]] ..
@@ -111,7 +110,7 @@ M.build_fzf_cli = function(opts, debug_print)
     [[ --height=100%%]] ..
     [[ %s %s %s %s %s %s]],
     opts.fzf_args or config.globals.fzf_args or '',
-    opts.fzf_colors,
+    M.create_fzf_colors(opts.fzf_colors or config.globals.fzf_colors),
     opts.fzf_layout or config.globals.fzf_layout,
     utils._if(opts.fzf_binds, opts.fzf_binds,
       vim.fn.shellescape(table.concat(config.globals.fzf_binds, ','))),

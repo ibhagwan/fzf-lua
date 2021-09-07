@@ -217,7 +217,6 @@ require'fzf-lua'.setup {
     hl_border        = 'FloatBorder',   -- window border color
   },
   -- fzf_bin             = 'sk',        -- use skim instead of fzf?
-  fzf_colors          = nil,            -- fzf '--color=' options
   fzf_layout          = 'reverse',      -- fzf '--layout=' options
   fzf_args            = '',             -- adv: fzf extra args, empty unless adv
   fzf_binds           = {               -- fzf '--bind=' options
@@ -232,6 +231,21 @@ require'fzf-lua'.setup {
       'ctrl-a:toggle-all',
       'ctrl-l:clear-query',
   },
+  --[[ fzf_colors = {                   -- fzf '--color=' options
+      ["fg"] = { "fg", "CursorLine" },
+      ["bg"] = { "bg", "Normal" },
+      ["hl"] = { "fg", "Comment" },
+      ["fg+"] = { "fg", "Normal" },
+      ["bg+"] = { "bg", "CursorLine" },
+      ["hl+"] = { "fg", "Statement" },
+      ["info"] = { "fg", "PreProc" },
+      ["prompt"] = { "fg", "Conditional" },
+      ["pointer"] = { "fg", "Exception" },
+      ["marker"] = { "fg", "Keyword" },
+      ["spinner"] = { "fg", "Label" },
+      ["header"] = { "fg", "Comment" },
+      ["gutter"] = { "bg", "Normal" },
+  }, ]]
   preview_border      = 'border',       -- border|noborder
   preview_wrap        = 'nowrap',       -- wrap|nowrap
   preview_opts        = 'nohidden',     -- hidden|nohidden
