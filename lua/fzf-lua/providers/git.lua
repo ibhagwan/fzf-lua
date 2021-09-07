@@ -21,10 +21,11 @@ M.files = function(opts)
   if not opts then return end
   opts.cwd = path.git_root(opts.cwd)
   if not opts.cwd then return end
+  local make_entry_file = core.make_entry_file
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(
     {cmd = opts.cmd, cwd = opts.cwd},
     function(x)
-      return core.make_entry_file(opts, x)
+      return make_entry_file(opts, x)
     end)
   return core.fzf_files(opts)
 end

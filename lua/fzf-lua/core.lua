@@ -41,7 +41,7 @@ end
 M.get_devicon = function(file, ext)
   local icon, hl
   if config._has_devicons and config._devicons then
-    icon, hl  = config._devicons.get_icon(file, ext, {default = true})
+    icon, hl  = config._devicons.get_icon(file, ext:lower(), {default = true})
   else
     icon, hl = '', 'dark_grey'
   end
