@@ -213,11 +213,14 @@ M.live_grep_native = function(opts)
         opts.prompt, opts.prompt,
         -- since we surrounded the skim placeholder with quotes
         -- we need to escape them in the initial query
-        vim.fn.shellescape(query:gsub([["]], [[\"]])),
+        vim.fn.shellescape(query:gsub('["`]',
+          function(x)
+            return '\\' .. x
+          end)),
           vim.fn.shellescape(
             ("(cd %s && %s)"):format(
               vim.fn.shellescape(opts.cwd or '.'),
-              ("sh -c %s"):format(vim.fn.shellescape(reload_command)))))
+              reload_command)))
   else
     opts.fzf_fn = {}
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
