@@ -4,6 +4,9 @@ local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 local win = require "fzf-lua.win"
+local string_byte = string.byte
+local string_byte_a = string_byte("a")
+local string_byte_z = string_byte("z")
 
 local M = {}
 
@@ -38,10 +41,21 @@ M.fzf = function(opts, contents, previewer)
   return selected
 end
 
+local function char_is_lower(str, idx)
+  local byte = string_byte(str, idx)
+  return byte >= string_byte_a and byte <= string_byte_z
+end
+
 M.get_devicon = function(file, ext)
   local icon, hl
   if config._has_devicons and config._devicons then
     icon, hl  = config._devicons.get_icon(file, ext:lower(), {default = true})
+    --[[ if hl and #hl>7 and char_is_lower(hl, 8) then
+      -- workaround for issue #119, devicons returns
+      -- highlights with lowercase icon names
+      -- (i.e. DevIconpy instead of DevIconPy)
+      hl = hl:sub(1,7) .. hl:sub(8,8):upper() .. hl:sub(9)
+    end ]]
   else
     icon, hl = '', 'dark_grey'
   end
@@ -198,7 +212,10 @@ M.make_entry_file = function(opts, x)
     local ext = path.extension(filename)
     icon, hl = M.get_devicon(filename, ext)
     if opts.color_icons then
-      icon = utils.ansi_codes[hl](icon)
+      -- extra workaround for issue #119 (or similars)
+      -- use default if we can't find the highlight ansi
+      local fn = utils.ansi_codes[hl] or utils.ansi_codes['dark_grey']
+      icon = fn(icon)
     end
     ret[#ret+1] = icon
     ret[#ret+1] = utils.nbsp
