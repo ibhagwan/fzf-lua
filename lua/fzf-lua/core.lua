@@ -289,6 +289,7 @@ M.fzf_files = function(opts)
 end
 
 
+
 M.fzf_files_interactive = function(opts)
 
   opts = opts or config.normalize_opts(opts, config.globals.files)
@@ -305,43 +306,54 @@ M.fzf_files_interactive = function(opts)
     local shell_cmd = opts._cb_live_cmd(args[1])
     local output_pipe = uv.new_pipe(false)
     local error_pipe = uv.new_pipe(false)
+    local read_cb_count = 0
 
     local shell = vim.env.SHELL or "sh"
+
+    local close_pipe = function()
+      if not uv.is_closing(pipe) then
+        uv.close(pipe)
+      end
+    end
 
     uv.spawn(shell, {
       args = { "-c", shell_cmd },
       stdio = { nil, output_pipe, error_pipe },
       cwd = opts.cwd
     }, function(code, signal)
-
+      output_pipe:read_stop()
+      error_pipe:read_stop()
+      output_pipe:close()
+      error_pipe :close()
+      if read_cb_count==0 then
+        -- only close if all our uv.write
+        -- calls are completed
+        close_pipe()
+      end
     end)
 
-    local cleaned_up = false
-    local cleanup = function()
-      if not cleaned_up then
-        cleaned_up = true
-        uv.read_stop(output_pipe)
-        uv.read_stop(error_pipe)
-        uv.close(output_pipe)
-        uv.close(error_pipe)
-        uv.close(pipe)
-      end
-    end
-
     local read_cb = function(err, data)
+      read_cb_count = read_cb_count + 1
 
       if err then
-        cleanup()
+        close_pipe()
         assert(not err)
       end
       if not data then
-        cleanup()
+        read_cb_count = read_cb_count - 1
         return
       end
 
       uv.write(pipe, data, function(err)
         if err then
-          cleanup()
+          close_pipe()
+        end
+        read_cb_count = read_cb_count - 1
+        if read_cb_count == 0 and uv.is_closing(output_pipe) then
+          -- spawn callback already called and did not close the pipe
+          -- due to read_cb_count>0, since this is the last call
+          -- we can close the fzf pipe
+          close_pipe()
         end
       end)
     end
@@ -367,7 +379,7 @@ M.fzf_files_interactive = function(opts)
         opts.prompt, opts.prompt,
         -- since we surrounded the skim placeholder with quotes
         -- we need to escape them in the initial query
-        vim.fn.shellescape(query:gsub([["]], [[\"]])),
+        vim.fn.shellescape(utils.sk_escape(query)),
         act_cmd)
   else
     -- fzf already adds single quotes

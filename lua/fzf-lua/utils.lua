@@ -71,6 +71,13 @@ function M.rg_escape(str)
   end)
 end
 
+function M.sk_escape(str)
+  if not str then return str end
+  return str:gsub('["`]', function(x)
+    return '\\' .. x
+  end)
+end
+
 M.read_file = function(filepath)
   local fd = vim.loop.fs_open(filepath, "r", 438)
   if fd == nil then return '' end
