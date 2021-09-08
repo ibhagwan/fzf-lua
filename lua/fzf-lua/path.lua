@@ -1,4 +1,5 @@
 local utils = require "fzf-lua.utils"
+local string_byte = string.byte
 
 local M = {}
 
@@ -11,22 +12,23 @@ M.starts_with_separator = function(path)
 end
 
 function M.tail(path)
-  local os_sep = M.separator()
-  local match_string = '[^' .. os_sep .. ']+'
+  local os_sep = string_byte(M.separator())
 
-  local tail = path
-  for s in string.gmatch(path, match_string) do
-      tail = s
+  for i=#path,1,-1 do
+    if string_byte(path, i) == os_sep then
+      return path:sub(i+1)
+    end
   end
-  return tail
+  return path
 end
 
 function M.extension(path)
-  local ext = path
-  for s in string.gmatch(path, '[^.]+') do
-      ext = s
+  for i=#path,1,-1 do
+    if string_byte(path, i) == 46 then
+      return path:sub(i+1)
+    end
   end
-  return ext
+  return path
 end
 
 function M.to_matching_str(path)
