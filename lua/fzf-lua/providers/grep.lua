@@ -69,7 +69,7 @@ local function set_search_header(opts, type)
     end
     header_str = header_str .. (cwd_str or '')
   end
-  if not header_str then return opts end
+  if not header_str or #header_str==0 then return opts end
   opts._fzf_header_args = opts._fzf_header_args or ''
   opts._fzf_header_args = string.format([[%s --header=%s ]],
     opts._fzf_header_args,
@@ -186,7 +186,7 @@ M.live_grep_native = function(opts)
     -- save the search query so the use can
     -- call the same search again
     last_search = {}
-    last_search.no_esc = true
+    last_search.no_esc = no_esc or opts.no_esc
     last_search.query = opts.search
     -- escape unless the user requested not to
     if not (no_esc or opts.no_esc) then
