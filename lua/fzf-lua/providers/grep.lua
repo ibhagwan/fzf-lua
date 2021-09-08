@@ -48,15 +48,32 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   return string.format('%s %s %s', command, search_query, search_path)
 end
 
-local function set_search_header(opts)
+local function set_search_header(opts, type)
   if not opts then opts = {} end
   if opts.no_header then return opts end
-  if not opts.search or #opts.search==0 then return opts end
+  if not opts.cwd_header then opts.cwd_header = "cwd:" end
   if not opts.search_header then opts.search_header = "Searching for:" end
-  opts._fzf_cli_args = opts._fzf_cli_args or ''
-  opts._fzf_cli_args = string.format([[%s --header=%s]],
-    opts._fzf_cli_args,
-    vim.fn.shellescape(("%s %s"):format(opts.search_header, opts.search)))
+  local header_str
+  local cwd_str = opts.cwd and ("%s %s"):format(opts.cwd_header, opts.cwd)
+  local search_str = opts.search and #opts.search > 0 and
+    ("%s %s"):format(opts.search_header, opts.search)
+  -- 1: only search
+  -- 2: only cwd
+  -- otherwise, all
+  if type == 1 and search_str then header_str = search_str
+  elseif type == 2 and cwd_str then header_str = cwd_str
+  else
+    header_str = search_str or ''
+    if #header_str>0 and cwd_str and #cwd_str>0 then
+      header_str = header_str .. ", "
+    end
+    header_str = header_str .. (cwd_str or '')
+  end
+  if not header_str then return opts end
+  opts._fzf_header_args = opts._fzf_header_args or ''
+  opts._fzf_header_args = string.format([[%s --header=%s ]],
+    opts._fzf_header_args,
+    vim.fn.shellescape(header_str))
   return opts
 end
 
@@ -132,6 +149,9 @@ M.live_grep = function(opts)
     end
   end
 
+  -- search query in header line
+  opts = set_search_header(opts, 2)
+
   opts._cb_live_cmd = function(query)
     if query and #query>0 and not opts.do_not_save_last_search then
       last_search = {}
@@ -173,6 +193,9 @@ M.live_grep_native = function(opts)
       query = utils.rg_escape(opts.search)
     end
   end
+
+  -- search query in header line
+  opts = set_search_header(opts, 2)
 
   -- fzf already adds single quotes around the placeholder when expanding
   -- for skim we surround it with double quotes or single quote searches fail

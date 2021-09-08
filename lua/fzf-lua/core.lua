@@ -108,7 +108,7 @@ M.build_fzf_cli = function(opts, debug_print)
     [[ %s %s --layout=%s --bind=%s --prompt=%s]] ..
     [[ --preview-window=%s%s --preview=%s]] ..
     [[ --height=100%%]] ..
-    [[ %s %s %s %s %s %s]],
+    [[ %s %s %s %s %s %s %s]],
     opts.fzf_args or config.globals.fzf_args or '',
     M.create_fzf_colors(opts.fzf_colors or config.globals.fzf_colors),
     opts.fzf_layout or config.globals.fzf_layout,
@@ -122,7 +122,8 @@ M.build_fzf_cli = function(opts, debug_print)
     utils._if(actions.expect(opts.actions), actions.expect(opts.actions), ''),
     utils._if(opts.nomulti, '--no-multi', '--multi'),
     utils._if(opts.fzf_cli_args, opts.fzf_cli_args, ''),
-    utils._if(opts._fzf_cli_args, opts._fzf_cli_args, '')
+    utils._if(opts._fzf_cli_args, opts._fzf_cli_args, ''),
+    utils._if(opts._fzf_header_args, opts._fzf_header_args, '')
   )
   if debug_print then print(cli) end
   return cli
