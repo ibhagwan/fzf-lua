@@ -39,11 +39,19 @@ M.vimcmd = function(vimcmd, selected)
   end
 end
 
-M.vimcmd_file = function(vimcmd, selected)
+M.vimcmd_file = function(vimcmd, selected, opts)
   if not selected or #selected < 2 then return end
+  local curbuf = vim.api.nvim_buf_get_name(0)
   for i = 2, #selected do
     local entry = path.entry_to_file(selected[i])
-    vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
+    -- only change buffer if we need to (issue #122)
+    local fullpath = entry.path
+    if not path.starts_with_separator(fullpath) then
+      fullpath = path.join({opts.cwd or vim.loop.cwd(), fullpath})
+    end
+    if vimcmd ~= "e" or curbuf ~= fullpath then
+      vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
+    end
     if entry.line > 1 or entry.col > 1 then
       vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
       vim.cmd("norm! zz")
@@ -52,29 +60,29 @@ M.vimcmd_file = function(vimcmd, selected)
 end
 
 -- file actions
-M.file_edit = function(selected)
+M.file_edit = function(selected, opts)
   local vimcmd = "e"
-  M.vimcmd_file(vimcmd, selected)
+  M.vimcmd_file(vimcmd, selected, opts)
 end
 
-M.file_split = function(selected)
+M.file_split = function(selected, opts)
   local vimcmd = "new"
-  M.vimcmd_file(vimcmd, selected)
+  M.vimcmd_file(vimcmd, selected, opts)
 end
 
-M.file_vsplit = function(selected)
+M.file_vsplit = function(selected, opts)
   local vimcmd = "vnew"
-  M.vimcmd_file(vimcmd, selected)
+  M.vimcmd_file(vimcmd, selected, opts)
 end
 
-M.file_tabedit = function(selected)
+M.file_tabedit = function(selected, opts)
   local vimcmd = "tabnew"
-  M.vimcmd_file(vimcmd, selected)
+  M.vimcmd_file(vimcmd, selected, opts)
 end
 
-M.file_open_in_background = function(selected)
+M.file_open_in_background = function(selected, opts)
   local vimcmd = "badd"
-  M.vimcmd_file(vimcmd, selected)
+  M.vimcmd_file(vimcmd, selected, opts)
 end
 
 M.file_sel_to_qf = function(selected)

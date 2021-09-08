@@ -287,7 +287,7 @@ M.fzf_files = function(opts)
       end
     end
 
-    actions.act(opts.actions, selected)
+    actions.act(opts.actions, selected, opts)
 
   end)()
 
