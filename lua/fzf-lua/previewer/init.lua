@@ -29,6 +29,7 @@ function Previewer.base:new(o, opts)
   self.type = "cmd";
   self.cmd = o.cmd;
   self.args = o.args or "";
+  self.relative = o.relative
   self.opts = opts;
   return self
 end
@@ -57,7 +58,7 @@ function Previewer.cmd:action(o)
   end
   local act = raw_action(function (items, fzf_lines, _)
     -- only preview first item
-    local file = path.entry_to_file(items[1], self.opts.cwd)
+    local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
     return file.path
   end, filespec)
   return act
@@ -117,8 +118,8 @@ end
 function Previewer.cmd_async:cmdline(o)
   o = o or {}
   local act = helpers.choices_to_shell_cmd_previewer(function(items)
-    local file = path.entry_to_file(items[1], self.opts.cwd)
-    local cmd = string.format('%s %s "%s"', self.cmd, self.args, file.path)
+    local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
+    local cmd = string.format('%s %s %s', self.cmd, self.args, vim.fn.shellescape(file.path))
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
@@ -142,7 +143,7 @@ function Previewer.bat_async:cmdline(o)
     highlight_line = string.format("--highlight-line=", self.opts._line_placeholder)
   end
   local act = helpers.choices_to_shell_cmd_previewer(function(items)
-    local file = path.entry_to_file(items[1], self.opts.cwd)
+    local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
     local cmd = string.format('%s %s %s%s "%s"',
       self.cmd, self.args,
       highlight_line,
@@ -169,7 +170,7 @@ function Previewer.git_diff:cmdline(o)
   local act = helpers.choices_to_shell_cmd_previewer(function(items)
     local is_deleted = items[1]:match("D"..utils.nbsp) ~= nil
     local is_untracked = items[1]:match("?"..utils.nbsp) ~= nil
-    local file = path.entry_to_file(items[1], self.opts.cwd)
+    local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
     local cmd = self.cmd
     local args = self.args
     if is_untracked then args = args .. " --no-index /dev/null" end
@@ -177,7 +178,7 @@ function Previewer.git_diff:cmdline(o)
       cmd = self.cmd:gsub("diff", "show HEAD:")
       cmd = string.format('%s"%s"', cmd, path.relative(file.path, self.opts.cwd))
     else
-      cmd = string.format('%s %s "%s"', cmd, args, file.path)
+      cmd = string.format('%s %s %s', cmd, args, vim.fn.shellescape(file.path))
     end
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
