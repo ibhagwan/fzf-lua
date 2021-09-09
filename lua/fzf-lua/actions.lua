@@ -239,7 +239,8 @@ M.git_switch = function(selected, opts)
   -- do nothing for active branch
   if branch:find("%*") ~= nil then return end
   local args = ""
-  if branch:find("/") ~= nil then args = "--detach " end
+  local is_remote = branch:find("^remotes/") ~= nil
+  if is_remote then args = "--detach " end
   local output = vim.fn.systemlist(cmd .. args .. branch)
   if utils.shell_error() then
     utils.err(unpack(output))
