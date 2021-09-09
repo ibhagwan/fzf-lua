@@ -15,11 +15,18 @@ M.fzf = function(opts, contents)
   local previewer, preview_opts = nil, nil
   if opts.previewer and type(opts.previewer) == 'string' then
     preview_opts = config.globals.previewers[opts.previewer]
+    if not preview_opts then
+      utils.warn(("invalid previewer '%s'"):format(opts.previewer))
+    end
   elseif opts.previewer and type(opts.previewer) == 'table' then
     preview_opts = opts.previewer
   end
   if preview_opts and type(preview_opts._new) == 'function' then
     previewer = preview_opts._new()(preview_opts, opts, fzf_win)
+  elseif preview_opts and type(preview_opts._ctor) == 'function' then
+    previewer = preview_opts._ctor()(preview_opts, opts, fzf_win)
+  end
+  if previewer then
     opts.preview = previewer:cmdline()
     if type(previewer.preview_window) == 'function' then
       -- do we need to override the preview_window args?

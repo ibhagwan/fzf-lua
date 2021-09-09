@@ -1,5 +1,6 @@
 local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
+local previewers = require "fzf-lua.previewer"
 
 -- Clear the default command or it would interfere with our options
 -- not needed anymore, we are pretty much overriding all options
@@ -63,41 +64,32 @@ M.globals = {
   flip_columns        = 120,
   default_previewer   = "builtin",
   previewers = {
-    cmd = {
-      -- custom previewer to be overidden by the user
-      cmd             = "",
-      args            = "",
-                      -- we use function here instead of the object due to
-                      -- vim.tbl_deep_extend not copying metatables and
-                      -- metamethods (__index and __call)
-      _new            = function() return require 'fzf-lua.previewer'.cmd_async end,
-    },
     cat = {
       cmd             = "cat",
       args            = "--number",
-      _new            = function() return require 'fzf-lua.previewer'.cmd_async end,
+      _ctor           = previewers.fzf.cmd_async,
     },
     bat = {
       cmd             = "bat",
       args            = "--italic-text=always --style=numbers,changes --color always",
       theme           = nil,
       config          = nil,
-      _new            = function() return require 'fzf-lua.previewer'.bat_async end,
+      _ctor           = previewers.fzf.bat_async,
     },
     bat_native = {
       cmd             = "bat",
       args            = "--italic-text=always --style=numbers,changes --color always",
-      _new            = function() return require 'fzf-lua.previewer'.bat end,
+      _ctor           = previewers.fzf.bat,
     },
     head = {
       cmd             = "head",
       args            = nil,
-      _new            = function() return require 'fzf-lua.previewer'.head end,
+      _ctor           = previewers.fzf.head,
     },
     git_diff = {
       cmd             = "git diff",
       args            = "--color",
-      _new            = function() return require 'fzf-lua.previewer'.git_diff end,
+      _ctor           = previewers.fzf.git_diff,
     },
     builtin = {
       title           = true,
@@ -121,7 +113,7 @@ M.globals = {
         page_down     = '<S-down>',   -- preview scroll down
         page_reset    = '<S-left>',   -- reset scroll to orig pos
       },
-      _new            = function() return require 'fzf-lua.previewer.builtin'.buffer_or_file end,
+      _ctor           = previewers.builtin.buffer_or_file,
     },
   },
 }
@@ -329,7 +321,7 @@ M.globals.helptags = {
         ["ctrl-t"]        = actions.help_tab,
       },
       previewer = {
-        _new              = function() return require 'fzf-lua.previewer.builtin'.help_tags end,
+        _ctor             = previewers.builtin.help_tags,
       },
   }
 M.globals.manpages = {
@@ -342,7 +334,7 @@ M.globals.manpages = {
         ["ctrl-t"]        = actions.man_tab,
       },
       previewer = {
-        _new              = function() return require 'fzf-lua.previewer.builtin'.man_pages end,
+        _ctor             = previewers.builtin.man_pages,
       },
   }
 M.globals.lsp = {

@@ -1,6 +1,6 @@
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
-local previewer_base = require "fzf-lua.previewer".base
+local previewer_base = require "fzf-lua.previewer"
 local raw_action = require("fzf.actions").raw_action
 
 local api = vim.api
