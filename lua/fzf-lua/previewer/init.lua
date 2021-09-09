@@ -35,6 +35,10 @@ function Previewer.base:new(o, opts)
   return self
 end
 
+function Previewer.base:preview_window(_)
+  return nil
+end
+
 -- Generic shell command previewer
 function Previewer.cmd:new(o, opts)
   self = setmetatable(Previewer.base(o, opts), {
@@ -208,14 +212,6 @@ function Previewer.man_pages:cmdline(o)
     return cmd
   end, "{}")
   return act
-end
-
-function Previewer.man_pages:override_fzf_preview_window()
-  return true
-end
-
-function Previewer.man_pages:preview_window(_)
-  return nil
 end
 
 return Previewer

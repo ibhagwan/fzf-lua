@@ -21,14 +21,13 @@ M.fzf = function(opts, contents)
   if preview_opts and type(preview_opts._new) == 'function' then
     previewer = preview_opts._new()(preview_opts, opts, fzf_win)
     opts.preview = previewer:cmdline()
-    if type(previewer.override_fzf_preview_window) == 'function' then
+    if type(previewer.preview_window) == 'function' then
       -- do we need to override the preview_window args?
       -- this can happen with the builtin previewer
       -- (1) when using a split we use the previewer as placeholder
-      -- (2) we use 'right:0' to call the previewer function only
-      if previewer:override_fzf_preview_window() then
-        opts.preview_window = previewer:preview_window()
-      end
+      -- (2) we use 'nohidden:right:0' to trigger preview function
+      --     calls without displaying the native fzf previewer split
+      opts.preview_window = previewer:preview_window(opts.preview_window)
     end
   end
 

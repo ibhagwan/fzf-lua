@@ -197,11 +197,11 @@ function Previewer.base:cmdline(_)
 end
 
 function Previewer.base:preview_window(_)
-  return 'nohidden:right:0'
-end
-
-function Previewer.base:override_fzf_preview_window()
-  return self.win and not self.win.winopts.split
+  if self.win and not self.win.winopts.split then
+    return 'nohidden:right:0'
+  else
+    return nil
+  end
 end
 
 function Previewer.base.scroll(direction)
@@ -447,6 +447,8 @@ function Previewer.help_tags:new(o, opts, fzf_win)
     __index = vim.tbl_deep_extend("keep",
       self, Previewer.base
     )})
+  self.split = o.split
+  self.help_cmd = o.help_cmd or "help"
   self:init_help_win()
   return self
 end
@@ -468,7 +470,7 @@ end
 
 function Previewer.help_tags:exec_cmd(str)
   str = str or ''
-  vim.cmd("help " .. str)
+  vim.cmd(("%s %s %s"):format(self.split, self.help_cmd, str))
 end
 
 function Previewer.help_tags:parse_entry(entry_str)
@@ -476,11 +478,17 @@ function Previewer.help_tags:parse_entry(entry_str)
 end
 
 function Previewer.help_tags:init_help_win(str)
+  if not self.split or
+    (self.split ~= "topleft" and self.split ~= "botright") then
+    self.split = "botright"
+  end
+  local orig_winid = api.nvim_get_current_win()
   self:exec_cmd(str)
   self.help_bufnr = api.nvim_get_current_buf()
   self.help_winid = api.nvim_get_current_win()
   pcall(vim.api.nvim_win_set_height, 0, 0)
   pcall(vim.api.nvim_win_set_width, 0, 0)
+  api.nvim_set_current_win(orig_winid)
 end
 
 function Previewer.help_tags:populate_preview_buf(entry_str)
@@ -528,13 +536,10 @@ function Previewer.man_pages:new(o, opts, fzf_win)
     __index = vim.tbl_deep_extend("keep",
       self, Previewer.help_tags, Previewer.base
     )})
+  self.split = o.split
+  self.help_cmd = o.help_cmd or "Man"
   self:init_help_win("echo")
   return self
-end
-
-function Previewer.man_pages:exec_cmd(str)
-  str = str or ''
-  vim.cmd("Man " .. str)
 end
 
 function Previewer.man_pages:parse_entry(entry_str)

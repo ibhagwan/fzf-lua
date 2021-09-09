@@ -104,9 +104,9 @@ M.helptags = function(opts)
 
     -- local prev_act = action(function (args) end)
 
+    opts.nomulti = true
+    opts.preview_window = 'hidden:right:0'
     opts._fzf_cli_args = "--nth 1"
-    opts.preview_window = opts.preview_window or 'right:0'
-    opts.nomulti = utils._if(opts.nomulti~=nil, opts.nomulti, true)
 
     local selected = core.fzf(opts, fzf_function)
 

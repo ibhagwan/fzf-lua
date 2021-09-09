@@ -261,7 +261,10 @@ end
 
 M.live_grep_resume = function(opts)
   if not opts then opts = {} end
-  opts.continue_last_search = true
+  opts.continue_last_search =
+    (opts.continue_last_search == nil and
+     opts.repeat_last_search == nil and true) or
+    (opts.continue_last_search or opts.repeat_last_search)
   return M.live_grep(opts)
 end
 

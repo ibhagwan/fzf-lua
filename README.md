@@ -206,7 +206,11 @@ Consult the list below for available settings:
 local actions = require "fzf-lua.actions"
 require'fzf-lua'.setup {
   winopts = {
-    -- split         = "new",           -- open in a split instead?
+    -- split         = "belowright new",-- open in a split instead?
+                                        -- "belowright new"  : split below
+                                        -- "aboveleft new"   : split above
+                                        -- "belowright vnew" : split right
+                                        -- "aboveleft vnew   : split left
     win_height       = 0.85,            -- window height
     win_width        = 0.80,            -- window width
     win_row          = 0.30,            -- window row position (0=top, 1=bottom)
@@ -459,6 +463,11 @@ require'fzf-lua'.setup {
   -- uncomment to disable the previewer
   -- helptags = { previewer = { _new = false } },
   -- manpages = { previewer = { _new = false } },
+  -- uncomment to set dummy win location (help|man bar)
+  -- "topleft"  : up
+  -- "botright" : down
+  -- helptags = { previewer = { split = "topleft" } },
+  -- manpages = { previewer = { split = "topleft" } },
   -- uncomment 2 lines to use `man` command as native fzf previewer
   -- manpages = { previewer = { cmd  = "man", _new = function()
       -- return require 'fzf-lua.previewer'.man_pages end } },
