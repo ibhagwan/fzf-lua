@@ -12,6 +12,12 @@ local uv = vim.loop
 
 local M = {}
 
+local function location_to_entry(location)
+  local item = vim.lsp.util.locations_to_items({ location })[1]
+
+  return ('%s:%d:%d'):format(item.filename, item.lnum, item.col)
+end
+
 local jump_to_location = function(opts, result)
 
   local winid = vim.api.nvim_get_current_win()
@@ -19,6 +25,13 @@ local jump_to_location = function(opts, result)
     -- utils.send_ctrl_c()
     vim.api.nvim_win_close(0, false)
   end
+
+  local action = opts.jump_to_single_result_action
+  if action then
+    local entry = location_to_entry(result)
+    return opts.jump_to_single_result_action({ 'jump_to_single_result', entry }, opts)
+  end
+
   return vim.lsp.util.jump_to_location(result)
 end
 
