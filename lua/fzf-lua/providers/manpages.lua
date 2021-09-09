@@ -11,8 +11,8 @@ local actions = require "fzf-lua.actions"
 
 local M = {}
 
-local function getmanpage(line)
-  -- extract section from the last pair of parentheses
+M.getmanpage = function(line)
+  --[[ -- extract section from the last pair of parentheses
   local name, section = line:match("^(.*)%((.-)%)[^()]-$")
   if name:sub(-1) == " " then
     -- man-db
@@ -22,7 +22,8 @@ local function getmanpage(line)
     name = name:match("^[^, ]+")
     section = section:match("^[^, ]+")
   end
-  return name .. "(" .. section .. ")"
+  return name .. "(" .. section .. ")" ]]
+  return line:match("[^[,( ]+")
 end
 
 M.manpages = function(opts)
@@ -41,9 +42,9 @@ M.manpages = function(opts)
         utils.ansi_codes.red(man), desc)
     end)
 
+    opts.nomulti = true
+    opts.preview_window = 'hidden:right:0'
     opts._fzf_cli_args = "--tiebreak begin --nth 1,2"
-    opts.preview_window = opts.preview_window or 'right:0'
-    opts.nomulti = utils._if(opts.nomulti~=nil, opts.nomulti, true)
 
     local selected = core.fzf(opts, fzf_fn)
 
@@ -51,7 +52,7 @@ M.manpages = function(opts)
 
     if #selected > 1 then
       for i = 2, #selected do
-        selected[i] = getmanpage(selected[i])
+        selected[i] = M.getmanpage(selected[i])
       end
     end
 

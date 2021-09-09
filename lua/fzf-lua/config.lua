@@ -125,7 +125,7 @@ M.globals = {
         page_down     = '<S-down>',   -- preview scroll down
         page_reset    = '<S-left>',   -- reset scroll to orig pos
       },
-      _new            = function() return require 'fzf-lua.previewer.builtin' end,
+      _new            = function() return require 'fzf-lua.previewer.builtin'.buffer_or_file end,
     },
   },
 }
@@ -365,6 +365,9 @@ M.globals.helptags = {
         ["ctrl-v"]        = actions.help_vert,
         ["ctrl-t"]        = actions.help_tab,
       },
+      previewer = {
+        _new              = function() return require 'fzf-lua.previewer.builtin'.help_tags end,
+      },
   }
 M.globals.manpages = {
       prompt              = 'Man> ',
@@ -374,6 +377,9 @@ M.globals.manpages = {
         ["ctrl-s"]        = actions.man,
         ["ctrl-v"]        = actions.man_vert,
         ["ctrl-t"]        = actions.man_tab,
+      },
+      previewer = {
+        _new              = function() return require 'fzf-lua.previewer.builtin'.man_pages end,
       },
   }
 M.globals.lsp = {
@@ -537,6 +543,11 @@ function M.normalize_opts(opts, defaults)
     -- we use a function so the user can override
     -- globals.default_previewer
     opts.previewer = opts.previewer()
+  end
+  if type(opts.previewer) == 'table' then
+    -- merge with the default builtin previewer
+    opts.previewer = vim.tbl_deep_extend("keep",
+      opts.previewer, M.globals.previewers.builtin)
   end
 
   if opts.cwd and #opts.cwd > 0 then

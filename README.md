@@ -456,10 +456,12 @@ require'fzf-lua'.setup {
       ["Hint"]        = { icon = "", color = "magenta" },   -- hint
     },
   },
-  -- placeholders for additional user customizations
-  loclist = {},
-  helptags = {},
-  manpages = {},
+  -- uncomment to disable the previewer
+  -- helptags = { previewer = { _new = false } },
+  -- manpages = { previewer = { _new = false } },
+  -- uncomment 2 lines to use `man` command as native fzf previewer
+  -- manpages = { previewer = { cmd  = "man", _new = function()
+      -- return require 'fzf-lua.previewer'.man_pages end } },
   -- optional override of file extension icon colors
   -- available colors (terminal):
   --    clear, bold, black, red, green, yellow

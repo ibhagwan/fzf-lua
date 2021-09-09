@@ -11,6 +11,7 @@ Previewer.bat = {}
 Previewer.cmd_async = {}
 Previewer.bat_async = {}
 Previewer.git_diff = {}
+Previewer.man_pages = {}
 Previewer.buffer = {}
 
 -- Constructors call on Previewer.<o>()
@@ -128,9 +129,9 @@ function Previewer.cmd_async:cmdline(o)
 end
 
 function Previewer.bat_async:new(o, opts)
-  self = setmetatable(Previewer.cmd(o, opts), {
+  self = setmetatable(Previewer.cmd_async(o, opts), {
     __index = vim.tbl_deep_extend("keep",
-      self, Previewer.cmd, Previewer.base
+      self, Previewer.cmd_async, Previewer.base
     )})
   self.theme = o.theme
   return self
@@ -157,7 +158,7 @@ function Previewer.bat_async:cmdline(o)
 end
 
 function Previewer.git_diff:new(o, opts)
-  self = setmetatable(Previewer.cmd(o, opts), {
+  self = setmetatable(Previewer.cmd_async(o, opts), {
     __index = vim.tbl_deep_extend("keep",
       self, Previewer.cmd_async, Previewer.base
     )})
@@ -185,6 +186,36 @@ function Previewer.git_diff:cmdline(o)
     return cmd
   end, "{}")
   return act
+end
+
+function Previewer.man_pages:new(o, opts)
+  self = setmetatable(Previewer.cmd_async(o, opts), {
+    __index = vim.tbl_deep_extend("keep",
+      self, Previewer.cmd_async, Previewer.base
+    )})
+  return self
+end
+
+function Previewer.man_pages:cmdline(o)
+  o = o or {}
+  local act = helpers.choices_to_shell_cmd_previewer(function(items)
+    -- local manpage = require'fzf-lua.providers.manpages'.getmanpage(items[1])
+    local manpage = items[1]:match("[^[,( ]+")
+    local cmd = ("%s %s %s"):format(
+      self.cmd, self.args, vim.fn.shellescape(manpage))
+    -- uncomment to see the command in the preview window
+    -- cmd = vim.fn.shellescape(cmd)
+    return cmd
+  end, "{}")
+  return act
+end
+
+function Previewer.man_pages:override_fzf_preview_window()
+  return true
+end
+
+function Previewer.man_pages:preview_window(_)
+  return nil
 end
 
 return Previewer

@@ -180,18 +180,13 @@ function FzfWin:new(o)
   self.winopts = normalize_winopts(o)
   self.previewer = o.previewer
   self.previewer_type = o.previewer_type
-  if self.previewer_type == 'builtin' or self.previewer == 'builtin' then
-    self.previewer_is_builtin = true
-  end
-  if not self.winopts.split and self.previewer_is_builtin then
-    self.layout = generate_layout(self.winopts)
-  end
   _self = self
   return self
 end
 
 function FzfWin:attach_previewer(previewer)
   self._previewer = previewer
+  self.previewer_is_builtin = previewer and type(previewer.display_entry) == 'function'
 end
 
 function FzfWin:fs_preview_layout(fs)
@@ -388,6 +383,9 @@ function FzfWin:redraw()
 end
 
 function FzfWin:create()
+  if not self.winopts.split and self.previewer_is_builtin then
+    self.layout = generate_layout(self.winopts)
+  end
   -- save sending bufnr/winid
   self.src_bufnr = vim.api.nvim_get_current_buf()
   self.src_winid = vim.api.nvim_get_current_win()
@@ -470,7 +468,11 @@ function FzfWin:close()
 end
 
 function FzfWin.win_leave()
-  if not _self or _self.closing then return end
+  local self = _self
+  if self._previewer and self._previewer.win_leave then
+    self._previewer:win_leave()
+  end
+  if not self or self.closing then return end
   _self:close()
 end
 
