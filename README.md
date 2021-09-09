@@ -228,12 +228,10 @@ require'fzf-lua'.setup {
       'f3:toggle-preview-wrap',
       'shift-down:preview-page-down',
       'shift-up:preview-page-up',
-      'ctrl-d:half-page-down',
-      'ctrl-u:half-page-up',
-      'ctrl-f:page-down',
-      'ctrl-b:page-up',
-      'ctrl-a:toggle-all',
-      'ctrl-l:clear-query',
+      'ctrl-u:unix-line-discard',
+      'ctrl-f:half-page-down',
+      'ctrl-b:half-page-up',
+      'alt-a:toggle-all',
   },
   --[[ fzf_colors = {                   -- fzf '--color=' options
       ["fg"] = { "fg", "CursorLine" },
@@ -315,11 +313,13 @@ require'fzf-lua'.setup {
     file_icons        = true,           -- show file icons?
     color_icons       = true,           -- colorize file|git icons
     actions = {
+      -- set bind to 'false' to disable
       ["default"]     = actions.file_edit,
       ["ctrl-s"]      = actions.file_split,
       ["ctrl-v"]      = actions.file_vsplit,
       ["ctrl-t"]      = actions.file_tabedit,
-      ["ctrl-q"]      = actions.file_sel_to_qf,
+      ["alt-q"]       = actions.file_sel_to_qf,
+      -- custom actions are available too
       ["ctrl-y"]      = function(selected) print(selected[2]) end,
     }
   },
@@ -385,14 +385,6 @@ require'fzf-lua'.setup {
     git_icons         = true,           -- show git icons?
     file_icons        = true,           -- show file icons?
     color_icons       = true,           -- colorize file|git icons
-    actions = {
-      ["default"]     = actions.file_edit,
-      ["ctrl-s"]      = actions.file_split,
-      ["ctrl-v"]      = actions.file_vsplit,
-      ["ctrl-t"]      = actions.file_tabedit,
-      ["ctrl-q"]      = actions.file_sel_to_qf,
-      ["ctrl-y"]      = function(selected) print(selected[2]) end,
-    }
   },
   oldfiles = {
     prompt            = 'History❯ ',

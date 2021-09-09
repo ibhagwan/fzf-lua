@@ -40,23 +40,19 @@ M.globals = {
   fzf_binds = {
     -- <F2>        toggle preview
     -- <F3>        toggle preview text wrap
-    -- <C-f>|<C-b> page down|up
-    -- <C-d>|<C-u> half page down|up
+    -- <C-f>|<C-b> half page down|up
     -- <S-d>|<S-u> preview page down|up
-    -- <C-a>       toggle select-all
     -- <C-u>       clear query
-    -- <C-q>       send selected to quicfix
-    -- <A-q>       send all to quicfix
+    -- <A-a>       toggle select-all
+    -- <A-q>       send selected to quickfix
     'f2:toggle-preview',
     'f3:toggle-preview-wrap',
     'shift-down:preview-page-down',
     'shift-up:preview-page-up',
-    'ctrl-d:half-page-down',
-    'ctrl-u:half-page-up',
-    'ctrl-f:page-down',
-    'ctrl-b:page-up',
-    'ctrl-a:toggle-all',
-    'ctrl-l:clear-query',
+    'ctrl-u:unix-line-discard',
+    'ctrl-f:half-page-down',
+    'ctrl-b:half-page-up',
+    'alt-a:toggle-all',
   },
   preview_border      = 'border',
   preview_wrap        = 'nowrap',
@@ -147,7 +143,10 @@ M.globals.files = {
       ["ctrl-s"]        = actions.file_split,
       ["ctrl-v"]        = actions.file_vsplit,
       ["ctrl-t"]        = actions.file_tabedit,
-      ["ctrl-q"]        = actions.file_sel_to_qf,
+      ["alt-q"]         = actions.file_sel_to_qf,
+      ["ctrl-q"]        = function()
+        utils.info("'ctrl-q|ctrl-a' has been deprecated in favor of 'alt-q|alt-a'")
+      end
     },
   }
 -- Must construct our opts table in stages
@@ -217,13 +216,7 @@ M.globals.grep = {
     git_untracked_cmd   = M.globals.files.git_untracked_cmd,
     grep_opts           = "--line-number --recursive --color=auto --perl-regexp",
     rg_opts             = "--column --line-number --no-heading --color=always --smart-case",
-    actions = {
-      ["default"]       = actions.file_edit,
-      ["ctrl-s"]        = actions.file_split,
-      ["ctrl-v"]        = actions.file_vsplit,
-      ["ctrl-t"]        = actions.file_tabedit,
-      ["ctrl-q"]        = actions.file_sel_to_qf,
-    },
+    actions             = M.globals.files.actions,
   }
 M.globals.oldfiles = {
     previewer           = function() return M.globals.default_previewer end,
@@ -233,13 +226,7 @@ M.globals.oldfiles = {
     git_icons           = false,
     git_diff_cmd        = M.globals.files.git_diff_cmd,
     git_untracked_cmd   = M.globals.files.git_untracked_cmd,
-    actions = {
-      ["default"]       = actions.file_edit,
-      ["ctrl-s"]        = actions.file_split,
-      ["ctrl-v"]        = actions.file_vsplit,
-      ["ctrl-t"]        = actions.file_tabedit,
-      ["ctrl-q"]        = actions.file_sel_to_qf,
-    },
+    actions             = M.globals.files.actions,
   }
 M.globals.quickfix = {
     previewer           = function() return M.globals.default_previewer end,
@@ -250,13 +237,7 @@ M.globals.quickfix = {
     git_icons           = false,
     git_diff_cmd        = M.globals.files.git_diff_cmd,
     git_untracked_cmd   = M.globals.files.git_untracked_cmd,
-    actions = {
-      ["default"]       = actions.file_edit,
-      ["ctrl-s"]        = actions.file_split,
-      ["ctrl-v"]        = actions.file_vsplit,
-      ["ctrl-t"]        = actions.file_tabedit,
-      ["ctrl-q"]        = actions.file_sel_to_qf,
-    },
+    actions             = M.globals.files.actions,
   }
 M.globals.loclist = {
     previewer           = function() return M.globals.default_previewer end,
@@ -267,13 +248,7 @@ M.globals.loclist = {
     git_icons           = false,
     git_diff_cmd        = M.globals.files.git_diff_cmd,
     git_untracked_cmd   = M.globals.files.git_untracked_cmd,
-    actions = {
-      ["default"]       = actions.file_edit,
-      ["ctrl-s"]        = actions.file_split,
-      ["ctrl-v"]        = actions.file_vsplit,
-      ["ctrl-t"]        = actions.file_tabedit,
-      ["ctrl-q"]        = actions.file_sel_to_qf,
-    },
+    actions             = M.globals.files.actions,
   }
 M.globals.buffers = {
     previewer             = "builtin",
@@ -323,13 +298,7 @@ M.globals.tags = {
     file_icons            = true and M._has_devicons,
     git_icons             = true,
     color_icons           = true,
-    actions = {
-        ["default"]       = actions.file_edit,
-        ["ctrl-s"]        = actions.file_split,
-        ["ctrl-v"]        = actions.file_vsplit,
-        ["ctrl-t"]        = actions.file_tabedit,
-        ["ctrl-q"]        = actions.file_sel_to_qf,
-    },
+    actions             = M.globals.files.actions,
   }
 M.globals.btags = {
     previewer             = function() return M.globals.default_previewer end,
@@ -338,13 +307,7 @@ M.globals.btags = {
     file_icons            = true and M._has_devicons,
     git_icons             = true,
     color_icons           = true,
-    actions = {
-        ["default"]       = actions.file_edit,
-        ["ctrl-s"]        = actions.file_split,
-        ["ctrl-v"]        = actions.file_vsplit,
-        ["ctrl-t"]        = actions.file_tabedit,
-        ["ctrl-q"]        = actions.file_sel_to_qf,
-    },
+    actions             = M.globals.files.actions,
   }
 M.globals.colorschemes = {
       prompt              = 'Colorschemes> ',
