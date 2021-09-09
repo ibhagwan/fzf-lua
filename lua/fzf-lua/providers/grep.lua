@@ -60,8 +60,8 @@ local function set_search_header(opts, type)
   -- 1: only search
   -- 2: only cwd
   -- otherwise, all
-  if type == 1 and search_str then header_str = search_str
-  elseif type == 2 and cwd_str then header_str = cwd_str
+  if type == 1 then header_str = search_str or ''
+  elseif type == 2 then header_str = cwd_str or ''
   else
     header_str = search_str or ''
     if #header_str>0 and cwd_str and #cwd_str>0 then
@@ -261,10 +261,12 @@ end
 
 M.live_grep_resume = function(opts)
   if not opts then opts = {} end
-  opts.continue_last_search =
-    (opts.continue_last_search == nil and
-     opts.repeat_last_search == nil and true) or
-    (opts.continue_last_search or opts.repeat_last_search)
+  if not opts.search then
+    opts.continue_last_search =
+      (opts.continue_last_search == nil and
+      opts.repeat_last_search == nil and true) or
+      (opts.continue_last_search or opts.repeat_last_search)
+  end
   return M.live_grep(opts)
 end
 
