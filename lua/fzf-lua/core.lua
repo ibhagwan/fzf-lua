@@ -102,11 +102,20 @@ M.create_fzf_colors = function(colors)
 end
 
 M.create_fzf_binds = function(binds)
+  if not binds then return '' end
   local tbl = {}
-  for key, action in pairs(binds) do
+  local dedup = {}
+  for k, v in pairs(binds) do
+    -- backward compatibility to when binds
+    -- where defined as one string '<key>:<command>'
+    local key, action = v:match("(.*):(.*)")
+    if action then k, v = key, action end
+    dedup[k] = v
+  end
+  for key, action in pairs(dedup) do
     table.insert(tbl, string.format("%s:%s", key, action))
   end
-  return vim.fn.shellescape(table.concat(tbl, ","))
+  return "--bind=" .. vim.fn.shellescape(table.concat(tbl, ","))
 end
 
 M.build_fzf_cli = function(opts, debug_print)
@@ -122,7 +131,7 @@ M.build_fzf_cli = function(opts, debug_print)
   end
 
   local cli = string.format(
-    [[ %s %s --layout=%s --bind=%s --prompt=%s]] ..
+    [[ %s %s --layout=%s %s --prompt=%s]] ..
     [[ --preview-window=%s%s --preview=%s]] ..
     [[ --height=100%%]] ..
     [[ %s %s %s %s %s %s %s]],
