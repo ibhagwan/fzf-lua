@@ -53,6 +53,8 @@ M.globals = {
     'ctrl-u:unix-line-discard',
     'ctrl-f:half-page-down',
     'ctrl-b:half-page-up',
+    'ctrl-a:beginning-of-line',
+    'ctrl-e:end-of-line',
     'alt-a:toggle-all',
   },
   preview_border      = 'border',
@@ -370,6 +372,9 @@ M.globals.nvim = {
       prompt              = 'Marks> ',
       actions = {
         ["default"]       = actions.goto_mark,
+      },
+      previewer = {
+        _ctor             = previewers.builtin.marks,
       },
     },
     commands = {

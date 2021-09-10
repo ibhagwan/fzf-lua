@@ -231,6 +231,8 @@ require'fzf-lua'.setup {
       'ctrl-u:unix-line-discard',
       'ctrl-f:half-page-down',
       'ctrl-b:half-page-up',
+      'ctrl-a:beginning-of-line',
+      'ctrl-e:end-of-line',
       'alt-a:toggle-all',
   },
   --[[ fzf_colors = {                   -- fzf '--color=' options
@@ -447,6 +449,7 @@ require'fzf-lua'.setup {
     },
   },
   -- uncomment to disable the previewer
+  -- nvim = { marks    = { previewer = { _ctor = false } } },
   -- helptags = { previewer = { _ctor = false } },
   -- manpages = { previewer = { _ctor = false } },
   -- uncomment to set dummy win location (help|man bar)
@@ -481,7 +484,7 @@ EOF
 
 ## TODO
 
-- [x] Add more providers
+- [x] ~~Add more providers~~
     + [x] ~~LSP (refs, symbols, etc)~~ (2021-07-20)
     + [x] ~~git commits~~ (2021-08-05)
     + [x] ~~git branches~~ (2021-08-05)
@@ -496,7 +499,7 @@ EOF
     + [x] ~~tags~~ (2021-08-15)
 - [x] ~~Built-in previewer with treesitter support~~ (2021-08-29)
 - [x] ~~Improve previewer for `buffers`~~ (2021-08-29)
-- [ ] Add support for `marks` in the builtin previewer
+- [x] ~~Add builtin previews for `marks|help_tags|man_pages`~~ (2021-09-09)
 - [ ] Add built-in plugin documentation
 - [ ] Complete the Wiki
 

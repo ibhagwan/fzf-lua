@@ -11,6 +11,7 @@ Previewer.base = {}
 Previewer.buffer_or_file = {}
 Previewer.help_tags = {}
 Previewer.man_pages = {}
+Previewer.marks = {}
 
 -- signgleton instance used for our keymappings
 local _self = nil
@@ -295,8 +296,12 @@ function Previewer.buffer_or_file:new(o, opts, fzf_win)
   return self
 end
 
+function Previewer.buffer_or_file:parse_entry(entry_str)
+  return path.entry_to_file(entry_str, self.opts.cwd)
+end
+
 function Previewer.buffer_or_file:populate_preview_buf(entry_str)
-  local entry = path.entry_to_file(entry_str, self.opts.cwd)
+  local entry = self:parse_entry(entry_str)
   if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
     -- must convert to number or our backup will have conflicting keys
     local bufnr = tonumber(entry.bufnr)
@@ -545,6 +550,38 @@ end
 function Previewer.man_pages:parse_entry(entry_str)
   return entry_str:match("[^[,( ]+")
   -- return require'fzf-lua.providers.manpages'.getmanpage(entry_str)
+end
+
+function Previewer.marks:new(o, opts, fzf_win)
+  self = setmetatable(Previewer.buffer_or_file(o, opts, fzf_win), {
+    __index = vim.tbl_deep_extend("keep",
+      self, Previewer.buffer_or_file, Previewer.base
+    )})
+  return self
+end
+
+function Previewer.marks:parse_entry(entry_str)
+  local bufnr = nil
+  local mark, lnum, col, filepath = entry_str:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
+  -- try to acquire position from sending buffer
+  -- if this succeeds (line>0) the mark is inside
+  local pos = vim.api.nvim_buf_get_mark(self.win.src_bufnr, mark)
+  if pos and pos[1] > 0 and pos[1] == tonumber(lnum) then
+    bufnr = self.win.src_bufnr
+    filepath = api.nvim_buf_get_name(bufnr)
+  end
+  if filepath and #filepath>0 then
+    local ok, res = pcall(vim.fn.expand, filepath)
+    if not ok then filepath = ''
+    else filepath = res end
+    filepath = path.relative(filepath, vim.loop.cwd())
+  end
+  return {
+    bufnr = bufnr,
+    path = filepath,
+    line = tonumber(lnum) or 1,
+    col  = tonumber(col) or 1,
+  }
 end
 
 return Previewer
