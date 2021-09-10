@@ -224,16 +224,16 @@ require'fzf-lua'.setup {
   fzf_layout          = 'reverse',      -- fzf '--layout=' options
   fzf_args            = '',             -- adv: fzf extra args, empty unless adv
   fzf_binds           = {               -- fzf '--bind=' options
-      'f2:toggle-preview',
-      'f3:toggle-preview-wrap',
-      'shift-down:preview-page-down',
-      'shift-up:preview-page-up',
-      'ctrl-u:unix-line-discard',
-      'ctrl-f:half-page-down',
-      'ctrl-b:half-page-up',
-      'ctrl-a:beginning-of-line',
-      'ctrl-e:end-of-line',
-      'alt-a:toggle-all',
+    ["f2"]            = "toggle-preview",
+    ["f3"]            = "toggle-preview-wrap",
+    ["shift-down"]    = "preview-page-down",
+    ["shift-up"]      = "preview-page-up",
+    ["ctrl-u"]        = "unix-line-discard",
+    ["ctrl-f"]        = "half-page-down",
+    ["ctrl-b"]        = "half-page-up",
+    ["ctrl-a"]        = "beginning-of-line",
+    ["ctrl-e"]        = "end-of-line",
+    ["alt-a"]         = "toggle-all",
   },
   --[[ fzf_colors = {                   -- fzf '--color=' options
       ["fg"] = { "fg", "CursorLine" },
