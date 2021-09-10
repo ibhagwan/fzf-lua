@@ -101,11 +101,20 @@ M.create_fzf_colors = function(colors)
   return string.format("--color=%s", colors)
 end
 
+M.create_fzf_binds = function(binds)
+  local tbl = {}
+  for key, action in pairs(binds) do
+    table.insert(tbl, string.format("%s:%s", key, action))
+  end
+  return vim.fn.shellescape(table.concat(tbl, ","))
+end
+
 M.build_fzf_cli = function(opts, debug_print)
   opts.prompt = opts.prompt or config.globals.default_prompt
   opts.preview_offset = opts.preview_offset or ''
   opts.fzf_info = opts.fzf_info or config.globals.fzf_info
   opts.fzf_ansi = opts.fzf_ansi or config.globals.fzf_ansi
+
   if not opts.fzf_info then
     -- skim (rust version of fzf) doesn't
     -- support the '--info=' flag
@@ -120,8 +129,7 @@ M.build_fzf_cli = function(opts, debug_print)
     opts.fzf_args or config.globals.fzf_args or '',
     M.create_fzf_colors(opts.fzf_colors or config.globals.fzf_colors),
     opts.fzf_layout or config.globals.fzf_layout,
-    utils._if(opts.fzf_binds, opts.fzf_binds,
-      vim.fn.shellescape(table.concat(config.globals.fzf_binds, ','))),
+    M.create_fzf_binds(opts.fzf_binds or config.globals.fzf_binds),
     vim.fn.shellescape(opts.prompt),
     utils._if(opts.preview_window, opts.preview_window, M.preview_window(opts)),
     utils._if(#opts.preview_offset>0, ":"..opts.preview_offset, ''),
