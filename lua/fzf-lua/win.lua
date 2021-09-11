@@ -132,10 +132,6 @@ local normalize_winopts = function(opts)
     border = config.globals.winopts.borderchars
   end
 
-  -- only accept single char
-  if not scrollchar or type(scrollchar) ~= 'string' then
-    scrollchar = '█'
-  end
 
   -- parse preview options
   local preview = opts.preview_horizontal
@@ -489,6 +485,7 @@ function FzfWin:update_scrollbar()
   local border_winid = self.border_winid
   local preview_winid = self.preview_winid
   local border_chars = self.winopts.border
+  local scrollchar = self.winopts.scrollchar
   local buf = api.nvim_win_get_buf(preview_winid)
   local border_buf = api.nvim_win_get_buf(border_winid)
   local line_count = api.nvim_buf_line_count(buf)
@@ -503,11 +500,16 @@ function FzfWin:update_scrollbar()
       bar_pos = height - bar_size + 1
   end
 
+  -- only accept a string
+  if not scrollchar or type(scrollchar) ~= 'string' then
+    scrollchar = '█'
+  end
+
   local lines = api.nvim_buf_get_lines(border_buf, 1, -2, true)
   for i = 1, #lines do
     local bar_char
     if i >= bar_pos and i < bar_pos + bar_size then
-      bar_char = self.winopts.scrollchar
+      bar_char = scrollchar
     else
       bar_char = border_chars[4]
     end
