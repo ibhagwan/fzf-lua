@@ -131,14 +131,14 @@ M.build_fzf_cli = function(opts, debug_print)
   end
 
   local cli = string.format(
-    [[ %s %s --layout=%s %s --prompt=%s]] ..
+    [[ %s %s %s --layout=%s --prompt=%s]] ..
     [[ --preview-window=%s%s --preview=%s]] ..
     [[ --height=100%%]] ..
     [[ %s %s %s %s %s %s %s]],
     opts.fzf_args or config.globals.fzf_args or '',
     M.create_fzf_colors(opts.fzf_colors or config.globals.fzf_colors),
-    opts.fzf_layout or config.globals.fzf_layout,
     M.create_fzf_binds(opts.fzf_binds or config.globals.fzf_binds),
+    opts.fzf_layout or config.globals.fzf_layout,
     vim.fn.shellescape(opts.prompt),
     utils._if(opts.preview_window, opts.preview_window, M.preview_window(opts)),
     utils._if(#opts.preview_offset>0, ":"..opts.preview_offset, ''),

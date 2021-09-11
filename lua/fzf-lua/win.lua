@@ -126,7 +126,8 @@ local normalize_winopts = function(opts)
 
   -- normalize border option for nvim_open_win()
   if border == false then
-    border = "none"
+    border = {}
+    for i=1, 8 do border[i] = ' ' end
   elseif border == true or border == nil then
     border = config.globals.winopts.borderchars
   end
@@ -288,12 +289,21 @@ end
 function FzfWin:update_border_buf()
   local border_buf = self.border_buf
   local border_winopts = self.border_winopts
-  local border_chars = self.winopts.border
-  if type(border_chars) == 'string' or type(border_chars[1]) ~= 'string' then
-    -- backward compatibility:
-    -- happens with 'winopts.win_border = false'
+  local border_chars = {}
+  if type(self.winopts.border) ~= 'table' then
     border_chars = config.globals.winopts.borderchars
+  else
+    for i=1, 8 do
+      if type(self.winopts.border[i]) == 'table' then
+        -- can happen when border chars contains a highlight, i.e:
+        -- border = { {'╭', 'NormalFloat'}, {'─', 'NormalFloat'}, ... }
+        table.insert(border_chars, self.winopts.border[i][1])
+      else
+        table.insert(border_chars, self.winopts.border[i])
+      end
+    end
   end
+  assert(#border_chars == 8)
   local width, height = border_winopts.width, border_winopts.height
   local top = border_chars[1] .. border_chars[2]:rep(width - 2) .. border_chars[3]
   local mid = border_chars[8] .. (' '):rep(width - 2) .. border_chars[4]
