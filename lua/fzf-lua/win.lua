@@ -132,10 +132,9 @@ local normalize_winopts = function(opts)
     border = config.globals.winopts.borderchars
   end
 
-  -- did user supply the scroll char at 9th slot?
-  if type(border) == 'table' and #border == 9 then
-    if not scrollchar then scrollchar = border[9] end
-    border[9] = nil
+  -- only accept single char
+  if not scrollchar or type(scrollchar) ~= 'string' then
+    scrollchar = '█'
   end
 
   -- parse preview options
@@ -156,7 +155,7 @@ local normalize_winopts = function(opts)
     split = raw.split or winopts.split,
     hl_normal = hl_normal, hl_border = hl_border,
     -- builtin previewer params
-    scrollchar = scrollchar or '█',
+    scrollchar = scrollchar,
     preview_pos = prev_pos, preview_size = prev_size,
   }
 end

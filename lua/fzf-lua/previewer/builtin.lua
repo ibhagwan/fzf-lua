@@ -57,7 +57,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.wrap = o.wrap
   self.title = o.title
   self.scrollbar = o.scrollbar
-  if o.scrollchar then
+  if o.scrollchar and type(o.scrollchar) == 'string' then
     self.win.winopts.scrollchar = o.scrollchar
   end
   self.expand = o.expand or o.fullscreen
