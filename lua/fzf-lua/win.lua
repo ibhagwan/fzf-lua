@@ -280,25 +280,31 @@ function FzfWin:preview_winids()
     return self.preview_winid, self.border_winid
 end
 
+local strip_border_highlights = function(border)
+  local default = config.globals.winopts.borderchars
+  if not border or type(border) ~= 'table' or #border<8 then
+    return default
+  end
+  local borderchars = {}
+  for i=1, 8 do
+    if type(border[i]) == 'string' then
+      table.insert(borderchars, border[i])
+    elseif type(border[i]) == 'table' and type(border[i][1]) == 'string' then
+      -- can happen when border chars contains a highlight, i.e:
+      -- border = { {'╭', 'NormalFloat'}, {'─', 'NormalFloat'}, ... }
+      table.insert(borderchars, border[i][1])
+    else
+      table.insert(borderchars, default[i])
+    end
+  end
+  -- assert(#borderchars == 8)
+  return borderchars
+end
 
 function FzfWin:update_border_buf()
   local border_buf = self.border_buf
   local border_winopts = self.border_winopts
-  local border_chars = {}
-  if type(self.winopts.border) ~= 'table' then
-    border_chars = config.globals.winopts.borderchars
-  else
-    for i=1, 8 do
-      if type(self.winopts.border[i]) == 'table' then
-        -- can happen when border chars contains a highlight, i.e:
-        -- border = { {'╭', 'NormalFloat'}, {'─', 'NormalFloat'}, ... }
-        table.insert(border_chars, self.winopts.border[i][1])
-      else
-        table.insert(border_chars, self.winopts.border[i])
-      end
-    end
-  end
-  assert(#border_chars == 8)
+  local border_chars = strip_border_highlights(self.winopts.border)
   local width, height = border_winopts.width, border_winopts.height
   local top = border_chars[1] .. border_chars[2]:rep(width - 2) .. border_chars[3]
   local mid = border_chars[8] .. (' '):rep(width - 2) .. border_chars[4]
@@ -484,7 +490,7 @@ end
 function FzfWin:update_scrollbar()
   local border_winid = self.border_winid
   local preview_winid = self.preview_winid
-  local border_chars = self.winopts.border
+  local border_chars = strip_border_highlights(self.winopts.border)
   local scrollchar = self.winopts.scrollchar
   local buf = api.nvim_win_get_buf(preview_winid)
   local border_buf = api.nvim_win_get_buf(border_winid)
