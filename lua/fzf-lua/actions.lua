@@ -1,5 +1,6 @@
 local utils = require "fzf-lua.utils"
 local path = require "fzf-lua.path"
+local stdio = require "fzf-lua.stdio"
 
 local M = {}
 
@@ -241,9 +242,9 @@ M.git_switch = function(selected, opts)
   local args = ""
   local is_remote = branch:find("^remotes/") ~= nil
   if is_remote then args = "--detach " end
-  local output = vim.fn.systemlist(cmd .. args .. branch)
-  if utils.shell_error() then
-    utils.err(unpack(output))
+  local output, err = stdio.get_stdout(cmd .. args .. branch)
+  if err then
+    utils.err(cmd .. args .. branch)
   else
     utils.info(unpack(output))
     vim.cmd("edit!")
@@ -255,11 +256,11 @@ M.git_checkout = function(selected, opts)
   local cmd_cur_commit = path.git_cwd("git rev-parse --short HEAD", opts.cwd)
   local commit_hash = selected[1]:match("[^ ]+")
   if vim.fn.input("Checkout commit " .. commit_hash .. "? [y/n] ") == "y" then
-    local current_commit = vim.fn.systemlist(cmd_cur_commit)
+    local current_commit = stdio.get_stdout(cmd_cur_commit)
     if(commit_hash == current_commit) then return end
-    local output = vim.fn.systemlist(cmd_checkout .. commit_hash)
-    if utils.shell_error() then
-      utils.err(unpack(output))
+    local output, err = stdio.get_stdout(cmd_checkout .. commit_hash)
+    if err then
+      utils.err(cmd_checkout .. commit_hash)
     else
       utils.info(unpack(output))
       vim.cmd("edit!")
@@ -276,7 +277,7 @@ M.git_buf_edit = function(selected, opts)
   local buffer_filetype = vim.bo.filetype
   local file = path.relative(vim.fn.expand("%:p"), git_root)
   local commit_hash = selected[1]:match("[^ ]+")
-  local git_file_contents = vim.fn.systemlist(cmd .. commit_hash .. ":" .. file)
+  local git_file_contents = stdio.get_stdout(cmd .. commit_hash .. ":" .. file)
   local buf = vim.api.nvim_create_buf(true, true)
   local file_name = string.gsub(file,"$","[" .. commit_hash .. "]")
   vim.api.nvim_buf_set_lines(buf,0,0,true,git_file_contents)

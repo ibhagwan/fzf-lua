@@ -118,6 +118,9 @@ M.globals = {
       _ctor           = previewers.builtin.buffer_or_file,
     },
   },
+  -- Use the standard library io to execute external commands?
+  -- If false, use vim.fn.systemlist()
+  lua_io = false,
 }
 M.globals.files = {
     previewer           = function() return M.globals.default_previewer end,
@@ -435,7 +438,7 @@ if M._has_devicons then
     return r, g, b
   end
 
-  for ext, info in pairs(M._devicons.get_icons()) do
+  for _, info in pairs(M._devicons.get_icons()) do
     local r, g, b = hex(info.color)
     utils.add_ansi_code('DevIcon' .. info.name, string.format('[38;2;%s;%s;%sm', r, g, b))
   end

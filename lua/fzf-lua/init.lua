@@ -2,9 +2,9 @@ if not pcall(require, "fzf") then
   return
 end
 
-local fzf = require "fzf"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
+local stdio = require "fzf-lua.stdio"
 
 
 local M = {}
@@ -35,6 +35,7 @@ function M.setup(opts)
   -- reset our globals based on user opts
   -- this doesn't happen automatically
   config.globals = globals
+  stdio.set_flag(globals.lua_io)
   globals = nil
 end
 

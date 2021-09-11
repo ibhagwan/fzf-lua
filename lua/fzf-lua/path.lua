@@ -1,4 +1,5 @@
 local utils = require "fzf-lua.utils"
+local stdio = require "fzf-lua.stdio"
 local string_byte = string.byte
 
 local M = {}
@@ -172,10 +173,10 @@ end
 
 function M.git_root(cwd, noerr)
     local cmd = M.git_cwd("git rev-parse --show-toplevel", cwd)
-    local output = vim.fn.systemlist(cmd)
-    if utils.shell_error() then
-        if not noerr then utils.info(unpack(output)) end
-        return nil
+    local output, err = stdio.get_stdout(cmd)
+    if err then
+      if not noerr then utils.info(cmd) end
+      return nil
     end
     return output[1]
 end

@@ -469,6 +469,9 @@ require'fzf-lua'.setup {
   file_icon_colors = {
     ["lua"]   = "blue",
   },
+  -- If true, use io (lua standard library) for runnig shell command (ex. git)
+  -- If git-based commands are slow, it might improve things.
+  lua_io = false,
 }
 ```
 
