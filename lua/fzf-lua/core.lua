@@ -4,6 +4,7 @@ local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 local win = require "fzf-lua.win"
+local stdio = require "fzf-lua.stdio"
 
 local M = {}
 
@@ -156,28 +157,46 @@ end
 
 local get_diff_files = function(opts)
     local diff_files = {}
-    local status = vim.fn.systemlist(path.git_cwd(
+
+    local status = stdio.get_stdout(path.git_cwd(
       config.globals.files.git_diff_cmd, opts.cwd))
-    if not utils.shell_error() then
-        for i = 1, #status do
-          local icon, file = status[i]:match("^([MUDAR])%s+(.*)")
-          if icon and file then diff_files[file] = icon end
-        end
+    for _, v in ipairs(status) do
+      local icon, file = v:match("^([MUDAR])%s+(.*)")
+      if icon and file then
+        diff_files[file] = icon
+      end
     end
+
+    --local status = vim.fn.systemlist(path.git_cwd(
+    --  config.globals.files.git_diff_cmd, opts.cwd))
+    --if not utils.shell_error() then
+    --    for i = 1, #status do
+    --      local icon, file = status[i]:match("^([MUDAR])%s+(.*)")
+    --      if icon and file then diff_files[file] = icon end
+    --    end
+    --end
 
     return diff_files
 end
 
 local get_untracked_files = function(opts)
     local untracked_files = {}
-    local status = vim.fn.systemlist(path.git_cwd(
+
+    local status = stdio.get_stdout(path.git_cwd(
       config.globals.files.git_untracked_cmd, opts.cwd))
-    if vim.v.shell_error == 0 then
-        for i = 1, #status do
-            local file = status[i]
-            untracked_files[file] = "?"
-        end
+
+    for _, v in ipairs(status) do
+      untracked_files[v] = "?"
     end
+
+    --local status = vim.fn.systemlist(path.git_cwd(
+    --  config.globals.files.git_untracked_cmd, opts.cwd))
+    --if vim.v.shell_error == 0 then
+    --    for i = 1, #status do
+    --        local file = status[i]
+    --        untracked_files[file] = "?"
+    --    end
+    --end
 
     return untracked_files
 end
