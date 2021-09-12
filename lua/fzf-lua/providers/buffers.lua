@@ -227,6 +227,7 @@ M.buffer_lines = function(opts)
     -- ignore bufnr when searching
     -- disable multi-select
     opts.nomulti = true
+    opts.preview_window = 'hidden:right:0'
     opts._fzf_cli_args = "--delimiter=']' --nth 2,-1"
 
     local selected = core.fzf(opts, items)
