@@ -172,8 +172,8 @@ end
 
 function M.git_root(cwd, noerr)
     local cmd = M.git_cwd("git rev-parse --show-toplevel", cwd)
-    local output = vim.fn.systemlist(cmd)
-    if utils.shell_error() then
+    local output, err = utils.io_systemlist(cmd)
+    if err ~= 0 then
         if not noerr then utils.info(unpack(output)) end
         return nil
     end

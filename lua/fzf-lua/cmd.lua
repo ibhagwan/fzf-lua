@@ -68,7 +68,7 @@ end
 local function run_command(args)
   local user_opts = args or {}
   if next(user_opts) == nil and not user_opts.cmd then
-    utils.info("[Fzf-lua] missing command args")
+    utils.info("missing command args")
     return
   end
 

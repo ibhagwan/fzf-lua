@@ -327,4 +327,48 @@ function M.ft_detect(ext)
   return ft
 end
 
+-- speed up exteral commands (issue #126)
+local _use_lua_io = false
+function M.set_lua_io(b)
+  _use_lua_io = b
+  if _use_lua_io then
+    M.warn("using experimental feature 'lua_io'")
+  end
+end
+
+function M.io_systemlist(cmd, use_lua_io)
+  if not use_lua_io then use_lua_io = _use_lua_io end
+  if use_lua_io then
+    local rc = 0
+    local stdout = ''
+    local handle = io.popen(cmd .. " 2>&1; echo $?", "r")
+    if handle then
+      stdout = {}
+      for h in handle:lines() do
+        stdout[#stdout + 1] = h
+      end
+      -- last line contains the exit status
+      rc = tonumber(stdout[#stdout])
+      stdout[#stdout] = nil
+    end
+    handle:close()
+    return stdout, rc
+  else
+    return vim.fn.systemlist(cmd), vim.v.shell_error
+  end
+end
+
+function M.io_system(cmd, use_lua_io)
+  if not use_lua_io then use_lua_io = _use_lua_io end
+  if use_lua_io then
+    local stdout, rc = M.io_systemlist(cmd, true)
+    if type(stdout) == 'table' then
+      stdout = table.concat(stdout, "\n")
+    end
+    return stdout, rc
+  else
+    return vim.fn.system(cmd), vim.v.shell_error
+  end
+end
+
 return M

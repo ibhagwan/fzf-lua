@@ -158,8 +158,8 @@ local get_diff_files = function(opts)
     local diff_files = {}
     local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd
     if not cmd then return {} end
-    local status = vim.fn.systemlist(path.git_cwd(cmd, opts.cwd))
-    if not utils.shell_error() then
+    local status, err = utils.io_systemlist(path.git_cwd(cmd, opts.cwd))
+    if err == 0 then
         for i = 1, #status do
           local icon = status[i]:match("[MUDAR?]+")
           local file = status[i]:match("[^ ]*$")

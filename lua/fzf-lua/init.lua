@@ -32,6 +32,8 @@ function M.setup(opts)
   if bat_theme and #bat_theme > 0 then
     vim.env.BAT_THEME = bat_theme
   end
+  -- set lua_io if caller requested
+  utils.set_lua_io(globals.lua_io)
   -- reset our globals based on user opts
   -- this doesn't happen automatically
   config.globals = globals
