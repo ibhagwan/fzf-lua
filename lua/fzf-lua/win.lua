@@ -433,6 +433,9 @@ function FzfWin:create()
     self._previewer:setup_keybinds()
   end
 
+  -- for hook to setlocal
+  vim.bo.filetype = "fzf_lua"
+
   return {
     src_bufnr = self.src_bufnr,
     src_winid = self.src_winid,
