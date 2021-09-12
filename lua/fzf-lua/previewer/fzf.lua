@@ -173,7 +173,7 @@ function Previewer.git_diff:cmdline(o)
   o = o or {}
   local act = helpers.choices_to_shell_cmd_previewer(function(items)
     local is_deleted = items[1]:match("D"..utils.nbsp) ~= nil
-    local is_untracked = items[1]:match("?"..utils.nbsp) ~= nil
+    local is_untracked = items[1]:match("[?RA]"..utils.nbsp) ~= nil
     local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
     local cmd = self.cmd
     local args = self.args

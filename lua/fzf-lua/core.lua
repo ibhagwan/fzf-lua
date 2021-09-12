@@ -156,42 +156,21 @@ end
 
 local get_diff_files = function(opts)
     local diff_files = {}
-    local status = vim.fn.systemlist(path.git_cwd(
-      config.globals.files.git_diff_cmd, opts.cwd))
+    local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd
+    if not cmd then return {} end
+    local status = vim.fn.systemlist(path.git_cwd(cmd, opts.cwd))
     if not utils.shell_error() then
         for i = 1, #status do
-          local icon, file = status[i]:match("^([MUDAR])%s+(.*)")
-          if icon and file then diff_files[file] = icon end
+          local icon = status[i]:match("[MUDAR?]+")
+          local file = status[i]:match("[^ ]*$")
+          if icon and file then
+            diff_files[file] = icon
+          end
         end
     end
 
     return diff_files
 end
-
-local get_untracked_files = function(opts)
-    local untracked_files = {}
-    local status = vim.fn.systemlist(path.git_cwd(
-      config.globals.files.git_untracked_cmd, opts.cwd))
-    if vim.v.shell_error == 0 then
-        for i = 1, #status do
-            local file = status[i]
-            untracked_files[file] = "?"
-        end
-    end
-
-    return untracked_files
-end
-
-local get_git_indicator = function(file, diff_files, untracked_files)
-    if diff_files and diff_files[file] then
-        return diff_files[file]
-    end
-    if untracked_files and untracked_files[file] then
-        return untracked_files[file]
-    end
-    return utils.nbsp
-end
-
 
 M.make_entry_lcol = function(_, entry)
   if not entry then return nil end
@@ -232,16 +211,18 @@ M.make_entry_file = function(opts, x)
     ret[#ret+1] = utils.nbsp
   end
   if opts.git_icons then
-    local indicator = get_git_indicator(file, opts.diff_files, opts.untracked_files)
-    icon = indicator
-    local git_icon = config.globals.git.icons[indicator]
-    if git_icon then
-      icon = git_icon.icon
-      if opts.color_icons then
-        icon = utils.ansi_codes[git_icon.color or "dark_grey"](icon)
+    local indicators = opts.diff_files and opts.diff_files[file] or utils.nbsp
+    for i=1,#indicators do
+      icon = indicators:sub(i,i)
+      local git_icon = config.globals.git.icons[icon]
+      if git_icon then
+        icon = git_icon.icon
+        if opts.color_icons then
+          icon = utils.ansi_codes[git_icon.color or "dark_grey"](icon)
+        end
       end
+      ret[#ret+1] = icon
     end
-    ret[#ret+1] = icon
     ret[#ret+1] = utils.nbsp
   end
   ret[#ret+1] = x
@@ -272,7 +253,7 @@ M.fzf_files = function(opts)
   if not opts then return end
 
   -- reset git tracking
-  opts.diff_files, opts.untracked_files = nil, nil
+  opts.diff_files = nil
   if opts.git_icons and not path.is_git_repo(opts.cwd, true) then opts.git_icons = false end
 
   coroutine.wrap(function ()
@@ -283,7 +264,6 @@ M.fzf_files = function(opts)
 
     if opts.git_icons then
       opts.diff_files = get_diff_files(opts)
-      opts.untracked_files = get_untracked_files(opts)
     end
 
     local has_prefix = opts.file_icons or opts.git_icons or opts.lsp_icons

@@ -126,8 +126,7 @@ M.globals.files = {
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = true,
-    git_diff_cmd        = "git diff --name-status --relative HEAD",
-    git_untracked_cmd   = "git ls-files --exclude-standard --others",
+    git_status_cmd      = "git status -s",
     find_opts           = "-type f -printf '%P\n'",
     fd_opts             =
       [[--color never --type f --hidden --follow ]] ..
@@ -195,6 +194,7 @@ M.globals.git = {
       ["M"]         = { icon = "M", color = "yellow" },
       ["D"]         = { icon = "D", color = "red" },
       ["A"]         = { icon = "A", color = "green" },
+      ["R"]         = { icon = "R", color = "yellow" },
       ["?"]         = { icon = "?", color = "magenta" },
     },
   }
@@ -206,8 +206,6 @@ M.globals.grep = {
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = true,
-    git_diff_cmd        = M.globals.files.git_diff_cmd,
-    git_untracked_cmd   = M.globals.files.git_untracked_cmd,
     grep_opts           = "--line-number --recursive --color=auto --perl-regexp",
     rg_opts             = "--column --line-number --no-heading --color=always --smart-case",
     actions             = M.globals.files.actions,
@@ -218,8 +216,6 @@ M.globals.oldfiles = {
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = false,
-    git_diff_cmd        = M.globals.files.git_diff_cmd,
-    git_untracked_cmd   = M.globals.files.git_untracked_cmd,
     actions             = M.globals.files.actions,
   }
 M.globals.quickfix = {
@@ -229,8 +225,6 @@ M.globals.quickfix = {
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = false,
-    git_diff_cmd        = M.globals.files.git_diff_cmd,
-    git_untracked_cmd   = M.globals.files.git_untracked_cmd,
     actions             = M.globals.files.actions,
   }
 M.globals.loclist = {
@@ -240,8 +234,6 @@ M.globals.loclist = {
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = false,
-    git_diff_cmd        = M.globals.files.git_diff_cmd,
-    git_untracked_cmd   = M.globals.files.git_untracked_cmd,
     actions             = M.globals.files.actions,
   }
 M.globals.buffers = {
