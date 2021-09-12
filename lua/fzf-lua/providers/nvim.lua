@@ -157,13 +157,16 @@ M.registers = function(opts)
 
     local prev_act = action(function (args)
       local r = args[1]:match("%[(.*)%] ")
-      local contents = vim.fn.getreg(r)
-      return contents or r
+      local _, contents = pcall(vim.fn.getreg, r)
+      return contents or args[1]
     end)
 
     local entries = {}
     for _, r in ipairs(registers) do
-      local contents = vim.fn.getreg(r)
+      -- pcall as this could fail with:
+      -- E5108: Error executing lua Vim:clipboard:
+      --        provider returned invalid data
+      local _, contents = pcall(vim.fn.getreg, r)
       contents = contents:gsub("\n", utils.ansi_codes.magenta("\\n"))
       if (contents and #contents > 0) or not opts.ignore_empty then
         table.insert(entries, string.format("[%s] %s",
