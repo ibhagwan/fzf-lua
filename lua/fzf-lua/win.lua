@@ -20,7 +20,7 @@ local generate_layout = function(winopts)
   local height, width = winopts.height, winopts.width
   local preview_pos = winopts.preview_pos
   local preview_size = winopts.preview_size
-  local prev_row, prev_col = row, col
+  local prev_row, prev_col = row+1, col+1
   local prev_height, prev_width
   local padding = 2
   local anchor
@@ -41,7 +41,7 @@ local generate_layout = function(winopts)
         end
       else
         anchor = 'SW'
-        prev_row = row - padding
+        prev_row = row - 1
       end
     else
       anchor = 'NW'
@@ -50,7 +50,7 @@ local generate_layout = function(winopts)
         prev_row = height + padding
         prev_height = prev_height - 1
       else
-        prev_row = row + height + padding
+        prev_row = row + height + 3
       end
     end
   elseif preview_pos == 'left' or preview_pos == 'right' then
@@ -85,7 +85,7 @@ local generate_layout = function(winopts)
           prev_width = prev_width - padding
         end
       else
-        prev_col = col + width + padding
+        prev_col = col + width + 3
       end
     end
   end
@@ -203,19 +203,19 @@ function FzfWin:fs_preview_layout(fs)
     if preview_pos == 'down' then
       height_diff = vim.o.lines - border_winopts.row - border_winopts.height - 3
     elseif preview_pos == 'up' then
-      height_diff = border_winopts.row - border_winopts.height + 1
+      height_diff = border_winopts.row - border_winopts.height
     end
     prev_winopts.col = prev_winopts.col - width_diff/2
     border_winopts.col = border_winopts.col - width_diff/2
   elseif preview_pos == 'left' or preview_pos == 'right'then
     height_diff = vim.o.lines - border_winopts.height - 2
     if preview_pos == 'left' then
-      width_diff = border_winopts.col - border_winopts.width + 1
+      width_diff = border_winopts.col - border_winopts.width
     elseif preview_pos == 'right' then
       width_diff = vim.o.columns - border_winopts.col - border_winopts.width - 1
     end
-    prev_winopts.row = prev_winopts.row - height_diff/2 - 1
-    border_winopts.row = border_winopts.row - height_diff/2 - 1
+    prev_winopts.row = prev_winopts.row - height_diff/2
+    border_winopts.row = border_winopts.row - height_diff/2
   end
 
   prev_winopts.height = prev_winopts.height + height_diff
@@ -248,8 +248,12 @@ function FzfWin:preview_layout()
         return {}, {}
     end
 
-    local winopts = {relative = 'win', win = self.fzf_winid, focusable = false, style = 'minimal'}
+    -- we cannot use relative with floating windows due to:
+    -- https://github.com/neovim/neovim/pull/14770
+    -- only use relative when using splits
+    local winopts = {relative = 'editor', focusable = false, style = 'minimal'}
     if self.winopts.split then
+      winopts = {relative = 'win', win = self.fzf_winid, focusable = false, style = 'minimal'}
       width = width - 2
     end
     local preview_opts = vim.tbl_extend('force', winopts, {
