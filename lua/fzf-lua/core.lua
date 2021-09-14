@@ -306,7 +306,7 @@ M.set_fzf_interactive_cmd = function(opts)
 
   local uv = vim.loop
   local raw_async_act = require("fzf.actions").raw_async_action(function(pipe, args)
-    local shell_cmd = opts._reload_get_cmd(args[1])
+    local shell_cmd = opts._reload_command(args[1])
     local output_pipe = uv.new_pipe(false)
     local error_pipe = uv.new_pipe(false)
     local read_cb_count = 0
