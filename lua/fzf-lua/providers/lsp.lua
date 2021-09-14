@@ -506,98 +506,51 @@ M.workspace_diagnostics = function(opts)
   return M.diagnostics(opts)
 end
 
-local live_workspace_symbols_sk = function(opts)
-
-  -- "'{}'" opens sk with an empty search_query showing all files
-  --  "{}"  opens sk without executing an empty string query
-  --  the problem is the latter doesn't support escaped chars
-  -- TODO: how to open without a query with special char support
-  local sk_args = string.format("%s '{}'", opts._action)
-
-  opts._fzf_cli_args = string.format("--cmd-prompt='%s' -i -c %s",
-      opts.prompt,
-      vim.fn.shellescape(sk_args))
-
-  opts.git_icons = false
-  opts.file_icons = false
-  opts.fzf_fn = nil --function(_) end
-  opts = core.set_fzf_line_args(opts)
-  core.fzf_files(opts)
-  opts.search = nil
-end
+local last_search = {}
 
 M.live_workspace_symbols = function(opts)
-
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
-  opts.lsp_params = {query = ''}
+
+  -- exec empty query is the default here
+  if opts.exec_empty_query == nil then
+    opts.exec_empty_query = true
+  end
+
+  if not opts.query
+    and opts.continue_last_search ~= false
+    and opts.repeat_last_search ~= false then
+    opts.query = last_search.query
+  end
+
+  if opts.query and #opts.query>0 then
+    -- save the search query so the use can
+    -- call the same search again
+    last_search = {}
+    last_search.query = opts.search
+  end
+
+  -- sent to the LSP server
+  opts.lsp_params = {query = opts.query or ''}
 
   -- must get those here, otherwise we get the
   -- fzf terminal buffer and window IDs
   opts.bufnr = vim.api.nvim_get_current_buf()
   opts.winid = vim.api.nvim_get_current_win()
 
-  local raw_act = raw_action(function(args)
+  opts._reload_action = function(query)
+    if query and not opts.do_not_save_last_search then
+      last_search = {}
+      last_search.query = query
+    end
     opts.sync = true
     opts.async = false
-    opts.lsp_params = {query = args[2] or ''}
+    opts.lsp_params = {query = query or ''}
     opts = set_lsp_fzf_fn(opts)
     return opts.fzf_fn
-  end)
-
-  local raw_async_act = raw_async_action(function(pipe, args)
-    coroutine.wrap(function ()
-      local co = coroutine.running()
-      local cb = function(item)
-        -- only close the pipe when nil is sent
-        if not item then
-          print("closing pipe")
-          uv.close(pipe)
-          coroutine.resume(co)
-        else
-          print(item)
-          uv.write(pipe, item, function(err)
-            assert(not err)
-          end)
-        end
-      end
-      opts.sync = false
-      opts.async = true
-      opts.lsp_params = {query = args[2] or ''}
-      opts = set_lsp_fzf_fn(opts)
-      opts.fzf_fn(cb)
-      -- wait for the request to be completed
-      coroutine.yield()
-    end)()
-  end)
-
-  -- TODO: async not working properly
-  -- use sync as default action
-  local act_lsp = raw_act
-  if opts.async or opts.sync == false then
-    act_lsp = raw_async_act
   end
 
-  -- skim (rust version of fzf)
-  if opts._is_skim then
-    opts._action = act_lsp
-    return live_workspace_symbols_sk(opts)
-  end
-
-  -- use {q} as a placeholder for fzf
-  local reload_command = act_lsp .. " {q}"
-
-  opts._fzf_cli_args = string.format('--phony --query="" --bind=%s',
-    vim.fn.shellescape(string.format("change:reload:%s", reload_command)))
-
-  -- TODO:
-  -- this is not getting called past the initial command
-  -- until we fix that we cannot use icons as they interfere
-  -- with the extension parsing
-  opts.git_icons = false
-  opts.file_icons = false
-
-  opts.fzf_fn = {}
+  opts = core.set_fzf_interactive_cb(opts)
   opts = core.set_fzf_line_args(opts)
   core.fzf_files(opts)
   opts.search = nil

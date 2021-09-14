@@ -296,22 +296,17 @@ M.fzf_files = function(opts)
 
 end
 
+M.set_fzf_interactive_cmd = function(opts)
 
-
-M.fzf_files_interactive = function(opts)
-
-  opts = opts or config.normalize_opts(opts, config.globals.files)
   if not opts then return end
 
-  -- cannot be nil
-  local query = opts._live_query or ''
   -- fzf already adds single quotes around the placeholder when expanding
   -- for skim we surround it with double quotes or single quote searches fail
   local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
 
   local uv = vim.loop
   local raw_async_act = require("fzf.actions").raw_async_action(function(pipe, args)
-    local shell_cmd = opts._cb_live_cmd(args[1])
+    local shell_cmd = opts._reload_get_cmd(args[1])
     local output_pipe = uv.new_pipe(false)
     local error_pipe = uv.new_pipe(false)
     local read_cb_count = 0
@@ -370,7 +365,49 @@ M.fzf_files_interactive = function(opts)
     error_pipe:read_start(read_cb)
   end, placeholder)
 
-  local act_cmd = raw_async_act
+  return M.set_fzf_interactive(opts, raw_async_act, placeholder)
+end
+
+M.set_fzf_interactive_cb = function(opts)
+
+  if not opts then return end
+
+  -- fzf already adds single quotes around the placeholder when expanding
+  -- for skim we surround it with double quotes or single quote searches fail
+  local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
+
+  local uv = vim.loop
+  local raw_async_act = require("fzf.actions").raw_async_action(function(pipe, args)
+
+    local results = opts._reload_action(args[1])
+
+    local close_pipe = function()
+      if pipe and not uv.is_closing(pipe) then
+        uv.close(pipe)
+        pipe = nil
+      end
+    end
+
+    for _, entry in ipairs(results) do
+      uv.write(pipe, entry .. "\n", function(err)
+        if err then
+          close_pipe()
+        end
+      end)
+    end
+
+    close_pipe()
+  end, placeholder)
+
+  return M.set_fzf_interactive(opts, raw_async_act, placeholder)
+end
+
+M.set_fzf_interactive = function(opts, act_cmd, placeholder)
+
+  if not opts or not act_cmd or not placeholder then return end
+
+  -- cannot be nil
+  local query = opts.query or ''
 
   if opts._is_skim then
     -- do not run an empty string query unless the user requested
@@ -411,8 +448,9 @@ M.fzf_files_interactive = function(opts)
   opts.git_icons = false
   opts.file_icons = false
 
-  opts = M.set_fzf_line_args(opts)
-  M.fzf_files(opts)
+  return opts
+
 end
+
 
 return M

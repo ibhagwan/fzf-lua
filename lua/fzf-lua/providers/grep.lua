@@ -136,7 +136,7 @@ M.live_grep = function(opts)
     opts.search = last_search.query
   end
 
-  opts._live_query = opts.search or ''
+  opts.query = opts.search or ''
   if opts.search and #opts.search>0 then
     -- save the search query so the use can
     -- call the same search again
@@ -145,15 +145,15 @@ M.live_grep = function(opts)
     last_search.query = opts.search
     -- escape unless the user requested not to
     if not (no_esc or opts.no_esc) then
-      opts._live_query = utils.rg_escape(opts.search)
+      opts.query = utils.rg_escape(opts.search)
     end
   end
 
   -- search query in header line
   opts = set_search_header(opts, 2)
 
-  opts._cb_live_cmd = function(query)
-    if query and #query>0 and not opts.do_not_save_last_search then
+  opts._reload_get_cmd = function(query)
+    if query and not opts.do_not_save_last_search then
       last_search = {}
       last_search.no_esc = true
       last_search.query = query
@@ -167,7 +167,9 @@ M.live_grep = function(opts)
     return get_grep_cmd(opts, query, true)
   end
 
-  core.fzf_files_interactive(opts)
+  opts = core.set_fzf_line_args(opts)
+  opts = core.set_fzf_interactive_cmd(opts)
+  core.fzf_files(opts)
 end
 
 M.live_grep_native = function(opts)
