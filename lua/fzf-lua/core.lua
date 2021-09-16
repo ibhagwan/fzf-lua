@@ -388,12 +388,14 @@ M.set_fzf_interactive_cb = function(opts)
       end
     end
 
-    for _, entry in ipairs(results) do
-      uv.write(pipe, entry .. "\n", function(err)
-        if err then
-          close_pipe()
-        end
-      end)
+    if type(results) == 'table' then
+      for _, entry in ipairs(results) do
+        uv.write(pipe, entry .. "\n", function(err)
+          if err then
+            close_pipe()
+          end
+        end)
+      end
     end
 
     close_pipe()
