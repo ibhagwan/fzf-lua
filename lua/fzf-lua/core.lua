@@ -10,6 +10,7 @@ local M = {}
 M.fzf = function(opts, contents)
   -- setup the fzf window and preview layout
   local fzf_win = win(opts)
+  if not fzf_win then return end
   -- instantiate the previewer
   -- if not opts.preview and not previewer and
   local previewer, preview_opts = nil, nil

@@ -171,6 +171,10 @@ function FzfWin:reset_win_highlights(win, is_border)
 end
 
 function FzfWin:new(o)
+  if _self then
+    utils.warn("Please close fzf-lua before starting a new instance")
+    return nil
+  end
   o = o or {}
   self = setmetatable({}, { __index = self })
   self.winopts = normalize_winopts(o)
