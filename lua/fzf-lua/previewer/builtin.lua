@@ -175,6 +175,10 @@ function Previewer.base:display_entry(entry_str)
   -- specialized previewer populate function
   self:populate_preview_buf(entry_str)
 
+  -- is the preview a terminal buffer (alternative way)
+  --[[ local is_terminal =
+    vim.fn.getwininfo(self.win.preview_winid)[1].terminal == 1 ]]
+
   -- set preview window options
   if not utils.is_term_buffer(self.preview_bufnr) then
     self:set_winopts(self.win.preview_winid)
@@ -223,17 +227,14 @@ function Previewer.base.scroll(direction)
     if utils.is_term_buffer(self.preview_bufnr) then
       -- can't use ":norm!" with terminal buffers due to:
       -- 'Vim(normal):Can't re-enter normal mode from terminal mode'
-      -- TODO: this is hacky and disgusting figure
-      -- out why it's failing or at the very least
-      -- hide the typed command from the user
+      -- https://github.com/neovim/neovim/issues/4895#issuecomment-303073838
+      -- according to the above comment feedkeys is the correct workaround
+      -- TODO: hide the typed command from the user (possible?)
       local input = direction > 0 and "<C-d>" or "<C-u>"
-      utils.feed_keys_termcodes(('<C-\\><C-n>:noa lua vim.api.nvim_win_call(' ..
-        '%d, function() vim.cmd("norm! <C-v>%s") end)<CR>i'):
+      vim.cmd("stopinsert")
+      utils.feed_keys_termcodes((':noa lua vim.api.nvim_win_call(' ..
+        '%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>'):
         format(tonumber(preview_winid), input))
-      --[[ local input = ('%c'):format(utils._if(direction>0, 0x04, 0x15))
-      vim.cmd(('noa lua vim.api.nvim_win_call(' ..
-        '%d, function() vim.cmd("norm! %s") end)'):
-        format(tonumber(preview_winid), input)) ]]
     else
       -- local input = direction > 0 and [[]] or [[]]
       -- local input = direction > 0 and [[]] or [[]]
@@ -297,7 +298,11 @@ function Previewer.buffer_or_file:new(o, opts, fzf_win)
 end
 
 function Previewer.buffer_or_file:parse_entry(entry_str)
-  return path.entry_to_file(entry_str, self.opts.cwd)
+  local entry = path.entry_to_file(entry_str, self.opts.cwd)
+  if entry.bufnr and utils.is_term_buffer(entry.bufnr) then
+    entry.line = tonumber(entry_str:match(":(%d+)$"))
+  end
+  return entry
 end
 
 function Previewer.buffer_or_file:populate_preview_buf(entry_str)
