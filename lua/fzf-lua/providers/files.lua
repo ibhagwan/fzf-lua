@@ -18,17 +18,9 @@ local get_files_cmd = function(opts)
   end
   local command = nil
   if vim.fn.executable("fd") == 1 then
-    if not opts.cwd or #opts.cwd == 0 then
-      command = string.format('fd %s', opts.fd_opts)
-    else
-      command = string.format('fd %s . %s', opts.fd_opts,
-        vim.fn.shellescape(vim.fn.expand(opts.cwd)))
-    end
+    command = string.format('fd %s', opts.fd_opts)
   else
-    command = string.format('find -L %s %s',
-      utils._if(opts.cwd and #opts.cwd>0,
-      vim.fn.shellescape(vim.fn.expand(opts.cwd)), '.'),
-      opts.find_opts)
+    command = string.format('find -L . %s', opts.find_opts)
   end
   return command
 end
@@ -40,7 +32,8 @@ M.files = function(opts)
 
   local command = get_files_cmd(opts)
 
-  opts.fzf_fn = fzf_helpers.cmd_line_transformer(command,
+  opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+    {cmd = command, cwd = opts.cwd},
     function(x)
       return core.make_entry_file(opts, x)
     end)
@@ -68,7 +61,8 @@ M.files_resume = function(opts)
   opts._fzf_cli_args = ('--query="%s" --bind=change:execute-silent:%s'):
     format(last_query, vim.fn.shellescape(raw_act))
 
-  opts.fzf_fn = fzf_helpers.cmd_line_transformer(command,
+  opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+    {cmd = command, cwd = opts.cwd},
     function(x)
       return core.make_entry_file(opts, x)
     end)

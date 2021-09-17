@@ -127,7 +127,7 @@ M.globals.files = {
     color_icons         = true,
     git_icons           = true,
     git_status_cmd      = "git status -s",
-    find_opts           = "-type f -printf '%P\n'",
+    find_opts           = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
     fd_opts             =
       [[--color never --type f --hidden --follow ]] ..
       [[--exclude .git --exclude node_modules --exclude '*.pyc']],
