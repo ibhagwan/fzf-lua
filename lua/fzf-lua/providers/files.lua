@@ -13,9 +13,6 @@ local get_files_cmd = function(opts)
   if opts.raw_cmd and #opts.raw_cmd>0 then
     return opts.raw_cmd
   end
-  if opts.cmd and #opts.cmd>0 then
-    return opts.cmd
-  end
   local command = nil
   if vim.fn.executable("fd") == 1 then
     if not opts.cwd or #opts.cwd == 0 then
