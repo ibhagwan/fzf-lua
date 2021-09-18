@@ -102,29 +102,57 @@ M.file_sel_to_qf = function(selected)
 end
 
 -- buffer actions
-M.buf_edit = function(selected)
+M.vimcmd_buf = function(vimcmd, selected, _)
+  if not selected or #selected < 2 then return end
+  for i = 2, #selected do
+    local bufnr = string.match(selected[i], "%[(%d+)")
+    vim.cmd(vimcmd .. " " .. bufnr)
+  end
+end
+
+M.buf_edit = function(selected, opts)
   local vimcmd = "b"
-  M.vimcmd(vimcmd, selected)
+  M.vimcmd_buf(vimcmd, selected, opts)
 end
 
-M.buf_split = function(selected)
+M.buf_split = function(selected, opts)
   local vimcmd = "split | b"
-  M.vimcmd(vimcmd, selected)
+  M.vimcmd_buf(vimcmd, selected, opts)
 end
 
-M.buf_vsplit = function(selected)
+M.buf_vsplit = function(selected, opts)
   local vimcmd = "vertical split | b"
-  M.vimcmd(vimcmd, selected)
+  M.vimcmd_buf(vimcmd, selected, opts)
 end
 
-M.buf_tabedit = function(selected)
+M.buf_tabedit = function(selected, opts)
   local vimcmd = "tab split | b"
-  M.vimcmd(vimcmd, selected)
+  M.vimcmd_buf(vimcmd, selected, opts)
 end
 
-M.buf_del = function(selected)
+M.buf_del = function(selected, opts)
   local vimcmd = "bd"
-  M.vimcmd(vimcmd, selected)
+  M.vimcmd_buf(vimcmd, selected, opts)
+end
+
+M.buf_switch = function(selected, _)
+  if not selected or #selected<2 then return end
+  local tabnr = selected[2]:match("(%d+)%)")
+  if tabnr then
+    vim.cmd("tabn " .. tabnr)
+  else
+    tabnr = vim.api.nvim_win_get_tabpage(0)
+  end
+  local bufnr = tonumber(string.match(selected[2], "%[(%d+)"))
+  if bufnr then
+    local winid = nil
+    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabnr)) do
+      if bufnr == vim.api.nvim_win_get_buf(w) then
+        winid = w
+      end
+    end
+    if winid then vim.api.nvim_set_current_win(winid) end
+  end
 end
 
 M.colorscheme = function(selected)

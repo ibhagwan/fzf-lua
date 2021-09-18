@@ -22,6 +22,120 @@ local function getfilename(line)
   return line:match("[^" .. utils.nbsp .. "]*$")
 end
 
+local filter_buffers = function(opts, unfiltered)
+  local curtab_bufnrs = {}
+  if opts.current_tab_only then
+    local curtab = vim.api.nvim_win_get_tabpage(0)
+    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(curtab)) do
+      local b = vim.api.nvim_win_get_buf(w)
+      curtab_bufnrs[b] = true
+    end
+  end
+
+  local excluded = {}
+  local bufnrs = vim.tbl_filter(function(b)
+    if 1 ~= vim.fn.buflisted(b) then
+      excluded[b] = true
+    end
+    -- only hide unloaded buffers if opts.show_all_buffers is false, keep them listed if true or nil
+    if opts.show_all_buffers == false and not vim.api.nvim_buf_is_loaded(b) then
+      excluded[b] = true
+    end
+    if opts.ignore_current_buffer and b == vim.api.nvim_get_current_buf() then
+      excluded[b] = true
+    end
+    if opts.current_tab_only and not curtab_bufnrs[b] then
+      excluded[b] = true
+    end
+    if opts.no_term_buffers and utils.is_term_buffer(b) then
+      excluded[b] = true
+    end
+    if opts.cwd_only and not path.is_relative(vim.api.nvim_buf_get_name(b), vim.loop.cwd()) then
+      excluded[b] = true
+    end
+    return not excluded[b]
+  end, unfiltered)
+
+  return bufnrs, excluded
+end
+
+local make_buffer_entries = function(opts, bufnrs)
+  local header_line = false
+  local buffers = {}
+  for _, bufnr in ipairs(bufnrs) do
+    local flag = bufnr == vim.fn.bufnr('') and '%' or (bufnr == vim.fn.bufnr('#') and '#' or ' ')
+
+    local element = {
+      bufnr = bufnr,
+      flag = flag,
+      info = vim.fn.getbufinfo(bufnr)[1],
+    }
+
+    if opts.sort_lastused and (flag == "#" or flag == "%") then
+      if flag == "%" then header_line = true end
+      local idx = ((buffers[1] ~= nil and buffers[1].flag == "%") and 2 or 1)
+      table.insert(buffers, idx, element)
+    else
+      table.insert(buffers, element)
+    end
+  end
+  return buffers, header_line
+end
+
+
+local function add_buffer_entry(opts, buf, items, header_line)
+  -- local hidden = buf.info.hidden == 1 and 'h' or 'a'
+  local hidden = ''
+  local readonly = vim.api.nvim_buf_get_option(buf.bufnr, 'readonly') and '=' or ' '
+  local changed = buf.info.changed == 1 and '+' or ' '
+  local flags = hidden .. readonly .. changed
+  local leftbr = utils.ansi_codes.clear('[')
+  local rightbr = utils.ansi_codes.clear(']')
+  local bufname = string.format("%s:%s",
+    utils._if(#buf.info.name>0, path.relative(buf.info.name, vim.loop.cwd()), "[No Name]"),
+    utils._if(buf.info.lnum>0, buf.info.lnum, ""))
+  if buf.flag == '%' then
+    flags = utils.ansi_codes.red(buf.flag) .. flags
+    if not header_line then
+      leftbr = utils.ansi_codes.green('[')
+      rightbr = utils.ansi_codes.green(']')
+      bufname = utils.ansi_codes.green(bufname)
+    end
+  elseif buf.flag == '#' then
+    flags = utils.ansi_codes.cyan(buf.flag) .. flags
+  else
+    flags = utils.nbsp .. flags
+  end
+  local bufnrstr = string.format("%s%s%s", leftbr,
+    utils.ansi_codes.yellow(string.format(buf.bufnr)), rightbr)
+  local buficon = ''
+  local hl = ''
+  if opts.file_icons then
+    if utils.is_term_bufname(buf.info.name) then
+      -- get shell-like icon for terminal buffers
+      buficon, hl = core.get_devicon(buf.info.name, "sh")
+    else
+      local filename = path.tail(buf.info.name)
+      local extension = path.extension(filename)
+      buficon, hl = core.get_devicon(filename, extension)
+    end
+    if opts.color_icons then
+      buficon = utils.ansi_codes[hl](buficon)
+    end
+  end
+  local item_str = string.format("%s%s%s%s%s%s%s%s",
+    utils._if(opts._prefix, opts._prefix, ''),
+    string.format("%-32s", bufnrstr),
+    utils.nbsp,
+    flags,
+    utils.nbsp,
+    buficon,
+    utils.nbsp,
+    bufname)
+  table.insert(items, item_str)
+  return items
+end
+
 M.buffers = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.buffers)
@@ -42,99 +156,17 @@ M.buffers = function(opts)
       end
     end)
 
+  local filtered = filter_buffers(opts,
+    opts._list_bufs and opts._list_bufs() or vim.api.nvim_list_bufs())
+
+  if not next(filtered) then return end
+
   coroutine.wrap(function ()
     local items = {}
 
-    local bufnrs = vim.tbl_filter(function(b)
-      if 1 ~= vim.fn.buflisted(b) then
-          return false
-      end
-      -- only hide unloaded buffers if opts.show_all_buffers is false, keep them listed if true or nil
-      if opts.show_all_buffers == false and not vim.api.nvim_buf_is_loaded(b) then
-        return false
-      end
-      if opts.ignore_current_buffer and b == vim.api.nvim_get_current_buf() then
-        return false
-      end
-      if opts.cwd_only and not path.is_relative(vim.api.nvim_buf_get_name(b), vim.loop.cwd()) then
-        return false
-      end
-      return true
-    end, opts._list_bufs and opts._list_bufs() or vim.api.nvim_list_bufs())
-    if not next(bufnrs) then return end
-
-    local header_line = false
-    local buffers = {}
-    for _, bufnr in ipairs(bufnrs) do
-      local flag = bufnr == vim.fn.bufnr('') and '%' or (bufnr == vim.fn.bufnr('#') and '#' or ' ')
-
-      local element = {
-        bufnr = bufnr,
-        flag = flag,
-        info = vim.fn.getbufinfo(bufnr)[1],
-      }
-
-      if opts.sort_lastused and (flag == "#" or flag == "%") then
-        if flag == "%" then header_line = true end
-        local idx = ((buffers[1] ~= nil and buffers[1].flag == "%") and 2 or 1)
-        table.insert(buffers, idx, element)
-      else
-        table.insert(buffers, element)
-      end
-    end
-
+    local buffers, header_line = make_buffer_entries(opts, filtered)
     for _, buf in pairs(buffers) do
-      -- local hidden = buf.info.hidden == 1 and 'h' or 'a'
-      local hidden = ''
-      local readonly = vim.api.nvim_buf_get_option(buf.bufnr, 'readonly') and '=' or ' '
-      local changed = buf.info.changed == 1 and '+' or ' '
-      local flags = hidden .. readonly .. changed
-      local leftbr = utils.ansi_codes.clear('[')
-      local rightbr = utils.ansi_codes.clear(']')
-      local bufname = string.format("%s:%s",
-        utils._if(#buf.info.name>0, path.relative(buf.info.name, vim.loop.cwd()), "[No Name]"),
-        utils._if(buf.info.lnum>0, buf.info.lnum, ""))
-      if buf.flag == '%' then
-        flags = utils.ansi_codes.red(buf.flag) .. flags
-        leftbr, rightbr = '[', ']'
-        if not header_line then
-          leftbr = utils.ansi_codes.green(leftbr)
-          rightbr = utils.ansi_codes.green(rightbr)
-          bufname = utils.ansi_codes.green(bufname)
-        end
-      elseif buf.flag == '#' then
-        flags = utils.ansi_codes.cyan(buf.flag) .. flags
-      else
-        flags = utils.nbsp .. flags
-      end
-      local bufnrstr = string.format("%s%s%s", leftbr,
-        utils.ansi_codes.yellow(string.format(buf.bufnr)), rightbr)
-      local buficon = ''
-      local hl = ''
-      if opts.file_icons then
-        if utils.is_term_bufname(buf.info.name) then
-          -- get shell-like icon for terminal buffers
-          buficon, hl = core.get_devicon(buf.info.name, "sh")
-        else
-          local filename = path.tail(buf.info.name)
-          local extension = path.extension(filename)
-          buficon, hl = core.get_devicon(filename, extension)
-        end
-        if opts.color_icons then
-          buficon = utils.ansi_codes[hl](buficon)
-        end
-      end
-      local item_str = string.format("%s%s%s%s%s%s%s",
-        utils._if(header_line and vim.tbl_isempty(items),
-          string.format("%-16s", bufnrstr),
-          string.format("%-32s", bufnrstr)),
-        utils.nbsp,
-        flags,
-        utils.nbsp,
-        buficon,
-        utils.nbsp,
-        bufname)
-      table.insert(items, item_str)
+      items = add_buffer_entry(opts, buf, items, header_line)
     end
 
     opts.preview = act
@@ -144,16 +176,9 @@ M.buffers = function(opts)
     )
 
     local selected = core.fzf(opts, items)
-
     if not selected then return end
 
-    if #selected > 1 then
-      for i = 2, #selected do
-          selected[i] = tostring(getbufnumber(selected[i]))
-      end
-    end
-
-    actions.act(opts.actions, selected)
+    actions.act(opts.actions, selected, opts)
 
   end)()
 end
@@ -173,27 +198,8 @@ end
 M.buffer_lines = function(opts)
   if not opts then return end
 
-  local buffers = {}
-  if opts.current_buffer_only then
-    table.insert(buffers, vim.api.nvim_get_current_buf())
-  else
-    buffers = vim.tbl_filter(function(b)
-      if 1 ~= vim.fn.buflisted(b) or utils.is_term_buffer(b) then
-          return false
-      end
-      -- only hide unloaded buffers if opts.show_all_buffers is false, keep them listed if true or nil
-      if opts.show_all_buffers == false and not vim.api.nvim_buf_is_loaded(b) then
-        return false
-      end
-      if opts.ignore_current_buffer and b == vim.api.nvim_get_current_buf() then
-        return false
-      end
-      if opts.cwd_only and not path.is_relative(vim.api.nvim_buf_get_name(b), vim.loop.cwd()) then
-        return false
-      end
-      return true
-    end, vim.api.nvim_list_bufs())
-  end
+  opts.no_term_buffers = true
+  local buffers = filter_buffers(opts, vim.api.nvim_list_bufs())
 
   coroutine.wrap(function()
     local items = {}
@@ -231,19 +237,12 @@ M.buffer_lines = function(opts)
     opts._fzf_cli_args = "--delimiter=']' --nth 2,-1"
 
     local selected = core.fzf(opts, items)
-
     if not selected then return end
 
     -- get the line number
     local line = tonumber(selected[2]:match(":(%d+):"))
 
-    if #selected > 1 then
-      for i = 2, #selected do
-          selected[i] = tostring(getbufnumber(selected[i]))
-      end
-    end
-
-    actions.act(opts.actions, selected)
+    actions.act(opts.actions, selected, opts)
 
     if line then vim.api.nvim_win_set_cursor(0, {line, 0}) end
 
@@ -255,29 +254,65 @@ M.tabs = function(opts)
   opts = config.normalize_opts(opts, config.globals.tabs)
   if not opts then return end
 
-  local buf_to_tab = {}
+  local curtab = vim.api.nvim_win_get_tabpage(0)
+
+  opts._tab_to_buf = {}
   opts._list_bufs = function()
     local res = {}
     for _, t in ipairs(vim.api.nvim_list_tabpages()) do
-      local w = vim.api.nvim_tabpage_get_win(t)
-      local b = vim.api.nvim_win_get_buf(w)
-      buf_to_tab[b] = t
-      table.insert(res, b)
+      for _, w in ipairs(vim.api.nvim_tabpage_list_wins(t)) do
+        local b = vim.api.nvim_win_get_buf(w)
+        opts._tab_to_buf[t] = opts._tab_to_buf[t] or {}
+        opts._tab_to_buf[t][b] = true
+        table.insert(res, b)
+      end
     end
     return res
   end
 
-  opts.nomulti = true
-  opts.preview_window = 'hidden:right:0'
-  opts.fzf_cli_args = "--delimiter=']' --nth 2,-1" --with-nth 2"
+  local filtered, excluded = filter_buffers(opts, opts._list_bufs())
+  if not next(filtered) then return end
 
-  opts.actions["default"] = function(selected)
-      local bufnr = tonumber(selected[2])
-      local tabnr = buf_to_tab[bufnr]
-      vim.cmd("tabn " .. tabnr)
+  -- remove the filtered-out buffers
+  for b, _ in pairs(excluded) do
+    for _, bufnrs in pairs(opts._tab_to_buf) do
+      bufnrs[b] = nil
+    end
   end
 
-  M.buffers(opts)
+  coroutine.wrap(function ()
+    local items = {}
+
+    for t, bufnrs in pairs(opts._tab_to_buf) do
+
+      table.insert(items, ("%d)%s%s\t%s"):format(t, utils.nbsp,
+        utils.ansi_codes.blue("%s%s#%d"):format(opts.tab_title, utils.nbsp, t),
+          (t==curtab) and utils.ansi_codes.blue(utils.ansi_codes.bold(opts.tab_marker)) or ''))
+
+      local bufnrs_flat = {}
+      for b, _ in pairs(bufnrs) do
+        table.insert(bufnrs_flat, b)
+      end
+
+      opts.sort_lastused = false
+      opts._prefix = ("%d)%s%s%s"):format(t, utils.nbsp, utils.nbsp, utils.nbsp)
+      local buffers = make_buffer_entries(opts, bufnrs_flat)
+      for _, buf in pairs(buffers) do
+        items = add_buffer_entry(opts, buf, items, true)
+      end
+    end
+
+    opts.nomulti = true
+    opts.preview_window = 'hidden:right:0'
+    opts.fzf_cli_args = "--delimiter='[\\)]' --with-nth=2"
+
+    local selected = core.fzf(opts, items)
+
+    if not selected then return end
+
+    actions.act(opts.actions, selected, opts)
+
+  end)()
 end
 
 return M
