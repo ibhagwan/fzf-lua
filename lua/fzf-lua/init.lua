@@ -61,6 +61,7 @@ M.oldfiles = require'fzf-lua.providers.oldfiles'.oldfiles
 M.quickfix = require'fzf-lua.providers.quickfix'.quickfix
 M.loclist = require'fzf-lua.providers.quickfix'.loclist
 M.buffers = require'fzf-lua.providers.buffers'.buffers
+M.tabs = require'fzf-lua.providers.buffers'.tabs
 M.lines = require'fzf-lua.providers.buffers'.lines
 M.blines = require'fzf-lua.providers.buffers'.blines
 M.help_tags = require'fzf-lua.providers.helptags'.helptags

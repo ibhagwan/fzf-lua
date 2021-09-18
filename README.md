@@ -134,6 +134,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 |`loclist`|location list|
 |`lines`|open buffers lines|
 |`blines`|current buffer lines|
+|`tabs`|open tabs|
 
 ### Search
 | Command | List |

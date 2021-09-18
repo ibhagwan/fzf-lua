@@ -253,6 +253,19 @@ M.globals.buffers = {
         ["ctrl-x"]        = actions.buf_del,
     },
   }
+M.globals.tabs = {
+    previewer             = "builtin",
+    prompt                = 'Tabs> ',
+    file_icons            = true and M._has_devicons,
+    color_icons           = true,
+    actions = {
+        ["default"]       = actions.buf_edit,
+        ["ctrl-s"]        = actions.buf_split,
+        ["ctrl-v"]        = actions.buf_vsplit,
+        ["ctrl-t"]        = actions.buf_tabedit,
+        ["ctrl-x"]        = actions.buf_del,
+    },
+  }
 M.globals.lines = {
     previewer             = "builtin",
     prompt                = 'Lines> ',

@@ -60,7 +60,7 @@ M.buffers = function(opts)
         return false
       end
       return true
-    end, vim.api.nvim_list_bufs())
+    end, opts._list_bufs and opts._list_bufs() or vim.api.nvim_list_bufs())
     if not next(bufnrs) then return end
 
     local header_line = false
@@ -248,6 +248,36 @@ M.buffer_lines = function(opts)
     if line then vim.api.nvim_win_set_cursor(0, {line, 0}) end
 
   end)()
+end
+
+M.tabs = function(opts)
+
+  opts = config.normalize_opts(opts, config.globals.tabs)
+  if not opts then return end
+
+  local buf_to_tab = {}
+  opts._list_bufs = function()
+    local res = {}
+    for _, t in ipairs(vim.api.nvim_list_tabpages()) do
+      local w = vim.api.nvim_tabpage_get_win(t)
+      local b = vim.api.nvim_win_get_buf(w)
+      buf_to_tab[b] = t
+      table.insert(res, b)
+    end
+    return res
+  end
+
+  opts.nomulti = true
+  opts.preview_window = 'hidden:right:0'
+  opts.fzf_cli_args = "--delimiter=']' --nth 2,-1" --with-nth 2"
+
+  opts.actions["default"] = function(selected)
+      local bufnr = tonumber(selected[2])
+      local tabnr = buf_to_tab[bufnr]
+      vim.cmd("tabn " .. tabnr)
+  end
+
+  M.buffers(opts)
 end
 
 return M
