@@ -73,12 +73,7 @@ local make_buffer_entries = function(opts, bufnrs, tabnr)
 
     -- get the correct lnum for tabbed buffers
     if tabnr then
-      local winid = nil
-      for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabnr)) do
-        if bufnr == vim.api.nvim_win_get_buf(w) then
-          winid = w
-        end
-      end
+      local winid = utils.winid_from_tab_buf(tabnr, bufnr)
       if winid then
         element.info.lnum = vim.api.nvim_win_get_cursor(winid)[1]
       end
@@ -212,7 +207,9 @@ M.buffer_lines = function(opts)
   if not opts then return end
 
   opts.no_term_buffers = true
-  local buffers = filter_buffers(opts, vim.api.nvim_list_bufs())
+  local buffers = filter_buffers(opts,
+    opts.current_buffer_only and { vim.api.nvim_get_current_buf() } or
+    vim.api.nvim_list_bufs())
 
   coroutine.wrap(function()
     local items = {}
@@ -236,7 +233,7 @@ M.buffer_lines = function(opts)
             utils.nbsp,
             buficon or '',
             buficon and utils.nbsp or '',
-            utils.ansi_codes.magenta(bufname),
+            utils.ansi_codes.magenta(#bufname>0 and bufname or "[No Name]"),
             utils.ansi_codes.green(tostring(l)),
             text))
         end

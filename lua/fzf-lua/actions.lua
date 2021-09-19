@@ -145,12 +145,7 @@ M.buf_switch = function(selected, _)
   end
   local bufnr = tonumber(string.match(selected[2], "%[(%d+)"))
   if bufnr then
-    local winid = nil
-    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabnr)) do
-      if bufnr == vim.api.nvim_win_get_buf(w) then
-        winid = w
-      end
-    end
+    local winid = utils.winid_from_tab_buf(tabnr, bufnr)
     if winid then vim.api.nvim_set_current_win(winid) end
   end
 end

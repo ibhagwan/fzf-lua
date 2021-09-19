@@ -265,6 +265,15 @@ function M.is_term_buffer(bufnr)
   return M.is_term_bufname(bufname)
 end
 
+function M.winid_from_tab_buf(tabnr, bufnr)
+  for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabnr)) do
+    if bufnr == vim.api.nvim_win_get_buf(w) then
+      return w
+    end
+  end
+  return nil
+end
+
 function M.zz()
   -- skip for terminal buffers
   if M.is_term_buffer() then return end
