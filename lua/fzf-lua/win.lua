@@ -187,6 +187,10 @@ function FzfWin:new(o)
 end
 
 function FzfWin:attach_previewer(previewer)
+  -- clear the previous previewer if existed
+  if self._previewer and self._previewer.close then
+    self._previewer:close()
+  end
   self._previewer = previewer
   self.previewer_is_builtin = previewer and type(previewer.display_entry) == 'function'
 end
