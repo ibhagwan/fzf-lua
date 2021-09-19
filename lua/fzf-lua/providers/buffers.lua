@@ -59,7 +59,7 @@ local filter_buffers = function(opts, unfiltered)
   return bufnrs, excluded
 end
 
-local make_buffer_entries = function(opts, bufnrs)
+local make_buffer_entries = function(opts, bufnrs, tabnr)
   local header_line = false
   local buffers = {}
   for _, bufnr in ipairs(bufnrs) do
@@ -70,6 +70,19 @@ local make_buffer_entries = function(opts, bufnrs)
       flag = flag,
       info = vim.fn.getbufinfo(bufnr)[1],
     }
+
+    -- get the correct lnum for tabbed buffers
+    if tabnr then
+      local winid = nil
+      for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabnr)) do
+        if bufnr == vim.api.nvim_win_get_buf(w) then
+          winid = w
+        end
+      end
+      if winid then
+        element.info.lnum = vim.api.nvim_win_get_cursor(winid)[1]
+      end
+    end
 
     if opts.sort_lastused and (flag == "#" or flag == "%") then
       if flag == "%" then header_line = true end
@@ -296,7 +309,7 @@ M.tabs = function(opts)
 
       opts.sort_lastused = false
       opts._prefix = ("%d)%s%s%s"):format(t, utils.nbsp, utils.nbsp, utils.nbsp)
-      local buffers = make_buffer_entries(opts, bufnrs_flat)
+      local buffers = make_buffer_entries(opts, bufnrs_flat, t)
       for _, buf in pairs(buffers) do
         items = add_buffer_entry(opts, buf, items, true)
       end
