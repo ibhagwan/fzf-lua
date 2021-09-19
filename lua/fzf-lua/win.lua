@@ -172,14 +172,16 @@ end
 
 function FzfWin:new(o)
   if _self then
-    utils.warn("Please close fzf-lua before starting a new instance")
-    return nil
+    -- utils.warn("Please close fzf-lua before starting a new instance")
+    _self._reuse = true
+    return _self
   end
   o = o or {}
   self = setmetatable({}, { __index = self })
   self.winopts = normalize_winopts(o)
   self.previewer = o.previewer
   self.previewer_type = o.previewer_type
+  self._orphaned_bufs = {}
   _self = self
   return self
 end
@@ -401,7 +403,35 @@ function FzfWin:redraw()
     end
 end
 
+function FzfWin:set_winleave_autocmd()
+  vim.cmd("augroup FzfLua")
+  vim.cmd("au!")
+  vim.cmd(('au WinLeave <buffer> %s'):format(
+    [[lua require('fzf-lua.win').win_leave()]]))
+  vim.cmd("augroup END")
+end
+
+function FzfWin:set_tmp_buffer()
+  if not self:validate() then return end
+  local tmp_buf = api.nvim_create_buf(false, true)
+  vim.api.nvim_win_set_buf(self.fzf_winid, tmp_buf)
+  self:set_winleave_autocmd()
+  -- closing the buffer here causes the win to close
+  -- shouldn't happen since the win is already associated
+  -- with tmp_buf... use this table instead
+  table.insert(self._orphaned_bufs, self.fzf_bufnr)
+  self.fzf_bufnr = tmp_buf
+  return self.fzf_bufnr
+end
+
 function FzfWin:create()
+  if self._reuse then
+    -- we can't reuse the fzf term buffer
+    -- create a new tmp buffer for the fzf win
+    self:set_tmp_buffer()
+    return
+  end
+
   if not self.winopts.split and self.previewer_is_builtin then
     self.layout = generate_layout(self.winopts)
   end
@@ -422,8 +452,7 @@ function FzfWin:create()
   -- when running async LSP with 'jump_to_single_result'
   -- should also close issue #105
   -- https://github.com/ibhagwan/fzf-lua/issues/105
-  vim.cmd(('au WinLeave <buffer> %s'):format(
-    [[lua require('fzf-lua.win').win_leave()]]))
+  self:set_winleave_autocmd()
 
   self:reset_win_highlights(self.fzf_winid)
 
@@ -479,15 +508,22 @@ function FzfWin:close()
   if vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
     vim.api.nvim_buf_delete(self.fzf_bufnr, {force=true})
   end
-  if vim.api.nvim_win_is_valid(self.src_winid) then
-    vim.api.nvim_set_current_win(self.src_winid)
+  if self._orphaned_bufs then
+    for _, b in ipairs(self._orphaned_bufs) do
+      if vim.api.nvim_buf_is_valid(b) then
+        vim.api.nvim_buf_delete(b, {force=true})
+      end
+    end
   end
   self.closing = nil
+  self._reuse = nil
+  self._orphaned_bufs = nil
   _self = nil
 end
 
 function FzfWin.win_leave()
   local self = _self
+  if not self then return end
   if self._previewer and self._previewer.win_leave then
     self._previewer:win_leave()
   end

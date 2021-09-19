@@ -43,7 +43,9 @@ M.fzf = function(opts, contents)
   fzf_win:create()
   local selected = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     { fzf_binary = opts.fzf_bin })
-  fzf_win:close()
+  if not opts.no_win_close then
+    fzf_win:close()
+  end
   return selected
 end
 
