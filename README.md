@@ -12,7 +12,7 @@
 
   </div>
 
-### Rationale
+## Rationale
 
 What more can be said about [fzf](https://github.com/junegunn/fzf)? It is the
 single most impactful tool for my command line workflow, once I started using
@@ -28,7 +28,7 @@ it builds on the elegant
 create a performant and lightweight fzf client for neovim that rivals any of
 the new shiny fuzzy finders for neovim.
 
-### Why use this plug-in?
+## Why Fzf-Lua
 
 ... and not, to name a few,
 [telescope](https://github.com/nvim-telescope/telescope.nvim) or
@@ -45,23 +45,25 @@ nvim. In addition `fzf` has been a rock for me since I started using it and
 hadn’t failed me once, it never hangs and can handle almost anything you throw
 at it. That, **and colorful file icons and git indicators!**.
 
-### Dependencies
+## Dependencies
 
 - `Linux` or `MacOS` only, see [nvim-fzf's How it
-  works](https://github.com/vijaymarupudi/nvim-fzf#How-it-works) section
+  works](https://github.com/vijaymarupudi/nvim-fzf#How-it-works)
 - [`fzf`](https://github.com/junegunn/fzf) or
   [`skim`](https://github.com/lotabout/skim) binary installed
 - [nvim-fzf](https://github.com/vijaymarupudi/nvim-fzf)
 - [nvim-web-devicons](https://github.com/kyazdani42/nvim-web-devicons)
   (optional)
 
-### Optional dependencies (recommended)
+### Optional dependencies
+
+Recommended optional utilities:
 
 - [fd](https://github.com/sharkdp/fd) - better performance `find` utility
 - [bat](https://github.com/sharkdp/bat) - for colorful syntax highlighted previews
 - [ripgrep](https://github.com/BurntSushi/ripgrep) - for better grep-like searches
 
-### Installation
+## Installation
 
 Using [vim-plug](https://github.com/junegunn/vim-plug)
 
@@ -123,74 +125,74 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 
 ## Commands
 
-### Buffers & Files
-| Command | List |
-| --- | --- |
-|`buffers`|open buffers|
-|`files`|`find` or `fd` on a path|
-|`files_resume`|continious query find|
-|`oldfiles`|opened files history|
-|`quickfix`|quickfix list|
-|`loclist`|location list|
-|`lines`|open buffers lines|
-|`blines`|current buffer lines|
-|`tabs`|open tabs|
+### Buffers and Files
+| Command          | List                                       |
+| ---------------- | ------------------------------------------ |
+| `buffers`          | open buffers                               |
+| `files`            | `find` or `fd` on a path                       |
+| `files_resume`     | continious query find                      |
+| `oldfiles`         | opened files history                       |
+| `quickfix`         | quickfix list                              |
+| `loclist`          | location list                              |
+| `lines`            | open buffers lines                         |
+| `blines`           | current buffer lines                       |
+| `tabs`             | open tabs                                  |
 
 ### Search
-| Command | List |
-| --- | --- |
-|`grep`|search for a pattern with `grep` or `rg`|
-|`grep_last`|run search again with the last pattern|
-|`grep_cword`|search word under cursor|
-|`grep_cWORD`|search WORD under cursor|
-|`grep_visual`|search visual selection|
-|`grep_curbuf`|live grep current buffer|
-|`live_grep`|live grep current project|
-|`live_grep_resume`|live grep continue last search|
+| Command          | List                                       |
+| ---------------- | ------------------------------------------ |
+| `grep`             | search for a pattern with `grep` or `rg`       |
+| `grep_last`        | run search again with the last pattern     |
+| `grep_cword`       | search word under cursor                   |
+| `grep_cWORD`       | search WORD under cursor                   |
+| `grep_visual`      | search visual selection                    |
+| `grep_curbuf`      | live grep current buffer                   |
+| `live_grep`        | live grep current project                  |
+| `live_grep_resume` | live grep continue last search             |
 
 
 ### Git
-| Command | List |
-| --- | --- |
-|`git_files`|`git ls-files`|
-|`git_status`|`git status`|
-|`git_commits`|git commit log (project)|
-|`git_bcommits`|git commit log (buffer)|
-|`git_branches`|git branches|
+| Command          | List                                       |
+| ---------------- | ------------------------------------------ |
+| `git_files`        | `git ls-files`                               |
+| `git_status`       | `git status`                                 |
+| `git_commits`      | git commit log (project)                   |
+| `git_bcommits`     | git commit log (buffer)                    |
+| `git_branches`     | git branches                               |
 
 ### LSP
-| Command | List |
-| --- | --- |
-|`lsp_references`|References|
-|`lsp_definitions`|Definitions|
-|`lsp_declarations`|Declarations|
-|`lsp_typedefs`|Type Definitions|
-|`lsp_implementations`|Implementations|
-|`lsp_document_symbols`|Document Symbols|
-|`lsp_workspace_symbols`|Workspace Symbols|
-|`lsp_live_workspace_symbols`|Workspace Symbols (live query)|
-|`lsp_code_actions`|Code Actions|
-|`lsp_document_diagnostics`|Document Diagnostics|
-|`lsp_workspace_diagnostics`|Workspace Diagnostics|
+| Command          | List                                       |
+| ---------------- | ------------------------------------------ |
+| `lsp_references`             | References                       |
+| `lsp_definitions`            | Definitions                      |
+| `lsp_declarations`           | Declarations                     |
+| `lsp_typedefs`               | Type Definitions                 |
+| `lsp_implementations`        | Implementations                  |
+| `lsp_document_symbols`       | Document Symbols                 |
+| `lsp_workspace_symbols`      | Workspace Symbols                |
+| `lsp_live_workspace_symbols` | Workspace Symbols (live query)   |
+| `lsp_code_actions`           | Code Actions                     |
+| `lsp_document_diagnostics`   | Document Diagnostics             |
+| `lsp_workspace_diagnostics`  | Workspace Diagnostics            |
 
 ### Misc
-| Command | List |
-| --- | --- |
-|`builtin`|fzf-lua builtin methods|
-|`help_tags`|help tags|
-|`man_pages`|man pages|
-|`colorschemes`|color schemes|
-|`commands`|neovim commands|
-|`command_history`|command history|
-|`search_history`|search history|
-|`marks`|:marks|
-|`registers`|:registers|
-|`keymaps`|key mappings|
-|`spell_suggest`|spelling suggestions|
-|`tags`|project tags|
-|`btags`|buffer tags|
-|`filetypes`|neovim filetypes|
-|`packadd`|:packadd <package>|
+| Command          | List                                       |
+| ---------------- | ------------------------------------------ |
+| `builtin`          | fzf-lua builtin commands                   |
+| `help_tags`        | help tags                                  |
+| `man_pages`        | man pages                                  |
+| `colorschemes`     | color schemes                              |
+| `commands`         | neovim commands                            |
+| `command_history`  | command history                            |
+| `search_history`   | search history                             |
+| `marks`            | :marks                                     |
+| `registers`        | :registers                                 |
+| `keymaps`          | key mappings                               |
+| `spell_suggest`    | spelling suggestions                       |
+| `tags`             | project tags                               |
+| `btags`            | buffer tags                                |
+| `filetypes`        | neovim filetypes                           |
+| `packadd`          | :packadd <package>                         |
 
 
 ## Customization
@@ -473,7 +475,7 @@ require'fzf-lua'.setup {
 }
 ```
 
-This can also be run from a `.vim` file using
+This can also be run from a `.vim` file using:
 
 ```lua
 lua << EOF
@@ -483,28 +485,7 @@ require('fzf-lua').setup{
 EOF
 ```
 
-## TODO
-
-- [x] ~~Add more providers~~
-    + [x] ~~LSP (refs, symbols, etc)~~ (2021-07-20)
-    + [x] ~~git commits~~ (2021-08-05)
-    + [x] ~~git branches~~ (2021-08-05)
-    + [x] nvim built-in:
-        * [x] ~~commands~~ (2021-08-14)
-        * [x] ~~command history~~ (2021-08-14)
-        * [x] ~~search history~~ (2021-08-14)
-        * [x] ~~registers~~ (2021-08-14)
-        * [x] ~~keymaps~~ (2021-08-14)
-        * [x] ~~spelling suggestions~~ (2021-08-14)
-        * [x] ~~marks~~ (2021-08-14)
-    + [x] ~~tags~~ (2021-08-15)
-- [x] ~~Built-in previewer with treesitter support~~ (2021-08-29)
-- [x] ~~Improve previewer for `buffers`~~ (2021-08-29)
-- [x] ~~Add builtin previews for `marks|help_tags|man_pages`~~ (2021-09-09)
-- [ ] Add built-in plugin documentation
-- [ ] Complete the Wiki
-
-### Credits
+## Credits
 
 Big thank you to all those I borrowed code/ideas from, I read so many configs
 and plugin codes that I probably forgot where I found some samples from so if
@@ -525,3 +506,6 @@ I missed your name feel free to contact me and I'll add it below:
   [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim)
 - [@sindrets](https://github.com/sindrets) for borrowing utilities from his
   fantastic lua plugin [diffview.nvim](https://github.com/sindrets/diffview.nvim)
+- [@kevinhwang91](https://github.com/kevinhwang91) for using his previewer
+  code as baseline for the builtin previewer and his must have plugin
+  [nvim-bqf](https://github.com/kevinhwang91/nvim-bqf)
