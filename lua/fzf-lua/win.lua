@@ -170,6 +170,25 @@ function FzfWin:reset_win_highlights(win, is_border)
   vim.api.nvim_win_set_option(win, 'winhighlight', hl)
 end
 
+function FzfWin:_set_autoclose(autoclose)
+  if autoclose ~= nil then
+    self._autoclose = autoclose
+  else
+    self._autoclose = true
+  end
+  return self._autoclose
+end
+
+function FzfWin.set_autoclose(autoclose)
+  if not _self then return nil end
+  return _self:_set_autoclose(autoclose)
+end
+
+function FzfWin.autoclose()
+  if not _self then return nil end
+  return _self._autoclose
+end
+
 function FzfWin:new(o)
   if _self then
     -- utils.warn("Please close fzf-lua before starting a new instance")
@@ -182,6 +201,7 @@ function FzfWin:new(o)
   self.previewer = o.previewer
   self.previewer_type = o.previewer_type
   self._orphaned_bufs = {}
+  self:_set_autoclose(o.autoclose)
   _self = self
   return self
 end
