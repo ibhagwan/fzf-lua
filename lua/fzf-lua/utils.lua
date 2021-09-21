@@ -213,10 +213,6 @@ function M.get_visual_selection()
         -- visual line doesn't provide columns
         cscol, cecol = 0, 999
       end
-      -- exit visual mode
-      vim.api.nvim_feedkeys(
-        vim.api.nvim_replace_termcodes("<Esc>",
-          true, false, true), 'n', true)
     else
       -- otherwise, use the last known visual position
       _, csrow, cscol, _ = unpack(vim.fn.getpos("'<"))
