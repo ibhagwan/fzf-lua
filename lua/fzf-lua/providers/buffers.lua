@@ -246,6 +246,11 @@ M.buffer_lines = function(opts)
     opts.preview_window = 'hidden:right:0'
     opts._fzf_cli_args = "--delimiter=']' --nth 2,-1"
 
+    if opts.search and #opts.search>0 then
+      opts._fzf_cli_args = opts._fzf_cli_args ..
+        (" --query=%s"):format(vim.fn.shellescape(opts.search))
+    end
+
     local selected = core.fzf(opts, items)
     if not selected then return end
 
