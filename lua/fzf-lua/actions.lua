@@ -5,7 +5,7 @@ local M = {}
 
 -- return fzf '--expect=' string from actions keyval tbl
 M.expect = function(actions)
-  if not actions then return '' end
+  if not actions then return nil end
   local keys = {}
   for k, v in pairs(actions) do
     if k ~= "default" and v ~= false then

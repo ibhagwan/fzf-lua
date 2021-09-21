@@ -177,11 +177,10 @@ M.buffers = function(opts)
       items = add_buffer_entry(opts, buf, items, header_line)
     end
 
-    opts.preview = act
-    opts._fzf_cli_args = utils._if(
-      header_line and not opts.ignore_current_buffer,
-      '--header-lines=1', ''
-    )
+    opts.fzf_opts['--preview'] = act
+    if header_line and not opts.ignore_current_buffer then
+      opts.fzf_opts['--header-lines'] = '1'
+    end
 
     local selected = core.fzf(opts, items)
     if not selected then return end
@@ -243,12 +242,12 @@ M.buffer_lines = function(opts)
     -- ignore bufnr when searching
     -- disable multi-select
     opts.nomulti = true
-    opts.preview_window = 'hidden:right:0'
-    opts._fzf_cli_args = "--delimiter=']' --nth 2,-1"
+    opts.fzf_opts["--preview-window"] = 'hidden:right:0'
+    opts.fzf_opts["--delimiter"] = vim.fn.shellescape(']')
+    opts.fzf_opts["--nth"] = '2,-1'
 
     if opts.search and #opts.search>0 then
-      opts._fzf_cli_args = opts._fzf_cli_args ..
-        (" --query=%s"):format(vim.fn.shellescape(opts.search))
+      opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search) 
     end
 
     local selected = core.fzf(opts, items)
@@ -318,8 +317,9 @@ M.tabs = function(opts)
     end
 
     opts.nomulti = true
-    opts.preview_window = 'hidden:right:0'
-    opts.fzf_cli_args = "--delimiter='[\\)]' --with-nth=2"
+    opts.fzf_opts["--preview-window"] = 'hidden:right:0'
+    opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[\\)]')
+    opts.fzf_opts["---with-nth"] = '2'
 
     local selected = core.fzf(opts, items)
 

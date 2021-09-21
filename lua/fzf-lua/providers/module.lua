@@ -33,9 +33,9 @@ M.metatable = function(opts)
 
     table.sort(methods, function(a, b) return a<b end)
 
-    opts.preview = prev_act
-    opts.preview_window = 'hidden:down:10'
-    opts.nomulti = true
+    opts.fzf_opts['--preview'] = prev_act
+    opts.fzf_opts['--preview-window'] = 'hidden:down:10'
+    opts.fzf_opts['--no-multi'] = ''
 
     local selected = core.fzf(opts, methods)
 

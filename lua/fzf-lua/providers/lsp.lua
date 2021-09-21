@@ -344,8 +344,8 @@ M.code_actions = function(opts)
 
   opts.nomulti = true
   opts.previewer = false
-  opts.preview_window = 'right:0'
-  opts._fzf_cli_args = "--delimiter=':'"
+  opts.fzf_opts["--preview-window"] = 'right:0'
+  opts.fzf_opts["--delimiter"] = vim.fn.shellescape(':')
   opts = set_lsp_fzf_fn(opts)
 
   -- error or no sync request no results

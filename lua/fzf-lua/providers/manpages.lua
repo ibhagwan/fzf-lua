@@ -42,9 +42,10 @@ M.manpages = function(opts)
         utils.ansi_codes.red(man), desc)
     end)
 
-    opts.nomulti = true
-    opts.preview_window = 'hidden:right:0'
-    opts._fzf_cli_args = "--tiebreak begin --nth 1,2"
+    opts.fzf_opts['--no-multi'] = ''
+    opts.fzf_opts['--preview-window'] = 'hidden:right:0'
+    opts.fzf_opts['--tiebreak'] = 'begin'
+    opts.fzf_opts['--nth'] = '1,2'
 
     local selected = core.fzf(opts, fzf_fn)
 

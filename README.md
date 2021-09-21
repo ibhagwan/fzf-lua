@@ -201,7 +201,7 @@ I tried to make it as customizable as possible, if you find you need to change s
 
 customization can be achieved by calling the `setup()` function or individually sending parameters to a builtin command, for exmaple:
 ```lua
-:lua require('fzf-lua').files({ fzf_layout = 'reverse-list' })
+:lua require('fzf-lua').files({ fzf_opts = {['--layout'] = 'reverse-list'} })
 ```
 
 Consult the list below for available settings:
@@ -224,8 +224,17 @@ require'fzf-lua'.setup {
     hl_border        = 'FloatBorder',   -- window border color
   },
   -- fzf_bin             = 'sk',        -- use skim instead of fzf?
-  fzf_layout          = 'reverse',      -- fzf '--layout=' options
-  fzf_args            = '',             -- adv: fzf extra args, empty unless adv
+  fzf_opts = {
+    -- options are sent as `<left>=<right>`
+    -- set to `false` to remove a flag
+    -- set to '' for a non-value flag
+    -- for raw args use `fzf_args` instead
+    ['--ansi']        = '',
+    ['--prompt']      = ' >',
+    ['--info']        = 'inline',
+    ['--height']      = '100%',
+    ['--layout']      = 'reverse',
+  },
   fzf_binds           = {               -- fzf '--bind=' options
     ["f2"]            = "toggle-preview",
     ["f3"]            = "toggle-preview-wrap",

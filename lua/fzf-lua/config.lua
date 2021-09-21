@@ -34,10 +34,14 @@ M.globals = {
       vim.cmd("set winhl=Normal:Normal,FloatBorder:FloatBorder")
     end, ]]
   },
-  default_prompt      = '> ',
   fzf_bin             = nil,
-  fzf_colors          = nil,
-  fzf_layout          = 'reverse',
+  fzf_opts = {
+    ['--ansi']        = '',
+    ['--prompt']      = ' >',
+    ['--info']        = 'inline',
+    ['--height']      = '100%',
+    ['--layout']      = 'reverse',
+  },
   fzf_binds = {
     -- <F2>        toggle preview
     -- <F3>        toggle preview text wrap
@@ -501,6 +505,7 @@ end
 
 function M.normalize_opts(opts, defaults)
   if not opts then opts = {} end
+  if not opts.fzf_opts then opts.fzf_opts = {} end
   opts = vim.tbl_deep_extend("keep", opts, defaults)
   if defaults.winopts then
     if not opts.winopts then opts.winopts = {} end

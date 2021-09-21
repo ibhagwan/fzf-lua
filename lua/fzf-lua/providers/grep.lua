@@ -70,10 +70,7 @@ local function set_search_header(opts, type)
     header_str = header_str .. (cwd_str or '')
   end
   if not header_str or #header_str==0 then return opts end
-  opts._fzf_header_args = opts._fzf_header_args or ''
-  opts._fzf_header_args = string.format([[%s --header=%s ]],
-    opts._fzf_header_args,
-    vim.fn.shellescape(header_str))
+  opts.fzf_opts['--header'] = vim.fn.shellescape(header_str)
   return opts
 end
 
@@ -210,12 +207,12 @@ M.live_grep_native = function(opts)
   if opts._is_skim then
     -- skim interactive mode does not need a piped command
     opts.fzf_fn = nil
-    opts._fzf_cli_args = string.format(
-        "--prompt='*%s' --cmd-prompt='%s' --cmd-query=%s -i -c %s",
-        opts.prompt, opts.prompt,
-        -- since we surrounded the skim placeholder with quotes
-        -- we need to escape them in the initial query
-        vim.fn.shellescape(utils.sk_escape(query)),
+    opts.fzf_opts['--prompt'] = '*' .. opts.prompt
+    opts.fzf_opts['--cmd-prompt'] = vim.fn.shellescape(opts.prompt)
+    -- since we surrounded the skim placeholder with quotes
+    -- we need to escape them in the initial query
+    opts.fzf_opts['--cmd-query'] = vim.fn.shellescape(utils.sk_escape(query))
+    opts._fzf_cli_args = string.format("-i -c %s",
           vim.fn.shellescape(
             ("(cd %s && %s)"):format(
               vim.fn.shellescape(opts.cwd or '.'),
@@ -230,8 +227,9 @@ M.live_grep_native = function(opts)
           return core.make_entry_file(opts, x)
         end)
     end
-    opts._fzf_cli_args = string.format('--phony --query=%s --bind=%s',
-        vim.fn.shellescape(query),
+    opts.fzf_opts['--phony'] = ''
+    opts.fzf_opts['--query'] = vim.fn.shellescape(query)
+    opts._fzf_cli_args = string.format('--bind=%s',
         vim.fn.shellescape(("change:reload:%s"):format(
           ("(cd %s && %s || true)"):format(
             vim.fn.shellescape(opts.cwd or '.'),

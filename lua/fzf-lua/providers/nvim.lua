@@ -34,8 +34,8 @@ M.commands = function(opts)
 
     table.sort(entries, function(a, b) return a<b end)
 
-    opts.nomulti = true
-    opts.preview = prev_act
+    opts.fzf_opts['--no-multi'] = ''
+    opts.fzf_opts['--preview'] = prev_act
 
     local selected = core.fzf(opts, entries)
 
@@ -59,9 +59,8 @@ local history = function(opts, str)
       table.insert(entries, string.sub(item, finish + 1))
     end
 
-    opts.nomulti = true
-    opts.preview = nil
-    opts.preview_window = 'hidden:down:0'
+    opts.fzf_opts['--no-multi'] = ''
+    opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
     local selected = core.fzf(opts, entries)
 
@@ -74,20 +73,21 @@ end
 local arg_header = function(sel_key, edit_key, text)
   sel_key = utils.ansi_codes.yellow(sel_key)
   edit_key = utils.ansi_codes.yellow(edit_key)
-  return ('--header=":: %s to %s, %s to edit"'):format(sel_key, text, edit_key)
+  return vim.fn.shellescape((':: %s to %s, %s to edit')
+    :format(sel_key, text, edit_key))
 end
 
 M.command_history = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.command_history)
   if not opts then return end
-  opts._fzf_cli_args = arg_header("<CR>", "<Ctrl-e>", "execute")
+  opts.fzf_opts['--header'] = arg_header("<CR>", "<Ctrl-e>", "execute")
   history(opts, "cmd")
 end
 
 M.search_history = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.search_history)
   if not opts then return end
-  opts._fzf_cli_args = arg_header("<CR>", "<Ctrl-e>", "search")
+  opts.fzf_opts['--header'] = arg_header("<CR>", "<Ctrl-e>", "search")
   history(opts, "search")
 end
 
@@ -126,9 +126,8 @@ M.marks = function(opts)
 
     table.sort(entries, function(a, b) return a<b end)
 
-    opts.nomulti = true
-    opts.preview = prev_act
-    -- opts.preview_window = 'hidden:down:0'
+    opts.fzf_opts['--preview'] = prev_act
+    opts.fzf_opts['--no-multi'] = ''
 
     local selected = core.fzf(opts, entries)
 
@@ -174,8 +173,8 @@ M.registers = function(opts)
       end
     end
 
-    opts.nomulti = true
-    opts.preview = prev_act
+    opts.fzf_opts['--no-multi'] = ''
+    opts.fzf_opts['--preview'] = prev_act
 
     local selected = core.fzf(opts, entries)
 
@@ -234,8 +233,8 @@ M.keymaps = function(opts)
       v.str, v.rhs))
     end
 
-    opts.nomulti = true
-    opts.preview = prev_act
+    opts.fzf_opts['--no-multi'] = ''
+    opts.fzf_opts['--preview'] = prev_act
 
     local selected = core.fzf(opts, entries)
 
@@ -258,9 +257,8 @@ M.spell_suggest = function(opts)
 
     if vim.tbl_isempty(entries) then return end
 
-    opts.nomulti = true
-    opts.preview = nil
-    opts.preview_window = 'hidden:down:0'
+    opts.fzf_opts['--no-multi'] = ''
+    opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
     local selected = core.fzf(opts, entries)
 
@@ -281,9 +279,8 @@ M.filetypes = function(opts)
     local entries = vim.fn.getcompletion('', 'filetype')
     if vim.tbl_isempty(entries) then return end
 
-    opts.nomulti = true
-    opts.preview = nil
-    opts.preview_window = 'hidden:down:0'
+    opts.fzf_opts['--no-multi'] = ''
+    opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
     local selected = core.fzf(opts, entries)
 
@@ -305,9 +302,8 @@ M.packadd = function(opts)
 
     if vim.tbl_isempty(entries) then return end
 
-    opts.nomulti = false
-    opts.preview = nil
-    opts.preview_window = 'hidden:down:0'
+    opts.fzf_opts['--no-multi'] = ''
+    opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
     local selected = core.fzf(opts, entries)
 

@@ -37,9 +37,9 @@ M.colorschemes = function(opts)
 
     -- must add ':nohidden' or fzf ignore the preview action
     -- disabling our live preview of colorschemes
-    opts.preview = prev_act
-    opts.preview_window = opts.preview_window or 'nohidden:right:0'
-    opts.nomulti = utils._if(opts.nomulti~=nil, opts.nomulti, true)
+    opts.fzf_opts['--preview'] = prev_act
+    opts.fzf_opts['--no-multi'] = ''
+    opts.fzf_opts['--preview-window'] = 'nohidden:right:0'
 
     local selected = core.fzf(opts, colors)
 

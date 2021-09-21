@@ -12,7 +12,6 @@ M.fzf = function(opts, contents)
   local fzf_win = win(opts)
   if not fzf_win then return end
   -- instantiate the previewer
-  -- if not opts.preview and not previewer and
   local previewer, preview_opts = nil, nil
   if opts.previewer and type(opts.previewer) == 'string' then
     preview_opts = config.globals.previewers[opts.previewer]
@@ -28,14 +27,14 @@ M.fzf = function(opts, contents)
     previewer = preview_opts._ctor()(preview_opts, opts, fzf_win)
   end
   if previewer then
-    opts.preview = previewer:cmdline()
+    opts.fzf_opts['--preview'] = previewer:cmdline()
     if type(previewer.preview_window) == 'function' then
       -- do we need to override the preview_window args?
       -- this can happen with the builtin previewer
       -- (1) when using a split we use the previewer as placeholder
       -- (2) we use 'nohidden:right:0' to trigger preview function
       --     calls without displaying the native fzf previewer split
-      opts.preview_window = previewer:preview_window(opts.preview_window)
+      opts.fzf_opts['--preview-window'] = previewer:preview_window(opts.preview_window)
     end
   end
 
@@ -121,40 +120,83 @@ M.create_fzf_binds = function(binds)
   return "--bind=" .. vim.fn.shellescape(table.concat(tbl, ","))
 end
 
-M.build_fzf_cli = function(opts, debug_print)
-  opts.prompt = opts.prompt or config.globals.default_prompt
-  opts.preview_offset = opts.preview_offset or ''
-  opts.fzf_info = opts.fzf_info or config.globals.fzf_info
-  opts.fzf_ansi = opts.fzf_ansi or config.globals.fzf_ansi
-
-  if not opts.fzf_info then
+M.build_fzf_cli = function(opts)
+  opts.fzf_opts = vim.tbl_extend("force", config.globals.fzf_opts, opts.fzf_opts or {})
+  -- copy from globals
+  for _, o in ipairs({
+    'fzf_info',
+    'fzf_ansi',
+    'fzf_binds',
+    'fzf_colors',
+    'fzf_layout',
+    'fzf_args',
+    'fzf_raw_args',
+    'fzf_cli_args',
+  }) do
+    opts[o] = opts[o] or config.globals[o]
+  end
+  opts.fzf_opts["--bind"] = M.create_fzf_binds(opts.fzf_binds)
+  opts.fzf_opts["--color"] = M.create_fzf_colors(opts.fzf_colors)
+  opts.fzf_opts["--expect"] = actions.expect(opts.actions)
+  opts.fzf_opts["--preview"] = opts.preview or opts.fzf_opts["--preview"]
+  if opts.fzf_opts["--preview-window"] == nil then
+    opts.fzf_opts["--preview-window"] = M.preview_window(opts)
+  end
+  if opts.preview_offset and #opts.preview_offset>0 then
+    opts.fzf_opts["--preview-window"] =
+      opts.fzf_opts["--preview-window"] .. ":" .. opts.preview_offset
+  end
+  -- shell escape the prompt
+  opts.fzf_opts["--prompt"] =
+    vim.fn.shellescape(opts.prompt or opts.fzf_opts["--prompt"])
+  -- multi | no-multi (select)
+  if opts.nomulti or opts.fzf_opts["--no-multi"] then
+    opts.fzf_opts["--multi"] = nil
+    opts.fzf_opts["--no-multi"] = ''
+  else
+    opts.fzf_opts["--multi"] = ''
+    opts.fzf_opts["--no-multi"] = nil
+  end
+  -- backward compatibility, add all previously known options
+  for k, v in pairs({
+    ['--ansi'] = 'fzf_ansi',
+    ['--layout'] = 'fzf_layout'
+  }) do
+    if opts[v] and #opts[v]==0 then
+      opts.fzf_opts[k] = nil
+    elseif opts[v] then
+      opts.fzf_opts[k] = opts[v]
+    end
+  end
+  local extra_args = ''
+  for _, o in ipairs({
+    'fzf_args',
+    'fzf_raw_args',
+    'fzf_cli_args',
+    '_fzf_cli_args',
+  }) do
+    if opts[o] then extra_args = extra_args .. " " .. opts[o] end
+  end
+  if opts._is_skim then
+    local info = opts.fzf_opts["--info"]
     -- skim (rust version of fzf) doesn't
     -- support the '--info=' flag
-    opts.fzf_info = utils._if(opts._is_skim, "--inline-info", "--info=inline")
+    opts.fzf_opts["--info"] = nil
+    if info == 'inline' then
+      -- inline for skim is defined as:
+      opts.fzf_opts["--inline-info"] = ''
+    end
   end
-
-  local cli = string.format(
-    [[ %s %s %s --layout=%s --prompt=%s]] ..
-    [[ --preview-window=%s%s --preview=%s]] ..
-    [[ --height=100%%]] ..
-    [[ %s %s %s %s %s %s %s]],
-    opts.fzf_args or config.globals.fzf_args or '',
-    M.create_fzf_colors(opts.fzf_colors or config.globals.fzf_colors),
-    M.create_fzf_binds(opts.fzf_binds or config.globals.fzf_binds),
-    opts.fzf_layout or config.globals.fzf_layout,
-    vim.fn.shellescape(opts.prompt),
-    utils._if(opts.preview_window, opts.preview_window, M.preview_window(opts)),
-    utils._if(#opts.preview_offset>0, ":"..opts.preview_offset, ''),
-    utils._if(opts.preview and #opts.preview>0, opts.preview, "''"),
-    opts.fzf_ansi or '--ansi', opts.fzf_info or '',
-    utils._if(actions.expect(opts.actions), actions.expect(opts.actions), ''),
-    utils._if(opts.nomulti, '--no-multi', '--multi'),
-    utils._if(opts.fzf_cli_args, opts.fzf_cli_args, ''),
-    utils._if(opts._fzf_cli_args, opts._fzf_cli_args, ''),
-    utils._if(opts._fzf_header_args, opts._fzf_header_args, '')
-  )
-  if debug_print then print(cli) end
-  return cli
+  -- build the clip args
+  local cli_args = ''
+  for k, v in pairs(opts.fzf_opts) do
+    if v then
+      v = v:gsub(k .. '=', '')
+      cli_args = cli_args ..
+        (" %s%s"):format(k,#v>0 and "="..v or '')
+    end
+  end
+  return cli_args .. extra_args
 end
 
 local get_diff_files = function(opts)
@@ -235,7 +277,7 @@ end
 M.set_fzf_line_args = function(opts)
   opts._line_placeholder = 2
   -- delimiters are ':' and <tab>
-  opts._fzf_cli_args = (opts._fzf_cli_args or '') .. " --delimiter='[:\\t]'"
+  opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[:\\t]')
   --[[
     #
     #   Explanation of the fzf preview offset options:
@@ -424,13 +466,13 @@ M.set_fzf_interactive = function(opts, act_cmd, placeholder)
     end
     -- skim interactive mode does not need a piped command
     opts.fzf_fn = nil
-    opts._fzf_cli_args = string.format(
-        "--prompt='*%s' --cmd-prompt='%s' --cmd-query=%s -i -c %s",
-        opts.prompt, opts.prompt,
-        -- since we surrounded the skim placeholder with quotes
-        -- we need to escape them in the initial query
-        vim.fn.shellescape(utils.sk_escape(query)),
-        act_cmd)
+    opts.fzf_opts['--prompt'] = '*' .. opts.prompt
+    opts.fzf_opts['--cmd-prompt'] = vim.fn.shellescape(opts.prompt)
+    opts.prompt = nil
+    -- since we surrounded the skim placeholder with quotes
+    -- we need to escape them in the initial query
+    opts.fzf_opts['--cmd-query'] = vim.fn.shellescape(utils.sk_escape(query))
+    opts._fzf_cli_args = string.format( "-i -c %s", act_cmd)
   else
     -- fzf already adds single quotes
     -- around the place holder
@@ -442,8 +484,9 @@ M.set_fzf_interactive = function(opts, act_cmd, placeholder)
           return M.make_entry_file(opts, x)
         end)
     end
-    opts._fzf_cli_args = string.format('--phony --query=%s --bind=%s',
-        vim.fn.shellescape(query),
+    opts.fzf_opts['--phony'] = ''
+    opts.fzf_opts['--query'] = vim.fn.shellescape(query)
+    opts._fzf_cli_args = string.format('--bind=%s',
         vim.fn.shellescape(string.format("change:reload:%s || true", act_cmd)))
   end
 
