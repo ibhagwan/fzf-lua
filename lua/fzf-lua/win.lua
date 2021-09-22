@@ -170,6 +170,14 @@ function FzfWin:reset_win_highlights(win, is_border)
   vim.api.nvim_win_set_option(win, 'winhighlight', hl)
 end
 
+function FzfWin:check_exit_status()
+  if not self:validate() then return end
+  local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
+  if lines and #lines[1]>0 then
+    utils.warn("fzf error: " .. lines[1])
+  end
+end
+
 function FzfWin:_set_autoclose(autoclose)
   if autoclose ~= nil then
     self._autoclose = autoclose

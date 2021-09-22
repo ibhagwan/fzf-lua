@@ -289,6 +289,7 @@ M.tabs = function(opts)
     return res
   end
 
+
   local filtered, excluded = filter_buffers(opts, opts._list_bufs())
   if not next(filtered) then return end
 
@@ -298,7 +299,6 @@ M.tabs = function(opts)
       bufnrs[b] = nil
     end
   end
-
   coroutine.wrap(function ()
     local items = {}
 
@@ -324,7 +324,7 @@ M.tabs = function(opts)
     opts.fzf_opts["--no-multi"] = ''
     opts.fzf_opts["--preview-window"] = 'hidden:right:0'
     opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[\\)]')
-    opts.fzf_opts["---with-nth"] = '2'
+    opts.fzf_opts["--with-nth"] = '2'
 
     local selected = core.fzf(opts, items)
 
