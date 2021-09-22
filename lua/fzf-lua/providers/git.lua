@@ -87,7 +87,7 @@ end
 M.branches = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.branches)
   if not opts then return end
-  opts.nomulti = true
+  opts.fzf_opts["--no-multi"] = ''
   opts._preview = path.git_cwd(opts.preview, opts.cwd)
   opts.preview = fzf_helpers.choices_to_shell_cmd_previewer(function(items)
     local branch = items[1]:gsub("%*", "")  -- remove the * from current branch

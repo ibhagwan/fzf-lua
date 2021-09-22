@@ -342,8 +342,8 @@ M.code_actions = function(opts)
     end
   end)
 
-  opts.nomulti = true
   opts.previewer = false
+  opts.fzf_opts["--no-multi"] = ''
   opts.fzf_opts["--preview-window"] = 'right:0'
   opts.fzf_opts["--delimiter"] = vim.fn.shellescape(':')
   opts = set_lsp_fzf_fn(opts)

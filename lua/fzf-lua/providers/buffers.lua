@@ -241,13 +241,13 @@ M.buffer_lines = function(opts)
 
     -- ignore bufnr when searching
     -- disable multi-select
-    opts.nomulti = true
+    opts.fzf_opts["--no-multi"] = ''
     opts.fzf_opts["--preview-window"] = 'hidden:right:0'
     opts.fzf_opts["--delimiter"] = vim.fn.shellescape(']')
     opts.fzf_opts["--nth"] = '2,-1'
 
     if opts.search and #opts.search>0 then
-      opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search) 
+      opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search)
     end
 
     local selected = core.fzf(opts, items)
@@ -258,7 +258,12 @@ M.buffer_lines = function(opts)
 
     actions.act(opts.actions, selected, opts)
 
-    if line then vim.api.nvim_win_set_cursor(0, {line, 0}) end
+    if line then
+      -- add current location to jumplist
+      vim.cmd("normal! m`")
+      vim.api.nvim_win_set_cursor(0, {line, 0})
+      vim.cmd("norm! zz")
+    end
 
   end)()
 end
@@ -316,7 +321,7 @@ M.tabs = function(opts)
       end
     end
 
-    opts.nomulti = true
+    opts.fzf_opts["--no-multi"] = ''
     opts.fzf_opts["--preview-window"] = 'hidden:right:0'
     opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[\\)]')
     opts.fzf_opts["---with-nth"] = '2'
