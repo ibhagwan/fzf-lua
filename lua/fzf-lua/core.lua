@@ -136,7 +136,9 @@ M.build_fzf_cli = function(opts)
     opts[o] = opts[o] or config.globals[o]
   end
   opts.fzf_opts["--bind"] = M.create_fzf_binds(opts.fzf_binds)
-  opts.fzf_opts["--color"] = M.create_fzf_colors(opts.fzf_colors)
+  if opts.fzf_colors then
+    opts.fzf_opts["--color"] = M.create_fzf_colors(opts.fzf_colors)
+  end
   opts.fzf_opts["--expect"] = actions.expect(opts.actions)
   opts.fzf_opts["--preview"] = opts.preview or opts.fzf_opts["--preview"]
   if opts.fzf_opts["--preview-window"] == nil then
