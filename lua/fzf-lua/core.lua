@@ -344,6 +344,10 @@ M.fzf_files = function(opts)
 
 end
 
+-- https://github.com/luvit/luv/blob/master/docs.md
+-- uv.spawn returns tuple: handle, pid
+local _, _pid
+
 M.set_fzf_interactive_cmd = function(opts)
 
   if not opts then return end
@@ -367,7 +371,12 @@ M.set_fzf_interactive_cmd = function(opts)
       end
     end
 
-    uv.spawn(shell, {
+    -- terminate previously running commands
+    if _pid then
+      uv.kill(_pid, 9)
+    end
+
+    _, _pid = uv.spawn(shell, {
       args = { "-c", shell_cmd },
       stdio = { nil, output_pipe, error_pipe },
       cwd = opts.cwd
@@ -381,6 +390,7 @@ M.set_fzf_interactive_cmd = function(opts)
         -- calls are completed
         close_pipe()
       end
+      _pid = nil
     end)
 
     local read_cb = function(err, data)
