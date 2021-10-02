@@ -209,7 +209,7 @@ local get_diff_files = function(opts)
     local status, err = utils.io_systemlist(path.git_cwd(cmd, opts.cwd))
     if err == 0 then
         for i = 1, #status do
-          local icon = status[i]:match("[MUDAR?]+")
+          local icon = status[i]:match("[MUDARC?]+")
           local file = status[i]:match("[^ ]*$")
           if icon and file then
             diff_files[file] = icon

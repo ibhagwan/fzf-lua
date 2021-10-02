@@ -28,7 +28,7 @@ M.globals = {
     win_border          = true,
     borderchars         = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
     hl_normal           = 'Normal',
-    hl_border           = 'FloatBorder',
+    hl_border           = 'Normal',
     --[[ window_on_create = function()
       -- Set popup background same as normal windows
       vim.cmd("set winhl=Normal:Normal,FloatBorder:FloatBorder")
@@ -199,6 +199,7 @@ M.globals.git = {
       ["D"]         = { icon = "D", color = "red" },
       ["A"]         = { icon = "A", color = "green" },
       ["R"]         = { icon = "R", color = "yellow" },
+      ["C"]         = { icon = "C", color = "yellow" },
       ["?"]         = { icon = "?", color = "magenta" },
     },
   }

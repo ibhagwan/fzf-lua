@@ -221,7 +221,7 @@ require'fzf-lua'.setup {
     -- win_border    = false,           -- window border? or borderchars?
     win_border       = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
     hl_normal        = 'Normal',        -- window normal color
-    hl_border        = 'FloatBorder',   -- window border color
+    hl_border        = 'Normal',        -- change to 'FloatBorder' if exists
   },
   -- fzf_bin             = 'sk',        -- use skim instead of fzf?
   fzf_opts = {
