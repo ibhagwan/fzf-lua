@@ -214,28 +214,32 @@ M.buffer_lines = function(opts)
     local items = {}
 
     for _, bufnr in ipairs(buffers) do
+      local data = {}
+      local filepath = api.nvim_buf_get_name(bufnr)
       if api.nvim_buf_is_loaded(bufnr) then
-        local bufname = path.basename(api.nvim_buf_get_name(bufnr))
-        local data = api.nvim_buf_get_lines(bufnr, 0, -1, false)
-        local buficon, hl
-        if opts.file_icons then
-          local filename = path.tail(bufname)
-          local extension = path.extension(filename)
-          buficon, hl = core.get_devicon(filename, extension)
-          if opts.color_icons then
-            buficon = utils.ansi_codes[hl](buficon)
-          end
+        data = api.nvim_buf_get_lines(bufnr, 0, -1, false)
+      elseif vim.fn.filereadable(filepath) ~= 0 then
+        data = vim.fn.readfile(filepath, "")
+      end
+      local bufname = path.basename(filepath)
+      local buficon, hl
+      if opts.file_icons then
+        local filename = path.tail(bufname)
+        local extension = path.extension(filename)
+        buficon, hl = core.get_devicon(filename, extension)
+        if opts.color_icons then
+          buficon = utils.ansi_codes[hl](buficon)
         end
-        for l, text in ipairs(data) do
-          table.insert(items, ("[%s]%s%s%s%s:%s: %s"):format(
-            utils.ansi_codes.yellow(tostring(bufnr)),
-            utils.nbsp,
-            buficon or '',
-            buficon and utils.nbsp or '',
-            utils.ansi_codes.magenta(#bufname>0 and bufname or "[No Name]"),
-            utils.ansi_codes.green(tostring(l)),
-            text))
-        end
+      end
+      for l, text in ipairs(data) do
+        table.insert(items, ("[%s]%s%s%s%s:%s: %s"):format(
+          utils.ansi_codes.yellow(tostring(bufnr)),
+          utils.nbsp,
+          buficon or '',
+          buficon and utils.nbsp or '',
+          utils.ansi_codes.magenta(#bufname>0 and bufname or "[No Name]"),
+          utils.ansi_codes.green(tostring(l)),
+          text))
       end
     end
 

@@ -316,6 +316,12 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     self.preview_bufnr = bufnr
     self:preview_buf_post(entry)
   else
+    if entry.bufnr then
+      -- buffer was unloaded, can happen when calling `lines`
+      -- with `set nohidden`, fix entry.path since it contains
+      -- filename only
+      entry.path = path.relative(vim.api.nvim_buf_get_name(entry.bufnr), vim.loop.cwd())
+    end
     -- mark the buffer for unloading the next call
     self.preview_bufloaded = true
     -- make sure the file is readable (or bad entry.path)
