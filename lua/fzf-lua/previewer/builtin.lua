@@ -13,9 +13,6 @@ Previewer.help_tags = {}
 Previewer.man_pages = {}
 Previewer.marks = {}
 
--- signgleton instance used for our keymappings
-local _self = nil
-
 -- Constructors call on Previewer.base.<o>()
 for c, _ in pairs(Previewer) do
   setmetatable(Previewer[c], {
@@ -25,27 +22,6 @@ for c, _ in pairs(Previewer) do
   })
 end
 
-function Previewer.base:setup_keybinds()
-  if not self.win or not self.win.fzf_bufnr then return end
-  local keymap_tbl = {
-    toggle_full   = { module = 'previewer.builtin', fnc = 'base.toggle_full()' },
-    toggle_wrap   = { module = 'previewer.builtin', fnc = 'base.toggle_wrap()' },
-    toggle_hide   = { module = 'previewer.builtin', fnc = 'base.toggle_hide()' },
-    page_up       = { module = 'previewer.builtin', fnc = 'base.scroll(-1)' },
-    page_down     = { module = 'previewer.builtin', fnc = 'base.scroll(1)' },
-    page_reset    = { module = 'previewer.builtin', fnc = 'base.scroll(0)' },
-  }
-  local function funcref_str(keymap)
-    return ([[<Cmd>lua require('fzf-lua.%s').%s<CR>]]):format(keymap.module, keymap.fnc)
-  end
-  for action, key in pairs(self.keymap) do
-    local keymap = keymap_tbl[action]
-    if keymap and not vim.tbl_isempty(keymap) and key ~= false then
-      api.nvim_buf_set_keymap(self.win.fzf_bufnr, 't', key,
-        funcref_str(keymap), {nowait = true, noremap = true})
-    end
-  end
-end
 
 function Previewer.base:new(o, opts, fzf_win)
   self = setmetatable(previewer_base(o, opts), {
@@ -54,14 +30,11 @@ function Previewer.base:new(o, opts, fzf_win)
     )})
   self.type = "builtin"
   self.win = fzf_win
-  self.wrap = o.wrap
   self.title = o.title
   self.scrollbar = o.scrollbar
   if o.scrollchar and type(o.scrollchar) == 'string' then
     self.win.winopts.scrollchar = o.scrollchar
   end
-  self.expand = o.expand or o.fullscreen
-  self.hidden = o.hidden
   self.syntax = o.syntax
   self.syntax_delay = o.syntax_delay
   self.syntax_limit_b = o.syntax_limit_b
@@ -69,9 +42,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.hl_cursor = o.hl_cursor
   self.hl_cursorline = o.hl_cursorline
   self.hl_range = o.hl_range
-  self.keymap = o.keymap
   self.backups = {}
-  _self = self
   return self
 end
 
@@ -79,12 +50,11 @@ function Previewer.base:close()
   self:restore_winopts(self.win.preview_winid)
   self:clear_preview_buf()
   self.backups = {}
-  _self = nil
 end
 
 function Previewer.base:gen_winopts()
   return {
-    wrap            = self.wrap,
+    wrap            = self.win.preview_wrap,
     number          = true,
     relativenumber  = false,
     cursorline      = true,
@@ -209,9 +179,7 @@ function Previewer.base:preview_window(_)
   end
 end
 
-function Previewer.base.scroll(direction)
-  if not _self then return end
-  local self = _self
+function Previewer.base:scroll(direction)
   local preview_winid = self.win.preview_winid
   if preview_winid < 0 or not direction then return end
 
@@ -251,43 +219,6 @@ function Previewer.base.scroll(direction)
   end
 end
 
-function Previewer.base.toggle_wrap()
-  if not _self then return end
-  local self = _self
-  self.wrap = not self.wrap
-  if self.win and self.win:validate_preview() then
-    api.nvim_win_set_option(self.win.preview_winid, 'wrap', self.wrap)
-  end
-end
-
-function Previewer.base.toggle_full()
-  if not _self then return end
-  local self = _self
-  self.expand = not self.expand
-  if self.win and self.win:validate_preview() then
-    self.win:redraw_preview()
-  end
-end
-
-function Previewer.base.toggle_hide()
-  if not _self then return end
-  local self = _self
-  self.hidden = not self.hidden
-  if self.win then
-    if self.win:validate_preview() then
-      self.win:close_preview()
-      self.win:redraw()
-    else
-      self.win:redraw()
-      self.win:redraw_preview()
-      self:display_last_entry()
-    end
-  end
-  -- close_preview() calls Previewer.base:close()
-  -- which will clear out our singleton so
-  -- we must save it again to call redraw
-  _self = self
-end
 
 function Previewer.buffer_or_file:new(o, opts, fzf_win)
   self = setmetatable(Previewer.base(o, opts, fzf_win), {

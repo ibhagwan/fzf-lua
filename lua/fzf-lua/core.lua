@@ -127,16 +127,16 @@ M.build_fzf_cli = function(opts)
   for _, o in ipairs({
     'fzf_info',
     'fzf_ansi',
-    'fzf_binds',
     'fzf_colors',
     'fzf_layout',
     'fzf_args',
     'fzf_raw_args',
     'fzf_cli_args',
+    'keymap',
   }) do
     opts[o] = opts[o] or config.globals[o]
   end
-  opts.fzf_opts["--bind"] = M.create_fzf_binds(opts.fzf_binds)
+  opts.fzf_opts["--bind"] = M.create_fzf_binds(opts.keymap.fzf)
   if opts.fzf_colors then
     opts.fzf_opts["--color"] = M.create_fzf_colors(opts.fzf_colors)
   end

@@ -29,10 +29,34 @@ M.globals = {
     borderchars         = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
     hl_normal           = 'Normal',
     hl_border           = 'Normal',
-    --[[ window_on_create = function()
-      -- Set popup background same as normal windows
-      vim.cmd("set winhl=Normal:Normal,FloatBorder:FloatBorder")
-    end, ]]
+    fullscreen          = false,
+    window_on_create = function()
+      -- vim.cmd("set winhl=Normal:Normal,FloatBorder:Normal")
+    end,
+  },
+  keymap = {
+    builtin = {
+      ["<F2>"]      = "toggle-fullscreen",
+      -- Only valid with the 'builtin' previewer
+      ["<F3>"]      = "toggle-preview-wrap",
+      ["<F4>"]      = "toggle-preview",
+      ["<S-down>"]  = "preview-page-down",
+      ["<S-up>"]    = "preview-page-up",
+      ["<S-left>"]  = "preview-page-reset",
+    },
+    fzf = {
+      ["ctrl-u"]        = "unix-line-discard",
+      ["ctrl-f"]        = "half-page-down",
+      ["ctrl-b"]        = "half-page-up",
+      ["ctrl-a"]        = "beginning-of-line",
+      ["ctrl-e"]        = "end-of-line",
+      ["alt-a"]         = "toggle-all",
+      -- Only valid with fzf previewers (bat/cat/git/etc)
+      ["f3"]            = "toggle-preview-wrap",
+      ["f4"]            = "toggle-preview",
+      ["shift-down"]    = "preview-page-down",
+      ["shift-up"]      = "preview-page-up",
+    },
   },
   fzf_bin             = nil,
   fzf_opts = {
@@ -41,25 +65,6 @@ M.globals = {
     ['--info']        = 'inline',
     ['--height']      = '100%',
     ['--layout']      = 'reverse',
-  },
-  fzf_binds = {
-    -- <F2>        toggle preview
-    -- <F3>        toggle preview text wrap
-    -- <C-f>|<C-b> half page down|up
-    -- <S-d>|<S-u> preview page down|up
-    -- <C-u>       clear query
-    -- <A-a>       toggle select-all
-    -- <A-q>       send selected to quickfix
-    ["f2"]            = "toggle-preview",
-    ["f3"]            = "toggle-preview-wrap",
-    ["shift-down"]    = "preview-page-down",
-    ["shift-up"]      = "preview-page-up",
-    ["ctrl-u"]        = "unix-line-discard",
-    ["ctrl-f"]        = "half-page-down",
-    ["ctrl-b"]        = "half-page-up",
-    ["ctrl-a"]        = "beginning-of-line",
-    ["ctrl-e"]        = "end-of-line",
-    ["alt-a"]         = "toggle-all",
   },
   preview_border      = 'border',
   preview_wrap        = 'nowrap',
@@ -101,24 +106,12 @@ M.globals = {
       title           = true,
       scrollbar       = true,
       scrollchar      = '█',
-      wrap            = false,
       syntax          = true,
       syntax_delay    = 0,
       syntax_limit_l  = 0,
       syntax_limit_b  = 1024*1024,
-      expand          = false,
-      hidden          = false,
       hl_cursor       = 'Cursor',
       hl_cursorline   = 'CursorLine',
-      hl_range        = 'IncSearch',
-      keymap = {
-        toggle_full   = '<F2>',       -- toggle full screen
-        toggle_wrap   = '<F3>',       -- toggle line wrap
-        toggle_hide   = '<F4>',       -- toggle on/off (not yet in use)
-        page_up       = '<S-up>',     -- preview scroll up
-        page_down     = '<S-down>',   -- preview scroll down
-        page_reset    = '<S-left>',   -- reset scroll to orig pos
-      },
       _ctor           = previewers.builtin.buffer_or_file,
     },
   },
@@ -508,6 +501,7 @@ function M.normalize_opts(opts, defaults)
   if not opts then opts = {} end
   if not opts.fzf_opts then opts.fzf_opts = {} end
   opts = vim.tbl_deep_extend("keep", opts, defaults)
+  opts.keymap = vim.tbl_deep_extend("keep", opts.keymap or {}, M.globals.keymap)
   if defaults.winopts then
     if not opts.winopts then opts.winopts = {} end
     opts.winopts = vim.tbl_deep_extend("keep", opts.winopts, defaults.winopts)
