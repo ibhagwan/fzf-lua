@@ -78,6 +78,16 @@ function M.sk_escape(str)
   end)
 end
 
+M.file_is_binary = function(filepath)
+  filepath = vim.fn.expand(filepath)
+  if vim.fn.executable("file") ~= 1 or
+     not vim.loop.fs_stat(filepath) then
+    return false
+  end
+  local out = M.io_system("file --dereference --mime " ..  filepath)
+  return out:match("charset=binary") ~= nil
+end
+
 M.read_file = function(filepath)
   local fd = vim.loop.fs_open(filepath, "r", 438)
   if fd == nil then return '' end

@@ -257,6 +257,13 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     self.preview_bufloaded = true
     -- make sure the file is readable (or bad entry.path)
     if not vim.loop.fs_stat(entry.path) then return end
+    if utils.file_is_binary(entry.path) then
+      vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, {
+        "Preview is not supported for binary files."
+      })
+      self:preview_buf_post(entry)
+      return
+    end
     -- read the file into the buffer
     utils.read_file_async(entry.path, vim.schedule_wrap(function(data)
       if not vim.api.nvim_buf_is_valid(self.preview_bufnr) then
