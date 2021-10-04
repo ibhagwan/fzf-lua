@@ -105,7 +105,9 @@ M.globals = {
       _ctor           = previewers.fzf.git_diff,
     },
     builtin = {
-      delay           = 60,
+      -- default preview delay 100ms, same as native fzf preview
+      -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
+      delay           = 100,
       title           = true,
       scrollbar       = true,
       scrollchar      = '█',

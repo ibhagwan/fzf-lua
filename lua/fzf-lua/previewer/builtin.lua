@@ -144,10 +144,13 @@ function Previewer.base:display_entry(entry_str)
   self.preview_bufnr = self:clear_preview_buf()
 
   -- specialized previewer populate function
-  self._entry_str = entry_str
+  if not self._entry_count then self._entry_count=1
+  else self._entry_count = self._entry_count+1 end
+  local entry_count = self._entry_count
   if self.delay>0 then
     vim.defer_fn(function()
-      if entry_str == self._entry_str then
+      -- only display if entry hasn't changed
+      if self._entry_count == entry_count then
         self:populate_preview_buf(entry_str)
       end
     end, self.delay)
@@ -267,13 +270,15 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     self.preview_bufloaded = true
     -- make sure the file is readable (or bad entry.path)
     if not vim.loop.fs_stat(entry.path) then return end
-    if utils.file_is_binary(entry.path) then
+    -- TODO: why does `file --dereference --mime` returns
+    -- wrong result for some lua files ('charset=binary')?
+    --[[ if utils.file_is_binary(entry.path) then
       vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, {
         "Preview is not supported for binary files."
       })
       self:preview_buf_post(entry)
       return
-    end
+    end ]]
     -- enable syntax highlighting
     if self.syntax then
       if self.syntax_delay > 0 then
