@@ -317,6 +317,8 @@ require'fzf-lua'.setup {
       args            = "--color",
     },
     builtin = {
+      delay           = 60,           -- delay(ms) displaying the preview
+                                      -- prevents lag on fast scrolling
       title           = true,         -- preview title?
       scrollbar       = true,         -- scrollbar?
       scrollchar      = '█',          -- scrollbar character

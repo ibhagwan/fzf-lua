@@ -30,6 +30,7 @@ function Previewer.base:new(o, opts, fzf_win)
     )})
   self.type = "builtin"
   self.win = fzf_win
+  self.delay = o.delay
   self.title = o.title
   self.scrollbar = o.scrollbar
   if o.scrollchar and type(o.scrollchar) == 'string' then
@@ -143,7 +144,16 @@ function Previewer.base:display_entry(entry_str)
   self.preview_bufnr = self:clear_preview_buf()
 
   -- specialized previewer populate function
-  self:populate_preview_buf(entry_str)
+  self._entry_str = entry_str
+  if self.delay>0 then
+    vim.defer_fn(function()
+      if entry_str == self._entry_str then
+        self:populate_preview_buf(entry_str)
+      end
+    end, self.delay)
+  else
+    self:populate_preview_buf(entry_str)
+  end
 
   -- is the preview a terminal buffer (alternative way)
   --[[ local is_terminal =

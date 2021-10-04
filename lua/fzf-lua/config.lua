@@ -105,6 +105,7 @@ M.globals = {
       _ctor           = previewers.fzf.git_diff,
     },
     builtin = {
+      delay           = 60,
       title           = true,
       scrollbar       = true,
       scrollchar      = '█',
