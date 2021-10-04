@@ -270,15 +270,13 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     self.preview_bufloaded = true
     -- make sure the file is readable (or bad entry.path)
     if not vim.loop.fs_stat(entry.path) then return end
-    -- TODO: why does `file --dereference --mime` returns
-    -- wrong result for some lua files ('charset=binary')?
-    --[[ if utils.file_is_binary(entry.path) then
+    if utils.perl_file_is_binary(entry.path) then
       vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, {
         "Preview is not supported for binary files."
       })
       self:preview_buf_post(entry)
       return
-    end ]]
+    end
     -- enable syntax highlighting
     if self.syntax then
       if self.syntax_delay > 0 then
