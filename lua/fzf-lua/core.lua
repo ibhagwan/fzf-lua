@@ -94,14 +94,13 @@ M.create_fzf_colors = function(colors)
   local tbl = {}
   for highlight, list in pairs(colors) do
     local value = M.get_color(list[2], list[1])
-    if string.match(value, "#[0-9a-f]+") or string.match(value, "[0-9]+") then
-      local hl_code = string.format("%s:%s", highlight, value)
-      table.insert(tbl, hl_code)
+    local col = value:match("#[%x]+") or value:match("^[0-9]+")
+    if col then
+      table.insert(tbl, ("%s:%s"):format(highlight, col))
     end
   end
 
-  local colors = table.concat(tbl, ",")
-  return string.format("--color=%s", colors)
+  return string.format("--color=%s", table.concat(tbl, ","))
 end
 
 M.create_fzf_binds = function(binds)

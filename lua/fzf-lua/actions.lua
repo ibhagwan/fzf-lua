@@ -3,12 +3,15 @@ local path = require "fzf-lua.path"
 
 local M = {}
 
+-- default action map key
+local _default_action = "default"
+
 -- return fzf '--expect=' string from actions keyval tbl
 M.expect = function(actions)
   if not actions then return nil end
   local keys = {}
   for k, v in pairs(actions) do
-    if k ~= "default" and v ~= false then
+    if k ~= _default_action and v ~= false then
       table.insert(keys, k)
     end
   end
@@ -18,31 +21,51 @@ M.expect = function(actions)
   return nil
 end
 
+M.normalize_selected = function(actions, selected)
+  -- 1. If there are no additional actions but the default
+  --    the selected table will contain the selected item(s)
+  -- 2. If multiple actions where defined the first item
+  --    will contain the action keybind string
+  --
+  -- The below makes separates the keybind from the item(s)
+  -- and makes sure 'selected' contains only items or {}
+  -- so it can always be enumerated safely
+  local action = _default_action
+  if utils.tbl_length(actions)>1 then
+    -- keybind should be in item #1
+    -- default keybind is an empty string
+    -- so we leave that as "default"
+    if #selected[1] > 0 then
+      action = selected[1]
+    end
+    -- entries are items #2+
+    local entries = {}
+    for i = 2, #selected do
+      table.insert(entries, selected[i])
+    end
+    return action, entries
+  else
+    return action, selected
+  end
+end
+
 M.act = function(actions, selected, opts)
   if not actions or not selected then return end
-  local action = "default"
-  -- if there are no actions besides default
-  -- the table will contain the results directly
-  -- otherwise 'selected[1]` will contain the keybind
-  -- empty string in selected[1] represents default
-  if actions and utils.tbl_length(actions) > 1 and
-    #selected>1 and #selected[1]>0 then action = selected[1] end
+  local action, entries = M.normalize_selected(actions, selected)
   if actions[action] then
-    actions[action](selected, opts)
+    actions[action](entries, opts)
   end
 end
 
 M.vimcmd = function(vimcmd, selected)
-  if not selected or #selected < 2 then return end
-  for i = 2, #selected do
+  for i = 1, #selected do
     vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(selected[i]))
   end
 end
 
 M.vimcmd_file = function(vimcmd, selected, opts)
-  if not selected or #selected < 2 then return end
   local curbuf = vim.api.nvim_buf_get_name(0)
-  for i = 2, #selected do
+  for i = 1, #selected do
     local entry = path.entry_to_file(selected[i])
     -- only change buffer if we need to (issue #122)
     local fullpath = entry.path
@@ -56,7 +79,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
       -- add current location to jumplist
       vim.cmd("normal! m`")
       vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
-      vim.cmd("norm! zz")
+      vim.cmd("norm! zvzz")
     end
   end
 end
@@ -87,10 +110,9 @@ M.file_open_in_background = function(selected, opts)
   M.vimcmd_file(vimcmd, selected, opts)
 end
 
-M.file_sel_to_qf = function(selected)
-  if not selected or #selected < 2 then return end
+M.file_sel_to_qf = function(selected, _)
   local qf_list = {}
-  for i = 2, #selected do
+  for i = 1, #selected do
     -- check if the file contains line
     local file, line, col, text = selected[i]:match("^([^ :]+):(%d+):(%d+):(.*)")
     if file and line and col then
@@ -103,10 +125,17 @@ M.file_sel_to_qf = function(selected)
   vim.cmd 'copen'
 end
 
+M.file_edit_or_qf = function(selected, opts)
+  if #selected>1 then
+    return M.file_sel_to_qf(selected, opts)
+  else
+    return M.file_edit(selected, opts)
+  end
+end
+
 -- buffer actions
 M.vimcmd_buf = function(vimcmd, selected, _)
-  if not selected or #selected < 2 then return end
-  for i = 2, #selected do
+  for i = 1, #selected do
     local bufnr = string.match(selected[i], "%[(%d+)")
     vim.cmd(vimcmd .. " " .. bufnr)
   end
@@ -138,14 +167,13 @@ M.buf_del = function(selected, opts)
 end
 
 M.buf_switch = function(selected, _)
-  if not selected or #selected<2 then return end
-  local tabnr = selected[2]:match("(%d+)%)")
+  local tabnr = selected[1]:match("(%d+)%)")
   if tabnr then
     vim.cmd("tabn " .. tabnr)
   else
     tabnr = vim.api.nvim_win_get_tabpage(0)
   end
-  local bufnr = tonumber(string.match(selected[2], "%[(%d+)"))
+  local bufnr = tonumber(string.match(selected[1], "%[(%d+)"))
   if bufnr then
     local winid = utils.winid_from_tab_buf(tabnr, bufnr)
     if winid then vim.api.nvim_set_current_win(winid) end
@@ -153,23 +181,17 @@ M.buf_switch = function(selected, _)
 end
 
 M.colorscheme = function(selected)
-  if not selected then return end
   local colorscheme = selected[1]
-  if #selected>1 then colorscheme = selected[2] end
   vim.cmd("colorscheme " .. colorscheme)
 end
 
 M.run_builtin = function(selected)
-  if not selected then return end
   local method = selected[1]
-  if #selected>1 then method = selected[2] end
   vim.cmd(string.format("lua require'fzf-lua'.%s()", method))
 end
 
 M.ex_run = function(selected)
-  if not selected then return end
   local cmd = selected[1]
-  if #selected>1 then cmd = selected[2] end
   vim.cmd("stopinsert")
   vim.fn.feedkeys(string.format(":%s", cmd))
   return cmd
@@ -182,9 +204,7 @@ M.ex_run_cr = function(selected)
 end
 
 M.search = function(selected)
-  if not selected then return end
   local query = selected[1]
-  if #selected>1 then query = selected[2] end
   vim.cmd("stopinsert")
   vim.fn.feedkeys(string.format("/%s", query))
   return query
@@ -197,9 +217,7 @@ M.search_cr = function(selected)
 end
 
 M.goto_mark = function(selected)
-  if not selected then return end
   local mark = selected[1]
-  if #selected>1 then mark = selected[2] end
   mark = mark:match("[^ ]+")
   vim.cmd("stopinsert")
   vim.cmd("normal! '" .. mark)
@@ -207,20 +225,16 @@ M.goto_mark = function(selected)
 end
 
 M.spell_apply = function(selected)
-  if not selected then return end
   local word = selected[1]
-  if #selected>1 then word = selected[2] end
   vim.cmd("normal! ciw" .. word)
   vim.cmd("stopinsert")
 end
 
 M.set_filetype = function(selected)
-  if not selected then return end
   vim.api.nvim_buf_set_option(0, 'filetype', selected[1])
 end
 
 M.packadd = function(selected)
-  if not selected then return end
   for i = 1, #selected do
     vim.cmd("packadd " .. selected[i])
   end
@@ -295,8 +309,6 @@ end
 M.git_buf_edit = function(selected, opts)
   local cmd = path.git_cwd("git show ", opts.cwd)
   local git_root = path.git_root(opts.cwd, true)
-  -- there's an empty string in position 1 for some reason?
-  table.remove(selected,1)
   local win = vim.api.nvim_get_current_win()
   local buffer_filetype = vim.bo.filetype
   local file = path.relative(vim.fn.expand("%:p"), git_root)

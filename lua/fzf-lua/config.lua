@@ -129,7 +129,7 @@ M.globals.files = {
       [[--color never --type f --hidden --follow ]] ..
       [[--exclude .git --exclude node_modules --exclude '*.pyc']],
     actions = {
-      ["default"]       = actions.file_edit,
+      ["default"]       = actions.file_edit_or_qf,
       ["ctrl-s"]        = actions.file_split,
       ["ctrl-v"]        = actions.file_vsplit,
       ["ctrl-t"]        = actions.file_tabedit,
