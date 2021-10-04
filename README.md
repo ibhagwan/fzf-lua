@@ -6,7 +6,7 @@
 
 [Installation](#installation) • [Usage](#usage) • [Commands](#commands) • [Customization](#customization) • [Wiki](https://github.com/ibhagwan/fzf-lua/wiki)
 
-![screenshot](https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/screenshots/main.png)
+![](https://raw.githubusercontent.com/wiki/ibhagwan/fzf-lua/demo.gif)
 
 [fzf](https://github.com/junegunn/fzf) changed my life, it can change yours too, if you allow it.
 
