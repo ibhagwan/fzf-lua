@@ -40,6 +40,8 @@ M.globals = {
       -- Only valid with the 'builtin' previewer
       ["<F3>"]      = "toggle-preview-wrap",
       ["<F4>"]      = "toggle-preview",
+      ["<F5>"]      = "toggle-preview-ccw",
+      ["<F6>"]      = "toggle-preview-cw",
       ["<S-down>"]  = "preview-page-down",
       ["<S-up>"]    = "preview-page-up",
       ["<S-left>"]  = "preview-page-reset",

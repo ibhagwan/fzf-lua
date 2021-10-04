@@ -9,8 +9,7 @@ Installation <#installation> • Usage <#usage> • Commands <#commands> •
 Customization <#customization> • Wiki
 <https://github.com/ibhagwan/fzf-lua/wiki>
 
-screenshot
-<https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/screenshots/main.png>
+Demo <https://raw.githubusercontent.com/wiki/ibhagwan/fzf-lua/demo.gif>
 
 fzf <https://github.com/junegunn/fzf> changed my life, it can change yours too,
 if you allow it.
@@ -271,6 +270,9 @@ Consult the list below for available settings:
           -- Only valid with the 'builtin' previewer
           ["<F3>"]        = "toggle-preview-wrap",
           ["<F4>"]        = "toggle-preview",
+          -- Rotate preview clockwise/counter-clockwise
+          ["<F5>"]        = "toggle-preview-ccw",
+          ["<F6>"]        = "toggle-preview-cw",
           ["<S-down>"]    = "preview-page-down",
           ["<S-up>"]      = "preview-page-up",
           ["<S-left>"]    = "preview-page-reset",

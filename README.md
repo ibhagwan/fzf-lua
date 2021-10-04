@@ -6,7 +6,7 @@
 
 [Installation](#installation) • [Usage](#usage) • [Commands](#commands) • [Customization](#customization) • [Wiki](https://github.com/ibhagwan/fzf-lua/wiki)
 
-![](https://raw.githubusercontent.com/wiki/ibhagwan/fzf-lua/demo.gif)
+![Demo](https://raw.githubusercontent.com/wiki/ibhagwan/fzf-lua/demo.gif)
 
 [fzf](https://github.com/junegunn/fzf) changed my life, it can change yours too, if you allow it.
 
@@ -236,6 +236,9 @@ require'fzf-lua'.setup {
       -- Only valid with the 'builtin' previewer
       ["<F3>"]        = "toggle-preview-wrap",
       ["<F4>"]        = "toggle-preview",
+      -- Rotate preview clockwise/counter-clockwise
+      ["<F5>"]        = "toggle-preview-ccw",
+      ["<F6>"]        = "toggle-preview-cw",
       ["<S-down>"]    = "preview-page-down",
       ["<S-up>"]      = "preview-page-up",
       ["<S-left>"]    = "preview-page-reset",

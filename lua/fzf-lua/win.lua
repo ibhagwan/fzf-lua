@@ -26,6 +26,8 @@ function FzfWin:setup_keybinds()
     keymap_tbl = vim.tbl_deep_extend("keep", keymap_tbl, {
       ['toggle-preview']      = { module = 'win', fnc = 'toggle_preview()' },
       ['toggle-preview-wrap'] = { module = 'win', fnc = 'toggle_preview_wrap()' },
+      ['toggle-preview-cw']   = { module = 'win', fnc = 'toggle_preview_cw(1)' },
+      ['toggle-preview-ccw']  = { module = 'win', fnc = 'toggle_preview_cw(-1)' },
       ['preview-page-up']     = { module = 'win', fnc = 'preview_scroll(-1)' },
       ['preview-page-down']   = { module = 'win', fnc = 'preview_scroll(1)' },
       ['preview-page-reset']  = { module = 'win', fnc = 'preview_scroll(0)' },
@@ -734,6 +736,31 @@ function FzfWin.toggle_preview_wrap()
   self.preview_wrap = not self.preview_wrap
   if self and self:validate_preview() then
     api.nvim_win_set_option(self.preview_winid, 'wrap', self.preview_wrap)
+  end
+end
+
+function FzfWin.toggle_preview_cw(direction)
+  if not _self or _self.winopts.split then return end
+  local self = _self
+  local pos = { 'up', 'right', 'down', 'left' }
+  local idx
+  for i=1,#pos do
+    if pos[i] == self.winopts.preview_pos then
+      idx = i
+      break
+    end
+  end
+  if not idx then return end
+  local newidx = direction>0 and idx+1 or idx-1
+  if newidx<1 then newidx = #pos end
+  if newidx>#pos then newidx = 1 end
+  self.winopts.preview_pos = pos[newidx]
+  self.layout = generate_layout(self.winopts)
+  self:close_preview()
+  self:redraw()
+  self:redraw_preview()
+  if self._previewer and self._previewer.display_last_entry then
+    self._previewer:display_last_entry()
   end
 end
 
