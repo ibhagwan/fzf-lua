@@ -276,7 +276,7 @@ function FzfWin:fs_preview_layout(fs)
   local height_diff = 0
   local width_diff = 0
   if preview_pos == 'down' or preview_pos == 'up' then
-    width_diff = vim.o.columns - border_winopts.width
+    width_diff = vim.o.columns - border_winopts.width - 1
     if preview_pos == 'down' then
       height_diff = vim.o.lines - border_winopts.row - border_winopts.height - 2
     elseif preview_pos == 'up' then
@@ -406,12 +406,14 @@ function FzfWin:update_border_buf()
 end
 
 function FzfWin:redraw_preview()
+  if not self.previewer_is_builtin or self.preview_hidden then return end
+
   self.prev_winopts, self.border_winopts = self:preview_layout()
   if vim.tbl_isempty(self.prev_winopts) or vim.tbl_isempty(self.border_winopts) then
       return -1, -1
   end
 
-  if not self.preview_hidden and self.fullscreen then
+  if self.fullscreen then
     self.prev_winopts, self.border_winopts =
       self:fs_preview_layout(self.fullscreen)
   end
@@ -574,8 +576,7 @@ function FzfWin:create()
   end
 
   -- create or redraw the preview win
-  local hidden = self._previewer and self._previewer.hidden
-  if not hidden then self:redraw_preview() end
+  self:redraw_preview()
 
   -- setup the keybinds
   self:setup_keybinds()
