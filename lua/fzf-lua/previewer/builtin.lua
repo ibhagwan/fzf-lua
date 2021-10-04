@@ -264,6 +264,16 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       self:preview_buf_post(entry)
       return
     end
+    -- enable syntax highlighting
+    if self.syntax then
+      if self.syntax_delay > 0 then
+        vim.defer_fn(function()
+          self:do_syntax(entry)
+        end, self.syntax_delay)
+      else
+        self:do_syntax(entry)
+      end
+    end
     -- read the file into the buffer
     utils.read_file_async(entry.path, vim.schedule_wrap(function(data)
       if not vim.api.nvim_buf_is_valid(self.preview_bufnr) then
@@ -382,15 +392,14 @@ function Previewer.buffer_or_file:preview_buf_post(entry)
     set_cursor_hl(self, entry)
   end)
 
-  -- local ml = vim.bo[entry.bufnr].ml
-  -- vim.bo[entry.bufnr].ml = false
-
-  if self.syntax then
+  -- syntax highlighting moved to before
+  -- reading the file to prevent highlight
+  -- colors flickering
+  --[[ if self.syntax then
     vim.defer_fn(function()
       self:do_syntax(entry)
-      -- vim.bo[entry.bufnr].ml = ml
     end, self.syntax_delay)
-  end
+ end ]]
 
   self:update_border(entry)
 end
