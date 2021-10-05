@@ -167,7 +167,7 @@ M.globals.git = {
     },
     commits = {
       prompt        = 'Commits> ',
-      cmd           = "git log --pretty=oneline --abbrev-commit --color --reflog",
+      cmd           = "git log --pretty=oneline --abbrev-commit --color",
       preview       = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
       actions = {
         ["default"] = actions.git_checkout,
@@ -175,7 +175,7 @@ M.globals.git = {
     },
     bcommits = {
       prompt        = 'BCommits> ',
-      cmd           = "git log --pretty=oneline --abbrev-commit --color --reflog",
+      cmd           = "git log --pretty=oneline --abbrev-commit --color",
       preview       = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
       actions = {
         ["default"] = actions.git_buf_edit,
