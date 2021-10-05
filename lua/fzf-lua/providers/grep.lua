@@ -213,10 +213,7 @@ M.live_grep_native = function(opts)
     -- we need to escape them in the initial query
     opts.fzf_opts['--cmd-query'] = vim.fn.shellescape(utils.sk_escape(query))
     opts._fzf_cli_args = string.format("-i -c %s",
-          vim.fn.shellescape(
-            ("(cd %s && %s)"):format(
-              vim.fn.shellescape(opts.cwd or '.'),
-              reload_command)))
+          vim.fn.shellescape(reload_command))
   else
     opts.fzf_fn = {}
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
@@ -231,9 +228,7 @@ M.live_grep_native = function(opts)
     opts.fzf_opts['--query'] = vim.fn.shellescape(query)
     opts._fzf_cli_args = string.format('--bind=%s',
         vim.fn.shellescape(("change:reload:%s"):format(
-          ("(cd %s && %s || true)"):format(
-            vim.fn.shellescape(opts.cwd or '.'),
-            reload_command))))
+          ("%s || true"):format(reload_command))))
   end
 
   -- we cannot parse any entries as they're not getting called

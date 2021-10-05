@@ -524,6 +524,10 @@ function M.normalize_opts(opts, defaults)
 
   if opts.cwd and #opts.cwd > 0 then
     opts.cwd = vim.fn.expand(opts.cwd)
+    if not vim.loop.fs_stat(opts.cwd) then
+      utils.warn(("Unable to access '%s', removing 'cwd' option."):format(opts.cwd))
+      opts.cwd = nil
+    end
   end
 
   local executable = function(binary, fncerr,  strerr)

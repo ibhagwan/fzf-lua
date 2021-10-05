@@ -41,7 +41,7 @@ M.fzf = function(opts, contents)
   fzf_win:attach_previewer(previewer)
   fzf_win:create()
   local selected = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
-    { fzf_binary = opts.fzf_bin })
+    { fzf_binary = opts.fzf_bin, fzf_cwd = opts.cwd })
   fzf_win:check_exit_status()
   if fzf_win:autoclose() == nil or fzf_win:autoclose() then
     fzf_win:close()
