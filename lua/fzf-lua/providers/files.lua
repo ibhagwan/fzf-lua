@@ -71,4 +71,43 @@ M.files_resume = function(opts)
   return core.fzf_files(opts)
 end
 
+M.args = function(opts)
+  opts = config.normalize_opts(opts, config.globals.args)
+  if not opts then return end
+
+  local entries = vim.fn.execute("args")
+  entries = utils.strsplit(entries, "%s\n")
+  -- remove the current file indicator
+  -- remove all non-files
+  local args = {}
+  for _, s in ipairs(entries) do
+    if s:match('^%[') then
+      s = s:gsub('^%[', ''):gsub('%]$', '')
+    end
+    local st = vim.loop.fs_stat(s)
+    if opts.files_only == false or
+       st and st.type == 'file' then
+      table.insert(args, s)
+    end
+  end
+  entries = nil
+
+  opts.fzf_fn = function (cb)
+    for _, x in ipairs(args) do
+      x = core.make_entry_file(opts, x)
+      if x then
+        cb(x, function(err)
+          if err then return end
+            -- close the pipe to fzf, this
+            -- removes the loading indicator in fzf
+            cb(nil, function() end)
+        end)
+      end
+    end
+    utils.delayed_cb(cb)
+  end
+
+  return core.fzf_files(opts)
+end
+
 return M

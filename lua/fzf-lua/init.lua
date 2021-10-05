@@ -58,6 +58,7 @@ end
 M.fzf_files = require'fzf-lua.core'.fzf_files
 M.files = require'fzf-lua.providers.files'.files
 M.files_resume = require'fzf-lua.providers.files'.files_resume
+M.args = require'fzf-lua.providers.files'.args
 M.grep = require'fzf-lua.providers.grep'.grep
 M.live_grep = require'fzf-lua.providers.grep'.live_grep_native
 M.live_grep_native = require'fzf-lua.providers.grep'.live_grep_native

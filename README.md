@@ -137,6 +137,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `lines`            | open buffers lines                         |
 | `blines`           | current buffer lines                       |
 | `tabs`             | open tabs                                  |
+| `args`             | argument list                              |
 
 ### Search
 | Command          | List                                       |
@@ -345,7 +346,7 @@ require'fzf-lua'.setup {
       ["ctrl-t"]      = actions.file_tabedit,
       ["alt-q"]       = actions.file_sel_to_qf,
       -- custom actions are available too
-      ["ctrl-y"]      = function(selected) print(selected[2]) end,
+      ["ctrl-y"]      = function(selected) print(selected[1]) end,
     }
   },
   git = {
@@ -411,6 +412,13 @@ require'fzf-lua'.setup {
     file_icons        = true,           -- show file icons?
     color_icons       = true,           -- colorize file|git icons
   },
+  args = {
+    prompt            = 'Args❯ ',
+    actions = {
+      -- added on top of regular file actions
+      ["ctrl-x"]      = actions.arg_del,
+    }
+  },
   oldfiles = {
     prompt            = 'History❯ ',
     cwd_only          = false,
@@ -444,7 +452,7 @@ require'fzf-lua'.setup {
     live_preview      = true,       -- apply the colorscheme on preview?
     actions = {
       ["default"]     = actions.colorscheme,
-      ["ctrl-y"]      = function(selected) print(selected[2]) end,
+      ["ctrl-y"]      = function(selected) print(selected[1]) end,
     },
     winopts = {
       win_height        = 0.55,

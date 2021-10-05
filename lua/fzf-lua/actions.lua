@@ -340,4 +340,14 @@ M.git_buf_vsplit = function(selected, opts)
   M.git_buf_edit(selected, opts)
 end
 
+M.arg_add = function(selected, opts)
+  local vimcmd = "argadd"
+  M.vimcmd_file(vimcmd, selected, opts)
+end
+
+M.arg_del = function(selected, opts)
+  local vimcmd = "argdel"
+  M.vimcmd_file(vimcmd, selected, opts)
+end
+
 return M

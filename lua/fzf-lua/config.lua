@@ -213,6 +213,15 @@ M.globals.grep = {
     rg_opts             = "--column --line-number --no-heading --color=always --smart-case",
     actions             = M.globals.files.actions,
   }
+M.globals.args = {
+    previewer           = function() return M.globals.default_previewer end,
+    prompt              = 'Args> ',
+    file_icons          = true and M._has_devicons,
+    color_icons         = true,
+    git_icons           = true,
+    actions             = M.globals.files.actions,
+  }
+M.globals.args.actions["ctrl-x"] = actions.arg_del
 M.globals.oldfiles = {
     previewer           = function() return M.globals.default_previewer end,
     prompt              = 'History> ',

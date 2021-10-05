@@ -22,6 +22,14 @@ M._if = function(bool, a, b)
     end
 end
 
+M.strsplit = function(inputstr, sep)
+  local t={}
+  for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+    table.insert(t, str)
+  end
+  return t
+end
+
 function M.round(num, limit)
   if not num then return nil end
   if not limit then limit = 0.5 end
