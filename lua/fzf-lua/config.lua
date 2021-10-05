@@ -216,6 +216,7 @@ M.globals.grep = {
 M.globals.args = {
     previewer           = function() return M.globals.default_previewer end,
     prompt              = 'Args> ',
+    files_only          = true,
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = true,

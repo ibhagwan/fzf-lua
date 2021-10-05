@@ -448,6 +448,7 @@ Consult the list below for available settings:
       },
       args = {
         prompt            = 'Args❯ ',
+        files_only        = true,
         actions = {
           -- added on top of regular file actions
           ["ctrl-x"]      = actions.arg_del,

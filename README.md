@@ -414,6 +414,7 @@ require'fzf-lua'.setup {
   },
   args = {
     prompt            = 'Args❯ ',
+    files_only        = true,
     actions = {
       -- added on top of regular file actions
       ["ctrl-x"]      = actions.arg_del,
