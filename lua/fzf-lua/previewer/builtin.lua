@@ -500,13 +500,13 @@ function Previewer.help_tags:populate_preview_buf(entry_str)
 end
 
 function Previewer.help_tags:win_leave()
-  if vim.api.nvim_win_is_valid(self.help_winid) then
+  if self.help_winid and vim.api.nvim_win_is_valid(self.help_winid) then
     api.nvim_win_close(self.help_winid, true)
   end
-  if vim.api.nvim_buf_is_valid(self.help_bufnr) then
+  if self.help_bufnr and vim.api.nvim_buf_is_valid(self.help_bufnr) then
     vim.api.nvim_buf_delete(self.help_bufnr, {force=true})
   end
-  if vim.api.nvim_buf_is_valid(self.prev_help_bufnr) then
+  if self.prev_help_bufnr and vim.api.nvim_buf_is_valid(self.prev_help_bufnr) then
     vim.api.nvim_buf_delete(self.prev_help_bufnr, {force=true})
   end
   self.help_winid = nil

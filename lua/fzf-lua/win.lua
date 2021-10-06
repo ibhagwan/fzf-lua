@@ -260,6 +260,9 @@ function FzfWin:attach_previewer(previewer)
   if self._previewer and self._previewer.close then
     self._previewer:close()
   end
+  if self._previewer and self._previewer.win_leave then
+    self._previewer:win_leave()
+  end
   self._previewer = previewer
   self.previewer_is_builtin = previewer and type(previewer.display_entry) == 'function'
 end
@@ -353,7 +356,8 @@ function FzfWin:preview_layout()
 end
 
 function FzfWin:validate_preview()
-  return self.preview_winid and self.preview_winid > 0
+  return not self.closing
+    and self.preview_winid and self.preview_winid > 0
     and api.nvim_win_is_valid(self.preview_winid)
     and self.border_winid and self.border_winid > 0
     and api.nvim_win_is_valid(self.border_winid)
@@ -545,6 +549,7 @@ function FzfWin:create()
     -- we can't reuse the fzf term buffer
     -- create a new tmp buffer for the fzf win
     self:set_tmp_buffer()
+    self:setup_keybinds()
     return
   end
 
@@ -596,14 +601,13 @@ function FzfWin:close_preview()
   if self._previewer and self._previewer.close then
     self._previewer:close()
   end
-  if not self:validate_preview() then return end
-  if vim.api.nvim_win_is_valid(self.border_winid) then
+  if self.border_winid and vim.api.nvim_win_is_valid(self.border_winid) then
     api.nvim_win_close(self.border_winid, true)
   end
-  if vim.api.nvim_buf_is_valid(self.border_buf) then
+  if self.border_buf and vim.api.nvim_buf_is_valid(self.border_buf) then
     vim.api.nvim_buf_delete(self.border_buf, {force=true})
   end
-  if vim.api.nvim_win_is_valid(self.preview_winid) then
+  if self.preview_winid and vim.api.nvim_win_is_valid(self.preview_winid) then
     api.nvim_win_close(self.preview_winid, true)
   end
   self.border_buf = nil
@@ -615,10 +619,10 @@ function FzfWin:close()
   -- prevents race condition with 'win_leave'
   self.closing = true
   self:close_preview()
-  if vim.api.nvim_win_is_valid(self.fzf_winid) then
+  if self.fzf_winid and vim.api.nvim_win_is_valid(self.fzf_winid) then
     vim.api.nvim_win_close(self.fzf_winid, {force=true})
   end
-  if vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
+  if self.fzf_bufnr and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
     vim.api.nvim_buf_delete(self.fzf_bufnr, {force=true})
   end
   if self._orphaned_bufs then
