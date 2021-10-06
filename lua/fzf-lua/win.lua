@@ -202,11 +202,15 @@ function FzfWin:reset_win_highlights(win, is_border)
   vim.api.nvim_win_set_option(win, 'winhighlight', hl)
 end
 
-function FzfWin:check_exit_status()
+function FzfWin:check_exit_status(exit_code)
   if not self:validate() then return end
-  local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
-  if lines and #lines[1]>0 then
-    utils.warn("fzf error: " .. lines[1])
+  if not exit_code or tonumber(exit_code) ~= 130 then
+    local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
+    -- this can happen before nvim-fzf returned exit code (PR #36)
+    if not exit_code and (not lines or #lines[1]==0) then return end
+    utils.warn(("fzf error %s: %s")
+      :format(exit_code or "<null>",
+        lines and #lines[1]>0 and lines[1] or "<null>"))
   end
 end
 
