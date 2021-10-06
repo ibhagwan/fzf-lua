@@ -143,7 +143,25 @@ function Previewer.base:display_entry(entry_str)
   -- store the new preview buffer
   self.preview_bufnr = self:clear_preview_buf()
 
-  -- specialized previewer populate function
+  local populate_preview_buf = function(entry_str)
+    if not self.win or not self.win:validate_preview() then return end
+
+    -- specialized previewer populate function
+    self:populate_preview_buf(entry_str)
+
+    -- is the preview a terminal buffer (alternative way)
+    --[[ local is_terminal =
+      vim.fn.getwininfo(self.win.preview_winid)[1].terminal == 1 ]]
+
+    -- set preview window options
+    if not utils.is_term_buffer(self.preview_bufnr) then
+      self:set_winopts(self.win.preview_winid)
+    end
+
+    -- reset the preview window highlights
+    self.win:reset_win_highlights(self.win.preview_winid)
+  end
+
   if not self._entry_count then self._entry_count=1
   else self._entry_count = self._entry_count+1 end
   local entry_count = self._entry_count
@@ -151,24 +169,13 @@ function Previewer.base:display_entry(entry_str)
     vim.defer_fn(function()
       -- only display if entry hasn't changed
       if self._entry_count == entry_count then
-        self:populate_preview_buf(entry_str)
+        populate_preview_buf(entry_str)
       end
     end, self.delay)
   else
-    self:populate_preview_buf(entry_str)
+    populate_preview_buf(entry_str)
   end
 
-  -- is the preview a terminal buffer (alternative way)
-  --[[ local is_terminal =
-    vim.fn.getwininfo(self.win.preview_winid)[1].terminal == 1 ]]
-
-  -- set preview window options
-  if not utils.is_term_buffer(self.preview_bufnr) then
-    self:set_winopts(self.win.preview_winid)
-  end
-
-  -- reset the preview window highlights
-  self.win:reset_win_highlights(self.win.preview_winid)
 end
 
 function Previewer.base:action(_)

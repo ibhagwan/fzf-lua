@@ -209,7 +209,7 @@ M.globals.grep = {
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = true,
-    grep_opts           = "--line-number --recursive --color=auto --perl-regexp",
+    grep_opts           = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp",
     rg_opts             = "--column --line-number --no-heading --color=always --smart-case",
     actions             = M.globals.files.actions,
   }
