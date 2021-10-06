@@ -63,6 +63,7 @@ M.grep = require'fzf-lua.providers.grep'.grep
 M.live_grep = require'fzf-lua.providers.grep'.live_grep
 M.live_grep_native = require'fzf-lua.providers.grep'.live_grep_native
 M.live_grep_resume = require'fzf-lua.providers.grep'.live_grep_resume
+M.live_grep_glob = require'fzf-lua.providers.grep'.live_grep_glob
 M.grep_last = require'fzf-lua.providers.grep'.grep_last
 M.grep_cword = require'fzf-lua.providers.grep'.grep_cword
 M.grep_cWORD = require'fzf-lua.providers.grep'.grep_cWORD

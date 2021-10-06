@@ -212,6 +212,9 @@ M.globals.grep = {
     grep_opts           = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp",
     rg_opts             = "--column --line-number --no-heading --color=always --smart-case",
     actions             = M.globals.files.actions,
+    -- live_grep_glob options
+    glob_flag           = "--iglob",  -- for case sensitive globs use '--glob'
+    glob_separator      = "%s%-%-"    -- query separator pattern (lua): ' --'
   }
 M.globals.args = {
     previewer           = function() return M.globals.default_previewer end,

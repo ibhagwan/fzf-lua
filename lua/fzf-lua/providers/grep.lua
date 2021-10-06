@@ -274,6 +274,48 @@ M.live_grep_resume = function(opts)
   return M.live_grep(opts)
 end
 
+M.live_grep_glob = function(opts)
+  if not opts then opts = {} end
+  if vim.fn.executable("rg") ~= 1 then
+    utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
+    return
+  end
+  opts.cmd_fn = function(opts, query, no_esc)
+
+    local glob_arg, glob_str = "", ""
+    local search_query = query or ""
+    if query:find(opts.glob_separator) then
+      search_query, glob_str = query:match("(.*)"..opts.glob_separator.."(.*)")
+      for _, s in ipairs(utils.strsplit(glob_str, "%s")) do
+        glob_arg = glob_arg .. (" %s %s")
+          :format(opts.glob_flag, vim.fn.shellescape(s))
+      end
+    end
+
+    -- copied over from get_grep_cmd
+    local search_path = ''
+    if opts.filespec and #opts.filespec>0 then
+      search_path = opts.filespec
+    elseif opts.filename and #opts.filename>0 then
+      search_path = vim.fn.shellescape(opts.filename)
+    end
+
+    if not (no_esc or opts.no_esc) then
+      search_query = utils.rg_escape(search_query)
+    end
+
+    -- do not escape at all
+    if not (no_esc == 2 or opts.no_esc == 2) then
+      search_query = vim.fn.shellescape(search_query)
+    end
+
+    local cmd = ("rg %s %s -- %s %s")
+      :format(opts.rg_opts, glob_arg, search_query, search_path)
+    return cmd
+  end
+  return M.live_grep(opts)
+end
+
 M.grep_last = function(opts)
   if not opts then opts = {} end
   opts.continue_last_search = true

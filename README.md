@@ -414,6 +414,9 @@ require'fzf-lua'.setup {
     -- 'true' enables file and git icons in 'live_grep'
     -- degrades performance in large datasets, YMMV
     experimental      = false,
+    -- live_grep_glob options
+    glob_flag         = "--iglob",  -- for case sensitive globs use '--glob'
+    glob_separator    = "%s%-%-"    -- query separator pattern (lua): ' --'
   },
   args = {
     prompt            = 'Args❯ ',

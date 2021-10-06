@@ -449,8 +449,8 @@ M.set_fzf_interactive_cmd = function(opts)
     local read_cb = function(err, data)
 
       if err then
-        finish()
         assert(not err)
+        finish()
       end
       if not data then
         return
@@ -476,8 +476,19 @@ M.set_fzf_interactive_cmd = function(opts)
 
     end
 
+    local err_cb = function(err, data)
+      if err then
+        assert(not err)
+        finish()
+      end
+      if not data then
+        return
+      end
+      write_cb(data)
+    end
+
     output_pipe:read_start(read_cb)
-    error_pipe:read_start(read_cb)
+    error_pipe:read_start(err_cb)
   end, placeholder)
 
   return M.set_fzf_interactive(opts, raw_async_act, placeholder)
