@@ -13,6 +13,9 @@ local last_search = {}
 local M = {}
 
 local get_grep_cmd = function(opts, search_query, no_esc)
+  if opts.cmd_fn and type(opts.cmd_fn) == 'function' then
+    return opts.cmd_fn(opts, search_query, no_esc)
+  end
   if opts.raw_cmd and #opts.raw_cmd>0 then
     return opts.raw_cmd
   end
