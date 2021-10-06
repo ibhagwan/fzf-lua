@@ -250,6 +250,7 @@ function Previewer.buffer_or_file:parse_entry(entry_str)
 end
 
 function Previewer.buffer_or_file:populate_preview_buf(entry_str)
+  if not self.win or not self.win:validate_preview() then return end
   local entry = self:parse_entry(entry_str)
   if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
     -- must convert to number or our backup will have conflicting keys

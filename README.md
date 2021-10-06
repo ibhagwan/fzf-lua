@@ -411,6 +411,9 @@ require'fzf-lua'.setup {
     git_icons         = true,           -- show git icons?
     file_icons        = true,           -- show file icons?
     color_icons       = true,           -- colorize file|git icons
+    -- 'true' enables file and git icons in 'live_grep'
+    -- degrades performance in large datasets, YMMV
+    experimental      = false,
   },
   args = {
     prompt            = 'Args❯ ',

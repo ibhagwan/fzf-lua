@@ -343,6 +343,18 @@ M.fzf_files = function(opts)
 
 end
 
+-- save to upvalue for performance reasons
+local string_byte = string.byte
+local string_sub = string.sub
+
+local function find_last_newline(str)
+  for i=#str,1,-1 do
+    if string_byte(str, i) == 10 then
+        return i
+    end
+  end
+end
+
 -- https://github.com/luvit/luv/blob/master/docs.md
 -- uv.spawn returns tuple: handle, pid
 local _, _pid
@@ -360,18 +372,22 @@ M.set_fzf_interactive_cmd = function(opts)
     local shell_cmd = opts._reload_command(args[1])
     local output_pipe = uv.new_pipe(false)
     local error_pipe = uv.new_pipe(false)
-    local read_cb_count = 0
+    local write_cb_count = 0
+    local prev_line_content = nil
 
     local shell = vim.env.SHELL or "sh"
 
-    local close_pipe = function()
-      if not uv.is_closing(pipe) then
+    local finish = function()
+      if pipe  and not uv.is_closing(pipe) then
         uv.close(pipe)
+        pipe = nil
       end
+      output_pipe:shutdown()
+      error_pipe:shutdown()
     end
 
     -- terminate previously running commands
-    if _pid then
+    if _pid and type(uv.os_getpriority(_pid)) == 'number' then
       uv.kill(_pid, 9)
     end
 
@@ -384,38 +400,80 @@ M.set_fzf_interactive_cmd = function(opts)
       error_pipe:read_stop()
       output_pipe:close()
       error_pipe :close()
-      if read_cb_count==0 then
+      if write_cb_count==0 then
         -- only close if all our uv.write
         -- calls are completed
-        close_pipe()
+        finish()
       end
-      _pid = nil
     end)
 
+    -- save current process pid
+    local pid = _pid
+
+    local function write_cb(data)
+      if not pipe then return end
+      if pid ~= _pid then
+        -- safety, I never saw this get called
+        -- will set `pipe = nill`
+        finish()
+        return
+      end
+      write_cb_count = write_cb_count + 1
+      uv.write(pipe, data, function(err)
+        if err then
+          -- sometime fails?
+          -- assert(not err)
+          finish()
+        end
+        write_cb_count = write_cb_count - 1
+        if write_cb_count == 0 and uv.is_closing(output_pipe) then
+          -- spawn callback already called and did not close the pipe
+          -- due to write_cb_count>0, since this is the last call
+          -- we can close the fzf pipe
+          finish()
+        end
+      end)
+    end
+
+    local function process_lines(str)
+      if not opts._transform_command then
+        write_cb(str)
+      else
+        write_cb(str:gsub("[^\n]+",
+          function(x)
+            return opts._transform_command(x)
+          end))
+      end
+    end
+
     local read_cb = function(err, data)
-      read_cb_count = read_cb_count + 1
 
       if err then
-        close_pipe()
+        finish()
         assert(not err)
       end
       if not data then
-        read_cb_count = read_cb_count - 1
         return
       end
 
-      uv.write(pipe, data, function(err)
-        if err then
-          close_pipe()
+      if prev_line_content then
+          data = prev_line_content .. data
+          prev_line_content = nil
+      end
+
+      if string_byte(data, #data) == 10 then
+        process_lines(data)
+      else
+        local nl_index = find_last_newline(data)
+        if not nl_index then
+          prev_line_content = data
+        else
+          prev_line_content = string_sub(data, nl_index + 1)
+          local stripped_with_newline = string_sub(data, 1, nl_index)
+          process_lines(stripped_with_newline)
         end
-        read_cb_count = read_cb_count - 1
-        if read_cb_count == 0 and uv.is_closing(output_pipe) then
-          -- spawn callback already called and did not close the pipe
-          -- due to read_cb_count>0, since this is the last call
-          -- we can close the fzf pipe
-          close_pipe()
-        end
-      end)
+      end
+
     end
 
     output_pipe:read_start(read_cb)
@@ -492,21 +550,13 @@ M.set_fzf_interactive = function(opts, act_cmd, placeholder)
     if opts.exec_empty_query or (query and #query>0) then
       opts.fzf_fn = require("fzf.helpers").cmd_line_transformer(
         act_cmd:gsub(placeholder, vim.fn.shellescape(query)),
-        function(x)
-          return M.make_entry_file(opts, x)
-        end)
+        function(x) return x end)
     end
     opts.fzf_opts['--phony'] = ''
     opts.fzf_opts['--query'] = vim.fn.shellescape(query)
     opts._fzf_cli_args = string.format('--bind=%s',
         vim.fn.shellescape(string.format("change:reload:%s || true", act_cmd)))
   end
-
-  -- we cannot parse any entries as they're not getting called
-  -- past the initial command, until I can find a solution for
-  -- that icons must be disabled
-  opts.git_icons = false
-  opts.file_icons = false
 
   return opts
 

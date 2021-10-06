@@ -164,6 +164,12 @@ M.live_grep = function(opts)
     return get_grep_cmd(opts, query, true)
   end
 
+  if opts.experimental then
+    opts._transform_command = function(x)
+      return core.make_entry_file(opts, x)
+    end
+  end
+
   opts = core.set_fzf_line_args(opts)
   opts = core.set_fzf_interactive_cmd(opts)
   core.fzf_files(opts)

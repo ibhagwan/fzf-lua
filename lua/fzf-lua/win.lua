@@ -645,6 +645,7 @@ function FzfWin.win_leave()
 end
 
 function FzfWin:update_scrollbar()
+  if not self:validate_preview() then return end
   local border_winid = self.border_winid
   local preview_winid = self.preview_winid
   local border_chars = strip_border_highlights(self.winopts.border)
