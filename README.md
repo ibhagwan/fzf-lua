@@ -252,6 +252,7 @@ require'fzf-lua'.setup {
     },
     fzf = {
       -- fzf '--bind=' options
+      ["ctrl-z"]      = "abort",
       ["ctrl-u"]      = "unix-line-discard",
       ["ctrl-f"]      = "half-page-down",
       ["ctrl-b"]      = "half-page-up",

@@ -47,6 +47,7 @@ M.globals = {
       ["<S-left>"]  = "preview-page-reset",
     },
     fzf = {
+      ["ctrl-z"]        = "abort",
       ["ctrl-u"]        = "unix-line-discard",
       ["ctrl-f"]        = "half-page-down",
       ["ctrl-b"]        = "half-page-up",

@@ -204,7 +204,7 @@ end
 
 function FzfWin:check_exit_status(exit_code)
   if not self:validate() then return end
-  if not exit_code or tonumber(exit_code) ~= 130 then
+  if not exit_code or (exit_code ~=0 and exit_code ~= 130) then
     local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
     -- this can happen before nvim-fzf returned exit code (PR #36)
     if not exit_code and (not lines or #lines[1]==0) then return end
