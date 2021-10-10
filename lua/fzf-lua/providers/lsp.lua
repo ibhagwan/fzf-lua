@@ -327,7 +327,7 @@ M.code_actions = function(opts)
   -- "apply action" as default function
   if not opts.actions then opts.actions = {} end
   opts.actions.default = (function(selected)
-    local idx = selected[2]:match("(%d+)")
+    local idx = selected[1]:match("(%d+)")
     local action = opts.code_actions[idx]
     if not action then return end
     if action.edit or type(action.command) == 'table' then
