@@ -55,6 +55,9 @@ M.globals = {
       scrolloff           = '-2',
       scrollchar          = '',
       scrollchars         = {'█', '' },
+      -- default preview delay 100ms, same as native fzf preview
+      -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
+      delay               = 100,
     },
     _borderchars          = {
       ["none"]            = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
@@ -134,10 +137,6 @@ M.globals = {
       _ctor           = previewers.builtin.man_pages,
     },
     builtin = {
-      -- default preview delay 100ms, same as native fzf preview
-      -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
-      delay           = 100,
-      title           = true,
       syntax          = true,
       syntax_delay    = 0,
       syntax_limit_l  = 0,
@@ -571,6 +570,7 @@ function M.normalize_opts(opts, defaults)
     ['winopts.hl.border']             = 'winopts.hl_border',
     ['winopts.hl.cursor']             = 'previewers.builtin.hl_cursor',
     ['winopts.hl.cursorline']         = 'previewers.builtin.hl_cursorline',
+    ['winopts.preview.delay']         = 'previewers.builtin.delay',
     ['winopts.preview.title']         = 'previewers.builtin.title',
     ['winopts.preview.scrollbar']     = 'previewers.builtin.scrollbar',
     ['winopts.preview.scrollchar']    = 'previewers.builtin.scrollchar',

@@ -30,7 +30,7 @@ function Previewer.base:new(o, opts, fzf_win)
     )})
   self.type = "builtin"
   self.win = fzf_win
-  self.delay = o.delay or 100
+  self.delay = self.win.winopts.preview.delay or 100
   self.title = self.win.winopts.preview.title
   self.syntax = o.syntax
   self.syntax_delay = o.syntax_delay
