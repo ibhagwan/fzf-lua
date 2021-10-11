@@ -177,12 +177,16 @@ function Previewer.git_diff:cmdline(o)
     local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
     local cmd = self.cmd
     local args = self.args
+    local pager = nil
+    if self.pager then
+      pager = '| ' .. self.pager
+    end
     if is_untracked then args = args .. " --no-index /dev/null" end
     if is_deleted then
       cmd = self.cmd:gsub("diff", "show HEAD:")
       cmd = string.format('%s"%s"', cmd, path.relative(file.path, self.opts.cwd))
     else
-      cmd = string.format('%s %s %s', cmd, args, vim.fn.shellescape(file.path))
+      cmd = string.format('%s %s %s %s', cmd, args, vim.fn.shellescape(file.path), pager)
     end
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)

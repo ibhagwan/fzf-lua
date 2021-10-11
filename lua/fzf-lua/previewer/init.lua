@@ -16,6 +16,7 @@ function Previewer:new(o, opts)
   self.cmd = o.cmd;
   self.args = o.args or "";
   self.relative = o.relative
+  self.pager = o.pager or "";
   self.opts = opts;
   return self
 end
