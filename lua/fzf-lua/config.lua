@@ -43,7 +43,7 @@ M.globals = {
     },
     preview = {
       default             = "builtin",
-      border              = 'float',
+      border              = 'border',
       wrap                = 'nowrap',
       hidden              = 'nohidden',
       vertical            = 'down:45%',
