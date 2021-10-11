@@ -39,7 +39,7 @@ M.manpages = function(opts)
       -- split by first occurence of ' - ' (spaced hyphen)
       local man, desc = x:match("^(.-) %- (.*)$")
       return string.format("%-45s %s",
-        utils.ansi_codes.red(man), desc)
+        utils.ansi_codes.magenta(man), desc)
     end)
 
     opts.fzf_opts['--no-multi'] = ''

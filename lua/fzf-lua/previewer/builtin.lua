@@ -439,12 +439,6 @@ function Previewer.help_tags:exec_cmd(str)
   vim.cmd(("noauto %s %s %s"):format(self.split, self.help_cmd, str))
 end
 
--- TODO: temp work around, why does 'Man' fail with 'noautocmd'
-function Previewer.man_pages:exec_cmd(str)
-  str = str or ''
-  vim.cmd(("%s %s %s"):format(self.split, self.help_cmd, str))
-end
-
 function Previewer.help_tags:parse_entry(entry_str)
   return entry_str
 end
@@ -501,22 +495,36 @@ function Previewer.help_tags:win_leave()
   self.prev_help_bufnr = nil
 end
 
--- inherit from help_tags
+-- inherit from help_tags for the specialized
+-- 'gen_winopts()' without ':set  number'
 function Previewer.man_pages:new(o, opts, fzf_win)
   self = setmetatable(Previewer.base(o, opts, fzf_win), {
     __index = vim.tbl_deep_extend("keep",
       self, Previewer.help_tags, Previewer.base
     )})
-  self.split = o.split
-  self.help_cmd = o.help_cmd or "Man"
+  -- self.split = o.split
+  -- self.help_cmd = o.help_cmd or "Man"
   self.filetype = "man"
-  self:init_help_win("echo")
   return self
 end
 
 function Previewer.man_pages:parse_entry(entry_str)
   return entry_str:match("[^[,( ]+")
   -- return require'fzf-lua.providers.manpages'.getmanpage(entry_str)
+end
+
+function Previewer.man_pages:populate_preview_buf(entry_str)
+  local entry = self:parse_entry(entry_str)
+  -- mark the buffer for unloading the next call
+  self.preview_bufloaded = true
+  local cmd = ("man -c %s | col -b"):format(entry)
+  local output, err = utils.io_systemlist(cmd)
+  if err == 0 then
+    -- vim.api.nvim_buf_set_option(self.preview_bufnr, 'modifiable', true)
+    vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, output)
+    vim.api.nvim_buf_set_option(self.preview_bufnr, 'filetype', self.filetype)
+    self.win:update_scrollbar()
+  end
 end
 
 function Previewer.marks:new(o, opts, fzf_win)
