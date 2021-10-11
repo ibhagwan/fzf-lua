@@ -30,7 +30,7 @@ function Previewer.base:new(o, opts, fzf_win)
     )})
   self.type = "builtin"
   self.win = fzf_win
-  self.delay = o.delay
+  self.delay = o.delay or 100
   self.title = self.win.winopts.preview.title
   self.syntax = o.syntax
   self.syntax_delay = o.syntax_delay
@@ -502,9 +502,8 @@ function Previewer.man_pages:new(o, opts, fzf_win)
     __index = vim.tbl_deep_extend("keep",
       self, Previewer.help_tags, Previewer.base
     )})
-  -- self.split = o.split
-  -- self.help_cmd = o.help_cmd or "Man"
   self.filetype = "man"
+  self.cmd = o.cmd or "man -c %s | col -b"
   return self
 end
 
@@ -517,14 +516,12 @@ function Previewer.man_pages:populate_preview_buf(entry_str)
   local entry = self:parse_entry(entry_str)
   -- mark the buffer for unloading the next call
   self.preview_bufloaded = true
-  local cmd = ("man -c %s | col -b"):format(entry)
-  local output, err = utils.io_systemlist(cmd)
-  if err == 0 then
-    -- vim.api.nvim_buf_set_option(self.preview_bufnr, 'modifiable', true)
-    vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, output)
-    vim.api.nvim_buf_set_option(self.preview_bufnr, 'filetype', self.filetype)
-    self.win:update_scrollbar()
-  end
+  local cmd = self.cmd:format(entry)
+  local output, _ = utils.io_systemlist(cmd)
+  -- vim.api.nvim_buf_set_option(self.preview_bufnr, 'modifiable', true)
+  vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, output)
+  vim.api.nvim_buf_set_option(self.preview_bufnr, 'filetype', self.filetype)
+  self.win:update_scrollbar()
 end
 
 function Previewer.marks:new(o, opts, fzf_win)

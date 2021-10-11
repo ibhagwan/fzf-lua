@@ -347,6 +347,9 @@ require'fzf-lua'.setup {
       cmd             = "git diff",
       args            = "--color",
     },
+    man = {
+      cmd             = "man -c %s | col -b",
+    },
     builtin = {
       delay           = 100,          -- delay(ms) displaying the preview
                                       -- prevents lag on fast scrolling
@@ -525,7 +528,6 @@ require'fzf-lua'.setup {
   -- "topleft"  : up
   -- "botright" : down
   -- helptags = { previewer = { split = "topleft" } },
-  -- manpages = { previewer = { split = "topleft" } },
   -- uncomment to use `man` command as native fzf previewer
   -- manpages = { previewer = { _ctor = require'fzf-lua.previewer'.fzf.man_pages } },
   -- optional override of file extension icon colors

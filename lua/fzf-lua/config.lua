@@ -129,6 +129,10 @@ M.globals = {
       args            = "--color",
       _ctor           = previewers.fzf.git_diff,
     },
+    man = {
+      cmd             = "man -c %s | col -b",
+      _ctor           = previewers.builtin.man_pages,
+    },
     builtin = {
       -- default preview delay 100ms, same as native fzf preview
       -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
@@ -379,9 +383,7 @@ M.globals.manpages = {
         ["ctrl-v"]        = actions.man_vert,
         ["ctrl-t"]        = actions.man_tab,
       },
-      previewer = {
-        _ctor             = previewers.builtin.man_pages,
-      },
+      previewer           = "man",
   }
 M.globals.lsp = {
       previewer           = M._default_previewer_fn,
