@@ -414,6 +414,7 @@ function Previewer.help_tags:new(o, opts, fzf_win)
     )})
   self.split = o.split
   self.help_cmd = o.help_cmd or "help"
+  self.filetype = "help"
   self:init_help_win()
   return self
 end
@@ -434,6 +435,12 @@ function Previewer.help_tags:gen_winopts()
 end
 
 function Previewer.help_tags:exec_cmd(str)
+  str = str or ''
+  vim.cmd(("noauto %s %s %s"):format(self.split, self.help_cmd, str))
+end
+
+-- TODO: temp work around, why does 'Man' fail with 'noautocmd'
+function Previewer.man_pages:exec_cmd(str)
   str = str or ''
   vim.cmd(("%s %s %s"):format(self.split, self.help_cmd, str))
 end
@@ -461,6 +468,7 @@ function Previewer.help_tags:populate_preview_buf(entry_str)
   vim.api.nvim_win_call(self.help_winid, function()
     self.prev_help_bufnr = api.nvim_get_current_buf()
     self:exec_cmd(entry)
+    vim.api.nvim_buf_set_option(0, 'filetype', self.filetype)
     self.preview_bufnr = api.nvim_get_current_buf()
     self.orig_pos = api.nvim_win_get_cursor(0)
   end)
@@ -501,6 +509,7 @@ function Previewer.man_pages:new(o, opts, fzf_win)
     )})
   self.split = o.split
   self.help_cmd = o.help_cmd or "Man"
+  self.filetype = "man"
   self:init_help_win("echo")
   return self
 end
