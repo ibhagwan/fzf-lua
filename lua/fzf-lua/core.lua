@@ -8,6 +8,10 @@ local win = require "fzf-lua.win"
 local M = {}
 
 M.fzf = function(opts, contents)
+  -- normalize with globals if not already normalized
+  if not opts._normalized then
+    opts = config.normalize_opts(opts, {})
+  end
   -- setup the fzf window and preview layout
   local fzf_win = win(opts)
   if not fzf_win then return end
@@ -66,19 +70,17 @@ M.get_devicon = function(file, ext)
   return icon..config.globals.file_icon_padding:gsub(" ", utils.nbsp), hl
 end
 
-M.preview_window = function(opts)
-  local o = vim.tbl_deep_extend("keep", opts, config.globals)
-  local preview_vertical = string.format('%s:%s:%s:%s',
-    o.preview_opts, o.preview_border, o.preview_wrap, o.preview_vertical)
-  local preview_horizontal = string.format('%s:%s:%s:%s',
-    o.preview_opts, o.preview_border, o.preview_wrap, o.preview_horizontal)
-  if o.preview_layout == "vertical" then
-    return preview_vertical
-  elseif o.preview_layout == "flex" then
-    return utils._if(vim.o.columns>o.flip_columns, preview_horizontal, preview_vertical)
+M.preview_window = function(o)
+  local preview_args = ("%s:%s:%s:"):format(
+    o.winopts.preview.hidden, o.winopts.preview.border, o.winopts.preview.wrap)
+  if o.winopts.preview.layout == "horizontal" or
+     o.winopts.preview.layout == "flex" and
+       vim.o.columns>o.winopts.preview.flip_columns then
+    preview_args = preview_args .. o.winopts.preview.horizontal
   else
-    return preview_horizontal
+    preview_args = preview_args .. o.winopts.preview.vertical
   end
+  return preview_args
 end
 
 M.get_color = function(hl_group, what)

@@ -217,16 +217,48 @@ require'fzf-lua'.setup {
                                         -- "aboveleft vnew   : split left
     -- Only valid when using a float window
     -- (i.e. when 'split' is not defined)
-    win_height       = 0.85,            -- window height
-    win_width        = 0.80,            -- window width
-    win_row          = 0.30,            -- window row position (0=top, 1=bottom)
-    win_col          = 0.50,            -- window col position (0=left, 1=right)
-    -- win_border    = false,           -- window border? or borderchars?
-    win_border       = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
-    hl_normal        = 'Normal',        -- window normal color
-    hl_border        = 'Normal',        -- change to 'FloatBorder' if exists
+    height           = 0.85,            -- window height
+    width            = 0.80,            -- window width
+    row              = 0.35,            -- window row position (0=top, 1=bottom)
+    col              = 0.50,            -- window col position (0=left, 1=right)
+    -- border argument passthrough to nvim_open_win(), also used
+    -- to manually draw the border characters around the preview
+    -- window, can be set to 'false' to remove all borders or to
+    -- 'none', 'single', 'double' or 'rounded' (default)
+    border           = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
     fullscreen       = false,           -- start fullscreen?
-    window_on_create = function()
+    hl = {
+      normal         = 'Normal',        -- window normal color (fg+bg)
+      border         = 'Normal',        -- border color (try 'FloatBorder')
+      -- Only valid with the builtin previewer:
+      cursor         = 'Cursor',        -- cursor highlight (grep/LSP matches)
+      cursorline     = 'CursorLine',    -- cursor line
+      -- title       = 'Normal',        -- preview border title (file/buffer)
+      -- scrollbar_f = 'PmenuThumb',    -- scrollbar "full" section highlight
+      -- scrollbar_e = 'PmenuSbar',     -- scrollbar "empty" section highlight
+    },
+    preview = {
+      -- default     = 'bat',           -- override the default previewer?
+                                        -- default uses the 'builtin' previewer
+      border         = 'border',        -- border|noborder, applies only to
+                                        -- native fzf previewers (bat/cat/git/etc)
+      wrap           = 'nowrap',        -- wrap|nowrap
+      hidden         = 'nohidden',      -- hidden|nohidden
+      vertical       = 'down:45%',      -- up|down:size
+      horizontal     = 'right:60%',     -- right|left:size
+      layout         = 'flex',          -- horizontal|vertical|flex
+      flip_columns   = 120,             -- #cols to switch to horizontal on flex
+      -- Only valid with the builtin previewer:
+      title          = true,            -- preview border title (file/buf)?
+      scrollbar      = 'float',         -- `false` or string:'float|border'
+                                        -- float:  in-window floating border 
+                                        -- border: in-border chars (see below)
+      scrolloff      = '-2',            -- float scrollbar offset from right
+                                        -- applies only when scrollbar = 'float'
+      scrollchars    = {'█', '' },      -- scrollbar chars ({ <full>, <empty> }
+                                        -- applies only when scrollbar = 'border'
+    },
+    on_create = function()
       -- called once upon creation of the fzf main window
       -- can be used to add custom fzf-lua mappings, e.g:
       --   vim.api.nvim_buf_set_keymap(0, "t", "<C-j>", "<Down>",
@@ -296,15 +328,6 @@ require'fzf-lua'.setup {
       ["header"] = { "fg", "Comment" },
       ["gutter"] = { "bg", "Normal" },
   }, ]]
-  preview_border      = 'border',       -- border|noborder
-  preview_wrap        = 'nowrap',       -- wrap|nowrap
-  preview_opts        = 'nohidden',     -- hidden|nohidden
-  preview_vertical    = 'down:45%',     -- up|down:size
-  preview_horizontal  = 'right:60%',    -- right|left:size
-  preview_layout      = 'flex',         -- horizontal|vertical|flex
-  flip_columns        = 120,            -- #cols to switch to horizontal on flex
-  -- default_previewer   = "bat",       -- override the default previewer?
-                                        -- by default uses the builtin previewer
   previewers = {
     cat = {
       cmd             = "cat",
@@ -327,14 +350,9 @@ require'fzf-lua'.setup {
     builtin = {
       delay           = 100,          -- delay(ms) displaying the preview
                                       -- prevents lag on fast scrolling
-      title           = true,         -- preview title?
-      scrollbar       = true,         -- scrollbar?
-      scrollchar      = '█',          -- scrollbar character
       syntax          = true,         -- preview syntax highlight?
       syntax_limit_l  = 0,            -- syntax limit (lines), 0=nolimit
       syntax_limit_b  = 1024*1024,    -- syntax limit (bytes), 0=nolimit
-      hl_cursor       = 'Cursor',     -- cursor highlight
-      hl_cursorline   = 'CursorLine', -- cursor line highlight
     },
   },
   -- provider setup
@@ -469,8 +487,8 @@ require'fzf-lua'.setup {
       ["ctrl-y"]      = function(selected) print(selected[1]) end,
     },
     winopts = {
-      win_height        = 0.55,
-      win_width         = 0.30,
+      height          = 0.55,
+      width           = 0.30,
     },
     post_reset_cb     = function()
       -- reset statusline highlights after

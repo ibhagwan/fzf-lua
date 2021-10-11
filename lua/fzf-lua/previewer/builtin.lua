@@ -31,18 +31,11 @@ function Previewer.base:new(o, opts, fzf_win)
   self.type = "builtin"
   self.win = fzf_win
   self.delay = o.delay
-  self.title = o.title
-  self.scrollbar = o.scrollbar
-  if o.scrollchar and type(o.scrollchar) == 'string' then
-    self.win.winopts.scrollchar = o.scrollchar
-  end
+  self.title = self.win.winopts.preview.title
   self.syntax = o.syntax
   self.syntax_delay = o.syntax_delay
   self.syntax_limit_b = o.syntax_limit_b
   self.syntax_limit_l = o.syntax_limit_l
-  self.hl_cursor = o.hl_cursor
-  self.hl_cursorline = o.hl_cursorline
-  self.hl_range = o.hl_range
   self.backups = {}
   return self
 end
@@ -234,9 +227,7 @@ function Previewer.base:scroll(direction)
       end)
     end
   end
-  if self.scrollbar then
-    self.win:update_scrollbar()
-  end
+  self.win:update_scrollbar()
 end
 
 
@@ -373,8 +364,8 @@ local function set_cursor_hl(self, entry)
 
     fn.clearmatches()
 
-    if lnum and lnum > 0 and col and col > 1 then
-      fn.matchaddpos(self.hl_cursor, {{lnum, math.max(1, col)}}, 11)
+    if self.win.winopts.hl.cursor and lnum and lnum > 0 and col and col > 1 then
+      fn.matchaddpos(self.win.winopts.hl.cursor, {{lnum, math.max(1, col)}}, 11)
     end
 end
 
@@ -391,9 +382,7 @@ function Previewer.buffer_or_file:update_border(entry)
     end
     self.win:update_title(title)
   end
-  if self.scrollbar then
-    self.win:update_scrollbar()
-  end
+  self.win:update_scrollbar()
 end
 
 function Previewer.buffer_or_file:preview_buf_post(entry)
@@ -477,9 +466,7 @@ function Previewer.help_tags:populate_preview_buf(entry_str)
   end)
   api.nvim_win_set_buf(self.win.preview_winid, self.preview_bufnr)
   api.nvim_win_set_cursor(self.win.preview_winid, self.orig_pos)
-  if self.scrollbar then
-    self.win:update_scrollbar()
-  end
+  self.win:update_scrollbar()
   if self.prev_help_bufnr ~= self.preview_bufnr and
     -- only delete the help buffer when the help
     -- tag triggers opening a different help file

@@ -31,10 +31,10 @@ function M.setup(opts)
     utils.warn("'previewers.builtin.keymap' moved under 'keymap.builtin', see ':help fzf-lua-customization'")
   end
   if globals.previewers.builtin.wrap ~= nil then
-    utils.warn("'previewers.builtin.wrap' is not longer in use, set 'preview_wrap' to 'wrap' or 'nowrap' instead")
+    utils.warn("'previewers.builtin.wrap' is not longer in use, set 'winopts.preview.wrap' to 'wrap' or 'nowrap' instead")
   end
   if globals.previewers.builtin.hidden ~= nil then
-    utils.warn("'previewers.builtin.hidden' is not longer in use, set 'preview_opts' to 'hidden' or 'nohidden' instead")
+    utils.warn("'previewers.builtin.hidden' is not longer in use, set 'winopts.preview.hidden' to 'hidden' or 'nohidden' instead")
   end
   -- override BAT_CONFIG_PATH to prevent a
   -- conflct with '$XDG_DATA_HOME/bat/config'

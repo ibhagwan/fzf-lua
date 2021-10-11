@@ -164,13 +164,9 @@ function M.tbl_length(T)
   return count
 end
 
-function M.tbl_has(table, key)
-  return table[key] ~= nil
-end
-
-function M.tbl_or(key, tbl1, tbl2)
-  if tbl1[key] ~= nil then return tbl1[key]
-  else return tbl2[key] end
+function M.tbl_isempty(T)
+  if not T or not next(T) then return true end
+  return false
 end
 
 function M.tbl_concat(...)
@@ -412,6 +408,19 @@ function M.io_system(cmd, use_lua_io)
   else
     return vim.fn.system(cmd), vim.v.shell_error
   end
+end
+
+function M.fzf_bind_to_neovim(key)
+  local conv_map  = {
+    ['alt'] = 'A',
+    ['ctrl'] = 'C',
+    ['shift'] = 'S',
+  }
+  key = key:lower()
+  for k, v in pairs(conv_map) do
+    key = key:gsub(k, v)
+  end
+  return ("<%s>"):format(key)
 end
 
 return M

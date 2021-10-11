@@ -19,18 +19,50 @@ if M._has_devicons and not M._devicons.has_loaded() then
   M._devicons.setup()
 end
 
+function M._default_previewer_fn()
+  return M.globals.default_previewer or M.globals.winopts.preview.default
+end
+
 M.globals = {
   winopts = {
-    win_height          = 0.85,
-    win_width           = 0.80,
-    win_row             = 0.30,
-    win_col             = 0.50,
-    win_border          = true,
-    borderchars         = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
-    hl_normal           = 'Normal',
-    hl_border           = 'Normal',
+    height              = 0.85,
+    width               = 0.80,
+    row                 = 0.35,
+    col                 = 0.55,
+    border              = 'rounded',
     fullscreen          = false,
-    window_on_create = function()
+    hl = {
+      normal            = 'Normal',
+      border            = 'Normal',
+      -- builtin preview only
+      cursor            = 'Cursor',
+      cursorline        = 'CursorLine',
+      -- title          = 'Normal',
+      -- scrollbar_f    = 'PmenuThumb',
+      -- scrollbar_e    = 'PmenuSbar',
+    },
+    preview = {
+      default             = "builtin",
+      border              = 'float',
+      wrap                = 'nowrap',
+      hidden              = 'nohidden',
+      vertical            = 'down:45%',
+      horizontal          = 'right:60%',
+      layout              = 'flex',
+      flip_columns        = 120,
+      title               = true,
+      scrollbar           = 'border',
+      scrolloff           = '-2',
+      scrollchar          = '',
+      scrollchars         = {'█', '' },
+    },
+    _borderchars          = {
+      ["none"]            = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+      ["single"]          = {'┌', '─', '┐', '│', '┘', '─', '└', '│' },
+      ["double"]          = {'╔', '═', '╗', '║', '╝', '═', '╚', '║' },
+      ["rounded"]         = {'╭', '─', '╮', '│', '╯', '─', '╰', '│' },
+    },
+    on_create = function()
       -- vim.cmd("set winhl=Normal:Normal,FloatBorder:Normal")
     end,
   },
@@ -69,14 +101,6 @@ M.globals = {
     ['--height']      = '100%',
     ['--layout']      = 'reverse',
   },
-  preview_border      = 'border',
-  preview_wrap        = 'nowrap',
-  preview_opts        = 'nohidden',
-  preview_vertical    = 'down:45%',
-  preview_horizontal  = 'right:60%',
-  preview_layout      = 'flex',
-  flip_columns        = 120,
-  default_previewer   = "builtin",
   previewers = {
     cat = {
       cmd             = "cat",
@@ -110,20 +134,16 @@ M.globals = {
       -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
       delay           = 100,
       title           = true,
-      scrollbar       = true,
-      scrollchar      = '█',
       syntax          = true,
       syntax_delay    = 0,
       syntax_limit_l  = 0,
       syntax_limit_b  = 1024*1024,
-      hl_cursor       = 'Cursor',
-      hl_cursorline   = 'CursorLine',
       _ctor           = previewers.builtin.buffer_or_file,
     },
   },
 }
 M.globals.files = {
-    previewer           = function() return M.globals.default_previewer end,
+    previewer           = M._default_previewer_fn,
     prompt              = '> ',
     cmd                 = nil,  -- default: auto detect find|fd
     file_icons          = true and M._has_devicons,
@@ -149,7 +169,7 @@ M.globals.files = {
 -- so we can reference 'M.globals.files'
 M.globals.git = {
     files = {
-      previewer     = function() return M.globals.default_previewer end,
+      previewer     = M._default_previewer_fn,
       prompt        = 'GitFiles> ',
       cmd           = "git ls-files --exclude-standard",
       file_icons    = true and M._has_devicons,
@@ -203,7 +223,7 @@ M.globals.git = {
     },
   }
 M.globals.grep = {
-    previewer           = function() return M.globals.default_previewer end,
+    previewer           = M._default_previewer_fn,
     prompt              = 'Rg> ',
     input_prompt        = 'Grep For> ',
     cmd                 = nil,  -- default: auto detect rg|grep
@@ -218,7 +238,7 @@ M.globals.grep = {
     glob_separator      = "%s%-%-"    -- query separator pattern (lua): ' --'
   }
 M.globals.args = {
-    previewer           = function() return M.globals.default_previewer end,
+    previewer           = M._default_previewer_fn,
     prompt              = 'Args> ',
     files_only          = true,
     file_icons          = true and M._has_devicons,
@@ -228,7 +248,7 @@ M.globals.args = {
   }
 M.globals.args.actions["ctrl-x"] = actions.arg_del
 M.globals.oldfiles = {
-    previewer           = function() return M.globals.default_previewer end,
+    previewer           = M._default_previewer_fn,
     prompt              = 'History> ',
     file_icons          = true and M._has_devicons,
     color_icons         = true,
@@ -236,7 +256,7 @@ M.globals.oldfiles = {
     actions             = M.globals.files.actions,
   }
 M.globals.quickfix = {
-    previewer           = function() return M.globals.default_previewer end,
+    previewer           = M._default_previewer_fn,
     prompt              = 'Quickfix> ',
     separator           = '▏',
     file_icons          = true and M._has_devicons,
@@ -245,7 +265,7 @@ M.globals.quickfix = {
     actions             = M.globals.files.actions,
   }
 M.globals.loclist = {
-    previewer           = function() return M.globals.default_previewer end,
+    previewer           = M._default_previewer_fn,
     prompt              = 'Locations> ',
     separator           = '▏',
     file_icons          = true and M._has_devicons,
@@ -310,7 +330,7 @@ M.globals.blines = {
     },
   }
 M.globals.tags = {
-    previewer             = function() return M.globals.default_previewer end,
+    previewer             = M._default_previewer_fn,
     prompt                = 'Tags> ',
     ctags_file            = "tags",
     file_icons            = true and M._has_devicons,
@@ -319,7 +339,7 @@ M.globals.tags = {
     actions             = M.globals.files.actions,
   }
 M.globals.btags = {
-    previewer             = function() return M.globals.default_previewer end,
+    previewer             = M._default_previewer_fn,
     prompt                = 'BTags> ',
     ctags_file            = "tags",
     file_icons            = true and M._has_devicons,
@@ -334,8 +354,8 @@ M.globals.colorschemes = {
         ["default"]       = actions.colorscheme,
       },
       winopts = {
-        win_height       = 0.55,
-        win_width        = 0.50,
+        height            = 0.55,
+        width             = 0.50,
       },
   }
 M.globals.helptags = {
@@ -364,7 +384,7 @@ M.globals.manpages = {
       },
   }
 M.globals.lsp = {
-      previewer           = function() return M.globals.default_previewer end,
+      previewer           = M._default_previewer_fn,
       prompt              = '> ',
       file_icons          = true and M._has_devicons,
       color_icons         = true,
@@ -384,8 +404,8 @@ M.globals.lsp = {
 M.globals.builtin = {
       prompt              = 'Builtin> ',
       winopts = {
-        win_height        = 0.65,
-        win_width         = 0.50,
+        height            = 0.65,
+        width             = 0.50,
       },
       actions = {
         ["default"]       = actions.run_builtin,
@@ -516,18 +536,67 @@ else
   }
 end
 
+
 function M.normalize_opts(opts, defaults)
   if not opts then opts = {} end
-  if not opts.fzf_opts then opts.fzf_opts = {} end
+
+  -- First, merge with provider defaults
   opts = vim.tbl_deep_extend("keep", opts, defaults)
-  opts.keymap = vim.tbl_deep_extend("keep", opts.keymap or {}, M.globals.keymap)
-  if defaults.winopts then
-    if not opts.winopts then opts.winopts = {} end
-    opts.winopts = vim.tbl_deep_extend("keep", opts.winopts, defaults.winopts)
+
+  -- Merge required tables from globals
+  for _, k in ipairs({ 'winopts', 'keymap', 'fzf_opts', 'previewers' }) do
+    opts[k] = vim.tbl_deep_extend("keep", opts[k] or {}, M.globals[k] or {})
   end
+
+  -- backward compatibility, rhs overrides lhs
+  -- (rhs being the "old" option)
+  local backward_compat = {
+    ['winopts.row']                   = 'winopts.win_row',
+    ['winopts.col']                   = 'winopts.win_col',
+    ['winopts.width']                 = 'winopts.win_width',
+    ['winopts.height']                = 'winopts.win_height',
+    ['winopts.border']                = 'winopts.win_border',
+    ['winopts.on_create']             = 'winopts.window_on_create',
+    ['winopts.preview.wrap']          = 'preview_wrap',
+    ['winopts.preview.border']        = 'preview_border',
+    ['winopts.preview.hidden']        = 'preview_opts',
+    ['winopts.preview.vertical']      = 'preview_vertical',
+    ['winopts.preview.horizontal']    = 'preview_horizontal',
+    ['winopts.preview.layout']        = 'preview_layout',
+    ['winopts.preview.flip_columns']  = 'flip_columns',
+    ['winopts.preview.default']       = 'default_previewer',
+    ['winopts.hl.normal']             = 'winopts.hl_normal',
+    ['winopts.hl.border']             = 'winopts.hl_border',
+    ['winopts.hl.cursor']             = 'previewers.builtin.hl_cursor',
+    ['winopts.hl.cursorline']         = 'previewers.builtin.hl_cursorline',
+    ['winopts.preview.title']         = 'previewers.builtin.title',
+    ['winopts.preview.scrollbar']     = 'previewers.builtin.scrollbar',
+    ['winopts.preview.scrollchar']    = 'previewers.builtin.scrollchar',
+  }
+
+  -- recursive key loopkup, can also set new value
+  local map_recurse = function(m, s, v, w)
+    local keys = utils.strsplit(s, '.')
+    local val, map = m, nil
+    for i=1,#keys do
+      map = val
+      val = val[keys[i]]
+      if not val then break end
+      if v~=nil and i==#keys then map[keys[i]] = v end
+    end
+    if v and w then utils.warn(w) end
+    return val
+  end
+
+  -- interate backward compat map, retrieve values from opts or globals
+  for k, v in pairs(backward_compat) do
+    map_recurse(opts, k, map_recurse(opts, v) or map_recurse(M.globals, v))
+     -- ,("'%s' is now defined under '%s'"):format(v, k))
+  end
+
   if type(opts.previewer) == 'function' then
     -- we use a function so the user can override
-    -- globals.default_previewer
+    -- globals.winopts.preview.default
     opts.previewer = opts.previewer()
   end
   if type(opts.previewer) == 'table' then
@@ -565,6 +634,9 @@ function M.normalize_opts(opts, defaults)
 
   -- are we using skim?
   opts._is_skim = opts.fzf_bin:find('sk') ~= nil
+
+  -- mark as normalized
+  opts._normalized = true
 
   return opts
 end
