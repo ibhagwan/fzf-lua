@@ -184,7 +184,7 @@ local normalize_winopts = function(o)
   end
 
   local max_width = vim.o.columns-2
-  local max_height = vim.o.lines-4
+  local max_height = vim.o.lines-vim.o.cmdheight-2
   winopts.width = math.min(max_width, winopts.width)
   winopts.height = math.min(max_height, winopts.height)
   if not winopts.height or winopts.height <= 1 then
@@ -336,14 +336,14 @@ function FzfWin:fs_preview_layout(fs)
   if preview_pos == 'down' or preview_pos == 'up' then
     width_diff = vim.o.columns - border_winopts.width
     if preview_pos == 'down' then
-      height_diff = vim.o.lines - border_winopts.row - border_winopts.height - 2
+      height_diff = vim.o.lines - border_winopts.row - border_winopts.height - vim.o.cmdheight
     elseif preview_pos == 'up' then
       height_diff = border_winopts.row - border_winopts.height
     end
     border_winopts.col = 0
     prev_winopts.col = border_winopts.col + 1
   elseif preview_pos == 'left' or preview_pos == 'right' then
-    height_diff = vim.o.lines - border_winopts.height - 2
+    height_diff = vim.o.lines - border_winopts.height - vim.o.cmdheight
     if preview_pos == 'left' then
       border_winopts.col = border_winopts.col - 1
       prev_winopts.col = prev_winopts.col - 1
@@ -495,7 +495,7 @@ function FzfWin:fs_fzf_layout(fs, winopts)
     winopts.col = 0
     winopts.row = 0
     winopts.width = vim.o.columns
-    winopts.height = vim.o.lines - 4
+    winopts.height = vim.o.lines - vim.o.cmdheight - 2
   else
     local preview_pos = self.winopts.preview_pos
     if preview_pos == 'down' or preview_pos == 'up' then
@@ -505,11 +505,12 @@ function FzfWin:fs_fzf_layout(fs, winopts)
         winopts.height = winopts.height + winopts.row
         winopts.row = 0
       elseif preview_pos == 'up' then
-        winopts.height = winopts.height + (vim.o.lines-winopts.row-winopts.height-4)
+        winopts.height = winopts.height +
+          (vim.o.lines-winopts.row-winopts.height-vim.o.cmdheight-2)
       end
     elseif preview_pos == 'left' or preview_pos == 'right'then
       winopts.row = 0
-      winopts.height = vim.o.lines - 4
+      winopts.height = vim.o.lines - vim.o.cmdheight - 2
       if preview_pos == 'right' then
         winopts.width = winopts.width + winopts.col
         winopts.col = 0
