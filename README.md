@@ -348,7 +348,7 @@ require'fzf-lua'.setup {
       args            = "--color",
     },
     man = {
-      cmd             = "man -c %s | col -b",
+      cmd             = "man -c %s | col -bx",
     },
     builtin = {
       delay           = 100,          -- delay(ms) displaying the preview

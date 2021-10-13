@@ -133,7 +133,7 @@ M.globals = {
       _ctor           = previewers.fzf.git_diff,
     },
     man = {
-      cmd             = "man -c %s | col -b",
+      cmd             = "man -c %s | col -bx",
       _ctor           = previewers.builtin.man_pages,
     },
     builtin = {

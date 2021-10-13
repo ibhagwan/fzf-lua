@@ -503,7 +503,7 @@ function Previewer.man_pages:new(o, opts, fzf_win)
       self, Previewer.help_tags, Previewer.base
     )})
   self.filetype = "man"
-  self.cmd = o.cmd or "man -c %s | col -b"
+  self.cmd = o.cmd or "man -c %s | col -bx"
   return self
 end
 
