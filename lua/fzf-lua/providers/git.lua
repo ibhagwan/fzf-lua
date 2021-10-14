@@ -23,7 +23,7 @@ M.files = function(opts)
   if not opts.cwd then return end
   local make_entry_file = core.make_entry_file
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(
-    {cmd = opts.cmd, cwd = opts.cwd},
+    { cmd = opts.cmd, cwd = opts.cwd, cb_pid = opts._cb_pid, cb_data = opts },
     function(x)
       return make_entry_file(opts, x)
     end)
@@ -39,7 +39,7 @@ M.status = function(opts)
     opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
   end
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(
-    {cmd = opts.cmd, cwd = opts.cwd},
+    { cmd = opts.cmd, cwd = opts.cwd, cb_pid = opts._cb_pid, cb_data = opts },
     function(x)
       -- greedy match anything after last space
       x = x:match("[^ ]*$")
@@ -53,7 +53,7 @@ local function git_cmd(opts)
   if not opts.cwd then return end
   coroutine.wrap(function ()
     opts.fzf_fn = fzf_helpers.cmd_line_transformer(
-      {cmd = opts.cmd, cwd = opts.cwd},
+      { cmd = opts.cmd, cwd = opts.cwd, cb_pid = opts._cb_pid, cb_data = opts },
       function(x) return x end)
     local selected = core.fzf(opts, opts.fzf_fn)
     if not selected then return end

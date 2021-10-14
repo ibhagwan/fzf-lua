@@ -637,6 +637,9 @@ function M.normalize_opts(opts, defaults)
   -- are we using skim?
   opts._is_skim = opts.fzf_bin:find('sk') ~= nil
 
+  -- cmd_line_transformer pid callback
+  opts._cb_pid = function(pid, o) o._pid_cmd = pid end
+
   -- mark as normalized
   opts._normalized = true
 

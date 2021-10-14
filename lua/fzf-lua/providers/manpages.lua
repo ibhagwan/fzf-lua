@@ -35,12 +35,14 @@ M.manpages = function(opts)
 
     -- local prev_act = action(function (args) end)
 
-    local fzf_fn = fzf_helpers.cmd_line_transformer(opts.cmd, function(x)
-      -- split by first occurence of ' - ' (spaced hyphen)
-      local man, desc = x:match("^(.-) %- (.*)$")
-      return string.format("%-45s %s",
-        utils.ansi_codes.magenta(man), desc)
-    end)
+    local fzf_fn = fzf_helpers.cmd_line_transformer(
+      { cmd = opts.cmd, cwd = opts.cwd, cb_pid = opts._cb_pid, cb_data = opts },
+      function(x)
+        -- split by first occurence of ' - ' (spaced hyphen)
+        local man, desc = x:match("^(.-) %- (.*)$")
+        return string.format("%-45s %s",
+          utils.ansi_codes.magenta(man), desc)
+      end)
 
     opts.fzf_opts['--no-multi'] = ''
     opts.fzf_opts['--preview-window'] = 'hidden:right:0'

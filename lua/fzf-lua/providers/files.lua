@@ -33,7 +33,7 @@ M.files = function(opts)
   local command = get_files_cmd(opts)
 
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(
-    {cmd = command, cwd = opts.cwd},
+    { cmd = command, cwd = opts.cwd, cb_pid = opts._cb_pid, cb_data = opts },
     function(x)
       return core.make_entry_file(opts, x)
     end)

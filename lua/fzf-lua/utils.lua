@@ -410,6 +410,13 @@ function M.io_system(cmd, use_lua_io)
   end
 end
 
+local uv = vim.loop
+function M.process_kill(pid)
+  if pid and type(uv.os_getpriority(pid)) == 'number' then
+    uv.kill(pid, 9)
+  end
+end
+
 function M.fzf_bind_to_neovim(key)
   local conv_map  = {
     ['alt'] = 'A',

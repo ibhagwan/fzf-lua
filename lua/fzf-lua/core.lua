@@ -46,6 +46,7 @@ M.fzf = function(opts, contents)
   fzf_win:create()
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     { fzf_binary = opts.fzf_bin, fzf_cwd = opts.cwd })
+  utils.process_kill(opts._pid_cmd)
   fzf_win:check_exit_status(exit_code)
   if fzf_win:autoclose() == nil or fzf_win:autoclose() then
     fzf_win:close()
@@ -389,9 +390,7 @@ M.set_fzf_interactive_cmd = function(opts)
     end
 
     -- terminate previously running commands
-    if _pid and type(uv.os_getpriority(_pid)) == 'number' then
-      uv.kill(_pid, 9)
-    end
+    utils.process_kill(_pid)
 
     _, _pid = uv.spawn(shell, {
       args = { "-c", shell_cmd },
@@ -562,7 +561,8 @@ M.set_fzf_interactive = function(opts, act_cmd, placeholder)
     opts.fzf_fn = {}
     if opts.exec_empty_query or (query and #query>0) then
       opts.fzf_fn = require("fzf.helpers").cmd_line_transformer(
-        act_cmd:gsub(placeholder, vim.fn.shellescape(query)),
+        { cmd = act_cmd:gsub(placeholder, vim.fn.shellescape(query)),
+          cwd = opts.cwd, cb_pid = opts._cb_pid, cb_data = opts },
         function(x) return x end)
     end
     opts.fzf_opts['--phony'] = ''
