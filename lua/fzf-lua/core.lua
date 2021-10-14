@@ -46,7 +46,7 @@ M.fzf = function(opts, contents)
   fzf_win:create()
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     { fzf_binary = opts.fzf_bin, fzf_cwd = opts.cwd })
-  utils.process_kill(opts._pid_cmd)
+  utils.process_kill(opts._pid)
   fzf_win:check_exit_status(exit_code)
   if fzf_win:autoclose() == nil or fzf_win:autoclose() then
     fzf_win:close()
@@ -410,6 +410,7 @@ M.set_fzf_interactive_cmd = function(opts)
 
     -- save current process pid
     local pid = _pid
+    opts._pid = _pid
 
     local function write_cb(data)
       if not pipe then return end
@@ -562,7 +563,7 @@ M.set_fzf_interactive = function(opts, act_cmd, placeholder)
     if opts.exec_empty_query or (query and #query>0) then
       opts.fzf_fn = require("fzf.helpers").cmd_line_transformer(
         { cmd = act_cmd:gsub(placeholder, vim.fn.shellescape(query)),
-          cwd = opts.cwd, cb_pid = opts._cb_pid, cb_data = opts },
+          cwd = opts.cwd, pid_cb = opts._pid_cb },
         function(x) return x end)
     end
     opts.fzf_opts['--phony'] = ''

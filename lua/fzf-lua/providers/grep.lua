@@ -111,7 +111,7 @@ M.grep = function(opts)
   local command = get_grep_cmd(opts, opts.search, no_esc)
 
   opts.fzf_fn = fzf_helpers.cmd_line_transformer(
-    { cmd = command, cwd = opts.cwd, cb_pid = opts._cb_pid, cb_data = opts },
+    { cmd = command, cwd = opts.cwd, pid_cb = opts._pid_cb },
     function(x)
       return core.make_entry_file(opts, x)
     end)
@@ -228,7 +228,7 @@ M.live_grep_native = function(opts)
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
       opts.fzf_fn = fzf_helpers.cmd_line_transformer(
         {cmd = initial_command:gsub(placeholder, vim.fn.shellescape(query)),
-         cwd = opts.cwd, cb_pid = opts._cb_pid, cb_data = opts },
+         cwd = opts.cwd, pid_cb = opts._pid_cb },
         function(x)
           return core.make_entry_file(opts, x)
         end)
