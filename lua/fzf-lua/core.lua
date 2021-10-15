@@ -362,6 +362,32 @@ end
 -- uv.spawn returns tuple: handle, pid
 local _, _pid
 
+local function coroutine_callback(fn)
+  local co = coroutine.running()
+  local callback = function(...)
+    if coroutine.status(co) == 'suspended' then
+      coroutine.resume(co, ...)
+    else
+      local pid = unpack({...})
+      utils.process_kill(pid)
+    end
+  end
+  fn(callback)
+  return coroutine.yield()
+end
+
+local function coroutinify(fn)
+  return function(...)
+    local args = {...}
+    return coroutine.wrap(function()
+      return coroutine_callback(function(cb)
+        table.insert(args, cb)
+        fn(unpack(args))
+      end)
+    end)()
+  end
+end
+
 M.set_fzf_interactive_cmd = function(opts)
 
   if not opts then return end
@@ -371,7 +397,7 @@ M.set_fzf_interactive_cmd = function(opts)
   local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
 
   local uv = vim.loop
-  local raw_async_act = require("fzf.actions").raw_async_action(function(pipe, args)
+  local function spawn(pipe, args, cb)
     local shell_cmd = opts._reload_command(args[1])
     local output_pipe = uv.new_pipe(false)
     local error_pipe = uv.new_pipe(false)
@@ -380,13 +406,14 @@ M.set_fzf_interactive_cmd = function(opts)
 
     local shell = vim.env.SHELL or "sh"
 
-    local finish = function()
-      if pipe  and not uv.is_closing(pipe) then
+    local finish = function(_)
+      if pipe and not uv.is_closing(pipe) then
         uv.close(pipe)
         pipe = nil
       end
       output_pipe:shutdown()
       error_pipe:shutdown()
+      if cb then cb(_pid) end
     end
 
     -- terminate previously running commands
@@ -404,7 +431,7 @@ M.set_fzf_interactive_cmd = function(opts)
       if write_cb_count==0 then
         -- only close if all our uv.write
         -- calls are completed
-        finish()
+        finish(1)
       end
     end)
 
@@ -417,7 +444,7 @@ M.set_fzf_interactive_cmd = function(opts)
       if pid ~= _pid then
         -- safety, I never saw this get called
         -- will set `pipe = nill`
-        finish()
+        finish(2)
         return
       end
       write_cb_count = write_cb_count + 1
@@ -425,34 +452,30 @@ M.set_fzf_interactive_cmd = function(opts)
         if err then
           -- sometime fails?
           -- assert(not err)
-          finish()
+          finish(3)
         end
         write_cb_count = write_cb_count - 1
         if write_cb_count == 0 and uv.is_closing(output_pipe) then
           -- spawn callback already called and did not close the pipe
           -- due to write_cb_count>0, since this is the last call
           -- we can close the fzf pipe
-          finish()
+          finish(4)
         end
       end)
     end
 
     local function process_lines(str)
-      if not opts._transform_command then
-        write_cb(str)
-      else
-        write_cb(str:gsub("[^\n]+",
-          function(x)
-            return opts._transform_command(x)
-          end))
-      end
+      write_cb(str:gsub("[^\n]+",
+        function(x)
+          return opts._transform_command(x)
+        end))
     end
 
     local read_cb = function(err, data)
 
       if err then
         assert(not err)
-        finish()
+        finish(5)
       end
       if not data then
         return
@@ -463,7 +486,9 @@ M.set_fzf_interactive_cmd = function(opts)
           prev_line_content = nil
       end
 
-      if string_byte(data, #data) == 10 then
+      if not opts._transform_command then
+        write_cb(data)
+      elseif string_byte(data, #data) == 10 then
         process_lines(data)
       else
         local nl_index = find_last_newline(data)
@@ -481,7 +506,7 @@ M.set_fzf_interactive_cmd = function(opts)
     local err_cb = function(err, data)
       if err then
         assert(not err)
-        finish()
+        finish(6)
       end
       if not data then
         return
@@ -491,7 +516,11 @@ M.set_fzf_interactive_cmd = function(opts)
 
     output_pipe:read_start(read_cb)
     error_pipe:read_start(err_cb)
-  end, placeholder)
+  end
+
+  -- local spawn_fn = spawn
+  local spawn_fn = coroutinify(spawn)
+  local raw_async_act = require("fzf.actions").raw_async_action(spawn_fn, placeholder)
 
   return M.set_fzf_interactive(opts, raw_async_act, placeholder)
 end

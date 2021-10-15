@@ -411,9 +411,9 @@ function M.io_system(cmd, use_lua_io)
 end
 
 local uv = vim.loop
-function M.process_kill(pid)
+function M.process_kill(pid, signal)
   if pid and type(uv.os_getpriority(pid)) == 'number' then
-    uv.kill(pid, 9)
+    uv.kill(pid, signal or 9)
   end
 end
 
