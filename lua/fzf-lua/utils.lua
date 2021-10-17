@@ -8,10 +8,20 @@ end
 
 local M = {}
 
--- invisible unicode char as icon|git separator
--- this way we can split our string by space
--- this causes "invalid escape sequence" error
--- local nbsp = "\u{00a0}"
+-- invisible unicode char (A0) + zero-width space (200B)
+-- as our separator sequence, creates invisible spaces
+-- without interfering with filenames that contain A0
+-- zero-width space did not work for 'fzf' (only 'sk')
+-- Word joiner (U+2060) works well for both 'fzf' and 'sk'
+-- but causes the fuzzy search to get messed up, can use
+-- Line Separator (U+2028) or Paragraph Separator (U+2029)
+-- DO NOT USE '\u{}' sequences as it throws
+-- "invalid escape sequence" in older lua versions
+-- M.nbsp = "\u{00a0}\u{200b}"
+-- M.nbsp = "\u{00a0}\u{2060}"
+-- M.nbsp = "\u{2029}"
+-- M.nbsp = " ​"
+-- M.nbsp = " "
 M.nbsp = " "
 
 M._if = function(bool, a, b)

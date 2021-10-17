@@ -111,39 +111,27 @@ function M.shorten(path, max_length)
   end
 end
 
-local function strsplit(inputstr, sep)
-  local t={}
-  for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-    table.insert(t, str)
-  end
-  return t
+local function lastIndexOf(haystack, needle)
+  local i=haystack:match(".*"..needle.."()")
+  if i==nil then return nil else return i-1 end
 end
 
---[[ local function lastIndexOf(haystack, needle)
-    local i, j
-    local k = 0
-    repeat
-        i = j
-        j, k = string.find(haystack, needle, k + 1, true)
-    until j == nil
-    return i
-end ]]
-
-local function lastIndexOf(haystack, needle)
-    local i=haystack:match(".*"..needle.."()")
-    if i==nil then return nil else return i-1 end
+local function stripBeforeLastOccurrenceOf(str, sep)
+  local idx = lastIndexOf(str, sep) or 0
+  return str:sub(idx+1)
 end
 
 function M.entry_to_file(entry, cwd)
+  -- not very efficient but since this only gets
+  -- called for preview / process selection
+  -- it shouldn't really matter
   entry = utils.strip_ansi_coloring(entry)
-  local sep = ":"
-  local s = strsplit(entry, sep)
+  local s = utils.strsplit(entry, ":")
   if not s[1] then return {} end
-  local file = s[1]:match("[^"..utils.nbsp.."]*$")
-  -- entries from 'buffers'
+  local file = stripBeforeLastOccurrenceOf(s[1], utils.nbsp)
+  local noicons = stripBeforeLastOccurrenceOf(entry, utils.nbsp)
+  -- entries from 'buffers' contain '[<bufnr>]'
   local bufnr = s[1]:match("%[(%d+)")
-  local idx = lastIndexOf(s[1], utils.nbsp) or 0
-  local noicons = string.sub(entry, idx+1)
   local line = tonumber(s[2])
   local col  = tonumber(s[3])
   if cwd and #cwd>0 and not M.starts_with_separator(file) then
