@@ -138,6 +138,7 @@ function M.entry_to_file(entry, cwd)
   entry = utils.strip_ansi_coloring(entry)
   local sep = ":"
   local s = strsplit(entry, sep)
+  if not s[1] then return {} end
   local file = s[1]:match("[^"..utils.nbsp.."]*$")
   -- entries from 'buffers'
   local bufnr = s[1]:match("%[(%d+)")

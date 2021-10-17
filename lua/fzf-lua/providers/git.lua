@@ -2,12 +2,11 @@ if not pcall(require, "fzf") then
   return
 end
 
-local fzf_helpers = require("fzf.helpers")
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
-local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
+local libuv = require "fzf-lua.libuv"
 
 local M = {}
 
@@ -22,7 +21,7 @@ M.files = function(opts)
   opts.cwd = path.git_root(opts.cwd)
   if not opts.cwd then return end
   local make_entry_file = core.make_entry_file
-  opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+  opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
     { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb },
     function(x)
       return make_entry_file(opts, x)
@@ -38,7 +37,7 @@ M.status = function(opts)
   if opts.preview then
     opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
   end
-  opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+  opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
     { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb },
     function(x)
       -- greedy match anything after last space
@@ -52,7 +51,7 @@ local function git_cmd(opts)
   opts.cwd = path.git_root(opts.cwd)
   if not opts.cwd then return end
   coroutine.wrap(function ()
-    opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+    opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
       { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb },
       function(x) return x end)
     local selected = core.fzf(opts, opts.fzf_fn)
@@ -89,7 +88,7 @@ M.branches = function(opts)
   if not opts then return end
   opts.fzf_opts["--no-multi"] = ''
   opts._preview = path.git_cwd(opts.preview, opts.cwd)
-  opts.preview = fzf_helpers.choices_to_shell_cmd_previewer(function(items)
+  opts.preview = libuv.spawn_nvim_fzf_action(function(items)
     local branch = items[1]:gsub("%*", "")  -- remove the * from current branch
     if branch:find("%)") ~= nil then
       -- (HEAD detached at origin/master)

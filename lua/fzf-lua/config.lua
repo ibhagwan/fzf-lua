@@ -234,7 +234,7 @@ M.globals.grep = {
     color_icons         = true,
     git_icons           = true,
     grep_opts           = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp",
-    rg_opts             = "--column --line-number --no-heading --color=always --smart-case",
+    rg_opts             = "--column --line-number --no-heading --color=always --smart-case --max-columns=512",
     actions             = M.globals.files.actions,
     -- live_grep_glob options
     glob_flag           = "--iglob",  -- for case sensitive globs use '--glob'
@@ -637,7 +637,7 @@ function M.normalize_opts(opts, defaults)
   -- are we using skim?
   opts._is_skim = opts.fzf_bin:find('sk') ~= nil
 
-  -- cmd_line_transformer pid callback
+  -- libuv.spawn_nvim_fzf_cmd() pid callback
   opts._pid_cb = function(pid) opts._pid = pid end
 
   -- mark as normalized

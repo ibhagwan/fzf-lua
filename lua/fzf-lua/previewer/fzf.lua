@@ -1,6 +1,6 @@
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
-local helpers = require("fzf.helpers")
+local libuv = require "fzf-lua.libuv"
 local previewer_base = require "fzf-lua.previewer"
 local raw_action = require("fzf.actions").raw_action
 
@@ -121,7 +121,7 @@ end
 
 function Previewer.cmd_async:cmdline(o)
   o = o or {}
-  local act = helpers.choices_to_shell_cmd_previewer(function(items)
+  local act = libuv.spawn_nvim_fzf_action(function(items)
     local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
     local cmd = string.format('%s %s %s', self.cmd, self.args, vim.fn.shellescape(file.path))
     -- uncomment to see the command in the preview window
@@ -146,7 +146,7 @@ function Previewer.bat_async:cmdline(o)
   if self.opts._line_placeholder then
     highlight_line = string.format("--highlight-line=", self.opts._line_placeholder)
   end
-  local act = helpers.choices_to_shell_cmd_previewer(function(items)
+  local act = libuv.spawn_nvim_fzf_action(function(items)
     local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
     local cmd = string.format('%s %s %s%s "%s"',
       self.cmd, self.args,
@@ -171,7 +171,7 @@ end
 
 function Previewer.git_diff:cmdline(o)
   o = o or {}
-  local act = helpers.choices_to_shell_cmd_previewer(function(items)
+  local act = libuv.spawn_nvim_fzf_action(function(items)
     local is_deleted = items[1]:match("D"..utils.nbsp) ~= nil
     local is_untracked = items[1]:match("[?RAC]"..utils.nbsp) ~= nil
     local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
@@ -207,7 +207,7 @@ end
 
 function Previewer.man_pages:cmdline(o)
   o = o or {}
-  local act = helpers.choices_to_shell_cmd_previewer(function(items)
+  local act = libuv.spawn_nvim_fzf_action(function(items)
     -- local manpage = require'fzf-lua.providers.manpages'.getmanpage(items[1])
     local manpage = items[1]:match("[^[,( ]+")
     local cmd = ("%s %s %s"):format(

@@ -2,10 +2,10 @@ if not pcall(require, "fzf") then
   return
 end
 
-local fzf_helpers = require("fzf.helpers")
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
+local libuv = require "fzf-lua.libuv"
 
 local M = {}
 
@@ -32,7 +32,7 @@ M.files = function(opts)
 
   local command = get_files_cmd(opts)
 
-  opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+  opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
     { cmd = command, cwd = opts.cwd, pid_cb = opts._pid_cb },
     function(x)
       return core.make_entry_file(opts, x)
@@ -62,7 +62,7 @@ M.files_resume = function(opts)
   opts._fzf_cli_args = ('--bind=change:execute-silent:%s'):
     format(vim.fn.shellescape(raw_act))
 
-  opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+  opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
     {cmd = command, cwd = opts.cwd},
     function(x)
       return core.make_entry_file(opts, x)

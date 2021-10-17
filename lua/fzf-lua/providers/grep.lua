@@ -2,11 +2,11 @@ if not pcall(require, "fzf") then
   return
 end
 
-local fzf_helpers = require("fzf.helpers")
 local path = require "fzf-lua.path"
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
+local libuv = require "fzf-lua.libuv"
 
 local last_search = {}
 
@@ -110,7 +110,7 @@ M.grep = function(opts)
 
   local command = get_grep_cmd(opts, opts.search, no_esc)
 
-  opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+  opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
     { cmd = command, cwd = opts.cwd, pid_cb = opts._pid_cb },
     function(x)
       return core.make_entry_file(opts, x)
@@ -168,7 +168,7 @@ M.live_grep = function(opts)
   end
 
   if opts.experimental then
-    opts._transform_command = function(x)
+    opts._fn_transform = function(x)
       return core.make_entry_file(opts, x)
     end
   end
@@ -226,7 +226,7 @@ M.live_grep_native = function(opts)
   else
     opts.fzf_fn = {}
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
-      opts.fzf_fn = fzf_helpers.cmd_line_transformer(
+      opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
         {cmd = initial_command:gsub(placeholder, vim.fn.shellescape(query)),
          cwd = opts.cwd, pid_cb = opts._pid_cb },
         function(x)

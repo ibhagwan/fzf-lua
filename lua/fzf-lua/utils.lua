@@ -86,6 +86,13 @@ function M.sk_escape(str)
   end)
 end
 
+function M.lua_escape(str)
+  if not str then return str end
+  return str:gsub('[%%]', function(x)
+    return '%' .. x
+  end)
+end
+
 -- TODO: why does `file --dereference --mime` return
 -- wrong result for some lua files ('charset=binary')?
 M.file_is_binary = function(filepath)
@@ -412,9 +419,12 @@ end
 
 local uv = vim.loop
 function M.process_kill(pid, signal)
-  if pid and type(uv.os_getpriority(pid)) == 'number' then
+  if not pid or not tonumber(pid) then return false end
+  if type(uv.os_getpriority(pid)) == 'number' then
     uv.kill(pid, signal or 9)
+    return true
   end
+  return false
 end
 
 function M.fzf_bind_to_neovim(key)
