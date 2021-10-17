@@ -8,21 +8,36 @@ end
 
 local M = {}
 
--- invisible unicode char (A0) + zero-width space (200B)
--- as our separator sequence, creates invisible spaces
--- without interfering with filenames that contain A0
--- zero-width space did not work for 'fzf' (only 'sk')
--- Word joiner (U+2060) works well for both 'fzf' and 'sk'
--- but causes the fuzzy search to get messed up, can use
--- Line Separator (U+2028) or Paragraph Separator (U+2029)
--- DO NOT USE '\u{}' sequences as it throws
--- "invalid escape sequence" in older lua versions
--- M.nbsp = "\u{00a0}\u{200b}"
--- M.nbsp = "\u{00a0}\u{2060}"
--- M.nbsp = "\u{2029}"
--- M.nbsp = " ​"
--- M.nbsp = " "
-M.nbsp = " "
+-- sets an invisible unicode character as icon seaprator
+-- the below was reached after many iterations, a short summary of everything
+-- that was tried and why it failed:
+--
+-- nbsp, U+00a0: the original separator, fails with files that contain nbsp
+-- nbsp + zero-width space (U+200b): works only with `sk` (`fzf` shows <200b>)
+-- word joiner (U+2060): display works fine, messes up fuzzy search highlights
+-- line separator (U+2028), paragraph separator (U+2029): created extra space
+-- EN space (U+2002): seems to work well
+--
+-- For more unicode SPACE options see:
+-- http://unicode-search.net/unicode-namesearch.pl?term=SPACE&.submit=Search
+
+-- DO NOT USE '\u{}' escape, it will fail with
+-- "invalid escape sequence" if Lua < 5.3
+-- '\x' escape sequence requires Lua 5.2
+-- M.nbsp = "\xc2\xa0"    -- "\u{00a0}"
+M.nbsp = "\xe2\x80\x82"   -- "\u{2002}"
+
+-- Lua 5.1 compatibility, not sure if required since we're running LuaJIT
+-- but it's harmless anyways since if the '\x' escape worked it will do nothing
+-- https://stackoverflow.com/questions/29966782/how-to-embed-hex-values-in-a-lua-string-literal-i-e-x-equivalent
+if _VERSION and type(_VERSION) == 'string' then
+  local ver= tonumber(_VERSION:match("%d+.%d+"))
+  if ver< 5.2 then
+    M.nbsp = M.nbsp:gsub("\\x(%x%x)",
+      function (x) return string.char(tonumber(x,16))
+    end)
+  end
+end
 
 M._if = function(bool, a, b)
     if bool then
