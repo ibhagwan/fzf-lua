@@ -272,7 +272,12 @@ end
 
 
 M.git_switch = function(selected, opts)
-  local cmd = path.git_cwd("git switch ", opts.cwd)
+  local cmd = path.git_cwd("git checkout ", opts.cwd)
+  local git_ver = utils.git_version()
+  -- git switch was added with git version 2.23
+  if git_ver and git_ver >= 2.23 then
+    cmd = path.git_cwd("git switch ", opts.cwd)
+  end
   -- remove anything past space
   local branch = selected[1]:match("[^ ]+")
   -- do nothing for active branch

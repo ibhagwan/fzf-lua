@@ -465,4 +465,9 @@ function M.fzf_bind_to_neovim(key)
   return ("<%s>"):format(key)
 end
 
+function M.git_version()
+  local out = M.io_system("git --version")
+  return tonumber(out:match("(%d+.%d+)."))
+end
+
 return M

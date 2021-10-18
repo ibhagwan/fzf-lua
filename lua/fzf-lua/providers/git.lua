@@ -4,16 +4,12 @@ end
 
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
+local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 local libuv = require "fzf-lua.libuv"
 
 local M = {}
-
-local function git_version()
-  local out = vim.fn.system("git --version")
-  return out:match("(%d+.%d+).")
-end
 
 M.files = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.files)
@@ -74,9 +70,9 @@ M.bcommits = function(opts)
   if not git_root then return end
   local file = path.relative(vim.fn.expand("%:p"), git_root)
   opts.cmd = opts.cmd .. " " .. file
-  local git_ver = git_version()
+  local git_ver = utils.git_version()
   -- rotate-to first appeared with git version 2.31
-  if git_ver and tonumber(git_ver) >= 2.31 then
+  if git_ver and git_ver >= 2.31 then
     opts.preview = opts.preview .. " --rotate-to=" .. vim.fn.shellescape(file)
   end
   opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
