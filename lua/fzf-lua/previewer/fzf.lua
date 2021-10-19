@@ -179,7 +179,7 @@ function Previewer.git_diff:cmdline(o)
     local args = self.args
     local pager = ""
     if self.pager and #self.pager>0 and
-      vim.fn.executable(self.pager) == 1 then
+      vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
       pager = '| ' .. self.pager
     end
     if is_untracked then args = args .. " --no-index /dev/null" end
