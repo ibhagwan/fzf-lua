@@ -297,7 +297,7 @@ require'fzf-lua'.setup {
       ["shift-down"]  = "preview-page-down",
       ["shift-up"]    = "preview-page-up",
     },
-  }
+  },
   -- use skim instead of fzf?
   -- https://github.com/lotabout/skim
   -- fzf_bin          = 'sk',
