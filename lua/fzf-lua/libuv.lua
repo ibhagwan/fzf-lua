@@ -91,13 +91,12 @@ M.spawn = function(opts, fn_transform, fn_done)
   local function write_cb(data)
     write_cb_count = write_cb_count + 1
     opts.cb_write(data, function(err)
+      write_cb_count = write_cb_count - 1
       if err then
         -- can fail with premature process kill
         -- assert(not err)
         finish(2, pid)
-      end
-      write_cb_count = write_cb_count - 1
-      if write_cb_count == 0 and uv.is_closing(output_pipe) then
+      elseif write_cb_count == 0 and uv.is_closing(output_pipe) then
         -- spawn callback already called and did not close the pipe
         -- due to write_cb_count>0, since this is the last call
         -- we can close the fzf pipe
@@ -171,18 +170,13 @@ M.spawn_nvim_fzf_cmd = function(opts, fn_transform)
     end
 
     local function on_write(data, cb)
-      -- nvim-fzf adds "\n" at the end
-      -- so we have to remove ours
-      assert(string_byte(data, #data) == 10)
-      fzf_cb(string_sub(data, 1, #data-1), cb)
-    end
-
-    if not fn_transform then
-      -- must add a dummy function here, without it
-      -- spawn() wouldn't parse EOLs and send partial
-      -- data via nvim-fzf's fzf_cb() which adds "\n"
-      -- each call, resulting in mangled data
-      fn_transform = function(x) return x end
+      -- passthrough the data exactly as received from the pipe
+      -- 'false' as 3rd parameter instructs raw_fzf to not add "\n"
+      -- if 'fn_transform' was specified the last char must be EOL
+      -- otherwise something went terribly wrong
+      -- without 'fn_transform' EOL isn't guaranteed at the end
+      -- assert(not fn_transform or string_byte(data, #data) == 10)
+      fzf_cb(data, cb, true)
     end
 
     return M.spawn({

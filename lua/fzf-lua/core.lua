@@ -1,4 +1,5 @@
-local fzf = require "fzf"
+-- local fzf = require "fzf"
+local fzf = require "fzf-lua.fzf"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"

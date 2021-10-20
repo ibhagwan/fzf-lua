@@ -48,8 +48,7 @@ local function git_cmd(opts)
   if not opts.cwd then return end
   coroutine.wrap(function ()
     opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
-      { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb },
-      function(x) return x end)
+      { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb })
     local selected = core.fzf(opts, opts.fzf_fn)
     if not selected then return end
     actions.act(opts.actions, selected, opts)
