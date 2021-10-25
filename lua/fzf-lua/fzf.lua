@@ -79,6 +79,34 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     end)
   end
 
+  -- nvim-fzf compatibility, builds the user callback functions
+  -- 1st argument: callback function that adds newline to each write
+  -- 2nd argument: callback function thhat writes the data as is
+  -- 3rd argument: direct access to the pipe object
+  local function usr_write_cb(nl)
+    local function end_of_data(usrdata, cb)
+      if usrdata == nil then
+        if cb then cb(nil) end
+        finish(5)
+        return true
+      end
+      return false
+    end
+    if nl then
+      return function(usrdata, cb)
+        if not end_of_data(usrdata, cb) then
+          write_cb(tostring(usrdata).."\n", cb)
+        end
+      end
+    else
+      return function(usrdata, cb)
+        if not end_of_data(usrdata, cb) then
+          write_cb(usrdata, cb)
+        end
+      end
+    end
+  end
+
   local co = coroutine.running()
   vim.fn.termopen(cmd, {
     cwd = cwd,
@@ -116,18 +144,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       end
       finish(4)
     else
-      contents(function(usrdata, cb, no_nl)
-        if usrdata == nil then
-          if cb then cb(nil) end
-          finish(5)
-          return
-        end
-        if no_nl then
-          write_cb(usrdata, cb)
-        else
-          write_cb(tostring(usrdata).."\n", cb)
-        end
-      end, output_pipe)
+      contents(usr_write_cb(true), usr_write_cb(false), output_pipe)
     end
   end
 

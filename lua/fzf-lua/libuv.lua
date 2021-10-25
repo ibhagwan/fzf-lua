@@ -163,7 +163,7 @@ M.async_spawn = coroutinify(M.spawn)
 
 
 M.spawn_nvim_fzf_cmd = function(opts, fn_transform)
-  return function(fzf_cb)
+  return function(_, fzf_cb, _)
 
     local function on_finish(_, _)
       fzf_cb(nil)
@@ -171,12 +171,14 @@ M.spawn_nvim_fzf_cmd = function(opts, fn_transform)
 
     local function on_write(data, cb)
       -- passthrough the data exactly as received from the pipe
-      -- 'false' as 3rd parameter instructs raw_fzf to not add "\n"
+      -- using the 2nd 'fzf_cb' arg instructs raw_fzf to not add "\n"
+      --
+      -- below not relevant anymore, will delete comment in future
       -- if 'fn_transform' was specified the last char must be EOL
       -- otherwise something went terribly wrong
       -- without 'fn_transform' EOL isn't guaranteed at the end
       -- assert(not fn_transform or string_byte(data, #data) == 10)
-      fzf_cb(data, cb, true)
+      fzf_cb(data, cb)
     end
 
     return M.spawn({
