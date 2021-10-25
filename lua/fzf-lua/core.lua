@@ -334,7 +334,7 @@ M.fzf_files = function(opts)
 
     if #selected > 1 then
       for i = 2, #selected do
-        selected[i] = path.entry_to_file(selected[i], opts.cwd).noicons
+        selected[i] = path.entry_to_file(selected[i], opts.cwd).stripped
         if opts.cb_selected then
           local cb_ret = opts.cb_selected(opts, selected[i])
           if cb_ret then selected[i] = cb_ret end

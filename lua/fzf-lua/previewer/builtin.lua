@@ -259,6 +259,14 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- store current preview buffer
     self.preview_bufnr = bufnr
     self:preview_buf_post(entry)
+  elseif entry.uri then
+    -- LSP 'jdt://' entries, see issue #195
+    -- https://github.com/ibhagwan/fzf-lua/issues/195
+    vim.api.nvim_win_call(self.win.preview_winid, function()
+      vim.lsp.util.jump_to_location(entry)
+      self.preview_bufnr = vim.api.nvim_get_current_buf()
+    end)
+    self:preview_buf_post(entry)
   else
     if entry.bufnr then
       -- buffer was unloaded, can happen when calling `lines`
@@ -269,7 +277,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- mark the buffer for unloading the next call
     self.preview_bufloaded = true
     -- make sure the file is readable (or bad entry.path)
-    if not vim.loop.fs_stat(entry.path) then return end
+    if not entry.path or not vim.loop.fs_stat(entry.path) then return end
     if utils.perl_file_is_binary(entry.path) then
       vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, {
         "Preview is not supported for binary files."
@@ -301,8 +309,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
 end
 
 function Previewer.buffer_or_file:do_syntax(entry)
-  if not entry then return end
   if not self.preview_bufnr then return end
+  if not entry or not entry.path then return end
   local bufnr = self.preview_bufnr
   local preview_winid = self.win.preview_winid
   if self.preview_bufloaded and vim.bo[bufnr].filetype == '' then
@@ -372,10 +380,10 @@ end
 
 function Previewer.buffer_or_file:update_border(entry)
   if self.title then
-    if self.opts.cwd then
+    if entry.path and self.opts.cwd then
       entry.path = path.relative(entry.path, self.opts.cwd)
     end
-    local title = (' %s '):format(entry.path)
+    local title = (' %s '):format(entry.path or entry.uri)
     if entry.bufnr then
       -- local border_width = api.nvim_win_get_width(self.win.preview_winid)
       local buf_str = ('buf %d:'):format(entry.bufnr)

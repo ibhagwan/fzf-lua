@@ -118,29 +118,57 @@ end
 
 local function stripBeforeLastOccurrenceOf(str, sep)
   local idx = lastIndexOf(str, sep) or 0
-  return str:sub(idx+1)
+  return str:sub(idx+1), idx
+end
+
+function M.entry_to_location(entry)
+  local uri, line, col = entry:match("^(.*://.*):(%d+):(%d+):")
+  line = line and tonumber(line-1) or 0
+  col = col and tonumber(col) or 1
+  return {
+    stripped = entry,
+    line = line+1,
+    col = col,
+    uri = uri,
+    range = {
+      start = {
+        line = line,
+        character = col,
+      }
+    }
+  }
 end
 
 function M.entry_to_file(entry, cwd)
-  -- not very efficient but since this only gets
-  -- called for preview / process selection
-  -- it shouldn't really matter
+  -- Remove ansi coloring and prefixed icons
   entry = utils.strip_ansi_coloring(entry)
-  local s = utils.strsplit(entry, ":")
-  if not s[1] then return {} end
-  local file = stripBeforeLastOccurrenceOf(s[1], utils.nbsp)
-  local noicons = stripBeforeLastOccurrenceOf(entry, utils.nbsp)
+  local stripped, idx = stripBeforeLastOccurrenceOf(entry, utils.nbsp)
   -- entries from 'buffers' contain '[<bufnr>]'
-  local bufnr = s[1]:match("%[(%d+)")
+  -- buffer placeholder always comes before the nbsp
+  local bufnr = idx>1 and entry:sub(1, idx):match("%[(%d+)") or nil
+  if not bufnr and stripped:match("^.*://") then
+    -- Issue #195, when using nvim-jdtls
+    -- https://github.com/mfussenegger/nvim-jdtls
+    -- LSP entries inside .jar files appear as URIs
+    -- 'jdt://' which can then be opened with
+    -- 'vim.lsp.util.jump_to_location' or
+    -- 'lua require('jdtls').open_jdt_link(vim.fn.expand('jdt://...'))'
+    -- Convert to location item so we can use 'jump_to_location'
+    -- This can also work with any 'file://' prefixes
+    return M.entry_to_location(stripped)
+  end
+  local s = utils.strsplit(stripped, ":")
+  if not s[1] then return {} end
+  local file = s[1]
   local line = tonumber(s[2])
   local col  = tonumber(s[3])
   if cwd and #cwd>0 and not M.starts_with_separator(file) then
     file = M.join({cwd, file})
-    noicons = M.join({cwd, noicons})
+    stripped = M.join({cwd, stripped})
   end
   return {
+    stripped = stripped,
     bufnr = bufnr,
-    noicons = noicons,
     path = file,
     line = line or 1,
     col  = col or 1,

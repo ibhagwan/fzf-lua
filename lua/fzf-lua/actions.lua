@@ -67,19 +67,26 @@ M.vimcmd_file = function(vimcmd, selected, opts)
   local curbuf = vim.api.nvim_buf_get_name(0)
   for i = 1, #selected do
     local entry = path.entry_to_file(selected[i])
-    -- only change buffer if we need to (issue #122)
-    local fullpath = entry.path
-    if not path.starts_with_separator(fullpath) then
-      fullpath = path.join({opts.cwd or vim.loop.cwd(), fullpath})
-    end
-    if vimcmd ~= "e" or curbuf ~= fullpath then
-      vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
-    end
-    if entry.line > 1 or entry.col > 1 then
-      -- add current location to jumplist
+    -- Java LSP entries, 'jdt://...'
+    if entry.uri then
       vim.cmd("normal! m`")
-      vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+      vim.lsp.util.jump_to_location(entry)
       vim.cmd("norm! zvzz")
+    else
+      -- only change buffer if we need to (issue #122)
+      local fullpath = entry.path
+      if not path.starts_with_separator(fullpath) then
+        fullpath = path.join({opts.cwd or vim.loop.cwd(), fullpath})
+      end
+      if vimcmd ~= "e" or curbuf ~= fullpath then
+        vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
+      end
+      if entry.line > 1 or entry.col > 1 then
+        -- add current location to jumplist
+        vim.cmd("normal! m`")
+        vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+        vim.cmd("norm! zvzz")
+      end
     end
   end
 end
