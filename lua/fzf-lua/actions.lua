@@ -78,6 +78,13 @@ M.vimcmd_file = function(vimcmd, selected, opts)
       if not path.starts_with_separator(fullpath) then
         fullpath = path.join({opts.cwd or vim.loop.cwd(), fullpath})
       end
+      if vimcmd == 'e' and curbuf ~= fullpath
+         and not vim.o.hidden and
+         utils.buffer_is_dirty(nil, true) then
+         -- warn the user when trying to switch from a dirty buffer
+         -- when `:set nohidden`
+         return
+      end
       if vimcmd ~= "e" or curbuf ~= fullpath then
         vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
       end
@@ -144,6 +151,13 @@ end
 M.vimcmd_buf = function(vimcmd, selected, _)
   for i = 1, #selected do
     local bufnr = string.match(selected[i], "%[(%d+)")
+    if vimcmd == 'b'
+      and not vim.o.hidden and
+      utils.buffer_is_dirty(nil, true) then
+      -- warn the user when trying to switch from a dirty buffer
+      -- when `:set nohidden`
+      return
+    end
     vim.cmd(vimcmd .. " " .. bufnr)
   end
 end
@@ -172,14 +186,7 @@ M.buf_del = function(selected, opts)
   local vimcmd = "bd"
   local bufnrs = vim.tbl_filter(function(line)
     local b = tonumber(line:match("%[(%d+)"))
-    local info = vim.fn.getbufinfo(b)[1]
-    if info then
-      if info.changed ~= 0 then
-        utils.warn(("Unable to delete dirty buffer [%d:%s]"):format(b, info.name))
-      end
-      return info.changed == 0
-    end
-    return false
+    return not utils.buffer_is_dirty(b, true)
   end, selected)
   M.vimcmd_buf(vimcmd, bufnrs, opts)
 end

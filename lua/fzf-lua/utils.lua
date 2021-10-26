@@ -327,6 +327,18 @@ function M.is_term_buffer(bufnr)
   return M.is_term_bufname(bufname)
 end
 
+function M.buffer_is_dirty(bufnr, warn)
+  bufnr = tonumber(bufnr) or vim.api.nvim_get_current_buf()
+  local info = bufnr and vim.fn.getbufinfo(bufnr)[1]
+  if info and info.changed ~= 0 then
+    if warn then
+      M.warn(('buffer %d has unsaved changes "%s"'):format(bufnr, info.name))
+    end
+    return true
+  end
+  return false
+end
+
 function M.winid_from_tab_buf(tabnr, bufnr)
   for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabnr)) do
     if bufnr == vim.api.nvim_win_get_buf(w) then
