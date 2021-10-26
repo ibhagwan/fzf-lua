@@ -111,6 +111,7 @@ M.lsp_workspace_diagnostics = require'fzf-lua.providers.lsp'.workspace_diagnosti
 
 -- exported modules
 local _modules = {
+  'win',
   'core',
   'path',
   'utils',
