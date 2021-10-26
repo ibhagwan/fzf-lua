@@ -59,11 +59,12 @@ local filter_buffers = function(opts, unfiltered)
   return bufnrs, excluded
 end
 
-local make_buffer_entries = function(opts, bufnrs, tabnr)
+local make_buffer_entries = function(opts, bufnrs, tabnr, curbuf)
   local header_line = false
   local buffers = {}
+  curbuf = curbuf or vim.fn.bufnr('')
   for _, bufnr in ipairs(bufnrs) do
-    local flag = bufnr == vim.fn.bufnr('') and '%' or (bufnr == vim.fn.bufnr('#') and '#' or ' ')
+    local flag = bufnr == curbuf and '%' or (bufnr == vim.fn.bufnr('#') and '#' or ' ')
 
     local element = {
       bufnr = bufnr,
@@ -172,7 +173,7 @@ M.buffers = function(opts)
   coroutine.wrap(function ()
     local items = {}
 
-    local buffers, header_line = make_buffer_entries(opts, filtered)
+    local buffers, header_line = make_buffer_entries(opts, filtered, nil, opts.curbuf)
     for _, buf in pairs(buffers) do
       items = add_buffer_entry(opts, buf, items, header_line)
     end
