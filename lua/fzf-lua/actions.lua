@@ -170,7 +170,18 @@ end
 
 M.buf_del = function(selected, opts)
   local vimcmd = "bd"
-  M.vimcmd_buf(vimcmd, selected, opts)
+  local bufnrs = vim.tbl_filter(function(line)
+    local b = tonumber(line:match("%[(%d+)"))
+    local info = vim.fn.getbufinfo(b)[1]
+    if info then
+      if info.changed ~= 0 then
+        utils.warn(("Unable to delete dirty buffer [%d:%s]"):format(b, info.name))
+      end
+      return info.changed == 0
+    end
+    return false
+  end, selected)
+  M.vimcmd_buf(vimcmd, bufnrs, opts)
 end
 
 M.buf_switch = function(selected, _)
