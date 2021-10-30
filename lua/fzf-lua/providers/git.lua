@@ -37,8 +37,14 @@ M.status = function(opts)
     { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb },
     function(x)
       -- greedy match anything after last space
-      x = x:match("[^ ]*$")
-      return core.make_entry_file(opts, x)
+      local f = x:match("[^ ]*$")
+      if f:sub(#f) == '"' then
+        -- `git status -s` wraps
+        -- spaced files with quotes
+        f = x:sub(1, #x-1)
+        f = f:match('[^"]*$')
+      end
+      return core.make_entry_file(opts, f)
     end)
   return core.fzf_files(opts)
 end
