@@ -307,7 +307,7 @@ require'fzf-lua'.setup {
     -- set to '' for a non-value flag
     -- for raw args use `fzf_args` instead
     ['--ansi']        = '',
-    ['--prompt']      = ' >',
+    ['--prompt']      = '> ',
     ['--info']        = 'inline',
     ['--height']      = '100%',
     ['--layout']      = 'reverse',

@@ -116,6 +116,7 @@ local _modules = {
   'path',
   'utils',
   'libuv',
+  'config',
   'actions',
 }
 

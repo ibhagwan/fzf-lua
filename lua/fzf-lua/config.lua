@@ -99,7 +99,7 @@ M.globals = {
   fzf_bin             = nil,
   fzf_opts = {
     ['--ansi']        = '',
-    ['--prompt']      = ' >',
+    ['--prompt']      = '> ',
     ['--info']        = 'inline',
     ['--height']      = '100%',
     ['--layout']      = 'reverse',
@@ -595,6 +595,9 @@ function M.normalize_opts(opts, defaults)
     map_recurse(opts, k, map_recurse(opts, v) or map_recurse(M.globals, v))
      -- ,("'%s' is now defined under '%s'"):format(v, k))
   end
+
+  -- Default prompt
+  opts.prompt = opts.prompt or opts.fzf_opts["--prompt"]
 
   if type(opts.previewer) == 'function' then
     -- we use a function so the user can override
