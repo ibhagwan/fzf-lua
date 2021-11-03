@@ -9,6 +9,16 @@ local libuv = require "fzf-lua.libuv"
 
 local M = {}
 
+local function POSIX_find_compat(opts)
+  local ver = utils.find_version()
+  -- POSIX find does not have '--version'
+  -- we assume POSIX when 'ver==nil'
+  if not ver and opts:match("%-printf") then
+    utils.warn("POSIX find does not support the '-printf' option." ..
+      " Install 'fd' or set 'files.find_opts' to '-type f'.")
+  end
+end
+
 local get_files_cmd = function(opts)
   if opts.raw_cmd and #opts.raw_cmd>0 then
     return opts.raw_cmd
@@ -20,6 +30,7 @@ local get_files_cmd = function(opts)
   if vim.fn.executable("fd") == 1 then
     command = string.format('fd %s', opts.fd_opts)
   else
+    POSIX_find_compat(opts.find_opts)
     command = string.format('find -L . %s', opts.find_opts)
   end
   return command

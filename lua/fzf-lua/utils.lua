@@ -482,4 +482,9 @@ function M.git_version()
   return tonumber(out:match("(%d+.%d+)."))
 end
 
+function M.find_version()
+  local out, rc = M.io_systemlist("find --version")
+  return rc==0 and tonumber(out[1]:match("(%d+.%d+)")) or nil
+end
+
 return M
