@@ -370,7 +370,7 @@ function M.zz()
   end
 end
 
-function M.win_execute(winid, func)
+function M.nvim_win_call(winid, func)
   vim.validate({
     winid = {
       winid, function(w)

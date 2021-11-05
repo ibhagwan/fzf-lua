@@ -197,7 +197,7 @@ function Previewer.base:scroll(direction)
   if preview_winid < 0 or not direction then return end
 
   if direction == 0 then
-    vim.api.nvim_win_call(preview_winid, function()
+    utils.nvim_win_call(preview_winid, function()
       -- for some reason 'nvim_win_set_cursor'
       -- only moves forward, so set to (1,0) first
       api.nvim_win_set_cursor(0, {1, 0})
@@ -221,7 +221,7 @@ function Previewer.base:scroll(direction)
       -- local input = direction > 0 and [[]] or [[]]
       -- ^D = 0x04, ^U = 0x15 ('g8' on char to display)
       local input = ('%c'):format(utils._if(direction>0, 0x04, 0x15))
-      vim.api.nvim_win_call(preview_winid, function()
+      utils.nvim_win_call(preview_winid, function()
         vim.cmd([[norm! ]] .. input)
         utils.zz()
       end)
