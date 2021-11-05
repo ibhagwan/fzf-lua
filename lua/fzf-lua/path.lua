@@ -146,7 +146,7 @@ function M.entry_to_file(entry, cwd)
   -- entries from 'buffers' contain '[<bufnr>]'
   -- buffer placeholder always comes before the nbsp
   local bufnr = idx>1 and entry:sub(1, idx):match("%[(%d+)") or nil
-  if not bufnr and stripped:match("^[^ ]+://") then
+  if not bufnr and stripped:match("^%a+://") then
     -- Issue #195, when using nvim-jdtls
     -- https://github.com/mfussenegger/nvim-jdtls
     -- LSP entries inside .jar files appear as URIs
