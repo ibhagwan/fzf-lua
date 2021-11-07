@@ -27,7 +27,9 @@ M.fzf = function(opts, contents)
   elseif opts.previewer and type(opts.previewer) == 'table' then
     preview_opts = opts.previewer
   end
-  if preview_opts and type(preview_opts._new) == 'function' then
+  if preview_opts and type(preview_opts.new) == 'function' then
+    previewer = preview_opts:new(preview_opts, opts, fzf_win)
+  elseif preview_opts and type(preview_opts._new) == 'function' then
     previewer = preview_opts._new()(preview_opts, opts, fzf_win)
   elseif preview_opts and type(preview_opts._ctor) == 'function' then
     previewer = preview_opts._ctor()(preview_opts, opts, fzf_win)
