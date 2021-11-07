@@ -390,9 +390,10 @@ function FzfWin:preview_layout()
     -- only use relative when using splits
     local winopts = {relative = 'editor', focusable = false, style = 'minimal'}
     if self.winopts.split then
-      winopts = {relative = 'win', win = self.fzf_winid, focusable = false, style = 'minimal'}
+      winopts.relative = 'win'
     end
     local preview_opts = vim.tbl_extend('force', winopts, {
+        focusable = true,
         anchor = anchor,
         width = width,
         height = height,
