@@ -80,13 +80,16 @@ local make_buffer_entries = function(opts, bufnrs, tabnr, curbuf)
       end
     end
 
-    if opts.sort_lastused and (flag == "#" or flag == "%") then
-      if flag == "%" then header_line = true end
-      local idx = ((buffers[1] ~= nil and buffers[1].flag == "%") and 2 or 1)
-      table.insert(buffers, idx, element)
-    else
-      table.insert(buffers, element)
+    if opts.sort_lastused and flag == "%" then
+      header_line = true
     end
+
+    table.insert(buffers, element)
+  end
+  if opts.sort_lastused then
+    table.sort(buffers, function(a, b)
+      return a.info.lastused > b.info.lastused
+    end)
   end
   return buffers, header_line
 end

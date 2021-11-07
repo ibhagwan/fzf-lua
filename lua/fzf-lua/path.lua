@@ -166,12 +166,20 @@ function M.entry_to_file(entry, cwd)
     file = M.join({cwd, file})
     stripped = M.join({cwd, stripped})
   end
+  local terminal
+  if bufnr then
+    terminal = utils.is_term_buffer(bufnr)
+    if terminal then
+      file, line = stripped:match("(.*):(%d+)$")
+    end
+  end
   return {
     stripped = stripped,
-    bufnr = bufnr,
+    bufnr = tonumber(bufnr),
+    terminal = terminal,
     path = file,
-    line = line or 1,
-    col  = col or 1,
+    line = tonumber(line) or 1,
+    col  = tonumber(col) or 1,
   }
 end
 

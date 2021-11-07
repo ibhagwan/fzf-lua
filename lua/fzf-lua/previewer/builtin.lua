@@ -112,6 +112,7 @@ function Previewer.base:clear_preview_buf()
     end
   end
   self.preview_bufnr = nil
+  self.preview_isterm = nil
   self.preview_bufloaded = nil
   return retbuf
 end
@@ -142,12 +143,8 @@ function Previewer.base:display_entry(entry_str)
     -- specialized previewer populate function
     self:populate_preview_buf(entry_str)
 
-    -- is the preview a terminal buffer (alternative way)
-    --[[ local is_terminal =
-      vim.fn.getwininfo(self.win.preview_winid)[1].terminal == 1 ]]
-
     -- set preview window options
-    if not utils.is_term_buffer(self.preview_bufnr) then
+    if not self.preview_isterm then
       self:set_winopts(self.win.preview_winid)
     end
 
@@ -205,7 +202,10 @@ function Previewer.base:scroll(direction)
       utils.zz()
     end)
   else
-    if utils.is_term_buffer(self.preview_bufnr) then
+    -- DO NOT NEED THIS WORKAROUND
+    -- since we are no longer setting the terminal buffer
+    -- directly into the preview window we can scroll norally
+    --[[ if self.preview_isterm then
       -- can't use ":norm!" with terminal buffers due to:
       -- 'Vim(normal):Can't re-enter normal mode from terminal mode'
       -- https://github.com/neovim/neovim/issues/4895#issuecomment-303073838
@@ -216,7 +216,7 @@ function Previewer.base:scroll(direction)
       utils.feed_keys_termcodes((':noa lua vim.api.nvim_win_call(' ..
         '%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>'):
         format(tonumber(preview_winid), input))
-    else
+    else --]]
       -- local input = direction > 0 and [[]] or [[]]
       -- local input = direction > 0 and [[]] or [[]]
       -- ^D = 0x04, ^U = 0x15 ('g8' on char to display)
@@ -225,7 +225,7 @@ function Previewer.base:scroll(direction)
         vim.cmd([[norm! ]] .. input)
         utils.zz()
       end)
-    end
+    -- end
   end
   self.win:update_scrollbar()
 end
@@ -241,9 +241,6 @@ end
 
 function Previewer.buffer_or_file:parse_entry(entry_str)
   local entry = path.entry_to_file(entry_str, self.opts.cwd)
-  if entry.bufnr and utils.is_term_buffer(entry.bufnr) then
-    entry.line = tonumber(entry_str:match(":(%d+)$"))
-  end
   return entry
 end
 
@@ -252,12 +249,21 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   local entry = self:parse_entry(entry_str)
   if vim.tbl_isempty(entry) then return end
   if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
-    -- must convert to number or our backup will have conflicting keys
-    local bufnr = tonumber(entry.bufnr)
-    -- display the buffer in the preview
-    api.nvim_win_set_buf(self.win.preview_winid, bufnr)
-    -- store current preview buffer
-    self.preview_bufnr = bufnr
+    -- WE NO LONGER REUSE THE CURRENT BUFFER (except for term)
+    -- this changes the buffer's 'getbufinfo[1].lastused'
+    -- which messes up our `buffers()` sort
+    self.preview_isterm = entry.terminal
+    --[[ if self.preview_isterm then
+      -- display the buffer in the preview
+      api.nvim_win_set_buf(self.win.preview_winid, entry.bufnr)
+      -- store current preview buffer
+      self.preview_bufnr = entry.bufnr
+    else --]]
+      -- mark the buffer for unloading the next call
+      self.preview_bufloaded = true
+      local lines = vim.api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
+      vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
+    -- end
     self:preview_buf_post(entry)
   elseif entry.uri then
     -- LSP 'jdt://' entries, see issue #195
