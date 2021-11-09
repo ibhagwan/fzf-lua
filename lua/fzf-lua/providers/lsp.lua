@@ -130,8 +130,11 @@ local mk_handler = function(fn)
   end
 end
 
-local function wrap_handler(handler)
+local function wrap_handler(handler, opts, cb, co)
   return mk_handler(function(err, result, context, lspcfg)
+    -- increment callback & result counters
+    opts.num_callbacks = opts.num_callbacks+1
+    opts.num_results = opts.num_results or 0 + result and utils.tbl_length(result) or 0
     local ret
     if err then
       ret = err.message
@@ -139,10 +142,18 @@ local function wrap_handler(handler)
         handler.method, err.message or "nil"))
       utils.send_ctrl_c()
     elseif not result or vim.tbl_isempty(result) then
-      ret = utils.info(string.format('No %s found', string.lower(handler.label)))
-      utils.send_ctrl_c()
+      -- Only close the window if all clients sent their results
+      if opts.num_callbacks == opts.num_clients and opts.num_results == 0 then
+        ret = utils.info(string.format('No %s found', string.lower(handler.label)))
+        utils.send_ctrl_c()
+      end
     else
-      ret = handler.target(err, result, context, lspcfg)
+      ret = opts.lsp_handler.handler(opts, cb, co, result)
+      if opts.num_callbacks == opts.num_clients then
+        -- close the pipe to fzf, this
+        -- removes the loading indicator in fzf
+        utils.delayed_cb(cb)
+      end
     end
     return ret
   end)
@@ -160,6 +171,12 @@ local function set_lsp_fzf_fn(opts)
     opts.lsp_params = vim.lsp.util.make_position_params()
     opts.lsp_params.context = { includeDeclaration = true }
   end
+
+  -- Save no of attached clients so we can determine
+  -- if all callbacks were completed
+  opts.num_results = 0
+  opts.num_callbacks = 0
+  opts.num_clients = utils.tbl_length(vim.lsp.buf_get_clients(0))
 
   if opts.sync or opts.async == false then
     local timeout = 5000
@@ -192,16 +209,6 @@ local function set_lsp_fzf_fn(opts)
     coroutine.wrap(function ()
       local co = coroutine.running()
 
-      -- callback when a location is found
-      -- we use this passthrough so we can send the
-      -- coroutine variable (not used rn but who knows?)
-      opts.lsp_handler.target = function(_, result, _, _)
-        opts.lsp_handler.handler(opts, cb, co, result)
-        -- close the pipe to fzf, this
-        -- removes the loading indicator in fzf
-        utils.delayed_cb(cb)
-        return
-      end
 
       -- cancel all currently running requests
       -- can happen when using `live_ws_symbols`
@@ -216,7 +223,7 @@ local function set_lsp_fzf_fn(opts)
 
       local _, cancel_all = vim.lsp.buf_request(opts.bufnr,
         opts.lsp_handler.method, opts.lsp_params,
-        wrap_handler(opts.lsp_handler))
+        wrap_handler(opts.lsp_handler, opts, cb, co))
 
       -- save this so we can cancel all requests
       -- when using `live_ws_symbols`
@@ -261,6 +268,9 @@ local normalize_lsp_opts = function(opts, cfg)
   opts.filename = nil
   opts.lsp_params = nil
   opts.code_actions = nil
+  opts.num_results = nil
+  opts.num_callbacks = nil
+  opts.num_clients = nil
 
   return opts
 end
