@@ -108,7 +108,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end
 
   local co = coroutine.running()
-  vim.fn.termopen(cmd, {
+  vim.fn.termopen({"sh", "-c", cmd}, {
     cwd = cwd,
     on_exit = function(_, rc, _)
       local f = io.open(outputtmpname)
