@@ -137,9 +137,8 @@ local function wrap_handler(handler, opts, cb, co)
     opts.num_results = opts.num_results or 0 + result and utils.tbl_length(result) or 0
     local ret
     if err then
-      ret = err.message
-      utils.err(string.format("Error executing '%s': %s",
-        handler.method, err.message or "nil"))
+      ret = err
+      utils.err(string.format("Error executing '%s': %s", handler.method, err))
       utils.send_ctrl_c()
     elseif not result or vim.tbl_isempty(result) then
       -- Only close the window if all clients sent their results
@@ -187,7 +186,7 @@ local function set_lsp_fzf_fn(opts)
         opts.lsp_handler.method, opts.lsp_params, timeout)
     if err then
       utils.err(string.format("Error executing '%s': %s",
-        opts.lsp_handler.method, err.message or "nil"))
+        opts.lsp_handler.method, err))
     else
       local results = {}
       local cb = function(text) table.insert(results, text) end
