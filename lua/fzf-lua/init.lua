@@ -5,6 +5,25 @@ end
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
+do
+  -- workaround nvim-fzf calls this from 'nvim_fzfvim' which doesn't
+  -- get called properly on the latest nightly?
+  -- NVIM v0.6.0-dev+569-g2ecf0a4c6
+  local path = require "fzf-lua.path"
+  local currFile = debug.getinfo(1, 'S').source:gsub("^@", "")
+  vim.g.fzf_lua_directory = path.parent(currFile)
+
+  if not vim.g.nvim_fzf_directory then
+    local nvim_fzf_directory = path.join({
+      path.parent(path.parent(path.parent(path.parent(currFile)))),
+      "nvim-fzf"
+    })
+    if vim.loop.fs_stat(nvim_fzf_directory) then
+      vim.g.nvim_fzf_directory = nvim_fzf_directory
+    end
+    utils.info(("vim.g.nvim_fzf_directory = '%s'"):format(nvim_fzf_directory))
+  end
+end
 
 local M = {}
 
