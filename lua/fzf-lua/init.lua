@@ -6,13 +6,26 @@ local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
 do
-  -- workaround nvim-fzf calls this from 'nvim_fzfvim' which doesn't
-  -- get called properly on the latest nightly?
-  -- NVIM v0.6.0-dev+569-g2ecf0a4c6
+  -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
+  -- pluging '.vim' initialization sometimes doesn't get called
   local path = require "fzf-lua.path"
   local currFile = debug.getinfo(1, 'S').source:gsub("^@", "")
   vim.g.fzf_lua_directory = path.parent(currFile)
 
+  -- Manually source the vimL script containing ':FzfLua' cmd
+  if not vim.g.loaded_fzf_lua then
+    local fzf_lua_vim = path.join({
+      path.parent(path.parent(vim.g.fzf_lua_directory)),
+      "plugin", "fzf-lua.vim"
+    })
+    if vim.loop.fs_stat(fzf_lua_vim) then
+      vim.cmd(("source %s"):format(fzf_lua_vim))
+      utils.info(("manually loaded '%s'"):format(fzf_lua_vim))
+    end
+  end
+
+  -- Since 'nvim_fzf.vim' doesn't get called we
+  -- have to manually set 'g:nvim_fzf_directory'
   if not vim.g.nvim_fzf_directory then
     local nvim_fzf_directory = path.join({
       path.parent(path.parent(path.parent(path.parent(currFile)))),
@@ -21,7 +34,7 @@ do
     if vim.loop.fs_stat(nvim_fzf_directory) then
       vim.g.nvim_fzf_directory = nvim_fzf_directory
     end
-    utils.info(("vim.g.nvim_fzf_directory = '%s'"):format(nvim_fzf_directory))
+    -- utils.info(("vim.g.nvim_fzf_directory = '%s'"):format(nvim_fzf_directory))
   end
 end
 
