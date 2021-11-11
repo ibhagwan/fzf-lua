@@ -20,7 +20,7 @@ do
     })
     if vim.loop.fs_stat(fzf_lua_vim) then
       vim.cmd(("source %s"):format(fzf_lua_vim))
-      utils.info(("manually loaded '%s'"):format(fzf_lua_vim))
+      -- utils.info(("manually loaded '%s'"):format(fzf_lua_vim))
     end
   end
 
