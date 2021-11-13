@@ -705,7 +705,7 @@ end
 function FzfWin:set_title_hl()
   if self.winopts.hl.title and self._title_len and self._title_len>0 then
     vim.api.nvim_win_call(self.border_winid, function()
-      fn.matchaddpos(self.winopts.hl.title, {{1, 9, self._title_len}}, 11)
+      fn.matchaddpos(self.winopts.hl.title, {{1, 9, self._title_len+1}}, 11)
     end)
   end
 end
