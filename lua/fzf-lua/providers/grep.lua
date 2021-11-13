@@ -167,7 +167,7 @@ M.live_grep = function(opts)
     return get_grep_cmd(opts, query, true)
   end
 
-  if opts.experimental then
+  if opts.experimental and (opts.git_icons or opts.file_icons) then
     opts._fn_transform = function(x)
       return core.make_entry_file(opts, x)
     end

@@ -239,7 +239,6 @@ M.globals.grep = {
     -- live_grep_glob options
     glob_flag           = "--iglob",  -- for case sensitive globs use '--glob'
     glob_separator      = "%s%-%-",   -- query separator pattern (lua): ' --'
-    data_limit          = 128 * 1024, -- 'live_grep' libuv chunk data limit
   }
 M.globals.args = {
     previewer           = M._default_previewer_fn,

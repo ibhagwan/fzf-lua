@@ -112,12 +112,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   end
 
   local function process_lines(data)
-    if opts.data_limit and opts.data_limit > 0 and #data>opts.data_limit then
-      vim.defer_fn(function()
-        utils.warn(("received large data chunk (%db), consider adding '--max-columns=512' to ripgrep flags\nDATA: '%s'")
-          :format(#data, utils.strip_ansi_coloring(data):sub(1,80)))
-      end, 0)
-    end
+    -- assert(#data<=66560) -- 65K
     write_cb(data:gsub("[^\n]+",
       function(x)
         return fn_transform(x)
@@ -125,21 +120,17 @@ M.spawn = function(opts, fn_transform, fn_done)
   end
 
   --[[ local function process_lines(data)
-    if opts.data_limit and opts.data_limit > 0 and #data>opts.data_limit then
-      vim.defer_fn(function()
-        utils.warn(("received large data chunk (%db, consider adding '--max-columns=512' to ripgrep flags\nDATA: '%s'")
-          :format(#data, utils.strip_ansi_coloring(data):sub(1,80)))
-      end, 0)
-    end
     local start_idx = 1
     repeat
       num_lines = num_lines + 1
       local nl_idx = find_next_newline(data, start_idx)
       local line = data:sub(start_idx, nl_idx)
       if #line > 1024 then
+        local msg =
+          ("long line detected, consider adding '--max-columns=512' to ripgrep options:\n  %s")
+            :format(utils.strip_ansi_coloring(line):sub(1,60))
         vim.defer_fn(function()
-          utils.warn(("long line %d bytes, '%s'")
-            :format(#line, utils.strip_ansi_coloring(line):sub(1,60)))
+          utils.warn(msg)
         end, 0)
         line = line:sub(1,512) .. '\n'
       end
@@ -159,8 +150,15 @@ M.spawn = function(opts, fn_transform, fn_done)
     end
 
     if prev_line_content then
-        data = prev_line_content .. data
-        prev_line_content = nil
+      if #prev_line_content > 1024 then
+        -- chunk size is 64K, limit previous line length to 1K
+        -- max line length is therefor 1K + 64K (leftover + full chunk)
+        -- without this we can memory fault on extremely long lines (#185)
+        -- or have UI freezes (#211)
+        prev_line_content = prev_line_content:sub(1, 1024)
+      end
+      data = prev_line_content .. data
+      prev_line_content = nil
     end
 
     if not fn_transform then
@@ -170,11 +168,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     else
       local nl_index = find_last_newline(data)
       if not nl_index then
-        -- chunk size is 64K, limit previous line length to 1K
-        -- max line length is therefor 1K + 64K (leftover + full chunk)
-        -- without this we can memory fault on extremely long lines (#185)
-        -- or have UI freezes (#211)
-        prev_line_content = data:sub(1, 1024)
+        prev_line_content = data
       else
         prev_line_content = string_sub(data, nl_index + 1)
         local stripped_with_newline = string_sub(data, 1, nl_index)
@@ -298,7 +292,6 @@ M.spawn_reload_cmd_action = function(opts, fzf_field_expression)
         cb_finish = on_finish,
         cb_write = on_write,
         cb_pid = on_pid,
-        data_limit = opts.data_limit,
         -- must send false, 'coroutinify' adds callback as last argument
         -- which will conflict with the 'fn_transform' argument
       }, opts._fn_transform or false)
