@@ -151,6 +151,8 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `grep_curbuf`      | live grep current buffer                   |
 | `live_grep`        | live grep current project                  |
 | `live_grep_resume` | live grep continue last search             |
+| `live_grep_glob`   | live_grep with `rg --glob` support           |
+| `live_grep_native` | performant version of `live_grep`            |
 
 
 ### Git
@@ -367,6 +369,13 @@ require'fzf-lua'.setup {
     git_icons         = true,           -- show git icons?
     file_icons        = true,           -- show file icons?
     color_icons       = true,           -- colorize file|git icons
+    -- if 'cmd' is not specified, 'files' priortizes 'fd' over 'find'
+    -- 'fd_opts' if using 'fd', 'find_opts' if using 'find'
+    -- NOTE: 'find -printf' requires GNU find
+    find_opts         = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
+    fd_opts           =
+      [[--color never --type f --hidden --follow ]] ..
+      [[--exclude .git --exclude node_modules --exclude '*.pyc']],
     actions = {
       -- set bind to 'false' to disable
       ["default"]     = actions.file_edit,
