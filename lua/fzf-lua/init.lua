@@ -100,6 +100,7 @@ M.grep_cword = require'fzf-lua.providers.grep'.grep_cword
 M.grep_cWORD = require'fzf-lua.providers.grep'.grep_cWORD
 M.grep_visual = require'fzf-lua.providers.grep'.grep_visual
 M.grep_curbuf = require'fzf-lua.providers.grep'.grep_curbuf
+M.grep_project = require'fzf-lua.providers.grep'.grep_project
 M.git_files = require'fzf-lua.providers.git'.files
 M.git_status = require'fzf-lua.providers.git'.status
 M.git_commits = require'fzf-lua.providers.git'.commits

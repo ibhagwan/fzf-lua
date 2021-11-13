@@ -147,6 +147,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `grep_cword`       | search word under cursor                   |
 | `grep_cWORD`       | search WORD under cursor                   |
 | `grep_visual`      | search visual selection                    |
+| `grep_project`     | search all project lines (fzf.vim's `:Rg`)   |
 | `grep_curbuf`      | live grep current buffer                   |
 | `live_grep`        | live grep current project                  |
 | `live_grep_resume` | live grep continue last search             |

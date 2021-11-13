@@ -340,6 +340,12 @@ M.grep_visual = function(opts)
   return M.grep(opts)
 end
 
+M.grep_project = function(opts)
+  if not opts then opts = {} end
+  if not opts.search then opts.search = '' end
+  return M.grep(opts)
+end
+
 M.grep_curbuf = function(opts)
   if not opts then opts = {} end
   opts.rg_opts = config.globals.grep.rg_opts .. " --with-filename"
