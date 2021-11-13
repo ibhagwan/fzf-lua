@@ -320,13 +320,7 @@ M.workspace_symbols = function(opts)
 end
 
 M.code_actions = function(opts)
-  -- we must clone the 'opts' tbl, otherwise 'opts.actions.default'
-  -- overrides 'config.globals.lsp.actions.default' in neovim 6.0
-  -- which then prevents the default action of all other LSP providers
-  -- https://github.com/ibhagwan/fzf-lua/issues/197
-  -- not applying this fix yet inside 'config.normalize_opts' as
-  -- I'm not sure what other butterfly effects this may cause
-  opts = utils.tbl_deep_clone(normalize_lsp_opts(opts, config.globals.lsp))
+  opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
   -- irrelevant for code actions and can cause
   -- single results to be skipped with 'async = false'

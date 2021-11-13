@@ -542,7 +542,11 @@ function M.normalize_opts(opts, defaults)
   if not opts then opts = {} end
 
   -- First, merge with provider defaults
-  opts = vim.tbl_deep_extend("keep", opts, defaults)
+  -- we must clone the 'defaults' tbl, otherwise 'opts.actions.default'
+  -- overrides 'config.globals.lsp.actions.default' in neovim 6.0
+  -- which then prevents the default action of all other LSP providers
+  -- https://github.com/ibhagwan/fzf-lua/issues/197
+  opts = vim.tbl_deep_extend("keep", opts, utils.tbl_deep_clone(defaults))
 
   -- Merge required tables from globals
   for _, k in ipairs({ 'winopts', 'keymap', 'fzf_opts', 'previewers' }) do
