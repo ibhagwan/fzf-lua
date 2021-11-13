@@ -1,7 +1,7 @@
 local path = require "fzf-lua.path"
+local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local previewer_base = require "fzf-lua.previewer"
-local raw_action = require("fzf.actions").raw_action
 
 local api = vim.api
 local fn = vim.fn
@@ -169,7 +169,7 @@ function Previewer.base:display_entry(entry_str)
 end
 
 function Previewer.base:action(_)
-  local act = raw_action(function (items, _, _)
+  local act = shell.raw_action(function (items, _, _)
     self:display_entry(items[1])
     return ""
   end, "{}")

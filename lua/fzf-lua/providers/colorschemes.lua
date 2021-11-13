@@ -2,9 +2,8 @@ if not pcall(require, "fzf") then
   return
 end
 
-local action = require("fzf.actions").action
 local core = require "fzf-lua.core"
-local utils = require "fzf-lua.utils"
+local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 
@@ -24,7 +23,7 @@ M.colorschemes = function(opts)
   if not opts then return end
 
   coroutine.wrap(function ()
-    local prev_act = action(function (args)
+    local prev_act = shell.action(function (args)
       if opts.live_preview and args then
         local colorscheme = args[1]
         vim.cmd("colorscheme " .. colorscheme)

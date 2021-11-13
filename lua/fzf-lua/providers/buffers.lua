@@ -2,9 +2,9 @@ if not pcall(require, "fzf") then
   return
 end
 
-local action = require("fzf.actions").action
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
+local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
@@ -153,7 +153,7 @@ M.buffers = function(opts)
   opts = config.normalize_opts(opts, config.globals.buffers)
   if not opts then return end
 
-    local act = action(function (items, fzf_lines, _)
+    local act = shell.action(function (items, fzf_lines, _)
       -- only preview first item
       local item = items[1]
       local buf = getbufnumber(item)

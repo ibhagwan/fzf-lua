@@ -4,6 +4,7 @@ end
 
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
+local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local libuv = require "fzf-lua.libuv"
 
@@ -63,7 +64,7 @@ M.files_resume = function(opts)
     return
   end
 
-  local raw_act = require("fzf.actions").raw_action(function(args)
+  local raw_act = shell.raw_action(function(args)
     last_query = args[1]
   end, "{q}")
 

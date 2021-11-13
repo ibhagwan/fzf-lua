@@ -148,6 +148,7 @@ local _modules = {
   'path',
   'utils',
   'libuv',
+  'shell',
   'config',
   'actions',
 }

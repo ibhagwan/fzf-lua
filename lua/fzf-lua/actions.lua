@@ -213,6 +213,15 @@ end
 M.run_builtin = function(selected)
   local method = selected[1]
   vim.cmd(string.format("lua require'fzf-lua'.%s()", method))
+  -- not sure what is causing this, tested with
+  -- 'NVIM v0.6.0-dev+575-g2ef9d2a66'
+  -- vim.cmd("startinsert") doesn't start INSERT mode
+  -- 'mode' returns { blocking = false, mode = "t" }
+  -- manually input 'i' seems to workaround this issue
+  local mode = vim.api.nvim_get_mode()
+  if mode.mode and mode.mode ~= 'i' then
+    vim.cmd[[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
+  end
 end
 
 M.ex_run = function(selected)

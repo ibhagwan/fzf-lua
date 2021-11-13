@@ -6,6 +6,7 @@ local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 local win = require "fzf-lua.win"
 local libuv = require "fzf-lua.libuv"
+local shell = require "fzf-lua.shell"
 
 local M = {}
 
@@ -370,7 +371,7 @@ M.set_fzf_interactive_cb = function(opts)
   local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
 
   local uv = vim.loop
-  local raw_async_act = require("fzf.actions").raw_async_action(function(pipe, args)
+  local raw_async_act = shell.raw_async_action(function(pipe, args)
 
     coroutine.wrap(function()
 

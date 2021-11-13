@@ -1,8 +1,8 @@
 local path = require "fzf-lua.path"
+local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local previewer_base = require "fzf-lua.previewer"
-local raw_action = require("fzf.actions").raw_action
 
 local Previewer = {}
 Previewer.base = {}
@@ -60,7 +60,7 @@ function Previewer.cmd:action(o)
   if self.opts._line_placeholder then
     filespec = "{1}"
   end
-  local act = raw_action(function (items, fzf_lines, _)
+  local act = shell.raw_action(function (items, fzf_lines, _)
     -- only preview first item
     local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
     return file.path

@@ -2,9 +2,9 @@ if not pcall(require, "fzf") then
   return
 end
 
-local action = require("fzf.actions").action
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
+local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 
@@ -19,7 +19,7 @@ M.commands = function(opts)
 
     local commands = vim.api.nvim_get_commands {}
 
-    local prev_act = action(function (args)
+    local prev_act = shell.action(function (args)
       local cmd = args[1]
       if commands[cmd] then
         cmd = vim.inspect(commands[cmd])
@@ -100,7 +100,7 @@ M.marks = function(opts)
     local marks = vim.fn.execute("marks")
     marks = vim.split(marks, "\n")
 
-    local prev_act = action(function (args, fzf_lines, _)
+    local prev_act = shell.action(function (args, fzf_lines, _)
       local mark = args[1]:match("[^ ]+")
       local bufnr, lnum, _, _ = unpack(vim.fn.getpos("'"..mark))
       if vim.api.nvim_buf_is_loaded(bufnr) then
@@ -154,7 +154,7 @@ M.registers = function(opts)
       table.insert(registers, string.char(i))
     end
 
-    local prev_act = action(function (args)
+    local prev_act = shell.action(function (args)
       local r = args[1]:match("%[(.*)%] ")
       local _, contents = pcall(vim.fn.getreg, r)
       return contents or args[1]
@@ -216,7 +216,7 @@ M.keymaps = function(opts)
       end
     end
 
-    local prev_act = action(function (args)
+    local prev_act = shell.action(function (args)
       local k = args[1]:match("(%[.*%]) ")
       local v = keymaps[k]
       if v then

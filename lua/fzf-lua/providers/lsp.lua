@@ -2,13 +2,10 @@ if not pcall(require, "fzf") then
   return
 end
 
-local raw_action = require("fzf.actions").raw_action
-local raw_async_action = require("fzf.actions").raw_async_action
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
-local uv = vim.loop
 
 local M = {}
 

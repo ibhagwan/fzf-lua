@@ -1,6 +1,5 @@
+local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
-local async_action = require("fzf.actions").async_action
-local raw_async_action = require("fzf.actions").raw_async_action
 local uv = vim.loop
 
 local M = {}
@@ -11,6 +10,14 @@ local string_sub = string.sub
 
 local function find_last_newline(str)
   for i=#str,1,-1 do
+    if string_byte(str, i) == 10 then
+        return i
+    end
+  end
+end
+
+local function find_next_newline(str, start_idx)
+  for i=start_idx or 1,#str do
     if string_byte(str, i) == 10 then
         return i
     end
@@ -49,10 +56,9 @@ M.spawn = function(opts, fn_transform, fn_done)
   local error_pipe = uv.new_pipe(false)
   local write_cb_count = 0
   local prev_line_content = nil
+  local num_lines = 0
 
   if opts.fn_transform then fn_transform = opts.fn_transform end
-
-  local shell = vim.env.SHELL or "sh"
 
   local finish = function(sig, pid)
     output_pipe:shutdown()
@@ -68,7 +74,7 @@ M.spawn = function(opts, fn_transform, fn_done)
 
   -- https://github.com/luvit/luv/blob/master/docs.md
   -- uv.spawn returns tuple: handle, pid
-  local _, pid = uv.spawn(shell, {
+  local _, pid = uv.spawn(vim.env.SHELL or "sh", {
     args = { "-c", opts.cmd },
     stdio = { nil, output_pipe, error_pipe },
     cwd = opts.cwd
@@ -105,12 +111,42 @@ M.spawn = function(opts, fn_transform, fn_done)
     end)
   end
 
-  local function process_lines(str)
-    write_cb(str:gsub("[^\n]+",
+  local function process_lines(data)
+    if opts.data_limit and opts.data_limit > 0 and #data>opts.data_limit then
+      vim.defer_fn(function()
+        utils.warn(("received large data chunk (%db), consider adding '--max-columns=512' to ripgrep flags\nDATA: '%s'")
+          :format(#data, utils.strip_ansi_coloring(data):sub(1,80)))
+      end, 0)
+    end
+    write_cb(data:gsub("[^\n]+",
       function(x)
         return fn_transform(x)
       end))
   end
+
+  --[[ local function process_lines(data)
+    if opts.data_limit and opts.data_limit > 0 and #data>opts.data_limit then
+      vim.defer_fn(function()
+        utils.warn(("received large data chunk (%db, consider adding '--max-columns=512' to ripgrep flags\nDATA: '%s'")
+          :format(#data, utils.strip_ansi_coloring(data):sub(1,80)))
+      end, 0)
+    end
+    local start_idx = 1
+    repeat
+      num_lines = num_lines + 1
+      local nl_idx = find_next_newline(data, start_idx)
+      local line = data:sub(start_idx, nl_idx)
+      if #line > 1024 then
+        vim.defer_fn(function()
+          utils.warn(("long line %d bytes, '%s'")
+            :format(#line, utils.strip_ansi_coloring(line):sub(1,60)))
+        end, 0)
+        line = line:sub(1,512) .. '\n'
+      end
+      write_cb(fn_transform(line))
+      start_idx = nl_idx + 1
+    until start_idx >= #data
+  end --]]
 
   local read_cb = function(err, data)
 
@@ -134,7 +170,11 @@ M.spawn = function(opts, fn_transform, fn_done)
     else
       local nl_index = find_last_newline(data)
       if not nl_index then
-        prev_line_content = data
+        -- chunk size is 64K, limit previous line length to 1K
+        -- max line length is therefor 1K + 64K (leftover + full chunk)
+        -- without this we can memory fault on extremely long lines (#185)
+        -- or have UI freezes (#211)
+        prev_line_content = data:sub(1, 1024)
       else
         prev_line_content = string_sub(data, nl_index + 1)
         local stripped_with_newline = string_sub(data, 1, nl_index)
@@ -194,7 +234,7 @@ end
 
 M.spawn_nvim_fzf_action = function(fn, fzf_field_expression)
 
-  return async_action(function(pipe, ...)
+  return shell.async_action(function(pipe, ...)
 
     local function on_finish(_, _)
       if pipe and not uv.is_closing(pipe) then
@@ -224,7 +264,7 @@ M.spawn_reload_cmd_action = function(opts, fzf_field_expression)
 
   local _pid = nil
 
-  return raw_async_action(function(pipe, args)
+  return shell.raw_async_action(function(pipe, args)
 
     local function on_pid(pid)
       _pid = pid
@@ -258,7 +298,10 @@ M.spawn_reload_cmd_action = function(opts, fzf_field_expression)
         cb_finish = on_finish,
         cb_write = on_write,
         cb_pid = on_pid,
-      }, opts._fn_transform)
+        data_limit = opts.data_limit,
+        -- must send false, 'coroutinify' adds callback as last argument
+        -- which will conflict with the 'fn_transform' argument
+      }, opts._fn_transform or false)
 
   end, fzf_field_expression)
 end

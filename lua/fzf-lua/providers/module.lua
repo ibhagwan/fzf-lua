@@ -2,8 +2,8 @@ if not pcall(require, "fzf") then
   return
 end
 
-local action = require("fzf.actions").action
 local core = require "fzf-lua.core"
+local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 
@@ -18,7 +18,7 @@ M.metatable = function(opts)
 
   coroutine.wrap(function ()
 
-    local prev_act = action(function (args)
+    local prev_act = shell.action(function (args)
       -- TODO: retreive method help
       local help = ''
       return string.format("%s:%s", args[1], help)
