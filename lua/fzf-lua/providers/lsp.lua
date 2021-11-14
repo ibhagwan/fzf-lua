@@ -330,12 +330,40 @@ M.code_actions = function(opts)
     diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
   }
 
+  -- see discussion in:
+  -- https://github.com/nvim-telescope/telescope.nvim/pull/738
+  -- If the text document version is 0, set it to nil instead so that Neovim
+  -- won't refuse to update a buffer that it believes is newer than edits.
+  -- See: https://github.com/eclipse/eclipse.jdt.ls/issues/1695
+  -- Source:
+  -- https://github.com/neovim/nvim-lspconfig/blob/486f72a25ea2ee7f81648fdfd8999a155049e466/lua/lspconfig/jdtls.lua#L62
+  local function fix_zero_version(workspace_edit)
+    if workspace_edit and workspace_edit.documentChanges then
+      for _, change in pairs(workspace_edit.documentChanges) do
+        local text_document = change.textDocument
+        if text_document and text_document.version and text_document.version == 0 then
+          text_document.version = nil
+        end
+      end
+    end
+    return workspace_edit
+  end
+
   -- "apply action" as default function
   if not opts.actions then opts.actions = {} end
   opts.actions.default = (function(selected)
     local idx = selected[1]:match("(%d+)")
     local action = opts.code_actions[idx]
     if not action then return end
+    -- Remove 0 -version from LSP codeaction request payload.
+    -- Is only run on the "java.apply.workspaceEdit" codeaction.
+    -- Fixed Java/jdtls compatibility with Telescope
+    -- See fix_zero_version commentary for more information
+    local command = (action.command and action.command.command) or action.command
+    if command == "java.apply.workspaceEdit" then
+      local arguments = (action.command and action.command.arguments) or action.arguments
+      action.edit = fix_zero_version(arguments[1])
+    end
     if action.edit or type(action.command) == 'table' then
       if action.edit then
         vim.lsp.util.apply_workspace_edit(action.edit)
