@@ -377,8 +377,13 @@ require'fzf-lua'.setup {
       [[--color never --type f --hidden --follow ]] ..
       [[--exclude .git --exclude node_modules --exclude '*.pyc']],
     actions = {
-      -- set bind to 'false' to disable
-      ["default"]     = actions.file_edit,
+      -- set bind to 'false' to disable an action
+      -- default action opens a single selection
+      -- or sends multiple selection to quickfix
+      -- replace the default aciton with the below
+      -- to open all files whether single or multiple
+      -- ["default"]     = actions.file_edit,
+      ["default"]       = actions.file_edit_or_qf,
       ["ctrl-s"]      = actions.file_split,
       ["ctrl-v"]      = actions.file_vsplit,
       ["ctrl-t"]      = actions.file_tabedit,

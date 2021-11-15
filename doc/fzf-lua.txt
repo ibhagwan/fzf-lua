@@ -176,7 +176,7 @@ SEARCH                                                        *fzf-lua-search*
 | `grep_curbuf`      | live grep current buffer                   |
 | `live_grep`        | live grep current project                  |
 | `live_grep_resume` | live grep continue last search             |
-| `live_grep_glob`   | live_grep with `rg --glob|--iglob` support   |
+| `live_grep_glob`   | live_grep with `rg --glob` support           |
 | `live_grep_native` | performant version of `live_grep`            |
 
                                                                               
@@ -411,8 +411,13 @@ Consult the list below for available settings:
           [[--color never --type f --hidden --follow ]] ..
           [[--exclude .git --exclude node_modules --exclude '*.pyc']],
         actions = {
-          -- set bind to 'false' to disable
-          ["default"]     = actions.file_edit,
+          -- set bind to 'false' to disable an action
+          -- default action opens a single selection
+          -- or sends multiple selection to quickfix
+          -- replace the default aciton with the below
+          -- to open all files whether single or multiple
+          -- ["default"]     = actions.file_edit,
+          ["default"]       = actions.file_edit_or_qf,
           ["ctrl-s"]      = actions.file_split,
           ["ctrl-v"]      = actions.file_vsplit,
           ["ctrl-t"]      = actions.file_tabedit,
