@@ -397,19 +397,19 @@ Consult the list below for available settings:
       },
       -- provider setup
       files = {
-        -- previewer         = "cat",       -- uncomment to override previewer
+        -- previewer      = "cat",          -- uncomment to override previewer
         prompt            = 'Files❯ ',
-        cmd               = '',             -- "find . -type f -printf '%P\n'",
         git_icons         = true,           -- show git icons?
         file_icons        = true,           -- show file icons?
         color_icons       = true,           -- colorize file|git icons
-        -- if 'cmd' is not specified, 'files' priortizes 'fd' over 'find'
-        -- 'fd_opts' if using 'fd', 'find_opts' if using 'find'
+        -- executed command priority is 'cmd' (if exists)
+        -- otherwise auto-detect prioritizes `fd` over `find`
+        -- default options are controlled by 'fd|find_opts'
         -- NOTE: 'find -printf' requires GNU find
+        -- cmd            = "find . -type f -printf '%P\n'",
         find_opts         = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
-        fd_opts           =
-          [[--color never --type f --hidden --follow ]] ..
-          [[--exclude .git --exclude node_modules --exclude '*.pyc']],
+        fd_opts           = [[--color never --type f --hidden --follow ]] ..
+                [[--exclude .git --exclude node_modules --exclude '*.pyc']],
         actions = {
           -- set bind to 'false' to disable an action
           -- default action opens a single selection
@@ -482,12 +482,15 @@ Consult the list below for available settings:
       grep = {
         prompt            = 'Rg❯ ',
         input_prompt      = 'Grep For❯ ',
-        -- cmd               = "rg --vimgrep",
-        rg_opts           = "--hidden --column --line-number --no-heading " ..
-                            "--color=always --smart-case -g '!{.git,node_modules}/*'",
         git_icons         = true,           -- show git icons?
         file_icons        = true,           -- show file icons?
         color_icons       = true,           -- colorize file|git icons
+        -- executed command priority is 'cmd' (if exists)
+        -- otherwise auto-detect prioritizes `rg` over `grep`
+        -- default options are controlled by 'rg|grep_opts'
+        -- cmd            = "rg --vimgrep",
+        rg_opts           = "--column --line-number --no-heading --color=always --smart-case --max-columns=512",
+        grep_opts         = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp",
         -- 'true' enables file and git icons in 'live_grep'
         -- degrades performance in large datasets, YMMV
         experimental      = false,
