@@ -47,22 +47,23 @@ at it. That, **and colorful file icons and git indicators!**.
 
 ## Dependencies
 
-- `Linux` or `MacOS` only, see [nvim-fzf's How it
-  works](https://github.com/vijaymarupudi/nvim-fzf#How-it-works)
+- `Linux` or `MacOS`
+- [`neovim`](https://github.com/neovim/neovim/releases) version > 0.5.0
 - [`fzf`](https://github.com/junegunn/fzf) or
   [`skim`](https://github.com/lotabout/skim) binary installed
 - [nvim-fzf](https://github.com/vijaymarupudi/nvim-fzf)
 - [nvim-web-devicons](https://github.com/kyazdani42/nvim-web-devicons)
   (optional)
 
-### Optional dependencies
+### Optional dependencies (recommended)
 
-Recommended optional utilities:
-
-- [fd](https://github.com/sharkdp/fd) - better performance `find` utility
-- [bat](https://github.com/sharkdp/bat) - for colorful syntax highlighted previews
-- [ripgrep](https://github.com/BurntSushi/ripgrep) - for better grep-like searches
-
+- [fd](https://github.com/sharkdp/fd) - better `find` utility
+- [rg](https://github.com/BurntSushi/ripgrep) - better `grep` utility
+- [bat](https://github.com/sharkdp/bat) - syntax highlighted previews when
+  using fzf's native previewer
+- [delta](https://github.com/dandavison/delta) - syntax highlighted git pager
+  for git status previews
+ 
 ## Installation
 
 Using [vim-plug](https://github.com/junegunn/vim-plug)
@@ -349,6 +350,7 @@ require'fzf-lua'.setup {
     git_diff = {
       cmd             = "git diff",
       args            = "--color",
+      -- pager        = "delta",      -- if you have `delta` installed
     },
     man = {
       cmd             = "man -c %s | col -bx",
