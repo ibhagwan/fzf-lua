@@ -1,7 +1,3 @@
-if not pcall(require, "fzf") then
-  return
-end
-
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"

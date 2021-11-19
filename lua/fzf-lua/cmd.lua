@@ -1,8 +1,4 @@
 -- Modified from Telescope 'command.lua'
-if not pcall(require, "fzf") then
-  return
-end
-
 local builtin = require "fzf-lua"
 local utils = require "fzf-lua.utils"
 local command = {}
