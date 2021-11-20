@@ -28,7 +28,7 @@ local fzf_tags = function(opts)
 
   local fzf_function = function (cb)
 
-    local read_line = function(file)
+    --[[ local read_line = function(file)
       local line
       local handle = io.open(file, "r")
       if handle then
@@ -59,7 +59,7 @@ local fzf_tags = function(opts)
       end
       _file2ff[file] = ff
       return ff
-    end
+    end --]]
 
     local getlinenumber = function(t)
       if not grep_cmd then grep_cmd = get_grep_cmd() end
@@ -72,12 +72,15 @@ local fzf_tags = function(opts)
       -- 'fileformat' isn't set to 'unix', when set to
       -- 'dos' we need to prepend '$' with '\r$' with 'rg'
       -- it is simpler to just ignore it compleley.
-      local ff = fileformat(filepath)
+      --[[ local ff = fileformat(filepath)
       if ff == 'dos' then
         pattern = pattern:gsub("\\%$$", "\\r%$")
       else
         pattern = pattern:gsub("\\%$$", "%$")
-      end
+      end --]]
+      -- equivalent pattern to `rg --crlf`
+      -- see discussion in #219
+      pattern = pattern:gsub("\\%$$", "\\r??%$")
       local cmd = string.format('%s "%s" %s',
         grep_cmd, pattern,
         vim.fn.shellescape(filepath))
