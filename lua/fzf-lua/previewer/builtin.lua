@@ -32,6 +32,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.win = fzf_win
   self.delay = self.win.winopts.preview.delay or 100
   self.title = self.win.winopts.preview.title
+  self.winopts = self.win.winopts.preview.winopts
   self.syntax = o.syntax
   self.syntax_delay = o.syntax_delay
   self.syntax_limit_b = o.syntax_limit_b
@@ -47,18 +48,8 @@ function Previewer.base:close()
 end
 
 function Previewer.base:gen_winopts()
-  return {
-    wrap            = self.win.preview_wrap,
-    number          = true,
-    relativenumber  = false,
-    cursorline      = true,
-    cursorlineopt   = 'both',
-    cursorcolumn    = false,
-    signcolumn      = 'no',
-    list            = false,
-    foldenable      = false,
-    foldmethod      = 'manual',
-  }
+  local winopts = { wrap = self.win.preview_wrap }
+  return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
 function Previewer.base:backup_winopts(win)
@@ -435,18 +426,11 @@ function Previewer.help_tags:new(o, opts, fzf_win)
 end
 
 function Previewer.help_tags:gen_winopts()
-  return {
-    wrap            = self.wrap,
-    number          = false,
-    relativenumber  = false,
-    cursorline      = true,
-    cursorlineopt   = 'both',
-    cursorcolumn    = false,
-    signcolumn      = 'no',
-    list            = false,
-    foldenable      = false,
-    foldmethod      = 'manual',
+  local winopts = {
+    wrap    = self.win.preview_wrap,
+    number  = false
   }
+  return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
 function Previewer.help_tags:exec_cmd(str)

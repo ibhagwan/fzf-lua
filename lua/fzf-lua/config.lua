@@ -58,6 +58,17 @@ M.globals = {
       -- default preview delay 100ms, same as native fzf preview
       -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
       delay               = 100,
+      winopts = {
+        number            = true,
+        relativenumber    = false,
+        cursorline        = true,
+        cursorlineopt     = 'both',
+        cursorcolumn      = false,
+        signcolumn        = 'no',
+        list              = false,
+        foldenable        = false,
+        foldmethod        = 'manual',
+      },
     },
     _borderchars          = {
       ["none"]            = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },

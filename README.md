@@ -261,6 +261,17 @@ require'fzf-lua'.setup {
                                         -- applies only when scrollbar = 'float'
       scrollchars    = {'█', '' },      -- scrollbar chars ({ <full>, <empty> }
                                         -- applies only when scrollbar = 'border'
+      winopts = {                       -- builtin previewer window options
+        number            = true,
+        relativenumber    = false,
+        cursorline        = true,
+        cursorlineopt     = 'both',
+        cursorcolumn      = false,
+        signcolumn        = 'no',
+        list              = false,
+        foldenable        = false,
+        foldmethod        = 'manual',
+      },
     },
     on_create = function()
       -- called once upon creation of the fzf main window
