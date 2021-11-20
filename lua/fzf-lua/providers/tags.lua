@@ -28,20 +28,56 @@ local fzf_tags = function(opts)
 
   local fzf_function = function (cb)
 
+    local read_line = function(file)
+      local line
+      local handle = io.open(file, "r")
+      if handle then
+        line = handle and handle:read("*line")
+        handle:close()
+      end
+      return line
+    end
+
+    local _file2ff = {}
+    local string_byte = string.byte
+    local fileformat = function(file)
+      local ff = _file2ff[file]
+      if ff then return ff end
+      local line = read_line(file)
+      -- dos ends with \13
+      -- mac ends with \13\13
+      -- unix ends with \62
+      -- char(13) == ^M
+      if line and string_byte(line, #line) == 13 then
+        if #line>1 and string_byte(line, #line-1) == 13 then
+          ff = 'mac'
+        else
+          ff = 'dos'
+        end
+      else
+        ff = 'unix'
+      end
+      _file2ff[file] = ff
+      return ff
+    end
+
     local getlinenumber = function(t)
       if not grep_cmd then grep_cmd = get_grep_cmd() end
       local line = 1
       local filepath = path.join({cwd, t.file})
       local pattern = utils.rg_escape(t.text:match("/(.*)/"))
+      if not pattern or not filepath then return line end
       -- ctags uses '$' at the end of short patterns
       -- 'rg|grep' does not match these properly when
       -- 'fileformat' isn't set to 'unix', when set to
       -- 'dos' we need to prepend '$' with '\r$' with 'rg'
       -- it is simpler to just ignore it compleley.
-      -- The commented line below is what we used before:
-      -- pattern = pattern:gsub("\\%$$", "%$")
-      pattern = pattern:gsub("\\%$$", "")
-      if not pattern or not filepath then return line end
+      local ff = fileformat(filepath)
+      if ff == 'dos' then
+        pattern = pattern:gsub("\\%$$", "\\r%$")
+      else
+        pattern = pattern:gsub("\\%$$", "%$")
+      end
       local cmd = string.format('%s "%s" %s',
         grep_cmd, pattern,
         vim.fn.shellescape(filepath))
