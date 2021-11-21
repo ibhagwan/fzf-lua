@@ -30,7 +30,7 @@ local filter_buffers = function(opts, unfiltered)
 
   local excluded = {}
   local bufnrs = vim.tbl_filter(function(b)
-    if 1 ~= vim.fn.buflisted(b) then
+    if not opts.show_unlisted and 1 ~= vim.fn.buflisted(b) then
       excluded[b] = true
     end
     -- only hide unloaded buffers if opts.show_all_buffers is false, keep them listed if true or nil
