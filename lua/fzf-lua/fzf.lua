@@ -15,6 +15,27 @@ local function get_lines_from_file(file)
   return t
 end
 
+
+-- workaround to a potential 'tempname' bug? (#222)
+-- neovim doesn't guarantee the existence of the
+-- parent temp dir potentially failing `mkfifo`
+-- https://github.com/neovim/neovim/issues/1432
+-- https://github.com/neovim/neovim/pull/11284
+local function tempname()
+  local tmpname = vim.fn.tempname()
+  local parent = vim.fn.fnamemodify(tmpname, ':h')
+  -- parent must exist for `mkfifo` to succeed
+  -- if the neovim temp dir was deleted or the
+  -- tempname already exists we use 'os.tmpname'
+  if not uv.fs_stat(parent) or uv.fs_stat(tmpname) then
+    tmpname = os.tmpname()
+    -- 'os.tmpname' touches the file which
+    -- will also fail `mkfifo`, delete it
+    vim.fn.delete(tmpname)
+  end
+  return tmpname
+end
+
 -- contents can be either a table with tostring()able items, or a function that
 -- can be called repeatedly for values. the latter can use coroutines for async
 -- behavior.
@@ -26,8 +47,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   if not opts then opts = {} end
   local cwd = opts.fzf_cwd or opts.cwd
   local cmd = opts.fzf_binary or opts.fzf_bin or 'fzf'
-  local fifotmpname = vim.fn.tempname()
-  local outputtmpname = vim.fn.tempname()
+  local fifotmpname = tempname()
+  local outputtmpname = tempname()
 
   if fzf_cli_args then cmd = cmd .. " " .. fzf_cli_args end
   if opts.fzf_cli_args then cmd = cmd .. " " .. opts.fzf_cli_args end
@@ -47,7 +68,10 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   local write_cb_count = 0
 
   -- Create the output pipe
-  vim.fn.system(("mkfifo %s"):format(vim.fn.shellescape(fifotmpname)))
+  -- We use tbl for perf reasons, from ':help system':
+  --  If {cmd} is a List it runs directly (no 'shell')
+  --  If {cmd} is a String it runs in the 'shell'
+  vim.fn.system({"mkfifo", fifotmpname})
 
   local function finish(_)
     -- mark finish if once called
@@ -133,7 +157,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   fd = uv.fs_open(fifotmpname, "w", -1)
   output_pipe = uv.new_pipe(false)
   output_pipe:open(fd)
-  -- print(uv.pipe_getpeername(output_pipe))
+  -- print(output_pipe:getpeername())
 
   -- this part runs in the background, when the user has selected, it will
   -- error out, but that doesn't matter so we just break out of the loop.
