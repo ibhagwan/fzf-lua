@@ -9,9 +9,9 @@ local grep_cmd = nil
 
 local get_grep_cmd = function()
   if vim.fn.executable("rg") == 1 then
-    return "rg --line-number"
+    return {"rg", "--line-number"}
   end
-  return "grep -n -P"
+  return {"grep", "-n", "-P"}
 end
 
 local fzf_tags = function(opts)
@@ -81,10 +81,10 @@ local fzf_tags = function(opts)
       -- equivalent pattern to `rg --crlf`
       -- see discussion in #219
       pattern = pattern:gsub("\\%$$", "\\r??%$")
-      local cmd = string.format('%s "%s" %s',
-        grep_cmd, pattern,
-        vim.fn.shellescape(filepath))
-      local out = vim.fn.system(cmd)
+      local cmd = utils.tbl_deep_clone(grep_cmd)
+      table.insert(cmd, pattern)
+      table.insert(cmd, filepath)
+      local out = utils.io_system(cmd)
       if not utils.shell_error() then
         line = out:match("[^:]+")
       end

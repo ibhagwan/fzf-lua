@@ -516,6 +516,7 @@ function Previewer.man_pages:populate_preview_buf(entry_str)
   -- mark the buffer for unloading the next call
   self.preview_bufloaded = true
   local cmd = self.cmd:format(entry)
+  if type(cmd) == 'string' then cmd = {"sh", "-c", cmd} end
   local output, _ = utils.io_systemlist(cmd)
   -- vim.api.nvim_buf_set_option(self.preview_bufnr, 'modifiable', true)
   vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, output)

@@ -306,20 +306,21 @@ end
 
 
 M.git_switch = function(selected, opts)
-  local cmd = path.git_cwd("git checkout ", opts.cwd)
+  local cmd = path.git_cwd({"git", "checkout"}, opts.cwd)
   local git_ver = utils.git_version()
   -- git switch was added with git version 2.23
   if git_ver and git_ver >= 2.23 then
-    cmd = path.git_cwd("git switch ", opts.cwd)
+    cmd = path.git_cwd({"git", "switch"}, opts.cwd)
   end
   -- remove anything past space
   local branch = selected[1]:match("[^ ]+")
   -- do nothing for active branch
   if branch:find("%*") ~= nil then return end
-  local args = ""
-  local is_remote = branch:find("^remotes/") ~= nil
-  if is_remote then args = "--detach " end
-  local output = vim.fn.systemlist(cmd .. args .. branch)
+  if branch:find("^remotes/") then
+    table.insert(cmd, "--detach")
+  end
+  table.insert(cmd, branch)
+  local output = utils.io_systemlist(cmd)
   if utils.shell_error() then
     utils.err(unpack(output))
   else
@@ -329,13 +330,14 @@ M.git_switch = function(selected, opts)
 end
 
 M.git_checkout = function(selected, opts)
-  local cmd_checkout = path.git_cwd("git checkout ", opts.cwd)
-  local cmd_cur_commit = path.git_cwd("git rev-parse --short HEAD", opts.cwd)
+  local cmd_checkout = path.git_cwd({"git", "checkout"}, opts.cwd)
+  local cmd_cur_commit = path.git_cwd({"git", "rev-parse", "--short HEAD"}, opts.cwd)
   local commit_hash = selected[1]:match("[^ ]+")
   if vim.fn.input("Checkout commit " .. commit_hash .. "? [y/n] ") == "y" then
-    local current_commit = vim.fn.systemlist(cmd_cur_commit)
+    local current_commit = utils.io_systemlist(cmd_cur_commit)
     if(commit_hash == current_commit) then return end
-    local output = vim.fn.systemlist(cmd_checkout .. commit_hash)
+    table.insert(cmd_checkout, commit_hash)
+    local output = utils.io_systemlist(cmd_checkout)
     if utils.shell_error() then
       utils.err(unpack(output))
     else
@@ -346,13 +348,14 @@ M.git_checkout = function(selected, opts)
 end
 
 M.git_buf_edit = function(selected, opts)
-  local cmd = path.git_cwd("git show ", opts.cwd)
+  local cmd = path.git_cwd({"git", "show"}, opts.cwd)
   local git_root = path.git_root(opts.cwd, true)
   local win = vim.api.nvim_get_current_win()
   local buffer_filetype = vim.bo.filetype
   local file = path.relative(vim.fn.expand("%:p"), git_root)
   local commit_hash = selected[1]:match("[^ ]+")
-  local git_file_contents = vim.fn.systemlist(cmd .. commit_hash .. ":" .. file)
+  table.insert(cmd, commit_hash .. ":" .. file)
+  local git_file_contents = utils.io_systemlist(cmd)
   local buf = vim.api.nvim_create_buf(true, true)
   local file_name = string.gsub(file,"$","[" .. commit_hash .. "]")
   vim.api.nvim_buf_set_lines(buf,0,0,true,git_file_contents)
