@@ -163,7 +163,7 @@ M.globals.files = {
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = true,
-    git_status_cmd      = "git status -s",
+    git_status_cmd      = {"git", "status", "-s"},
     find_opts           = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
     fd_opts             =
       [[--color never --type f --hidden --follow ]] ..

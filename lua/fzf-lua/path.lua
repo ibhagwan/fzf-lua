@@ -186,8 +186,14 @@ end
 function M.git_cwd(cmd, cwd)
   if not cwd then return cmd end
   cwd = vim.fn.expand(cwd)
-  local arg_cwd = ("-C %s "):format(vim.fn.shellescape(cwd))
-  cmd = cmd:gsub("^git ", "git " ..  arg_cwd)
+  if type(cmd) == 'string' then
+    local arg_cwd = ("-C %s "):format(vim.fn.shellescape(cwd))
+    cmd = cmd:gsub("^git ", "git " ..  arg_cwd)
+  else
+    cmd = utils.tbl_deep_clone(cmd)
+    table.insert(cmd, 2, "-C")
+    table.insert(cmd, 3, cwd)
+  end
   return cmd
 end
 
@@ -196,7 +202,7 @@ function M.is_git_repo(cwd, noerr)
 end
 
 function M.git_root(cwd, noerr)
-    local cmd = M.git_cwd("git rev-parse --show-toplevel", cwd)
+    local cmd = M.git_cwd({"git", "rev-parse", "--show-toplevel"}, cwd)
     local output, err = utils.io_systemlist(cmd)
     if err ~= 0 then
         if not noerr then utils.info(unpack(output)) end

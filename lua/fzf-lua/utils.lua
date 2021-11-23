@@ -126,8 +126,7 @@ M.file_is_binary = function(filepath)
      not vim.loop.fs_stat(filepath) then
     return false
   end
-  local out = M.io_system("file --dereference --mime " ..
-    vim.fn.shellescape(filepath))
+  local out = M.io_system({"file", "--dereference", "--mime", filepath})
   return out:match("charset=binary") ~= nil
 end
 
@@ -139,8 +138,7 @@ M.perl_file_is_binary = function(filepath)
   end
   -- can also use '-T' to test for text files
   -- `perldoc -f -x` to learn more about '-B|-T'
-  M.io_system("perl -E 'exit((-B $ARGV[0])?0:1);' " ..
-    vim.fn.shellescape(filepath))
+  M.io_system({"perl", "-E", 'exit((-B $ARGV[0])?0:1);', filepath})
   return not M.shell_error()
 end
 
@@ -421,7 +419,8 @@ end
 
 function M.io_systemlist(cmd, use_lua_io)
   if not use_lua_io then use_lua_io = _use_lua_io end
-  if use_lua_io then
+  -- only supported with string cmds (no tables)
+  if use_lua_io and cmd == 'string' then
     local rc = 0
     local stdout = ''
     local handle = io.popen(cmd .. " 2>&1; echo $?", "r")
@@ -478,12 +477,12 @@ function M.fzf_bind_to_neovim(key)
 end
 
 function M.git_version()
-  local out = M.io_system("git --version")
+  local out = M.io_system({"git", "--version"})
   return tonumber(out:match("(%d+.%d+)."))
 end
 
 function M.find_version()
-  local out, rc = M.io_systemlist("find --version")
+  local out, rc = M.io_systemlist({"find", "--version"})
   return rc==0 and tonumber(out[1]:match("(%d+.%d+)")) or nil
 end
 
