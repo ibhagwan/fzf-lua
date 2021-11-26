@@ -442,18 +442,34 @@ function Previewer.help_tags:parse_entry(entry_str)
   return entry_str
 end
 
+local function curtab_helpbuf()
+  for _, w in ipairs(vim.api.nvim_tabpage_list_wins(nil)) do
+    local bufnr = vim.api.nvim_win_get_buf(w)
+    local bufinfo = vim.fn.getbufinfo(bufnr)[1]
+    if bufinfo.variables and bufinfo.variables.current_syntax == 'help' then
+      return bufnr, w
+    end
+  end
+  return nil, nil
+end
+
 function Previewer.help_tags:init_help_win(str)
   if not self.split or
     (self.split ~= "topleft" and self.split ~= "botright") then
     self.split = "botright"
   end
   local orig_winid = api.nvim_get_current_win()
-  self:exec_cmd(str)
-  self.help_bufnr = api.nvim_get_current_buf()
-  self.help_winid = api.nvim_get_current_win()
-  pcall(vim.api.nvim_win_set_height, 0, 0)
-  pcall(vim.api.nvim_win_set_width, 0, 0)
-  api.nvim_set_current_win(orig_winid)
+  self.help_bufnr, self.help_winid = curtab_helpbuf()
+  -- do not open a new 'help' window
+  -- if one already exists
+  if not self.help_bufnr then
+    self:exec_cmd(str)
+    self.help_bufnr = api.nvim_get_current_buf()
+    self.help_winid = api.nvim_get_current_win()
+    pcall(vim.api.nvim_win_set_height, 0, 0)
+    pcall(vim.api.nvim_win_set_width, 0, 0)
+    api.nvim_set_current_win(orig_winid)
+  end
 end
 
 function Previewer.help_tags:populate_preview_buf(entry_str)
