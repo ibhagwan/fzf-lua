@@ -76,10 +76,11 @@ local function code_action_handler(opts, cb, _, code_actions, context, _)
     local text = string.format("%s %s",
       utils.ansi_codes.magenta(string.format("%d:", i)),
       action.title)
-    local client = vim.lsp.get_client_by_id(context.client_id)
+    -- local client = vim.lsp.get_client_by_id(context.client_id)
     local entry = {
-      client = client,
-      client_name = client and client.name or "",
+      client_id = context.client_id,
+      -- client - client,
+      -- client_name = client and client.name or "",
       command = action,
     }
     opts.code_actions[tostring(i)] = entry
@@ -385,8 +386,9 @@ M.code_actions = function(opts)
   if not opts.actions then opts.actions = {} end
   opts.actions.default = (function(selected)
     local idx = selected[1]:match("(%d+)")
-    local action = opts.code_actions[idx].command
-    local client = opts.code_actions[idx].client
+    local entry = opts.code_actions[idx]
+    local action = entry.command
+    local client = entry.client or vim.lsp.get_client_by_id(entry.client_id)
     if
       not action.edit
       and client
