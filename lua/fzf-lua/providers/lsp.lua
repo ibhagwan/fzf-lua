@@ -28,7 +28,7 @@ local jump_to_location = function(opts, result)
   return vim.lsp.util.jump_to_location(result)
 end
 
-local function location_handler(opts, cb, _, result)
+local function location_handler(opts, cb, _, result, _, _)
   result = vim.tbl_islist(result) and result or {result}
   -- Jump immediately if there is only one location
   if opts.jump_to_single_result and #result == 1 then
@@ -49,7 +49,7 @@ local function location_handler(opts, cb, _, result)
   end
 end
 
-local function symbol_handler(opts, cb, _, result)
+local function symbol_handler(opts, cb, _, result, _, _)
   result = vim.tbl_islist(result) and result or {result}
   local items = vim.lsp.util.symbols_to_items(result)
   for _, entry in ipairs(items) do
@@ -69,14 +69,20 @@ local function symbol_handler(opts, cb, _, result)
   end
 end
 
-local function code_action_handler(opts, cb, _, code_actions)
+local function code_action_handler(opts, cb, _, code_actions, context, _)
   if not opts.code_actions then opts.code_actions = {} end
   local i = utils.tbl_length(opts.code_actions) + 1
   for _, action in ipairs(code_actions) do
     local text = string.format("%s %s",
       utils.ansi_codes.magenta(string.format("%d:", i)),
       action.title)
-    opts.code_actions[tostring(i)] = action
+    local client = vim.lsp.get_client_by_id(context.client_id)
+    local entry = {
+      client = client,
+      client_name = client and client.name or "",
+      command = action,
+    }
+    opts.code_actions[tostring(i)] = entry
     cb(text, function(err)
       if err then return end
     end)
@@ -140,7 +146,7 @@ local function wrap_handler(handler, opts, cb, co)
         utils.send_ctrl_c()
       end
     else
-      ret = opts.lsp_handler.handler(opts, cb, co, result)
+      ret = opts.lsp_handler.handler(opts, cb, co, result, context, lspcfg)
       if opts.num_callbacks == opts.num_clients then
         -- close the pipe to fzf, this
         -- removes the loading indicator in fzf
@@ -183,9 +189,10 @@ local function set_lsp_fzf_fn(opts)
     else
       local results = {}
       local cb = function(text) table.insert(results, text) end
-      for _, v in pairs(lsp_results) do
-        if v.result then
-          opts.lsp_handler.handler(opts, cb, opts.lsp_handler.method, v.result)
+      for client_id, response in pairs(lsp_results) do
+        if response.result then
+          local context = { client_id = client_id }
+          opts.lsp_handler.handler(opts, cb, opts.lsp_handler.method, response.result, context)
         end
       end
       if vim.tbl_isempty(results) then
@@ -345,30 +352,62 @@ M.code_actions = function(opts)
     return workspace_edit
   end
 
+  local transform_action = opts.transform_action
+    or function(action)
+      -- Remove 0 -version from LSP codeaction request payload.
+      -- Is only run on the "java.apply.workspaceEdit" codeaction.
+      -- Fixed Java/jdtls compatibility with Telescope
+      -- See fix_zero_version commentary for more information
+      local command = (action.command and action.command.command) or action.command
+      if not (command == "java.apply.workspaceEdit") then
+        return action
+      end
+      local arguments = (action.command and action.command.arguments) or action.arguments
+      action.edit = fix_zero_version(arguments[1])
+      return action
+    end
+
+  local execute_action = opts.execute_action
+    or function(action)
+      if action.edit or type(action.command) == "table" then
+        if action.edit then
+          vim.lsp.util.apply_workspace_edit(action.edit)
+        end
+        if type(action.command) == "table" then
+          vim.lsp.buf.execute_command(action.command)
+        end
+      else
+        vim.lsp.buf.execute_command(action)
+      end
+    end
+
   -- "apply action" as default function
   if not opts.actions then opts.actions = {} end
   opts.actions.default = (function(selected)
     local idx = selected[1]:match("(%d+)")
-    local action = opts.code_actions[idx]
-    if not action then return end
-    -- Remove 0 -version from LSP codeaction request payload.
-    -- Is only run on the "java.apply.workspaceEdit" codeaction.
-    -- Fixed Java/jdtls compatibility with Telescope
-    -- See fix_zero_version commentary for more information
-    local command = (action.command and action.command.command) or action.command
-    if command == "java.apply.workspaceEdit" then
-      local arguments = (action.command and action.command.arguments) or action.arguments
-      action.edit = fix_zero_version(arguments[1])
-    end
-    if action.edit or type(action.command) == 'table' then
-      if action.edit then
-        vim.lsp.util.apply_workspace_edit(action.edit)
-      end
-      if type(action.command) == 'table' then
-        vim.lsp.buf.execute_command(action.command)
-      end
+    local action = opts.code_actions[idx].command
+    local client = opts.code_actions[idx].client
+    if
+      not action.edit
+      and client
+      and type(client.resolved_capabilities.code_action) == "table"
+      and client.resolved_capabilities.code_action.resolveProvider
+    then
+      local request = "codeAction/resolve"
+      client.request(request, action, function(resolved_err, resolved_action)
+        if resolved_err then
+          utils.err(("Error %d executing '%s': %s")
+            :format(resolved_err.code, request, resolved_err.message))
+          return
+        end
+        if resolved_action then
+          execute_action(transform_action(resolved_action))
+        else
+          execute_action(transform_action(action))
+        end
+      end)
     else
-      vim.lsp.buf.execute_command(action)
+      execute_action(transform_action(action))
     end
   end)
 
