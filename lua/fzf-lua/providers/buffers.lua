@@ -205,7 +205,9 @@ end
 M.buffer_lines = function(opts)
   if not opts then return end
 
-  opts.no_term_buffers = true
+  if opts.no_term_buffers == nil then
+    opts.no_term_buffers = true
+  end
   local buffers = filter_buffers(opts,
     opts.current_buffer_only and { vim.api.nvim_get_current_buf() } or
     vim.api.nvim_list_bufs())
