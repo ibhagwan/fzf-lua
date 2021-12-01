@@ -352,11 +352,22 @@ M.grep_curbuf = function(opts)
   opts.filename = vim.api.nvim_buf_get_name(0)
   if #opts.filename > 0 then
     opts.filename = path.relative(opts.filename, vim.loop.cwd())
-    return M.live_grep(opts)
+    if opts.lgrep then
+      return M.live_grep(opts)
+    else
+      opts.search = ''
+      return M.grep(opts)
+    end
   else
     utils.info("Rg current buffer requires actual file on disk")
     return
   end
+end
+
+M.lgrep_curbuf = function(opts)
+  if not opts then opts = {} end
+  opts.lgrep = true
+  return M.grep_curbuf(opts)
 end
 
 return M
