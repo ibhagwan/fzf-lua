@@ -251,6 +251,7 @@ M.buffer_lines = function(opts)
     opts.fzf_opts["--preview-window"] = 'hidden:right:0'
     opts.fzf_opts["--delimiter"] = vim.fn.shellescape(']')
     opts.fzf_opts["--nth"] = '2,-1'
+    opts.fzf_opts["--tiebreak"] = 'index'
 
     if opts.search and #opts.search>0 then
       opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search)
