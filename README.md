@@ -507,6 +507,8 @@ require'fzf-lua'.setup {
   blines = {
     previewer         = "builtin",    -- set to 'false' to disable
     prompt            = 'BLines❯ ',
+    show_unlisted     = true,         -- include 'help' buffers
+    no_term_buffers   = false,        -- include 'term' buffers
     actions = {
       ["default"]     = actions.buf_edit,
       ["ctrl-s"]      = actions.buf_split,
