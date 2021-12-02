@@ -336,7 +336,8 @@ function Previewer.buffer_or_file:do_syntax(entry)
         ))
       end
       if syntax_limit_reached == 0 then
-        if entry.filetype and #entry.filetype>0 then
+        if entry.filetype == 'help' then
+        -- if entry.filetype and #entry.filetype>0 then
           -- filetype was saved from a loaded buffer
           -- this helps avoid losing highlights for help buffers
           -- which are '.txt' files with 'ft=help'
