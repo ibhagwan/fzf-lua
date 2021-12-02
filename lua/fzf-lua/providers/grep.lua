@@ -39,6 +39,11 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     search_query = utils.rg_escape(search_query)
   end
 
+  -- remove column numbers when search term is empty
+  if not opts.no_column_hide and #search_query==0 then
+    command = command:gsub("--column", "")
+  end
+
   -- do not escape at all
   if not (no_esc == 2 or opts.no_esc == 2) then
     search_query = vim.fn.shellescape(search_query)
