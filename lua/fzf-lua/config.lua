@@ -324,6 +324,13 @@ M.globals.lines = {
     prompt                = 'Lines> ',
     file_icons            = true and M._has_devicons,
     color_icons           = true,
+    show_unlisted         = false,
+    no_term_buffers       = true,
+    fzf_opts = {
+        ['--delimiter']   = vim.fn.shellescape(']'),
+        ["--nth"]         = '2..',
+        ["--tiebreak"]    = 'index',
+    },
     actions = {
         ["default"]       = actions.buf_edit,
         ["ctrl-s"]        = actions.buf_split,
@@ -338,6 +345,11 @@ M.globals.blines = {
     color_icons           = true,
     show_unlisted         = true,
     no_term_buffers       = false,
+    fzf_opts = {
+        ['--delimiter']   = vim.fn.shellescape('[:]'),
+        ["--with-nth"]    = '2..',
+        ["--tiebreak"]    = 'index',
+    },
     actions = {
         ["default"]       = actions.buf_edit,
         ["ctrl-s"]        = actions.buf_split,

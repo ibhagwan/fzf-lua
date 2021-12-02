@@ -252,6 +252,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     else --]]
       -- mark the buffer for unloading the next call
       self.preview_bufloaded = true
+      entry.filetype = vim.api.nvim_buf_get_option(entry.bufnr, 'filetype')
       local lines = vim.api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
       vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
     -- end
@@ -335,11 +336,19 @@ function Previewer.buffer_or_file:do_syntax(entry)
         ))
       end
       if syntax_limit_reached == 0 then
-        -- prepend the buffer number to the path and
-        -- set as buffer name, this makes sure 'filetype detect'
-        -- gets the right filetype which enables the syntax
-        local tempname = path.join({tostring(bufnr), entry.path})
-        pcall(api.nvim_buf_set_name, bufnr, tempname)
+        if entry.filetype and #entry.filetype>0 then
+          -- filetype was saved from a loaded buffer
+          -- this helps avoid losing highlights for help buffers
+          -- which are '.txt' files with 'ft=help'
+          -- api.nvim_buf_set_option(bufnr, 'filetype', entry.filetype)
+          pcall(api.nvim_buf_set_option, bufnr, 'filetype', entry.filetype)
+        else
+          -- prepend the buffer number to the path and
+          -- set as buffer name, this makes sure 'filetype detect'
+          -- gets the right filetype which enables the syntax
+          local tempname = path.join({tostring(bufnr), entry.path})
+          pcall(api.nvim_buf_set_name, bufnr, tempname)
+        end
         -- nvim_buf_call has less side-effects than window switch
         api.nvim_buf_call(bufnr, function()
           vim.cmd('filetype detect')

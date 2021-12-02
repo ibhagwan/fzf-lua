@@ -170,7 +170,7 @@ function M.entry_to_file(entry, cwd)
   if bufnr then
     terminal = utils.is_term_buffer(bufnr)
     if terminal then
-      file, line = stripped:match("(.*):(%d+)$")
+      file, line = stripped:match("([^:]+):(%d+)")
     end
   end
   return {

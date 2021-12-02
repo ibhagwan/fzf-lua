@@ -349,8 +349,10 @@ M.grep_curbuf = function(opts)
   if opts.exec_empty_query == nil then
     opts.exec_empty_query = true
   end
+  opts.fzf_opts = vim.tbl_extend("keep",
+    opts.fzf_opts or {}, config.globals.blines.fzf_opts)
   opts.filename = vim.api.nvim_buf_get_name(0)
-  if #opts.filename > 0 then
+  if #opts.filename > 0 and vim.loop.fs_stat(opts.filename) then
     opts.filename = path.relative(opts.filename, vim.loop.cwd())
     if opts.lgrep then
       return M.live_grep(opts)
@@ -359,7 +361,7 @@ M.grep_curbuf = function(opts)
       return M.grep(opts)
     end
   else
-    utils.info("Rg current buffer requires actual file on disk")
+    utils.info("Rg current buffer requires file on disk")
     return
   end
 end

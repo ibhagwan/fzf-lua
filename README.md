@@ -504,11 +504,36 @@ require'fzf-lua'.setup {
       ["ctrl-x"]      = actions.buf_del,
     }
   },
+  lines = {
+    previewer         = "builtin",    -- set to 'false' to disable
+    prompt            = 'Lines❯ ',
+    show_unlisted     = false,        -- exclude 'help' buffers
+    no_term_buffers   = true,         -- exclude 'term' buffers
+    fzf_opts = {
+      -- do not include bufnr in fuzzy matching
+      -- tiebreak by line no.
+      ['--delimiter'] = vim.fn.shellescape(']'),
+      ["--nth"]       = '2..',
+      ["--tiebreak"]  = 'index',
+    },
+    actions = {
+      ["default"]     = actions.buf_edit,
+      ["ctrl-s"]      = actions.buf_split,
+      ["ctrl-v"]      = actions.buf_vsplit,
+      ["ctrl-t"]      = actions.buf_tabedit,
+    }
+  },
   blines = {
     previewer         = "builtin",    -- set to 'false' to disable
     prompt            = 'BLines❯ ',
     show_unlisted     = true,         -- include 'help' buffers
     no_term_buffers   = false,        -- include 'term' buffers
+    fzf_opts = {
+      -- hide filename, tiebreak by line no.
+      ['--delimiter'] = vim.fn.shellescape('[:]'),
+      ["--with-nth"]  = '2..',
+      ["--tiebreak"]  = 'index',
+    },
     actions = {
       ["default"]     = actions.buf_edit,
       ["ctrl-s"]      = actions.buf_split,

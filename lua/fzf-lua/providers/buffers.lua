@@ -205,9 +205,6 @@ end
 M.buffer_lines = function(opts)
   if not opts then return end
 
-  if opts.no_term_buffers == nil then
-    opts.no_term_buffers = true
-  end
   local buffers = filter_buffers(opts,
     opts.current_buffer_only and { vim.api.nvim_get_current_buf() } or
     vim.api.nvim_list_bufs())
@@ -249,9 +246,6 @@ M.buffer_lines = function(opts)
     -- disable multi-select
     opts.fzf_opts["--no-multi"] = ''
     opts.fzf_opts["--preview-window"] = 'hidden:right:0'
-    opts.fzf_opts["--delimiter"] = vim.fn.shellescape(']')
-    opts.fzf_opts["--nth"] = '2,-1'
-    opts.fzf_opts["--tiebreak"] = 'index'
 
     if opts.search and #opts.search>0 then
       opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search)
