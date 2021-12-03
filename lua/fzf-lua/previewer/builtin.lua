@@ -105,6 +105,7 @@ function Previewer.base:clear_preview_buf()
   self.preview_bufnr = nil
   self.preview_isterm = nil
   self.preview_bufloaded = nil
+  self.loaded_entry = nil
   return retbuf
 end
 
@@ -126,7 +127,11 @@ function Previewer.base:display_entry(entry_str)
   assert(not self.preview_bufnr or previous_bufnr == self.preview_bufnr)
   -- clear the current preview buffer
   -- store the new preview buffer
-  self.preview_bufnr = self:clear_preview_buf()
+  local should_clear = self.should_clear_preview and
+    self:should_clear_preview(entry_str)
+  if should_clear == nil or should_clear == true then
+    self.preview_bufnr = self:clear_preview_buf()
+  end
 
   local populate_preview_buf = function(entry_str)
     if not self.win or not self.win:validate_preview() then return end
@@ -235,11 +240,31 @@ function Previewer.buffer_or_file:parse_entry(entry_str)
   return entry
 end
 
+function Previewer.buffer_or_file:should_clear_preview(entry)
+  -- we don't have a previous entry to compare to
+  -- return 'true' so the buffer will be loaded in
+  -- ::populate_preview_buf
+  if not self.loaded_entry then return true end
+  if type(entry) == 'string' then
+    entry = self:parse_entry(entry)
+  end
+  if (entry.bufnr and entry.bufnr == self.loaded_entry.bufnr) or
+    (entry.path and entry.path == self.loaded_entry.path) then
+    return false
+  end
+  return true
+end
+
 function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
   local entry = self:parse_entry(entry_str)
   if vim.tbl_isempty(entry) then return end
-  if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
+  if not self:should_clear_preview(entry) then
+    -- same file/buffer as previous entry
+    -- no need to reload content
+    -- call post to set cusror location
+    self:preview_buf_post(entry)
+  elseif entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
     -- WE NO LONGER REUSE THE CURRENT BUFFER (except for term)
     -- this changes the buffer's 'getbufinfo[1].lastused'
     -- which messes up our `buffers()` sort
@@ -420,6 +445,11 @@ function Previewer.buffer_or_file:preview_buf_post(entry)
   end
 
   self:update_border(entry)
+
+  -- save the loaded entry so we can compare
+  -- bufnr|path with the next entry, if equal
+  -- we can skip loading the buffer again
+  self.loaded_entry = entry
 end
 
 
