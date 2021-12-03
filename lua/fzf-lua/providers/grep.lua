@@ -41,7 +41,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
 
   -- remove column numbers when search term is empty
   if not opts.no_column_hide and #search_query==0 then
-    command = command:gsub("--column", "")
+    command = command:gsub("%s%-%-column", "")
   end
 
   -- do not escape at all
