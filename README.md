@@ -262,6 +262,8 @@ require'fzf-lua'.setup {
                                         -- applies only when scrollbar = 'float'
       scrollchars    = {'█', '' },      -- scrollbar chars ({ <full>, <empty> }
                                         -- applies only when scrollbar = 'border'
+      delay          = 100,             -- delay(ms) displaying the preview
+                                        -- prevents lag on fast scrolling
       winopts = {                       -- builtin previewer window options
         number            = true,
         relativenumber    = false,
@@ -368,8 +370,6 @@ require'fzf-lua'.setup {
       cmd             = "man -c %s | col -bx",
     },
     builtin = {
-      delay           = 100,          -- delay(ms) displaying the preview
-                                      -- prevents lag on fast scrolling
       syntax          = true,         -- preview syntax highlight?
       syntax_limit_l  = 0,            -- syntax limit (lines), 0=nolimit
       syntax_limit_b  = 1024*1024,    -- syntax limit (bytes), 0=nolimit
