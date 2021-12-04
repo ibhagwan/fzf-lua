@@ -218,9 +218,21 @@ M.run_builtin = function(selected)
   -- vim.cmd("startinsert") doesn't start INSERT mode
   -- 'mode' returns { blocking = false, mode = "t" }
   -- manually input 'i' seems to workaround this issue
-  local mode = vim.api.nvim_get_mode()
-  if mode.mode and mode.mode ~= 'i' then
-    vim.cmd[[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
+  -- **only if fzf term window was succefully opened (#235)
+  -- this is only required after the 'nt' (normal-terminal)
+  -- mode was introduced along with the 'ModeChanged' event
+  -- https://github.com/neovim/neovim/pull/15878
+  -- https://github.com/neovim/neovim/pull/15840
+  local has_mode_nt = not vim.tbl_isempty(
+    vim.fn.getcompletion('ModeChanged', 'event'))
+  if has_mode_nt then
+    local mode = vim.api.nvim_get_mode()
+    local wininfo = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1]
+    if vim.bo.ft == 'fzf'
+      and wininfo.terminal == 1
+      and mode and mode.mode == 't' then
+      vim.cmd[[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
+    end
   end
 end
 
