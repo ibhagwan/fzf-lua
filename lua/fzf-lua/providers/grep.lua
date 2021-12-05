@@ -154,7 +154,7 @@ M.live_grep = function(opts)
   opts = set_search_header(opts, 2)
 
   opts._reload_command = function(query)
-    if query and not opts.do_not_save_last_search then
+    if query and not (opts.save_last_search == false) then
       last_search = {}
       last_search.no_esc = true
       last_search.query = query

@@ -624,7 +624,7 @@ M.live_workspace_symbols = function(opts)
   opts.winid = vim.api.nvim_get_current_win()
 
   opts._reload_action = function(query)
-    if query and not opts.do_not_save_last_search then
+    if query and not (opts.save_last_search == false) then
       last_search = {}
       last_search.query = query
     end

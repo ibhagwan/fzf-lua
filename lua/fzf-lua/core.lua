@@ -251,7 +251,7 @@ M.make_entry_file = function(opts, x)
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
   -- the './' prefix, will not work with '--color=always'
   -- https://github.com/sharkdp/fd/blob/master/CHANGELOG.md
-  if opts.strip_cwd_prefix == nil or opts.strip_cwd_prefix then
+  if not (opts.strip_cwd_prefix == false) then
      x = path.strip_cwd_prefix(x)
   end
   if opts.cwd and #opts.cwd > 0 then
