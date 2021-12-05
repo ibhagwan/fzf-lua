@@ -248,6 +248,12 @@ M.make_entry_file = function(opts, x)
       return nil
     end
   end
+  -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
+  -- the './' prefix, will not work with '--color=always'
+  -- https://github.com/sharkdp/fd/blob/master/CHANGELOG.md
+  if opts.strip_cwd_prefix == nil or opts.strip_cwd_prefix then
+     x = path.strip_cwd_prefix(x)
+  end
   if opts.cwd and #opts.cwd > 0 then
     -- TODO: does this work if there are ANSI escape codes in x?
     x = path.relative(x, opts.cwd)

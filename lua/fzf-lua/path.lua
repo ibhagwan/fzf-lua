@@ -11,6 +11,10 @@ M.starts_with_separator = function(path)
   return path:find(M.separator()) == 1
 end
 
+M.strip_cwd_prefix = function(path)
+  return path:gsub("^."..M.separator(), "")
+end
+
 function M.tail(path)
   local os_sep = string_byte(M.separator())
 
