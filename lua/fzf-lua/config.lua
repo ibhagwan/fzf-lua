@@ -418,7 +418,7 @@ M.globals.lsp = {
       lsp_icons           = true,
       severity            = "hint",
       cwd_only            = false,
-      async_or_timeout    = true,
+      async_or_timeout    = 5000,
       actions             = M.globals.files.actions,
       icons = {
           ["Error"]       = { icon = "", color = "red" },       -- error

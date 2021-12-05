@@ -177,6 +177,16 @@ local function set_lsp_fzf_fn(opts)
   opts.num_callbacks = 0
   opts.num_clients = utils.tbl_length(vim.lsp.buf_get_clients(0))
 
+  -- consider 'async_or_timeout' only if
+  -- 'sync|async' wasn't manually set
+  if opts.sync == nil and opts.async == nil then
+    if type(opts.async_or_timeout) == 'number' then
+      opts.async = false
+    elseif type(opts.async_or_timeout) == 'boolean' then
+      opts.async = opts.async_or_timeout
+    end
+  end
+
   if opts.sync or opts.async == false then
     local timeout = 5000
     if type(opts.async_or_timeout) == "number" then
@@ -247,15 +257,19 @@ local function set_lsp_fzf_fn(opts)
   return opts
 end
 
+local set_async_default = function(opts, bool)
+  if not opts then opts = {} end
+  if opts.sync == nil and
+     opts.async == nil and
+     type(opts.async_or_timeout) == 'number' then
+     opts.async = bool
+  end
+  return opts
+end
+
 local normalize_lsp_opts = function(opts, cfg)
   opts = config.normalize_opts(opts, cfg)
   if not opts then return end
-
-  -- function async params override global config
-  if opts.async == nil and opts.sync == nil
-    and opts.async_or_timeout ~= true then
-      opts.async = false
-  end
 
   if not opts.cwd then opts.cwd = vim.loop.cwd() end
   if not opts.prompt or opts.prompt == config.globals.lsp.prompt then
@@ -306,7 +320,7 @@ M.implementations = function(opts)
 end
 
 M.document_symbols = function(opts)
-  if not opts then opts = {} end
+  opts = set_async_default(opts, true)
   -- TODO: filename hiding
   -- since single document
   opts.ignore_filename = true
@@ -314,6 +328,7 @@ M.document_symbols = function(opts)
 end
 
 M.workspace_symbols = function(opts)
+  opts = set_async_default(opts, true)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
   opts.lsp_params = {query = opts.query or ''}
