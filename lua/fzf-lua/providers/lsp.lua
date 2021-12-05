@@ -260,8 +260,7 @@ end
 local set_async_default = function(opts, bool)
   if not opts then opts = {} end
   if opts.sync == nil and
-     opts.async == nil and
-     type(opts.async_or_timeout) == 'number' then
+     opts.async == nil then
      opts.async = bool
   end
   return opts
