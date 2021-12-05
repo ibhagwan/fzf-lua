@@ -11,8 +11,12 @@ M.starts_with_separator = function(path)
   return path:find(M.separator()) == 1
 end
 
+M.starts_with_cwd = function(path)
+  return path:match("^."..M.separator()) ~= nil
+end
+
 M.strip_cwd_prefix = function(path)
-  return path:gsub("^."..M.separator(), "")
+  return #path>1 and path[1] == '.' and path[2] == M.separator()
 end
 
 function M.tail(path)
