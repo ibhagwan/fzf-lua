@@ -225,6 +225,7 @@ M.run_builtin = function(selected)
   -- https://github.com/neovim/neovim/pull/15840
   local has_mode_nt = not vim.tbl_isempty(
     vim.fn.getcompletion('ModeChanged', 'event'))
+    or vim.fn.has('nvim-0.6') == 1
   if has_mode_nt then
     local mode = vim.api.nvim_get_mode()
     local wininfo = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1]
