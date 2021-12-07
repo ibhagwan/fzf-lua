@@ -16,7 +16,7 @@ local quickfix_run = function(opts, cfg, locations)
 
   if not opts.cwd then opts.cwd = vim.loop.cwd() end
 
-  opts.fzf_fn = function (cb)
+  local contents = function (cb)
     for _, x in ipairs(results) do
       x = core.make_entry_file(opts, x)
       if x then
@@ -36,7 +36,7 @@ local quickfix_run = function(opts, cfg, locations)
   end ]]
 
   opts = core.set_fzf_line_args(opts)
-  return core.fzf_files(opts)
+  return core.fzf_files(opts, contents)
 end
 
 M.quickfix = function(opts)

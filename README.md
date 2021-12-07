@@ -383,13 +383,13 @@ require'fzf-lua'.setup {
     file_icons        = true,           -- show file icons?
     color_icons       = true,           -- colorize file|git icons
     -- executed command priority is 'cmd' (if exists)
-    -- otherwise auto-detect prioritizes `fd` over `find`
-    -- default options are controlled by 'fd|find_opts'
+    -- otherwise auto-detect prioritizes `fd`:`rg`:`find`
+    -- default options are controlled by 'fd|rg|find|_opts'
     -- NOTE: 'find -printf' requires GNU find
     -- cmd            = "find . -type f -printf '%P\n'",
     find_opts         = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
-    fd_opts           = [[--color never --type f --hidden --follow ]] ..
-            [[--exclude .git --exclude node_modules --exclude '*.pyc']],
+    rg_opts           = "--color=never --files --hidden --follow -g '!.git'",
+    fd_opts           = "--color=never --type f --hidden --follow --exclude .git",
     actions = {
       -- set bind to 'false' to disable an action
       -- default action opens a single selection

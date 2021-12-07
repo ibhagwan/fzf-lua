@@ -30,7 +30,7 @@ M.oldfiles = function(opts)
     end
   end
 
-  opts.fzf_fn = function (cb)
+  local contents = function (cb)
     for _, x in ipairs(results) do
       x = core.make_entry_file(opts, x)
       if x then
@@ -45,11 +45,7 @@ M.oldfiles = function(opts)
     utils.delayed_cb(cb)
   end
 
-  --[[ opts.cb_selected = function(_, x)
-    print("o:", x)
-  end ]]
-
-  return core.fzf_files(opts)
+  return core.fzf_files(opts, contents)
 end
 
 return M

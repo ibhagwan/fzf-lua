@@ -26,6 +26,8 @@ local get_files_cmd = function(opts)
   local command = nil
   if vim.fn.executable("fd") == 1 then
     command = string.format('fd %s', opts.fd_opts)
+  elseif vim.fn.executable("rg") == 1 then
+    command = string.format('rg %s', opts.rg_opts)
   else
     POSIX_find_compat(opts.find_opts)
     command = string.format('find -L . %s', opts.find_opts)
@@ -40,13 +42,16 @@ M.files = function(opts)
 
   local command = get_files_cmd(opts)
 
-  opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
-    { cmd = command, cwd = opts.cwd, pid_cb = opts._pid_cb },
-    function(x)
-      return core.make_entry_file(opts, x)
-    end)
+  local contents = (opts.git_icons or opts.file_icons) and
+    libuv.spawn_nvim_fzf_cmd(
+      { cmd = command, cwd = opts.cwd, pid_cb = opts._pid_cb },
+      function(x)
+        return core.make_entry_file(opts, x)
+      end)
+    or command
 
-  return core.fzf_files(opts)
+  opts = core.set_header(opts, 2)
+  return core.fzf_files(opts, contents)
 end
 
 local last_query = ""
@@ -64,19 +69,11 @@ M.files_resume = function(opts)
     last_query = args[1]
   end, "{q}")
 
-  local command = get_files_cmd(opts)
-
   opts.fzf_opts['--query'] = vim.fn.shellescape(last_query)
   opts._fzf_cli_args = ('--bind=change:execute-silent:%s'):
     format(vim.fn.shellescape(raw_act))
 
-  opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
-    {cmd = command, cwd = opts.cwd},
-    function(x)
-      return core.make_entry_file(opts, x)
-    end)
-
-  return core.fzf_files(opts)
+  return M.files(opts)
 end
 
 M.args = function(opts)
@@ -100,7 +97,7 @@ M.args = function(opts)
   end
   entries = nil
 
-  opts.fzf_fn = function (cb)
+  local contents = function (cb)
     for _, x in ipairs(args) do
       x = core.make_entry_file(opts, x)
       if x then
@@ -115,7 +112,7 @@ M.args = function(opts)
     utils.delayed_cb(cb)
   end
 
-  return core.fzf_files(opts)
+  return core.fzf_files(opts, contents)
 end
 
 return M

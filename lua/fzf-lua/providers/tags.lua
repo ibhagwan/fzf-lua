@@ -26,7 +26,7 @@ local fzf_tags = function(opts)
   local cwd = vim.fn.expand(opts.cwd or vim.fn.getcwd())
   local current_file = vim.api.nvim_buf_get_name(0)
 
-  local fzf_function = function (cb)
+  local contents = function (cb)
 
     --[[ local read_line = function(file)
       local line
@@ -137,8 +137,7 @@ local fzf_tags = function(opts)
   end
 
   opts = core.set_fzf_line_args(opts)
-  opts.fzf_fn = fzf_function
-  return core.fzf_files(opts)
+  return core.fzf_files(opts, contents)
 end
 
 M.tags = function(opts)

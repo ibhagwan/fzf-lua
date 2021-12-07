@@ -1,3 +1,4 @@
+local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
 local previewers = require "fzf-lua.previewer"
@@ -165,18 +166,14 @@ M.globals.files = {
     git_icons           = true,
     git_status_cmd      = {"git", "status", "-s"},
     find_opts           = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
-    fd_opts             =
-      [[--color never --type f --hidden --follow ]] ..
-      [[--exclude .git --exclude node_modules --exclude '*.pyc']],
+    rg_opts             = "--color=never --files --hidden --follow -g '!.git'",
+    fd_opts             = "--color=never --type f --hidden --follow --exclude .git",
     actions = {
       ["default"]       = actions.file_edit_or_qf,
       ["ctrl-s"]        = actions.file_split,
       ["ctrl-v"]        = actions.file_vsplit,
       ["ctrl-t"]        = actions.file_tabedit,
       ["alt-q"]         = actions.file_sel_to_qf,
-      ["ctrl-q"]        = function()
-        utils.info("'ctrl-q|ctrl-a' has been deprecated in favor of 'alt-q|alt-a'")
-      end
     },
   }
 -- Must construct our opts table in stages
@@ -649,6 +646,9 @@ function M.normalize_opts(opts, defaults)
       opts.cwd = nil
     end
   end
+  
+  -- test for valid git_repo
+  opts.git_icons = opts.git_icons and path.is_git_repo(opts.cwd, true)
 
   local executable = function(binary, fncerr,  strerr)
     if binary and vim.fn.executable(binary) ~= 1 then

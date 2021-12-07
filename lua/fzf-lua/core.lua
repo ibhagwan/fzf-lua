@@ -251,9 +251,9 @@ M.make_entry_file = function(opts, x)
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
   -- the './' prefix, will not work with '--color=always'
   -- https://github.com/sharkdp/fd/blob/master/CHANGELOG.md
-  -- if not (opts.strip_cwd_prefix == false) and path.starts_with_cwd(x) then
-  --    x = x:sub(3)
-  -- end
+  if not (opts.strip_cwd_prefix == false) and path.starts_with_cwd(x) then
+     x = x:sub(3)
+  end
   if opts.cwd and #opts.cwd > 0 then
     -- TODO: does this work if there are ANSI escape codes in x?
     x = path.relative(x, opts.cwd)
@@ -309,13 +309,39 @@ M.set_fzf_line_args = function(opts)
   return opts
 end
 
-M.fzf_files = function(opts)
+M.set_header = function(opts, type)
+  if not opts then opts = {} end
+  if opts.no_header then return opts end
+  if not opts.cwd_header then opts.cwd_header = "cwd:" end
+  if not opts.search_header then opts.search_header = "Searching for:" end
+  local header_str
+  local cwd_str = opts.cwd and opts.cwd ~= vim.loop.cwd() and
+    ("%s %s"):format(opts.cwd_header, opts.cwd:gsub("^"..vim.env.HOME, "~"))
+  local search_str = opts.search and #opts.search > 0 and
+    ("%s %s"):format(opts.search_header, opts.search)
+  -- 1: only search
+  -- 2: only cwd
+  -- otherwise, all
+  if type == 1 then header_str = search_str or ''
+  elseif type == 2 then header_str = cwd_str or ''
+  else
+    header_str = search_str or ''
+    if #header_str>0 and cwd_str and #cwd_str>0 then
+      header_str = header_str .. ", "
+    end
+    header_str = header_str .. (cwd_str or '')
+  end
+  if not header_str or #header_str==0 then return opts end
+  opts.fzf_opts['--header'] = vim.fn.shellescape(header_str)
+  return opts
+end
+
+M.fzf_files = function(opts, contents)
 
   if not opts then return end
 
   -- reset git tracking
   opts.diff_files = nil
-  if opts.git_icons and not path.is_git_repo(opts.cwd, true) then opts.git_icons = false end
 
   coroutine.wrap(function ()
 
@@ -327,13 +353,7 @@ M.fzf_files = function(opts)
       opts.diff_files = get_diff_files(opts)
     end
 
-    local has_prefix = opts.file_icons or opts.git_icons or opts.lsp_icons
-    if not opts.filespec then
-      opts.filespec = utils._if(has_prefix, "{2}", "{1}")
-    end
-
-
-    local selected = M.fzf(opts, opts.fzf_fn)
+    local selected = M.fzf(opts, contents or opts.fzf_fn)
 
     if opts.post_select_cb then
       opts.post_select_cb()
@@ -342,7 +362,8 @@ M.fzf_files = function(opts)
     if not selected then return end
 
     if #selected > 1 then
-      for i = 2, #selected do
+      local idx = utils.tbl_length(opts.actions)>1 and 2 or 1
+      for i = idx, #selected do
         selected[i] = path.entry_to_file(selected[i], opts.cwd).stripped
         if opts.cb_selected then
           local cb_ret = opts.cb_selected(opts, selected[i])

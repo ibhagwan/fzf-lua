@@ -12,13 +12,15 @@ M.files = function(opts)
   if not opts then return end
   opts.cwd = path.git_root(opts.cwd)
   if not opts.cwd then return end
-  local make_entry_file = core.make_entry_file
-  opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
-    { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb },
-    function(x)
-      return make_entry_file(opts, x)
-    end)
-  return core.fzf_files(opts)
+  local contents = (opts.git_icons or opts.file_icons) and
+    libuv.spawn_nvim_fzf_cmd(
+      { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb },
+      function(x)
+        return core.make_entry_file(opts, x)
+      end)
+    or opts.cmd
+  opts = core.set_header(opts, 2)
+  return core.fzf_files(opts, contents)
 end
 
 M.status = function(opts)
@@ -29,7 +31,7 @@ M.status = function(opts)
   if opts.preview then
     opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
   end
-  opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
+  local contents = libuv.spawn_nvim_fzf_cmd(
     { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb },
     function(x)
       -- greedy match anything after last space
@@ -42,16 +44,16 @@ M.status = function(opts)
       end
       return core.make_entry_file(opts, f)
     end)
-  return core.fzf_files(opts)
+  opts = core.set_header(opts, 2)
+  return core.fzf_files(opts, contents)
 end
 
 local function git_cmd(opts)
   opts.cwd = path.git_root(opts.cwd)
   if not opts.cwd then return end
   coroutine.wrap(function ()
-    opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
-      { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb })
-    local selected = core.fzf(opts, opts.fzf_fn)
+    opts = core.set_header(opts, 2)
+    local selected = core.fzf(opts, opts.cmd)
     if not selected then return end
     actions.act(opts.actions, selected, opts)
   end)()
