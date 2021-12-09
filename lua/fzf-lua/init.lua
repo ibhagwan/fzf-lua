@@ -20,18 +20,14 @@ do
     end
   end
 
-  -- Since 'nvim_fzf.vim' doesn't get called we
-  -- have to manually set 'g:nvim_fzf_directory'
-  if not vim.g.nvim_fzf_directory then
-    local nvim_fzf_directory = path.join({
-      path.parent(path.parent(path.parent(path.parent(currFile)))),
-      "nvim-fzf"
-    })
-    if vim.loop.fs_stat(nvim_fzf_directory) then
-      vim.g.nvim_fzf_directory = nvim_fzf_directory
-    end
-    -- utils.info(("vim.g.nvim_fzf_directory = '%s'"):format(nvim_fzf_directory))
+  -- Create a new RPC server (tmp socket) to listen to messages (actions/headless)
+  -- this is safer than using $NVIM_LISTEN_ADDRESS. If the user is using a custom
+  -- fixed $NVIM_LISTEN_ADDRESS different neovim instances will use the same path
+  -- as their address and messages won't be recieved on older instances
+  if not vim.g.fzf_lua_server then
+    vim.g.fzf_lua_server = vim.fn.serverstart()
   end
+
 end
 
 local M = {}

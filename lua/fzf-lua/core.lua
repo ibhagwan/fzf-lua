@@ -7,6 +7,7 @@ local actions = require "fzf-lua.actions"
 local win = require "fzf-lua.win"
 local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
+local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -51,7 +52,7 @@ M.fzf = function(opts, contents)
   fzf_win:create()
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     { fzf_binary = opts.fzf_bin, fzf_cwd = opts.cwd })
-  utils.process_kill(opts._pid)
+  libuv.process_kill(opts._pid)
   fzf_win:check_exit_status(exit_code)
   if fzf_win:autoclose() == nil or fzf_win:autoclose() then
     fzf_win:close()
@@ -59,22 +60,6 @@ M.fzf = function(opts, contents)
   return selected
 end
 
-M.get_devicon = function(file, ext)
-  local icon, hl
-  if config._has_devicons and config._devicons then
-    icon, hl  = config._devicons.get_icon(file, ext:lower(), {default = true})
-  else
-    icon, hl = '', 'dark_grey'
-  end
-
-  -- allow user override of the color
-  local override = config.globals.file_icon_colors[ext]
-  if override then
-      hl = override
-  end
-
-  return icon..config.globals.file_icon_padding:gsub(" ", utils.nbsp), hl
-end
 
 M.preview_window = function(o)
   local preview_args = ("%s:%s:%s:"):format(
@@ -209,23 +194,71 @@ M.build_fzf_cli = function(opts)
   return cli_args .. extra_args
 end
 
-local get_diff_files = function(opts)
-    local diff_files = {}
-    local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd
-    if not cmd then return {} end
-    local status, err = utils.io_systemlist(path.git_cwd(cmd, opts.cwd))
-    if err == 0 then
-        for i = 1, #status do
-          local icon = status[i]:match("[MUDARC?]+")
-          local file = status[i]:match("[^ ]*$")
-          if icon and file then
-            diff_files[file] = icon
-          end
-        end
-    end
+M.mt_cmd_wrapper = function(opts)
+  assert(opts and opts.cmd)
 
-    return diff_files
+  local str_to_str = function(s)
+    return "[[" .. s:gsub('[%]]', function(x) return "\\"..x end) .. "]]"
+  end
+
+  local opts_to_str = function(o)
+    local names = {
+      "debug",
+      "cmd",
+      "cwd",
+      "git_icons",
+      "file_icons",
+      "color_icons",
+      "strip_cwd_prefix",
+    }
+    local str = ""
+    for _, name in ipairs(names) do
+      if o[name] ~= nil then
+        if #str>0 then str = str..',' end
+        local val = o[name]
+        if type(val) == 'string' then
+          val = str_to_str(val)
+        end
+        if type(val) == 'table' then
+          val = vim.inspect(val)
+        end
+        str = str .. ("%s=%s"):format(name, val)
+      end
+    end
+    return '{'..str..'}'
+  end
+
+  if not opts.git_icons and not opts.file_icons then
+    -- command does not require any processing
+    return opts.cmd
+  elseif opts.multiprocess then
+    local fn_preprocess = [[return require("make_entry").preprocess]]
+    local fn_transform = [[return require("make_entry").file]]
+    if not opts.no_remote_config then
+      fn_transform = ([[_G._fzf_lua_server=%s; %s]]):format(
+        vim.fn.shellescape(vim.g.fzf_lua_server),
+        fn_transform)
+    end
+    if config._devicons_path then
+      fn_transform = ([[_G._devicons_path=%s; %s]]) :format(
+          vim.fn.shellescape(config._devicons_path),
+          fn_transform)
+    end
+    local cmd = libuv.wrap_spawn_stdio(opts_to_str(opts),
+      fn_transform, fn_preprocess)
+    if opts.debug then print(cmd) end
+    return cmd
+  else
+    return libuv.spawn_nvim_fzf_cmd(opts,
+      function(x)
+        return make_entry.file(opts, x)
+      end)
+  end
 end
+
+-- shortcuts to make_entry
+M.get_devicon = make_entry.get_devicon
+M.make_entry_file = make_entry.file
 
 M.make_entry_lcol = function(_, entry)
   if not entry then return nil end
@@ -236,58 +269,6 @@ M.make_entry_lcol = function(_, entry)
     utils.ansi_codes.blue(tostring(entry.col)),
     utils._if(entry.text and entry.text:find("^\t"), "", "\t"),
     entry.text)
-end
-
-M.make_entry_file = function(opts, x)
-  local icon, hl
-  local ret = {}
-  local file = utils.strip_ansi_coloring(string.match(x, '[^:]*'))
-  if opts.cwd_only and path.starts_with_separator(file) then
-    local cwd = opts.cwd or vim.loop.cwd()
-    if not path.is_relative(file, cwd) then
-      return nil
-    end
-  end
-  -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
-  -- the './' prefix, will not work with '--color=always'
-  -- https://github.com/sharkdp/fd/blob/master/CHANGELOG.md
-  if not (opts.strip_cwd_prefix == false) and path.starts_with_cwd(x) then
-     x = x:sub(3)
-  end
-  if opts.cwd and #opts.cwd > 0 then
-    -- TODO: does this work if there are ANSI escape codes in x?
-    x = path.relative(x, opts.cwd)
-  end
-  if opts.file_icons then
-    local filename = path.tail(file)
-    local ext = path.extension(filename)
-    icon, hl = M.get_devicon(filename, ext)
-    if opts.color_icons then
-      -- extra workaround for issue #119 (or similars)
-      -- use default if we can't find the highlight ansi
-      local fn = utils.ansi_codes[hl] or utils.ansi_codes['dark_grey']
-      icon = fn(icon)
-    end
-    ret[#ret+1] = icon
-    ret[#ret+1] = utils.nbsp
-  end
-  if opts.git_icons then
-    local indicators = opts.diff_files and opts.diff_files[file] or utils.nbsp
-    for i=1,#indicators do
-      icon = indicators:sub(i,i)
-      local git_icon = config.globals.git.icons[icon]
-      if git_icon then
-        icon = git_icon.icon
-        if opts.color_icons then
-          icon = utils.ansi_codes[git_icon.color or "dark_grey"](icon)
-        end
-      end
-      ret[#ret+1] = icon
-    end
-    ret[#ret+1] = utils.nbsp
-  end
-  ret[#ret+1] = x
-  return table.concat(ret)
 end
 
 M.set_fzf_line_args = function(opts)
@@ -336,6 +317,7 @@ M.set_header = function(opts, type)
   return opts
 end
 
+
 M.fzf_files = function(opts, contents)
 
   if not opts then return end
@@ -345,13 +327,8 @@ M.fzf_files = function(opts, contents)
 
   coroutine.wrap(function ()
 
-    if opts.cwd_only and not opts.cwd then
-      opts.cwd = vim.loop.cwd()
-    end
-
-    if opts.git_icons then
-      opts.diff_files = get_diff_files(opts)
-    end
+    -- setup opts.cwd and git diff files
+    make_entry.preprocess(opts)
 
     local selected = M.fzf(opts, contents or opts.fzf_fn)
 
@@ -385,7 +362,7 @@ M.set_fzf_interactive_cmd = function(opts)
   -- fzf already adds single quotes around the placeholder when expanding
   -- for skim we surround it with double quotes or single quote searches fail
   local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
-  local raw_async_act = libuv.spawn_reload_cmd_action(opts, placeholder)
+  local raw_async_act = shell.reload_action_cmd(opts, placeholder)
   return M.set_fzf_interactive(opts, raw_async_act, placeholder)
 end
 
@@ -460,10 +437,8 @@ M.set_fzf_interactive = function(opts, act_cmd, placeholder)
     -- around the place holder
     opts.fzf_fn = {}
     if opts.exec_empty_query or (query and #query>0) then
-      opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
-        { cmd = act_cmd:gsub(placeholder,
-          #query>0 and utils.lua_escape(vim.fn.shellescape(query)) or "''"),
-          cwd = opts.cwd, pid_cb = opts._pid_cb })
+      opts.fzf_fn = act_cmd:gsub(placeholder,
+          #query>0 and utils.lua_escape(vim.fn.shellescape(query)) or "''")
     end
     opts.fzf_opts['--phony'] = ''
     opts.fzf_opts['--query'] = vim.fn.shellescape(query)

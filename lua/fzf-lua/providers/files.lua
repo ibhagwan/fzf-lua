@@ -2,7 +2,6 @@ local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
-local libuv = require "fzf-lua.libuv"
 
 local M = {}
 
@@ -36,20 +35,10 @@ local get_files_cmd = function(opts)
 end
 
 M.files = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.files)
   if not opts then return end
-
-  local command = get_files_cmd(opts)
-
-  local contents = (opts.git_icons or opts.file_icons) and
-    libuv.spawn_nvim_fzf_cmd(
-      { cmd = command, cwd = opts.cwd, pid_cb = opts._pid_cb },
-      function(x)
-        return core.make_entry_file(opts, x)
-      end)
-    or command
-
+  opts.cmd = get_files_cmd(opts)
+  local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, 2)
   return core.fzf_files(opts, contents)
 end

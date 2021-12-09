@@ -12,13 +12,13 @@ local M = {}
 
 M._has_devicons, M._devicons = pcall(require, "nvim-web-devicons")
 
--- if the caller has devicons lazy loaded
--- this will generate an error
---  nvim-web-devicons.lua:972: E5560:
---  nvim_command must not be called in a lua loop callback
-if M._has_devicons and not M._devicons.has_loaded() then
-  M._devicons.setup()
-end
+M._devicons_path = (function()
+  for _, p in ipairs(vim.api.nvim_list_runtime_paths()) do
+    if path.tail(p) == "nvim-web-devicons" then
+      return path.join({p, "lua/nvim-web-devicons.lua"})
+    end
+  end
+end)()
 
 function M._default_previewer_fn()
   return M.globals.default_previewer or M.globals.winopts.preview.default
@@ -162,6 +162,7 @@ M.globals.files = {
     previewer           = M._default_previewer_fn,
     prompt              = '> ',
     cmd                 = nil,  -- default: auto detect find|fd
+    multiprocess        = true,
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = true,
@@ -239,6 +240,7 @@ M.globals.grep = {
     prompt              = 'Rg> ',
     input_prompt        = 'Grep For> ',
     cmd                 = nil,  -- default: auto detect rg|grep
+    multiprocess        = true,
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = true,
@@ -496,20 +498,7 @@ M.globals.nvim = {
 
 M.globals.file_icon_padding = ''
 
-if M._has_devicons then
-  M.globals.file_icon_colors = {}
-
-  local function hex(hex)
-    local r,g,b = hex:match('.(..)(..)(..)')
-    r, g, b = tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
-    return r, g, b
-  end
-
-  for ext, info in pairs(M._devicons.get_icons()) do
-    local r, g, b = hex(info.color)
-    utils.add_ansi_code('DevIcon' .. info.name, string.format('[38;2;%s;%s;%sm', r, g, b))
-  end
-else
+if not M._has_devicons then
   M.globals.file_icon_colors = {
     ["lua"]       = "blue",
     ["rockspec"]  = "magenta",

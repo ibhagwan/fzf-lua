@@ -2,7 +2,6 @@ local path = require "fzf-lua.path"
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
-local libuv = require "fzf-lua.libuv"
 
 local last_search = {}
 
@@ -83,16 +82,8 @@ M.grep = function(opts)
   last_search.no_esc = no_esc or opts.no_esc
   last_search.query = opts.search
 
-  local command = get_grep_cmd(opts, opts.search, no_esc)
-
-  local contents = (opts.git_icons or opts.file_icons) and
-    libuv.spawn_nvim_fzf_cmd(
-      { cmd = command, cwd = opts.cwd, pid_cb = opts._pid_cb },
-      function(x)
-        return core.make_entry_file(opts, x)
-      end)
-    or command
-
+  opts.cmd = get_grep_cmd(opts, opts.search, no_esc)
+  local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_fzf_line_args(opts)
   core.fzf_files(opts, contents)
   opts.search = nil
@@ -178,6 +169,14 @@ M.live_grep_native = function(opts)
   -- search query in header line
   opts = core.set_header(opts, 2)
 
+  -- we do not process any entries in the 'native' version
+  -- as fzf runs the command directly in the 'change:reload'
+  -- event, we could run the command through 'libuv.spawn_stdio'
+  -- wrapper but for that we have the non-native version
+  -- keep the native version "clean" for debugging/performance
+  opts.git_icons = false
+  opts.file_icons = false
+
   -- fzf already adds single quotes around the placeholder when expanding
   -- for skim we surround it with double quotes or single quote searches fail
   local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
@@ -199,12 +198,8 @@ M.live_grep_native = function(opts)
   else
     opts.fzf_fn = {}
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
-      opts.fzf_fn = libuv.spawn_nvim_fzf_cmd(
-        {cmd = initial_command:gsub(placeholder, vim.fn.shellescape(query)),
-         cwd = opts.cwd, pid_cb = opts._pid_cb },
-        function(x)
-          return core.make_entry_file(opts, x)
-        end)
+      opts.cmd = initial_command:gsub(placeholder, vim.fn.shellescape(query))
+      opts.fzf_fn = core.mt_cmd_wrapper(opts)
     end
     opts.fzf_opts['--phony'] = ''
     opts.fzf_opts['--query'] = vim.fn.shellescape(query)
@@ -212,12 +207,6 @@ M.live_grep_native = function(opts)
         vim.fn.shellescape(("change:reload:%s"):format(
           ("%s || true"):format(reload_command))))
   end
-
-  -- we cannot parse any entries as they're not getting called
-  -- past the initial command, until I can find a solution for
-  -- that icons must be disabled
-  opts.git_icons = false
-  opts.file_icons = false
 
   opts = core.set_fzf_line_args(opts)
   core.fzf_files(opts)

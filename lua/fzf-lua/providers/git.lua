@@ -4,6 +4,7 @@ local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 local libuv = require "fzf-lua.libuv"
+local shell = require "fzf-lua.shell"
 
 local M = {}
 
@@ -12,13 +13,7 @@ M.files = function(opts)
   if not opts then return end
   opts.cwd = path.git_root(opts.cwd)
   if not opts.cwd then return end
-  local contents = (opts.git_icons or opts.file_icons) and
-    libuv.spawn_nvim_fzf_cmd(
-      { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb },
-      function(x)
-        return core.make_entry_file(opts, x)
-      end)
-    or opts.cmd
+  local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, 2)
   return core.fzf_files(opts, contents)
 end
@@ -87,7 +82,7 @@ M.branches = function(opts)
   if not opts then return end
   opts.fzf_opts["--no-multi"] = ''
   opts._preview = path.git_cwd(opts.preview, opts.cwd)
-  opts.preview = libuv.spawn_nvim_fzf_action(function(items)
+  opts.preview = shell.preview_action_cmd(function(items)
     local branch = items[1]:gsub("%*", "")  -- remove the * from current branch
     if branch:find("%)") ~= nil then
       -- (HEAD detached at origin/master)

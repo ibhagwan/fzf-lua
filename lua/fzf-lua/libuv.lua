@@ -1,8 +1,23 @@
-local shell = require "fzf-lua.shell"
-local utils = require "fzf-lua.utils"
 local uv = vim.loop
 
 local M = {}
+
+-- path to current file
+local __FILE__ = debug.getinfo(1, 'S').source:gsub("^@", "")
+
+-- if loading this file as standalone ('--headless --clean')
+-- add the current folder to package.path so we can 'require'
+if not vim.g.fzf_lua_directory then
+  -- prepend this folder first so our modules always get first
+  -- priority over some unknown random module with the same name
+  package.path = (";%s/?.lua;"):format(vim.fn.fnamemodify(__FILE__, ':h'))
+    .. package.path
+
+  -- override require to remove the 'fzf-lua.' part
+  -- since all files are going to be loaded locally
+  local _require = require
+  require = function(s) return _require(s:gsub("^fzf%-lua%.", "")) end
+end
 
 -- save to upvalue for performance reasons
 local string_byte = string.byte
@@ -24,6 +39,17 @@ local function find_next_newline(str, start_idx)
   end
 end
 
+local function process_kill(pid, signal)
+  if not pid or not tonumber(pid) then return false end
+  if type(uv.os_getpriority(pid)) == 'number' then
+    uv.kill(pid, signal or 9)
+    return true
+  end
+  return false
+end
+
+M.process_kill = process_kill
+
 local function coroutine_callback(fn)
   local co = coroutine.running()
   local callback = function(...)
@@ -31,7 +57,7 @@ local function coroutine_callback(fn)
       coroutine.resume(co, ...)
     else
       local pid = unpack({...})
-      utils.process_kill(pid)
+      process_kill(pid)
     end
   end
   fn(callback)
@@ -60,11 +86,11 @@ M.spawn = function(opts, fn_transform, fn_done)
 
   if opts.fn_transform then fn_transform = opts.fn_transform end
 
-  local finish = function(sig, pid)
+  local finish = function(code, sig, from, pid)
     output_pipe:shutdown()
     error_pipe:shutdown()
     if opts.cb_finish then
-      opts.cb_finish(sig, pid)
+      opts.cb_finish(code, sig, from, pid)
     end
     -- coroutinify callback
     if fn_done then
@@ -74,7 +100,7 @@ M.spawn = function(opts, fn_transform, fn_done)
 
   -- https://github.com/luvit/luv/blob/master/docs.md
   -- uv.spawn returns tuple: handle, pid
-  local _, pid = uv.spawn(vim.env.SHELL or "sh", {
+  local handle, pid = uv.spawn(vim.env.SHELL or "sh", {
     args = { "-c", opts.cmd },
     stdio = { nil, output_pipe, error_pipe },
     cwd = opts.cwd
@@ -86,13 +112,14 @@ M.spawn = function(opts, fn_transform, fn_done)
     if write_cb_count==0 then
       -- only close if all our uv.write
       -- calls are completed
-      finish(1)
+      finish(code, signal, 1)
     end
   end)
 
   -- save current process pid
   if opts.cb_pid then opts.cb_pid(pid) end
   if opts.pid_cb then opts.pid_cb(pid) end
+  if opts._pid_cb then opts._pid_cb(pid) end
 
   local function write_cb(data)
     write_cb_count = write_cb_count + 1
@@ -101,12 +128,12 @@ M.spawn = function(opts, fn_transform, fn_done)
       if err then
         -- can fail with premature process kill
         -- assert(not err)
-        finish(2, pid)
+        finish(130, 0, 2, pid)
       elseif write_cb_count == 0 and uv.is_closing(output_pipe) then
         -- spawn callback already called and did not close the pipe
         -- due to write_cb_count>0, since this is the last call
         -- we can close the fzf pipe
-        finish(3, pid)
+        finish(0, 0, 3, pid)
       end
     end)
   end
@@ -143,7 +170,7 @@ M.spawn = function(opts, fn_transform, fn_done)
 
     if err then
       assert(not err)
-      finish(4, pid)
+      finish(130, 0, 4, pid)
     end
     if not data then
       return
@@ -180,23 +207,37 @@ M.spawn = function(opts, fn_transform, fn_done)
 
   local err_cb = function(err, data)
     if err then
-      assert(not err)
-      finish(9, pid)
+      finish(130, 0, 9, pid)
     end
     if not data then
       return
     end
-    write_cb(data)
+    if opts.cb_err then
+      opts.cb_err(data)
+    else
+      write_cb(data)
+    end
   end
 
-  output_pipe:read_start(read_cb)
-  error_pipe:read_start(err_cb)
+  if not handle then
+    -- uv.spawn failed, error will be in 'pid'
+    -- call once to output the error message
+    -- and second time to signal EOF (data=nil)
+    err_cb(nil, pid.."\n")
+    err_cb(pid, nil)
+  else
+    output_pipe:read_start(read_cb)
+    error_pipe:read_start(err_cb)
+  end
 end
 
 M.async_spawn = coroutinify(M.spawn)
 
 
 M.spawn_nvim_fzf_cmd = function(opts, fn_transform)
+
+  assert(not fn_transform or type(fn_transform) == 'function')
+
   return function(_, fzf_cb, _)
 
     local function on_finish(_, _)
@@ -225,78 +266,114 @@ M.spawn_nvim_fzf_cmd = function(opts, fn_transform)
   end
 end
 
+M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
 
-M.spawn_nvim_fzf_action = function(fn, fzf_field_expression)
+  local function load_fn(fn_str)
+    if type(fn_str) ~= 'string' then return end
+    local fn_loaded = nil
+    local fn = loadstring(fn_str) or load(fn_str)
+    if fn then fn_loaded = fn() end
+    if type(fn_loaded) ~= 'function' then
+      fn_loaded = nil
+    end
+    return fn_loaded
+  end
 
-  return shell.async_action(function(pipe, ...)
+  fn_transform = load_fn(fn_transform)
+  fn_preprocess = load_fn(fn_preprocess)
 
-    local function on_finish(_, _)
-      if pipe and not uv.is_closing(pipe) then
-        uv.close(pipe)
-        pipe = nil
-      end
+  -- run the preprocessing fn
+  if fn_preprocess then fn_preprocess(opts) end
+
+  -- print(uv.os_getpid(), ":", opts.cmd, opts.cwd)
+  local stderr, stdout = nil, nil
+
+  local function exit(exit_code, msg)
+    if msg then
+      -- prioritize writing errors to stderr
+      if stderr then stderr:write(msg)
+      else io.write(msg) end
+    end
+    os.exit(exit_code)
+  end
+
+  local function pipe_open(pipename)
+    local fd = uv.fs_open(pipename, "w", -1)
+    if type(fd) ~= 'number' then
+      exit(1, ("error opening '%s': %s\n"):format(pipename, fd))
+    end
+    local pipe = uv.new_pipe(false)
+    pipe:open(fd)
+    return pipe
+  end
+
+  local function pipe_close(pipe)
+    if pipe and not pipe:is_closing() then
+      pipe:close()
+    end
+  end
+
+  local function pipe_write(pipe, data, cb)
+    if not pipe or pipe:is_closing() then return end
+    pipe:write(data,
+      function(err)
+        -- if the user cancels the call prematurely with
+        -- <C-c> err will be either EPIPE or ECANCELED
+        -- don't really need to do anything since the
+        -- processs will be killed anyways with os.exit()
+        if err then print("write err:", err) end
+        if cb then cb(err) end
+      end)
+  end
+
+  stderr = pipe_open(opts.stderr or "/dev/stderr")
+  stdout = pipe_open(opts.stdout or "/dev/stdout")
+  assert(stderr and stdout)
+
+  local on_finish = opts.on_finish or
+    function(code)
+      pipe_close(stdout)
+      pipe_close(stderr)
+      exit(code)
     end
 
-    local function on_write(data, cb)
-      if not pipe then
-        cb(true)
-      else
-        uv.write(pipe, data, cb)
-      end
+  local on_write = opts.on_write or
+    function(data, cb)
+      pipe_write(stdout, data, cb)
     end
 
-    return M.spawn({
-        cmd = fn(...),
-        cb_finish = on_finish,
-        cb_write = on_write,
-      }, false)
+  local on_err = opts.on_err or
+    function(data)
+      pipe_write(stderr, data)
+    end
 
-  end, fzf_field_expression)
+  return M.spawn({
+      cwd = opts.cwd,
+      cmd = opts.cmd,
+      cb_finish = on_finish,
+      cb_write = on_write,
+      cb_err = on_err,
+    },
+    fn_transform and function(x)
+      return fn_transform(opts, x)
+    end)
 end
 
-M.spawn_reload_cmd_action = function(opts, fzf_field_expression)
-
-  local _pid = nil
-
-  return shell.raw_async_action(function(pipe, args)
-
-    local function on_pid(pid)
-      _pid = pid
-      if opts.pid_cb then
-        opts.pid_cb(pid)
-      end
+M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
+  assert(opts and type(opts) == 'string')
+  assert(not fn_transform or type(fn_transform) == 'string')
+  local nvim_bin = vim.v.argv[1]
+  local call_args = opts
+  for _, fn in ipairs({ fn_transform, fn_preprocess }) do
+    if type(fn) == 'string' then
+      call_args = ("%s,[[%s]]"):format(call_args, fn)
     end
-
-    local function on_finish(_, _)
-      if pipe and not uv.is_closing(pipe) then
-        uv.close(pipe)
-        pipe = nil
-      end
-    end
-
-    local function on_write(data, cb)
-      if not pipe then
-        cb(true)
-      else
-        uv.write(pipe, data, cb)
-      end
-    end
-
-    -- terminate previously running commands
-    utils.process_kill(_pid)
-
-    -- return M.spawn({
-    return M.async_spawn({
-        cwd = opts.cwd,
-        cmd = opts._reload_command(args[1]),
-        cb_finish = on_finish,
-        cb_write = on_write,
-        cb_pid = on_pid,
-        -- must send false, 'coroutinify' adds callback as last argument
-        -- which will conflict with the 'fn_transform' argument
-      }, opts._fn_transform or false)
-
-  end, fzf_field_expression)
+  end
+  local cmd_str = ("%s -n --headless --clean --cmd %s"):format(
+    vim.fn.shellescape(nvim_bin),
+    vim.fn.shellescape(("lua loadfile([[%s]])().spawn_stdio(%s)")
+      :format(__FILE__, call_args)))
+  return cmd_str
 end
 
 return M

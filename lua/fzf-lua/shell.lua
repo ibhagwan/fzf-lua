@@ -2,6 +2,7 @@
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf/actions.lua
 local uv = vim.loop
 local path = require "fzf-lua.path"
+local libuv = require "fzf-lua.libuv"
 
 local M = {}
 
@@ -41,20 +42,16 @@ function M.raw_async_action(fn, fzf_field_expression)
     end)
   end
 
-  if not action_server_address then
-    action_server_address = vim.fn.serverstart()
-  end
-
   local id = M.register_func(receiving_function)
 
   -- this is for windows WSL and AppImage users, their nvim path isn't just
   -- 'nvim', it can be something else
   local nvim_command = vim.v.argv[1]
 
-  local action_string = string.format("%s --headless --clean --cmd %s %s %s %s",
+  local action_string = string.format("%s -n --headless --clean --cmd %s %s %s %s",
     vim.fn.shellescape(nvim_command),
     vim.fn.shellescape("luafile " .. path.join{vim.g.fzf_lua_directory, "shell_helper.lua"}),
-    vim.fn.shellescape(action_server_address),
+    vim.fn.shellescape(vim.g.fzf_lua_server),
     id,
     fzf_field_expression)
   return action_string, id
@@ -107,6 +104,79 @@ if false then
   M.raw_action = require("fzf.actions").raw_action
   M.async_action = require("fzf.actions").async_action
   M.raw_async_action = require("fzf.actions").raw_async_action
+end
+
+M.preview_action_cmd = function(fn, fzf_field_expression)
+
+  return M.async_action(function(pipe, ...)
+
+    local function on_finish(_, _)
+      if pipe and not uv.is_closing(pipe) then
+        uv.close(pipe)
+        pipe = nil
+      end
+    end
+
+    local function on_write(data, cb)
+      if not pipe then
+        cb(true)
+      else
+        uv.write(pipe, data, cb)
+      end
+    end
+
+    return libuv.spawn({
+        cmd = fn(...),
+        cb_finish = on_finish,
+        cb_write = on_write,
+      }, false)
+
+  end, fzf_field_expression)
+end
+
+M.reload_action_cmd = function(opts, fzf_field_expression)
+
+  local _pid = nil
+
+  return M.raw_async_action(function(pipe, args)
+
+    local function on_pid(pid)
+      _pid = pid
+      if opts.pid_cb then
+        opts.pid_cb(pid)
+      end
+    end
+
+    local function on_finish(_, _)
+      if pipe and not uv.is_closing(pipe) then
+        uv.close(pipe)
+        pipe = nil
+      end
+    end
+
+    local function on_write(data, cb)
+      if not pipe then
+        cb(true)
+      else
+        uv.write(pipe, data, cb)
+      end
+    end
+
+    -- terminate previously running commands
+    libuv.process_kill(_pid)
+
+    -- return libuv.spawn({
+    return libuv.async_spawn({
+        cwd = opts.cwd,
+        cmd = opts._reload_command(args[1]),
+        cb_finish = on_finish,
+        cb_write = on_write,
+        cb_pid = on_pid,
+        -- must send false, 'coroutinify' adds callback as last argument
+        -- which will conflict with the 'fn_transform' argument
+      }, opts._fn_transform or false)
+
+  end, fzf_field_expression)
 end
 
 return M

@@ -7,16 +7,23 @@ M.separator = function()
   return '/'
 end
 
+M.dot_byte = string_byte('.')
+M.separator_byte = string_byte(M.separator())
+
 M.starts_with_separator = function(path)
-  return path:find("^"..M.separator()) == 1
+  return string_byte(path, 1) == M.separator_byte
+  -- return path:find("^"..M.separator()) == 1
 end
 
 M.starts_with_cwd = function(path)
-  return path:match("^."..M.separator()) ~= nil
+  return #path>1
+    and string_byte(path, 1) == M.dot_byte
+    and string_byte(path, 2) == M.separator_byte
+  -- return path:match("^."..M.separator()) ~= nil
 end
 
 M.strip_cwd_prefix = function(path)
-  return #path>1 and path[1] == '.' and path[2] == M.separator()
+  return #path>2 and path:sub(3)
 end
 
 function M.tail(path)
