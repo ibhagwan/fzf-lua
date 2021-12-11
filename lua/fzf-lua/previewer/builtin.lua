@@ -602,19 +602,11 @@ end
 
 function Previewer.tags:parse_entry(entry_str)
   -- first parse as normal entry
-  local entry = self.super.parse_entry(self, entry_str)
-  -- add the ctag part:
   -- must use 'super.' and send self as 1st arg
   -- or the ':' syntactic suger will send super's
   -- self which doesn't have self.opts
-  local scode = entry_str:match("%:.-/^?\t?(.*)/")
-  if scode then
-    scode = string.gsub(scode, "[$]$", "")
-    scode = string.gsub(scode, [[\\]], [[\]])
-    scode = string.gsub(scode, [[\/]], [[/]])
-    scode = string.gsub(scode, "[*]", [[\*]])
-  end
-  entry.ctag = scode
+  local entry = self.super.parse_entry(self, entry_str)
+  entry.ctag = path.entry_to_ctag(entry_str)
   return entry
 end
 

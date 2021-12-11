@@ -67,6 +67,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
   local curbuf = vim.api.nvim_buf_get_name(0)
   for i = 1, #selected do
     local entry = path.entry_to_file(selected[i])
+    entry.ctag = path.entry_to_ctag(selected[i])
     -- Java LSP entries, 'jdt://...'
     if entry.uri then
       vim.cmd("normal! m`")
@@ -85,13 +86,17 @@ M.vimcmd_file = function(vimcmd, selected, opts)
          -- when `:set nohidden`
          return
       end
+      -- add current location to jumplist
+      vim.cmd("normal! m`")
       if vimcmd ~= "e" or curbuf ~= fullpath then
         vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
       end
-      if entry.line > 1 or entry.col > 1 then
-        -- add current location to jumplist
-        vim.cmd("normal! m`")
-        vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+      if entry.ctag or entry.line>1 or entry.col>1 then
+        if entry.ctag then
+          vim.fn.search(entry.ctag, "W")
+        else
+          vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+        end
         vim.cmd("norm! zvzz")
       end
     end

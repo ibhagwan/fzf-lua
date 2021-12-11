@@ -129,6 +129,18 @@ local function stripBeforeLastOccurrenceOf(str, sep)
   return str:sub(idx+1), idx
 end
 
+
+function M.entry_to_ctag(entry)
+  local scode = entry:match("%:.-/^?\t?(.*)/")
+  if scode then
+    scode = string.gsub(scode, "[$]$", "")
+    scode = string.gsub(scode, [[\\]], [[\]])
+    scode = string.gsub(scode, [[\/]], [[/]])
+    scode = string.gsub(scode, "[*]", [[\*]])
+  end
+  return scode
+end
+
 function M.entry_to_location(entry)
   local uri, line, col = entry:match("^(.*://.*):(%d+):(%d+):")
   line = line and tonumber(line-1) or 0
