@@ -191,11 +191,11 @@ M.keymaps = function(opts)
     local keymaps = {}
 
     local add_keymap = function(keymap)
-      -- hijack field
+      -- hijack fields
       keymap.str = string.format("[%s:%s:%s]",
         utils.ansi_codes.yellow(tostring(keymap.buffer)),
         utils.ansi_codes.green(keymap.mode),
-        utils.ansi_codes.magenta(keymap.lhs))
+        utils.ansi_codes.magenta(keymap.lhs:gsub("%s", "<Space>")))
       local k = string.format("[%s:%s:%s]",
         keymap.buffer, keymap.mode, keymap.lhs)
       keymaps[k] = keymap
