@@ -1,34 +1,19 @@
 local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
-local previewer_base = require "fzf-lua.previewer"
+local Object = require "fzf-lua.class"
 
 local api = vim.api
 local fn = vim.fn
 
 local Previewer = {}
-Previewer.base = {}
-Previewer.buffer_or_file = {}
-Previewer.help_tags = {}
-Previewer.man_pages = {}
-Previewer.marks = {}
 
--- Constructors call on Previewer.base.<o>()
-for c, _ in pairs(Previewer) do
-  setmetatable(Previewer[c], {
-    __call = function (cls, ...)
-      return cls:new(...)
-    end,
-  })
-end
-
+Previewer.base = Object:extend()
 
 function Previewer.base:new(o, opts, fzf_win)
-  self = setmetatable(previewer_base(o, opts), {
-    __index = vim.tbl_deep_extend("keep",
-      self, previewer_base
-    )})
+  o = o or {}
   self.type = "builtin"
+  self.opts = opts;
   self.win = fzf_win
   self.delay = self.win.winopts.preview.delay or 100
   self.title = self.win.winopts.preview.title
@@ -227,11 +212,10 @@ function Previewer.base:scroll(direction)
 end
 
 
+Previewer.buffer_or_file = Previewer.base:extend()
+
 function Previewer.buffer_or_file:new(o, opts, fzf_win)
-  self = setmetatable(Previewer.base(o, opts, fzf_win), {
-    __index = vim.tbl_deep_extend("keep",
-      self, Previewer.base
-    )})
+  Previewer.buffer_or_file.super.new(self, o, opts, fzf_win)
   return self
 end
 
@@ -384,7 +368,8 @@ function Previewer.buffer_or_file:do_syntax(entry)
   end
 end
 
-local function set_cursor_hl(self, entry)
+function Previewer.buffer_or_file:set_cursor_hl(entry)
+  vim.api.nvim_win_call(self.win.preview_winid, function()
     local lnum, col = tonumber(entry.line), tonumber(entry.col) or 1
     local pattern = entry.pattern or entry.text
 
@@ -408,6 +393,7 @@ local function set_cursor_hl(self, entry)
     if self.win.winopts.hl.cursor and lnum and lnum > 0 and col and col > 1 then
       fn.matchaddpos(self.win.winopts.hl.cursor, {{lnum, math.max(1, col)}}, 11)
     end
+  end)
 end
 
 function Previewer.buffer_or_file:update_border(entry)
@@ -429,9 +415,7 @@ end
 function Previewer.buffer_or_file:preview_buf_post(entry)
   -- set preview win options or load the file
   -- if not already loaded from buffer
-  vim.api.nvim_win_call(self.win.preview_winid, function()
-    set_cursor_hl(self, entry)
-  end)
+  self:set_cursor_hl(entry)
 
   -- syntax highlighting
   if self.syntax then
@@ -453,11 +437,10 @@ function Previewer.buffer_or_file:preview_buf_post(entry)
 end
 
 
+Previewer.help_tags = Previewer.base:extend()
+
 function Previewer.help_tags:new(o, opts, fzf_win)
-  self = setmetatable(Previewer.base(o, opts, fzf_win), {
-    __index = vim.tbl_deep_extend("keep",
-      self, Previewer.base
-    )})
+  Previewer.help_tags.super.new(self, o, opts, fzf_win)
   self.split = o.split
   self.help_cmd = o.help_cmd or "help"
   self.filetype = "help"
@@ -552,11 +535,10 @@ end
 
 -- inherit from help_tags for the specialized
 -- 'gen_winopts()' without ':set  number'
+Previewer.man_pages = Previewer.help_tags:extend()
+
 function Previewer.man_pages:new(o, opts, fzf_win)
-  self = setmetatable(Previewer.base(o, opts, fzf_win), {
-    __index = vim.tbl_deep_extend("keep",
-      self, Previewer.help_tags, Previewer.base
-    )})
+  Previewer.man_pages.super.new(self, o, opts, fzf_win)
   self.filetype = "man"
   self.cmd = o.cmd or "man -c %s | col -bx"
   return self
@@ -580,11 +562,10 @@ function Previewer.man_pages:populate_preview_buf(entry_str)
   self.win:update_scrollbar()
 end
 
+Previewer.marks = Previewer.buffer_or_file:extend()
+
 function Previewer.marks:new(o, opts, fzf_win)
-  self = setmetatable(Previewer.buffer_or_file(o, opts, fzf_win), {
-    __index = vim.tbl_deep_extend("keep",
-      self, Previewer.buffer_or_file, Previewer.base
-    )})
+  Previewer.marks.super.new(self, o, opts, fzf_win)
   return self
 end
 
@@ -610,6 +591,46 @@ function Previewer.marks:parse_entry(entry_str)
     line = tonumber(lnum) or 1,
     col  = tonumber(col) or 1,
   }
+end
+
+Previewer.tags = Previewer.buffer_or_file:extend()
+
+function Previewer.tags:new(o, opts, fzf_win)
+  Previewer.tags.super.new(self, o, opts, fzf_win)
+  return self
+end
+
+function Previewer.tags:parse_entry(entry_str)
+  -- first parse as normal entry
+  local entry = self.super.parse_entry(self, entry_str)
+  -- add the ctag part:
+  -- must use 'super.' and send self as 1st arg
+  -- or the ':' syntactic suger will send super's
+  -- self which doesn't have self.opts
+  local scode = entry_str:match("%:.-/^?\t?(.*)/")
+  if scode then
+    scode = string.gsub(scode, "[$]$", "")
+    scode = string.gsub(scode, [[\\]], [[\]])
+    scode = string.gsub(scode, [[\/]], [[/]])
+    scode = string.gsub(scode, "[*]", [[\*]])
+  end
+  entry.ctag = scode
+  return entry
+end
+
+function Previewer.tags:set_cursor_hl(entry)
+  -- pcall(vim.fn.clearmatches, self.win.preview_winid)
+  api.nvim_win_call(self.win.preview_winid, function()
+    -- start searching at line 1 in case we
+    -- didn't reload the buffer (same file)
+    api.nvim_win_set_cursor(0, {1, 0})
+    fn.clearmatches()
+    fn.search(entry.ctag, "W")
+    if self.win.winopts.hl.search then
+      fn.matchadd(self.win.winopts.hl.search, entry.ctag)
+    end
+    utils.zz()
+  end)
 end
 
 return Previewer

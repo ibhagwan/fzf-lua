@@ -38,6 +38,7 @@ M.globals = {
       -- builtin preview only
       cursor            = 'Cursor',
       cursorline        = 'CursorLine',
+      search            = 'Search',
       -- title          = 'Normal',
       -- scrollbar_f    = 'PmenuThumb',
       -- scrollbar_e    = 'PmenuSbar',
@@ -355,22 +356,22 @@ M.globals.blines = {
     },
   }
 M.globals.tags = {
-    previewer             = M._default_previewer_fn,
+    previewer             = { _ctor = previewers.builtin.tags },
     prompt                = 'Tags> ',
     ctags_file            = "tags",
     file_icons            = true and M._has_devicons,
     git_icons             = true,
     color_icons           = true,
-    actions             = M.globals.files.actions,
+    actions               = M.globals.files.actions,
   }
 M.globals.btags = {
-    previewer             = M._default_previewer_fn,
+    previewer             = { _ctor = previewers.builtin.tags },
     prompt                = 'BTags> ',
     ctags_file            = "tags",
     file_icons            = true and M._has_devicons,
     git_icons             = true,
     color_icons           = true,
-    actions             = M.globals.files.actions,
+    actions               = M.globals.files.actions,
   }
 M.globals.colorschemes = {
       prompt              = 'Colorschemes> ',
@@ -648,7 +649,7 @@ function M.normalize_opts(opts, defaults)
       opts.cwd = nil
     end
   end
-  
+
   -- test for valid git_repo
   opts.git_icons = opts.git_icons and path.is_git_repo(opts.cwd, true)
 

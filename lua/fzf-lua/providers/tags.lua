@@ -93,7 +93,7 @@ local fzf_tags = function(opts)
     end
 
     local add_tag = function(t, fzf_cb, co)
-      local line = getlinenumber(t)
+      local line = t.line or getlinenumber(t)
       local tag = string.format("%s:%s: %s %s",
         core.make_entry_file(opts, t.file),
         utils.ansi_codes.green(tostring(line)),
@@ -119,6 +119,9 @@ local fzf_tags = function(opts)
                 add_tag({
                   name = name,
                   file = file,
+                  -- unless we're using native previewer
+                  -- do not need to extract the line number
+                  line = type(opts.previewer) == 'table' and 1,
                   text = text,
                 }, cb, co)
               end)

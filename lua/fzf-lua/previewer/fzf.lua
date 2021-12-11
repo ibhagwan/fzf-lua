@@ -2,35 +2,21 @@ local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
-local previewer_base = require "fzf-lua.previewer"
+local Object = require "fzf-lua.class"
+
 
 local Previewer = {}
-Previewer.base = {}
-Previewer.head = {}
-Previewer.cmd = {}
-Previewer.bat = {}
-Previewer.cmd_async = {}
-Previewer.bat_async = {}
-Previewer.git_diff = {}
-Previewer.man_pages = {}
-Previewer.buffer = {}
 
--- Constructors call on Previewer.<o>()
-for c, _ in pairs(Previewer) do
-  setmetatable(Previewer[c], {
-    __call = function (cls, ...)
-      return cls:new(...)
-    end,
-  })
-end
+Previewer.base = Object:extend()
 
 -- Previewer base object
 function Previewer.base:new(o, opts)
-  self = setmetatable(previewer_base(o, opts), {
-    __index = vim.tbl_deep_extend("keep",
-      self, previewer_base
-  )})
+  o = o or {}
   self.type = "cmd";
+  self.cmd = o.cmd;
+  self.args = o.args or "";
+  self.relative = o.relative
+  self.opts = opts;
   return self
 end
 
@@ -39,11 +25,10 @@ function Previewer.base:preview_window(_)
 end
 
 -- Generic shell command previewer
+Previewer.cmd = Previewer.base:extend()
+
 function Previewer.cmd:new(o, opts)
-  self = setmetatable(Previewer.base(o, opts), {
-    __index = vim.tbl_deep_extend("keep",
-      self, Previewer.base
-    )})
+  Previewer.cmd.super.new(self, o, opts)
   return self
 end
 
@@ -69,11 +54,10 @@ function Previewer.cmd:action(o)
 end
 
 -- Specialized bat previewer
+Previewer.bat = Previewer.cmd:extend()
+
 function Previewer.bat:new(o, opts)
-  self = setmetatable(Previewer.cmd(o, opts), {
-    __index = vim.tbl_deep_extend("keep",
-      self, Previewer.cmd, Previewer.base
-    )})
+  Previewer.bat.super.new(self, o, opts)
   self.theme = o.theme
   return self
 end
@@ -90,12 +74,10 @@ function Previewer.bat:cmdline(o)
 end
 
 -- Specialized head previewer
+Previewer.head = Previewer.cmd:extend()
+
 function Previewer.head:new(o, opts)
-  self = setmetatable(Previewer.cmd(o, opts), {
-    __index = vim.tbl_deep_extend("keep",
-      self, Previewer.cmd, Previewer.base
-    )})
-  self.theme = o.theme
+  Previewer.head.super.new(self, o, opts)
   return self
 end
 
@@ -111,11 +93,10 @@ function Previewer.head:cmdline(o)
 end
 
 -- new async_action from nvim-fzf
+Previewer.cmd_async = Previewer.base:extend()
+
 function Previewer.cmd_async:new(o, opts)
-  self = setmetatable(Previewer.base(o, opts), {
-    __index = vim.tbl_deep_extend("keep",
-      self, Previewer.base
-    )})
+  Previewer.cmd_async.super.new(self, o, opts)
   return self
 end
 
@@ -131,11 +112,10 @@ function Previewer.cmd_async:cmdline(o)
   return act
 end
 
+Previewer.bat_async = Previewer.cmd_async:extend()
+
 function Previewer.bat_async:new(o, opts)
-  self = setmetatable(Previewer.cmd_async(o, opts), {
-    __index = vim.tbl_deep_extend("keep",
-      self, Previewer.cmd_async, Previewer.base
-    )})
+  Previewer.bat_async.super.new(self, o, opts)
   self.theme = o.theme
   return self
 end
@@ -160,12 +140,12 @@ function Previewer.bat_async:cmdline(o)
   return act
 end
 
+Previewer.git_diff = Previewer.cmd_async:extend()
+
 function Previewer.git_diff:new(o, opts)
-  self = setmetatable(Previewer.cmd_async(o, opts), {
-    __index = vim.tbl_deep_extend("keep",
-      self, Previewer.cmd_async, Previewer.base
-    )})
+  Previewer.git_diff.super.new(self, o, opts)
   self.cmd = path.git_cwd(self.cmd, opts.cwd)
+  self.pager = o.pager
   return self
 end
 
@@ -196,11 +176,10 @@ function Previewer.git_diff:cmdline(o)
   return act
 end
 
+Previewer.man_pages = Previewer.cmd_async:extend()
+
 function Previewer.man_pages:new(o, opts)
-  self = setmetatable(Previewer.cmd_async(o, opts), {
-    __index = vim.tbl_deep_extend("keep",
-      self, Previewer.cmd_async, Previewer.base
-    )})
+  Previewer.man_pages.super.new(self, o, opts)
   self.cmd = self.cmd or "man"
   return self
 end

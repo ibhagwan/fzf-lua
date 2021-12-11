@@ -1,30 +1,4 @@
-local utils = require "fzf-lua.utils"
-
 local Previewer = {}
-
--- Constructor
-setmetatable(Previewer, {
-  __call = function (cls, ...)
-    return cls:new(...)
-  end,
-})
-
--- Previewer base object
-function Previewer:new(o, opts)
-  o = o or {}
-  self = setmetatable({}, { __index = self })
-  self.cmd = o.cmd;
-  self.args = o.args or "";
-  self.relative = o.relative
-  self.pager = o.pager
-  self.opts = opts;
-  return self
-end
-
-function Previewer:preview_window(_)
-  utils.warn("Previewer:preview_window wasn't implemented, will use defaults")
-  return nil
-end
 
 Previewer.fzf = {}
 Previewer.fzf.cmd = function() return require 'fzf-lua.previewer.fzf'.cmd end
@@ -40,5 +14,6 @@ Previewer.builtin.buffer_or_file = function() return require 'fzf-lua.previewer.
 Previewer.builtin.help_tags = function() return require 'fzf-lua.previewer.builtin'.help_tags end
 Previewer.builtin.man_pages = function() return require 'fzf-lua.previewer.builtin'.man_pages end
 Previewer.builtin.marks = function() return require 'fzf-lua.previewer.builtin'.marks end
+Previewer.builtin.tags = function() return require 'fzf-lua.previewer.builtin'.tags end
 
 return Previewer
