@@ -63,7 +63,6 @@ DEPENDENCIES                                            *fzf-lua-dependencies*
 - `neovim` <https://github.com/neovim/neovim/releases> version > 0.5.0
 - `fzf` <https://github.com/junegunn/fzf> or
   `skim` <https://github.com/lotabout/skim> binary installed
-- nvim-fzf <https://github.com/vijaymarupudi/nvim-fzf>
 - nvim-web-devicons <https://github.com/kyazdani42/nvim-web-devicons>
   (optional)
 
@@ -85,16 +84,14 @@ Using vim-plug <https://github.com/junegunn/vim-plug>
 
 >
     Plug 'ibhagwan/fzf-lua'
-    Plug 'vijaymarupudi/nvim-fzf'
     Plug 'kyazdani42/nvim-web-devicons'
 <
 Using packer.nvim <https://github.com/wbthomason/packer.nvim>
 
 >
     use { 'ibhagwan/fzf-lua',
-      requires = {
-        'vijaymarupudi/nvim-fzf',
-        'kyazdani42/nvim-web-devicons' } -- optional for icons
+      -- optional for icon support
+      requires = { 'kyazdani42/nvim-web-devicons' }
     }
 <
   Note: if you already have fzf installed you do not need to install fzf or
@@ -414,7 +411,7 @@ Consult the list below for available settings:
       files = {
         -- previewer      = "cat",          -- uncomment to override previewer
         prompt            = 'Files❯ ',
-        multiprocess      = true,           -- run command in a separator process
+        multiprocess      = true,           -- run command in a separate process
         git_icons         = true,           -- show git icons?
         file_icons        = true,           -- show file icons?
         color_icons       = true,           -- colorize file|git icons
@@ -445,7 +442,7 @@ Consult the list below for available settings:
       git = {
         files = {
           prompt          = 'GitFiles❯ ',
-          multiprocess    = false,          -- run command in a separator process
+          multiprocess    = false,          -- run command in a separate process
           cmd             = 'git ls-files --exclude-standard',
           git_icons       = true,           -- show git icons?
           file_icons      = true,           -- show file icons?
@@ -499,7 +496,7 @@ Consult the list below for available settings:
       grep = {
         prompt            = 'Rg❯ ',
         input_prompt      = 'Grep For❯ ',
-        multiprocess      = true,           -- run command in a separator process
+        multiprocess      = true,           -- run command in a separate process
         git_icons         = true,           -- show git icons?
         file_icons        = true,           -- show file icons?
         color_icons       = true,           -- colorize file|git icons

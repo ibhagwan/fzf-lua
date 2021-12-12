@@ -1,4 +1,4 @@
--- for testing, copied from:
+-- modified version of:
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf/actions.lua
 local uv = vim.loop
 local path = require "fzf-lua.path"
@@ -95,15 +95,6 @@ end
 function M.action(fn, fzf_field_expression)
   local action_string, id = M.raw_action(fn, fzf_field_expression)
   return vim.fn.shellescape(action_string), id
-end
-
--- set to 'true' to use 'nvim-fzf'
--- set to 'false' for debugging using the local version
-if false then
-  M.action = require("fzf.actions").action
-  M.raw_action = require("fzf.actions").raw_action
-  M.async_action = require("fzf.actions").async_action
-  M.raw_async_action = require("fzf.actions").raw_async_action
 end
 
 M.preview_action_cmd = function(fn, fzf_field_expression)

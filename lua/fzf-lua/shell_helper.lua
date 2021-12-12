@@ -1,4 +1,4 @@
--- for testing, copied from:
+-- modified version of:
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/action_helper.lua
 local uv = vim.loop
 

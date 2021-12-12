@@ -51,7 +51,6 @@ at it. That, **and colorful file icons and git indicators!**.
 - [`neovim`](https://github.com/neovim/neovim/releases) version > 0.5.0
 - [`fzf`](https://github.com/junegunn/fzf) or
   [`skim`](https://github.com/lotabout/skim) binary installed
-- [nvim-fzf](https://github.com/vijaymarupudi/nvim-fzf)
 - [nvim-web-devicons](https://github.com/kyazdani42/nvim-web-devicons)
   (optional)
 
@@ -70,7 +69,6 @@ Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
 Plug 'ibhagwan/fzf-lua'
-Plug 'vijaymarupudi/nvim-fzf'
 Plug 'kyazdani42/nvim-web-devicons'
 ```
 
@@ -78,9 +76,8 @@ Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
 
 ```lua
 use { 'ibhagwan/fzf-lua',
-  requires = {
-    'vijaymarupudi/nvim-fzf',
-    'kyazdani42/nvim-web-devicons' } -- optional for icons
+  -- optional for icon support
+  requires = { 'kyazdani42/nvim-web-devicons' }
 }
 ```
 > **Note:** if you already have fzf installed you do not need to install `fzf`

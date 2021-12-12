@@ -34,7 +34,6 @@ end
 packer.startup({function(use)
   use { 'wbthomason/packer.nvim', opt = true }
   use { 'ibhagwan/fzf-lua',
-    requires = { 'vijaymarupudi/nvim-fzf' },
     config = function()
       vim.api.nvim_set_keymap('n', '<C-p>',
         '<Esc>:lua require"fzf-lua".files()<CR>', {})
