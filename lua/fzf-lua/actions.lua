@@ -93,6 +93,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
       end
       if entry.ctag or entry.line>1 or entry.col>1 then
         if entry.ctag then
+          vim.api.nvim_win_set_cursor(0, {1, 0})
           vim.fn.search(entry.ctag, "W")
         else
           vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
