@@ -17,14 +17,16 @@ M._fzf_lua_server = _G._fzf_lua_server
 ---@diagnostic disable-next-line: undefined-field
 M._devicons_path = _G._devicons_path
 
-local function load_config_section(s)
+local function load_config_section(s, datatype)
   if config then
     local keys = utils.strsplit(s, '.')
     local iter, sect = config, nil
     for i=1,#keys do
       iter = iter[keys[i]]
       if not iter then break end
-      if i == #keys then sect = iter end
+      if i == #keys and type(iter) == datatype then
+        sect = iter
+      end
     end
     return sect
   elseif M._fzf_lua_server then
@@ -40,7 +42,7 @@ local function load_config_section(s)
     if not ok then
       io.write(("Error loading remote config section '%s': %s\n")
         :format(s, errmsg))
-    else
+    elseif type(res) == datatype then
       return res
     end
   end
@@ -76,8 +78,10 @@ local function load_devicons()
     --  nvim_command must not be called in a lua loop callback
     M._devicons.setup()
   end
-  -- Setup devicon terminal ansi color codes
-  setup_devicon_term_hls()
+  if M._devicons and M._devicons.has_loaded() then
+    -- Setup devicon terminal ansi color codes
+    setup_devicon_term_hls()
+  end
 end
 
 -- Load remote config and devicons
@@ -85,10 +89,10 @@ load_devicons()
 
 if not config then
   local _config = { globals = { git = {}, files = {} } }
-  _config.globals.git.icons = load_config_section('globals.git.icons')
-  _config.globals.file_icon_colors = load_config_section('globals.file_icon_colors')
-  _config.globals.file_icon_padding = load_config_section('globals.file_icon_padding')
-  _config.globals.files.git_status_cmd = load_config_section('globals.files.git_status_cmd')
+  _config.globals.git.icons = load_config_section('globals.git.icons', 'table') or {}
+  _config.globals.file_icon_colors = load_config_section('globals.file_icon_colors', 'table') or {}
+  _config.globals.file_icon_padding = load_config_section('globals.file_icon_padding', 'string')
+  _config.globals.files.git_status_cmd = load_config_section('globals.files.git_status_cmd', 'string')
 
   -- _G.dump(_config)
   config = _config
@@ -103,7 +107,8 @@ M.get_devicon = function(file, ext)
   end
 
   -- allow user override of the color
-  local override = config.globals.file_icon_colors[ext]
+  local override = config.globals.file_icon_colors
+    and config.globals.file_icon_colors[ext]
   if override then
       hl = override
   end

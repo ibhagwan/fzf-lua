@@ -380,7 +380,7 @@ require'fzf-lua'.setup {
   files = {
     -- previewer      = "cat",          -- uncomment to override previewer
     prompt            = 'Files❯ ',
-    multiprocess      = true,           -- run command in a separator process
+    multiprocess      = true,           -- run command in a separate process
     git_icons         = true,           -- show git icons?
     file_icons        = true,           -- show file icons?
     color_icons       = true,           -- colorize file|git icons
@@ -411,7 +411,7 @@ require'fzf-lua'.setup {
   git = {
     files = {
       prompt          = 'GitFiles❯ ',
-      multiprocess    = false,          -- run command in a separator process
+      multiprocess    = false,          -- run command in a separate process
       cmd             = 'git ls-files --exclude-standard',
       git_icons       = true,           -- show git icons?
       file_icons      = true,           -- show file icons?
@@ -465,7 +465,7 @@ require'fzf-lua'.setup {
   grep = {
     prompt            = 'Rg❯ ',
     input_prompt      = 'Grep For❯ ',
-    multiprocess      = true,           -- run command in a separator process
+    multiprocess      = true,           -- run command in a separate process
     git_icons         = true,           -- show git icons?
     file_icons        = true,           -- show file icons?
     color_icons       = true,           -- colorize file|git icons
