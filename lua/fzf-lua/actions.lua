@@ -92,11 +92,11 @@ M.vimcmd_file = function(vimcmd, selected, opts)
         vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
       end
       if entry.ctag or entry.line>1 or entry.col>1 then
-        if entry.ctag then
+        if entry.line>1 or entry.col>1 then
+          vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+        else
           vim.api.nvim_win_set_cursor(0, {1, 0})
           vim.fn.search(entry.ctag, "W")
-        else
-          vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
         end
         vim.cmd("norm! zvzz")
       end
