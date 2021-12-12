@@ -233,7 +233,7 @@ function Previewer.buffer_or_file:should_clear_preview(entry)
     entry = self:parse_entry(entry)
   end
   if (entry.bufnr and entry.bufnr == self.loaded_entry.bufnr) or
-    (entry.path and entry.path == self.loaded_entry.path) then
+    (not entry.bufnr and entry.path and entry.path == self.loaded_entry.path) then
     return false
   end
   return true
