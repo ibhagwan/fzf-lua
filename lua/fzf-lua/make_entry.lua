@@ -91,7 +91,7 @@ if not config then
   local _config = { globals = { git = {}, files = {} } }
   _config.globals.git.icons = load_config_section('globals.git.icons', 'table') or {}
   _config.globals.file_icon_colors = load_config_section('globals.file_icon_colors', 'table') or {}
-  _config.globals.file_icon_padding = load_config_section('globals.file_icon_padding', 'string')
+  _config.globals.file_icon_padding = load_config_section('globals.file_icon_padding', 'string') or ""
   _config.globals.files.git_status_cmd = load_config_section('globals.files.git_status_cmd', 'table')
 
   -- _G.dump(_config)
