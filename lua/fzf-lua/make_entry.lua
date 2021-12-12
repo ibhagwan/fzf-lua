@@ -85,7 +85,7 @@ local function load_devicons()
 end
 
 -- Load remote config and devicons
-load_devicons()
+pcall(load_devicons)
 
 if not config then
   local _config = { globals = { git = {}, files = {} } }
@@ -120,8 +120,8 @@ M.get_diff_files = function(opts)
     local diff_files = {}
     local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd
     if not cmd then return {} end
-    local status, err = utils.io_systemlist(path.git_cwd(cmd, opts.cwd))
-    if err == 0 then
+    local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts.cwd))
+    if ok and err == 0 then
         for i = 1, #status do
           local icon = status[i]:match("[MUDARC?]+")
           local file = status[i]:match("[^ ]*$")
