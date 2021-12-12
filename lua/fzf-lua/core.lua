@@ -252,6 +252,10 @@ M.mt_cmd_wrapper = function(opts)
     return libuv.spawn_nvim_fzf_cmd(opts,
       function(x)
         return make_entry.file(opts, x)
+      end,
+      function(o)
+        -- setup opts.cwd and git diff files
+        return make_entry.preprocess(o)
       end)
   end
 end
@@ -259,6 +263,7 @@ end
 -- shortcuts to make_entry
 M.get_devicon = make_entry.get_devicon
 M.make_entry_file = make_entry.file
+M.make_entry_preprocess = make_entry.preprocess
 
 M.make_entry_lcol = function(_, entry)
   if not entry then return nil end
@@ -322,13 +327,7 @@ M.fzf_files = function(opts, contents)
 
   if not opts then return end
 
-  -- reset git tracking
-  opts.diff_files = nil
-
   coroutine.wrap(function ()
-
-    -- setup opts.cwd and git diff files
-    make_entry.preprocess(opts)
 
     local selected = M.fzf(opts, contents or opts.fzf_fn)
 

@@ -234,9 +234,14 @@ end
 M.async_spawn = coroutinify(M.spawn)
 
 
-M.spawn_nvim_fzf_cmd = function(opts, fn_transform)
+M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess)
 
   assert(not fn_transform or type(fn_transform) == 'function')
+
+  if fn_preprocess and type(fn_preprocess) == 'function' then
+    -- run the preprocessing fn
+    fn_preprocess(opts)
+  end
 
   return function(_, fzf_cb, _)
 

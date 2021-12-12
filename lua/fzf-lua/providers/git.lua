@@ -26,8 +26,7 @@ M.status = function(opts)
   if opts.preview then
     opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
   end
-  local contents = libuv.spawn_nvim_fzf_cmd(
-    { cmd = opts.cmd, cwd = opts.cwd, pid_cb = opts._pid_cb },
+  local contents = libuv.spawn_nvim_fzf_cmd(opts,
     function(x)
       -- greedy match anything after last space
       local f = x:match("[^ ]*$")
@@ -38,6 +37,9 @@ M.status = function(opts)
         f = f:match('[^"]*$')
       end
       return core.make_entry_file(opts, f)
+    end,
+    function(o)
+      return core.make_entry_preprocess(o)
     end)
   opts = core.set_header(opts, 2)
   return core.fzf_files(opts, contents)
