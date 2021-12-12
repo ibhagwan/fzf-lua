@@ -63,11 +63,13 @@ local setup_devicon_term_hls = function()
 end
 
 local function load_devicons()
-  -- file was called from a headless instance
-  -- load nvim-web-devicons manually
   if config and config._has_devicons then
+    -- file was called from the primary instance
+    -- acquire nvim-web-devicons from config
     M._devicons = config._devicons
   elseif M._devicons_path and vim.loop.fs_stat(M._devicons_path) then
+    -- file was called from a headless instance
+    -- load nvim-web-devicons manually
     local file = loadfile(M._devicons_path)
     M._devicons = file and file()
   end
@@ -91,7 +93,7 @@ if not config then
   local _config = { globals = { git = {}, files = {} } }
   _config.globals.git.icons = load_config_section('globals.git.icons', 'table') or {}
   _config.globals.file_icon_colors = load_config_section('globals.file_icon_colors', 'table') or {}
-  _config.globals.file_icon_padding = load_config_section('globals.file_icon_padding', 'string') or ""
+  _config.globals.file_icon_padding = load_config_section('globals.file_icon_padding', 'string')
   _config.globals.files.git_status_cmd = load_config_section('globals.files.git_status_cmd', 'table')
 
   -- _G.dump(_config)
@@ -113,7 +115,12 @@ M.get_devicon = function(file, ext)
       hl = override
   end
 
-  return icon..config.globals.file_icon_padding:gsub(" ", utils.nbsp), hl
+  if config.globals.file_icon_padding and
+    #config.globals.file_icon_padding>0 then
+    icon = icon .. config.globals.file_icon_padding:gsub(" ", utils.nbsp)
+  end
+
+  return icon, hl
 end
 
 M.get_diff_files = function(opts)
