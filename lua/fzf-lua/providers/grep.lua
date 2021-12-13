@@ -169,18 +169,32 @@ M.live_grep_native = function(opts)
   -- search query in header line
   opts = core.set_header(opts, 2)
 
-  -- we do not process any entries in the 'native' version
-  -- as fzf runs the command directly in the 'change:reload'
-  -- event, we could run the command through 'libuv.spawn_stdio'
-  -- wrapper but for that we have the non-native version
-  -- keep the native version "clean" for debugging/performance
-  opts.git_icons = false
-  opts.file_icons = false
+  -- we do not process any entries in the 'native' version as
+  -- fzf runs the command directly in the 'change:reload' event
+  -- since the introduction of 'libuv.spawn_stdio' with '--headless'
+  -- we can now run the command externally with minimal overhead
+  if not opts.multiprocess then
+    opts.git_icons = false
+    opts.file_icons = false
+  end
 
   -- fzf already adds single quotes around the placeholder when expanding
   -- for skim we surround it with double quotes or single quote searches fail
   local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
-  local initial_command = get_grep_cmd(opts , placeholder, 2)
+  opts.cmd = get_grep_cmd(opts , placeholder, 2)
+  local initial_command = core.mt_cmd_wrapper(opts)
+  if initial_command ~= opts.cmd then
+    -- this means mt_cmd_wrapper wrapped the command
+    -- since now the `rg` command is wrapped inside
+    -- the shell escaped '--headless .. --cmd' we won't
+    -- be able to search single quotes as it will break
+    -- the escape sequence so we use a nifty trick
+    --   * replace the placeholder with {argv1}
+    --   * re-add the placeholder at the end of the command
+    --   * spawn_stdio then relaces it with vim.fn.argv(1)
+    initial_command = initial_command:gsub(placeholder, "{argv1}")
+      .. " " .. placeholder
+  end
   local reload_command = initial_command
   if not opts.exec_empty_query then
     reload_command =  ('[ -z %s ] || %s'):format(placeholder, reload_command)
@@ -198,7 +212,9 @@ M.live_grep_native = function(opts)
   else
     opts.fzf_fn = {}
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
-      opts.cmd = initial_command:gsub(placeholder, vim.fn.shellescape(query))
+      -- must empty opts.cmd first
+      opts.cmd = nil
+      opts.cmd = get_grep_cmd(opts , opts.search, false)
       opts.fzf_fn = core.mt_cmd_wrapper(opts)
     end
     opts.fzf_opts['--phony'] = ''
