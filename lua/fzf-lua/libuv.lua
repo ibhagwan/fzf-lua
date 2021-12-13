@@ -292,12 +292,14 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
 
   local stderr, stdout = nil, nil
 
+  local function stderr_write(msg)
+    -- prioritize writing errors to stderr
+    if stderr then stderr:write(msg)
+    else io.stderr:write(msg) end
+  end
+
   local function exit(exit_code, msg)
-    if msg then
-      -- prioritize writing errors to stderr
-      if stderr then stderr:write(msg)
-      else io.stderr:write(msg) end
-    end
+    if msg then stderr_write(msg) end
     os.exit(exit_code)
   end
 
@@ -327,7 +329,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
         -- don't really need to do anything since the
         -- processs will be killed anyways with os.exit()
         if err then
-          io.stderr:write(("pipe:write error: %s\n"):format(err))
+          stderr_write(("pipe:write error: %s\n"):format(err))
         end
         if cb then cb(err) end
       end)
@@ -357,7 +359,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
         -- cb with an err ends the process
         local rc, err = io.stdout:write(data)
         if not rc then
-          io.stderr:write(("io.stdout:write error: %s\n"):format(err))
+          stderr_write(("io.stdout:write error: %s\n"):format(err))
           cb(err or true)
         else
           cb(nil)
