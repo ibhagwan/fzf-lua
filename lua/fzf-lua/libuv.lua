@@ -332,12 +332,12 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
       end)
   end
 
-  stderr = pipe_open(opts.stderr or "/dev/stderr")
-
-  -- /dev/stdout seems to create issues on MacOS (#248, #251)
-  -- do not use a pipe unless use specifically requests it
-  -- instead we use 'io.write'
-  stdout = pipe_open(opts.stdout)
+  if opts.stderr then
+    stderr = pipe_open(opts.stderr)
+  end
+  if opts.stdout then
+    stdout = pipe_open(opts.stdout)
+  end
 
   local on_finish = opts.on_finish or
     function(code)
@@ -351,14 +351,19 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
       if stdout then
         pipe_write(stdout, data, cb)
       else
-        io.write(data)
+        io.stdout:write(data)
         cb(nil)
       end
     end
 
   local on_err = opts.on_err or
     function(data)
-      pipe_write(stderr, data)
+      if stderr then
+        pipe_write(stderr, data)
+      else
+        io.stderr:write(data)
+        cb(nil)
+      end
     end
 
   return M.spawn({
