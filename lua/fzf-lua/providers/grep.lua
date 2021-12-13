@@ -3,7 +3,17 @@ local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
-local last_search = {}
+local function get_last_search()
+  local last_search = config.globals.grep._last_search or {}
+  return last_search.query, last_search.no_esc
+end
+
+local function set_last_search(query, no_esc)
+  config.globals.grep._last_search = {
+    query = query,
+    no_esc = no_esc
+  }
+end
 
 local M = {}
 
@@ -58,8 +68,7 @@ M.grep = function(opts)
 
   local no_esc = false
   if opts.continue_last_search or opts.repeat_last_search then
-    no_esc = last_search.no_esc
-    opts.search = last_search.query
+    opts.search, no_esc = get_last_search()
   end
 
   -- if user did not provide a search term
@@ -78,9 +87,7 @@ M.grep = function(opts)
 
   -- save the search query so the use can
   -- call the same search again
-  last_search = {}
-  last_search.no_esc = no_esc or opts.no_esc
-  last_search.query = opts.search
+  set_last_search(opts.search, no_esc or opts.no_esc)
 
   opts.cmd = get_grep_cmd(opts, opts.search, no_esc)
   local contents = core.mt_cmd_wrapper(opts)
@@ -96,17 +103,14 @@ M.live_grep = function(opts)
 
   local no_esc = false
   if opts.continue_last_search or opts.repeat_last_search then
-    no_esc = last_search.no_esc
-    opts.search = last_search.query
+    opts.search, no_esc = get_last_search()
   end
 
   opts.query = opts.search or ''
   if opts.search and #opts.search>0 then
     -- save the search query so the use can
     -- call the same search again
-    last_search = {}
-    last_search.no_esc = true
-    last_search.query = opts.search
+    set_last_search(opts.search, true)
     -- escape unless the user requested not to
     if not (no_esc or opts.no_esc) then
       opts.query = utils.rg_escape(opts.search)
@@ -118,9 +122,7 @@ M.live_grep = function(opts)
 
   opts._reload_command = function(query)
     if query and not (opts.save_last_search == false) then
-      last_search = {}
-      last_search.no_esc = true
-      last_search.query = query
+      set_last_search(query, true)
     end
     -- can be nill when called as fzf initial command
     query = query or ''
@@ -176,17 +178,14 @@ M.live_grep_mt = function(opts)
 
   local no_esc = false
   if opts.continue_last_search or opts.repeat_last_search then
-    no_esc = last_search.no_esc
-    opts.search = last_search.query
+    opts.search, no_esc = get_last_search()
   end
 
   local query = opts.search or ''
   if opts.search and #opts.search>0 then
     -- save the search query so the use can
     -- call the same search again
-    last_search = {}
-    last_search.no_esc = no_esc or opts.no_esc
-    last_search.query = opts.search
+    set_last_search(opts.search, no_esc or opts.no_esc)
     -- escape unless the user requested not to
     if not (no_esc or opts.no_esc) then
       query = utils.rg_escape(opts.search)
@@ -237,10 +236,8 @@ M.live_grep_mt = function(opts)
   else
     opts.fzf_fn = {}
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
-      -- must empty opts.cmd first
-      opts.cmd = nil
-      opts.cmd = get_grep_cmd(opts , opts.search, false)
-      opts.fzf_fn = core.mt_cmd_wrapper(opts)
+      opts.fzf_fn = initial_command:gsub(placeholder,
+        vim.fn.shellescape(query))
     end
     opts.fzf_opts['--phony'] = ''
     opts.fzf_opts['--query'] = vim.fn.shellescape(query)

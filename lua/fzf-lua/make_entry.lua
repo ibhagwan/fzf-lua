@@ -48,6 +48,36 @@ local function load_config_section(s, datatype)
   end
 end
 
+local function set_config_section(s, data)
+  if M._fzf_lua_server then
+    -- save config in our running instance
+    local ok, errmsg = pcall(function()
+      local chan_id = vim.fn.sockconnect("pipe", M._fzf_lua_server, { rpc = true })
+      vim.rpcrequest(chan_id, "nvim_exec_lua", ([[
+        local data = select(1, ...)
+        require'fzf-lua'.config.%s = data
+      ]]):format(s), { data })
+      vim.fn.chanclose(chan_id)
+    end)
+    if not ok then
+      io.stderr:write(("Error setting remote config section '%s': %s\n")
+        :format(s, errmsg))
+    end
+    return ok
+  elseif config then
+    local keys = utils.strsplit(s, '.')
+    local iter = config
+    for i=1,#keys do
+      iter = iter[keys[i]]
+      if not iter then break end
+      if i == #keys-1 then
+        iter[keys[i+1]] = data
+        return iter
+      end
+    end
+  end
+end
+
 -- Setup the terminal colors codes for nvim-web-devicons colors
 local setup_devicon_term_hls = function()
   local function hex(hexstr)
@@ -154,6 +184,12 @@ M.preprocess = function(opts)
     -- argv1 is actually the 7th argument if we count
     -- arguments already supplied by 'wrap_spawn_stdio'
     return i and vim.v.argv[i+6] or nil
+  end
+
+  -- save our last search argument for resume
+  if opts.cmd:match("{argv1}") then
+    set_config_section('globals.grep._last_search',
+      { query = argv(1), no_esc = true })
   end
 
   -- did the caller request rg with glob support?
