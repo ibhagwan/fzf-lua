@@ -40,7 +40,7 @@ local function load_config_section(s, datatype)
       vim.fn.chanclose(chan_id)
     end)
     if not ok then
-      io.write(("Error loading remote config section '%s': %s\n")
+      io.stderr:write(("Error loading remote config section '%s': %s\n")
         :format(s, errmsg))
     elseif type(res) == datatype then
       return res

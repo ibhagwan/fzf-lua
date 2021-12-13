@@ -64,6 +64,6 @@ local success, errmsg = pcall(function ()
 end)
 
 if not success then
-  io.write("FzfLua Error:\n\n" .. errmsg .. "\n")
+  io.stderr:write("FzfLua Error:\n\n" .. errmsg .. "\n")
   vim.cmd [[qall]]
 end
