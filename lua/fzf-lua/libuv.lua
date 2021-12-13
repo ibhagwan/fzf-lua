@@ -290,16 +290,6 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
 
-  -- nifty hack to avoid having to double escape quotations
-  -- see my comment within the 'live_grep' code initial_command
-  opts.cmd = opts.cmd:gsub("{argv%d+}",
-    function(x)
-      local idx = x:match("{argv(%d+)}")
-      -- argv1 is actually the 7th argument if we count
-      -- arguments already supplied by 'wrap_spawn_stdio'
-      local argv = vim.v.argv[idx+6]
-      return vim.fn.shellescape(argv)
-    end)
 
   -- for i=0,8 do
   --   io.stdout:write(("%d %s\n"):format(i, vim.v.argv[i]))

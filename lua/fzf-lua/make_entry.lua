@@ -149,6 +149,39 @@ M.preprocess = function(opts)
   if opts.git_icons then
     opts.diff_files = M.get_diff_files(opts)
   end
+
+  local argv = function(i)
+    -- argv1 is actually the 7th argument if we count
+    -- arguments already supplied by 'wrap_spawn_stdio'
+    return i and vim.v.argv[i+6] or nil
+  end
+
+  -- did the caller request rg with glob support?
+  -- mannipulation needs to be done before the argv hack
+  if opts.rg_glob then
+    local query = argv(1)
+    if query and query:find(opts.glob_separator) then
+      local glob_args = ""
+      local search_query, glob_str = query:match("(.*)"..opts.glob_separator.."(.*)")
+      for _, s in ipairs(utils.strsplit(glob_str, "%s")) do
+        glob_args = glob_args .. ("%s %s ")
+          :format(opts.glob_flag, vim.fn.shellescape(s))
+      end
+      -- reset argv1 so it doesn't get replaced again below
+      opts.cmd = opts.cmd:gsub("{argv1}",
+        glob_args .. vim.fn.shellescape(search_query))
+    end
+  end
+
+  -- nifty hack to avoid having to double escape quotations
+  -- see my comment inside 'live_grep' initial_command code
+  opts.cmd = opts.cmd:gsub("{argv%d+}",
+    function(x)
+      local idx = x:match("{argv(%d+)}")
+      return vim.fn.shellescape(argv(idx))
+    end)
+
+
   return opts
 end
 

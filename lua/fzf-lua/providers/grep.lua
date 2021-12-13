@@ -144,6 +144,33 @@ end
 
 M.live_grep_native = function(opts)
 
+  -- backward compatibility, by setting git|files icons to false
+  -- we forces mt_cmd_wrapper to pipe the command as is so fzf
+  -- runs the command directly in the 'change:reload' event
+  opts = opts or {}
+  opts.git_icons = false
+  opts.file_icons = false
+
+  return M.live_grep_mt(opts)
+end
+
+M.live_grep_glob_mt = function(opts)
+
+  if vim.fn.executable("rg") ~= 1 then
+    utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
+    return
+  end
+
+  -- 'rg_glob = true' enables the glob processsing in
+  -- 'make_entry.preprocess', only supported with multiprocess
+  opts = opts or {}
+  opts.rg_glob = true
+  opts.force_multiprocess = true
+  return M.live_grep_mt(opts)
+end
+
+M.live_grep_mt = function(opts)
+
   opts = config.normalize_opts(opts, config.globals.grep)
   if not opts then return end
 
@@ -169,11 +196,9 @@ M.live_grep_native = function(opts)
   -- search query in header line
   opts = core.set_header(opts, 2)
 
-  -- we do not process any entries in the 'native' version as
-  -- fzf runs the command directly in the 'change:reload' event
   -- since the introduction of 'libuv.spawn_stdio' with '--headless'
   -- we can now run the command externally with minimal overhead
-  if not opts.multiprocess then
+  if not opts.multiprocess and not opts.force_multiprocess then
     opts.git_icons = false
     opts.file_icons = false
   end

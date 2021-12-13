@@ -210,7 +210,13 @@ M.mt_cmd_wrapper = function(opts)
       "file_icons",
       "color_icons",
       "strip_cwd_prefix",
+      "rg_glob",
     }
+    -- caller reqested rg with glob support
+    if o.rg_glob then
+      table.insert(names, "glob_flag")
+      table.insert(names, "glob_separator")
+    end
     local str = ""
     for _, name in ipairs(names) do
       if o[name] ~= nil then
@@ -228,10 +234,11 @@ M.mt_cmd_wrapper = function(opts)
     return '{'..str..'}'
   end
 
-  if not opts.git_icons and not opts.file_icons then
+  if not opts.force_multiprocess and
+     not opts.git_icons and not opts.file_icons then
     -- command does not require any processing
     return opts.cmd
-  elseif opts.multiprocess then
+  elseif opts.multiprocess or opts.force_multiprocess then
     local fn_preprocess = [[return require("make_entry").preprocess]]
     local fn_transform = [[return require("make_entry").file]]
     if not opts.no_remote_config then
