@@ -303,6 +303,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
   end
 
   local function pipe_open(pipename)
+    if not pipename then return end
     local fd = uv.fs_open(pipename, "w", -1)
     if type(fd) ~= 'number' then
       exit(1, ("error opening '%s': %s\n"):format(pipename, fd))
@@ -332,8 +333,11 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
   end
 
   stderr = pipe_open(opts.stderr or "/dev/stderr")
-  stdout = pipe_open(opts.stdout or "/dev/stdout")
-  assert(stderr and stdout)
+
+  -- /dev/stdout seems to create issues on MacOS (#248, #251)
+  -- do not use a pipe unless use specifically requests it
+  -- instead we use 'io.write'
+  stdout = pipe_open(opts.stdout)
 
   local on_finish = opts.on_finish or
     function(code)
@@ -344,7 +348,12 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
 
   local on_write = opts.on_write or
     function(data, cb)
-      pipe_write(stdout, data, cb)
+      if stdout then
+        pipe_write(stdout, data, cb)
+      else
+        io.write(data)
+        cb(nil)
+      end
     end
 
   local on_err = opts.on_err or
