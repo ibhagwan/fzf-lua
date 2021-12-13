@@ -297,7 +297,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
     if msg then
       -- prioritize writing errors to stderr
       if stderr then stderr:write(msg)
-      else io.write(msg) end
+      else io.stderr:write(msg) end
     end
     os.exit(exit_code)
   end
@@ -362,7 +362,6 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
         pipe_write(stderr, data)
       else
         io.stderr:write(data)
-        cb(nil)
       end
     end
 
