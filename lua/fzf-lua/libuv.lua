@@ -290,7 +290,6 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
 
-  -- print(uv.os_getpid(), ":", opts.cmd, opts.cwd)
   local stderr, stdout = nil, nil
 
   local function exit(exit_code, msg)
@@ -327,7 +326,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
         -- <C-c> err will be either EPIPE or ECANCELED
         -- don't really need to do anything since the
         -- processs will be killed anyways with os.exit()
-        if err then print("write err:", err) end
+        if err then io.stderr:write("pipe:write Error: "..err) end
         if cb then cb(err) end
       end)
   end
