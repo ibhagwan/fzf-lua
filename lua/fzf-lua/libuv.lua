@@ -296,7 +296,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
   -- end
 
   if opts.debug then
-    io.stdout:write(opts.cmd.."\n")
+    io.stdout:write("[DEBUG]: "..opts.cmd.."\n")
   end
 
   local stderr, stdout = nil, nil

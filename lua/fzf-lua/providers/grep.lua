@@ -96,7 +96,8 @@ M.grep = function(opts)
   opts.search = nil
 end
 
-M.live_grep = function(opts)
+-- single threaded version
+M.live_grep_st = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.grep)
   if not opts then return end
@@ -171,6 +172,7 @@ M.live_grep_glob_mt = function(opts)
   return M.live_grep_mt(opts)
 end
 
+-- multi threaded (multi-process actually) version
 M.live_grep_mt = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.grep)
@@ -251,18 +253,6 @@ M.live_grep_mt = function(opts)
   opts.search = nil
 end
 
-M.live_grep_sk = function(opts)
-  if not opts then opts = {} end
-  opts.fzf_bin = "sk"
-  M.live_grep(opts)
-end
-
-M.live_grep_fzf = function(opts)
-  if not opts then opts = {} end
-  opts.fzf_bin = "fzf"
-  M.live_grep(opts)
-end
-
 M.live_grep_resume = function(opts)
   if not opts then opts = {} end
   if not opts.search then
@@ -271,7 +261,7 @@ M.live_grep_resume = function(opts)
       opts.repeat_last_search == nil and true) or
       (opts.continue_last_search or opts.repeat_last_search)
   end
-  return M.live_grep(opts)
+  return M.live_grep_mt(opts)
 end
 
 M.live_grep_glob = function(opts)
@@ -313,7 +303,7 @@ M.live_grep_glob = function(opts)
       :format(opts.rg_opts, glob_arg, search_query, search_path)
     return cmd
   end
-  return M.live_grep(opts)
+  return M.live_grep_st(opts)
 end
 
 M.grep_last = function(opts)
@@ -359,7 +349,7 @@ M.grep_curbuf = function(opts)
   if #opts.filename > 0 and vim.loop.fs_stat(opts.filename) then
     opts.filename = path.relative(opts.filename, vim.loop.cwd())
     if opts.lgrep then
-      return M.live_grep(opts)
+      return M.live_grep_mt(opts)
     else
       opts.search = ''
       return M.grep(opts)
