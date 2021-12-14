@@ -553,8 +553,18 @@ function FzfWin:redraw()
     if self:validate() then
       api.nvim_win_set_config(self.fzf_winid, win_opts)
     else
+      -- save 'cursorline' setting prior to opening the popup
+      local cursorline = vim.o.cursorline
       self.fzf_bufnr = vim.api.nvim_create_buf(false, true)
       self.fzf_winid = vim.api.nvim_open_win(self.fzf_bufnr, true, win_opts)
+      -- `:help nvim_open_win`
+      -- 'minimal' sets 'nocursorline', normally this shouldn't
+      -- be an issue but for some reason this is affecting opening
+      -- buffers in new splits and causes them to open with
+      -- 'nocursorline', see discussion in #254
+      if vim.o.cursorline ~= cursorline then
+        vim.o.cursorline = cursorline
+      end
     end
 end
 
