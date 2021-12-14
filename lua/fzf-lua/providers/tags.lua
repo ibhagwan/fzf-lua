@@ -92,11 +92,11 @@ local fzf_tags = function(opts)
       return line
     end
 
-    local add_tag = function(t, fzf_cb, co)
-      local line = t.line or getlinenumber(t)
-      local tag = string.format("%s:%s: %s %s",
+    local add_tag = function(t, fzf_cb, co, no_line)
+      local line = not no_line and getlinenumber(t)
+      local tag = string.format("%s%s: %s %s",
         core.make_entry_file(opts, t.file),
-        utils.ansi_codes.green(tostring(line)),
+        not line and "" or ":"..utils.ansi_codes.green(tostring(line)),
         utils.ansi_codes.magenta(t.name),
         utils.ansi_codes.green(t.text))
       fzf_cb(tag, function()
@@ -117,13 +117,13 @@ local fzf_tags = function(opts)
               -- at any `vim.fn...` call
               vim.schedule(function()
                 add_tag({
-                  name = name,
-                  file = file,
+                    name = name,
+                    file = file,
+                    text = text,
+                  }, cb, co,
                   -- unless we're using native previewer
                   -- do not need to extract the line number
-                  line = type(opts.previewer) == 'table' and 1,
-                  text = text,
-                }, cb, co)
+                  type(opts.previewer) == 'table')
               end)
               -- pause here until we call coroutine.resume()
               coroutine.yield()
@@ -152,6 +152,8 @@ end
 M.btags = function(opts)
   opts = config.normalize_opts(opts, config.globals.btags)
   if not opts then return end
+  opts.fzf_opts = vim.tbl_extend("keep",
+    opts.fzf_opts or {}, config.globals.blines.fzf_opts)
   opts.current_buffer_only = true
   return fzf_tags(opts)
 end
