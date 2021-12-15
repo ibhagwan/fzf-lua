@@ -91,6 +91,13 @@ M.grep = function(opts)
 
   opts.cmd = get_grep_cmd(opts, opts.search, no_esc)
   local contents = core.mt_cmd_wrapper(opts)
+  -- by redirecting the error stream to stdout
+  -- we make sure a clear error message is displayed
+  -- when the user enters bad regex expressions
+  if type(contents) == 'string' then
+    contents = contents .. " 2>&1"
+  end
+
   opts = core.set_fzf_line_args(opts)
   core.fzf_files(opts, contents)
   opts.search = nil
@@ -221,6 +228,10 @@ M.live_grep_mt = function(opts)
     initial_command = initial_command:gsub(placeholder, "{argv1}")
       .. " " .. placeholder
   end
+  -- by redirecting the error stream to stdout
+  -- we make sure a clear error message is displayed
+  -- when the user enters bad regex expressions
+  initial_command = initial_command .. " 2>&1"
   local reload_command = initial_command
   if not opts.exec_empty_query then
     reload_command =  ('[ -z %s ] || %s'):format(placeholder, reload_command)
