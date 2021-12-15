@@ -12,13 +12,9 @@ local M = {}
 
 M._has_devicons, M._devicons = pcall(require, "nvim-web-devicons")
 
-M._devicons_path = (function()
-  for _, p in ipairs(vim.api.nvim_list_runtime_paths()) do
-    if path.tail(p) == "nvim-web-devicons" then
-      return path.join({p, "lua/nvim-web-devicons.lua"})
-    end
-  end
-end)()
+-- get the devicons module path
+M._devicons_path = M._has_devicons and M._devicons and M._devicons.setup
+  and debug.getinfo(M._devicons.setup, 'S').source:gsub("^@", "")
 
 function M._default_previewer_fn()
   return M.globals.default_previewer or M.globals.winopts.preview.default
