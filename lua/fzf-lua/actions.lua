@@ -246,7 +246,7 @@ end
 M.ex_run = function(selected)
   local cmd = selected[1]
   vim.cmd("stopinsert")
-  vim.fn.feedkeys(string.format(":%s", cmd))
+  vim.fn.feedkeys(string.format(":%s", cmd), "n")
   return cmd
 end
 
@@ -259,7 +259,7 @@ end
 M.search = function(selected)
   local query = selected[1]
   vim.cmd("stopinsert")
-  vim.fn.feedkeys(string.format("/%s", query))
+  vim.fn.feedkeys(string.format("/%s", query), "n")
   return query
 end
 
