@@ -155,7 +155,11 @@ end
 M.read_file_async = function(filepath, callback)
   vim.loop.fs_open(filepath, "r", 438, function(err_open, fd)
     if err_open then
-      M.warn("We tried to open this file but couldn't. We failed with following error message: " .. err_open)
+      -- we must schedule this or we get
+      -- E5560: nvim_exec must not be called in a lua loop callback
+      vim.schedule(function()
+        M.warn(("Unable to open file '%s', error: %s"):format(filepath, err_open))
+      end)
       return
     end
     vim.loop.fs_fstat(fd, function(err_fstat, stat)
