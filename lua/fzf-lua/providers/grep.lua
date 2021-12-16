@@ -310,8 +310,8 @@ M.live_grep_glob = function(opts)
       search_query = vim.fn.shellescape(search_query)
     end
 
-    local cmd = ("rg %s %s -- %s %s")
-      :format(opts.rg_opts, glob_arg, search_query, search_path)
+    local cmd = ("rg -- %s %s %s %s")
+      :format(search_query, opts.rg_opts, glob_arg, search_path)
     return cmd
   end
   return M.live_grep_st(opts)
