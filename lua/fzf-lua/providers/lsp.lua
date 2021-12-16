@@ -219,6 +219,9 @@ local function set_lsp_fzf_fn(opts)
     coroutine.wrap(function ()
       local co = coroutine.running()
 
+      -- reset number of callbacks incase
+      -- we're being called from 'resume'
+      opts.num_callbacks = 0
 
       -- cancel all currently running requests
       -- can happen when using `live_ws_symbols`
@@ -436,9 +439,7 @@ M.code_actions = function(opts)
   -- error or no sync request no results
   if not opts.fzf_fn then return end
 
-  coroutine.wrap(function ()
-
-    local selected = core.fzf(opts, opts.fzf_fn)
+  core.fzf_wrap(opts, opts.fzf_fn, function(selected)
 
     if opts.post_select_cb then
       opts.post_select_cb()
@@ -627,6 +628,7 @@ M.live_workspace_symbols = function(opts)
     if query and not (opts.save_last_search == false) then
       last_search = {}
       last_search.query = query
+      config.__resume_data.last_query = query
     end
     opts.sync = true
     opts.async = false
@@ -635,6 +637,10 @@ M.live_workspace_symbols = function(opts)
     return opts.fzf_fn
   end
 
+  -- disable global resume
+  -- conflicts with 'change:reload' event
+  opts.no_global_resume_act = true
+  opts.__FNCREF__ = M.live_workspace_symbols
   opts = core.set_fzf_interactive_cb(opts)
   opts = core.set_fzf_line_args(opts)
   core.fzf_files(opts)

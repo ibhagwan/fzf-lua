@@ -79,6 +79,8 @@ function M.setup(opts)
   globals = nil
 end
 
+M.resume = require'fzf-lua.core'.fzf_resume
+
 M.files = require'fzf-lua.providers.files'.files
 M.files_resume = require'fzf-lua.providers.files'.files_resume
 M.args = require'fzf-lua.providers.files'.args
@@ -155,15 +157,17 @@ end
 
 -- API shortcuts
 M.fzf = require'fzf-lua.core'.fzf
+M.fzf_wrap = require'fzf-lua.core'.fzf_wrap
 M.raw_fzf = require'fzf-lua.fzf'.raw_fzf
 
 M.builtin = function(opts)
   if not opts then opts = {} end
   opts.metatable = M
   opts.metatable_exclude = {
-    ["setup"]   = false,
-    ["fzf"]     = false,
-    ["raw_fzf"] = false,
+    ["setup"]     = false,
+    ["fzf"]       = false,
+    ["fzf_wrap"]  = false,
+    ["raw_fzf"]   = false,
   }
   for _, m in ipairs(_modules) do
     opts.metatable_exclude[m] = false

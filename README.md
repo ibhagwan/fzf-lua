@@ -181,6 +181,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 ### Misc
 | Command          | List                                       |
 | ---------------- | ------------------------------------------ |
+| `resume`           | resume last command/query                  |
 | `builtin`          | fzf-lua builtin commands                   |
 | `help_tags`        | help tags                                  |
 | `man_pages`        | man pages                                  |
@@ -212,6 +213,7 @@ Consult the list below for available settings:
 ```lua
 local actions = require "fzf-lua.actions"
 require'fzf-lua'.setup {
+  global_resume      = true,            -- enable `resume` provider?
   winopts = {
     -- split         = "belowright new",-- open in a split instead?
                                         -- "belowright new"  : split below

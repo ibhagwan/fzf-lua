@@ -8,6 +8,11 @@ end
 
 local M = {}
 
+function M.__FILE__() return debug.getinfo(2, 'S').source end
+function M.__LINE__() return debug.getinfo(2, 'l').currentline end
+function M.__FNC__() return debug.getinfo(2, 'n').name end
+function M.__FNCREF__() return debug.getinfo(2, 'f').func end
+
 -- sets an invisible unicode character as icon seaprator
 -- the below was reached after many iterations, a short summary of everything
 -- that was tried and why it failed:

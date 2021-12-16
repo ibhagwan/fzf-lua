@@ -48,9 +48,8 @@ end
 local function git_cmd(opts)
   opts.cwd = path.git_root(opts.cwd)
   if not opts.cwd then return end
-  coroutine.wrap(function ()
-    opts = core.set_header(opts, 2)
-    local selected = core.fzf(opts, opts.cmd)
+  opts = core.set_header(opts, 2)
+  core.fzf_wrap(opts, opts.cmd, function(selected)
     if not selected then return end
     actions.act(opts.actions, selected, opts)
   end)()

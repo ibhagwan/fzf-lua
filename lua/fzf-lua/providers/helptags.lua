@@ -96,15 +96,13 @@ M.helptags = function(opts)
   opts = config.normalize_opts(opts, config.globals.helptags)
   if not opts then return end
 
-  coroutine.wrap(function ()
+  -- local prev_act = action(function (args) end)
 
-    -- local prev_act = action(function (args) end)
+  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts['--preview-window'] = 'hidden:right:0'
+  opts.fzf_opts['--nth'] = '1'
 
-    opts.fzf_opts['--no-multi'] = ''
-    opts.fzf_opts['--preview-window'] = 'hidden:right:0'
-    opts.fzf_opts['--nth'] = '1'
-
-    local selected = core.fzf(opts, fzf_function)
+  core.fzf_wrap(opts, fzf_function, function(selected)
 
     if not selected then return end
 

@@ -20,7 +20,12 @@ function M._default_previewer_fn()
   return M.globals.default_previewer or M.globals.winopts.preview.default
 end
 
+-- set this so that make_entry won't
+-- get nil err when setting remotely
+M.__resume_data = {}
+
 M.globals = {
+  global_resume         = true,
   winopts = {
     height              = 0.85,
     width               = 0.80,

@@ -169,20 +169,20 @@ M.buffers = function(opts)
 
   if not next(filtered) then return end
 
-  coroutine.wrap(function ()
-    local items = {}
+  local items = {}
 
-    local buffers, header_line = make_buffer_entries(opts, filtered, nil, opts.curbuf)
-    for _, buf in pairs(buffers) do
-      items = add_buffer_entry(opts, buf, items, header_line)
-    end
+  local buffers, header_line = make_buffer_entries(opts, filtered, nil, opts.curbuf)
+  for _, buf in pairs(buffers) do
+    items = add_buffer_entry(opts, buf, items, header_line)
+  end
 
-    opts.fzf_opts['--preview'] = act
-    if header_line and not opts.ignore_current_buffer then
-      opts.fzf_opts['--header-lines'] = '1'
-    end
+  opts.fzf_opts['--preview'] = act
+  if header_line and not opts.ignore_current_buffer then
+    opts.fzf_opts['--header-lines'] = '1'
+  end
 
-    local selected = core.fzf(opts, items)
+  core.fzf_wrap(opts, items, function(selected)
+
     if not selected then return end
 
     actions.act(opts.actions, selected, opts)
@@ -209,49 +209,48 @@ M.buffer_lines = function(opts)
     opts.current_buffer_only and { vim.api.nvim_get_current_buf() } or
     vim.api.nvim_list_bufs())
 
-  coroutine.wrap(function()
-    local items = {}
+  local items = {}
 
-    for _, bufnr in ipairs(buffers) do
-      local data = {}
-      local filepath = api.nvim_buf_get_name(bufnr)
-      if api.nvim_buf_is_loaded(bufnr) then
-        data = api.nvim_buf_get_lines(bufnr, 0, -1, false)
-      elseif vim.fn.filereadable(filepath) ~= 0 then
-        data = vim.fn.readfile(filepath, "")
-      end
-      local bufname = path.basename(filepath)
-      local buficon, hl
-      if opts.file_icons then
-        local filename = path.tail(bufname)
-        local extension = path.extension(filename)
-        buficon, hl = core.get_devicon(filename, extension)
-        if opts.color_icons then
-          buficon = utils.ansi_codes[hl](buficon)
-        end
-      end
-      for l, text in ipairs(data) do
-        table.insert(items, ("[%s]%s%s%s%s:%s: %s"):format(
-          utils.ansi_codes.yellow(tostring(bufnr)),
-          utils.nbsp,
-          buficon or '',
-          buficon and utils.nbsp or '',
-          utils.ansi_codes.magenta(#bufname>0 and bufname or "[No Name]"),
-          utils.ansi_codes.green(tostring(l)),
-          text))
+  for _, bufnr in ipairs(buffers) do
+    local data = {}
+    local filepath = api.nvim_buf_get_name(bufnr)
+    if api.nvim_buf_is_loaded(bufnr) then
+      data = api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    elseif vim.fn.filereadable(filepath) ~= 0 then
+      data = vim.fn.readfile(filepath, "")
+    end
+    local bufname = path.basename(filepath)
+    local buficon, hl
+    if opts.file_icons then
+      local filename = path.tail(bufname)
+      local extension = path.extension(filename)
+      buficon, hl = core.get_devicon(filename, extension)
+      if opts.color_icons then
+        buficon = utils.ansi_codes[hl](buficon)
       end
     end
-
-    -- ignore bufnr when searching
-    -- disable multi-select
-    opts.fzf_opts["--no-multi"] = ''
-    opts.fzf_opts["--preview-window"] = 'hidden:right:0'
-
-    if opts.search and #opts.search>0 then
-      opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search)
+    for l, text in ipairs(data) do
+      table.insert(items, ("[%s]%s%s%s%s:%s: %s"):format(
+        utils.ansi_codes.yellow(tostring(bufnr)),
+        utils.nbsp,
+        buficon or '',
+        buficon and utils.nbsp or '',
+        utils.ansi_codes.magenta(#bufname>0 and bufname or "[No Name]"),
+        utils.ansi_codes.green(tostring(l)),
+        text))
     end
+  end
 
-    local selected = core.fzf(opts, items)
+  -- ignore bufnr when searching
+  -- disable multi-select
+  opts.fzf_opts["--no-multi"] = ''
+  opts.fzf_opts["--preview-window"] = 'hidden:right:0'
+
+  if opts.search and #opts.search>0 then
+    opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search)
+  end
+
+  core.fzf_wrap(opts, items, function(selected)
     if not selected then return end
 
     -- get the line number
@@ -300,34 +299,34 @@ M.tabs = function(opts)
       bufnrs[b] = nil
     end
   end
-  coroutine.wrap(function ()
-    local items = {}
 
-    for t, bufnrs in pairs(opts._tab_to_buf) do
+  local items = {}
 
-      table.insert(items, ("%d)%s%s\t%s"):format(t, utils.nbsp,
-        utils.ansi_codes.blue("%s%s#%d"):format(opts.tab_title, utils.nbsp, t),
-          (t==curtab) and utils.ansi_codes.blue(utils.ansi_codes.bold(opts.tab_marker)) or ''))
+  for t, bufnrs in pairs(opts._tab_to_buf) do
 
-      local bufnrs_flat = {}
-      for b, _ in pairs(bufnrs) do
-        table.insert(bufnrs_flat, b)
-      end
+    table.insert(items, ("%d)%s%s\t%s"):format(t, utils.nbsp,
+      utils.ansi_codes.blue("%s%s#%d"):format(opts.tab_title, utils.nbsp, t),
+        (t==curtab) and utils.ansi_codes.blue(utils.ansi_codes.bold(opts.tab_marker)) or ''))
 
-      opts.sort_lastused = false
-      opts._prefix = ("%d)%s%s%s"):format(t, utils.nbsp, utils.nbsp, utils.nbsp)
-      local buffers = make_buffer_entries(opts, bufnrs_flat, t)
-      for _, buf in pairs(buffers) do
-        items = add_buffer_entry(opts, buf, items, true)
-      end
+    local bufnrs_flat = {}
+    for b, _ in pairs(bufnrs) do
+      table.insert(bufnrs_flat, b)
     end
 
-    opts.fzf_opts["--no-multi"] = ''
-    opts.fzf_opts["--preview-window"] = 'hidden:right:0'
-    opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[\\)]')
-    opts.fzf_opts["--with-nth"] = '2'
+    opts.sort_lastused = false
+    opts._prefix = ("%d)%s%s%s"):format(t, utils.nbsp, utils.nbsp, utils.nbsp)
+    local buffers = make_buffer_entries(opts, bufnrs_flat, t)
+    for _, buf in pairs(buffers) do
+      items = add_buffer_entry(opts, buf, items, true)
+    end
+  end
 
-    local selected = core.fzf(opts, items)
+  opts.fzf_opts["--no-multi"] = ''
+  opts.fzf_opts["--preview-window"] = 'hidden:right:0'
+  opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[\\)]')
+  opts.fzf_opts["--with-nth"] = '2'
+
+  core.fzf_wrap(opts, items, function(selected)
 
     if not selected then return end
 

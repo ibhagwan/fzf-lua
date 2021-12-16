@@ -13,6 +13,9 @@ local function set_last_search(query, no_esc)
     query = query,
     no_esc = no_esc
   }
+  if config.__resume_data then
+    config.__resume_data.last_query = query
+  end
 end
 
 local M = {}
@@ -147,6 +150,10 @@ M.live_grep_st = function(opts)
     end
   end
 
+  -- disable global resume
+  -- conflicts with 'change:reload' event
+  opts.no_global_resume_act = true
+  opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
   opts = core.set_fzf_line_args(opts)
   opts = core.set_fzf_interactive_cmd(opts)
   core.fzf_files(opts)
@@ -259,6 +266,10 @@ M.live_grep_mt = function(opts)
           ("%s || true"):format(reload_command))))
   end
 
+  -- disable global resume
+  -- conflicts with 'change:reload' event
+  opts.no_global_resume_act = true
+  opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
   opts = core.set_fzf_line_args(opts)
   core.fzf_files(opts)
   opts.search = nil
@@ -374,6 +385,7 @@ end
 M.lgrep_curbuf = function(opts)
   if not opts then opts = {} end
   opts.lgrep = true
+  opts.__FNCREF__ = utils.__FNCREF__()
   return M.grep_curbuf(opts)
 end
 

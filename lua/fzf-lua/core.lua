@@ -1,4 +1,3 @@
--- local fzf = require "fzf"
 local fzf = require "fzf-lua.fzf"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -11,7 +10,55 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+M.fzf_resume = function()
+  if not config.__resume_data or not config.__resume_data.opts then
+    utils.info("No resume data available, is 'global_resume' enabled?")
+    return
+  end
+  local opts = config.__resume_data.opts
+  local last_query = config.__resume_data.last_query
+  if last_query and #last_query>0 then
+    last_query = vim.fn.shellescape(last_query)
+  else
+    -- in case we continue from another resume
+    -- reset the previous query which was saved
+    -- inside "fzf_opts['--query']" argument
+    last_query = false
+  end
+  opts.fzf_opts['--query'] = last_query
+  if opts.__FNCREF__ then
+    -- HACK for 'live_grep' and 'lsp_live_workspace_symbols'
+    opts.__FNCREF__({ continue_last_search = true })
+  else
+    M.fzf_wrap(opts, config.__resume_data.contents)()
+  end
+end
+
+M.fzf_wrap = function(opts, contents, fn_post)
+  return coroutine.wrap(function()
+    opts.fn_post = opts.fn_post or fn_post
+    local selected = M.fzf(opts, contents)
+    if opts.fn_post then
+      opts.fn_post(selected)
+    end
+  end)
+end
+
 M.fzf = function(opts, contents)
+  -- support global resume?
+  if config.globals.global_resume and not opts.no_global_resume then
+    config.__resume_data = config.__resume_data or {}
+    config.__resume_data.opts = vim.deepcopy(opts)
+    config.__resume_data.contents = contents and vim.deepcopy(contents) or nil
+    if not opts._is_skim and not opts.no_global_resume_act then
+      local raw_act = shell.raw_action(function(args)
+        config.__resume_data.last_query = args[1]
+      end, "{q}")
+      opts._fzf_cli_args = ('--bind=change:execute-silent:%s'):
+        format(vim.fn.shellescape(raw_act))
+    end
+    config.__resume_data.last_query = nil
+  end
   -- normalize with globals if not already normalized
   if not opts._normalized then
     opts = config.normalize_opts(opts, {})
@@ -334,9 +381,8 @@ M.fzf_files = function(opts, contents)
 
   if not opts then return end
 
-  coroutine.wrap(function ()
 
-    local selected = M.fzf(opts, contents or opts.fzf_fn)
+  M.fzf_wrap(opts, contents or opts.fzf_fn, function(selected)
 
     if opts.post_select_cb then
       opts.post_select_cb()

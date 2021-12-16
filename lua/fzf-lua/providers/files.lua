@@ -43,26 +43,8 @@ M.files = function(opts)
   return core.fzf_files(opts, contents)
 end
 
-local last_query = ""
-
-M.files_resume = function(opts)
-
-  opts = config.normalize_opts(opts, config.globals.files)
-  if not opts then return end
-  if opts._is_skim then
-    utils.info("'files_resume' is not supported with 'sk'")
-    return
-  end
-
-  local raw_act = shell.raw_action(function(args)
-    last_query = args[1]
-  end, "{q}")
-
-  opts.fzf_opts['--query'] = vim.fn.shellescape(last_query)
-  opts._fzf_cli_args = ('--bind=change:execute-silent:%s'):
-    format(vim.fn.shellescape(raw_act))
-
-  return M.files(opts)
+M.files_resume = function(_)
+  utils.warn("'files_resume' was deprecated, please use global 'resume' instead.")
 end
 
 M.args = function(opts)
