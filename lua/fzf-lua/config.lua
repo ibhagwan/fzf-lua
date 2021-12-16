@@ -443,6 +443,15 @@ M.globals.nvim = {
         _ctor             = previewers.builtin.marks,
       },
     },
+    jumps = {
+      prompt              = 'Jumps> ',
+      actions = {
+        ["default"]       = actions.goto_jump,
+      },
+      previewer = {
+        _ctor             = previewers.builtin.jumps,
+      },
+    },
     commands = {
       prompt              = 'Commands> ',
       actions = {

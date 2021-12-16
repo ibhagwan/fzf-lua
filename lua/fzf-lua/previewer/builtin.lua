@@ -593,6 +593,29 @@ function Previewer.marks:parse_entry(entry_str)
   }
 end
 
+Previewer.jumps = Previewer.buffer_or_file:extend()
+
+function Previewer.jumps:new(o, opts, fzf_win)
+  Previewer.jumps.super.new(self, o, opts, fzf_win)
+  return self
+end
+
+function Previewer.jumps:parse_entry(entry_str)
+  local bufnr = nil
+  local _, lnum, col, filepath = entry_str:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
+  if filepath and #filepath>0 and not vim.loop.fs_stat(filepath) then
+    -- file is not accessible,
+    -- text is a string from current buffer
+    bufnr = self.win.src_bufnr
+    filepath = vim.api.nvim_buf_get_name(self.win.src_bufnr)
+  end
+  return {
+    bufnr = bufnr,
+    path = filepath,
+    line = tonumber(lnum) or 1,
+    col  = tonumber(col)+1 or 1,
+  }
+end
 Previewer.tags = Previewer.buffer_or_file:extend()
 
 function Previewer.tags:new(o, opts, fzf_win)

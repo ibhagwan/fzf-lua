@@ -277,6 +277,28 @@ M.goto_mark = function(selected)
   -- vim.fn.feedkeys(string.format("'%s", mark))
 end
 
+M.goto_jump = function(selected, opts)
+  if opts.jump_using_norm then
+    local jump, _, _, _ = selected[1]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
+    if tonumber(jump) then
+      vim.cmd(("normal! %d"):format(jump))
+    end
+  else
+    local _, lnum, col, filepath = selected[1]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
+    local ok, res = pcall(vim.fn.expand, filepath)
+    if not ok then filepath = ''
+    else filepath = res end
+    if not filepath or not vim.loop.fs_stat(filepath) then
+      -- no accessible file
+      -- jump is in current
+      filepath = vim.api.nvim_buf_get_name(0)
+    end
+    local entry = ("%s:%d:%d:"):format(filepath, tonumber(lnum), tonumber(col)+1)
+    print(entry)
+    M.file_edit({ entry }, opts)
+  end
+end
+
 M.spell_apply = function(selected)
   local word = selected[1]
   vim.cmd("normal! ciw" .. word)

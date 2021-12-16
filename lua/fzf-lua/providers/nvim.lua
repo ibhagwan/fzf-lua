@@ -87,6 +87,36 @@ M.search_history = function(opts)
   history(opts, "search")
 end
 
+M.jumps = function(opts)
+  opts = config.normalize_opts(opts, config.globals.nvim.jumps)
+  if not opts then return end
+
+  coroutine.wrap(function ()
+
+    local jumps = vim.fn.execute("jumps")
+    jumps = vim.split(jumps, "\n")
+
+    local entries = {}
+    for i = #jumps-1, 3, -1 do
+      local jump, line, col, text = jumps[i]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
+      if not jump then print(i, jumps[i]) end
+      table.insert(entries, string.format("%-15s %-15s %-15s %s",
+        utils.ansi_codes.yellow(jump),
+        utils.ansi_codes.blue(line),
+        utils.ansi_codes.green(col),
+        text))
+    end
+
+    opts.fzf_opts['--no-multi'] = ''
+
+    local selected = core.fzf(opts, entries)
+
+    if not selected then return end
+    actions.act(opts.actions, selected, opts)
+
+  end)()
+end
+
 M.marks = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.marks)
   if not opts then return end

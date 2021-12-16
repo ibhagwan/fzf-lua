@@ -189,6 +189,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `command_history`  | command history                            |
 | `search_history`   | search history                             |
 | `marks`            | :marks                                     |
+| `jumps`            | :jumps                                     |
 | `registers`        | :registers                                 |
 | `keymaps`          | key mappings                               |
 | `spell_suggest`    | spelling suggestions                       |
