@@ -213,7 +213,7 @@ Consult the list below for available settings:
 ```lua
 local actions = require "fzf-lua.actions"
 require'fzf-lua'.setup {
-  global_resume      = true,            -- enable `resume` provider?
+  global_resume      = true,            -- enable global `resume`?
   winopts = {
     -- split         = "belowright new",-- open in a split instead?
                                         -- "belowright new"  : split below
@@ -399,7 +399,7 @@ require'fzf-lua'.setup {
       -- replace the default aciton with the below
       -- to open all files whether single or multiple
       -- ["default"]     = actions.file_edit,
-      ["default"]       = actions.file_edit_or_qf,
+      ["default"]     = actions.file_edit_or_qf,
       ["ctrl-s"]      = actions.file_split,
       ["ctrl-v"]      = actions.file_vsplit,
       ["ctrl-t"]      = actions.file_tabedit,
@@ -411,8 +411,8 @@ require'fzf-lua'.setup {
   git = {
     files = {
       prompt          = 'GitFiles❯ ',
-      multiprocess    = false,          -- run command in a separate process
       cmd             = 'git ls-files --exclude-standard',
+      multiprocess    = false,          -- run command in a separate process
       git_icons       = true,           -- show git icons?
       file_icons      = true,           -- show file icons?
       color_icons     = true,           -- colorize file|git icons
@@ -457,6 +457,7 @@ require'fzf-lua'.setup {
       ["D"]           = { icon = "D", color = "red" },
       ["A"]           = { icon = "A", color = "green" },
       ["?"]           = { icon = "?", color = "magenta" },
+      -- override git icons?
       -- ["M"]          = { icon = "★", color = "red" },
       -- ["D"]          = { icon = "✗", color = "red" },
       -- ["A"]          = { icon = "+", color = "green" },
@@ -475,10 +476,7 @@ require'fzf-lua'.setup {
     -- cmd            = "rg --vimgrep",
     rg_opts           = "--column --line-number --no-heading --color=always --smart-case --max-columns=512",
     grep_opts         = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp",
-    -- 'true' enables file and git icons in 'live_grep'
-    -- degrades performance in large datasets, YMMV
-    experimental      = false,
-    -- live_grep_glob options
+    -- 'live_grep_glob' options:
     glob_flag         = "--iglob",  -- for case sensitive globs use '--glob'
     glob_separator    = "%s%-%-"    -- query separator pattern (lua): ' --'
   },
