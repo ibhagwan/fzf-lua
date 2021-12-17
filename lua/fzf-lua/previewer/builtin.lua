@@ -644,6 +644,7 @@ function Previewer.tags:set_cursor_hl(entry)
     if self.win.winopts.hl.search then
       fn.matchadd(self.win.winopts.hl.search, entry.ctag)
     end
+    self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
   end)
 end
