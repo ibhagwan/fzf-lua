@@ -84,11 +84,18 @@ M.search_history = function(opts)
   history(opts, "search")
 end
 
+M.changes = function(opts)
+  opts = opts or {}
+  opts.cmd = "changes"
+  opts.prompt = opts.prompt or "Changes> "
+  return M.jumps(opts)
+end
+
 M.jumps = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.jumps)
   if not opts then return end
 
-  local jumps = vim.fn.execute("jumps")
+  local jumps = vim.fn.execute(opts.cmd)
   jumps = vim.split(jumps, "\n")
 
   local entries = {}

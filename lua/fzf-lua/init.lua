@@ -116,6 +116,7 @@ M.colorschemes = require'fzf-lua.providers.colorschemes'.colorschemes
 M.tags = require'fzf-lua.providers.tags'.tags
 M.btags = require'fzf-lua.providers.tags'.btags
 M.jumps = require'fzf-lua.providers.nvim'.jumps
+M.changes = require'fzf-lua.providers.nvim'.changes
 M.marks = require'fzf-lua.providers.nvim'.marks
 M.keymaps = require'fzf-lua.providers.nvim'.keymaps
 M.registers = require'fzf-lua.providers.nvim'.registers

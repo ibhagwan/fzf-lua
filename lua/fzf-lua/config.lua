@@ -450,6 +450,7 @@ M.globals.nvim = {
     },
     jumps = {
       prompt              = 'Jumps> ',
+      cmd                 = "jumps",
       actions = {
         ["default"]       = actions.goto_jump,
       },

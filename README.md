@@ -190,6 +190,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `search_history`   | search history                             |
 | `marks`            | :marks                                     |
 | `jumps`            | :jumps                                     |
+| `changes`          | :changes                                   |
 | `registers`        | :registers                                 |
 | `keymaps`          | key mappings                               |
 | `spell_suggest`    | spelling suggestions                       |

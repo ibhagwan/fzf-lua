@@ -220,6 +220,7 @@ MISC                                                            *fzf-lua-misc*
 | `search_history`   | search history                             |
 | `marks`            | :marks                                     |
 | `jumps`            | :jumps                                     |
+| `changes`          | :changes                                   |
 | `registers`        | :registers                                 |
 | `keymaps`          | key mappings                               |
 | `spell_suggest`    | spelling suggestions                       |
