@@ -294,7 +294,6 @@ M.goto_jump = function(selected, opts)
       filepath = vim.api.nvim_buf_get_name(0)
     end
     local entry = ("%s:%d:%d:"):format(filepath, tonumber(lnum), tonumber(col)+1)
-    print(entry)
     M.file_edit({ entry }, opts)
   end
 end
