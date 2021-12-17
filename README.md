@@ -128,7 +128,6 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | ---------------- | ------------------------------------------ |
 | `buffers`          | open buffers                               |
 | `files`            | `find` or `fd` on a path                       |
-| `files_resume`     | continious query find                      |
 | `oldfiles`         | opened files history                       |
 | `quickfix`         | quickfix list                              |
 | `loclist`          | location list                              |
