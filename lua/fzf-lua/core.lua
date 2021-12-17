@@ -25,6 +25,7 @@ M.fzf_resume = function()
     -- inside "fzf_opts['--query']" argument
     last_query = false
   end
+  opts.__resume = true
   opts.fzf_opts['--query'] = last_query
   if opts.__FNCREF__ then
     -- HACK for 'live_grep' and 'lsp_live_workspace_symbols'
@@ -50,6 +51,15 @@ M.fzf = function(opts, contents)
     config.__resume_data = config.__resume_data or {}
     config.__resume_data.opts = vim.deepcopy(opts)
     config.__resume_data.contents = contents and vim.deepcopy(contents) or nil
+    if not opts.__resume then
+      -- since the shell callback isn't called
+      -- until the user first types something
+      -- delete the stored query unless called
+      -- from within 'fzf_resume', this prevents
+      -- using the stored query between different
+      -- providers
+      config.__resume_data.last_query = nil
+    end
     if not opts._is_skim and not opts.no_global_resume_act then
       local raw_act = shell.raw_action(function(args)
         config.__resume_data.last_query = args[1]
@@ -57,7 +67,6 @@ M.fzf = function(opts, contents)
       opts._fzf_cli_args = ('--bind=change:execute-silent:%s'):
         format(vim.fn.shellescape(raw_act))
     end
-    config.__resume_data.last_query = nil
   end
   -- normalize with globals if not already normalized
   if not opts._normalized then
