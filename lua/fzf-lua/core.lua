@@ -47,7 +47,9 @@ end
 
 M.fzf = function(opts, contents)
   -- support global resume?
-  if config.globals.global_resume and not opts.no_global_resume then
+  if config.globals.global_resume and
+    not opts.no_resume and
+    not opts.no_global_resume then
     config.__resume_data = config.__resume_data or {}
     config.__resume_data.opts = vim.deepcopy(opts)
     config.__resume_data.contents = contents and vim.deepcopy(contents) or nil

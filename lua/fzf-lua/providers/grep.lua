@@ -167,7 +167,7 @@ M.live_grep_native = function(opts)
   opts = opts or {}
   opts.git_icons = false
   opts.file_icons = false
-
+  opts.__FNCREF__ = utils.__FNCREF__()
   return M.live_grep_mt(opts)
 end
 
@@ -183,6 +183,7 @@ M.live_grep_glob_mt = function(opts)
   opts = opts or {}
   opts.rg_glob = true
   opts.force_multiprocess = true
+  opts.__FNCREF__ = utils.__FNCREF__()
   return M.live_grep_mt(opts)
 end
 
@@ -325,6 +326,7 @@ M.live_grep_glob = function(opts)
       :format(opts.rg_opts, glob_arg, search_query, search_path)
     return cmd
   end
+  opts.__FNCREF__ = utils.__FNCREF__()
   return M.live_grep_st(opts)
 end
 
