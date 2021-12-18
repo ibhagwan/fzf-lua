@@ -248,6 +248,9 @@ Consult the list below for available settings:
     local actions = require "fzf-lua.actions"
     require'fzf-lua'.setup {
       global_resume      = true,            -- enable global `resume`?
+                                            -- send 'no_global_resume = true'
+                                            -- to exclude specific providers
+                                            -- from being resumed
       winopts = {
         -- split         = "belowright new",-- open in a split instead?
                                             -- "belowright new"  : split below

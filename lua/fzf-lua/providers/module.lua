@@ -31,11 +31,10 @@ M.metatable = function(opts)
   opts.fzf_opts['--preview-window'] = 'hidden:down:10'
   opts.fzf_opts['--no-multi'] = ''
 
-  if opts.no_resume == nil and
-     opts.no_global_resume == nil then
-    -- builtin default is no resume as
-    -- the behavior might confuse users (#267)
-    opts.no_resume = true
+  if opts.no_global_resume == nil then
+    -- builtin is excluded by from global resume
+    -- as the behavior might confuse users (#267)
+    opts.no_global_resume = true
   end
 
   core.fzf_wrap(opts, methods, function(selected)
