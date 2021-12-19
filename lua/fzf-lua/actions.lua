@@ -30,6 +30,7 @@ M.normalize_selected = function(actions, selected)
   -- The below makes separates the keybind from the item(s)
   -- and makes sure 'selected' contains only items or {}
   -- so it can always be enumerated safely
+  if not actions or not selected then return end
   local action = _default_action
   if utils.tbl_length(actions)>1 then
     -- keybind should be in item #1
@@ -51,10 +52,27 @@ end
 
 M.act = function(actions, selected, opts)
   if not actions or not selected then return end
-  local action, entries = M.normalize_selected(actions, selected)
-  if actions[action] then
-    actions[action](entries, opts)
+  local keybind, entries = M.normalize_selected(actions, selected)
+  local action = actions[keybind]
+  if type(action) == 'table' then
+    for _, f in ipairs(action) do
+      f(entries, opts)
+    end
+  elseif type(action) == 'function' then
+    action(entries, opts)
+  elseif type(action) == 'string' then
+    vim.cmd(action)
+  else
+    utils.warn(("unsupported action: '%s', type:%s")
+      :format(action, type(action)))
   end
+end
+
+M.resume = function(_, _)
+  -- must call via vim.cmd or we create
+  -- circular 'require'
+  -- TODO: is this really a big deal?
+  vim.cmd("lua require'fzf-lua'.resume()")
 end
 
 M.vimcmd = function(vimcmd, selected)

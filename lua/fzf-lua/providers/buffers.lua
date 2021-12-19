@@ -1,6 +1,5 @@
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
-local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
@@ -8,21 +7,26 @@ local fn, api = vim.fn, vim.api
 
 local M = {}
 
-local function getbufnumber(line)
-  return tonumber(string.match(line, "%[(%d+)"))
-end
+-- will hold current/previous buffer/tab
+local __STATE = {}
 
-local function getfilename(line)
-  -- return string.match(line, "%[.*%] (.+)")
-  -- greedy match anything after last nbsp
-  return line:match("[^" .. utils.nbsp .. "]*$")
+local UPDATE_STATE = function()
+  __STATE = {
+    curtab = vim.api.nvim_win_get_tabpage(0),
+    curbuf = vim.api.nvim_get_current_buf(),
+    prevbuf = vim.fn.bufnr('#'),
+  }
 end
 
 local filter_buffers = function(opts, unfiltered)
+
+  if type(unfiltered) == 'function' then
+    unfiltered = unfiltered()
+  end
+
   local curtab_bufnrs = {}
   if opts.current_tab_only then
-    local curtab = vim.api.nvim_win_get_tabpage(0)
-    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(curtab)) do
+    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(__STATE.curtab)) do
       local b = vim.api.nvim_win_get_buf(w)
       curtab_bufnrs[b] = true
     end
@@ -37,7 +41,7 @@ local filter_buffers = function(opts, unfiltered)
     if opts.show_all_buffers == false and not vim.api.nvim_buf_is_loaded(b) then
       excluded[b] = true
     end
-    if opts.ignore_current_buffer and b == vim.api.nvim_get_current_buf() then
+    if opts.ignore_current_buffer and b == __STATE.curbuf then
       excluded[b] = true
     end
     if opts.current_tab_only and not curtab_bufnrs[b] then
@@ -55,12 +59,11 @@ local filter_buffers = function(opts, unfiltered)
   return bufnrs, excluded
 end
 
-local make_buffer_entries = function(opts, bufnrs, tabnr, curbuf)
-  local header_line = false
+local populate_buffer_entries = function(opts, bufnrs, tabnr)
   local buffers = {}
-  curbuf = curbuf or vim.fn.bufnr('')
   for _, bufnr in ipairs(bufnrs) do
-    local flag = bufnr == curbuf and '%' or (bufnr == vim.fn.bufnr('#') and '#' or ' ')
+    local flag = (bufnr == __STATE.curbuf and '%') or
+                 (bufnr == __STATE.prevbuf and '#') or ' '
 
     local element = {
       bufnr = bufnr,
@@ -76,10 +79,6 @@ local make_buffer_entries = function(opts, bufnrs, tabnr, curbuf)
       end
     end
 
-    if opts.sort_lastused and flag == "%" then
-      header_line = true
-    end
-
     table.insert(buffers, element)
   end
   if opts.sort_lastused then
@@ -87,11 +86,11 @@ local make_buffer_entries = function(opts, bufnrs, tabnr, curbuf)
       return a.info.lastused > b.info.lastused
     end)
   end
-  return buffers, header_line
+  return buffers
 end
 
 
-local function add_buffer_entry(opts, buf, items, header_line)
+local function gen_buffer_entry(opts, buf, hl_curbuf)
   -- local hidden = buf.info.hidden == 1 and 'h' or 'a'
   local hidden = ''
   local readonly = vim.api.nvim_buf_get_option(buf.bufnr, 'readonly') and '=' or ' '
@@ -104,7 +103,8 @@ local function add_buffer_entry(opts, buf, items, header_line)
     utils._if(buf.info.lnum>0, buf.info.lnum, ""))
   if buf.flag == '%' then
     flags = utils.ansi_codes.red(buf.flag) .. flags
-    if not header_line then
+    if hl_curbuf then
+      -- no header line, highlight current buffer
       leftbr = utils.ansi_codes.green('[')
       rightbr = utils.ansi_codes.green(']')
       bufname = utils.ansi_codes.green(bufname)
@@ -140,48 +140,36 @@ local function add_buffer_entry(opts, buf, items, header_line)
     buficon,
     utils.nbsp,
     bufname)
-  table.insert(items, item_str)
-  return items
+  return item_str
 end
+
 
 M.buffers = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.buffers)
   if not opts then return end
 
-    local act = shell.action(function (items, fzf_lines, _)
-      -- only preview first item
-      local item = items[1]
-      local buf = getbufnumber(item)
-      if api.nvim_buf_is_loaded(buf) then
-        return api.nvim_buf_get_lines(buf, 0, fzf_lines, false)
-      else
-        local name = getfilename(item)
-        if fn.filereadable(name) ~= 0 then
-          return fn.readfile(name, "", fzf_lines)
-        end
-        return "UNLOADED: " .. name
+  -- get current tab/buffer/previos buffer
+  -- save as a func ref for resume to reuse
+  opts.fn_pre_fzf = UPDATE_STATE
+
+  local contents = function(cb)
+
+    local filtered = filter_buffers(opts, vim.api.nvim_list_bufs)
+
+    if next(filtered) then
+      local buffers = populate_buffer_entries(opts, filtered)
+      for _, bufinfo in pairs(buffers) do
+        cb(gen_buffer_entry(opts, bufinfo, not opts.sort_lastused))
       end
-    end)
-
-  local filtered = filter_buffers(opts,
-    opts._list_bufs and opts._list_bufs() or vim.api.nvim_list_bufs())
-
-  if not next(filtered) then return end
-
-  local items = {}
-
-  local buffers, header_line = make_buffer_entries(opts, filtered, nil, opts.curbuf)
-  for _, buf in pairs(buffers) do
-    items = add_buffer_entry(opts, buf, items, header_line)
+    end
+    cb(nil)
   end
 
-  opts.fzf_opts['--preview'] = act
-  if header_line and not opts.ignore_current_buffer then
-    opts.fzf_opts['--header-lines'] = '1'
-  end
+  opts.fzf_opts['--header-lines'] =
+    (not opts.ignore_current_buffer and opts.sort_lastused) and '1'
 
-  core.fzf_wrap(opts, items, function(selected)
+  core.fzf_wrap(opts, contents, function(selected)
 
     if not selected then return end
 
@@ -205,9 +193,12 @@ end
 M.buffer_lines = function(opts)
   if not opts then return end
 
+  opts.fn_pre_fzf = UPDATE_STATE
+  opts.fn_pre_fzf()
+
   local buffers = filter_buffers(opts,
-    opts.current_buffer_only and { vim.api.nvim_get_current_buf() } or
-    vim.api.nvim_list_bufs())
+    opts.current_buffer_only and { __STATE.curbuf } or
+    vim.api.nvim_list_bufs)
 
   local items = {}
 
@@ -273,7 +264,7 @@ M.tabs = function(opts)
   opts = config.normalize_opts(opts, config.globals.tabs)
   if not opts then return end
 
-  local curtab = vim.api.nvim_win_get_tabpage(0)
+  opts.fn_pre_fzf = UPDATE_STATE
 
   opts._tab_to_buf = {}
   opts._list_bufs = function()
@@ -289,36 +280,37 @@ M.tabs = function(opts)
     return res
   end
 
+  local contents = function(cb)
+    local filtered, excluded = filter_buffers(opts, opts._list_bufs)
+    if not next(filtered) then return end
 
-  local filtered, excluded = filter_buffers(opts, opts._list_bufs())
-  if not next(filtered) then return end
-
-  -- remove the filtered-out buffers
-  for b, _ in pairs(excluded) do
-    for _, bufnrs in pairs(opts._tab_to_buf) do
-      bufnrs[b] = nil
-    end
-  end
-
-  local items = {}
-
-  for t, bufnrs in pairs(opts._tab_to_buf) do
-
-    table.insert(items, ("%d)%s%s\t%s"):format(t, utils.nbsp,
-      utils.ansi_codes.blue("%s%s#%d"):format(opts.tab_title, utils.nbsp, t),
-        (t==curtab) and utils.ansi_codes.blue(utils.ansi_codes.bold(opts.tab_marker)) or ''))
-
-    local bufnrs_flat = {}
-    for b, _ in pairs(bufnrs) do
-      table.insert(bufnrs_flat, b)
+    -- remove the filtered-out buffers
+    for b, _ in pairs(excluded) do
+      for _, bufnrs in pairs(opts._tab_to_buf) do
+        bufnrs[b] = nil
+      end
     end
 
-    opts.sort_lastused = false
-    opts._prefix = ("%d)%s%s%s"):format(t, utils.nbsp, utils.nbsp, utils.nbsp)
-    local buffers = make_buffer_entries(opts, bufnrs_flat, t)
-    for _, buf in pairs(buffers) do
-      items = add_buffer_entry(opts, buf, items, true)
+    for t, bufnrs in pairs(opts._tab_to_buf) do
+
+      cb(("%d)%s%s\t%s"):format(t, utils.nbsp,
+        utils.ansi_codes.blue("%s%s#%d"):format(opts.tab_title, utils.nbsp, t),
+          (t==__STATE.curtab) and
+          utils.ansi_codes.blue(utils.ansi_codes.bold(opts.tab_marker)) or ''))
+
+      local bufnrs_flat = {}
+      for b, _ in pairs(bufnrs) do
+        table.insert(bufnrs_flat, b)
+      end
+
+      opts.sort_lastused = false
+      opts._prefix = ("%d)%s%s%s"):format(t, utils.nbsp, utils.nbsp, utils.nbsp)
+      local buffers = populate_buffer_entries(opts, bufnrs_flat, t)
+      for _, bufinfo in pairs(buffers) do
+        cb(gen_buffer_entry(opts, bufinfo, false))
+      end
     end
+    cb(nil)
   end
 
   opts.fzf_opts["--no-multi"] = ''
@@ -326,7 +318,7 @@ M.tabs = function(opts)
   opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[\\)]')
   opts.fzf_opts["--with-nth"] = '2'
 
-  core.fzf_wrap(opts, items, function(selected)
+  core.fzf_wrap(opts, contents, function(selected)
 
     if not selected then return end
 

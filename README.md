@@ -506,7 +506,11 @@ require'fzf-lua'.setup {
       ["ctrl-s"]      = actions.buf_split,
       ["ctrl-v"]      = actions.buf_vsplit,
       ["ctrl-t"]      = actions.buf_tabedit,
-      ["ctrl-x"]      = actions.buf_del,
+      -- by supplying a table of functions we're telling
+      -- fzf-lua to not close the fzf window, this way we
+      -- can resume the buffers picker on the same window
+      -- eliminating an otherwise unaesthetic win "flash"
+      ["ctrl-x"]      = { actions.buf_del, actions.resume },
     }
   },
   lines = {

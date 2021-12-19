@@ -104,13 +104,25 @@ M.fzf = function(opts, contents)
     end
   end
 
+  if opts.fn_pre_fzf then
+    -- some functions such as buffers|tabs
+    -- need to reacquire current buffer|tab state
+    opts.fn_pre_fzf(opts)
+  end
+
   fzf_win:attach_previewer(previewer)
   fzf_win:create()
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     { fzf_binary = opts.fzf_bin, fzf_cwd = opts.cwd })
   libuv.process_kill(opts._pid)
   fzf_win:check_exit_status(exit_code)
-  if fzf_win:autoclose() == nil or fzf_win:autoclose() then
+  -- retrieve the future action and check:
+  --   * if it's a single function we can close the window
+  --   * if it's a table of functions we do not close the window
+  local keybind = actions.normalize_selected(opts.actions, selected)
+  local action = keybind and opts.actions and opts.actions[keybind]
+  -- only close the window if autoclose wasn't specified or is 'true'
+  if (not fzf_win:autoclose() == false) and type(action) ~= 'table' then
     fzf_win:close()
   end
   return selected
