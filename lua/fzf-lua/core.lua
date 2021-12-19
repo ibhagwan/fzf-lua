@@ -114,6 +114,9 @@ M.fzf = function(opts, contents)
   fzf_win:create()
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     { fzf_binary = opts.fzf_bin, fzf_cwd = opts.cwd })
+  if opts.fn_post_fzf then
+    opts.fn_post_fzf(opts, selected)
+  end
   libuv.process_kill(opts._pid)
   fzf_win:check_exit_status(exit_code)
   -- retrieve the future action and check:
