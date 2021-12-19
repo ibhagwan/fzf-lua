@@ -175,14 +175,20 @@ end
 M.vimcmd_buf = function(vimcmd, selected, _)
   for i = 1, #selected do
     local bufnr = string.match(selected[i], "%[(%d+)")
-    if vimcmd == 'b'
-      and not vim.o.hidden and
-      utils.buffer_is_dirty(nil, true) then
-      -- warn the user when trying to switch from a dirty buffer
-      -- when `:set nohidden`
-      return
+    if bufnr then
+      if vimcmd == 'b'
+        and not vim.o.hidden and
+        utils.buffer_is_dirty(nil, true) then
+        -- warn the user when trying to switch from a dirty buffer
+        -- when `:set nohidden`
+        return
+      end
+      local cmd = vimcmd .. " " .. bufnr
+      local ok, res = pcall(vim.cmd, cmd)
+      if not ok then
+        utils.warn(("':%s' failed: %s"):format(cmd, res))
+      end
     end
-    vim.cmd(vimcmd .. " " .. bufnr)
   end
 end
 

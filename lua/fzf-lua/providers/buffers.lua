@@ -266,14 +266,13 @@ M.tabs = function(opts)
 
   opts.fn_pre_fzf = UPDATE_STATE
 
-  opts._tab_to_buf = {}
   opts._list_bufs = function()
     local res = {}
     for _, t in ipairs(vim.api.nvim_list_tabpages()) do
       for _, w in ipairs(vim.api.nvim_tabpage_list_wins(t)) do
         local b = vim.api.nvim_win_get_buf(w)
         opts._tab_to_buf[t] = opts._tab_to_buf[t] or {}
-        opts._tab_to_buf[t][b] = true
+        opts._tab_to_buf[t][b] = t
         table.insert(res, b)
       end
     end
@@ -281,6 +280,9 @@ M.tabs = function(opts)
   end
 
   local contents = function(cb)
+
+    opts._tab_to_buf = {}
+
     local filtered, excluded = filter_buffers(opts, opts._list_bufs)
     if not next(filtered) then return end
 
@@ -313,7 +315,7 @@ M.tabs = function(opts)
     cb(nil)
   end
 
-  opts.fzf_opts["--no-multi"] = ''
+  -- opts.fzf_opts["--no-multi"] = ''
   opts.fzf_opts["--preview-window"] = 'hidden:right:0'
   opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[\\)]')
   opts.fzf_opts["--with-nth"] = '2'

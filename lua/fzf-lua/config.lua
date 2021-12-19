@@ -317,7 +317,7 @@ M.globals.tabs = {
         ["ctrl-s"]        = actions.buf_split,
         ["ctrl-v"]        = actions.buf_vsplit,
         ["ctrl-t"]        = actions.buf_tabedit,
-        ["ctrl-x"]        = actions.buf_del,
+        ["ctrl-x"]        = { actions.buf_del, actions.resume },
     },
   }
 M.globals.lines = {
