@@ -586,6 +586,11 @@ function FzfWin:set_tmp_buffer()
   -- with tmp_buf... use this table instead
   table.insert(self._orphaned_bufs, self.fzf_bufnr)
   self.fzf_bufnr = tmp_buf
+  -- since we have the cusrorline workaround from
+  -- issue #254 resume shows an ugly cursorline
+  -- remove it, nvim_win API is better than vim.wo?
+  -- vim.wo[self.fzf_winid].cursorline = false
+  vim.api.nvim_win_set_option(self.fzf_winid, 'cursorline', false)
   return self.fzf_bufnr
 end
 
