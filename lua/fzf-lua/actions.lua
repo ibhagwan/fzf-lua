@@ -411,6 +411,30 @@ M.git_checkout = function(selected, opts)
   end
 end
 
+local git_exec = function(selected, opts, cmd)
+  for _, e in ipairs(selected) do
+    local file = path.relative(path.entry_to_file(e, opts.cwd).path, opts.cwd)
+    local _cmd = vim.deepcopy(cmd)
+    table.insert(_cmd, file)
+    local output = utils.io_systemlist(_cmd)
+    if utils.shell_error() then
+      utils.err(unpack(output))
+    -- elseif not vim.tbl_isempty(output) then
+    --   utils.info(unpack(output))
+    end
+  end
+end
+
+M.git_stage = function(selected, opts)
+  local cmd = path.git_cwd({"git", "add", "--"}, opts.cwd)
+  git_exec(selected, opts, cmd)
+end
+
+M.git_unstage = function(selected, opts)
+  local cmd = path.git_cwd({"git", "reset", "--"}, opts.cwd)
+  git_exec(selected, opts, cmd)
+end
+
 M.git_buf_edit = function(selected, opts)
   local cmd = path.git_cwd({"git", "show"}, opts.cwd)
   local git_root = path.git_root(opts.cwd, true)

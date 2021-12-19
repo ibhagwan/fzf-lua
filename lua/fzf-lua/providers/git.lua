@@ -26,17 +26,47 @@ M.status = function(opts)
   if opts.preview then
     opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
   end
+  -- we don't need git icons since we get them
+  -- as part of our `git status -s`
+  opts.git_icons = false
+  if not opts.no_header then
+    local stage = utils.ansi_codes.yellow("<left>")
+    local unstage = utils.ansi_codes.yellow("<right>")
+    opts.fzf_opts['--header'] = vim.fn.shellescape(
+      ('+ - :: %s to stage, %s to unstage'):format(stage, unstage))
+  end
+  local function git_iconify(x)
+    local icon = x
+    local git_icon = config.globals.git.icons[x]
+    if git_icon then
+      icon = git_icon.icon
+      if opts.color_icons then
+        icon = utils.ansi_codes[git_icon.color or "dark_grey"](icon)
+      end
+    end
+    return icon
+  end
   local contents = libuv.spawn_nvim_fzf_cmd(opts,
     function(x)
-      -- greedy match anything after last space
-      local f = x:match("[^ ]*$")
-      if f:sub(#f) == '"' then
-        -- `git status -s` wraps
-        -- spaced files with quotes
-        f = x:sub(1, #x-1)
-        f = f:match('[^"]*$')
+      -- unrecognizable format, return
+      if not x or #x<4 then return x end
+      -- `man git-status`
+      -- we are guaranteed format of: XY <text>
+      -- spaced files are wrapped with quotes
+      -- remove both git markers and quotes
+      local f1, f2 = x:sub(4):gsub('"', ""), nil
+      -- renames spearate files with '->'
+      if f1:match("%s%->%s") then
+        f1, f2 = f1:match("(.*)%s%->%s(.*)")
       end
-      return core.make_entry_file(opts, f)
+      f1 = f1 and core.make_entry_file(opts, f1)
+      f2 = f2 and core.make_entry_file(opts, f2)
+      local staged = git_iconify(x:sub(1,1):gsub("?", " "))
+      local unstaged = git_iconify(x:sub(2,2))
+      local entry = ("%s%s%s%s%s"):format(
+        staged, utils.nbsp, unstaged, utils.nbsp .. utils.nbsp,
+        (f2 and ("%s -> %s"):format(f1, f2) or f1))
+      return entry
     end,
     function(o)
       return core.make_entry_preprocess(o)

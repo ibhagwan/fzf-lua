@@ -142,7 +142,9 @@ Previewer.git_diff = Previewer.cmd_async:extend()
 
 function Previewer.git_diff:new(o, opts)
   Previewer.git_diff.super.new(self, o, opts)
-  self.cmd = path.git_cwd(self.cmd, opts.cwd)
+  self.cmd_deleted = path.git_cwd(o.cmd_deleted, opts.cwd)
+  self.cmd_modified = path.git_cwd(o.cmd_modified, opts.cwd)
+  self.cmd_untracked = path.git_cwd(o.cmd_untracked, opts.cwd)
   self.pager = o.pager
   return self
 end
@@ -151,21 +153,21 @@ function Previewer.git_diff:cmdline(o)
   o = o or {}
   local act = shell.preview_action_cmd(function(items)
     local is_deleted = items[1]:match("D"..utils.nbsp) ~= nil
-    local is_untracked = items[1]:match("[?RAC]"..utils.nbsp) ~= nil
+    local is_modified = items[1]:match("[MRA]"..utils.nbsp) ~= nil
+    local is_untracked = items[1]:match("[%?C]"..utils.nbsp) ~= nil
     local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
-    local cmd = self.cmd
-    local args = self.args
+    local cmd = nil
+    if is_modified then cmd = self.cmd_modified
+    elseif is_deleted then cmd = self.cmd_deleted
+    elseif is_untracked then cmd = self.cmd_untracked end
     local pager = ""
     if self.pager and #self.pager>0 and
       vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
       pager = '| ' .. self.pager
     end
-    if is_untracked then args = args .. " --no-index /dev/null" end
-    if is_deleted then
-      cmd = self.cmd:gsub("diff", "show HEAD:")
-      cmd = string.format('%s"%s"', cmd, path.relative(file.path, self.opts.cwd))
-    else
-      cmd = string.format('%s %s %s %s', cmd, args, vim.fn.shellescape(file.path), pager)
+    cmd = string.format('%s %s %s', cmd, vim.fn.shellescape(file.path), pager)
+    if self.opts.debug then
+      print("[DEBUG]: "..cmd.."\n")
     end
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)

@@ -142,8 +142,9 @@ M.globals = {
       _ctor           = previewers.fzf.head,
     },
     git_diff = {
-      cmd             = "git diff",
-      args            = "--color",
+      cmd_deleted     = "git diff --color HEAD --",
+      cmd_modified    = "git diff --color HEAD",
+      cmd_untracked   = "git diff --color --no-index /dev/null",
       _ctor           = previewers.fzf.git_diff,
     },
     man = {
@@ -198,7 +199,15 @@ M.globals.git = {
       file_icons    = true and M._has_devicons,
       color_icons   = true,
       git_icons     = true,
-      actions       = M.globals.files.actions,
+      actions = {
+        ["default"]       = actions.file_edit_or_qf,
+        ["ctrl-s"]        = actions.file_split,
+        ["ctrl-v"]        = actions.file_vsplit,
+        ["ctrl-t"]        = actions.file_tabedit,
+        ["alt-q"]         = actions.file_sel_to_qf,
+        ["right"]         = { actions.git_unstage, actions.resume },
+        ["left"]          = { actions.git_stage, actions.resume },
+      },
     },
     commits = {
       prompt        = 'Commits> ',
