@@ -153,7 +153,7 @@ M.btags = function(opts)
   opts = config.normalize_opts(opts, config.globals.btags)
   if not opts then return end
   opts.fzf_opts = vim.tbl_extend("keep",
-    opts.fzf_opts or {}, config.globals.blines.fzf_opts)
+    opts.fzf_opts or {}, config.globals.tags.fzf_opts)
   opts.current_buffer_only = true
   return fzf_tags(opts)
 end

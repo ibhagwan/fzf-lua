@@ -375,6 +375,9 @@ M.globals.tags = {
     git_icons             = true,
     color_icons           = true,
     actions               = M.globals.files.actions,
+    fzf_opts = {
+      ['--nth'] = '2',
+    },
   }
 M.globals.btags = {
     previewer             = { _ctor = previewers.builtin.tags },
