@@ -15,6 +15,21 @@ setmetatable(FzfWin, {
   end,
 })
 
+function FzfWin.save_query(key)
+  local self = _self
+  if not self then return end
+  local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
+  if not lines or vim.tbl_isempty(lines) then return end
+  local query = lines[1]:gsub("^"..self.prompt, ""):match("[^<]+")
+  -- trim whitespaces at the end
+  query = query and query:gsub("%s*$", "")
+  if self.fn_save_query then
+    self.fn_save_query(query)
+  end
+  -- feed the original key back to the term
+  utils.feed_keys_termcodes(utils.fzf_bind_to_neovim(key))
+end
+
 function FzfWin:setup_keybinds()
   if not self:validate() then return end
   if not self.keymap or not self.keymap.builtin then return end
@@ -49,6 +64,19 @@ function FzfWin:setup_keybinds()
     if keymap and not vim.tbl_isempty(keymap) and action ~= false then
       api.nvim_buf_set_keymap(self.fzf_bufnr, 't', key,
         funcref_str(keymap), {nowait = true, noremap = true})
+    end
+  end
+  -- since '--print-query' only covers successful exists
+  -- we have to monitor <C-c> and <Esc> to save the query
+  if self.fn_save_query then
+    -- workaround, how to enter <Esc>/<C-c> in map as literals?
+    -- for now use the fzf notation and convert later, otherwise
+    -- the prevalance of '<Esc>' in the mapping will interrupt it
+    for _, key in ipairs({ "ctrl-c", "esc" }) do
+      api.nvim_buf_set_keymap(self.fzf_bufnr, 't',
+        utils.fzf_bind_to_neovim(key),
+        ("<Cmd>lua require('fzf-lua.win').save_query('%s')<CR>"):format(key),
+        {nowait = true, noremap = true})
     end
   end
 end
@@ -569,34 +597,11 @@ function FzfWin:redraw()
     end
 end
 
-function FzfWin.save_query()
-  local self = _self
-  if not self then return end
-  local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
-  if not lines or vim.tbl_isempty(lines) then return end
-  local query = lines[1]:gsub("^"..self.prompt, ""):match("[^<]+")
-  -- trim whitespaces at the end
-  query = query and query:gsub("%s*$", "")
-  if self.fn_save_query then
-    self.fn_save_query(query)
-  end
-  -- print("query:", query)
-end
-
 function FzfWin:set_winleave_autocmd()
   vim.cmd("augroup FzfLua")
   vim.cmd("au!")
   vim.cmd(('au WinLeave <buffer> %s'):format(
     [[lua require('fzf-lua.win').win_leave()]]))
-  --[[ if self.fn_save_query then
-    -- if resume is enabled fire an event for every
-    -- key pressed so we can retreieve the typed query
-    -- TODO: InsertCharPre does not work for terminals
-    -- find another way to trigger save_query()
-    -- https://github.com/neovim/neovim/issues/5018
-    vim.cmd(('au InsertCharPre <buffer> %s'):format(
-      "lua require('fzf-lua.win').save_query()"))
-  end ]]
   vim.cmd("augroup END")
 end
 

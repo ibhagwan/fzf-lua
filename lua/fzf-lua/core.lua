@@ -67,22 +67,32 @@ M.fzf = function(opts, contents)
       -- providers
       config.__resume_data.last_query = nil
     end
-    -- signals to the win object resume is enabled
-    -- so we can setup the keypress event monitoring
-    -- TODO: how to get keypress event in neovim?
-    -- InsertCharPre would be perfect here but:
-    -- https://github.com/neovim/neovim/issues/5018
-    opts.fn_save_query = function(query)
-      config.__resume_data.last_query = query and #query>0 and query
-    end
-    -- this is causing lag when typing too fast (#271)
-    -- also not possible with skim (no 'change' event)
-    if opts.global_resume_query and not opts._is_skim then
-      local raw_act = shell.raw_action(function(args)
-        opts.fn_save_query(args[1])
-      end, "{q}")
-      opts._fzf_cli_args = ('--bind=change:execute-silent:%s'):
-        format(vim.fn.shellescape(raw_act))
+    if opts.global_resume_query then
+      -- We use this option to print the query on line 1
+      -- later to be removed from the result by M.fzf()
+      -- this providers a solution for saving the query
+      -- when the user pressed a valid bind but not when
+      -- aborting with <C-c> or <Esc>, see next comment
+      opts.fzf_opts['--print-query'] = ''
+      -- Signals to the win object resume is enabled
+      -- so we can setup the keypress event monitoring
+      -- since we already have the query on valid
+      -- exit codes we only need to monitor <C-c>, <Esc>
+      opts.fn_save_query = function(query)
+        config.__resume_data.last_query = query and #query>0 and query or nil
+      end
+      -- 'au InsertCharPre' would be the best option here
+      -- but it does not work for terminals:
+      -- https://github.com/neovim/neovim/issues/5018
+      -- this is causing lag when typing too fast (#271)
+      -- also not possible with skim (no 'change' event)
+      --[[ if not opts._is_skim then
+        local raw_act = shell.raw_action(function(args)
+          opts.fn_save_query(args[1])
+        end, "{q}")
+        opts._fzf_cli_args = ('--bind=change:execute-silent:%s'):
+          format(vim.fn.shellescape(raw_act))
+      end ]]
     end
   end
   -- setup the fzf window and preview layout
@@ -127,6 +137,17 @@ M.fzf = function(opts, contents)
   fzf_win:create()
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     { fzf_binary = opts.fzf_bin, fzf_cwd = opts.cwd })
+  -- This was added by 'resume':
+  -- when '--print-query' is specified
+  -- we are guaranteed to have the query
+  -- in the first line, save&remove it
+  if selected and #selected>0 and
+     opts.fzf_opts['--print-query'] ~= nil then
+    if opts.fn_save_query then
+      opts.fn_save_query(selected[1])
+    end
+    table.remove(selected, 1)
+  end
   if opts.fn_post_fzf then
     opts.fn_post_fzf(opts, selected)
   end

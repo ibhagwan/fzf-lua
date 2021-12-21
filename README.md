@@ -217,8 +217,6 @@ require'fzf-lua'.setup {
                                         -- can also be sent individually:
                                         -- `<any_function>.({ gl ... })`
   global_resume_query = true,           -- include typed query in `resume`?
-                                        -- may cause lag when fast typing
-                                        -- disable if you're having issues
   winopts = {
     -- split         = "belowright new",-- open in a split instead?
                                         -- "belowright new"  : split below
