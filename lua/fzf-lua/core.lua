@@ -46,8 +46,12 @@ M.fzf_wrap = function(opts, contents, fn_post)
 end
 
 M.fzf = function(opts, contents)
+  -- normalize with globals if not already normalized
+  if not opts._normalized then
+    opts = config.normalize_opts(opts, {})
+  end
   -- support global resume?
-  if config.globals.global_resume and not opts.no_global_resume then
+  if opts.global_resume then
     config.__resume_data = config.__resume_data or {}
     config.__resume_data.opts = vim.deepcopy(opts)
     config.__resume_data.contents = contents and vim.deepcopy(contents) or nil
@@ -60,17 +64,23 @@ M.fzf = function(opts, contents)
       -- providers
       config.__resume_data.last_query = nil
     end
-    if not opts._is_skim and not opts.no_global_resume_act then
+    -- signals to the win object resume is enabled
+    -- so we can setup the keypress event monitoring
+    -- TODO: how to get keypress event in neovim?
+    -- InsertCharPre would be perfect here but:
+    -- https://github.com/neovim/neovim/issues/5018
+    opts.fn_save_query = function(query)
+      config.__resume_data.last_query = query and #query>0 and query
+    end
+    -- this is causing lag when typing too fast (#271)
+    -- also not possible with skim (no 'change' event)
+    if opts.global_resume_query and not opts._is_skim then
       local raw_act = shell.raw_action(function(args)
-        config.__resume_data.last_query = args[1]
+        opts.fn_save_query(args[1])
       end, "{q}")
       opts._fzf_cli_args = ('--bind=change:execute-silent:%s'):
         format(vim.fn.shellescape(raw_act))
     end
-  end
-  -- normalize with globals if not already normalized
-  if not opts._normalized then
-    opts = config.normalize_opts(opts, {})
   end
   -- setup the fzf window and preview layout
   local fzf_win = win(opts)

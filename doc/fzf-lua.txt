@@ -248,9 +248,11 @@ Consult the list below for available settings:
     local actions = require "fzf-lua.actions"
     require'fzf-lua'.setup {
       global_resume      = true,            -- enable global `resume`?
-                                            -- send 'no_global_resume = true'
-                                            -- to exclude specific providers
-                                            -- from being resumed
+                                            -- can also be sent individually:
+                                            -- `<any_function>.({ gl ... })`
+      global_resume_query = true,           -- include typed query in `resume`?
+                                            -- may cause lag when fast typing
+                                            -- disable if you're having issues
       winopts = {
         -- split         = "belowright new",-- open in a split instead?
                                             -- "belowright new"  : split below

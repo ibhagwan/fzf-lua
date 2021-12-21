@@ -639,7 +639,7 @@ M.live_workspace_symbols = function(opts)
 
   -- disable global resume
   -- conflicts with 'change:reload' event
-  opts.no_global_resume_act = true
+  opts.global_resume_query = false
   opts.__FNCREF__ = M.live_workspace_symbols
   opts = core.set_fzf_interactive_cb(opts)
   opts = core.set_fzf_line_args(opts)

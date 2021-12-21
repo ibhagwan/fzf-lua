@@ -152,7 +152,7 @@ M.live_grep_st = function(opts)
 
   -- disable global resume
   -- conflicts with 'change:reload' event
-  opts.no_global_resume_act = true
+  opts.global_resume_query = false
   opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
   opts = core.set_fzf_line_args(opts)
   opts = core.set_fzf_interactive_cmd(opts)
@@ -269,7 +269,7 @@ M.live_grep_mt = function(opts)
 
   -- disable global resume
   -- conflicts with 'change:reload' event
-  opts.no_global_resume_act = true
+  opts.global_resume_query = false
   opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
   opts = core.set_fzf_line_args(opts)
   core.fzf_files(opts)

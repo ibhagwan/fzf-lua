@@ -26,6 +26,7 @@ M.__resume_data = {}
 
 M.globals = {
   global_resume         = true,
+  global_resume_query   = true,
   winopts = {
     height              = 0.85,
     width               = 0.80,
@@ -589,6 +590,15 @@ function M.normalize_opts(opts, defaults)
       -- and then overwritten if found in 'backward_compat'
       opts[k] or {}, utils.tbl_deep_clone(M.globals[k]) or {})
   end
+
+  local function get_opt(o, t1, t2)
+    if t1[o] ~= nil then return t1[o]
+    else return t2[o] end
+  end
+
+  -- Merge global resume options
+  opts.global_resume = get_opt('global_resume', opts, M.globals)
+  opts.global_resume_query = get_opt('global_resume_query', opts, M.globals)
 
   -- backward compatibility, rhs overrides lhs
   -- (rhs being the "old" option)
