@@ -31,10 +31,6 @@ local quickfix_run = function(opts, cfg, locations)
     utils.delayed_cb(cb)
   end
 
-  --[[ opts.cb_selected = function(_, x)
-    return x
-  end ]]
-
   opts = core.set_fzf_line_args(opts)
   return core.fzf_files(opts, contents)
 end

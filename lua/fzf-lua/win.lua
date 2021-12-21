@@ -301,7 +301,8 @@ function FzfWin:new(o)
   self.preview_border = not opt_matches(o, 'border', 'noborder')
   self.keymap = o.keymap
   self.previewer = o.previewer
-  self.previewer_type = o.previewer_type
+  self.prompt = o.prompt
+  self.fn_save_query = o.fn_save_query
   self._orphaned_bufs = {}
   self:_set_autoclose(o.autoclose)
   _self = self
@@ -568,11 +569,34 @@ function FzfWin:redraw()
     end
 end
 
+function FzfWin.save_query()
+  local self = _self
+  if not self then return end
+  local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
+  if not lines or vim.tbl_isempty(lines) then return end
+  local query = lines[1]:gsub("^"..self.prompt, ""):match("[^<]+")
+  -- trim whitespaces at the end
+  query = query and query:gsub("%s*$", "")
+  if self.fn_save_query then
+    self.fn_save_query(query)
+  end
+  -- print("query:", query)
+end
+
 function FzfWin:set_winleave_autocmd()
   vim.cmd("augroup FzfLua")
   vim.cmd("au!")
   vim.cmd(('au WinLeave <buffer> %s'):format(
     [[lua require('fzf-lua.win').win_leave()]]))
+  --[[ if self.fn_save_query then
+    -- if resume is enabled fire an event for every
+    -- key pressed so we can retreieve the typed query
+    -- TODO: InsertCharPre does not work for terminals
+    -- find another way to trigger save_query()
+    -- https://github.com/neovim/neovim/issues/5018
+    vim.cmd(('au InsertCharPre <buffer> %s'):format(
+      "lua require('fzf-lua.win').save_query()"))
+  end ]]
   vim.cmd("augroup END")
 end
 

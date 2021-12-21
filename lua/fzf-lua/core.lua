@@ -35,12 +35,12 @@ M.fzf_resume = function()
   end
 end
 
-M.fzf_wrap = function(opts, contents, fn_post)
+M.fzf_wrap = function(opts, contents, fn_selected)
   return coroutine.wrap(function()
-    opts.fn_post = opts.fn_post or fn_post
+    opts.fn_selected = opts.fn_selected or fn_selected
     local selected = M.fzf(opts, contents)
-    if opts.fn_post then
-      opts.fn_post(selected)
+    if opts.fn_selected then
+      opts.fn_selected(selected)
     end
   end)
 end
@@ -49,6 +49,9 @@ M.fzf = function(opts, contents)
   -- normalize with globals if not already normalized
   if not opts._normalized then
     opts = config.normalize_opts(opts, {})
+  end
+  if opts.fn_pre_win then
+    opts.fn_pre_win(opts)
   end
   -- support global resume?
   if opts.global_resume then
@@ -430,10 +433,6 @@ M.fzf_files = function(opts, contents)
       local idx = utils.tbl_length(opts.actions)>1 and 2 or 1
       for i = idx, #selected do
         selected[i] = path.entry_to_file(selected[i], opts.cwd).stripped
-        if opts.cb_selected then
-          local cb_ret = opts.cb_selected(opts, selected[i])
-          if cb_ret then selected[i] = cb_ret end
-        end
       end
     end
 
