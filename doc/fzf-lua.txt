@@ -11,8 +11,8 @@ Customization <#customization> • Wiki
 
 Demo <https://raw.githubusercontent.com/wiki/ibhagwan/fzf-lua/demo.gif>
 
-fzf <https://github.com/junegunn/fzf> changed my life, it can change yours too,
-if you allow it.
+fzf <https://github.com/junegunn/fzf> changed my life, it can change yours
+too, if you allow it.
 
 
 ------------------------------------------------------------------------------
@@ -23,9 +23,9 @@ What more can be said about fzf <https://github.com/junegunn/fzf>? It is the
 single most impactful tool for my command line workflow, once I started using
 fzf I couldn’t see myself living without it.
 
-  To understand fzf properly I highly recommended fzf screencast
+  **To understand fzf properly I highly recommended fzf screencast
   <https://www.youtube.com/watch?v=qgG5Jhi_Els> by @samoshkin
-  <https://github.com/samoshkin>
+  <https://github.com/samoshkin>**
 
 This is my take on the original fzf.vim <https://github.com/junegunn/fzf.vim>,
 written in lua for neovim 0.5, it builds on the elegant nvim-fzf
@@ -43,16 +43,16 @@ WHY FZF-LUA                                              *fzf-lua-why-fzf-lua*
 <https://github.com/liuchengxu/vim-clap>?
 
 As @junegunn <https://github.com/junegunn> himself put it, “because you can
-and you love fzf ”.
+and you love `fzf`”.
 
 If you’re happy with your current setup there is absolutely no reason to
 switch.
 
 That said, without taking anything away from the greatness of other plugins I
 found it more efficient having a uniform experience between my shell and my
-nvim. In addition fzf has been a rock for me since I started using it and
+nvim. In addition `fzf` has been a rock for me since I started using it and
 hadn’t failed me once, it never hangs and can handle almost anything you
-throw at it. That, and colorful file icons and git indicators!.
+throw at it. That, **and colorful file icons and git indicators!**.
 
 
 ------------------------------------------------------------------------------
@@ -61,13 +61,13 @@ DEPENDENCIES                                            *fzf-lua-dependencies*
 
 - `Linux` or `MacOS`
 - `neovim` <https://github.com/neovim/neovim/releases> version > 0.5.0
-- `fzf` <https://github.com/junegunn/fzf> or
-  `skim` <https://github.com/lotabout/skim> binary installed
+- `fzf` <https://github.com/junegunn/fzf> or `skim`
+  <https://github.com/lotabout/skim> binary installed
 - nvim-web-devicons <https://github.com/kyazdani42/nvim-web-devicons>
   (optional)
 
                                                                               
-OPTIONAL DEPENDENCIES (RECOMMENDED)*fzf-lua-optional-dependencies-(recommended)*
+OPTIONAL DEPENDENCIES                          *fzf-lua-optional-dependencies*
 
 - fd <https://github.com/sharkdp/fd> - better `find` utility
 - rg <https://github.com/BurntSushi/ripgrep> - better `grep` utility
@@ -94,25 +94,24 @@ Using packer.nvim <https://github.com/wbthomason/packer.nvim>
       requires = { 'kyazdani42/nvim-web-devicons' }
     }
 <
-  Note: if you already have fzf installed you do not need to install fzf or
-  fzf.vim , however if you do not have it installed, you only need fzf which can
-  be installed with (fzf.vim is not a requirement nor conflict):
-
+  **Note:** if you already have fzf installed you do not need to install `fzf`
+  or `fzf.vim`, however if you do not have it installed, **you only need** fzf
+  which can be installed with (fzf.vim is not a requirement nor conflict):
 >
     Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 <
   or with packer.nvim <https://github.com/wbthomason/packer.nvim>:
-
 >
     use = { 'junegunn/fzf', run = './install --bin', }
 <
+
 
 ------------------------------------------------------------------------------
 USAGE                                                          *fzf-lua-usage*
 
 
-Fzf-lua aims to be as plug and play as possible with sane defaults, you can run
-any fzf-lua command like this:
+Fzf-lua aims to be as plug and play as possible with sane defaults, you can
+run any fzf-lua command like this:
 
 >
     :lua require('fzf-lua').files()
@@ -131,7 +130,7 @@ which can be easily mapped to:
 >
     nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 <
-or if using init.lua :
+or if using `init.lua`:
 
 >
     vim.api.nvim_set_keymap('n', '<c-P>',
@@ -159,6 +158,7 @@ BUFFERS AND FILES                                  *fzf-lua-buffers-and-files*
 | `tabs`             | open tabs                                  |
 | `args`             | argument list                              |
 
+
                                                                               
 SEARCH                                                        *fzf-lua-search*
 
@@ -177,6 +177,7 @@ SEARCH                                                        *fzf-lua-search*
 | `live_grep_glob`   | live_grep with `rg --glob` support           |
 | `live_grep_native` | performant version of `live_grep`            |
 
+
                                                                               
 GIT                                                              *fzf-lua-git*
 
@@ -187,6 +188,7 @@ GIT                                                              *fzf-lua-git*
 | `git_commits`      | git commit log (project)                   |
 | `git_bcommits`     | git commit log (buffer)                    |
 | `git_branches`     | git branches                               |
+
 
                                                                               
 LSP                                                              *fzf-lua-lsp*
@@ -204,6 +206,7 @@ LSP                                                              *fzf-lua-lsp*
 | `lsp_code_actions`           | Code Actions                     |
 | `lsp_document_diagnostics`   | Document Diagnostics             |
 | `lsp_workspace_diagnostics`  | Workspace Diagnostics            |
+
 
                                                                               
 MISC                                                            *fzf-lua-misc*
@@ -229,6 +232,7 @@ MISC                                                            *fzf-lua-misc*
 | `filetypes`        | neovim filetypes                           |
 | `packadd`          | :packadd <package>                         |
 
+
 ------------------------------------------------------------------------------
 CUSTOMIZATION                                          *fzf-lua-customization*
 
@@ -236,8 +240,8 @@ CUSTOMIZATION                                          *fzf-lua-customization*
 I tried to make it as customizable as possible, if you find you need to change
 something that isn’t below, open an issue and I’ll do my best to add it.
 
-customization can be achieved by calling the setup() function or individually
-sending parameters to a builtin command, for exmaple:
+customization can be achieved by calling the `setup()` function or
+individually sending parameters to a builtin command, for exmaple:
 
 >
     :lua require('fzf-lua').files({ fzf_opts = {['--layout'] = 'reverse-list'} })
@@ -654,7 +658,7 @@ Consult the list below for available settings:
       },
     }
 <
-This can also be run from a .vim file using:
+This can also be run from a `.vim` file using:
 
 >
     lua << EOF
@@ -669,26 +673,26 @@ CREDITS                                                      *fzf-lua-credits*
 
 
 Big thank you to all those I borrowed code/ideas from, I read so many configs
-and plugin codes that I probably forgot where I found some samples from so if I
-missed your name feel free to contact me and I'll add it below:
+and plugin codes that I probably forgot where I found some samples from so if
+I missed your name feel free to contact me and I'll add it below:
 
 - @vijaymarupudi <https://github.com/vijaymarupudi/> for his wonderful
   nvim-fzf <https://github.com/vijaymarupudi/nvim-fzf> plugin which is in the
   core of this plugin
-- @tjdevries <https://github.com/tjdevries/> for too many great things to
-  list here and for borrowing some of his
-  nvim-telescope <https://github.com/nvim-telescope/telescope.nvim> provider
-  code
-- @lukas-reineke <https://github.com/lukas-reineke> for inspiring the
-  solution after browsing his
-  dotfiles <https://github.com/lukas-reineke/dotfiles> and coming across his
-  fuzzy.lua <https://github.com/lukas-reineke/dotfiles/blob/master/vim/lua/fuzzy.lua>
-  , and while we're, also here for his great lua plugin
-  indent-blankline <https://github.com/lukas-reineke/indent-blankline.nvim>
+- @tjdevries <https://github.com/tjdevries/> for too many great things to list
+  here and for borrowing some of his nvim-telescope
+  <https://github.com/nvim-telescope/telescope.nvim> provider code
+- @lukas-reineke <https://github.com/lukas-reineke> for inspiring the solution
+  after browsing his dotfiles <https://github.com/lukas-reineke/dotfiles> and
+  coming across his fuzzy.lua
+  <https://github.com/lukas-reineke/dotfiles/blob/master/vim/lua/fuzzy.lua> ,
+  and while we're, also here for his great lua plugin indent-blankline
+  <https://github.com/lukas-reineke/indent-blankline.nvim>
 - @sindrets <https://github.com/sindrets> for borrowing utilities from his
-  fantastic lua plugin diffview.nvim <https://github.com/sindrets/diffview.nvim>
-- @kevinhwang91 <https://github.com/kevinhwang91> for using his previewer
-  code as baseline for the builtin previewer and his must have plugin
-  nvim-bqf <https://github.com/kevinhwang91/nvim-bqf>
+  fantastic lua plugin diffview.nvim
+  <https://github.com/sindrets/diffview.nvim>
+- @kevinhwang91 <https://github.com/kevinhwang91> for using his previewer code
+  as baseline for the builtin previewer and his must have plugin nvim-bqf
+  <https://github.com/kevinhwang91/nvim-bqf>
 
 vim:tw=78:ts=8:ft=help:norl:

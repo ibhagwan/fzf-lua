@@ -54,7 +54,7 @@ at it. That, **and colorful file icons and git indicators!**.
 - [nvim-web-devicons](https://github.com/kyazdani42/nvim-web-devicons)
   (optional)
 
-### Optional dependencies (recommended)
+### Optional dependencies
 
 - [fd](https://github.com/sharkdp/fd) - better `find` utility
 - [rg](https://github.com/BurntSushi/ripgrep) - better `grep` utility
