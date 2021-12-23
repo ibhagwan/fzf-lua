@@ -140,7 +140,7 @@ end
 function M.entry_to_ctag(entry)
   local scode = entry:match("%:.-/^?\t?(.*)/")
   if scode then
-    scode = string.gsub(scode, "[$]$", "")
+    -- scode = string.gsub(scode, "[$]$", "")
     scode = string.gsub(scode, [[\\]], [[\]])
     scode = string.gsub(scode, [[\/]], [[/]])
     scode = string.gsub(scode, "[*]", [[\*]])
