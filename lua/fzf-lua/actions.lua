@@ -151,13 +151,14 @@ end
 M.file_sel_to_qf = function(selected, _)
   local qf_list = {}
   for i = 1, #selected do
-    -- check if the file contains line
-    local file, line, col, text = selected[i]:match("^([^ :]+):(%d+):(%d+):(.*)")
-    if file and line and col then
-      table.insert(qf_list, {filename = file, lnum = line, col = col, text = text})
-    else
-      table.insert(qf_list, {filename = selected[i], lnum = 1, col = 1})
-    end
+    local file = path.entry_to_file(selected[i])
+    local text = selected[i]:match(":%d+:(.*)$")
+    table.insert(qf_list, {
+      filename = file.path,
+      lnum = file.line,
+      col = file.col,
+      text = text,
+    })
   end
   vim.fn.setqflist(qf_list)
   vim.cmd 'copen'
