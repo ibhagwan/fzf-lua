@@ -49,7 +49,7 @@ at it. That, **and colorful file icons and git indicators!**.
 
 - `Linux` or `MacOS`
 - [`neovim`](https://github.com/neovim/neovim/releases) version > 0.5.0
-- [`fzf`](https://github.com/junegunn/fzf) or
+- [`fzf`](https://github.com/junegunn/fzf) version > 0.24.0 **or**
   [`skim`](https://github.com/lotabout/skim) binary installed
 - [nvim-web-devicons](https://github.com/kyazdani42/nvim-web-devicons)
   (optional)
