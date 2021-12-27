@@ -414,8 +414,11 @@ M.set_header = function(opts, type)
   if opts.no_header then return opts end
   if not opts.cwd_header then opts.cwd_header = "cwd:" end
   if not opts.search_header then opts.search_header = "Searching for:" end
+  if not opts.cwd and opts.show_cwd_header then opts.cwd = vim.loop.cwd() end
   local header_str
-  local cwd_str = opts.cwd and opts.cwd ~= vim.loop.cwd() and
+  local cwd_str =
+    opts.cwd and (opts.show_cwd_header ~= false) and
+    (opts.show_cwd_header or opts.cwd ~= vim.loop.cwd()) and
     ("%s %s"):format(opts.cwd_header, opts.cwd:gsub("^"..vim.env.HOME, "~"))
   local search_str = opts.search and #opts.search > 0 and
     ("%s %s"):format(opts.search_header, opts.search)
