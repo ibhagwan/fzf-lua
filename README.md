@@ -69,6 +69,7 @@ Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
 Plug 'ibhagwan/fzf-lua'
+" optional for icon support
 Plug 'kyazdani42/nvim-web-devicons'
 ```
 
@@ -213,6 +214,8 @@ Consult the list below for available settings:
 ```lua
 local actions = require "fzf-lua.actions"
 require'fzf-lua'.setup {
+  -- fzf_bin         = 'sk',            -- use skim instead of fzf?
+                                        -- https://github.com/lotabout/skim
   global_resume      = true,            -- enable global `resume`?
                                         -- can also be sent individually:
                                         -- `<any_function>.({ gl ... })`
@@ -224,7 +227,7 @@ require'fzf-lua'.setup {
                                         -- "belowright vnew" : split right
                                         -- "aboveleft vnew   : split left
     -- Only valid when using a float window
-    -- (i.e. when 'split' is not defined)
+    -- (i.e. when 'split' is not defined, default)
     height           = 0.85,            -- window height
     width            = 0.80,            -- window width
     row              = 0.35,            -- window row position (0=top, 1=bottom)
@@ -320,9 +323,6 @@ require'fzf-lua'.setup {
       ["shift-up"]    = "preview-page-up",
     },
   },
-  -- use skim instead of fzf?
-  -- https://github.com/lotabout/skim
-  -- fzf_bin          = 'sk',
   fzf_opts = {
     -- options are sent as `<left>=<right>`
     -- set to `false` to remove a flag
@@ -336,19 +336,19 @@ require'fzf-lua'.setup {
   },
   -- fzf '--color=' options (optional)
   --[[ fzf_colors = {
-      ["fg"] = { "fg", "CursorLine" },
-      ["bg"] = { "bg", "Normal" },
-      ["hl"] = { "fg", "Comment" },
-      ["fg+"] = { "fg", "Normal" },
-      ["bg+"] = { "bg", "CursorLine" },
-      ["hl+"] = { "fg", "Statement" },
-      ["info"] = { "fg", "PreProc" },
-      ["prompt"] = { "fg", "Conditional" },
-      ["pointer"] = { "fg", "Exception" },
-      ["marker"] = { "fg", "Keyword" },
-      ["spinner"] = { "fg", "Label" },
-      ["header"] = { "fg", "Comment" },
-      ["gutter"] = { "bg", "Normal" },
+      ["fg"]          = { "fg", "CursorLine" },
+      ["bg"]          = { "bg", "Normal" },
+      ["hl"]          = { "fg", "Comment" },
+      ["fg+"]         = { "fg", "Normal" },
+      ["bg+"]         = { "bg", "CursorLine" },
+      ["hl+"]         = { "fg", "Statement" },
+      ["info"]        = { "fg", "PreProc" },
+      ["prompt"]      = { "fg", "Conditional" },
+      ["pointer"]     = { "fg", "Exception" },
+      ["marker"]      = { "fg", "Keyword" },
+      ["spinner"]     = { "fg", "Label" },
+      ["header"]      = { "fg", "Comment" },
+      ["gutter"]      = { "bg", "Normal" },
   }, ]]
   previewers = {
     cat = {
@@ -382,7 +382,9 @@ require'fzf-lua'.setup {
   },
   -- provider setup
   files = {
-    -- previewer      = "cat",          -- uncomment to override previewer
+    -- previewer      = "bat",          -- uncomment to override previewer
+                                        -- (name from 'previewers' table)
+                                        -- set to 'false' to disable
     prompt            = 'Files❯ ',
     multiprocess      = true,           -- run command in a separate process
     git_icons         = true,           -- show git icons?
@@ -400,7 +402,7 @@ require'fzf-lua'.setup {
       -- set bind to 'false' to disable an action
       -- default action opens a single selection
       -- or sends multiple selection to quickfix
-      -- replace the default aciton with the below
+      -- replace the default action with the below
       -- to open all files whether single or multiple
       -- ["default"]     = actions.file_edit,
       ["default"]     = actions.file_edit_or_qf,
@@ -471,9 +473,9 @@ require'fzf-lua'.setup {
       ["A"]           = { icon = "A", color = "green" },
       ["?"]           = { icon = "?", color = "magenta" },
       -- override git icons?
-      -- ["M"]          = { icon = "★", color = "red" },
-      -- ["D"]          = { icon = "✗", color = "red" },
-      -- ["A"]          = { icon = "+", color = "green" },
+      -- ["M"]        = { icon = "★", color = "red" },
+      -- ["D"]        = { icon = "✗", color = "red" },
+      -- ["A"]        = { icon = "+", color = "green" },
     },
   },
   grep = {
@@ -496,17 +498,14 @@ require'fzf-lua'.setup {
   args = {
     prompt            = 'Args❯ ',
     files_only        = true,
-    actions = {
-      -- added on top of regular file actions
-      ["ctrl-x"]      = actions.arg_del,
-    }
+    -- added on top of regular file actions
+    actions           = { ["ctrl-x"] = actions.arg_del }
   },
   oldfiles = {
     prompt            = 'History❯ ',
     cwd_only          = false,
   },
   buffers = {
-    -- previewer      = false,        -- disable the builtin previewer?
     prompt            = 'Buffers❯ ',
     file_icons        = true,         -- show file icons?
     color_icons       = true,         -- colorize file|git icons
@@ -563,14 +562,8 @@ require'fzf-lua'.setup {
   colorschemes = {
     prompt            = 'Colorschemes❯ ',
     live_preview      = true,       -- apply the colorscheme on preview?
-    actions = {
-      ["default"]     = actions.colorscheme,
-      ["ctrl-y"]      = function(selected) print(selected[1]) end,
-    },
-    winopts = {
-      height          = 0.55,
-      width           = 0.30,
-    },
+    actions           = { ["default"] = actions.colorscheme, },
+    winopts           = { height = 0.55, width = 0.30, },
     post_reset_cb     = function()
       -- reset statusline highlights after
       -- a live_preview of the colorscheme
@@ -578,13 +571,11 @@ require'fzf-lua'.setup {
     end,
   },
   quickfix = {
-    -- cwd               = vim.loop.cwd(),
     file_icons        = true,
     git_icons         = true,
   },
   lsp = {
     prompt            = '❯ ',
-    -- cwd               = vim.loop.cwd(),
     cwd_only          = false,      -- LSP/diagnostics for cwd only?
     async_or_timeout  = 5000,       -- timeout(ms) or 'true' for async calls
     file_icons        = true,
@@ -599,7 +590,7 @@ require'fzf-lua'.setup {
     },
   },
   -- uncomment to disable the previewer
-  -- nvim = { marks    = { previewer = { _ctor = false } } },
+  -- nvim = { marks = { previewer = { _ctor = false } } },
   -- helptags = { previewer = { _ctor = false } },
   -- manpages = { previewer = { _ctor = false } },
   -- uncomment to set dummy win location (help|man bar)
