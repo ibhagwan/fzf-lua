@@ -146,6 +146,7 @@ M.globals = {
       cmd_deleted     = "git diff --color HEAD --",
       cmd_modified    = "git diff --color HEAD",
       cmd_untracked   = "git diff --color --no-index /dev/null",
+      _fn_git_icons   = function() return M.globals.git.icons end,
       _ctor           = previewers.fzf.git_diff,
     },
     man = {

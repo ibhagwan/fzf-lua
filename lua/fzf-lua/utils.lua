@@ -123,6 +123,15 @@ function M.lua_escape(str)
   end)
 end
 
+function M.lua_regex_escape(str)
+  -- escape all lua special chars
+  -- ( ) % . + - * [ ? ^ $
+  if not str then return nil end
+  return str:gsub('[%(%)%.%+%-%*%[%?%^%$%%]', function(x)
+    return '%' .. x
+  end)
+end
+
 -- TODO: why does `file --dereference --mime` return
 -- wrong result for some lua files ('charset=binary')?
 M.file_is_binary = function(filepath)

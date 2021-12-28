@@ -146,15 +146,36 @@ function Previewer.git_diff:new(o, opts)
   self.cmd_modified = path.git_cwd(o.cmd_modified, opts.cwd)
   self.cmd_untracked = path.git_cwd(o.cmd_untracked, opts.cwd)
   self.pager = o.pager
+  do
+    -- populate the icon mappings
+    local icons_overrides = o._fn_git_icons and o._fn_git_icons()
+    self.git_icons = {}
+    for _, i in ipairs({ "D", "M", "R", "A", "C", "?" }) do
+      self.git_icons[i] =
+        icons_overrides and icons_overrides[i] and
+        utils.lua_regex_escape(icons_overrides[i].icon) or i
+    end
+  end
   return self
 end
 
 function Previewer.git_diff:cmdline(o)
   o = o or {}
   local act = shell.preview_action_cmd(function(items)
-    local is_deleted = items[1]:match("D"..utils.nbsp) ~= nil
-    local is_modified = items[1]:match("[MRA]"..utils.nbsp) ~= nil
-    local is_untracked = items[1]:match("[%?C]"..utils.nbsp) ~= nil
+    if not items or vim.tbl_isempty(items) then
+      utils.warn("shell error while running preview action.")
+      return
+    end
+    local is_deleted = items[1]:match(self.git_icons['D']..utils.nbsp) ~= nil
+    local is_modified = items[1]:match("[" ..
+      self.git_icons['M'] ..
+      self.git_icons['R'] ..
+      self.git_icons['A'] ..
+      "]" ..utils.nbsp) ~= nil
+    local is_untracked = items[1]:match("[" ..
+      self.git_icons['?'] ..
+      self.git_icons['C'] ..
+      "]"..utils.nbsp) ~= nil
     local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
     local cmd = nil
     if is_modified then cmd = self.cmd_modified
@@ -172,7 +193,10 @@ function Previewer.git_diff:cmdline(o)
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
-  end, "{}")
+  -- we need to add '--' to mark the end of command options
+  -- as git icon customization may contain special shell chars
+  -- which will otherwise choke our preview cmd ('+', '-', etc)
+  end, "-- {}")
   return act
 end
 
