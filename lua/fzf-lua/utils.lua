@@ -132,10 +132,29 @@ function M.lua_regex_escape(str)
   end)
 end
 
+function M.pcall_expand(filepath)
+  -- expand using pcall, this is a workaround to trying to
+  -- expand certain special chars, more info in issue #285
+  -- expanding the below fails with:
+  -- "special[1][98f3a7e3-0d6e-f432-8a18-e1144b53633f][-1].xml"
+  --  "Vim:E944: Reverse range in character class"
+  -- this seems to fail with only a single hypen:
+  -- :lua print(vim.fn.expand("~/file[2-1].ext"))
+  -- but not when escaping the hypen:
+  -- :lua print(vim.fn.expand("~/file[2\\-1].ext"))
+  local ok, expanded = pcall(vim.fn.expand,
+    filepath:gsub("%-", "\\-"))
+  if ok and expanded and #expanded>0 then
+    return expanded
+  else
+    return filepath
+  end
+end
+
 -- TODO: why does `file --dereference --mime` return
 -- wrong result for some lua files ('charset=binary')?
 M.file_is_binary = function(filepath)
-  filepath = vim.fn.expand(filepath)
+  filepath = M.pcall_expand(filepath)
   if vim.fn.executable("file") ~= 1 or
      not vim.loop.fs_stat(filepath) then
     return false
@@ -145,7 +164,7 @@ M.file_is_binary = function(filepath)
 end
 
 M.perl_file_is_binary = function(filepath)
-  filepath = vim.fn.expand(filepath)
+  filepath = M.pcall_expand(filepath)
   if vim.fn.executable("perl") ~= 1 or
      not vim.loop.fs_stat(filepath) then
     return false
