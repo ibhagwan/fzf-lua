@@ -428,7 +428,6 @@ M.globals.lsp = {
       color_icons         = true,
       git_icons           = false,
       lsp_icons           = true,
-      severity            = "hint",
       cwd_only            = false,
       async_or_timeout    = 5000,
       actions             = M.globals.files.actions,

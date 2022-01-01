@@ -96,8 +96,8 @@ local function diagnostics_handler(opts, cb, _, entry)
   entry = core.make_entry_lcol(opts, entry)
   entry = core.make_entry_file(opts, entry)
   if not entry then return end
-  if opts.lsp_icons and opts.cfg.icons[type] then
-    local severity = opts.cfg.icons[type]
+  if opts.lsp_icons and opts._severity_icons[type] then
+    local severity = opts._severity_icons[type]
     local icon = severity.icon
     if opts.color_icons then
       icon = utils.ansi_codes[severity.color or "dark_grey"](icon)
@@ -278,7 +278,6 @@ local normalize_lsp_opts = function(opts, cfg)
     opts.prompt = opts.lsp_handler.label .. cfg.prompt
   end
 
-  opts.cfg = nil
   opts.bufnr = nil
   opts.winid = nil
   opts.filename = nil
@@ -455,22 +454,23 @@ end
 
 local convert_diagnostic_type = function(severity)
   -- convert from string to int
-  if type(severity) == "string" then
+  if type(severity) == "string" and not tonumber(severity) then
     -- make sure that e.g. error is uppercased to Error
-    return vim.lsp.protocol.DiagnosticSeverity[severity:gsub("^%l", string.upper)]
+    return vim.diagnostic and vim.diagnostic.severity[severity:upper()] or
+      vim.lsp.protocol.DiagnosticSeverity[severity:gsub("^%l", string.upper)]
+  else
+    -- otherwise keep original value, incl. nil
+    return tonumber(severity)
   end
-  -- otherwise keep original value, incl. nil
-  if type(severity) ~= "number" then return nil end
-  return severity
 end
 
 local filter_diag_severity = function(opts, severity)
-  if opts.severity_exact ~= nil then
-    return opts.severity_exact == severity
-  elseif opts.severity ~= nil then
-    return severity <= opts.severity
+  if opts.severity_only ~= nil then
+    return tonumber(opts.severity_only) == severity
+  elseif opts.severity_limit ~= nil then
+    return severity <= tonumber(opts.severity_limit)
   elseif opts.severity_bound ~= nil then
-    return severity >= opts.severity_bound
+    return severity >= tonumber(opts.severity_bound)
   else
     return true
   end
@@ -487,51 +487,65 @@ M.diagnostics = function(opts)
   end
 
   opts.winid = vim.api.nvim_get_current_win()
-  local lsp_type_diagnostic = vim.lsp.protocol.DiagnosticSeverity
   local current_buf = vim.api.nvim_get_current_buf()
 
-  -- save this so handler can get the lsp icon
-  opts.cfg = config.globals.lsp
+  -- normalize the LSP icons table
+  opts._severity_icons = {}
+  for k, v in pairs({
+    ["Error"]       = 1,
+    ["Warning"]     = 2,
+    ["Information"] = 3,
+    ["Hint"]        = 4
+  }) do
+    if opts.icons and opts.icons[k] then
+      opts._severity_icons[v] = opts.icons[k]
+    end
+  end
 
   -- hint         = 4
   -- information  = 3
   -- warning      = 2
   -- error        = 1
-  -- severity:        keep any equal or more severe (lower)
-  -- severity_exact:  keep any matching exact severity
+  -- severity_only:   keep any matching exact severity
+  -- severity_limit:  keep any equal or more severe (lower)
   -- severity_bound:  keep any equal or less severe (higher)
-  opts.severity = convert_diagnostic_type(opts.severity)
-  opts.severity_exact = convert_diagnostic_type(opts.severity_exact)
+  opts.severity_only = convert_diagnostic_type(opts.severity_only)
+  opts.severity_limit = convert_diagnostic_type(opts.severity_limit)
   opts.severity_bound = convert_diagnostic_type(opts.severity_bound)
 
-  local validate_severity = 0
-  for _, v in ipairs({opts.severity_exact, opts.severity, opts.severity_bound}) do
-    if v ~= nil then
-      validate_severity = validate_severity + 1
+  local diag_opts = { severity = {}, namespace = opts.namespace }
+  if opts.severity_only ~= nil then
+    if opts.severity_limit ~= nil or opts.severity_bound ~= nil then
+      utils.warn("Invalid severity parameters. Both a specific severity and a limit/bound is not allowed")
+      return {}
     end
-    if validate_severity > 1 then
-      utils.warn("Invalid severity params, ignoring severity filters")
-      opts.severity, opts.severity_exact, opts.severity_bound = nil, nil, nil
+    diag_opts.severity = opts.severity_only
+  else
+    if opts.severity_limit ~= nil then
+      diag_opts.severity["min"] = opts.severity_limit
+    end
+    if opts.severity_bound ~= nil then
+      diag_opts.severity["max"] = opts.severity_bound
     end
   end
 
   local preprocess_diag = function(diag, bufnr)
+    bufnr = bufnr or diag.bufnr
     local filename = vim.api.nvim_buf_get_name(bufnr)
-    local start = diag.range['start']
-    local finish = diag.range['end']
-    local row = start.line
-    local col = start.character
+    -- pre vim.diagnostic (vim.lsp.diagnostic)
+    -- has 'start|finish' instead of 'end_col|end_lnum'
+    local start = diag.range and diag.range['start']
+    -- local finish = diag.range and diag.range['end']
+    local row = diag.lnum or start.line
+    local col = diag.col or start.character
 
     local buffer_diag = {
       bufnr = bufnr,
       filename = filename,
       lnum = row + 1,
       col = col + 1,
-      start = start,
-      finish = finish,
-      -- remove line break to avoid display issues
       text = vim.trim(diag.message:gsub("[\n]", "")),
-      type = lsp_type_diagnostic[diag.severity] or lsp_type_diagnostic[1]
+      type = diag.severity or 1
     }
     return buffer_diag
   end
@@ -540,10 +554,12 @@ M.diagnostics = function(opts)
     coroutine.wrap(function ()
       local co = coroutine.running()
 
-      local buffer_diags = opts.diag_all and vim.lsp.diagnostic.get_all() or
+      local diag_results = vim.diagnostic and
+        vim.diagnostic.get(not opts.diag_all and current_buf or nil, diag_opts) or
+        opts.diag_all and vim.lsp.diagnostic.get_all() or
         {[current_buf] = vim.lsp.diagnostic.get(current_buf, opts.client_id)}
       local has_diags = false
-      for _, diags in pairs(buffer_diags) do
+      for _, diags in pairs(diag_results) do
         if #diags > 0 then has_diags = true end
       end
       if not has_diags then
@@ -558,7 +574,7 @@ M.diagnostics = function(opts)
           utils.send_ctrl_c()
         end
       end
-      for bufnr, diags in pairs(buffer_diags) do
+      local function process_diagnostics(diags, bufnr)
         for _, diag in ipairs(diags) do
           -- workspace diagnostics may include empty tables for unused bufnr
           if not vim.tbl_isempty(diag) then
@@ -567,6 +583,13 @@ M.diagnostics = function(opts)
                 preprocess_diag(diag, bufnr))
             end
           end
+        end
+      end
+      if vim.diagnostic then
+        process_diagnostics(diag_results)
+      else
+        for bufnr, diags in pairs(diag_results) do
+          process_diagnostics(diags, bufnr)
         end
       end
       -- coroutine.yield()
