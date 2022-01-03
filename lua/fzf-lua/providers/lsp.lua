@@ -529,6 +529,26 @@ M.diagnostics = function(opts)
     end
   end
 
+  local diag_results = vim.diagnostic and
+    vim.diagnostic.get(not opts.diag_all and current_buf or nil, diag_opts) or
+    opts.diag_all and vim.lsp.diagnostic.get_all() or
+    {[current_buf] = vim.lsp.diagnostic.get(current_buf, opts.client_id)}
+
+  local has_diags = false
+  if vim.diagnostic then
+    -- format: { <diag array> }
+    has_diags = not vim.tbl_isempty(diag_results)
+  else
+    -- format: { [bufnr] = <diag array>, ... }
+    for _, diags in pairs(diag_results) do
+      if #diags > 0 then has_diags = true end
+    end
+  end
+  if not has_diags then
+    utils.info(string.format('No %s found', string.lower(opts.lsp_handler.label)))
+    return
+  end
+
   local preprocess_diag = function(diag, bufnr)
     bufnr = bufnr or diag.bufnr
     local filename = vim.api.nvim_buf_get_name(bufnr)
@@ -554,29 +574,10 @@ M.diagnostics = function(opts)
     coroutine.wrap(function ()
       local co = coroutine.running()
 
-      local diag_results = vim.diagnostic and
-        vim.diagnostic.get(not opts.diag_all and current_buf or nil, diag_opts) or
-        opts.diag_all and vim.lsp.diagnostic.get_all() or
-        {[current_buf] = vim.lsp.diagnostic.get(current_buf, opts.client_id)}
-      local has_diags = false
-      for _, diags in pairs(diag_results) do
-        if #diags > 0 then has_diags = true end
-      end
-      if not has_diags then
-        utils.info(string.format('No %s found', string.lower(opts.lsp_handler.label)))
-        local winid = vim.api.nvim_get_current_win()
-        if opts.winid ~= winid then
-          -- TODO: why does it go into insert mode after
-          -- 'nvim_win_close()?
-          -- vim.api.nvim_win_close(0, {force=true})
-          -- utils.feed_key("<C-c>")
-          -- utils.feed_key("<Esc>")
-          utils.send_ctrl_c()
-        end
-      end
       local function process_diagnostics(diags, bufnr)
         for _, diag in ipairs(diags) do
-          -- workspace diagnostics may include empty tables for unused bufnr
+          -- workspace diagnostics may include
+          -- empty tables for unused buffers
           if not vim.tbl_isempty(diag) then
             if filter_diag_severity(opts, diag.severity) then
               diagnostics_handler(opts, cb, co,
@@ -585,6 +586,7 @@ M.diagnostics = function(opts)
           end
         end
       end
+
       if vim.diagnostic then
         process_diagnostics(diag_results)
       else
@@ -592,16 +594,9 @@ M.diagnostics = function(opts)
           process_diagnostics(diags, bufnr)
         end
       end
-      -- coroutine.yield()
       -- close the pipe to fzf, this
-      -- removes the loading indicator in fzf
-      -- TODO: why is this causing a bug with
-      -- 'glepnir/dashboard-nvim'??? (issue #23)
-      -- vim.defer_fn(function()
-        -- cb(nil, function() coroutine.resume(co) end)
-      -- end, 20)
-      utils.delayed_cb(cb, function() coroutine.resume(co) end)
-      coroutine.yield()
+      -- removes the loading indicator
+      cb(nil)
     end)()
   end
 
