@@ -358,7 +358,7 @@ function M.is_term_bufname(bufname)
 end
 
 function M.is_term_buffer(bufnr)
-  local bufname = vim.api.nvim_buf_get_name(bufnr or 0)
+  local bufname = vim.api.nvim_buf_get_name(tonumber(bufnr) or 0)
   return M.is_term_bufname(bufname)
 end
 

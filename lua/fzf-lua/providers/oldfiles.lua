@@ -1,5 +1,4 @@
 local core = require "fzf-lua.core"
-local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
 local M = {}
@@ -42,9 +41,10 @@ M.oldfiles = function(opts)
         end)
       end
     end
-    utils.delayed_cb(cb)
+    cb(nil)
   end
 
+  opts = core.set_header(opts, 2)
   return core.fzf_files(opts, contents)
 end
 
