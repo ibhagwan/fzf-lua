@@ -180,15 +180,21 @@ M.preprocess = function(opts)
     opts.diff_files = M.get_diff_files(opts)
   end
 
-  local argv = function(i)
+  local argv = function(i, debug)
     -- argv1 is actually the 7th argument if we count
     -- arguments already supplied by 'wrap_spawn_stdio'
-    return i and vim.v.argv[i+6] or nil
+    -- if no index was supplied use the last argument
+    local idx = tonumber(i) and tonumber(i)+6 or #vim.v.argv
+    if debug then
+      io.stdout:write(("[DEBUG]: arg(%d) = %s\n")
+        :format(idx, vim.fn.shellescape(vim.v.argv[idx])))
+    end
+    return vim.v.argv[idx]
   end
 
   -- save our last search argument for resume
-  if opts.cmd:match("{argv1}") then
-    local query = argv(1)
+  if opts.cmd:match("{argvz}") then
+    local query = argv(nil, opts.debug)
     set_config_section('globals.grep._last_search',
       { query = query, no_esc = true })
     set_config_section('__resume_data.last_query', query)
@@ -197,7 +203,7 @@ M.preprocess = function(opts)
   -- did the caller request rg with glob support?
   -- mannipulation needs to be done before the argv hack
   if opts.rg_glob then
-    local query = argv(1)
+    local query = argv()
     if query and query:find(opts.glob_separator) then
       local glob_args = ""
       local search_query, glob_str = query:match("(.*)"..opts.glob_separator.."(.*)")
@@ -205,17 +211,17 @@ M.preprocess = function(opts)
         glob_args = glob_args .. ("%s %s ")
           :format(opts.glob_flag, vim.fn.shellescape(s))
       end
-      -- reset argv1 so it doesn't get replaced again below
-      opts.cmd = opts.cmd:gsub("{argv1}",
+      -- reset argvz so it doesn't get replaced again below
+      opts.cmd = opts.cmd:gsub("{argvz}",
         glob_args .. vim.fn.shellescape(search_query))
     end
   end
 
   -- nifty hack to avoid having to double escape quotations
   -- see my comment inside 'live_grep' initial_command code
-  opts.cmd = opts.cmd:gsub("{argv%d+}",
+  opts.cmd = opts.cmd:gsub("{argv.*}",
     function(x)
-      local idx = x:match("{argv(%d+)}")
+      local idx = x:match("{argv(.*)}")
       return vim.fn.shellescape(argv(idx))
     end)
 

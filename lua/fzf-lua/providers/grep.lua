@@ -232,8 +232,10 @@ M.live_grep_mt = function(opts)
     -- the escape sequence so we use a nifty trick
     --   * replace the placeholder with {argv1}
     --   * re-add the placeholder at the end of the command
-    --   * spawn_stdio then relaces it with vim.fn.argv(1)
-    initial_command = initial_command:gsub(placeholder, "{argv1}")
+    --   * preprocess then relaces it with vim.fn.argv(1)
+    -- NOTE: since we cannot guarantee the positional index
+    -- of arguments (#291) we use the last argument instead
+    initial_command = initial_command:gsub(placeholder, "{argvz}")
       .. " " .. placeholder
   end
   -- by redirecting the error stream to stdout
