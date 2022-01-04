@@ -311,6 +311,7 @@ M.mt_cmd_wrapper = function(opts)
   local opts_to_str = function(o)
     local names = {
       "debug",
+      "argv_expr",
       "cmd",
       "cwd",
       "git_icons",

@@ -219,6 +219,9 @@ M.live_grep_mt = function(opts)
     opts.file_icons = false
   end
 
+  -- signal to preprocess we are looking to replace {argvz}
+  opts.argv_expr = true
+
   -- fzf already adds single quotes around the placeholder when expanding
   -- for skim we surround it with double quotes or single quote searches fail
   local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')

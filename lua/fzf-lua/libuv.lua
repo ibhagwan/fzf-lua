@@ -287,9 +287,12 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
   fn_transform = load_fn(fn_transform)
   fn_preprocess = load_fn(fn_preprocess)
 
+  -- if opts.argv_expr and opts.debug then
+  --   io.stdout:write("[DEBUG]: "..opts.cmd.."\n")
+  -- end
+
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
-
 
   -- for i=0,8 do
   --   io.stdout:write(("%d %s\n"):format(i, vim.v.argv[i]))

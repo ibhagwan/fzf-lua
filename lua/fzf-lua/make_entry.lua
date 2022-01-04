@@ -186,14 +186,17 @@ M.preprocess = function(opts)
     -- if no index was supplied use the last argument
     local idx = tonumber(i) and tonumber(i)+6 or #vim.v.argv
     if debug then
-      io.stdout:write(("[DEBUG]: arg(%d) = %s\n")
+      io.stdout:write(("[DEBUG]: argv(%d) = %s\n")
         :format(idx, vim.fn.shellescape(vim.v.argv[idx])))
     end
     return vim.v.argv[idx]
   end
 
+  -- live_grep replace pattern with last argument
+  local argvz = "{argvz}"
+
   -- save our last search argument for resume
-  if opts.cmd:match("{argvz}") then
+  if opts.argv_expr and opts.cmd:match(argvz) then
     local query = argv(nil, opts.debug)
     set_config_section('globals.grep._last_search',
       { query = query, no_esc = true })
@@ -212,19 +215,20 @@ M.preprocess = function(opts)
           :format(opts.glob_flag, vim.fn.shellescape(s))
       end
       -- reset argvz so it doesn't get replaced again below
-      opts.cmd = opts.cmd:gsub("{argvz}",
+      opts.cmd = opts.cmd:gsub(argvz,
         glob_args .. vim.fn.shellescape(search_query))
     end
   end
 
   -- nifty hack to avoid having to double escape quotations
   -- see my comment inside 'live_grep' initial_command code
-  opts.cmd = opts.cmd:gsub("{argv.*}",
-    function(x)
-      local idx = x:match("{argv(.*)}")
-      return vim.fn.shellescape(argv(idx))
-    end)
-
+  if opts.argv_expr then
+    opts.cmd = opts.cmd:gsub("{argv.*}",
+      function(x)
+        local idx = x:match("{argv(.*)}")
+        return vim.fn.shellescape(argv(idx))
+      end)
+  end
 
   return opts
 end
