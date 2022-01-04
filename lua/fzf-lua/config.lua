@@ -576,6 +576,11 @@ end
 function M.normalize_opts(opts, defaults)
   if not opts then opts = {} end
 
+  -- opts can also be a function that returns an opts table
+  if type(opts) == 'function' then
+    opts = opts()
+  end
+
   -- First, merge with provider defaults
   -- we must clone the 'defaults' tbl, otherwise 'opts.actions.default'
   -- overrides 'config.globals.lsp.actions.default' in neovim 6.0
