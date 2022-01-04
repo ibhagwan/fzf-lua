@@ -466,7 +466,7 @@ function Previewer.help_tags:parse_entry(entry_str)
 end
 
 local function curtab_helpbuf()
-  for _, w in ipairs(vim.api.nvim_tabpage_list_wins(nil)) do
+  for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
     local bufnr = vim.api.nvim_win_get_buf(w)
     local bufinfo = vim.fn.getbufinfo(bufnr)[1]
     if bufinfo.variables and bufinfo.variables.current_syntax == 'help' then
