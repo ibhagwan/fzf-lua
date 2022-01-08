@@ -83,14 +83,15 @@ end
 
 M.vimcmd_file = function(vimcmd, selected, opts)
   local curbuf = vim.api.nvim_buf_get_name(0)
+  local is_term = utils.is_term_buffer(0)
   for i = 1, #selected do
     local entry = path.entry_to_file(selected[i])
     entry.ctag = path.entry_to_ctag(selected[i])
     -- Java LSP entries, 'jdt://...'
     if entry.uri then
-      vim.cmd("normal! m`")
+      if not is_term then vim.cmd("normal! m`") end
       vim.lsp.util.jump_to_location(entry)
-      vim.cmd("norm! zvzz")
+      if not is_term then vim.cmd("norm! zvzz") end
     else
       -- only change buffer if we need to (issue #122)
       local fullpath = entry.path
@@ -105,7 +106,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
          return
       end
       -- add current location to jumplist
-      vim.cmd("normal! m`")
+      if not is_term then vim.cmd("normal! m`") end
       if vimcmd ~= "e" or curbuf ~= fullpath then
         vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
       end
@@ -116,7 +117,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
           vim.api.nvim_win_set_cursor(0, {1, 0})
           vim.fn.search(entry.ctag, "W")
         end
-        vim.cmd("norm! zvzz")
+        if not is_term then vim.cmd("norm! zvzz") end
       end
     end
   end
