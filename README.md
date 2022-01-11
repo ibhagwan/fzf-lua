@@ -422,6 +422,9 @@ require'fzf-lua'.setup {
       git_icons       = true,           -- show git icons?
       file_icons      = true,           -- show file icons?
       color_icons     = true,           -- colorize file|git icons
+      -- force display the cwd header line regardles of your current working directory
+      -- can also be used to hide the header when not wanted
+      -- show_cwd_header = true
     },
     status = {
       prompt          = 'GitStatus❯ ',
