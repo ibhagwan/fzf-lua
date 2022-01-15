@@ -1104,11 +1104,12 @@ function FzfWin.toggle_help()
   -- rearrange lines so keymaps appear
   -- sequential within the same column
   lines = {}
-  for i=1,height do
-    lines[i] = keymaps[i]
-  end
-  for i=1,height do
-    lines[i] = lines[i] .. (keymaps[i+height] or '')
+  for c=0, math.floor(vim.o.columns/(opts.column_width+#opts.column_padding)) do
+    for i=1,height do
+      local idx = height*c+i
+      lines[i] = c==0 and keymaps[idx] or
+        lines[i] .. (keymaps[idx] or '')
+    end
   end
 
   local winopts = {
