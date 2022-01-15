@@ -296,6 +296,7 @@ require'fzf-lua'.setup {
     -- delete or modify is sufficient
     builtin = {
       -- neovim `:tmap` mappings for the fzf win
+      ["<F1>"]        = "toggle-help",
       ["<F2>"]        = "toggle-fullscreen",
       -- Only valid with the 'builtin' previewer
       ["<F3>"]        = "toggle-preview-wrap",
@@ -422,8 +423,8 @@ require'fzf-lua'.setup {
       git_icons       = true,           -- show git icons?
       file_icons      = true,           -- show file icons?
       color_icons     = true,           -- colorize file|git icons
-      -- force display the cwd header line regardles of your current working directory
-      -- can also be used to hide the header when not wanted
+      -- force display the cwd header line regardles of your current working
+      -- directory can also be used to hide the header when not wanted
       -- show_cwd_header = true
     },
     status = {
@@ -474,6 +475,8 @@ require'fzf-lua'.setup {
       ["M"]           = { icon = "M", color = "yellow" },
       ["D"]           = { icon = "D", color = "red" },
       ["A"]           = { icon = "A", color = "green" },
+      ["R"]           = { icon = "R", color = "yellow" },
+      ["C"]           = { icon = "C", color = "yellow" },
       ["?"]           = { icon = "?", color = "magenta" },
       -- override git icons?
       -- ["M"]        = { icon = "★", color = "red" },

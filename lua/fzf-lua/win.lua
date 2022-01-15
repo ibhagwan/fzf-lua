@@ -42,6 +42,7 @@ function FzfWin:setup_keybinds()
     end
   end
   local keymap_tbl = {
+    ['toggle-help']         = { module = 'win', fnc = 'toggle_help()' },
     ['toggle-fullscreen']   = { module = 'win', fnc = 'toggle_fullscreen()' },
   }
   if self.previewer_is_builtin then
@@ -322,6 +323,7 @@ function FzfWin:new(o)
   end
   o = o or {}
   self = setmetatable({}, { __index = self })
+  self.actions = o.actions
   self.winopts = normalize_winopts(o)
   self.fullscreen = self.winopts.fullscreen
   self.preview_wrap = not opt_matches(o, 'wrap', 'nowrap')
@@ -1007,6 +1009,142 @@ function FzfWin.preview_scroll(direction)
     and self._previewer.scroll then
     self._previewer:scroll(direction)
   end
+end
+
+function FzfWin.toggle_help()
+  if not _self then return end
+  local self = _self
+
+  if self.km_winid then
+    -- help window is already open
+    -- close and dispose resources
+    if vim.api.nvim_win_is_valid(self.km_winid) then
+      vim.api.nvim_win_close(self.km_winid, true)
+    end
+    if vim.api.nvim_buf_is_valid(self.km_bufnr) then
+      vim.api.nvim_buf_delete(self.km_bufnr, {force=true})
+    end
+    self.km_winid = nil
+    self.km_bufnr = nil
+    return
+  end
+
+  local opts = {}
+  opts.max_height = opts.max_height or math.floor(0.4*vim.o.lines)
+  opts.mode_width = opts.mode_width or 10
+  opts.name_width = opts.name_width or 28
+  opts.keybind_width = opts.keybind_width or 14
+  opts.normal_hl = opts.normal_hl or self.winopts.hl.normal
+  opts.border_hl = opts.border_hl or self.winopts.hl.border
+  opts.winblend = opts.winblend or 0
+  opts.column_padding = opts.column_padding or "  "
+  opts.column_width = opts.keybind_width + opts.name_width + #opts.column_padding + 2
+  opts.close_with_action = opts.close_with_action or true
+
+  local function format_bind(m, k, v, ml, kl, vl)
+    return ("%s%%-%ds %%-%ds %%-%ds")
+      :format(opts.column_padding, ml, kl, vl)
+        :format('`'..m..'`', '|'..k..'|', '*'..v..'*')
+  end
+
+  local keymaps = {}
+
+  -- fzf and neovim (builtin) keymaps
+  for _, m in ipairs({ 'builtin', 'fzf' }) do
+    for k, v in pairs(self.keymap[m]) do
+      table.insert(keymaps,
+        format_bind(m, k, v, opts.mode_width, opts.keybind_width, opts.name_width))
+    end
+  end
+
+  -- action keymaps
+  if self.actions then
+    for k, v in pairs(self.actions) do
+      if k == 'default' then k = 'enter' end
+      if type(v) =='table' then
+        v = config.get_action_helpstr(v[1]) or v
+      else
+        v = config.get_action_helpstr(v) or v
+      end
+      table.insert(keymaps,
+        format_bind('action', k,
+          ("%s"):format(v):gsub(" ", ""),
+          opts.mode_width, opts.keybind_width, opts.name_width))
+    end
+  end
+
+  -- sort alphabetically
+  table.sort(keymaps, function(x, y)
+    if x < y then
+      return true
+    else
+      return false
+    end
+  end)
+
+  -- append to existing line based on
+  -- available columns
+  local function table_append(tbl, s)
+    local last = #tbl>0 and tbl[#tbl]
+    if not last or #last+#s>vim.o.columns then
+      table.insert(tbl, s)
+    else
+      tbl[#tbl] = last .. s
+    end
+  end
+
+  local lines = {}
+  for _, km in ipairs(keymaps) do
+    table_append(lines, km)
+  end
+
+  -- calc popup height based on no. of lines
+  local height = #lines<opts.max_height and #lines or opts.max_height
+
+  -- rearrange lines so keymaps appear
+  -- sequential within the same column
+  lines = {}
+  for i=1,height do
+    lines[i] = keymaps[i]
+  end
+  for i=1,height do
+    lines[i] = lines[i] .. (keymaps[i+height] or '')
+  end
+
+  local winopts = {
+    relative = 'editor',
+    style = 'minimal',
+    width = vim.o.columns,
+    height = height,
+    row = vim.o.lines-height-vim.o.cmdheight-2,
+    col = 1,
+    -- top border only
+    border = {' ', '─', ' ', ' ', ' ', ' ', ' ', ' ' },
+    -- topmost popup
+    zindex = 999,
+  }
+
+  self.km_bufnr = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_option(self.km_bufnr, "bufhidden", "wipe")
+  self.km_winid = vim.api.nvim_open_win(self.km_bufnr, false, winopts)
+  vim.api.nvim_buf_set_name(self.km_bufnr, "_FzfLuaHelp")
+  vim.api.nvim_win_set_option(self.km_winid, "winhl", "Normal:" .. opts.normal_hl)
+  vim.api.nvim_win_set_option(self.km_winid, "winhl", "FloatBorder:" .. opts.border_hl)
+  vim.api.nvim_win_set_option(self.km_winid, "winblend", opts.winblend)
+  vim.api.nvim_win_set_option(self.km_winid, "foldenable", false)
+  vim.api.nvim_win_set_option(self.km_winid, "wrap", false)
+  vim.api.nvim_buf_set_option(self.km_bufnr, 'filetype', 'help')
+
+  vim.cmd(string.format(
+    "autocmd BufLeave <buffer> ++once lua %s",
+    table.concat({
+      string.format("pcall(vim.api.nvim_win_close, %s, true)", self.km_winid),
+      string.format("pcall(vim.api.nvim_buf_delete, %s, {force=true})", self.km_bufnr),
+    }, ";")
+  ))
+
+  vim.api.nvim_buf_set_lines(self.km_bufnr, 0, -1, false, lines)
+
 end
 
 return FzfWin

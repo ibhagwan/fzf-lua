@@ -86,6 +86,7 @@ M.globals = {
   },
   keymap = {
     builtin = {
+      ["<F1>"]      = "toggle-help",
       ["<F2>"]      = "toggle-fullscreen",
       -- Only valid with the 'builtin' previewer
       ["<F3>"]      = "toggle-preview-wrap",
@@ -707,5 +708,56 @@ function M.normalize_opts(opts, defaults)
 
   return opts
 end
+
+M.set_action_helpstr = function(fn, helpstr)
+  assert(type(fn) == 'function' and type(helpstr) == 'string')
+  M._action_to_helpstr[fn] = helpstr
+end
+
+M.get_action_helpstr = function(fn)
+  return M._action_to_helpstr[fn]
+end
+
+M._action_to_helpstr = {
+  [actions.file_edit]             = "file-edit",
+  [actions.file_edit_or_qf]       = "file-edit-or-qf",
+  [actions.file_split]            = "file-split",
+  [actions.file_vsplit]           = "file-vsplit",
+  [actions.file_tabedit]          = "file-tabedit",
+  [actions.file_sel_to_qf]        = "file-selection-to-qf",
+  [actions.buf_edit]              = "buffer-edit",
+  [actions.buf_split]             = "buffer-split",
+  [actions.buf_vsplit]            = "buffer-vsplit",
+  [actions.buf_tabedit]           = "buffer-tabedit",
+  [actions.buf_del]               = "buffer-delete",
+  [actions.buf_switch]            = "buffer-switch",
+  [actions.colorscheme]           = "set-colorscheme",
+  [actions.run_builtin]           = "run-builtin",
+  [actions.ex_run]                = "edit-cmd",
+  [actions.ex_run_cr]             = "exec-cmd",
+  [actions.search]                = "edit-search",
+  [actions.search_cr]             = "exec-search",
+  [actions.goto_mark]             = "goto-mark",
+  [actions.goto_jump]             = "goto-jump",
+  [actions.spell_apply]           = "spell-apply",
+  [actions.set_filetype]          = "set-filetype",
+  [actions.packadd]               = "packadd",
+  [actions.help]                  = "help-open",
+  [actions.help_vert]             = "help-vertical",
+  [actions.help_tab]              = "help-tab",
+  [actions.man]                   = "man-open",
+  [actions.man_vert]              = "man-vertical",
+  [actions.man_tab]               = "man-tab",
+  [actions.git_switch]            = "git-switch",
+  [actions.git_checkout]          = "git-checkout",
+  [actions.git_stage]             = "git-stage",
+  [actions.git_unstage]           = "git-unstage",
+  [actions.git_buf_edit]          = "git-buffer-edit",
+  [actions.git_buf_tabedit]       = "git-buffer-tabedit",
+  [actions.git_buf_split]         = "git-buffer-split",
+  [actions.git_buf_vsplit]        = "git-buffer-vsplit",
+  [actions.arg_add]               = "arg-list-add",
+  [actions.arg_del]               = "arg-list-delete",
+}
 
 return M
