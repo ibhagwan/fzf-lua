@@ -725,6 +725,7 @@ M._action_to_helpstr = {
   [actions.file_vsplit]           = "file-vsplit",
   [actions.file_tabedit]          = "file-tabedit",
   [actions.file_sel_to_qf]        = "file-selection-to-qf",
+  [actions.file_switch]           = "file-switch",
   [actions.buf_edit]              = "buffer-edit",
   [actions.buf_split]             = "buffer-split",
   [actions.buf_vsplit]            = "buffer-vsplit",

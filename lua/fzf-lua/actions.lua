@@ -173,6 +173,32 @@ M.file_edit_or_qf = function(selected, opts)
   end
 end
 
+M.file_switch = function(selected, opts)
+  local bufnr = nil
+  local entry = path.entry_to_file(selected[1])
+  local fullpath = entry.path
+  if not path.starts_with_separator(fullpath) then
+    fullpath = path.join({opts.cwd or vim.loop.cwd(), fullpath})
+  end
+  for _, b in ipairs(vim.api.nvim_list_bufs()) do
+    local bname = vim.api.nvim_buf_get_name(b)
+    if bname and bname == fullpath then
+      bufnr = b
+      break
+    end
+  end
+  if not bufnr then return false end
+  local is_term = utils.is_term_buffer(0)
+  if not is_term then vim.cmd("normal! m`") end
+  local winid = utils.winid_from_tab_buf(0, bufnr)
+  if winid then vim.api.nvim_set_current_win(winid) end
+  if entry.line>1 or entry.col>1 then
+    vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+  end
+  if not is_term then vim.cmd("norm! zvzz") end
+  return true
+end
+
 -- buffer actions
 M.vimcmd_buf = function(vimcmd, selected, _)
   for i = 1, #selected do
