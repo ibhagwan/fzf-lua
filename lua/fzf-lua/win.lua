@@ -30,6 +30,16 @@ function FzfWin.save_query(key)
   utils.feed_keys_termcodes(utils.fzf_bind_to_neovim(key))
 end
 
+local _preview_keymaps = {
+  ['toggle-preview']      = { module = 'win', fnc = 'toggle_preview()' },
+  ['toggle-preview-wrap'] = { module = 'win', fnc = 'toggle_preview_wrap()' },
+  ['toggle-preview-cw']   = { module = 'win', fnc = 'toggle_preview_cw(1)' },
+  ['toggle-preview-ccw']  = { module = 'win', fnc = 'toggle_preview_cw(-1)' },
+  ['preview-page-up']     = { module = 'win', fnc = 'preview_scroll(-1)' },
+  ['preview-page-down']   = { module = 'win', fnc = 'preview_scroll(1)' },
+  ['preview-page-reset']  = { module = 'win', fnc = 'preview_scroll(0)' },
+}
+
 function FzfWin:setup_keybinds()
   if not self:validate() then return end
   if not self.keymap or not self.keymap.builtin then return end
@@ -47,15 +57,7 @@ function FzfWin:setup_keybinds()
   }
   if self.previewer_is_builtin then
     -- These maps are only valid for the builtin previewer
-    keymap_tbl = vim.tbl_deep_extend("keep", keymap_tbl, {
-      ['toggle-preview']      = { module = 'win', fnc = 'toggle_preview()' },
-      ['toggle-preview-wrap'] = { module = 'win', fnc = 'toggle_preview_wrap()' },
-      ['toggle-preview-cw']   = { module = 'win', fnc = 'toggle_preview_cw(1)' },
-      ['toggle-preview-ccw']  = { module = 'win', fnc = 'toggle_preview_cw(-1)' },
-      ['preview-page-up']     = { module = 'win', fnc = 'preview_scroll(-1)' },
-      ['preview-page-down']   = { module = 'win', fnc = 'preview_scroll(1)' },
-      ['preview-page-reset']  = { module = 'win', fnc = 'preview_scroll(0)' },
-    })
+    keymap_tbl = vim.tbl_deep_extend("keep", keymap_tbl, _preview_keymaps)
   end
   local function funcref_str(keymap)
     return ([[<Cmd>lua require('fzf-lua.%s').%s<CR>]]):format(keymap.module, keymap.fnc)
@@ -856,7 +858,7 @@ function FzfWin:update_scrollbar_float(o)
     style1.row = info.winrow - 1
     style1.col = info.wincol + info.width +
       (tonumber(self.winopts.preview.scrolloff) or -2)
-    style1.zindex = info.zindex or 998
+    style1.zindex = info.zindex or 997
     if self._swin1 and vim.api.nvim_win_is_valid(self._swin1) then
       vim.api.nvim_win_set_config(self._swin1, style1)
     else
@@ -1048,12 +1050,21 @@ function FzfWin.toggle_help()
   end
 
   local keymaps = {}
+  local preview_mode = self.previewer_is_builtin and 'builtin' or 'fzf'
 
   -- fzf and neovim (builtin) keymaps
   for _, m in ipairs({ 'builtin', 'fzf' }) do
     for k, v in pairs(self.keymap[m]) do
-      table.insert(keymaps,
-        format_bind(m, k, v, opts.mode_width, opts.keybind_width, opts.name_width))
+      -- only add preview keybinds respective of
+      -- the current preview mode
+      if not _preview_keymaps[v] or m == preview_mode then
+        if m == 'builtin' then
+          k = utils.neovim_bind_to_fzf(k)
+        end
+        table.insert(keymaps,
+          format_bind(m, k, v,
+            opts.mode_width, opts.keybind_width, opts.name_width))
+      end
     end
   end
 

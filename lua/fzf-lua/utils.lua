@@ -503,6 +503,19 @@ function M.fzf_bind_to_neovim(key)
   return ("<%s>"):format(key)
 end
 
+function M.neovim_bind_to_fzf(key)
+  local conv_map  = {
+    ['a'] = 'alt',
+    ['c'] = 'ctrl',
+    ['s'] = 'shift',
+  }
+  key = key:lower():gsub("[<>]", "")
+  for k, v in pairs(conv_map) do
+    key = key:gsub(k..'%-', v..'-')
+  end
+  return key
+end
+
 function M.git_version()
   local out = M.io_system({"git", "--version"})
   return tonumber(out:match("(%d+.%d+)."))
