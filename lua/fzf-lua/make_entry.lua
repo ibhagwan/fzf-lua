@@ -16,6 +16,7 @@ end
 M._fzf_lua_server = _G._fzf_lua_server
 ---@diagnostic disable-next-line: undefined-field
 M._devicons_path = _G._devicons_path
+M._devicons_setup = _G._devicons_setup
 
 local function load_config_section(s, datatype)
   if config then
@@ -100,8 +101,27 @@ local function load_devicons()
   elseif M._devicons_path and vim.loop.fs_stat(M._devicons_path) then
     -- file was called from a headless instance
     -- load nvim-web-devicons manually
-    local file = loadfile(M._devicons_path)
-    M._devicons = file and file()
+    -- add nvim-web-devicons path to `package.path`
+    -- so `require("nvim-web-devicons")` can find it
+    package.path = (";%s/?.lua;"):format(vim.fn.fnamemodify(M._devicons_path, ':h'))
+      .. package.path
+    M._devicons = require("nvim-web-devicons")
+    -- WE NO LONGER USE THIS, LEFT FOR DOCUMENTATION
+    -- loading with 'require' is needed, 'loadfile'
+    -- cannot load a custom setup function as it's
+    -- considered a separate instance and the inner
+    -- 'require' in the setup fill will create an
+    -- additional 'nvim-web-devicons' instance
+    --[[ local file = loadfile(M._devicons_path)
+    M._devicons = file and file() ]]
+    -- did caller specify a custom setup function?
+    -- must be called before the next step as `setup`
+    -- is ignored when called the second time
+    M._devicons_setup = M._devicons_setup and vim.fn.expand(M._devicons_setup)
+    if M._devicons and M._devicons_setup and vim.loop.fs_stat(M._devicons_setup) then
+      local file = loadfile(M._devicons_setup)
+      if file then file() end
+    end
   end
   if M._devicons and M._devicons.setup and not M._devicons.has_loaded() then
     -- if the caller has devicons lazy loaded

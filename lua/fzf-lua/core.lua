@@ -354,6 +354,11 @@ M.mt_cmd_wrapper = function(opts)
         vim.fn.shellescape(vim.g.fzf_lua_server),
         fn_transform)
     end
+    if config._devicons_setup then
+      fn_transform = ([[_G._devicons_setup=%s; %s]]) :format(
+          vim.fn.shellescape(config._devicons_setup),
+          fn_transform)
+    end
     if config._devicons_path then
       fn_transform = ([[_G._devicons_path=%s; %s]]) :format(
           vim.fn.shellescape(config._devicons_path),
