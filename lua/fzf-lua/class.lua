@@ -13,7 +13,8 @@ local Object = {}
 Object.__index = Object
 
 
-function Object:new()
+---@diagnostic disable-next-line: unused-vararg
+function Object:new(...)
 end
 
 
