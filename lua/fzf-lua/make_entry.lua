@@ -147,7 +147,7 @@ M.get_devicon = function(file, ext)
 
   if config.globals.file_icon_padding and
     #config.globals.file_icon_padding>0 then
-    icon = icon .. config.globals.file_icon_padding:gsub(" ", utils.nbsp)
+    icon = icon .. config.globals.file_icon_padding
   end
 
   return icon, hl
