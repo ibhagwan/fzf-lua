@@ -5,13 +5,13 @@ local actions = require "fzf-lua.actions"
 
 local M = {}
 
-local function location_to_entry(location)
-  local item = vim.lsp.util.locations_to_items({ location })[1]
+local function location_to_entry(location, enc)
+  local item = vim.lsp.util.locations_to_items({ location }, enc)[1]
 
   return ('%s:%d:%d'):format(item.filename, item.lnum, item.col)
 end
 
-local jump_to_location = function(opts, result)
+local jump_to_location = function(opts, result, enc)
 
   local winid = vim.api.nvim_get_current_win()
   if opts.winid ~= winid then
@@ -21,20 +21,21 @@ local jump_to_location = function(opts, result)
 
   local action = opts.jump_to_single_result_action
   if action then
-    local entry = location_to_entry(result)
+    local entry = location_to_entry(result, enc)
     return opts.jump_to_single_result_action({ 'jump_to_single_result', entry }, opts)
   end
 
-  return vim.lsp.util.jump_to_location(result)
+  return vim.lsp.util.jump_to_location(result, enc)
 end
 
-local function location_handler(opts, cb, _, result, _, _)
+local function location_handler(opts, cb, _, result, ctx, _)
+  local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
   result = vim.tbl_islist(result) and result or {result}
   -- Jump immediately if there is only one location
   if opts.jump_to_single_result and #result == 1 then
-    jump_to_location(opts, result[1])
+    jump_to_location(opts, result[1], encoding)
   end
-  local items = vim.lsp.util.locations_to_items(result)
+  local items = vim.lsp.util.locations_to_items(result, encoding)
   for _, entry in ipairs(items) do
     if not opts.current_buffer_only or
       vim.api.nvim_buf_get_name(opts.bufnr) == entry.filename then
