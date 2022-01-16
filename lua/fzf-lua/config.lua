@@ -424,7 +424,7 @@ M.globals.manpages = {
   }
 M.globals.lsp = {
       previewer           = M._default_previewer_fn,
-      prompt              = '> ',
+      prompt_postfix      = '> ',
       file_icons          = true and M._has_devicons,
       color_icons         = true,
       git_icons           = false,
@@ -652,9 +652,6 @@ function M.normalize_opts(opts, defaults)
     map_recurse(opts, k, map_recurse(opts, v) or map_recurse(M.globals, v))
      -- ,("'%s' is now defined under '%s'"):format(v, k))
   end
-
-  -- Default prompt
-  opts.prompt = opts.prompt or opts.fzf_opts["--prompt"]
 
   if type(opts.previewer) == 'function' then
     -- we use a function so the user can override

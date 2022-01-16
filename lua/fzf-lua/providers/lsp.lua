@@ -275,8 +275,8 @@ local normalize_lsp_opts = function(opts, cfg)
   if not opts then return end
 
   if not opts.cwd then opts.cwd = vim.loop.cwd() end
-  if not opts.prompt or opts.prompt == config.globals.lsp.prompt then
-    opts.prompt = opts.lsp_handler.label .. cfg.prompt
+  if not opts.prompt and opts.prompt_postfix then
+    opts.prompt = opts.lsp_handler.label .. (opts.prompt_postfix or '')
   end
 
   opts.bufnr = nil
