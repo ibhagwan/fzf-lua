@@ -333,7 +333,7 @@ function FzfWin:new(o)
   self.preview_border = not opt_matches(o, 'border', 'noborder')
   self.keymap = o.keymap
   self.previewer = o.previewer
-  self.prompt = o.prompt
+  self.prompt = o.prompt or o.fzf_opts['--prompt']
   self.fn_save_query = o.fn_save_query
   self._orphaned_bufs = {}
   self:_set_autoclose(o.autoclose)
