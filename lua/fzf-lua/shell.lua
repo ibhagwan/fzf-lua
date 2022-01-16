@@ -24,7 +24,8 @@ end
 -- instances will then use the same path as the address and it causes a mess,
 -- i.e. actions stop working on the old instance. So we create our own (random
 -- path) RPC server for this instance if it hasn't been started already.
-local action_server_address = nil
+-- NOT USED ANYMORE, we use `vim.g.fzf_lua_server` instead
+-- local action_server_address = nil
 
 function M.raw_async_action(fn, fzf_field_expression)
 
@@ -67,9 +68,9 @@ function M.raw_action(fn, fzf_field_expression)
   local receiving_function = function(pipe, ...)
     local ret = fn(...)
 
-    local on_complete = function(err)
-      -- We are NOT asserting, in case fzf closes the pipe before we can send
-      -- the preview.
+    local on_complete = function(_)
+      -- We are NOT asserting, in case fzf closes
+      -- the pipe before we can send the preview
       -- assert(not err)
       uv.close(pipe)
     end

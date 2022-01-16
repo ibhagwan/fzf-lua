@@ -3,7 +3,6 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
-local fn, api = vim.fn, vim.api
 
 local M = {}
 
@@ -204,9 +203,9 @@ M.buffer_lines = function(opts)
 
   for _, bufnr in ipairs(buffers) do
     local data = {}
-    local filepath = api.nvim_buf_get_name(bufnr)
-    if api.nvim_buf_is_loaded(bufnr) then
-      data = api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    local filepath = vim.api.nvim_buf_get_name(bufnr)
+    if vim.api.nvim_buf_is_loaded(bufnr) then
+      data = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
     elseif vim.fn.filereadable(filepath) ~= 0 then
       data = vim.fn.readfile(filepath, "")
     end

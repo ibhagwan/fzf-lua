@@ -1,6 +1,5 @@
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
-local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 
 local M = {}

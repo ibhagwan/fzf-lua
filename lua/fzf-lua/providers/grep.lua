@@ -298,37 +298,37 @@ M.live_grep_glob = function(opts)
     utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
     return
   end
-  opts.cmd_fn = function(opts, query, no_esc)
+  opts.cmd_fn = function(o, query, no_esc)
 
     local glob_arg, glob_str = "", ""
     local search_query = query or ""
-    if query:find(opts.glob_separator) then
-      search_query, glob_str = query:match("(.*)"..opts.glob_separator.."(.*)")
+    if query:find(o.glob_separator) then
+      search_query, glob_str = query:match("(.*)"..o.glob_separator.."(.*)")
       for _, s in ipairs(utils.strsplit(glob_str, "%s")) do
         glob_arg = glob_arg .. (" %s %s")
-          :format(opts.glob_flag, vim.fn.shellescape(s))
+          :format(o.glob_flag, vim.fn.shellescape(s))
       end
     end
 
     -- copied over from get_grep_cmd
     local search_path = ''
-    if opts.filespec and #opts.filespec>0 then
-      search_path = opts.filespec
-    elseif opts.filename and #opts.filename>0 then
-      search_path = vim.fn.shellescape(opts.filename)
+    if o.filespec and #o.filespec>0 then
+      search_path = o.filespec
+    elseif o.filename and #o.filename>0 then
+      search_path = vim.fn.shellescape(o.filename)
     end
 
-    if not (no_esc or opts.no_esc) then
+    if not (no_esc or o.no_esc) then
       search_query = utils.rg_escape(search_query)
     end
 
     -- do not escape at all
-    if not (no_esc == 2 or opts.no_esc == 2) then
+    if not (no_esc == 2 or o.no_esc == 2) then
       search_query = vim.fn.shellescape(search_query)
     end
 
     local cmd = ("rg %s %s -- %s %s")
-      :format(opts.rg_opts, glob_arg, search_query, search_path)
+      :format(o.rg_opts, glob_arg, search_query, search_path)
     return cmd
   end
   opts.__FNCREF__ = utils.__FNCREF__()

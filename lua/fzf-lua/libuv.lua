@@ -31,13 +31,13 @@ local function find_last_newline(str)
   end
 end
 
-local function find_next_newline(str, start_idx)
+--[[ local function find_next_newline(str, start_idx)
   for i=start_idx or 1,#str do
     if string_byte(str, i) == 10 then
         return i
     end
   end
-end
+end ]]
 
 local function process_kill(pid, signal)
   if not pid or not tonumber(pid) then return false end
@@ -82,7 +82,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   local error_pipe = uv.new_pipe(false)
   local write_cb_count = 0
   local prev_line_content = nil
-  local num_lines = 0
+  -- local num_lines = 0
 
   if opts.fn_transform then fn_transform = opts.fn_transform end
 

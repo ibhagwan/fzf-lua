@@ -118,11 +118,11 @@ function Previewer.base:display_entry(entry_str)
     self.preview_bufnr = self:clear_preview_buf()
   end
 
-  local populate_preview_buf = function(entry_str)
+  local populate_preview_buf = function(entry_str_)
     if not self.win or not self.win:validate_preview() then return end
 
     -- specialized previewer populate function
-    self:populate_preview_buf(entry_str)
+    self:populate_preview_buf(entry_str_)
 
     -- set preview window options
     if not self.preview_isterm then

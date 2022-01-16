@@ -11,7 +11,7 @@ end
 
 local preview_socket, preview_socket_path = get_preview_socket()
 
-uv.listen(preview_socket, 100, function(err)
+uv.listen(preview_socket, 100, function(_)
   local preview_receive_socket = uv.new_pipe(false)
   -- start listening
   uv.accept(preview_socket, preview_receive_socket)

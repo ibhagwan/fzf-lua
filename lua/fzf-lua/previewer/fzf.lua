@@ -43,7 +43,7 @@ function Previewer.cmd:action(o)
   if self.opts._line_placeholder then
     filespec = "{1}"
   end
-  local act = shell.raw_action(function (items, fzf_lines, _)
+  local act = shell.raw_action(function (items, _, _)
     -- only preview first item
     local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
     return file.path

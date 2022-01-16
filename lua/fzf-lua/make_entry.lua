@@ -16,6 +16,7 @@ end
 M._fzf_lua_server = _G._fzf_lua_server
 ---@diagnostic disable-next-line: undefined-field
 M._devicons_path = _G._devicons_path
+---@diagnostic disable-next-line: undefined-field
 M._devicons_setup = _G._devicons_setup
 
 local function load_config_section(s, datatype)
