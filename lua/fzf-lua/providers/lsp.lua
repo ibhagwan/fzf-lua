@@ -22,7 +22,7 @@ local jump_to_location = function(opts, result, enc)
   local action = opts.jump_to_single_result_action
   if action then
     local entry = location_to_entry(result, enc)
-    return opts.jump_to_single_result_action({ 'jump_to_single_result', entry }, opts)
+    return opts.jump_to_single_result_action({ entry }, opts)
   end
 
   return vim.lsp.util.jump_to_location(result, enc)
