@@ -386,10 +386,10 @@ M.code_actions = function(opts)
     end
 
   local execute_action = opts.execute_action
-    or function(action)
+    or function(action, enc)
       if action.edit or type(action.command) == "table" then
         if action.edit then
-          vim.lsp.util.apply_workspace_edit(action.edit)
+          vim.lsp.util.apply_workspace_edit(action.edit, enc)
         end
         if type(action.command) == "table" then
           vim.lsp.buf.execute_command(action.command)
@@ -406,6 +406,7 @@ M.code_actions = function(opts)
     local entry = opts.code_actions[idx]
     local action = entry.command
     local client = entry.client or vim.lsp.get_client_by_id(entry.client_id)
+    local offset_encoding = client and client.offset_encoding
     if
       not action.edit
       and client
@@ -420,13 +421,13 @@ M.code_actions = function(opts)
           return
         end
         if resolved_action then
-          execute_action(transform_action(resolved_action))
+          execute_action(transform_action(resolved_action), offset_encoding)
         else
-          execute_action(transform_action(action))
+          execute_action(transform_action(action), offset_encoding)
         end
       end)
     else
-      execute_action(transform_action(action))
+      execute_action(transform_action(action), offset_encoding)
     end
   end)
 
