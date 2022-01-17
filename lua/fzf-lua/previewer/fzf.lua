@@ -161,7 +161,7 @@ end
 
 function Previewer.git_diff:cmdline(o)
   o = o or {}
-  local act = shell.preview_action_cmd(function(items)
+  local act = shell.preview_action_cmd(function(items, fzf_lines, fzf_columns)
     if not items or vim.tbl_isempty(items) then
       utils.warn("shell error while running preview action.")
       return
@@ -186,7 +186,8 @@ function Previewer.git_diff:cmdline(o)
       vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
       pager = '| ' .. self.pager
     end
-    cmd = string.format('%s %s %s', cmd, vim.fn.shellescape(file.path), pager)
+    cmd = string.format('FZF_PREVIEW_LINES=%d;FZF_PREVIEW_COLUMNS=%d;%s %s %s',
+      fzf_lines, fzf_columns, cmd, vim.fn.shellescape(file.path), pager)
     if self.opts.debug then
       print("[DEBUG]: "..cmd.."\n")
     end
