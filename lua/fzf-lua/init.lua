@@ -140,9 +140,13 @@ M.lsp_code_actions = require'fzf-lua.providers.lsp'.code_actions
 M.lsp_document_diagnostics = require'fzf-lua.providers.lsp'.diagnostics
 M.lsp_workspace_diagnostics = require'fzf-lua.providers.lsp'.workspace_diagnostics
 
+-- API shortcuts
+M.fzf = require'fzf-lua.core'.fzf
+M.fzf_wrap = require'fzf-lua.core'.fzf_wrap
+M.raw_fzf = require'fzf-lua.fzf'.raw_fzf
 
 -- exported modules
-local _modules = {
+M._exported_modules = {
   'win',
   'core',
   'path',
@@ -153,27 +157,32 @@ local _modules = {
   'actions',
 }
 
-for _, m in ipairs(_modules) do
+-- excluded from builtin / auto-complete
+M._excluded_meta = {
+  'setup',
+  'fzf',
+  'fzf_wrap',
+  'raw_fzf',
+  '_excluded_meta',
+  '_excluded_metamap',
+  '_exported_modules',
+}
+
+for _, m in ipairs(M._exported_modules) do
   M[m] = require("fzf-lua." .. m)
 end
 
--- API shortcuts
-M.fzf = require'fzf-lua.core'.fzf
-M.fzf_wrap = require'fzf-lua.core'.fzf_wrap
-M.raw_fzf = require'fzf-lua.fzf'.raw_fzf
+M._excluded_metamap = {}
+for _, t in pairs({ M._excluded_meta, M._exported_modules }) do
+  for _, m in ipairs(t) do
+    M._excluded_metamap[m] = true
+  end
+end
 
 M.builtin = function(opts)
   if not opts then opts = {} end
   opts.metatable = M
-  opts.metatable_exclude = {
-    ["setup"]     = false,
-    ["fzf"]       = false,
-    ["fzf_wrap"]  = false,
-    ["raw_fzf"]   = false,
-  }
-  for _, m in ipairs(_modules) do
-    opts.metatable_exclude[m] = false
-  end
+  opts.metatable_exclude = M._excluded_metamap
   return require'fzf-lua.providers.module'.metatable(opts)
 end
 

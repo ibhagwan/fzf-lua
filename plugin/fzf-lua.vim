@@ -10,7 +10,14 @@ let g:loaded_fzf_lua = 1
 
 " FzfLua builtin lists
 function! s:fzflua_complete(arg,line,pos)
-  let l:builtin_list = luaeval('vim.tbl_keys(require("fzf-lua"))')
+  let l:builtin_list = luaeval('vim.tbl_filter(
+    \ function(k)
+    \   if require("fzf-lua")._excluded_metamap[k] then
+    \     return false
+    \   end
+    \   return true
+    \ end,
+    \ vim.tbl_keys(require("fzf-lua")))')
 
   let list = [l:builtin_list]
   let l = split(a:line[:a:pos-1], '\%(\%(\%(^\|[^\\]\)\\\)\@<!\s\)\+', 1)
