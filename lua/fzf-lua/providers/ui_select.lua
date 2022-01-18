@@ -1,5 +1,6 @@
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
+local actions = require "fzf-lua.actions"
 
 local M = {}
 
@@ -69,10 +70,22 @@ M.ui_select = function(items, opts, on_choice)
     ['--preview-window']  = 'hidden:right:0',
   }
 
+  _opts.actions = vim.tbl_deep_extend("keep", _opts.actions or {},
+    {
+      ["default"] = function(selected, _)
+        local idx = selected and tonumber(selected[1]:match("^(%d+).")) or nil
+        on_choice(idx and items[idx] or nil, idx)
+      end
+    })
+
   core.fzf_wrap(_opts, entries, function(selected)
 
-    local idx = selected and tonumber(selected[1]:match("^(%d+).")) or nil
-    on_choice(idx and items[idx] or nil, idx)
+    if not selected then
+      on_choice(nil, nil)
+      return
+    end
+
+    actions.act(_opts.actions, selected)
 
   end)()
 
