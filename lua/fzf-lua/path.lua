@@ -47,7 +47,9 @@ function M.extension(path)
 end
 
 function M.to_matching_str(path)
-  return path:gsub('(%-)', '(%%-)'):gsub('(%.)', '(%%.)'):gsub('(%_)', '(%%_)')
+  -- return path:gsub('(%-)', '(%%-)'):gsub('(%.)', '(%%.)'):gsub('(%_)', '(%%_)')
+  -- above is missing other lua special chars like '+' etc (#315)
+  return utils.lua_regex_escape(path)
 end
 
 function M.join(paths)
