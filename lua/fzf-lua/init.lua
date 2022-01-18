@@ -140,6 +140,9 @@ M.lsp_code_actions = require'fzf-lua.providers.lsp'.code_actions
 M.lsp_document_diagnostics = require'fzf-lua.providers.lsp'.diagnostics
 M.lsp_workspace_diagnostics = require'fzf-lua.providers.lsp'.workspace_diagnostics
 
+M.register_ui_select = require'fzf-lua.providers.ui_select'.register
+M.deregister_ui_select = require'fzf-lua.providers.ui_select'.deregister
+
 -- API shortcuts
 M.fzf = require'fzf-lua.core'.fzf
 M.fzf_wrap = require'fzf-lua.core'.fzf_wrap
