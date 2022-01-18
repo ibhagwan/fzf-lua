@@ -234,6 +234,17 @@ MISC                                                            *fzf-lua-misc*
 | `packadd`          | :packadd <package>                         |
 
 
+                                                                              
+NEOVIM API                                                *fzf-lua-neovim-api*
+
+  `:help vim.ui.select` for more info
+
+| Command              | List                                   |
+| -------------------- | -------------------------------------- |
+| `register_ui_select`   | register fzf-lua as the UI interface for `vim.ui.select`|
+| `deregister_ui_select` | de-register fzf-lua with `vim.ui.select` |
+
+
 ------------------------------------------------------------------------------
 CUSTOMIZATION                                          *fzf-lua-customization*
 

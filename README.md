@@ -201,6 +201,16 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `packadd`          | :packadd <package>                         |
 
 
+### Neovim API
+
+> `:help vim.ui.select` for more info
+
+| Command              | List                                 
+| -------------------- | -------------------------------------- |
+| `register_ui_select`   | register fzf-lua as the UI interface for `vim.ui.select`|
+| `deregister_ui_select` | de-register fzf-lua with `vim.ui.select` |
+
+
 ## Customization
 
 I tried to make it as customizable as possible, if you find you need to change something that isn’t below, open an issue and I’ll do my best to add it.
