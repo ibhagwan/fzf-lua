@@ -66,7 +66,7 @@ M.ui_select = function(items, opts, on_choice)
   core.fzf_wrap(_opts, entries, function(selected)
 
     local idx = selected and tonumber(selected[1]:match("^(%d+).")) or nil
-    on_choice(items[idx], idx)
+    on_choice(idx and items[idx] or nil, idx)
 
   end)()
 
