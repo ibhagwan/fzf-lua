@@ -1,5 +1,6 @@
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
+local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 
 local M = {}
@@ -78,7 +79,11 @@ M.ui_select = function(items, opts, on_choice)
       end
     })
 
+  config.set_action_helpstr(_opts.actions['default'], "accept-item")
+
   core.fzf_wrap(_opts, entries, function(selected)
+
+    config.set_action_helpstr(_opts.actions['default'], nil)
 
     if not selected then
       on_choice(nil, nil)

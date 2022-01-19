@@ -708,7 +708,7 @@ function M.normalize_opts(opts, defaults)
 end
 
 M.set_action_helpstr = function(fn, helpstr)
-  assert(type(fn) == 'function' and type(helpstr) == 'string')
+  assert(type(fn) == 'function')
   M._action_to_helpstr[fn] = helpstr
 end
 
