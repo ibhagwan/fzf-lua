@@ -298,6 +298,8 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
   --   io.stdout:write(("%d %s\n"):format(i, vim.v.argv[i]))
   -- end
 
+  local is_darwin = vim.loop.os_uname().sysname == 'Darwin'
+
   if opts.debug then
     io.stdout:write("[DEBUG]: "..opts.cmd.."\n")
   end
@@ -384,7 +386,13 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
       if stderr then
         pipe_write(stderr, data)
       else
-        io.stderr:write(data)
+        if is_darwin then
+          -- for some reason io:stderr causes
+          -- weird rendering issues on Mac (#316, #287)
+          io.stdout:write(data)
+        else
+          io.stderr:write(data)
+        end
       end
     end
 
