@@ -429,7 +429,7 @@ require'fzf-lua'.setup {
     files = {
       prompt          = 'GitFiles❯ ',
       cmd             = 'git ls-files --exclude-standard',
-      multiprocess    = false,          -- run command in a separate process
+      multiprocess    = true,           -- run command in a separate process
       git_icons       = true,           -- show git icons?
       file_icons      = true,           -- show file icons?
       color_icons     = true,           -- colorize file|git icons

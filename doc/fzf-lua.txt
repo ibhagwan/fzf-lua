@@ -239,7 +239,7 @@ NEOVIM API                                                *fzf-lua-neovim-api*
 
   `:help vim.ui.select` for more info
 
-| Command              | List                                   |
+| Command              | List                                 
 | -------------------- | -------------------------------------- |
 | `register_ui_select`   | register fzf-lua as the UI interface for `vim.ui.select`|
 | `deregister_ui_select` | de-register fzf-lua with `vim.ui.select` |
@@ -468,7 +468,7 @@ Consult the list below for available settings:
         files = {
           prompt          = 'GitFiles❯ ',
           cmd             = 'git ls-files --exclude-standard',
-          multiprocess    = false,          -- run command in a separate process
+          multiprocess    = true,           -- run command in a separate process
           git_icons       = true,           -- show git icons?
           file_icons      = true,           -- show file icons?
           color_icons     = true,           -- colorize file|git icons

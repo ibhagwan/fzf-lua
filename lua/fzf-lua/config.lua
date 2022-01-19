@@ -190,6 +190,7 @@ M.globals.git = {
       previewer     = M._default_previewer_fn,
       prompt        = 'GitFiles> ',
       cmd           = "git ls-files --exclude-standard",
+      multiprocess  = true,
       file_icons    = true and M._has_devicons,
       color_icons   = true,
       git_icons     = true,
