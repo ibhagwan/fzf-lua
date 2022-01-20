@@ -64,10 +64,15 @@ M.ui_select = function(items, opts, on_choice)
         opts.format_item(e)))
   end
 
+  local prompt = opts.prompt
+  if not prompt then
+      prompt =  "Select one of:"
+  end
+
   _opts = _opts or {}
   _opts.fzf_opts = {
     ['--no-multi']        = '',
-    ['--prompt']          = opts.prompt:gsub(":$", "> "),
+    ['--prompt']          = prompt:gsub(":$", "> "),
     ['--preview-window']  = 'hidden:right:0',
   }
 
