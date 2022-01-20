@@ -8,24 +8,35 @@ local M = {}
 local _opts = nil
 local _old_ui_select = nil
 
-M.deregister = function()
+M.deregister = function(_, silent, noclear)
   if not _old_ui_select then
-    utils.info("vim.ui.select in not registered to fzf-lua")
+    if not silent then
+      utils.info("vim.ui.select in not registered to fzf-lua")
+    end
+    return false
   end
   vim.ui.select = _old_ui_select
   _old_ui_select = nil
-  _opts = nil
+  -- do not empty _opts incase when
+  -- resume from `lsp_code_actions`
+  if not noclear then
+    _opts = nil
+  end
+  return true
 end
 
-M.register = function(opts)
+M.register = function(opts, silent)
   if vim.ui.select == M.ui_select then
     -- already registered
-    utils.info("vim.ui.select already registered to fzf-lua")
-    return
+    if not silent then
+      utils.info("vim.ui.select already registered to fzf-lua")
+    end
+    return false
   end
   _opts = opts
   _old_ui_select = vim.ui.select
   vim.ui.select = M.ui_select
+  return true
 end
 
 M.ui_select = function(items, opts, on_choice)
@@ -96,10 +107,13 @@ M.ui_select = function(items, opts, on_choice)
 
     if not selected then
       on_choice(nil, nil)
-      return
+    else
+      actions.act(_opts.actions, selected, _opts)
     end
 
-    actions.act(_opts.actions, selected, _opts)
+    if _opts.post_action_cb then
+      _opts.post_action_cb()
+    end
 
   end)()
 

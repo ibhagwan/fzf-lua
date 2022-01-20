@@ -343,6 +343,20 @@ end
 M.code_actions = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
+  -- use `vim.ui.select` for neovim > 0.6
+  -- the original method is now deprecated
+  if vim.fn.has('nvim-0.6') == 1 then
+    local ui_select = require'fzf-lua.providers.ui_select'
+    opts.previewer = false
+    opts.actions = opts.actions or {}
+    opts.actions.default = nil
+    opts.post_action_cb = function()
+      ui_select.deregister({}, true, true)
+    end
+    ui_select.register(opts, true)
+    vim.lsp.buf.code_action()
+    return
+  end
   -- irrelevant for code actions and can cause
   -- single results to be skipped with 'async = false'
   opts.jump_to_single_result = false
