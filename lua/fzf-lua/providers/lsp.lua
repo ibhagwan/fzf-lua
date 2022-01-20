@@ -448,7 +448,7 @@ M.code_actions = function(opts)
 
     if not selected then return end
 
-    actions.act(opts.actions, selected)
+    actions.act(opts.actions, selected, opts)
 
   end)()
 
