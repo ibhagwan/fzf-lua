@@ -76,11 +76,14 @@ M.ui_select = function(items, opts, on_choice)
     ['--preview-window']  = 'hidden:right:0',
   }
 
+  -- save items so we can access them from the action
+  _opts.items = items
+
   _opts.actions = vim.tbl_deep_extend("keep", _opts.actions or {},
     {
-      ["default"] = function(selected, _)
+      ["default"] = function(selected, o)
         local idx = selected and tonumber(selected[1]:match("^(%d+).")) or nil
-        on_choice(idx and items[idx] or nil, idx)
+        on_choice(idx and o.items[idx] or nil, idx)
       end
     })
 
@@ -95,7 +98,7 @@ M.ui_select = function(items, opts, on_choice)
       return
     end
 
-    actions.act(_opts.actions, selected)
+    actions.act(_opts.actions, selected, _opts)
 
   end)()
 
