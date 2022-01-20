@@ -77,13 +77,14 @@ M.ui_select = function(items, opts, on_choice)
   }
 
   -- save items so we can access them from the action
-  _opts.items = items
+  _opts._items = items
+  _opts._on_choice = on_choice
 
   _opts.actions = vim.tbl_deep_extend("keep", _opts.actions or {},
     {
       ["default"] = function(selected, o)
         local idx = selected and tonumber(selected[1]:match("^(%d+).")) or nil
-        on_choice(idx and o.items[idx] or nil, idx)
+        o._on_choice(idx and o._items[idx] or nil, idx)
       end
     })
 
