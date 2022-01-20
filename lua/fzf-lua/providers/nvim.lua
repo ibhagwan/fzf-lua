@@ -101,7 +101,6 @@ M.jumps = function(opts)
   local entries = {}
   for i = #jumps-1, 3, -1 do
     local jump, line, col, text = jumps[i]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
-    if not jump then print(i, jumps[i]) end
     table.insert(entries, string.format("%-15s %-15s %-15s %s",
       utils.ansi_codes.yellow(jump),
       utils.ansi_codes.blue(line),
