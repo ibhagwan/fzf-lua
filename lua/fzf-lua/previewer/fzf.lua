@@ -188,6 +188,7 @@ function Previewer.git_diff:cmdline(o)
     end
     cmd = string.format('FZF_PREVIEW_LINES=%d;FZF_PREVIEW_COLUMNS=%d;%s %s %s',
       fzf_lines, fzf_columns, cmd, vim.fn.shellescape(file.path), pager)
+    cmd = 'sh -c ' .. vim.fn.shellescape(cmd)
     if self.opts.debug then
       print("[DEBUG]: "..cmd.."\n")
     end
