@@ -270,7 +270,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- LSP 'jdt://' entries, see issue #195
     -- https://github.com/ibhagwan/fzf-lua/issues/195
     vim.api.nvim_win_call(self.win.preview_winid, function()
-      vim.lsp.util.jump_to_location(entry)
+      vim.lsp.util.jump_to_location(entry, "utf-16")
       self.preview_bufnr = vim.api.nvim_get_current_buf()
     end)
     self:preview_buf_post(entry)

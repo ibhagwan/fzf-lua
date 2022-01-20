@@ -90,7 +90,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     -- Java LSP entries, 'jdt://...'
     if entry.uri then
       if not is_term then vim.cmd("normal! m`") end
-      vim.lsp.util.jump_to_location(entry)
+      vim.lsp.util.jump_to_location(entry, "utf-16")
       if not is_term then vim.cmd("norm! zvzz") end
     else
       -- only change buffer if we need to (issue #122)
