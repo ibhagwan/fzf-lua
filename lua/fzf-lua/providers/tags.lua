@@ -15,9 +15,9 @@ local get_grep_cmd = function()
 end
 
 local fzf_tags = function(opts)
-  opts.ctags_file = opts.ctags_file or "tags"
+  opts.ctags_file = opts.ctags_file and vim.fn.expand(opts.ctags_file) or "tags"
 
-  if not vim.loop.fs_open(vim.fn.expand(opts.ctags_file, true), "r", 438) then
+  if not vim.loop.fs_open(opts.ctags_file, "r", 438) then
     utils.info("Tags file does not exists. Create one with ctags -R")
     return
   end
@@ -139,6 +139,7 @@ local fzf_tags = function(opts)
     end)()
   end
 
+  opts = core.set_header(opts, 2)
   opts = core.set_fzf_line_args(opts)
   return core.fzf_files(opts, contents)
 end
