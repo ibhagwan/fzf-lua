@@ -17,6 +17,17 @@ if not vim.g.fzf_lua_directory then
   -- since all files are going to be loaded locally
   local _require = require
   require = function(s) return _require(s:gsub("^fzf%-lua%.", "")) end
+
+  -- due to 'os.exit' neovim doesn't delete the temporary
+  -- directory, save it so we can delete prior to exit (#329)
+  -- NOTE: opted to delete the temp dir at the start due to:
+  --   (1) spawn_stdio doesn't need a temp directory
+  --   (2) avoid dangling temp dirs on process kill (i.e. live_grep)
+  local tmpdir = vim.fn.fnamemodify(vim.fn.tempname(), ':h')
+  if tmpdir and #tmpdir>0 then
+    vim.fn.delete(tmpdir, "rf")
+    -- io.stdout:write("[DEBUG]: "..tmpdir.."\n")
+  end
 end
 
 -- save to upvalue for performance reasons
@@ -306,13 +317,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
 
   local stderr, stdout = nil, nil
 
-  -- due to 'os.exit' neovim doesn't delete the temporary
-  -- directory, save it so we can delete prior to exit (#329)
-  local tmpdir = vim.fn.fnamemodify(vim.fn.tempname(), ':h')
-  local exiting = nil
-
   local function stderr_write(msg)
-    if exiting then return end
     -- prioritize writing errors to stderr
     if stderr then stderr:write(msg)
     else io.stderr:write(msg) end
@@ -320,21 +325,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
 
   local function exit(exit_code, msg)
     if msg then stderr_write(msg) end
-    -- signal we're exiting so we stop displaying errors
-    -- otherwise we get multiple errors when we ctrl-c
-    -- due to the exit being deffered by 'vim.defer_fn'
-    exiting = true
-    -- we can't call delete directly, it will fail with error:
-    -- E5560: vimL function must not be called in a lua loop callback
-    -- so we defer both 'delete' and 'os.exit' so delete happens first
-    if tmpdir then
-      vim.defer_fn(function()
-        vim.fn.delete(tmpdir, "rf")
-      end, 0)
-    end
-    vim.defer_fn(function()
-      os.exit(exit_code)
-    end, 0)
+    os.exit(exit_code)
   end
 
   local function pipe_open(pipename)
