@@ -309,8 +309,10 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
   -- due to 'os.exit' neovim doesn't delete the temporary
   -- directory, save it so we can delete prior to exit (#329)
   local tmpdir = vim.fn.fnamemodify(vim.fn.tempname(), ':h')
+  local exiting = nil
 
   local function stderr_write(msg)
+    if exiting then return end
     -- prioritize writing errors to stderr
     if stderr then stderr:write(msg)
     else io.stderr:write(msg) end
@@ -318,6 +320,10 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
 
   local function exit(exit_code, msg)
     if msg then stderr_write(msg) end
+    -- signal we're exiting so we stop displaying errors
+    -- otherwise we get multiple errors when we ctrl-c
+    -- due to the exit being deffered by 'vim.defer_fn'
+    exiting = true
     -- we can't call delete directly, it will fail with error:
     -- E5560: vimL function must not be called in a lua loop callback
     -- so we defer both 'delete' and 'os.exit' so delete happens first
