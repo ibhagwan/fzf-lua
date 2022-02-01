@@ -112,6 +112,21 @@ M.globals = {
       ["shift-up"]      = "preview-page-up",
     },
   },
+  actions = {
+    files = {
+      ["default"]       = actions.file_edit_or_qf,
+      ["ctrl-s"]        = actions.file_split,
+      ["ctrl-v"]        = actions.file_vsplit,
+      ["ctrl-t"]        = actions.file_tabedit,
+      ["alt-q"]         = actions.file_sel_to_qf,
+    },
+    buffers = {
+      ["default"]       = actions.buf_edit,
+      ["ctrl-s"]        = actions.buf_split,
+      ["ctrl-v"]        = actions.buf_vsplit,
+      ["ctrl-t"]        = actions.buf_tabedit,
+    }
+  },
   fzf_bin             = nil,
   fzf_opts = {
     ['--ansi']        = '',
@@ -175,13 +190,7 @@ M.globals.files = {
     find_opts           = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
     rg_opts             = "--color=never --files --hidden --follow -g '!.git'",
     fd_opts             = "--color=never --type f --hidden --follow --exclude .git",
-    actions = {
-      ["default"]       = actions.file_edit_or_qf,
-      ["ctrl-s"]        = actions.file_split,
-      ["ctrl-v"]        = actions.file_vsplit,
-      ["ctrl-t"]        = actions.file_tabedit,
-      ["alt-q"]         = actions.file_sel_to_qf,
-    },
+    _actions            = function() return M.globals.actions.files end,
   }
 -- Must construct our opts table in stages
 -- so we can reference 'M.globals.files'
@@ -194,7 +203,7 @@ M.globals.git = {
       file_icons    = true and M._has_devicons,
       color_icons   = true,
       git_icons     = true,
-      actions       = M.globals.files.actions,
+      _actions      = function() return M.globals.actions.files end,
     },
     status = {
       prompt        = 'GitStatus> ',
@@ -203,14 +212,10 @@ M.globals.git = {
       file_icons    = true and M._has_devicons,
       color_icons   = true,
       git_icons     = true,
+      _actions      = function() return M.globals.actions.files end,
       actions = {
-        ["default"]       = actions.file_edit_or_qf,
-        ["ctrl-s"]        = actions.file_split,
-        ["ctrl-v"]        = actions.file_vsplit,
-        ["ctrl-t"]        = actions.file_tabedit,
-        ["alt-q"]         = actions.file_sel_to_qf,
-        ["right"]         = { actions.git_unstage, actions.resume },
-        ["left"]          = { actions.git_stage, actions.resume },
+        ["right"]   = { actions.git_unstage, actions.resume },
+        ["left"]    = { actions.git_stage, actions.resume },
       },
     },
     commits = {
@@ -260,7 +265,7 @@ M.globals.grep = {
     git_icons           = true,
     grep_opts           = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp",
     rg_opts             = "--column --line-number --no-heading --color=always --smart-case --max-columns=512",
-    actions             = M.globals.files.actions,
+    _actions            = function() return M.globals.actions.files end,
     -- live_grep_glob options
     glob_flag           = "--iglob",  -- for case sensitive globs use '--glob'
     glob_separator      = "%s%-%-",   -- query separator pattern (lua): ' --'
@@ -272,16 +277,18 @@ M.globals.args = {
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = true,
-    actions             = M.globals.files.actions,
+    _actions            = function() return M.globals.actions.files end,
+    actions = {
+      ["ctrl-x"]        = actions.arg_del
+    },
   }
-M.globals.args.actions["ctrl-x"] = actions.arg_del
 M.globals.oldfiles = {
     previewer           = M._default_previewer_fn,
     prompt              = 'History> ',
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = false,
-    actions             = M.globals.files.actions,
+    _actions            = function() return M.globals.actions.files end,
   }
 M.globals.quickfix = {
     previewer           = M._default_previewer_fn,
@@ -290,7 +297,7 @@ M.globals.quickfix = {
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = false,
-    actions             = M.globals.files.actions,
+    _actions            = function() return M.globals.actions.files end,
   }
 M.globals.loclist = {
     previewer           = M._default_previewer_fn,
@@ -299,7 +306,7 @@ M.globals.loclist = {
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = false,
-    actions             = M.globals.files.actions,
+    _actions            = function() return M.globals.actions.files end,
   }
 M.globals.buffers = {
     previewer             = "builtin",
@@ -310,11 +317,8 @@ M.globals.buffers = {
     show_all_buffers      = true,
     ignore_current_buffer = false,
     cwd_only              = false,
+    _actions              = function() return M.globals.actions.buffers end,
     actions = {
-        ["default"]       = actions.buf_edit,
-        ["ctrl-s"]        = actions.buf_split,
-        ["ctrl-v"]        = actions.buf_vsplit,
-        ["ctrl-t"]        = actions.buf_tabedit,
         ["ctrl-x"]        = { actions.buf_del, actions.resume },
     },
   }
@@ -325,11 +329,9 @@ M.globals.tabs = {
     tab_marker            = "<<",
     file_icons            = true and M._has_devicons,
     color_icons           = true,
+    _actions              = function() return M.globals.actions.buffers end,
     actions = {
         ["default"]       = actions.buf_switch,
-        ["ctrl-s"]        = actions.buf_split,
-        ["ctrl-v"]        = actions.buf_vsplit,
-        ["ctrl-t"]        = actions.buf_tabedit,
         ["ctrl-x"]        = { actions.buf_del, actions.resume },
     },
   }
@@ -345,12 +347,7 @@ M.globals.lines = {
         ["--nth"]         = '2..',
         ["--tiebreak"]    = 'index',
     },
-    actions = {
-        ["default"]       = actions.buf_edit,
-        ["ctrl-s"]        = actions.buf_split,
-        ["ctrl-v"]        = actions.buf_vsplit,
-        ["ctrl-t"]        = actions.buf_tabedit,
-    },
+    _actions              = function() return M.globals.actions.buffers end,
   }
 M.globals.blines = {
     previewer             = "builtin",
@@ -364,12 +361,7 @@ M.globals.blines = {
         ["--with-nth"]    = '2..',
         ["--tiebreak"]    = 'index',
     },
-    actions = {
-        ["default"]       = actions.buf_edit,
-        ["ctrl-s"]        = actions.buf_split,
-        ["ctrl-v"]        = actions.buf_vsplit,
-        ["ctrl-t"]        = actions.buf_tabedit,
-    },
+    _actions              = function() return M.globals.actions.buffers end,
   }
 M.globals.tags = {
     previewer             = { _ctor = previewers.builtin.tags },
@@ -378,7 +370,7 @@ M.globals.tags = {
     file_icons            = true and M._has_devicons,
     git_icons             = true,
     color_icons           = true,
-    actions               = M.globals.files.actions,
+    _actions              = function() return M.globals.actions.files end,
   }
 M.globals.btags = {
     previewer             = { _ctor = previewers.builtin.tags },
@@ -387,7 +379,7 @@ M.globals.btags = {
     file_icons            = true and M._has_devicons,
     git_icons             = true,
     color_icons           = true,
-    actions               = M.globals.files.actions,
+    _actions              = function() return M.globals.actions.files end,
   }
 M.globals.colorschemes = {
       prompt              = 'Colorschemes> ',
@@ -432,7 +424,7 @@ M.globals.lsp = {
       lsp_icons           = true,
       cwd_only            = false,
       async_or_timeout    = 5000,
-      actions             = M.globals.files.actions,
+      _actions            = function() return M.globals.actions.files end,
       icons = {
           ["Error"]       = { icon = "", color = "red" },       -- error
           ["Warning"]     = { icon = "", color = "yellow" },    -- warning
@@ -581,6 +573,13 @@ function M.normalize_opts(opts, defaults)
   -- opts can also be a function that returns an opts table
   if type(opts) == 'function' then
     opts = opts()
+  end
+
+  -- inherit from globals.actions?
+  if type(defaults._actions) == 'function' then
+    defaults.actions = vim.tbl_deep_extend("keep",
+      defaults.actions or {},
+      defaults._actions())
   end
 
   -- First, merge with provider defaults

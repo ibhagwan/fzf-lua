@@ -334,6 +334,29 @@ require'fzf-lua'.setup {
       ["shift-up"]    = "preview-page-up",
     },
   },
+  actions = {
+    -- These override the default tables completely
+    -- no need to set to `false` to disable an action
+    -- delete or modify is sufficient
+    files = {
+      -- default action opens a single selection
+      -- or sends multiple selection to quickfix
+      -- replace the default action with the below
+      -- to open all files whether single or multiple
+      -- ["default"]     = actions.file_edit,
+      ["default"]     = actions.file_edit_or_qf,
+      ["ctrl-s"]      = actions.file_split,
+      ["ctrl-v"]      = actions.file_vsplit,
+      ["ctrl-t"]      = actions.file_tabedit,
+      ["alt-q"]       = actions.file_sel_to_qf,
+    },
+    buffers = {
+      ["default"]     = actions.buf_edit,
+      ["ctrl-s"]      = actions.buf_split,
+      ["ctrl-v"]      = actions.buf_vsplit,
+      ["ctrl-t"]      = actions.buf_tabedit,
+    }
+  },
   fzf_opts = {
     -- options are sent as `<left>=<right>`
     -- set to `false` to remove a flag
@@ -410,17 +433,9 @@ require'fzf-lua'.setup {
     rg_opts           = "--color=never --files --hidden --follow -g '!.git'",
     fd_opts           = "--color=never --type f --hidden --follow --exclude .git",
     actions = {
-      -- set bind to 'false' to disable an action
-      -- default action opens a single selection
-      -- or sends multiple selection to quickfix
-      -- replace the default action with the below
-      -- to open all files whether single or multiple
-      -- ["default"]     = actions.file_edit,
-      ["default"]     = actions.file_edit_or_qf,
-      ["ctrl-s"]      = actions.file_split,
-      ["ctrl-v"]      = actions.file_vsplit,
-      ["ctrl-t"]      = actions.file_tabedit,
-      ["alt-q"]       = actions.file_sel_to_qf,
+      -- inherits from 'actions.files', here we can override
+      -- or set bind to 'false' to disable a default action
+      ["default"]     = actions.file_edit,
       -- custom actions are available too
       ["ctrl-y"]      = function(selected) print(selected[1]) end,
     }
@@ -445,13 +460,9 @@ require'fzf-lua'.setup {
       git_icons       = true,
       color_icons     = true,
       actions = {
-        ["default"]   = actions.file_edit_or_qf,
-        ["ctrl-s"]    = actions.file_split,
-        ["ctrl-v"]    = actions.file_vsplit,
-        ["ctrl-t"]    = actions.file_tabedit,
-        ["alt-q"]     = actions.file_sel_to_qf,
-        ["right"]     = { actions.git_unstage, actions.resume },
-        ["left"]      = { actions.git_stage, actions.resume },
+        -- actions inherit from 'actions.files' and merge
+        ["right"]   = { actions.git_unstage, actions.resume },
+        ["left"]    = { actions.git_stage, actions.resume },
       },
     },
     commits = {
@@ -514,7 +525,7 @@ require'fzf-lua'.setup {
   args = {
     prompt            = 'Args❯ ',
     files_only        = true,
-    -- added on top of regular file actions
+    -- actions inherit from 'actions.files' and merge
     actions           = { ["ctrl-x"] = actions.arg_del }
   },
   oldfiles = {
@@ -527,10 +538,7 @@ require'fzf-lua'.setup {
     color_icons       = true,         -- colorize file|git icons
     sort_lastused     = true,         -- sort buffers() by last used
     actions = {
-      ["default"]     = actions.buf_edit,
-      ["ctrl-s"]      = actions.buf_split,
-      ["ctrl-v"]      = actions.buf_vsplit,
-      ["ctrl-t"]      = actions.buf_tabedit,
+      -- actions inherit from 'actions.buffers' and merge
       -- by supplying a table of functions we're telling
       -- fzf-lua to not close the fzf window, this way we
       -- can resume the buffers picker on the same window
@@ -550,12 +558,7 @@ require'fzf-lua'.setup {
       ["--nth"]       = '2..',
       ["--tiebreak"]  = 'index',
     },
-    actions = {
-      ["default"]     = actions.buf_edit,
-      ["ctrl-s"]      = actions.buf_split,
-      ["ctrl-v"]      = actions.buf_vsplit,
-      ["ctrl-t"]      = actions.buf_tabedit,
-    }
+    -- actions inherit from 'actions.buffers'
   },
   blines = {
     previewer         = "builtin",    -- set to 'false' to disable
@@ -568,12 +571,7 @@ require'fzf-lua'.setup {
       ["--with-nth"]  = '2..',
       ["--tiebreak"]  = 'index',
     },
-    actions = {
-      ["default"]     = actions.buf_edit,
-      ["ctrl-s"]      = actions.buf_split,
-      ["ctrl-v"]      = actions.buf_vsplit,
-      ["ctrl-t"]      = actions.buf_tabedit,
-    }
+    -- actions inherit from 'actions.buffers'
   },
   colorschemes = {
     prompt            = 'Colorschemes❯ ',

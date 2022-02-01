@@ -50,6 +50,13 @@ function M.setup(opts)
   if opts.keymap and opts.keymap.builtin then
     globals.keymap.builtin = opts.keymap.builtin
   end
+  -- do not merge, override the default action tables
+  if opts.actions and opts.actions.files then
+    globals.actions.files = opts.actions.files
+  end
+  if opts.actions and opts.actions.buffers then
+    globals.actions.buffers = opts.actions.buffers
+  end
   -- deprecated options
   if globals.previewers.builtin.keymap then
     utils.warn("'previewers.builtin.keymap' moved under 'keymap.builtin', see ':help fzf-lua-customization'")
