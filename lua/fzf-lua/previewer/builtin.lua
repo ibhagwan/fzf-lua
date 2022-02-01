@@ -294,7 +294,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     end
     -- read the file into the buffer
     utils.read_file_async(entry.path, vim.schedule_wrap(function(data)
-      if not vim.api.nvim_buf_is_valid(self.preview_bufnr) then
+      if not self.preview_bufnr or
+         not vim.api.nvim_buf_is_valid(self.preview_bufnr) then
         return
       end
 
