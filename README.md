@@ -339,6 +339,10 @@ require'fzf-lua'.setup {
     -- no need to set to `false` to disable an action
     -- delete or modify is sufficient
     files = {
+      -- providers that inherit these actions:
+      --   files, git_files, git_status, grep, lsp
+      --   oldfiles, quickfix, loclist, tags, btags
+      --   args
       -- default action opens a single selection
       -- or sends multiple selection to quickfix
       -- replace the default action with the below
@@ -351,6 +355,8 @@ require'fzf-lua'.setup {
       ["alt-q"]       = actions.file_sel_to_qf,
     },
     buffers = {
+      -- providers that inherit these actions:
+      --   buffers, tabs, lines, blines
       ["default"]     = actions.buf_edit,
       ["ctrl-s"]      = actions.buf_split,
       ["ctrl-v"]      = actions.buf_vsplit,
@@ -545,6 +551,18 @@ require'fzf-lua'.setup {
       -- eliminating an otherwise unaesthetic win "flash"
       ["ctrl-x"]      = { actions.buf_del, actions.resume },
     }
+  },
+  tabs = {
+    prompt            = 'Tabs❯ ',
+    tab_title         = "Tab",
+    tab_marker        = "<<",
+    file_icons        = true,         -- show file icons?
+    color_icons       = true,         -- colorize file|git icons
+    actions = {
+      -- actions inherit from 'actions.buffers' and merge
+      ["default"]     = actions.buf_switch,
+      ["ctrl-x"]      = { actions.buf_del, actions.resume },
+    },
   },
   lines = {
     previewer         = "builtin",    -- set to 'false' to disable
