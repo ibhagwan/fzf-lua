@@ -177,10 +177,24 @@ M.registers = function(opts)
     table.insert(registers, string.char(i))
   end
 
+  local function register_escape_special(reg, nl)
+    if not reg then return end
+    local gsub_map = {
+      ["\3"]  = "^C",   -- <C-c>
+      ["\27"] = "^[",   -- <Esc>
+      ["\18"] = "^R",   -- <C-r>
+    }
+    for k, v in pairs(gsub_map) do
+      reg = reg:gsub(k, utils.ansi_codes.magenta(v))
+    end
+    return not nl and reg or
+      reg:gsub("\n", utils.ansi_codes.magenta("\\n"))
+  end
+
   local prev_act = shell.action(function (args)
     local r = args[1]:match("%[(.*)%] ")
     local _, contents = pcall(vim.fn.getreg, r)
-    return contents or args[1]
+    return contents and register_escape_special(contents) or args[1]
   end)
 
   local entries = {}
@@ -189,7 +203,7 @@ M.registers = function(opts)
     -- E5108: Error executing lua Vim:clipboard:
     --        provider returned invalid data
     local _, contents = pcall(vim.fn.getreg, r)
-    contents = contents:gsub("\n", utils.ansi_codes.magenta("\\n"))
+    contents = register_escape_special(contents, true)
     if (contents and #contents > 0) or not opts.ignore_empty then
       table.insert(entries, string.format("[%s] %s",
         utils.ansi_codes.yellow(r), contents))
