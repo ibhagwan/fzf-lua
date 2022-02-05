@@ -156,8 +156,8 @@ M.tagstack = function(opts)
         buficon = utils.ansi_codes[hl](buficon)
       end
     end
-    -- table.insert(entries, ("%s)%s[%s]%s%s%s%s:%s:%s: %s"):format(
-    table.insert(entries, ("%s)%s%s%s%s:%s:%s: %s"):format(
+    -- table.insert(entries, ("%s)%s[%s]%s%s%s%s:%s:%s: %s %s"):format(
+    table.insert(entries, ("%s)%s%s%s%s:%s:%s: %s %s"):format(
       utils.ansi_codes.yellow(tostring(i)),
       utils.nbsp,
       -- utils.ansi_codes.yellow(tostring(tag.bufnr)),
@@ -167,6 +167,7 @@ M.tagstack = function(opts)
       utils.ansi_codes.magenta(#bufname>0 and bufname or "[No Name]"),
       utils.ansi_codes.green(tostring(tag.lnum)),
       tag.col,
+      utils.ansi_codes.red("["..tag.tagname.."]"),
       tag.text))
   end
 
