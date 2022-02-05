@@ -107,12 +107,12 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     -- Java LSP entries, 'jdt://...' or LSP locations
     if entry.uri then
       vim.lsp.util.jump_to_location(entry, "utf-16")
-    elseif tonumber(entry.line)>0 then
-      entry.col = entry.col or 1
-      vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
     elseif entry.ctag then
       vim.api.nvim_win_set_cursor(0, {1, 0})
       vim.fn.search(entry.ctag, "W")
+    elseif tonumber(entry.line)>0 then
+      entry.col = entry.col or 1
+      vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
     end
     if not is_term then vim.cmd("norm! zvzz") end
   end
