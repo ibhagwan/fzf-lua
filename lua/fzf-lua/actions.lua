@@ -85,7 +85,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
   local curbuf = vim.api.nvim_buf_get_name(0)
   local is_term = utils.is_term_buffer(0)
   for i = 1, #selected do
-    local entry = path.entry_to_file(selected[i])
+    local entry = path.entry_to_file(selected[i], opts.cwd, opts.force_uri)
     entry.ctag = path.entry_to_ctag(selected[i])
     -- Java LSP entries, 'jdt://...'
     if entry.uri then

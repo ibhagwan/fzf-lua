@@ -168,10 +168,15 @@ function M.entry_to_location(entry)
   }
 end
 
-function M.entry_to_file(entry, cwd)
+function M.entry_to_file(entry, cwd, force_uri)
   -- Remove ansi coloring and prefixed icons
   entry = utils.strip_ansi_coloring(entry)
   local stripped, idx = stripBeforeLastOccurrenceOf(entry, utils.nbsp)
+  -- #336: force LSP jumps using 'vim.lsp.util.jump_to_location'
+  -- so that LSP entries are added to the tag stack
+  if force_uri and not stripped:match("^%a+://") then
+    stripped = "file://" .. stripped
+  end
   -- entries from 'buffers' contain '[<bufnr>]'
   -- buffer placeholder always comes before the nbsp
   local bufnr = idx>1 and entry:sub(1, idx):match("%[(%d+)") or nil
