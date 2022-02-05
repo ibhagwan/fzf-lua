@@ -1,4 +1,5 @@
 local core = require "fzf-lua.core"
+local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
@@ -117,6 +118,68 @@ M.jumps = function(opts)
 
   end)()
 end
+
+M.tagstack = function(opts)
+  opts = config.normalize_opts(opts, config.globals.nvim.tagstack)
+  if not opts then return end
+
+  local tagstack = vim.fn.gettagstack().items
+
+  local tags = {}
+  for i = #tagstack, 1, -1 do
+    local tag = tagstack[i]
+    tag.bufnr = tag.from[1]
+    if vim.api.nvim_buf_is_valid(tag.bufnr) then
+      tags[#tags + 1] = tag
+      tag.filename = vim.fn.bufname(tag.bufnr)
+      tag.lnum = tag.from[2]
+      tag.col = tag.from[3]
+
+      tag.text = vim.api.nvim_buf_get_lines(tag.bufnr, tag.lnum - 1, tag.lnum, false)[1] or ""
+    end
+  end
+
+  if vim.tbl_isempty(tags) then
+    utils.info("No tagstack available")
+    return
+  end
+
+  local entries = {}
+  for i, tag in ipairs(tags) do
+    local bufname = tag.filename
+    local buficon, hl
+    if opts.file_icons then
+      local filename = path.tail(bufname)
+      local extension = path.extension(filename)
+      buficon, hl = core.get_devicon(filename, extension)
+      if opts.color_icons then
+        buficon = utils.ansi_codes[hl](buficon)
+      end
+    end
+    -- table.insert(entries, ("%s)%s[%s]%s%s%s%s:%s:%s: %s"):format(
+    table.insert(entries, ("%s)%s%s%s%s:%s:%s: %s"):format(
+      utils.ansi_codes.yellow(tostring(i)),
+      utils.nbsp,
+      -- utils.ansi_codes.yellow(tostring(tag.bufnr)),
+      -- utils.nbsp,
+      buficon or '',
+      buficon and utils.nbsp or '',
+      utils.ansi_codes.magenta(#bufname>0 and bufname or "[No Name]"),
+      utils.ansi_codes.green(tostring(tag.lnum)),
+      tag.col,
+      tag.text))
+  end
+
+  opts.fzf_opts['--no-multi'] = ''
+
+  core.fzf_wrap(opts, entries, function(selected)
+
+    if not selected then return end
+    actions.act(opts.actions, selected, opts)
+
+  end)()
+end
+
 
 M.marks = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.marks)

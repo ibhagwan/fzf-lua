@@ -462,6 +462,14 @@ M.globals.nvim = {
         _ctor             = previewers.builtin.jumps,
       },
     },
+    tagstack = {
+      prompt              = 'Tagstack> ',
+      file_icons          = true and M._has_devicons,
+      color_icons         = true,
+      git_icons           = true,
+      previewer           = M._default_previewer_fn,
+      _actions            = function() return M.globals.actions.files end,
+    },
     commands = {
       prompt              = 'Commands> ',
       actions = {

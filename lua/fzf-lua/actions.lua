@@ -87,39 +87,34 @@ M.vimcmd_file = function(vimcmd, selected, opts)
   for i = 1, #selected do
     local entry = path.entry_to_file(selected[i], opts.cwd, opts.force_uri)
     entry.ctag = path.entry_to_ctag(selected[i])
-    -- Java LSP entries, 'jdt://...'
-    if entry.uri then
-      if not is_term then vim.cmd("normal! m`") end
-      vim.lsp.util.jump_to_location(entry, "utf-16")
-      if not is_term then vim.cmd("norm! zvzz") end
-    else
-      -- only change buffer if we need to (issue #122)
-      local fullpath = entry.path
-      if not path.starts_with_separator(fullpath) then
-        fullpath = path.join({opts.cwd or vim.loop.cwd(), fullpath})
-      end
-      if vimcmd == 'e' and curbuf ~= fullpath
-         and not vim.o.hidden and
-         utils.buffer_is_dirty(nil, true) then
-         -- warn the user when trying to switch from a dirty buffer
-         -- when `:set nohidden`
-         return
-      end
-      -- add current location to jumplist
-      if not is_term then vim.cmd("normal! m`") end
-      if vimcmd ~= "e" or curbuf ~= fullpath then
-        vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
-      end
-      if entry.ctag or entry.line>1 or entry.col>1 then
-        if entry.line>1 or entry.col>1 then
-          vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
-        else
-          vim.api.nvim_win_set_cursor(0, {1, 0})
-          vim.fn.search(entry.ctag, "W")
-        end
-        if not is_term then vim.cmd("norm! zvzz") end
-      end
+    local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
+    if not path.starts_with_separator(fullpath) then
+      fullpath = path.join({opts.cwd or vim.loop.cwd(), fullpath})
     end
+    if vimcmd == 'e' and curbuf ~= fullpath
+        and not vim.o.hidden and
+        utils.buffer_is_dirty(nil, true) then
+        -- warn the user when trying to switch from a dirty buffer
+        -- when `:set nohidden`
+        return
+    end
+    -- add current location to jumplist
+    if not is_term then vim.cmd("normal! m`") end
+    -- only change buffer if we need to (issue #122)
+    if vimcmd ~= "e" or curbuf ~= fullpath then
+      vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
+    end
+    -- Java LSP entries, 'jdt://...' or LSP locations
+    if entry.uri then
+      vim.lsp.util.jump_to_location(entry, "utf-16")
+    elseif tonumber(entry.line)>0 then
+      entry.col = entry.col or 1
+      vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+    elseif entry.ctag then
+      vim.api.nvim_win_set_cursor(0, {1, 0})
+      vim.fn.search(entry.ctag, "W")
+    end
+    if not is_term then vim.cmd("norm! zvzz") end
   end
 end
 

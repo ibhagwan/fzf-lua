@@ -193,6 +193,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `jumps`            | :jumps                                     |
 | `changes`          | :changes                                   |
 | `registers`        | :registers                                 |
+| `tagstack`         | :tags                                      |
 | `keymaps`          | key mappings                               |
 | `spell_suggest`    | spelling suggestions                       |
 | `tags`             | project tags                               |
