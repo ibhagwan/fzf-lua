@@ -86,7 +86,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
   local is_term = utils.is_term_buffer(0)
   for i = 1, #selected do
     local entry = path.entry_to_file(selected[i], opts.cwd, opts.force_uri)
-    entry.ctag = path.entry_to_ctag(selected[i])
+    entry.ctag = opts._ctag and path.entry_to_ctag(selected[i])
     local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
     if not path.starts_with_separator(fullpath) then
       fullpath = path.join({opts.cwd or vim.loop.cwd(), fullpath})

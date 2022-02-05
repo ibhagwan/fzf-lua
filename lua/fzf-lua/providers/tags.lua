@@ -139,6 +139,8 @@ local fzf_tags = function(opts)
     end)()
   end
 
+  -- signal actions this is a ctag
+  opts._ctag = true
   opts = core.set_header(opts, 2)
   opts = core.set_fzf_line_args(opts)
   return core.fzf_files(opts, contents)
