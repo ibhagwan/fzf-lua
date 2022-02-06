@@ -14,6 +14,14 @@ local UPDATE_STATE = function()
     curtab = vim.api.nvim_win_get_tabpage(0),
     curbuf = vim.api.nvim_get_current_buf(),
     prevbuf = vim.fn.bufnr('#'),
+    buflist = vim.api.nvim_list_bufs(),
+    bufmap = (function()
+      local map = {}
+      for _, b in ipairs(vim.api.nvim_list_bufs()) do
+        map[b] = true
+      end
+      return map
+    end)()
   }
 end
 
@@ -38,6 +46,9 @@ local filter_buffers = function(opts, unfiltered)
     end
     -- only hide unloaded buffers if opts.show_all_buffers is false, keep them listed if true or nil
     if opts.show_all_buffers == false and not vim.api.nvim_buf_is_loaded(b) then
+      excluded[b] = true
+    end
+    if not opts.show_quickfix and utils.buf_is_qf(b) then
       excluded[b] = true
     end
     if opts.ignore_current_buffer and b == __STATE.curbuf then
@@ -100,6 +111,10 @@ local function gen_buffer_entry(opts, buf, hl_curbuf)
   local bufname = string.format("%s:%s",
     utils._if(#buf.info.name>0, path.relative(buf.info.name, vim.loop.cwd()), "[No Name]"),
     utils._if(buf.info.lnum>0, buf.info.lnum, ""))
+  local is_qf = utils.buf_is_qf(buf.bufnr, buf.info)
+  if is_qf then
+    bufname = string.format("%s", is_qf==1 and "[Quickfix List]" or "[Location List]")
+  end
   if buf.flag == '%' then
     flags = utils.ansi_codes.red(buf.flag) .. flags
     if hl_curbuf then
@@ -154,7 +169,7 @@ M.buffers = function(opts)
 
   local contents = function(cb)
 
-    local filtered = filter_buffers(opts, vim.api.nvim_list_bufs)
+    local filtered = filter_buffers(opts, __STATE.buflist)
 
     if next(filtered) then
       local buffers = populate_buffer_entries(opts, filtered)
@@ -196,8 +211,7 @@ M.buffer_lines = function(opts)
   opts.fn_pre_fzf()
 
   local buffers = filter_buffers(opts,
-    opts.current_buffer_only and { __STATE.curbuf } or
-    vim.api.nvim_list_bufs)
+    opts.current_buffer_only and { __STATE.curbuf } or __STATE.buflist)
 
   local items = {}
 
@@ -219,13 +233,21 @@ M.buffer_lines = function(opts)
         buficon = utils.ansi_codes[hl](buficon)
       end
     end
+    if not bufname or #bufname==0 then
+      local is_qf = utils.buf_is_qf(bufnr)
+      if is_qf then
+        bufname = is_qf==1 and "[Quickfix List]" or "[Location List]"
+      else
+        bufname = "[No Name]"
+      end
+    end
     for l, text in ipairs(data) do
       table.insert(items, ("[%s]%s%s%s%s:%s: %s"):format(
         utils.ansi_codes.yellow(tostring(bufnr)),
         utils.nbsp,
         buficon or '',
         buficon and utils.nbsp or '',
-        utils.ansi_codes.magenta(#bufname>0 and bufname or "[No Name]"),
+        utils.ansi_codes.magenta(bufname),
         utils.ansi_codes.green(tostring(l)),
         text))
     end
@@ -271,9 +293,13 @@ M.tabs = function(opts)
     for _, t in ipairs(vim.api.nvim_list_tabpages()) do
       for _, w in ipairs(vim.api.nvim_tabpage_list_wins(t)) do
         local b = vim.api.nvim_win_get_buf(w)
-        opts._tab_to_buf[t] = opts._tab_to_buf[t] or {}
-        opts._tab_to_buf[t][b] = t
-        table.insert(res, b)
+        -- since this function is called after fzf window
+        -- is created, exclude the scratch fzf buffers
+        if __STATE.bufmap[b] then
+          opts._tab_to_buf[t] = opts._tab_to_buf[t] or {}
+          opts._tab_to_buf[t][b] = t
+          table.insert(res, b)
+        end
       end
     end
     return res

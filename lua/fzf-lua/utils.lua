@@ -358,7 +358,8 @@ function M.is_term_bufname(bufname)
 end
 
 function M.is_term_buffer(bufnr)
-  local bufname = vim.api.nvim_buf_get_name(tonumber(bufnr) or 0)
+  bufnr = tonumber(bufnr) or 0
+  local bufname = vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_get_name(bufnr)
   return M.is_term_bufname(bufname)
 end
 
@@ -370,6 +371,30 @@ function M.buffer_is_dirty(bufnr, warn)
       M.warn(('buffer %d has unsaved changes "%s"'):format(bufnr, info.name))
     end
     return true
+  end
+  return false
+end
+
+
+-- returns:
+--   1 for qf list
+--   2 for loc list
+function M.win_is_qf(winid, wininfo)
+  wininfo = wininfo or
+    (vim.api.nvim_win_is_valid(winid) and vim.fn.getwininfo(winid)[1])
+  if wininfo and wininfo.quickfix == 1 then
+    return wininfo.loclist == 1 and 2 or 1
+  end
+  return false
+end
+
+function M.buf_is_qf(bufnr, bufinfo)
+  bufinfo = bufinfo or
+    (vim.api.nvim_buf_is_valid(bufnr) and vim.fn.getbufinfo(bufnr)[1])
+  if bufinfo and bufinfo.variables and
+     bufinfo.variables.current_syntax == 'qf' and
+     not vim.tbl_isempty(bufinfo.windows) then
+    return M.win_is_qf(bufinfo.windows[1])
   end
   return false
 end
