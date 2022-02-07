@@ -111,7 +111,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     elseif entry.ctag then
       vim.api.nvim_win_set_cursor(0, {1, 0})
       vim.fn.search(entry.ctag, "W")
-    elseif tonumber(entry.line)>0 then
+    elseif entry.line>1 or entry.col>1 then
       entry.col = entry.col or 1
       vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
     end
