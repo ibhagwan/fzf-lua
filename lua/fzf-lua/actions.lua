@@ -91,7 +91,8 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     if not path.starts_with_separator(fullpath) then
       fullpath = path.join({opts.cwd or vim.loop.cwd(), fullpath})
     end
-    if vimcmd == 'e' and curbuf ~= fullpath
+    if vimcmd == 'e'
+        and curbuf ~= fullpath
         and not vim.o.hidden and
         utils.buffer_is_dirty(nil, true) then
         -- warn the user when trying to switch from a dirty buffer
@@ -194,22 +195,31 @@ M.file_switch = function(selected, opts)
   return true
 end
 
+M.file_switch_or_edit = function(...)
+  M.file_switch(...)
+  M.file_edit(...)
+end
+
 -- buffer actions
 M.vimcmd_buf = function(vimcmd, selected, _)
+  local curbuf = vim.api.nvim_get_current_buf()
   for i = 1, #selected do
     local bufnr = string.match(selected[i], "%[(%d+)")
     if bufnr then
       if vimcmd == 'b'
+        and curbuf ~= tonumber(bufnr)
         and not vim.o.hidden and
         utils.buffer_is_dirty(nil, true) then
         -- warn the user when trying to switch from a dirty buffer
         -- when `:set nohidden`
         return
       end
-      local cmd = vimcmd .. " " .. bufnr
-      local ok, res = pcall(vim.cmd, cmd)
-      if not ok then
-        utils.warn(("':%s' failed: %s"):format(cmd, res))
+      if vimcmd ~= "b" or curbuf ~= tonumber(bufnr) then
+        local cmd = vimcmd .. " " .. bufnr
+        local ok, res = pcall(vim.cmd, cmd)
+        if not ok then
+          utils.warn(("':%s' failed: %s"):format(cmd, res))
+        end
       end
     end
   end
@@ -256,6 +266,11 @@ M.buf_switch = function(selected, _)
     local winid = utils.winid_from_tab_buf(tabnr, bufnr)
     if winid then vim.api.nvim_set_current_win(winid) end
   end
+end
+
+M.buf_switch_or_edit = function(...)
+  M.buf_switch(...)
+  M.buf_edit(...)
 end
 
 M.colorscheme = function(selected)

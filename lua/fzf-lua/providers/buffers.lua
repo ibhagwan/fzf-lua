@@ -48,8 +48,13 @@ local filter_buffers = function(opts, unfiltered)
     if opts.show_all_buffers == false and not vim.api.nvim_buf_is_loaded(b) then
       excluded[b] = true
     end
-    if not opts.show_quickfix and utils.buf_is_qf(b) then
-      excluded[b] = true
+    if utils.buf_is_qf(b) then
+      if opts.show_quickfix then
+        -- show_quickfix trumps show_unlisted
+        excluded[b] = nil
+      else
+        excluded[b] = true
+      end
     end
     if opts.ignore_current_buffer and b == __STATE.curbuf then
       excluded[b] = true
@@ -109,12 +114,10 @@ local function gen_buffer_entry(opts, buf, hl_curbuf)
   local leftbr = utils.ansi_codes.clear('[')
   local rightbr = utils.ansi_codes.clear(']')
   local bufname = string.format("%s:%s",
-    utils._if(#buf.info.name>0, path.relative(buf.info.name, vim.loop.cwd()), "[No Name]"),
-    utils._if(buf.info.lnum>0, buf.info.lnum, ""))
-  local is_qf = utils.buf_is_qf(buf.bufnr, buf.info)
-  if is_qf then
-    bufname = string.format("%s", is_qf==1 and "[Quickfix List]" or "[Location List]")
-  end
+    #buf.info.name>0 and
+      path.relative(buf.info.name, vim.loop.cwd()) or
+      utils.nvim_buf_get_name(buf.bufnr, buf.info),
+    buf.info.lnum>0 and buf.info.lnum or  "")
   if buf.flag == '%' then
     flags = utils.ansi_codes.red(buf.flag) .. flags
     if hl_curbuf then
@@ -234,12 +237,7 @@ M.buffer_lines = function(opts)
       end
     end
     if not bufname or #bufname==0 then
-      local is_qf = utils.buf_is_qf(bufnr)
-      if is_qf then
-        bufname = is_qf==1 and "[Quickfix List]" or "[Location List]"
-      else
-        bufname = "[No Name]"
-      end
+      bufname = utils.nvim_buf_get_name(bufnr)
     end
     for l, text in ipairs(data) do
       table.insert(items, ("[%s]%s%s%s%s:%s: %s"):format(

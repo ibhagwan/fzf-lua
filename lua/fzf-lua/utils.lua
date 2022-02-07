@@ -408,6 +408,24 @@ function M.winid_from_tab_buf(tabnr, bufnr)
   return nil
 end
 
+function M.nvim_buf_get_name(bufnr, bufinfo)
+  if not vim.api.nvim_buf_is_valid(bufnr) then return end
+  if bufinfo and bufinfo.name and #bufinfo.name>0 then
+    return bufinfo.name
+  end
+  local bufname = vim.api.nvim_buf_get_name(bufnr)
+  if not bufname or #bufname==0 then
+    local is_qf = M.buf_is_qf(bufnr, bufinfo)
+    if is_qf then
+      bufname = is_qf==1 and "[Quickfix List]" or "[Location List]"
+    else
+      bufname = "[No Name]"
+    end
+  end
+  assert(#bufname>0)
+  return bufname
+end
+
 function M.zz()
   -- skip for terminal buffers
   if M.is_term_buffer() then return end
