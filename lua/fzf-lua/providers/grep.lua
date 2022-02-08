@@ -254,6 +254,7 @@ M.live_grep_mt = function(opts)
     opts.fzf_fn = nil
     opts.fzf_opts['--prompt'] = '*' .. opts.prompt
     opts.fzf_opts['--cmd-prompt'] = vim.fn.shellescape(opts.prompt)
+    opts.prompt = nil
     -- since we surrounded the skim placeholder with quotes
     -- we need to escape them in the initial query
     opts.fzf_opts['--cmd-query'] = vim.fn.shellescape(utils.sk_escape(query))
