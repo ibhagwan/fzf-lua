@@ -103,7 +103,13 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     if not is_term then vim.cmd("normal! m`") end
     -- only change buffer if we need to (issue #122)
     if vimcmd ~= "e" or curbuf ~= fullpath then
-      vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
+      if entry.path then
+        -- do not run ':<cmd> <file>' for uri entries (#341)
+        vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
+      elseif vimcmd ~= 'e' then
+        -- uri entries only execute new buffers (new|vnew|tabnew)
+        vim.cmd(vimcmd)
+      end
     end
     -- Java LSP entries, 'jdt://...' or LSP locations
     if entry.uri then
