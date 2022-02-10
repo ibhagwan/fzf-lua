@@ -370,7 +370,9 @@ M.mt_cmd_wrapper = function(opts)
     end
     local cmd = libuv.wrap_spawn_stdio(opts_to_str(opts),
       fn_transform, fn_preprocess)
-    if opts.debug then print(cmd) end
+    if opts.debug_cmd or opts.debug and not (opts.debug_cmd==false) then
+      print(cmd)
+    end
     return cmd
   else
     return libuv.spawn_nvim_fzf_cmd(opts,
