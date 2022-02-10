@@ -405,8 +405,9 @@ end
 
 M.set_fzf_line_args = function(opts)
   opts._line_placeholder = 2
-  -- delimiters are ':' and <tab>
-  opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[:\\t]')
+  -- set delimiter to ':'
+  -- entry format is 'file:line:col: text'
+  opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[:]')
   --[[
     #
     #   Explanation of the fzf preview offset options:
