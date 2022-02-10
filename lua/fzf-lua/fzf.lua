@@ -134,6 +134,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   local co = coroutine.running()
   vim.fn.termopen({"sh", "-c", cmd}, {
     cwd = cwd,
+    env = { ['SHELL'] = 'sh' },
     on_exit = function(_, rc, _)
       local f = io.open(outputtmpname)
       local output = get_lines_from_file(f)

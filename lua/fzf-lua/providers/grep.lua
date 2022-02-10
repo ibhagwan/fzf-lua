@@ -2,6 +2,7 @@ local path = require "fzf-lua.path"
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
+local libuv = require "fzf-lua.libuv"
 
 local function get_last_search()
   local last_search = config.globals.grep._last_search or {}
@@ -58,7 +59,9 @@ local get_grep_cmd = function(opts, search_query, no_esc)
 
   -- do not escape at all
   if not (no_esc == 2 or opts.no_esc == 2) then
-    search_query = vim.fn.shellescape(search_query)
+    -- we need to use our own version of 'shellescape'
+    -- that doesn't escape '\' on fish shell (#340)
+    search_query = libuv.shellescape(search_query)
   end
 
   return string.format('%s %s %s', command, search_query, search_path)
@@ -257,17 +260,17 @@ M.live_grep_mt = function(opts)
     opts.prompt = nil
     -- since we surrounded the skim placeholder with quotes
     -- we need to escape them in the initial query
-    opts.fzf_opts['--cmd-query'] = vim.fn.shellescape(utils.sk_escape(query))
+    opts.fzf_opts['--cmd-query'] = libuv.shellescape(utils.sk_escape(query))
     opts._fzf_cli_args = string.format("-i -c %s",
           vim.fn.shellescape(reload_command))
   else
     opts.fzf_fn = {}
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
       opts.fzf_fn = initial_command:gsub(placeholder,
-        vim.fn.shellescape(query))
+        libuv.shellescape(query))
     end
     opts.fzf_opts['--phony'] = ''
-    opts.fzf_opts['--query'] = vim.fn.shellescape(query)
+    opts.fzf_opts['--query'] = libuv.shellescape(query)
     opts._fzf_cli_args = string.format('--bind=%s',
         vim.fn.shellescape(("change:reload:%s"):format(
           ("%s || true"):format(reload_command))))
@@ -325,7 +328,7 @@ M.live_grep_glob = function(opts)
 
     -- do not escape at all
     if not (no_esc == 2 or o.no_esc == 2) then
-      search_query = vim.fn.shellescape(search_query)
+      search_query = libuv.shellescape(search_query)
     end
 
     local cmd = ("rg %s %s -- %s %s")

@@ -349,19 +349,23 @@ M.mt_cmd_wrapper = function(opts)
   elseif opts.multiprocess or opts.force_multiprocess then
     local fn_preprocess = [[return require("make_entry").preprocess]]
     local fn_transform = [[return require("make_entry").file]]
+    -- replace all below 'fn.shellescape' with our version
+    -- replacing the surrounding single quotes with double
+    -- as this was causing resume to fail with fish shell
+    -- due to fzf replacing ' with \ (no idea why)
     if not opts.no_remote_config then
       fn_transform = ([[_G._fzf_lua_server=%s; %s]]):format(
-        vim.fn.shellescape(vim.g.fzf_lua_server),
+        libuv.shellescape(vim.g.fzf_lua_server),
         fn_transform)
     end
     if config._devicons_setup then
       fn_transform = ([[_G._devicons_setup=%s; %s]]) :format(
-          vim.fn.shellescape(config._devicons_setup),
+          libuv.shellescape(config._devicons_setup),
           fn_transform)
     end
     if config._devicons_path then
       fn_transform = ([[_G._devicons_path=%s; %s]]) :format(
-          vim.fn.shellescape(config._devicons_path),
+          libuv.shellescape(config._devicons_path),
           fn_transform)
     end
     local cmd = libuv.wrap_spawn_stdio(opts_to_str(opts),
@@ -441,7 +445,7 @@ M.set_header = function(opts, type)
     header_str = header_str .. (cwd_str or '')
   end
   if not header_str or #header_str==0 then return opts end
-  opts.fzf_opts['--header'] = vim.fn.shellescape(header_str)
+  opts.fzf_opts['--header'] = libuv.shellescape(header_str)
   return opts
 end
 

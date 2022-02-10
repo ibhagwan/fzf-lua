@@ -419,6 +419,37 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
     end)
 end
 
+-- our own version of vim.fn.shellescape compatibile with fish shells
+--   * don't double-escape '\' (#340)
+--   * if possible, replace surrounding single quote with double
+-- from ':help shellescape':
+--    If 'shell' contains "fish" in the tail, the "\" character will
+--    be escaped because in fish it is used as an escape character
+--    inside single quotes.
+-- this function is a better fit for utils but we're
+-- trying to avoid having any 'require' in this file
+M.shellescape = function(s)
+  local shell = vim.o.shell
+  if not shell or not shell:match("fish$") then
+    return vim.fn.shellescape(s)
+  else
+    local ret = nil
+    vim.o.shell = "sh"
+    if not s:match([["]]) then
+      -- if the original string does not contain double quotes
+      -- replace surrounding single quote with double quotes
+      -- temporarily replace all single quotes with double
+      -- quotes and restore after the call to shellescape
+      ret = vim.fn.shellescape(s:gsub([[']], [["]]))
+      ret = [["]] .. ret:gsub([["]], [[']]):sub(2, #ret-1) .. [["]]
+    else
+      ret = vim.fn.shellescape(s)
+    end
+    vim.o.shell = shell
+    return ret
+  end
+end
+
 M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
   assert(opts and type(opts) == 'string')
   assert(not fn_transform or type(fn_transform) == 'string')
@@ -431,7 +462,7 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
   end
   local cmd_str = ("%s -n --headless --clean --cmd %s"):format(
     vim.fn.shellescape(nvim_bin),
-    vim.fn.shellescape(("lua loadfile([[%s]])().spawn_stdio(%s)")
+    M.shellescape(("lua loadfile([[%s]])().spawn_stdio(%s)")
       :format(__FILE__, call_args)))
   return cmd_str
 end
