@@ -125,6 +125,19 @@ M.fzf = function(opts, contents)
       --     calls without displaying the native fzf previewer split
       opts.fzf_opts['--preview-window'] = previewer:preview_window(opts.preview_window)
     end
+    -- provides preview offset when using native previewers
+    -- (bat/cat/etc) with providers that supply line numbers
+    -- (grep/quickfix/LSP)
+    if type(previewer.fzf_delimiter) == 'function' then
+      opts.fzf_opts["--delimiter"] = previewer:fzf_delimiter()
+    end
+    if type(previewer.preview_offset) == 'function' then
+      opts.preview_offset = previewer:preview_offset()
+    end
+  elseif not opts.preview and not opts.fzf_opts['--preview'] then
+    -- no preview available, override incase $FZF_DEFAULT_OPTS
+    -- contains a preview which will most likely fail
+    opts.fzf_opts['--preview-window'] = 'hidden:right:0'
   end
 
   if opts.fn_pre_fzf then
@@ -405,21 +418,6 @@ end
 
 M.set_fzf_line_args = function(opts)
   opts._line_placeholder = 2
-  -- set delimiter to ':'
-  -- entry format is 'file:line:col: text'
-  opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[:]')
-  --[[
-    #
-    #   Explanation of the fzf preview offset options:
-    #
-    #   ~3    Top 3 lines as the fixed header
-    #   +{2}  Base scroll offset extracted from the second field
-    #   +3    Extra offset to compensate for the 3-line header
-    #   /2    Put in the middle of the preview area
-    #
-    '--preview-window '~3:+{2}+3/2''
-  ]]
-  opts.preview_offset = string.format("+{%d}-/2", opts._line_placeholder)
   return opts
 end
 

@@ -189,7 +189,7 @@ M.marks = function(opts)
   local marks = vim.fn.execute("marks")
   marks = vim.split(marks, "\n")
 
-  local prev_act = shell.action(function (args, fzf_lines, _)
+  --[[ local prev_act = shell.action(function (args, fzf_lines, _)
     local mark = args[1]:match("[^ ]+")
     local bufnr, lnum, _, _ = unpack(vim.fn.getpos("'"..mark))
     if vim.api.nvim_buf_is_loaded(bufnr) then
@@ -201,7 +201,7 @@ M.marks = function(opts)
       end
       return "UNLOADED: " .. name
     end
-  end)
+  end) ]]
 
   local entries = {}
   for i = #marks, 3, -1 do
@@ -215,7 +215,7 @@ M.marks = function(opts)
 
   table.sort(entries, function(a, b) return a<b end)
 
-  opts.fzf_opts['--preview'] = prev_act
+  -- opts.fzf_opts['--preview'] = prev_act
   opts.fzf_opts['--no-multi'] = ''
 
   core.fzf_wrap(opts, entries, function(selected)

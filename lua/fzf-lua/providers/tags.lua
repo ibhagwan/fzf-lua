@@ -65,7 +65,7 @@ local fzf_tags = function(opts)
       if not grep_cmd then grep_cmd = get_grep_cmd() end
       local line = 1
       local filepath = path.join({cwd, t.file})
-      local pattern = utils.rg_escape(t.text:match("/(.*)/"))
+      local pattern = utils.rg_escape(t.text:match("/^?(.*)/"))
       if not pattern or not filepath then return line end
       -- ctags uses '$' at the end of short patterns
       -- 'rg|grep' does not match these properly when
@@ -123,7 +123,9 @@ local fzf_tags = function(opts)
                   }, cb, co,
                   -- unless we're using native previewer
                   -- do not need to extract the line number
-                  type(opts.previewer) == 'table')
+                  not opts.previewer
+                  or opts.previewer == 'builtin'
+                  or type(opts.previewer) == 'table')
               end)
               -- pause here until we call coroutine.resume()
               coroutine.yield()

@@ -22,6 +22,40 @@ function Previewer.base:preview_window(_)
   return nil
 end
 
+function Previewer.base:preview_offset()
+  --[[
+    #
+    #   Explanation of the fzf preview offset options:
+    #
+    #   ~3    Top 3 lines as the fixed header
+    #   +{2}  Base scroll offset extracted from the second field
+    #   +3    Extra offset to compensate for the 3-line header
+    #   /2    Put in the middle of the preview area
+    #
+    '--preview-window '~3:+{2}+3/2''
+  ]]
+  if self.opts._line_placeholder then
+    return ("+{%d}-/2"):format(self.opts._line_placeholder)
+  end
+end
+
+function Previewer.base:fzf_delimiter()
+  if not self.opts._line_placeholder then return end
+  -- set delimiter to ':'
+  -- entry format is 'file:line:col: text'
+  local delim = self.opts.fzf_opts and self.opts.fzf_opts["--delimiter"]
+  if not delim then
+    delim = '[:]'
+  elseif not delim:match(":") then
+    if delim:match("%[.*%]")then
+      delim = '[:' .. delim:match("%[(.*%])")
+    else
+      delim = '[:' .. delim .. ']'
+    end
+  end
+  return delim
+end
+
 -- Generic shell command previewer
 Previewer.cmd = Previewer.base:extend()
 
