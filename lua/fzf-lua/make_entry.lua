@@ -235,6 +235,8 @@ M.preprocess = function(opts)
         glob_args = glob_args .. ("%s %s ")
           :format(opts.glob_flag, vim.fn.shellescape(s))
       end
+      -- gsub doesn't like single % on rhs
+      search_query = search_query:gsub("%%", "%%%%")
       -- reset argvz so it doesn't get replaced again below
       opts.cmd = opts.cmd:gsub(argvz,
         glob_args .. vim.fn.shellescape(search_query))

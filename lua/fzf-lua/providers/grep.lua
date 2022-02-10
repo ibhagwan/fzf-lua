@@ -267,7 +267,7 @@ M.live_grep_mt = function(opts)
     opts.fzf_fn = {}
     if opts.exec_empty_query or (opts.search and #opts.search > 0) then
       opts.fzf_fn = initial_command:gsub(placeholder,
-        libuv.shellescape(query))
+        libuv.shellescape(query:gsub("%%", "%%%%")))
     end
     opts.fzf_opts['--phony'] = ''
     opts.fzf_opts['--query'] = libuv.shellescape(query)
