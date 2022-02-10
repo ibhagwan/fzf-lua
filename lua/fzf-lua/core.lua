@@ -391,15 +391,16 @@ M.get_devicon = make_entry.get_devicon
 M.make_entry_file = make_entry.file
 M.make_entry_preprocess = make_entry.preprocess
 
-M.make_entry_lcol = function(_, entry)
+M.make_entry_lcol = function(opts, entry)
   if not entry then return nil end
   local filename = entry.filename or vim.api.nvim_buf_get_name(entry.bufnr)
   return string.format("%s:%s:%s:%s%s",
     filename, --utils.ansi_codes.magenta(filename),
     utils.ansi_codes.green(tostring(entry.lnum)),
     utils.ansi_codes.blue(tostring(entry.col)),
-    utils._if(entry.text and entry.text:find("^\t"), "", "\t"),
-    entry.text)
+    entry.text and #entry.text>0 and " " or "",
+    not entry.text and "" or
+      (opts.trim_entry and vim.trim(entry.text)) or entry.text)
 end
 
 M.set_fzf_line_args = function(opts)
