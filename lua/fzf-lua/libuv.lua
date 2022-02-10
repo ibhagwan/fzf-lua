@@ -435,7 +435,7 @@ M.shellescape = function(s)
   else
     local ret = nil
     vim.o.shell = "sh"
-    if not s:match([["]]) then
+    if not s:match([["]]) and not s:match([[\]]) then
       -- if the original string does not contain double quotes
       -- replace surrounding single quote with double quotes
       -- temporarily replace all single quotes with double

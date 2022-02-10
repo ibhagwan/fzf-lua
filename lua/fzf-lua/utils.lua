@@ -103,8 +103,8 @@ end
 function M.rg_escape(str)
   if not str then return str end
   --  [(~'"\/$?'`*&&||;[]<>)]
-  --  escape "\~$?*|[()"
-  return str:gsub('[\\~$?*|{\\[()-]', function(x)
+  --  escape "\~$?*|[()-^"
+  return str:gsub('[\\~$?*|{\\[()%-^]', function(x)
     return '\\' .. x
   end)
 end
@@ -113,7 +113,7 @@ function M.sk_escape(str)
   if not str then return str end
   return str:gsub('["`]', function(x)
     return '\\' .. x
-  end)
+  end):gsub([[\\]], [[\\\\]]):gsub([[\%$]], [[\\\$]])
 end
 
 function M.lua_escape(str)
