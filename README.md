@@ -599,7 +599,7 @@ require'fzf-lua'.setup {
     no_term_buffers   = false,        -- include 'term' buffers
     fzf_opts = {
       -- hide filename, tiebreak by line no.
-      ['--delimiter'] = vim.fn.shellescape('[:]'),
+      ['--delimiter'] = vim.fn.shellescape('[\\]:]'),
       ["--with-nth"]  = '2..',
       ["--tiebreak"]  = 'index',
     },

@@ -361,7 +361,7 @@ M.globals.blines = {
     show_unlisted         = true,
     no_term_buffers       = false,
     fzf_opts = {
-        ['--delimiter']   = vim.fn.shellescape('[:]'),
+        ['--delimiter']   = vim.fn.shellescape('[\\]:]'),
         ["--with-nth"]    = '2..',
         ["--tiebreak"]    = 'index',
     },
