@@ -262,7 +262,7 @@ M.buffer_lines = function(opts)
     opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search)
   end
 
-  opts = core.set_fzf_field_index(opts, 3, "{..-2}")
+  opts = core.set_fzf_field_index(opts, 3, opts._is_skim and "{}" or "{..-2}")
 
   core.fzf_wrap(opts, items, function(selected)
     if not selected then return end
@@ -348,7 +348,7 @@ M.tabs = function(opts)
   opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[\\):]')
   opts.fzf_opts["--with-nth"] = '2..'
 
-  opts = core.set_fzf_field_index(opts, 3)
+  opts = core.set_fzf_field_index(opts, 3, "{}")
 
   core.fzf_wrap(opts, contents, function(selected)
 
