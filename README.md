@@ -551,6 +551,8 @@ require'fzf-lua'.setup {
   oldfiles = {
     prompt            = 'History❯ ',
     cwd_only          = false,
+    stat_file         = false,        -- verify files exist on disk
+    include_current_session = false,  -- include bufs from current session
   },
   buffers = {
     prompt            = 'Buffers❯ ',
