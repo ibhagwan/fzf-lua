@@ -9,28 +9,38 @@ M.oldfiles = function(opts)
 
   local current_buffer = vim.api.nvim_get_current_buf()
   local current_file = vim.api.nvim_buf_get_name(current_buffer)
-  local results = {}
+  local sess_tbl = {}
+  local sess_map = {}
 
   if opts.include_current_session then
     for _, buffer in ipairs(vim.split(vim.fn.execute(':buffers! t'), "\n")) do
-      local match = tonumber(string.match(buffer, '%s*(%d+)'))
-      if match then
-        local file = vim.api.nvim_buf_get_name(match)
-        if vim.loop.fs_stat(file) and match ~= current_buffer then
-          table.insert(results, file)
+      local bufnr = tonumber(buffer:match('%s*(%d+)'))
+      if bufnr then
+        local file = vim.api.nvim_buf_get_name(bufnr)
+        local fs_stat = not opts.stat_file and true or vim.loop.fs_stat(file)
+        if #file>0 and fs_stat and bufnr ~= current_buffer then
+          sess_map[file] = true
+          table.insert(sess_tbl, file)
         end
       end
     end
   end
 
-  for _, file in ipairs(vim.v.oldfiles) do
-    if vim.loop.fs_stat(file) and not vim.tbl_contains(results, file) and file ~= current_file then
-      table.insert(results, file)
-    end
-  end
-
   local contents = function (cb)
-    for _, x in ipairs(results) do
+
+    local entries = {}
+
+    for _, file in ipairs(sess_tbl) do
+        table.insert(entries, file)
+    end
+    for _, file in ipairs(vim.v.oldfiles) do
+      local fs_stat = not opts.stat_file and true or vim.loop.fs_stat(file)
+      if fs_stat and file ~= current_file and not sess_map[file] then
+        table.insert(entries, file)
+      end
+    end
+
+    for _, x in ipairs(entries) do
       x = core.make_entry_file(opts, x)
       if x then
         cb(x, function(err)
