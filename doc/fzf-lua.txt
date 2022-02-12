@@ -75,6 +75,8 @@ OPTIONAL DEPENDENCIES                          *fzf-lua-optional-dependencies*
   using fzf's native previewer
 - delta <https://github.com/dandavison/delta> - syntax highlighted git pager
   for git status previews
+- nvim-dap <https://github.com/mfussenegger/nvim-dap> - for Debug Adapter
+  Protocol (DAP) support
 
 ------------------------------------------------------------------------------
 INSTALLATION                                            *fzf-lua-installation*
@@ -236,18 +238,6 @@ MISC                                                            *fzf-lua-misc*
 
 
                                                                               
-NVIM-DAP                                                    *fzf-lua-nvim-dap*
-
-| Command              | List                                       |
-| -------------------- | ------------------------------------------ |
-| `dap_commands`         | list,run `nvim-dap` builtin commands         |
-| `dap_configurations`   | list,run debug configurations              |
-| `dap_breakpoints`      | list,delete breakpoints                    |
-| `dap_variables`        | active session variables                   |
-| `dap_frames`           | active session jump to frame               |
-
-
-                                                                              
 NEOVIM API                                                *fzf-lua-neovim-api*
 
   `:help vim.ui.select` for more info
@@ -256,6 +246,20 @@ NEOVIM API                                                *fzf-lua-neovim-api*
 | -------------------- | -------------------------------------- |
 | `register_ui_select`   | register fzf-lua as the UI interface for `vim.ui.select`|
 | `deregister_ui_select` | de-register fzf-lua with `vim.ui.select` |
+
+
+                                                                              
+NVIM-DAP                                                    *fzf-lua-nvim-dap*
+
+  Requires `nvim-dap` <https://github.com/mfussenegger/nvim-dap>
+
+| Command              | List                                       |
+| -------------------- | ------------------------------------------ |
+| `dap_commands`         | list,run `nvim-dap` builtin commands         |
+| `dap_configurations`   | list,run debug configurations              |
+| `dap_breakpoints`      | list,delete breakpoints                    |
+| `dap_variables`        | active session variables                   |
+| `dap_frames`           | active session jump to frame               |
 
 
 ------------------------------------------------------------------------------

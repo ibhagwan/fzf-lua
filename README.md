@@ -62,6 +62,8 @@ at it. That, **and colorful file icons and git indicators!**.
   using fzf's native previewer
 - [delta](https://github.com/dandavison/delta) - syntax highlighted git pager
   for git status previews
+- [nvim-dap](https://github.com/mfussenegger/nvim-dap) - for Debug Adapter
+  Protocol (DAP) support
  
 ## Installation
 
@@ -201,15 +203,6 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `filetypes`        | neovim filetypes                           |
 | `packadd`          | :packadd <package>                         |
 
-### nvim-dap
-| Command              | List                                       |
-| -------------------- | ------------------------------------------ |
-| `dap_commands`         | list,run `nvim-dap` builtin commands         |
-| `dap_configurations`   | list,run debug configurations              |
-| `dap_breakpoints`      | list,delete breakpoints                    |
-| `dap_variables`        | active session variables                   |
-| `dap_frames`           | active session jump to frame               |
-
 ### Neovim API
 
 > `:help vim.ui.select` for more info
@@ -218,6 +211,18 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | -------------------- | -------------------------------------- |
 | `register_ui_select`   | register fzf-lua as the UI interface for `vim.ui.select`|
 | `deregister_ui_select` | de-register fzf-lua with `vim.ui.select` |
+
+### nvim-dap
+
+> Requires [`nvim-dap`](https://github.com/mfussenegger/nvim-dap)
+
+| Command              | List                                       |
+| -------------------- | ------------------------------------------ |
+| `dap_commands`         | list,run `nvim-dap` builtin commands         |
+| `dap_configurations`   | list,run debug configurations              |
+| `dap_breakpoints`      | list,delete breakpoints                    |
+| `dap_variables`        | active session variables                   |
+| `dap_frames`           | active session jump to frame               |
 
 
 ## Customization
