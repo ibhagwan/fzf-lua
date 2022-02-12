@@ -169,6 +169,10 @@ M.globals = {
       cmd             = "man -c %s | col -bx",
       _ctor           = previewers.builtin.man_pages,
     },
+    man_native = {
+      cmd             = "man",
+      _ctor           = previewers.fzf.man_pages,
+    },
     builtin = {
       syntax          = true,
       syntax_delay    = 0,
@@ -309,7 +313,7 @@ M.globals.loclist = {
     _actions            = function() return M.globals.actions.files end,
   }
 M.globals.buffers = {
-    previewer             = "builtin",
+    previewer             = M._default_previewer_fn,
     prompt                = 'Buffers> ',
     file_icons            = true and M._has_devicons,
     color_icons           = true,
@@ -323,7 +327,7 @@ M.globals.buffers = {
     },
   }
 M.globals.tabs = {
-    previewer             = "builtin",
+    previewer             = M._default_previewer_fn,
     prompt                = 'Tabs> ',
     tab_title             = "Tab",
     tab_marker            = "<<",
@@ -336,21 +340,21 @@ M.globals.tabs = {
     },
   }
 M.globals.lines = {
-    previewer             = "builtin",
+    previewer             = M._default_previewer_fn,
     prompt                = 'Lines> ',
     file_icons            = true and M._has_devicons,
     color_icons           = true,
     show_unlisted         = false,
     no_term_buffers       = true,
     fzf_opts = {
-        ['--delimiter']   = vim.fn.shellescape('[]]'),
+        ['--delimiter']   = vim.fn.shellescape('[\\]:]'),
         ["--nth"]         = '2..',
         ["--tiebreak"]    = 'index',
     },
     _actions              = function() return M.globals.actions.buffers end,
   }
 M.globals.blines = {
-    previewer             = "builtin",
+    previewer             = M._default_previewer_fn,
     prompt                = 'BLines> ',
     file_icons            = true and M._has_devicons,
     color_icons           = true,
@@ -540,7 +544,7 @@ M.globals.dap = {
       previewer           = M._default_previewer_fn,
       _actions            = function() return M.globals.actions.files end,
       fzf_opts = {
-        ['--delimiter']   = vim.fn.shellescape('[]]'),
+        ['--delimiter']   = vim.fn.shellescape('[\\]:]'),
         ["--with-nth"]    = '2..',
       },
     },

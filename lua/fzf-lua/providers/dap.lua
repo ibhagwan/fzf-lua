@@ -162,7 +162,7 @@ M.breakpoints = function(opts)
       :format(utils.ansi_codes.yellow("<Ctrl-x>")))
   end
 
-  opts = core.set_fzf_line_args(opts)
+  opts = core.set_fzf_field_index(opts, 3, "{..-2}")
 
   core.fzf_wrap(opts, contents, function(selected)
 

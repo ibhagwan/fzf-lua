@@ -294,7 +294,7 @@ end
 local function fzf_lsp_locations(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
-  opts = core.set_fzf_line_args(opts)
+  opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
@@ -335,7 +335,7 @@ M.workspace_symbols = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
   opts.lsp_params = {query = opts.query or ''}
-  opts = core.set_fzf_line_args(opts)
+  opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
@@ -633,7 +633,7 @@ M.diagnostics = function(opts)
     end)()
   end
 
-  opts = core.set_fzf_line_args(opts)
+  opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   return core.fzf_files(opts)
 end
@@ -694,7 +694,7 @@ M.live_workspace_symbols = function(opts)
   opts.global_resume_query = false
   opts.__FNCREF__ = M.live_workspace_symbols
   opts = core.set_fzf_interactive_cb(opts)
-  opts = core.set_fzf_line_args(opts)
+  opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   core.fzf_files(opts)
   opts.search = nil

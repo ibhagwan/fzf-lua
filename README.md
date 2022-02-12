@@ -586,7 +586,7 @@ require'fzf-lua'.setup {
     fzf_opts = {
       -- do not include bufnr in fuzzy matching
       -- tiebreak by line no.
-      ['--delimiter'] = vim.fn.shellescape('[]]'),
+      ['--delimiter'] = vim.fn.shellescape('[\\]:]'),
       ["--nth"]       = '2..',
       ["--tiebreak"]  = 'index',
     },

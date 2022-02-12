@@ -416,8 +416,22 @@ M.make_entry_lcol = function(opts, entry)
       (opts.trim_entry and vim.trim(entry.text)) or entry.text)
 end
 
-M.set_fzf_line_args = function(opts)
-  opts._line_placeholder = 2
+-- given the default delimiter ':' this is the
+-- fzf experssion field index for the line number
+-- when entry format is 'file:line:col: text'
+-- this is later used with native fzf previewers
+-- for setting the preview offset (and on some
+-- cases the highlighted line)
+M.set_fzf_field_index = function(opts, default_idx, default_expr)
+  opts.line_field_index = opts.line_field_index or default_idx or 2
+  -- when entry contains lines we set the fzf FIELD INDEX EXPRESSION
+  -- to the below so that only the filename is sent to the preview
+  -- action, otherwise we will have issues with entries with text
+  -- containing '--' as fzf won't know how to interpret the cmd
+  -- this works when the delimiter is only ':', when using multiple
+  -- or different delimiters (e.g. in 'lines') we need to use a different
+  -- field index experssion such as "{..-2}" (all fields but the last 2)
+  opts.field_index_expr = opts.field_index_expr or default_expr or "{1}"
   return opts
 end
 

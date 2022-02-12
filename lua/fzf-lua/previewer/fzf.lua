@@ -34,13 +34,13 @@ function Previewer.base:preview_offset()
     #
     '--preview-window '~3:+{2}+3/2''
   ]]
-  if self.opts._line_placeholder then
-    return ("+{%d}-/2"):format(self.opts._line_placeholder)
+  if self.opts.line_field_index then
+    return ("+{%d}-/2"):format(self.opts.line_field_index)
   end
 end
 
 function Previewer.base:fzf_delimiter()
-  if not self.opts._line_placeholder then return end
+  if not self.opts.line_field_index then return end
   -- set delimiter to ':'
   -- entry format is 'file:line:col: text'
   local delim = self.opts.fzf_opts and self.opts.fzf_opts["--delimiter"]
@@ -50,7 +50,9 @@ function Previewer.base:fzf_delimiter()
     if delim:match("%[.*%]")then
       delim = delim:match("(%[.*)%]") .. ':]'
     else
-      delim = '[' .. delim:match("[^[^']+") .. ':]'
+      delim = '[' ..
+        utils.rg_escape(delim:match("^'?(.*)'$?")):gsub("%]", "\\]")
+      .. ':]'
     end
   end
   return delim
@@ -73,15 +75,11 @@ end
 
 function Previewer.cmd:action(o)
   o = o or {}
-  local filespec = "{}"
-  if self.opts._line_placeholder then
-    filespec = "{1}"
-  end
   local act = shell.raw_action(function (items, _, _)
     -- only preview first item
-    local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
-    return file.path
-  end, filespec)
+    local entry = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
+    return entry.bufname or entry.path
+  end, self.opts.field_index_expr or "{}")
   return act
 end
 
@@ -98,8 +96,8 @@ function Previewer.bat:cmdline(o)
   o = o or {}
   o.action = o.action or self:action(o)
   local highlight_line = ""
-  if self.opts._line_placeholder then
-    highlight_line = string.format("--highlight-line={%d}", self.opts._line_placeholder)
+  if self.opts.line_field_index then
+    highlight_line = string.format("--highlight-line={%d}", self.opts.line_field_index)
   end
   return vim.fn.shellescape(string.format('sh -c "%s %s %s `%s`"',
     self.cmd, self.args, highlight_line, self:action(o)))
@@ -116,10 +114,11 @@ end
 function Previewer.head:cmdline(o)
   o = o or {}
   o.action = o.action or self:action(o)
-  local lines = ""
-  if self.opts._line_placeholder then
-    lines = string.format("--lines={%d}", self.opts._line_placeholder)
-  end
+  local lines = "--lines=-0"
+  -- print all lines instead
+  -- if self.opts.line_field_index then
+  --   lines = string.format("--lines={%d}", self.opts.line_field_index)
+  -- end
   return vim.fn.shellescape(string.format('sh -c "%s %s %s `%s`"',
     self.cmd, self.args, lines, self:action(o)))
 end
@@ -132,11 +131,24 @@ function Previewer.cmd_async:new(o, opts)
   return self
 end
 
+function Previewer.cmd_async:parse_entry_and_verify(entrystr)
+  local entry = path.entry_to_file(entrystr, not self.relative and self.opts.cwd)
+  local filepath = entry.bufname or entry.path or ''
+  local errcmd = nil
+  -- verify the file exists on disk and is accessible
+  if #filepath==0 or not vim.loop.fs_stat(filepath) then
+    errcmd = ('echo "%s: NO SUCH FILE OR ACCESS DENIED"'):format(
+      filepath and #filepath>0 and vim.fn.shellescape(filepath) or "<null>")
+  end
+  return filepath, entry, errcmd
+end
+
 function Previewer.cmd_async:cmdline(o)
   o = o or {}
   local act = shell.preview_action_cmd(function(items)
-    local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
-    local cmd = string.format('%s %s %s', self.cmd, self.args, vim.fn.shellescape(file.path))
+    local filepath, _, errcmd = self:parse_entry_and_verify(items[1])
+    local cmd = errcmd or ('%s %s %s'):format(
+      self.cmd, self.args, vim.fn.shellescape(filepath))
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
@@ -154,17 +166,13 @@ end
 
 function Previewer.bat_async:cmdline(o)
   o = o or {}
-  local highlight_line = ""
-  if self.opts._line_placeholder then
-    highlight_line = string.format("--highlight-line=", self.opts._line_placeholder)
-  end
   local act = shell.preview_action_cmd(function(items)
-    local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
-    local cmd = string.format('%s %s %s%s "%s"',
+    local filepath, entry, errcmd = self:parse_entry_and_verify(items[1])
+    local cmd = errcmd or ('%s %s %s %s'):format(
       self.cmd, self.args,
-      highlight_line,
-      utils._if(#highlight_line>0, tostring(file.line), ""),
-      file.path)
+      self.opts.line_field_index and
+        ("--highlight-line=%d"):format(entry.line) or '',
+      vim.fn.shellescape(filepath))
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
@@ -172,7 +180,7 @@ function Previewer.bat_async:cmdline(o)
   return act
 end
 
-Previewer.git_diff = Previewer.cmd_async:extend()
+Previewer.git_diff = Previewer.base:extend()
 
 function Previewer.git_diff:new(o, opts)
   Previewer.git_diff.super.new(self, o, opts)
@@ -236,7 +244,7 @@ function Previewer.git_diff:cmdline(o)
   return act
 end
 
-Previewer.man_pages = Previewer.cmd_async:extend()
+Previewer.man_pages = Previewer.base:extend()
 
 function Previewer.man_pages:new(o, opts)
   Previewer.man_pages.super.new(self, o, opts)

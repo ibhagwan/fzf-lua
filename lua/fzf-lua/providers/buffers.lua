@@ -186,6 +186,8 @@ M.buffers = function(opts)
   opts.fzf_opts['--header-lines'] =
     (not opts.ignore_current_buffer and opts.sort_lastused) and '1'
 
+  opts = core.set_fzf_field_index(opts)
+
   core.fzf_wrap(opts, contents, function(selected)
 
     if not selected then return end
@@ -260,7 +262,7 @@ M.buffer_lines = function(opts)
     opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search)
   end
 
-  opts = core.set_fzf_line_args(opts)
+  opts = core.set_fzf_field_index(opts, 3, "{..-2}")
 
   core.fzf_wrap(opts, items, function(selected)
     if not selected then return end
@@ -343,8 +345,10 @@ M.tabs = function(opts)
 
   -- opts.fzf_opts["--no-multi"] = ''
   opts.fzf_opts["--preview-window"] = 'hidden:right:0'
-  opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[\\)]')
-  opts.fzf_opts["--with-nth"] = '2'
+  opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[\\):]')
+  opts.fzf_opts["--with-nth"] = '2..'
+
+  opts = core.set_fzf_field_index(opts, 3)
 
   core.fzf_wrap(opts, contents, function(selected)
 

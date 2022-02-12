@@ -104,7 +104,7 @@ M.grep = function(opts)
     contents = contents .. " 2>&1"
   end
 
-  opts = core.set_fzf_line_args(opts)
+  opts = core.set_fzf_field_index(opts)
   core.fzf_files(opts, contents)
   opts.search = nil
 end
@@ -157,7 +157,7 @@ M.live_grep_st = function(opts)
   -- conflicts with 'change:reload' event
   opts.global_resume_query = false
   opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
-  opts = core.set_fzf_line_args(opts)
+  opts = core.set_fzf_field_index(opts)
   opts = core.set_fzf_interactive_cmd(opts)
   core.fzf_files(opts)
 end
@@ -280,7 +280,7 @@ M.live_grep_mt = function(opts)
   -- conflicts with 'change:reload' event
   opts.global_resume_query = false
   opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
-  opts = core.set_fzf_line_args(opts)
+  opts = core.set_fzf_field_index(opts)
   core.fzf_files(opts)
   opts.search = nil
 end

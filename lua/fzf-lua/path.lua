@@ -210,6 +210,8 @@ function M.entry_to_file(entry, cwd, force_uri)
   return {
     stripped = stripped,
     bufnr = tonumber(bufnr),
+    bufname = bufnr and vim.api.nvim_buf_is_valid(tonumber(bufnr))
+          and vim.api.nvim_buf_get_name(tonumber(bufnr)),
     terminal = terminal,
     path = file,
     line = tonumber(line) or 1,
