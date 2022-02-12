@@ -50,7 +50,7 @@ function Previewer.base:fzf_delimiter()
     if delim:match("%[.*%]")then
       delim = delim:match("(%[.*)%]") .. ':]'
     else
-      delim = '[' .. delim .. ':]'
+      delim = '[' .. delim:match("[^[^']+") .. ':]'
     end
   end
   return delim

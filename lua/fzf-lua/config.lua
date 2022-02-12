@@ -343,7 +343,7 @@ M.globals.lines = {
     show_unlisted         = false,
     no_term_buffers       = true,
     fzf_opts = {
-        ['--delimiter']   = vim.fn.shellescape('[\\]]'),
+        ['--delimiter']   = vim.fn.shellescape('[]]'),
         ["--nth"]         = '2..',
         ["--tiebreak"]    = 'index',
     },
@@ -540,7 +540,7 @@ M.globals.dap = {
       previewer           = M._default_previewer_fn,
       _actions            = function() return M.globals.actions.files end,
       fzf_opts = {
-        ['--delimiter']   = vim.fn.shellescape('[\\]]'),
+        ['--delimiter']   = vim.fn.shellescape('[]]'),
         ["--with-nth"]    = '2..',
       },
     },
