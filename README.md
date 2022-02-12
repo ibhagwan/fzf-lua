@@ -579,6 +579,11 @@ require'fzf-lua'.setup {
       ["default"]     = actions.buf_switch,
       ["ctrl-x"]      = { actions.buf_del, actions.resume },
     },
+    fzf_opts = {
+      -- hide tabnr
+      ['--delimiter'] = "'[\\):]'",
+      ["--with-nth"]  = '2..',
+    },
   },
   lines = {
     previewer         = "builtin",    -- set to 'false' to disable
@@ -588,7 +593,7 @@ require'fzf-lua'.setup {
     fzf_opts = {
       -- do not include bufnr in fuzzy matching
       -- tiebreak by line no.
-      ['--delimiter'] = vim.fn.shellescape('[\\]:]'),
+      ['--delimiter'] = "'[\\]:]'",
       ["--nth"]       = '2..',
       ["--tiebreak"]  = 'index',
     },
@@ -601,7 +606,7 @@ require'fzf-lua'.setup {
     no_term_buffers   = false,        -- include 'term' buffers
     fzf_opts = {
       -- hide filename, tiebreak by line no.
-      ['--delimiter'] = vim.fn.shellescape('[\\]:]'),
+      ['--delimiter'] = "'[\\]:]'",
       ["--with-nth"]  = '2..',
       ["--tiebreak"]  = 'index',
     },

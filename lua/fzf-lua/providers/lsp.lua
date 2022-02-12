@@ -469,7 +469,6 @@ M.code_actions = function(opts)
   opts.previewer = false
   opts.fzf_opts["--no-multi"] = ''
   opts.fzf_opts["--preview-window"] = 'right:0'
-  opts.fzf_opts["--delimiter"] = vim.fn.shellescape(':')
 
   core.fzf_wrap(opts, opts.fzf_fn, function(selected)
 

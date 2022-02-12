@@ -345,8 +345,6 @@ M.tabs = function(opts)
 
   -- opts.fzf_opts["--no-multi"] = ''
   opts.fzf_opts["--preview-window"] = 'hidden:right:0'
-  opts.fzf_opts["--delimiter"] = vim.fn.shellescape('[\\):]')
-  opts.fzf_opts["--with-nth"] = '2..'
 
   opts = core.set_fzf_field_index(opts, 3, "{}")
 

@@ -338,6 +338,10 @@ M.globals.tabs = {
         ["default"]       = actions.buf_switch,
         ["ctrl-x"]        = { actions.buf_del, actions.resume },
     },
+    fzf_opts = {
+        ['--delimiter']   = "'[\\):]'",
+        ["--with-nth"]    = '2..',
+    },
   }
 M.globals.lines = {
     previewer             = M._default_previewer_fn,
@@ -347,7 +351,7 @@ M.globals.lines = {
     show_unlisted         = false,
     no_term_buffers       = true,
     fzf_opts = {
-        ['--delimiter']   = vim.fn.shellescape('[\\]:]'),
+        ['--delimiter']   = "'[\\]:]'",
         ["--nth"]         = '2..',
         ["--tiebreak"]    = 'index',
     },
@@ -361,7 +365,7 @@ M.globals.blines = {
     show_unlisted         = true,
     no_term_buffers       = false,
     fzf_opts = {
-        ['--delimiter']   = vim.fn.shellescape('[\\]:]'),
+        ['--delimiter']   = "'[\\]:]'",
         ["--with-nth"]    = '2..',
         ["--tiebreak"]    = 'index',
     },
@@ -544,7 +548,7 @@ M.globals.dap = {
       previewer           = M._default_previewer_fn,
       _actions            = function() return M.globals.actions.files end,
       fzf_opts = {
-        ['--delimiter']   = vim.fn.shellescape('[\\]:]'),
+        ['--delimiter']   = "'[\\]:]'",
         ["--with-nth"]    = '2..',
       },
     },
