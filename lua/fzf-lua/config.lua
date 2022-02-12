@@ -283,7 +283,7 @@ M.globals.args = {
     git_icons           = true,
     _actions            = function() return M.globals.actions.files end,
     actions = {
-      ["ctrl-x"]        = actions.arg_del
+      ["ctrl-x"]        = { actions.arg_del, actions.resume }
     },
   }
 M.globals.oldfiles = {

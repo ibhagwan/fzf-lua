@@ -46,38 +46,56 @@ M.args = function(opts)
   opts = config.normalize_opts(opts, config.globals.args)
   if not opts then return end
 
-  local entries = vim.fn.execute("args")
-  entries = utils.strsplit(entries, "%s\n")
-  -- remove the current file indicator
-  -- remove all non-files
-  local args = {}
-  for _, s in ipairs(entries) do
-    if s:match('^%[') then
-      s = s:gsub('^%[', ''):gsub('%]$', '')
-    end
-    local st = vim.loop.fs_stat(s)
-    if opts.files_only == false or
-       st and st.type == 'file' then
-      table.insert(args, s)
-    end
+  if opts.fzf_opts['--header'] == nil then
+    opts.fzf_opts['--header'] = vim.fn.shellescape((':: %s to delete')
+      :format(utils.ansi_codes.yellow("<Ctrl-x>")))
   end
-  entries = nil
 
   local contents = function (cb)
-    for _, x in ipairs(args) do
+
+    local function add_entry(x, co)
       x = core.make_entry_file(opts, x)
-      if x then
-        cb(x, function(err)
-          if err then return end
-            -- close the pipe to fzf, this
-            -- removes the loading indicator in fzf
-            cb(nil, function() end)
-        end)
-      end
+      if not x then return end
+      cb(x, function(err)
+        coroutine.resume(co)
+        if err then
+          -- close the pipe to fzf, this
+          -- removes the loading indicator in fzf
+          cb(nil, function() end)
+        end
+      end)
+      coroutine.yield()
     end
-    utils.delayed_cb(cb)
+
+    -- run in a coroutine for async progress indication
+    coroutine.wrap(function()
+      local co = coroutine.running()
+
+      local entries = vim.fn.execute("args")
+      entries = utils.strsplit(entries, "%s\n")
+      -- remove the current file indicator
+      -- remove all non-files
+      -- local start = os.time(); for _ = 1,10000,1 do
+      for _, s in ipairs(entries) do
+        if s:match('^%[') then
+          s = s:gsub('^%[', ''):gsub('%]$', '')
+        end
+        local st = vim.loop.fs_stat(s)
+        if opts.files_only == false or
+          st and st.type == 'file' then
+          add_entry(s, co)
+        end
+      end
+      -- end; print("took", os.time()-start, "seconds.")
+
+      -- done
+      cb(nil, function() coroutine.resume(co) end)
+      coroutine.yield()
+    end)()
+
   end
 
+  opts = core.set_header(opts, 2)
   return core.fzf_files(opts, contents)
 end
 

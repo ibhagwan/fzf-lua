@@ -546,7 +546,7 @@ require'fzf-lua'.setup {
     prompt            = 'Args❯ ',
     files_only        = true,
     -- actions inherit from 'actions.files' and merge
-    actions           = { ["ctrl-x"] = actions.arg_del }
+    actions           = { ["ctrl-x"] = { actions.arg_del, actions.resume } }
   },
   oldfiles = {
     prompt            = 'History❯ ',
