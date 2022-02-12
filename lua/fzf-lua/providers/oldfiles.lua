@@ -28,30 +28,42 @@ M.oldfiles = function(opts)
 
   local contents = function (cb)
 
-    local entries = {}
-
-    for _, file in ipairs(sess_tbl) do
-        table.insert(entries, file)
-    end
-    for _, file in ipairs(vim.v.oldfiles) do
-      local fs_stat = not opts.stat_file and true or vim.loop.fs_stat(file)
-      if fs_stat and file ~= current_file and not sess_map[file] then
-        table.insert(entries, file)
-      end
-    end
-
-    for _, x in ipairs(entries) do
+    local function add_entry(x, co)
       x = core.make_entry_file(opts, x)
-      if x then
-        cb(x, function(err)
-          if err then return end
+      if not x then return end
+      cb(x, function(err)
+        coroutine.resume(co)
+        if err then
           -- close the pipe to fzf, this
           -- removes the loading indicator in fzf
           cb(nil, function() end)
-        end)
-      end
+        end
+      end)
+      coroutine.yield()
     end
-    cb(nil)
+
+    -- run in a coroutine for async progress indication
+    coroutine.wrap(function()
+      local co = coroutine.running()
+
+      for _, file in ipairs(sess_tbl) do
+        add_entry(file, co)
+      end
+
+      -- local start = os.time(); for _ = 1,10000,1 do
+      for _, file in ipairs(vim.v.oldfiles) do
+        local fs_stat = not opts.stat_file and true or vim.loop.fs_stat(file)
+        if fs_stat and file ~= current_file and not sess_map[file] then
+          add_entry(file, co)
+        end
+      end
+      -- end; print("took", os.time()-start, "seconds.")
+
+      -- done
+      cb(nil, function() coroutine.resume(co) end)
+      coroutine.yield()
+    end)()
+
   end
 
   opts = core.set_header(opts, 2)
