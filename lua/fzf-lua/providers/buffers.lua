@@ -260,6 +260,8 @@ M.buffer_lines = function(opts)
     opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search)
   end
 
+  opts = core.set_fzf_line_args(opts)
+
   core.fzf_wrap(opts, items, function(selected)
     if not selected then return end
 

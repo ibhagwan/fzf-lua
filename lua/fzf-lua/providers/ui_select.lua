@@ -8,6 +8,10 @@ local M = {}
 local _opts = nil
 local _old_ui_select = nil
 
+M.is_registered = function()
+  return vim.ui.select == M.ui_select
+end
+
 M.deregister = function(_, silent, noclear)
   if not _old_ui_select then
     if not silent then
@@ -83,7 +87,7 @@ M.ui_select = function(items, opts, on_choice)
   _opts = _opts or {}
   _opts.fzf_opts = {
     ['--no-multi']        = '',
-    ['--prompt']          = prompt:gsub(":$", "> "),
+    ['--prompt']          = prompt:gsub(":%s?$", "> "),
     ['--preview-window']  = 'hidden:right:0',
   }
 

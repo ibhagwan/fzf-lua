@@ -151,6 +151,12 @@ M.lsp_workspace_diagnostics = require'fzf-lua.providers.lsp'.workspace_diagnosti
 M.register_ui_select = require'fzf-lua.providers.ui_select'.register
 M.deregister_ui_select = require'fzf-lua.providers.ui_select'.deregister
 
+M.dap_commands = require'fzf-lua.providers.dap'.commands
+M.dap_configurations = require'fzf-lua.providers.dap'.configurations
+M.dap_breakpoints = require'fzf-lua.providers.dap'.breakpoints
+M.dap_variables = require'fzf-lua.providers.dap'.variables
+M.dap_frames = require'fzf-lua.providers.dap'.frames
+
 -- API shortcuts
 M.fzf = require'fzf-lua.core'.fzf
 M.fzf_wrap = require'fzf-lua.core'.fzf_wrap

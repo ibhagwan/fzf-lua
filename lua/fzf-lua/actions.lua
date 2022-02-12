@@ -118,7 +118,9 @@ M.vimcmd_file = function(vimcmd, selected, opts)
       vim.api.nvim_win_set_cursor(0, {1, 0})
       vim.fn.search(entry.ctag, "W")
     elseif entry.line>1 or entry.col>1 then
-      entry.col = entry.col or 1
+      -- make sure we have valid column
+      -- 'nvim-dap' for example sets columns to 0
+      entry.col = entry.col and entry.col>0 and entry.col or 1
       vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
     end
     if not is_term then vim.cmd("norm! zvzz") end
@@ -284,9 +286,7 @@ M.colorscheme = function(selected)
   vim.cmd("colorscheme " .. colorscheme)
 end
 
-M.run_builtin = function(selected)
-  local method = selected[1]
-  vim.cmd(string.format("lua require'fzf-lua'.%s()", method))
+M.ensure_insert_mode = function()
   -- not sure what is causing this, tested with
   -- 'NVIM v0.6.0-dev+575-g2ef9d2a66'
   -- vim.cmd("startinsert") doesn't start INSERT mode
@@ -309,6 +309,12 @@ M.run_builtin = function(selected)
       vim.cmd[[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
     end
   end
+end
+
+M.run_builtin = function(selected)
+  local method = selected[1]
+  vim.cmd(string.format("lua require'fzf-lua'.%s()", method))
+  M.ensure_insert_mode()
 end
 
 M.ex_run = function(selected)

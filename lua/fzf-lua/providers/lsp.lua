@@ -345,6 +345,29 @@ end
 M.code_actions = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
+
+  -- irrelevant for code actions and can cause
+  -- single results to be skipped with 'async = false'
+  opts.jump_to_single_result = false
+  opts.lsp_params = vim.lsp.util.make_range_params()
+  opts.lsp_params.context = {
+    diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
+  }
+
+  -- we use `vim.ui.select` for neovim > 0.6
+  -- so make sure 'set_lsp_fzf_fn' is run synchronously
+  if vim.fn.has('nvim-0.6') == 1 then
+    opts.sync, opts.async = true, false
+  end
+
+  -- when 'opts.sync == true' calls 'vim.lsp.buf_request_sync'
+  -- so we can avoid calling  'ui_select.register' when no code
+  -- actions are available
+  opts = set_lsp_fzf_fn(opts)
+
+  -- error or no sync request no results
+  if not opts.fzf_fn then return end
+
   -- use `vim.ui.select` for neovim > 0.6
   -- the original method is now deprecated
   if vim.fn.has('nvim-0.6') == 1 then
@@ -357,15 +380,11 @@ M.code_actions = function(opts)
     end
     ui_select.register(opts, true)
     vim.lsp.buf.code_action()
+    -- vim.defer_fn(function()
+    --   ui_select.deregister({}, true, true)
+    -- end, 100)
     return
   end
-  -- irrelevant for code actions and can cause
-  -- single results to be skipped with 'async = false'
-  opts.jump_to_single_result = false
-  opts.lsp_params = vim.lsp.util.make_range_params()
-  opts.lsp_params.context = {
-    diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
-  }
 
   -- see discussion in:
   -- https://github.com/nvim-telescope/telescope.nvim/pull/738
@@ -451,10 +470,6 @@ M.code_actions = function(opts)
   opts.fzf_opts["--no-multi"] = ''
   opts.fzf_opts["--preview-window"] = 'right:0'
   opts.fzf_opts["--delimiter"] = vim.fn.shellescape(':')
-  opts = set_lsp_fzf_fn(opts)
-
-  -- error or no sync request no results
-  if not opts.fzf_fn then return end
 
   core.fzf_wrap(opts, opts.fzf_fn, function(selected)
 

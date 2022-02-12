@@ -201,6 +201,14 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `filetypes`        | neovim filetypes                           |
 | `packadd`          | :packadd <package>                         |
 
+### nvim-dap
+| Command              | List                                       |
+| -------------------- | ------------------------------------------ |
+| `dap_commands`         | list,run `nvim-dap` builtin commands         |
+| `dap_configurations`   | list,run debug configurations              |
+| `dap_breakpoints`      | list,delete breakpoints                    |
+| `dap_variables`        | active session variables                   |
+| `dap_frames`           | active session jump to frame               |
 
 ### Neovim API
 
@@ -573,7 +581,7 @@ require'fzf-lua'.setup {
     fzf_opts = {
       -- do not include bufnr in fuzzy matching
       -- tiebreak by line no.
-      ['--delimiter'] = vim.fn.shellescape(']'),
+      ['--delimiter'] = vim.fn.shellescape('[\\]]'),
       ["--nth"]       = '2..',
       ["--tiebreak"]  = 'index',
     },
