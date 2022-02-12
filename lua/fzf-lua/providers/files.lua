@@ -42,10 +42,6 @@ M.files = function(opts)
   return core.fzf_files(opts, contents)
 end
 
-M.files_resume = function(_)
-  utils.warn("'files_resume' was deprecated, please use global 'resume' instead.")
-end
-
 M.args = function(opts)
   opts = config.normalize_opts(opts, config.globals.args)
   if not opts then return end

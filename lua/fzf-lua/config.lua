@@ -292,6 +292,7 @@ M.globals.oldfiles = {
     file_icons          = true and M._has_devicons,
     color_icons         = true,
     git_icons           = false,
+    stat_file           = true,
     _actions            = function() return M.globals.actions.files end,
   }
 M.globals.quickfix = {

@@ -44,28 +44,15 @@ function M.setup(opts)
     globals.keymap.fzf = opts.fzf_binds
   end
   -- do not merge, override the bind tables
-  if opts.keymap and opts.keymap.fzf then
-    globals.keymap.fzf = opts.keymap.fzf
-  end
-  if opts.keymap and opts.keymap.builtin then
-    globals.keymap.builtin = opts.keymap.builtin
-  end
-  -- do not merge, override the default action tables
-  if opts.actions and opts.actions.files then
-    globals.actions.files = opts.actions.files
-  end
-  if opts.actions and opts.actions.buffers then
-    globals.actions.buffers = opts.actions.buffers
-  end
-  -- deprecated options
-  if globals.previewers.builtin.keymap then
-    utils.warn("'previewers.builtin.keymap' moved under 'keymap.builtin', see ':help fzf-lua-customization'")
-  end
-  if globals.previewers.builtin.wrap ~= nil then
-    utils.warn("'previewers.builtin.wrap' is not longer in use, set 'winopts.preview.wrap' to 'wrap' or 'nowrap' instead")
-  end
-  if globals.previewers.builtin.hidden ~= nil then
-    utils.warn("'previewers.builtin.hidden' is not longer in use, set 'winopts.preview.hidden' to 'hidden' or 'nohidden' instead")
+  for t, v in pairs({
+    ['keymap']  = { 'fzf',   'builtin' },
+    ['actions'] = { 'files', 'buffers' },
+  }) do
+    for _, k in ipairs(v) do
+      if opts[t] and opts[t][k] then
+        globals[t][k] = opts[t][k]
+      end
+    end
   end
   -- override BAT_CONFIG_PATH to prevent a
   -- conflct with '$XDG_DATA_HOME/bat/config'
@@ -89,7 +76,6 @@ end
 M.resume = require'fzf-lua.core'.fzf_resume
 
 M.files = require'fzf-lua.providers.files'.files
-M.files_resume = require'fzf-lua.providers.files'.files_resume
 M.args = require'fzf-lua.providers.files'.args
 M.grep = require'fzf-lua.providers.grep'.grep
 M.live_grep = require'fzf-lua.providers.grep'.live_grep_mt
