@@ -76,7 +76,7 @@ M.ui_select = function(items, opts, on_choice)
   for i, e in ipairs(items) do
     table.insert(entries,
       ("%s. %s"):format(utils.ansi_codes.magenta(tostring(i)),
-        opts.format_item(e)))
+        opts.format_item and opts.format_item(e) or tostring(e)))
   end
 
   local prompt = opts.prompt
