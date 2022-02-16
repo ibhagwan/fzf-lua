@@ -67,6 +67,8 @@ function M.setup(opts)
   end
   -- set lua_io if caller requested
   utils.set_lua_io(globals.lua_io)
+  -- set custom &nbsp if caller requested
+  if globals.nbsp then utils.nbsp = globals.nbsp end
   -- reset our globals based on user opts
   -- this doesn't happen automatically
   config.globals = globals

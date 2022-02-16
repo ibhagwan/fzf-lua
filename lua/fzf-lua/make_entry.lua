@@ -147,7 +147,9 @@ if not config then
   _config.globals.file_icon_padding = load_config_section('globals.file_icon_padding', 'string')
   _config.globals.files.git_status_cmd = load_config_section('globals.files.git_status_cmd', 'table')
 
-  -- _G.dump(_config)
+  _config.globals.nbsp = load_config_section('globals.nbsp', 'string')
+  if _config.globals.nbsp then utils.nbsp = _config.globals.nbsp end
+
   config = _config
 end
 

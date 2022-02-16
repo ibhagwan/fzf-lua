@@ -25,6 +25,7 @@ end
 M.__resume_data = {}
 
 M.globals = {
+  nbsp                  = utils.nbsp,
   global_resume         = true,
   global_resume_query   = true,
   winopts = {
