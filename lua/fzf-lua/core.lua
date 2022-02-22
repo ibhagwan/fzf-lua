@@ -408,6 +408,8 @@ M.make_entry_lcol = function(opts, entry)
   if not entry then return nil end
   local filename = entry.filename or vim.api.nvim_buf_get_name(entry.bufnr)
   return string.format("%s:%s:%s:%s%s",
+    -- uncomment to test URIs
+    -- "file://" .. filename,
     filename, --utils.ansi_codes.magenta(filename),
     utils.ansi_codes.green(tostring(entry.lnum)),
     utils.ansi_codes.blue(tostring(entry.col)),

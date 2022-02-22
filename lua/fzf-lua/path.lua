@@ -152,17 +152,17 @@ end
 
 function M.entry_to_location(entry)
   local uri, line, col = entry:match("^(.*://.*):(%d+):(%d+):")
-  line = line and tonumber(line-1) or 0
-  col = col and tonumber(col-1) or 0
+  line = line and tonumber(line) or 1
+  col = col and tonumber(col) or 1
   return {
     stripped = entry,
-    line = line+1,
+    line = line,
     col = col,
     uri = uri,
     range = {
       start = {
-        line = line,
-        character = col,
+        line = line-1,
+        character = col-1,
       }
     }
   }

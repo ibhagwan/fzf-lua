@@ -62,34 +62,49 @@ function Previewer.base:set_winopts(win)
   end
 end
 
-function Previewer.base:set_tmp_buffer()
-  if not self.win or not self.win:validate_preview() then return end
+function Previewer.base:get_tmp_buffer()
   local tmp_buf = api.nvim_create_buf(false, true)
   api.nvim_buf_set_option(tmp_buf, 'bufhidden', 'wipe')
-  api.nvim_win_set_buf(self.win.preview_winid, tmp_buf)
   return tmp_buf
+end
+
+function Previewer.base:set_preview_buf(newbuf)
+  if not self.win or not self.win:validate_preview() then return end
+  api.nvim_win_set_buf(self.win.preview_winid, newbuf)
+  self.preview_bufnr = newbuf
+  -- set preview window options
+  if not self.preview_isterm then
+    self:set_winopts(self.win.preview_winid)
+  end
 end
 
 function Previewer.base:clear_preview_buf()
   local retbuf = nil
-  if self.win and self.win:validate_preview() then
+  if self.win and api.nvim_win_is_valid(self.win.preview_winid) then
     -- attach a temp buffer to the window
     -- so we can safely delete the buffer
     -- ('nvim_buf_delete' removes the attached win)
-    retbuf = self:set_tmp_buffer()
+    retbuf = self:get_tmp_buffer()
+    api.nvim_win_set_buf(self.win.preview_winid, retbuf)
   end
-  if self.preview_bufloaded then
-    local bufnr = self.preview_bufnr
-    if vim.api.nvim_buf_is_valid(bufnr) then
-      api.nvim_buf_call(bufnr, function()
-        vim.cmd('delm \\"')
-      end)
-      vim.api.nvim_buf_delete(bufnr, {force=true})
-    end
+  -- since our temp buffers have 'bufhidden=wipe' the tmp
+  -- buffer will be automatically wiped and 'nvim_buf_is_valid'
+  -- will return false
+  -- one case where the buffer may remain valid after detaching
+  -- from the preview window is with URI type entries after calling
+  -- 'vim.lsp.util.jump_to_location' which can reuse existing buffers
+  -- so techinically this should never be executed unless we're the
+  -- user wrote an fzf-lua extension and set the preview buffer to
+  -- a random buffer without the 'bufhidden' property
+  if not self.preview_isuri
+    and self.preview_bufnr
+    and vim.api.nvim_buf_is_valid(self.preview_bufnr) then
+    api.nvim_buf_call(self.preview_bufnr, function()
+      vim.cmd('delm \\"')
+    end)
+    vim.api.nvim_buf_delete(self.preview_bufnr, {force=true})
   end
   self.preview_bufnr = nil
-  self.preview_isterm = nil
-  self.preview_bufloaded = nil
   self.loaded_entry = nil
   return retbuf
 end
@@ -110,11 +125,13 @@ function Previewer.base:display_entry(entry_str)
   end
   local previous_bufnr = api.nvim_win_get_buf(self.win.preview_winid)
   assert(not self.preview_bufnr or previous_bufnr == self.preview_bufnr)
-  -- clear the current preview buffer
-  -- store the new preview buffer
+
+  -- clears the current preview buffer and set to a new temp buffer
+  -- recommended to return false from 'should_clear_preview' and use
+  -- 'self:set_preview_buf()' instead for flicker-free exeperience
   local should_clear = self.should_clear_preview and
     self:should_clear_preview(entry_str)
-  if should_clear == nil or should_clear == true then
+  if should_clear ~= false then
     self.preview_bufnr = self:clear_preview_buf()
   end
 
@@ -133,10 +150,11 @@ function Previewer.base:display_entry(entry_str)
     self.win:reset_win_highlights(self.win.preview_winid)
   end
 
-  if not self._entry_count then self._entry_count=1
-  else self._entry_count = self._entry_count+1 end
-  local entry_count = self._entry_count
-  if self.delay>0 then
+  -- debounce preview entries
+  if tonumber(self.delay)>0 then
+    if not self._entry_count then self._entry_count=1
+    else self._entry_count = self._entry_count+1 end
+    local entry_count = self._entry_count
     vim.defer_fn(function()
       -- only display if entry hasn't changed
       if self._entry_count == entry_count then
@@ -224,7 +242,11 @@ function Previewer.buffer_or_file:parse_entry(entry_str)
   return entry
 end
 
-function Previewer.buffer_or_file:should_clear_preview(entry)
+function Previewer.buffer_or_file:should_clear_preview(_)
+  return false
+end
+
+function Previewer.buffer_or_file:should_load_buffer(entry)
   -- we don't have a previous entry to compare to
   -- return 'true' so the buffer will be loaded in
   -- ::populate_preview_buf
@@ -243,28 +265,24 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
   local entry = self:parse_entry(entry_str)
   if vim.tbl_isempty(entry) then return end
-  if not self:should_clear_preview(entry) then
+  -- mark terminal buffers so we don't call 'set_winopts'
+  -- mark uri entries so we do not delete the preview buffer
+  self.preview_isuri = (entry.uri ~= nil)
+  self.preview_isterm = entry.terminal
+  if not self:should_load_buffer(entry) then
     -- same file/buffer as previous entry
     -- no need to reload content
     -- call post to set cusror location
     self:preview_buf_post(entry)
   elseif entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
-    -- WE NO LONGER REUSE THE CURRENT BUFFER (except for term)
+    -- WE NO LONGER REUSE THE CURRENT BUFFER
     -- this changes the buffer's 'getbufinfo[1].lastused'
     -- which messes up our `buffers()` sort
-    self.preview_isterm = entry.terminal
-    --[[ if self.preview_isterm then
-      -- display the buffer in the preview
-      api.nvim_win_set_buf(self.win.preview_winid, entry.bufnr)
-      -- store current preview buffer
-      self.preview_bufnr = entry.bufnr
-    else --]]
-      -- mark the buffer for unloading the next call
-      self.preview_bufloaded = true
-      entry.filetype = vim.api.nvim_buf_get_option(entry.bufnr, 'filetype')
-      local lines = vim.api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
-      vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
-    -- end
+    entry.filetype = vim.api.nvim_buf_get_option(entry.bufnr, 'filetype')
+    local lines = vim.api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
+    local tmpbuf = self:get_tmp_buffer()
+    vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+    self:set_preview_buf(tmpbuf)
     self:preview_buf_post(entry)
   elseif entry.uri then
     -- LSP 'jdt://' entries, see issue #195
@@ -281,24 +299,20 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       -- filename only
       entry.path = path.relative(vim.api.nvim_buf_get_name(entry.bufnr), vim.loop.cwd())
     end
-    -- mark the buffer for unloading the next call
-    self.preview_bufloaded = true
     -- make sure the file is readable (or bad entry.path)
     if not entry.path or not vim.loop.fs_stat(entry.path) then return end
+    local tmpbuf = self:get_tmp_buffer()
     if utils.perl_file_is_binary(entry.path) then
-      vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, {
+      vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, {
         "Preview is not supported for binary files."
       })
+      -- swap preview buffer with new one
+      self:set_preview_buf(tmpbuf)
       self:preview_buf_post(entry)
       return
     end
     -- read the file into the buffer
     utils.read_file_async(entry.path, vim.schedule_wrap(function(data)
-      if not self.preview_bufnr or
-         not vim.api.nvim_buf_is_valid(self.preview_bufnr) then
-        return
-      end
-
       local lines = vim.split(data, "[\r]?\n")
 
       -- if file ends in new line, don't write an empty string as the last
@@ -306,11 +320,9 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       if data:sub(#data, #data) == "\n" or data:sub(#data-1,#data) == "\r\n" then
         table.remove(lines)
       end
-
-      local ok = pcall(vim.api.nvim_buf_set_lines, self.preview_bufnr, 0, -1, false, lines)
-      if not ok then
-        return
-      end
+      vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+      -- swap preview buffer with new one
+      self:set_preview_buf(tmpbuf)
       self:preview_buf_post(entry)
     end))
   end
@@ -321,7 +333,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
   if not entry or not entry.path then return end
   local bufnr = self.preview_bufnr
   local preview_winid = self.win.preview_winid
-  if self.preview_bufloaded and vim.bo[bufnr].filetype == '' then
+  if api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].filetype == '' then
     if fn.bufwinid(bufnr) == preview_winid then
       -- do not enable for large files, treesitter still has perf issues:
       -- https://github.com/nvim-treesitter/nvim-treesitter/issues/556
@@ -414,6 +426,7 @@ function Previewer.buffer_or_file:update_border(entry)
 end
 
 function Previewer.buffer_or_file:preview_buf_post(entry)
+  if not self.win or not self.win:validate_preview() then return end
   -- set preview win options or load the file
   -- if not already loaded from buffer
   self:set_cursor_hl(entry)
@@ -439,6 +452,10 @@ end
 
 
 Previewer.help_tags = Previewer.base:extend()
+
+function Previewer.help_tags:should_clear_preview(_)
+  return false
+end
 
 function Previewer.help_tags:new(o, opts, fzf_win)
   Previewer.help_tags.super.new(self, o, opts, fzf_win)
@@ -552,14 +569,14 @@ end
 
 function Previewer.man_pages:populate_preview_buf(entry_str)
   local entry = self:parse_entry(entry_str)
-  -- mark the buffer for unloading the next call
-  self.preview_bufloaded = true
   local cmd = self.cmd:format(entry)
   if type(cmd) == 'string' then cmd = {"sh", "-c", cmd} end
   local output, _ = utils.io_systemlist(cmd)
-  -- vim.api.nvim_buf_set_option(self.preview_bufnr, 'modifiable', true)
-  vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, output)
-  vim.api.nvim_buf_set_option(self.preview_bufnr, 'filetype', self.filetype)
+  local tmpbuf = self:get_tmp_buffer()
+  -- vim.api.nvim_buf_set_option(tmpbuf, 'modifiable', true)
+  vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, output)
+  vim.api.nvim_buf_set_option(tmpbuf, 'filetype', self.filetype)
+  self:set_preview_buf(tmpbuf)
   self.win:update_scrollbar()
 end
 
