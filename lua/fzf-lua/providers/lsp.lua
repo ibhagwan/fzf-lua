@@ -52,7 +52,7 @@ end
 
 local function symbol_handler(opts, cb, _, result, _, _)
   result = vim.tbl_islist(result) and result or {result}
-  local items = vim.lsp.util.symbols_to_items(result)
+  local items = vim.lsp.util.symbols_to_items(result, 0)
   for _, entry in ipairs(items) do
     if opts.ignore_filename then
       entry.filename = opts.filename
@@ -168,7 +168,7 @@ local function set_lsp_fzf_fn(opts)
   opts.winid = opts.winid or vim.api.nvim_get_current_win()
   opts.filename = vim.api.nvim_buf_get_name(opts.bufnr)
   if not opts.lsp_params then
-    opts.lsp_params = vim.lsp.util.make_position_params()
+    opts.lsp_params = vim.lsp.util.make_position_params(0)
     opts.lsp_params.context = { includeDeclaration = true }
   end
 
@@ -349,7 +349,7 @@ M.code_actions = function(opts)
   -- irrelevant for code actions and can cause
   -- single results to be skipped with 'async = false'
   opts.jump_to_single_result = false
-  opts.lsp_params = vim.lsp.util.make_range_params()
+  opts.lsp_params = vim.lsp.util.make_range_params(0)
   opts.lsp_params.context = {
     diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
   }
