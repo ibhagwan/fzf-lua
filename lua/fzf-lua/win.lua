@@ -979,7 +979,11 @@ function FzfWin.toggle_preview_wrap()
 end
 
 function FzfWin.toggle_preview_cw(direction)
-  if not _self or _self.winopts.split then return end
+  if not _self
+    or _self.winopts.split
+    or not _self:validate_preview() then
+    return
+  end
   local self = _self
   local pos = { 'up', 'right', 'down', 'left' }
   local idx

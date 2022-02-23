@@ -73,7 +73,7 @@ function Previewer.base:set_preview_buf(newbuf)
   api.nvim_win_set_buf(self.win.preview_winid, newbuf)
   self.preview_bufnr = newbuf
   -- set preview window options
-  if not self.preview_isterm then
+  if not self.do_not_set_winopts then
     self:set_winopts(self.win.preview_winid)
   end
 end
@@ -96,7 +96,7 @@ function Previewer.base:clear_preview_buf()
   -- so techinically this should never be executed unless we're the
   -- user wrote an fzf-lua extension and set the preview buffer to
   -- a random buffer without the 'bufhidden' property
-  if not self.preview_isuri
+  if not self.do_not_unload
     and self.preview_bufnr
     and vim.api.nvim_buf_is_valid(self.preview_bufnr) then
     api.nvim_buf_call(self.preview_bufnr, function()
@@ -142,7 +142,7 @@ function Previewer.base:display_entry(entry_str)
     self:populate_preview_buf(entry_str_)
 
     -- set preview window options
-    if not self.preview_isterm then
+    if not self.do_not_set_winopts then
       self:set_winopts(self.win.preview_winid)
     end
 
@@ -267,8 +267,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if vim.tbl_isempty(entry) then return end
   -- mark terminal buffers so we don't call 'set_winopts'
   -- mark uri entries so we do not delete the preview buffer
-  self.preview_isuri = (entry.uri ~= nil)
-  self.preview_isterm = entry.terminal
+  self.do_not_unload = (entry.uri ~= nil)
+  self.do_not_set_winopts = entry.terminal
   if not self:should_load_buffer(entry) then
     -- same file/buffer as previous entry
     -- no need to reload content
@@ -462,6 +462,9 @@ function Previewer.help_tags:new(o, opts, fzf_win)
   self.split = o.split
   self.help_cmd = o.help_cmd or "help"
   self.filetype = "help"
+  -- do not unload preview buffer
+  -- it's our dedicated ':help' buffer
+  self.do_not_unload = true
   self:init_help_win()
   return self
 end
@@ -553,7 +556,19 @@ end
 
 -- inherit from help_tags for the specialized
 -- 'gen_winopts()' without ':set  number'
-Previewer.man_pages = Previewer.help_tags:extend()
+Previewer.man_pages = Previewer.base:extend()
+
+function Previewer.man_pages:should_clear_preview(_)
+  return false
+end
+
+function Previewer.man_pages:gen_winopts()
+  local winopts = {
+    wrap    = self.win.preview_wrap,
+    number  = false
+  }
+  return vim.tbl_extend("keep", winopts, self.winopts)
+end
 
 function Previewer.man_pages:new(o, opts, fzf_win)
   Previewer.man_pages.super.new(self, o, opts, fzf_win)
