@@ -80,7 +80,11 @@ end
 
 function Previewer.base:clear_preview_buf()
   local retbuf = nil
-  if self.win and api.nvim_win_is_valid(self.win.preview_winid) then
+  -- we don't use 'self.win:validate_preview()' because we want
+  -- to detach the buffer even when 'self.win.closing = true'
+  if self.win and self.win.preview_winid
+    and tonumber(self.win.preview_winid)>0
+    and api.nvim_win_is_valid(self.win.preview_winid) then
     -- attach a temp buffer to the window
     -- so we can safely delete the buffer
     -- ('nvim_buf_delete' removes the attached win)
