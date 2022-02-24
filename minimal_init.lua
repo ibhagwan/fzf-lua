@@ -1,3 +1,5 @@
+-- Download this file and run `nvim -u /path/to/minimal_init.lua` or exec directly with:
+-- nvim -u <((echo "lua << EOF") && (curl -s https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/minimal_init.lua) && (echo "EOF"))
 if vim.api.nvim_call_function('has', {'nvim-0.5'}) ~= 1 then
   vim.api.nvim_command('echohl WarningMsg | echom "Fzf-lua requires neovim > v0.5 | echohl None"')
   return
@@ -52,4 +54,6 @@ end
 
 if not vim.loop.fs_stat(packer.config.compile_path) then
   packer.sync()
+else
+  packer.compile()
 end
