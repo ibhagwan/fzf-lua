@@ -31,19 +31,25 @@ if not res then
   end
 end
 
-packer.startup({function(use)
-  use { 'wbthomason/packer.nvim', opt = true }
-  use { 'ibhagwan/fzf-lua',
-    config = function()
-      vim.api.nvim_set_keymap('n', '<C-p>',
-        '<Esc>:lua require"fzf-lua".files()<CR>', {})
-      require'fzf-lua'.setup({})
-    end,
-  }
-end})
+packer.startup({
+  function(use)
+    use { 'wbthomason/packer.nvim', opt = true }
+    use { 'ibhagwan/fzf-lua',
+      setup = [[ vim.api.nvim_set_keymap('n', '<C-p>',
+        '<Cmd>lua require"fzf-lua".files()<CR>', {}) ]],
+      config = 'require"fzf-lua".setup({})',
+      event = 'VimEnter',
+      opt = true,
+    }
+  end,
+  -- do not remove installed plugins (when running 'vim -u')
+  config = { auto_clean = false }
+})
+
+packer.on_compile_done = function()
+  packer.loader('fzf-lua')
+end
 
 if not vim.loop.fs_stat(packer.config.compile_path) then
   packer.sync()
-else
-  packer.compile()
 end

@@ -9,6 +9,16 @@
 - `nvim --version`:
 - `fzf --version`:
 
+<!--
+Check if your problem is reproducible with minimal init, by running:
+
+nvim -u <((echo "lua << EOF") && (curl -s https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/minimal_init.lua) && (echo "EOF"))
+
+Change '[ ]' to '[x]' below if the issue is reproducible.
+-->
+- [ ] The issue is reproducible with `minimal_init.lua`
+
+<!-- Delete this section if the issue is reproducible with minimal init -->
 <details>
 <summary>fzf-lua configuration</summary>
 
@@ -18,7 +28,6 @@
 require('fzf-lua').setup({
 })
 ```
-
 </details>
 
 ### Description 
