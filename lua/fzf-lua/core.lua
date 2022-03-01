@@ -56,8 +56,8 @@ M.fzf = function(opts, contents)
   -- support global resume?
   if opts.global_resume then
     config.__resume_data = config.__resume_data or {}
-    config.__resume_data.opts = vim.deepcopy(opts)
-    config.__resume_data.contents = contents and vim.deepcopy(contents) or nil
+    config.__resume_data.opts = utils.deepcopy(opts)
+    config.__resume_data.contents = contents and utils.deepcopy(contents) or nil
     if not opts.__resume then
       -- since the shell callback isn't called
       -- until the user first types something

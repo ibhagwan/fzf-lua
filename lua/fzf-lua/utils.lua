@@ -210,6 +210,15 @@ M.read_file_async = function(filepath, callback)
 end
 
 
+function M.deepcopy(t)
+  local ok, res = pcall(vim.deepcopy, t)
+  if ok then
+    return res
+  else
+    return M.tbl_deep_clone(t)
+  end
+end
+
 function M.tbl_deep_clone(t)
   if not t then return end
   local clone = {}

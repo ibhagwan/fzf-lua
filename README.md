@@ -636,6 +636,7 @@ require'fzf-lua'.setup {
     git_icons         = false,
     lsp_icons         = true,
     severity          = "hint",
+    ui_select         = true,       -- use 'vim.ui.select' for code actions
     icons = {
       ["Error"]       = { icon = "", color = "red" },       -- error
       ["Warning"]     = { icon = "", color = "yellow" },    -- warning

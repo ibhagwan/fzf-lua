@@ -370,7 +370,7 @@ M.code_actions = function(opts)
 
   -- use `vim.ui.select` for neovim > 0.6
   -- the original method is now deprecated
-  if vim.fn.has('nvim-0.6') == 1 then
+  if opts.ui_select and vim.fn.has('nvim-0.6') == 1 then
     local ui_select = require'fzf-lua.providers.ui_select'
     opts.previewer = false
     opts.actions = opts.actions or {}

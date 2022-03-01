@@ -433,6 +433,7 @@ M.globals.lsp = {
       git_icons           = false,
       lsp_icons           = true,
       cwd_only            = false,
+      ui_select           = true,
       async_or_timeout    = 5000,
       _actions            = function() return M.globals.actions.files end,
       icons = {
