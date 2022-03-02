@@ -294,6 +294,7 @@ end
 local function fzf_lsp_locations(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
+  opts = core.set_header(opts, 2)
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = set_lsp_fzf_fn(opts)
@@ -632,6 +633,7 @@ M.diagnostics = function(opts)
     end)()
   end
 
+  opts = core.set_header(opts, 2)
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   return core.fzf_files(opts)
