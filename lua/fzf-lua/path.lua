@@ -172,15 +172,22 @@ function M.entry_to_file(entry, cwd, force_uri)
   -- Remove ansi coloring and prefixed icons
   entry = utils.strip_ansi_coloring(entry)
   local stripped, idx = stripBeforeLastOccurrenceOf(entry, utils.nbsp)
+  local isURI = stripped:match("^%a+://")
+  -- Prepend cwd before constructing the URI (#341)
+  if cwd and #cwd>0 and not isURI and
+    not M.starts_with_separator(stripped) then
+    stripped = M.join({cwd, stripped})
+  end
   -- #336: force LSP jumps using 'vim.lsp.util.jump_to_location'
   -- so that LSP entries are added to the tag stack
-  if force_uri and not stripped:match("^%a+://") then
+  if not isURI and force_uri then
+    isURI = true
     stripped = "file://" .. stripped
   end
   -- entries from 'buffers' contain '[<bufnr>]'
   -- buffer placeholder always comes before the nbsp
   local bufnr = idx>1 and entry:sub(1, idx):match("%[(%d+)") or nil
-  if not bufnr and stripped:match("^%a+://") then
+  if isURI and not bufnr then
     -- Issue #195, when using nvim-jdtls
     -- https://github.com/mfussenegger/nvim-jdtls
     -- LSP entries inside .jar files appear as URIs
@@ -196,10 +203,6 @@ function M.entry_to_file(entry, cwd, force_uri)
   local file = s[1]
   local line = tonumber(s[2])
   local col  = tonumber(s[3])
-  if cwd and #cwd>0 and not M.starts_with_separator(file) then
-    file = M.join({cwd, file})
-    stripped = M.join({cwd, stripped})
-  end
   local terminal
   if bufnr then
     terminal = utils.is_term_buffer(bufnr)
