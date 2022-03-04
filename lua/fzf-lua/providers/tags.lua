@@ -176,17 +176,19 @@ local function get_tags_cmd(opts)
 end
 
 local function tags(opts)
-  opts.ctags_file = opts.ctags_file and vim.fn.expand(opts.ctags_file) or "tags"
-
-  if not vim.loop.fs_open(opts.ctags_file, "r", 438) then
-    utils.info("Tags file does not exists. Create one with ctags -R")
-    return
-  end
 
   -- signal actions this is a ctag
   opts._ctag = true
+  opts.ctags_file = opts.ctags_file and vim.fn.expand(opts.ctags_file) or "tags"
   opts._ctags_file = opts.cwd and path.join({opts.cwd, opts.ctags_file}) or opts.ctags_file
   opts._curr_file = opts._curr_file and path.relative(opts._curr_file, opts.cwd or vim.loop.cwd())
+
+  if not vim.loop.fs_stat(opts._ctags_file) then
+    utils.info(("Tags file ('%s') does not exists. Create one with ctags -R")
+      :format(opts._ctags_file))
+    return
+  end
+
   opts.cmd = opts.cmd or get_tags_cmd(opts)
   opts._fn_transform = make_entry.tag                            -- multiprocess=false
   opts._fn_transform_str = [[return require("make_entry").tag]]  -- multiprocess=true

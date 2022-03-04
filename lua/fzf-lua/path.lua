@@ -139,9 +139,9 @@ local function stripBeforeLastOccurrenceOf(str, sep)
 end
 
 
-function M.entry_to_ctag(entry)
+function M.entry_to_ctag(entry, noesc)
   local scode = entry:match("%:.-/^?\t?(.*)/")
-  if scode then
+  if scode and not noesc then
     -- scode = string.gsub(scode, "[$]$", "")
     scode = string.gsub(scode, [[\\]], [[\]])
     scode = string.gsub(scode, [[\/]], [[/]])

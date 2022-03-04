@@ -131,9 +131,53 @@ function Previewer.cmd_async:new(o, opts)
   return self
 end
 
+local grep_tag = function(file, tag)
+  local line = 1
+  local filepath = file
+  local pattern = utils.rg_escape(tag)
+  if not pattern or not filepath then return line end
+  local grep_cmd = vim.fn.executable("rg") == 1
+    and {"rg", "--line-number"}
+    or {"grep", "-n", "-P"}
+  -- ctags uses '$' at the end of short patterns
+  -- 'rg|grep' does not match these properly when
+  -- 'fileformat' isn't set to 'unix', when set to
+  -- 'dos' we need to prepend '$' with '\r$' with 'rg'
+  -- it is simpler to just ignore it compleley.
+  --[[ local ff = fileformat(filepath)
+  if ff == 'dos' then
+    pattern = pattern:gsub("\\%$$", "\\r%$")
+  else
+    pattern = pattern:gsub("\\%$$", "%$")
+  end --]]
+  -- equivalent pattern to `rg --crlf`
+  -- see discussion in #219
+  pattern = pattern:gsub("\\%$$", "\\r??%$")
+  local cmd = utils.tbl_deep_clone(grep_cmd)
+  table.insert(cmd, pattern)
+  table.insert(cmd, filepath)
+  local out = utils.io_system(cmd)
+  if not utils.shell_error() then
+    line = out:match("[^:]+")
+  end
+  -- if line == 1 then print(cmd) end
+  return line
+end
+
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   local entry = path.entry_to_file(entrystr, not self.relative and self.opts.cwd)
   local filepath = entry.bufname or entry.path or ''
+  if self.opts._ctag and entry.line<=1 then
+    -- tags without line numbers
+    -- make sure we don't already have line #
+    -- (in the case the line no. is actually 1)
+    local line = entry.stripped:match("[^:]+(%d+):")
+    local ctag = path.entry_to_ctag(entry.stripped, true)
+    if not line and ctag then
+      entry.ctag = ctag
+      entry.line = grep_tag(filepath, entry.ctag)
+    end
+  end
   local errcmd = nil
   -- verify the file exists on disk and is accessible
   if #filepath==0 or not vim.loop.fs_stat(filepath) then
@@ -166,12 +210,22 @@ end
 
 function Previewer.bat_async:cmdline(o)
   o = o or {}
-  local act = shell.preview_action_cmd(function(items)
+  local act = shell.preview_action_cmd(function(items, fzf_lines)
     local filepath, entry, errcmd = self:parse_entry_and_verify(items[1])
-    local cmd = errcmd or ('%s %s %s %s'):format(
+    local line_range = ''
+    if entry.ctag then
+      -- this is a ctag without line numbers, since we can't
+      -- provide the preview file offset to fzf via the field
+      -- index expression we use '--line-range' instead
+      local start_line = math.max(1, entry.line-fzf_lines/2)
+      local end_line = start_line + fzf_lines-1
+      line_range = ("--line-range=%d:%d"):format(start_line, end_line)
+    end
+    local cmd = errcmd or ('%s %s %s %s %s'):format(
       self.cmd, self.args,
       self.opts.line_field_index and
         ("--highlight-line=%d"):format(entry.line) or '',
+      line_range,
       vim.fn.shellescape(filepath))
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
