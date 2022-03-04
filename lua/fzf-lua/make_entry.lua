@@ -319,9 +319,10 @@ M.file = function(opts, x)
 end
 
 M.tag = function(opts, x)
-  local name, file, text = x:match("^(.*)\t(.*)\t(.*/)")
-  local line, tag = text:match("(%d-);?(/.*/)")
-  if not file then return x end
+  local name, file, text = x:match("([^\t]+)\t([^\t]+)\t(.*)")
+  if not file or not name or not text then return x end
+  text = text:match('(.*);"') or text   -- remove ctag comments
+  local line, tag = text:gsub("\\/", "/"):match("(%d-);?(/.*/)")
   return ("%s%s: %s %s"):format(
     M.file(opts, file),
     (not line or #line==0) and "" or ":"..utils.ansi_codes.green(tostring(line)),

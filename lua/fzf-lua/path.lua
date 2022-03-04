@@ -141,6 +141,10 @@ end
 
 function M.entry_to_ctag(entry, noesc)
   local scode = entry:match("%:.-/^?\t?(.*)/")
+  -- if tag name contains a slash we could
+  -- have the wrong match, most tags start
+  -- with ^ so try to match based on that
+  scode = scode and scode:match("/^(.*)") or scode
   if scode and not noesc then
     -- scode = string.gsub(scode, "[$]$", "")
     scode = string.gsub(scode, [[\\]], [[\]])

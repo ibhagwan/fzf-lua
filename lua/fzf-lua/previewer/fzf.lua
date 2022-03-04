@@ -13,7 +13,6 @@ function Previewer.base:new(o, opts)
   self.type = "cmd";
   self.cmd = o.cmd;
   self.args = o.args or "";
-  self.relative = o.relative
   self.opts = opts;
   return self
 end
@@ -77,7 +76,7 @@ function Previewer.cmd:action(o)
   o = o or {}
   local act = shell.raw_action(function (items, _, _)
     -- only preview first item
-    local entry = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
+    local entry = path.entry_to_file(items[1], self.opts.cwd)
     return entry.bufname or entry.path
   end, self.opts.field_index_expr or "{}")
   return act
@@ -159,13 +158,15 @@ local grep_tag = function(file, tag)
   local out = utils.io_system(cmd)
   if not utils.shell_error() then
     line = out:match("[^:]+")
+  else
+    utils.warn(("Unable to find pattern '%s' in file '%s'"):format(pattern, file))
   end
   -- if line == 1 then print(cmd) end
   return line
 end
 
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
-  local entry = path.entry_to_file(entrystr, not self.relative and self.opts.cwd)
+  local entry = path.entry_to_file(entrystr, self.opts.cwd)
   local filepath = entry.bufname or entry.path or ''
   if self.opts._ctag and entry.line<=1 then
     -- tags without line numbers
@@ -176,6 +177,7 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
     if not line and ctag then
       entry.ctag = ctag
       entry.line = grep_tag(filepath, entry.ctag)
+      print("line", entry.line, entry.ctag)
     end
   end
   local errcmd = nil
@@ -272,7 +274,7 @@ function Previewer.git_diff:cmdline(o)
       self.git_icons['?'] ..
       self.git_icons['C'] ..
       "]"..utils.nbsp) ~= nil
-    local file = path.entry_to_file(items[1], not self.relative and self.opts.cwd)
+    local file = path.entry_to_file(items[1], self.opts.cwd)
     local cmd = nil
     if is_modified then cmd = self.cmd_modified
     elseif is_deleted then cmd = self.cmd_deleted
