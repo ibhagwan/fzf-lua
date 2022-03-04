@@ -319,14 +319,14 @@ M.file = function(opts, x)
 end
 
 M.tag = function(opts, x)
-  local line = nil
-  local name, file, text = x:match("^(.*)\t(.*)\t(/.*/)")
+  local name, file, text = x:match("^(.*)\t(.*)\t(.*/)")
+  local line, tag = text:match("(%d-);?(/.*/)")
   if not file then return x end
   return ("%s%s: %s %s"):format(
-        M.file(opts, file),
-        not line and "" or ":"..utils.ansi_codes.green(tostring(line)),
-        utils.ansi_codes.magenta(name),
-        utils.ansi_codes.green(text))
+    M.file(opts, file),
+    (not line or #line==0) and "" or ":"..utils.ansi_codes.green(tostring(line)),
+    utils.ansi_codes.magenta(name),
+    utils.ansi_codes.green(tag))
 end
 
 return M

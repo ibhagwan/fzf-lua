@@ -192,6 +192,7 @@ local function tags(opts)
   opts.requires_processing = true
   local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, 2)
+  opts = core.set_fzf_field_index(opts)
   return core.fzf_files(opts, contents)
 end
 
