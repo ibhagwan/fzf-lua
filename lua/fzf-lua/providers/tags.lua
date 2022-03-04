@@ -183,6 +183,8 @@ local function tags(opts)
     return
   end
 
+  -- signal actions this is a ctag
+  opts._ctag = true
   opts._ctags_file = opts.cwd and path.join({opts.cwd, opts.ctags_file}) or opts.ctags_file
   opts._curr_file = opts._curr_file and path.relative(opts._curr_file, opts.cwd or vim.loop.cwd())
   opts.cmd = opts.cmd or get_tags_cmd(opts)
