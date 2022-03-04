@@ -177,7 +177,6 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
     if not line and ctag then
       entry.ctag = ctag
       entry.line = grep_tag(filepath, entry.ctag)
-      print("line", entry.line, entry.ctag)
     end
   end
   local errcmd = nil
