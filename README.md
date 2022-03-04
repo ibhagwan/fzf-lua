@@ -612,6 +612,29 @@ require'fzf-lua'.setup {
     },
     -- actions inherit from 'actions.buffers'
   },
+  tags = {
+    prompt                = 'Tags❯ ',
+    ctags_file            = "tags",
+    multiprocess          = true,
+    file_icons            = true,
+    git_icons             = true,
+    color_icons           = true,
+    -- actions inherit from 'actions.files'
+  },
+  btags = {
+    prompt                = 'BTags❯ ',
+    ctags_file            = "tags",
+    multiprocess          = true,
+    file_icons            = true,
+    git_icons             = true,
+    color_icons           = true,
+    fzf_opts = {
+      ['--delimiter']     = "'[\\]:]'",
+      ["--with-nth"]      = '2..',
+      ["--tiebreak"]      = 'index',
+    },
+    -- actions inherit from 'actions.files'
+  },
   colorschemes = {
     prompt            = 'Colorschemes❯ ',
     live_preview      = true,       -- apply the colorscheme on preview?

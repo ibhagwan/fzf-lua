@@ -356,12 +356,13 @@ M.mt_cmd_wrapper = function(opts)
   end
 
   if not opts.force_multiprocess and
+     not opts.requires_processing and
      not opts.git_icons and not opts.file_icons then
     -- command does not require any processing
     return opts.cmd
   elseif opts.multiprocess or opts.force_multiprocess then
-    local fn_preprocess = [[return require("make_entry").preprocess]]
-    local fn_transform = [[return require("make_entry").file]]
+    local fn_preprocess = opts._fn_preprocess_str or [[return require("make_entry").preprocess]]
+    local fn_transform = opts._fn_transform_str or [[return require("make_entry").file]]
     -- replace all below 'fn.shellescape' with our version
     -- replacing the surrounding single quotes with double
     -- as this was causing resume to fail with fish shell
@@ -390,11 +391,15 @@ M.mt_cmd_wrapper = function(opts)
   else
     return libuv.spawn_nvim_fzf_cmd(opts,
       function(x)
-        return make_entry.file(opts, x)
+        return opts._fn_transform
+          and opts._fn_transform(opts, x)
+          or make_entry.file(opts, x)
       end,
       function(o)
         -- setup opts.cwd and git diff files
-        return make_entry.preprocess(o)
+        return opts._fn_preprocess
+          and opts._fn_preprocess(o)
+          or make_entry.preprocess(o)
       end)
   end
 end

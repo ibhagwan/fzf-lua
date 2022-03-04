@@ -377,6 +377,7 @@ M.globals.tags = {
     previewer             = { _ctor = previewers.builtin.tags },
     prompt                = 'Tags> ',
     ctags_file            = "tags",
+    multiprocess          = true,
     file_icons            = true and M._has_devicons,
     git_icons             = true,
     color_icons           = true,
@@ -386,9 +387,15 @@ M.globals.btags = {
     previewer             = { _ctor = previewers.builtin.tags },
     prompt                = 'BTags> ',
     ctags_file            = "tags",
+    multiprocess          = true,
     file_icons            = true and M._has_devicons,
     git_icons             = true,
     color_icons           = true,
+    fzf_opts = {
+        ['--delimiter']   = "'[\\]:]'",
+        ["--with-nth"]    = '2..',
+        ["--tiebreak"]    = 'index',
+    },
     _actions              = function() return M.globals.actions.files end,
   }
 M.globals.colorschemes = {

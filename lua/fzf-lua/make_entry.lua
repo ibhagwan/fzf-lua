@@ -318,4 +318,15 @@ M.file = function(opts, x)
   return table.concat(ret)
 end
 
+M.tag = function(opts, x)
+  local line = nil
+  local name, file, text = x:match("^(.*)\t(.*)\t(/.*/)")
+  if not file then return x end
+  return ("%s%s: %s %s"):format(
+        M.file(opts, file),
+        not line and "" or ":"..utils.ansi_codes.green(tostring(line)),
+        utils.ansi_codes.magenta(name),
+        utils.ansi_codes.green(text))
+end
+
 return M

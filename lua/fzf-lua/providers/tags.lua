@@ -2,6 +2,7 @@ local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
+local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -148,19 +149,67 @@ local fzf_tags = function(opts)
   return core.fzf_files(opts, contents)
 end
 
-M.tags = function(opts)
+M.tags_old = function(opts)
   opts = config.normalize_opts(opts, config.globals.tags)
   if not opts then return end
   return fzf_tags(opts)
 end
 
-M.btags = function(opts)
+M.btags_old = function(opts)
   opts = config.normalize_opts(opts, config.globals.btags)
   if not opts then return end
   opts.fzf_opts = vim.tbl_extend("keep",
     opts.fzf_opts or {}, config.globals.blines.fzf_opts)
   opts.current_buffer_only = true
   return fzf_tags(opts)
+end
+
+local function get_tags_cmd(opts)
+  local post = opts._curr_file and #opts._curr_file>0
+    and ("%s %s"):format(vim.fn.shellescape(opts._curr_file), opts._ctags_file)
+    or ("-v '^!_TAG_' %s"):format(opts._ctags_file)
+  if vim.fn.executable("rg") == 1 then
+    return ("rg %s"):format(post)
+  else
+    return ("grep %s"):format(post)
+  end
+end
+
+local function tags(opts)
+  opts.ctags_file = opts.ctags_file and vim.fn.expand(opts.ctags_file) or "tags"
+
+  if not vim.loop.fs_open(opts.ctags_file, "r", 438) then
+    utils.info("Tags file does not exists. Create one with ctags -R")
+    return
+  end
+
+  opts._ctags_file = opts.cwd and path.join({opts.cwd, opts.ctags_file}) or opts.ctags_file
+  opts._curr_file = opts._curr_file and path.relative(opts._curr_file, opts.cwd or vim.loop.cwd())
+  opts.cmd = opts.cmd or get_tags_cmd(opts)
+  opts._fn_transform = make_entry.tag                            -- multiprocess=false
+  opts._fn_transform_str = [[return require("make_entry").tag]]  -- multiprocess=true
+  -- prevents 'file|git_icons=false' from overriding processing
+  opts.requires_processing = true
+  local contents = core.mt_cmd_wrapper(opts)
+  opts = core.set_header(opts, 2)
+  return core.fzf_files(opts, contents)
+end
+
+M.tags = function(opts)
+  opts = config.normalize_opts(opts, config.globals.tags)
+  if not opts then return end
+  return tags(opts)
+end
+
+M.btags = function(opts)
+  opts = config.normalize_opts(opts, config.globals.btags)
+  if not opts then return end
+  opts._curr_file = vim.api.nvim_buf_get_name(0)
+  if not opts._curr_file or #opts._curr_file==0 then
+    utils.info("'btags' is not available for unnamed buffers.")
+    return
+  end
+  return tags(opts)
 end
 
 return M
