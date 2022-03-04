@@ -111,6 +111,7 @@ M.colorschemes = require'fzf-lua.providers.colorschemes'.colorschemes
 
 M.tags = require'fzf-lua.providers.tags'.tags
 M.btags = require'fzf-lua.providers.tags'.btags
+M.tags_grep = require'fzf-lua.providers.tags'.tags_grep
 M.tags_old = require'fzf-lua.providers.tags'.tags_old
 M.btags_old = require'fzf-lua.providers.tags'.btags_old
 M.jumps = require'fzf-lua.providers.nvim'.jumps

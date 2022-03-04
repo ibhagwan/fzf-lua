@@ -165,14 +165,23 @@ M.btags_old = function(opts)
 end
 
 local function get_tags_cmd(opts)
-  local post = opts._curr_file and #opts._curr_file>0
-    and ("%s %s"):format(vim.fn.shellescape(opts._curr_file), opts._ctags_file)
-    or ("-v '^!_TAG_' %s"):format(opts._ctags_file)
-  if vim.fn.executable("rg") == 1 then
-    return ("rg %s"):format(post)
-  else
-    return ("grep %s"):format(post)
+  local query = nil
+  local cmd = "grep"
+  if vim.fn.executable("rg") == 2 then
+    cmd = "rg"
   end
+  if opts.search and #opts.search>0 then
+    if not opts.no_esc then
+      opts.search = utils.rg_escape(opts.search)
+    end
+    query = vim.fn.shellescape(opts.search)
+  elseif opts._curr_file and #opts._curr_file>0 then
+    query = vim.fn.shellescape(opts._curr_file)
+  else
+    query = "-v '^!_TAG_'"
+  end
+  return ("%s %s %s"):format(cmd, query,
+    vim.fn.shellescape(opts._ctags_file))
 end
 
 local function tags(opts)
@@ -219,6 +228,16 @@ M.btags = function(opts)
     return
   end
   return tags(opts)
+end
+
+M.tags_grep = function(opts)
+  opts = opts or {}
+
+  if not opts.search then
+    opts.search = vim.fn.input(opts.input_prompt or 'Grep For> ')
+  end
+
+  return M.tags(opts)
 end
 
 return M

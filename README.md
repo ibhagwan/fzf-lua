@@ -199,6 +199,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `keymaps`          | key mappings                               |
 | `spell_suggest`    | spelling suggestions                       |
 | `tags`             | project tags                               |
+| `tags_grep`        | grep project tags                          |
 | `btags`            | buffer tags                                |
 | `filetypes`        | neovim filetypes                           |
 | `packadd`          | :packadd <package>                         |
