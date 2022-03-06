@@ -178,7 +178,8 @@ M.globals = {
       syntax          = true,
       syntax_delay    = 0,
       syntax_limit_l  = 0,
-      syntax_limit_b  = 1024*1024,
+      syntax_limit_b  = 1024*1024,    -- 1MB
+      limit_b         = 1024*1024*10, -- 10MB
       _ctor           = previewers.builtin.buffer_or_file,
     },
   },

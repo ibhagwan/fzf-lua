@@ -22,6 +22,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.syntax_delay = o.syntax_delay
   self.syntax_limit_b = o.syntax_limit_b
   self.syntax_limit_l = o.syntax_limit_l
+  self.limit_b = o.limit_b
   self.backups = {}
   return self
 end
@@ -304,16 +305,27 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       entry.path = path.relative(vim.api.nvim_buf_get_name(entry.bufnr), vim.loop.cwd())
     end
     -- make sure the file is readable (or bad entry.path)
-    if not entry.path or not vim.loop.fs_stat(entry.path) then return end
+    local fs_stat = vim.loop.fs_stat(entry.path)
+    if not entry.path or not fs_stat then return end
     local tmpbuf = self:get_tmp_buffer()
-    if utils.perl_file_is_binary(entry.path) then
-      vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, {
-        "Preview is not supported for binary files."
-      })
-      -- swap preview buffer with new one
-      self:set_preview_buf(tmpbuf)
-      self:preview_buf_post(entry)
-      return
+    do
+      local lines = nil
+      if utils.perl_file_is_binary(entry.path) then
+        lines = { "Preview is not supported for binary files." }
+      elseif tonumber(self.limit_b)>0 and fs_stat.size>self.limit_b then
+        lines = {
+          ("Preview file size limit (>%dMB) reached, file size %dMB.")
+            :format(self.limit_b/(1024*1024), fs_stat.size/(1024*1024)),
+          -- "(configured via 'previewers.builtin.limit_b')"
+        }
+      end
+      if lines then
+        vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+        -- swap preview buffer with new one
+        self:set_preview_buf(tmpbuf)
+        self:preview_buf_post(entry)
+        return
+      end
     end
     -- read the file into the buffer
     utils.read_file_async(entry.path, vim.schedule_wrap(function(data)
