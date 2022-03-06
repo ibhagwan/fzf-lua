@@ -155,6 +155,16 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `live_grep_glob`   | live_grep with `rg --glob` support           |
 | `live_grep_native` | performant version of `live_grep`            |
 
+### Tags
+| Command          | List                                       |
+| ---------------- | ------------------------------------------ |
+| `tags`             | search project tags                        |
+| `btags`            | search buffer tags                         |
+| `tags_grep`        | grep project tags                          |
+| `tags_grep_cword`  | `tags_grep` word under cursor                |
+| `tags_grep_cWORD`  | `tags_grep` WORD under cursor                |
+| `tags_grep_visual` | `tags_grep` visual selection                 |
+| `tags_live_grep`   | live grep project tags                     |
 
 ### Git
 | Command          | List                                       |
@@ -198,13 +208,6 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `tagstack`         | :tags                                      |
 | `keymaps`          | key mappings                               |
 | `spell_suggest`    | spelling suggestions                       |
-| `tags`             | project tags                               |
-| `tags_grep`        | grep project tags                          |
-| `tags_grep_cword`  | tag search word under cursor               |
-| `tags_grep_cWORD`  | tag search WORD under cursor               |
-| `tags_grep_visual` | tag search visual selection                |
-| `tags_live_grep`   | live grep project tags                     |
-| `btags`            | buffer tags                                |
 | `filetypes`        | neovim filetypes                           |
 | `packadd`          | :packadd <package>                         |
 
