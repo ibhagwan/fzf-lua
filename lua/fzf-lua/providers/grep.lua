@@ -194,10 +194,7 @@ end
 -- multi threaded (multi-process actually) version
 M.live_grep_mt = function(opts)
 
-  -- do not normalize when called from 'tags_live_grep'
-  if not opts or not opts._normalized then
-    opts = config.normalize_opts(opts, config.globals.grep)
-  end
+  opts = config.normalize_opts(opts, config.globals.grep)
 
   if not opts then return end
 

@@ -111,8 +111,11 @@ M.colorschemes = require'fzf-lua.providers.colorschemes'.colorschemes
 
 M.tags = require'fzf-lua.providers.tags'.tags
 M.btags = require'fzf-lua.providers.tags'.btags
-M.tags_grep = require'fzf-lua.providers.tags'.tags_grep
-M.tags_live_grep = require'fzf-lua.providers.tags'.tags_live_grep
+M.tags_grep = require'fzf-lua.providers.tags'.grep
+M.tags_grep_cword = require'fzf-lua.providers.tags'.grep_cword
+M.tags_grep_CWORD = require'fzf-lua.providers.tags'.grep_cWORD
+M.tags_grep_visual = require'fzf-lua.providers.tags'.grep_visual
+M.tags_live_grep = require'fzf-lua.providers.tags'.live_grep
 M.tags_old = require'fzf-lua.providers.tags'.tags_old
 M.btags_old = require'fzf-lua.providers.tags'.btags_old
 M.jumps = require'fzf-lua.providers.nvim'.jumps

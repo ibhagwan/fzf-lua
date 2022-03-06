@@ -224,7 +224,7 @@ local function tags(opts)
     path.relative(opts._curr_file, opts.cwd or vim.loop.cwd())
   opts.cmd = opts.cmd or get_tags_cmd(opts)
   local contents = core.mt_cmd_wrapper(opts)
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts)
   opts = core.set_fzf_field_index(opts)
   return core.fzf_files(opts, contents)
 end
@@ -246,7 +246,7 @@ M.btags = function(opts)
   return tags(opts)
 end
 
-M.tags_grep = function(opts)
+M.grep = function(opts)
   opts = opts or {}
 
   if not opts.search then
@@ -256,12 +256,30 @@ M.tags_grep = function(opts)
   return M.tags(opts)
 end
 
-M.tags_live_grep = function(opts)
+M.live_grep = function(opts)
   opts = config.normalize_opts(opts, config.globals.tags)
   if not opts then return end
   opts.lgrep = true
   opts.__FNCREF__ = utils.__FNCREF__()
   return tags(opts)
+end
+
+M.grep_cword = function(opts)
+  if not opts then opts = {} end
+  opts.search = vim.fn.expand("<cword>")
+  return M.grep(opts)
+end
+
+M.grep_cWORD = function(opts)
+  if not opts then opts = {} end
+  opts.search = vim.fn.expand("<cWORD>")
+  return M.grep(opts)
+end
+
+M.grep_visual = function(opts)
+  if not opts then opts = {} end
+  opts.search = utils.get_visual_selection()
+  return M.grep(opts)
 end
 
 return M

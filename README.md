@@ -200,6 +200,9 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `spell_suggest`    | spelling suggestions                       |
 | `tags`             | project tags                               |
 | `tags_grep`        | grep project tags                          |
+| `tags_grep_cword`  | tag search word under cursor               |
+| `tags_grep_cWORD`  | tag search WORD under cursor               |
+| `tags_grep_visual` | tag search visual selection                |
 | `tags_live_grep`   | live grep project tags                     |
 | `btags`            | buffer tags                                |
 | `filetypes`        | neovim filetypes                           |
