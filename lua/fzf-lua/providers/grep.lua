@@ -147,10 +147,11 @@ M.live_grep_st = function(opts)
     return get_grep_cmd(opts, query, true)
   end
 
-  if opts.experimental and (opts.git_icons or opts.file_icons) then
-    opts._fn_transform = function(x)
-      return core.make_entry_file(opts, x)
-    end
+  if opts.requires_processing or opts.git_icons or opts.file_icons then
+    opts._fn_transform = opts._fn_transform
+      or function(x)
+        return core.make_entry_file(opts, x)
+      end
   end
 
   -- disable global resume

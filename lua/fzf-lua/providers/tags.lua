@@ -200,15 +200,24 @@ local function tags(opts)
     return
   end
 
-  opts._fn_transform = make_entry.tag                            -- multiprocess=false
-  opts._fn_transform_str = [[return require("make_entry").tag]]  -- multiprocess=true
   -- prevents 'file|git_icons=false' from overriding processing
   opts.requires_processing = true
+  opts._fn_transform = make_entry.tag                            -- multiprocess=false
+  opts._fn_transform_str = [[return require("make_entry").tag]]  -- multiprocess=true
 
   if opts.lgrep then
+    -- live_grep requested by caller ('tags_live_grep')
     opts.prompt = '*' .. opts.prompt
     opts.filename = opts._ctags_file
-    return require'fzf-lua.providers.grep'.live_grep_mt(opts)
+    if opts.multiprocess then
+      return require'fzf-lua.providers.grep'.live_grep_mt(opts)
+    else
+      -- 'live_grep_st' uses different signature '_fn_transform'
+      opts._fn_transform = function(x)
+        return make_entry.tag(opts, x)
+      end
+      return require'fzf-lua.providers.grep'.live_grep_st(opts)
+    end
   end
 
   opts._curr_file = opts._curr_file and
