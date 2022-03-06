@@ -323,11 +323,13 @@ M.tag = function(opts, x)
   if not file or not name or not text then return x end
   text = text:match('(.*);"') or text   -- remove ctag comments
   local line, tag = text:gsub("\\/", "/"):match("(%d-);?(/.*/)")
+  line = line and #line>0 and tonumber(line)
   return ("%s%s: %s %s"):format(
     M.file(opts, file),
-    (not line or #line==0) and "" or ":"..utils.ansi_codes.green(tostring(line)),
+    not line and "" or ":"..utils.ansi_codes.green(tostring(line)),
     utils.ansi_codes.magenta(name),
     utils.ansi_codes.green(tag))
+    , line
 end
 
 return M

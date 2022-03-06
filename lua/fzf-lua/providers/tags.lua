@@ -6,7 +6,7 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
-local function get_tags_cmd(opts)
+local function get_tags_cmd(opts, flags)
   local query = nil
   local cmd = "grep"
   if vim.fn.executable("rg") == 1 then
@@ -20,7 +20,7 @@ local function get_tags_cmd(opts)
   else
     query = "-v '^!_TAG_'"
   end
-  return ("%s %s %s"):format(cmd, query,
+  return ("%s %s %s %s"):format(cmd, flags or '', query,
     vim.fn.shellescape(opts._ctags_file))
 end
 
@@ -38,6 +38,21 @@ local function tags(opts)
     utils.info(("Tags file ('%s') does not exists. Create one with ctags -R")
       :format(opts._ctags_file))
     return
+  end
+
+  if opts.line_field_index == nil then
+    -- if caller did not specify the line field index
+    -- grep the first tag with '-m 1' and test for line presence
+    local cmd = get_tags_cmd({ _ctags_file = opts._ctags_file }, "-m 1")
+    local ok, lines, err = pcall(utils.io_systemlist, cmd)
+    if ok and err == 0 and lines and not vim.tbl_isempty(lines) then
+      local tag, line = make_entry.tag(opts, lines[1])
+      if tag and not line then
+        -- tags file does not contain lines
+        -- remove preview offset field index
+        opts.line_field_index = 0
+      end
+    end
   end
 
   -- prevents 'file|git_icons=false' from overriding processing
