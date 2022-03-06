@@ -115,6 +115,8 @@ M.live_grep_st = function(opts)
   opts = config.normalize_opts(opts, config.globals.grep)
   if not opts then return end
 
+  assert(not opts.multiprocess)
+
   local no_esc = false
   if opts.continue_last_search or opts.repeat_last_search then
     opts.search, no_esc = get_last_search()
@@ -163,40 +165,14 @@ M.live_grep_st = function(opts)
   core.fzf_files(opts)
 end
 
-M.live_grep_native = function(opts)
-
-  -- backward compatibility, by setting git|files icons to false
-  -- we forces mt_cmd_wrapper to pipe the command as is so fzf
-  -- runs the command directly in the 'change:reload' event
-  opts = opts or {}
-  opts.git_icons = false
-  opts.file_icons = false
-  opts.__FNCREF__ = utils.__FNCREF__()
-  return M.live_grep_mt(opts)
-end
-
-M.live_grep_glob_mt = function(opts)
-
-  if vim.fn.executable("rg") ~= 1 then
-    utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
-    return
-  end
-
-  -- 'rg_glob = true' enables the glob processsing in
-  -- 'make_entry.preprocess', only supported with multiprocess
-  opts = opts or {}
-  opts.rg_glob = true
-  opts.force_multiprocess = true
-  opts.__FNCREF__ = utils.__FNCREF__()
-  return M.live_grep_mt(opts)
-end
 
 -- multi threaded (multi-process actually) version
 M.live_grep_mt = function(opts)
 
   opts = config.normalize_opts(opts, config.globals.grep)
-
   if not opts then return end
+
+  assert(opts.multiprocess)
 
   local no_esc = false
   if opts.continue_last_search or opts.repeat_last_search then
@@ -216,13 +192,6 @@ M.live_grep_mt = function(opts)
 
   -- search query in header line
   opts = core.set_header(opts, 2)
-
-  -- since the introduction of 'libuv.spawn_stdio' with '--headless'
-  -- we can now run the command externally with minimal overhead
-  if not opts.multiprocess and not opts.force_multiprocess then
-    opts.git_icons = false
-    opts.file_icons = false
-  end
 
   -- signal to preprocess we are looking to replace {argvz}
   opts.argv_expr = true
@@ -287,18 +256,7 @@ M.live_grep_mt = function(opts)
   opts.search = nil
 end
 
-M.live_grep_resume = function(opts)
-  if not opts then opts = {} end
-  if not opts.search then
-    opts.continue_last_search =
-      (opts.continue_last_search == nil and
-      opts.repeat_last_search == nil and true) or
-      (opts.continue_last_search or opts.repeat_last_search)
-  end
-  return M.live_grep_mt(opts)
-end
-
-M.live_grep_glob = function(opts)
+M.live_grep_glob_st = function(opts)
   if not opts then opts = {} end
   if vim.fn.executable("rg") ~= 1 then
     utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
@@ -337,8 +295,71 @@ M.live_grep_glob = function(opts)
       :format(o.rg_opts, glob_arg, search_query, search_path)
     return cmd
   end
-  opts.__FNCREF__ = utils.__FNCREF__()
   return M.live_grep_st(opts)
+end
+
+M.live_grep_glob_mt = function(opts)
+
+  if vim.fn.executable("rg") ~= 1 then
+    utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
+    return
+  end
+
+  -- 'rg_glob = true' enables the glob processsing in
+  -- 'make_entry.preprocess', only supported with multiprocess
+  opts = opts or {}
+  opts.rg_glob = true
+  opts.requires_processing = true
+  return M.live_grep_mt(opts)
+end
+
+M.live_grep_native = function(opts)
+
+  -- backward compatibility, by setting git|files icons to false
+  -- we forces mt_cmd_wrapper to pipe the command as is so fzf
+  -- runs the command directly in the 'change:reload' event
+  opts = opts or {}
+  opts.git_icons = false
+  opts.file_icons = false
+  opts.__FNCREF__ = utils.__FNCREF__()
+  return M.live_grep_mt(opts)
+end
+
+M.live_grep = function(opts)
+  opts = config.normalize_opts(opts, config.globals.grep)
+  if not opts then return end
+
+  opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
+
+  if opts.multiprocess then
+    return M.live_grep_mt(opts)
+  else
+    return M.live_grep_st(opts)
+  end
+end
+
+M.live_grep_glob = function(opts)
+  opts = config.normalize_opts(opts, config.globals.grep)
+  if not opts then return end
+
+  opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
+
+  if opts.multiprocess then
+    return M.live_grep_glob_mt(opts)
+  else
+    return M.live_grep_glob_st(opts)
+  end
+end
+
+M.live_grep_resume = function(opts)
+  if not opts then opts = {} end
+  if not opts.search then
+    opts.continue_last_search =
+      (opts.continue_last_search == nil and
+      opts.repeat_last_search == nil and true) or
+      (opts.continue_last_search or opts.repeat_last_search)
+  end
+  return M.live_grep(opts)
 end
 
 M.grep_last = function(opts)
@@ -389,7 +410,7 @@ M.grep_curbuf = function(opts)
   if #opts.filename > 0 and vim.loop.fs_stat(opts.filename) then
     opts.filename = path.relative(opts.filename, vim.loop.cwd())
     if opts.lgrep then
-      return M.live_grep_mt(opts)
+      return M.live_grep(opts)
     else
       opts.search = ''
       return M.grep(opts)

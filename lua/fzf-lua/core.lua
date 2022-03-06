@@ -10,12 +10,12 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
-M.fzf_resume = function()
+M.fzf_resume = function(opts)
   if not config.__resume_data or not config.__resume_data.opts then
     utils.info("No resume data available, is 'global_resume' enabled?")
     return
   end
-  local opts = config.__resume_data.opts
+  opts = vim.tbl_deep_extend("force", config.__resume_data.opts, opts or {})
   local last_query = config.__resume_data.last_query
   if last_query and #last_query>0 then
     last_query = vim.fn.shellescape(last_query)
@@ -26,11 +26,13 @@ M.fzf_resume = function()
     last_query = false
   end
   opts.__resume = true
-  opts.fzf_opts['--query'] = last_query
   if opts.__FNCREF__ then
     -- HACK for 'live_grep' and 'lsp_live_workspace_symbols'
-    opts.__FNCREF__({ continue_last_search = true })
+    opts.cmd = nil
+    opts.continue_last_search = true
+    opts.__FNCREF__(opts)
   else
+    opts.fzf_opts['--query'] = last_query
     M.fzf_wrap(opts, config.__resume_data.contents)()
   end
 end
@@ -355,12 +357,11 @@ M.mt_cmd_wrapper = function(opts)
     return '{'..str..'}'
   end
 
-  if not opts.force_multiprocess and
-     not opts.requires_processing and
+  if not opts.requires_processing and
      not opts.git_icons and not opts.file_icons then
     -- command does not require any processing
     return opts.cmd
-  elseif opts.multiprocess or opts.force_multiprocess then
+  elseif opts.multiprocess then
     local fn_preprocess = opts._fn_preprocess_str or [[return require("make_entry").preprocess]]
     local fn_transform = opts._fn_transform_str or [[return require("make_entry").file]]
     -- replace all below 'fn.shellescape' with our version
