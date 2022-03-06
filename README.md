@@ -200,6 +200,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `spell_suggest`    | spelling suggestions                       |
 | `tags`             | project tags                               |
 | `tags_grep`        | grep project tags                          |
+| `tags_live_grep`   | live grep project tags                     |
 | `btags`            | buffer tags                                |
 | `filetypes`        | neovim filetypes                           |
 | `packadd`          | :packadd <package>                         |
@@ -620,6 +621,9 @@ require'fzf-lua'.setup {
     file_icons            = true,
     git_icons             = true,
     color_icons           = true,
+    -- 'tags_live_grep' options, `rg` prioritizes over `grep`
+    rg_opts               = "--no-heading --color=always --smart-case",
+    grep_opts             = "--color=auto --perl-regexp",
     -- actions inherit from 'actions.files'
   },
   btags = {

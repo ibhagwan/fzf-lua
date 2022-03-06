@@ -377,6 +377,8 @@ M.globals.tags = {
     previewer             = { _ctor = previewers.builtin.tags },
     prompt                = 'Tags> ',
     ctags_file            = "tags",
+    rg_opts               = "--no-heading --color=always --smart-case",
+    grep_opts             = "--color=auto --perl-regexp",
     multiprocess          = true,
     file_icons            = true and M._has_devicons,
     git_icons             = true,
