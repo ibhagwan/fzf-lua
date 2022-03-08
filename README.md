@@ -70,7 +70,7 @@ at it. That, **and colorful file icons and git indicators!**.
 Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
-Plug 'ibhagwan/fzf-lua'
+Plug 'ibhagwan/fzf-lua', {'branch': 'main'}
 " optional for icon support
 Plug 'kyazdani42/nvim-web-devicons'
 ```
