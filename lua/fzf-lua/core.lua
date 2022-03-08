@@ -150,6 +150,9 @@ M.fzf = function(opts, contents)
 
   fzf_win:attach_previewer(previewer)
   fzf_win:create()
+  -- save the normalized winopts, otherwise we
+  -- lose overrides by 'winopts_fn|winopts_raw'
+  opts.winopts = fzf_win.winopts
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     { fzf_binary = opts.fzf_bin, fzf_cwd = opts.cwd })
   -- This was added by 'resume':
