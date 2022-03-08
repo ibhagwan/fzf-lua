@@ -1,6 +1,7 @@
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
 
@@ -13,7 +14,7 @@ local function get_tags_cmd(opts, flags)
     cmd = "rg"
   end
   if opts.search and #opts.search>0 then
-    query = vim.fn.shellescape(opts.no_esc and opts.search or
+    query = libuv.shellescape(opts.no_esc and opts.search or
       utils.rg_escape(opts.search))
   elseif opts._curr_file and #opts._curr_file>0 then
     query = vim.fn.shellescape(opts._curr_file)

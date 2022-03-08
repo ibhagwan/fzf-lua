@@ -44,7 +44,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   if opts.filespec and #opts.filespec>0 then
     search_path = opts.filespec
   elseif opts.filename and #opts.filename>0 then
-    search_path = vim.fn.shellescape(opts.filename)
+    search_path = libuv.shellescape(opts.filename)
   end
 
   search_query = search_query or ''
