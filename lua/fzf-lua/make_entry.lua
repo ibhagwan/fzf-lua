@@ -288,19 +288,6 @@ M.file = function(opts, x)
     -- TODO: does this work if there are ANSI escape codes in x?
     x = path.relative(x, opts.cwd)
   end
-  if opts.file_icons then
-    local filename = path.tail(file)
-    local ext = path.extension(filename)
-    icon, hl = M.get_devicon(filename, ext)
-    if opts.color_icons then
-      -- extra workaround for issue #119 (or similars)
-      -- use default if we can't find the highlight ansi
-      local fn = utils.ansi_codes[hl] or utils.ansi_codes['dark_grey']
-      icon = fn(icon)
-    end
-    ret[#ret+1] = icon
-    ret[#ret+1] = utils.nbsp
-  end
   if opts.git_icons then
     local indicators = opts.diff_files and opts.diff_files[file] or utils.nbsp
     for i=1,#indicators do
@@ -314,6 +301,19 @@ M.file = function(opts, x)
       end
       ret[#ret+1] = icon
     end
+    ret[#ret+1] = utils.nbsp
+  end
+  if opts.file_icons then
+    local filename = path.tail(file)
+    local ext = path.extension(filename)
+    icon, hl = M.get_devicon(filename, ext)
+    if opts.color_icons then
+      -- extra workaround for issue #119 (or similars)
+      -- use default if we can't find the highlight ansi
+      local fn = utils.ansi_codes[hl] or utils.ansi_codes['dark_grey']
+      icon = fn(icon)
+    end
+    ret[#ret+1] = icon
     ret[#ret+1] = utils.nbsp
   end
   ret[#ret+1] = x
