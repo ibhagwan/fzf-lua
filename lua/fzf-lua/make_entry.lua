@@ -221,9 +221,11 @@ M.preprocess = function(opts)
   -- save our last search argument for resume
   if opts.argv_expr and opts.cmd:match(argvz) then
     local query = argv(nil, opts.debug)
-    set_config_section('globals.grep._last_search',
-      { query = query, no_esc = true })
     set_config_section('__resume_data.last_query', query)
+    if opts.__module__ then
+      set_config_section(("globals.%s._last_search"):format(opts.__module__),
+        { query = query, no_esc = true })
+    end
   end
 
   -- did the caller request rg with glob support?

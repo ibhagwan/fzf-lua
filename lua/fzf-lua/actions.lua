@@ -530,4 +530,27 @@ M.arg_del = function(selected, opts)
   M.vimcmd_file(vimcmd, selected, opts)
 end
 
+M.grep_lgrep = function(_, opts)
+
+  -- 'FNCREF' is set only on 'M.live_grep' calls
+  -- 'MODULE' is set on 'M.grep' and 'live_grep' calls
+  assert(opts.__MODULE__
+    and type(opts.__MODULE__.grep) == 'function'
+    or type(opts.__MODULE__.live_grep) == 'function')
+
+  local o = vim.tbl_extend("keep", {
+      search = false,
+      continue_last_search = true,
+      continue_last_search_default = '',
+    }, opts.__call_opts or {})
+
+  if opts.__FNCREF__ then
+    opts.__MODULE__.grep(o)
+    -- require'fzf-lua.actions'.ensure_insert_mode()
+  else
+    opts.__MODULE__.live_grep(o)
+    -- require'fzf-lua.actions'.ensure_insert_mode()
+  end
+end
+
 return M

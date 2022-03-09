@@ -272,6 +272,9 @@ M.globals.grep = {
     grep_opts           = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp",
     rg_opts             = "--column --line-number --no-heading --color=always --smart-case --max-columns=512",
     _actions            = function() return M.globals.actions.files end,
+    actions = {
+      ["ctrl-i"]        = { actions.grep_lgrep }
+    },
     -- live_grep_glob options
     glob_flag           = "--iglob",  -- for case sensitive globs use '--glob'
     glob_separator      = "%s%-%-",   -- query separator pattern (lua): ' --'
@@ -385,6 +388,9 @@ M.globals.tags = {
     git_icons             = true,
     color_icons           = true,
     _actions              = function() return M.globals.actions.files end,
+    actions = {
+      ["ctrl-i"]          = { actions.grep_lgrep }
+    },
   }
 M.globals.btags = {
     previewer             = { _ctor = previewers.builtin.tags },
@@ -626,6 +632,10 @@ end
 function M.normalize_opts(opts, defaults)
   if not opts then opts = {} end
 
+  -- save the user's call parameters separately
+  -- we reuse those with 'actions.grep_lgrep'
+  opts.__call_opts = opts.__call_opts or utils.deepcopy(opts)
+
   -- opts can also be a function that returns an opts table
   if type(opts) == 'function' then
     opts = opts()
@@ -814,6 +824,7 @@ M._action_to_helpstr = {
   [actions.git_buf_vsplit]        = "git-buffer-vsplit",
   [actions.arg_add]               = "arg-list-add",
   [actions.arg_del]               = "arg-list-delete",
+  [actions.grep_lgrep]            = "grep<->lgrep",
 }
 
 return M

@@ -548,8 +548,15 @@ require'fzf-lua'.setup {
     rg_opts           = "--column --line-number --no-heading --color=always --smart-case --max-columns=512",
     grep_opts         = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp",
     -- 'live_grep_glob' options:
-    glob_flag         = "--iglob",  -- for case sensitive globs use '--glob'
-    glob_separator    = "%s%-%-"    -- query separator pattern (lua): ' --'
+    glob_flag         = "--iglob",    -- for case sensitive globs use '--glob'
+    glob_separator    = "%s%-%-"      -- query separator pattern (lua): ' --'
+    actions = {
+      -- actions inherit from 'actions.files' and merge
+      -- this action toggles between 'grep' and 'live_grep'
+      ["ctrl-i"]      = { actions.grep_lgrep }
+    },
+    no_header             = false,    -- hide grep|cwd header?
+    no_header_i           = false,    -- hide interactive header?
   },
   args = {
     prompt            = 'Args❯ ',
@@ -631,7 +638,13 @@ require'fzf-lua'.setup {
     -- 'tags_live_grep' options, `rg` prioritizes over `grep`
     rg_opts               = "--no-heading --color=always --smart-case",
     grep_opts             = "--color=auto --perl-regexp",
-    -- actions inherit from 'actions.files'
+    actions = {
+      -- actions inherit from 'actions.files' and merge
+      -- this action toggles between 'grep' and 'live_grep'
+      ["ctrl-i"]          = { actions.grep_lgrep }
+    },
+    no_header             = false,    -- hide grep|cwd header?
+    no_header_i           = false,    -- hide interactive header?
   },
   btags = {
     prompt                = 'BTags❯ ',

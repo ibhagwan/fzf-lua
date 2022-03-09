@@ -20,7 +20,11 @@ function FzfWin.save_query(key)
   if not self then return end
   local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
   if not lines or vim.tbl_isempty(lines) then return end
-  local query = lines[1]:gsub("^"..self.prompt, ""):match("[^<]+")
+  -- 'live_grep' prepends an asterisk to the prompt
+  -- remove '*' from the start of the line & prompt
+  local query = lines[1]:gsub("^%*+", "")
+    :gsub("^"..utils.lua_escape(self.prompt:match("[^%*]+")), "")
+      :match("[^<]+")
   -- trim whitespaces at the end
   query = query and query:gsub("%s*$", "")
   if self.fn_save_query then
@@ -1078,13 +1082,16 @@ function FzfWin.toggle_help()
       if k == 'default' then k = 'enter' end
       if type(v) =='table' then
         v = config.get_action_helpstr(v[1]) or v
-      else
+      elseif v then
         v = config.get_action_helpstr(v) or v
       end
-      table.insert(keymaps,
-        format_bind('action', k,
-          ("%s"):format(v):gsub(" ", ""),
-          opts.mode_width, opts.keybind_width, opts.name_width))
+      if v then
+        -- skips 'v == false'
+        table.insert(keymaps,
+          format_bind('action', k,
+            ("%s"):format(v):gsub(" ", ""),
+            opts.mode_width, opts.keybind_width, opts.name_width))
+      end
     end
   end
 

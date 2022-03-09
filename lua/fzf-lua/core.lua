@@ -69,33 +69,35 @@ M.fzf = function(opts, contents)
       -- providers
       config.__resume_data.last_query = nil
     end
-    if opts.global_resume_query then
-      -- We use this option to print the query on line 1
-      -- later to be removed from the result by M.fzf()
-      -- this providers a solution for saving the query
-      -- when the user pressed a valid bind but not when
-      -- aborting with <C-c> or <Esc>, see next comment
-      opts.fzf_opts['--print-query'] = ''
-      -- Signals to the win object resume is enabled
-      -- so we can setup the keypress event monitoring
-      -- since we already have the query on valid
-      -- exit codes we only need to monitor <C-c>, <Esc>
-      opts.fn_save_query = function(query)
-        config.__resume_data.last_query = query and #query>0 and query or nil
-      end
-      -- 'au InsertCharPre' would be the best option here
-      -- but it does not work for terminals:
-      -- https://github.com/neovim/neovim/issues/5018
-      -- this is causing lag when typing too fast (#271)
-      -- also not possible with skim (no 'change' event)
-      --[[ if not opts._is_skim then
-        local raw_act = shell.raw_action(function(args)
-          opts.fn_save_query(args[1])
-        end, "{q}")
-        opts._fzf_cli_args = ('--bind=change:execute-silent:%s'):
-          format(vim.fn.shellescape(raw_act))
-      end ]]
+    
+  end
+  if opts.save_query or
+    opts.global_resume and opts.global_resume_query then
+    -- We use this option to print the query on line 1
+    -- later to be removed from the result by M.fzf()
+    -- this providers a solution for saving the query
+    -- when the user pressed a valid bind but not when
+    -- aborting with <C-c> or <Esc>, see next comment
+    opts.fzf_opts['--print-query'] = ''
+    -- Signals to the win object resume is enabled
+    -- so we can setup the keypress event monitoring
+    -- since we already have the query on valid
+    -- exit codes we only need to monitor <C-c>, <Esc>
+    opts.fn_save_query = function(query)
+      config.__resume_data.last_query = query and #query>0 and query or nil
     end
+    -- 'au InsertCharPre' would be the best option here
+    -- but it does not work for terminals:
+    -- https://github.com/neovim/neovim/issues/5018
+    -- this is causing lag when typing too fast (#271)
+    -- also not possible with skim (no 'change' event)
+    --[[ if not opts._is_skim then
+      local raw_act = shell.raw_action(function(args)
+        opts.fn_save_query(args[1])
+      end, "{q}")
+      opts._fzf_cli_args = ('--bind=change:execute-silent:%s'):
+        format(vim.fn.shellescape(raw_act))
+    end ]]
   end
   -- setup the fzf window and preview layout
   local fzf_win = win(opts)
@@ -152,7 +154,7 @@ M.fzf = function(opts, contents)
   fzf_win:create()
   -- save the normalized winopts, otherwise we
   -- lose overrides by 'winopts_fn|winopts_raw'
-  opts.winopts = fzf_win.winopts
+  opts.winopts.preview = fzf_win.winopts.preview
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     { fzf_binary = opts.fzf_bin, fzf_cwd = opts.cwd })
   -- This was added by 'resume':
@@ -162,6 +164,10 @@ M.fzf = function(opts, contents)
   if selected and #selected>0 and
      opts.fzf_opts['--print-query'] ~= nil then
     if opts.fn_save_query then
+      -- reminder: this doesn't get called with 'live_grep' when using skim
+      -- due to a bug where '--print-query --interactive' combo is broken:
+      -- skim always prints an emtpy line where the typed query should be
+      -- see addtional note above 'opts.save_query' inside 'live_grep_mt'
       opts.fn_save_query(selected[1])
     end
     table.remove(selected, 1)
@@ -337,6 +343,7 @@ M.mt_cmd_wrapper = function(opts)
       "color_icons",
       "strip_cwd_prefix",
       "rg_glob",
+      "__module__",
     }
     -- caller reqested rg with glob support
     if o.rg_glob then
@@ -446,30 +453,42 @@ M.set_fzf_field_index = function(opts, default_idx, default_expr)
   return opts
 end
 
-M.set_header = function(opts, type)
+M.set_header = function(opts, flags)
   if not opts then opts = {} end
   if opts.no_header then return opts end
   if not opts.cwd_header then opts.cwd_header = "cwd:" end
-  if not opts.search_header then opts.search_header = "Searching for:" end
+  if not opts.grep_header then opts.grep_header = "Grep string:" end
   if not opts.cwd and opts.show_cwd_header then opts.cwd = vim.loop.cwd() end
   local header_str
   local cwd_str =
     opts.cwd and (opts.show_cwd_header ~= false) and
     (opts.show_cwd_header or opts.cwd ~= vim.loop.cwd()) and
-    ("%s %s"):format(opts.cwd_header, opts.cwd:gsub("^"..vim.env.HOME, "~"))
+    ("%s %s"):format(opts.cwd_header,
+      utils.ansi_codes.red(opts.cwd:gsub("^"..vim.env.HOME, "~")))
   local search_str = opts.search and #opts.search > 0 and
-    ("%s %s"):format(opts.search_header, opts.search)
+    ("%s %s"):format(opts.grep_header, utils.ansi_codes.red(opts.search))
   -- 1: only search
   -- 2: only cwd
   -- otherwise, all
-  if type == 1 then header_str = search_str or ''
-  elseif type == 2 then header_str = cwd_str or ''
+  if flags == 1 then header_str = search_str or ''
+  elseif flags == 2 then header_str = cwd_str or ''
   else
-    header_str = search_str or ''
-    if #header_str>0 and cwd_str and #cwd_str>0 then
-      header_str = header_str .. ", "
+    header_str = ("%s%s%s"):format(
+      cwd_str and cwd_str or '',
+      cwd_str and search_str and ', ' or '',
+      search_str and search_str or '')
+  end
+  -- check for 'actions.grep_lgrep' and "ineteractive" header
+  if not opts.no_header_i then
+    for k, v in pairs(opts.actions) do
+      if type(v) == 'table' and v[1] == actions.grep_lgrep then
+        local to = opts.__FNCREF__ and 'Grep' or 'Live Grep'
+        header_str = (':: <%s> to %s%s'):format(
+          utils.ansi_codes.yellow(k),
+          utils.ansi_codes.red(to),
+          header_str and #header_str>0 and ", "..header_str or '')
+      end
     end
-    header_str = header_str .. (cwd_str or '')
   end
   if not header_str or #header_str==0 then return opts end
   opts.fzf_opts['--header'] = libuv.shellescape(header_str)
@@ -573,12 +592,12 @@ M.set_fzf_interactive = function(opts, act_cmd, placeholder)
     end
     -- skim interactive mode does not need a piped command
     opts.fzf_fn = nil
-    opts.fzf_opts['--prompt'] = '*' .. opts.prompt
-    opts.fzf_opts['--cmd-prompt'] = vim.fn.shellescape(opts.prompt)
+    opts.fzf_opts['--prompt'] = opts.prompt:match("[^%*]+")
+    opts.fzf_opts['--cmd-prompt'] = libuv.shellescape(opts.prompt)
     opts.prompt = nil
     -- since we surrounded the skim placeholder with quotes
     -- we need to escape them in the initial query
-    opts.fzf_opts['--cmd-query'] = vim.fn.shellescape(utils.sk_escape(query))
+    opts.fzf_opts['--cmd-query'] = libuv.shellescape(utils.sk_escape(query))
     opts._fzf_cli_args = string.format( "-i -c %s", act_cmd)
   else
     -- fzf already adds single quotes
@@ -586,10 +605,10 @@ M.set_fzf_interactive = function(opts, act_cmd, placeholder)
     opts.fzf_fn = {}
     if opts.exec_empty_query or (query and #query>0) then
       opts.fzf_fn = act_cmd:gsub(placeholder,
-          #query>0 and utils.lua_escape(vim.fn.shellescape(query)) or "''")
+          #query>0 and utils.lua_escape(libuv.shellescape(query)) or "''")
     end
     opts.fzf_opts['--phony'] = ''
-    opts.fzf_opts['--query'] = vim.fn.shellescape(query)
+    opts.fzf_opts['--query'] = libuv.shellescape(query)
     opts._fzf_cli_args = string.format('--bind=%s',
         vim.fn.shellescape(string.format("change:reload:%s || true", act_cmd)))
   end

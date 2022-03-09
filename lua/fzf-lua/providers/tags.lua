@@ -7,6 +7,21 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+function M.get_last_search(_)
+  local last_search = config.globals.tags._last_search or {}
+  return last_search.query, last_search.no_esc
+end
+
+function M.set_last_search(_, query, no_esc)
+  config.globals.tags._last_search = {
+    query = query,
+    no_esc = no_esc
+  }
+  if config.__resume_data then
+    config.__resume_data.last_query = query
+  end
+end
+
 local function get_tags_cmd(opts, flags)
   local query = nil
   local cmd = "grep"
@@ -26,6 +41,10 @@ local function get_tags_cmd(opts, flags)
 end
 
 local function tags(opts)
+
+  -- we need this for 'actions.grep_lgrep'
+  opts.__MODULE__ = opts.__MODULE__ or M
+  opts.__module__ = opts.__module__ or 'tags'
 
   -- signal actions this is a ctag
   opts._ctag = true
@@ -63,7 +82,6 @@ local function tags(opts)
 
   if opts.lgrep then
     -- live_grep requested by caller ('tags_live_grep')
-    opts.prompt = opts.prompt:match("^*") and opts.prompt or '*' .. opts.prompt
     opts.filename = opts._ctags_file
     if opts.multiprocess then
       return require'fzf-lua.providers.grep'.live_grep_mt(opts)
@@ -75,6 +93,10 @@ local function tags(opts)
       return require'fzf-lua.providers.grep'.live_grep_st(opts)
     end
   end
+
+  -- save the search query so the use can
+  -- call the same search again
+  M.set_last_search(opts, opts.search, opts.no_esc)
 
   opts._curr_file = opts._curr_file and
     path.relative(opts._curr_file, opts.cwd or vim.loop.cwd())
@@ -104,6 +126,11 @@ end
 
 M.grep = function(opts)
   opts = opts or {}
+
+  if opts.continue_last_search or opts.repeat_last_search then
+    opts.search, opts.no_esc = M.get_last_search(opts)
+    opts.search = opts.search or opts.continue_last_search_default
+  end
 
   if not opts.search then
     opts.search = vim.fn.input(opts.input_prompt or 'Grep For> ')
