@@ -22,11 +22,12 @@ function M.set_last_search(_, query, no_esc)
   end
 end
 
-local function get_tags_cmd(opts, flags)
-  local query = nil
-  local cmd = "grep"
+local function get_tags_cmd(opts)
+  local cmd, query = nil, nil
   if vim.fn.executable("rg") == 1 then
-    cmd = "rg"
+    cmd = ("%s %s"):format("rg", opts.rg_opts or '')
+  else
+    cmd = ("%s %s"):format("grep", opts.grep_opts or '')
   end
   if opts.search and #opts.search>0 then
     query = libuv.shellescape(opts.no_esc and opts.search or
@@ -36,7 +37,7 @@ local function get_tags_cmd(opts, flags)
   else
     query = "-v '^!_TAG_'"
   end
-  return ("%s %s %s %s"):format(cmd, flags or '', query,
+  return ("%s %s %s"):format(cmd, query,
     vim.fn.shellescape(opts._ctags_file))
 end
 
@@ -63,7 +64,11 @@ local function tags(opts)
   if opts.line_field_index == nil then
     -- if caller did not specify the line field index
     -- grep the first tag with '-m 1' and test for line presence
-    local cmd = get_tags_cmd({ _ctags_file = opts._ctags_file }, "-m 1")
+    local cmd = get_tags_cmd({
+      rg_opts = "-m 1",
+      grep_opts = "-m 1",
+      _ctags_file = opts._ctags_file
+    })
     local ok, lines, err = pcall(utils.io_systemlist, cmd)
     if ok and err == 0 and lines and not vim.tbl_isempty(lines) then
       local tag, line = make_entry.tag(opts, lines[1])
