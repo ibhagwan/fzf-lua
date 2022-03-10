@@ -91,6 +91,7 @@ end
 local generate_layout = function(winopts)
   local row, col = winopts.row, winopts.col
   local height, width = winopts.height, winopts.width
+  local signcol_width = winopts.signcol_width or 0
   local preview_pos = winopts.preview_pos
   local preview_size = winopts.preview_size
   local prev_row, prev_col = row+1, col+1
@@ -140,21 +141,21 @@ local generate_layout = function(winopts)
       prev_col = col - 1
       if winopts.split then
         prev_row = 1
-        prev_width = prev_width - 1
+        prev_width = prev_width - 1 - signcol_width
         prev_height = prev_height - padding
         if vert_split then
           anchor = 'NW'
           prev_col = 1
         else
-          prev_col = col - 3
+          prev_col = col - 3 - signcol_width
         end
       end
     else
       anchor = 'NW'
       if winopts.split then
         prev_row = 1
-        prev_col = width + 4
-        prev_width = prev_width - 3
+        prev_col = width + 4 - signcol_width
+        prev_width = prev_width - 3 + signcol_width
         prev_height = prev_height - padding
       else
         prev_col = col + width + 3
@@ -403,11 +404,18 @@ end
 function FzfWin:preview_layout()
     if self.winopts.split and self.previewer_is_builtin then
       local wininfo = fn.getwininfo(self.fzf_winid)[1]
+      -- unlike floating win popups split windows inherit the global
+      -- 'signcolumn' setting which affects the available width for fzf
+      -- 'generate_layout' will then use the sign column available width
+      -- to assure a perfect alignment of the builtin previewer window
+      -- and the dummy native fzf previewer window border underneath it
+      local signcol_width = vim.wo[self.fzf_winid].signcolumn == 'no' and 1 or 0
       self.layout = generate_layout({
         row = wininfo.winrow,
         col = wininfo.wincol,
         height = wininfo.height,
         width = api.nvim_win_get_width(self.fzf_winid),
+        signcol_width = signcol_width,
         preview_pos = self.winopts.preview_pos,
         preview_size = self.winopts.preview_size,
         split = self.winopts.split,
