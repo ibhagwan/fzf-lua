@@ -645,6 +645,10 @@ function FzfWin:create()
     -- create a new tmp buffer for the fzf win
     self:set_tmp_buffer()
     self:setup_keybinds()
+    -- not sure why but when using a split and reusing the window
+    -- fzf will not use all the avialable width until 'redraw' is
+    -- called resulting in misaligned native and builtin previews
+    vim.cmd("redraw")
     return
   end
 
