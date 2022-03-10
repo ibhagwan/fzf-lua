@@ -663,6 +663,16 @@ function FzfWin:create()
     vim.cmd(self.winopts.split)
     self.fzf_bufnr = vim.api.nvim_get_current_buf()
     self.fzf_winid = vim.api.nvim_get_current_win()
+    -- match window options with 'nvim_open_win' style:minimal
+    vim.wo[self.fzf_winid].number = false
+    vim.wo[self.fzf_winid].relativenumber = false
+    vim.wo[self.fzf_winid].cursorline = false
+    vim.wo[self.fzf_winid].cursorcolumn = false
+    vim.wo[self.fzf_winid].spell = false
+    vim.wo[self.fzf_winid].list = false
+    vim.wo[self.fzf_winid].signcolumn = 'no'
+    vim.wo[self.fzf_winid].foldcolumn = '0'
+    vim.wo[self.fzf_winid].colorcolumn = ''
   else
     -- draw the main window
     self:redraw()
