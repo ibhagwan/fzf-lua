@@ -553,7 +553,7 @@ require'fzf-lua'.setup {
     actions = {
       -- actions inherit from 'actions.files' and merge
       -- this action toggles between 'grep' and 'live_grep'
-      ["ctrl-l"]      = { actions.grep_lgrep }
+      ["ctrl-g"]      = { actions.grep_lgrep }
     },
     no_header             = false,    -- hide grep|cwd header?
     no_header_i           = false,    -- hide interactive header?
@@ -641,7 +641,7 @@ require'fzf-lua'.setup {
     actions = {
       -- actions inherit from 'actions.files' and merge
       -- this action toggles between 'grep' and 'live_grep'
-      ["ctrl-l"]          = { actions.grep_lgrep }
+      ["ctrl-g"]          = { actions.grep_lgrep }
     },
     no_header             = false,    -- hide grep|cwd header?
     no_header_i           = false,    -- hide interactive header?

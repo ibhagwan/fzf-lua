@@ -69,7 +69,6 @@ M.fzf = function(opts, contents)
       -- providers
       config.__resume_data.last_query = nil
     end
-    
   end
   if opts.save_query or
     opts.global_resume and opts.global_resume_query then
