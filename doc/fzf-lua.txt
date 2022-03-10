@@ -85,7 +85,7 @@ INSTALLATION                                            *fzf-lua-installation*
 Using vim-plug <https://github.com/junegunn/vim-plug>
 
 >
-    Plug 'ibhagwan/fzf-lua'
+    Plug 'ibhagwan/fzf-lua', {'branch': 'main'}
     " optional for icon support
     Plug 'kyazdani42/nvim-web-devicons'
 <
@@ -599,7 +599,7 @@ Consult the list below for available settings:
         actions = {
           -- actions inherit from 'actions.files' and merge
           -- this action toggles between 'grep' and 'live_grep'
-          ["ctrl-i"]      = { actions.grep_lgrep }
+          ["ctrl-l"]      = { actions.grep_lgrep }
         },
         no_header             = false,    -- hide grep|cwd header?
         no_header_i           = false,    -- hide interactive header?
@@ -687,7 +687,7 @@ Consult the list below for available settings:
         actions = {
           -- actions inherit from 'actions.files' and merge
           -- this action toggles between 'grep' and 'live_grep'
-          ["ctrl-i"]          = { actions.grep_lgrep }
+          ["ctrl-l"]          = { actions.grep_lgrep }
         },
         no_header             = false,    -- hide grep|cwd header?
         no_header_i           = false,    -- hide interactive header?

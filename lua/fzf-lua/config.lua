@@ -273,7 +273,7 @@ M.globals.grep = {
     rg_opts             = "--column --line-number --no-heading --color=always --smart-case --max-columns=512",
     _actions            = function() return M.globals.actions.files end,
     actions = {
-      ["ctrl-i"]        = { actions.grep_lgrep }
+      ["ctrl-l"]        = { actions.grep_lgrep }
     },
     -- live_grep_glob options
     glob_flag           = "--iglob",  -- for case sensitive globs use '--glob'
@@ -389,7 +389,7 @@ M.globals.tags = {
     color_icons           = true,
     _actions              = function() return M.globals.actions.files end,
     actions = {
-      ["ctrl-i"]          = { actions.grep_lgrep }
+      ["ctrl-l"]          = { actions.grep_lgrep }
     },
   }
 M.globals.btags = {
