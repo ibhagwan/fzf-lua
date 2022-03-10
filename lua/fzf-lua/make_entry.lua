@@ -186,7 +186,7 @@ M.get_diff_files = function(opts)
           local icon = status[i]:match("[MUDARC?]+")
           local file = status[i]:match("[^ ]*$")
           if icon and file then
-            diff_files[file] = icon
+            diff_files[file] = icon:gsub("%?%?", "?")
           end
         end
     end
