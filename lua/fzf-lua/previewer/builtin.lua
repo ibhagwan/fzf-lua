@@ -684,7 +684,7 @@ end
 
 function Previewer.tags:set_cursor_hl(entry)
   -- pcall(vim.fn.clearmatches, self.win.preview_winid)
-  api.nvim_win_call(self.win.preview_winid, function()
+  pcall(api.nvim_win_call, self.win.preview_winid, function()
     -- start searching at line 1 in case we
     -- didn't reload the buffer (same file)
     api.nvim_win_set_cursor(0, {1, 0})
