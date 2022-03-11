@@ -632,14 +632,14 @@ end
 function M.normalize_opts(opts, defaults)
   if not opts then opts = {} end
 
-  -- save the user's call parameters separately
-  -- we reuse those with 'actions.grep_lgrep'
-  opts.__call_opts = opts.__call_opts or utils.deepcopy(opts)
-
   -- opts can also be a function that returns an opts table
   if type(opts) == 'function' then
     opts = opts()
   end
+
+  -- save the user's call parameters separately
+  -- we reuse those with 'actions.grep_lgrep'
+  opts.__call_opts = opts.__call_opts or utils.deepcopy(opts)
 
   -- inherit from globals.actions?
   if type(defaults._actions) == 'function' then
