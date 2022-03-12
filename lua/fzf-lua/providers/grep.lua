@@ -469,6 +469,11 @@ M.grep_curbuf = function(opts)
   opts.fzf_opts = vim.tbl_extend("keep",
     opts.fzf_opts or {}, config.globals.blines.fzf_opts)
   opts.filename = vim.api.nvim_buf_get_name(0)
+  -- disable ctrl-g switch by default
+  if not opts.actions or not opts.actions["ctrl-g"] then
+    opts.actions = opts.actions or {}
+    opts.actions["ctrl-g"] = false
+  end
   if #opts.filename > 0 and vim.loop.fs_stat(opts.filename) then
     opts.filename = path.relative(opts.filename, vim.loop.cwd())
     if opts.lgrep then

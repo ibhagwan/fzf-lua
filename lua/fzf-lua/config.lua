@@ -371,7 +371,7 @@ M.globals.blines = {
     show_unlisted         = true,
     no_term_buffers       = false,
     fzf_opts = {
-        ['--delimiter']   = "'[\\]:]'",
+        ['--delimiter']   = "'[:]'",
         ["--with-nth"]    = '2..',
         ["--tiebreak"]    = 'index',
     },
@@ -401,7 +401,7 @@ M.globals.btags = {
     git_icons             = true,
     color_icons           = true,
     fzf_opts = {
-        ['--delimiter']   = "'[\\]:]'",
+        ['--delimiter']   = "'[:]'",
         ["--with-nth"]    = '2..',
         ["--tiebreak"]    = 'index',
     },
