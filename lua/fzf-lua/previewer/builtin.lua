@@ -399,7 +399,7 @@ end
 
 function Previewer.buffer_or_file:set_cursor_hl(entry)
   vim.api.nvim_win_call(self.win.preview_winid, function()
-    local lnum, col = tonumber(entry.line), tonumber(entry.col) or 1
+    local lnum, col = tonumber(entry.line), tonumber(entry.col)
     local pattern = entry.pattern or entry.text
 
     if not lnum or lnum < 1 then
@@ -419,7 +419,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
 
     fn.clearmatches()
 
-    if self.win.winopts.hl.cursor and lnum and lnum > 0 and col and col > 1 then
+    if self.win.winopts.hl.cursor and not (lnum<=1 and col<=1) then
       fn.matchaddpos(self.win.winopts.hl.cursor, {{lnum, math.max(1, col)}}, 11)
     end
   end)
