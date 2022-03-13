@@ -229,24 +229,28 @@ local normalize_winopts = function(o)
   if not winopts.width or winopts.width <= 1 then
     winopts.width = math.floor(max_width * winopts.width)
   end
-  if not winopts.row or winopts.row < 1 then
+  if not winopts.row or winopts.row <= 1 then
     winopts.row = math.floor((vim.o.lines - winopts.height) * winopts.row)
   end
-  if not winopts.col or winopts.col < 1 then
+  if not winopts.col or winopts.col <= 1 then
     winopts.col = math.floor((vim.o.columns - winopts.width) * winopts.col)
   end
   winopts.col = math.min(winopts.col, max_width-winopts.width)
   winopts.row = math.min(winopts.row, max_height-winopts.height)
 
+
   -- normalize border option for nvim_open_win()
-  if not winopts.border or winopts.border == true then
-    winopts.border = 'rounded'
-  elseif winopts.border == false then
+  if winopts.border == false then
     winopts.border = 'none'
+  elseif not winopts.border or winopts.border == true then
+    winopts.border = 'rounded'
   end
 
   -- We only allow 'none|single|double|rounded'
   if type(winopts.border) == 'string' then
+    -- save the original string so we can pass it
+    -- to the main fzf window 'nvim_open_win' (#364)
+    winopts._border = winopts.border
     winopts.border = config.globals.winopts._borderchars[winopts.border] or
       config.globals.winopts._borderchars['rounded']
   end
@@ -594,6 +598,13 @@ function FzfWin:redraw()
     }
     win_opts.row = winopts.row or math.floor(((lines - win_opts.height) / 2) - 1)
     win_opts.col = winopts.col or math.floor((columns - win_opts.width) / 2)
+
+    -- adjust for borderless main window (#364)
+    if self.winopts._border and self.winopts._border == 'none' then
+      win_opts.border = self.winopts._border
+      win_opts.width = win_opts.width + 2
+      win_opts.height = win_opts.height + 2
+    end
 
     if self:validate() then
       if self._previewer
