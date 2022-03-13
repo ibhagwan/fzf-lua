@@ -495,8 +495,9 @@ Consult the list below for available settings:
           -- for example, use `viu` for image previews
           -- will do nothing if `viu` isn't executable
           extensions      = {
-            ["gif"]       = { "viu" },
-            ["png"]       = { "viu" },
+            -- neovim terminal only supports `viu` block output
+            ["png"]       = { "viu", "-b" },
+            ["jpg"]       = { "ueberzug" },
           },
           -- if using `ueberzug` in the above extensions map
           -- set the default image scaler, possible scalers:
