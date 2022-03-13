@@ -23,6 +23,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.syntax_limit_b = o.syntax_limit_b
   self.syntax_limit_l = o.syntax_limit_l
   self.limit_b = o.limit_b
+  self.extensions = o.extensions
   self.backups = {}
   return self
 end
@@ -55,12 +56,18 @@ function Previewer.base:restore_winopts(win)
 end
 
 function Previewer.base:set_winopts(win)
+  if self.do_not_set_winopts then return end
   if not win or not api.nvim_win_is_valid(win) then return end
   for opt, v in pairs(self:gen_winopts()) do
     if utils.nvim_has_option(opt) then
       api.nvim_win_set_option(win, opt, v)
     end
   end
+end
+
+function Previewer.base:preview_is_terminal()
+  if not self.win or not self.win:validate_preview() then return end
+  return vim.fn.getwininfo(self.win.preview_winid)[1].terminal == 1
 end
 
 function Previewer.base:get_tmp_buffer()
@@ -74,9 +81,7 @@ function Previewer.base:set_preview_buf(newbuf)
   api.nvim_win_set_buf(self.win.preview_winid, newbuf)
   self.preview_bufnr = newbuf
   -- set preview window options
-  if not self.do_not_set_winopts then
-    self:set_winopts(self.win.preview_winid)
-  end
+  self:set_winopts(self.win.preview_winid)
 end
 
 function Previewer.base:clear_preview_buf()
@@ -149,6 +154,10 @@ function Previewer.base:display_entry(entry_str)
     -- set preview window options
     if not self.do_not_set_winopts then
       self:set_winopts(self.win.preview_winid)
+    else
+      -- removes 'number', 'signcolumn', 'cursorline', etc
+      -- call after 'set_preview_buf' or 'cursorline' becomes true
+      self.win:set_style_minimal(self.win.preview_winid)
     end
 
     -- reset the preview window highlights
@@ -196,40 +205,40 @@ end
 function Previewer.base:scroll(direction)
   local preview_winid = self.win.preview_winid
   if preview_winid < 0 or not direction then return end
+  if not api.nvim_win_is_valid(preview_winid) then return end
 
   if direction == 0 then
     vim.api.nvim_win_call(preview_winid, function()
       -- for some reason 'nvim_win_set_cursor'
       -- only moves forward, so set to (1,0) first
       api.nvim_win_set_cursor(0, {1, 0})
-      api.nvim_win_set_cursor(0, self.orig_pos)
+      if self.orig_pos then
+        api.nvim_win_set_cursor(0, self.orig_pos)
+      end
+      utils.zz()
+    end)
+  elseif not self:preview_is_terminal() then
+    -- local input = direction > 0 and [[]] or [[]]
+    -- local input = direction > 0 and [[]] or [[]]
+    -- ^D = 0x04, ^U = 0x15 ('g8' on char to display)
+    local input = ('%c'):format(utils._if(direction>0, 0x04, 0x15))
+    vim.api.nvim_win_call(preview_winid, function()
+      vim.cmd([[norm! ]] .. input)
       utils.zz()
     end)
   else
-    -- DO NOT NEED THIS WORKAROUND
-    -- since we are no longer setting the terminal buffer
-    -- directly into the preview window we can scroll norally
-    --[[ if self.preview_isterm then
-      -- can't use ":norm!" with terminal buffers due to:
-      -- 'Vim(normal):Can't re-enter normal mode from terminal mode'
-      -- https://github.com/neovim/neovim/issues/4895#issuecomment-303073838
-      -- according to the above comment feedkeys is the correct workaround
-      -- TODO: hide the typed command from the user (possible?)
-      local input = direction > 0 and "<C-d>" or "<C-u>"
-      vim.cmd("stopinsert")
-      utils.feed_keys_termcodes((':noa lua vim.api.nvim_win_call(' ..
-        '%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>'):
-        format(tonumber(preview_winid), input))
-    else --]]
-      -- local input = direction > 0 and [[]] or [[]]
-      -- local input = direction > 0 and [[]] or [[]]
-      -- ^D = 0x04, ^U = 0x15 ('g8' on char to display)
-      local input = ('%c'):format(utils._if(direction>0, 0x04, 0x15))
-      vim.api.nvim_win_call(preview_winid, function()
-        vim.cmd([[norm! ]] .. input)
-        utils.zz()
-      end)
-    -- end
+    -- we get here when using custom term commands using
+    -- the extensions map (i.e. view term images with 'vui')
+    -- we can't use ":norm!" with terminal buffers due to:
+    -- 'Vim(normal):Can't re-enter normal mode from terminal mode'
+    -- https://github.com/neovim/neovim/issues/4895#issuecomment-303073838
+    -- according to the above comment feedkeys is the correct workaround
+    -- TODO: hide the typed command from the user (possible?)
+    local input = direction > 0 and "<C-d>" or "<C-u>"
+    vim.cmd("stopinsert")
+    utils.feed_keys_termcodes((':noa lua vim.api.nvim_win_call(' ..
+      '%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>'):
+      format(tonumber(preview_winid), input))
   end
   self.win:update_scrollbar()
 end
@@ -266,20 +275,63 @@ function Previewer.buffer_or_file:should_load_buffer(entry)
   return true
 end
 
+function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
+  if not cmd then return end
+  cmd = type(cmd) == 'table' and utils.deepcopy(cmd) or { cmd }
+  if not cmd[1] or vim.fn.executable(cmd[1]) ~= 1 then
+    return false
+  end
+  -- add filename as last parameter
+  table.insert(cmd, entry.path)
+  -- set this to prevent calling 'set_winopts'
+  -- preview buf must be attached beforehand
+  -- for terminal image previews to have the
+  -- correct size
+  self.loaded_entry = nil
+  self.do_not_set_winopts = true
+  self:set_preview_buf(tmpbuf)
+  -- must be modifiable or 'termopen' fails
+  vim.bo[tmpbuf].modifiable = true
+  vim.api.nvim_buf_call(tmpbuf, function()
+    self._job_id = vim.fn.termopen(cmd, {
+      cwd = self.opts.cwd,
+      on_exit = function()
+        -- run post only after terminal job finished
+        if self._job_id then
+          self:preview_buf_post(entry)
+          self._job_id = nil
+        end
+      end
+    })
+  end)
+  -- run here so title gets updated
+  -- even if the image is still loading
+  self:preview_buf_post(entry)
+  return true
+end
+
 function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
   local entry = self:parse_entry(entry_str)
   if vim.tbl_isempty(entry) then return end
-  -- mark terminal buffers so we don't call 'set_winopts'
-  -- mark uri entries so we do not delete the preview buffer
-  self.do_not_unload = (entry.uri ~= nil)
-  self.do_not_set_winopts = entry.terminal
   if not self:should_load_buffer(entry) then
     -- same file/buffer as previous entry
     -- no need to reload content
     -- call post to set cusror location
     self:preview_buf_post(entry)
-  elseif entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
+    return
+  end
+  -- kill previously running terminal jobs
+  -- when using external commands extension map
+  if self._job_id and self._job_id > 0 then
+    vim.fn.jobstop(self._job_id)
+    self._job_id = nil
+  end
+  -- mark terminal buffers so we don't call 'set_winopts'
+  -- mark uri entries so we do not delete the preview buffer
+  self.do_not_unload = (entry.uri ~= nil)
+  self.do_not_set_winopts = entry.terminal
+  if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
     -- WE NO LONGER REUSE THE CURRENT BUFFER
     -- this changes the buffer's 'getbufinfo[1].lastused'
     -- which messes up our `buffers()` sort
@@ -308,6 +360,18 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     local fs_stat = vim.loop.fs_stat(entry.path)
     if not entry.path or not fs_stat then return end
     local tmpbuf = self:get_tmp_buffer()
+    if self.extensions and not vim.tbl_isempty(self.extensions) then
+      local ext = path.extension(entry.path)
+      local cmd = ext and self.extensions[ext]
+      if cmd and self:populate_terminal_cmd(tmpbuf, cmd, entry) then
+        -- will return 'false' when cmd isn't executable
+        -- if we get here it means preview was successful
+        -- it can still fail if using wrong command flags
+        -- but the use will be able to see the error in
+        -- the preview win
+        return
+      end
+    end
     do
       local lines = nil
       if utils.perl_file_is_binary(entry.path) then
@@ -443,18 +507,21 @@ end
 
 function Previewer.buffer_or_file:preview_buf_post(entry)
   if not self.win or not self.win:validate_preview() then return end
-  -- set preview win options or load the file
-  -- if not already loaded from buffer
-  self:set_cursor_hl(entry)
 
-  -- syntax highlighting
-  if self.syntax then
-    if self.syntax_delay > 0 then
-      vim.defer_fn(function()
+  if not self:preview_is_terminal() then
+
+    -- set cursor highlights for line|col or tag
+    self:set_cursor_hl(entry)
+
+    -- syntax highlighting
+    if self.syntax then
+      if self.syntax_delay > 0 then
+        vim.defer_fn(function()
+          self:do_syntax(entry)
+        end, self.syntax_delay)
+      else
         self:do_syntax(entry)
-      end, self.syntax_delay)
-    else
-      self:do_syntax(entry)
+      end
     end
   end
 

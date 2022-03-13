@@ -62,6 +62,8 @@ at it. That, **and colorful file icons and git indicators!**.
   using fzf's native previewer
 - [delta](https://github.com/dandavison/delta) - syntax highlighted git pager
   for git status previews
+- [viu](https://github.com/atanunq/viu) - terminal image previews (needs to be
+  configured via 'previewer.builtin.extensions')
 - [nvim-dap](https://github.com/mfussenegger/nvim-dap) - for Debug Adapter
   Protocol (DAP) support
  
@@ -441,6 +443,13 @@ require'fzf-lua'.setup {
       syntax_limit_l  = 0,            -- syntax limit (lines), 0=nolimit
       syntax_limit_b  = 1024*1024,    -- syntax limit (bytes), 0=nolimit
       limit_b         = 1024*1024*10, -- preview limit (bytes), 0=nolimit
+      -- preview extensions using a custom shell command:
+      -- for example, use `viu` for image previews
+      -- will do nothing if `viu` isn't executable
+      extensions      = {
+        ["gif"]       = { "viu" },
+        ["png"]       = { "viu" },
+      },
     },
   },
   -- provider setup

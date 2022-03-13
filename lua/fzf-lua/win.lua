@@ -508,7 +508,7 @@ function FzfWin:redraw_preview()
     self:update_border_buf()
     api.nvim_win_set_config(self.border_winid, self.border_winopts)
     api.nvim_win_set_config(self.preview_winid, self.prev_winopts)
-    if self._previewer and self._previewer.set_winopts then
+    if self._previewer and self._previewer.display_last_entry then
       self._previewer:set_winopts(self.preview_winid)
       self._previewer:display_last_entry()
     end
@@ -639,6 +639,21 @@ function FzfWin:set_tmp_buffer()
   return self.fzf_bufnr
 end
 
+function FzfWin:set_style_minimal(winid)
+  if not tonumber(winid) or
+    not api.nvim_win_is_valid(winid)
+    then return end
+  vim.wo[winid].number = false
+  vim.wo[winid].relativenumber = false
+  vim.wo[winid].cursorline = false
+  vim.wo[winid].cursorcolumn = false
+  vim.wo[winid].spell = false
+  vim.wo[winid].list = false
+  vim.wo[winid].signcolumn = 'no'
+  vim.wo[winid].foldcolumn = '0'
+  vim.wo[winid].colorcolumn = ''
+end
+
 function FzfWin:create()
   if self._reuse then
     -- we can't reuse the fzf term buffer
@@ -664,15 +679,7 @@ function FzfWin:create()
     self.fzf_bufnr = vim.api.nvim_get_current_buf()
     self.fzf_winid = vim.api.nvim_get_current_win()
     -- match window options with 'nvim_open_win' style:minimal
-    vim.wo[self.fzf_winid].number = false
-    vim.wo[self.fzf_winid].relativenumber = false
-    vim.wo[self.fzf_winid].cursorline = false
-    vim.wo[self.fzf_winid].cursorcolumn = false
-    vim.wo[self.fzf_winid].spell = false
-    vim.wo[self.fzf_winid].list = false
-    vim.wo[self.fzf_winid].signcolumn = 'no'
-    vim.wo[self.fzf_winid].foldcolumn = '0'
-    vim.wo[self.fzf_winid].colorcolumn = ''
+    self:set_style_minimal(self.fzf_winid)
   else
     -- draw the main window
     self:redraw()

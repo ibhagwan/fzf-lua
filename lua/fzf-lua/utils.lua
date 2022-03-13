@@ -371,6 +371,12 @@ end
 
 function M.is_term_buffer(bufnr)
   bufnr = tonumber(bufnr) or 0
+  -- convert bufnr=0 to current buf so we can call 'bufwinid'
+  bufnr = bufnr==0 and vim.api.nvim_get_current_buf() or bufnr
+  local winid = vim.fn.bufwinid(bufnr)
+  if tonumber(winid)>0 and vim.api.nvim_win_is_valid(winid) then
+    return vim.fn.getwininfo(winid)[1].terminal == 1
+  end
   local bufname = vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_get_name(bufnr)
   return M.is_term_bufname(bufname)
 end
