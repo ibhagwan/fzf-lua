@@ -596,6 +596,11 @@ function FzfWin:redraw()
     win_opts.col = winopts.col or math.floor((columns - win_opts.width) / 2)
 
     if self:validate() then
+      if self._previewer
+        and self._previewer.clear_on_redraw
+        and self._previewer.clear_preview_buf then
+        self._previewer:clear_preview_buf()
+      end
       api.nvim_win_set_config(self.fzf_winid, win_opts)
     else
       -- save 'cursorline' setting prior to opening the popup

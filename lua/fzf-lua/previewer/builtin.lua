@@ -24,9 +24,28 @@ function Previewer.base:new(o, opts, fzf_win)
   self.syntax_limit_b = o.syntax_limit_b
   self.syntax_limit_l = o.syntax_limit_l
   self.limit_b = o.limit_b
-  self.extensions = o.extensions
-  self.ueberzug_scaler = o.ueberzug_scaler
   self.backups = {}
+  -- convert extension map to lower case
+  if o.extensions then
+    self.extensions = {}
+    for k, v in pairs(o.extensions) do
+      self.extensions[k:lower()] = v
+    end
+  end
+  -- validatee the ueberzug image scaler
+  local uz_scalers = {
+    ["crop"]          = "crop",
+    ["distort"]       = "distort",
+    ["contain"]       = "contain",
+    ["fit_contain"]   = "fit_contain",
+    ["cover"]         = "cover",
+    ["forced_cover"]  = "forced_cover",
+  }
+  self.ueberzug_scaler = uz_scalers[o.ueberzug_scaler]
+  if o.ueberzug_scaler and not self.ueberzug_scaler then
+    utils.warn(("Invalid ueberzug image scaler '%s', option will be omitted.")
+      :format(o.ueberzug_scaler))
+  end
   return self
 end
 
@@ -266,8 +285,6 @@ function Previewer.buffer_or_file:parse_entry(entry_str)
 end
 
 function Previewer.buffer_or_file:should_clear_preview(_)
-  -- must redraw when using ueberzug
-  if self._ueberzug_fifo then return true end
   return false
 end
 
@@ -325,6 +342,9 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
   -- correct size
   self.loaded_entry = nil
   self.do_not_set_winopts = true
+  -- both ueberzug and terminal cmds need a clear
+  -- on redraw to fit the new window dimentions
+  self.clear_on_redraw = true
   self:set_preview_buf(tmpbuf)
   if cmd[1]:match("ueberzug") then
     local fifo = self:start_ueberzug()
@@ -390,6 +410,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   end
   -- mark terminal buffers so we don't call 'set_winopts'
   -- mark uri entries so we do not delete the preview buffer
+  self.clear_on_redraw = false
   self.do_not_unload = (entry.uri ~= nil)
   self.do_not_set_winopts = entry.terminal
   if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
@@ -423,7 +444,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     local tmpbuf = self:get_tmp_buffer()
     if self.extensions and not vim.tbl_isempty(self.extensions) then
       local ext = path.extension(entry.path)
-      local cmd = ext and self.extensions[ext]
+      local cmd = ext and self.extensions[ext:lower()]
       if cmd and self:populate_terminal_cmd(tmpbuf, cmd, entry) then
         -- will return 'false' when cmd isn't executable
         -- if we get here it means preview was successful
