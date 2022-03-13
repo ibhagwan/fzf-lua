@@ -4,6 +4,7 @@ local utils = require "fzf-lua.utils"
 local Object = require "fzf-lua.class"
 
 local api = vim.api
+local uv = vim.loop
 local fn = vim.fn
 
 local Previewer = {}
@@ -24,6 +25,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.syntax_limit_l = o.syntax_limit_l
   self.limit_b = o.limit_b
   self.extensions = o.extensions
+  self.ueberzug_scaler = o.ueberzug_scaler
   self.backups = {}
   return self
 end
@@ -251,12 +253,21 @@ function Previewer.buffer_or_file:new(o, opts, fzf_win)
   return self
 end
 
+function Previewer.buffer_or_file:close()
+  self:restore_winopts(self.win.preview_winid)
+  self:clear_preview_buf()
+  self:stop_ueberzug()
+  self.backups = {}
+end
+
 function Previewer.buffer_or_file:parse_entry(entry_str)
   local entry = path.entry_to_file(entry_str, self.opts.cwd)
   return entry
 end
 
 function Previewer.buffer_or_file:should_clear_preview(_)
+  -- must redraw when using ueberzug
+  if self._ueberzug_fifo then return true end
   return false
 end
 
@@ -275,14 +286,39 @@ function Previewer.buffer_or_file:should_load_buffer(entry)
   return true
 end
 
+function Previewer.buffer_or_file:start_ueberzug()
+  if self._ueberzug_fifo then return self._ueberzug_fifo end
+  local fifo = ("fzf-lua-%d-ueberzug"):format(vim.fn.getpid())
+  self._ueberzug_fifo = vim.fn.systemlist({"mktemp", "--dry-run", "--suffix", fifo})[1]
+  vim.fn.system({"mkfifo", self._ueberzug_fifo})
+  self._ueberzug_job = vim.fn.jobstart({"sh", "-c",
+    ("tail --follow %s | ueberzug layer --silent --parser json")
+      :format(vim.fn.shellescape(self._ueberzug_fifo))})
+  self._ueberzug_pid = vim.fn.jobpid(self._ueberzug_job)
+  return self._ueberzug_fifo
+end
+
+function Previewer.buffer_or_file:stop_ueberzug()
+  if self._ueberzug_job then
+    vim.fn.jobstop(self._ueberzug_job)
+    if type(uv.os_getpriority(self._ueberzug_pid)) == 'number' then
+      uv.kill(self._ueberzug_pid, 9)
+    end
+    self._ueberzug_job = nil
+    self._ueberzug_pid = nil
+  end
+  if self._ueberzug_fifo and uv.fs_stat(self._ueberzug_fifo) then
+    vim.fn.delete(self._ueberzug_fifo)
+    self._ueberzug_fifo = nil
+  end
+end
+
 function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
   if not cmd then return end
   cmd = type(cmd) == 'table' and utils.deepcopy(cmd) or { cmd }
   if not cmd[1] or vim.fn.executable(cmd[1]) ~= 1 then
     return false
   end
-  -- add filename as last parameter
-  table.insert(cmd, entry.path)
   -- set this to prevent calling 'set_winopts'
   -- preview buf must be attached beforehand
   -- for terminal image previews to have the
@@ -290,20 +326,43 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
   self.loaded_entry = nil
   self.do_not_set_winopts = true
   self:set_preview_buf(tmpbuf)
-  -- must be modifiable or 'termopen' fails
-  vim.bo[tmpbuf].modifiable = true
-  vim.api.nvim_buf_call(tmpbuf, function()
-    self._job_id = vim.fn.termopen(cmd, {
-      cwd = self.opts.cwd,
-      on_exit = function()
-        -- run post only after terminal job finished
-        if self._job_id then
-          self:preview_buf_post(entry)
-          self._job_id = nil
+  if cmd[1]:match("ueberzug") then
+    local fifo = self:start_ueberzug()
+    if not fifo then return end
+    local wincfg = vim.api.nvim_win_get_config(self.win.preview_winid)
+    local winpos = vim.api.nvim_win_get_position(self.win.preview_winid)
+    local json = ('{ "action": "add", "identifier": "preview", "x": %d, "y": %d, "width": %d, "height": %d, "path": "%s" %s }')
+      :format(winpos[2], winpos[1], wincfg.width, wincfg.height,
+        path.join({self.opts.cwd or uv.cwd(), entry.path}),
+        self.ueberzug_scaler and (', "scaler": "%s"'):format(self.ueberzug_scaler) or '')
+    -- both 'fs_open|write|close' and 'vim.fn.system' work
+    -- we prefer the libuv method as it doesn't rely on the shell
+    -- cmd = { "sh", "-c", ("echo '%s' > %s"):format(json, self._ueberzug_fifo) }
+    -- vim.fn.system(cmd)
+    local fd = uv.fs_open(self._ueberzug_fifo, "a", -1)
+    if fd then
+      uv.fs_write(fd, json.."\n", nil, function(_)
+        uv.fs_close(fd)
+      end)
+    end
+  else
+    -- add filename as last parameter
+    table.insert(cmd, entry.path)
+    -- must be modifiable or 'termopen' fails
+    vim.bo[tmpbuf].modifiable = true
+    vim.api.nvim_buf_call(tmpbuf, function()
+      self._job_id = vim.fn.termopen(cmd, {
+        cwd = self.opts.cwd,
+        on_exit = function()
+          -- run post only after terminal job finished
+          if self._job_id then
+            self:preview_buf_post(entry)
+            self._job_id = nil
+          end
         end
-      end
-    })
-  end)
+      })
+    end)
+  end
   -- run here so title gets updated
   -- even if the image is still loading
   self:preview_buf_post(entry)
@@ -321,6 +380,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     self:preview_buf_post(entry)
     return
   end
+  -- stop ueberzug shell job
+  self:stop_ueberzug()
   -- kill previously running terminal jobs
   -- when using external commands extension map
   if self._job_id and self._job_id > 0 then

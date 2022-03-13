@@ -63,7 +63,9 @@ at it. That, **and colorful file icons and git indicators!**.
 - [delta](https://github.com/dandavison/delta) - syntax highlighted git pager
   for git status previews
 - [viu](https://github.com/atanunq/viu) - terminal image previews (needs to be
-  configured via 'previewer.builtin.extensions')
+  configured via `previewer.builtin.extensions`)
+- [ueberzug](https://github.com/seebye/ueberzug) - X11 image previews (needs to
+  be configured via `previewer.builtin.extensions`)
 - [nvim-dap](https://github.com/mfussenegger/nvim-dap) - for Debug Adapter
   Protocol (DAP) support
  
@@ -450,6 +452,12 @@ require'fzf-lua'.setup {
         ["gif"]       = { "viu" },
         ["png"]       = { "viu" },
       },
+      -- if using `ueberzug` in the above extensions map
+      -- set the default image scaler, possible scalers:
+      --   false (none), "crop", "distort", "fit_contain",
+      --   "contain", "forced_cover", "cover"
+      -- https://github.com/seebye/ueberzug
+      ueberzug_scaler = "cover",
     },
   },
   -- provider setup
