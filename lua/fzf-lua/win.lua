@@ -606,6 +606,23 @@ function FzfWin:redraw()
       win_opts.height = win_opts.height + 2
     end
 
+    -- When border chars are empty strings 'nvim_open_win' adjusts
+    -- the layout to take all avialable space, we use these to adjust
+    -- our main window height to use all available lines (#364)
+    if type(win_opts.border) == 'table' then
+      local function is_empty_str(tbl, arr)
+        for _, i in ipairs(arr) do
+          if tbl[i] and #tbl[i]>0 then
+            return false
+          end
+        end
+        return true
+      end
+      win_opts.height = win_opts.height
+        + (is_empty_str(win_opts.border, {2}) and 1 or 0)  -- top border
+        + (is_empty_str(win_opts.border, {6}) and 1 or 0)  -- bottom border
+    end
+
     if self:validate() then
       if self._previewer
         and self._previewer.clear_on_redraw
