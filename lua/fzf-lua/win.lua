@@ -189,11 +189,11 @@ local strip_borderchars_hl = function(border)
   local borderchars = {}
   for i=1, 8 do
     if type(border[i]) == 'string' then
-      table.insert(borderchars, border[i])
+      table.insert(borderchars, #border[i]>0 and border[i] or ' ')
     elseif type(border[i]) == 'table' and type(border[i][1]) == 'string' then
       -- can happen when border chars contains a highlight, i.e:
       -- border = { {'╭', 'NormalFloat'}, {'─', 'NormalFloat'}, ... }
-      table.insert(borderchars, border[i][1])
+      table.insert(borderchars, #border[i][1]>0 and border[i][1] or ' ')
     else
       table.insert(borderchars, default[i])
     end
@@ -621,6 +621,9 @@ function FzfWin:redraw()
       win_opts.height = win_opts.height
         + (is_empty_str(win_opts.border, {2}) and 1 or 0)  -- top border
         + (is_empty_str(win_opts.border, {6}) and 1 or 0)  -- bottom border
+      win_opts.width = win_opts.width
+        + (is_empty_str(win_opts.border, {4}) and 1 or 0)  -- right border
+        + (is_empty_str(win_opts.border, {8}) and 1 or 0)  -- left border
     end
 
     if self:validate() then
