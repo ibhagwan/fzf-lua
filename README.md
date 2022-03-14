@@ -563,9 +563,13 @@ require'fzf-lua'.setup {
     -- otherwise auto-detect prioritizes `rg` over `grep`
     -- default options are controlled by 'rg|grep_opts'
     -- cmd            = "rg --vimgrep",
-    rg_opts           = "--column --line-number --no-heading --color=always --smart-case --max-columns=512",
     grep_opts         = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp",
-    -- 'live_grep_glob' options:
+    rg_opts           = "--column --line-number --no-heading --color=always --smart-case --max-columns=512",
+    -- set to 'true' to always parse globs in both 'grep' and 'live_grep'
+    -- search strings will be split using the 'glob_separator' and translated
+    -- to '--iglob=' arguments, requires 'rg'
+    -- can still be used when 'false' by calling 'live_grep_glob' directly
+    rg_glob           = false,        -- always parse for globs with 
     glob_flag         = "--iglob",    -- for case sensitive globs use '--glob'
     glob_separator    = "%s%-%-"      -- query separator pattern (lua): ' --'
     actions = {

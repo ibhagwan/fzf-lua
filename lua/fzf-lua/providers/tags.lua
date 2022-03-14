@@ -87,6 +87,9 @@ local function tags(opts)
 
   if opts.lgrep then
     -- live_grep requested by caller ('tags_live_grep')
+    -- rg globs are meaningless here since we searching
+    -- a single file
+    opts.rg_glob = false
     opts.filename = opts._ctags_file
     if opts.multiprocess then
       return require'fzf-lua.providers.grep'.live_grep_mt(opts)

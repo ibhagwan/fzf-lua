@@ -542,6 +542,9 @@ M.grep_lgrep = function(_, opts)
       search = false,
       continue_last_search = true,
       continue_last_search_default = '',
+      rg_glob = opts.rg_glob or opts.__call_opts.rg_glob,
+      -- globs always require command processing with 'multiprocess'
+      requires_processing = opts.rg_glob or opts.__call_opts.rg_glob,
     }, opts.__call_opts or {})
 
   if opts.__FNCREF__ then

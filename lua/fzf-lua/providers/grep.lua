@@ -3,6 +3,7 @@ local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local libuv = require "fzf-lua.libuv"
+local make_entry = require "fzf-lua.make_entry"
 
 local function get_last_search(opts)
   if opts.__MODULE__ and opts.__MODULE__.get_last_search then
@@ -34,9 +35,6 @@ end
 local M = {}
 
 local get_grep_cmd = function(opts, search_query, no_esc)
-  if opts.cmd_fn and type(opts.cmd_fn) == 'function' then
-    return opts.cmd_fn(opts, search_query, no_esc)
-  end
   if opts.raw_cmd and #opts.raw_cmd>0 then
     return opts.raw_cmd
   end
@@ -47,6 +45,27 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     command = string.format("rg %s", opts.rg_opts)
   else
     command = string.format("grep %s", opts.grep_opts)
+  end
+
+  if opts.rg_glob and not command:match("^rg") then
+    opts.rg_glob = false
+    utils.warn("'--glob|iglob' flags require 'rg', ignoring 'rg_glob' option.")
+  end
+
+  if opts.rg_glob then
+    local new_query, glob_args = make_entry.glob_parse(opts, search_query)
+    if glob_args then
+      -- since the search string mixes both the query and
+      -- glob separators we cannot used unescaped strings
+      if not (no_esc or opts.no_esc) then
+        new_query = utils.rg_escape(new_query)
+        opts.no_esc = true
+        opts.search = ("%s%s"):format(new_query,
+          search_query:match(opts.glob_separator..".*"))
+      end
+      search_query = new_query
+      command = ("%s %s"):format(command, glob_args)
+    end
   end
 
   -- filename takes precedence over directory
@@ -99,19 +118,17 @@ M.grep = function(opts)
     opts.search = vim.fn.input(opts.input_prompt) or ''
   end
 
-  --[[ if not opts.search or #opts.search == 0 then
-    utils.info("Please provide a valid search string")
-    return
-  end ]]
-
   -- search query in header line
   opts = core.set_header(opts)
 
-  -- save the search query so the use can
-  -- call the same search again
+  -- get the grep command before saving the last search
+  -- incase the search string is overwritten by 'rg_glob'
+  opts.cmd = get_grep_cmd(opts, opts.search, no_esc)
+
+  -- save the search query so we
+  -- can call the same search again
   set_last_search(opts, opts.search, no_esc or opts.no_esc)
 
-  opts.cmd = get_grep_cmd(opts, opts.search, no_esc)
   local contents = core.mt_cmd_wrapper(opts)
   -- by redirecting the error stream to stdout
   -- we make sure a clear error message is displayed
@@ -319,44 +336,16 @@ M.live_grep_mt = function(opts)
 end
 
 M.live_grep_glob_st = function(opts)
-  if not opts then opts = {} end
+
   if vim.fn.executable("rg") ~= 1 then
     utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
     return
   end
-  opts.cmd_fn = function(o, query, no_esc)
 
-    local glob_arg, glob_str = "", ""
-    local search_query = query or ""
-    if query:find(o.glob_separator) then
-      search_query, glob_str = query:match("(.*)"..o.glob_separator.."(.*)")
-      for _, s in ipairs(utils.strsplit(glob_str, "%s")) do
-        glob_arg = glob_arg .. (" %s %s")
-          :format(o.glob_flag, vim.fn.shellescape(s))
-      end
-    end
-
-    -- copied over from get_grep_cmd
-    local search_path = ''
-    if o.filespec and #o.filespec>0 then
-      search_path = o.filespec
-    elseif o.filename and #o.filename>0 then
-      search_path = vim.fn.shellescape(o.filename)
-    end
-
-    if not (no_esc or o.no_esc) then
-      search_query = utils.rg_escape(search_query)
-    end
-
-    -- do not escape at all
-    if not (no_esc == 2 or o.no_esc == 2) then
-      search_query = libuv.shellescape(search_query)
-    end
-
-    local cmd = ("rg %s %s -- %s %s")
-      :format(o.rg_opts, glob_arg, search_query, search_path)
-    return cmd
-  end
+  -- 'rg_glob = true' enables glob
+  -- processsing in 'get_grep_cmd'
+  opts = opts or {}
+  opts.rg_glob = true
   return M.live_grep_st(opts)
 end
 
@@ -383,6 +372,12 @@ M.live_grep_native = function(opts)
   opts = opts or {}
   opts.git_icons = false
   opts.file_icons = false
+  opts.rg_glob = false
+  -- disable ctrl-g switch by default
+  if not opts.actions or not opts.actions["ctrl-g"] then
+    opts.actions = opts.actions or {}
+    opts.actions["ctrl-g"] = false
+  end
   opts.__FNCREF__ = utils.__FNCREF__()
   return M.live_grep_mt(opts)
 end
@@ -461,6 +456,9 @@ end
 
 M.grep_curbuf = function(opts)
   if not opts then opts = {} end
+  -- rg globs are meaningless here since we searching
+  -- a single file
+  opts.rg_glob = false
   opts.rg_opts = config.globals.grep.rg_opts .. " --with-filename"
   opts.grep_opts = config.globals.grep.grep_opts .. " --with-filename"
   if opts.exec_empty_query == nil then

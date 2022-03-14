@@ -194,6 +194,19 @@ M.get_diff_files = function(opts)
     return diff_files
 end
 
+M.glob_parse = function(opts, query)
+  if not query or not query:find(opts.glob_separator) then
+    return query, nil
+  end
+  local glob_args = ""
+  local search_query, glob_str = query:match("(.*)"..opts.glob_separator.."(.*)")
+  for _, s in ipairs(utils.strsplit(glob_str, "%s")) do
+    glob_args = glob_args .. ("%s %s ")
+      :format(opts.glob_flag, vim.fn.shellescape(s))
+  end
+  return search_query, glob_args
+end
+
 M.preprocess = function(opts)
   if opts.cwd_only and not opts.cwd then
     opts.cwd = vim.loop.cwd()
@@ -232,13 +245,8 @@ M.preprocess = function(opts)
   -- mannipulation needs to be done before the argv hack
   if opts.rg_glob then
     local query = argv()
-    if query and query:find(opts.glob_separator) then
-      local glob_args = ""
-      local search_query, glob_str = query:match("(.*)"..opts.glob_separator.."(.*)")
-      for _, s in ipairs(utils.strsplit(glob_str, "%s")) do
-        glob_args = glob_args .. ("%s %s ")
-          :format(opts.glob_flag, vim.fn.shellescape(s))
-      end
+    local search_query, glob_args = M.glob_parse(opts, query)
+    if glob_args then
       -- gsub doesn't like single % on rhs
       search_query = search_query:gsub("%%", "%%%%")
       -- reset argvz so it doesn't get replaced again below
