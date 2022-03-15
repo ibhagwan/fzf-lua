@@ -137,6 +137,20 @@ M.grep = function(opts)
     contents = contents .. " 2>&1"
   end
 
+  -- when using an empty string grep (as in 'grep_project') or
+  -- when switching from grep to live_grep using 'ctrl-g' users
+  -- may find it confusing why is the last typed query not
+  -- considered the last search so we find out if that's the
+  -- case and use the last typed prompt as the grep string
+  opts.fn_post_fzf = function(o, _)
+    local last_search, _ = get_last_search(o)
+    local last_query = config.__resume_data and config.__resume_data.last_query
+    if not last_search or #last_search==0
+       and (last_query and #last_query>0) then
+      set_last_search(opts, last_query)
+    end
+  end
+
   opts = core.set_fzf_field_index(opts)
   core.fzf_files(opts, contents)
   opts.search = nil

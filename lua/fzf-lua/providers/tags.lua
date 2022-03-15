@@ -102,6 +102,16 @@ local function tags(opts)
     end
   end
 
+  -- see my comment in 'grep.lua:grep' what this is for
+  opts.fn_post_fzf = function(o, _)
+    local last_search, _ = M.get_last_search(o)
+    local last_query = config.__resume_data and config.__resume_data.last_query
+    if not last_search or #last_search==0
+       and (last_query and #last_query>0) then
+      M.set_last_search(opts, last_query)
+    end
+  end
+
   -- save the search query so the use can
   -- call the same search again
   M.set_last_search(opts, opts.search, opts.no_esc)
