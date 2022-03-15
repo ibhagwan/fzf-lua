@@ -1,4 +1,3 @@
-local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
@@ -100,29 +99,12 @@ local function tags(opts)
       end
       return require'fzf-lua.providers.grep'.live_grep_st(opts)
     end
+  else
+    opts._curr_file = opts._curr_file and
+      path.relative(opts._curr_file, opts.cwd or vim.loop.cwd())
+    opts.raw_cmd = opts.cmd or get_tags_cmd(opts)
+    return require'fzf-lua.providers.grep'.grep(opts)
   end
-
-  -- see my comment in 'grep.lua:grep' what this is for
-  opts.fn_post_fzf = function(o, _)
-    local last_search, _ = M.get_last_search(o)
-    local last_query = config.__resume_data and config.__resume_data.last_query
-    if not last_search or #last_search==0
-       and (last_query and #last_query>0) then
-      M.set_last_search(opts, last_query)
-    end
-  end
-
-  -- save the search query so the use can
-  -- call the same search again
-  M.set_last_search(opts, opts.search, opts.no_esc)
-
-  opts._curr_file = opts._curr_file and
-    path.relative(opts._curr_file, opts.cwd or vim.loop.cwd())
-  opts.cmd = opts.cmd or get_tags_cmd(opts)
-  local contents = core.mt_cmd_wrapper(opts)
-  opts = core.set_header(opts)
-  opts = core.set_fzf_field_index(opts)
-  return core.fzf_files(opts, contents)
 end
 
 M.tags = function(opts)
@@ -134,6 +116,9 @@ end
 M.btags = function(opts)
   opts = config.normalize_opts(opts, config.globals.btags)
   if not opts then return end
+  -- since the grep string is the filename
+  -- we cannot use additional grep strings
+  opts.search = nil
   opts._curr_file = vim.api.nvim_buf_get_name(0)
   if not opts._curr_file or #opts._curr_file==0 then
     utils.info("'btags' is not available for unnamed buffers.")
