@@ -153,7 +153,6 @@ M.grep = function(opts)
 
   opts = core.set_fzf_field_index(opts)
   core.fzf_files(opts, contents)
-  opts.search = nil
 end
 
 -- single threaded version
@@ -191,12 +190,9 @@ M.live_grep_st = function(opts)
     if query and not (opts.save_last_search == false) then
       set_last_search(opts, query, true)
     end
-    -- can be nill when called as fzf initial command
+    -- can be nil when called as fzf initial command
     query = query or ''
-    -- TODO: need to empty filespec
-    -- fix this collision, rename to _filespec
     opts.no_esc = nil
-    opts.filespec = nil
     return get_grep_cmd(opts, query, true)
   end
 

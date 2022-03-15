@@ -28,11 +28,13 @@ local function get_tags_cmd(opts)
   else
     cmd = ("%s %s"):format("grep", opts.grep_opts or '')
   end
-  if opts.search and #opts.search>0 then
+  -- filename (i.e. btags) takes precedence over
+  -- search query as we can't search for both
+  if opts.filename and #opts.filename>0 then
+    query = libuv.shellescape(opts.filename)
+  elseif opts.search and #opts.search>0 then
     query = libuv.shellescape(opts.no_esc and opts.search or
       utils.rg_escape(opts.search))
-  elseif opts._curr_file and #opts._curr_file>0 then
-    query = vim.fn.shellescape(opts._curr_file)
   else
     query = "-v '^!_TAG_'"
   end
@@ -116,14 +118,13 @@ end
 M.btags = function(opts)
   opts = config.normalize_opts(opts, config.globals.btags)
   if not opts then return end
-  -- since the grep string is the filename
-  -- we cannot use additional grep strings
-  opts.search = nil
-  opts._curr_file = vim.api.nvim_buf_get_name(0)
-  if not opts._curr_file or #opts._curr_file==0 then
+  opts.filename = vim.api.nvim_buf_get_name(0)
+  if not opts.filename or #opts.filename==0 then
     utils.info("'btags' is not available for unnamed buffers.")
     return
   end
+  -- tags use relative paths
+  opts.filename = path.relative(opts.filename, opts.cwd or vim.loop.cwd())
   return tags(opts)
 end
 
