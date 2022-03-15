@@ -258,7 +258,7 @@ NEOVIM API                                                *fzf-lua-neovim-api*
 
   `:help vim.ui.select` for more info
 
-| Command              | List                                 
+| Command              | List                                   |
 | -------------------- | -------------------------------------- |
 | `register_ui_select`   | register fzf-lua as the UI interface for `vim.ui.select`|
 | `deregister_ui_select` | de-register fzf-lua with `vim.ui.select` |
@@ -345,7 +345,7 @@ Consult the list below for available settings:
           -- Only valid with the builtin previewer:
           title          = true,            -- preview border title (file/buf)?
           scrollbar      = 'float',         -- `false` or string:'float|border'
-                                            -- float:  in-window floating border 
+                                            -- float:  in-window floating border
                                             -- border: in-border chars (see below)
           scrolloff      = '-2',            -- float scrollbar offset from right
                                             -- applies only when scrollbar = 'float'
@@ -613,11 +613,11 @@ Consult the list below for available settings:
         rg_opts           = "--column --line-number --no-heading --color=always --smart-case --max-columns=512",
         -- set to 'true' to always parse globs in both 'grep' and 'live_grep'
         -- search strings will be split using the 'glob_separator' and translated
-        -- to '--iglob=' arguments, requires 'rg'.
+        -- to '--iglob=' arguments, requires 'rg'
         -- can still be used when 'false' by calling 'live_grep_glob' directly
-        rg_glob           = false,        -- always parse for globs with 
+        rg_glob           = false,        -- default to glob parsing?
         glob_flag         = "--iglob",    -- for case sensitive globs use '--glob'
-        glob_separator    = "%s%-%-"      -- query separator pattern (lua): ' --'
+        glob_separator    = "%s%-%-",     -- query separator pattern (lua): ' --'
         actions = {
           -- actions inherit from 'actions.files' and merge
           -- this action toggles between 'grep' and 'live_grep'

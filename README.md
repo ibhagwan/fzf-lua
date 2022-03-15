@@ -68,7 +68,8 @@ at it. That, **and colorful file icons and git indicators!**.
   be configured via `previewer.builtin.extensions`)
 - [nvim-dap](https://github.com/mfussenegger/nvim-dap) - for Debug Adapter
   Protocol (DAP) support
- 
+
+
 ## Installation
 
 Using [vim-plug](https://github.com/junegunn/vim-plug)
@@ -219,7 +220,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 
 > `:help vim.ui.select` for more info
 
-| Command              | List                                 
+| Command              | List                                   |
 | -------------------- | -------------------------------------- |
 | `register_ui_select`   | register fzf-lua as the UI interface for `vim.ui.select`|
 | `deregister_ui_select` | de-register fzf-lua with `vim.ui.select` |
@@ -299,7 +300,7 @@ require'fzf-lua'.setup {
       -- Only valid with the builtin previewer:
       title          = true,            -- preview border title (file/buf)?
       scrollbar      = 'float',         -- `false` or string:'float|border'
-                                        -- float:  in-window floating border 
+                                        -- float:  in-window floating border
                                         -- border: in-border chars (see below)
       scrolloff      = '-2',            -- float scrollbar offset from right
                                         -- applies only when scrollbar = 'float'
@@ -569,9 +570,9 @@ require'fzf-lua'.setup {
     -- search strings will be split using the 'glob_separator' and translated
     -- to '--iglob=' arguments, requires 'rg'
     -- can still be used when 'false' by calling 'live_grep_glob' directly
-    rg_glob           = false,        -- always parse for globs with 
+    rg_glob           = false,        -- default to glob parsing?
     glob_flag         = "--iglob",    -- for case sensitive globs use '--glob'
-    glob_separator    = "%s%-%-"      -- query separator pattern (lua): ' --'
+    glob_separator    = "%s%-%-",     -- query separator pattern (lua): ' --'
     actions = {
       -- actions inherit from 'actions.files' and merge
       -- this action toggles between 'grep' and 'live_grep'
