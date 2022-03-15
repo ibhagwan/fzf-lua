@@ -157,9 +157,9 @@ local grep_tag = function(file, tag)
   table.insert(cmd, filepath)
   local out = utils.io_system(cmd)
   if not utils.shell_error() then
-    line = out:match("[^:]+")
+    line = tonumber(out:match("[^:]+")) or 1
   else
-    utils.warn(("Unable to find pattern '%s' in file '%s'"):format(pattern, file))
+    utils.warn(("previewer: unable to find pattern '%s' in file '%s'"):format(pattern, file))
   end
   -- if line == 1 then print(cmd) end
   return line

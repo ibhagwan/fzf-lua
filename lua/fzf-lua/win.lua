@@ -292,13 +292,21 @@ end
 
 function FzfWin:check_exit_status(exit_code)
   if not self:validate() then return end
-  if not exit_code or (exit_code ~=0 and exit_code ~= 130) then
+  -- from 'man fzf':
+  --    0      Normal exit
+  --    1      No match
+  --    2      Error
+  --    130    Interrupted with CTRL-C or ESC
+  if exit_code ~=0 and exit_code ~= 130 then
     local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
-    -- this can happen before nvim-fzf returned exit code (PR #36)
-    if not exit_code and (not lines or #lines[1]==0) then return end
-    utils.warn(("fzf error %s: %s")
-      :format(exit_code or "<null>",
+    -- the reason we're not ignoring error 1 is due
+    -- to skim returning 1 for unexpected arguments
+    -- only warn about there is an actual error msg
+    if exit_code ~= 1 or (lines and #lines[1]>0) then
+      utils.warn(("fzf error %s: %s"):format(
+        exit_code or "<null>",
         lines and #lines[1]>0 and lines[1] or "<null>"))
+    end
   end
 end
 
