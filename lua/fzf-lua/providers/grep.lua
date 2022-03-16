@@ -95,7 +95,15 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     search_query = libuv.shellescape(search_query)
   end
 
-  return string.format('%s %s %s', command, search_query, search_path)
+  -- construct the final command
+  command = ('%s %s %s'):format(command, search_query, search_path)
+
+  -- piped command filter, used for filtering ctags
+  if opts.filter and #opts.filter>0 then
+    command = ("%s | %s"):format(command, opts.filter)
+  end
+
+  return command
 end
 
 M.grep = function(opts)

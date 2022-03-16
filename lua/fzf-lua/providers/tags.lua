@@ -22,24 +22,28 @@ function M.set_last_search(_, query, no_esc)
 end
 
 local function get_tags_cmd(opts)
-  local cmd, query = nil, nil
+  local query, filter = nil, nil
+  local bin, flags = nil, nil
   if vim.fn.executable("rg") == 1 then
-    cmd = ("%s %s"):format("rg", opts.rg_opts or '')
+    bin, flags = "rg", opts.rg_opts
   else
-    cmd = ("%s %s"):format("grep", opts.grep_opts or '')
+    bin, flags = "grep", opts.grep_opts
   end
   -- filename (i.e. btags) takes precedence over
   -- search query as we can't search for both
   if opts.filename and #opts.filename>0 then
     query = libuv.shellescape(opts.filename)
   elseif opts.search and #opts.search>0 then
+    filter = ('%s -v "^!"'):format(bin)
     query = libuv.shellescape(opts.no_esc and opts.search or
       utils.rg_escape(opts.search))
   else
-    query = "-v '^!_TAG_'"
+    query = '-v "^!_TAG_"'
   end
-  return ("%s %s %s"):format(cmd, query,
-    vim.fn.shellescape(opts._ctags_file))
+  return ("%s %s %s %s"):format(
+      bin, flags, query,
+      opts._ctags_file and vim.fn.shellescape(opts._ctags_file) or ''
+    ), filter
 end
 
 local function tags(opts)
@@ -88,6 +92,8 @@ local function tags(opts)
 
   if opts.lgrep then
     -- live_grep requested by caller ('tags_live_grep')
+    local _, filter = get_tags_cmd({ search = 'dummy' })
+    opts.filter = (opts.filter == nil) and filter or opts.filter
     -- rg globs are meaningless here since we searching
     -- a single file
     opts.rg_glob = false
@@ -102,9 +108,15 @@ local function tags(opts)
       return require'fzf-lua.providers.grep'.live_grep_st(opts)
     end
   else
-    opts._curr_file = opts._curr_file and
-      path.relative(opts._curr_file, opts.cwd or vim.loop.cwd())
-    opts.raw_cmd = opts.cmd or get_tags_cmd(opts)
+    -- generate the command and pipe filter if needed
+    -- since we cannot use include and exclude in the
+    -- same grep command we need to use a pipe to filter
+    local cmd, filter = get_tags_cmd(opts)
+    opts.raw_cmd = opts.cmd or cmd
+    opts.filter = (opts.filter == nil) and filter or opts.filter
+    if opts.filter and #opts.filter>0 then
+      opts.raw_cmd = ("%s | %s"):format(opts.raw_cmd, opts.filter)
+    end
     return require'fzf-lua.providers.grep'.grep(opts)
   end
 end
