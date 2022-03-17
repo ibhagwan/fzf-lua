@@ -351,10 +351,17 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
     if not fifo then return end
     local wincfg = vim.api.nvim_win_get_config(self.win.preview_winid)
     local winpos = vim.api.nvim_win_get_position(self.win.preview_winid)
-    local json = ('{ "action": "add", "identifier": "preview", "x": %d, "y": %d, "width": %d, "height": %d, "path": "%s" %s }')
-      :format(winpos[2], winpos[1], wincfg.width, wincfg.height,
-        path.join({self.opts.cwd or uv.cwd(), entry.path}),
-        self.ueberzug_scaler and (', "scaler": "%s"'):format(self.ueberzug_scaler) or '')
+    local params = {
+      action      = "add",
+      identifier  = "preview",
+      x           = winpos[2],
+      y           = winpos[1],
+      width       = wincfg.width,
+      height      = wincfg.height,
+      scaler      = self.ueberzug_scaler,
+      path        = path.join({self.opts.cwd or uv.cwd(), entry.path}),
+    }
+    local json = vim.json.encode(params)
     -- both 'fs_open|write|close' and 'vim.fn.system' work
     -- we prefer the libuv method as it doesn't rely on the shell
     -- cmd = { "sh", "-c", ("echo '%s' > %s"):format(json, self._ueberzug_fifo) }
