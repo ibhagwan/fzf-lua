@@ -203,6 +203,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `help_tags`        | help tags                                  |
 | `man_pages`        | man pages                                  |
 | `colorschemes`     | color schemes                              |
+| `highlights`       | highlight groups                           |
 | `commands`         | neovim commands                            |
 | `command_history`  | command history                            |
 | `search_history`   | search history                             |

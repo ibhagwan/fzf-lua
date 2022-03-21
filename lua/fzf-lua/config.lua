@@ -419,6 +419,10 @@ M.globals.colorschemes = {
         width             = 0.50,
       },
   }
+M.globals.highlights = {
+      prompt              = 'highlights> ',
+      previewer           = { _ctor = previewers.builtin.highlights, },
+  }
 M.globals.helptags = {
       prompt              = 'Help> ',
       actions = {

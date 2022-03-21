@@ -1,4 +1,5 @@
 local core = require "fzf-lua.core"
+local utils = require "fzf-lua.utils"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
@@ -55,6 +56,70 @@ M.colorschemes = function(opts)
 
   end)()
 
+end
+
+M.highlights = function(opts)
+  opts = config.normalize_opts(opts, config.globals.highlights)
+  if not opts then return end
+
+  local contents = function (cb)
+
+    local highlights = vim.fn.getcompletion('', 'highlight')
+
+    local function add_entry(hl, co)
+      -- translate the highlight using ansi escape sequences
+      local x = utils.ansi_from_hl(hl, hl)
+      cb(x, function(err)
+        if co then coroutine.resume(co) end
+        if err then
+          -- error, close fzf pipe
+          cb(nil, function() end)
+        end
+      end)
+      if co then coroutine.yield() end
+    end
+
+    local function populate(entries, fn, co)
+      for _, e in ipairs(entries) do
+        fn(e, co)
+      end
+
+      cb(nil, function()
+        if co then coroutine.resume(co) end
+      end)
+    end
+
+    local coroutinify = (opts.coroutinify==nil) and false or opts.coroutinify
+
+    if not coroutinify then
+      populate(highlights, add_entry)
+    else
+      coroutine.wrap(function()
+        -- Unable to coroutinify, hl functions fail inside coroutines with:
+        -- E5560: vimL function must not be called in a lua loop callback
+        -- and using 'vim.schedule'
+        -- attempt to yield across C-call boundary
+        populate(highlights,
+          function(x, co)
+            vim.schedule(function()
+              add_entry(x, co)
+            end)
+          end,
+          coroutine.running())
+        coroutine.yield()
+      end)()
+    end
+
+  end
+
+  opts.fzf_opts['--no-multi'] = ''
+
+  core.fzf_wrap(opts, contents, function(selected)
+
+    if not selected then return end
+    actions.act(opts.actions, selected)
+
+  end)()
 end
 
 return M

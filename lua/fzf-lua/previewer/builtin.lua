@@ -854,4 +854,72 @@ function Previewer.tags:set_cursor_hl(entry)
   end)
 end
 
+Previewer.highlights = Previewer.base:extend()
+
+function Previewer.highlights:should_clear_preview(_)
+  return false
+end
+
+function Previewer.highlights:gen_winopts()
+  local winopts = {
+    wrap    = self.win.preview_wrap,
+    number  = false
+  }
+  return vim.tbl_extend("keep", winopts, self.winopts)
+end
+
+function Previewer.highlights:new(o, opts, fzf_win)
+  Previewer.highlights.super.new(self, o, opts, fzf_win)
+  self.ns_previewer = vim.api.nvim_create_namespace("fzf-lua.previewer.hl")
+  return self
+end
+
+function Previewer.highlights:close()
+  Previewer.highlights.super.close(self)
+  self.tmpbuf = nil
+end
+
+function Previewer.highlights:populate_preview_buf(entry_str)
+  if not self.tmpbuf then
+    local output = vim.split(vim.fn.execute "highlight", "\n")
+    local hl_groups = {}
+    for _, v in ipairs(output) do
+      if v ~= "" then
+        if v:sub(1, 1) == " " then
+          local part_of_old = v:match "%s+(.*)"
+          hl_groups[#hl_groups] = hl_groups[#hl_groups] .. part_of_old
+        else
+          table.insert(hl_groups, v)
+        end
+      end
+    end
+
+    self.tmpbuf = self:get_tmp_buffer()
+    vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, hl_groups)
+    for k, v in ipairs(hl_groups) do
+      local startPos = string.find(v, "xxx", 1, true) - 1
+      local endPos = startPos + 3
+      local hlgroup = string.match(v, "([^ ]*)%s+.*")
+      pcall(vim.api.nvim_buf_add_highlight, self.tmpbuf, 0, hlgroup, k - 1, startPos, endPos)
+    end
+    self:set_preview_buf(self.tmpbuf)
+  end
+
+  local selected_hl = utils.strip_ansi_coloring(entry_str)
+  pcall(vim.api.nvim_buf_clear_namespace, self.tmpbuf, self.ns_previewer, 0, -1)
+  pcall(api.nvim_win_call, self.win.preview_winid, function()
+    -- start searching at line 1 in case we
+    -- didn't reload the buffer (same file)
+    api.nvim_win_set_cursor(0, {1, 0})
+    fn.clearmatches()
+    fn.search(selected_hl.." ", "W")
+    if self.win.winopts.hl.search then
+      fn.matchadd(self.win.winopts.hl.search, selected_hl.." ")
+    end
+    self.orig_pos = api.nvim_win_get_cursor(0)
+    utils.zz()
+  end)
+  self.win:update_scrollbar()
+end
+
 return Previewer

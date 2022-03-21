@@ -300,6 +300,51 @@ for color, escseq in pairs(M.ansi_colors) do
   M.add_ansi_code(color, escseq)
 end
 
+local function hex2rgb(hexcol)
+  local r,g,b = hexcol:match('#(..)(..)(..)')
+  if not r or not g or not b then return end
+  r, g, b = tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
+  return r, g, b
+end
+
+local function synIDattr(hl, w)
+  return vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl)), w)
+end
+
+function M.ansi_from_hl(hl, s)
+  if vim.fn.hlexists(hl) == 1 then
+    -- https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797#rgb-colors
+    -- Set foreground color as RGB: 'ESC[38;2;{r};{g};{b}m'
+    -- Set background color as RGB: 'ESC[48;2;{r};{g};{b}m'
+    local what = {
+      ['fg']            = { rgb = true, code = 38 },
+      ['bg']            = { rgb = true, code = 48 },
+      ['bold']          = { code = 1 },
+      ['italic']        = { code = 3 },
+      ['underline']     = { code = 4 },
+      ['inverse']       = { code = 7 },
+      ['reverse']       = { code = 7 },
+      ['strikethrough'] = { code = 9 },
+    }
+    for w, p in pairs(what) do
+      if p.rgb then
+        local hexcol = synIDattr(hl, w)
+        local r, g, b = hex2rgb(hexcol)
+        if r and g and b then
+          local escseq = ('[%d;2;%d;%d;%dm'):format(p.code, r, g, b)
+          s = ("%s%s%s"):format(escseq, s, M.ansi_colors.clear)
+        end
+      else
+        local value = synIDattr(hl, w)
+        if value and tonumber(value)==1 then
+          local escseq = ('[%dm'):format(p.code)
+          s = ("%s%s%s"):format(escseq, s, M.ansi_colors.clear)
+        end
+      end
+    end
+  end
+  return s
+end
 
 function M.strip_ansi_coloring(str)
   if not str then return str end

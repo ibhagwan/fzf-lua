@@ -106,6 +106,7 @@ M.blines = require'fzf-lua.providers.buffers'.blines
 M.help_tags = require'fzf-lua.providers.helptags'.helptags
 M.man_pages = require'fzf-lua.providers.manpages'.manpages
 M.colorschemes = require'fzf-lua.providers.colorschemes'.colorschemes
+M.highlights = require'fzf-lua.providers.colorschemes'.highlights
 
 M.tags = require'fzf-lua.providers.tags'.tags
 M.btags = require'fzf-lua.providers.tags'.btags
