@@ -143,7 +143,8 @@ end
 M.grep = function(opts)
   opts = opts or {}
 
-  if opts.continue_last_search or opts.repeat_last_search then
+  if not opts.search and
+    (opts.continue_last_search or opts.repeat_last_search) then
     opts.search, opts.no_esc = M.get_last_search(opts)
     opts.search = opts.search or opts.continue_last_search_default
   end

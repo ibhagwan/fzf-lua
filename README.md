@@ -439,6 +439,7 @@ require'fzf-lua'.setup {
       -- pager        = "delta",      -- if you have `delta` installed
     },
     man = {
+      -- NOTE: remove the `-c` flag when using man-db
       cmd             = "man -c %s | col -bx",
     },
     builtin = {
