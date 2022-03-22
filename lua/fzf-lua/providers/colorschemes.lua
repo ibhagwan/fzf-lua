@@ -64,11 +64,12 @@ M.highlights = function(opts)
 
   local contents = function (cb)
 
+    local colormap = vim.api.nvim_get_color_map()
     local highlights = vim.fn.getcompletion('', 'highlight')
 
     local function add_entry(hl, co)
       -- translate the highlight using ansi escape sequences
-      local x = utils.ansi_from_hl(hl, hl)
+      local x = utils.ansi_from_hl(hl, hl, colormap)
       cb(x, function(err)
         if co then coroutine.resume(co) end
         if err then
