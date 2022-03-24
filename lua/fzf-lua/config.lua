@@ -397,6 +397,8 @@ M.globals.btags = {
     previewer             = { _ctor = previewers.builtin.tags },
     prompt                = 'BTags> ',
     ctags_file            = "tags",
+    rg_opts               = "--no-heading --color=always",
+    grep_opts             = "--color=auto --perl-regexp",
     multiprocess          = true,
     file_icons            = true and M._has_devicons,
     git_icons             = true,

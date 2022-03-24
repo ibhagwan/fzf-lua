@@ -678,6 +678,8 @@ require'fzf-lua'.setup {
     file_icons            = true,
     git_icons             = true,
     color_icons           = true,
+    rg_opts               = "--no-heading --color=always",
+    grep_opts             = "--color=auto --perl-regexp",
     fzf_opts = {
       ['--delimiter']     = "'[\\]:]'",
       ["--with-nth"]      = '2..',
