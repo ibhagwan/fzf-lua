@@ -140,18 +140,20 @@ end
 
 
 function M.entry_to_ctag(entry, noesc)
-  local scode = entry:match("%:.-/^?\t?(.*)/")
+  local ctag = entry:match("%:.-/^?\t?(.*)/")
   -- if tag name contains a slash we could
   -- have the wrong match, most tags start
   -- with ^ so try to match based on that
-  scode = scode and scode:match("/^(.*)") or scode
-  if scode and not noesc then
-    -- scode = string.gsub(scode, "[$]$", "")
-    scode = string.gsub(scode, [[\\]], [[\]])
-    scode = string.gsub(scode, [[\/]], [[/]])
-    scode = string.gsub(scode, "[*]", [[\*]])
+  ctag = ctag and ctag:match("/^(.*)") or ctag
+  if ctag and not noesc then
+    -- required escapes for vim.fn.search()
+    -- \ ] ~ *
+    ctag = ctag:gsub('[\\%]~*]',
+      function(x)
+        return '\\' .. x
+      end)
   end
-  return scode
+  return ctag
 end
 
 function M.entry_to_location(entry)

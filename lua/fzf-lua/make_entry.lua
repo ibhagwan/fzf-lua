@@ -332,7 +332,13 @@ M.tag = function(opts, x)
   local name, file, text = x:match("([^\t]+)\t([^\t]+)\t(.*)")
   if not file or not name or not text then return x end
   text = text:match('(.*);"') or text   -- remove ctag comments
-  local line, tag = text:gsub("\\/", "/"):match("(%d-);?(/.*/)")
+  -- unescape ctags special chars
+  -- '\/' -> '/'
+  -- '\\' -> '\'
+  for _, s in ipairs({ '/',  '\\' }) do
+    text = text:gsub([[\]]..s, s)
+  end
+  local line, tag = text:match("(%d-);?(/.*/)")
   line = line and #line>0 and tonumber(line)
   return ("%s%s: %s %s"):format(
     M.file(opts, file),
