@@ -188,13 +188,13 @@ M.live_grep_st = function(opts)
 
   opts.query = opts.search or ''
   if opts.search and #opts.search>0 then
-    -- save the search query so the use can
-    -- call the same search again
-    set_last_search(opts, opts.search, true)
     -- escape unless the user requested not to
     if not (no_esc or opts.no_esc) then
       opts.query = utils.rg_escape(opts.search)
     end
+    -- save the search query so the use can
+    -- call the same search again
+    set_last_search(opts, opts.query, true)
   end
 
   -- search query in header line
@@ -269,13 +269,13 @@ M.live_grep_mt = function(opts)
 
   local query = opts.search or ''
   if opts.search and #opts.search>0 then
-    -- save the search query so the use can
-    -- call the same search again
-    set_last_search(opts, opts.search, no_esc or opts.no_esc)
     -- escape unless the user requested not to
     if not (no_esc or opts.no_esc) then
       query = utils.rg_escape(opts.search)
     end
+    -- save the search query so the use can
+    -- call the same search again
+    set_last_search(opts, query, true)
   end
 
   -- search query in header line
