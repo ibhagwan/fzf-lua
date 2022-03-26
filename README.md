@@ -581,7 +581,7 @@ require'fzf-lua'.setup {
     --   second returned argument are addtional rg flags
     -- rg_glob_fn = function(opts, query)
     --   ...
-    --   return flags, new_query
+    --   return new_query, flags
     -- end,
     actions = {
       -- actions inherit from 'actions.files' and merge
