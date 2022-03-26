@@ -19,7 +19,7 @@ M._devicons_path = _G._devicons_path
 ---@diagnostic disable-next-line: undefined-field
 M._devicons_setup = _G._devicons_setup
 
-local function load_config_section(s, datatype)
+local function load_config_section(s, datatype, optional)
   if config then
     local keys = utils.strsplit(s, '.')
     local iter, sect = config, nil
@@ -34,17 +34,28 @@ local function load_config_section(s, datatype)
   elseif M._fzf_lua_server then
     -- load config from our running instance
     local res = nil
+    local is_bytecode = false
+    local exec_str, exec_opts = nil, nil
+    if datatype == 'function' then
+      is_bytecode = true
+      exec_opts = { s, datatype }
+      exec_str = ("return require'fzf-lua'.config.bytecode(...)"):format(s)
+    else
+      exec_opts = {}
+      exec_str = ("return require'fzf-lua'.config.%s"):format(s)
+    end
     local ok, errmsg = pcall(function()
       local chan_id = vim.fn.sockconnect("pipe", M._fzf_lua_server, { rpc = true })
-      res = vim.rpcrequest(chan_id, "nvim_exec_lua", ([[
-        return require'fzf-lua'.config.%s
-      ]]):format(s), {})
+      res = vim.rpcrequest(chan_id, "nvim_exec_lua", exec_str, exec_opts)
       vim.fn.chanclose(chan_id)
     end)
-    if not ok then
+    if ok and is_bytecode then
+      ok, res = pcall(loadstring, res)
+    end
+    if not ok and not optional then
       io.stderr:write(("Error loading remote config section '%s': %s\n")
         :format(s, errmsg))
-    elseif type(res) == datatype then
+    elseif ok and type(res) == datatype then
       return res
     end
   end
@@ -141,11 +152,12 @@ end
 pcall(load_devicons)
 
 if not config then
-  local _config = { globals = { git = {}, files = {} } }
+  local _config = { globals = { git = {}, files = {}, grep = {} } }
   _config.globals.git.icons = load_config_section('globals.git.icons', 'table') or {}
   _config.globals.file_icon_colors = load_config_section('globals.file_icon_colors', 'table') or {}
   _config.globals.file_icon_padding = load_config_section('globals.file_icon_padding', 'string')
   _config.globals.files.git_status_cmd = load_config_section('globals.files.git_status_cmd', 'table')
+  _config.globals.grep.rg_glob_fn = load_config_section('globals.grep.rg_glob_fn', 'function', true)
 
   _config.globals.nbsp = load_config_section('globals.nbsp', 'string')
   if _config.globals.nbsp then utils.nbsp = _config.globals.nbsp end
@@ -198,10 +210,13 @@ M.glob_parse = function(opts, query)
   if not query or not query:find(opts.glob_separator) then
     return query, nil
   end
-  local glob_args = ""
+  if config.globals.grep.rg_glob_fn then
+    return config.globals.grep.rg_glob_fn(opts, query)
+  end
+  local glob_args = nil
   local search_query, glob_str = query:match("(.*)"..opts.glob_separator.."(.*)")
   for _, s in ipairs(utils.strsplit(glob_str, "%s")) do
-    glob_args = glob_args .. ("%s %s ")
+    glob_args = (glob_args or "") .. ("%s %s ")
       :format(opts.glob_flag, vim.fn.shellescape(s))
   end
   return search_query, glob_args
@@ -230,9 +245,10 @@ M.preprocess = function(opts)
 
   -- live_grep replace pattern with last argument
   local argvz = "{argvz}"
+  local has_argvz = opts.cmd:match(argvz)
 
   -- save our last search argument for resume
-  if opts.argv_expr and opts.cmd:match(argvz) then
+  if opts.argv_expr and has_argvz then
     local query = argv(nil, opts.debug)
     set_config_section('__resume_data.last_query', query)
     if opts.__module__ then
@@ -243,7 +259,7 @@ M.preprocess = function(opts)
 
   -- did the caller request rg with glob support?
   -- mannipulation needs to be done before the argv hack
-  if opts.rg_glob then
+  if opts.rg_glob and has_argvz then
     local query = argv()
     local search_query, glob_args = M.glob_parse(opts, query)
     if glob_args then

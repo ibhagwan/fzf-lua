@@ -138,7 +138,11 @@ M.grep = function(opts)
   -- can call the same search again
   set_last_search(opts, opts.search, no_esc or opts.no_esc)
 
-  local contents = core.mt_cmd_wrapper(opts)
+  local contents = core.mt_cmd_wrapper(vim.tbl_deep_extend("force", opts,
+    -- query was already parsed for globs inside 'get_grep_cmd'
+    -- no need for our external headless instance to parse again
+    { rg_glob = false }))
+
   -- by redirecting the error stream to stdout
   -- we make sure a clear error message is displayed
   -- when the user enters bad regex expressions
@@ -246,6 +250,14 @@ M.live_grep_mt = function(opts)
   opts.__MODULE__ = opts.__MODULE__ or M
   opts.__module__ = opts.__module__ or 'grep'
   opts.prompt = set_live_grep_prompt(opts.prompt)
+
+  -- when using glob parsing we must use the external
+  -- headless instance for processing the query, this
+  -- prevents 'file|git_icons=false' from overriding
+  -- processing inside 'core.mt_cmd_wrapper'
+  if opts.rg_glob then
+    opts.requires_processing = true
+  end
 
   assert(opts.multiprocess)
 
@@ -381,7 +393,6 @@ M.live_grep_glob_mt = function(opts)
   -- 'make_entry.preprocess', only supported with multiprocess
   opts = opts or {}
   opts.rg_glob = true
-  opts.requires_processing = true
   return M.live_grep_mt(opts)
 end
 

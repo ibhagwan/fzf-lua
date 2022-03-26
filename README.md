@@ -575,6 +575,14 @@ require'fzf-lua'.setup {
     rg_glob           = false,        -- default to glob parsing?
     glob_flag         = "--iglob",    -- for case sensitive globs use '--glob'
     glob_separator    = "%s%-%-",     -- query separator pattern (lua): ' --'
+    -- advanced usage: for custom argument parsing define
+    -- 'rg_glob_fn' to return a pair:
+    --   first returned argument is the new search query
+    --   second returned argument are addtional rg flags
+    -- rg_glob_fn = function(opts, query)
+    --   ...
+    --   return flags, new_query
+    -- end,
     actions = {
       -- actions inherit from 'actions.files' and merge
       -- this action toggles between 'grep' and 'live_grep'

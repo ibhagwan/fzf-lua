@@ -779,6 +779,21 @@ function M.normalize_opts(opts, defaults)
   return opts
 end
 
+M.bytecode = function(s, datatype)
+  local keys = utils.strsplit(s, '.')
+  local iter = M
+  for i=1,#keys do
+    iter = iter[keys[i]]
+    if not iter then break end
+    if i == #keys and type(iter) == datatype then
+      -- Not sure if second argument 'true' is needed
+      -- can't find any references for it other than
+      -- it being used in packer.nvim
+      return string.dump(iter, true)
+    end
+  end
+end
+
 M.set_action_helpstr = function(fn, helpstr)
   assert(type(fn) == 'function')
   M._action_to_helpstr[fn] = helpstr

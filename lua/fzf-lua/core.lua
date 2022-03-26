@@ -29,6 +29,7 @@ M.fzf_resume = function(opts)
   if opts.__FNCREF__ then
     -- HACK for 'live_grep' and 'lsp_live_workspace_symbols'
     opts.cmd = nil
+    opts.search = nil
     opts.continue_last_search = true
     opts.__FNCREF__(opts)
   else
