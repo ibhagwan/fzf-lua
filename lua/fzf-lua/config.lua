@@ -742,6 +742,13 @@ function M.normalize_opts(opts, defaults)
     if not vim.loop.fs_stat(opts.cwd) then
       utils.warn(("Unable to access '%s', removing 'cwd' option."):format(opts.cwd))
       opts.cwd = nil
+    else
+      -- relative paths in cwd are inaccessible when using multiprocess
+      -- as the external process have no awareness of our current working
+      -- directory so we must convert to full path (#375)
+      if not path.starts_with_separator(opts.cwd) then
+        opts.cwd = path.join({ vim.loop.cwd(), opts.cwd })
+      end
     end
   end
 

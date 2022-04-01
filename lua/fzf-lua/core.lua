@@ -459,14 +459,22 @@ M.set_header = function(opts, flags)
   if not opts.cwd_header then opts.cwd_header = "cwd:" end
   if not opts.grep_header then opts.grep_header = "Grep string:" end
   if not opts.cwd and opts.show_cwd_header then opts.cwd = vim.loop.cwd() end
-  local header_str
-  local cwd_str =
-    opts.cwd and (opts.show_cwd_header ~= false) and
-    (opts.show_cwd_header or opts.cwd ~= vim.loop.cwd()) and
-    ("%s %s"):format(opts.cwd_header,
-      utils.ansi_codes.red(opts.cwd:gsub("^"..vim.env.HOME, "~")))
-  local search_str = opts.search and #opts.search > 0 and
+  local cwd_str, header_str
+  local search_str = flags ~= 2 and opts.search and #opts.search>0 and
     ("%s %s"):format(opts.grep_header, utils.ansi_codes.red(opts.search))
+  if flags ~= 1 and opts.cwd and
+    (opts.show_cwd_header ~= false) and
+    (opts.show_cwd_header or opts.cwd ~= vim.loop.cwd()) then
+    local cwd = opts.cwd
+    if path.starts_with_separator(cwd) and cwd ~= vim.loop.cwd() then
+      -- since we're always converting cwd to full path
+      -- try to convert it back to relative for display
+      cwd = path.relative(cwd, vim.loop.cwd())
+    end
+    -- make our home dir path look pretty
+    cwd = cwd:gsub("^"..vim.env.HOME, "~")
+    cwd_str = ("%s %s"):format(opts.cwd_header, utils.ansi_codes.red(cwd))
+  end
   -- 1: only search
   -- 2: only cwd
   -- otherwise, all
