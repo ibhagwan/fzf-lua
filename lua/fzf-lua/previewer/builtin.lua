@@ -542,9 +542,14 @@ function Previewer.buffer_or_file:do_syntax(entry)
           pcall(api.nvim_buf_set_name, bufnr, tempname)
         end
         -- nvim_buf_call has less side-effects than window switch
-        api.nvim_buf_call(bufnr, function()
+        local ok, _ = pcall(api.nvim_buf_call, bufnr, function()
           vim.cmd('filetype detect')
         end)
+        if not ok then
+          utils.warn(("syntax highlighting failed for filetype '%s', ")
+            :format(entry.path and path.extension(entry.path) or "<null>") ..
+            "open the file and run ':filetype detect' for more info.")
+        end
       end
     end
   end
