@@ -213,10 +213,10 @@ M.glob_parse = function(opts, query)
   if config.globals.grep.rg_glob_fn then
     return config.globals.grep.rg_glob_fn(opts, query)
   end
-  local glob_args = nil
+  local glob_args = ""
   local search_query, glob_str = query:match("(.*)"..opts.glob_separator.."(.*)")
   for _, s in ipairs(utils.strsplit(glob_str, "%s")) do
-    glob_args = (glob_args or "") .. ("%s %s ")
+    glob_args = glob_args .. ("%s %s ")
       :format(opts.glob_flag, vim.fn.shellescape(s))
   end
   return search_query, glob_args
