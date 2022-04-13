@@ -768,6 +768,13 @@ function M.normalize_opts(opts, defaults)
      not executable(opts.fzf_bin, utils.warn, "fallback to 'fzf'.") then
     -- default|fallback to fzf
     opts.fzf_bin = "fzf"
+    -- try fzf plugin if fzf is not installed globally
+    if vim.fn.executable(opts.fzf_bin) ~= 1 then
+      local ok, fzf_plug = pcall(vim.api.nvim_call_function, "fzf#exec", {})
+      if ok and fzf_plug then
+        opts.fzf_bin = fzf_plug
+      end
+    end
     if not executable(opts.fzf_bin, utils.err,
       "aborting. Please make sure 'fzf' is in installed.") then
       return nil

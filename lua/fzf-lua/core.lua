@@ -52,6 +52,7 @@ M.fzf = function(opts, contents)
   -- normalize with globals if not already normalized
   if not opts._normalized then
     opts = config.normalize_opts(opts, {})
+    if not opts then return end
   end
   if opts.fn_pre_win then
     opts.fn_pre_win(opts)
