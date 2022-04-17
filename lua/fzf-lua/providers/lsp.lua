@@ -701,6 +701,10 @@ M.live_workspace_symbols = function(opts)
   opts.search = nil
 end
 
+M.incoming_calls = function(opts)
+  return fzf_lsp_locations(opts)
+end
+
 local function check_capabilities(feature)
   local clients = vim.lsp.buf_get_clients(0)
 
@@ -778,6 +782,11 @@ local handlers = {
     capability = nil,
     method = nil,
     handler = diagnostics_handler },
+  ["incoming_calls"] = {
+    label = "Incoming Calls",
+    capability = "call_hierarchy",
+    method = "textDocument/prepareCallHierarchy",
+    handler = location_handler },
 }
 
 local function wrap_module_fncs(mod)

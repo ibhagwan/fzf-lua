@@ -139,6 +139,7 @@ M.lsp_live_workspace_symbols = require'fzf-lua.providers.lsp'.live_workspace_sym
 M.lsp_code_actions = require'fzf-lua.providers.lsp'.code_actions
 M.lsp_document_diagnostics = require'fzf-lua.providers.lsp'.diagnostics
 M.lsp_workspace_diagnostics = require'fzf-lua.providers.lsp'.workspace_diagnostics
+M.lsp_incoming_calls = require'fzf-lua.providers.lsp'.incoming_calls
 
 M.register_ui_select = require'fzf-lua.providers.ui_select'.register
 M.deregister_ui_select = require'fzf-lua.providers.ui_select'.deregister
