@@ -253,9 +253,6 @@ M.buffer_lines = function(opts)
     end
   end
 
-  -- ignore bufnr when searching
-  -- disable multi-select
-  opts.fzf_opts["--no-multi"] = ''
   opts.fzf_opts["--preview-window"] = 'hidden:right:0'
 
   if opts.search and #opts.search>0 then

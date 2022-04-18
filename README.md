@@ -658,6 +658,8 @@ require'fzf-lua'.setup {
       ['--delimiter'] = "'[\\]:]'",
       ["--with-nth"]  = '2..',
       ["--tiebreak"]  = 'index',
+      -- disable multi-select, set to false to disable
+      ["--no-multi"]  = '',
     },
     -- actions inherit from 'actions.buffers'
   },

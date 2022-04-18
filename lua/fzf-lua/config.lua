@@ -375,6 +375,7 @@ M.globals.blines = {
         ['--delimiter']   = "'[:]'",
         ["--with-nth"]    = '2..',
         ["--tiebreak"]    = 'index',
+        ["--no-multi"]    = '',
     },
     _actions              = function() return M.globals.actions.buffers end,
   }
