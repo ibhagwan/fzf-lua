@@ -343,6 +343,33 @@ M.workspace_symbols = function(opts)
   return core.fzf_files(opts)
 end
 
+-- Converts 'vim.diagnostic.get' to legacy style 'get_line_diagnostics()'
+local function get_line_diagnostics(opts)
+  if not vim.diagnostic then
+    return vim.lsp.diagnostic.get_line_diagnostics()
+  end
+  local diag = vim.diagnostic.get(opts.bufnr, {lnum = vim.api.nvim_win_get_cursor(0)[1]-1})
+  return diag and diag[1] and {{
+    source = diag[1].source,
+    message = diag[1].message,
+    severity = diag[1].severity,
+    code = diag[1].user_data and diag[1].user_data.lsp and
+      diag[1].user_data.lsp.code,
+    codeDescription = diag[1].user_data and diag[1].user_data.lsp and
+      diag[1].user_data.lsp.codeDescription,
+    range = {
+      ["start"] = {
+        line = diag[1].lnum,
+        character = diag[1].col,
+      },
+      ["end"] = {
+        line = diag[1].end_lnum,
+        character = diag[1].end_col,
+      }
+    }
+  }} or nil
+end
+
 M.code_actions = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
@@ -352,7 +379,7 @@ M.code_actions = function(opts)
   opts.jump_to_single_result = false
   opts.lsp_params = vim.lsp.util.make_range_params(0)
   opts.lsp_params.context = {
-    diagnostics = vim.lsp.diagnostic.get_line_diagnostics()
+    diagnostics = get_line_diagnostics(opts)
   }
 
   -- we use `vim.ui.select` for neovim > 0.6
@@ -513,10 +540,12 @@ M.diagnostics = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
 
-  local lsp_clients = vim.lsp.buf_get_clients(0)
-  if utils.tbl_isempty(lsp_clients) then
-    utils.info("LSP: no client attached")
-    return
+  if not vim.diagnostic then
+    local lsp_clients = vim.lsp.buf_get_clients(0)
+    if utils.tbl_isempty(lsp_clients) then
+      utils.info("LSP: no client attached")
+      return
+    end
   end
 
   opts.winid = vim.api.nvim_get_current_win()
