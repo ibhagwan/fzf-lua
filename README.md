@@ -646,7 +646,11 @@ require'fzf-lua'.setup {
       ["--nth"]       = '2..',
       ["--tiebreak"]  = 'index',
     },
-    -- actions inherit from 'actions.buffers'
+    -- actions inherit from 'actions.buffers' and merge
+    actions = {
+      ["default"]     = { actions.buf_edit_or_qf },
+      ["alt-q"]       = { actions.buf_sel_to_qf }
+    },
   },
   blines = {
     previewer         = "builtin",    -- set to 'false' to disable
@@ -658,10 +662,12 @@ require'fzf-lua'.setup {
       ['--delimiter'] = "'[\\]:]'",
       ["--with-nth"]  = '2..',
       ["--tiebreak"]  = 'index',
-      -- disable multi-select, set to false to disable
-      ["--no-multi"]  = '',
     },
-    -- actions inherit from 'actions.buffers'
+    -- actions inherit from 'actions.buffers' and merge
+    actions = {
+      ["default"]     = { actions.buf_edit_or_qf },
+      ["alt-q"]       = { actions.buf_sel_to_qf }
+    },
   },
   tags = {
     prompt                = 'Tags❯ ',

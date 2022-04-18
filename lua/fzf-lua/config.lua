@@ -363,6 +363,10 @@ M.globals.lines = {
         ["--tiebreak"]    = 'index',
     },
     _actions              = function() return M.globals.actions.buffers end,
+    actions = {
+      ["default"]         = actions.buf_edit_or_qf,
+      ["alt-q"]           = actions.buf_sel_to_qf
+    },
   }
 M.globals.blines = {
     previewer             = M._default_previewer_fn,
@@ -375,9 +379,12 @@ M.globals.blines = {
         ['--delimiter']   = "'[:]'",
         ["--with-nth"]    = '2..',
         ["--tiebreak"]    = 'index',
-        ["--no-multi"]    = '',
     },
     _actions              = function() return M.globals.actions.buffers end,
+    actions = {
+      ["default"]         = actions.buf_edit_or_qf,
+      ["alt-q"]           = actions.buf_sel_to_qf
+    },
   }
 M.globals.tags = {
     previewer             = { _ctor = previewers.builtin.tags },
@@ -828,6 +835,8 @@ M._action_to_helpstr = {
   [actions.file_switch]           = "file-switch",
   [actions.file_switch_or_edit]   = "file-switch-or-edit",
   [actions.buf_edit]              = "buffer-edit",
+  [actions.buf_edit_or_qf]        = "buffer-edit-or-qf",
+  [actions.buf_sel_to_qf]         = "buffer-selection-to-qf",
   [actions.buf_split]             = "buffer-split",
   [actions.buf_vsplit]            = "buffer-vsplit",
   [actions.buf_tabedit]           = "buffer-tabedit",

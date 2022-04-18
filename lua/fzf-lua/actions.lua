@@ -281,6 +281,18 @@ M.buf_switch_or_edit = function(...)
   M.buf_edit(...)
 end
 
+M.buf_sel_to_qf = function(selected, opts)
+  return M.file_sel_to_qf(selected, opts)
+end
+
+M.buf_edit_or_qf = function(selected, opts)
+  if #selected>1 then
+    return M.buf_sel_to_qf(selected, opts)
+  else
+    return M.buf_edit(selected, opts)
+  end
+end
+
 M.colorscheme = function(selected)
   local colorscheme = selected[1]
   vim.cmd("colorscheme " .. colorscheme)
