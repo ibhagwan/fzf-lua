@@ -9,6 +9,10 @@ local FzfWin = {}
 -- signgleton instance used in win_leave
 local _self = nil
 
+function FzfWin.__SELF()
+  return _self
+end
+
 setmetatable(FzfWin, {
   __call = function (cls, ...)
     return cls:new(...)
