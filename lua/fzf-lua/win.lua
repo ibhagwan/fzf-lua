@@ -92,7 +92,7 @@ function FzfWin:setup_keybinds()
   end
 end
 
-local generate_layout = function(winopts)
+function FzfWin:generate_layout(winopts)
   local row, col = winopts.row, winopts.col
   local height, width = winopts.height, winopts.width
   local signcol_width = winopts.signcol_width or 0
@@ -426,7 +426,7 @@ function FzfWin:preview_layout()
       -- to assure a perfect alignment of the builtin previewer window
       -- and the dummy native fzf previewer window border underneath it
       local signcol_width = vim.wo[self.fzf_winid].signcolumn == 'no' and 1 or 0
-      self.layout = generate_layout({
+      self.layout = self:generate_layout({
         row = wininfo.winrow,
         col = wininfo.wincol,
         height = wininfo.height,
@@ -716,7 +716,7 @@ function FzfWin:create()
   end
 
   if not self.winopts.split and self.previewer_is_builtin then
-    self.layout = generate_layout(self.winopts)
+    self.layout = self:generate_layout(self.winopts)
   end
   -- save sending bufnr/winid
   self.src_bufnr = vim.api.nvim_get_current_buf()
@@ -1082,7 +1082,7 @@ function FzfWin.toggle_preview_cw(direction)
   if newidx<1 then newidx = #pos end
   if newidx>#pos then newidx = 1 end
   self.winopts.preview_pos = pos[newidx]
-  self.layout = generate_layout(self.winopts)
+  self.layout = self:generate_layout(self.winopts)
   self:close_preview()
   self:redraw()
   self:redraw_preview()
