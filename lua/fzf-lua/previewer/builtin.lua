@@ -359,7 +359,8 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
       width       = wincfg.width,
       height      = wincfg.height,
       scaler      = self.ueberzug_scaler,
-      path        = path.join({self.opts.cwd or uv.cwd(), entry.path}),
+      path        = path.starts_with_separator(entry.path) and entry.path or
+        path.join({self.opts.cwd or uv.cwd(), entry.path}),
     }
     local json = vim.json.encode(params)
     -- both 'fs_open|write|close' and 'vim.fn.system' work
