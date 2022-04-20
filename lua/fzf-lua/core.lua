@@ -339,6 +339,8 @@ M.mt_cmd_wrapper = function(opts)
       "argv_expr",
       "cmd",
       "cwd",
+      "git_dir",
+      "git_worktree",
       "git_icons",
       "file_icons",
       "color_icons",

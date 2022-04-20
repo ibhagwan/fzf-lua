@@ -228,26 +228,47 @@ function M.entry_to_file(entry, cwd, force_uri)
   }
 end
 
-function M.git_cwd(cmd, cwd)
-  if not cwd then return cmd end
-  cwd = vim.fn.expand(cwd)
+function M.git_cwd(cmd, opts)
+  -- backward compat, used to be single cwd param
+  local o = opts or {}
+  if type(o) == 'string' then
+    o = { cwd = o }
+  end
+  local git_args = {
+    { "cwd", "-C" },
+    { "git_dir", "--git-dir" },
+    { "git_worktree", "--work-tree" },
+  }
   if type(cmd) == 'string' then
-    local arg_cwd = ("-C %s "):format(vim.fn.shellescape(cwd))
-    cmd = cmd:gsub("^git ", "git " ..  arg_cwd)
+    local args = ""
+    for _, a in ipairs(git_args) do
+      if o[a[1]] then
+        o[a[1]] = vim.fn.expand(o[a[1]])
+        args = args .. ("%s %s "):format(a[2], vim.fn.shellescape(o[a[1]]))
+      end
+    end
+    cmd = cmd:gsub("^git ", "git " ..  args)
   else
+    local idx = 2
     cmd = utils.tbl_deep_clone(cmd)
-    table.insert(cmd, 2, "-C")
-    table.insert(cmd, 3, cwd)
+    for _, a in ipairs(git_args) do
+      if o[a[1]] then
+        o[a[1]] = vim.fn.expand(o[a[1]])
+        table.insert(cmd, idx, a[2])
+        table.insert(cmd, idx+1, o[a[1]])
+        idx = idx + 2
+      end
+    end
   end
   return cmd
 end
 
-function M.is_git_repo(cwd, noerr)
-    return not not M.git_root(cwd, noerr)
+function M.is_git_repo(opts, noerr)
+    return not not M.git_root(opts, noerr)
 end
 
-function M.git_root(cwd, noerr)
-    local cmd = M.git_cwd({"git", "rev-parse", "--show-toplevel"}, cwd)
+function M.git_root(opts, noerr)
+    local cmd = M.git_cwd({"git", "rev-parse", "--show-toplevel"}, opts)
     local output, err = utils.io_systemlist(cmd)
     if err ~= 0 then
         if not noerr then utils.info(unpack(output)) end

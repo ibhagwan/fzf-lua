@@ -432,11 +432,11 @@ end
 
 
 M.git_switch = function(selected, opts)
-  local cmd = path.git_cwd({"git", "checkout"}, opts.cwd)
+  local cmd = path.git_cwd({"git", "checkout"}, opts)
   local git_ver = utils.git_version()
   -- git switch was added with git version 2.23
   if git_ver and git_ver >= 2.23 then
-    cmd = path.git_cwd({"git", "switch"}, opts.cwd)
+    cmd = path.git_cwd({"git", "switch"}, opts)
   end
   -- remove anything past space
   local branch = selected[1]:match("[^ ]+")
@@ -456,8 +456,8 @@ M.git_switch = function(selected, opts)
 end
 
 M.git_checkout = function(selected, opts)
-  local cmd_checkout = path.git_cwd({"git", "checkout"}, opts.cwd)
-  local cmd_cur_commit = path.git_cwd({"git", "rev-parse", "--short HEAD"}, opts.cwd)
+  local cmd_checkout = path.git_cwd({"git", "checkout"}, opts)
+  local cmd_cur_commit = path.git_cwd({"git", "rev-parse", "--short HEAD"}, opts)
   local commit_hash = selected[1]:match("[^ ]+")
   if vim.fn.input("Checkout commit " .. commit_hash .. "? [y/n] ") == "y" then
     local current_commit = utils.io_systemlist(cmd_cur_commit)
@@ -488,18 +488,18 @@ local git_exec = function(selected, opts, cmd)
 end
 
 M.git_stage = function(selected, opts)
-  local cmd = path.git_cwd({"git", "add", "--"}, opts.cwd)
+  local cmd = path.git_cwd({"git", "add", "--"}, opts)
   git_exec(selected, opts, cmd)
 end
 
 M.git_unstage = function(selected, opts)
-  local cmd = path.git_cwd({"git", "reset", "--"}, opts.cwd)
+  local cmd = path.git_cwd({"git", "reset", "--"}, opts)
   git_exec(selected, opts, cmd)
 end
 
 M.git_buf_edit = function(selected, opts)
-  local cmd = path.git_cwd({"git", "show"}, opts.cwd)
-  local git_root = path.git_root(opts.cwd, true)
+  local cmd = path.git_cwd({"git", "show"}, opts)
+  local git_root = path.git_root(opts, true)
   local win = vim.api.nvim_get_current_win()
   local buffer_filetype = vim.bo.filetype
   local file = path.relative(vim.fn.expand("%:p"), git_root)

@@ -761,7 +761,7 @@ function M.normalize_opts(opts, defaults)
   end
 
   -- test for valid git_repo
-  opts.git_icons = opts.git_icons and path.is_git_repo(opts.cwd, true)
+  opts.git_icons = opts.git_icons and path.is_git_repo(opts, true)
 
   local executable = function(binary, fncerr,  strerr)
     if binary and vim.fn.executable(binary) ~= 1 then

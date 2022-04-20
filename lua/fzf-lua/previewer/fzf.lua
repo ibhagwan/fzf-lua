@@ -239,9 +239,9 @@ Previewer.git_diff = Previewer.base:extend()
 
 function Previewer.git_diff:new(o, opts)
   Previewer.git_diff.super.new(self, o, opts)
-  self.cmd_deleted = path.git_cwd(o.cmd_deleted, opts.cwd)
-  self.cmd_modified = path.git_cwd(o.cmd_modified, opts.cwd)
-  self.cmd_untracked = path.git_cwd(o.cmd_untracked, opts.cwd)
+  self.cmd_deleted = path.git_cwd(o.cmd_deleted, opts)
+  self.cmd_modified = path.git_cwd(o.cmd_modified, opts)
+  self.cmd_untracked = path.git_cwd(o.cmd_untracked, opts)
   self.pager = o.pager
   do
     -- populate the icon mappings

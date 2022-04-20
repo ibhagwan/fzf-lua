@@ -8,10 +8,18 @@ local shell = require "fzf-lua.shell"
 
 local M = {}
 
+local function set_git_cwd_args(opts)
+  opts.cwd = path.git_root(opts)
+  if opts.git_dir or opts.git_worktree then
+    opts.cmd = path.git_cwd(opts.cmd, opts)
+  end
+  return opts
+end
+
 M.files = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.files)
   if not opts then return end
-  opts.cwd = path.git_root(opts.cwd)
+  opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, 2)
@@ -21,10 +29,10 @@ end
 M.status = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.status)
   if not opts then return end
-  opts.cwd = path.git_root(opts.cwd)
+  opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   if opts.preview then
-    opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
+    opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts))
   end
   -- we don't need git icons since we get them
   -- as part of our `git status -s`
@@ -76,7 +84,7 @@ M.status = function(opts)
 end
 
 local function git_cmd(opts)
-  opts.cwd = path.git_root(opts.cwd)
+  opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   opts = core.set_header(opts, 2)
   core.fzf_wrap(opts, opts.cmd, function(selected)
@@ -88,14 +96,14 @@ end
 M.commits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.commits)
   if not opts then return end
-  opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
+  opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts))
   return git_cmd(opts)
 end
 
 M.bcommits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.bcommits)
   if not opts then return end
-  local git_root = path.git_root(opts.cwd)
+  local git_root = path.git_root(opts)
   if not git_root then return end
   local file = path.relative(vim.fn.expand("%:p"), git_root)
   opts.cmd = opts.cmd .. " " .. file
@@ -104,7 +112,7 @@ M.bcommits = function(opts)
   if git_ver and git_ver >= 2.31 then
     opts.preview = opts.preview .. " --rotate-to=" .. vim.fn.shellescape(file)
   end
-  opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts.cwd))
+  opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts))
   return git_cmd(opts)
 end
 
@@ -112,7 +120,7 @@ M.branches = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.branches)
   if not opts then return end
   opts.fzf_opts["--no-multi"] = ''
-  opts._preview = path.git_cwd(opts.preview, opts.cwd)
+  opts._preview = path.git_cwd(opts.preview, opts)
   opts.preview = shell.preview_action_cmd(function(items)
     local branch = items[1]:gsub("%*", "")  -- remove the * from current branch
     if branch:find("%)") ~= nil then

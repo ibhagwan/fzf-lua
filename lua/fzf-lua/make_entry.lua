@@ -192,7 +192,7 @@ M.get_diff_files = function(opts)
     local diff_files = {}
     local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd
     if not cmd then return {} end
-    local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts.cwd))
+    local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts))
     if ok and err == 0 then
         for i = 1, #status do
           local icon = status[i]:match("[MUDARC?]+")
