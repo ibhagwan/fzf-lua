@@ -195,7 +195,7 @@ M.get_diff_files = function(opts)
     local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts))
     if ok and err == 0 then
         for i = 1, #status do
-          local icon = status[i]:match("[MUDARC?]+")
+          local icon = status[i]:match("[MUDARCT?]+")
           local file = status[i]:match("[^ ]*$")
           if icon and file then
             diff_files[file] = icon:gsub("%?%?", "?")

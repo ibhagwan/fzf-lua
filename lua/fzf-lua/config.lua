@@ -258,6 +258,7 @@ M.globals.git = {
       ["A"]         = { icon = "A", color = "green" },
       ["R"]         = { icon = "R", color = "yellow" },
       ["C"]         = { icon = "C", color = "yellow" },
+      ["T"]         = { icon = "T", color = "magenta" },
       ["?"]         = { icon = "?", color = "magenta" },
     },
   }

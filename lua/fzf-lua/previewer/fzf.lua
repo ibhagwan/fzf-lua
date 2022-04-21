@@ -247,7 +247,7 @@ function Previewer.git_diff:new(o, opts)
     -- populate the icon mappings
     local icons_overrides = o._fn_git_icons and o._fn_git_icons()
     self.git_icons = {}
-    for _, i in ipairs({ "D", "M", "R", "A", "C", "?" }) do
+    for _, i in ipairs({ "D", "M", "R", "A", "C", "T", "?" }) do
       self.git_icons[i] =
         icons_overrides and icons_overrides[i] and
         utils.lua_regex_escape(icons_overrides[i].icon) or i
@@ -268,6 +268,7 @@ function Previewer.git_diff:cmdline(o)
       self.git_icons['M'] ..
       self.git_icons['R'] ..
       self.git_icons['A'] ..
+      self.git_icons['T'] ..
       "]" ..utils.nbsp) ~= nil
     local is_untracked = items[1]:match("[" ..
       self.git_icons['?'] ..

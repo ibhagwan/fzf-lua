@@ -548,6 +548,7 @@ require'fzf-lua'.setup {
       ["A"]           = { icon = "A", color = "green" },
       ["R"]           = { icon = "R", color = "yellow" },
       ["C"]           = { icon = "C", color = "yellow" },
+      ["T"]           = { icon = "T", color = "magenta" },
       ["?"]           = { icon = "?", color = "magenta" },
       -- override git icons?
       -- ["M"]        = { icon = "★", color = "red" },
