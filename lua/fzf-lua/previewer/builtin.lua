@@ -308,9 +308,25 @@ function Previewer.buffer_or_file:start_ueberzug()
   local fifo = ("fzf-lua-%d-ueberzug"):format(vim.fn.getpid())
   self._ueberzug_fifo = vim.fn.systemlist({"mktemp", "--dry-run", "--suffix", fifo})[1]
   vim.fn.system({"mkfifo", self._ueberzug_fifo})
-  self._ueberzug_job = vim.fn.jobstart({"sh", "-c",
-    ("tail --follow %s | ueberzug layer --silent --parser json")
-      :format(vim.fn.shellescape(self._ueberzug_fifo))})
+  self._ueberzug_job = vim.fn.jobstart({ "sh", "-c",
+    ("tail --follow %s | ueberzug layer --parser json")
+      :format(vim.fn.shellescape(self._ueberzug_fifo))
+    }, {
+      on_exit = function(_, rc, _)
+        if rc ~= 0 and rc ~= 143 then
+          utils.warn(("ueberzug exited with error %d"):format(rc) ..
+            ", run ':messages' to see the detailed error.")
+        end
+      end,
+      on_stderr = function(_, data, _)
+        for _, l in ipairs(data or {}) do
+          if #l>0 then
+            utils.info(l)
+          end
+        end
+      end
+    }
+      )
   self._ueberzug_pid = vim.fn.jobpid(self._ueberzug_job)
   return self._ueberzug_fifo
 end
