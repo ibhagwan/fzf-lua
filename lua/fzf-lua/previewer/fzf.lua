@@ -284,8 +284,19 @@ function Previewer.git_diff:cmdline(o)
       vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
       pager = '| ' .. self.pager
     end
-    cmd = string.format('FZF_PREVIEW_LINES=%d;FZF_PREVIEW_COLUMNS=%d;%s %s %s',
-      fzf_lines, fzf_columns, cmd, vim.fn.shellescape(file.path), pager)
+    -- with default commands we add the filepath at the end
+    -- if the user configured a more complex command, e.g.:
+    -- git_diff = {
+    --   cmd_modified = "git diff --color HEAD %s | less -SEX"
+    -- }
+    -- we use ':format' directly on the user's command, see
+    -- issue #392 for more info (limiting diff output width)
+    if not cmd:match("%%s") then
+      cmd = cmd .. " %s"
+    end
+    cmd = cmd:format(vim.fn.shellescape(file.path))
+    cmd = ("FZF_PREVIEW_LINES=%d;FZF_PREVIEW_COLUMNS=%d;%s %s")
+      :format(fzf_lines, fzf_columns, cmd, pager)
     cmd = 'sh -c ' .. vim.fn.shellescape(cmd)
     if self.opts.debug then
       print("[DEBUG]: "..cmd.."\n")
