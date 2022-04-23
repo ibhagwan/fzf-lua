@@ -100,7 +100,6 @@ M.helptags = function(opts)
 
   opts.fzf_opts['--no-multi'] = ''
   opts.fzf_opts['--preview-window'] = 'hidden:right:0'
-  opts.fzf_opts['--nth'] = '1'
 
   core.fzf_wrap(opts, fzf_function, function(selected)
 
