@@ -708,6 +708,11 @@ function FzfWin:create()
     -- create a new tmp buffer for the fzf win
     self:set_tmp_buffer()
     self:setup_keybinds()
+    -- also recall the user's 'on_create' (#394)
+    if self.winopts.on_create and
+        type(self.winopts.on_create) == 'function' then
+      self.winopts.on_create()
+    end
     -- not sure why but when using a split and reusing the window
     -- fzf will not use all the avialable width until 'redraw' is
     -- called resulting in misaligned native and builtin previews
