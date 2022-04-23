@@ -712,7 +712,6 @@ function FzfWin:create()
     -- fzf will not use all the avialable width until 'redraw' is
     -- called resulting in misaligned native and builtin previews
     vim.cmd("redraw")
-    return
   end
 
   if not self.winopts.split and self.previewer_is_builtin then
