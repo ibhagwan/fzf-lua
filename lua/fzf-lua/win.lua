@@ -817,6 +817,15 @@ function FzfWin:close()
       end
     end
   end
+  -- when using `split = "belowright new"` closing the fzf
+  -- window may not always return to the correct source win
+  -- depending on the user's split configuration (#397)
+  if self.winopts and self.winopts.split
+    and self.src_winid and self.src_winid>0
+    and self.src_winid ~= vim.api.nvim_get_current_win()
+    and vim.api.nvim_win_is_valid(self.src_winid) then
+      vim.api.nvim_set_current_win(self.src_winid)
+  end
   self.closing = nil
   self._reuse = nil
   self._orphaned_bufs = nil
