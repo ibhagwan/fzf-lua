@@ -279,6 +279,7 @@ function Previewer.git_diff:cmdline(o)
     if is_modified then cmd = self.cmd_modified
     elseif is_deleted then cmd = self.cmd_deleted
     elseif is_untracked then cmd = self.cmd_untracked end
+    if not cmd then return "" end
     local pager = ""
     if self.pager and #self.pager>0 and
       vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
