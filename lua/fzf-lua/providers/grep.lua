@@ -487,7 +487,13 @@ M.grep_project = function(opts)
 end
 
 M.grep_curbuf = function(opts)
-  if not opts then opts = {} end
+  -- we can't call 'normalize_opts' here because it will override
+  -- 'opts.__call_opts' which will confuse 'actions.grep_lgrep'
+  if type(opts) == 'function' then
+    opts = opts()
+  elseif not opts then
+    opts = {}
+  end
   -- rg globs are meaningless here since we searching
   -- a single file
   opts.rg_glob = false
@@ -499,17 +505,12 @@ M.grep_curbuf = function(opts)
   opts.fzf_opts = vim.tbl_extend("keep",
     opts.fzf_opts or {}, config.globals.blines.fzf_opts)
   opts.filename = vim.api.nvim_buf_get_name(0)
-  -- disable ctrl-g switch by default
-  if not opts.actions or not opts.actions["ctrl-g"] then
-    opts.actions = opts.actions or {}
-    opts.actions["ctrl-g"] = false
-  end
   if #opts.filename > 0 and vim.loop.fs_stat(opts.filename) then
     opts.filename = path.relative(opts.filename, vim.loop.cwd())
     if opts.lgrep then
       return M.live_grep(opts)
     else
-      opts.search = ''
+      opts.search = opts.search or ''
       return M.grep(opts)
     end
   else
@@ -521,7 +522,6 @@ end
 M.lgrep_curbuf = function(opts)
   if not opts then opts = {} end
   opts.lgrep = true
-  opts.__FNCREF__ = utils.__FNCREF__()
   return M.grep_curbuf(opts)
 end
 
