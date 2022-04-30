@@ -135,6 +135,7 @@ M.globals = {
     ['--info']        = 'inline',
     ['--height']      = '100%',
     ['--layout']      = 'reverse',
+    ['--border']      = 'none',
   },
   previewers = {
     cat = {
