@@ -420,6 +420,21 @@ local function get_line_diagnostics(opts)
   }} or nil
 end
 
+---Returns true if the client has code_action capability and its
+-- resolveProvider is true.
+-- @param client vim.lsp.buf.client
+-- @return boolean
+local function code_action_resolves(client)
+  local code_action
+  if vim.fn.has("nvim-0.8") == 1 then
+    code_action = client.server_capabilities.codeActionProvider
+  else
+    code_action = client.resolved_capabilities.code_action
+  end
+
+  return type(code_action) == "table" and code_action.resolveProvider
+end
+
 M.code_actions = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
@@ -520,12 +535,8 @@ M.code_actions = function(opts)
     local action = entry.command
     local client = entry.client or vim.lsp.get_client_by_id(entry.client_id)
     local offset_encoding = client and client.offset_encoding
-    if
-      not action.edit
-      and client
-      and type(client.resolved_capabilities.code_action) == "table"
-      and client.resolved_capabilities.code_action.resolveProvider
-    then
+
+    if not action.edit and client and code_action_resolves(client) then
       local request = "codeAction/resolve"
       client.request(request, action, function(resolved_err, resolved_action)
         if resolved_err then
@@ -783,88 +794,103 @@ end
 local function check_capabilities(feature)
   local clients = vim.lsp.buf_get_clients(0)
 
-  local supported_client = false
   for _, client in pairs(clients) do
-    supported_client = client.resolved_capabilities[feature]
-    if supported_client then break end
+    if vim.fn.has("nvim-0.8") == 1 then
+      if client.server_capabilities[feature] then
+        return true
+      end
+    else
+      if client.resolved_capabilities[feature] then
+        return true
+      end
+    end
   end
 
-  if supported_client then
-    return true
+  if utils.tbl_isempty(clients) then
+    utils.info("LSP: no client attached")
   else
-    if utils.tbl_isempty(clients) then
-      utils.info("LSP: no client attached")
-    else
-      utils.info("LSP: server does not support " .. feature)
-    end
-    return false
+    utils.info("LSP: server does not support " .. feature)
   end
+  return false
 end
 
 local handlers = {
   ["code_actions"] = {
     label = "Code Actions",
-    capability = "code_action",
+    resolved_capability = "code_action",
+    server_capability = "codeActionProvider",
     method = "textDocument/codeAction",
     handler = code_action_handler },
   ["references"] = {
     label = "References",
-    capability = "find_references",
+    resolved_capability = "find_references",
+    server_capability = "referencesProvider",
     method = "textDocument/references",
     handler = location_handler },
   ["definitions"] = {
     label = "Definitions",
-    capability = "goto_definition",
+    resolved_capability = "goto_definition",
+    server_capability = "definitionProvider",
     method = "textDocument/definition",
     handler = location_handler },
   ["declarations"] = {
     label = "Declarations",
-    capability = "goto_declaration",
+    resolved_capability = "goto_declaration",
+    server_capability = "declarationProvider",
     method = "textDocument/declaration",
     handler = location_handler },
   ["typedefs"] = {
     label = "Type Definitions",
-    capability = "type_definition",
+    resolved_capability = "type_definition",
+    server_capability = "typeDefinitionProvider",
     method = "textDocument/typeDefinition",
     handler = location_handler },
   ["implementations"] = {
     label = "Implementations",
-    capability =  "implementation",
+    resolved_capability = "implementation",
+    server_capability = "implementationProvider",
     method = "textDocument/implementation",
     handler = location_handler },
   ["document_symbols"] = {
     label = "Document Symbols",
-    capability = "document_symbol",
+    resolved_capability = "document_symbol",
+    server_capability = "documentSymbolProvider",
     method = "textDocument/documentSymbol",
     handler = symbol_handler },
   ["workspace_symbols"] = {
     label = "Workspace Symbols",
-    capability = "workspace_symbol",
+    resolved_capability = "workspace_symbol",
+    server_capability = "workspaceSymbolProvider",
     method = "workspace/symbol",
     handler = symbol_handler },
   ["live_workspace_symbols"] = {
     label = "Workspace Symbols",
-    capability = "workspace_symbol",
+    resolved_capability = "workspace_symbol",
+    server_capability = "workspaceSymbolProvider",
     method = "workspace/symbol",
     handler = symbol_handler },
   ["diagnostics"] = {
     label = "Diagnostics",
-    capability = nil,
+    resolved_capability = nil,
+    server_capability = nil,
     method = nil,
     handler = diagnostics_handler },
   ["workspace_diagnostics"] = {
     label = "Workspace Diagnostics",
-    capability = nil,
+    resolved_capability = nil,
+    server_capability = nil,
     method = nil,
     handler = diagnostics_handler },
   ["incoming_calls"] = {
     label = "Incoming Calls",
-    capability = "call_hierarchy",
+    resolved_capability = "call_hierarchy",
+    server_capability = "callHierarchyProvider",
     method = "callHierarchy/incomingCalls",
     handler = call_hierarchy_handler },
   ["outgoing_calls"] = {
     label = "Outgoing Calls",
-    capability = "call_hierarchy",
+    resolved_capability = "call_hierarchy",
+    server_capability = "callHierarchyProvider",
     method = "callHierarchy/outgoingCalls",
     handler = call_hierarchy_handler },
 }
@@ -879,7 +905,17 @@ local function wrap_module_fncs(mod)
         utils.err(string.format("No LSP handler defined for %s", k))
         return
       end
-      if opts.lsp_handler and opts.lsp_handler.capability
+
+      -- We only need to set this once.
+      if opts.lsp_handler and not opts.lsp_handler.capability then
+        if vim.fn.has("nvim-0.8") == 1 then
+          opts.lsp_handler.capability = opts.lsp_handler.server_capability
+        else
+          opts.lsp_handler.capability = opts.lsp_handler.resolved_capability
+        end
+      end
+
+      if opts.lsp_handler.capability
         and not check_capabilities(opts.lsp_handler.capability) then
         return
       end
