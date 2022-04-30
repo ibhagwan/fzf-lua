@@ -752,13 +752,6 @@ M.live_workspace_symbols = function(opts)
     opts.query = last_search.query
   end
 
-  if opts.query and #opts.query>0 then
-    -- save the search query so the use can
-    -- call the same search again
-    last_search = {}
-    last_search.query = opts.search
-  end
-
   -- sent to the LSP server
   opts.lsp_params = {query = opts.query or ''}
 
@@ -768,9 +761,8 @@ M.live_workspace_symbols = function(opts)
   opts.winid = vim.api.nvim_get_current_win()
 
   opts._reload_action = function(query)
-    if query and not (opts.save_last_search == false) then
-      last_search = {}
-      last_search.query = query
+    if query and not (opts.save_last_query == false) then
+      last_search = { query = query }
       config.__resume_data.last_query = query
     end
     opts.sync = true
