@@ -194,6 +194,8 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `lsp_code_actions`           | Code Actions                     |
 | `lsp_document_diagnostics`   | Document Diagnostics             |
 | `lsp_workspace_diagnostics`  | Workspace Diagnostics            |
+| `lsp_incoming_calls`         | Incoming Calls                   |
+| `lsp_outgoing_calls`         | Outgoing Calls                   |
 
 ### Misc
 | Command          | List                                       |

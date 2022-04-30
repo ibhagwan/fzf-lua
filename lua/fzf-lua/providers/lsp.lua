@@ -50,6 +50,28 @@ local function location_handler(opts, cb, _, result, ctx, _)
   end
 end
 
+local function call_hierarchy_handler(opts, cb, _, result, _, _)
+  for _, call_hierarchy_call in pairs(result) do
+    --- "from" for incoming calls and "to" for outgoing calls
+    local call_hierarchy_item = call_hierarchy_call.from or call_hierarchy_call.to
+    for _, range in pairs(call_hierarchy_call.fromRanges) do
+      local entry = {
+        filename = assert(vim.uri_to_fname(call_hierarchy_item.uri)),
+        text = call_hierarchy_item.name,
+        lnum = range.start.line + 1,
+        col = range.start.character + 1,
+      }
+      entry = core.make_entry_lcol(opts, entry)
+      entry = core.make_entry_file(opts, entry)
+      if entry then
+        cb(entry, function(err)
+          if err then return end
+        end)
+      end
+    end
+  end
+end
+
 local function symbol_handler(opts, cb, _, result, _, _)
   result = vim.tbl_islist(result) and result or {result}
   local items = vim.lsp.util.symbols_to_items(result, 0)
@@ -282,7 +304,6 @@ local normalize_lsp_opts = function(opts, cfg)
   opts.bufnr = nil
   opts.winid = nil
   opts.filename = nil
-  opts.lsp_params = nil
   opts.code_actions = nil
   opts.num_results = nil
   opts.num_callbacks = nil
@@ -321,6 +342,35 @@ end
 
 M.implementations = function(opts)
   return fzf_lsp_locations(opts)
+end
+
+-- see $VIMRUNTIME/lua/vim/buf.lua:pick_call_hierarchy_item()
+M.call_hierarchy = function(opts)
+  opts.lsp_params = vim.lsp.util.make_position_params(0)
+  local method = "textDocument/prepareCallHierarchy"
+  local res, err = vim.lsp.buf_request_sync(
+    0, method, opts.lsp_params, 2000)
+  if err then
+    utils.err(("Error executing '%s': %s"):format(method, err))
+  else
+    local _, response = next(res)
+    if vim.tbl_isempty(response) then
+      utils.info(('No %s found'):format(opts.lsp_handler.label:lower()))
+      return
+    end
+    assert(response.result and response.result[1])
+    local call_hierarchy_item = response.result[1]
+    opts.lsp_params = { item = call_hierarchy_item }
+    return fzf_lsp_locations(opts)
+  end
+end
+
+M.incoming_calls = function(opts)
+  return M.call_hierarchy(opts)
+end
+
+M.outgoing_calls = function(opts)
+  return M.call_hierarchy(opts)
 end
 
 M.document_symbols = function(opts)
@@ -730,10 +780,6 @@ M.live_workspace_symbols = function(opts)
   opts.search = nil
 end
 
-M.incoming_calls = function(opts)
-  return fzf_lsp_locations(opts)
-end
-
 local function check_capabilities(feature)
   local clients = vim.lsp.buf_get_clients(0)
 
@@ -814,8 +860,13 @@ local handlers = {
   ["incoming_calls"] = {
     label = "Incoming Calls",
     capability = "call_hierarchy",
-    method = "textDocument/prepareCallHierarchy",
-    handler = location_handler },
+    method = "callHierarchy/incomingCalls",
+    handler = call_hierarchy_handler },
+  ["outgoing_calls"] = {
+    label = "Outgoing Calls",
+    capability = "call_hierarchy",
+    method = "callHierarchy/outgoingCalls",
+    handler = call_hierarchy_handler },
 }
 
 local function wrap_module_fncs(mod)
