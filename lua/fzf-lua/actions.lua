@@ -75,9 +75,10 @@ M.resume = function(_, _)
   vim.cmd("lua require'fzf-lua'.resume()")
 end
 
-M.vimcmd = function(vimcmd, selected)
+M.vimcmd = function(vimcmd, selected, noesc)
   for i = 1, #selected do
-    vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(selected[i]))
+    vim.cmd(("%s %s"):format(vimcmd,
+      noesc and selected[i] or vim.fn.fnameescape(selected[i])))
   end
 end
 
@@ -402,17 +403,17 @@ end
 
 M.help = function(selected)
   local vimcmd = "help"
-  M.vimcmd(vimcmd, selected)
+  M.vimcmd(vimcmd, selected, true)
 end
 
 M.help_vert = function(selected)
   local vimcmd = "vert help"
-  M.vimcmd(vimcmd, selected)
+  M.vimcmd(vimcmd, selected, true)
 end
 
 M.help_tab = function(selected)
   local vimcmd = "tab help"
-  M.vimcmd(vimcmd, selected)
+  M.vimcmd(vimcmd, selected, true)
 end
 
 M.man = function(selected)
