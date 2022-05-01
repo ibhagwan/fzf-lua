@@ -866,6 +866,7 @@ M._action_to_helpstr = {
   [actions.git_checkout]          = "git-checkout",
   [actions.git_stage]             = "git-stage",
   [actions.git_unstage]           = "git-unstage",
+  [actions.git_reset]             = "git-reset",
   [actions.git_buf_edit]          = "git-buffer-edit",
   [actions.git_buf_tabedit]       = "git-buffer-tabedit",
   [actions.git_buf_split]         = "git-buffer-split",

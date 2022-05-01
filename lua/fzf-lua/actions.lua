@@ -498,6 +498,11 @@ M.git_unstage = function(selected, opts)
   git_exec(selected, opts, cmd)
 end
 
+M.git_reset = function(selected, opts)
+  local cmd = path.git_cwd({"git", "checkout", "HEAD", "--"}, opts)
+  git_exec(selected, opts, cmd)
+end
+
 M.git_buf_edit = function(selected, opts)
   local cmd = path.git_cwd({"git", "show"}, opts)
   local git_root = path.git_root(opts, true)
