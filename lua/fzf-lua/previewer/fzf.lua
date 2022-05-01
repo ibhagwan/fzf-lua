@@ -49,9 +49,9 @@ function Previewer.base:fzf_delimiter()
     if delim:match("%[.*%]")then
       delim = delim:match("(%[.*)%]") .. ':]'
     else
-      delim = '[' ..
-        utils.rg_escape(delim:match("^'?(.*)'$?")):gsub("%]", "\\]")
-      .. ':]'
+      -- remove surrounding quotes
+      delim = delim:match("^'?(.*)'$?") or delim
+      delim = '[' ..  utils.rg_escape(delim):gsub("%]", "\\]") .. ':]'
     end
   end
   return delim

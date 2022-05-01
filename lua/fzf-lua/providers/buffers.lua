@@ -113,11 +113,14 @@ local function gen_buffer_entry(opts, buf, hl_curbuf)
   local flags = hidden .. readonly .. changed
   local leftbr = utils.ansi_codes.clear('[')
   local rightbr = utils.ansi_codes.clear(']')
-  local bufname = string.format("%s:%s",
-    #buf.info.name>0 and
+  local bufname = #buf.info.name>0 and
       path.relative(buf.info.name, vim.loop.cwd()) or
-      utils.nvim_buf_get_name(buf.bufnr, buf.info),
-    buf.info.lnum>0 and buf.info.lnum or  "")
+      utils.nvim_buf_get_name(buf.bufnr, buf.info)
+  if opts.filename_only then
+    bufname = path.basename(bufname)
+  end
+  -- add line number
+  bufname = ("%s:%s"):format(bufname, buf.info.lnum>0 and buf.info.lnum or  "")
   if buf.flag == '%' then
     flags = utils.ansi_codes.red(buf.flag) .. flags
     if hl_curbuf then
