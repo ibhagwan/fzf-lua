@@ -345,6 +345,7 @@ M.mt_cmd_wrapper = function(opts)
       "git_icons",
       "file_icons",
       "color_icons",
+      "path_shorten",
       "strip_cwd_prefix",
       "rg_glob",
       "__module__",
@@ -524,7 +525,7 @@ M.fzf_files = function(opts, contents)
     if #selected > 1 then
       local idx = utils.tbl_length(opts.actions)>1 and 2 or 1
       for i = idx, #selected do
-        selected[i] = path.entry_to_file(selected[i], opts.cwd).stripped
+        selected[i] = path.entry_to_file(selected[i], opts).stripped
       end
     end
 

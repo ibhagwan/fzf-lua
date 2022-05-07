@@ -86,7 +86,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
   local curbuf = vim.api.nvim_buf_get_name(0)
   local is_term = utils.is_term_buffer(0)
   for i = 1, #selected do
-    local entry = path.entry_to_file(selected[i], opts.cwd, opts.force_uri)
+    local entry = path.entry_to_file(selected[i], opts)
     entry.ctag = opts._ctag and path.entry_to_ctag(selected[i])
     local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
     if not path.starts_with_separator(fullpath) then
@@ -476,7 +476,7 @@ end
 
 local git_exec = function(selected, opts, cmd)
   for _, e in ipairs(selected) do
-    local file = path.relative(path.entry_to_file(e, opts.cwd).path, opts.cwd)
+    local file = path.relative(path.entry_to_file(e, opts).path, opts.cwd)
     local _cmd = vim.deepcopy(cmd)
     table.insert(_cmd, file)
     local output = utils.io_systemlist(_cmd)

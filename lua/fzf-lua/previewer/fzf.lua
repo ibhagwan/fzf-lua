@@ -76,7 +76,7 @@ function Previewer.cmd:action(o)
   o = o or {}
   local act = shell.raw_action(function (items, _, _)
     -- only preview first item
-    local entry = path.entry_to_file(items[1], self.opts.cwd)
+    local entry = path.entry_to_file(items[1], self.opts)
     return entry.bufname or entry.path
   end, self.opts.field_index_expr or "{}")
   return act
@@ -166,7 +166,7 @@ local grep_tag = function(file, tag)
 end
 
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
-  local entry = path.entry_to_file(entrystr, self.opts.cwd)
+  local entry = path.entry_to_file(entrystr, self.opts)
   local filepath = entry.bufname or entry.path or ''
   if self.opts._ctag and entry.line<=1 then
     -- tags without line numbers
@@ -274,7 +274,7 @@ function Previewer.git_diff:cmdline(o)
       self.git_icons['?'] ..
       self.git_icons['C'] ..
       "]"..utils.nbsp) ~= nil
-    local file = path.entry_to_file(items[1], self.opts.cwd)
+    local file = path.entry_to_file(items[1], self.opts)
     local cmd = nil
     if is_modified then cmd = self.cmd_modified
     elseif is_deleted then cmd = self.cmd_deleted

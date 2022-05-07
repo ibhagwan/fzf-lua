@@ -123,7 +123,7 @@ M.breakpoints = function(opts)
         {
           function(selected, o)
             for _, e in ipairs(selected) do
-              local entry = path.entry_to_file(e, o.cwd)
+              local entry = path.entry_to_file(e, o)
               if entry.bufnr>0 and entry.line then
                 dap_bps.remove(entry.bufnr, entry.line)
               end

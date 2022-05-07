@@ -1,4 +1,5 @@
 local utils = require "fzf-lua.utils"
+local string_sub = string.sub
 local string_byte = string.byte
 
 local M = {}
@@ -115,17 +116,33 @@ function M.remove_trailing(path)
   return p
 end
 
-function M.shorten(path, max_length)
-  if string.len(path) > max_length - 1 then
-    path = path:sub(string.len(path) - max_length + 1, string.len(path))
-    local i = path:match("()" .. M.separator())
-    if not i then
-      return "…" .. path
+local function find_next(str, char, start_idx)
+  local i_char = string_byte(char, 1)
+  for i=start_idx or 1,#str do
+    if string_byte(str, i) == i_char then
+      return i
     end
-    return "…" .. path:sub(i, -1)
-  else
-    return path
   end
+end
+
+function M.shorten(path, max_len)
+  local sep = M.separator()
+  local parts = {}
+  local start_idx = 1
+  max_len = max_len or 1
+  repeat
+    local i = find_next(path, sep, start_idx)
+    local end_idx = i and start_idx+math.min(i-start_idx, max_len)-1 or nil
+    table.insert(parts, string_sub(path, start_idx, end_idx))
+    if i then start_idx = i+1 end
+  until not i
+  return table.concat(parts, sep)
+end
+
+function M.lengthen(path)
+  return vim.fn.glob(path:gsub(M.separator(), "%*"..M.separator())
+    -- remove the starting '*/' if any
+    :gsub("^%*"..M.separator(), M.separator()))
 end
 
 local function lastIndexOf(haystack, needle)
@@ -156,10 +173,13 @@ function M.entry_to_ctag(entry, noesc)
   return ctag
 end
 
-function M.entry_to_location(entry)
+function M.entry_to_location(entry, opts)
   local uri, line, col = entry:match("^(.*://.*):(%d+):(%d+):")
   line = line and tonumber(line) or 1
   col = col and tonumber(col) or 1
+  if opts and opts.path_shorten then
+    uri = uri:match("^.*://") .. M.lengthen(uri:match("^.*://(.*)"))
+  end
   return {
     stripped = entry,
     line = line,
@@ -174,7 +194,10 @@ function M.entry_to_location(entry)
   }
 end
 
-function M.entry_to_file(entry, cwd, force_uri)
+function M.entry_to_file(entry, opts)
+  opts = opts or {}
+  local cwd = opts.cwd
+  local force_uri = opts.force_uri
   -- Remove ansi coloring and prefixed icons
   entry = utils.strip_ansi_coloring(entry)
   local stripped, idx = stripBeforeLastOccurrenceOf(entry, utils.nbsp)
@@ -202,7 +225,7 @@ function M.entry_to_file(entry, cwd, force_uri)
     -- 'lua require('jdtls').open_jdt_link(vim.fn.expand('jdt://...'))'
     -- Convert to location item so we can use 'jump_to_location'
     -- This can also work with any 'file://' prefixes
-    return M.entry_to_location(stripped)
+    return M.entry_to_location(stripped, opts)
   end
   local s = utils.strsplit(stripped, ":")
   if not s[1] then return {} end
@@ -215,6 +238,9 @@ function M.entry_to_file(entry, cwd, force_uri)
     if terminal then
       file, line = stripped:match("([^:]+):(%d+)")
     end
+  end
+  if opts.path_shorten then
+    file = M.lengthen(file)
   end
   return {
     stripped = stripped,

@@ -280,7 +280,7 @@ function Previewer.buffer_or_file:close()
 end
 
 function Previewer.buffer_or_file:parse_entry(entry_str)
-  local entry = path.entry_to_file(entry_str, self.opts.cwd)
+  local entry = path.entry_to_file(entry_str, self.opts)
   return entry
 end
 

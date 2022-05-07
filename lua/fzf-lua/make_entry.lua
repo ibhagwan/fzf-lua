@@ -312,6 +312,9 @@ M.file = function(opts, x)
     -- TODO: does this work if there are ANSI escape codes in x?
     x = path.relative(x, opts.cwd)
   end
+  if opts.path_shorten then
+    x = path.shorten(x, tonumber(opts.path_shorten))
+  end
   if opts.git_icons then
     local indicators = opts.diff_files and opts.diff_files[file] or utils.nbsp
     for i=1,#indicators do
