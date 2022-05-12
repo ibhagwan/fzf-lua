@@ -253,6 +253,22 @@ M.globals.git = {
         ["default"] = actions.git_switch,
       },
     },
+    stash = {
+      prompt        = 'Stash> ',
+      cmd           = "git --no-pager stash list",
+      preview       = "git --no-pager stash show --patch --color {1}",
+      actions = {
+        ["default"] = actions.git_stash_apply,
+        ["ctrl-x"]  = { actions.git_stash_drop, actions.resume },
+      },
+      fzf_opts      = {
+      -- TODO: multiselect requires more work as dropping
+      -- a stash changes the stash index causing an error
+      -- when the next stash is attempted a drop
+        ["--no-multi"]  = '',
+        ['--delimiter'] = "'[:]'",
+      },
+    },
     icons = {
       ["M"]         = { icon = "M", color = "yellow" },
       ["D"]         = { icon = "D", color = "red" },
@@ -867,6 +883,8 @@ M._action_to_helpstr = {
   [actions.git_stage]             = "git-stage",
   [actions.git_unstage]           = "git-unstage",
   [actions.git_reset]             = "git-reset",
+  [actions.git_stash_drop]        = "git-stash-drop",
+  [actions.git_stash_apply]       = "git-stash-apply",
   [actions.git_buf_edit]          = "git-buffer-edit",
   [actions.git_buf_tabedit]       = "git-buffer-tabedit",
   [actions.git_buf_split]         = "git-buffer-split",

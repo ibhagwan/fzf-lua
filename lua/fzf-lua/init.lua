@@ -93,6 +93,7 @@ M.lgrep_curbuf = require'fzf-lua.providers.grep'.lgrep_curbuf
 M.grep_project = require'fzf-lua.providers.grep'.grep_project
 M.git_files = require'fzf-lua.providers.git'.files
 M.git_status = require'fzf-lua.providers.git'.status
+M.git_stash = require'fzf-lua.providers.git'.stash
 M.git_commits = require'fzf-lua.providers.git'.commits
 M.git_bcommits = require'fzf-lua.providers.git'.bcommits
 M.git_branches = require'fzf-lua.providers.git'.branches

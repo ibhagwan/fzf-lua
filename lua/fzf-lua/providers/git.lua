@@ -136,4 +136,33 @@ M.branches = function(opts)
   return git_cmd(opts)
 end
 
+M.stash = function(opts)
+  opts = config.normalize_opts(opts, config.globals.git.stash)
+  if not opts then return end
+
+  if opts.preview then
+    opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts))
+  end
+
+  if opts.fzf_opts['--header'] == nil then
+    opts.fzf_opts['--header'] = vim.fn.shellescape((':: %s to drop selected stash(es)')
+      :format(utils.ansi_codes.yellow("<Ctrl-x>")))
+  end
+
+  opts.cmd = libuv.spawn_nvim_fzf_cmd(
+    { cmd = opts.cmd, cwd = opts.cwd },
+    function(x)
+      local stash, rest = x:match("([^:]+)(.*)")
+      if stash then
+        stash = utils.ansi_codes.yellow(stash)
+        stash = stash:gsub("{%d+}", function(s)
+          return ("%s"):format(utils.ansi_codes.green(tostring(s)))
+        end)
+      end
+      return (not stash or not rest) and x or stash .. rest
+    end)
+
+  return git_cmd(opts)
+end
+
 return M

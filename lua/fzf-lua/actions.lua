@@ -503,6 +503,19 @@ M.git_reset = function(selected, opts)
   git_exec(selected, opts, cmd)
 end
 
+M.git_stash_drop = function(selected, opts)
+  local cmd = path.git_cwd({"git", "stash", "drop"}, opts)
+  git_exec(selected, opts, cmd)
+end
+
+M.git_stash_apply = function(selected, opts)
+  if vim.fn.input("Apply " .. #selected .. " stash(es)? [y/n] ") == "y" then
+    local cmd = path.git_cwd({"git", "stash", "apply"}, opts)
+    git_exec(selected, opts, cmd)
+    vim.cmd("e!")
+  end
+end
+
 M.git_buf_edit = function(selected, opts)
   local cmd = path.git_cwd({"git", "show"}, opts)
   local git_root = path.git_root(opts, true)

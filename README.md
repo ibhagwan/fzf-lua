@@ -179,6 +179,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `git_commits`      | git commit log (project)                   |
 | `git_bcommits`     | git commit log (buffer)                    |
 | `git_branches`     | git branches                               |
+| `git_stash`        | git stash                                  |
 
 ### LSP
 | Command          | List                                       |
@@ -544,6 +545,19 @@ require'fzf-lua'.setup {
       preview         = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
       actions = {
         ["default"] = actions.git_switch,
+      },
+    },
+    stash = {
+      prompt          = 'Stash> ',
+      cmd             = "git --no-pager stash list",
+      preview         = "git --no-pager stash show --patch --color {1}",
+      actions = {
+        ["default"]   = actions.git_stash_apply,
+        ["ctrl-x"]    = { actions.git_stash_drop, actions.resume },
+      },
+      fzf_opts = {
+        ["--no-multi"]  = '',
+        ['--delimiter'] = "'[:]'",
       },
     },
     icons = {
