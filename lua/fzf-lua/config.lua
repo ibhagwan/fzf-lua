@@ -883,6 +883,7 @@ M._action_to_helpstr = {
   [actions.git_stage]             = "git-stage",
   [actions.git_unstage]           = "git-unstage",
   [actions.git_reset]             = "git-reset",
+  [actions.git_stash_pop]         = "git-stash-pop",
   [actions.git_stash_drop]        = "git-stash-drop",
   [actions.git_stash_apply]       = "git-stash-apply",
   [actions.git_buf_edit]          = "git-buffer-edit",

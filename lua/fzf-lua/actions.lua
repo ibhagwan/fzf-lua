@@ -508,6 +508,14 @@ M.git_stash_drop = function(selected, opts)
   git_exec(selected, opts, cmd)
 end
 
+M.git_stash_pop = function(selected, opts)
+  if vim.fn.input("Pop " .. #selected .. " stash(es)? [y/n] ") == "y" then
+    local cmd = path.git_cwd({"git", "stash", "pop"}, opts)
+    git_exec(selected, opts, cmd)
+    vim.cmd("e!")
+  end
+end
+
 M.git_stash_apply = function(selected, opts)
   if vim.fn.input("Apply " .. #selected .. " stash(es)? [y/n] ") == "y" then
     local cmd = path.git_cwd({"git", "stash", "apply"}, opts)
