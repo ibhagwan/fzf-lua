@@ -208,6 +208,7 @@ end
 M.blines = function(opts)
   opts = config.normalize_opts(opts, config.globals.blines)
   opts.current_buffer_only = true
+  opts.line_field_index = opts.line_field_index or 2
   M.buffer_lines(opts)
 end
 
