@@ -295,21 +295,26 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
     return fn_loaded
   end
 
+  -- stdin/stdout are already buffered, not stderr this means
+  -- that every character is flushed immedietely which casued
+  -- rendering issues on Mac (#316, #287) and Linux (#414)
+  -- switch 'stderr' stream to 'line' buffering
+  -- https://www.lua.org/manual/5.2/manual.html#pdf-file%3asetvbuf
+  io.stderr:setvbuf 'line'
+
+  -- redirect 'stderr' to 'stdout' on Macs by default
+  -- only takes effect if 'opts.stderr' was not set
+  if opts.stderr_to_stdout == nil and
+    vim.loop.os_uname().sysname == 'Darwin' then
+    opts.stderr_to_stdout = true
+  end
+
   fn_transform = load_fn(fn_transform)
   fn_preprocess = load_fn(fn_preprocess)
-
-  -- if opts.argv_expr and opts.debug then
-  --   io.stdout:write("[DEBUG]: "..opts.cmd.."\n")
-  -- end
 
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
 
-  -- for i=0,8 do
-  --   io.stdout:write(("%d %s\n"):format(i, vim.v.argv[i]))
-  -- end
-
-  local is_darwin = vim.loop.os_uname().sysname == 'Darwin'
 
   if opts.debug then
     io.stdout:write("[DEBUG]: "..opts.cmd.."\n")
@@ -360,10 +365,10 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
       end)
   end
 
-  if opts.stderr then
+  if type(opts.stderr) == 'string' then
     stderr = pipe_open(opts.stderr)
   end
-  if opts.stdout then
+  if type(opts.stdout) == 'string' then
     stdout = pipe_open(opts.stdout)
   end
 
@@ -396,10 +401,8 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
     function(data)
       if stderr then
         pipe_write(stderr, data)
-      else
-        if is_darwin then
-          -- for some reason io:stderr causes
-          -- weird rendering issues on Mac (#316, #287)
+      elseif opts.stderr ~= false then
+        if opts.stderr_to_stdout then
           io.stdout:write(data)
         else
           io.stderr:write(data)
