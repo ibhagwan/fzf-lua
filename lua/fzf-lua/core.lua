@@ -222,6 +222,12 @@ M.create_fzf_colors = function(colors)
     if col then
       table.insert(tbl, ("%s:%s"):format(highlight, col))
     end
+    -- arguments in the 3nd slot onward are passed raw, this can
+    -- be used to pass styling arguments, for more info see #413
+    -- https://github.com/junegunn/fzf/issues/1663
+    for i = 3, #list do
+      table.insert(tbl, ("%s:%s"):format(highlight, list[i]))
+    end
   end
 
   return string.format("--color=%s", table.concat(tbl, ","))
