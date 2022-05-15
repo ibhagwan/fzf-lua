@@ -48,11 +48,15 @@ at it. That, **and colorful file icons and git indicators!**.
 ## Dependencies
 
 - `Linux` or `MacOS`
-- [`neovim`](https://github.com/neovim/neovim/releases) version > 0.5.0
-- [`fzf`](https://github.com/junegunn/fzf) version > 0.24.0 **or**
-  [`skim`](https://github.com/lotabout/skim) binary installed
+- [`neovim`](https://github.com/neovim/neovim/releases) version > `0.5.0`
+- [`fzf`](https://github.com/junegunn/fzf) version > `0.27` (see note below)
+  **or** [`skim`](https://github.com/lotabout/skim) binary installed
 - [nvim-web-devicons](https://github.com/kyazdani42/nvim-web-devicons)
   (optional)
+
+> `fzf` version > `0.27` is recommended but it's still possible to use `fzf`
+> version > `0.24` by setting `fzf_opts = { ['--border'] = false }`, see
+> [Customization](#customization).
 
 ### Optional dependencies
 
@@ -246,7 +250,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 
 I tried to make it as customizable as possible, if you find you need to change something that isn’t below, open an issue and I’ll do my best to add it.
 
-customization can be achieved by calling the `setup()` function or individually sending parameters to a builtin command, for exmaple:
+customization can be achieved by calling the `setup()` function or individually sending parameters to a builtin command, for example:
 ```lua
 :lua require('fzf-lua').files({ fzf_opts = {['--layout'] = 'reverse-list'} })
 ```
