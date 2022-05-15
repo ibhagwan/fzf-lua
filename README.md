@@ -246,7 +246,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 
 I tried to make it as customizable as possible, if you find you need to change something that isn’t below, open an issue and I’ll do my best to add it.
 
-customization can be achieved by calling the `setup()` function or individually sending parameters to a builtin command, for exmaple:
+customization can be achieved by calling the `setup()` function or individually sending parameters to a builtin command, for example:
 ```lua
 :lua require('fzf-lua').files({ fzf_opts = {['--layout'] = 'reverse-list'} })
 ```
