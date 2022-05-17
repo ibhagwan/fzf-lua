@@ -194,10 +194,9 @@ function M.entry_to_location(entry, opts)
   }
 end
 
-function M.entry_to_file(entry, opts)
+function M.entry_to_file(entry, opts, force_uri)
   opts = opts or {}
   local cwd = opts.cwd
-  local force_uri = opts.force_uri
   -- Remove ansi coloring and prefixed icons
   entry = utils.strip_ansi_coloring(entry)
   local stripped, idx = stripBeforeLastOccurrenceOf(entry, utils.nbsp)
