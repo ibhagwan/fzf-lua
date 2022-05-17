@@ -927,16 +927,16 @@ function Previewer.highlights:populate_preview_buf(entry_str)
     self:set_preview_buf(self.tmpbuf)
   end
 
-  local selected_hl = utils.strip_ansi_coloring(entry_str)
+  local selected_hl = "^" .. utils.strip_ansi_coloring(entry_str) .. "\\>"
   pcall(vim.api.nvim_buf_clear_namespace, self.tmpbuf, self.ns_previewer, 0, -1)
   pcall(api.nvim_win_call, self.win.preview_winid, function()
     -- start searching at line 1 in case we
     -- didn't reload the buffer (same file)
     api.nvim_win_set_cursor(0, {1, 0})
     fn.clearmatches()
-    fn.search(selected_hl.." ", "W")
+    fn.search(selected_hl, "W")
     if self.win.winopts.hl.search then
-      fn.matchadd(self.win.winopts.hl.search, selected_hl.." ")
+      fn.matchadd(self.win.winopts.hl.search, selected_hl)
     end
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
