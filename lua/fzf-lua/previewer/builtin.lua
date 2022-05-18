@@ -206,7 +206,7 @@ function Previewer.base:action(_)
   local act = shell.raw_action(function (items, _, _)
     self:display_entry(items[1])
     return ""
-  end, "{}")
+  end, "{}", self.opts.debug)
   return act
 end
 

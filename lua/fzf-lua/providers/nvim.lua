@@ -20,7 +20,7 @@ M.commands = function(opts)
       cmd = vim.inspect(commands[cmd])
     end
     return cmd
-  end)
+  end, nil, opts.debug)
 
   local entries = {}
   for k, _ in pairs(commands) do
@@ -259,7 +259,7 @@ M.registers = function(opts)
     local r = args[1]:match("%[(.*)%] ")
     local _, contents = pcall(vim.fn.getreg, r)
     return contents and register_escape_special(contents) or args[1]
-  end)
+  end, nil, opts.debug)
 
   local entries = {}
   for _, r in ipairs(registers) do
@@ -324,7 +324,7 @@ M.keymaps = function(opts)
       k = vim.inspect(v)
     end
     return k
-  end)
+  end, nil, opts.debug)
 
   local entries = {}
   for _, v in pairs(keymaps) do

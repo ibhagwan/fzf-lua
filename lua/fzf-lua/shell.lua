@@ -27,7 +27,7 @@ end
 -- NOT USED ANYMORE, we use `vim.g.fzf_lua_server` instead
 -- local action_server_address = nil
 
-function M.raw_async_action(fn, fzf_field_expression)
+function M.raw_async_action(fn, fzf_field_expression, debug)
 
   if not fzf_field_expression then
     fzf_field_expression = "{+}"
@@ -47,23 +47,26 @@ function M.raw_async_action(fn, fzf_field_expression)
 
   -- this is for windows WSL and AppImage users, their nvim path isn't just
   -- 'nvim', it can be something else
-  local nvim_command = vim.v.argv[1]
+  local nvim_bin = vim.v.argv[1]
 
-  local action_string = string.format("%s -n --headless --clean --cmd %s %s %s %s",
-    vim.fn.shellescape(nvim_command),
-    vim.fn.shellescape("luafile " .. path.join{vim.g.fzf_lua_directory, "shell_helper.lua"}),
-    vim.fn.shellescape(vim.g.fzf_lua_server),
-    id,
+  local call_args = ("fzf_lua_server=[[%s]], fnc_id=%d %s"):format(
+    vim.g.fzf_lua_server, id, debug and ", debug=true" or "")
+
+  local action_cmd = ("%s -n --headless --clean --cmd %s %s"):format(
+    libuv.shellescape(nvim_bin),
+    libuv.shellescape(("lua loadfile([[%s]])().rpc_nvim_exec_lua({%s})")
+      :format(path.join{vim.g.fzf_lua_directory, "shell_helper.lua"}, call_args)),
     fzf_field_expression)
-  return action_string, id
+
+  return action_cmd, id
 end
 
-function M.async_action(fn, fzf_field_expression)
-  local action_string, id = M.raw_async_action(fn, fzf_field_expression)
+function M.async_action(fn, fzf_field_expression, debug)
+  local action_string, id = M.raw_async_action(fn, fzf_field_expression, debug)
   return vim.fn.shellescape(action_string), id
 end
 
-function M.raw_action(fn, fzf_field_expression)
+function M.raw_action(fn, fzf_field_expression, debug)
 
   local receiving_function = function(pipe, ...)
     local ret = fn(...)
@@ -90,15 +93,15 @@ function M.raw_action(fn, fzf_field_expression)
     end
   end
 
-  return M.raw_async_action(receiving_function, fzf_field_expression)
+  return M.raw_async_action(receiving_function, fzf_field_expression, debug)
 end
 
-function M.action(fn, fzf_field_expression)
-  local action_string, id = M.raw_action(fn, fzf_field_expression)
+function M.action(fn, fzf_field_expression ,debug)
+  local action_string, id = M.raw_action(fn, fzf_field_expression, debug)
   return vim.fn.shellescape(action_string), id
 end
 
-M.preview_action_cmd = function(fn, fzf_field_expression)
+M.preview_action_cmd = function(fn, fzf_field_expression, debug)
 
   return M.async_action(function(pipe, ...)
 
@@ -123,7 +126,7 @@ M.preview_action_cmd = function(fn, fzf_field_expression)
         cb_write = on_write,
       }, false)
 
-  end, fzf_field_expression)
+  end, fzf_field_expression, debug)
 end
 
 M.reload_action_cmd = function(opts, fzf_field_expression)
@@ -168,7 +171,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         -- which will conflict with the 'fn_transform' argument
       }, opts._fn_transform or false)
 
-  end, fzf_field_expression)
+  end, fzf_field_expression, opts.debug)
 end
 
 return M

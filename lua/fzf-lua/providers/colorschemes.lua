@@ -24,7 +24,7 @@ M.colorschemes = function(opts)
       local colorscheme = args[1]
       vim.cmd("colorscheme " .. colorscheme)
     end
-  end)
+  end, nil, opts.debug)
 
   local current_colorscheme = get_current_colorscheme()
   local current_background = vim.o.background

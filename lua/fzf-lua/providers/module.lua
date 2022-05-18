@@ -16,7 +16,7 @@ M.metatable = function(opts)
     -- TODO: retreive method help
     local help = ''
     return string.format("%s:%s", args[1], help)
-  end)
+  end, nil, opts.debug)
 
   local methods = {}
   for k, _ in pairs(opts.metatable) do

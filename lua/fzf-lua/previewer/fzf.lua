@@ -1,4 +1,5 @@
 local path = require "fzf-lua.path"
+local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local Object = require "fzf-lua.class"
@@ -65,11 +66,15 @@ function Previewer.cmd:new(o, opts)
   return self
 end
 
+function Previewer.cmd:sh_wrap(cmd, args, action, extra_args)
+  return "sh -c " .. libuv.shellescape(("%s %s %s `%s`"):format(
+    cmd, args or "", extra_args or "", action))
+end
+
 function Previewer.cmd:cmdline(o)
   o = o or {}
   o.action = o.action or self:action(o)
-  return vim.fn.shellescape(string.format('sh -c "%s %s `%s`"',
-    self.cmd, self.args, o.action))
+  return vim.fn.shellescape(self:sh_wrap(self.cmd, self.args, o.action))
 end
 
 function Previewer.cmd:action(o)
@@ -78,7 +83,7 @@ function Previewer.cmd:action(o)
     -- only preview first item
     local entry = path.entry_to_file(items[1], self.opts)
     return entry.bufname or entry.path
-  end, self.opts.field_index_expr or "{}")
+  end, self.opts.field_index_expr or "{}", self.opts.debug)
   return act
 end
 
@@ -98,8 +103,7 @@ function Previewer.bat:cmdline(o)
   if self.opts.line_field_index then
     highlight_line = string.format("--highlight-line={%d}", self.opts.line_field_index)
   end
-  return vim.fn.shellescape(string.format('sh -c "%s %s %s `%s`"',
-    self.cmd, self.args, highlight_line, self:action(o)))
+  return vim.fn.shellescape(self:sh_wrap(self.cmd, self.args, o.action, highlight_line))
 end
 
 -- Specialized head previewer
@@ -118,8 +122,7 @@ function Previewer.head:cmdline(o)
   -- if self.opts.line_field_index then
   --   lines = string.format("--lines={%d}", self.opts.line_field_index)
   -- end
-  return vim.fn.shellescape(string.format('sh -c "%s %s %s `%s`"',
-    self.cmd, self.args, lines, self:action(o)))
+  return vim.fn.shellescape(self:sh_wrap(self.cmd, self.args, o.action, lines))
 end
 
 -- new async_action from nvim-fzf
@@ -197,7 +200,7 @@ function Previewer.cmd_async:cmdline(o)
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
-  end, "{}")
+  end, "{}", self.opts.debug)
   return act
 end
 
@@ -231,7 +234,7 @@ function Previewer.bat_async:cmdline(o)
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
-  end, "{}")
+  end, "{}", self.opts.debug)
   return act
 end
 
@@ -299,16 +302,13 @@ function Previewer.git_diff:cmdline(o)
     cmd = ("FZF_PREVIEW_LINES=%d;FZF_PREVIEW_COLUMNS=%d;%s %s")
       :format(fzf_lines, fzf_columns, cmd, pager)
     cmd = 'sh -c ' .. vim.fn.shellescape(cmd)
-    if self.opts.debug then
-      print("[DEBUG]: "..cmd.."\n")
-    end
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
   -- we need to add '--' to mark the end of command options
   -- as git icon customization may contain special shell chars
   -- which will otherwise choke our preview cmd ('+', '-', etc)
-  end, "-- {}")
+  end, "-- {}", self.opts.debug)
   return act
 end
 
@@ -330,7 +330,7 @@ function Previewer.man_pages:cmdline(o)
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
-  end, "{}")
+  end, "{}", self.opts.debug)
   return act
 end
 

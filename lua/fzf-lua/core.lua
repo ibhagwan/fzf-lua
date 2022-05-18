@@ -592,7 +592,7 @@ M.set_fzf_interactive_cb = function(opts)
       close_pipe()
 
     end)()
-  end, placeholder)
+  end, placeholder, opts.debug)
 
   return M.set_fzf_interactive(opts, raw_async_act, placeholder)
 end

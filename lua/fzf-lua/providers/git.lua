@@ -132,7 +132,7 @@ M.branches = function(opts)
     end
     return opts._preview:gsub("{.*}", branch)
     -- return "echo " .. branch
-  end)
+  end, nil, opts.debug)
   return git_cmd(opts)
 end
 
