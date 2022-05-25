@@ -324,6 +324,15 @@ function Previewer.buffer_or_file:start_ueberzug()
             utils.info(l)
           end
         end
+        -- populate the preview buffer with the error message
+        if self.preview_bufnr and self.preview_bufnr > 0 and
+          vim.api.nvim_buf_is_valid(self.preview_bufnr) then
+          local lines = vim.api.nvim_buf_get_lines(self.preview_bufnr, 0, -1, false)
+          for _, l in ipairs(data or {}) do
+            table.insert(lines, l)
+          end
+          vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
+        end
       end
     }
       )
