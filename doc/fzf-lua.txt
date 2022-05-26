@@ -325,7 +325,7 @@ Consult the list below for available settings:
         -- border argument passthrough to nvim_open_win(), also used
         -- to manually draw the border characters around the preview
         -- window, can be set to 'false' to remove all borders or to
-        -- 'none', 'single', 'double' or 'rounded' (default)
+        -- 'none', 'single', 'double', 'thicc' or 'rounded' (default)
         border           = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
         fullscreen       = false,           -- start fullscreen?
         hl = {
