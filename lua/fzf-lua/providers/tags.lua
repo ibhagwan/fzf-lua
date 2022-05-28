@@ -150,7 +150,7 @@ M.grep = function(opts)
   end
 
   if not opts.search then
-    opts.search = vim.fn.input(opts.input_prompt or 'Grep For> ')
+    opts.search = utils.input(opts.input_prompt or 'Grep For> ')
   end
 
   return M.tags(opts)

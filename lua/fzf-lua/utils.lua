@@ -611,6 +611,13 @@ function M.io_system(cmd, use_lua_io)
   end
 end
 
+-- wrapper around |input()| to allow cancellation with `<C-c>`
+-- without "E5108: Error executing lua Keyboard interrupt"
+function M.input(prompt, text)
+  local ok, res = pcall(vim.fn.input, prompt, text or '')
+  return ok and res or nil
+end
+
 function M.fzf_bind_to_neovim(key)
   local conv_map  = {
     ['alt'] = 'A',

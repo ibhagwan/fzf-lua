@@ -460,7 +460,7 @@ M.git_checkout = function(selected, opts)
   local cmd_checkout = path.git_cwd({"git", "checkout"}, opts)
   local cmd_cur_commit = path.git_cwd({"git", "rev-parse", "--short HEAD"}, opts)
   local commit_hash = selected[1]:match("[^ ]+")
-  if vim.fn.input("Checkout commit " .. commit_hash .. "? [y/n] ") == "y" then
+  if utils.input("Checkout commit " .. commit_hash .. "? [y/n] ") == "y" then
     local current_commit = utils.io_systemlist(cmd_cur_commit)
     if(commit_hash == current_commit) then return end
     table.insert(cmd_checkout, commit_hash)
@@ -509,7 +509,7 @@ M.git_stash_drop = function(selected, opts)
 end
 
 M.git_stash_pop = function(selected, opts)
-  if vim.fn.input("Pop " .. #selected .. " stash(es)? [y/n] ") == "y" then
+  if utils.input("Pop " .. #selected .. " stash(es)? [y/n] ") == "y" then
     local cmd = path.git_cwd({"git", "stash", "pop"}, opts)
     git_exec(selected, opts, cmd)
     vim.cmd("e!")
@@ -517,7 +517,7 @@ M.git_stash_pop = function(selected, opts)
 end
 
 M.git_stash_apply = function(selected, opts)
-  if vim.fn.input("Apply " .. #selected .. " stash(es)? [y/n] ") == "y" then
+  if utils.input("Apply " .. #selected .. " stash(es)? [y/n] ") == "y" then
     local cmd = path.git_cwd({"git", "stash", "apply"}, opts)
     git_exec(selected, opts, cmd)
     vim.cmd("e!")

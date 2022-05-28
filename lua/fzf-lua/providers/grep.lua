@@ -124,7 +124,7 @@ M.grep = function(opts)
   -- if user did not provide a search term
   -- provide an input prompt
   if not opts.search and not opts.raw_cmd then
-    opts.search = vim.fn.input(opts.input_prompt) or ''
+    opts.search = utils.input(opts.input_prompt) or ''
   end
 
   -- search query in header line
