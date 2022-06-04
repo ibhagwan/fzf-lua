@@ -310,24 +310,24 @@ M.ensure_insert_mode = function()
   -- mode was introduced along with the 'ModeChanged' event
   -- https://github.com/neovim/neovim/pull/15878
   -- https://github.com/neovim/neovim/pull/15840
-  local has_mode_nt = not vim.tbl_isempty(
-    vim.fn.getcompletion('ModeChanged', 'event'))
-    or vim.fn.has('nvim-0.6') == 1
-  if has_mode_nt then
-    local mode = vim.api.nvim_get_mode()
-    local wininfo = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1]
-    if vim.bo.ft == 'fzf'
-      and wininfo.terminal == 1
-      and mode and mode.mode == 't' then
-      vim.cmd[[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
-    end
-  end
+  -- local has_mode_nt = not vim.tbl_isempty(
+  --   vim.fn.getcompletion('ModeChanged', 'event'))
+  --   or vim.fn.has('nvim-0.6') == 1
+  -- if has_mode_nt then
+  --   local mode = vim.api.nvim_get_mode()
+  --   local wininfo = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1]
+  --   if vim.bo.ft == 'fzf'
+  --     and wininfo.terminal == 1
+  --     and mode and mode.mode == 't' then
+  --     vim.cmd[[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
+  --   end
+  -- end
+  utils.warn("calling 'ensure_insert_mode' is no longer required and can be safely omitted.")
 end
 
 M.run_builtin = function(selected)
   local method = selected[1]
   vim.cmd(string.format("lua require'fzf-lua'.%s()", method))
-  M.ensure_insert_mode()
 end
 
 M.ex_run = function(selected)
@@ -588,10 +588,8 @@ M.grep_lgrep = function(_, opts)
 
   if opts.__FNCREF__ then
     opts.__MODULE__.grep(o)
-    -- require'fzf-lua.actions'.ensure_insert_mode()
   else
     opts.__MODULE__.live_grep(o)
-    -- require'fzf-lua.actions'.ensure_insert_mode()
   end
 end
 

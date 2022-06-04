@@ -37,10 +37,6 @@ M.commands = function(opts)
     ["default"] = opts.actions and opts.actions.default or
       function(selected, _)
         _dap[selected[1]]()
-        if require'fzf-lua.providers.ui_select'.is_registered() then
-          -- opening an fzf-lua win from another requires this
-          actions.ensure_insert_mode()
-        end
       end,
   }
 
