@@ -839,11 +839,17 @@ end
 function Previewer.jumps:parse_entry(entry_str)
   local bufnr = nil
   local _, lnum, col, filepath = entry_str:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
-  if filepath and #filepath>0 and not vim.loop.fs_stat(filepath) then
-    -- file is not accessible,
-    -- text is a string from current buffer
-    bufnr = self.win.src_bufnr
-    filepath = vim.api.nvim_buf_get_name(self.win.src_bufnr)
+  if filepath then
+    local ok, res = pcall(vim.fn.expand, filepath)
+    if ok then
+      filepath = path.relative(res, vim.loop.cwd())
+    end
+    if not vim.loop.fs_stat(filepath) then
+      -- file is not accessible,
+      -- text is a string from current buffer
+      bufnr = self.win.src_bufnr
+      filepath = vim.api.nvim_buf_get_name(self.win.src_bufnr)
+    end
   end
   return {
     bufnr = bufnr,
