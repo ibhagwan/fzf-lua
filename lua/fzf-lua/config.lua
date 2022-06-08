@@ -697,6 +697,35 @@ function M.normalize_opts(opts, defaults)
       opts[k] or {}, utils.tbl_deep_clone(M.globals[k]) or {})
   end
 
+  -- these options are copied from globals unless specifically set
+  -- also check if we need to override 'opts.prompt' from cli args
+  -- if we don't override 'opts.prompt' 'FzfWin.save_query' will
+  -- fail to remove the prompt part from resume saved query (#434)
+  for _, s in ipairs({ 'fzf_args', 'fzf_cli_args', 'fzf_raw_args' }) do
+    if opts[s] == nil then
+      opts[s] = M.globals[s]
+    end
+    local pattern_prefix = "%-%-prompt="
+    local pattern_prompt = ".-"
+    local surround = opts[s] and opts[s]:match(pattern_prefix .. "(.)")
+    -- prompt was set without surrounding quotes
+    -- technically an error but we can handle it gracefully instead
+    if surround and surround ~= [[']] and surround ~= [["]] then
+      surround = ''
+      pattern_prompt = "[^%s]+"
+    end
+    if surround then
+      local pattern_capture = pattern_prefix ..
+        ("%s(%s)%s"):format(surround, pattern_prompt, surround)
+      local pattern_gsub = pattern_prefix ..
+        ("%s%s%s"):format(surround, pattern_prompt, surround)
+      if opts[s]:match(pattern_gsub) then
+        opts.prompt = opts[s]:match(pattern_capture)
+        opts[s] = opts[s]:gsub(pattern_gsub, "")
+      end
+    end
+  end
+
   local function get_opt(o, t1, t2)
     if t1[o] ~= nil then return t1[o]
     else return t2[o] end

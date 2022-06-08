@@ -256,13 +256,9 @@ M.build_fzf_cli = function(opts)
   opts.fzf_opts = vim.tbl_extend("force", config.globals.fzf_opts, opts.fzf_opts or {})
   -- copy from globals
   for _, o in ipairs({
-    'fzf_info',
     'fzf_ansi',
     'fzf_colors',
     'fzf_layout',
-    'fzf_args',
-    'fzf_raw_args',
-    'fzf_cli_args',
     'keymap',
   }) do
     opts[o] = opts[o] or config.globals[o]
