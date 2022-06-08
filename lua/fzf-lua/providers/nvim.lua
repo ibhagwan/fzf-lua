@@ -407,4 +407,46 @@ M.packadd = function(opts)
 
 end
 
+M.menus = function(opts)
+
+  opts = config.normalize_opts(opts, config.globals.nvim.menus)
+  if not opts then return end
+
+  -- @param prefix will be prepended to the entry name
+  local function gen_menu_entries(prefix, entry)
+    local name = prefix and ("%s.%s"):format(prefix, entry.name) or entry.name
+    if entry.submenus then
+      -- entry.submenus is a list of {}
+      return vim.tbl_map(
+        function(x)
+          return gen_menu_entries(name, x)
+        end, entry.submenus)
+    else
+      -- if we reached a leaf
+      return name
+    end
+  end
+
+  local entries = vim.tbl_flatten(vim.tbl_map(
+    function (x)
+      return gen_menu_entries(nil, x)
+    end, vim.fn.menu_get('')))
+
+  if vim.tbl_isempty(entries) then
+    utils.info("No menus available")
+    return
+  end
+
+  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts['--preview-window'] = 'hidden:right:0'
+
+  core.fzf_wrap(opts, entries, function(selected)
+
+    if not selected then return end
+    actions.act(opts.actions, selected)
+
+  end)()
+
+end
+
 return M

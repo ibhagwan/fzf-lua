@@ -343,6 +343,12 @@ M.ex_run_cr = function(selected)
   vim.fn.histadd("cmd", cmd)
 end
 
+M.exec_menu = function(selected)
+  local cmd = selected[1]
+  vim.cmd("emenu " .. cmd)
+end
+
+
 M.search = function(selected)
   local query = selected[1]
   vim.cmd("stopinsert")

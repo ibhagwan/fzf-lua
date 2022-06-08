@@ -220,8 +220,9 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `registers`        | :registers                                 |
 | `tagstack`         | :tags                                      |
 | `keymaps`          | key mappings                               |
+| `filetypes`        | filetypes                                  |
+| `menus`            | menus                                      |
 | `spell_suggest`    | spelling suggestions                       |
-| `filetypes`        | neovim filetypes                           |
 | `packadd`          | :packadd <package>                         |
 
 ### Neovim API

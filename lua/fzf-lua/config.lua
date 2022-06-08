@@ -581,6 +581,12 @@ M.globals.nvim = {
         ["default"]       = actions.packadd,
       },
     },
+    menus = {
+      prompt              = 'Menu> ',
+      actions = {
+        ["default"]       = actions.exec_menu,
+      },
+    },
   }
 
 M.globals.dap = {
@@ -898,6 +904,7 @@ M._action_to_helpstr = {
   [actions.run_builtin]           = "run-builtin",
   [actions.ex_run]                = "edit-cmd",
   [actions.ex_run_cr]             = "exec-cmd",
+  [actions.exec_menu]             = "exec-menu",
   [actions.search]                = "edit-search",
   [actions.search_cr]             = "exec-search",
   [actions.goto_mark]             = "goto-mark",
