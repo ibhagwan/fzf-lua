@@ -407,4 +407,34 @@ M.packadd = function(opts)
 
 end
 
+M.menu = function(opts)
+
+  opts = config.normalize_opts(opts, config.globals.nvim.menu)
+  if not opts then return end
+
+  -- TODO convert json to string/or only get leaves
+  -- 
+  -- local entries = vim.fn.menu_get('')
+  local entries = {
+	"test",
+	"test2"
+
+  }
+
+  if vim.tbl_isempty(entries) then return end
+
+  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts['--preview-window'] = 'hidden:right:0'
+
+  core.fzf_wrap(opts, entries, function(selected)
+
+    if not selected then return end
+
+	-- execute the menu entry
+    actions.act(opts.actions, selected)
+
+  end)()
+
+end
+
 return M

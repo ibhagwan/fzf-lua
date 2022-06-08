@@ -504,6 +504,15 @@ M.globals.builtin = {
       },
   }
 M.globals.nvim = {
+    menu = {
+      prompt              = 'Menu> ',
+      actions = {
+        -- ["default"]       = actions.goto_mark,
+      },
+      -- previewer = {
+      --   _ctor             = previewers.builtin.marks,
+      -- },
+    },
     marks = {
       prompt              = 'Marks> ',
       actions = {
