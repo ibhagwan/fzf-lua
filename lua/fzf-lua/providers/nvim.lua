@@ -413,13 +413,27 @@ M.menu = function(opts)
   if not opts then return end
 
   -- TODO convert json to string/or only get leaves
-  -- 
-  -- local entries = vim.fn.menu_get('')
-  local entries = {
-	"test",
-	"test2"
+  menu_content = vim.fn.menu_get('')
+  print( vim.fn.menu_get(''))
+  print(menu_content)
+  local entries = {}
+  -- local decoded = vim.json.decode(menu_content)
+  -- TODO
+  local function keep_name() 	
+	  if 
 
-  }
+  end
+
+  vim.tbl_filter(keep_name, menu_content)
+
+  for _, entry in ipairs(menu_content) do
+	  print(vim.inspect(entry))
+	entries[#entries] = 
+  end
+  -- local entries = {
+	-- "test",
+	-- "test2"
+  -- }
 
   if vim.tbl_isempty(entries) then return end
 
