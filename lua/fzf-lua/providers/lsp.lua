@@ -81,6 +81,12 @@ local function symbol_handler(opts, cb, _, result, _, _)
     end
     if not opts.current_buffer_only or
       vim.api.nvim_buf_get_name(opts.bufnr) == entry.filename then
+      if M._sym2style then
+        local kind = entry.text:match("%[(.-)%]")
+        if kind and M._sym2style[kind] then
+          entry.text = entry.text:gsub("%[.-%]", M._sym2style[kind])
+        end
+      end
       entry = core.make_entry_lcol(opts, entry)
       entry = core.make_entry_file(opts, entry)
       if entry then
@@ -373,12 +379,60 @@ M.outgoing_calls = function(opts)
   return M.call_hierarchy(opts)
 end
 
+local function gen_sym2style_map(opts)
+  assert(M._sym2style == nil)
+  assert(opts.symbol_style ~= nil)
+  M._sym2style = {}
+  local colormap = vim.api.nvim_get_color_map()
+  for k, v in pairs(vim.lsp.protocol.CompletionItemKind) do
+    if type(k) == 'string' then
+      local icon = vim.lsp.protocol.CompletionItemKind[v]
+      -- style==1: "<icon> <kind>"
+      -- style==2: "<icon>"
+      -- style==3: "<kind>"
+      local s = nil
+      if opts.symbol_style == 1 then
+        s = ("%s %s"):format(icon, k)
+      elseif opts.symbol_style == 2 then
+        s = icon
+      elseif opts.symbol_style == 3 then
+        s = k
+      end
+      if s then
+        M._sym2style[k] = utils.ansi_from_hl("CmpItemKind" .. k, s, colormap)
+      else
+        -- can get here when only 'opts.symbol_fmt' was set
+        M._sym2style[k] = k
+      end
+    end
+  end
+  if type(opts.symbol_fmt) == 'function' then
+    for k, v in pairs(M._sym2style) do
+      M._sym2style[k] = opts.symbol_fmt(v) or v
+    end
+  end
+end
+
 M.document_symbols = function(opts)
   opts = set_async_default(opts, true)
-  -- TODO: filename hiding
-  -- since single document
+  opts = normalize_lsp_opts(opts, config.globals.lsp)
+  if not opts then return end
+  opts = core.set_header(opts, 2)
+  opts = core.set_fzf_field_index(opts)
+  if opts.force_uri == nil then opts.force_uri = true end
+  if not opts.fzf_opts or opts.fzf_opts['--with-nth'] == nil then
+    opts.fzf_opts = opts.fzf_opts or {}
+    opts.fzf_opts["--with-nth"]    = '2..'
+    opts.fzf_opts["--tiebreak"]    = 'index'
+  end
   opts.ignore_filename = true
-  return fzf_lsp_locations(opts)
+  opts = set_lsp_fzf_fn(opts)
+  if not opts.fzf_fn then return end
+  if opts.symbol_style or opts.symbol_fmt then
+    gen_sym2style_map(opts)
+    opts.fn_post_fzf = function() M._sym2style = nil end
+  end
+  return core.fzf_files(opts)
 end
 
 M.workspace_symbols = function(opts)
@@ -386,10 +440,15 @@ M.workspace_symbols = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
   opts.lsp_params = {query = opts.query or ''}
+  opts = core.set_header(opts, 2)
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
+  if opts.symbol_style or opts.symbol_fmt then
+    gen_sym2style_map(opts)
+    opts.fn_post_fzf = function() M._sym2style = nil end
+  end
   return core.fzf_files(opts)
 end
 

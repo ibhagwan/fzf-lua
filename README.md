@@ -750,6 +750,12 @@ require'fzf-lua'.setup {
     git_icons         = false,
     lsp_icons         = true,
     ui_select         = true,       -- use 'vim.ui.select' for code actions
+    symbol_style      = 1,          -- style for document/workspace symbols
+                                    -- colorize using CmpItemKindXXX hls
+                                    -- false: disable,    1: icon+kind
+                                    --     2: icon only,  3: kind only
+    -- additional symbol formatting, works with or without style
+    symbol_fmt        = function(s) return "["..s.."]" end,
     severity          = "hint",
     icons = {
       ["Error"]       = { icon = "", color = "red" },       -- error

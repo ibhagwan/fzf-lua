@@ -119,7 +119,7 @@ local function gen_buffer_entry(opts, buf, hl_curbuf)
   if opts.filename_only then
     bufname = path.basename(bufname)
   end
-  -- replace $HOME with '~' for paths ourside of cwd
+  -- replace $HOME with '~' for paths outside of cwd
   bufname = bufname:gsub("^"..vim.env.HOME, "~")
   -- add line number
   bufname = ("%s:%s"):format(bufname, buf.info.lnum>0 and buf.info.lnum or  "")
