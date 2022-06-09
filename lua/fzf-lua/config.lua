@@ -485,6 +485,7 @@ M.globals.lsp = {
       cwd_only            = false,
       ui_select           = true,
       symbol_style        = 1,
+      symbol_hl_prefix    = "CmpItemKind",
       symbol_fmt          = function(s) return "["..s.."]" end,
       async_or_timeout    = 5000,
       _actions            = function() return M.globals.actions.files end,

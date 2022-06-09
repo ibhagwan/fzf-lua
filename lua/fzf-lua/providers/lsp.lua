@@ -398,8 +398,10 @@ local function gen_sym2style_map(opts)
       elseif opts.symbol_style == 3 then
         s = k
       end
-      if s then
-        M._sym2style[k] = utils.ansi_from_hl("CmpItemKind" .. k, s, colormap)
+      if s and opts.symbol_hl_prefix then
+        M._sym2style[k] = utils.ansi_from_hl(opts.symbol_hl_prefix .. k, s, colormap)
+      elseif s then
+        M._sym2style[k] = s
       else
         -- can get here when only 'opts.symbol_fmt' was set
         M._sym2style[k] = k
