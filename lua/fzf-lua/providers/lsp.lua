@@ -392,7 +392,13 @@ local function gen_sym2style_map(opts)
       -- style==3: "<kind>"
       local s = nil
       if opts.symbol_style == 1 then
-        s = ("%s %s"):format(icon, k)
+        -- if icons weren't set by the user
+        -- icon will match the kind
+        if icon ~= k then
+          s = ("%s %s"):format(icon, k)
+        else
+          s = k
+        end
       elseif opts.symbol_style == 2 then
         s = icon
       elseif opts.symbol_style == 3 then

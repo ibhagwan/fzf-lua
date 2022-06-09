@@ -753,6 +753,8 @@ require'fzf-lua'.setup {
     symbol_style      = 1,          -- style for document/workspace symbols
                                     -- false: disable,    1: icon+kind
                                     --     2: icon only,  3: kind only
+                                    -- NOTE: icons are extracted from
+                                    -- vim.lsp.protocol.CompletionItemKind
     -- colorize using nvim-cmp's CmpItemKindXXX highlights
     -- can also be set to 'TS' for treesitter highlights ('TSProperty', etc)
     -- or 'false' to disable highlighting
