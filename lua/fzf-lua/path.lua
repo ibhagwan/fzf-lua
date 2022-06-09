@@ -142,7 +142,7 @@ end
 function M.lengthen(path)
   return vim.fn.glob(path:gsub(M.separator(), "%*"..M.separator())
     -- remove the starting '*/' if any
-    :gsub("^%*"..M.separator(), M.separator()))
+    :gsub("^%*"..M.separator(), M.separator())):match("[^\n]+")
 end
 
 local function lastIndexOf(haystack, needle)
