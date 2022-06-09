@@ -431,7 +431,7 @@ M.document_symbols = function(opts)
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
   if opts.symbol_style or opts.symbol_fmt then
-    gen_sym2style_map(opts)
+    opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
   end
   return core.fzf_files(opts)
@@ -448,7 +448,7 @@ M.workspace_symbols = function(opts)
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
   if opts.symbol_style or opts.symbol_fmt then
-    gen_sym2style_map(opts)
+    opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
   end
   return core.fzf_files(opts)
@@ -841,7 +841,7 @@ M.live_workspace_symbols = function(opts)
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   if opts.symbol_style or opts.symbol_fmt then
-    gen_sym2style_map(opts)
+    opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
   end
   core.fzf_files(opts)
