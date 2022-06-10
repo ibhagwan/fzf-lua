@@ -507,7 +507,7 @@ M.globals.nvim = {
     menu = {
       prompt              = 'Menu> ',
       actions = {
-        -- ["default"]       = actions.goto_mark,
+        ["default"]       = actions.execute_menu,
       },
       -- previewer = {
       --   _ctor             = previewers.builtin.marks,
@@ -904,6 +904,7 @@ M._action_to_helpstr = {
   [actions.run_builtin]           = "run-builtin",
   [actions.ex_run]                = "edit-cmd",
   [actions.ex_run_cr]             = "exec-cmd",
+  [actions.execute_menu]          = "execute_menu",
   [actions.search]                = "edit-search",
   [actions.search_cr]             = "exec-search",
   [actions.goto_mark]             = "goto-mark",

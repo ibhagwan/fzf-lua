@@ -419,21 +419,28 @@ M.menu = function(opts)
   local entries = {}
   -- local decoded = vim.json.decode(menu_content)
   -- TODO
-  local function keep_name() 	
-	  if 
-
+  -- @param prefix will be concatenated 
+  function gen_menu_entries(prefix, entry)
+	-- if we reached a leaf
+	-- print("name", entry.name, "prefix", prefix)
+	-- print(vim.inspect(entry))
+	if not entry.submenus then
+		return (prefix and table.concat( {prefix, entry.name}, ".")) or entry.name
+	end
+	-- entry.submenus is a list of {}
+	return vim.tbl_map(function (x)
+			print(vim.inspect("current prefix:"), prefix);
+			return gen_menu_entries(	(prefix and table.concat({prefix, entry.name}, ".")) or entry.name, x)
+		end, entry.submenus)
   end
 
-  vim.tbl_filter(keep_name, menu_content)
-
-  for _, entry in ipairs(menu_content) do
-	  print(vim.inspect(entry))
-	entries[#entries] = 
-  end
-  -- local entries = {
-	-- "test",
-	-- "test2"
-  -- }
+	-- ici je peux les flatten en fait
+	entries = vim.tbl_flatten(vim.tbl_map(function (x) return gen_menu_entries(nil, x) end, menu_content))
+	--vim.tbl_flatten
+	print("entries: ", vim.inspect((entries)))
+	for _, entry in ipairs(entries) do
+		print(vim.inspect(entry))
+	end
 
   if vim.tbl_isempty(entries) then return end
 
