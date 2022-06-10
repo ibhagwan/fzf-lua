@@ -110,7 +110,13 @@ M.bcommits = function(opts)
   local git_ver = utils.git_version()
   -- rotate-to first appeared with git version 2.31
   if git_ver and git_ver >= 2.31 then
-    opts.preview = opts.preview .. " --rotate-to=" .. vim.fn.shellescape(file)
+    -- check if the user added a pipe (e.g. `| delta`)
+    local before_pipe = opts.preview:match("[^|]+")
+    local after_pipe = opts.preview:match("|.*$") or ''
+    opts.preview = before_pipe
+      .. " --rotate-to="
+      .. vim.fn.shellescape(file)
+      .. after_pipe
   end
   opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts))
   return git_cmd(opts)
