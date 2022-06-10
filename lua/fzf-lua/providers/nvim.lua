@@ -412,18 +412,11 @@ M.menu = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.menu)
   if not opts then return end
 
-  -- TODO convert json to string/or only get leaves
-  menu_content = vim.fn.menu_get('')
-  print( vim.fn.menu_get(''))
-  print(menu_content)
+  local menu_content = vim.fn.menu_get('')
   local entries = {}
-  -- local decoded = vim.json.decode(menu_content)
-  -- TODO
-  -- @param prefix will be concatenated 
+  -- @param prefix will be concatenated to the entry name
   function gen_menu_entries(prefix, entry)
 	-- if we reached a leaf
-	-- print("name", entry.name, "prefix", prefix)
-	-- print(vim.inspect(entry))
 	if not entry.submenus then
 		return (prefix and table.concat( {prefix, entry.name}, ".")) or entry.name
 	end
@@ -436,8 +429,6 @@ M.menu = function(opts)
 
 	-- ici je peux les flatten en fait
 	entries = vim.tbl_flatten(vim.tbl_map(function (x) return gen_menu_entries(nil, x) end, menu_content))
-	--vim.tbl_flatten
-	print("entries: ", vim.inspect((entries)))
 	for _, entry in ipairs(entries) do
 		print(vim.inspect(entry))
 	end

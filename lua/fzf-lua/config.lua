@@ -509,9 +509,6 @@ M.globals.nvim = {
       actions = {
         ["default"]       = actions.execute_menu,
       },
-      -- previewer = {
-      --   _ctor             = previewers.builtin.marks,
-      -- },
     },
     marks = {
       prompt              = 'Marks> ',
