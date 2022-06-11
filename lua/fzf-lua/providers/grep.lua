@@ -128,7 +128,7 @@ M.grep = function(opts)
   end
 
   -- search query in header line
-  opts = core.set_header(opts)
+  opts = core.set_header(opts, opts.headers or {"actions","cwd","search"})
 
   -- get the grep command before saving the last search
   -- incase the search string is overwritten by 'rg_glob'
@@ -198,7 +198,7 @@ M.live_grep_st = function(opts)
   end
 
   -- search query in header line
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"actions","cwd"})
 
   opts._reload_command = function(query)
     if query and not (opts.save_last_search == false) then
@@ -279,7 +279,7 @@ M.live_grep_mt = function(opts)
   end
 
   -- search query in header line
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"actions","cwd"})
 
   -- signal to preprocess we are looking to replace {argvz}
   opts.argv_expr = true

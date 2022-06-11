@@ -22,7 +22,7 @@ M.files = function(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   local contents = core.mt_cmd_wrapper(opts)
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"cwd"})
   return core.fzf_files(opts, contents)
 end
 
@@ -79,14 +79,14 @@ M.status = function(opts)
     function(o)
       return core.make_entry_preprocess(o)
     end)
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"cwd"})
   return core.fzf_files(opts, contents)
 end
 
 local function git_cmd(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"cwd"})
   core.fzf_wrap(opts, opts.cmd, function(selected)
     if not selected then return end
     actions.act(opts.actions, selected, opts)

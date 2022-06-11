@@ -38,7 +38,7 @@ M.files = function(opts)
   if not opts then return end
   opts.cmd = get_files_cmd(opts)
   local contents = core.mt_cmd_wrapper(opts)
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"cwd"})
   return core.fzf_files(opts, contents)
 end
 
@@ -95,7 +95,7 @@ M.args = function(opts)
 
   end
 
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"cwd"})
   return core.fzf_files(opts, contents)
 end
 

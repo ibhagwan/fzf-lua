@@ -463,53 +463,106 @@ M.set_fzf_field_index = function(opts, default_idx, default_expr)
   return opts
 end
 
-M.set_header = function(opts, flags)
+M.set_header = function(opts, hdr_tbl)
   if not opts then opts = {} end
-  if opts.no_header then return opts end
-  if not opts.cwd_header then opts.cwd_header = "cwd:" end
-  if not opts.grep_header then opts.grep_header = "Grep string:" end
-  if not opts.cwd and opts.show_cwd_header then opts.cwd = vim.loop.cwd() end
-  local cwd_str, header_str
-  local search_str = flags ~= 2 and opts.search and #opts.search>0 and
-    ("%s %s"):format(opts.grep_header, utils.ansi_codes.red(opts.search))
-  if flags ~= 1 and opts.cwd and
-    (opts.show_cwd_header ~= false) and
-    (opts.show_cwd_header or opts.cwd ~= vim.loop.cwd()) then
-    local cwd = opts.cwd
-    if path.starts_with_separator(cwd) and cwd ~= vim.loop.cwd() then
-      -- since we're always converting cwd to full path
-      -- try to convert it back to relative for display
-      cwd = path.relative(cwd, vim.loop.cwd())
-    end
-    -- make our home dir path look pretty
-    cwd = cwd:gsub("^"..vim.env.HOME, "~")
-    cwd_str = ("%s %s"):format(opts.cwd_header, utils.ansi_codes.red(cwd))
+  if opts.no_header or opts.headers == false then
+    return opts
   end
-  -- 1: only search
-  -- 2: only cwd
-  -- otherwise, all
-  if flags == 1 then header_str = search_str or ''
-  elseif flags == 2 then header_str = cwd_str or ''
-  else
-    header_str = ("%s%s%s"):format(
-      cwd_str and cwd_str or '',
-      cwd_str and search_str and ', ' or '',
-      search_str and search_str or '')
-  end
-  -- check for 'actions.grep_lgrep' and "ineteractive" header
-  if not opts.no_header_i then
-    for k, v in pairs(opts.actions) do
-      if type(v) == 'table' and v[1] == actions.grep_lgrep then
-        local to = opts.__FNCREF__ and 'Grep' or 'Live Grep'
-        header_str = (':: <%s> to %s%s'):format(
-          utils.ansi_codes.yellow(k),
-          utils.ansi_codes.red(to),
-          header_str and #header_str>0 and ", "..header_str or '')
+  local definitions = {
+    -- key: opt name
+    -- val.hdr_txt_opt: opt header string name
+    -- val.hdr_txt_str: opt header string text
+    cwd = {
+      hdr_txt_opt = "cwd_header",
+      hdr_txt_str = "cwd: ",
+      hdr_txt_col = "red",
+      val = function()
+        -- do not display header when we're inside our
+        -- cwd unless the caller specifically requested
+        if opts.show_cwd_header == false
+            or (not opts.show_cwd_header and not opts.cwd)
+            or opts.cwd == vim.loop.cwd() then
+          return
+        end
+        local cwd = opts.cwd or vim.loop.cwd()
+        if path.starts_with_separator(cwd) and cwd ~= vim.loop.cwd() then
+          -- since we're always converting cwd to full path
+          -- try to convert it back to relative for display
+          cwd = path.relative(cwd, vim.loop.cwd())
+        end
+        -- make our home dir path look pretty
+        return cwd:gsub("^"..vim.env.HOME, "~")
       end
+    },
+    search = {
+      hdr_txt_opt = "grep_header",
+      hdr_txt_str = "Grep string: ",
+      hdr_txt_col = "red",
+      val = function()
+        return opts.search and #opts.search>0 and opts.search
+      end,
+    },
+    query = {
+      hdr_txt_opt = "query_header",
+      hdr_txt_str = "Query: ",
+      hdr_txt_col = "red",
+      val = function()
+        return opts.query and #opts.query>0 and opts.query
+      end,
+    },
+    regex_filter = {
+      hdr_txt_opt = "regex_header",
+      hdr_txt_str = "Regex filter: ",
+      hdr_txt_col = "red",
+      val = function()
+        return opts.regex_filter and #opts.regex_filter>0 and opts.regex_filter
+      end,
+    },
+    actions = {
+      hdr_txt_opt = "grep_lgrep_header",
+      hdr_txt_str = "",
+      val = function()
+        if opts.no_header_i then return end
+        for k, v in pairs(opts.actions) do
+          if type(v) == 'table' and v[1] == actions.grep_lgrep then
+            local to = opts.__FNCREF__ and 'Grep' or 'Live Grep'
+            return (':: <%s> to %s'):format(
+              utils.ansi_codes.yellow(k),
+              utils.ansi_codes.red(to))
+          end
+        end
+      end,
+    },
+  }
+  -- by default we only display cwd headers
+  -- header string constructed in array order
+  if not opts.headers then
+    opts.headers = hdr_tbl or { "cwd" }
+  end
+  -- override header text with the user's settings
+  for _, h in ipairs(opts.headers) do
+    assert(definitions[h])
+    local hdr_text = opts[definitions[h].hdr_txt_opt]
+    if hdr_text then
+      definitions[h].hdr_txt_str = hdr_text
     end
   end
-  if not header_str or #header_str==0 then return opts end
-  opts.fzf_opts['--header'] = libuv.shellescape(header_str)
+  -- build the header string
+  local hdr_str
+  for _, h in ipairs(opts.headers) do
+    assert(definitions[h])
+    local def = definitions[h]
+    local txt =  def.val()
+    if def and txt then
+      hdr_str = not hdr_str and '' or (hdr_str .. ', ')
+      hdr_str = ("%s%s%s"):format(hdr_str, def.hdr_txt_str,
+        not def.hdr_txt_col and txt or
+        utils.ansi_codes[def.hdr_txt_col](txt))
+    end
+  end
+  if hdr_str and #hdr_str>0 then
+    opts.fzf_opts['--header'] = libuv.shellescape(hdr_str)
+  end
   return opts
 end
 

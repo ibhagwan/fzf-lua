@@ -79,8 +79,9 @@ local function symbol_handler(opts, cb, _, result, _, _)
     if opts.ignore_filename then
       entry.filename = opts.filename
     end
-    if not opts.current_buffer_only or
-      vim.api.nvim_buf_get_name(opts.bufnr) == entry.filename then
+    if (not opts.current_buffer_only or
+        vim.api.nvim_buf_get_name(opts.bufnr) == entry.filename) and
+      (not opts.regex_filter or entry.text:match(opts.regex_filter)) then
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
         if kind and M._sym2style[kind] then
@@ -321,7 +322,7 @@ end
 local function fzf_lsp_locations(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"cwd"})
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = set_lsp_fzf_fn(opts)
@@ -425,7 +426,7 @@ M.document_symbols = function(opts)
   opts = set_async_default(opts, true)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"cwd","regex_filter"})
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   if not opts.fzf_opts or opts.fzf_opts['--with-nth'] == nil then
@@ -448,7 +449,7 @@ M.workspace_symbols = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
   opts.lsp_params = {query = opts.query or ''}
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"cwd","query","regex_filter"})
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = set_lsp_fzf_fn(opts)
@@ -790,7 +791,7 @@ M.diagnostics = function(opts)
     end)()
   end
 
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"cwd"})
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   return core.fzf_files(opts)

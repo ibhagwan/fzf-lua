@@ -66,7 +66,7 @@ M.oldfiles = function(opts)
 
   end
 
-  opts = core.set_header(opts, 2)
+  opts = core.set_header(opts, opts.headers or {"cwd"})
   return core.fzf_files(opts, contents)
 end
 
