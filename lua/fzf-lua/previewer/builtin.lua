@@ -614,6 +614,7 @@ function Previewer.buffer_or_file:update_border(entry)
     if entry.path and self.opts.cwd then
       entry.path = path.relative(entry.path, self.opts.cwd)
     end
+    entry.path = path.HOME_to_tilde(entry.path)
     local title = (' %s '):format(entry.path or entry.uri)
     if entry.bufnr then
       -- local border_width = api.nvim_win_get_width(self.win.preview_winid)

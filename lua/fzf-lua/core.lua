@@ -491,7 +491,7 @@ M.set_header = function(opts, hdr_tbl)
           cwd = path.relative(cwd, vim.loop.cwd())
         end
         -- make our home dir path look pretty
-        return cwd:gsub("^"..vim.env.HOME, "~")
+        return path.HOME_to_tilde(cwd)
       end
     },
     search = {

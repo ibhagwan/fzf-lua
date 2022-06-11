@@ -120,7 +120,7 @@ local function gen_buffer_entry(opts, buf, hl_curbuf)
     bufname = path.basename(bufname)
   end
   -- replace $HOME with '~' for paths outside of cwd
-  bufname = bufname:gsub("^"..vim.env.HOME, "~")
+  bufname = path.HOME_to_tilde(bufname)
   -- add line number
   bufname = ("%s:%s"):format(bufname, buf.info.lnum>0 and buf.info.lnum or  "")
   if buf.flag == '%' then

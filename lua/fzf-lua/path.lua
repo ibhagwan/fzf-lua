@@ -125,6 +125,14 @@ local function find_next(str, char, start_idx)
   end
 end
 
+function M.tilde_to_HOME(path)
+  return path and path:gsub("^~", vim.env.HOME) or nil
+end
+
+function M.HOME_to_tilde(path)
+  return path and path:gsub("^"..vim.env.HOME, "~") or nil
+end
+
 function M.shorten(path, max_len)
   local sep = M.separator()
   local parts = {}
@@ -200,6 +208,7 @@ function M.entry_to_file(entry, opts, force_uri)
   -- Remove ansi coloring and prefixed icons
   entry = utils.strip_ansi_coloring(entry)
   local stripped, idx = stripBeforeLastOccurrenceOf(entry, utils.nbsp)
+  stripped = M.tilde_to_HOME(stripped)
   local isURI = stripped:match("^%a+://")
   -- Prepend cwd before constructing the URI (#341)
   if cwd and #cwd>0 and not isURI and

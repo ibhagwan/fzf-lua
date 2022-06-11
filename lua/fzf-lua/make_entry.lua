@@ -312,6 +312,10 @@ M.file = function(opts, x)
     -- TODO: does this work if there are ANSI escape codes in x?
     x = path.relative(x, opts.cwd)
   end
+  -- replace $HOME with ~
+  if path.starts_with_separator(x) then
+    x = path.HOME_to_tilde(x)
+  end
   if opts.path_shorten then
     x = path.shorten(x, tonumber(opts.path_shorten))
   end
