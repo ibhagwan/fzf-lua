@@ -154,10 +154,10 @@ M.file_open_in_background = function(selected, opts)
   M.vimcmd_file(vimcmd, selected, opts)
 end
 
-M.file_sel_to_qf = function(selected, _)
+M.file_sel_to_qf = function(selected, opts)
   local qf_list = {}
   for i = 1, #selected do
-    local file = path.entry_to_file(selected[i])
+    local file = path.entry_to_file(selected[i], opts)
     local text = selected[i]:match(":%d+:%d?%d?%d?%d?:?(.*)$")
     table.insert(qf_list, {
       filename = file.path,
