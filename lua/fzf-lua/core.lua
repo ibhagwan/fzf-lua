@@ -479,9 +479,9 @@ M.set_header = function(opts, hdr_tbl)
       val = function()
         -- do not display header when we're inside our
         -- cwd unless the caller specifically requested
-        if opts.show_cwd_header == false
-            or (not opts.show_cwd_header and not opts.cwd)
-            or opts.cwd == vim.loop.cwd() then
+        if opts.show_cwd_header == false or
+          not opts.show_cwd_header and
+          (not opts.cwd or opts.cwd == vim.loop.cwd()) then
           return
         end
         local cwd = opts.cwd or vim.loop.cwd()
