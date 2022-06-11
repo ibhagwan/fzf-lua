@@ -137,7 +137,7 @@ function M.shorten(path, max_len)
   local sep = M.separator()
   local parts = {}
   local start_idx = 1
-  max_len = max_len or 1
+  max_len = max_len and tonumber(max_len)>0 and max_len or 1
   repeat
     local i = find_next(path, sep, start_idx)
     local end_idx = i and start_idx+math.min(i-start_idx, max_len)-1 or nil
