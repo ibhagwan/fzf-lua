@@ -12,7 +12,9 @@ M.commands = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.commands)
   if not opts then return end
 
-  local commands = vim.api.nvim_get_commands {}
+  local global_commands = vim.api.nvim_get_commands {}
+  local buf_commands = vim.api.nvim_buf_get_commands(0, {})
+  local commands = vim.tbl_extend('force', {}, global_commands, buf_commands)
 
   local prev_act = shell.action(function (args)
     local cmd = args[1]
@@ -23,8 +25,14 @@ M.commands = function(opts)
   end, nil, opts.debug)
 
   local entries = {}
-  for k, _ in pairs(commands) do
+  for k, _ in pairs(global_commands) do
     table.insert(entries, utils.ansi_codes.magenta(k))
+  end
+
+  for k, v in pairs(buf_commands) do
+    if type(v) == 'table' then
+      table.insert(entries, utils.ansi_codes.green(k))
+    end
   end
 
   table.sort(entries, function(a, b) return a<b end)
