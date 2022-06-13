@@ -24,15 +24,18 @@ end
 M.normalize_selected = function(actions, selected)
   -- 1. If there are no additional actions but the default
   --    the selected table will contain the selected item(s)
-  -- 2. If multiple actions where defined the first item
-  --    will contain the action keybind string
+  -- 2. If at least one non-default action was defined, our 'expect'
+  --    function above sent fzf the '--expect` flag, from `man fzf`:
+  --      When this option is set, fzf will print the name of
+  --      the key pressed as the first line of its output (or
+  --      as the second line if --print-query is also used).
   --
   -- The below makes separates the keybind from the item(s)
   -- and makes sure 'selected' contains only items or {}
   -- so it can always be enumerated safely
   if not actions or not selected then return end
   local action = _default_action
-  if utils.tbl_length(actions)>1 then
+  if utils.tbl_length(actions)>1 or not actions[_default_action] then
     -- keybind should be in item #1
     -- default keybind is an empty string
     -- so we leave that as "default"
@@ -62,9 +65,9 @@ M.act = function(actions, selected, opts)
     action(entries, opts)
   elseif type(action) == 'string' then
     vim.cmd(action)
-  else
+  elseif keybind ~= _default_action then
     utils.warn(("unsupported action: '%s', type:%s")
-      :format(action, type(action)))
+      :format(keybind, type(action)))
   end
 end
 
