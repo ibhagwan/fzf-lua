@@ -125,12 +125,23 @@ local function find_next(str, char, start_idx)
   end
 end
 
+-- I'm not sure why this happens given that neovim is single threaded
+-- but it seems that 'oldfiles' provider processing entries concurrently
+-- crashes when trying to access `vim.env.HOME' from two differnt entries
+-- at the same time due to being run in a coroutine (#447)
+M.HOME = function()
+  if not M.__HOME then
+    M.__HOME = vim.env.HOME
+  end
+  return M.__HOME
+end
+
 function M.tilde_to_HOME(path)
-  return path and path:gsub("^~", vim.env.HOME) or nil
+  return path and path:gsub("^~", M.HOME()) or nil
 end
 
 function M.HOME_to_tilde(path)
-  return path and path:gsub("^"..vim.env.HOME, "~") or nil
+  return path and path:gsub("^"..M.HOME(), "~") or nil
 end
 
 function M.shorten(path, max_len)
