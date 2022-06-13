@@ -744,6 +744,20 @@ function M.normalize_opts(opts, defaults)
   opts.global_resume = get_opt('global_resume', opts, M.globals)
   opts.global_resume_query = get_opt('global_resume_query', opts, M.globals)
 
+  -- global option overrides, if exists, these options will
+  -- be used in a "LOGICAL AND" against the local option (#188)
+  -- e.g.:
+  --    git_icons = TRUE
+  --    global_git_icons = FALSE
+  -- the resulting 'git_icons' would be:
+  --    git_icons = TRUE && FALSE (==FALSE)
+  for _, o in ipairs({ 'file_icons', 'git_icons', 'color_icons' }) do
+    local g_opt = get_opt("global_" .. o, opts, M.globals)
+    if g_opt ~= nil then
+      opts[o] = opts[o] and g_opt
+    end
+  end
+
   -- backward compatibility, rhs overrides lhs
   -- (rhs being the "old" option)
   local backward_compat = {
