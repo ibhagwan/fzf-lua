@@ -8,7 +8,7 @@ local M = {}
 local function location_to_entry(location, enc)
   local item = vim.lsp.util.locations_to_items({ location }, enc)[1]
 
-  return ('%s:%d:%d'):format(item.filename, item.lnum, item.col)
+  return ('%s:%d:%d:'):format(item.filename, item.lnum, item.col)
 end
 
 local jump_to_location = function(opts, result, enc)
