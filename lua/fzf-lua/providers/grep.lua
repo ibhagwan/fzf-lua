@@ -352,9 +352,12 @@ M.live_grep_mt = function(opts)
     opts.fn_post_fzf = function(o, _)
       local last_search, _ = get_last_search(o)
       local last_query = config.__resume_data and config.__resume_data.last_query
-      if not opts.exec_empty_query
-        and last_search ~= last_query then
-        set_last_search(opts, last_query or '')
+      if not opts.exec_empty_query and last_search ~= last_query or
+        -- we should also save the query when we are piping the command
+        -- directly without our headless wrapper, i.e. 'live_grep_native'
+        (not opts.requires_processing and
+         not opts.git_icons and not opts.file_icons) then
+        set_last_search(opts, last_query or '', true)
       end
     end
   end
