@@ -31,7 +31,7 @@ M.fzf_resume = function(opts)
     opts.cmd = nil
     opts.query = nil
     opts.search = nil
-    opts.continue_last_search = true
+    opts.resume = true
     opts.__FNCREF__(opts)
   else
     opts.fzf_opts['--query'] = last_query

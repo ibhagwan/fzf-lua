@@ -115,10 +115,9 @@ M.grep = function(opts)
   opts.__MODULE__ = opts.__MODULE__ or M
 
   local no_esc = false
-  if not opts.search and
-    (opts.continue_last_search or opts.repeat_last_search) then
+  if not opts.search and opts.resume then
     opts.search, no_esc = get_last_search(opts)
-    opts.search = opts.search or opts.continue_last_search_default
+    opts.search = opts.search or opts.resume_search_default
   end
 
   -- if user did not provide a search term
@@ -181,8 +180,7 @@ M.live_grep_st = function(opts)
   assert(not opts.multiprocess)
 
   local no_esc = false
-  if not opts.search and
-    (opts.continue_last_search or opts.repeat_last_search) then
+  if not opts.search and opts.resume then
     opts.search, no_esc = get_last_search(opts)
   end
 
@@ -262,8 +260,7 @@ M.live_grep_mt = function(opts)
   assert(opts.multiprocess)
 
   local no_esc = false
-  if not opts.search and
-    (opts.continue_last_search or opts.repeat_last_search) then
+  if not opts.search and opts.resume then
     opts.search, no_esc = get_last_search(opts)
   end
 
@@ -445,18 +442,13 @@ end
 
 M.live_grep_resume = function(opts)
   if not opts then opts = {} end
-  if not opts.search then
-    opts.continue_last_search =
-      (opts.continue_last_search == nil and
-      opts.repeat_last_search == nil and true) or
-      (opts.continue_last_search or opts.repeat_last_search)
-  end
+  opts.resume = true
   return M.live_grep(opts)
 end
 
 M.grep_last = function(opts)
   if not opts then opts = {} end
-  opts.continue_last_search = true
+  opts.resume = true
   return M.grep(opts)
 end
 

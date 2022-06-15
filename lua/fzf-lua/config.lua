@@ -744,6 +744,15 @@ function M.normalize_opts(opts, defaults)
   opts.global_resume = get_opt('global_resume', opts, M.globals)
   opts.global_resume_query = get_opt('global_resume_query', opts, M.globals)
 
+  -- Backward compat: renamed '{continue|repeat}_last_search'
+  if opts.resume == nil then
+    for _, o in ipairs({ 'repeat_last_search', 'continue_last_search' }) do
+      if opts[o] ~= nil then
+        opts.resume = opts[o]
+      end
+    end
+  end
+
   -- global option overrides, if exists, these options will
   -- be used in a "LOGICAL AND" against the local option (#188)
   -- e.g.:

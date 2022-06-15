@@ -588,8 +588,8 @@ M.grep_lgrep = function(_, opts)
 
   local o = vim.tbl_extend("keep", {
       search = false,
-      continue_last_search = true,
-      continue_last_search_default = '',
+      resume = true,
+      resume_search_default = '',
       rg_glob = opts.rg_glob or opts.__call_opts.rg_glob,
       -- globs always require command processing with 'multiprocess'
       requires_processing = opts.rg_glob or opts.__call_opts.rg_glob,

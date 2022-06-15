@@ -814,9 +814,7 @@ M.live_workspace_symbols = function(opts)
     opts.exec_empty_query = true
   end
 
-  if not opts.query
-    and opts.continue_last_search ~= false
-    and opts.repeat_last_search ~= false then
+  if not opts.query and opts.resume then
     opts.query = last_search.query
   end
 
