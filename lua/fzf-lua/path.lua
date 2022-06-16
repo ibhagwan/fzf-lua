@@ -131,7 +131,10 @@ end
 -- at the same time due to being run in a coroutine (#447)
 M.HOME = function()
   if not M.__HOME then
-    M.__HOME = vim.env.HOME
+    -- use 'os.getenv' instead of 'vim.env' due to (#452):
+    -- E5560: nvim_exec must not be called in a lua loop callback
+    -- M.__HOME = vim.env.HOME
+    M.__HOME = os.getenv("HOME")
   end
   return M.__HOME
 end
