@@ -254,6 +254,28 @@ function M.entry_to_file(entry, opts, force_uri)
   local file = s[1]
   local line = tonumber(s[2])
   local col  = tonumber(s[3])
+  -- if the filename contains ':' we will have the wrong filename.
+  -- test for existence on the longest possible match on the file
+  -- system so we can accept files that end with ':', for example:
+  --   file.ext:1
+  --   file.ext:1:2
+  --   file.ext:1:2:3
+  -- the only usecase where this would fail would be when grep'ing
+  -- if the contents of the file starts with '%d' without indents
+  -- AND the match line:col+text would match an existing file.
+  -- probably not great for performance but this function only gets
+  -- called within previews/actions so it's not that bad (#453)
+  if #s > 1 then
+    local newfile = file
+    for i=2, #s do
+      newfile = ("%s:%s"):format(newfile, s[i])
+      if vim.loop.fs_stat(newfile) then
+        file = newfile
+        line = s[i+1]
+        col = s[i+2]
+      end
+    end
+  end
   local terminal
   if bufnr then
     terminal = utils.is_term_buffer(bufnr)
