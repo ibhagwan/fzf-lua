@@ -28,7 +28,8 @@ function FzfWin.save_query(key)
   -- remove '*' from the start of the line & prompt
   local query = lines[1]:gsub("^%*+", "")
     :gsub("^"..utils.lua_escape(self.prompt:match("[^%*]+")), "")
-      :match("[^<]+")
+  -- remove '--info=inline'
+  query = query and query:gsub("<%s%d+/%d+.*$", "")
   -- trim whitespaces at the end
   query = query and query:gsub("%s*$", "")
   if self.fn_save_query then
