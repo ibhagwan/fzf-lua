@@ -41,7 +41,7 @@ M.globals = {
       -- builtin preview only
       cursor            = 'Cursor',
       cursorline        = 'CursorLine',
-      search            = 'Search',
+      search            = 'IncSearch',
       -- title          = 'Normal',
       -- scrollbar_f    = 'PmenuThumb',
       -- scrollbar_e    = 'PmenuSbar',
