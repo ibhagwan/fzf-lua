@@ -815,26 +815,23 @@ Consult the list below for available settings:
           ["Hint"]        = { icon = "", color = "magenta" },   -- hint
         },
       },
-      -- uncomment to disable the previewer
-      -- nvim = { marks = { previewer = { _ctor = false } } },
-      -- helptags = { previewer = { _ctor = false } },
-      -- manpages = { previewer = { _ctor = false } },
-      -- uncomment to set dummy win location (help|man bar)
-      -- "topleft"  : up
-      -- "botright" : down
-      -- helptags = { previewer = { split = "topleft" } },
+      -- uncomment to use the old help previewer which used a
+      -- minimized help window to generate the help tag preview
+      -- helptags = { previewer = "help_tags" },
       -- uncomment to use `man` command as native fzf previewer
-      -- manpages = { previewer = { _ctor = require'fzf-lua.previewer'.fzf.man_pages } },
+      -- (instead of using a neovim floating window)
+      -- manpages = { previewer = "man_native" },
+      -- 
       -- optional override of file extension icon colors
       -- available colors (terminal):
       --    clear, bold, black, red, green, yellow
       --    blue, magenta, cyan, grey, dark_grey, white
+      file_icon_colors = {
+        ["sh"] = "green",
+      },
       -- padding can help kitty term users with
       -- double-width icon rendering
       file_icon_padding = '',
-      file_icon_colors = {
-        ["lua"]   = "blue",
-      },
       -- uncomment if your terminal/font does not support unicode character
       -- 'EN SPACE' (U+2002), the below sets it to 'NBSP' (U+00A0) instead
       -- nbsp = '\xc2\xa0',

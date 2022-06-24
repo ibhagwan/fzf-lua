@@ -176,6 +176,13 @@ M.globals = {
       cmd             = "man",
       _ctor           = previewers.fzf.man_pages,
     },
+    help_tags = {
+      split           = "botright", -- "topleft"
+      _ctor           = previewers.builtin.help_tags,
+    },
+    help_file = {
+      _ctor           = previewers.builtin.help_file,
+    },
     builtin = {
       syntax          = true,
       syntax_delay    = 0,
@@ -460,8 +467,12 @@ M.globals.helptags = {
         ["ctrl-v"]        = actions.help_vert,
         ["ctrl-t"]        = actions.help_tab,
       },
+      fzf_opts            = {
+        ['--delimiter']   = "'[ ]'",
+        ['--with-nth']    = "..-2",
+      },
       previewer = {
-        _ctor             = previewers.builtin.help_tags,
+        _ctor             = previewers.builtin.help_file,
       },
   }
 M.globals.manpages = {

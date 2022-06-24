@@ -410,19 +410,25 @@ M.packadd = function(selected)
   end
 end
 
+local function helptags(s)
+  return vim.tbl_map(function(x)
+    return x:match("[^%s]+")
+  end, s)
+end
+
 M.help = function(selected)
   local vimcmd = "help"
-  M.vimcmd(vimcmd, selected, true)
+  M.vimcmd(vimcmd, helptags(selected), true)
 end
 
 M.help_vert = function(selected)
   local vimcmd = "vert help"
-  M.vimcmd(vimcmd, selected, true)
+  M.vimcmd(vimcmd, helptags(selected), true)
 end
 
 M.help_tab = function(selected)
   local vimcmd = "tab help"
-  M.vimcmd(vimcmd, selected, true)
+  M.vimcmd(vimcmd, helptags(selected), true)
 end
 
 M.man = function(selected)

@@ -12,6 +12,12 @@ local Previewer = {}
 Previewer.base = Object:extend()
 
 function Previewer.base:new(o, opts, fzf_win)
+
+  local function default(var, def)
+    if var ~= nil then return var
+    else return def end
+  end
+
   o = o or {}
   self.type = "builtin"
   self.opts = opts;
@@ -19,11 +25,11 @@ function Previewer.base:new(o, opts, fzf_win)
   self.delay = self.win.winopts.preview.delay or 100
   self.title = self.win.winopts.preview.title
   self.winopts = self.win.winopts.preview.winopts
-  self.syntax = o.syntax
-  self.syntax_delay = o.syntax_delay
-  self.syntax_limit_b = o.syntax_limit_b
-  self.syntax_limit_l = o.syntax_limit_l
-  self.limit_b = o.limit_b
+  self.syntax = default(o.syntax, true)
+  self.syntax_delay = default(o.syntax_delay, 0)
+  self.syntax_limit_b = default(o.syntax_limit_b, 1024*1024)
+  self.syntax_limit_l = default(o.syntax_limit_l, 0)
+  self.limit_b = default(o.limit_b, 1024*1024*10)
   self.backups = {}
   -- convert extension map to lower case
   if o.extensions then
@@ -41,7 +47,7 @@ function Previewer.base:new(o, opts, fzf_win)
     ["cover"]         = "cover",
     ["forced_cover"]  = "forced_cover",
   }
-  self.ueberzug_scaler = uz_scalers[o.ueberzug_scaler]
+  self.ueberzug_scaler = o.ueberzug_scaler and uz_scalers[o.ueberzug_scaler]
   if o.ueberzug_scaler and not self.ueberzug_scaler then
     utils.warn(("Invalid ueberzug image scaler '%s', option will be omitted.")
       :format(o.ueberzug_scaler))
@@ -687,7 +693,7 @@ function Previewer.help_tags:exec_cmd(str)
 end
 
 function Previewer.help_tags:parse_entry(entry_str)
-  return entry_str
+  return entry_str:match("[^%s]+")
 end
 
 local function curtab_helpbuf()
@@ -758,8 +764,47 @@ function Previewer.help_tags:win_leave()
   self.prev_help_bufnr = nil
 end
 
--- inherit from help_tags for the specialized
--- 'gen_winopts()' without ':set  number'
+Previewer.help_file = Previewer.buffer_or_file:extend()
+
+function Previewer.help_file:new(o, opts, fzf_win)
+  Previewer.help_file.super.new(self, o, opts, fzf_win)
+  return self
+end
+
+function Previewer.help_file:parse_entry(entry_str)
+  local tag, filename = entry_str:match("(.*)%s+(.*)$")
+  return {
+    htag = tag,
+    hregex = ([[\V*%s*]]):format(tag:gsub([[\]], [[\\]])),
+    path = filename,
+    filetype = 'help',
+  }
+end
+
+function Previewer.help_file:gen_winopts()
+  local winopts = {
+    wrap    = self.win.preview_wrap,
+    number  = false
+  }
+  return vim.tbl_extend("keep", winopts, self.winopts)
+end
+
+function Previewer.help_file:set_cursor_hl(entry)
+  pcall(api.nvim_win_call, self.win.preview_winid, function()
+    -- start searching at line 1 in case we
+    -- didn't reload the buffer (same file)
+    api.nvim_win_set_cursor(0, {1, 0})
+    fn.clearmatches()
+    fn.search(entry.hregex, "W")
+    if self.win.winopts.hl.search then
+      fn.matchadd(self.win.winopts.hl.search, entry.hregex)
+    end
+    self.orig_pos = api.nvim_win_get_cursor(0)
+    utils.zz()
+  end)
+end
+
+
 Previewer.man_pages = Previewer.base:extend()
 
 function Previewer.man_pages:should_clear_preview(_)

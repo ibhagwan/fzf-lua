@@ -50,7 +50,7 @@ local fzf_function = function (cb)
     --[[ local tag = string.format("%-58s\t%s",
       utils.ansi_codes.blue(t.name),
       utils._if(t.name and #t.name>0, path.basename(t.name), '')) ]]
-    local tag = utils.ansi_codes.magenta(t.name)
+    local tag = ("%s %s"):format(utils.ansi_codes.magenta(t.name), t.filename)
     fzf_cb(tag, function()
       coroutine.resume(co)
     end)

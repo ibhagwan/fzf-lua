@@ -12,6 +12,7 @@ Previewer.fzf.man_pages = function() return require 'fzf-lua.previewer.fzf'.man_
 Previewer.builtin = {}
 Previewer.builtin.buffer_or_file = function() return require 'fzf-lua.previewer.builtin'.buffer_or_file end
 Previewer.builtin.help_tags = function() return require 'fzf-lua.previewer.builtin'.help_tags end
+Previewer.builtin.help_file = function() return require 'fzf-lua.previewer.builtin'.help_file end
 Previewer.builtin.man_pages = function() return require 'fzf-lua.previewer.builtin'.man_pages end
 Previewer.builtin.marks = function() return require 'fzf-lua.previewer.builtin'.marks end
 Previewer.builtin.jumps = function() return require 'fzf-lua.previewer.builtin'.jumps end
