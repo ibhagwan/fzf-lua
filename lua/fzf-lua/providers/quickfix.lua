@@ -7,16 +7,17 @@ local M = {}
 local quickfix_run = function(opts, cfg, locations)
   if not locations then return {} end
   local results = {}
-  for _, entry in ipairs(locations) do
-    table.insert(results, core.make_entry_lcol(opts, entry))
-  end
 
   opts = config.normalize_opts(opts, cfg)
   if not opts then return end
 
   if not opts.cwd then opts.cwd = vim.loop.cwd() end
 
-  local contents = function (cb)
+  for _, entry in ipairs(locations) do
+    table.insert(results, core.make_entry_lcol(opts, entry))
+  end
+
+  local contents = function(cb)
     for _, x in ipairs(results) do
       x = core.make_entry_file(opts, x)
       if x then
