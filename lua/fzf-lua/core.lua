@@ -50,12 +50,20 @@ M.fzf_wrap = function(opts, contents, fn_selected)
   end)
 end
 
-M.fzf_exec = function(contents, opts, fn_selected)
-  fn_selected = fn_selected or function(selected)
+M.fzf_exec = function(contents, opts)
+  opts = opts or {}
+  opts.fn_selected = opts.fn_selected or function(selected)
     if not selected then return end
-    actions.act(opts and opts.actions or nil, selected)
+    actions.act(opts.actions, selected, opts)
   end
-  return M.fzf_wrap(opts, contents, fn_selected)()
+  -- wrapper for command transformer
+  if type(contents) == 'string' and opts.fn_transform then
+    contents = libuv.spawn_nvim_fzf_cmd({
+      cmd = contents,
+      cwd = opts.cwd,
+    }, opts.fn_transform)
+  end
+  return M.fzf_wrap(opts, contents)()
 end
 
 M.fzf = function(opts, contents)
