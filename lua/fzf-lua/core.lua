@@ -51,7 +51,7 @@ M.fzf_wrap = function(opts, contents, fn_selected)
 end
 
 M.fzf_exec = function(contents, opts)
-  opts = opts or {}
+  opts = config.normalize_opts(opts or {}, {})
   opts.fn_selected = opts.fn_selected or function(selected)
     if not selected then return end
     actions.act(opts.actions, selected, opts)
