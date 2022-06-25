@@ -40,6 +40,7 @@ M.fzf_resume = function(opts)
 end
 
 M.fzf_wrap = function(opts, contents, fn_selected)
+  opts = opts or {}
   return coroutine.wrap(function()
     opts.fn_selected = opts.fn_selected or fn_selected
     local selected = M.fzf(opts, contents)
@@ -47,6 +48,14 @@ M.fzf_wrap = function(opts, contents, fn_selected)
       opts.fn_selected(selected)
     end
   end)
+end
+
+M.fzf_exec = function(contents, opts, fn_selected)
+  fn_selected = fn_selected or function(selected)
+    if not selected then return end
+    actions.act(opts and opts.actions or nil, selected)
+  end
+  return M.fzf_wrap(opts, contents, fn_selected)()
 end
 
 M.fzf = function(opts, contents)
