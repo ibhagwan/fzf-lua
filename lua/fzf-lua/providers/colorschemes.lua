@@ -115,12 +115,7 @@ M.highlights = function(opts)
 
   opts.fzf_opts['--no-multi'] = ''
 
-  core.fzf_wrap(opts, contents, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(contents, opts)
 end
 
 return M

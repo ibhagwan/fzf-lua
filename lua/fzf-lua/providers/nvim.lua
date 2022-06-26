@@ -3,7 +3,7 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
+local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -40,12 +40,7 @@ M.commands = function(opts)
   opts.fzf_opts['--no-multi'] = ''
   opts.fzf_opts['--preview'] = prev_act
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 
 end
 
@@ -64,12 +59,7 @@ local history = function(opts, str)
   opts.fzf_opts['--no-multi'] = ''
   opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 end
 
 local arg_header = function(sel_key, edit_key, text)
@@ -119,12 +109,7 @@ M.jumps = function(opts)
 
   opts.fzf_opts['--no-multi'] = ''
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected, opts)
-
-  end)()
+  core.fzf_exec(entries, opts)
 end
 
 M.tagstack = function(opts)
@@ -154,12 +139,13 @@ M.tagstack = function(opts)
 
   local entries = {}
   for i, tag in ipairs(tags) do
-    local bufname = tag.filename
+    local bufname = path.HOME_to_tilde(
+      path.relative(tag.filename, vim.loop.cwd()))
     local buficon, hl
     if opts.file_icons then
       local filename = path.tail(bufname)
       local extension = path.extension(filename)
-      buficon, hl = core.get_devicon(filename, extension)
+      buficon, hl = make_entry.get_devicon(filename, extension)
       if opts.color_icons then
         buficon = utils.ansi_codes[hl](buficon)
       end
@@ -181,12 +167,7 @@ M.tagstack = function(opts)
 
   opts.fzf_opts['--no-multi'] = ''
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected, opts)
-
-  end)()
+  core.fzf_exec(entries, opts)
 end
 
 
@@ -226,12 +207,7 @@ M.marks = function(opts)
   -- opts.fzf_opts['--preview'] = prev_act
   opts.fzf_opts['--no-multi'] = ''
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 end
 
 M.registers = function(opts)
@@ -285,12 +261,7 @@ M.registers = function(opts)
   opts.fzf_opts['--no-multi'] = ''
   opts.fzf_opts['--preview'] = prev_act
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 end
 
 M.keymaps = function(opts)
@@ -343,12 +314,7 @@ M.keymaps = function(opts)
   opts.fzf_opts['--no-multi'] = ''
   opts.fzf_opts['--preview'] = prev_act
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 end
 
 M.spell_suggest = function(opts)
@@ -365,12 +331,7 @@ M.spell_suggest = function(opts)
   opts.fzf_opts['--no-multi'] = ''
   opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 
 end
 
@@ -385,12 +346,7 @@ M.filetypes = function(opts)
   opts.fzf_opts['--no-multi'] = ''
   opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 
 end
 
@@ -406,12 +362,7 @@ M.packadd = function(opts)
   opts.fzf_opts['--no-multi'] = ''
   opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 
 end
 
@@ -448,12 +399,7 @@ M.menus = function(opts)
   opts.fzf_opts['--no-multi'] = ''
   opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 
 end
 

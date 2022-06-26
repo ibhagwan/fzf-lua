@@ -29,7 +29,9 @@ function FzfWin.save_query(key)
   local query = lines[1]:gsub("^%*+", "")
     :gsub("^"..utils.lua_escape(self.prompt:match("[^%*]+")), "")
   -- remove '--info=inline'
-  query = query and query:gsub("<%s%d+/%d+.*$", "")
+  query = query and query:gsub("[<%-]%s%d+/%d+.*$", "")
+  -- remove '< [Command failed: ...]
+  query = query and query:gsub("<%s%[Command failed:.*$", "")
   -- trim whitespaces at the end
   query = query and query:gsub("%s*$", "")
   if self.fn_save_query then

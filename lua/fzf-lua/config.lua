@@ -484,6 +484,7 @@ M.globals.manpages = {
         ["ctrl-v"]        = actions.man_vert,
         ["ctrl-t"]        = actions.man_tab,
       },
+      fzf_opts            = { ['--tiebreak'] = 'begin' },
       previewer           = "man",
   }
 M.globals.lsp = {

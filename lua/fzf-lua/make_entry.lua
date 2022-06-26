@@ -206,12 +206,12 @@ M.get_diff_files = function(opts)
     return diff_files
 end
 
-M.glob_parse = function(opts, query)
+M.glob_parse = function(query, opts)
   if not query or not query:find(opts.glob_separator) then
     return query, nil
   end
   if config.globals.grep.rg_glob_fn then
-    return config.globals.grep.rg_glob_fn(opts, query)
+    return config.globals.grep.rg_glob_fn(query, opts)
   end
   local glob_args = ""
   local search_query, glob_str = query:match("(.*)"..opts.glob_separator.."(.*)")
@@ -245,7 +245,7 @@ M.preprocess = function(opts)
 
   -- live_grep replace pattern with last argument
   local argvz = "{argvz}"
-  local has_argvz = opts.cmd:match(argvz)
+  local has_argvz = opts.cmd and opts.cmd:match(argvz)
 
   -- save our last search argument for resume
   if opts.argv_expr and has_argvz then
@@ -261,7 +261,7 @@ M.preprocess = function(opts)
   -- mannipulation needs to be done before the argv hack
   if opts.rg_glob and has_argvz then
     local query = argv()
-    local search_query, glob_args = M.glob_parse(opts, query)
+    local search_query, glob_args = M.glob_parse(query, opts)
     if glob_args then
       -- gsub doesn't like single % on rhs
       search_query = search_query:gsub("%%", "%%%%")
@@ -284,7 +284,22 @@ M.preprocess = function(opts)
   return opts
 end
 
-M.file = function(opts, x)
+M.lcol = function(entry, opts)
+  if not entry then return nil end
+  local filename = entry.filename or vim.api.nvim_buf_get_name(entry.bufnr)
+  return string.format("%s:%s:%s:%s%s",
+    -- uncomment to test URIs
+    -- "file://" .. filename,
+    filename, --utils.ansi_codes.magenta(filename),
+    utils.ansi_codes.green(tostring(entry.lnum)),
+    utils.ansi_codes.blue(tostring(entry.col)),
+    entry.text and #entry.text>0 and " " or "",
+    not entry.text and "" or
+      (opts and opts.trim_entry and vim.trim(entry.text)) or entry.text)
+end
+
+M.file = function(x, opts)
+  opts = opts or {}
   local ret = {}
   local icon, hl
   local file = utils.strip_ansi_coloring(string.match(x, '[^:]*'))
@@ -351,7 +366,7 @@ M.file = function(opts, x)
   return table.concat(ret)
 end
 
-M.tag = function(opts, x)
+M.tag = function(x, opts)
   local name, file, text = x:match("([^\t]+)\t([^\t]+)\t(.*)")
   if not file or not name or not text then return x end
   text = text:match('(.*);"') or text   -- remove ctag comments
@@ -364,7 +379,7 @@ M.tag = function(opts, x)
   local line, tag = text:match("(%d-);?(/.*/)")
   line = line and #line>0 and tonumber(line)
   return ("%s%s: %s %s"):format(
-    M.file(opts, file),
+    M.file(file, opts),
     not line and "" or ":"..utils.ansi_codes.green(tostring(line)),
     utils.ansi_codes.magenta(name),
     utils.ansi_codes.green(tag))

@@ -66,7 +66,7 @@ DEPENDENCIES                                            *fzf-lua-dependencies*
 - nvim-web-devicons <https://github.com/kyazdani42/nvim-web-devicons>
   (optional)
   `fzf` version > `0.27` is recommended but it's still possible to use `fzf`
-  version > `0.24` by setting `fzf_opts = { ['--border'] = false }`, see
+  version > `0.25` by setting `fzf_opts = { ['--border'] = false }`, see
   Customization <#customization>.
 
 
@@ -648,7 +648,7 @@ Consult the list below for available settings:
         -- 'rg_glob_fn' to return a pair:
         --   first returned argument is the new search query
         --   second returned argument are addtional rg flags
-        -- rg_glob_fn = function(opts, query)
+        -- rg_glob_fn = function(query, opts)
         --   ...
         --   return new_query, flags
         -- end,

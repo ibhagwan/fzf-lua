@@ -1,7 +1,6 @@
 local core = require "fzf-lua.core"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
 
 local M = {}
 
@@ -35,13 +34,7 @@ M.metatable = function(opts)
   -- as the behavior might confuse users (#267)
   opts.global_resume = false
 
-  core.fzf_wrap(opts, methods, function(selected)
-
-    if not selected then return end
-
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(methods, opts)
 
 end
 

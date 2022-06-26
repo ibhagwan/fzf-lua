@@ -1,7 +1,7 @@
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
+local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -39,8 +39,8 @@ local function location_handler(opts, cb, _, result, ctx, _)
   for _, entry in ipairs(items) do
     if not opts.current_buffer_only or
       vim.api.nvim_buf_get_name(opts.bufnr) == entry.filename then
-      entry = core.make_entry_lcol(opts, entry)
-      entry = core.make_entry_file(opts, entry)
+      entry = make_entry.lcol(entry, opts)
+      entry = make_entry.file(entry, opts)
       if entry then
         cb(entry, function(err)
           if err then return end
@@ -61,8 +61,8 @@ local function call_hierarchy_handler(opts, cb, _, result, _, _)
         lnum = range.start.line + 1,
         col = range.start.character + 1,
       }
-      entry = core.make_entry_lcol(opts, entry)
-      entry = core.make_entry_file(opts, entry)
+      entry = make_entry.lcol(entry, opts)
+      entry = make_entry.file(entry, opts)
       if entry then
         cb(entry, function(err)
           if err then return end
@@ -88,8 +88,8 @@ local function symbol_handler(opts, cb, _, result, _, _)
           entry.text = entry.text:gsub("%[.-%]", M._sym2style[kind])
         end
       end
-      entry = core.make_entry_lcol(opts, entry)
-      entry = core.make_entry_file(opts, entry)
+      entry = make_entry.lcol(entry, opts)
+      entry = make_entry.file(entry, opts)
       if entry then
         cb(entry, function(err)
           if err then return end
@@ -121,10 +121,10 @@ local function code_action_handler(opts, cb, _, code_actions, context, _)
   end
 end
 
-local function diagnostics_handler(opts, cb, _, entry)
+local function diagnostics_handler(opts, cb, co, entry)
   local type = entry.type
-  entry = core.make_entry_lcol(opts, entry)
-  entry = core.make_entry_file(opts, entry)
+  entry = make_entry.lcol(entry, opts)
+  entry = make_entry.file(entry, opts)
   if not entry then return end
   if opts.lsp_icons and opts._severity_icons[type] then
     local severity = opts._severity_icons[type]
@@ -134,9 +134,7 @@ local function diagnostics_handler(opts, cb, _, entry)
     end
     entry = icon .. utils.nbsp .. utils.nbsp .. entry
   end
-  cb(entry, function(err)
-    if err then return end
-  end)
+  cb(entry, function() coroutine.resume(co) end)
 end
 
 -- see neovim #15504
@@ -181,7 +179,7 @@ local function wrap_handler(handler, opts, cb, co)
       if opts.num_callbacks == opts.num_clients then
         -- close the pipe to fzf, this
         -- removes the loading indicator in fzf
-        utils.delayed_cb(cb)
+        cb(nil)
       end
     end
     return ret
@@ -275,14 +273,12 @@ local function set_lsp_fzf_fn(opts)
       -- cancel all remaining LSP requests
       -- once the user made their selection
       -- or closed the fzf popup
-      opts.post_select_cb = function()
+      opts._fn_post_fzf = function()
         if opts._cancel_all then
           opts._cancel_all()
           opts._cancel_all = nil
         end
       end
-
-      -- coroutine.yield()
 
     end)()
   end
@@ -303,7 +299,6 @@ local normalize_lsp_opts = function(opts, cfg)
   opts = config.normalize_opts(opts, cfg)
   if not opts then return end
 
-  if not opts.cwd then opts.cwd = vim.loop.cwd() end
   if not opts.prompt and opts.prompt_postfix then
     opts.prompt = opts.lsp_handler.label .. (opts.prompt_postfix or '')
   end
@@ -327,7 +322,7 @@ local function fzf_lsp_locations(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
-  return core.fzf_files(opts)
+  return core.fzf_exec(opts.fzf_fn, opts)
 end
 
 -- define the functions for wrap_module_fncs
@@ -441,7 +436,7 @@ M.document_symbols = function(opts)
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
   end
-  return core.fzf_files(opts)
+  return core.fzf_exec(opts.fzf_fn, opts)
 end
 
 M.workspace_symbols = function(opts)
@@ -458,7 +453,7 @@ M.workspace_symbols = function(opts)
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
   end
-  return core.fzf_files(opts)
+  return core.fzf_exec(opts.fzf_fn, opts)
 end
 
 -- Converts 'vim.diagnostic.get' to legacy style 'get_line_diagnostics()'
@@ -627,17 +622,7 @@ M.code_actions = function(opts)
   opts.fzf_opts["--no-multi"] = ''
   opts.fzf_opts["--preview-window"] = 'right:0'
 
-  core.fzf_wrap(opts, opts.fzf_fn, function(selected)
-
-    if opts.post_select_cb then
-      opts.post_select_cb()
-    end
-
-    if not selected then return end
-
-    actions.act(opts.actions, selected, opts)
-
-  end)()
+  core.fzf_exec(opts.fzf_fn, opts)
 
 end
 
@@ -761,7 +746,7 @@ M.diagnostics = function(opts)
     return buffer_diag
   end
 
-  opts.fzf_fn = function (cb)
+  opts.fzf_fn = function (fzf_cb)
     coroutine.wrap(function ()
       local co = coroutine.running()
 
@@ -771,8 +756,13 @@ M.diagnostics = function(opts)
           -- empty tables for unused buffers
           if not vim.tbl_isempty(diag) then
             if filter_diag_severity(opts, diag.severity) then
-              diagnostics_handler(opts, cb, co,
-                preprocess_diag(diag, bufnr))
+              -- wrap with 'vim.scheudle' or calls to vim.{fn|api} fail:
+              -- E5560: vimL function must not be called in a lua loop callback
+              vim.schedule(function()
+                diagnostics_handler(opts, fzf_cb, co, preprocess_diag(diag, bufnr))
+              end)
+              -- wait here for 'diagnostics_handler' to return
+              coroutine.yield()
             end
           end
         end
@@ -787,14 +777,14 @@ M.diagnostics = function(opts)
       end
       -- close the pipe to fzf, this
       -- removes the loading indicator
-      cb(nil)
+      fzf_cb(nil)
     end)()
   end
 
   opts = core.set_header(opts, opts.headers or {"cwd"})
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
-  return core.fzf_files(opts)
+  return core.fzf_exec(opts.fzf_fn, opts)
 end
 
 M.workspace_diagnostics = function(opts)
@@ -826,7 +816,7 @@ M.live_workspace_symbols = function(opts)
   opts.bufnr = vim.api.nvim_get_current_buf()
   opts.winid = vim.api.nvim_get_current_win()
 
-  opts._reload_action = function(query)
+  opts.fn_reload = function(query)
     if query and not (opts.save_last_query == false) then
       last_search = { query = query }
       config.__resume_data.last_query = query
@@ -838,19 +828,13 @@ M.live_workspace_symbols = function(opts)
     return opts.fzf_fn
   end
 
-  -- disable global resume
-  -- conflicts with 'change:reload' event
-  opts.global_resume_query = false
-  opts.__FNCREF__ = M.live_workspace_symbols
-  opts = core.set_fzf_interactive_cb(opts)
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   if opts.symbol_style or opts.symbol_fmt then
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
   end
-  core.fzf_files(opts)
-  opts.search = nil
+  core.fzf_exec(nil, opts)
 end
 
 local function check_capabilities(feature)

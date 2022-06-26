@@ -3,6 +3,7 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
+local make_entry = require "fzf-lua.make_entry"
 
 local _has_dap, _dap = nil, nil
 
@@ -42,12 +43,7 @@ M.commands = function(opts)
 
   opts.fzf_opts['--no-multi'] = ''
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 end
 
 M.configurations = function(opts)
@@ -83,12 +79,7 @@ M.configurations = function(opts)
 
   opts.fzf_opts['--no-multi'] = ''
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 end
 
 M.breakpoints = function(opts)
@@ -133,14 +124,14 @@ M.breakpoints = function(opts)
   local contents = function (cb)
     local entries = {}
     for _, entry in ipairs(opts._locations) do
-      table.insert(entries, core.make_entry_lcol(opts, entry))
+      table.insert(entries, make_entry.lcol(entry, opts))
     end
 
     for i, x in ipairs(entries) do
       x = ("[%s] %s"):format(
         -- tostring(opts._locations[i].bufnr),
         utils.ansi_codes.yellow(tostring(opts._locations[i].bufnr)),
-        core.make_entry_file(opts, x))
+        make_entry.file(x, opts))
       if x then
         cb(x, function(err)
           if err then return end
@@ -160,12 +151,7 @@ M.breakpoints = function(opts)
 
   opts = core.set_fzf_field_index(opts, 3, opts._is_skim and "{}" or "{..-2}")
 
-  core.fzf_wrap(opts, contents, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected, opts)
-
-  end)()
+  core.fzf_exec(contents, opts)
 
 end
 
@@ -197,12 +183,7 @@ M.variables = function(opts)
     end
   end
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(entries, opts)
 
 end
 
@@ -249,12 +230,7 @@ M.frames = function(opts)
 
   opts.fzf_opts['--no-multi'] = ''
 
-  core.fzf_wrap(opts, entries, function(selected)
-
-    if not selected then return end
-    actions.act(opts.actions, selected, opts)
-
-  end)()
+  core.fzf_exec(entries, opts)
 
 end
 

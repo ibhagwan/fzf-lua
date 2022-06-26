@@ -164,7 +164,6 @@ local grep_tag = function(file, tag)
   else
     utils.warn(("previewer: unable to find pattern '%s' in file '%s'"):format(pattern, file))
   end
-  -- if line == 1 then print(cmd) end
   return line
 end
 

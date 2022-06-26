@@ -213,27 +213,37 @@ M.file_switch_or_edit = function(...)
 end
 
 -- buffer actions
-M.vimcmd_buf = function(vimcmd, selected, _)
+M.vimcmd_buf = function(vimcmd, selected, opts)
   local curbuf = vim.api.nvim_get_current_buf()
+  local lnum = vim.api.nvim_win_get_cursor(0)[1]
+  local is_term = utils.is_term_buffer(0)
   for i = 1, #selected do
-    local bufnr = string.match(selected[i], "%[(%d+)")
-    if bufnr then
-      if vimcmd == 'b'
-        and curbuf ~= tonumber(bufnr)
-        and not vim.o.hidden and
-        utils.buffer_is_dirty(nil, true) then
-        -- warn the user when trying to switch from a dirty buffer
-        -- when `:set nohidden`
-        return
-      end
-      if vimcmd ~= "b" or curbuf ~= tonumber(bufnr) then
-        local cmd = vimcmd .. " " .. bufnr
-        local ok, res = pcall(vim.cmd, cmd)
-        if not ok then
-          utils.warn(("':%s' failed: %s"):format(cmd, res))
-        end
+    local entry = path.entry_to_file(selected[i], opts)
+    if not entry.bufnr then return end
+    assert(type(entry.bufnr) == 'number')
+    if vimcmd == 'b'
+      and curbuf ~= entry.bufnr
+      and not vim.o.hidden and
+      utils.buffer_is_dirty(nil, true) then
+      -- warn the user when trying to switch from a dirty buffer
+      -- when `:set nohidden`
+      return
+    end
+    -- add current location to jumplist
+    if not is_term then vim.cmd("normal! m`") end
+    if vimcmd ~= "b" or curbuf ~= entry.bufnr then
+      local cmd = vimcmd .. " " .. entry.bufnr
+      local ok, res = pcall(vim.cmd, cmd)
+      if not ok then
+        utils.warn(("':%s' failed: %s"):format(cmd, res))
       end
     end
+    if curbuf ~= entry.bufnr or lnum ~= entry.line then
+      -- make sure we have valid column
+      entry.col = entry.col and entry.col>0 and entry.col or 1
+      vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+    end
+    if not is_term then vim.cmd("norm! zvzz") end
   end
 end
 
@@ -431,19 +441,25 @@ M.help_tab = function(selected)
   M.vimcmd(vimcmd, helptags(selected), true)
 end
 
+local function mantags(s)
+  return vim.tbl_map(function(x)
+    return x:match("[^[,( ]+")
+  end, s)
+end
+
 M.man = function(selected)
   local vimcmd = "Man"
-  M.vimcmd(vimcmd, selected)
+  M.vimcmd(vimcmd, mantags(selected))
 end
 
 M.man_vert = function(selected)
   local vimcmd = "vert Man"
-  M.vimcmd(vimcmd, selected)
+  M.vimcmd(vimcmd, mantags(selected))
 end
 
 M.man_tab = function(selected)
   local vimcmd = "tab Man"
-  M.vimcmd(vimcmd, selected)
+  M.vimcmd(vimcmd, mantags(selected))
 end
 
 
@@ -586,8 +602,7 @@ end
 
 M.grep_lgrep = function(_, opts)
 
-  -- 'FNCREF' is set only on 'M.live_grep' calls
-  -- 'MODULE' is set on 'M.grep' and 'live_grep' calls
+  -- 'MODULE' is set on 'grep' and 'live_grep' calls
   assert(opts.__MODULE__
     and type(opts.__MODULE__.grep) == 'function'
     or type(opts.__MODULE__.live_grep) == 'function')
@@ -601,7 +616,8 @@ M.grep_lgrep = function(_, opts)
       requires_processing = opts.rg_glob or opts.__call_opts.rg_glob,
     }, opts.__call_opts or {})
 
-  if opts.__FNCREF__ then
+  -- 'fn_reload' is set only on 'live_grep' calls
+  if opts.fn_reload then
     opts.__MODULE__.grep(o)
   else
     opts.__MODULE__.live_grep(o)
@@ -609,3 +625,4 @@ M.grep_lgrep = function(_, opts)
 end
 
 return M
+

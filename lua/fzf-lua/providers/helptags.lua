@@ -2,12 +2,11 @@ local path = require "fzf-lua.path"
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
 
 
 local M = {}
 
-local fzf_function = function (cb)
+local fzf_fn = function (cb)
   local opts = {}
   opts.lang = config.globals.helptags.lang or vim.o.helplang
   opts.fallback = utils._if(config.globals.helptags.fallback ~= nil, config.globals.helptags.fallback, true)
@@ -82,11 +81,7 @@ local fzf_function = function (cb)
         end
       end
     end
-    -- done, we can't call utils.delayed_cb here
-    -- because sleep() messes up the coroutine
-    -- cb(nil, function() coroutine.resume(co) end)
-    utils.delayed_cb(cb, function() coroutine.resume(co) end)
-    coroutine.yield()
+    cb(nil)
   end)()
 end
 
@@ -96,18 +91,10 @@ M.helptags = function(opts)
   opts = config.normalize_opts(opts, config.globals.helptags)
   if not opts then return end
 
-  -- local prev_act = action(function (args) end)
-
   opts.fzf_opts['--no-multi'] = ''
   opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
-  core.fzf_wrap(opts, fzf_function, function(selected)
-
-    if not selected then return end
-
-    actions.act(opts.actions, selected)
-
-  end)()
+  core.fzf_exec(fzf_fn, opts)
 
 end
 

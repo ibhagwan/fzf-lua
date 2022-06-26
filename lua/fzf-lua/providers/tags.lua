@@ -76,7 +76,7 @@ local function tags(opts)
     })
     local ok, lines, err = pcall(utils.io_systemlist, cmd)
     if ok and err == 0 and lines and not vim.tbl_isempty(lines) then
-      local tag, line = make_entry.tag(opts, lines[1])
+      local tag, line = make_entry.tag(lines[1], opts)
       if tag and not line then
         -- tags file does not contain lines
         -- remove preview offset field index
@@ -87,8 +87,11 @@ local function tags(opts)
 
   -- prevents 'file|git_icons=false' from overriding processing
   opts.requires_processing = true
-  opts._fn_transform = make_entry.tag                            -- multiprocess=false
-  opts._fn_transform_str = [[return require("make_entry").tag]]  -- multiprocess=true
+  if opts.multiprocess then
+    opts.__mt_transform = [[return require("make_entry").tag]]
+  else
+    opts.__mt_transform = make_entry.tag
+  end
 
   if opts.lgrep then
     -- live_grep requested by caller ('tags_live_grep')
@@ -101,9 +104,9 @@ local function tags(opts)
     if opts.multiprocess then
       return require'fzf-lua.providers.grep'.live_grep_mt(opts)
     else
-      -- 'live_grep_st' uses different signature '_fn_transform'
-      opts._fn_transform = function(x)
-        return make_entry.tag(opts, x)
+      -- 'live_grep_st' uses different signature 'fn_transform'
+      opts.fn_transform = function(x)
+        return make_entry.tag(x, opts)
       end
       return require'fzf-lua.providers.grep'.live_grep_st(opts)
     end
@@ -159,7 +162,6 @@ M.live_grep = function(opts)
   opts = config.normalize_opts(opts, config.globals.tags)
   if not opts then return end
   opts.lgrep = true
-  opts.__FNCREF__ = utils.__FNCREF__()
   return tags(opts)
 end
 

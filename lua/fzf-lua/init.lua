@@ -155,9 +155,11 @@ M.dap_frames = require'fzf-lua.providers.dap'.frames
 
 -- API shortcuts
 M.fzf = require'fzf-lua.core'.fzf
+M.fzf_raw = require'fzf-lua.fzf'.raw_fzf
 M.fzf_wrap = require'fzf-lua.core'.fzf_wrap
 M.fzf_exec = require'fzf-lua.core'.fzf_exec
-M.raw_fzf = require'fzf-lua.fzf'.raw_fzf
+M.fzf_live = require'fzf-lua.core'.fzf_live
+M.defaults = config.globals
 
 -- exported modules
 M._exported_modules = {
@@ -169,15 +171,18 @@ M._exported_modules = {
   'shell',
   'config',
   'actions',
+  'make_entry',
 }
 
 -- excluded from builtin / auto-complete
 M._excluded_meta = {
   'setup',
   'fzf',
+  'fzf_raw',
   'fzf_wrap',
   'fzf_exec',
-  'raw_fzf',
+  'fzf_live',
+  'defaults',
   '_excluded_meta',
   '_excluded_metamap',
   '_exported_modules',

@@ -413,17 +413,6 @@ function M.feed_keys_termcodes(key)
     vim.api.nvim_replace_termcodes(key, true, false, true), 'n', true)
 end
 
-function M.delayed_cb(cb, fn)
-  -- HACK: slight delay to prevent missing results
-  -- otherwise the input stream closes too fast
-  -- sleep was causing all sorts of issues
-  -- vim.cmd("sleep! 10m")
-  if fn == nil then fn = function() end end
-  vim.defer_fn(function()
-    cb(nil, fn)
-  end, 20)
-end
-
 function M.is_term_bufname(bufname)
   if bufname and bufname:match("term://") then return true end
   return false
@@ -590,8 +579,8 @@ function M.io_systemlist(cmd, use_lua_io)
       -- last line contains the exit status
       rc = tonumber(stdout[#stdout])
       stdout[#stdout] = nil
+      handle:close()
     end
-    handle:close()
     return stdout, rc
   else
     return vim.fn.systemlist(cmd), vim.v.shell_error

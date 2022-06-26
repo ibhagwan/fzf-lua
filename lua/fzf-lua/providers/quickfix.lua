@@ -1,6 +1,7 @@
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
+local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -14,12 +15,12 @@ local quickfix_run = function(opts, cfg, locations)
   if not opts.cwd then opts.cwd = vim.loop.cwd() end
 
   for _, entry in ipairs(locations) do
-    table.insert(results, core.make_entry_lcol(opts, entry))
+    table.insert(results, make_entry.lcol(entry, opts))
   end
 
   local contents = function(cb)
     for _, x in ipairs(results) do
-      x = core.make_entry_file(opts, x)
+      x = make_entry.file(x, opts)
       if x then
         cb(x, function(err)
           if err then return end
@@ -29,11 +30,11 @@ local quickfix_run = function(opts, cfg, locations)
         end)
       end
     end
-    utils.delayed_cb(cb)
+    cb(nil)
   end
 
   opts = core.set_fzf_field_index(opts)
-  return core.fzf_files(opts, contents)
+  return core.fzf_exec(contents, opts)
 end
 
 M.quickfix = function(opts)

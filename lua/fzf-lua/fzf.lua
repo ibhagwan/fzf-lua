@@ -7,15 +7,6 @@ local uv = vim.loop
 
 local M = {}
 
-local function get_lines_from_file(file)
-  local t = {}
-  for v in file:lines() do
-    table.insert(t, v)
-  end
-  return t
-end
-
-
 -- workaround to a potential 'tempname' bug? (#222)
 -- neovim doesn't guarantee the existence of the
 -- parent temp dir potentially failing `mkfifo`
@@ -41,21 +32,31 @@ end
 -- behavior.
 function M.raw_fzf(contents, fzf_cli_args, opts)
   if not coroutine.running() then
-    error("please run function in a coroutine")
+    error("[Fzf-lua] function must be called inside a coroutine.")
   end
 
   if not opts then opts = {} end
   local cwd = opts.fzf_cwd or opts.cwd
-  local cmd = opts.fzf_binary or opts.fzf_bin or 'fzf'
+  local cmd = opts.fzf_bin or 'fzf'
   local fifotmpname = tempname()
   local outputtmpname = tempname()
+
+  -- we use a temporary env $FZF_DEFAULT_COMMAND instead of piping
+  -- the command to fzf, this way fzf kills the command when it exits
+  -- this is especially important with our shell helper as io.write fails
+  -- to delect when the pipe is broken (EPIPE) so the neovim headless
+  -- instance never terminates which hangs fzf on exit
+  local FZF_DEFAULT_COMMAND = nil
 
   if fzf_cli_args then cmd = cmd .. " " .. fzf_cli_args end
   if opts.fzf_cli_args then cmd = cmd .. " " .. opts.fzf_cli_args end
 
   if contents then
     if type(contents) == "string" and #contents>0 then
-      cmd = ("%s | %s"):format(contents, cmd)
+      if opts.silent_fail ~= false then
+          contents = ("%s || true"):format(contents)
+      end
+      FZF_DEFAULT_COMMAND = contents
     else
       cmd = ("%s < %s"):format(cmd, vim.fn.shellescape(fifotmpname))
     end
@@ -134,11 +135,20 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   local co = coroutine.running()
   vim.fn.termopen({"sh", "-c", cmd}, {
     cwd = cwd,
-    env = { ['SHELL'] = 'sh' },
+    env = {
+      ['SHELL'] = 'sh',
+      ['FZF_DEFAULT_COMMAND'] = FZF_DEFAULT_COMMAND,
+      ['SKIM_DEFAULT_COMMAND'] = FZF_DEFAULT_COMMAND,
+    },
     on_exit = function(_, rc, _)
+      local output = {}
       local f = io.open(outputtmpname)
-      local output = get_lines_from_file(f)
-      f:close()
+      if f then
+        for v in f:lines() do
+          table.insert(output, v)
+        end
+        f:close()
+      end
       finish(1)
       vim.fn.delete(fifotmpname)
       vim.fn.delete(outputtmpname)

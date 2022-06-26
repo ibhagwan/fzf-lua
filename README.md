@@ -8,9 +8,10 @@
 
 ![Demo](https://raw.githubusercontent.com/wiki/ibhagwan/fzf-lua/demo.gif)
 
-[fzf](https://github.com/junegunn/fzf) changed my life, it can change yours too, if you allow it.
+[fzf](https://github.com/junegunn/fzf) changed my command life, it can change
+yours too, if you allow it.
 
-  </div>
+</div>
 
 ## Rationale
 
@@ -30,9 +31,9 @@ the new shiny fuzzy finders for neovim.
 
 ## Why Fzf-Lua
 
-... and not, to name a few,
-[telescope](https://github.com/nvim-telescope/telescope.nvim) or
-[vim-clap](https://github.com/liuchengxu/vim-clap)?
+... and not
+[telescope](https://github.com/nvim-telescope/telescope.nvim)
+or any other vim/neovim household name?
 
 As [@junegunn](https://github.com/junegunn) himself put it, “because you can
 and you love `fzf`”.
@@ -55,7 +56,7 @@ at it. That, **and colorful file icons and git indicators!**.
   (optional)
 
 > `fzf` version > `0.27` is recommended but it's still possible to use `fzf`
-> version > `0.24` by setting `fzf_opts = { ['--border'] = false }`, see
+> version > `0.25` by setting `fzf_opts = { ['--border'] = false }`, see
 > [Customization](#customization).
 
 ### Optional dependencies
@@ -249,9 +250,14 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 
 ## Customization
 
-I tried to make it as customizable as possible, if you find you need to change something that isn’t below, open an issue and I’ll do my best to add it.
+> **[ADVANCED CUSTOMIZATION](https://github.com/ibhagwan/fzf-lua/wiki/Advanced)
+: to create your own fzf-lua commands see
+[Wiki/ADVANCED](https://github.com/ibhagwan/fzf-lua/wiki/Advanced)**
 
-customization can be achieved by calling the `setup()` function or individually sending parameters to a builtin command, for example:
+I tried to make this plugin as customizable as possible, if you find you need to
+change something that isn’t below, open an issue and I’ll do my best to add it.
+
+Customization can be achieved by calling the `setup()` function or individually sending parameters to a builtin command, for example:
 ```lua
 :lua require('fzf-lua').files({ fzf_opts = {['--layout'] = 'reverse-list'} })
 ```
@@ -603,7 +609,7 @@ require'fzf-lua'.setup {
     -- 'rg_glob_fn' to return a pair:
     --   first returned argument is the new search query
     --   second returned argument are addtional rg flags
-    -- rg_glob_fn = function(opts, query)
+    -- rg_glob_fn = function(query, opts)
     --   ...
     --   return new_query, flags
     -- end,
@@ -810,7 +816,7 @@ and plugin codes that I probably forgot where I found some samples from so if
 I missed your name feel free to contact me and I'll add it below:
 
 - [@vijaymarupudi](https://github.com/vijaymarupudi/) for his wonderful
-  [nvim-fzf](https://github.com/vijaymarupudi/nvim-fzf) plugin which is in the
+  [nvim-fzf](https://github.com/vijaymarupudi/nvim-fzf) plugin which is at the
   core of this plugin
 - [@tjdevries](https://github.com/tjdevries/) for too many great things to
   list here and for borrowing some of his

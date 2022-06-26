@@ -418,7 +418,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
       cb_err = on_err,
     },
     fn_transform and function(x)
-      return fn_transform(opts, x)
+      return fn_transform(x, opts)
     end)
 end
 
@@ -443,7 +443,11 @@ M.shellescape = function(s)
       -- replace surrounding single quote with double quotes
       -- temporarily replace all single quotes with double
       -- quotes and restore after the call to shellescape
-      ret = vim.fn.shellescape(s:gsub([[']], [["]]))
+      -- NOTE: we use '({s:gsub(...)})[1]' to extract the
+      -- modified string without the multival # of changes
+      -- otherwise the number will be sent to shellescape
+      -- as {special} triggering an escape for ! % and #
+      ret = vim.fn.shellescape(({s:gsub([[']], [["]])})[1])
       ret = [["]] .. ret:gsub([["]], [[']]):sub(2, #ret-1) .. [["]]
     else
       ret = vim.fn.shellescape(s)

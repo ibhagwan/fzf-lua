@@ -2,7 +2,7 @@ local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
+local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -143,11 +143,11 @@ local function gen_buffer_entry(opts, buf, hl_curbuf)
   if opts.file_icons then
     if utils.is_term_bufname(buf.info.name) then
       -- get shell-like icon for terminal buffers
-      buficon, hl = core.get_devicon(buf.info.name, "sh")
+      buficon, hl = make_entry.get_devicon(buf.info.name, "sh")
     else
       local filename = path.tail(buf.info.name)
       local extension = path.extension(filename)
-      buficon, hl = core.get_devicon(filename, extension)
+      buficon, hl = make_entry.get_devicon(filename, extension)
     end
     if opts.color_icons then
       buficon = utils.ansi_codes[hl](buficon)
@@ -193,13 +193,7 @@ M.buffers = function(opts)
 
   opts = core.set_fzf_field_index(opts)
 
-  core.fzf_wrap(opts, contents, function(selected)
-
-    if not selected then return end
-
-    actions.act(opts.actions, selected, opts)
-
-  end)()
+  core.fzf_exec(contents, opts)
 end
 
 M.lines = function(opts)
@@ -239,7 +233,7 @@ M.buffer_lines = function(opts)
     if opts.file_icons then
       local filename = path.tail(bufname)
       local extension = path.extension(filename)
-      buficon, hl = core.get_devicon(filename, extension)
+      buficon, hl = make_entry.get_devicon(filename, extension)
       if opts.color_icons then
         buficon = utils.ansi_codes[hl](buficon)
       end
@@ -267,23 +261,7 @@ M.buffer_lines = function(opts)
 
   opts = core.set_fzf_field_index(opts, 3, opts._is_skim and "{}" or "{..-2}")
 
-  core.fzf_wrap(opts, items, function(selected)
-    if not selected then return end
-
-    -- get the line number
-    local line = tonumber(selected[2]:match(":(%d+):"))
-
-    actions.act(opts.actions, selected, opts)
-
-    if line then
-      -- add current location to jumplist
-      local is_term = utils.is_term_buffer(0)
-      if not is_term then vim.cmd("normal! m`") end
-      vim.api.nvim_win_set_cursor(0, {line, 0})
-      if not is_term then vim.cmd("norm! zz") end
-    end
-
-  end)()
+  core.fzf_exec(items, opts)
 end
 
 M.tabs = function(opts)
@@ -351,13 +329,7 @@ M.tabs = function(opts)
 
   opts = core.set_fzf_field_index(opts, 3, "{}")
 
-  core.fzf_wrap(opts, contents, function(selected)
-
-    if not selected then return end
-
-    actions.act(opts.actions, selected, opts)
-
-  end)()
+  core.fzf_exec(contents, opts)
 end
 
 return M

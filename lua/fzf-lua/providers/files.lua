@@ -1,6 +1,7 @@
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
+local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -39,7 +40,7 @@ M.files = function(opts)
   opts.cmd = get_files_cmd(opts)
   local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, opts.headers or {"cwd"})
-  return core.fzf_files(opts, contents)
+  return core.fzf_exec(contents, opts)
 end
 
 M.args = function(opts)
@@ -54,7 +55,7 @@ M.args = function(opts)
   local contents = function (cb)
 
     local function add_entry(x, co)
-      x = core.make_entry_file(opts, x)
+      x = make_entry.file(x, opts)
       if not x then return end
       cb(x, function(err)
         coroutine.resume(co)
@@ -89,14 +90,13 @@ M.args = function(opts)
       -- end; print("took", os.time()-start, "seconds.")
 
       -- done
-      cb(nil, function() coroutine.resume(co) end)
-      coroutine.yield()
+      cb(nil)
     end)()
 
   end
 
   opts = core.set_header(opts, opts.headers or {"cwd"})
-  return core.fzf_files(opts, contents)
+  return core.fzf_exec(contents, opts)
 end
 
 return M

@@ -53,7 +53,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   end
 
   if opts.rg_glob then
-    local new_query, glob_args = make_entry.glob_parse(opts, search_query)
+    local new_query, glob_args = make_entry.glob_parse(search_query, opts)
     if glob_args then
       -- since the search string mixes both the query and
       -- glob separators we cannot used unescaped strings
@@ -126,9 +126,6 @@ M.grep = function(opts)
     opts.search = utils.input(opts.input_prompt) or ''
   end
 
-  -- search query in header line
-  opts = core.set_header(opts, opts.headers or {"actions","cwd","search"})
-
   -- get the grep command before saving the last search
   -- incase the search string is overwritten by 'rg_glob'
   opts.cmd = get_grep_cmd(opts, opts.search, no_esc)
@@ -163,8 +160,10 @@ M.grep = function(opts)
     end
   end
 
+  -- search query in header line
+  opts = core.set_header(opts, opts.headers or {"actions","cwd","search"})
   opts = core.set_fzf_field_index(opts)
-  core.fzf_files(opts, contents)
+  core.fzf_exec(contents, opts)
 end
 
 -- single threaded version
@@ -195,10 +194,7 @@ M.live_grep_st = function(opts)
     set_last_search(opts, opts.query, true)
   end
 
-  -- search query in header line
-  opts = core.set_header(opts, opts.headers or {"actions","cwd"})
-
-  opts._reload_command = function(query)
+  opts.fn_reload = function(query)
     if query and not (opts.save_last_search == false) then
       set_last_search(opts, query, true)
     end
@@ -209,9 +205,13 @@ M.live_grep_st = function(opts)
   end
 
   if opts.requires_processing or opts.git_icons or opts.file_icons then
-    opts._fn_transform = opts._fn_transform
-      or function(x)
-        return core.make_entry_file(opts, x)
+    opts.fn_transform = opts.fn_transform or
+      function(x)
+        return make_entry.file(x, opts)
+      end
+    opts.fn_preprocess = opts.fn_preprocess or
+      function(o)
+        return make_entry.preprocess(o)
       end
   end
 
@@ -228,13 +228,10 @@ M.live_grep_st = function(opts)
     end
   end
 
-  -- disable global resume
-  -- conflicts with 'change:reload' event
-  opts.global_resume_query = false
-  opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
+  -- search query in header line
+  opts = core.set_header(opts, opts.headers or {"actions","cwd"})
   opts = core.set_fzf_field_index(opts)
-  opts = core.set_fzf_interactive_cmd(opts)
-  core.fzf_files(opts)
+  core.fzf_exec(nil, opts)
 end
 
 
@@ -264,29 +261,26 @@ M.live_grep_mt = function(opts)
     opts.search, no_esc = get_last_search(opts)
   end
 
-  local query = opts.search or ''
+  -- interactive interface uses 'query' parameter
+  opts.query = opts.search or ''
   if opts.search and #opts.search>0 then
     -- escape unless the user requested not to
     if not (no_esc or opts.no_esc) then
-      query = utils.rg_escape(opts.search)
+      opts.query = utils.rg_escape(opts.search)
     end
     -- save the search query so the use can
     -- call the same search again
-    set_last_search(opts, query, true)
+    set_last_search(opts, opts.query, true)
   end
-
-  -- search query in header line
-  opts = core.set_header(opts, opts.headers or {"actions","cwd"})
 
   -- signal to preprocess we are looking to replace {argvz}
   opts.argv_expr = true
 
-  -- fzf already adds single quotes around the placeholder when expanding
-  -- for skim we surround it with double quotes or single quote searches fail
-  local placeholder = utils._if(opts._is_skim, '"{}"', '{q}')
-  opts.cmd = get_grep_cmd(opts , placeholder, 2)
-  local initial_command = core.mt_cmd_wrapper(opts)
-  if initial_command ~= opts.cmd then
+  -- this will be replaced by the approperiate fzf
+  -- FIELD INDEX EXPRESSION by 'fzf_exec'
+  opts.cmd = get_grep_cmd(opts , core.fzf_query_placeholder, 2)
+  local command = core.mt_cmd_wrapper(opts)
+  if command ~= opts.cmd then
     -- this means mt_cmd_wrapper wrapped the command
     -- since now the `rg` command is wrapped inside
     -- the shell escaped '--headless .. --cmd' we won't
@@ -297,40 +291,13 @@ M.live_grep_mt = function(opts)
     --   * preprocess then relaces it with vim.fn.argv(1)
     -- NOTE: since we cannot guarantee the positional index
     -- of arguments (#291) we use the last argument instead
-    initial_command = initial_command:gsub(placeholder, "{argvz}")
-      .. " " .. placeholder
+    command = command:gsub(core.fzf_query_placeholder, "{argvz}")
+      .. " " .. core.fzf_query_placeholder
   end
-  -- by redirecting the error stream to stdout
-  -- we make sure a clear error message is displayed
-  -- when the user enters bad regex expressions
-  initial_command = initial_command .. " 2>&1"
-  local reload_command = initial_command
-  if not opts.exec_empty_query then
-    reload_command =  ('[ -z %s ] || %s'):format(placeholder, reload_command)
-  end
-  if opts._is_skim then
-    -- skim interactive mode does not need a piped command
-    opts.fzf_fn = nil
-    opts.fzf_opts['--prompt'] = opts.prompt:match("[^%*]+")
-    opts.fzf_opts['--cmd-prompt'] = vim.fn.shellescape(opts.prompt)
-    opts.prompt = nil
-    -- since we surrounded the skim placeholder with quotes
-    -- we need to escape them in the initial query
-    opts.fzf_opts['--cmd-query'] = libuv.shellescape(utils.sk_escape(query))
-    opts._fzf_cli_args = string.format("-i -c %s",
-          vim.fn.shellescape(reload_command))
-  else
-    opts.fzf_fn = {}
-    if opts.exec_empty_query or (opts.search and #opts.search > 0) then
-      opts.fzf_fn = initial_command:gsub(placeholder,
-        libuv.shellescape(query:gsub("%%", "%%%%")))
-    end
-    opts.fzf_opts['--phony'] = ''
-    opts.fzf_opts['--query'] = libuv.shellescape(query)
-    opts._fzf_cli_args = string.format('--bind=%s',
-        vim.fn.shellescape(("change:reload:%s"):format(
-          ("%s || true"):format(reload_command))))
-  end
+
+  -- signal 'fzf_exec' to set 'change:reload' parameters
+  -- or skim's "interactive" mode (AKA "live query")
+  opts.fn_reload = command
 
   -- when running 'live_grep' with 'exec_empty_query=false' (default)
   -- an empty typed query will not be saved as the 'neovim --headless'
@@ -359,13 +326,10 @@ M.live_grep_mt = function(opts)
     end
   end
 
-  -- disable global resume
-  -- conflicts with 'change:reload' event
-  opts.global_resume_query = false
-  opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
+  -- search query in header line
+  opts = core.set_header(opts, opts.headers or {"actions","cwd"})
   opts = core.set_fzf_field_index(opts)
-  core.fzf_files(opts)
-  opts.search = nil
+  core.fzf_exec(nil, opts)
 end
 
 M.live_grep_glob_st = function(opts)
@@ -399,26 +363,18 @@ end
 M.live_grep_native = function(opts)
 
   -- backward compatibility, by setting git|files icons to false
-  -- we forces mt_cmd_wrapper to pipe the command as is so fzf
+  -- we force 'mt_cmd_wrapper' to pipe the command as is so fzf
   -- runs the command directly in the 'change:reload' event
   opts = opts or {}
   opts.git_icons = false
   opts.file_icons = false
   opts.rg_glob = false
-  -- disable ctrl-g switch by default
-  if not opts.actions or not opts.actions["ctrl-g"] then
-    opts.actions = opts.actions or {}
-    opts.actions["ctrl-g"] = false
-  end
-  opts.__FNCREF__ = utils.__FNCREF__()
   return M.live_grep_mt(opts)
 end
 
 M.live_grep = function(opts)
   opts = config.normalize_opts(opts, config.globals.grep)
   if not opts then return end
-
-  opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
 
   if opts.multiprocess then
     return M.live_grep_mt(opts)
@@ -430,8 +386,6 @@ end
 M.live_grep_glob = function(opts)
   opts = config.normalize_opts(opts, config.globals.grep)
   if not opts then return end
-
-  opts.__FNCREF__ = opts.__FNCREF__ or utils.__FNCREF__()
 
   if opts.multiprocess then
     return M.live_grep_glob_mt(opts)

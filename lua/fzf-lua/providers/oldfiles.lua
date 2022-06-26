@@ -1,5 +1,6 @@
 local core = require "fzf-lua.core"
 local config = require "fzf-lua.config"
+local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -29,14 +30,14 @@ M.oldfiles = function(opts)
   local contents = function (cb)
 
     local function add_entry(x, co)
-      x = core.make_entry_file(opts, x)
+      x = make_entry.file(x, opts)
       if not x then return end
       cb(x, function(err)
         coroutine.resume(co)
         if err then
           -- close the pipe to fzf, this
           -- removes the loading indicator in fzf
-          cb(nil, function() end)
+          cb(nil)
         end
       end)
       coroutine.yield()
@@ -60,14 +61,13 @@ M.oldfiles = function(opts)
       -- end; print("took", os.time()-start, "seconds.")
 
       -- done
-      cb(nil, function() coroutine.resume(co) end)
-      coroutine.yield()
+      cb(nil)
     end)()
 
   end
 
   opts = core.set_header(opts, opts.headers or {"cwd"})
-  return core.fzf_files(opts, contents)
+  return core.fzf_exec(contents, opts)
 end
 
 return M

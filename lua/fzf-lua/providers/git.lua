@@ -2,9 +2,9 @@ local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
 local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
+local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -23,7 +23,7 @@ M.files = function(opts)
   if not opts.cwd then return end
   local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, opts.headers or {"cwd"})
-  return core.fzf_files(opts, contents)
+  return core.fzf_exec(contents, opts)
 end
 
 M.status = function(opts)
@@ -67,8 +67,8 @@ M.status = function(opts)
       if f1:match("%s%->%s") then
         f1, f2 = f1:match("(.*)%s%->%s(.*)")
       end
-      f1 = f1 and core.make_entry_file(opts, f1)
-      f2 = f2 and core.make_entry_file(opts, f2)
+      f1 = f1 and make_entry.file(f1, opts)
+      f2 = f2 and make_entry.file(f2, opts)
       local staged = git_iconify(x:sub(1,1):gsub("?", " "))
       local unstaged = git_iconify(x:sub(2,2))
       local entry = ("%s%s%s%s%s"):format(
@@ -77,20 +77,17 @@ M.status = function(opts)
       return entry
     end,
     function(o)
-      return core.make_entry_preprocess(o)
+      return make_entry.preprocess(o)
     end)
   opts = core.set_header(opts, opts.headers or {"cwd"})
-  return core.fzf_files(opts, contents)
+  return core.fzf_exec(contents, opts)
 end
 
 local function git_cmd(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   opts = core.set_header(opts, opts.headers or {"cwd"})
-  core.fzf_wrap(opts, opts.cmd, function(selected)
-    if not selected then return end
-    actions.act(opts.actions, selected, opts)
-  end)()
+  core.fzf_exec(opts.cmd, opts)
 end
 
 M.commits = function(opts)
