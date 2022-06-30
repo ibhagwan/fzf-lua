@@ -11,8 +11,8 @@ Customization <#customization> • Wiki
 
 Demo <https://raw.githubusercontent.com/wiki/ibhagwan/fzf-lua/demo.gif>
 
-fzf <https://github.com/junegunn/fzf> changed my life, it can change yours
-too, if you allow it.
+fzf <https://github.com/junegunn/fzf> changed my command life, it can change
+yours too, if you allow it.
 
 
 ------------------------------------------------------------------------------
@@ -38,9 +38,8 @@ shiny fuzzy finders for neovim.
 WHY FZF-LUA                                              *fzf-lua-why-fzf-lua*
 
 
-... and not, to name a few, telescope
-<https://github.com/nvim-telescope/telescope.nvim> or vim-clap
-<https://github.com/liuchengxu/vim-clap>?
+... and not telescope <https://github.com/nvim-telescope/telescope.nvim> or
+any other vim/neovim household name?
 
 As @junegunn <https://github.com/junegunn> himself put it, “because you can
 and you love `fzf`”.
@@ -291,10 +290,15 @@ NVIM-DAP                                                    *fzf-lua-nvim-dap*
 CUSTOMIZATION                                          *fzf-lua-customization*
 
 
-I tried to make it as customizable as possible, if you find you need to change
-something that isn’t below, open an issue and I’ll do my best to add it.
+  **ADVANCED CUSTOMIZATION <https://github.com/ibhagwan/fzf-lua/wiki/Advanced> :
+  to create your own fzf-lua commands see Wiki/ADVANCED
+  <https://github.com/ibhagwan/fzf-lua/wiki/Advanced>**
 
-customization can be achieved by calling the `setup()` function or
+I tried to make this plugin as customizable as possible, if you find you need
+to change something that isn’t below, open an issue and I’ll do my best to
+add it.
+
+Customization can be achieved by calling the `setup()` function or
 individually sending parameters to a builtin command, for example:
 
 >
@@ -336,7 +340,7 @@ Consult the list below for available settings:
           cursor         = 'Cursor',        -- cursor highlight (grep/LSP matches)
           cursorline     = 'CursorLine',    -- cursor line
           cursorlinenr   = 'CursorLineNr',  -- cursor line number
-          search         = 'IncSearch',     -- search matches (ctags)
+          search         = 'IncSearch',     -- search matches (ctags|help)
           -- title       = 'Normal',        -- preview border title (file/buffer)
           -- scrollbar_f = 'PmenuThumb',    -- scrollbar "full" section highlight
           -- scrollbar_e = 'PmenuSbar',     -- scrollbar "empty" section highlight
@@ -856,7 +860,7 @@ and plugin codes that I probably forgot where I found some samples from so if
 I missed your name feel free to contact me and I'll add it below:
 
 - @vijaymarupudi <https://github.com/vijaymarupudi/> for his wonderful
-  nvim-fzf <https://github.com/vijaymarupudi/nvim-fzf> plugin which is in the
+  nvim-fzf <https://github.com/vijaymarupudi/nvim-fzf> plugin which is at the
   core of this plugin
 - @tjdevries <https://github.com/tjdevries/> for too many great things to list
   here and for borrowing some of his nvim-telescope
