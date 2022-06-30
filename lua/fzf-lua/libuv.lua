@@ -460,7 +460,7 @@ end
 M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
   assert(opts and type(opts) == 'string')
   assert(not fn_transform or type(fn_transform) == 'string')
-  local nvim_bin = vim.v.argv[1]
+  local nvim_bin = vim.v.progpath
   local call_args = opts
   for _, fn in ipairs({ fn_transform, fn_preprocess }) do
     if type(fn) == 'string' then
