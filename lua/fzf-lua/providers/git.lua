@@ -32,7 +32,7 @@ M.status = function(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   if opts.preview then
-    opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts))
+    opts.preview = path.git_cwd(opts.preview, opts)
   end
   -- we don't need git icons since we get them
   -- as part of our `git status -s`
@@ -93,7 +93,7 @@ end
 M.commits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.commits)
   if not opts then return end
-  opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts))
+  opts.preview = path.git_cwd(opts.preview, opts)
   return git_cmd(opts)
 end
 
@@ -115,7 +115,7 @@ M.bcommits = function(opts)
       .. vim.fn.shellescape(file)
       .. after_pipe
   end
-  opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts))
+  opts.preview = path.git_cwd(opts.preview, opts)
   return git_cmd(opts)
 end
 
@@ -123,8 +123,10 @@ M.branches = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.branches)
   if not opts then return end
   opts.fzf_opts["--no-multi"] = ''
-  opts._preview = path.git_cwd(opts.preview, opts)
-  opts.preview = shell.preview_action_cmd(function(items)
+  opts.__preview = path.git_cwd(opts.preview, opts)
+  -- nullify 'opts.preview' doesn't take priority over '--preview'
+  opts.preview = nil
+  opts.fzf_opts["--preview"] = shell.preview_action_cmd(function(items)
     local branch = items[1]:gsub("%*", "")  -- remove the * from current branch
     if branch:find("%)") ~= nil then
       -- (HEAD detached at origin/master)
@@ -133,7 +135,7 @@ M.branches = function(opts)
       -- remove anything past space
       branch = branch:match("[^ ]+")
     end
-    return opts._preview:gsub("{.*}", branch)
+    return opts.__preview:gsub("{.*}", branch)
     -- return "echo " .. branch
   end, nil, opts.debug)
   return git_cmd(opts)
@@ -144,7 +146,7 @@ M.stash = function(opts)
   if not opts then return end
 
   if opts.preview then
-    opts.preview = vim.fn.shellescape(path.git_cwd(opts.preview, opts))
+    opts.preview = path.git_cwd(opts.preview, opts)
   end
 
   if opts.fzf_opts['--header'] == nil then

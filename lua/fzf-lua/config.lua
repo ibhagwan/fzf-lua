@@ -132,7 +132,6 @@ M.globals = {
   fzf_bin             = nil,
   fzf_opts = {
     ['--ansi']        = '',
-    ['--prompt']      = '> ',
     ['--info']        = 'inline',
     ['--height']      = '100%',
     ['--layout']      = 'reverse',

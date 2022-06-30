@@ -24,16 +24,25 @@ function FzfWin.save_query(key)
   if not self then return end
   local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
   if not lines or vim.tbl_isempty(lines) then return end
-  -- 'live_grep' prepends an asterisk to the prompt
-  -- remove '*' from the start of the line & prompt
-  local query = lines[1]:gsub("^%*+", "")
-    :gsub("^"..utils.lua_escape(self.prompt:match("[^%*]+")), "")
-  -- remove '--info=inline'
-  query = query and query:gsub("[<%-]%s%d+/%d+.*$", "")
-  -- remove '< [Command failed: ...]
-  query = query and query:gsub("<%s%[Command failed:.*$", "")
-  -- trim whitespaces at the end
-  query = query and query:gsub("%s*$", "")
+  local query = nil
+  if not self.prompt then
+    -- no prompt specifed, assume default '> '
+    -- or 'c> ' in skim interactive mode
+    query = lines[1]:match(".->%s(.*)")
+  else
+    -- 'live_grep' prepends an asterisk to the prompt
+    -- remove '*' from the start of the line & prompt
+    query = lines[1]:gsub("^%*+", "")
+      :gsub("^"..utils.lua_escape(self.prompt:match("[^%*]+")), "")
+  end
+  if query then
+    -- remove '--info=inline'
+    query = query:gsub("[<%-]%s%d+/%d+.*$", "")
+    -- remove '< [Command failed: ...]
+    query = query:gsub("<%s%[Command failed:.*$", "")
+    -- trim whitespaces at the end
+    query = query:gsub("%s*$", "")
+  end
   if self.fn_save_query then
     self.fn_save_query(query)
   end

@@ -92,7 +92,6 @@ M.fzf_resume = function(opts)
   end
   opts.__resume = true
   opts.query = last_query
-  opts.fzf_opts['--query'] = last_query and vim.fn.shellescape(last_query)
   M.fzf_exec(config.__resume_data.contents, opts)
 end
 
@@ -130,6 +129,8 @@ M.fzf = function(opts, contents)
       -- providers
       config.__resume_data.last_query = nil
     end
+    -- save a ref to resume data for 'grep_lgrep'
+    opts.__resume_data = config.__resume_data
   end
   if opts.save_query or
     opts.global_resume and opts.global_resume_query then
@@ -180,6 +181,9 @@ M.fzf = function(opts, contents)
     previewer = preview_opts._ctor()(preview_opts, opts, fzf_win)
   end
   if previewer then
+    -- we use fzf_opts because previewer:cmdline is already
+    -- shellescaped, clear opts.preview so it doesn't override
+    opts.preview = nil
     opts.fzf_opts['--preview'] = previewer:cmdline()
     if type(previewer.preview_window) == 'function' then
       -- do we need to override the preview_window args?
@@ -226,7 +230,7 @@ M.fzf = function(opts, contents)
   -- in the first line, save&remove it
   if selected and #selected>0 and
      opts.fzf_opts['--print-query'] ~= nil then
-    if opts.fn_save_query then
+    if opts.fn_save_query and not (opts._is_skim and opts.fn_reload) then
       -- reminder: this doesn't get called with 'live_grep' when using skim
       -- due to a bug where '--print-query --interactive' combo is broken:
       -- skim always prints an emtpy line where the typed query should be
@@ -329,12 +333,24 @@ M.build_fzf_cli = function(opts)
   }) do
     opts[o] = opts[o] or config.globals[o]
   end
+  -- preview and query have special handling:
+  --   'opts.<name>' is prioritized over 'fzf_opts[--name]'
+  --   'opts.<name>' is automatically shellescaped
+  for _, o in ipairs({ 'query', 'preview' }) do
+    local flag = string.format("--%s", o)
+    if opts[o] ~= nil then
+      -- opt can be 'false' (disabled)
+      -- don't shellescape in this case
+      opts.fzf_opts[flag] = opts[o] and vim.fn.shellescape(opts[o])
+    else
+      opts.fzf_opts[flag] = opts.fzf_opts[flag]
+    end
+  end
   opts.fzf_opts["--bind"] = M.create_fzf_binds(opts.keymap.fzf)
   if opts.fzf_colors then
     opts.fzf_opts["--color"] = M.create_fzf_colors(opts)
   end
   opts.fzf_opts["--expect"] = actions.expect(opts.actions)
-  opts.fzf_opts["--preview"] = opts.preview or opts.fzf_opts["--preview"]
   if opts.fzf_opts["--preview-window"] == nil then
     opts.fzf_opts["--preview-window"] = M.preview_window(opts)
   end
@@ -343,7 +359,7 @@ M.build_fzf_cli = function(opts)
       opts.fzf_opts["--preview-window"] .. ":" .. opts.preview_offset
   end
   -- shell escape the prompt
-  opts.fzf_opts["--prompt"] =
+  opts.fzf_opts["--prompt"] = (opts.prompt or opts.fzf_opts["--prompt"]) and
     vim.fn.shellescape(opts.prompt or opts.fzf_opts["--prompt"])
   -- multi | no-multi (select)
   if opts.nomulti or opts.fzf_opts["--no-multi"] then
@@ -645,20 +661,26 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
   if opts._is_skim then
     -- skim interactive mode does not need a piped command
     opts.__fzf_init_cmd = nil
-    opts.prompt = opts.prompt or opts.fzf_opts['--prompt']
+    opts.prompt = opts.__prompt or opts.prompt or opts.fzf_opts['--prompt']
     if opts.prompt then
       opts.fzf_opts['--prompt'] = opts.prompt:match("[^%*]+")
       opts.fzf_opts['--cmd-prompt'] = libuv.shellescape(opts.prompt)
+      -- save original prompt and reset the current one since
+      -- we're using the '--cmd-prompt' as the "main" prompt
+      -- required for resume to have the asterisk prompt prefix
+      opts.__prompt = opts.prompt
       opts.prompt = nil
     end
+    -- since we surrounded the skim placeholder with quotes
+    -- we need to escape them in the initial query
+    opts.fzf_opts['--cmd-query'] = libuv.shellescape(utils.sk_escape(opts.query))
     -- '--query' was set by 'resume()', skim has the option to switch back and
     -- forth between interactive command and fuzzy matching (using 'ctrl-q')
     -- setting both '--query' and '--cmd-query' will use <query> to fuzzy match
     -- on top of our result set double filtering our results (undesierable)
     opts.fzf_opts['--query'] = nil
-    -- since we surrounded the skim placeholder with quotes
-    -- we need to escape them in the initial query
-    opts.fzf_opts['--cmd-query'] = libuv.shellescape(utils.sk_escape(opts.query))
+    opts.query = nil
+    -- setup as inetarctive
     opts._fzf_cli_args = string.format("--interactive --cmd %s",
         vim.fn.shellescape(reload_command))
   else

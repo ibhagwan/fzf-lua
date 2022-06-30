@@ -443,7 +443,7 @@ M.workspace_symbols = function(opts)
   opts = set_async_default(opts, true)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
-  opts.lsp_params = {query = opts.query or ''}
+  opts.lsp_params = {query = opts.lsp_query or ''}
   opts = core.set_header(opts, opts.headers or {"cwd","query","regex_filter"})
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end

@@ -614,6 +614,12 @@ M.grep_lgrep = function(_, opts)
       rg_glob = opts.rg_glob or opts.__call_opts.rg_glob,
       -- globs always require command processing with 'multiprocess'
       requires_processing = opts.rg_glob or opts.__call_opts.rg_glob,
+      -- grep has both search string and query prompt, when switching
+      -- from live_grep to grep we want to restore both:
+      --   * we save the last query prompt when exiting grep
+      --   * we set query to the last known when entering grep
+      __prev_query = not opts.fn_reload and opts.__resume_data.last_query,
+      query = opts.fn_reload and opts.__call_opts.__prev_query,
     }, opts.__call_opts or {})
 
   -- 'fn_reload' is set only on 'live_grep' calls
