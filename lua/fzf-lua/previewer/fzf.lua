@@ -103,7 +103,7 @@ function Previewer.bat:cmdline(o)
   if self.opts.line_field_index then
     highlight_line = string.format("--highlight-line={%d}", self.opts.line_field_index)
   end
-  return vim.fn.shellescape(self:sh_wrap(self.cmd, self.args, o.action, highlight_line))
+  return self:sh_wrap(self.cmd, self.args, o.action, highlight_line)
 end
 
 -- Specialized head previewer
@@ -122,7 +122,7 @@ function Previewer.head:cmdline(o)
   -- if self.opts.line_field_index then
   --   lines = string.format("--lines={%d}", self.opts.line_field_index)
   -- end
-  return vim.fn.shellescape(self:sh_wrap(self.cmd, self.args, o.action, lines))
+  return self:sh_wrap(self.cmd, self.args, o.action, lines)
 end
 
 -- new async_action from nvim-fzf
@@ -192,7 +192,7 @@ end
 
 function Previewer.cmd_async:cmdline(o)
   o = o or {}
-  local act = shell.preview_action_cmd(function(items)
+  local act = shell.raw_preview_action_cmd(function(items)
     local filepath, _, errcmd = self:parse_entry_and_verify(items[1])
     local cmd = errcmd or ('%s %s %s'):format(
       self.cmd, self.args, vim.fn.shellescape(filepath))
@@ -213,7 +213,7 @@ end
 
 function Previewer.bat_async:cmdline(o)
   o = o or {}
-  local act = shell.preview_action_cmd(function(items, fzf_lines)
+  local act = shell.raw_preview_action_cmd(function(items, fzf_lines)
     local filepath, entry, errcmd = self:parse_entry_and_verify(items[1])
     local line_range = ''
     if entry.ctag then
@@ -260,7 +260,7 @@ end
 
 function Previewer.git_diff:cmdline(o)
   o = o or {}
-  local act = shell.preview_action_cmd(function(items, fzf_lines, fzf_columns)
+  local act = shell.raw_preview_action_cmd(function(items, fzf_lines, fzf_columns)
     if not items or vim.tbl_isempty(items) then
       utils.warn("shell error while running preview action.")
       return
@@ -321,7 +321,7 @@ end
 
 function Previewer.man_pages:cmdline(o)
   o = o or {}
-  local act = shell.preview_action_cmd(function(items)
+  local act = shell.raw_preview_action_cmd(function(items)
     -- local manpage = require'fzf-lua.providers.manpages'.getmanpage(items[1])
     local manpage = items[1]:match("[^[,( ]+")
     local cmd = ("%s %s %s"):format(

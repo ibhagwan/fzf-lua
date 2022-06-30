@@ -181,10 +181,8 @@ M.fzf = function(opts, contents)
     previewer = preview_opts._ctor()(preview_opts, opts, fzf_win)
   end
   if previewer then
-    -- we use fzf_opts because previewer:cmdline is already
-    -- shellescaped, clear opts.preview so it doesn't override
-    opts.preview = nil
-    opts.fzf_opts['--preview'] = previewer:cmdline()
+    -- Set the preview command line
+    opts.preview = previewer:cmdline()
     if type(previewer.preview_window) == 'function' then
       -- do we need to override the preview_window args?
       -- this can happen with the builtin previewer

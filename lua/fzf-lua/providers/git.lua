@@ -124,9 +124,7 @@ M.branches = function(opts)
   if not opts then return end
   opts.fzf_opts["--no-multi"] = ''
   opts.__preview = path.git_cwd(opts.preview, opts)
-  -- nullify 'opts.preview' doesn't take priority over '--preview'
-  opts.preview = nil
-  opts.fzf_opts["--preview"] = shell.preview_action_cmd(function(items)
+  opts.preview = shell.raw_preview_action_cmd(function(items)
     local branch = items[1]:gsub("%*", "")  -- remove the * from current branch
     if branch:find("%)") ~= nil then
       -- (HEAD detached at origin/master)

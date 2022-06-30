@@ -92,7 +92,6 @@ M.helptags = function(opts)
   if not opts then return end
 
   opts.fzf_opts['--no-multi'] = ''
-  opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
   core.fzf_exec(fzf_fn, opts)
 

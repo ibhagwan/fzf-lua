@@ -295,8 +295,12 @@ end
 function FzfWin:reset_win_highlights(win, is_border)
   local hl = ("Normal:%s,FloatBorder:%s"):format(
     self.winopts.hl.normal, self.winopts.hl.border)
-  if self._previewer and self.winopts.hl.cursorline then
-    hl = hl .. (",CursorLine:%s"):format(self.winopts.hl.cursorline)
+  if self._previewer then
+    for _, h in ipairs({ 'CursorLine', 'CursorLineNr' }) do
+      if self.winopts.hl[h:lower()] then
+        hl = hl .. (",%s:%s"):format(h, self.winopts.hl[h:lower()])
+      end
+    end
   end
   if is_border then
     -- our border is manuually drawn so we need

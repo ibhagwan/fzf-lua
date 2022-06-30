@@ -19,25 +19,25 @@ M.colorschemes = function(opts)
   opts = config.normalize_opts(opts, config.globals.colorschemes)
   if not opts then return end
 
-  local prev_act = shell.action(function (args)
-    if opts.live_preview and args then
-      local colorscheme = args[1]
-      vim.cmd("colorscheme " .. colorscheme)
-    end
-  end, nil, opts.debug)
 
   local current_colorscheme = get_current_colorscheme()
   local current_background = vim.o.background
   local colors = vim.list_extend(opts.colors or {}, vim.fn.getcompletion('', 'color'))
 
-  -- must add ':nohidden' or fzf ignore the preview action
-  -- disabling our live preview of colorschemes
-  opts.fzf_opts['--preview'] = prev_act
   opts.fzf_opts['--no-multi'] = ''
-  opts.fzf_opts['--preview-window'] = 'nohidden:right:0'
 
-  core.fzf_wrap(opts, colors, function(selected)
+  if opts.live_preview then
+    -- must add ':nohidden' or fzf ignores the preview action
+    opts.fzf_opts['--preview-window'] = 'nohidden:right:0'
+    opts.preview = shell.raw_action(function (args)
+      if opts.live_preview and args then
+        local colorscheme = args[1]
+        vim.cmd("colorscheme " .. colorscheme)
+      end
+    end, nil, opts.debug)
+  end
 
+  opts.fn_selected = function(selected)
     -- reset color scheme if live_preview is enabled
     -- and nothing or non-default action was selected
     if opts.live_preview and (not selected or #selected[1]>0) then
@@ -53,8 +53,9 @@ M.colorschemes = function(opts)
     if opts.post_reset_cb then
       opts.post_reset_cb()
     end
+  end
 
-  end)()
+  core.fzf_exec(colors, opts)
 
 end
 

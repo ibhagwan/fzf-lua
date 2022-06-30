@@ -253,8 +253,6 @@ M.buffer_lines = function(opts)
     end
   end
 
-  opts.fzf_opts["--preview-window"] = 'hidden:right:0'
-
   if opts.search and #opts.search>0 then
     opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search)
   end
@@ -323,9 +321,6 @@ M.tabs = function(opts)
     end
     cb(nil)
   end
-
-  -- opts.fzf_opts["--no-multi"] = ''
-  opts.fzf_opts["--preview-window"] = 'hidden:right:0'
 
   opts = core.set_fzf_field_index(opts, 3, "{}")
 

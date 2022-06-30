@@ -57,7 +57,6 @@ local history = function(opts, str)
   end
 
   opts.fzf_opts['--no-multi'] = ''
-  opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
   core.fzf_exec(entries, opts)
 end
@@ -329,7 +328,6 @@ M.spell_suggest = function(opts)
   if vim.tbl_isempty(entries) then return end
 
   opts.fzf_opts['--no-multi'] = ''
-  opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
   core.fzf_exec(entries, opts)
 
@@ -344,7 +342,6 @@ M.filetypes = function(opts)
   if vim.tbl_isempty(entries) then return end
 
   opts.fzf_opts['--no-multi'] = ''
-  opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
   core.fzf_exec(entries, opts)
 
@@ -360,7 +357,6 @@ M.packadd = function(opts)
   if vim.tbl_isempty(entries) then return end
 
   opts.fzf_opts['--no-multi'] = ''
-  opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
   core.fzf_exec(entries, opts)
 
@@ -397,7 +393,6 @@ M.menus = function(opts)
   end
 
   opts.fzf_opts['--no-multi'] = ''
-  opts.fzf_opts['--preview-window'] = 'hidden:right:0'
 
   core.fzf_exec(entries, opts)
 

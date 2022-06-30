@@ -296,6 +296,7 @@ require'fzf-lua'.setup {
       -- Only valid with the builtin previewer:
       cursor         = 'Cursor',        -- cursor highlight (grep/LSP matches)
       cursorline     = 'CursorLine',    -- cursor line
+      cursorlinenr   = 'CursorLineNr',  -- cursor line number
       search         = 'IncSearch',     -- search matches (ctags|help)
       -- title       = 'Normal',        -- preview border title (file/buffer)
       -- scrollbar_f = 'PmenuThumb',    -- scrollbar "full" section highlight

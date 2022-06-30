@@ -105,8 +105,7 @@ M.ui_select = function(items, opts, on_choice)
 
   config.set_action_helpstr(_opts.actions['default'], "accept-item")
 
-  core.fzf_wrap(_opts, entries, function(selected)
-
+  _opts.fn_selected = function(selected)
     config.set_action_helpstr(_opts.actions['default'], nil)
 
     if not selected then
@@ -118,8 +117,9 @@ M.ui_select = function(items, opts, on_choice)
     if _opts.post_action_cb then
       _opts.post_action_cb()
     end
+  end
 
-  end)()
+  core.fzf_exec(entries, _opts)
 
 end
 

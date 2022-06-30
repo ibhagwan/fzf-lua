@@ -208,17 +208,12 @@ function Previewer.base:display_entry(entry_str)
 
 end
 
-function Previewer.base:action(_)
+function Previewer.base:cmdline(_)
   local act = shell.raw_action(function (items, _, _)
     self:display_entry(items[1])
     return ""
   end, "{}", self.opts.debug)
   return act
-end
-
-function Previewer.base:cmdline(_)
-  return vim.fn.shellescape(self:action())
-  -- return 'true'
 end
 
 function Previewer.base:preview_window(_)
@@ -266,6 +261,22 @@ function Previewer.base:scroll(direction)
     utils.feed_keys_termcodes((':noa lua vim.api.nvim_win_call(' ..
       '%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>'):
       format(tonumber(preview_winid), input))
+  end
+  -- 'cursorline' is effectively our match highlight, once the
+  -- user scrolls, the highlight is no longer relevenat (#462)
+  -- conditionally toggle 'cursorline' based on cursor position
+  if self.orig_pos and self.winopts.cursorline then
+    local wininfo = vim.fn.getwininfo(preview_winid)
+    if wininfo and wininfo[1] and
+      self.orig_pos[1] >= wininfo[1].topline and
+      self.orig_pos[1] <= wininfo[1].botline then
+      -- reset cursor pos even when it's already there, no bigggie
+      -- local curpos = vim.api.nvim_win_get_cursor(preview_winid)
+      vim.api.nvim_win_set_cursor(preview_winid, self.orig_pos)
+      vim.api.nvim_win_set_option(preview_winid, 'cursorline', true)
+    else
+      vim.api.nvim_win_set_option(preview_winid, 'cursorline', false)
+    end
   end
   self.win:update_scrollbar()
 end
