@@ -163,7 +163,7 @@ M.file_sel_to_qf = function(selected, opts)
     local file = path.entry_to_file(selected[i], opts)
     local text = selected[i]:match(":%d+:%d?%d?%d?%d?:?(.*)$")
     table.insert(qf_list, {
-      filename = file.path,
+      filename = file.bufname or file.path,
       lnum = file.line,
       col = file.col,
       text = text,
