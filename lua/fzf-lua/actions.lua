@@ -277,7 +277,7 @@ M.buf_del = function(selected, opts)
 end
 
 M.buf_switch = function(selected, _)
-  local tabnr = selected[1]:match("(%d+)%)")
+  local tabnr = tonumber(selected[1]:match("(%d+)%)"))
   if tabnr then
     vim.cmd("tabn " .. tabnr)
   else
