@@ -13,11 +13,9 @@ end
 
 local jump_to_location = function(opts, result, enc)
 
-  local winid = vim.api.nvim_get_current_win()
-  if opts.winid ~= winid then
-    -- utils.send_ctrl_c()
-    vim.api.nvim_win_close(0, false)
-  end
+  -- exists the fzf window when use with async
+  -- safe to call even if the interafce is closed
+  utils.fzf_exit()
 
   local action = opts.jump_to_single_result_action
   if action then
@@ -37,15 +35,10 @@ local function location_handler(opts, cb, _, result, ctx, _)
   end
   local items = vim.lsp.util.locations_to_items(result, encoding)
   for _, entry in ipairs(items) do
-    if not opts.current_buffer_only or
-      vim.api.nvim_buf_get_name(opts.bufnr) == entry.filename then
+    if not opts.current_buffer_only or __CTX.bufname == entry.filename then
       entry = make_entry.lcol(entry, opts)
       entry = make_entry.file(entry, opts)
-      if entry then
-        cb(entry, function(err)
-          if err then return end
-        end)
-      end
+      if entry then cb(entry) end
     end
   end
 end
@@ -55,32 +48,24 @@ local function call_hierarchy_handler(opts, cb, _, result, _, _)
     --- "from" for incoming calls and "to" for outgoing calls
     local call_hierarchy_item = call_hierarchy_call.from or call_hierarchy_call.to
     for _, range in pairs(call_hierarchy_call.fromRanges) do
-      local entry = {
+      local location = {
         filename = assert(vim.uri_to_fname(call_hierarchy_item.uri)),
         text = call_hierarchy_item.name,
         lnum = range.start.line + 1,
         col = range.start.character + 1,
       }
-      entry = make_entry.lcol(entry, opts)
+      local entry = make_entry.lcol(location, opts)
       entry = make_entry.file(entry, opts)
-      if entry then
-        cb(entry, function(err)
-          if err then return end
-        end)
-      end
+      if entry then cb(entry) end
     end
   end
 end
 
 local function symbol_handler(opts, cb, _, result, _, _)
   result = vim.tbl_islist(result) and result or {result}
-  local items = vim.lsp.util.symbols_to_items(result, 0)
+  local items = vim.lsp.util.symbols_to_items(result, __CTX.bufnr)
   for _, entry in ipairs(items) do
-    if opts.ignore_filename then
-      entry.filename = opts.filename
-    end
-    if (not opts.current_buffer_only or
-        vim.api.nvim_buf_get_name(opts.bufnr) == entry.filename) and
+    if (not opts.current_buffer_only or __CTX.bufname == entry.filename) and
       (not opts.regex_filter or entry.text:match(opts.regex_filter)) then
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
@@ -90,18 +75,14 @@ local function symbol_handler(opts, cb, _, result, _, _)
       end
       entry = make_entry.lcol(entry, opts)
       entry = make_entry.file(entry, opts)
-      if entry then
-        cb(entry, function(err)
-          if err then return end
-        end)
-      end
+      if entry then cb(entry) end
     end
   end
 end
 
 local function code_action_handler(opts, cb, _, code_actions, context, _)
   if not opts.code_actions then opts.code_actions = {} end
-  local i = utils.tbl_length(opts.code_actions) + 1
+  local i = vim.tbl_count(opts.code_actions) + 1
   for _, action in ipairs(code_actions) do
     local text = string.format("%s %s",
       utils.ansi_codes.magenta(string.format("%d:", i)),
@@ -114,28 +95,11 @@ local function code_action_handler(opts, cb, _, code_actions, context, _)
       command = action,
     }
     opts.code_actions[tostring(i)] = entry
-    cb(text, function(err)
-      if err then return end
-    end)
+    cb(text)
     i = i + 1
   end
 end
 
-local function diagnostics_handler(opts, cb, co, entry)
-  local type = entry.type
-  entry = make_entry.lcol(entry, opts)
-  entry = make_entry.file(entry, opts)
-  if not entry then return end
-  if opts.lsp_icons and opts._severity_icons[type] then
-    local severity = opts._severity_icons[type]
-    local icon = severity.icon
-    if opts.color_icons then
-      icon = utils.ansi_codes[severity.color or "dark_grey"](icon)
-    end
-    entry = icon .. utils.nbsp .. utils.nbsp .. entry
-  end
-  cb(entry, function() coroutine.resume(co) end)
-end
 
 -- see neovim #15504
 -- https://github.com/neovim/neovim/pull/15504#discussion_r698424017
@@ -153,57 +117,40 @@ local mk_handler = function(fn)
       local client_id = select(4, ...)
       local bufnr = select(5, ...)
       local lspcfg = select(6, ...)
-      fn(err, result, { method = method, client_id = client_id, bufnr = bufnr }, lspcfg)
+      fn(err, result,
+        { method = method, client_id = client_id, bufnr = bufnr }, lspcfg)
     end
   end
 end
 
-local function wrap_handler(handler, opts, cb, co)
+local function async_lsp_handler(co, handler, opts)
   return mk_handler(function(err, result, context, lspcfg)
     -- increment callback & result counters
     opts.num_callbacks = opts.num_callbacks+1
-    opts.num_results = opts.num_results or 0 + result and utils.tbl_length(result) or 0
-    local ret
+    opts.num_results = (opts.num_results or 0) +
+      (result and vim.tbl_count(result) or 0)
     if err then
-      ret = err
       utils.err(string.format("Error executing '%s': %s", handler.method, err))
-      utils.send_ctrl_c()
+      utils.fzf_exit()
+      coroutine.resume(co, err)
     elseif not result or vim.tbl_isempty(result) then
       -- Only close the window if all clients sent their results
       if opts.num_callbacks == opts.num_clients and opts.num_results == 0 then
-        ret = utils.info(string.format('No %s found', string.lower(handler.label)))
-        utils.send_ctrl_c()
+        -- Do not close the window for 'live_workspace_symbols'
+        if not opts.fn_reload then
+          utils.info(string.format('No %s found', string.lower(handler.label)))
+          utils.fzf_exit()
+        end
+        coroutine.resume(co)
       end
     else
-      ret = opts.lsp_handler.handler(opts, cb, co, result, context, lspcfg)
-      if opts.num_callbacks == opts.num_clients then
-        -- close the pipe to fzf, this
-        -- removes the loading indicator in fzf
-        cb(nil)
-      end
+      local done = opts.num_callbacks == opts.num_clients
+      coroutine.resume(co, err, result, context, lspcfg, done)
     end
-    return ret
   end)
 end
 
 local function set_lsp_fzf_fn(opts)
-
-  -- we must make the params here while we're on
-  -- our current buffer window, anything inside
-  -- fzf_fn is run while fzf term is open
-  opts.bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
-  opts.winid = opts.winid or vim.api.nvim_get_current_win()
-  opts.filename = vim.api.nvim_buf_get_name(opts.bufnr)
-  if not opts.lsp_params then
-    opts.lsp_params = vim.lsp.util.make_position_params(0)
-    opts.lsp_params.context = { includeDeclaration = true }
-  end
-
-  -- Save no of attached clients so we can determine
-  -- if all callbacks were completed
-  opts.num_results = 0
-  opts.num_callbacks = 0
-  opts.num_clients = utils.tbl_length(vim.lsp.buf_get_clients(0))
 
   -- consider 'async_or_timeout' only if
   -- 'sync|async' wasn't manually set
@@ -215,12 +162,21 @@ local function set_lsp_fzf_fn(opts)
     end
   end
 
+  -- build positional params for the LSP query
+  -- from the context buffer and cursor position
+  if not opts.lsp_params then
+    opts.lsp_params = vim.lsp.util.make_position_params(__CTX.winid)
+    opts.lsp_params.context = { includeDeclaration = true }
+  end
+
   if opts.sync or opts.async == false then
+
+    -- SYNC
     local timeout = 5000
     if type(opts.async_or_timeout) == "number" then
       timeout = opts.async_or_timeout
     end
-    local lsp_results, err = vim.lsp.buf_request_sync(opts.bufnr,
+    local lsp_results, err = vim.lsp.buf_request_sync(__CTX.bufnr,
         opts.lsp_handler.method, opts.lsp_params, timeout)
     if err then
       utils.err(string.format("Error executing '%s': %s",
@@ -235,63 +191,84 @@ local function set_lsp_fzf_fn(opts)
         end
       end
       if vim.tbl_isempty(results) then
-        utils.info(string.format('No %s found', string.lower(opts.lsp_handler.label)))
+        if not opts.fn_reload then
+          utils.info(string.format('No %s found', string.lower(opts.lsp_handler.label)))
+        end
       elseif not (opts.jump_to_single_result and #results == 1) then
-        opts.fzf_fn = results
-      end
-    end
-    return opts
-  end
-
-  opts.fzf_fn = function (cb)
-    coroutine.wrap(function ()
-      local co = coroutine.running()
-
-      -- reset number of callbacks incase
-      -- we're being called from 'resume'
-      opts.num_callbacks = 0
-
-      -- cancel all currently running requests
-      -- can happen when using `live_ws_symbols`
-      if opts._cancel_all then
-        opts._cancel_all()
-        opts._cancel_all = nil
-      end
-
-      -- local cancel_all = vim.lsp.buf_request_all(opts.bufnr,
-        -- opts.lsp_handler.method, opts.lsp_params,
-        -- wrap_request_all(opts.lsp_handler))
-
-      local _, cancel_all = vim.lsp.buf_request(opts.bufnr,
-        opts.lsp_handler.method, opts.lsp_params,
-        wrap_handler(opts.lsp_handler, opts, cb, co))
-
-      -- save this so we can cancel all requests
-      -- when using `live_ws_symbols`
-      opts._cancel_all = cancel_all
-
-      -- cancel all remaining LSP requests
-      -- once the user made their selection
-      -- or closed the fzf popup
-      opts._fn_post_fzf = function()
-        if opts._cancel_all then
-          opts._cancel_all()
-          opts._cancel_all = nil
+        -- LSP request was synchronou but we can
+        -- still async the fzf feeding
+        opts.fzf_fn = function (fzf_cb)
+          coroutine.wrap(function ()
+            local co = coroutine.running()
+            for _, e in ipairs(results) do
+              fzf_cb(e, function() coroutine.resume(co) end)
+              coroutine.yield()
+            end
+            fzf_cb(nil)
+          end)()
         end
       end
+    end
+  else
 
-    end)()
+    -- cancel all remaining LSP requests once the user
+    -- made their selection or closed the fzf popup
+    local fn_cancel_all = function(o)
+      if o and o._cancel_all then
+        o._cancel_all()
+        o._cancel_all = nil
+      end
+    end
+    opts._fn_post_fzf = fn_cancel_all
+
+    -- ASYNC
+    opts.fzf_fn = function (fzf_cb)
+      coroutine.wrap(function ()
+        local co = coroutine.running()
+
+        -- Save no of attached clients so we can determine
+        -- if all callbacks were completed
+        opts.num_results = 0
+        opts.num_callbacks = 0
+        opts.num_clients = vim.tbl_count(vim.lsp.buf_get_clients(__CTX.bufnr))
+
+        -- when used with 'live_workspace_symbols'
+        -- cancel all lingering LSP queries
+        fn_cancel_all(opts)
+
+        local _, cancel_all = vim.lsp.buf_request(__CTX.bufnr,
+          opts.lsp_handler.method, opts.lsp_params,
+          async_lsp_handler(co, opts.lsp_handler, opts))
+
+        -- save this so we can cancel all requests
+        -- when using `live_ws_symbols`
+        opts._cancel_all = cancel_all
+
+        -- process results from all LSP client
+        local err, result, context, lspcfg, done
+        repeat
+          err, result, context, lspcfg, done = coroutine.yield()
+          if not err and type(result) == 'table' then
+            local cb = function(e)
+              fzf_cb(e, function() coroutine.resume(co) end)
+              coroutine.yield()
+            end
+            opts.lsp_handler.handler(opts, cb,
+              opts.lsp_handler.method, result, context, lspcfg)
+          end
+        until done or err or result == nil
+
+        -- no more results
+        fzf_cb(nil)
+
+        -- we only get here once all requests are done
+        -- so we can clear '_cancel_all'
+        opts._cancel_all = nil
+
+      end)()
+    end
   end
 
-  return opts
-end
-
-local set_async_default = function(opts, bool)
-  if not opts then opts = {} end
-  if opts.sync == nil and
-     opts.async == nil then
-     opts.async = bool
-  end
   return opts
 end
 
@@ -303,13 +280,22 @@ local normalize_lsp_opts = function(opts, cfg)
     opts.prompt = opts.lsp_handler.label .. (opts.prompt_postfix or '')
   end
 
-  opts.bufnr = nil
-  opts.winid = nil
-  opts.filename = nil
+  -- required for relative paths presentation
+  if not opts.cwd or #opts.cwd == 0 then
+    opts.cwd = vim.loop.cwd()
+  end
+
+  -- save current win/buf context
+  -- ignore when fzf window is already open
+  if not __CTX or not utils.fzf_winobj() then
+    __CTX = {
+      winid = vim.api.nvim_get_current_win(),
+      bufnr = vim.api.nvim_get_current_buf(),
+      bufname = vim.api.nvim_buf_get_name(0)
+    }
+  end
+
   opts.code_actions = nil
-  opts.num_results = nil
-  opts.num_callbacks = nil
-  opts.num_clients = nil
 
   return opts
 end
@@ -317,9 +303,8 @@ end
 local function fzf_lsp_locations(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp)
   if not opts then return end
-  opts = core.set_header(opts, opts.headers or {"cwd"})
-  opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
+  opts = core.set_fzf_field_index(opts)
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
   return core.fzf_exec(opts.fzf_fn, opts)
@@ -348,7 +333,7 @@ end
 
 -- see $VIMRUNTIME/lua/vim/buf.lua:pick_call_hierarchy_item()
 M.call_hierarchy = function(opts)
-  opts.lsp_params = vim.lsp.util.make_position_params(0)
+  opts.lsp_params = vim.lsp.util.make_position_params(__CTX.winid)
   local method = "textDocument/prepareCallHierarchy"
   local res, err = vim.lsp.buf_request_sync(
     0, method, opts.lsp_params, 2000)
@@ -418,10 +403,10 @@ local function gen_sym2style_map(opts)
 end
 
 M.document_symbols = function(opts)
-  opts = set_async_default(opts, true)
-  opts = normalize_lsp_opts(opts, config.globals.lsp)
+  opts = normalize_lsp_opts(opts, config.globals.lsp.symbols)
   if not opts then return end
-  opts = core.set_header(opts, opts.headers or {"cwd","regex_filter"})
+  opts.__MODULE__ = opts.__MODULE__ or M
+  opts = core.set_header(opts, opts.headers or {"regex_filter"})
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   if not opts.fzf_opts or opts.fzf_opts['--with-nth'] == nil then
@@ -429,7 +414,6 @@ M.document_symbols = function(opts)
     opts.fzf_opts["--with-nth"]    = '2..'
     opts.fzf_opts["--tiebreak"]    = 'index'
   end
-  opts.ignore_filename = true
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
   if opts.symbol_style or opts.symbol_fmt then
@@ -439,29 +423,109 @@ M.document_symbols = function(opts)
   return core.fzf_exec(opts.fzf_fn, opts)
 end
 
+local function get_last_lspquery(opts)
+  if opts.__MODULE__ and opts.__MODULE__.get_last_search then
+    return opts.__MODULE__.get_last_lspquery(opts)
+  end
+  return M.__last_ws_lsp_query
+end
+
+local function set_last_lspquery(opts, query)
+  if opts.__MODULE__ and opts.__MODULE__.set_last_search then
+    opts.__MODULE__.set_last_lspquery(opts, query)
+    return
+  end
+  M.__last_ws_lsp_query = query
+  if config.__resume_data then
+    config.__resume_data.last_query = query
+  end
+end
+
 M.workspace_symbols = function(opts)
-  opts = set_async_default(opts, true)
-  opts = normalize_lsp_opts(opts, config.globals.lsp)
+  opts = normalize_lsp_opts(opts, config.globals.lsp.symbols)
   if not opts then return end
+  opts.__MODULE__ = opts.__MODULE__ or M
+  if not opts.lsp_query and opts.resume then
+    opts.lsp_query = get_last_lspquery(opts)
+  end
+  set_last_lspquery(opts, opts.lsp_query)
   opts.lsp_params = {query = opts.lsp_query or ''}
-  opts = core.set_header(opts, opts.headers or {"cwd","query","regex_filter"})
+  opts = core.set_header(opts, opts.headers or
+    { "actions", "cwd", "lsp_query", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
   if opts.symbol_style or opts.symbol_fmt then
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
-    opts.fn_post_fzf = function() M._sym2style = nil end
+    -- when using an empty string grep (as in 'grep_project') or
+    -- when switching from grep to live_grep using 'ctrl-g' users
+    -- may find it confusing why is the last typed query not
+    -- considered the last search so we find out if that's the
+    -- case and use the last typed prompt as the grep string
+    opts.fn_post_fzf = function(o, _)
+      M._sym2style = nil
+      local last_lspquery = get_last_lspquery(o)
+      local last_query = config.__resume_data and config.__resume_data.last_query
+      if not last_lspquery or #last_lspquery==0
+        and (last_query and #last_query>0) then
+        set_last_lspquery(opts, last_query)
+      end
+    end
   end
   return core.fzf_exec(opts.fzf_fn, opts)
 end
 
+M.live_workspace_symbols = function(opts)
+  opts = normalize_lsp_opts(opts, config.globals.lsp.symbols)
+  if not opts then return end
+
+  -- needed by 'actions.sym_lsym'
+  -- prepend the prompt with asterisk
+  opts.__MODULE__ = opts.__MODULE__ or M
+  opts.prompt = opts.prompt and opts.prompt:match("^%*") or '*'..opts.prompt
+
+  -- exec empty query is the default here
+  if opts.exec_empty_query == nil then
+    opts.exec_empty_query = true
+  end
+
+  if not opts.lsp_query and opts.resume then
+    opts.lsp_query = get_last_lspquery(opts)
+  end
+
+  -- sent to the LSP server
+  opts.lsp_params = {query = opts.lsp_query or opts.query or ''}
+  opts.query = opts.lsp_query or opts.query
+
+  -- don't use the automatic coroutine since we
+  -- use our own 
+  opts.func_async_callback = false
+  opts.fn_reload = function(query)
+    if query and not (opts.save_last_search == false) then
+      set_last_lspquery(opts, query)
+    end
+    opts.lsp_params = {query = query or ''}
+    opts = set_lsp_fzf_fn(opts)
+    return opts.fzf_fn
+  end
+
+  opts = core.set_header(opts, opts.headers or {"actions", "cwd", "regex_filter"})
+  opts = core.set_fzf_field_index(opts)
+  if opts.force_uri == nil then opts.force_uri = true end
+  if opts.symbol_style or opts.symbol_fmt then
+    opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
+    opts.fn_post_fzf = function() M._sym2style = nil end
+  end
+  core.fzf_exec(nil, opts)
+end
+
 -- Converts 'vim.diagnostic.get' to legacy style 'get_line_diagnostics()'
-local function get_line_diagnostics(opts)
+local function get_line_diagnostics(_)
   if not vim.diagnostic then
     return vim.lsp.diagnostic.get_line_diagnostics()
   end
-  local diag = vim.diagnostic.get(opts.bufnr, {lnum = vim.api.nvim_win_get_cursor(0)[1]-1})
+  local diag = vim.diagnostic.get(__CTX.bufnr, {lnum = vim.api.nvim_win_get_cursor(0)[1]-1})
   return diag and diag[1] and {{
     source = diag[1].source,
     message = diag[1].message,
@@ -626,219 +690,9 @@ M.code_actions = function(opts)
 
 end
 
-local convert_diagnostic_type = function(severity)
-  -- convert from string to int
-  if type(severity) == "string" and not tonumber(severity) then
-    -- make sure that e.g. error is uppercased to Error
-    return vim.diagnostic and vim.diagnostic.severity[severity:upper()] or
-      vim.lsp.protocol.DiagnosticSeverity[severity:gsub("^%l", string.upper)]
-  else
-    -- otherwise keep original value, incl. nil
-    return tonumber(severity)
-  end
-end
-
-local filter_diag_severity = function(opts, severity)
-  if opts.severity_only ~= nil then
-    return tonumber(opts.severity_only) == severity
-  elseif opts.severity_limit ~= nil then
-    return severity <= tonumber(opts.severity_limit)
-  elseif opts.severity_bound ~= nil then
-    return severity >= tonumber(opts.severity_bound)
-  else
-    return true
-  end
-end
-
-M.diagnostics = function(opts)
-  opts = normalize_lsp_opts(opts, config.globals.lsp)
-  if not opts then return end
-
-  if not vim.diagnostic then
-    local lsp_clients = vim.lsp.buf_get_clients(0)
-    if utils.tbl_isempty(lsp_clients) then
-      utils.info("LSP: no client attached")
-      return
-    end
-  end
-
-  opts.winid = vim.api.nvim_get_current_win()
-  local current_buf = vim.api.nvim_get_current_buf()
-
-  -- normalize the LSP icons table
-  opts._severity_icons = {}
-  for k, v in pairs({
-    ["Error"]       = 1,
-    ["Warning"]     = 2,
-    ["Information"] = 3,
-    ["Hint"]        = 4
-  }) do
-    if opts.icons and opts.icons[k] then
-      opts._severity_icons[v] = opts.icons[k]
-    end
-  end
-
-  -- hint         = 4
-  -- information  = 3
-  -- warning      = 2
-  -- error        = 1
-  -- severity_only:   keep any matching exact severity
-  -- severity_limit:  keep any equal or more severe (lower)
-  -- severity_bound:  keep any equal or less severe (higher)
-  opts.severity_only = convert_diagnostic_type(opts.severity_only)
-  opts.severity_limit = convert_diagnostic_type(opts.severity_limit)
-  opts.severity_bound = convert_diagnostic_type(opts.severity_bound)
-
-  local diag_opts = { severity = {}, namespace = opts.namespace }
-  if opts.severity_only ~= nil then
-    if opts.severity_limit ~= nil or opts.severity_bound ~= nil then
-      utils.warn("Invalid severity parameters. Both a specific severity and a limit/bound is not allowed")
-      return {}
-    end
-    diag_opts.severity = opts.severity_only
-  else
-    if opts.severity_limit ~= nil then
-      diag_opts.severity["min"] = opts.severity_limit
-    end
-    if opts.severity_bound ~= nil then
-      diag_opts.severity["max"] = opts.severity_bound
-    end
-  end
-
-  local diag_results = vim.diagnostic and
-    vim.diagnostic.get(not opts.diag_all and current_buf or nil, diag_opts) or
-    opts.diag_all and vim.lsp.diagnostic.get_all() or
-    {[current_buf] = vim.lsp.diagnostic.get(current_buf, opts.client_id)}
-
-  local has_diags = false
-  if vim.diagnostic then
-    -- format: { <diag array> }
-    has_diags = not vim.tbl_isempty(diag_results)
-  else
-    -- format: { [bufnr] = <diag array>, ... }
-    for _, diags in pairs(diag_results) do
-      if #diags > 0 then has_diags = true end
-    end
-  end
-  if not has_diags then
-    utils.info(string.format('No %s found', string.lower(opts.lsp_handler.label)))
-    return
-  end
-
-  local preprocess_diag = function(diag, bufnr)
-    bufnr = bufnr or diag.bufnr
-    local filename = vim.api.nvim_buf_get_name(bufnr)
-    -- pre vim.diagnostic (vim.lsp.diagnostic)
-    -- has 'start|finish' instead of 'end_col|end_lnum'
-    local start = diag.range and diag.range['start']
-    -- local finish = diag.range and diag.range['end']
-    local row = diag.lnum or start.line
-    local col = diag.col or start.character
-
-    local buffer_diag = {
-      bufnr = bufnr,
-      filename = filename,
-      lnum = row + 1,
-      col = col + 1,
-      text = vim.trim(diag.message:gsub("[\n]", "")),
-      type = diag.severity or 1
-    }
-    return buffer_diag
-  end
-
-  opts.fzf_fn = function (fzf_cb)
-    coroutine.wrap(function ()
-      local co = coroutine.running()
-
-      local function process_diagnostics(diags, bufnr)
-        for _, diag in ipairs(diags) do
-          -- workspace diagnostics may include
-          -- empty tables for unused buffers
-          if not vim.tbl_isempty(diag) then
-            if filter_diag_severity(opts, diag.severity) then
-              -- wrap with 'vim.scheudle' or calls to vim.{fn|api} fail:
-              -- E5560: vimL function must not be called in a lua loop callback
-              vim.schedule(function()
-                diagnostics_handler(opts, fzf_cb, co, preprocess_diag(diag, bufnr))
-              end)
-              -- wait here for 'diagnostics_handler' to return
-              coroutine.yield()
-            end
-          end
-        end
-      end
-
-      if vim.diagnostic then
-        process_diagnostics(diag_results)
-      else
-        for bufnr, diags in pairs(diag_results) do
-          process_diagnostics(diags, bufnr)
-        end
-      end
-      -- close the pipe to fzf, this
-      -- removes the loading indicator
-      fzf_cb(nil)
-    end)()
-  end
-
-  opts = core.set_header(opts, opts.headers or {"cwd"})
-  opts = core.set_fzf_field_index(opts)
-  if opts.force_uri == nil then opts.force_uri = true end
-  return core.fzf_exec(opts.fzf_fn, opts)
-end
-
-M.workspace_diagnostics = function(opts)
-  if not opts then opts = {} end
-  opts.diag_all = true
-  return M.diagnostics(opts)
-end
-
-local last_search = {}
-
-M.live_workspace_symbols = function(opts)
-  opts = normalize_lsp_opts(opts, config.globals.lsp)
-  if not opts then return end
-
-  -- exec empty query is the default here
-  if opts.exec_empty_query == nil then
-    opts.exec_empty_query = true
-  end
-
-  if not opts.query and opts.resume then
-    opts.query = last_search.query
-  end
-
-  -- sent to the LSP server
-  opts.lsp_params = {query = opts.query or ''}
-
-  -- must get those here, otherwise we get the
-  -- fzf terminal buffer and window IDs
-  opts.bufnr = vim.api.nvim_get_current_buf()
-  opts.winid = vim.api.nvim_get_current_win()
-
-  opts.fn_reload = function(query)
-    if query and not (opts.save_last_query == false) then
-      last_search = { query = query }
-      config.__resume_data.last_query = query
-    end
-    opts.sync = true
-    opts.async = false
-    opts.lsp_params = {query = query or ''}
-    opts = set_lsp_fzf_fn(opts)
-    return opts.fzf_fn
-  end
-
-  opts = core.set_fzf_field_index(opts)
-  if opts.force_uri == nil then opts.force_uri = true end
-  if opts.symbol_style or opts.symbol_fmt then
-    opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
-    opts.fn_post_fzf = function() M._sym2style = nil end
-  end
-  core.fzf_exec(nil, opts)
-end
 
 local function check_capabilities(feature)
-  local clients = vim.lsp.buf_get_clients(0)
+  local clients = vim.lsp.buf_get_clients(__CTX and __CTX.bufnr or 0)
 
   for _, client in pairs(clients) do
     if vim.fn.has("nvim-0.8") == 1 then
@@ -915,18 +769,6 @@ local handlers = {
     server_capability = "workspaceSymbolProvider",
     method = "workspace/symbol",
     handler = symbol_handler },
-  ["diagnostics"] = {
-    label = "Diagnostics",
-    resolved_capability = nil,
-    server_capability = nil,
-    method = nil,
-    handler = diagnostics_handler },
-  ["workspace_diagnostics"] = {
-    label = "Workspace Diagnostics",
-    resolved_capability = nil,
-    server_capability = nil,
-    method = nil,
-    handler = diagnostics_handler },
   ["incoming_calls"] = {
     label = "Incoming Calls",
     resolved_capability = "call_hierarchy",

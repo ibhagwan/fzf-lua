@@ -630,5 +630,30 @@ M.grep_lgrep = function(_, opts)
   end
 end
 
+M.sym_lsym = function(_, opts)
+
+  assert(opts.__MODULE__
+    and type(opts.__MODULE__.workspace_symbols) == 'function'
+    or type(opts.__MODULE__.live_workspace_symbols) == 'function')
+
+  local o = vim.tbl_extend("keep", {
+      resume = true,
+      lsp_query = false,
+      -- ws has both search string and query prompt, when
+      -- switching from live_ws to ws we want to restore both:
+      --   * we save the last query prompt when exiting ws
+      --   * we set query to the last known when entering ws
+      __prev_query = not opts.fn_reload and opts.__resume_data.last_query,
+      query = opts.fn_reload and opts.__call_opts.__prev_query,
+    }, opts.__call_opts or {})
+
+  -- 'fn_reload' is set only on 'live_xxx' calls
+  if opts.fn_reload then
+    opts.__MODULE__.workspace_symbols(o)
+  else
+    opts.__MODULE__.live_workspace_symbols(o)
+  end
+end
+
 return M
 

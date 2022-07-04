@@ -403,6 +403,15 @@ function M.get_visual_selection()
     return table.concat(lines, "\n")
 end
 
+function M.fzf_exit()
+  vim.cmd([[lua require('fzf-lua.win').win_leave()]])
+end
+
+function M.fzf_winobj()
+  -- use 'loadstring' to prevent circular require
+  return loadstring("return require'fzf-lua'.win.__SELF()")()
+end
+
 function M.send_ctrl_c()
   vim.api.nvim_feedkeys(
     vim.api.nvim_replace_termcodes("<C-c>", true, false, true), 'n', true)

@@ -299,9 +299,7 @@ M.globals.grep = {
     grep_opts           = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp",
     rg_opts             = "--column --line-number --no-heading --color=always --smart-case --max-columns=512",
     _actions            = function() return M.globals.actions.files end,
-    actions = {
-      ["ctrl-g"]        = { actions.grep_lgrep }
-    },
+    actions             = { ["ctrl-g"] = { actions.grep_lgrep } },
     -- live_grep_glob options
     glob_flag           = "--iglob",  -- for case sensitive globs use '--glob'
     glob_separator      = "%s%-%-",   -- query separator pattern (lua): ' --'
@@ -423,9 +421,7 @@ M.globals.tags = {
     git_icons             = true,
     color_icons           = true,
     _actions              = function() return M.globals.actions.files end,
-    actions = {
-      ["ctrl-g"]          = { actions.grep_lgrep }
-    },
+    actions               = { ["ctrl-g"] = { actions.grep_lgrep } },
   }
 M.globals.btags = {
     previewer             = { _ctor = previewers.builtin.tags },
@@ -493,19 +489,37 @@ M.globals.lsp = {
       file_icons          = true and M._has_devicons,
       color_icons         = true,
       git_icons           = false,
-      lsp_icons           = true,
       cwd_only            = false,
       ui_select           = true,
+      async_or_timeout    = 5000,
+      _actions            = function() return M.globals.actions.files end,
+  }
+M.globals.lsp.symbols = {
+      previewer           = M._default_previewer_fn,
+      prompt_postfix      = '> ',
+      file_icons          = true and M._has_devicons,
+      color_icons         = true,
+      git_icons           = false,
       symbol_style        = 1,
       symbol_hl_prefix    = "CmpItemKind",
       symbol_fmt          = function(s) return "["..s.."]" end,
-      async_or_timeout    = 5000,
+      async_or_timeout    = true,
       _actions            = function() return M.globals.actions.files end,
-      icons = {
-          ["Error"]       = { icon = "", color = "red" },       -- error
-          ["Warning"]     = { icon = "", color = "yellow" },    -- warning
-          ["Information"] = { icon = "", color = "blue" },      -- info
-          ["Hint"]        = { icon = "", color = "magenta" },   -- hint
+      actions             = { ["ctrl-g"] = { actions.sym_lsym } },
+  }
+M.globals.diagnostics = {
+      previewer           = M._default_previewer_fn,
+      prompt              = 'Diagnostics> ',
+      file_icons          = true and M._has_devicons,
+      color_icons         = true,
+      git_icons           = false,
+      diag_icons          = true,
+      _actions            = function() return M.globals.actions.files end,
+      severity_icons = {
+        ["Error"]         = { icon = "", color = "red" },
+        ["Warning"]       = { icon = "", color = "yellow" },
+        ["Information"]   = { icon = "", color = "blue" },
+        ["Hint"]          = { icon = "", color = "magenta" },
       },
   }
 M.globals.builtin = {
@@ -804,6 +818,12 @@ function M.normalize_opts(opts, defaults)
     ['winopts.preview.title']         = 'previewers.builtin.title',
     ['winopts.preview.scrollbar']     = 'previewers.builtin.scrollbar',
     ['winopts.preview.scrollchar']    = 'previewers.builtin.scrollchar',
+    -- Diagnostics & LSP symbols separation options
+    ['symbol_fmt']                    = 'lsp.symbol_fmt',
+    ['symbol_style']                  = 'lsp.symbol_style',
+    ['symbol_hl_prefix']              = 'lsp.symbol_hl_prefix',
+    ['diag_icons']                    = 'lsp.lsp_icons',
+    ['severity_icons']                = 'lsp.icons',
   }
 
   -- recursive key loopkup, can also set new value
@@ -851,6 +871,7 @@ function M.normalize_opts(opts, defaults)
       end
     end
   end
+
 
   -- test for valid git_repo
   opts.git_icons = opts.git_icons and path.is_git_repo(opts, true)
@@ -968,6 +989,7 @@ M._action_to_helpstr = {
   [actions.arg_add]               = "arg-list-add",
   [actions.arg_del]               = "arg-list-delete",
   [actions.grep_lgrep]            = "grep<->lgrep",
+  [actions.sym_lsym]              = "sym<->lsym",
 }
 
 return M

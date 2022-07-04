@@ -139,10 +139,14 @@ M.lsp_document_symbols = require'fzf-lua.providers.lsp'.document_symbols
 M.lsp_workspace_symbols = require'fzf-lua.providers.lsp'.workspace_symbols
 M.lsp_live_workspace_symbols = require'fzf-lua.providers.lsp'.live_workspace_symbols
 M.lsp_code_actions = require'fzf-lua.providers.lsp'.code_actions
-M.lsp_document_diagnostics = require'fzf-lua.providers.lsp'.diagnostics
-M.lsp_workspace_diagnostics = require'fzf-lua.providers.lsp'.workspace_diagnostics
 M.lsp_incoming_calls = require'fzf-lua.providers.lsp'.incoming_calls
 M.lsp_outgoing_calls = require'fzf-lua.providers.lsp'.outgoing_calls
+
+-- backward compat
+M.lsp_document_diagnostics = require'fzf-lua.providers.diagnostic'.diagnostics
+M.lsp_workspace_diagnostics = require'fzf-lua.providers.diagnostic'.all
+M.diagnostics_document = require'fzf-lua.providers.diagnostic'.diagnostics
+M.diagnostics_workspace = require'fzf-lua.providers.diagnostic'.all
 
 M.register_ui_select = require'fzf-lua.providers.ui_select'.register
 M.deregister_ui_select = require'fzf-lua.providers.ui_select'.deregister

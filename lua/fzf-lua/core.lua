@@ -208,12 +208,9 @@ M.fzf = function(opts, contents)
 
   -- some functions such as buffers|tabs
   -- need to reacquire current buffer|tab state
-  if opts._fn_pre_fzf then
-    opts._fn_pre_fzf(opts)
-  end
-  if opts.fn_pre_fzf then
-    opts.fn_pre_fzf(opts)
-  end
+  if opts.__fn_pre_fzf then opts.__fn_pre_fzf(opts) end
+  if opts._fn_pre_fzf then opts._fn_pre_fzf(opts) end
+  if opts.fn_pre_fzf then opts.fn_pre_fzf(opts) end
 
   fzf_win:attach_previewer(previewer)
   fzf_win:create()
@@ -237,12 +234,9 @@ M.fzf = function(opts, contents)
     end
     table.remove(selected, 1)
   end
-  if opts._fn_post_fzf then
-    opts._fn_post_fzf(opts, selected)
-  end
-  if opts.fn_post_fzf then
-    opts.fn_post_fzf(opts, selected)
-  end
+  if opts.__fn_post_fzf then opts.__fn_post_fzf(opts, selected) end
+  if opts._fn_post_fzf then opts._fn_post_fzf(opts, selected) end
+  if opts.fn_post_fzf then opts.fn_post_fzf(opts, selected) end
   libuv.process_kill(opts._pid)
   fzf_win:check_exit_status(exit_code)
   -- retrieve the future action and check:
@@ -567,12 +561,12 @@ M.set_header = function(opts, hdr_tbl)
         return opts.search and #opts.search>0 and opts.search
       end,
     },
-    query = {
-      hdr_txt_opt = "query_header",
+    lsp_query = {
+      hdr_txt_opt = "lsp_query_header",
       hdr_txt_str = "Query: ",
       hdr_txt_col = "red",
       val = function()
-        return opts.query and #opts.query>0 and opts.query
+        return opts.lsp_query and #opts.lsp_query>0 and opts.lsp_query
       end,
     },
     regex_filter = {
@@ -584,13 +578,19 @@ M.set_header = function(opts, hdr_tbl)
       end,
     },
     actions = {
-      hdr_txt_opt = "grep_lgrep_header",
+      hdr_txt_opt = "interactive_header",
       hdr_txt_str = "",
       val = function()
+        local is_lsp = opts.__MODULE__.workspace_symbols
+        local o = {
+          action    = is_lsp and actions.sym_lsym or actions.grep_lgrep,
+          to_live   = is_lsp and "Live Query" or "Regex Search",
+          to_fuzzy  = is_lsp and "Fuzzy Search" or "Fuzzy Search",
+        }
         if opts.no_header_i then return end
         for k, v in pairs(opts.actions) do
-          if type(v) == 'table' and v[1] == actions.grep_lgrep then
-            local to = opts.fn_reload and 'Grep' or 'Live Grep'
+          if type(v) == 'table' and v[1] == o.action then
+            local to = opts.fn_reload and o.to_fuzzy or o.to_live
             return (':: <%s> to %s'):format(
               utils.ansi_codes.yellow(k),
               utils.ansi_codes.red(to))
