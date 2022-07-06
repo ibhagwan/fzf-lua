@@ -216,7 +216,7 @@ GIT                                                              *fzf-lua-git*
 
 
                                                                               
-LSP                                                              *fzf-lua-lsp*
+LSP/DIAGNOSTICS                                      *fzf-lua-lsp/diagnostics*
 
 | Command          | List                                       |
 | ---------------- | ------------------------------------------ |
@@ -229,10 +229,12 @@ LSP                                                              *fzf-lua-lsp*
 | `lsp_workspace_symbols`      | Workspace Symbols                |
 | `lsp_live_workspace_symbols` | Workspace Symbols (live query)   |
 | `lsp_code_actions`           | Code Actions                     |
-| `lsp_document_diagnostics`   | Document Diagnostics             |
-| `lsp_workspace_diagnostics`  | Workspace Diagnostics            |
 | `lsp_incoming_calls`         | Incoming Calls                   |
 | `lsp_outgoing_calls`         | Outgoing Calls                   |
+| `diagnostics_document`       | Document Diagnostics             |
+| `diagnostics_workspace`      | Workspace Diagnostics            |
+| `lsp_document_diagnostics`   | alias to `diagnostics_document`    |
+| `lsp_workspace_diagnostics`  | alias to `diagnostics_workspace`   |
 
 
                                                                               
@@ -798,26 +800,43 @@ Consult the list below for available settings:
         async_or_timeout  = 5000,       -- timeout(ms) or 'true' for async calls
         file_icons        = true,
         git_icons         = false,
-        lsp_icons         = true,
         ui_select         = true,       -- use 'vim.ui.select' for code actions
-        symbol_style      = 1,          -- style for document/workspace symbols
-                                        -- false: disable,    1: icon+kind
-                                        --     2: icon only,  3: kind only
-                                        -- NOTE: icons are extracted from
-                                        -- vim.lsp.protocol.CompletionItemKind
-        -- colorize using nvim-cmp's CmpItemKindXXX highlights
-        -- can also be set to 'TS' for treesitter highlights ('TSProperty', etc)
-        -- or 'false' to disable highlighting
-        symbol_hl_prefix  = "CmpItemKind",
-        -- additional symbol formatting, works with or without style
-        symbol_fmt        = function(s) return "["..s.."]" end,
-        severity          = "hint",
-        icons = {
-          ["Error"]       = { icon = "", color = "red" },       -- error
-          ["Warning"]     = { icon = "", color = "yellow" },    -- warning
-          ["Information"] = { icon = "", color = "blue" },      -- info
-          ["Hint"]        = { icon = "", color = "magenta" },   -- hint
+        -- settings for 'lsp_{document|workspace|lsp_live_workspace}_symbols'
+        symbols = {
+            async_or_timeout  = true,       -- symbols are async by default
+            symbol_style      = 1,          -- style for document/workspace symbols
+                                            -- false: disable,    1: icon+kind
+                                            --     2: icon only,  3: kind only
+                                            -- NOTE: icons are extracted from
+                                            -- vim.lsp.protocol.CompletionItemKind
+            -- colorize using nvim-cmp's CmpItemKindXXX highlights
+            -- can also be set to 'TS' for treesitter highlights ('TSProperty', etc)
+            -- or 'false' to disable highlighting
+            symbol_hl_prefix  = "CmpItemKind",
+            -- additional symbol formatting, works with or without style
+            symbol_fmt        = function(s) return "["..s.."]" end,
         },
+      },
+      diagnostics ={
+        prompt            = 'Diagnostics❯ ',
+        cwd_only          = false,      -- limit to cwd only?
+        file_icons        = true,
+        git_icons         = false,
+        diag_icons        = true,
+        severity_icons = {
+          ["Error"]       = { icon = "", color = "red" },
+          ["Warning"]     = { icon = "", color = "yellow" },
+          ["Information"] = { icon = "", color = "blue" },
+          ["Hint"]        = { icon = "", color = "magenta" },
+        },
+        -- limit to specific severity, use either a string or num:
+        --   1 or "hint"
+        --   2 or "information"
+        --   3 or "warning"
+        --   4 or "error"
+        -- severity_only:   keep any matching exact severity
+        -- severity_limit:  keep any equal or more severe (lower)
+        -- severity_bound:  keep any equal or less severe (higher)
       },
       -- uncomment to use the old help previewer which used a
       -- minimized help window to generate the help tag preview

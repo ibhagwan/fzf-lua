@@ -739,7 +739,7 @@ end
 
 function Previewer.help_tags:populate_preview_buf(entry_str)
   local entry = self:parse_entry(entry_str)
-  vim.api.nvim_win_call(self.help_winid, function()
+  pcall(vim.api.nvim_win_call, self.help_winid, function()
     self.prev_help_bufnr = api.nvim_get_current_buf()
     self:exec_cmd(entry)
     vim.api.nvim_buf_set_option(0, 'filetype', self.filetype)
