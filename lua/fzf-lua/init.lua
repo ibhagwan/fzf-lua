@@ -32,6 +32,47 @@ end
 
 local M = {}
 
+function M.setup_highlights()
+
+  local highlights = {
+    FzfLuaNormal = { 'winopts.hl.normal', "Normal" },
+    FzfLuaBorder = { 'winopts.hl.border', "FloatBorder" },
+    FzfLuaCursor = { 'winopts.hl.cursor', "Cursor" },
+    FzfLuaCursorLine = { 'winopts.hl.cursorline', "CursorLine" },
+    FzfLuaCursorLineNr = { 'winopts.hl.cursornr', "CursorLineNr" },
+    FzfLuaSearch = { 'winopts.hl.search', "IncSearch" },
+    FzfLuaTitle = { 'winopts.hl.title', "FzfLuaNormal" },
+    FzfLuaScrollBorderEmpty = { 'winopts.hl.scrollborder_e', "FzfLuaBorder" },
+    FzfLuaScrollBorderFull  = { 'winopts.hl.scrollborder_f', "FzfLuaBorder" },
+    FzfLuaScrollFloatEmpty  = { 'winopts.hl.scrollfloat_e', "PmenuSbar" },
+    FzfLuaScrollFloatFull   = { 'winopts.hl.scrollfloat_f', "PmenuThumb" },
+    FzfLuaHelpNormal = { 'winopts.hl.help_normal', "FzfLuaNormal" },
+    FzfLuaHelpBorder = { 'winopts.hl.help_border', "FzfLuaBorder" },
+  }
+  for hl_name, v in pairs(highlights) do
+    -- define a new linked highlight and then override the
+    -- default config with the new FzfLuaXXX hl this leaves
+    -- the option for direct call option overrides (via winopts)
+    local hl_link = config.get_global(v[1])
+    if not hl_link or vim.fn.hlID(hl_link) == 0 then
+      -- revert to default if hl option or link doesn't exist
+      hl_link = v[2]
+    end
+    if vim.fn.has('nvim-0.7') == 1 then
+      vim.api.nvim_set_hl(0, hl_name, { default = true, link = hl_link })
+    else
+      vim.cmd(string.format("hi! link %s %s", hl_name, hl_link))
+    end
+    -- save new highlight groups under 'winopts.__hl'
+    config.set_global(v[1]:gsub("%.hl%.", ".__hl."), hl_name)
+  end
+end
+
+-- Setup highlights at least once on load in
+-- case the user decides not to call `setup()`
+M.setup_highlights()
+
+
 function M.setup(opts)
   local globals = vim.tbl_deep_extend("keep", opts, config.globals)
   -- backward compatibility before winopts was it's own struct
@@ -73,6 +114,8 @@ function M.setup(opts)
   -- this doesn't happen automatically
   config.globals = globals
   globals = nil
+  -- setup highlights
+  M.setup_highlights()
 end
 
 M.resume = require'fzf-lua.core'.fzf_resume

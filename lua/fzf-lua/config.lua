@@ -35,18 +35,22 @@ M.globals = {
     col                 = 0.55,
     border              = 'rounded',
     fullscreen          = false,
-    hl = {
+    --[[ hl = {
       normal            = 'Normal',
-      border            = 'Normal',
+      border            = 'FloatBorder',
+      help_normal       = 'Normal',
+      help_border       = 'FloatBorder',
       -- builtin preview only
       cursor            = 'Cursor',
       cursorline        = 'CursorLine',
       cursorlinenr      = 'CursorLineNr',
       search            = 'IncSearch',
-      -- title          = 'Normal',
-      -- scrollbar_f    = 'PmenuThumb',
-      -- scrollbar_e    = 'PmenuSbar',
-    },
+      title             = 'Normal',
+      scrollfloat_e     = 'PmenuSbar',
+      scrollfloat_f     = 'PmenuThumb',
+      scrollborder_e    = 'FloatBorder',
+      scrollborder_f    = 'FloatBorder',
+    }, ]]
     preview = {
       default             = "builtin",
       border              = 'border',
@@ -732,6 +736,10 @@ function M.normalize_opts(opts, defaults)
       opts[k] or {}, utils.tbl_deep_clone(M.globals[k]) or {})
   end
 
+  -- overwrite highlights if supplied by the caller/provider setup
+  opts.winopts.__hl = vim.tbl_deep_extend("force",
+    opts.winopts.__hl, opts.winopts.hl or {})
+
   -- these options are copied from globals unless specifically set
   -- also check if we need to override 'opts.prompt' from cli args
   -- if we don't override 'opts.prompt' 'FzfWin.save_query' will
@@ -925,6 +933,38 @@ M.bytecode = function(s, datatype)
       -- can't find any references for it other than
       -- it being used in packer.nvim
       return string.dump(iter, true)
+    end
+  end
+end
+
+-- returns nil if not found
+M.get_global = function(s)
+  local keys = utils.strsplit(s, '.')
+  local iter = M.globals
+  for i=1,#keys do
+    iter = iter[keys[i]]
+    if not iter then break end
+    if i == #keys then
+      return iter
+    end
+  end
+end
+
+-- builds the tree if needed
+M.set_global = function(s, value)
+  local keys = utils.strsplit(s, '.')
+  local iter = M.globals
+  for i=1,#keys do
+    if i == #keys then
+      iter[keys[i]] = value
+    else
+      -- build the new leaf on parent
+      -- to preserve original table ref
+      local parent = iter
+      if not parent[keys[i]] then
+        parent[keys[i]] = {}
+      end
+      iter = parent[keys[i]]
     end
   end
 end

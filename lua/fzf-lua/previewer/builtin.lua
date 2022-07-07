@@ -230,7 +230,7 @@ function Previewer.base:scroll(direction)
   if not api.nvim_win_is_valid(preview_winid) then return end
 
   if direction == 0 then
-    vim.api.nvim_win_call(preview_winid, function()
+    pcall(vim.api.nvim_win_call, preview_winid, function()
       -- for some reason 'nvim_win_set_cursor'
       -- only moves forward, so set to (1,0) first
       api.nvim_win_set_cursor(0, {1, 0})
@@ -244,7 +244,7 @@ function Previewer.base:scroll(direction)
     -- local input = direction > 0 and [[]] or [[]]
     -- ^D = 0x04, ^U = 0x15 ('g8' on char to display)
     local input = ('%c'):format(utils._if(direction>0, 0x04, 0x15))
-    vim.api.nvim_win_call(preview_winid, function()
+    pcall(vim.api.nvim_win_call, preview_winid, function()
       vim.cmd([[norm! ]] .. input)
       utils.zz()
     end)
@@ -476,7 +476,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   elseif entry.uri then
     -- LSP 'jdt://' entries, see issue #195
     -- https://github.com/ibhagwan/fzf-lua/issues/195
-    vim.api.nvim_win_call(self.win.preview_winid, function()
+    pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
       vim.lsp.util.jump_to_location(entry, "utf-16")
       self.preview_bufnr = vim.api.nvim_get_current_buf()
     end)
@@ -599,7 +599,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
 end
 
 function Previewer.buffer_or_file:set_cursor_hl(entry)
-  vim.api.nvim_win_call(self.win.preview_winid, function()
+  pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
     local lnum, col = tonumber(entry.line), tonumber(entry.col)
     local pattern = entry.pattern or entry.text
 
@@ -620,8 +620,8 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
 
     fn.clearmatches()
 
-    if self.win.winopts.hl.cursor and not (lnum<=1 and col<=1) then
-      fn.matchaddpos(self.win.winopts.hl.cursor, {{lnum, math.max(1, col)}}, 11)
+    if self.win.winopts.__hl.cursor and not (lnum<=1 and col<=1) then
+      fn.matchaddpos(self.win.winopts.__hl.cursor, {{lnum, math.max(1, col)}}, 11)
     end
   end)
 end
@@ -807,8 +807,8 @@ function Previewer.help_file:set_cursor_hl(entry)
     api.nvim_win_set_cursor(0, {1, 0})
     fn.clearmatches()
     fn.search(entry.hregex, "W")
-    if self.win.winopts.hl.search then
-      fn.matchadd(self.win.winopts.hl.search, entry.hregex)
+    if self.win.winopts.__hl.search then
+      fn.matchadd(self.win.winopts.__hl.search, entry.hregex)
     end
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
@@ -940,8 +940,8 @@ function Previewer.tags:set_cursor_hl(entry)
     api.nvim_win_set_cursor(0, {1, 0})
     fn.clearmatches()
     fn.search(entry.ctag, "W")
-    if self.win.winopts.hl.search then
-      fn.matchadd(self.win.winopts.hl.search, entry.ctag)
+    if self.win.winopts.__hl.search then
+      fn.matchadd(self.win.winopts.__hl.search, entry.ctag)
     end
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
@@ -1007,8 +1007,8 @@ function Previewer.highlights:populate_preview_buf(entry_str)
     api.nvim_win_set_cursor(0, {1, 0})
     fn.clearmatches()
     fn.search(selected_hl, "W")
-    if self.win.winopts.hl.search then
-      fn.matchadd(self.win.winopts.hl.search, selected_hl)
+    if self.win.winopts.__hl.search then
+      fn.matchadd(self.win.winopts.__hl.search, selected_hl)
     end
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()

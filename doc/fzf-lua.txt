@@ -296,17 +296,53 @@ CUSTOMIZATION                                          *fzf-lua-customization*
   to create your own fzf-lua commands see Wiki/ADVANCED
   <https://github.com/ibhagwan/fzf-lua/wiki/Advanced>**
 
-I tried to make this plugin as customizable as possible, if you find you need
-to change something that isn’t below, open an issue and I’ll do my best to
-add it.
+Customization can be achieved by calling the `setup()` function (optional) or
+individually sending parameters to a builtin command, A few examples below:
 
-Customization can be achieved by calling the `setup()` function or
-individually sending parameters to a builtin command, for example:
+  Different `fzf` layout:
 
 >
     :lua require('fzf-lua').files({ fzf_opts = {['--layout'] = 'reverse-list'} })
 <
-Consult the list below for available settings:
+  Using `files` with a different command and working directory:
+
+>
+    :lua require'fzf-lua'.files({ prompt="LS> ", cmd = "ls", cwd="~/<folder>" })
+<
+  Using `live_grep` with `git grep`:
+
+>
+    :lua require'fzf-lua'.live_grep({ cmd = "git grep --line-number --column --color=always" })
+<
+  `colorschemes` with non-default window size:
+
+>
+    :lua require'fzf-lua'.colorschemes({ winopts = { height=0.33, width=0.33 } })
+<
+Use `setup()` If you wish for a setting to persist and not have to send it
+using the call arguments, e.g:
+
+>
+    require('fzf-lua').setup{
+      winopts = {
+        ...
+      }
+    }
+<
+Can also be called from a `.vim` file:
+
+>
+    lua << EOF
+    require('fzf-lua').setup{
+      ...
+    }
+    EOF
+<
+**Below is a list of most (still, not all default settings), please also
+consult the issues if there's something you need and you can't find as there
+have been many obscure requests which have been fulfilled and are yet to be
+documented. If you're still having issues and/or questions do not hesitate to
+open an issue and I'll be more than happy to help.**
 
 >
     local actions = require "fzf-lua.actions"
@@ -335,18 +371,27 @@ Consult the list below for available settings:
         -- 'none', 'single', 'double', 'thicc' or 'rounded' (default)
         border           = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
         fullscreen       = false,           -- start fullscreen?
-        hl = {
+        -- highlights should optimally be set by the colorscheme using
+        -- FzfLuaXXX highlights. If your colorscheme doesn't set these
+        -- or you wish to override its defaults use these:
+        --[[ hl = {
           normal         = 'Normal',        -- window normal color (fg+bg)
-          border         = 'Normal',        -- border color (try 'FloatBorder')
-          -- Only valid with the builtin previewer:
+          border         = 'FloatBorder',   -- border color
+          help_normal    = 'Normal',        -- <F1> window normal
+          help_border    = 'FloatBorder',   -- <F1> window border
+          -- Only used with the builtin previewer:
           cursor         = 'Cursor',        -- cursor highlight (grep/LSP matches)
           cursorline     = 'CursorLine',    -- cursor line
           cursorlinenr   = 'CursorLineNr',  -- cursor line number
           search         = 'IncSearch',     -- search matches (ctags|help)
-          -- title       = 'Normal',        -- preview border title (file/buffer)
-          -- scrollbar_f = 'PmenuThumb',    -- scrollbar "full" section highlight
-          -- scrollbar_e = 'PmenuSbar',     -- scrollbar "empty" section highlight
-        },
+          title          = 'Normal',        -- preview border title (file/buffer)
+          -- Only used with 'winopts.preview.scrollbar = 'float'
+          scrollfloat_e  = 'PmenuSbar',     -- scrollbar "empty" section highlight
+          scrollfloat_f  = 'PmenuThumb',    -- scrollbar "full" section highlight
+          -- Only used with 'winopts.preview.scrollbar = 'border'
+          scrollborder_e = 'FloatBorder',   -- scrollbar "empty" section highlight
+          scrollborder_f = 'FloatBorder',   -- scrollbar "full" section highlight
+        }, ]]
         preview = {
           -- default     = 'bat',           -- override the default previewer?
                                             -- default uses the 'builtin' previewer
@@ -358,7 +403,7 @@ Consult the list below for available settings:
           horizontal     = 'right:60%',     -- right|left:size
           layout         = 'flex',          -- horizontal|vertical|flex
           flip_columns   = 120,             -- #cols to switch to horizontal on flex
-          -- Only valid with the builtin previewer:
+          -- Only used with the builtin previewer:
           title          = true,            -- preview border title (file/buf)?
           scrollbar      = 'float',         -- `false` or string:'float|border'
                                             -- float:  in-window floating border
@@ -860,14 +905,55 @@ Consult the list below for available settings:
       -- nbsp = '\xc2\xa0',
     }
 <
-This can also be run from a `.vim` file using:
+
+                                                                              
+CUSTOMIZING HIGHLIGHTS                        *fzf-lua-customizing-highlights*
+
+FzfLua conviniently creates the below highlights:
 
 >
-    lua << EOF
+      -- key is the highlight group name
+      -- value[1] is the setup/call arg option name
+      -- value[2] is the default link if value[1] is undefined
+      FzfLuaNormal = { 'winopts.hl.normal', "Normal" },
+      FzfLuaBorder = { 'winopts.hl.border', "FloatBorder" },
+      FzfLuaCursor = { 'winopts.hl.cursor', "Cursor" },
+      FzfLuaCursorLine = { 'winopts.hl.cursorline', "CursorLine" },
+      FzfLuaCursorLineNr = { 'winopts.hl.cursornr', "CursorLineNr" },
+      FzfLuaSearch = { 'winopts.hl.search', "IncSearch" },
+      FzfLuaTitle = { 'winopts.hl.title', "FzfLuaNormal" },
+      FzfLuaScrollBorderEmpty = { 'winopts.hl.scrollborder_e', "FzfLuaBorder" },
+      FzfLuaScrollBorderFull  = { 'winopts.hl.scrollborder_f', "FzfLuaBorder" },
+      FzfLuaScrollFloatEmpty  = { 'winopts.hl.scrollfloat_e', "PmenuSbar" },
+      FzfLuaScrollFloatFull   = { 'winopts.hl.scrollfloat_f', "PmenuThumb" },
+      FzfLuaHelpNormal = { 'winopts.hl.help_normal', "FzfLuaNormal" },
+      FzfLuaHelpBorder = { 'winopts.hl.help_border', "FzfLuaBorder" },
+<
+These can be easily customized either via the lua API:
+
+>
+    :lua vim.api.nvim_set_hl(0, "FzfLuaBorder", { link = "FloatBorder" })
+<
+Or vimscript:
+
+>
+    :hi! link FzfLuaBorder FloatBorder
+<
+If you wish to further customize these highlights without having to modify
+your preset colorscheme highlight links you can define the corresponding
+`winopts.hl` option or even send it directly via a call argument:
+
+>
+    :lua require'fzf-lua'.files({ winopts={hl={normal="IncSearch"}} })
+<
+Or via `setup`:
+
+>
     require('fzf-lua').setup{
-    -- ...
+      winopts = {
+        hl = { border = "FloatBorder", }
+      }
     }
-    EOF
 <
 
 ------------------------------------------------------------------------------

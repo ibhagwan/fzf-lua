@@ -294,18 +294,18 @@ end
 
 function FzfWin:reset_win_highlights(win, is_border)
   local hl = ("Normal:%s,FloatBorder:%s"):format(
-    self.winopts.hl.normal, self.winopts.hl.border)
+    self.winopts.__hl.normal, self.winopts.__hl.border)
   if self._previewer then
     for _, h in ipairs({ 'CursorLine', 'CursorLineNr' }) do
-      if self.winopts.hl[h:lower()] then
-        hl = hl .. (",%s:%s"):format(h, self.winopts.hl[h:lower()])
+      if self.winopts.__hl[h:lower()] then
+        hl = hl .. (",%s:%s"):format(h, self.winopts.__hl[h:lower()])
       end
     end
   end
   if is_border then
     -- our border is manuually drawn so we need
     -- to replace Normal with the border color
-    hl = ("Normal:%s"):format(self.winopts.hl.border)
+    hl = ("Normal:%s"):format(self.winopts.__hl.border)
   end
   vim.api.nvim_win_set_option(win, 'winhighlight', hl)
 end
@@ -865,9 +865,9 @@ function FzfWin:clear_border_highlights()
 end
 
 function FzfWin:set_title_hl()
-  if self.winopts.hl.title and self._title_len and self._title_len>0 then
-    vim.api.nvim_win_call(self.border_winid, function()
-      fn.matchaddpos(self.winopts.hl.title, {{1, 9, self._title_len+1}}, 11)
+  if self.winopts.__hl.title and self._title_len and self._title_len>0 then
+    pcall(vim.api.nvim_win_call, self.border_winid, function()
+      fn.matchaddpos(self.winopts.__hl.title, {{1, 9, self._title_len+1}}, 11)
     end)
   end
 end
@@ -920,16 +920,16 @@ function FzfWin:update_scrollbar_border(o)
   end
   api.nvim_buf_set_lines(self.border_buf, 1, -2, 0, lines)
   -- border highlights
-  if self.winopts.hl.scrollbar_f or self.winopts.hl.scrollbar_e then
-    vim.api.nvim_win_call(self.border_winid, function()
-      if self.winopts.hl.scrollbar_f then
+  if self.winopts.__hl.scrollborder_f or self.winopts.__hl.scrollborder_e then
+    pcall(vim.api.nvim_win_call, self.border_winid, function()
+      if self.winopts.hl.scrollborder_f then
         for i=1,#full do
-          fn.matchaddpos(self.winopts.hl.scrollbar_f, full[i], 11)
+          fn.matchaddpos(self.winopts.__hl.scrollborder_f, full[i], 11)
         end
       end
-      if self.winopts.hl.scrollbar_e then
+      if self.winopts.__hl.scrollborder_e then
         for i=1,#empty do
-          fn.matchaddpos(self.winopts.hl.scrollbar_e, empty[i], 11)
+          fn.matchaddpos(self.winopts.__hl.scrollborder_e, empty[i], 11)
         end
       end
     end)
@@ -979,7 +979,7 @@ function FzfWin:update_scrollbar_float(o)
       style1.noautocmd = true
       self._sbuf1 = ensure_tmp_buf(self._sbuf1)
       self._swin1 = vim.api.nvim_open_win(self._sbuf1, false, style1)
-      local hl = self.winopts.hl.scrollbar_e or 'PmenuSbar'
+      local hl = self.winopts.__hl.scrollfloat_e or 'PmenuSbar'
       vim.api.nvim_win_set_option(self._swin1, 'winhighlight',
         ('Normal:%s,NormalNC:%s,NormalFloat:%s'):format(hl, hl, hl))
     end
@@ -993,7 +993,7 @@ function FzfWin:update_scrollbar_float(o)
       style2.noautocmd = true
       self._sbuf2 = ensure_tmp_buf(self._sbuf2)
       self._swin2 = vim.api.nvim_open_win(self._sbuf2, false, style2)
-      local hl = self.winopts.hl.scrollbar_f or 'PmenuThumb'
+      local hl = self.winopts.__hl.scrollfloat_f or 'PmenuThumb'
       vim.api.nvim_win_set_option(self._swin2, 'winhighlight',
         ('Normal:%s,NormalNC:%s,NormalFloat:%s'):format(hl, hl, hl))
     end
@@ -1154,8 +1154,8 @@ function FzfWin.toggle_help()
   opts.mode_width = opts.mode_width or 10
   opts.name_width = opts.name_width or 28
   opts.keybind_width = opts.keybind_width or 14
-  opts.normal_hl = opts.normal_hl or self.winopts.hl.normal
-  opts.border_hl = opts.border_hl or self.winopts.hl.border
+  opts.normal_hl = opts.normal_hl or self.winopts.__hl.help_normal
+  opts.border_hl = opts.border_hl or self.winopts.__hl.help_border
   opts.winblend = opts.winblend or 0
   opts.column_padding = opts.column_padding or "  "
   opts.column_width = opts.keybind_width + opts.name_width + #opts.column_padding + 2
@@ -1261,8 +1261,8 @@ function FzfWin.toggle_help()
   vim.api.nvim_buf_set_option(self.km_bufnr, "bufhidden", "wipe")
   self.km_winid = vim.api.nvim_open_win(self.km_bufnr, false, winopts)
   vim.api.nvim_buf_set_name(self.km_bufnr, "_FzfLuaHelp")
-  vim.api.nvim_win_set_option(self.km_winid, "winhl", "Normal:" .. opts.normal_hl)
-  vim.api.nvim_win_set_option(self.km_winid, "winhl", "FloatBorder:" .. opts.border_hl)
+  vim.api.nvim_win_set_option(self.km_winid, "winhl",
+    string.format("Normal:%s,FloatBorder:%s", opts.normal_hl, opts.border_hl))
   vim.api.nvim_win_set_option(self.km_winid, "winblend", opts.winblend)
   vim.api.nvim_win_set_option(self.km_winid, "foldenable", false)
   vim.api.nvim_win_set_option(self.km_winid, "wrap", false)
