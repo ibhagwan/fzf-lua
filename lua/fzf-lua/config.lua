@@ -519,12 +519,12 @@ M.globals.diagnostics = {
       git_icons           = false,
       diag_icons          = true,
       _actions            = function() return M.globals.actions.files end,
-      severity_icons = {
-        ["Error"]         = { icon = "", color = "red" },
-        ["Warning"]       = { icon = "", color = "yellow" },
-        ["Information"]   = { icon = "", color = "blue" },
-        ["Hint"]          = { icon = "", color = "magenta" },
-      },
+      -- signs = {
+      --   ["Error"] = { text = "e", texthl = "DiagnosticError" },
+      --   ["Warn"]  = { text = "w", texthl = "DiagnosticWarn" },
+      --   ["Info"]  = { text = "i", texthl = "DiagnosticInfo" },
+      --   ["Hint"]  = { text = "h", texthl = "DiagnosticHint" },
+      -- },
   }
 M.globals.builtin = {
       prompt              = 'Builtin> ',
@@ -736,10 +736,6 @@ function M.normalize_opts(opts, defaults)
       opts[k] or {}, utils.tbl_deep_clone(M.globals[k]) or {})
   end
 
-  -- overwrite highlights if supplied by the caller/provider setup
-  opts.winopts.__hl = vim.tbl_deep_extend("force",
-    opts.winopts.__hl, opts.winopts.hl or {})
-
   -- these options are copied from globals unless specifically set
   -- also check if we need to override 'opts.prompt' from cli args
   -- if we don't override 'opts.prompt' 'FzfWin.save_query' will
@@ -827,11 +823,7 @@ function M.normalize_opts(opts, defaults)
     ['winopts.preview.scrollbar']     = 'previewers.builtin.scrollbar',
     ['winopts.preview.scrollchar']    = 'previewers.builtin.scrollchar',
     -- Diagnostics & LSP symbols separation options
-    ['symbol_fmt']                    = 'lsp.symbol_fmt',
-    ['symbol_style']                  = 'lsp.symbol_style',
-    ['symbol_hl_prefix']              = 'lsp.symbol_hl_prefix',
     ['diag_icons']                    = 'lsp.lsp_icons',
-    ['severity_icons']                = 'lsp.icons',
   }
 
   -- recursive key loopkup, can also set new value

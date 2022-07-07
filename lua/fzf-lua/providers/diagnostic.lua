@@ -47,16 +47,31 @@ M.diagnostics = function(opts)
     end
   end
 
-  -- normalize the LSP icons table
-  opts._severity_icons = {}
-  for k, v in pairs({
-    ["Error"]       = 1,
-    ["Warning"]     = 2,
-    ["Information"] = 3,
-    ["Hint"]        = 4
-  }) do
-    if opts.severity_icons and opts.severity_icons[k] then
-      opts._severity_icons[v] = opts.severity_icons[k]
+  -- configure signs and highlights
+  local signs = vim.diagnostic and {
+    ["Error"] = { severity = 1, default = "E", sign = "DiagnosticSignError" },
+    ["Warn"]  = { severity = 2, default = "W", sign = "DiagnosticSignWarn" },
+    ["Info"]  = { severity = 3, default = "I", sign = "DiagnosticSignInfo" },
+    ["Hint"]  = { severity = 4, default = "H", sign = "DiagnosticSignHint" },
+  } or {
+    -- At one point or another wdefault = "E", e'll drop support for the old LSP diag
+    ["Error"] = { severity = 1, default = "E", sign = "LspDiagnosticsSignError" },
+    ["Warn"]  = { severity = 2, default = "W", sign = "LspDiagnosticsSignWarning" },
+    ["Info"]  = { severity = 3, default = "I", sign = "LspDiagnosticsSignInformation" },
+    ["Hint"]  = { severity = 4, default = "H", sign = "LspDiagnosticsSignHint" },
+  }
+
+  opts.__signs = {}
+  for k, v in pairs(signs) do
+    opts.__signs[v.severity] = {}
+    local sign_def = vim.fn.sign_getdefined(v.sign)
+    opts.__signs[v.severity].text = sign_def and sign_def[1].text or v.default
+    opts.__signs[v.severity].texthl = sign_def and sign_def[1].texthl or nil
+    if opts.signs and opts.signs[k] and opts.signs[k].text then
+      opts.__signs[v.severity].text = opts.signs[k].text
+    end
+    if opts.signs and opts.signs[k] and opts.signs[k].texthl then
+      opts.__signs[v.severity].texthl = opts.signs[k].texthl
     end
   end
 
@@ -149,11 +164,11 @@ M.diagnostics = function(opts)
                 coroutine.resume(co)
               else
                 local type = diag_entry.type
-                if opts.diag_icons and opts._severity_icons[type] then
-                  local severity = opts._severity_icons[type]
-                  local icon = severity.icon
+                if opts.diag_icons and opts.__signs[type] then
+                  local value = opts.__signs[type]
+                  local icon = value.text
                   if opts.color_icons then
-                    icon = utils.ansi_codes[severity.color or "dark_grey"](icon)
+                    icon = utils.ansi_from_hl(value.texthl, icon)
                   end
                   entry = icon .. utils.nbsp .. utils.nbsp .. entry
                 end

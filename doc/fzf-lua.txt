@@ -338,6 +338,10 @@ Can also be called from a `.vim` file:
     }
     EOF
 <
+
+                                                                              
+DEFAULT OPTIONS                                      *fzf-lua-default-options*
+
 **Below is a list of most (still, not all default settings), please also
 consult the issues if there's something you need and you can't find as there
 have been many obscure requests which have been fulfilled and are yet to be
@@ -868,12 +872,19 @@ open an issue and I'll be more than happy to help.**
         file_icons        = true,
         git_icons         = false,
         diag_icons        = true,
-        severity_icons = {
-          ["Error"]       = { icon = "", color = "red" },
-          ["Warning"]     = { icon = "", color = "yellow" },
-          ["Information"] = { icon = "", color = "blue" },
-          ["Hint"]        = { icon = "", color = "magenta" },
-        },
+        -- by default icons and highlights are extracted from 'DiagnosticSignXXX'
+        -- and highlighted by a highlight group of the same name (which is usually
+        -- set by your colorscheme, for more info see:
+        --   :help DiagnosticSignHint'
+        --   :help hl-DiagnosticSignHint'
+        -- only uncomment below if you wish to override the signs/highlights
+        -- define only text, texthl or both (':help sign_define()' for more info)
+        -- signs = {
+        --   ["Error"] = { text = "", texthl = "DiagnosticError" },
+        --   ["Warn"]  = { text = "", texthl = "DiagnosticWarn" },
+        --   ["Info"]  = { text = "", texthl = "DiagnosticInfo" },
+        --   ["Hint"]  = { text = "", texthl = "DiagnosticHint" },
+        -- },
         -- limit to specific severity, use either a string or num:
         --   1 or "hint"
         --   2 or "information"

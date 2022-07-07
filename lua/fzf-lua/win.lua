@@ -235,6 +235,9 @@ local normalize_winopts = function(o)
     winopts = vim.tbl_deep_extend("force", winopts, opts.winopts_raw())
   end
 
+  -- overwrite highlights if supplied by the caller/provider setup
+  winopts.__hl = vim.tbl_deep_extend("force", winopts.__hl, winopts.hl or {})
+
   local max_width = vim.o.columns-2
   local max_height = vim.o.lines-vim.o.cmdheight-2
   winopts.width = math.min(max_width, winopts.width)
