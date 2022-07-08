@@ -68,6 +68,8 @@ M.status = function(opts)
         f1, f2 = f1:match("(.*)%s%->%s(.*)")
       end
       f1 = f1 and make_entry.file(f1, opts)
+      -- accomodate 'file_ignore_patterns'
+      if not f1 then return end
       f2 = f2 and make_entry.file(f2, opts)
       local staged = git_iconify(x:sub(1,1):gsub("?", " "))
       local unstaged = git_iconify(x:sub(2,2))

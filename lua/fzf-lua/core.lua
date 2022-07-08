@@ -426,6 +426,7 @@ M.mt_cmd_wrapper = function(opts)
       "color_icons",
       "path_shorten",
       "strip_cwd_prefix",
+      "file_ignore_patterns",
       "rg_glob",
       "__module__",
     }

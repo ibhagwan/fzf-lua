@@ -42,13 +42,13 @@ local function find_last_newline(str)
   end
 end
 
---[[ local function find_next_newline(str, start_idx)
+local function find_next_newline(str, start_idx)
   for i=start_idx or 1,#str do
     if string_byte(str, i) == 10 then
         return i
     end
   end
-end ]]
+end
 
 local function process_kill(pid, signal)
   if not pid or not tonumber(pid) then return false end
@@ -93,7 +93,6 @@ M.spawn = function(opts, fn_transform, fn_done)
   local error_pipe = uv.new_pipe(false)
   local write_cb_count = 0
   local prev_line_content = nil
-  -- local num_lines = 0
 
   if opts.fn_transform then fn_transform = opts.fn_transform end
 
@@ -149,33 +148,42 @@ M.spawn = function(opts, fn_transform, fn_done)
     end)
   end
 
-  local function process_lines(data)
+  -- This is the old function used, worked very well
+  -- but couldn't handle 'fn_transform' nil retval
+  -- which we need for 'file_ignore_patterns'
+  --[[ local function process_lines(data)
     -- assert(#data<=66560) -- 65K
     write_cb(data:gsub("[^\n]+",
       function(x)
         return fn_transform(x)
       end))
-  end
+  end ]]
 
-  --[[ local function process_lines(data)
+  local function process_lines(data)
+    local lines = {}
     local start_idx = 1
     repeat
-      num_lines = num_lines + 1
       local nl_idx = find_next_newline(data, start_idx)
-      local line = data:sub(start_idx, nl_idx)
+      local line = data:sub(start_idx, nl_idx-1)
+      -- makes no sense to feed lines
+      -- bigger than 1024 bytes into fzf
       if #line > 1024 then
-        local msg =
-          ("long line detected, consider adding '--max-columns=512' to ripgrep options:\n  %s")
-            :format(utils.strip_ansi_coloring(line):sub(1,60))
-        vim.defer_fn(function()
-          utils.warn(msg)
-        end, 0)
-        line = line:sub(1,512) .. '\n'
+        line = line:sub(1,1024)
+        -- io.stderr:write(string.format("[Fzf-lua] long line detected (%db), "
+        --   .. "consider adding '--max-columns=512' to ripgrep options: %s\n",
+        --   #line, line:sub(1,256)))
       end
-      write_cb(fn_transform(line))
+      line = fn_transform(line)
+      if line then table.insert(lines, line) end
       start_idx = nl_idx + 1
     until start_idx >= #data
-  end --]]
+    -- testing shows better performance writing the entire
+    -- table at once as opposed to calling 'write_cb' for
+    -- every line after 'fn_transform'
+    if #lines > 0 then
+      write_cb(table.concat(lines, "\n").."\n")
+    end
+  end
 
   local read_cb = function(err, data)
 

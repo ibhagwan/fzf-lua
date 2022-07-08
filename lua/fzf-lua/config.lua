@@ -736,6 +736,19 @@ function M.normalize_opts(opts, defaults)
       opts[k] or {}, utils.tbl_deep_clone(M.globals[k]) or {})
   end
 
+  -- Merge arrays from globals|defaults, can't use 'vim.tbl_xxx'
+  -- for these as they only work for maps, ie. '{ key = value }'
+  for _, k in ipairs({ 'file_ignore_patterns' }) do
+    for _, m in ipairs({ defaults, M.globals }) do
+      if m[k] then
+        for _, item in ipairs(m[k]) do
+          if not opts[k] then opts[k] = {} end
+          table.insert(opts[k], item)
+        end
+      end
+    end
+  end
+
   -- these options are copied from globals unless specifically set
   -- also check if we need to override 'opts.prompt' from cli args
   -- if we don't override 'opts.prompt' 'FzfWin.save_query' will

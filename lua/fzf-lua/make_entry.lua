@@ -303,9 +303,6 @@ M.file = function(x, opts)
   local ret = {}
   local icon, hl
   local file = utils.strip_ansi_coloring(string.match(x, '[^:]*'))
-  -- TODO: this can cause issues with files/grep/live_grep
-  -- process_lines gsub will replace the entry with nil
-  -- **low priority as we never use 'cwd_only' with files/grep
   if opts.cwd_only and path.starts_with_separator(file) then
     local cwd = opts.cwd or vim.loop.cwd()
     if not path.is_relative(file, cwd) then
@@ -330,6 +327,15 @@ M.file = function(x, opts)
   -- replace $HOME with ~
   if path.starts_with_separator(x) then
     x = path.HOME_to_tilde(x)
+  end
+  -- only check for ignored patterns after './' was
+  -- stripped and path was transformed to relative
+  if opts.file_ignore_patterns then
+    for _, pattern in ipairs(opts.file_ignore_patterns) do
+      if #pattern>0 and x:match(pattern) then
+        return nil
+      end
+    end
   end
   if opts.path_shorten then
     x = path.shorten(x, tonumber(opts.path_shorten))
