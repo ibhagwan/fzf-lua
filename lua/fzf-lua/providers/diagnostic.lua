@@ -170,7 +170,8 @@ M.diagnostics = function(opts)
                   if opts.color_icons then
                     icon = utils.ansi_from_hl(value.texthl, icon)
                   end
-                  entry = icon .. utils.nbsp .. utils.nbsp .. entry
+                  entry = string.format("%s%s%s%s",
+                    icon, opts.icon_padding or '', utils.nbsp, entry)
                 end
                 fzf_cb(entry, function() coroutine.resume(co) end)
               end

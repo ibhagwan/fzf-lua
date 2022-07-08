@@ -829,10 +829,11 @@ require'fzf-lua'.setup {
   },
   diagnostics ={
     prompt            = 'Diagnostics❯ ',
-    cwd_only          = false,      -- limit to cwd only?
+    cwd_only          = false,
     file_icons        = true,
     git_icons         = false,
     diag_icons        = true,
+    icon_padding      = '',     -- add padding for wide diagnostics signs
     -- by default icons and highlights are extracted from 'DiagnosticSignXXX'
     -- and highlighted by a highlight group of the same name (which is usually
     -- set by your colorscheme, for more info see:
