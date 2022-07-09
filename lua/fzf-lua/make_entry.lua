@@ -298,50 +298,59 @@ M.lcol = function(entry, opts)
       (opts and opts.trim_entry and vim.trim(entry.text)) or entry.text)
 end
 
+local COLON_BYTE = string.byte(":")
+
 M.file = function(x, opts)
   opts = opts or {}
   local ret = {}
   local icon, hl
-  local file = utils.strip_ansi_coloring(string.match(x, '[^:]*'))
-  if opts.cwd_only and path.starts_with_separator(file) then
-    local cwd = opts.cwd or vim.loop.cwd()
-    if not path.is_relative(file, cwd) then
-      return nil
-    end
-  end
+  local colon_idx = utils.find_next_char(x, COLON_BYTE) or 0
+  local file_part = colon_idx>1 and x:sub(1, colon_idx-1) or x
+  local rest_of_line = colon_idx>1 and x:sub(colon_idx) or nil
+  -- strip ansi coloring from path so we can use filters
+  -- otherwise the ANSI escape sequnce will get in the way
+  -- TODO: we only support path modfication without ANSI
+  -- escape sequences, it becomes too expensive to modify
+  -- and restore the path with escape sequences
+  local filepath, file_is_ansi = utils.strip_ansi_coloring(file_part)
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
   -- the './' prefix, will not work with '--color=always'
   -- https://github.com/sharkdp/fd/blob/master/CHANGELOG.md
-  if not (opts.strip_cwd_prefix == false) and path.starts_with_cwd(x) then
-     x = path.strip_cwd_prefix(x)
-     -- this is required to fix git icons not showing
-     -- since `git status -s` does not prepend './'
-     -- we can assume no ANSI coloring is present
-     -- since 'path.starts_with_cwd == true'
-     file = x
+  if not (opts.strip_cwd_prefix == false) and path.starts_with_cwd(filepath) then
+    filepath = path.strip_cwd_prefix(filepath)
   end
-  if opts.cwd and #opts.cwd > 0 then
-    -- TODO: does this work if there are ANSI escape codes in x?
-    x = path.relative(x, opts.cwd)
+  -- make path relative
+  if opts.cwd and #opts.cwd>0 then
+    filepath = path.relative(filepath, opts.cwd)
   end
-  -- replace $HOME with ~
-  if path.starts_with_separator(x) then
-    x = path.HOME_to_tilde(x)
+  if path.starts_with_separator(filepath) then
+    -- filter for cwd only
+    if opts.cwd_only then
+      local cwd = opts.cwd or vim.loop.cwd()
+      if not path.is_relative(filepath, cwd) then
+        return nil
+      end
+    end
+    -- replace $HOME with ~
+    filepath = path.HOME_to_tilde(filepath)
   end
   -- only check for ignored patterns after './' was
   -- stripped and path was transformed to relative
   if opts.file_ignore_patterns then
     for _, pattern in ipairs(opts.file_ignore_patterns) do
-      if #pattern>0 and x:match(pattern) then
+      if #pattern>0 and filepath:match(pattern) then
         return nil
       end
     end
   end
+  -- only shorten after we're done with all the filtering
+  -- save a copy for git indicator and icon lookups
+  local origpath = filepath
   if opts.path_shorten then
-    x = path.shorten(x, tonumber(opts.path_shorten))
+    filepath = path.shorten(filepath, tonumber(opts.path_shorten))
   end
   if opts.git_icons then
-    local indicators = opts.diff_files and opts.diff_files[file] or utils.nbsp
+    local indicators = opts.diff_files and opts.diff_files[origpath] or utils.nbsp
     for i=1,#indicators do
       icon = indicators:sub(i,i)
       local git_icon = config.globals.git.icons[icon]
@@ -356,7 +365,7 @@ M.file = function(x, opts)
     ret[#ret+1] = utils.nbsp
   end
   if opts.file_icons then
-    local filename = path.tail(file)
+    local filename = path.tail(origpath)
     local ext = path.extension(filename)
     icon, hl = M.get_devicon(filename, ext)
     if opts.color_icons then
@@ -368,7 +377,8 @@ M.file = function(x, opts)
     ret[#ret+1] = icon
     ret[#ret+1] = utils.nbsp
   end
-  ret[#ret+1] = x
+  ret[#ret+1] = file_is_ansi>0 and file_part or filepath
+  ret[#ret+1] = rest_of_line
   return table.concat(ret)
 end
 

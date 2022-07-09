@@ -60,6 +60,24 @@ M.strsplit = function(inputstr, sep)
   return t
 end
 
+local string_byte = string.byte
+
+M.find_last_char = function(str, c)
+  for i=#str,1,-1 do
+    if string_byte(str, i) == c then
+      return i
+    end
+  end
+end
+
+M.find_next_char = function(str, c, start_idx)
+  for i=start_idx or 1,#str do
+    if string_byte(str, i) == c then
+      return i
+    end
+  end
+end
+
 function M.round(num, limit)
   if not num then return nil end
   if not limit then limit = 0.5 end
