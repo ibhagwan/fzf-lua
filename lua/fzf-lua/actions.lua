@@ -127,7 +127,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
       entry.col = entry.col and entry.col>0 and entry.col or 1
       vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
     end
-    if not is_term then vim.cmd("norm! zvzz") end
+    if not is_term and not opts.no_action_zz then vim.cmd("norm! zvzz") end
   end
 end
 
@@ -203,7 +203,7 @@ M.file_switch = function(selected, opts)
   if entry.line>1 or entry.col>1 then
     vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
   end
-  if not is_term then vim.cmd("norm! zvzz") end
+  if not is_term and not opts.no_action_zz then vim.cmd("norm! zvzz") end
   return true
 end
 
@@ -243,7 +243,7 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
       entry.col = entry.col and entry.col>0 and entry.col or 1
       vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
     end
-    if not is_term then vim.cmd("norm! zvzz") end
+    if not is_term and not opts.no_action_zz then vim.cmd("norm! zvzz") end
   end
 end
 
