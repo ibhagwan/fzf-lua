@@ -546,7 +546,9 @@ open an issue and I'll be more than happy to help.**
           cmd_deleted     = "git diff --color HEAD --",
           cmd_modified    = "git diff --color HEAD",
           cmd_untracked   = "git diff --color --no-index /dev/null",
-          -- pager        = "delta",      -- if you have `delta` installed
+          -- uncomment if you wish to use git-delta as pager
+          -- can also be set under 'git.status.preview_pager'
+          -- pager        = "delta --width=$FZF_PREVIEW_COLUMNS",
         },
         man = {
           -- NOTE: remove the `-c` flag when using man-db
@@ -602,23 +604,27 @@ open an issue and I'll be more than happy to help.**
       },
       git = {
         files = {
-          prompt          = 'GitFiles❯ ',
-          cmd             = 'git ls-files --exclude-standard',
-          multiprocess    = true,           -- run command in a separate process
-          git_icons       = true,           -- show git icons?
-          file_icons      = true,           -- show file icons?
-          color_icons     = true,           -- colorize file|git icons
+          prompt        = 'GitFiles❯ ',
+          cmd           = 'git ls-files --exclude-standard',
+          multiprocess  = true,           -- run command in a separate process
+          git_icons     = true,           -- show git icons?
+          file_icons    = true,           -- show file icons?
+          color_icons   = true,           -- colorize file|git icons
           -- force display the cwd header line regardles of your current working
           -- directory can also be used to hide the header when not wanted
           -- show_cwd_header = true
         },
         status = {
-          prompt          = 'GitStatus❯ ',
-          cmd             = "git status -s",
-          previewer       = "git_diff",
-          file_icons      = true,
-          git_icons       = true,
-          color_icons     = true,
+          prompt        = 'GitStatus❯ ',
+          -- consider using `git status -su` if you wish to see
+          -- untracked files individually under their subfolders
+          cmd           = "git status -s",
+          file_icons    = true,
+          git_icons     = true,
+          color_icons   = true,
+          previewer     = "git_diff",
+          -- uncomment if you wish to use git-delta as pager
+          --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS"
           actions = {
             -- actions inherit from 'actions.files' and merge
             ["right"]   = { actions.git_unstage, actions.resume },
@@ -626,17 +632,26 @@ open an issue and I'll be more than happy to help.**
           },
         },
         commits = {
-          prompt          = 'Commits❯ ',
-          cmd             = "git log --pretty=oneline --abbrev-commit --color",
-          preview         = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
+          prompt        = 'Commits❯ ',
+          cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset'",
+          preview       = "git show --pretty='%Cred%H%n%Cblue%an <%ae>%n%C(yellow)%cD%n%Cgreen%s' --color {1}",
+          -- uncomment if you wish to use git-delta as pager
+          --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS"
           actions = {
             ["default"] = actions.git_checkout,
           },
         },
         bcommits = {
-          prompt          = 'BCommits❯ ',
-          cmd             = "git log --pretty=oneline --abbrev-commit --color",
-          preview         = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
+          prompt        = 'BCommits❯ ',
+          -- default preview shows a git diff vs the preview commit
+          -- if you prefer to see the entire commit you can use:
+          --   git show --color {1} --rotate-to=<file>
+          --   {1}    : commit SHA (fzf field index expression)
+          --   <file> : filepath placement within the commands
+          cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' <file>",
+          preview       = "git diff --color {1}~1 {1} -- <file>",
+          -- uncomment if you wish to use git-delta as pager
+          --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS"
           actions = {
             ["default"] = actions.git_buf_edit,
             ["ctrl-s"]  = actions.git_buf_split,

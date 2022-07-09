@@ -95,29 +95,46 @@ end
 M.commits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.commits)
   if not opts then return end
-  opts.preview = path.git_cwd(opts.preview, opts)
+  if opts.preview then
+    opts.preview = path.git_cwd(opts.preview, opts)
+    if opts.preview_pager then
+      opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
+    end
+  end
   return git_cmd(opts)
 end
 
 M.bcommits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.bcommits)
   if not opts then return end
+  local bufname = vim.api.nvim_buf_get_name(0)
+  if not bufname or #bufname==0 then
+    utils.info("'bcommits' is not available for unnamed buffers.")
+    return
+  end
+  -- if caller did not specify cwd we attempt to auto detect the
+  -- file's git repo from its parent folder, could be further
+  -- optimized to prevent the duplicate call to `git rev-parse`
+  -- but overall it's not a big deal as it's a pretty cheap call
+  -- first 'git_root' call won't print a warning to ':messages'
+  if not opts.cwd and not opts.git_dir then
+    opts.cwd = path.git_root({ cwd = vim.fn.expand("%:p:h") }, true)
+  end
   local git_root = path.git_root(opts)
   if not git_root then return end
   local file = path.relative(vim.fn.expand("%:p"), git_root)
-  opts.cmd = opts.cmd .. " " .. file
-  local git_ver = utils.git_version()
-  -- rotate-to first appeared with git version 2.31
-  if git_ver and git_ver >= 2.31 then
-    -- check if the user added a pipe (e.g. `| delta`)
-    local before_pipe = opts.preview:match("[^|]+")
-    local after_pipe = opts.preview:match("|.*$") or ''
-    opts.preview = before_pipe
-      .. " --rotate-to="
-      .. vim.fn.shellescape(file)
-      .. after_pipe
+  if opts.cmd:match("<file") then
+    opts.cmd = opts.cmd:gsub("<file>", file)
+  else
+    opts.cmd = opts.cmd .. " " .. file
   end
-  opts.preview = path.git_cwd(opts.preview, opts)
+  if type(opts.preview) == 'string' then
+    opts.preview = opts.preview:gsub("<file>", vim.fn.shellescape(file))
+    opts.preview = path.git_cwd(opts.preview, opts)
+    if opts.preview_pager then
+      opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
+    end
+  end
   return git_cmd(opts)
 end
 
@@ -125,19 +142,19 @@ M.branches = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.branches)
   if not opts then return end
   opts.fzf_opts["--no-multi"] = ''
-  opts.__preview = path.git_cwd(opts.preview, opts)
-  opts.preview = shell.raw_preview_action_cmd(function(items)
-    local branch = items[1]:gsub("%*", "")  -- remove the * from current branch
-    if branch:find("%)") ~= nil then
-      -- (HEAD detached at origin/master)
-      branch = branch:match(".* ([^%)]+)") or ""
-    else
-      -- remove anything past space
-      branch = branch:match("[^ ]+")
-    end
-    return opts.__preview:gsub("{.*}", branch)
-    -- return "echo " .. branch
-  end, nil, opts.debug)
+  if opts.preview then
+    opts.__preview = path.git_cwd(opts.preview, opts)
+    opts.preview = shell.raw_preview_action_cmd(function(items)
+      -- all possible options;
+      --   branch
+      -- * branch
+      --   remotes/origin/branch
+      --   (HEAD detached at origin/branch)
+      local branch = items[1]:match("[^%s%*]*$"):gsub("%)$", "")
+      return opts.__preview:gsub("{.*}", branch)
+      -- return "echo " .. branch
+    end, nil, opts.debug)
+  end
   return git_cmd(opts)
 end
 

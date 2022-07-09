@@ -240,16 +240,16 @@ M.globals.git = {
     },
     commits = {
       prompt        = 'Commits> ',
-      cmd           = "git log --pretty=oneline --abbrev-commit --color",
-      preview       = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
+      cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset'",
+      preview       = "git show --pretty='%Cred%H%n%Cblue%an <%ae>%n%C(yellow)%cD%n%Cgreen%s' --color {1}",
       actions = {
         ["default"] = actions.git_checkout,
       },
     },
     bcommits = {
       prompt        = 'BCommits> ',
-      cmd           = "git log --pretty=oneline --abbrev-commit --color",
-      preview       = "git show --pretty='%Cred%H%n%Cblue%an%n%Cgreen%s' --color {1}",
+      cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' <file>",
+      preview       = "git diff --color {1}~1 {1} -- <file>",
       actions = {
         ["default"] = actions.git_buf_edit,
         ["ctrl-s"]  = actions.git_buf_split,
