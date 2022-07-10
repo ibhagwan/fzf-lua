@@ -36,7 +36,7 @@ function M.setup_highlights()
 
   local highlights = {
     FzfLuaNormal = { 'winopts.hl.normal', "Normal" },
-    FzfLuaBorder = { 'winopts.hl.border', "FloatBorder" },
+    FzfLuaBorder = { 'winopts.hl.border', "Normal" },
     FzfLuaCursor = { 'winopts.hl.cursor', "Cursor" },
     FzfLuaCursorLine = { 'winopts.hl.cursorline', "CursorLine" },
     FzfLuaCursorLineNr = { 'winopts.hl.cursornr', "CursorLineNr" },

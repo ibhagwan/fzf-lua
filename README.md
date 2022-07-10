@@ -904,7 +904,7 @@ FzfLua conviniently creates the below highlights:
   -- value[1] is the setup/call arg option name
   -- value[2] is the default link if value[1] is undefined
   FzfLuaNormal = { 'winopts.hl.normal', "Normal" },
-  FzfLuaBorder = { 'winopts.hl.border', "FloatBorder" },
+  FzfLuaBorder = { 'winopts.hl.border', "Normal" },
   FzfLuaCursor = { 'winopts.hl.cursor', "Cursor" },
   FzfLuaCursorLine = { 'winopts.hl.cursorline', "CursorLine" },
   FzfLuaCursorLineNr = { 'winopts.hl.cursornr', "CursorLineNr" },
