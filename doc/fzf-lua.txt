@@ -643,7 +643,7 @@ open an issue and I'll be more than happy to help.**
         },
         bcommits = {
           prompt        = 'BCommits❯ ',
-          -- default preview shows a git diff vs the preview commit
+          -- default preview shows a git diff vs the previous commit
           -- if you prefer to see the entire commit you can use:
           --   git show --color {1} --rotate-to=<file>
           --   {1}    : commit SHA (fzf field index expression)

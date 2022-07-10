@@ -132,20 +132,21 @@ local function async_lsp_handler(co, handler, opts)
     if err then
       utils.err(string.format("Error executing '%s': %s", handler.method, err))
       utils.fzf_exit()
-      coroutine.resume(co, err)
-    elseif not result or vim.tbl_isempty(result) then
-      -- Only close the window if all clients sent their results
-      if opts.num_callbacks == opts.num_clients and opts.num_results == 0 then
-        -- Do not close the window for 'live_workspace_symbols'
+      coroutine.resume(co, true, err)
+    else
+      -- did all clients send back their responses?
+      local done = opts.num_callbacks == opts.num_clients
+      -- only close the window if after all clients sent
+      -- their results we still have zero results
+      if done and opts.num_results == 0 then
+        -- Do not close the window in 'live_workspace_symbols'
         if not opts.fn_reload then
           utils.info(string.format('No %s found', string.lower(handler.label)))
           utils.fzf_exit()
         end
-        coroutine.resume(co)
       end
-    else
-      local done = opts.num_callbacks == opts.num_clients
-      coroutine.resume(co, err, result, context, lspcfg, done)
+      -- resume the coroutine
+      coroutine.resume(co, done, err, result, context, lspcfg)
     end
   end)
 end
@@ -198,8 +199,8 @@ local function set_lsp_fzf_fn(opts)
           opts.fzf_fn = {}
         end
       elseif not (opts.jump_to_single_result and #results == 1) then
-        -- LSP request was synchronou but we can
-        -- still async the fzf feeding
+        -- LSP request was synchronous but
+        -- we still async the fzf feeding
         opts.fzf_fn = function (fzf_cb)
           coroutine.wrap(function ()
             local co = coroutine.running()
@@ -251,7 +252,7 @@ local function set_lsp_fzf_fn(opts)
         -- process results from all LSP client
         local err, result, context, lspcfg, done
         repeat
-          err, result, context, lspcfg, done = coroutine.yield()
+          done, err, result, context, lspcfg = coroutine.yield()
           if not err and type(result) == 'table' then
             local cb = function(e)
               fzf_cb(e, function() coroutine.resume(co) end)
@@ -260,7 +261,9 @@ local function set_lsp_fzf_fn(opts)
             opts.lsp_handler.handler(opts, cb,
               opts.lsp_handler.method, result, context, lspcfg)
           end
-        until done or err or result == nil
+        -- some clients may not always return results (null-ls?)
+        -- so don't terminate the loop when 'result == nil`
+        until done or err
 
         -- no more results
         fzf_cb(nil)
