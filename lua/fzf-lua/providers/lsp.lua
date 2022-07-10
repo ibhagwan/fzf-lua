@@ -152,9 +152,8 @@ end
 
 local function set_lsp_fzf_fn(opts)
 
-  -- consider 'async_or_timeout' only if
-  -- 'sync|async' wasn't manually set
-  if opts.sync == nil and opts.async == nil then
+  -- consider 'async_or_timeout' only if 'async' wasn't manually set
+  if opts.async == nil then
     if type(opts.async_or_timeout) == 'number' then
       opts.async = false
     elseif type(opts.async_or_timeout) == 'boolean' then
@@ -169,7 +168,7 @@ local function set_lsp_fzf_fn(opts)
     opts.lsp_params.context = { includeDeclaration = true }
   end
 
-  if opts.sync or opts.async == false then
+  if not opts.async then
 
     -- SYNC
     local timeout = 5000
@@ -193,6 +192,10 @@ local function set_lsp_fzf_fn(opts)
       if vim.tbl_isempty(results) then
         if not opts.fn_reload then
           utils.info(string.format('No %s found', string.lower(opts.lsp_handler.label)))
+        else
+          -- return an empty set or the results wouldn't be
+          -- cleared on live_workspace_symbols (#468)
+          opts.fzf_fn = {}
         end
       elseif not (opts.jump_to_single_result and #results == 1) then
         -- LSP request was synchronou but we can
@@ -211,6 +214,7 @@ local function set_lsp_fzf_fn(opts)
     end
   else
 
+    -- ASYNC
     -- cancel all remaining LSP requests once the user
     -- made their selection or closed the fzf popup
     local fn_cancel_all = function(o)
@@ -577,10 +581,10 @@ M.code_actions = function(opts)
   -- we use `vim.ui.select` for neovim > 0.6
   -- so make sure 'set_lsp_fzf_fn' is run synchronously
   if vim.fn.has('nvim-0.6') == 1 then
-    opts.sync, opts.async = true, false
+    opts.async = false
   end
 
-  -- when 'opts.sync == true' calls 'vim.lsp.buf_request_sync'
+  -- when 'opts.async == false' calls 'vim.lsp.buf_request_sync'
   -- so we can avoid calling  'ui_select.register' when no code
   -- actions are available
   opts = set_lsp_fzf_fn(opts)
