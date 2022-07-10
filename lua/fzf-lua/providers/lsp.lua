@@ -5,6 +5,37 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+local function check_capabilities(feature)
+  local clients = vim.lsp.buf_get_clients(__CTX and __CTX.bufnr or 0)
+
+  -- return the number of clients supporting the feature
+  -- so the async version knows how many callbacks to wait for
+  local num_clients = 0
+
+  for _, client in pairs(clients) do
+    if vim.fn.has("nvim-0.8") == 1 then
+      if client.server_capabilities[feature] then
+        num_clients = num_clients + 1
+      end
+    else
+      if client.resolved_capabilities[feature] then
+        num_clients = num_clients + 1
+      end
+    end
+  end
+
+  if num_clients>0 then
+    return num_clients
+  end
+
+  if utils.tbl_isempty(clients) then
+    utils.info("LSP: no client attached")
+  else
+    utils.info("LSP: server does not support " .. feature)
+  end
+  return false
+end
+
 local function location_to_entry(location, enc)
   local item = vim.lsp.util.locations_to_items({ location }, enc)[1]
 
@@ -231,11 +262,11 @@ local function set_lsp_fzf_fn(opts)
       coroutine.wrap(function ()
         local co = coroutine.running()
 
-        -- Save no of attached clients so we can determine
-        -- if all callbacks were completed
+        -- Save no. of attached clients **supporting the capability**
+        -- so we can determine if all callbacks were completed (#468)
         opts.num_results = 0
         opts.num_callbacks = 0
-        opts.num_clients = vim.tbl_count(vim.lsp.buf_get_clients(__CTX.bufnr))
+        opts.num_clients = check_capabilities(opts.lsp_handler.capability)
 
         -- when used with 'live_workspace_symbols'
         -- cancel all lingering LSP queries
@@ -695,30 +726,6 @@ M.code_actions = function(opts)
 
   core.fzf_exec(opts.fzf_fn, opts)
 
-end
-
-
-local function check_capabilities(feature)
-  local clients = vim.lsp.buf_get_clients(__CTX and __CTX.bufnr or 0)
-
-  for _, client in pairs(clients) do
-    if vim.fn.has("nvim-0.8") == 1 then
-      if client.server_capabilities[feature] then
-        return true
-      end
-    else
-      if client.resolved_capabilities[feature] then
-        return true
-      end
-    end
-  end
-
-  if utils.tbl_isempty(clients) then
-    utils.info("LSP: no client attached")
-  else
-    utils.info("LSP: server does not support " .. feature)
-  end
-  return false
 end
 
 local handlers = {
