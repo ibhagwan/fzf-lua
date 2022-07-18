@@ -65,6 +65,9 @@ M.diagnostics = function(opts)
   for k, v in pairs(signs) do
     opts.__signs[v.severity] = {}
     local sign_def = vim.fn.sign_getdefined(v.sign)
+    -- can be empty when config set to (#480):
+    -- vim.diagnostic.config({ signs = false })
+    if vim.tbl_isempty(sign_def) then sign_def = nil end
     opts.__signs[v.severity].text = sign_def and vim.trim(sign_def[1].text) or v.default
     opts.__signs[v.severity].texthl = sign_def and sign_def[1].texthl or nil
     if opts.signs and opts.signs[k] and opts.signs[k].text then
