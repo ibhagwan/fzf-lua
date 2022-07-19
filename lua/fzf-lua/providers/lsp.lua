@@ -371,7 +371,7 @@ end
 
 -- see $VIMRUNTIME/lua/vim/buf.lua:pick_call_hierarchy_item()
 M.call_hierarchy = function(opts)
-  opts.lsp_params = vim.lsp.util.make_position_params(__CTX.winid)
+  opts.lsp_params = vim.lsp.util.make_position_params(__CTX and __CTX.winid or 0)
   local method = "textDocument/prepareCallHierarchy"
   local res, err = vim.lsp.buf_request_sync(
     0, method, opts.lsp_params, 2000)
