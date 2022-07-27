@@ -5,7 +5,22 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+local function CTX_UPDATE()
+  -- save current win/buf context, ignore when fzf
+  -- window is already open (actions.sym_lsym)
+  if not __CTX or not utils.fzf_winobj() then
+    __CTX = {
+      winid = vim.api.nvim_get_current_win(),
+      bufnr = vim.api.nvim_get_current_buf(),
+      bufname = vim.api.nvim_buf_get_name(0)
+    }
+  end
+end
+
 local function check_capabilities(feature)
+  -- update CTX since this gets called before normalize_lsp_opts (#490)
+  CTX_UPDATE()
+
   local clients = vim.lsp.buf_get_clients(__CTX and __CTX.bufnr or 0)
 
   -- return the number of clients supporting the feature
@@ -324,14 +339,8 @@ local normalize_lsp_opts = function(opts, cfg)
   end
 
   -- save current win/buf context
-  -- ignore when fzf window is already open
-  if not __CTX or not utils.fzf_winobj() then
-    __CTX = {
-      winid = vim.api.nvim_get_current_win(),
-      bufnr = vim.api.nvim_get_current_buf(),
-      bufname = vim.api.nvim_buf_get_name(0)
-    }
-  end
+  -- moved to 'check_capabilities' (#490)
+  -- CTX_UPDATE()
 
   opts.code_actions = nil
 
