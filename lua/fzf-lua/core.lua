@@ -99,14 +99,14 @@ M.fzf_wrap = function(opts, contents, fn_selected)
   opts = opts or {}
   return coroutine.wrap(function()
     opts.fn_selected = opts.fn_selected or fn_selected
-    local selected = M.fzf(opts, contents)
+    local selected = M.fzf(contents, opts)
     if opts.fn_selected then
       opts.fn_selected(selected)
     end
   end)
 end
 
-M.fzf = function(opts, contents)
+M.fzf = function(contents, opts)
   -- normalize with globals if not already normalized
   if not opts or not opts._normalized then
     opts = config.normalize_opts(opts or {}, {})
