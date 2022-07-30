@@ -238,12 +238,14 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
         utils.warn(("':%s' failed: %s"):format(cmd, res))
       end
     end
-    if curbuf ~= entry.bufnr or lnum ~= entry.line then
-      -- make sure we have valid column
-      entry.col = entry.col and entry.col>0 and entry.col or 1
-      vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+    if vimcmd ~= "bd" then
+      if curbuf ~= entry.bufnr or lnum ~= entry.line then
+        -- make sure we have valid column
+        entry.col = entry.col and entry.col>0 and entry.col or 1
+        vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+      end
+      if not is_term and not opts.no_action_zz then vim.cmd("norm! zvzz") end
     end
-    if not is_term and not opts.no_action_zz then vim.cmd("norm! zvzz") end
   end
 end
 
