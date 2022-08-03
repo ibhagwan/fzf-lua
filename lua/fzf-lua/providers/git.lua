@@ -9,7 +9,9 @@ local make_entry = require "fzf-lua.make_entry"
 local M = {}
 
 local function set_git_cwd_args(opts)
-  opts.cwd = path.git_root(opts)
+  if not opts.cwd then
+    opts.cwd = path.git_root(opts)
+  end
   if opts.git_dir or opts.git_worktree then
     opts.cmd = path.git_cwd(opts.cmd, opts)
   end
