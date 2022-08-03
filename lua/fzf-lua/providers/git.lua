@@ -9,7 +9,13 @@ local make_entry = require "fzf-lua.make_entry"
 local M = {}
 
 local function set_git_cwd_args(opts)
-  opts.cwd = path.git_root(opts)
+  -- verify cwd is a git repo, override user supplied
+  -- cwd if cwd isn't a git repo, error was already
+  -- printed to `:messages` by 'path.git_root'
+  local git_root = path.git_root(opts)
+  if not opts.cwd or not git_root then
+    opts.cwd = git_root
+  end
   if opts.git_dir or opts.git_worktree then
     opts.cmd = path.git_cwd(opts.cmd, opts)
   end
