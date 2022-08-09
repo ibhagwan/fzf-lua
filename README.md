@@ -585,7 +585,7 @@ require'fzf-lua'.setup {
       color_icons   = true,
       previewer     = "git_diff",
       -- uncomment if you wish to use git-delta as pager
-      --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS"
+      --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS",
       actions = {
         -- actions inherit from 'actions.files' and merge
         ["right"]   = { actions.git_unstage, actions.resume },
@@ -597,7 +597,7 @@ require'fzf-lua'.setup {
       cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset'",
       preview       = "git show --pretty='%Cred%H%n%Cblue%an <%ae>%n%C(yellow)%cD%n%Cgreen%s' --color {1}",
       -- uncomment if you wish to use git-delta as pager
-      --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS"
+      --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS",
       actions = {
         ["default"] = actions.git_checkout,
       },
@@ -612,7 +612,7 @@ require'fzf-lua'.setup {
       cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' <file>",
       preview       = "git diff --color {1}~1 {1} -- <file>",
       -- uncomment if you wish to use git-delta as pager
-      --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS"
+      --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS",
       actions = {
         ["default"] = actions.git_buf_edit,
         ["ctrl-s"]  = actions.git_buf_split,
