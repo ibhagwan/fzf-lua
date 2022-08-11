@@ -364,6 +364,7 @@ function FzfWin:new(o)
     return _self
   end
   o = o or {}
+  self._o = o
   self = setmetatable({}, { __index = self })
   self.actions = o.actions
   self.winopts = normalize_winopts(o)
@@ -605,6 +606,19 @@ function FzfWin:fs_fzf_layout(fs, winopts)
 end
 
 function FzfWin:redraw()
+  self.winopts = normalize_winopts(self._o)
+  if not self.winopts.split and self.previewer_is_builtin then
+    self.layout = self:generate_layout(self.winopts)
+  end
+  if self:validate() then
+    self:redraw_main()
+  end
+  if self:validate_preview() then
+    self:redraw_preview()
+  end
+end
+
+function FzfWin:redraw_main()
     if self.winopts.split then return end
     local hidden = self._previewer and self.preview_hidden
     local relative = self.winopts.relative or 'editor'
@@ -754,7 +768,7 @@ function FzfWin:create()
     self:set_style_minimal(self.fzf_winid)
   else
     -- draw the main window
-    self:redraw()
+    self:redraw_main()
   end
 
   -- verify the preview is closed, this can happen
@@ -1056,7 +1070,7 @@ function FzfWin.toggle_fullscreen()
   self.fullscreen = not self.fullscreen
   self:hide_scrollbar()
   if self and self:validate() then
-    self:redraw()
+    self:redraw_main()
   end
   if self and self:validate_preview() then
     self:redraw_preview()
@@ -1072,9 +1086,9 @@ function FzfWin.toggle_preview()
   end
   if self.preview_hidden and self:validate_preview() then
     self:close_preview()
-    self:redraw()
+    self:redraw_main()
   elseif not self.preview_hidden then
-    self:redraw()
+    self:redraw_main()
     self:redraw_preview()
     if self._previewer and self._previewer.display_last_entry then
       self._previewer:display_last_entry()
@@ -1117,7 +1131,7 @@ function FzfWin.toggle_preview_cw(direction)
   self.winopts.preview_pos = pos[newidx]
   self.layout = self:generate_layout(self.winopts)
   self:close_preview()
-  self:redraw()
+  self:redraw_main()
   self:redraw_preview()
   if self._previewer and self._previewer.display_last_entry then
     self._previewer:display_last_entry()

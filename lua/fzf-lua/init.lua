@@ -208,6 +208,13 @@ M.fzf_exec = require'fzf-lua.core'.fzf_exec
 M.fzf_live = require'fzf-lua.core'.fzf_live
 M.defaults = config.globals
 
+M.redraw = function()
+  local winobj = require'fzf-lua'.win.__SELF()
+  if winobj then
+    winobj:redraw()
+  end
+end
+
 -- exported modules
 M._exported_modules = {
   'win',
