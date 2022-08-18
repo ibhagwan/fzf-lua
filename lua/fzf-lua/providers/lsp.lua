@@ -590,7 +590,9 @@ local function get_line_diagnostics(_)
         line = diag[1].end_lnum,
         character = diag[1].end_col,
       }
-    }
+    },
+    data = diag[1].user_data and diag[1].user_data.lsp and
+      diag[1].user_data.lsp.data
   }} or nil
 end
 
