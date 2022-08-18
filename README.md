@@ -451,6 +451,7 @@ require'fzf-lua'.setup {
       ["ctrl-v"]      = actions.file_vsplit,
       ["ctrl-t"]      = actions.file_tabedit,
       ["alt-q"]       = actions.file_sel_to_qf,
+      ["alt-l"]       = actions.file_sel_to_ll,
     },
     buffers = {
       -- providers that inherit these actions:
@@ -748,8 +749,9 @@ require'fzf-lua'.setup {
     },
     -- actions inherit from 'actions.buffers' and merge
     actions = {
-      ["default"]     = { actions.buf_edit_or_qf },
-      ["alt-q"]       = { actions.buf_sel_to_qf }
+      ["default"]     = actions.buf_edit_or_qf,
+      ["alt-q"]       = actions.buf_sel_to_qf,
+      ["alt-l"]       = actions.buf_sel_to_ll
     },
   },
   blines = {
@@ -765,8 +767,9 @@ require'fzf-lua'.setup {
     },
     -- actions inherit from 'actions.buffers' and merge
     actions = {
-      ["default"]     = { actions.buf_edit_or_qf },
-      ["alt-q"]       = { actions.buf_sel_to_qf }
+      ["default"]     = actions.buf_edit_or_qf,
+      ["alt-q"]       = actions.buf_sel_to_qf,
+      ["alt-l"]       = actions.buf_sel_to_ll
     },
   },
   tags = {

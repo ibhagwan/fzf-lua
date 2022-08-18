@@ -157,7 +157,7 @@ M.file_open_in_background = function(selected, opts)
   M.vimcmd_file(vimcmd, selected, opts)
 end
 
-M.file_sel_to_qf = function(selected, opts)
+local sel_to_qf = function(selected, opts, is_loclist)
   local qf_list = {}
   for i = 1, #selected do
     local file = path.entry_to_file(selected[i], opts)
@@ -169,8 +169,21 @@ M.file_sel_to_qf = function(selected, opts)
       text = text,
     })
   end
-  vim.fn.setqflist(qf_list)
-  vim.cmd 'copen'
+  if is_loclist then
+    vim.fn.setloclist(0, qf_list)
+    vim.cmd 'lopen'
+  else
+    vim.fn.setqflist(qf_list)
+    vim.cmd 'copen'
+  end
+end
+
+M.file_sel_to_qf = function(selected, opts)
+  sel_to_qf(selected, opts)
+end
+
+M.file_sel_to_ll = function(selected, opts)
+  sel_to_qf(selected, opts, true)
 end
 
 M.file_edit_or_qf = function(selected, opts)
@@ -298,7 +311,11 @@ M.buf_switch_or_edit = function(...)
 end
 
 M.buf_sel_to_qf = function(selected, opts)
-  return M.file_sel_to_qf(selected, opts)
+  return sel_to_qf(selected, opts)
+end
+
+M.buf_sel_to_ll = function(selected, opts)
+  return sel_to_qf(selected, opts, true)
 end
 
 M.buf_edit_or_qf = function(selected, opts)

@@ -126,6 +126,7 @@ M.globals = {
       ["ctrl-v"]        = actions.file_vsplit,
       ["ctrl-t"]        = actions.file_tabedit,
       ["alt-q"]         = actions.file_sel_to_qf,
+      ["alt-l"]         = actions.file_sel_to_ll,
     },
     buffers = {
       ["default"]       = actions.buf_edit,
@@ -393,7 +394,8 @@ M.globals.lines = {
     _actions              = function() return M.globals.actions.buffers end,
     actions = {
       ["default"]         = actions.buf_edit_or_qf,
-      ["alt-q"]           = actions.buf_sel_to_qf
+      ["alt-q"]           = actions.buf_sel_to_qf,
+      ["alt-l"]           = actions.buf_sel_to_ll
     },
   }
 M.globals.blines = {
@@ -411,7 +413,8 @@ M.globals.blines = {
     _actions              = function() return M.globals.actions.buffers end,
     actions = {
       ["default"]         = actions.buf_edit_or_qf,
-      ["alt-q"]           = actions.buf_sel_to_qf
+      ["alt-q"]           = actions.buf_sel_to_qf,
+      ["alt-l"]           = actions.buf_sel_to_ll
     },
   }
 M.globals.tags = {
@@ -990,11 +993,13 @@ M._action_to_helpstr = {
   [actions.file_vsplit]           = "file-vsplit",
   [actions.file_tabedit]          = "file-tabedit",
   [actions.file_sel_to_qf]        = "file-selection-to-qf",
+  [actions.file_sel_to_ll]        = "file-selection-to-loclist",
   [actions.file_switch]           = "file-switch",
   [actions.file_switch_or_edit]   = "file-switch-or-edit",
   [actions.buf_edit]              = "buffer-edit",
   [actions.buf_edit_or_qf]        = "buffer-edit-or-qf",
   [actions.buf_sel_to_qf]         = "buffer-selection-to-qf",
+  [actions.buf_sel_to_ll]         = "buffer-selection-to-loclist",
   [actions.buf_split]             = "buffer-split",
   [actions.buf_vsplit]            = "buffer-vsplit",
   [actions.buf_tabedit]           = "buffer-tabedit",
