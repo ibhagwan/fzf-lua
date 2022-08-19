@@ -884,7 +884,7 @@ end
 function FzfWin:set_title_hl()
   if self.winopts.__hl.title and self._title_len and self._title_len>0 then
     pcall(vim.api.nvim_win_call, self.border_winid, function()
-      fn.matchaddpos(self.winopts.__hl.title, {{1, 9, self._title_len+1}}, 11)
+      fn.matchaddpos(self.winopts.__hl.title, {{1, self._title_position, self._title_len+1}}, 11)
     end)
   end
 end
@@ -1056,10 +1056,19 @@ function FzfWin:update_title(title)
   end
   -- save for set_title_hl
   self._title_len = #title
+  local width_title = fn.strwidth(title)
   local prefix = fn.strcharpart(top, 0, 3)
-  local suffix = fn.strcharpart(top, fn.strwidth(title) + 3, fn.strwidth(top))
+  if self.winopts.preview.title_align == "center" then
+    prefix = fn.strcharpart(top, 0, utils.round((width - width_title)/2))
+  elseif self.winopts.preview.title_align == "right" then
+    prefix = fn.strcharpart(top, 0, width - (width_title + 3))
+  end
+
+  local suffix = fn.strcharpart(top, width_title + fn.strwidth(prefix), width)
   title = ('%s%s%s'):format(prefix, title, suffix)
   api.nvim_buf_set_lines(border_buf, 0, 1, 1, {title})
+  -- will be used later in set_title_hl()
+  self._title_position = #prefix
   self:set_title_hl()
 end
 

@@ -61,6 +61,7 @@ M.globals = {
       layout              = 'flex',
       flip_columns        = 120,
       title               = true,
+      title_align         = "left",
       scrollbar           = 'border',
       scrolloff           = '-2',
       scrollchar          = '',
@@ -838,6 +839,7 @@ function M.normalize_opts(opts, defaults)
     ['winopts.hl.cursorline']         = 'previewers.builtin.hl_cursorline',
     ['winopts.preview.delay']         = 'previewers.builtin.delay',
     ['winopts.preview.title']         = 'previewers.builtin.title',
+    ['winopts.preview.title_align']   = 'previewers.builtin.title_align',
     ['winopts.preview.scrollbar']     = 'previewers.builtin.scrollbar',
     ['winopts.preview.scrollchar']    = 'previewers.builtin.scrollchar',
     -- Diagnostics & LSP symbols separation options

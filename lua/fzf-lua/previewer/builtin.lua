@@ -24,6 +24,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.win = fzf_win
   self.delay = self.win.winopts.preview.delay or 100
   self.title = self.win.winopts.preview.title
+  self.title_align = self.win.winopts.preview.title_align
   self.winopts = self.win.winopts.preview.winopts
   self.syntax = default(o.syntax, true)
   self.syntax_delay = default(o.syntax_delay, 0)
