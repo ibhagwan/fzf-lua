@@ -370,7 +370,7 @@ require'fzf-lua'.setup {
       flip_columns   = 120,             -- #cols to switch to horizontal on flex
       -- Only used with the builtin previewer:
       title          = true,            -- preview border title (file/buf)?
-      title_align    = "left",         -- left|center|right, preview title alignment (file/buf)?
+      title_align    = "left",          -- left|center|right, title alignment
       scrollbar      = 'float',         -- `false` or string:'float|border'
                                         -- float:  in-window floating border
                                         -- border: in-border chars (see below)
