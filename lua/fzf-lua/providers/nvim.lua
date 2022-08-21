@@ -268,21 +268,27 @@ M.keymaps = function(opts)
   opts = config.normalize_opts(opts, config.globals.nvim.keymaps)
   if not opts then return end
 
-  local modes = { "n", "i", "c" }
+  local modes = {
+    n = "blue",
+    i = "red",
+    c = "yellow"
+  }
   local keymaps = {}
 
   local add_keymap = function(keymap)
     -- hijack fields
-    keymap.str = string.format("[%s:%s:%s]",
-      utils.ansi_codes.yellow(tostring(keymap.buffer)),
-      utils.ansi_codes.green(keymap.mode),
-      utils.ansi_codes.magenta(keymap.lhs:gsub("%s", "<Space>")))
+    local keymap_desc = keymap.desc == nil and keymap.rhs or keymap.desc
+    keymap.str = string.format("%s │ %-40s │ %s",
+      utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
+      keymap.lhs:gsub("%s", "<Space>"),
+      keymap_desc)
+
     local k = string.format("[%s:%s:%s]",
       keymap.buffer, keymap.mode, keymap.lhs)
     keymaps[k] = keymap
   end
 
-  for _, mode in pairs(modes) do
+  for mode, _ in pairs(modes) do
     local global = vim.api.nvim_get_keymap(mode)
     for _, keymap in pairs(global) do
       add_keymap(keymap)
@@ -293,25 +299,12 @@ M.keymaps = function(opts)
     end
   end
 
-  local prev_act = shell.action(function (args)
-    local k = args[1]:match("(%[.*%]) ")
-    local v = keymaps[k]
-    if v then
-      -- clear hijacked field
-      v.str = nil
-      k = vim.inspect(v)
-    end
-    return k
-  end, nil, opts.debug)
-
   local entries = {}
   for _, v in pairs(keymaps) do
-    table.insert(entries, string.format("%-50s %s",
-    v.str, v.rhs))
+    table.insert(entries, v.str)
   end
 
   opts.fzf_opts['--no-multi'] = ''
-  opts.fzf_opts['--preview'] = prev_act
 
   core.fzf_exec(entries, opts)
 end
