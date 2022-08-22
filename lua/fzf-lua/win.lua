@@ -694,6 +694,12 @@ function FzfWin:redraw_main()
     end
 end
 
+function FzfWin:set_redraw_autocmd()
+  vim.cmd("augroup FzfLua")
+  vim.cmd('au VimResized <buffer> lua require("fzf-lua").redraw()')
+  vim.cmd("augroup END")
+end
+
 function FzfWin:set_winleave_autocmd()
   vim.cmd("augroup FzfLua")
   vim.cmd("au!")
@@ -707,6 +713,8 @@ function FzfWin:set_tmp_buffer()
   local tmp_buf = api.nvim_create_buf(false, true)
   vim.api.nvim_win_set_buf(self.fzf_winid, tmp_buf)
   self:set_winleave_autocmd()
+  -- automatically resize fzf window
+  self:set_redraw_autocmd()
   -- closing the buffer here causes the win to close
   -- shouldn't happen since the win is already associated
   -- with tmp_buf... use this table instead
@@ -776,6 +784,8 @@ function FzfWin:create()
   -- should also close issue #105
   -- https://github.com/ibhagwan/fzf-lua/issues/105
   self:set_winleave_autocmd()
+  -- automatically resize fzf window
+  self:set_redraw_autocmd()
 
   self:reset_win_highlights(self.fzf_winid)
 
