@@ -98,7 +98,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     if vimcmd == 'e'
         and curbuf ~= fullpath
         and not vim.o.hidden and
-        utils.buffer_is_dirty(nil, true) then
+        utils.buffer_is_dirty(nil, true, true) then
         -- warn the user when trying to switch from a dirty buffer
         -- when `:set nohidden`
         return
@@ -237,7 +237,7 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
     if vimcmd == 'b'
       and curbuf ~= entry.bufnr
       and not vim.o.hidden and
-      utils.buffer_is_dirty(nil, true) then
+      utils.buffer_is_dirty(nil, true, true) then
       -- warn the user when trying to switch from a dirty buffer
       -- when `:set nohidden`
       return
@@ -286,7 +286,7 @@ M.buf_del = function(selected, opts)
   local vimcmd = "bd"
   local bufnrs = vim.tbl_filter(function(line)
     local b = tonumber(line:match("%[(%d+)"))
-    return not utils.buffer_is_dirty(b, true)
+    return not utils.buffer_is_dirty(b, true, false)
   end, selected)
   M.vimcmd_buf(vimcmd, bufnrs, opts)
 end
