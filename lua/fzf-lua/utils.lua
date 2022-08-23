@@ -457,10 +457,13 @@ function M.is_term_buffer(bufnr)
   return M.is_term_bufname(bufname)
 end
 
-function M.buffer_is_dirty(bufnr, warn)
+function M.buffer_is_dirty(bufnr, warn, only_if_last_buffer)
   bufnr = tonumber(bufnr) or vim.api.nvim_get_current_buf()
   local info = bufnr and vim.fn.getbufinfo(bufnr)[1]
   if info and info.changed ~= 0 then
+    if only_if_last_buffer and 1 < M.tbl_length(vim.fn.win_findbuf(bufnr)) then
+      return false
+    end
     if warn then
       M.warn(('buffer %d has unsaved changes "%s"'):format(bufnr, info.name))
     end
