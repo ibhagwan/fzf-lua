@@ -281,7 +281,7 @@ M.keymaps = function(opts)
     keymap.str = string.format("%s │ %-40s │ %s",
       utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
       keymap.lhs:gsub("%s", "<Space>"),
-      keymap_desc)
+      keymap_desc .. ' ')
 
     local k = string.format("[%s:%s:%s]",
       keymap.buffer, keymap.mode, keymap.lhs)
