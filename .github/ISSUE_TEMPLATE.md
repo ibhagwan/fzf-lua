@@ -12,11 +12,14 @@
 <!--
 Check if your problem is reproducible with minimal init, by running:
 
-nvim -u <((echo "lua << EOF") && (curl -s https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/minimal_init.lua) && (echo "EOF"))
+sh -c "$(curl -s https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/scripts/mini.sh)"
+
+For more minimal init testing options see:
+https://github.com/ibhagwan/fzf-lua/wiki#minimal-init
 
 Change '[ ]' to '[x]' below if the issue is reproducible.
 -->
-- [ ] The issue is reproducible with `minimal_init.lua`
+- [ ] The issue is reproducible with `mini.sh`
 
 <!-- Delete this section if the issue is reproducible with minimal init -->
 <details>
