@@ -294,7 +294,9 @@ end
 M.buf_switch = function(selected, _)
   local tabnr = tonumber(selected[1]:match("(%d+)%)"))
   if tabnr then
-    vim.cmd("tabn " .. tabnr)
+    -- `:tabn` will result in the wrong tab
+    -- if `:tabmove` was previously used (#515)
+    vim.api.nvim_set_current_tabpage(tabnr)
   else
     tabnr = vim.api.nvim_win_get_tabpage(0)
   end
