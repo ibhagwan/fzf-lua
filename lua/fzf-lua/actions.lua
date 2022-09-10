@@ -292,7 +292,8 @@ M.buf_del = function(selected, opts)
 end
 
 M.buf_switch = function(selected, _)
-  local tabnr = tonumber(selected[1]:match("(%d+)%)"))
+  local tabidx = tonumber(selected[1]:match("(%d+)%)"))
+  local tabnr = tabidx and vim.api.nvim_list_tabpages()[tabidx]
   if tabnr then
     -- `:tabn` will result in the wrong tab
     -- if `:tabmove` was previously used (#515)

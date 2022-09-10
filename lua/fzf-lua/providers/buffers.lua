@@ -271,14 +271,14 @@ M.tabs = function(opts)
 
   opts._list_bufs = function()
     local res = {}
-    for _, t in ipairs(vim.api.nvim_list_tabpages()) do
+    for i, t in ipairs(vim.api.nvim_list_tabpages()) do
       for _, w in ipairs(vim.api.nvim_tabpage_list_wins(t)) do
         local b = vim.api.nvim_win_get_buf(w)
         -- since this function is called after fzf window
         -- is created, exclude the scratch fzf buffers
         if __STATE.bufmap[b] then
-          opts._tab_to_buf[t] = opts._tab_to_buf[t] or {}
-          opts._tab_to_buf[t][b] = t
+          opts._tab_to_buf[i] = opts._tab_to_buf[i] or {}
+          opts._tab_to_buf[i][b] = t
           table.insert(res, b)
         end
       end
