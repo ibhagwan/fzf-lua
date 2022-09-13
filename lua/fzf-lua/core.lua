@@ -681,7 +681,7 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
     opts.query = nil
     -- setup as inetarctive
     opts._fzf_cli_args = string.format("--interactive --cmd %s",
-        vim.fn.shellescape(reload_command))
+        libuv.shellescape(reload_command))
   else
     -- send an empty table to avoid running $FZF_DEFAULT_COMMAND
     opts.__fzf_init_cmd = {}
@@ -696,7 +696,7 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
         reload_command = ("%s || true"):format(reload_command)
     end
     opts._fzf_cli_args = string.format('--bind=%s',
-        vim.fn.shellescape(("change:reload:%s"):format(
+        libuv.shellescape(("change:reload:%s"):format(
           ("%s"):format(reload_command))))
   end
 
