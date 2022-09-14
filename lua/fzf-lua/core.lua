@@ -683,8 +683,10 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
     opts._fzf_cli_args = string.format("--interactive --cmd %s",
         libuv.shellescape(reload_command))
   else
-    -- send an empty table to avoid running $FZF_DEFAULT_COMMAND
-    opts.__fzf_init_cmd = {}
+    -- **send an empty table to avoid running $FZF_DEFAULT_COMMAND
+    -- The above seems to create a hang in some systems
+    -- use `true` as $FZF_DEFAULT_COMMAND instead (#510)
+    opts.__fzf_init_cmd = "true"
     if opts.exec_empty_query or (opts.query and #opts.query > 0) then
       opts.__fzf_init_cmd = initial_command:gsub(fzf_field_expression,
         libuv.shellescape(opts.query:gsub("%%", "%%%%")))
