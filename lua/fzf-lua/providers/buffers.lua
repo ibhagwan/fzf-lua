@@ -314,7 +314,8 @@ M.tabs = function(opts)
 
       opts.sort_lastused = false
       opts._prefix = ("%d)%s%s%s"):format(t, utils.nbsp, utils.nbsp, utils.nbsp)
-      local buffers = populate_buffer_entries(opts, bufnrs_flat, t)
+      local tabnr = vim.api.nvim_list_tabpages()[t]
+      local buffers = populate_buffer_entries(opts, bufnrs_flat, tabnr)
       for _, bufinfo in pairs(buffers) do
         cb(gen_buffer_entry(opts, bufinfo, false))
       end
