@@ -118,100 +118,107 @@ function M.setup(opts)
   M.setup_highlights()
 end
 
-M.resume = require'fzf-lua.core'.fzf_resume
-
-M.files = require'fzf-lua.providers.files'.files
-M.args = require'fzf-lua.providers.files'.args
-M.grep = require'fzf-lua.providers.grep'.grep
-M.live_grep = require'fzf-lua.providers.grep'.live_grep
-M.live_grep_native = require'fzf-lua.providers.grep'.live_grep_native
-M.live_grep_resume = require'fzf-lua.providers.grep'.live_grep_resume
-M.live_grep_glob = require'fzf-lua.providers.grep'.live_grep_glob
-M.grep_last = require'fzf-lua.providers.grep'.grep_last
-M.grep_cword = require'fzf-lua.providers.grep'.grep_cword
-M.grep_cWORD = require'fzf-lua.providers.grep'.grep_cWORD
-M.grep_visual = require'fzf-lua.providers.grep'.grep_visual
-M.grep_curbuf = require'fzf-lua.providers.grep'.grep_curbuf
-M.lgrep_curbuf = require'fzf-lua.providers.grep'.lgrep_curbuf
-M.grep_project = require'fzf-lua.providers.grep'.grep_project
-M.git_files = require'fzf-lua.providers.git'.files
-M.git_status = require'fzf-lua.providers.git'.status
-M.git_stash = require'fzf-lua.providers.git'.stash
-M.git_commits = require'fzf-lua.providers.git'.commits
-M.git_bcommits = require'fzf-lua.providers.git'.bcommits
-M.git_branches = require'fzf-lua.providers.git'.branches
-M.oldfiles = require'fzf-lua.providers.oldfiles'.oldfiles
-M.quickfix = require'fzf-lua.providers.quickfix'.quickfix
-M.loclist = require'fzf-lua.providers.quickfix'.loclist
-M.buffers = require'fzf-lua.providers.buffers'.buffers
-M.tabs = require'fzf-lua.providers.buffers'.tabs
-M.lines = require'fzf-lua.providers.buffers'.lines
-M.blines = require'fzf-lua.providers.buffers'.blines
-M.help_tags = require'fzf-lua.providers.helptags'.helptags
-M.man_pages = require'fzf-lua.providers.manpages'.manpages
-M.colorschemes = require'fzf-lua.providers.colorschemes'.colorschemes
-M.highlights = require'fzf-lua.providers.colorschemes'.highlights
-
-M.tags = require'fzf-lua.providers.tags'.tags
-M.btags = require'fzf-lua.providers.tags'.btags
-M.tags_grep = require'fzf-lua.providers.tags'.grep
-M.tags_grep_cword = require'fzf-lua.providers.tags'.grep_cword
-M.tags_grep_cWORD = require'fzf-lua.providers.tags'.grep_cWORD
-M.tags_grep_visual = require'fzf-lua.providers.tags'.grep_visual
-M.tags_live_grep = require'fzf-lua.providers.tags'.live_grep
-M.jumps = require'fzf-lua.providers.nvim'.jumps
-M.changes = require'fzf-lua.providers.nvim'.changes
-M.tagstack = require'fzf-lua.providers.nvim'.tagstack
-M.marks = require'fzf-lua.providers.nvim'.marks
-M.menus = require'fzf-lua.providers.nvim'.menus
-M.keymaps = require'fzf-lua.providers.nvim'.keymaps
-M.registers = require'fzf-lua.providers.nvim'.registers
-M.commands = require'fzf-lua.providers.nvim'.commands
-M.command_history = require'fzf-lua.providers.nvim'.command_history
-M.search_history = require'fzf-lua.providers.nvim'.search_history
-M.spell_suggest = require'fzf-lua.providers.nvim'.spell_suggest
-M.filetypes = require'fzf-lua.providers.nvim'.filetypes
-M.packadd = require'fzf-lua.providers.nvim'.packadd
-
-M.lsp_typedefs = require'fzf-lua.providers.lsp'.typedefs
-M.lsp_references = require'fzf-lua.providers.lsp'.references
-M.lsp_definitions = require'fzf-lua.providers.lsp'.definitions
-M.lsp_declarations = require'fzf-lua.providers.lsp'.declarations
-M.lsp_implementations = require'fzf-lua.providers.lsp'.implementations
-M.lsp_document_symbols = require'fzf-lua.providers.lsp'.document_symbols
-M.lsp_workspace_symbols = require'fzf-lua.providers.lsp'.workspace_symbols
-M.lsp_live_workspace_symbols = require'fzf-lua.providers.lsp'.live_workspace_symbols
-M.lsp_code_actions = require'fzf-lua.providers.lsp'.code_actions
-M.lsp_incoming_calls = require'fzf-lua.providers.lsp'.incoming_calls
-M.lsp_outgoing_calls = require'fzf-lua.providers.lsp'.outgoing_calls
-
--- backward compat
-M.lsp_document_diagnostics = require'fzf-lua.providers.diagnostic'.diagnostics
-M.lsp_workspace_diagnostics = require'fzf-lua.providers.diagnostic'.all
-M.diagnostics_document = require'fzf-lua.providers.diagnostic'.diagnostics
-M.diagnostics_workspace = require'fzf-lua.providers.diagnostic'.all
-
-M.register_ui_select = require'fzf-lua.providers.ui_select'.register
-M.deregister_ui_select = require'fzf-lua.providers.ui_select'.deregister
-
-M.dap_commands = require'fzf-lua.providers.dap'.commands
-M.dap_configurations = require'fzf-lua.providers.dap'.configurations
-M.dap_breakpoints = require'fzf-lua.providers.dap'.breakpoints
-M.dap_variables = require'fzf-lua.providers.dap'.variables
-M.dap_frames = require'fzf-lua.providers.dap'.frames
-
--- API shortcuts
-M.fzf = require'fzf-lua.core'.fzf
-M.fzf_raw = require'fzf-lua.fzf'.raw_fzf
-M.fzf_wrap = require'fzf-lua.core'.fzf_wrap
-M.fzf_exec = require'fzf-lua.core'.fzf_exec
-M.fzf_live = require'fzf-lua.core'.fzf_live
 M.defaults = config.globals
 
 M.redraw = function()
   local winobj = require'fzf-lua'.win.__SELF()
   if winobj then
     winobj:redraw()
+  end
+end
+
+do
+  -- lazy load modules, run inside a local 'do' scope
+  -- so 'lazyloaded_modules' is not stored in mem
+  local lazyloaded_modules = {
+    resume = { 'fzf-lua.core', 'fzf_resume' },
+    files = { 'fzf-lua.providers.files', 'files' },
+    args = { 'fzf-lua.providers.files', 'args' },
+    grep = { 'fzf-lua.providers.grep', 'grep' },
+    grep_last = { 'fzf-lua.providers.grep', 'grep_last' },
+    grep_cword = { 'fzf-lua.providers.grep', 'grep_cword' },
+    grep_cWORD = { 'fzf-lua.providers.grep', 'grep_cWORD' },
+    grep_visual = { 'fzf-lua.providers.grep', 'grep_visual' },
+    grep_curbuf = { 'fzf-lua.providers.grep', 'grep_curbuf' },
+    grep_project = { 'fzf-lua.providers.grep', 'grep_project' },
+    live_grep = { 'fzf-lua.providers.grep', 'live_grep' },
+    live_grep_native = { 'fzf-lua.providers.grep', 'live_grep_native' },
+    live_grep_resume = { 'fzf-lua.providers.grep', 'live_grep_resume' },
+    live_grep_glob = { 'fzf-lua.providers.grep', 'live_grep_glob' },
+    lgrep_curbuf = { 'fzf-lua.providers.grep', 'lgrep_curbuf' },
+    tags = { 'fzf-lua.providers.tags', 'tags' },
+    btags = { 'fzf-lua.providers.tags', 'btags' },
+    tags_grep = { 'fzf-lua.providers.tags', 'grep' },
+    tags_grep_cword = { 'fzf-lua.providers.tags', 'grep_cword' },
+    tags_grep_cWORD = { 'fzf-lua.providers.tags', 'grep_cWORD' },
+    tags_grep_visual = { 'fzf-lua.providers.tags', 'grep_visual' },
+    tags_live_grep = { 'fzf-lua.providers.tags', 'live_grep' },
+    git_files = { 'fzf-lua.providers.git', 'files' },
+    git_status = { 'fzf-lua.providers.git', 'status' },
+    git_stash = { 'fzf-lua.providers.git', 'stash' },
+    git_commits = { 'fzf-lua.providers.git', 'commits' },
+    git_bcommits = { 'fzf-lua.providers.git', 'bcommits' },
+    git_branches = { 'fzf-lua.providers.git', 'branches' },
+    oldfiles = { 'fzf-lua.providers.oldfiles', 'oldfiles' },
+    quickfix = { 'fzf-lua.providers.quickfix', 'quickfix' },
+    loclist = { 'fzf-lua.providers.quickfix', 'loclist' },
+    buffers = { 'fzf-lua.providers.buffers', 'buffers' },
+    tabs = { 'fzf-lua.providers.buffers', 'tabs' },
+    lines = { 'fzf-lua.providers.buffers', 'lines' },
+    blines = { 'fzf-lua.providers.buffers', 'blines' },
+    help_tags = { 'fzf-lua.providers.helptags', 'helptags' },
+    man_pages = { 'fzf-lua.providers.manpages', 'manpages' },
+    colorschemes = { 'fzf-lua.providers.colorschemes', 'colorschemes' },
+    highlights = { 'fzf-lua.providers.colorschemes', 'highlights' },
+    jumps = { 'fzf-lua.providers.nvim', 'jumps' },
+    changes = { 'fzf-lua.providers.nvim', 'changes' },
+    tagstack = { 'fzf-lua.providers.nvim', 'tagstack' },
+    marks = { 'fzf-lua.providers.nvim', 'marks' },
+    menus = { 'fzf-lua.providers.nvim', 'menus' },
+    keymaps = { 'fzf-lua.providers.nvim', 'keymaps' },
+    registers = { 'fzf-lua.providers.nvim', 'registers' },
+    commands = { 'fzf-lua.providers.nvim', 'commands' },
+    command_history = { 'fzf-lua.providers.nvim', 'command_history' },
+    search_history = { 'fzf-lua.providers.nvim', 'search_history' },
+    spell_suggest = { 'fzf-lua.providers.nvim', 'spell_suggest' },
+    filetypes = { 'fzf-lua.providers.nvim', 'filetypes' },
+    packadd = { 'fzf-lua.providers.nvim', 'packadd' },
+    lsp_typedefs = { 'fzf-lua.providers.lsp', 'typedefs' },
+    lsp_references = { 'fzf-lua.providers.lsp', 'references' },
+    lsp_definitions = { 'fzf-lua.providers.lsp', 'definitions' },
+    lsp_declarations = { 'fzf-lua.providers.lsp', 'declarations' },
+    lsp_implementations = { 'fzf-lua.providers.lsp', 'implementations' },
+    lsp_document_symbols = { 'fzf-lua.providers.lsp', 'document_symbols' },
+    lsp_workspace_symbols = { 'fzf-lua.providers.lsp', 'workspace_symbols' },
+    lsp_live_workspace_symbols = { 'fzf-lua.providers.lsp', 'live_workspace_symbols' },
+    lsp_code_actions = { 'fzf-lua.providers.lsp', 'code_actions' },
+    lsp_incoming_calls = { 'fzf-lua.providers.lsp', 'incoming_calls' },
+    lsp_outgoing_calls = { 'fzf-lua.providers.lsp', 'outgoing_calls' },
+    lsp_document_diagnostics = { 'fzf-lua.providers.diagnostic', 'diagnostics' },
+    lsp_workspace_diagnostics = { 'fzf-lua.providers.diagnostic', 'all' },
+    diagnostics_document = { 'fzf-lua.providers.diagnostic', 'diagnostics' },
+    diagnostics_workspace = { 'fzf-lua.providers.diagnostic', 'all' },
+    dap_commands = { 'fzf-lua.providers.dap', 'commands' },
+    dap_configurations = { 'fzf-lua.providers.dap', 'configurations' },
+    dap_breakpoints = { 'fzf-lua.providers.dap', 'breakpoints' },
+    dap_variables = { 'fzf-lua.providers.dap', 'variables' },
+    dap_frames = { 'fzf-lua.providers.dap', 'frames' },
+    register_ui_select = { 'fzf-lua.providers.ui_select', 'register' },
+    deregister_ui_select = { 'fzf-lua.providers.ui_select', 'deregister' },
+    -- API shortcuts
+    fzf = { 'fzf-lua.core', 'fzf' },
+    fzf_raw = { 'fzf-lua.fzf', 'raw_fzf' },
+    fzf_wrap = { 'fzf-lua.core', 'fzf_wrap' },
+    fzf_exec = { 'fzf-lua.core', 'fzf_exec' },
+    fzf_live = { 'fzf-lua.core', 'fzf_live' },
+  }
+
+  for k, v in pairs(lazyloaded_modules) do
+    M[k] = function(...)
+      -- override self so this function is only called once
+      M[k] = require(v[1])[v[2]]
+      M[k](...)
+    end
   end
 end
 
