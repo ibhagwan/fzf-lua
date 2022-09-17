@@ -11,6 +11,7 @@ local __STATE = {}
 
 local UPDATE_STATE = function()
   __STATE = {
+    curtabidx = vim.fn.tabpagenr(),
     curtab = vim.api.nvim_win_get_tabpage(0),
     curbuf = vim.api.nvim_get_current_buf(),
     prevbuf = vim.fn.bufnr('#'),
@@ -304,7 +305,7 @@ M.tabs = function(opts)
 
       cb(("%d)%s%s\t%s"):format(t, utils.nbsp,
         utils.ansi_codes.blue("%s%s#%d"):format(opts.tab_title, utils.nbsp, t),
-          (t==__STATE.curtab) and
+          (t==__STATE.curtabidx) and
           utils.ansi_codes.blue(utils.ansi_codes.bold(opts.tab_marker)) or ''))
 
       local bufnrs_flat = {}
