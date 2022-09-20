@@ -217,7 +217,7 @@ do
     M[k] = function(...)
       -- override self so this function is only called once
       M[k] = require(v[1])[v[2]]
-      M[k](...)
+      return M[k](...)
     end
   end
 end
