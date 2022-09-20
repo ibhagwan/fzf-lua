@@ -60,8 +60,8 @@ local function tags(opts)
     opts._ctags_file = path.join({opts.cwd, opts.ctags_file})
   end
 
-  if not vim.loop.fs_stat(opts._ctags_file) then
-    utils.info(("Tags file ('%s') does not exists. Create one with ctags -R")
+  if not opts.ctags_gen and not vim.loop.fs_stat(opts._ctags_file) then
+    utils.info(("Tags file ('%s') does not exist. Create one with ctags -R")
       :format(opts._ctags_file))
     return
   end
@@ -137,6 +137,13 @@ M.btags = function(opts)
   if not opts.filename or #opts.filename==0 then
     utils.info("'btags' is not available for unnamed buffers.")
     return
+  end
+  if opts.ctags_gen then
+    opts.cmd = opts.cmd or string.format("%s -f %s %s",
+      opts.ctags_bin or "ctags",
+      opts.ctags_out or "-",
+      opts.filename)
+    print("cmd", opts.cmd)
   end
   -- tags use relative paths
   opts.filename = path.relative(opts.filename, opts.cwd or vim.loop.cwd())
