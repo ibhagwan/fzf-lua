@@ -833,7 +833,7 @@ open an issue and I'll be more than happy to help.**
       btags = {
         prompt                = 'BTags❯ ',
         ctags_file            = "tags",
-        ctags_gen             = false,    -- dynamically generate ctags each call
+        ctags_autogen         = false,    -- dynamically generate ctags each call
         multiprocess          = true,
         file_icons            = true,
         git_icons             = true,

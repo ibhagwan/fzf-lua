@@ -449,6 +449,7 @@ M.globals.btags = {
         ["--tiebreak"]    = 'index',
     },
     _actions              = function() return M.globals.actions.files end,
+    actions               = { ["ctrl-g"] = false },
   }
 M.globals.colorschemes = {
       prompt              = 'Colorschemes> ',

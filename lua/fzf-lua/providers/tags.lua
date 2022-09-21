@@ -54,16 +54,29 @@ local function tags(opts)
 
   -- signal actions this is a ctag
   opts._ctag = true
+  opts.ctags_bin = opts.ctags_bin or "ctags"
   opts.ctags_file = opts.ctags_file and vim.fn.expand(opts.ctags_file) or "tags"
   opts._ctags_file = opts.ctags_file
   if not path.starts_with_separator(opts._ctags_file) and opts.cwd then
     opts._ctags_file = path.join({opts.cwd, opts.ctags_file})
   end
 
-  if not opts.ctags_gen and not vim.loop.fs_stat(opts._ctags_file) then
-    utils.info(("Tags file ('%s') does not exist. Create one with ctags -R")
-      :format(opts._ctags_file))
-    return
+  if not opts.ctags_autogen and not vim.loop.fs_stat(opts._ctags_file) then
+    -- are we using btags and have the `ctags` binary?
+    -- btags with no tag file, try to autogen using `ctags`
+    if opts.filename then
+      if vim.fn.executable(opts.ctags_bin) == 1 then
+        opts.cmd = opts.cmd or opts._btags_cmd
+      else
+        utils.info("Unable to locate `ctags` executable, " ..
+          "install `ctags` or supply its path using 'ctags_bin'")
+        return
+      end
+    else
+      utils.info(("Tags file ('%s') does not exist. Create one with ctags -R")
+        :format(opts._ctags_file))
+      return
+    end
   end
 
   if opts.line_field_index == nil then
@@ -138,12 +151,14 @@ M.btags = function(opts)
     utils.info("'btags' is not available for unnamed buffers.")
     return
   end
-  if opts.ctags_gen then
-    opts.cmd = opts.cmd or string.format("%s -f %s %s",
-      opts.ctags_bin or "ctags",
-      opts.ctags_out or "-",
-      opts.filename)
-    print("cmd", opts.cmd)
+  -- store the autogen command in case tags file doesn't exist
+  -- used as fallback to pipe the tags into fzf from stdout
+  opts._btags_cmd = string.format("%s %s %s",
+    opts.ctags_bin or "ctags",
+    opts.ctags_args or "-f -",
+    opts.filename)
+  if opts.ctags_autogen then
+    opts.cmd = opts.cmd or opts._btags_cmd
   end
   -- tags use relative paths
   opts.filename = path.relative(opts.filename, opts.cwd or vim.loop.cwd())
