@@ -25,6 +25,8 @@ local get_files_cmd = function(opts)
   local command = nil
   if vim.fn.executable("fd") == 1 then
     command = string.format('fd %s', opts.fd_opts)
+  elseif vim.fn.executable("fdfind") == 1 then
+    command = string.format('fdfind %s', opts.fd_opts)
   elseif vim.fn.executable("rg") == 1 then
     command = string.format('rg %s', opts.rg_opts)
   else
