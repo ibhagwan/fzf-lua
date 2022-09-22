@@ -79,7 +79,7 @@ M.ui_select = function(items, opts, on_choice)
         opts.format_item and opts.format_item(e) or tostring(e)))
   end
 
-  local prompt = opts.prompt
+  local prompt = opts.prompt .. " "
   if not prompt then
       prompt =  "Select one of:"
   end
