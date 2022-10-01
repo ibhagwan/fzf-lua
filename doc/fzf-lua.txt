@@ -288,6 +288,14 @@ NVIM-DAP                                                    *fzf-lua-nvim-dap*
 | `dap_frames`           | active session jump to frame               |
 
 
+                                                                              
+TMUX                                                            *fzf-lua-tmux*
+
+| Command              | List                                       |
+| -------------------- | ------------------------------------------ |
+| `dap_configurations`   | list tmux paste buffers                    |
+
+
 ------------------------------------------------------------------------------
 CUSTOMIZATION                                          *fzf-lua-customization*
 

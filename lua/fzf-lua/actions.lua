@@ -677,5 +677,20 @@ M.sym_lsym = function(_, opts)
   end
 end
 
+M.tmux_buf_set_reg = function(selected, opts)
+    local buf = selected[1]:match("^%[(.-)%]")
+      local data = vim.fn.system({'tmux', 'show-buffer', '-b', buf})
+      if not utils.shell_error() and data and #data>0 then
+      opts.register = opts.register or "+"
+      local ok, err = pcall(vim.fn.setreg, opts.register, data)
+      if ok then
+        utils.info(string.format("%d characters copied into register '%s'",
+          #data, opts.register))
+      else
+        utils.err(string.format("setreg('%s') failed: %s", opts.register, err))
+      end
+    end
+end
+
 return M
 

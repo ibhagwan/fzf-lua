@@ -205,6 +205,7 @@ do
     dap_frames = { 'fzf-lua.providers.dap', 'frames' },
     register_ui_select = { 'fzf-lua.providers.ui_select', 'register' },
     deregister_ui_select = { 'fzf-lua.providers.ui_select', 'deregister' },
+    tmux_buffers = { 'fzf-lua.providers.tmux', 'buffers' },
     -- API shortcuts
     fzf = { 'fzf-lua.core', 'fzf' },
     fzf_raw = { 'fzf-lua.fzf', 'raw_fzf' },

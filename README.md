@@ -249,6 +249,10 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `dap_variables`        | active session variables                   |
 | `dap_frames`           | active session jump to frame               |
 
+### tmux
+| Command              | List                                       |
+| -------------------- | ------------------------------------------ |
+| `dap_configurations`   | list tmux paste buffers                    |
 
 ## Customization
 

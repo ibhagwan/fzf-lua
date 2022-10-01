@@ -626,6 +626,17 @@ M.globals.nvim = {
     },
   }
 
+M.globals.tmux = {
+  buffers = {
+    prompt                = 'Tmux Buffers> ',
+    cmd                   = "tmux list-buffers",
+    register              = "+",
+      actions = {
+        ["default"]       = actions.tmux_buf_set_reg,
+      },
+  },
+}
+
 M.globals.dap = {
     commands = {
       prompt              = 'DAP Commands> ',
@@ -1045,6 +1056,7 @@ M._action_to_helpstr = {
   [actions.arg_del]               = "arg-list-delete",
   [actions.grep_lgrep]            = "grep<->lgrep",
   [actions.sym_lsym]              = "sym<->lsym",
+  [actions.tmux_buf_set_reg]      = "set-register",
 }
 
 return M
