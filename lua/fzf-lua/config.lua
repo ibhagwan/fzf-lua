@@ -630,7 +630,7 @@ M.globals.tmux = {
   buffers = {
     prompt                = 'Tmux Buffers> ',
     cmd                   = "tmux list-buffers",
-    register              = "+",
+    register              = [["]],
       actions = {
         ["default"]       = actions.tmux_buf_set_reg,
       },

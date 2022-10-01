@@ -252,7 +252,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 ### tmux
 | Command              | List                                       |
 | -------------------- | ------------------------------------------ |
-| `dap_configurations`   | list tmux paste buffers                    |
+| `tmux_buffers`         | list tmux paste buffers                    |
 
 ## Customization
 
