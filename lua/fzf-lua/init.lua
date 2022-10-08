@@ -217,10 +217,30 @@ do
   for k, v in pairs(lazyloaded_modules) do
     M[k] = function(...)
       -- override self so this function is only called once
-      M[k] = require(v[1])[v[2]]
+      -- we use an adittional wrapper in order to save the
+      -- current provider info: {cmd-name|module|function}
+      M[k] = function(...)
+        M.set_info {
+          cmd = k,
+          mod = v[1],
+          fnc = v[2],
+        }
+        return require(v[1])[v[2]](...)
+      end
       return M[k](...)
     end
   end
+end
+
+M.get_info = function(filter)
+  if filter and filter.winobj and type(M.__INFO) == 'table' then
+    M.__INFO.winobj = utils.fzf_winobj()
+  end
+  return M.__INFO
+end
+
+M.set_info = function(x)
+  M.__INFO = x
 end
 
 -- exported modules
@@ -248,6 +268,9 @@ M._excluded_meta = {
   '_excluded_meta',
   '_excluded_metamap',
   '_exported_modules',
+  '__INFO',
+  'get_info',
+  'set_info',
 }
 
 for _, m in ipairs(M._exported_modules) do
