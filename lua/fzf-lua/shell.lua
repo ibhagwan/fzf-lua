@@ -36,6 +36,15 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   local receiving_function = function(pipe_path, ...)
     local pipe = uv.new_pipe(false)
     local args = {...}
+    -- save selected item in main module's __INFO
+    -- use loadstring to avoid circular require
+    pcall(function()
+      local module = loadstring("return require'fzf-lua'")()
+      if module then
+        module.__INFO = vim.tbl_deep_extend("force",
+          module.__INFO or {}, { selected = args[1][1] })
+      end
+    end)
     uv.pipe_connect(pipe, pipe_path, function(err)
       if err then
         error(string.format("pipe_connect(%s) failed with error: %s",

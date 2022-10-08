@@ -874,9 +874,7 @@ function FzfWin:close()
   self._orphaned_bufs = nil
   _self = nil
   -- clear the main module picker __INFO
-  pcall(function()
-    loadstring("require'fzf-lua'.set_info(nil)")()
-  end)
+  utils.reset_info()
 end
 
 function FzfWin.win_leave()

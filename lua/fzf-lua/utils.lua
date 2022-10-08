@@ -430,6 +430,10 @@ function M.fzf_winobj()
   return loadstring("return require'fzf-lua'.win.__SELF()")()
 end
 
+function M.reset_info()
+  pcall(loadstring("require'fzf-lua'.set_info(nil)"))
+end
+
 function M.send_ctrl_c()
   vim.api.nvim_feedkeys(
     vim.api.nvim_replace_termcodes("<C-c>", true, false, true), 'n', true)
