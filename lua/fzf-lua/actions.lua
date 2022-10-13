@@ -693,10 +693,12 @@ M.tmux_buf_set_reg = function(selected, opts)
 end
 
 M.paste_register = function(selected)
-	local lines = vim.split(selected[1], "^%[.] ", false)
-	local text = table.remove(lines)
-	vim.api.nvim_put({text}, "c", true, true)
+	local reg = selected[1]:match("%[(.-)%]")
+	if reg == '"' then
+		vim.cmd.normal("p")
+	else
+		vim.cmd.normal('"' .. reg .. "p")
+	end
 end
 
 return M
-
