@@ -692,5 +692,12 @@ M.tmux_buf_set_reg = function(selected, opts)
     end
 end
 
-return M
+M.paste_register = function(selected)
+  local reg = selected[1]:match("%[(.-)%]")
+  local ok, data = pcall(vim.fn.getreg, reg)
+  if ok and #data>0 then
+    vim.api.nvim_paste(data, false, -1)
+  end
+end
 
+return M

@@ -596,6 +596,9 @@ M.globals.nvim = {
     registers = {
       prompt              = 'Registers> ',
       ignore_empty        = true,
+      actions = {
+        ["default"]       = actions.paste_register,
+      },
     },
     keymaps = {
       prompt              = 'Keymaps> ',
@@ -1057,6 +1060,7 @@ M._action_to_helpstr = {
   [actions.grep_lgrep]            = "grep<->lgrep",
   [actions.sym_lsym]              = "sym<->lsym",
   [actions.tmux_buf_set_reg]      = "set-register",
+  [actions.paste_register]        = "paste-register",
 }
 
 return M
