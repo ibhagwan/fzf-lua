@@ -692,5 +692,11 @@ M.tmux_buf_set_reg = function(selected, opts)
     end
 end
 
+M.paste_register = function(selected)
+	local lines = vim.split(selected[1], "^%[.] ", false)
+	local text = table.remove(lines)
+	vim.api.nvim_put({text}, "c", true, true)
+end
+
 return M
 
