@@ -692,5 +692,10 @@ M.tmux_buf_set_reg = function(selected, opts)
     end
 end
 
+M.paste_register = function(selected)
+	local words = vim.split(selected[1], "] ", true)
+	vim.api.nvim_put({ words[#words] }, "c", true, true)
+end
+
 return M
 
