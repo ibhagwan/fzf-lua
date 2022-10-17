@@ -543,8 +543,7 @@ M.globals.builtin = {
         ["default"]       = actions.run_builtin,
       },
   }
-M.globals.nvim = {
-    marks = {
+M.globals.marks = {
       prompt              = 'Marks> ',
       actions = {
         ["default"]       = actions.goto_mark,
@@ -552,8 +551,8 @@ M.globals.nvim = {
       previewer = {
         _ctor             = previewers.builtin.marks,
       },
-    },
-    jumps = {
+    }
+M.globals.jumps = {
       prompt              = 'Jumps> ',
       cmd                 = "jumps",
       actions = {
@@ -562,72 +561,71 @@ M.globals.nvim = {
       previewer = {
         _ctor             = previewers.builtin.jumps,
       },
-    },
-    tagstack = {
+    }
+M.globals.tagstack = {
       prompt              = 'Tagstack> ',
       file_icons          = true and M._has_devicons,
       color_icons         = true,
       git_icons           = true,
       previewer           = M._default_previewer_fn,
       _actions            = function() return M.globals.actions.files end,
-    },
-    commands = {
+    }
+M.globals.commands = {
       prompt              = 'Commands> ',
       actions = {
         ["default"]       = actions.ex_run,
       },
-    },
-    command_history = {
+    }
+M.globals.command_history = {
       prompt              = 'Command History> ',
       fzf_opts            = { ["--tiebreak"] = 'index', },
       actions = {
         ["default"]       = actions.ex_run_cr,
         ["ctrl-e"]        = actions.ex_run,
       },
-    },
-    search_history = {
+    }
+M.globals.search_history = {
       prompt              = 'Search History> ',
       fzf_opts            = { ["--tiebreak"] = 'index', },
       actions = {
         ["default"]       = actions.search_cr,
         ["ctrl-e"]        = actions.search,
       },
-    },
-    registers = {
+    }
+M.globals.registers = {
       prompt              = 'Registers> ',
       ignore_empty        = true,
       actions = {
         ["default"]       = actions.paste_register,
       },
-    },
-    keymaps = {
+    }
+M.globals.keymaps = {
       prompt              = 'Keymaps> ',
-    },
-    spell_suggest = {
+    }
+M.globals.spell_suggest = {
       prompt              = 'Spelling Suggestions> ',
       actions = {
         ["default"]       = actions.spell_apply,
       },
-    },
-    filetypes = {
+    }
+M.globals.filetypes = {
       prompt              = 'Filetypes> ',
       actions = {
         ["default"]       = actions.set_filetype,
       },
-    },
-    packadd = {
+    }
+M.globals.packadd = {
       prompt              = 'packadd> ',
       actions = {
         ["default"]       = actions.packadd,
       },
-    },
-    menus = {
+    }
+M.globals.menus = {
       prompt              = 'Menu> ',
       actions = {
         ["default"]       = actions.exec_menu,
       },
-    },
-  }
+    }
 
 M.globals.tmux = {
   buffers = {

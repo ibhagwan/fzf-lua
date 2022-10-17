@@ -9,7 +9,7 @@ local M = {}
 
 M.commands = function(opts)
 
-  opts = config.normalize_opts(opts, config.globals.nvim.commands)
+  opts = config.normalize_opts(opts, config.globals.commands)
   if not opts then return end
 
   local global_commands = vim.api.nvim_get_commands {}
@@ -69,14 +69,14 @@ local arg_header = function(sel_key, edit_key, text)
 end
 
 M.command_history = function(opts)
-  opts = config.normalize_opts(opts, config.globals.nvim.command_history)
+  opts = config.normalize_opts(opts, config.globals.command_history)
   if not opts then return end
   opts.fzf_opts['--header'] = arg_header("<CR>", "<Ctrl-e>", "execute")
   history(opts, "cmd")
 end
 
 M.search_history = function(opts)
-  opts = config.normalize_opts(opts, config.globals.nvim.search_history)
+  opts = config.normalize_opts(opts, config.globals.search_history)
   if not opts then return end
   opts.fzf_opts['--header'] = arg_header("<CR>", "<Ctrl-e>", "search")
   history(opts, "search")
@@ -90,7 +90,7 @@ M.changes = function(opts)
 end
 
 M.jumps = function(opts)
-  opts = config.normalize_opts(opts, config.globals.nvim.jumps)
+  opts = config.normalize_opts(opts, config.globals.jumps)
   if not opts then return end
 
   local jumps = vim.fn.execute(opts.cmd)
@@ -112,7 +112,7 @@ M.jumps = function(opts)
 end
 
 M.tagstack = function(opts)
-  opts = config.normalize_opts(opts, config.globals.nvim.tagstack)
+  opts = config.normalize_opts(opts, config.globals.tagstack)
   if not opts then return end
 
   local tagstack = vim.fn.gettagstack().items
@@ -171,7 +171,7 @@ end
 
 
 M.marks = function(opts)
-  opts = config.normalize_opts(opts, config.globals.nvim.marks)
+  opts = config.normalize_opts(opts, config.globals.marks)
   if not opts then return end
 
   local marks = vim.fn.execute("marks")
@@ -211,7 +211,7 @@ end
 
 M.registers = function(opts)
 
-  opts = config.normalize_opts(opts, config.globals.nvim.registers)
+  opts = config.normalize_opts(opts, config.globals.registers)
   if not opts then return end
 
   local registers = { '"', "_", "#", "=", "_", "/", "*", "+", ":", ".", "%" }
@@ -265,7 +265,7 @@ end
 
 M.keymaps = function(opts)
 
-  opts = config.normalize_opts(opts, config.globals.nvim.keymaps)
+  opts = config.normalize_opts(opts, config.globals.keymaps)
   if not opts then return end
 
   local modes = {
@@ -313,7 +313,7 @@ end
 M.spell_suggest = function(opts)
 
   -- if not vim.wo.spell then return false end
-  opts = config.normalize_opts(opts, config.globals.nvim.spell_suggest)
+  opts = config.normalize_opts(opts, config.globals.spell_suggest)
   if not opts then return end
 
   local cursor_word = vim.fn.expand "<cword>"
@@ -329,7 +329,7 @@ end
 
 M.filetypes = function(opts)
 
-  opts = config.normalize_opts(opts, config.globals.nvim.filetypes)
+  opts = config.normalize_opts(opts, config.globals.filetypes)
   if not opts then return end
 
   local entries = vim.fn.getcompletion('', 'filetype')
@@ -343,7 +343,7 @@ end
 
 M.packadd = function(opts)
 
-  opts = config.normalize_opts(opts, config.globals.nvim.packadd)
+  opts = config.normalize_opts(opts, config.globals.packadd)
   if not opts then return end
 
   local entries = vim.fn.getcompletion('', 'packadd')
@@ -358,7 +358,7 @@ end
 
 M.menus = function(opts)
 
-  opts = config.normalize_opts(opts, config.globals.nvim.menus)
+  opts = config.normalize_opts(opts, config.globals.menus)
   if not opts then return end
 
   -- @param prefix will be prepended to the entry name
