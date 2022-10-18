@@ -163,8 +163,11 @@ end
 
 function M.lengthen(path)
   return vim.fn.glob(path:gsub(M.separator(), "%*"..M.separator())
+    -- escape backward slashes (#548)
+    :gsub([[\]], [[\\]])
     -- remove the starting '*/' if any
     :gsub("^%*"..M.separator(), M.separator())):match("[^\n]+")
+    or string.format("<glob expand failed for '%s'>", path)
 end
 
 local function lastIndexOf(haystack, needle)

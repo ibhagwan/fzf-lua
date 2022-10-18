@@ -489,9 +489,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       -- filename only
       entry.path = path.relative(vim.api.nvim_buf_get_name(entry.bufnr), vim.loop.cwd())
     end
-    -- make sure the file is readable (or bad entry.path)
-    local fs_stat = vim.loop.fs_stat(entry.path)
-    if not entry.path or not fs_stat then return end
+    assert(entry.path)
     local tmpbuf = self:get_tmp_buffer()
     if self.extensions and not vim.tbl_isempty(self.extensions) then
       local ext = path.extension(entry.path)
@@ -507,7 +505,11 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     end
     do
       local lines = nil
-      if utils.perl_file_is_binary(entry.path) then
+      -- make sure the file is readable (or bad entry.path)
+      local fs_stat = vim.loop.fs_stat(entry.path)
+      if not entry.path or not fs_stat then
+        lines = { string.format("Unable to stat file %s", entry.path) }
+      elseif utils.perl_file_is_binary(entry.path) then
         lines = { "Preview is not supported for binary files." }
       elseif tonumber(self.limit_b)>0 and fs_stat.size>self.limit_b then
         lines = {
