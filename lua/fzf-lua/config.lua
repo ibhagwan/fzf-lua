@@ -320,6 +320,7 @@ function M.normalize_opts(opts, globals, __resume_key)
     "fzf_raw_args",
     "file_icon_padding",
     "dir_icon",
+    "debug_tracelog",
   }) do
     if opts[s] == nil then
       opts[s] = M.globals[s]

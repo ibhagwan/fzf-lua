@@ -218,6 +218,36 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     print("[Fzf-lua]: fzf cmd:", table.concat(cmd, " "))
   end
 
+  local pid, chan_id, ns_id, fh_trace
+  if opts.debug_tracelog then
+    fh_trace = io.open(vim.fn.expand(opts.debug_tracelog), "wb")
+    if fh_trace then
+      debug.sethook(function(_, _)
+        local s = string.format("%s %s:%s %s\n",
+          os.date("%Y-%m-%dT%H:%M:%S"),
+          debug.getinfo(2, "S").source,
+          debug.getinfo(2, "l").currentline,
+          debug.getinfo(2, "n").name)
+        fh_trace:write(s)
+        fh_trace:flush()
+      end, "l")
+    end
+  end
+
+  local function unset_debughook()
+    if fh_trace then
+      debug.sethook(nil, "", 0)
+      fh_trace:close()
+    end
+  end
+
+  local function unhook_onkey()
+    if tonumber(ns_id) and vim.on_key then
+      ---@diagnostic disable-next-line: param-type-mismatch
+      vim.on_key(nil, ns_id)
+    end
+  end
+
   local co = coroutine.running()
   local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or vim.fn.termopen
   local shell_cmd = utils.__IS_WINDOWS
@@ -233,7 +263,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- temporarily set to `false`, for more info see `:help shellslash` (#1055)
   local nvim_opt_shellslash = utils.__WIN_HAS_SHELLSLASH and vim.o.shellslash
   if nvim_opt_shellslash then vim.o.shellslash = false end
-  jobstart(shell_cmd, {
+  chan_id = jobstart(shell_cmd, {
     cwd = cwd,
     pty = true,
     env = {
@@ -263,6 +293,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
           and libuv.expand(opts.RIPGREP_CONFIG_PATH) or "",
     },
     on_exit = function(_, rc, _)
+      -- clear hook
+      unhook_onkey()
+      unset_debughook()
       local output = {}
       local f = io.open(outputtmpname)
       if f then
@@ -284,6 +317,14 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       coroutine.resume(co, output, rc)
     end
   })
+
+  if tonumber(chan_id) > 0 then
+    pid = vim.fn.jobpid(chan_id)
+  else
+    -- job failed or cmd[0] is not executable
+    unhook_onkey()
+    unset_debughook()
+  end
 
   -- fzf-tmux spawns outside neovim, don't set filetype/insert mode
   if not opts.is_fzf_tmux then
