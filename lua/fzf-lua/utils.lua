@@ -150,6 +150,13 @@ function M.lua_regex_escape(str)
   end)
 end
 
+function M.glob_escape(str)
+  if not str then return str end
+  return str:gsub('[\\%{}]', function(x)
+    return [[\]] .. x
+  end)
+end
+
 function M.pcall_expand(filepath)
   -- expand using pcall, this is a workaround to trying to
   -- expand certain special chars, more info in issue #285

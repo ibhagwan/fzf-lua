@@ -162,9 +162,9 @@ function M.shorten(path, max_len)
 end
 
 function M.lengthen(path)
+  -- we use 'glob_escape' to escape \{} (#548)
+  path = utils.glob_escape(path)
   return vim.fn.glob(path:gsub(M.separator(), "%*"..M.separator())
-    -- escape backward slashes (#548)
-    :gsub([[\]], [[\\]])
     -- remove the starting '*/' if any
     :gsub("^%*"..M.separator(), M.separator())):match("[^\n]+")
     or string.format("<glob expand failed for '%s'>", path)
