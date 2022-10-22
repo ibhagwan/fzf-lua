@@ -101,7 +101,7 @@ M.fzf_wrap = function(opts, contents, fn_selected)
     opts.fn_selected = opts.fn_selected or fn_selected
     local selected = M.fzf(contents, opts)
     if opts.fn_selected then
-      opts.fn_selected(selected)
+      opts.fn_selected(selected, opts)
     end
   end)
 end
