@@ -834,7 +834,6 @@ require'fzf-lua'.setup {
     async_or_timeout  = 5000,       -- timeout(ms) or 'true' for async calls
     file_icons        = true,
     git_icons         = false,
-    ui_select         = true,       -- use 'vim.ui.select' for code actions
     -- settings for 'lsp_{document|workspace|lsp_live_workspace}_symbols'
     symbols = {
         async_or_timeout  = true,       -- symbols are async by default
@@ -850,6 +849,16 @@ require'fzf-lua'.setup {
         -- additional symbol formatting, works with or without style
         symbol_fmt        = function(s) return "["..s.."]" end,
     },
+    code_actions = {
+        prompt            = 'Code Actions> ',
+        ui_select         = true,       -- use 'vim.ui.select'?
+        async_or_timeout  = 5000,
+        winopts = {
+            row           = 0.40,
+            height        = 0.35,
+            width         = 0.60,
+        },
+    }
   },
   diagnostics ={
     prompt            = 'Diagnostics❯ ',

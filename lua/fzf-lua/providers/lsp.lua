@@ -612,7 +612,7 @@ local function code_action_resolves(client)
 end
 
 M.code_actions = function(opts)
-  opts = normalize_lsp_opts(opts, config.globals.lsp)
+  opts = normalize_lsp_opts(opts, config.globals.lsp.code_actions)
   if not opts then return end
 
   -- irrelevant for code actions and can cause
@@ -641,13 +641,19 @@ M.code_actions = function(opts)
   -- the original method is now deprecated
   if opts.ui_select and vim.fn.has('nvim-0.6') == 1 then
     local ui_select = require'fzf-lua.providers.ui_select'
+    local registered = ui_select.is_registered()
     opts.previewer = false
     opts.actions = opts.actions or {}
     opts.actions.default = nil
-    opts.post_action_cb = function()
-      ui_select.deregister({}, true, true)
+    -- only dereg if we aren't registered
+    if not registered then
+      opts.post_action_cb = function()
+        ui_select.deregister({}, true, true)
+      end
     end
-    ui_select.register(opts, true)
+    -- 3rd arg are "once" options to override
+    -- existing "registered" ui_select options
+    ui_select.register(opts, true, opts)
     vim.lsp.buf.code_action()
     -- vim.defer_fn(function()
     --   ui_select.deregister({}, true, true)

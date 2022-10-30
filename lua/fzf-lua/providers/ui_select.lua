@@ -6,6 +6,7 @@ local actions = require "fzf-lua.actions"
 local M = {}
 
 local _opts = nil
+local _opts_once = nil
 local _old_ui_select = nil
 
 M.is_registered = function()
@@ -29,7 +30,9 @@ M.deregister = function(_, silent, noclear)
   return true
 end
 
-M.register = function(opts, silent)
+M.register = function(opts, silent, opts_once)
+  -- save "once" opts sent from lsp_code_actions
+  _opts_once = opts_once
   if vim.ui.select == M.ui_select then
     -- already registered
     if not silent then
@@ -105,13 +108,13 @@ M.ui_select = function(items, opts, on_choice)
 
   config.set_action_helpstr(_opts.actions['default'], "accept-item")
 
-  _opts.fn_selected = function(selected)
+  _opts.fn_selected = function(selected, o)
     config.set_action_helpstr(_opts.actions['default'], nil)
 
     if not selected then
       on_choice(nil, nil)
     else
-      actions.act(_opts.actions, selected, _opts)
+      actions.act(_opts.actions, selected, o)
     end
 
     if _opts.post_action_cb then
@@ -119,7 +122,19 @@ M.ui_select = function(items, opts, on_choice)
     end
   end
 
-  core.fzf_exec(entries, _opts)
+  -- was this triggered by lsp_code_actions?
+  local opts_once = _opts_once
+  if _opts_once then
+    -- merge and clear the once opts sent from lsp_code_actions
+    -- we also override actions to guarantee a single default
+    -- action, otherwise, selected[1] will be empty due to
+    -- multiple keybinds trigger sending `--expect` to fzf
+    _opts_once.actions = _opts.actions
+    opts_once = vim.tbl_deep_extend("keep", _opts_once, _opts)
+    _opts_once = nil
+  end
+
+  core.fzf_exec(entries, opts_once or _opts)
 
 end
 

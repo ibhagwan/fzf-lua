@@ -501,7 +501,6 @@ M.globals.lsp = {
       color_icons         = true,
       git_icons           = false,
       cwd_only            = false,
-      ui_select           = true,
       async_or_timeout    = 5000,
       _actions            = function() return M.globals.actions.files end,
   }
@@ -517,6 +516,16 @@ M.globals.lsp.symbols = {
       async_or_timeout    = true,
       _actions            = function() return M.globals.actions.files end,
       actions             = { ["ctrl-g"] = { actions.sym_lsym } },
+  }
+M.globals.lsp.code_actions = {
+      prompt              = 'Code Actions> ',
+      ui_select           = true,
+      async_or_timeout    = 5000,
+      winopts = {
+        row               = 0.40,
+        height            = 0.35,
+        width             = 0.60,
+      },
   }
 M.globals.diagnostics = {
       previewer           = M._default_previewer_fn,
