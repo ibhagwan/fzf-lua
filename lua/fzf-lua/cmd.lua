@@ -63,7 +63,7 @@ end
 -- }
 local function run_command(args)
   local user_opts = args or {}
-  if next(user_opts) == nil and not user_opts.cmd then
+  if next(user_opts) == nil or not user_opts.cmd then
     utils.info("missing command args")
     return
   end
