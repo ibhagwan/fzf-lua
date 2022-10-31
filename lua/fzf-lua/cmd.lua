@@ -77,7 +77,8 @@ local function run_command(args)
 
   if builtin[cmd] then
     builtin[cmd](opts)
-    return
+	else
+    utils.info(string.format("invalid command '%s'", cmd))
   end
 end
 
