@@ -15,42 +15,14 @@ local bool_type = {
 }
 
 -- convert command line string arguments to
--- lua number boolean type and nil value
+-- lua boolean type and nil value
 local function convert_user_opts(user_opts)
-
-  local _switch = {
-    ["boolean"] = function(key, val)
-      if val == "false" then
-        user_opts[key] = false
-        return
-      end
-      user_opts[key] = true
-    end,
-    ["number"] = function(key, val)
-      user_opts[key] = tonumber(val)
-    end,
-    ["string"] = function(key, val)
-      if arg_value[val] ~= nil then
-        user_opts[key] = arg_value[val]
-        return
-      end
-
-      if bool_type[val] ~= nil then
-        user_opts[key] = bool_type[val]
-      end
-    end,
-  }
-
-  local _switch_metatable = {
-    __index = function(_, k)
-      utils.info(string.format("Type of %s does not match", k))
-    end,
-  }
-
-  setmetatable(_switch, _switch_metatable)
-
   for key, val in pairs(user_opts) do
-    _switch["string"](key, val)
+    if arg_value[val] ~= nil then
+      user_opts[key] = arg_value[val]
+    elseif bool_type[val] ~= nil then
+      user_opts[key] = bool_type[val]
+    end
   end
 end
 
@@ -77,7 +49,7 @@ local function run_command(args)
 
   if builtin[cmd] then
     builtin[cmd](opts)
-	else
+  else
     utils.info(string.format("invalid command '%s'", cmd))
   end
 end
