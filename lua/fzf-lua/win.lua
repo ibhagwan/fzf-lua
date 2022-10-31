@@ -248,15 +248,24 @@ local normalize_winopts = function(o)
   if not winopts.width or winopts.width <= 1 then
     winopts.width = math.floor(max_width * winopts.width)
   end
-  if not winopts.row or winopts.row <= 1 then
-    winopts.row = math.floor((vim.o.lines - winopts.height) * winopts.row)
+  if winopts.relative == 'cursor' then
+    -- convert cursor relative to absolute ('editor'),
+    -- this solves the preview positioning seamlessly
+    local pos = vim.api.nvim_win_get_cursor(0)
+    local screenpos = vim.fn.screenpos(0, pos[1], pos[2])
+    winopts.row = math.floor((winopts.row or 0) + screenpos.row-1)
+    winopts.col = math.floor((winopts.col or 0) + screenpos.col-1)
+    winopts.relative = nil
+  else
+    if not winopts.row or winopts.row <= 1 then
+      winopts.row = math.floor((vim.o.lines - winopts.height) * winopts.row)
+    end
+    if not winopts.col or winopts.col <= 1 then
+      winopts.col = math.floor((vim.o.columns - winopts.width) * winopts.col)
+    end
+    winopts.col = math.min(winopts.col, max_width-winopts.width)
+    winopts.row = math.min(winopts.row, max_height-winopts.height)
   end
-  if not winopts.col or winopts.col <= 1 then
-    winopts.col = math.floor((vim.o.columns - winopts.width) * winopts.col)
-  end
-  winopts.col = math.min(winopts.col, max_width-winopts.width)
-  winopts.row = math.min(winopts.row, max_height-winopts.height)
-
 
   -- normalize border option for nvim_open_win()
   if winopts.border == false then
