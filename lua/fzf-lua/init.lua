@@ -3,7 +3,7 @@ local config = require "fzf-lua.config"
 
 do
   -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
-  -- pluging '.vim' initialization sometimes doesn't get called
+  -- plugin '.vim' initialization sometimes doesn't get called
   local path = require "fzf-lua.path"
   local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
   vim.g.fzf_lua_directory = path.parent(currFile)
@@ -22,8 +22,8 @@ do
 
   -- Create a new RPC server (tmp socket) to listen to messages (actions/headless)
   -- this is safer than using $NVIM_LISTEN_ADDRESS. If the user is using a custom
-  -- fixed $NVIM_LISTEN_ADDRESS different neovim instances will use the same path
-  -- as their address and messages won't be recieved on older instances
+  -- fixed $NVIM_LISTEN_ADDRESS, different neovim instances will use the same path
+  -- as their address and messages won't be received on older instances
   if not vim.g.fzf_lua_server then
     vim.g.fzf_lua_server = vim.fn.serverstart()
   end
@@ -50,8 +50,8 @@ function M.setup_highlights()
   }
   for hl_name, v in pairs(highlights) do
     -- define a new linked highlight and then override the
-    -- default config with the new FzfLuaXXX hl this leaves
-    -- the option for direct call option overrides (via winopts)
+    -- default config with the new FzfLuaXXX hl. This leaves
+    -- the choice for direct call option overrides (via winopts)
     local hl_link = config.get_global(v[1])
     if not hl_link or vim.fn.hlID(hl_link) == 0 then
       -- revert to default if hl option or link doesn't exist
@@ -96,7 +96,7 @@ function M.setup(opts)
     end
   end
   -- override BAT_CONFIG_PATH to prevent a
-  -- conflct with '$XDG_DATA_HOME/bat/config'
+  -- conflict with '$XDG_DATA_HOME/bat/config'
   local bat_theme = globals.previewers.bat.theme or globals.previewers.bat_native.theme
   local bat_config = globals.previewers.bat.config or globals.previewers.bat_native.config
   if bat_config then
@@ -217,7 +217,7 @@ do
   for k, v in pairs(lazyloaded_modules) do
     M[k] = function(...)
       -- override self so this function is only called once
-      -- we use an adittional wrapper in order to save the
+      -- we use an additional wrapper in order to save the
       -- current provider info: {cmd-name|module|function}
       M[k] = function(...)
         M.set_info {

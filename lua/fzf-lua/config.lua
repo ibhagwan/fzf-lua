@@ -281,8 +281,8 @@ M.globals.git = {
     },
     fzf_opts = {
       -- TODO: multiselect requires more work as dropping
-      -- a stash changes the stash index causing an error
-      -- when the next stash is attempted a drop
+      -- a stash changes the stash index, causing an error
+      -- when the next stash is attempted
       ["--no-multi"]  = "",
       ["--delimiter"] = "'[:]'",
     },
@@ -828,7 +828,7 @@ function M.normalize_opts(opts, defaults)
     end
   end
 
-  -- global option overrides, if exists, these options will
+  -- global option overrides. If exists, these options will
   -- be used in a "LOGICAL AND" against the local option (#188)
   -- e.g.:
   --    git_icons = TRUE
@@ -886,7 +886,7 @@ function M.normalize_opts(opts, defaults)
     return val
   end
 
-  -- interate backward compat map, retrieve values from opts or globals
+  -- iterate backward compat map, retrieve values from opts or globals
   for k, v in pairs(backward_compat) do
     map_recurse(opts, k, map_recurse(opts, v) or map_recurse(M.globals, v))
     -- ,("'%s' is now defined under '%s'"):format(v, k))

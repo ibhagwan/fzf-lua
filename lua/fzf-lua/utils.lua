@@ -16,7 +16,7 @@ function M.__FNC__() return debug.getinfo(2, "n").name end
 
 function M.__FNCREF__() return debug.getinfo(2, "f").func end
 
--- sets an invisible unicode character as icon seaprator
+-- sets an invisible unicode character as icon separator
 -- the below was reached after many iterations, a short summary of everything
 -- that was tried and why it failed:
 --
@@ -167,9 +167,9 @@ function M.pcall_expand(filepath)
   -- expanding the below fails with:
   -- "special[1][98f3a7e3-0d6e-f432-8a18-e1144b53633f][-1].xml"
   --  "Vim:E944: Reverse range in character class"
-  -- this seems to fail with only a single hypen:
+  -- this seems to fail with only a single hyphen:
   -- :lua print(vim.fn.expand("~/file[2-1].ext"))
-  -- but not when escaping the hypen:
+  -- but not when escaping the hyphen:
   -- :lua print(vim.fn.expand("~/file[2\\-1].ext"))
   local ok, expanded = pcall(vim.fn.expand,
     filepath:gsub("%-", "\\-"))

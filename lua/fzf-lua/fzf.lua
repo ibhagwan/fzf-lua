@@ -17,7 +17,7 @@ local function tempname()
   local parent = vim.fn.fnamemodify(tmpname, ":h")
   -- parent must exist for `mkfifo` to succeed
   -- if the neovim temp dir was deleted or the
-  -- tempname already exists we use 'os.tmpname'
+  -- tempname already exists, we use 'os.tmpname'
   if not uv.fs_stat(parent) or uv.fs_stat(tmpname) then
     tmpname = os.tmpname()
     -- 'os.tmpname' touches the file which
@@ -28,7 +28,7 @@ local function tempname()
 end
 
 -- contents can be either a table with tostring()able items, or a function that
--- can be called repeatedly for values. the latter can use coroutines for async
+-- can be called repeatedly for values. The latter can use coroutines for async
 -- behavior.
 function M.raw_fzf(contents, fzf_cli_args, opts)
   if not coroutine.running() then
@@ -42,9 +42,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   local outputtmpname = tempname()
 
   -- we use a temporary env $FZF_DEFAULT_COMMAND instead of piping
-  -- the command to fzf, this way fzf kills the command when it exits
-  -- this is especially important with our shell helper as io.write fails
-  -- to delect when the pipe is broken (EPIPE) so the neovim headless
+  -- the command to fzf, this way fzf kills the command when it exits.
+  -- This is especially important with our shell helper as io.write fails
+  -- to select when the pipe is broken (EPIPE) so the neovim headless
   -- instance never terminates which hangs fzf on exit
   local FZF_DEFAULT_COMMAND = nil
 
@@ -75,7 +75,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   vim.fn.system({ "mkfifo", fifotmpname })
 
   local function finish(_)
-    -- mark finish if once called
+    -- mark finish once called
     finish_called = true
     -- close pipe if there are no outstanding writes
     if output_pipe and write_cb_count == 0 then
@@ -106,7 +106,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
 
   -- nvim-fzf compatibility, builds the user callback functions
   -- 1st argument: callback function that adds newline to each write
-  -- 2nd argument: callback function thhat writes the data as is
+  -- 2nd argument: callback function that writes the data as is
   -- 3rd argument: direct access to the pipe object
   local function usr_write_cb(nl)
     local function end_of_data(usrdata, cb)
@@ -136,13 +136,13 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- I'm not sure why this happens (probably a neovim bug) but when pressing
   -- <C-c> in quick successsion immediately after opening the window neovim
   -- hangs the CPU at 100% at the last `coroutine.yield` before returning from
-  -- this function, at this point it seems that the fzf subprocess was started
-  -- and killed but `on_exit` is never called, in order to avoid calling `yield`
+  -- this function. At this point it seems that the fzf subprocess was started
+  -- and killed but `on_exit` is never called. In order to avoid calling `yield`
   -- I tried checking the job/coroutine status in different ways:
   --   * coroutine.status(co): always returns 'running'
   --   * vim.fn.job_pid: always returns the corrent pid (even if it doesn't
-  --     exist anymore
-  --   * vim.fn.jobwait({job_pid}, 0): always returns '-1' (even when lopping
+  --     exist anymore)
+  --   * vim.fn.jobwait({job_pid}, 0): always returns '-1' (even when looping
   --     with 'vim.defer_fn(fn, 100)')
   --   * uv.os_priority(job_pid): always returns '0'
   -- `sudo strace -s 99 -ffp <pid> when neovim is stuck:
@@ -170,7 +170,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   --   [pid 27432] write(18, "\1\0\0\0\0\0\0\0", 8 <unfinished ...>
   --
   -- As a workaround we map buffer <C-c> to <Esc> for the fzf buffer
-  -- `vim.keymap.set` to no break compatibility with older neovim versions
+  -- `vim.keymap.set` to avoid breaking compatibility with older neovim versions
   vim.api.nvim_buf_set_keymap(0, "", "<C-c>", "<Esc>", { noremap = false })
   vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = false })
 
@@ -200,20 +200,20 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   })
   vim.cmd [[set ft=fzf]]
 
-  -- terminal behavior seem to have changed after the introduction
+  -- terminal behavior seems to have changed after the introduction
   -- of 'nt' mode (terminal-normal mode) which is included in 0.6
   -- https://github.com/neovim/neovim/pull/15878
-  -- preferably I'd like to check if the vim patch is included using
+  -- Preferably I'd like to check if the vim patch is included using
   --   vim.fn.has('patch-8.2.3461')
   -- but this doesn't work for vim patches > 8.1 as explained in:
   -- https://github.com/neovim/neovim/issues/9635
-  -- however, since this patch was included in 0.6 we can test
+  -- However, since this patch was included in 0.6 we can test
   -- for neovim version 0.6
-  -- beats me why 'nvim_get_mode().mode' still returns 'nt' even
+  -- Beats me why 'nvim_get_mode().mode' still returns 'nt' even
   -- after we're clearly in insert mode or why `:startinsert`
   -- won't change the mode from 'nt' to 't' so we use feedkeys()
   -- instead.
-  -- this "retires" 'actions.ensure_insert_mode' and solves the
+  -- This "retires" 'actions.ensure_insert_mode' and solves the
   -- issue of calling an fzf-lua mapping from insert mode (#429)
   if vim.fn.has("nvim-0.6") == 1 then
     vim.cmd([[noautocmd lua vim.api.nvim_feedkeys(]]
@@ -234,7 +234,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   output_pipe:open(fd)
   -- print(output_pipe:getpeername())
 
-  -- this part runs in the background, when the user has selected, it will
+  -- this part runs in the background. When the user has selected, it will
   -- error out, but that doesn't matter so we just break out of the loop.
   if contents then
     if type(contents) == "table" then

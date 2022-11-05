@@ -262,10 +262,10 @@ function M.entry_to_file(entry, opts, force_uri)
   --   file.ext:1
   --   file.ext:1:2
   --   file.ext:1:2:3
-  -- the only usecase where this would fail would be when grep'ing
+  -- the only usecase where this would fail would be when grep'ing,
   -- if the contents of the file starts with '%d' without indents
   -- AND the match line:col+text would match an existing file.
-  -- probably not great for performance but this function only gets
+  -- Probably not great for performance but this function only gets
   -- called within previews/actions so it's not that bad (#453)
   if #s > 1 then
     local newfile = file

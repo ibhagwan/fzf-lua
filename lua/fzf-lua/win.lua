@@ -6,7 +6,7 @@ local fn = vim.fn
 
 local FzfWin = {}
 
--- signgleton instance used in win_leave
+-- singleton instance used in win_leave
 local _self = nil
 
 function FzfWin.__SELF()
@@ -26,7 +26,7 @@ function FzfWin.save_query(key)
   if not lines or vim.tbl_isempty(lines) then return end
   local query = nil
   if not self.prompt then
-    -- no prompt specifed, assume default '> '
+    -- no prompt specified, assume default '> '
     -- or 'c> ' in skim interactive mode
     query = lines[1]:match(".->%s(.*)")
   else
@@ -90,12 +90,12 @@ function FzfWin:setup_keybinds()
         funcref_str(keymap), { nowait = true, noremap = true })
     end
   end
-  -- since '--print-query' only covers successful exists
+  -- since '--print-query' only covers successful exits
   -- we have to monitor <C-c> and <Esc> to save the query
   if self.fn_save_query then
     -- workaround, how to enter <Esc>/<C-c> in map as literals?
     -- for now use the fzf notation and convert later, otherwise
-    -- the prevalance of '<Esc>' in the mapping will interrupt it
+    -- the prevalence of '<Esc>' in the mapping will interrupt it
     for _, key in ipairs({ "ctrl-c", "esc" }) do
       api.nvim_buf_set_keymap(self.fzf_bufnr, "t",
         utils.fzf_bind_to_neovim(key),
@@ -316,7 +316,7 @@ function FzfWin:reset_win_highlights(win, is_border)
     end
   end
   if is_border then
-    -- our border is manuually drawn so we need
+    -- our border is manually drawn so we need
     -- to replace Normal with the border color
     hl = ("Normal:%s"):format(self.winopts.__hl.border)
   end
@@ -450,7 +450,7 @@ end
 function FzfWin:preview_layout()
   if self.winopts.split and self.previewer_is_builtin then
     local wininfo = fn.getwininfo(self.fzf_winid)[1]
-    -- unlike floating win popups split windows inherit the global
+    -- unlike floating win popups, split windows inherit the global
     -- 'signcolumn' setting which affects the available width for fzf
     -- 'generate_layout' will then use the sign column available width
     -- to assure a perfect alignment of the builtin previewer window
@@ -731,8 +731,8 @@ function FzfWin:set_tmp_buffer()
   -- with tmp_buf... use this table instead
   table.insert(self._orphaned_bufs, self.fzf_bufnr)
   self.fzf_bufnr = tmp_buf
-  -- since we have the cusrorline workaround from
-  -- issue #254 resume shows an ugly cursorline
+  -- since we have the cursorline workaround from
+  -- issue #254, resume shows an ugly cursorline.
   -- remove it, nvim_win API is better than vim.wo?
   -- vim.wo[self.fzf_winid].cursorline = false
   vim.api.nvim_win_set_option(self.fzf_winid, "cursorline", false)
@@ -765,7 +765,7 @@ function FzfWin:create()
         type(self.winopts.on_create) == "function" then
       self.winopts.on_create()
     end
-    -- not sure why but when using a split and reusing the window
+    -- not sure why but when using a split and reusing the window,
     -- fzf will not use all the avialable width until 'redraw' is
     -- called resulting in misaligned native and builtin previews
     vim.cmd("redraw")

@@ -54,7 +54,7 @@ M.diagnostics = function(opts)
     ["Info"]  = { severity = 3, default = "I", sign = "DiagnosticSignInfo" },
     ["Hint"]  = { severity = 4, default = "H", sign = "DiagnosticSignHint" },
   } or {
-    -- At one point or another wdefault = "E", e'll drop support for the old LSP diag
+    -- At one point or another, we'll drop support for the old LSP diag
     ["Error"] = { severity = 1, default = "E", sign = "LspDiagnosticsSignError" },
     ["Warn"]  = { severity = 2, default = "W", sign = "LspDiagnosticsSignWarning" },
     ["Info"]  = { severity = 3, default = "I", sign = "LspDiagnosticsSignInformation" },
@@ -158,7 +158,7 @@ M.diagnostics = function(opts)
           -- workspace diagnostics may include
           -- empty tables for unused buffers
           if not vim.tbl_isempty(diag) and filter_diag_severity(opts, diag.severity) then
-            -- wrap with 'vim.scheudle' or calls to vim.{fn|api} fail:
+            -- wrap with 'vim.schedule' or calls to vim.{fn|api} fail:
             -- E5560: vimL function must not be called in a lua loop callback
             vim.schedule(function()
               local diag_entry = preprocess_diag(diag, bufnr)

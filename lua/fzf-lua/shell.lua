@@ -19,7 +19,7 @@ function M.get_func(counter)
   return _registry[counter]
 end
 
--- creates a new address to listen to messages from actions. This is important,
+-- creates a new address to listen to messages from actions. This is important
 -- if the user is using a custom fixed $NVIM_LISTEN_ADDRESS. Different neovim
 -- instances will then use the same path as the address and it causes a mess,
 -- i.e. actions stop working on the old instance. So we create our own (random
@@ -170,7 +170,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
 
     local on_write = function(data, cb, co)
       -- pipe can be nil when using a shell command with spawn
-      -- and typing quickly, the process will terminate and
+      -- and typing quickly, the process will terminate
       assert(not co or (co and pipe and not uv.is_closing(pipe)))
       if not pipe then return end
       if not data then
@@ -191,7 +191,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
             on_finish(nil, nil, 3)
           end
         end)
-        -- yield returns when uv.write compeletes
+        -- yield returns when uv.write completes
         -- or when a new coroutine calls resume(1)
         if co and coroutine.yield() == 1 then
           -- we have a new routine in opts.__co, this
@@ -203,7 +203,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
     end
 
     if type(reload_contents) == "string" then
-      -- string will be used as a shell command
+      -- string will be used as a shell command.
       -- terminate previously running commands
       libuv.process_kill(opts.__pid)
       opts.__pid = nil

@@ -144,7 +144,7 @@ local grep_tag = function(file, tag)
   -- 'rg|grep' does not match these properly when
   -- 'fileformat' isn't set to 'unix', when set to
   -- 'dos' we need to prepend '$' with '\r$' with 'rg'
-  -- it is simpler to just ignore it compleley.
+  -- it is simpler to just ignore it completely.
   --[[ local ff = fileformat(filepath)
   if ff == 'dos' then
     pattern = pattern:gsub("\\%$$", "\\r%$")
@@ -286,8 +286,8 @@ function Previewer.git_diff:cmdline(o)
         vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
       pager = "| " .. self.pager
     end
-    -- with default commands we add the filepath at the end
-    -- if the user configured a more complex command, e.g.:
+    -- with default commands we add the filepath at the end.
+    -- If the user configured a more complex command, e.g.:
     -- git_diff = {
     --   cmd_modified = "git diff --color HEAD %s | less -SEX"
     -- }

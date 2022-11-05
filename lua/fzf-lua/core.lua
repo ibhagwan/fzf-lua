@@ -33,13 +33,13 @@ M.fzf_exec = function(contents, opts)
       opts.fn_preprocess)
   end
   -- setup as "live": disables fuzzy matching and reload the content
-  -- every keystroke (query changed), utlizes fzf's 'change:reload'
+  -- every keystroke (query changed), utilizes fzf's 'change:reload'
   -- event trigger or skim's "interactive" mode
   if type(opts.fn_reload) == "string" then
     if not opts.fn_transform then
       -- TODO: add support for 'fn_transform' using 'mt_cmd_wrapper'
       -- functions can be stored using 'config.bytecode' which uses
-      -- 'string.dump' to convert to function code to bytes
+      -- 'string.dump' to convert from function code to bytes
       opts = M.setup_fzf_interactive_native(opts.fn_reload, opts)
       contents = opts.__fzf_init_cmd
     else
@@ -85,7 +85,7 @@ M.fzf_resume = function(opts)
   opts = vim.tbl_deep_extend("force", config.__resume_data.opts, opts or {})
   local last_query = config.__resume_data.last_query
   if not last_query or #last_query == 0 then
-    -- in case we continue from another resume
+    -- in case we continue from another resume,
     -- reset the previous query which was saved
     -- inside "fzf_opts['--query']" argument
     last_query = false
@@ -136,11 +136,11 @@ M.fzf = function(contents, opts)
       opts.global_resume and opts.global_resume_query then
     -- We use this option to print the query on line 1
     -- later to be removed from the result by M.fzf()
-    -- this providers a solution for saving the query
+    -- this provides a solution for saving the query
     -- when the user pressed a valid bind but not when
     -- aborting with <C-c> or <Esc>, see next comment
     opts.fzf_opts["--print-query"] = ""
-    -- Signals to the win object resume is enabled
+    -- Signals to the win object that resume is enabled
     -- so we can setup the keypress event monitoring
     -- since we already have the query on valid
     -- exit codes we only need to monitor <C-c>, <Esc>
@@ -201,7 +201,7 @@ M.fzf = function(contents, opts)
       opts.preview_offset = previewer:preview_offset()
     end
   elseif not opts.preview and not opts.fzf_opts["--preview"] then
-    -- no preview available, override incase $FZF_DEFAULT_OPTS
+    -- no preview available, override in case $FZF_DEFAULT_OPTS
     -- contains a preview which will most likely fail
     opts.fzf_opts["--preview-window"] = "hidden:right:0"
   end
@@ -228,7 +228,7 @@ M.fzf = function(contents, opts)
     if opts.fn_save_query and not (opts._is_skim and opts.fn_reload) then
       -- reminder: this doesn't get called with 'live_grep' when using skim
       -- due to a bug where '--print-query --interactive' combo is broken:
-      -- skim always prints an emtpy line where the typed query should be
+      -- skim always prints an empty line where the typed query should be.
       -- see addtional note above 'opts.save_query' inside 'live_grep_mt'
       opts.fn_save_query(selected[1])
     end
@@ -284,7 +284,7 @@ M.create_fzf_colors = function(opts)
     if col then
       table.insert(tbl, ("%s:%s"):format(highlight, col))
     end
-    -- arguments in the 3nd slot onward are passed raw, this can
+    -- arguments in the 3rd slot onward are passed raw, this can
     -- be used to pass styling arguments, for more info see #413
     -- https://github.com/junegunn/fzf/issues/1663
     for i = 3, #list do
@@ -505,7 +505,7 @@ M.mt_cmd_wrapper = function(opts)
 end
 
 -- given the default delimiter ':' this is the
--- fzf experssion field index for the line number
+-- fzf expression field index for the line number
 -- when entry format is 'file:line:col: text'
 -- this is later used with native fzf previewers
 -- for setting the preview offset (and on some
@@ -515,10 +515,10 @@ M.set_fzf_field_index = function(opts, default_idx, default_expr)
   -- when entry contains lines we set the fzf FIELD INDEX EXPRESSION
   -- to the below so that only the filename is sent to the preview
   -- action, otherwise we will have issues with entries with text
-  -- containing '--' as fzf won't know how to interpret the cmd
+  -- containing '--' as fzf won't know how to interpret the cmd.
   -- this works when the delimiter is only ':', when using multiple
   -- or different delimiters (e.g. in 'lines') we need to use a different
-  -- field index experssion such as "{..-2}" (all fields but the last 2)
+  -- field index expression such as "{..-2}" (all fields but the last 2)
   opts.field_index_expr = opts.field_index_expr or default_expr or "{1}"
   return opts
 end
@@ -675,10 +675,10 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
     -- '--query' was set by 'resume()', skim has the option to switch back and
     -- forth between interactive command and fuzzy matching (using 'ctrl-q')
     -- setting both '--query' and '--cmd-query' will use <query> to fuzzy match
-    -- on top of our result set double filtering our results (undesierable)
+    -- on top of our result set, double filtering our results (undesirable)
     opts.fzf_opts["--query"] = nil
     opts.query = nil
-    -- setup as inetarctive
+    -- setup as interactive
     opts._fzf_cli_args = string.format("--interactive --cmd %s",
       libuv.shellescape(reload_command))
   else
@@ -708,12 +708,12 @@ end
 M.fzf_query_placeholder = "<query>"
 
 M.fzf_field_expression = function(opts)
-  -- fzf already adds single quotes around the placeholder when expanding
+  -- fzf already adds single quotes around the placeholder when expanding.
   -- for skim we surround it with double quotes or single quote searches fail
   return opts and opts._is_skim and '"{}"' or "{q}"
 end
 
--- Sets up the flags and commands require for running a "live" interface
+-- Sets up the flags and commands required for running a "live" interface
 -- @param fn_reload :function called for reloading contents
 -- @param fn_transform :function to transform entries when using shell cmd
 M.setup_fzf_interactive_wrap = function(opts)
@@ -728,8 +728,8 @@ end
 M.setup_fzf_interactive_native = function(command, opts)
   local fzf_field_expression = M.fzf_field_expression(opts)
 
-  -- replace placeholder with the field index expression
-  -- if the command doesn't contain our placeholder append
+  -- replace placeholder with the field index expression.
+  -- If the command doesn't contain our placeholder, append
   -- the field index expression instead
   if command:match(M.fzf_query_placeholder) then
     command = opts.fn_reload:gsub(M.fzf_query_placeholder, fzf_field_expression)

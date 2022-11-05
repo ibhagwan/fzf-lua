@@ -126,7 +126,7 @@ M.grep = function(opts)
   end
 
   -- get the grep command before saving the last search
-  -- incase the search string is overwritten by 'rg_glob'
+  -- in case the search string is overwritten by 'rg_glob'
   opts.cmd = get_grep_cmd(opts, opts.search, no_esc)
 
   -- save the search query so we
@@ -187,7 +187,7 @@ M.live_grep_st = function(opts)
     if not (no_esc or opts.no_esc) then
       opts.query = utils.rg_escape(opts.search)
     end
-    -- save the search query so the use can
+    -- save the search query so the user can
     -- call the same search again
     set_last_search(opts, opts.query, true)
   end
@@ -243,8 +243,8 @@ M.live_grep_mt = function(opts)
   opts.__module__ = opts.__module__ or "grep"
   opts.prompt = set_live_grep_prompt(opts.prompt)
 
-  -- when using glob parsing we must use the external
-  -- headless instance for processing the query, this
+  -- when using glob parsing, we must use the external
+  -- headless instance for processing the query. This
   -- prevents 'file|git_icons=false' from overriding
   -- processing inside 'core.mt_cmd_wrapper'
   if opts.rg_glob then
@@ -265,7 +265,7 @@ M.live_grep_mt = function(opts)
     if not (no_esc or opts.no_esc) then
       opts.query = utils.rg_escape(opts.search)
     end
-    -- save the search query so the use can
+    -- save the search query so the user can
     -- call the same search again
     set_last_search(opts, opts.query, true)
   end
@@ -278,16 +278,16 @@ M.live_grep_mt = function(opts)
   opts.cmd = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
   local command = core.mt_cmd_wrapper(opts)
   if command ~= opts.cmd then
-    -- this means mt_cmd_wrapper wrapped the command
-    -- since now the `rg` command is wrapped inside
-    -- the shell escaped '--headless .. --cmd' we won't
+    -- this means mt_cmd_wrapper wrapped the command.
+    -- Since now the `rg` command is wrapped inside
+    -- the shell escaped '--headless .. --cmd', we won't
     -- be able to search single quotes as it will break
-    -- the escape sequence so we use a nifty trick
+    -- the escape sequence. So we use a nifty trick
     --   * replace the placeholder with {argv1}
     --   * re-add the placeholder at the end of the command
-    --   * preprocess then relaces it with vim.fn.argv(1)
+    --   * preprocess then replace it with vim.fn.argv(1)
     -- NOTE: since we cannot guarantee the positional index
-    -- of arguments (#291) we use the last argument instead
+    -- of arguments (#291), we use the last argument instead
     command = command:gsub(core.fzf_query_placeholder, "{argvz}")
         .. " " .. core.fzf_query_placeholder
   end
@@ -298,16 +298,16 @@ M.live_grep_mt = function(opts)
 
   -- when running 'live_grep' with 'exec_empty_query=false' (default)
   -- an empty typed query will not be saved as the 'neovim --headless'
-  -- command isn't executed resulting in '_last_search.query' never
-  -- cleared, always having a minimum of one characer.
-  -- this signals 'core.fzf' to add the '--print-query' flag and
-  -- handle the typed query on process exit using 'opts.fn_save_query'
-  -- due to a skim bug this doesn't work when used in conjucntion with
-  -- the '--interactive' flag, the line with the typed query is printed
-  -- to stdout but is always empty
-  -- to understand this issue, run 'live_grep', type a query and then
-  -- delete it and press <C-i> to switch to 'grep', instead of an empty
-  -- search the last typed character will be used as the search string
+  -- command isn't executed, resulting in '_last_search.query' never
+  -- cleared and always having a minimum of one characer.
+  -- This signals 'core.fzf' to add the '--print-query' flag and
+  -- handle the typed query on process exit using 'opts.fn_save_query'.
+  -- Due to a skim bug, this doesn't work when used in conjunction with
+  -- the '--interactive' flag: the line with the typed query is printed
+  -- to stdout but is always empty.
+  -- To understand this issue, run 'live_grep', type a query and then
+  -- delete it and press <C-i> to switch to 'grep'. Instead of an empty
+  -- search, the last typed character will be used as the search string
   if not opts._is_skim then
     opts.save_query = true
     opts.fn_post_fzf = function(o, _)
@@ -357,7 +357,7 @@ end
 
 M.live_grep_native = function(opts)
   -- backward compatibility, by setting git|files icons to false
-  -- we force 'mt_cmd_wrapper' to pipe the command as is so fzf
+  -- we force 'mt_cmd_wrapper' to pipe the command as is, so fzf
   -- runs the command directly in the 'change:reload' event
   opts = opts or {}
   opts.git_icons = false

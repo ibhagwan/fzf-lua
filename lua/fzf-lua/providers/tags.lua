@@ -109,7 +109,7 @@ local function tags(opts)
     -- live_grep requested by caller ('tags_live_grep')
     local _, filter = get_tags_cmd({ search = "dummy" })
     opts.filter = (opts.filter == nil) and filter or opts.filter
-    -- rg globs are meaningless here since we searching
+    -- rg globs are meaningless here since we are searching
     -- a single file
     opts.rg_glob = false
     opts.filename = opts._ctags_file
@@ -123,9 +123,9 @@ local function tags(opts)
       return require "fzf-lua.providers.grep".live_grep_st(opts)
     end
   else
-    -- generate the command and pipe filter if needed
-    -- since we cannot use include and exclude in the
-    -- same grep command we need to use a pipe to filter
+    -- generate the command and pipe filter if needed.
+    -- Since we cannot use include and exclude in the
+    -- same grep command, we need to use a pipe to filter
     local cmd, filter = get_tags_cmd(opts)
     opts.raw_cmd = opts.cmd or cmd
     opts.filter = (opts.filter == nil) and filter or opts.filter
@@ -150,8 +150,8 @@ M.btags = function(opts)
     utils.info("'btags' is not available for unnamed buffers.")
     return
   end
-  -- store the autogen command in case tags file doesn't exist
-  -- used as fallback to pipe the tags into fzf from stdout
+  -- store the autogen command in case tags file doesn't exist.
+  -- Used as fallback to pipe the tags into fzf from stdout
   opts._btags_cmd = string.format("%s %s %s",
     opts.ctags_bin or "ctags",
     opts.ctags_args or "-f -",
