@@ -58,8 +58,8 @@ local function location_to_entry(location, enc)
 end
 
 local jump_to_location = function(opts, result, enc)
-  -- exists the fzf window when use with async
-  -- safe to call even if the interafce is closed
+  -- exits the fzf window when use with async
+  -- safe to call even if the interface is closed
   utils.fzf_exit()
 
   local action = opts.jump_to_single_result_action
@@ -180,8 +180,8 @@ local function async_lsp_handler(co, handler, opts)
     else
       -- did all clients send back their responses?
       local done = opts.num_callbacks == opts.num_clients
-      -- only close the window if after all clients sent
-      -- their results we still have zero results
+      -- only close the window if we still have zero results
+      -- after all clients have sent their results
       if done and opts.num_results == 0 then
         -- Do not close the window in 'live_workspace_symbols'
         if not opts.fn_reload then
@@ -502,9 +502,9 @@ M.workspace_symbols = function(opts)
   if opts.symbol_style or opts.symbol_fmt then
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     -- when using an empty string grep (as in 'grep_project') or
-    -- when switching from grep to live_grep using 'ctrl-g' users
-    -- may find it confusing why is the last typed query not
-    -- considered the last search so we find out if that's the
+    -- when switching from grep to live_grep using 'ctrl-g', users
+    -- may find it confusing why the last typed query is not
+    -- considered the last search. So we find out if that's the
     -- case and use the last typed prompt as the grep string
     opts.fn_post_fzf = function(o, _)
       M._sym2style = nil
@@ -626,7 +626,7 @@ M.code_actions = function(opts)
   end
 
   -- when 'opts.async == false' calls 'vim.lsp.buf_request_sync'
-  -- so we can avoid calling  'ui_select.register' when no code
+  -- so we can avoid calling 'ui_select.register' when no code
   -- actions are available
   opts = set_lsp_fzf_fn(opts)
 
@@ -659,7 +659,7 @@ M.code_actions = function(opts)
 
   -- see discussion in:
   -- https://github.com/nvim-telescope/telescope.nvim/pull/738
-  -- If the text document version is 0, set it to nil instead so that Neovim
+  -- If the text document version is 0, set it to nil so that Neovim
   -- won't refuse to update a buffer that it believes is newer than edits.
   -- See: https://github.com/eclipse/eclipse.jdt.ls/issues/1695
   -- Source:
@@ -679,7 +679,7 @@ M.code_actions = function(opts)
 
   local transform_action = opts.transform_action
       or function(action)
-        -- Remove 0 -version from LSP codeaction request payload.
+        -- Remove 0-version from LSP codeaction request payload.
         -- Is only run on the "java.apply.workspaceEdit" codeaction.
         -- Fixed Java/jdtls compatibility with Telescope
         -- See fix_zero_version commentary for more information

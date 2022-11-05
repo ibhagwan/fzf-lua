@@ -70,7 +70,7 @@ M.status = function(opts)
       -- spaced files are wrapped with quotes
       -- remove both git markers and quotes
       local f1, f2 = x:sub(4):gsub('"', ""), nil
-      -- renames spearate files with '->'
+      -- renames separate files with '->'
       if f1:match("%s%->%s") then
         f1, f2 = f1:match("(.*)%s%->%s(.*)")
       end
@@ -119,8 +119,8 @@ M.bcommits = function(opts)
     utils.info("'bcommits' is not available for unnamed buffers.")
     return
   end
-  -- if caller did not specify cwd we attempt to auto detect the
-  -- file's git repo from its parent folder, could be further
+  -- if caller did not specify cwd, we attempt to auto detect the
+  -- file's git repo from its parent folder. Could be further
   -- optimized to prevent the duplicate call to `git rev-parse`
   -- but overall it's not a big deal as it's a pretty cheap call
   -- first 'git_root' call won't print a warning to ':messages'
@@ -152,7 +152,7 @@ M.branches = function(opts)
   if opts.preview then
     opts.__preview = path.git_cwd(opts.preview, opts)
     opts.preview = shell.raw_preview_action_cmd(function(items)
-      -- all possible options;
+      -- all possible options:
       --   branch
       -- * branch
       --   remotes/origin/branch

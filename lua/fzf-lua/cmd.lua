@@ -15,7 +15,7 @@ local bool_type = {
 }
 
 -- convert command line string arguments to
--- lua number boolean type and nil value
+-- lua number boolean type and nil values
 local function convert_user_opts(user_opts)
   local _switch = {
     ["boolean"] = function(key, val)

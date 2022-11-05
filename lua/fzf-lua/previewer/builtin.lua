@@ -38,7 +38,7 @@ function Previewer.base:new(o, opts, fzf_win)
       self.extensions[k:lower()] = v
     end
   end
-  -- validatee the ueberzug image scaler
+  -- validate the ueberzug image scaler
   local uz_scalers = {
     ["crop"]         = "crop",
     ["distort"]      = "distort",
@@ -129,8 +129,8 @@ function Previewer.base:clear_preview_buf()
   -- will return false
   -- one case where the buffer may remain valid after detaching
   -- from the preview window is with URI type entries after calling
-  -- 'vim.lsp.util.jump_to_location' which can reuse existing buffers
-  -- so techinically this should never be executed unless we're the
+  -- 'vim.lsp.util.jump_to_location' which can reuse existing buffers,
+  -- so technically this should never be executed unless the
   -- user wrote an fzf-lua extension and set the preview buffer to
   -- a random buffer without the 'bufhidden' property
   if not self.do_not_unload
@@ -165,7 +165,7 @@ function Previewer.base:display_entry(entry_str)
 
   -- clears the current preview buffer and set to a new temp buffer
   -- recommended to return false from 'should_clear_preview' and use
-  -- 'self:set_preview_buf()' instead for flicker-free exeperience
+  -- 'self:set_preview_buf()' instead for flicker-free experience
   local should_clear = self.should_clear_preview and
       self:should_clear_preview(entry_str)
   if should_clear ~= false then
@@ -261,9 +261,9 @@ function Previewer.base:scroll(direction)
         '%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>'):
       format(tonumber(preview_winid), input))
   end
-  -- 'cursorline' is effectively our match highlight, once the
-  -- user scrolls, the highlight is no longer relevenat (#462)
-  -- conditionally toggle 'cursorline' based on cursor position
+  -- 'cursorline' is effectively our match highlight. Once the
+  -- user scrolls, the highlight is no longer relevant (#462).
+  -- Conditionally toggle 'cursorline' based on cursor position
   if self.orig_pos and self.winopts.cursorline then
     local wininfo = vim.fn.getwininfo(preview_winid)
     if wininfo and wininfo[1] and
@@ -403,8 +403,8 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
           path.join({ self.opts.cwd or uv.cwd(), entry.path }),
     }
     local json = vim.json.encode(params)
-    -- both 'fs_open|write|close' and 'vim.fn.system' work
-    -- we prefer the libuv method as it doesn't rely on the shell
+    -- both 'fs_open|write|close' and 'vim.fn.system' work.
+    -- We prefer the libuv method as it doesn't rely on the shell
     -- cmd = { "sh", "-c", ("echo '%s' > %s"):format(json, self._ueberzug_fifo) }
     -- vim.fn.system(cmd)
     local fd = uv.fs_open(self._ueberzug_fifo, "a", -1)
@@ -444,7 +444,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if not self:should_load_buffer(entry) then
     -- same file/buffer as previous entry
     -- no need to reload content
-    -- call post to set cusror location
+    -- call post to set cursor location
     self:preview_buf_post(entry)
     return
   end
@@ -492,10 +492,10 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       local ext = path.extension(entry.path)
       local cmd = ext and self.extensions[ext:lower()]
       if cmd and self:populate_terminal_cmd(tmpbuf, cmd, entry) then
-        -- will return 'false' when cmd isn't executable
-        -- if we get here it means preview was successful
+        -- will return 'false' when cmd isn't executable.
+        -- If we get here it means preview was successful
         -- it can still fail if using wrong command flags
-        -- but the use will be able to see the error in
+        -- but the user will be able to see the error in
         -- the preview win
         return
       end
@@ -666,7 +666,7 @@ function Previewer.buffer_or_file:preview_buf_post(entry)
   self:update_border(entry)
 
   -- save the loaded entry so we can compare
-  -- bufnr|path with the next entry, if equal
+  -- bufnr|path with the next entry. If equal
   -- we can skip loading the buffer again
   self.loaded_entry = entry
 end

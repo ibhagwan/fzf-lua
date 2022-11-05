@@ -169,7 +169,7 @@ M.buffers = function(opts)
   opts = config.normalize_opts(opts, config.globals.buffers)
   if not opts then return end
 
-  -- get current tab/buffer/previos buffer
+  -- get current tab/buffer/previous buffer
   -- save as a func ref for resume to reuse
   opts.fn_pre_fzf = UPDATE_STATE
 

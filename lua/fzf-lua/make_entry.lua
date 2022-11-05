@@ -122,7 +122,7 @@ local function load_devicons()
     -- loading with 'require' is needed, 'loadfile'
     -- cannot load a custom setup function as it's
     -- considered a separate instance and the inner
-    -- 'require' in the setup fill will create an
+    -- 'require' in the setup file will create an
     -- additional 'nvim-web-devicons' instance
     --[[ local file = loadfile(M._devicons_path)
     M._devicons = file and file() ]]
@@ -233,8 +233,8 @@ M.preprocess = function(opts)
 
   local argv = function(i, debug)
     -- argv1 is actually the 7th argument if we count
-    -- arguments already supplied by 'wrap_spawn_stdio'
-    -- if no index was supplied use the last argument
+    -- arguments already supplied by 'wrap_spawn_stdio'.
+    -- If no index was supplied use the last argument
     local idx = tonumber(i) and tonumber(i) + 6 or #vim.v.argv
     if debug then
       io.stdout:write(("[DEBUG]: argv(%d) = %s\n")
@@ -258,7 +258,7 @@ M.preprocess = function(opts)
   end
 
   -- did the caller request rg with glob support?
-  -- mannipulation needs to be done before the argv hack
+  -- manipulation needs to be done before the argv hack
   if opts.rg_glob and has_argvz then
     local query = argv()
     local search_query, glob_args = M.glob_parse(query, opts)
@@ -308,8 +308,8 @@ M.file = function(x, opts)
   local file_part = colon_idx > 1 and x:sub(1, colon_idx - 1) or x
   local rest_of_line = colon_idx > 1 and x:sub(colon_idx) or nil
   -- strip ansi coloring from path so we can use filters
-  -- otherwise the ANSI escape sequnce will get in the way
-  -- TODO: we only support path modfication without ANSI
+  -- otherwise the ANSI escape sequence will get in the way
+  -- TODO: we only support path modification without ANSI
   -- escape sequences, it becomes too expensive to modify
   -- and restore the path with escape sequences
   local filepath, file_is_ansi = utils.strip_ansi_coloring(file_part)

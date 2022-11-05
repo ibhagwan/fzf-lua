@@ -22,7 +22,7 @@ M.deregister = function(_, silent, noclear)
   end
   vim.ui.select = _old_ui_select
   _old_ui_select = nil
-  -- do not empty _opts incase when
+  -- do not empty _opts in case when
   -- resume from `lsp_code_actions`
   if not noclear then
     _opts = nil
@@ -125,10 +125,10 @@ M.ui_select = function(items, opts, on_choice)
   -- was this triggered by lsp_code_actions?
   local opts_once = _opts_once
   if _opts_once then
-    -- merge and clear the once opts sent from lsp_code_actions
-    -- we also override actions to guarantee a single default
-    -- action, otherwise, selected[1] will be empty due to
-    -- multiple keybinds trigger sending `--expect` to fzf
+    -- merge and clear the once opts sent from lsp_code_actions.
+    -- We also override actions to guarantee a single default
+    -- action, otherwise selected[1] will be empty due to
+    -- multiple keybinds trigger, sending `--expect` to fzf
     _opts_once.actions = _opts.actions
     opts_once = vim.tbl_deep_extend("keep", _opts_once, _opts)
     _opts_once = nil

@@ -8,10 +8,10 @@ local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
 -- if loading this file as standalone ('--headless --clean')
 -- add the current folder to package.path so we can 'require'
 -- NOTE: loading this file before fzf-lua can cause unintended
--- effects (as 'vim.g.fzf_lua_directory=nil'). Run an adittional
+-- effects (as 'vim.g.fzf_lua_directory=nil'). Run an additional
 -- check if we are running headless with 'vim.api.nvim_list_uis'
 if not vim.g.fzf_lua_directory and #vim.api.nvim_list_uis() == 0 then
-  -- prepend this folder first so our modules always get first
+  -- prepend this folder first, so our modules always get first
   -- priority over some unknown random module with the same name
   package.path = (";%s/?.lua;"):format(vim.fn.fnamemodify(__FILE__, ":h"))
       .. package.path
@@ -270,10 +270,10 @@ M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess)
       -- passthrough the data exactly as received from the pipe
       -- using the 2nd 'fzf_cb' arg instructs raw_fzf to not add "\n"
       --
-      -- below not relevant anymore, will delete comment in future
-      -- if 'fn_transform' was specified the last char must be EOL
-      -- otherwise something went terribly wrong
-      -- without 'fn_transform' EOL isn't guaranteed at the end
+      -- below not relevant anymore, will delete comment in future.
+      -- If 'fn_transform' was specified, the last char must be EOL
+      -- otherwise something went terribly wrong.
+      -- Without 'fn_transform', EOL isn't guaranteed at the end
       -- assert(not fn_transform or string_byte(data, #data) == 10)
       fzf_cb(data, cb)
     end
@@ -300,8 +300,8 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
     return fn_loaded
   end
 
-  -- stdin/stdout are already buffered, not stderr this means
-  -- that every character is flushed immedietely which casued
+  -- stdin/stdout are already buffered, not stderr. This means
+  -- that every character is flushed immedietely which caused
   -- rendering issues on Mac (#316, #287) and Linux (#414)
   -- switch 'stderr' stream to 'line' buffering
   -- https://www.lua.org/manual/5.2/manual.html#pdf-file%3asetvbuf
@@ -360,7 +360,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
     pipe:write(data,
       function(err)
         -- if the user cancels the call prematurely with
-        -- <C-c> err will be either EPIPE or ECANCELED
+        -- <C-c>, err will be either EPIPE or ECANCELED
         -- don't really need to do anything since the
         -- processs will be killed anyways with os.exit()
         if err then
@@ -444,14 +444,14 @@ M.shellescape = function(s)
     local ret = nil
     vim.o.shell = "sh"
     if not s:match([["]]) and not s:match([[\]]) then
-      -- if the original string does not contain double quotes
-      -- replace surrounding single quote with double quotes
+      -- if the original string does not contain double quotes,
+      -- replace surrounding single quote with double quotes,
       -- temporarily replace all single quotes with double
-      -- quotes and restore after the call to shellescape
+      -- quotes and restore after the call to shellescape.
       -- NOTE: we use '({s:gsub(...)})[1]' to extract the
-      -- modified string without the multival # of changes
+      -- modified string without the multival # of changes,
       -- otherwise the number will be sent to shellescape
-      -- as {special} triggering an escape for ! % and #
+      -- as {special}, triggering an escape for ! % and #
       ret = vim.fn.shellescape(({ s:gsub([[']], [["]]) })[1])
       ret = [["]] .. ret:gsub([["]], [[']]):sub(2, #ret - 1) .. [["]]
     else
