@@ -67,14 +67,14 @@ function Previewer.cmd:new(o, opts)
 end
 
 function Previewer.cmd:sh_wrap(cmd, args, action, extra_args)
-  return "sh -c " .. libuv.shellescape(("%s %s %s `%s`"):format(
-    cmd, args or "", extra_args or "", action))
+  return [[sh -c "]] .. string.format([[%s %s %s $(%s)"]],
+    cmd, args or '', extra_args or '', action)
 end
 
 function Previewer.cmd:cmdline(o)
   o = o or {}
   o.action = o.action or self:action(o)
-  return vim.fn.shellescape(self:sh_wrap(self.cmd, self.args, o.action))
+  return self:sh_wrap(self.cmd, self.args, o.action)
 end
 
 function Previewer.cmd:action(o)
