@@ -1,5 +1,5 @@
-local fn = vim.fn
-local api = vim.api
+-- local fn = vim.fn
+-- local api = vim.api
 
 local fzf = require("fzf-lua")
 

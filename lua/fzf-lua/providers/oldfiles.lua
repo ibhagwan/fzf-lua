@@ -14,12 +14,12 @@ M.oldfiles = function(opts)
   local sess_map = {}
 
   if opts.include_current_session then
-    for _, buffer in ipairs(vim.split(vim.fn.execute(':buffers! t'), "\n")) do
-      local bufnr = tonumber(buffer:match('%s*(%d+)'))
+    for _, buffer in ipairs(vim.split(vim.fn.execute(":buffers! t"), "\n")) do
+      local bufnr = tonumber(buffer:match("%s*(%d+)"))
       if bufnr then
         local file = vim.api.nvim_buf_get_name(bufnr)
         local fs_stat = not opts.stat_file and true or vim.loop.fs_stat(file)
-        if #file>0 and fs_stat and bufnr ~= current_buffer then
+        if #file > 0 and fs_stat and bufnr ~= current_buffer then
           sess_map[file] = true
           table.insert(sess_tbl, file)
         end
@@ -27,8 +27,7 @@ M.oldfiles = function(opts)
     end
   end
 
-  local contents = function (cb)
-
+  local contents = function(cb)
     local function add_entry(x, co)
       x = make_entry.file(x, opts)
       if not x then return end
@@ -63,12 +62,11 @@ M.oldfiles = function(opts)
       -- done
       cb(nil)
     end)()
-
   end
 
   -- for 'file_ignore_patterns' to work on relative paths
-  opts.cwd  = opts.cwd or vim.loop.cwd()
-  opts = core.set_header(opts, opts.headers or {"cwd"})
+  opts.cwd = opts.cwd or vim.loop.cwd()
+  opts     = core.set_header(opts, opts.headers or { "cwd" })
   return core.fzf_exec(contents, opts)
 end
 

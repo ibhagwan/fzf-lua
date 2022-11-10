@@ -21,7 +21,7 @@ uv.listen(preview_socket, 100, function(_)
       uv.close(preview_receive_socket)
       uv.close(preview_socket)
       vim.schedule(function()
-        vim.cmd[[qall]]
+        vim.cmd [[qall]]
       end)
       return
     end
@@ -31,11 +31,11 @@ end)
 
 
 local function rpc_nvim_exec_lua(opts)
-  local success, errmsg = pcall(function ()
+  local success, errmsg = pcall(function()
     -- fzf selection is unpacked as the argument list
     local fzf_selection = {}
-    for i=1,vim.fn.argc() do
-      table.insert(fzf_selection, vim.fn.argv(i-1))
+    for i = 1, vim.fn.argc() do
+      table.insert(fzf_selection, vim.fn.argv(i - 1))
     end
     -- for skim compatibility
     local preview_lines = vim.env.FZF_PREVIEW_LINES or vim.env.LINES
@@ -64,11 +64,11 @@ local function rpc_nvim_exec_lua(opts)
     io.stderr:write(("[DEBUG]\tdebug = %s\n"):format(opts.debug))
     io.stderr:write(("[DEBUG]\tfunction ID = %d\n"):format(opts.fnc_id))
     io.stderr:write(("[DEBUG]\tfzf_lua_server = %s\n"):format(opts.fzf_lua_server))
-    for i=1,#vim.v.argv do
+    for i = 1, #vim.v.argv do
       io.stderr:write(("[DEBUG]\targv[%d] = %s\n"):format(i, vim.v.argv[i]))
     end
-    for i=1,vim.fn.argc() do
-      io.stderr:write(("[DEBUG]\targ[%d] = %s\n"):format(i, vim.fn.argv(i-1)))
+    for i = 1, vim.fn.argc() do
+      io.stderr:write(("[DEBUG]\targ[%d] = %s\n"):format(i, vim.fn.argv(i - 1)))
     end
   end
 

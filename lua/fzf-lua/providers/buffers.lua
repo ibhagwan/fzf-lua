@@ -14,7 +14,7 @@ local UPDATE_STATE = function()
     curtabidx = vim.fn.tabpagenr(),
     curtab = vim.api.nvim_win_get_tabpage(0),
     curbuf = vim.api.nvim_get_current_buf(),
-    prevbuf = vim.fn.bufnr('#'),
+    prevbuf = vim.fn.bufnr("#"),
     buflist = vim.api.nvim_list_bufs(),
     bufmap = (function()
       local map = {}
@@ -27,8 +27,7 @@ local UPDATE_STATE = function()
 end
 
 local filter_buffers = function(opts, unfiltered)
-
-  if type(unfiltered) == 'function' then
+  if type(unfiltered) == "function" then
     unfiltered = unfiltered()
   end
 
@@ -78,8 +77,8 @@ end
 local populate_buffer_entries = function(opts, bufnrs, tabnr)
   local buffers = {}
   for _, bufnr in ipairs(bufnrs) do
-    local flag = (bufnr == __STATE.curbuf and '%') or
-                 (bufnr == __STATE.prevbuf and '#') or ' '
+    local flag = (bufnr == __STATE.curbuf and "%") or
+        (bufnr == __STATE.prevbuf and "#") or " "
 
     local element = {
       bufnr = bufnr,
@@ -108,13 +107,13 @@ end
 
 local function gen_buffer_entry(opts, buf, hl_curbuf)
   -- local hidden = buf.info.hidden == 1 and 'h' or 'a'
-  local hidden = ''
-  local readonly = vim.api.nvim_buf_get_option(buf.bufnr, 'readonly') and '=' or ' '
-  local changed = buf.info.changed == 1 and '+' or ' '
+  local hidden = ""
+  local readonly = vim.api.nvim_buf_get_option(buf.bufnr, "readonly") and "=" or " "
+  local changed = buf.info.changed == 1 and "+" or " "
   local flags = hidden .. readonly .. changed
-  local leftbr = utils.ansi_codes.clear('[')
-  local rightbr = utils.ansi_codes.clear(']')
-  local bufname = #buf.info.name>0 and
+  local leftbr = utils.ansi_codes.clear("[")
+  local rightbr = utils.ansi_codes.clear("]")
+  local bufname = #buf.info.name > 0 and
       path.relative(buf.info.name, vim.loop.cwd()) or
       utils.nvim_buf_get_name(buf.bufnr, buf.info)
   if opts.filename_only then
@@ -123,24 +122,24 @@ local function gen_buffer_entry(opts, buf, hl_curbuf)
   -- replace $HOME with '~' for paths outside of cwd
   bufname = path.HOME_to_tilde(bufname)
   -- add line number
-  bufname = ("%s:%s"):format(bufname, buf.info.lnum>0 and buf.info.lnum or  "")
-  if buf.flag == '%' then
+  bufname = ("%s:%s"):format(bufname, buf.info.lnum > 0 and buf.info.lnum or "")
+  if buf.flag == "%" then
     flags = utils.ansi_codes.red(buf.flag) .. flags
     if hl_curbuf then
       -- no header line, highlight current buffer
-      leftbr = utils.ansi_codes.green('[')
-      rightbr = utils.ansi_codes.green(']')
+      leftbr = utils.ansi_codes.green("[")
+      rightbr = utils.ansi_codes.green("]")
       bufname = utils.ansi_codes.green(bufname)
     end
-  elseif buf.flag == '#' then
+  elseif buf.flag == "#" then
     flags = utils.ansi_codes.cyan(buf.flag) .. flags
   else
     flags = utils.nbsp .. flags
   end
   local bufnrstr = string.format("%s%s%s", leftbr,
     utils.ansi_codes.yellow(string.format(buf.bufnr)), rightbr)
-  local buficon = ''
-  local hl = ''
+  local buficon = ""
+  local hl = ""
   if opts.file_icons then
     if utils.is_term_bufname(buf.info.name) then
       -- get shell-like icon for terminal buffers
@@ -155,7 +154,7 @@ local function gen_buffer_entry(opts, buf, hl_curbuf)
     end
   end
   local item_str = string.format("%s%s%s%s%s%s%s%s",
-    utils._if(opts._prefix, opts._prefix, ''),
+    utils._if(opts._prefix, opts._prefix, ""),
     string.format("%-32s", bufnrstr),
     utils.nbsp,
     flags,
@@ -166,9 +165,7 @@ local function gen_buffer_entry(opts, buf, hl_curbuf)
   return item_str
 end
 
-
 M.buffers = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.buffers)
   if not opts then return end
 
@@ -177,7 +174,6 @@ M.buffers = function(opts)
   opts.fn_pre_fzf = UPDATE_STATE
 
   local contents = function(cb)
-
     local filtered = filter_buffers(opts, __STATE.buflist)
 
     if next(filtered) then
@@ -189,8 +185,8 @@ M.buffers = function(opts)
     cb(nil)
   end
 
-  opts.fzf_opts['--header-lines'] =
-    (not opts.ignore_current_buffer and opts.sort_lastused) and '1'
+  opts.fzf_opts["--header-lines"] =
+  (not opts.ignore_current_buffer and opts.sort_lastused) and "1"
 
   opts = core.set_fzf_field_index(opts)
 
@@ -239,23 +235,23 @@ M.buffer_lines = function(opts)
         buficon = utils.ansi_codes[hl](buficon)
       end
     end
-    if not bufname or #bufname==0 then
+    if not bufname or #bufname == 0 then
       bufname = utils.nvim_buf_get_name(bufnr)
     end
     for l, text in ipairs(data) do
       table.insert(items, ("[%s]%s%s%s%s:%s: %s"):format(
         utils.ansi_codes.yellow(tostring(bufnr)),
         utils.nbsp,
-        buficon or '',
-        buficon and utils.nbsp or '',
+        buficon or "",
+        buficon and utils.nbsp or "",
         utils.ansi_codes.magenta(bufname),
         utils.ansi_codes.green(tostring(l)),
         text))
     end
   end
 
-  if opts.search and #opts.search>0 then
-    opts.fzf_opts['--query'] = vim.fn.shellescape(opts.search)
+  if opts.search and #opts.search > 0 then
+    opts.fzf_opts["--query"] = vim.fn.shellescape(opts.search)
   end
 
   opts = core.set_fzf_field_index(opts, 3, opts._is_skim and "{}" or "{..-2}")
@@ -264,7 +260,6 @@ M.buffer_lines = function(opts)
 end
 
 M.tabs = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.tabs)
   if not opts then return end
 
@@ -288,7 +283,6 @@ M.tabs = function(opts)
   end
 
   local contents = function(cb)
-
     opts._tab_to_buf = {}
 
     local filtered, excluded = filter_buffers(opts, opts._list_bufs)
@@ -305,8 +299,8 @@ M.tabs = function(opts)
 
       cb(("%d)%s%s\t%s"):format(t, utils.nbsp,
         utils.ansi_codes.blue("%s%s#%d"):format(opts.tab_title, utils.nbsp, t),
-          (t==__STATE.curtabidx) and
-          utils.ansi_codes.blue(utils.ansi_codes.bold(opts.tab_marker)) or ''))
+        (t == __STATE.curtabidx) and
+        utils.ansi_codes.blue(utils.ansi_codes.bold(opts.tab_marker)) or ""))
 
       local bufnrs_flat = {}
       for b, _ in pairs(bufnrs) do

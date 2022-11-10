@@ -17,7 +17,6 @@ local bool_type = {
 -- convert command line string arguments to
 -- lua number boolean type and nil value
 local function convert_user_opts(user_opts)
-
   local _switch = {
     ["boolean"] = function(key, val)
       if val == "false" then
@@ -77,7 +76,7 @@ local function run_command(args)
 
   if builtin[cmd] then
     builtin[cmd](opts)
-	else
+  else
     utils.info(string.format("invalid command '%s'", cmd))
   end
 end

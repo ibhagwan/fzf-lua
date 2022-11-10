@@ -39,7 +39,7 @@ local function check_capabilities(feature)
     end
   end
 
-  if num_clients>0 then
+  if num_clients > 0 then
     return num_clients
   end
 
@@ -54,11 +54,10 @@ end
 local function location_to_entry(location, enc)
   local item = vim.lsp.util.locations_to_items({ location }, enc)[1]
 
-  return ('%s:%d:%d:'):format(item.filename, item.lnum, item.col)
+  return ("%s:%d:%d:"):format(item.filename, item.lnum, item.col)
 end
 
 local jump_to_location = function(opts, result, enc)
-
   -- exists the fzf window when use with async
   -- safe to call even if the interafce is closed
   utils.fzf_exit()
@@ -74,7 +73,7 @@ end
 
 local function location_handler(opts, cb, _, result, ctx, _)
   local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
-  result = vim.tbl_islist(result) and result or {result}
+  result = vim.tbl_islist(result) and result or { result }
   -- Jump immediately if there is only one location
   if opts.jump_to_single_result and #result == 1 then
     jump_to_location(opts, result[1], encoding)
@@ -108,11 +107,11 @@ local function call_hierarchy_handler(opts, cb, _, result, _, _)
 end
 
 local function symbol_handler(opts, cb, _, result, _, _)
-  result = vim.tbl_islist(result) and result or {result}
+  result = vim.tbl_islist(result) and result or { result }
   local items = vim.lsp.util.symbols_to_items(result, __CTX.bufnr)
   for _, entry in ipairs(items) do
     if (not opts.current_buffer_only or __CTX.bufname == entry.filename) and
-      (not opts.regex_filter or entry.text:match(opts.regex_filter)) then
+        (not opts.regex_filter or entry.text:match(opts.regex_filter)) then
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
         if kind and M._sym2style[kind] then
@@ -146,12 +145,11 @@ local function code_action_handler(opts, cb, _, code_actions, context, _)
   end
 end
 
-
 -- see neovim #15504
 -- https://github.com/neovim/neovim/pull/15504#discussion_r698424017
 local mk_handler = function(fn)
   return function(...)
-    local is_new = not select(4, ...) or type(select(4, ...)) ~= 'number'
+    local is_new = not select(4, ...) or type(select(4, ...)) ~= "number"
     if is_new then
       -- function(err, result, context, config)
       fn(...)
@@ -172,9 +170,9 @@ end
 local function async_lsp_handler(co, handler, opts)
   return mk_handler(function(err, result, context, lspcfg)
     -- increment callback & result counters
-    opts.num_callbacks = opts.num_callbacks+1
+    opts.num_callbacks = opts.num_callbacks + 1
     opts.num_results = (opts.num_results or 0) +
-      (result and vim.tbl_count(result) or 0)
+        (result and vim.tbl_count(result) or 0)
     if err then
       utils.err(string.format("Error executing '%s': %s", handler.method, err))
       utils.fzf_exit()
@@ -187,7 +185,7 @@ local function async_lsp_handler(co, handler, opts)
       if done and opts.num_results == 0 then
         -- Do not close the window in 'live_workspace_symbols'
         if not opts.fn_reload then
-          utils.info(string.format('No %s found', string.lower(handler.label)))
+          utils.info(string.format("No %s found", string.lower(handler.label)))
           utils.fzf_exit()
         end
       end
@@ -198,12 +196,11 @@ local function async_lsp_handler(co, handler, opts)
 end
 
 local function set_lsp_fzf_fn(opts)
-
   -- consider 'async_or_timeout' only if 'async' wasn't manually set
   if opts.async == nil then
-    if type(opts.async_or_timeout) == 'number' then
+    if type(opts.async_or_timeout) == "number" then
       opts.async = false
-    elseif type(opts.async_or_timeout) == 'boolean' then
+    elseif type(opts.async_or_timeout) == "boolean" then
       opts.async = opts.async_or_timeout
     end
   end
@@ -223,7 +220,7 @@ local function set_lsp_fzf_fn(opts)
       timeout = opts.async_or_timeout
     end
     local lsp_results, err = vim.lsp.buf_request_sync(__CTX.bufnr,
-        opts.lsp_handler.method, opts.lsp_params, timeout)
+      opts.lsp_handler.method, opts.lsp_params, timeout)
     if err then
       utils.err(string.format("Error executing '%s': %s",
         opts.lsp_handler.method, err))
@@ -238,7 +235,7 @@ local function set_lsp_fzf_fn(opts)
       end
       if vim.tbl_isempty(results) then
         if not opts.fn_reload then
-          utils.info(string.format('No %s found', string.lower(opts.lsp_handler.label)))
+          utils.info(string.format("No %s found", string.lower(opts.lsp_handler.label)))
         else
           -- return an empty set or the results wouldn't be
           -- cleared on live_workspace_symbols (#468)
@@ -247,8 +244,8 @@ local function set_lsp_fzf_fn(opts)
       elseif not (opts.jump_to_single_result and #results == 1) then
         -- LSP request was synchronous but
         -- we still async the fzf feeding
-        opts.fzf_fn = function (fzf_cb)
-          coroutine.wrap(function ()
+        opts.fzf_fn = function(fzf_cb)
+          coroutine.wrap(function()
             local co = coroutine.running()
             for _, e in ipairs(results) do
               fzf_cb(e, function() coroutine.resume(co) end)
@@ -273,8 +270,8 @@ local function set_lsp_fzf_fn(opts)
     opts._fn_post_fzf = fn_cancel_all
 
     -- ASYNC
-    opts.fzf_fn = function (fzf_cb)
-      coroutine.wrap(function ()
+    opts.fzf_fn = function(fzf_cb)
+      coroutine.wrap(function()
         local co = coroutine.running()
 
         -- Save no. of attached clients **supporting the capability**
@@ -299,7 +296,7 @@ local function set_lsp_fzf_fn(opts)
         local err, result, context, lspcfg, done
         repeat
           done, err, result, context, lspcfg = coroutine.yield()
-          if not err and type(result) == 'table' then
+          if not err and type(result) == "table" then
             local cb = function(e)
               fzf_cb(e, function() coroutine.resume(co) end)
               coroutine.yield()
@@ -307,8 +304,8 @@ local function set_lsp_fzf_fn(opts)
             opts.lsp_handler.handler(opts, cb,
               opts.lsp_handler.method, result, context, lspcfg)
           end
-        -- some clients may not always return results (null-ls?)
-        -- so don't terminate the loop when 'result == nil`
+          -- some clients may not always return results (null-ls?)
+          -- so don't terminate the loop when 'result == nil`
         until done or err
 
         -- no more results
@@ -317,7 +314,6 @@ local function set_lsp_fzf_fn(opts)
         -- we only get here once all requests are done
         -- so we can clear '_cancel_all'
         opts._cancel_all = nil
-
       end)()
     end
   end
@@ -330,7 +326,7 @@ local normalize_lsp_opts = function(opts, cfg)
   if not opts then return end
 
   if not opts.prompt and opts.prompt_postfix then
-    opts.prompt = opts.lsp_handler.label .. (opts.prompt_postfix or '')
+    opts.prompt = opts.lsp_handler.label .. (opts.prompt_postfix or "")
   end
 
   -- required for relative paths presentation
@@ -389,7 +385,7 @@ M.call_hierarchy = function(opts)
   else
     local _, response = next(res)
     if vim.tbl_isempty(response) then
-      utils.info(('No %s found'):format(opts.lsp_handler.label:lower()))
+      utils.info(("No %s found"):format(opts.lsp_handler.label:lower()))
       return
     end
     assert(response.result and response.result[1])
@@ -413,7 +409,7 @@ local function gen_sym2style_map(opts)
   M._sym2style = {}
   local colormap = vim.api.nvim_get_color_map()
   for k, v in pairs(vim.lsp.protocol.CompletionItemKind) do
-    if type(k) == 'string' then
+    if type(k) == "string" then
       local icon = vim.lsp.protocol.CompletionItemKind[v]
       -- style==1: "<icon> <kind>"
       -- style==2: "<icon>"
@@ -442,7 +438,7 @@ local function gen_sym2style_map(opts)
       end
     end
   end
-  if type(opts.symbol_fmt) == 'function' then
+  if type(opts.symbol_fmt) == "function" then
     for k, v in pairs(M._sym2style) do
       M._sym2style[k] = opts.symbol_fmt(v) or v
     end
@@ -453,13 +449,13 @@ M.document_symbols = function(opts)
   opts = normalize_lsp_opts(opts, config.globals.lsp.symbols)
   if not opts then return end
   opts.__MODULE__ = opts.__MODULE__ or M
-  opts = core.set_header(opts, opts.headers or {"regex_filter"})
+  opts = core.set_header(opts, opts.headers or { "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
-  if not opts.fzf_opts or opts.fzf_opts['--with-nth'] == nil then
-    opts.fzf_opts = opts.fzf_opts or {}
-    opts.fzf_opts["--with-nth"]    = '2..'
-    opts.fzf_opts["--tiebreak"]    = 'index'
+  if not opts.fzf_opts or opts.fzf_opts["--with-nth"] == nil then
+    opts.fzf_opts               = opts.fzf_opts or {}
+    opts.fzf_opts["--with-nth"] = "2.."
+    opts.fzf_opts["--tiebreak"] = "index"
   end
   opts = set_lsp_fzf_fn(opts)
   if not opts.fzf_fn then return end
@@ -496,7 +492,7 @@ M.workspace_symbols = function(opts)
     opts.lsp_query = get_last_lspquery(opts)
   end
   set_last_lspquery(opts, opts.lsp_query)
-  opts.lsp_params = {query = opts.lsp_query or ''}
+  opts.lsp_params = { query = opts.lsp_query or "" }
   opts = core.set_header(opts, opts.headers or
     { "actions", "cwd", "lsp_query", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
@@ -514,8 +510,8 @@ M.workspace_symbols = function(opts)
       M._sym2style = nil
       local last_lspquery = get_last_lspquery(o)
       local last_query = config.__resume_data and config.__resume_data.last_query
-      if not last_lspquery or #last_lspquery==0
-        and (last_query and #last_query>0) then
+      if not last_lspquery or #last_lspquery == 0
+          and (last_query and #last_query > 0) then
         set_last_lspquery(opts, last_query)
       end
     end
@@ -530,7 +526,7 @@ M.live_workspace_symbols = function(opts)
   -- needed by 'actions.sym_lsym'
   -- prepend the prompt with asterisk
   opts.__MODULE__ = opts.__MODULE__ or M
-  opts.prompt = opts.prompt and opts.prompt:match("^%*") or '*'..opts.prompt
+  opts.prompt = opts.prompt and opts.prompt:match("^%*") or "*" .. opts.prompt
 
   -- exec empty query is the default here
   if opts.exec_empty_query == nil then
@@ -542,22 +538,22 @@ M.live_workspace_symbols = function(opts)
   end
 
   -- sent to the LSP server
-  opts.lsp_params = {query = opts.lsp_query or opts.query or ''}
+  opts.lsp_params = { query = opts.lsp_query or opts.query or "" }
   opts.query = opts.lsp_query or opts.query
 
   -- don't use the automatic coroutine since we
-  -- use our own 
+  -- use our own
   opts.func_async_callback = false
   opts.fn_reload = function(query)
     if query and not (opts.save_last_search == false) then
       set_last_lspquery(opts, query)
     end
-    opts.lsp_params = {query = query or ''}
+    opts.lsp_params = { query = query or "" }
     opts = set_lsp_fzf_fn(opts)
     return opts.fzf_fn
   end
 
-  opts = core.set_header(opts, opts.headers or {"actions", "cwd", "regex_filter"})
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   if opts.symbol_style or opts.symbol_fmt then
@@ -572,15 +568,15 @@ local function get_line_diagnostics(_)
   if not vim.diagnostic then
     return vim.lsp.diagnostic.get_line_diagnostics()
   end
-  local diag = vim.diagnostic.get(__CTX.bufnr, {lnum = vim.api.nvim_win_get_cursor(0)[1]-1})
-  return diag and diag[1] and {{
+  local diag = vim.diagnostic.get(__CTX.bufnr, { lnum = vim.api.nvim_win_get_cursor(0)[1] - 1 })
+  return diag and diag[1] and { {
     source = diag[1].source,
     message = diag[1].message,
     severity = diag[1].severity,
     code = diag[1].user_data and diag[1].user_data.lsp and
-      diag[1].user_data.lsp.code,
+        diag[1].user_data.lsp.code,
     codeDescription = diag[1].user_data and diag[1].user_data.lsp and
-      diag[1].user_data.lsp.codeDescription,
+        diag[1].user_data.lsp.codeDescription,
     range = {
       ["start"] = {
         line = diag[1].lnum,
@@ -592,8 +588,8 @@ local function get_line_diagnostics(_)
       }
     },
     data = diag[1].user_data and diag[1].user_data.lsp and
-      diag[1].user_data.lsp.data
-  }} or nil
+        diag[1].user_data.lsp.data
+  } } or nil
 end
 
 ---Returns true if the client has code_action capability and its
@@ -625,7 +621,7 @@ M.code_actions = function(opts)
 
   -- we use `vim.ui.select` for neovim > 0.6
   -- so make sure 'set_lsp_fzf_fn' is run synchronously
-  if vim.fn.has('nvim-0.6') == 1 then
+  if vim.fn.has("nvim-0.6") == 1 then
     opts.async = false
   end
 
@@ -639,8 +635,8 @@ M.code_actions = function(opts)
 
   -- use `vim.ui.select` for neovim > 0.6
   -- the original method is now deprecated
-  if opts.ui_select and vim.fn.has('nvim-0.6') == 1 then
-    local ui_select = require'fzf-lua.providers.ui_select'
+  if opts.ui_select and vim.fn.has("nvim-0.6") == 1 then
+    local ui_select = require "fzf-lua.providers.ui_select"
     local registered = ui_select.is_registered()
     opts.previewer = false
     opts.actions = opts.actions or {}
@@ -667,7 +663,8 @@ M.code_actions = function(opts)
   -- won't refuse to update a buffer that it believes is newer than edits.
   -- See: https://github.com/eclipse/eclipse.jdt.ls/issues/1695
   -- Source:
-  -- https://github.com/neovim/nvim-lspconfig/blob/486f72a25ea2ee7f81648fdfd8999a155049e466/lua/lspconfig/jdtls.lua#L62
+  -- https://github.com/neovim/nvim-lspconfig/blob/\
+  --    486f72a25ea2ee7f81648fdfd8999a155049e466/lua/lspconfig/jdtls.lua#L62
   local function fix_zero_version(workspace_edit)
     if workspace_edit and workspace_edit.documentChanges then
       for _, change in pairs(workspace_edit.documentChanges) do
@@ -681,33 +678,33 @@ M.code_actions = function(opts)
   end
 
   local transform_action = opts.transform_action
-    or function(action)
-      -- Remove 0 -version from LSP codeaction request payload.
-      -- Is only run on the "java.apply.workspaceEdit" codeaction.
-      -- Fixed Java/jdtls compatibility with Telescope
-      -- See fix_zero_version commentary for more information
-      local command = (action.command and action.command.command) or action.command
-      if not (command == "java.apply.workspaceEdit") then
+      or function(action)
+        -- Remove 0 -version from LSP codeaction request payload.
+        -- Is only run on the "java.apply.workspaceEdit" codeaction.
+        -- Fixed Java/jdtls compatibility with Telescope
+        -- See fix_zero_version commentary for more information
+        local command = (action.command and action.command.command) or action.command
+        if not (command == "java.apply.workspaceEdit") then
+          return action
+        end
+        local arguments = (action.command and action.command.arguments) or action.arguments
+        action.edit = fix_zero_version(arguments[1])
         return action
       end
-      local arguments = (action.command and action.command.arguments) or action.arguments
-      action.edit = fix_zero_version(arguments[1])
-      return action
-    end
 
   local execute_action = opts.execute_action
-    or function(action, enc)
-      if action.edit or type(action.command) == "table" then
-        if action.edit then
-          vim.lsp.util.apply_workspace_edit(action.edit, enc)
+      or function(action, enc)
+        if action.edit or type(action.command) == "table" then
+          if action.edit then
+            vim.lsp.util.apply_workspace_edit(action.edit, enc)
+          end
+          if type(action.command) == "table" then
+            vim.lsp.buf.execute_command(action.command)
+          end
+        else
+          vim.lsp.buf.execute_command(action)
         end
-        if type(action.command) == "table" then
-          vim.lsp.buf.execute_command(action.command)
-        end
-      else
-        vim.lsp.buf.execute_command(action)
       end
-    end
 
   -- "apply action" as default function
   if not opts.actions then opts.actions = {} end
@@ -738,11 +735,10 @@ M.code_actions = function(opts)
   end)
 
   opts.previewer = false
-  opts.fzf_opts["--no-multi"] = ''
-  opts.fzf_opts["--preview-window"] = 'right:0'
+  opts.fzf_opts["--no-multi"] = ""
+  opts.fzf_opts["--preview-window"] = "right:0"
 
   core.fzf_exec(opts.fzf_fn, opts)
-
 end
 
 local handlers = {
@@ -751,67 +747,78 @@ local handlers = {
     resolved_capability = "code_action",
     server_capability = "codeActionProvider",
     method = "textDocument/codeAction",
-    handler = code_action_handler },
+    handler = code_action_handler
+  },
   ["references"] = {
     label = "References",
     resolved_capability = "find_references",
     server_capability = "referencesProvider",
     method = "textDocument/references",
-    handler = location_handler },
+    handler = location_handler
+  },
   ["definitions"] = {
     label = "Definitions",
     resolved_capability = "goto_definition",
     server_capability = "definitionProvider",
     method = "textDocument/definition",
-    handler = location_handler },
+    handler = location_handler
+  },
   ["declarations"] = {
     label = "Declarations",
     resolved_capability = "goto_declaration",
     server_capability = "declarationProvider",
     method = "textDocument/declaration",
-    handler = location_handler },
+    handler = location_handler
+  },
   ["typedefs"] = {
     label = "Type Definitions",
     resolved_capability = "type_definition",
     server_capability = "typeDefinitionProvider",
     method = "textDocument/typeDefinition",
-    handler = location_handler },
+    handler = location_handler
+  },
   ["implementations"] = {
     label = "Implementations",
     resolved_capability = "implementation",
     server_capability = "implementationProvider",
     method = "textDocument/implementation",
-    handler = location_handler },
+    handler = location_handler
+  },
   ["document_symbols"] = {
     label = "Document Symbols",
     resolved_capability = "document_symbol",
     server_capability = "documentSymbolProvider",
     method = "textDocument/documentSymbol",
-    handler = symbol_handler },
+    handler = symbol_handler
+  },
   ["workspace_symbols"] = {
     label = "Workspace Symbols",
     resolved_capability = "workspace_symbol",
     server_capability = "workspaceSymbolProvider",
     method = "workspace/symbol",
-    handler = symbol_handler },
+    handler = symbol_handler
+  },
   ["live_workspace_symbols"] = {
     label = "Workspace Symbols",
     resolved_capability = "workspace_symbol",
     server_capability = "workspaceSymbolProvider",
     method = "workspace/symbol",
-    handler = symbol_handler },
+    handler = symbol_handler
+  },
   ["incoming_calls"] = {
     label = "Incoming Calls",
     resolved_capability = "call_hierarchy",
     server_capability = "callHierarchyProvider",
     method = "callHierarchy/incomingCalls",
-    handler = call_hierarchy_handler },
+    handler = call_hierarchy_handler
+  },
   ["outgoing_calls"] = {
     label = "Outgoing Calls",
     resolved_capability = "call_hierarchy",
     server_capability = "callHierarchyProvider",
     method = "callHierarchy/outgoingCalls",
-    handler = call_hierarchy_handler },
+    handler = call_hierarchy_handler
+  },
 }
 
 local function wrap_module_fncs(mod)
@@ -835,7 +842,7 @@ local function wrap_module_fncs(mod)
       end
 
       if opts.lsp_handler.capability
-        and not check_capabilities(opts.lsp_handler.capability) then
+          and not check_capabilities(opts.lsp_handler.capability) then
         return
       end
       v(opts)

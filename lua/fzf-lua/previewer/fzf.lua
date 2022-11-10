@@ -1,5 +1,4 @@
 local path = require "fzf-lua.path"
-local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local Object = require "fzf-lua.class"
@@ -45,14 +44,14 @@ function Previewer.base:fzf_delimiter()
   -- entry format is 'file:line:col: text'
   local delim = self.opts.fzf_opts and self.opts.fzf_opts["--delimiter"]
   if not delim then
-    delim = '[:]'
+    delim = "[:]"
   elseif not delim:match(":") then
-    if delim:match("%[.*%]")then
-      delim = delim:match("(%[.*)%]") .. ':]'
+    if delim:match("%[.*%]") then
+      delim = delim:match("(%[.*)%]") .. ":]"
     else
       -- remove surrounding quotes
       delim = delim:match("^'?(.*)'$?") or delim
-      delim = '[' ..  utils.rg_escape(delim):gsub("%]", "\\]") .. ':]'
+      delim = "[" .. utils.rg_escape(delim):gsub("%]", "\\]") .. ":]"
     end
   end
   return delim
@@ -68,7 +67,7 @@ end
 
 function Previewer.cmd:sh_wrap(cmd, args, action, extra_args)
   return [[sh -c "]] .. string.format([[%s %s %s $(%s)"]],
-    cmd, args or '', extra_args or '', action)
+    cmd, args or "", extra_args or "", action)
 end
 
 function Previewer.cmd:cmdline(o)
@@ -79,7 +78,7 @@ end
 
 function Previewer.cmd:action(o)
   o = o or {}
-  local act = shell.raw_action(function (items, _, _)
+  local act = shell.raw_action(function(items, _, _)
     -- only preview first item
     local entry = path.entry_to_file(items[1], self.opts)
     return entry.bufname or entry.path
@@ -139,8 +138,8 @@ local grep_tag = function(file, tag)
   local pattern = utils.rg_escape(tag)
   if not pattern or not filepath then return line end
   local grep_cmd = vim.fn.executable("rg") == 1
-    and {"rg", "--line-number"}
-    or {"grep", "-n", "-P"}
+      and { "rg", "--line-number" }
+      or { "grep", "-n", "-P" }
   -- ctags uses '$' at the end of short patterns
   -- 'rg|grep' does not match these properly when
   -- 'fileformat' isn't set to 'unix', when set to
@@ -169,8 +168,8 @@ end
 
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   local entry = path.entry_to_file(entrystr, self.opts)
-  local filepath = entry.bufname or entry.path or ''
-  if self.opts._ctag and entry.line<=1 then
+  local filepath = entry.bufname or entry.path or ""
+  if self.opts._ctag and entry.line <= 1 then
     -- tags without line numbers
     -- make sure we don't already have line #
     -- (in the case the line no. is actually 1)
@@ -183,9 +182,9 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   end
   local errcmd = nil
   -- verify the file exists on disk and is accessible
-  if #filepath==0 or not vim.loop.fs_stat(filepath) then
+  if #filepath == 0 or not vim.loop.fs_stat(filepath) then
     errcmd = ('echo "%s: NO SUCH FILE OR ACCESS DENIED"'):format(
-      filepath and #filepath>0 and vim.fn.shellescape(filepath) or "<null>")
+      filepath and #filepath > 0 and vim.fn.shellescape(filepath) or "<null>")
   end
   return filepath, entry, errcmd
 end
@@ -194,7 +193,7 @@ function Previewer.cmd_async:cmdline(o)
   o = o or {}
   local act = shell.raw_preview_action_cmd(function(items)
     local filepath, _, errcmd = self:parse_entry_and_verify(items[1])
-    local cmd = errcmd or ('%s %s %s'):format(
+    local cmd = errcmd or ("%s %s %s"):format(
       self.cmd, self.args, vim.fn.shellescape(filepath))
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
@@ -215,19 +214,19 @@ function Previewer.bat_async:cmdline(o)
   o = o or {}
   local act = shell.raw_preview_action_cmd(function(items, fzf_lines)
     local filepath, entry, errcmd = self:parse_entry_and_verify(items[1])
-    local line_range = ''
+    local line_range = ""
     if entry.ctag then
       -- this is a ctag without line numbers, since we can't
       -- provide the preview file offset to fzf via the field
       -- index expression we use '--line-range' instead
-      local start_line = math.max(1, entry.line-fzf_lines/2)
-      local end_line = start_line + fzf_lines-1
+      local start_line = math.max(1, entry.line - fzf_lines / 2)
+      local end_line = start_line + fzf_lines - 1
       line_range = ("--line-range=%d:%d"):format(start_line, end_line)
     end
-    local cmd = errcmd or ('%s %s %s %s %s'):format(
+    local cmd = errcmd or ("%s %s %s %s %s"):format(
       self.cmd, self.args,
       self.opts.line_field_index and
-        ("--highlight-line=%d"):format(entry.line) or '',
+      ("--highlight-line=%d"):format(entry.line) or "",
       line_range,
       vim.fn.shellescape(filepath))
     -- uncomment to see the command in the preview window
@@ -251,8 +250,8 @@ function Previewer.git_diff:new(o, opts)
     self.git_icons = {}
     for _, i in ipairs({ "D", "M", "R", "A", "C", "T", "?" }) do
       self.git_icons[i] =
-        icons_overrides and icons_overrides[i] and
-        utils.lua_regex_escape(icons_overrides[i].icon) or i
+      icons_overrides and icons_overrides[i] and
+          utils.lua_regex_escape(icons_overrides[i].icon) or i
     end
   end
   return self
@@ -265,17 +264,17 @@ function Previewer.git_diff:cmdline(o)
       utils.warn("shell error while running preview action.")
       return
     end
-    local is_deleted = items[1]:match(self.git_icons['D']..utils.nbsp) ~= nil
+    local is_deleted = items[1]:match(self.git_icons["D"] .. utils.nbsp) ~= nil
     local is_modified = items[1]:match("[" ..
-      self.git_icons['M'] ..
-      self.git_icons['R'] ..
-      self.git_icons['A'] ..
-      self.git_icons['T'] ..
-      "]" ..utils.nbsp) ~= nil
+      self.git_icons["M"] ..
+      self.git_icons["R"] ..
+      self.git_icons["A"] ..
+      self.git_icons["T"] ..
+      "]" .. utils.nbsp) ~= nil
     local is_untracked = items[1]:match("[" ..
-      self.git_icons['?'] ..
-      self.git_icons['C'] ..
-      "]"..utils.nbsp) ~= nil
+      self.git_icons["?"] ..
+      self.git_icons["C"] ..
+      "]" .. utils.nbsp) ~= nil
     local file = path.entry_to_file(items[1], self.opts)
     local cmd = nil
     if is_modified then cmd = self.cmd_modified
@@ -283,9 +282,9 @@ function Previewer.git_diff:cmdline(o)
     elseif is_untracked then cmd = self.cmd_untracked end
     if not cmd then return "" end
     local pager = ""
-    if self.pager and #self.pager>0 and
-      vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
-      pager = '| ' .. self.pager
+    if self.pager and #self.pager > 0 and
+        vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
+      pager = "| " .. self.pager
     end
     -- with default commands we add the filepath at the end
     -- if the user configured a more complex command, e.g.:
@@ -299,14 +298,14 @@ function Previewer.git_diff:cmdline(o)
     end
     cmd = cmd:format(vim.fn.shellescape(file.path))
     cmd = ("LINES=%d;COLUMNS=%d;FZF_PREVIEW_LINES=%d;FZF_PREVIEW_COLUMNS=%d;%s %s")
-      :format(fzf_lines, fzf_columns, fzf_lines, fzf_columns, cmd, pager)
-    cmd = 'sh -c ' .. vim.fn.shellescape(cmd)
+        :format(fzf_lines, fzf_columns, fzf_lines, fzf_columns, cmd, pager)
+    cmd = "sh -c " .. vim.fn.shellescape(cmd)
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
-  -- we need to add '--' to mark the end of command options
-  -- as git icon customization may contain special shell chars
-  -- which will otherwise choke our preview cmd ('+', '-', etc)
+    -- we need to add '--' to mark the end of command options
+    -- as git icon customization may contain special shell chars
+    -- which will otherwise choke our preview cmd ('+', '-', etc)
   end, "-- {}", self.opts.debug)
   return act
 end

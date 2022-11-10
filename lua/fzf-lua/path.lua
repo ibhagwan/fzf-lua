@@ -5,10 +5,10 @@ local string_byte = string.byte
 local M = {}
 
 M.separator = function()
-  return '/'
+  return "/"
 end
 
-M.dot_byte = string_byte('.')
+M.dot_byte = string_byte(".")
 M.separator_byte = string_byte(M.separator())
 
 M.starts_with_separator = function(path)
@@ -17,31 +17,31 @@ M.starts_with_separator = function(path)
 end
 
 M.starts_with_cwd = function(path)
-  return #path>1
-    and string_byte(path, 1) == M.dot_byte
-    and string_byte(path, 2) == M.separator_byte
+  return #path > 1
+      and string_byte(path, 1) == M.dot_byte
+      and string_byte(path, 2) == M.separator_byte
   -- return path:match("^."..M.separator()) ~= nil
 end
 
 M.strip_cwd_prefix = function(path)
-  return #path>2 and path:sub(3)
+  return #path > 2 and path:sub(3)
 end
 
 function M.tail(path)
   local os_sep = string_byte(M.separator())
 
-  for i=#path,1,-1 do
+  for i = #path, 1, -1 do
     if string_byte(path, i) == os_sep then
-      return path:sub(i+1)
+      return path:sub(i + 1)
     end
   end
   return path
 end
 
 function M.extension(path)
-  for i=#path,1,-1 do
+  for i = #path, 1, -1 do
     if string_byte(path, i) == 46 then
-      return path:sub(i+1)
+      return path:sub(i + 1)
     end
   end
   return path
@@ -56,11 +56,11 @@ end
 function M.join(paths)
   -- gsub to remove double separator
   return table.concat(paths, M.separator()):gsub(
-    M.separator()..M.separator(), M.separator())
+    M.separator() .. M.separator(), M.separator())
 end
 
 function M.split(path)
-  return path:gmatch('[^'..M.separator()..']+'..M.separator()..'?')
+  return path:gmatch("[^" .. M.separator() .. "]+" .. M.separator() .. "?")
 end
 
 ---Get the basename of the given path.
@@ -108,17 +108,17 @@ function M.add_trailing(path)
     return path
   end
 
-  return path..M.separator()
+  return path .. M.separator()
 end
 
 function M.remove_trailing(path)
-  local p, _ = path:gsub(M.separator()..'$', '')
+  local p, _ = path:gsub(M.separator() .. "$", "")
   return p
 end
 
 local function find_next(str, char, start_idx)
   local i_char = string_byte(char, 1)
-  for i=start_idx or 1,#str do
+  for i = start_idx or 1, #str do
     if string_byte(str, i) == i_char then
       return i
     end
@@ -144,19 +144,19 @@ function M.tilde_to_HOME(path)
 end
 
 function M.HOME_to_tilde(path)
-  return path and path:gsub("^"..M.HOME(), "~") or nil
+  return path and path:gsub("^" .. M.HOME(), "~") or nil
 end
 
 function M.shorten(path, max_len)
   local sep = M.separator()
   local parts = {}
   local start_idx = 1
-  max_len = max_len and tonumber(max_len)>0 and max_len or 1
+  max_len = max_len and tonumber(max_len) > 0 and max_len or 1
   repeat
     local i = find_next(path, sep, start_idx)
-    local end_idx = i and start_idx+math.min(i-start_idx, max_len)-1 or nil
+    local end_idx = i and start_idx + math.min(i - start_idx, max_len) - 1 or nil
     table.insert(parts, string_sub(path, start_idx, end_idx))
-    if i then start_idx = i+1 end
+    if i then start_idx = i + 1 end
   until not i
   return table.concat(parts, sep)
 end
@@ -164,22 +164,21 @@ end
 function M.lengthen(path)
   -- we use 'glob_escape' to escape \{} (#548)
   path = utils.glob_escape(path)
-  return vim.fn.glob(path:gsub(M.separator(), "%*"..M.separator())
+  return vim.fn.glob(path:gsub(M.separator(), "%*" .. M.separator())
     -- remove the starting '*/' if any
-    :gsub("^%*"..M.separator(), M.separator())):match("[^\n]+")
-    or string.format("<glob expand failed for '%s'>", path)
+    :gsub("^%*" .. M.separator(), M.separator())):match("[^\n]+")
+      or string.format("<glob expand failed for '%s'>", path)
 end
 
 local function lastIndexOf(haystack, needle)
-  local i=haystack:match(".*"..needle.."()")
-  if i==nil then return nil else return i-1 end
+  local i = haystack:match(".*" .. needle .. "()")
+  if i == nil then return nil else return i - 1 end
 end
 
 local function stripBeforeLastOccurrenceOf(str, sep)
   local idx = lastIndexOf(str, sep) or 0
-  return str:sub(idx+1), idx
+  return str:sub(idx + 1), idx
 end
-
 
 function M.entry_to_ctag(entry, noesc)
   local ctag = entry:match("%:.-/^?\t?(.*)/")
@@ -190,9 +189,9 @@ function M.entry_to_ctag(entry, noesc)
   if ctag and not noesc then
     -- required escapes for vim.fn.search()
     -- \ ] ~ *
-    ctag = ctag:gsub('[\\%]~*]',
+    ctag = ctag:gsub("[\\%]~*]",
       function(x)
-        return '\\' .. x
+        return "\\" .. x
       end)
   end
   return ctag
@@ -212,8 +211,8 @@ function M.entry_to_location(entry, opts)
     uri = uri,
     range = {
       start = {
-        line = line-1,
-        character = col-1,
+        line = line - 1,
+        character = col - 1,
       }
     }
   }
@@ -228,9 +227,9 @@ function M.entry_to_file(entry, opts, force_uri)
   stripped = M.tilde_to_HOME(stripped)
   local isURI = stripped:match("^%a+://")
   -- Prepend cwd before constructing the URI (#341)
-  if cwd and #cwd>0 and not isURI and
-    not M.starts_with_separator(stripped) then
-    stripped = M.join({cwd, stripped})
+  if cwd and #cwd > 0 and not isURI and
+      not M.starts_with_separator(stripped) then
+    stripped = M.join({ cwd, stripped })
   end
   -- #336: force LSP jumps using 'vim.lsp.util.jump_to_location'
   -- so that LSP entries are added to the tag stack
@@ -240,7 +239,7 @@ function M.entry_to_file(entry, opts, force_uri)
   end
   -- entries from 'buffers' contain '[<bufnr>]'
   -- buffer placeholder always comes before the nbsp
-  local bufnr = idx>1 and entry:sub(1, idx):match("%[(%d+)") or nil
+  local bufnr = idx > 1 and entry:sub(1, idx):match("%[(%d+)") or nil
   if isURI and not bufnr then
     -- Issue #195, when using nvim-jdtls
     -- https://github.com/mfussenegger/nvim-jdtls
@@ -270,12 +269,12 @@ function M.entry_to_file(entry, opts, force_uri)
   -- called within previews/actions so it's not that bad (#453)
   if #s > 1 then
     local newfile = file
-    for i=2, #s do
+    for i = 2, #s do
       newfile = ("%s:%s"):format(newfile, s[i])
       if vim.loop.fs_stat(newfile) then
         file = newfile
-        line = s[i+1]
-        col = s[i+2]
+        line = s[i + 1]
+        col = s[i + 2]
       end
     end
   end
@@ -291,20 +290,20 @@ function M.entry_to_file(entry, opts, force_uri)
   end
   return {
     stripped = stripped,
-    bufnr = tonumber(bufnr),
-    bufname = bufnr and vim.api.nvim_buf_is_valid(tonumber(bufnr))
-          and vim.api.nvim_buf_get_name(tonumber(bufnr)),
+    bufnr    = tonumber(bufnr),
+    bufname  = bufnr and vim.api.nvim_buf_is_valid(tonumber(bufnr))
+        and vim.api.nvim_buf_get_name(tonumber(bufnr)),
     terminal = terminal,
-    path = file,
-    line = tonumber(line) or 1,
-    col  = tonumber(col) or 1,
+    path     = file,
+    line     = tonumber(line) or 1,
+    col      = tonumber(col) or 1,
   }
 end
 
 function M.git_cwd(cmd, opts)
   -- backward compat, used to be single cwd param
   local o = opts or {}
-  if type(o) == 'string' then
+  if type(o) == "string" then
     o = { cwd = o }
   end
   local git_args = {
@@ -312,7 +311,7 @@ function M.git_cwd(cmd, opts)
     { "git_dir", "--git-dir" },
     { "git_worktree", "--work-tree" },
   }
-  if type(cmd) == 'string' then
+  if type(cmd) == "string" then
     local args = ""
     for _, a in ipairs(git_args) do
       if o[a[1]] then
@@ -320,7 +319,7 @@ function M.git_cwd(cmd, opts)
         args = args .. ("%s %s "):format(a[2], vim.fn.shellescape(o[a[1]]))
       end
     end
-    cmd = cmd:gsub("^git ", "git " ..  args)
+    cmd = cmd:gsub("^git ", "git " .. args)
   else
     local idx = 2
     cmd = utils.tbl_deep_clone(cmd)
@@ -328,7 +327,7 @@ function M.git_cwd(cmd, opts)
       if o[a[1]] then
         o[a[1]] = vim.fn.expand(o[a[1]])
         table.insert(cmd, idx, a[2])
-        table.insert(cmd, idx+1, o[a[1]])
+        table.insert(cmd, idx + 1, o[a[1]])
         idx = idx + 2
       end
     end
@@ -337,17 +336,17 @@ function M.git_cwd(cmd, opts)
 end
 
 function M.is_git_repo(opts, noerr)
-    return not not M.git_root(opts, noerr)
+  return not not M.git_root(opts, noerr)
 end
 
 function M.git_root(opts, noerr)
-    local cmd = M.git_cwd({"git", "rev-parse", "--show-toplevel"}, opts)
-    local output, err = utils.io_systemlist(cmd)
-    if err ~= 0 then
-        if not noerr then utils.info(unpack(output)) end
-        return nil
-    end
-    return output[1]
+  local cmd = M.git_cwd({ "git", "rev-parse", "--show-toplevel" }, opts)
+  local output, err = utils.io_systemlist(cmd)
+  if err ~= 0 then
+    if not noerr then utils.info(unpack(output)) end
+    return nil
+  end
+  return output[1]
 end
 
 return M

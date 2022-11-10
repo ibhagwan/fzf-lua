@@ -3,7 +3,7 @@ local uv = vim.loop
 local M = {}
 
 -- path to current file
-local __FILE__ = debug.getinfo(1, 'S').source:gsub("^@", "")
+local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
 
 -- if loading this file as standalone ('--headless --clean')
 -- add the current folder to package.path so we can 'require'
@@ -13,8 +13,8 @@ local __FILE__ = debug.getinfo(1, 'S').source:gsub("^@", "")
 if not vim.g.fzf_lua_directory and #vim.api.nvim_list_uis() == 0 then
   -- prepend this folder first so our modules always get first
   -- priority over some unknown random module with the same name
-  package.path = (";%s/?.lua;"):format(vim.fn.fnamemodify(__FILE__, ':h'))
-    .. package.path
+  package.path = (";%s/?.lua;"):format(vim.fn.fnamemodify(__FILE__, ":h"))
+      .. package.path
 
   -- override require to remove the 'fzf-lua.' part
   -- since all files are going to be loaded locally
@@ -26,8 +26,8 @@ if not vim.g.fzf_lua_directory and #vim.api.nvim_list_uis() == 0 then
   -- NOTE: opted to delete the temp dir at the start due to:
   --   (1) spawn_stdio doesn't need a temp directory
   --   (2) avoid dangling temp dirs on process kill (i.e. live_grep)
-  local tmpdir = vim.fn.fnamemodify(vim.fn.tempname(), ':h')
-  if tmpdir and #tmpdir>0 then
+  local tmpdir = vim.fn.fnamemodify(vim.fn.tempname(), ":h")
+  if tmpdir and #tmpdir > 0 then
     vim.fn.delete(tmpdir, "rf")
     -- io.stdout:write("[DEBUG]: "..tmpdir.."\n")
   end
@@ -38,24 +38,24 @@ local string_byte = string.byte
 local string_sub = string.sub
 
 local function find_last_newline(str)
-  for i=#str,1,-1 do
+  for i = #str, 1, -1 do
     if string_byte(str, i) == 10 then
-        return i
+      return i
     end
   end
 end
 
 local function find_next_newline(str, start_idx)
-  for i=start_idx or 1,#str do
+  for i = start_idx or 1, #str do
     if string_byte(str, i) == 10 then
-        return i
+      return i
     end
   end
 end
 
 local function process_kill(pid, signal)
   if not pid or not tonumber(pid) then return false end
-  if type(uv.os_getpriority(pid)) == 'number' then
+  if type(uv.os_getpriority(pid)) == "number" then
     uv.kill(pid, signal or 9)
     return true
   end
@@ -67,10 +67,10 @@ M.process_kill = process_kill
 local function coroutine_callback(fn)
   local co = coroutine.running()
   local callback = function(...)
-    if coroutine.status(co) == 'suspended' then
+    if coroutine.status(co) == "suspended" then
       coroutine.resume(co, ...)
     else
-      local pid = unpack({...})
+      local pid = unpack({ ... })
       process_kill(pid)
     end
   end
@@ -80,7 +80,7 @@ end
 
 local function coroutinify(fn)
   return function(...)
-    local args = {...}
+    local args = { ... }
     return coroutine.wrap(function()
       return coroutine_callback(function(cb)
         table.insert(args, cb)
@@ -89,7 +89,6 @@ local function coroutinify(fn)
     end)()
   end
 end
-
 
 M.spawn = function(opts, fn_transform, fn_done)
   local output_pipe = uv.new_pipe(false)
@@ -121,8 +120,8 @@ M.spawn = function(opts, fn_transform, fn_done)
     output_pipe:read_stop()
     error_pipe:read_stop()
     output_pipe:close()
-    error_pipe :close()
-    if write_cb_count==0 then
+    error_pipe:close()
+    if write_cb_count == 0 then
       -- only close if all our uv.write
       -- calls are completed
       finish(code, signal, 1)
@@ -167,11 +166,11 @@ M.spawn = function(opts, fn_transform, fn_done)
     local start_idx = 1
     repeat
       local nl_idx = find_next_newline(data, start_idx)
-      local line = data:sub(start_idx, nl_idx-1)
+      local line = data:sub(start_idx, nl_idx - 1)
       -- makes no sense to feed lines
       -- bigger than 1024 bytes into fzf
       if #line > 1024 then
-        line = line:sub(1,1024)
+        line = line:sub(1, 1024)
         -- io.stderr:write(string.format("[Fzf-lua] long line detected (%db), "
         --   .. "consider adding '--max-columns=512' to ripgrep options: %s\n",
         --   #line, line:sub(1,256)))
@@ -184,12 +183,11 @@ M.spawn = function(opts, fn_transform, fn_done)
     -- table at once as opposed to calling 'write_cb' for
     -- every line after 'fn_transform'
     if #lines > 0 then
-      write_cb(table.concat(lines, "\n").."\n")
+      write_cb(table.concat(lines, "\n") .. "\n")
     end
   end
 
   local read_cb = function(err, data)
-
     if err then
       assert(not err)
       finish(130, 0, 4, pid)
@@ -224,7 +222,6 @@ M.spawn = function(opts, fn_transform, fn_done)
         process_lines(stripped_with_newline)
       end
     end
-
   end
 
   local err_cb = function(err, data)
@@ -245,7 +242,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     -- uv.spawn failed, error will be in 'pid'
     -- call once to output the error message
     -- and second time to signal EOF (data=nil)
-    err_cb(nil, pid.."\n")
+    err_cb(nil, pid .. "\n")
     err_cb(pid, nil)
   else
     output_pipe:read_start(read_cb)
@@ -257,16 +254,14 @@ M.async_spawn = coroutinify(M.spawn)
 
 
 M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess)
+  assert(not fn_transform or type(fn_transform) == "function")
 
-  assert(not fn_transform or type(fn_transform) == 'function')
-
-  if fn_preprocess and type(fn_preprocess) == 'function' then
+  if fn_preprocess and type(fn_preprocess) == "function" then
     -- run the preprocessing fn
     fn_preprocess(opts)
   end
 
   return function(_, fzf_cb, _)
-
     local function on_finish(_, _)
       fzf_cb(nil)
     end
@@ -284,23 +279,22 @@ M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess)
     end
 
     return M.spawn({
-        cwd = opts.cwd,
-        cmd = opts.cmd,
-        cb_finish = on_finish,
-        cb_write = on_write,
-        cb_pid = opts.pid_cb,
-      }, fn_transform)
+      cwd = opts.cwd,
+      cmd = opts.cmd,
+      cb_finish = on_finish,
+      cb_write = on_write,
+      cb_pid = opts.pid_cb,
+    }, fn_transform)
   end
 end
 
 M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
-
   local function load_fn(fn_str)
-    if type(fn_str) ~= 'string' then return end
+    if type(fn_str) ~= "string" then return end
     local fn_loaded = nil
     local fn = loadstring(fn_str) or load(fn_str)
     if fn then fn_loaded = fn() end
-    if type(fn_loaded) ~= 'function' then
+    if type(fn_loaded) ~= "function" then
       fn_loaded = nil
     end
     return fn_loaded
@@ -311,12 +305,12 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
   -- rendering issues on Mac (#316, #287) and Linux (#414)
   -- switch 'stderr' stream to 'line' buffering
   -- https://www.lua.org/manual/5.2/manual.html#pdf-file%3asetvbuf
-  io.stderr:setvbuf 'line'
+  io.stderr:setvbuf "line"
 
   -- redirect 'stderr' to 'stdout' on Macs by default
   -- only takes effect if 'opts.stderr' was not set
   if opts.stderr_to_stdout == nil and
-    vim.loop.os_uname().sysname == 'Darwin' then
+      vim.loop.os_uname().sysname == "Darwin" then
     opts.stderr_to_stdout = true
   end
 
@@ -328,7 +322,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
 
 
   if opts.debug then
-    io.stdout:write("[DEBUG]: "..opts.cmd.."\n")
+    io.stdout:write("[DEBUG]: " .. opts.cmd .. "\n")
   end
 
   local stderr, stdout = nil, nil
@@ -347,7 +341,7 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
   local function pipe_open(pipename)
     if not pipename then return end
     local fd = uv.fs_open(pipename, "w", -1)
-    if type(fd) ~= 'number' then
+    if type(fd) ~= "number" then
       exit(1, ("error opening '%s': %s\n"):format(pipename, fd))
     end
     local pipe = uv.new_pipe(false)
@@ -376,58 +370,58 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
       end)
   end
 
-  if type(opts.stderr) == 'string' then
+  if type(opts.stderr) == "string" then
     stderr = pipe_open(opts.stderr)
   end
-  if type(opts.stdout) == 'string' then
+  if type(opts.stdout) == "string" then
     stdout = pipe_open(opts.stdout)
   end
 
   local on_finish = opts.on_finish or
-    function(code)
-      pipe_close(stdout)
-      pipe_close(stderr)
-      exit(code)
-    end
+      function(code)
+        pipe_close(stdout)
+        pipe_close(stderr)
+        exit(code)
+      end
 
   local on_write = opts.on_write or
-    function(data, cb)
-      if stdout then
-        pipe_write(stdout, data, cb)
-      else
-        -- on success: rc=true, err=nil
-        -- on failure: rc=nil, err="Broken pipe"
-        -- cb with an err ends the process
-        local rc, err = io.stdout:write(data)
-        if not rc then
-          stderr_write(("io.stdout:write error: %s\n"):format(err))
-          cb(err or true)
+      function(data, cb)
+        if stdout then
+          pipe_write(stdout, data, cb)
         else
-          cb(nil)
+          -- on success: rc=true, err=nil
+          -- on failure: rc=nil, err="Broken pipe"
+          -- cb with an err ends the process
+          local rc, err = io.stdout:write(data)
+          if not rc then
+            stderr_write(("io.stdout:write error: %s\n"):format(err))
+            cb(err or true)
+          else
+            cb(nil)
+          end
         end
       end
-    end
 
   local on_err = opts.on_err or
-    function(data)
-      if stderr then
-        pipe_write(stderr, data)
-      elseif opts.stderr ~= false then
-        if opts.stderr_to_stdout then
-          io.stdout:write(data)
-        else
-          io.stderr:write(data)
+      function(data)
+        if stderr then
+          pipe_write(stderr, data)
+        elseif opts.stderr ~= false then
+          if opts.stderr_to_stdout then
+            io.stdout:write(data)
+          else
+            io.stderr:write(data)
+          end
         end
       end
-    end
 
   return M.spawn({
-      cwd = opts.cwd,
-      cmd = opts.cmd,
-      cb_finish = on_finish,
-      cb_write = on_write,
-      cb_err = on_err,
-    },
+    cwd = opts.cwd,
+    cmd = opts.cmd,
+    cb_finish = on_finish,
+    cb_write = on_write,
+    cb_err = on_err,
+  },
     fn_transform and function(x)
       return fn_transform(x, opts)
     end)
@@ -458,8 +452,8 @@ M.shellescape = function(s)
       -- modified string without the multival # of changes
       -- otherwise the number will be sent to shellescape
       -- as {special} triggering an escape for ! % and #
-      ret = vim.fn.shellescape(({s:gsub([[']], [["]])})[1])
-      ret = [["]] .. ret:gsub([["]], [[']]):sub(2, #ret-1) .. [["]]
+      ret = vim.fn.shellescape(({ s:gsub([[']], [["]]) })[1])
+      ret = [["]] .. ret:gsub([["]], [[']]):sub(2, #ret - 1) .. [["]]
     else
       ret = vim.fn.shellescape(s)
     end
@@ -469,12 +463,12 @@ M.shellescape = function(s)
 end
 
 M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
-  assert(opts and type(opts) == 'string')
-  assert(not fn_transform or type(fn_transform) == 'string')
+  assert(opts and type(opts) == "string")
+  assert(not fn_transform or type(fn_transform) == "string")
   local nvim_bin = vim.v.progpath
   local call_args = opts
   for _, fn in ipairs({ fn_transform, fn_preprocess }) do
-    if type(fn) == 'string' then
+    if type(fn) == "string" then
       call_args = ("%s,[[%s]]"):format(call_args, fn)
     end
   end

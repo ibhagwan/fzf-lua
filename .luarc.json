@@ -1,0 +1,39 @@
+{
+    "runtime.version": "LuaJIT",
+    "diagnostics": {
+        "enable": true,
+        "globals": [
+            "vim",
+            "describe",
+            "pending",
+            "it",
+            "before_each",
+            "after_each",
+        ],
+        "neededFileStatus": {
+            "codestyle-check": "Any"
+        },
+        "disable": [
+            "need-check-nil",
+            "missing-parameter",
+            "cast-local-type",
+        ],
+    },
+    "workspace": {
+        "library": [
+            "runtime/lua",
+        ],
+        "checkThirdParty": false,
+        "maxPreload": 2000,
+        "preloadFileSize": 1000,
+        "ignoreDir": [
+            "tests/",
+        ],
+    },
+    "type": {
+        "weakNilCheck": true,
+        "weakUnionCheck": true,
+        "castNumberToInteger": true,
+    },
+    "telemetry.enable": false
+}

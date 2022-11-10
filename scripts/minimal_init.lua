@@ -1,6 +1,8 @@
 -- Download this file and run `nvim -u /path/to/minimal_init.lua` or exec directly with:
--- nvim -u <((echo "lua << EOF") && (curl -s https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/scripts/minimal_init.lua) && (echo "EOF"))
-if vim.api.nvim_call_function('has', {'nvim-0.5'}) ~= 1 then
+-- nvim -u <((echo "lua << EOF") && \
+--  (curl -s https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/scripts/minimal_init.lua) && \
+--  (echo "EOF"))
+if vim.api.nvim_call_function("has", { "nvim-0.5" }) ~= 1 then
   vim.api.nvim_command('echohl WarningMsg | echom "Fzf-lua requires neovim > v0.5 | echohl None"')
   return
 end
@@ -18,7 +20,7 @@ end
 if not res then
   print("Downloading packer.nvim...\n")
   vim.fn.system({
-    "git", "clone", '--depth', '1',
+    "git", "clone", "--depth", "1",
     "https://github.com/wbthomason/packer.nvim",
     install_path,
   })
@@ -35,12 +37,12 @@ end
 
 packer.startup({
   function(use)
-    use { 'wbthomason/packer.nvim', opt = true }
-    use { 'ibhagwan/fzf-lua',
+    use { "wbthomason/packer.nvim", opt = true }
+    use { "ibhagwan/fzf-lua",
       setup = [[ vim.api.nvim_set_keymap('n', '<C-p>',
         '<Cmd>lua require"fzf-lua".files()<CR>', {}) ]],
       config = 'require"fzf-lua".setup({})',
-      event = 'VimEnter',
+      event = "VimEnter",
       opt = true,
     }
   end,
@@ -49,7 +51,7 @@ packer.startup({
 })
 
 packer.on_compile_done = function()
-  packer.loader('fzf-lua')
+  packer.loader("fzf-lua")
 end
 
 if not vim.loop.fs_stat(packer.config.compile_path) then

@@ -5,7 +5,6 @@ local config = require "fzf-lua.config"
 local M = {}
 
 M.manpages = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.manpages)
   if not opts then return end
 
@@ -16,7 +15,7 @@ M.manpages = function(opts)
       utils.ansi_codes.magenta(man), desc)
   end
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(opts.cmd, opts)
 end

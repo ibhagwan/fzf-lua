@@ -8,15 +8,14 @@ local make_entry = require "fzf-lua.make_entry"
 local M = {}
 
 M.commands = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.commands)
   if not opts then return end
 
   local global_commands = vim.api.nvim_get_commands {}
   local buf_commands = vim.api.nvim_buf_get_commands(0, {})
-  local commands = vim.tbl_extend('force', {}, global_commands, buf_commands)
+  local commands = vim.tbl_extend("force", {}, global_commands, buf_commands)
 
-  local prev_act = shell.action(function (args)
+  local prev_act = shell.action(function(args)
     local cmd = args[1]
     if commands[cmd] then
       cmd = vim.inspect(commands[cmd])
@@ -30,22 +29,20 @@ M.commands = function(opts)
   end
 
   for k, v in pairs(buf_commands) do
-    if type(v) == 'table' then
+    if type(v) == "table" then
       table.insert(entries, utils.ansi_codes.green(k))
     end
   end
 
-  table.sort(entries, function(a, b) return a<b end)
+  table.sort(entries, function(a, b) return a < b end)
 
-  opts.fzf_opts['--no-multi'] = ''
-  opts.fzf_opts['--preview'] = prev_act
+  opts.fzf_opts["--no-multi"] = ""
+  opts.fzf_opts["--preview"] = prev_act
 
   core.fzf_exec(entries, opts)
-
 end
 
 local history = function(opts, str)
-
   local history = vim.fn.execute("history " .. str)
   history = vim.split(history, "\n")
 
@@ -56,7 +53,7 @@ local history = function(opts, str)
     table.insert(entries, string.sub(item, finish + 1))
   end
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end
@@ -64,21 +61,21 @@ end
 local arg_header = function(sel_key, edit_key, text)
   sel_key = utils.ansi_codes.yellow(sel_key)
   edit_key = utils.ansi_codes.yellow(edit_key)
-  return vim.fn.shellescape((':: %s to %s, %s to edit')
+  return vim.fn.shellescape((":: %s to %s, %s to edit")
     :format(sel_key, text, edit_key))
 end
 
 M.command_history = function(opts)
   opts = config.normalize_opts(opts, config.globals.command_history)
   if not opts then return end
-  opts.fzf_opts['--header'] = arg_header("<CR>", "<Ctrl-e>", "execute")
+  opts.fzf_opts["--header"] = arg_header("<CR>", "<Ctrl-e>", "execute")
   history(opts, "cmd")
 end
 
 M.search_history = function(opts)
   opts = config.normalize_opts(opts, config.globals.search_history)
   if not opts then return end
-  opts.fzf_opts['--header'] = arg_header("<CR>", "<Ctrl-e>", "search")
+  opts.fzf_opts["--header"] = arg_header("<CR>", "<Ctrl-e>", "search")
   history(opts, "search")
 end
 
@@ -97,7 +94,7 @@ M.jumps = function(opts)
   jumps = vim.split(jumps, "\n")
 
   local entries = {}
-  for i = #jumps-1, 3, -1 do
+  for i = #jumps - 1, 3, -1 do
     local jump, line, col, text = jumps[i]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
     table.insert(entries, string.format("%-15s %-15s %-15s %s",
       utils.ansi_codes.yellow(jump),
@@ -106,7 +103,7 @@ M.jumps = function(opts)
       text))
   end
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end
@@ -155,16 +152,16 @@ M.tagstack = function(opts)
       utils.nbsp,
       -- utils.ansi_codes.yellow(tostring(tag.bufnr)),
       -- utils.nbsp,
-      buficon or '',
-      buficon and utils.nbsp or '',
-      utils.ansi_codes.magenta(#bufname>0 and bufname or "[No Name]"),
+      buficon or "",
+      buficon and utils.nbsp or "",
+      utils.ansi_codes.magenta(#bufname > 0 and bufname or "[No Name]"),
       utils.ansi_codes.green(tostring(tag.lnum)),
       tag.col,
-      utils.ansi_codes.red("["..tag.tagname.."]"),
+      utils.ansi_codes.red("[" .. tag.tagname .. "]"),
       tag.text))
   end
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end
@@ -201,16 +198,15 @@ M.marks = function(opts)
       text))
   end
 
-  table.sort(entries, function(a, b) return a<b end)
+  table.sort(entries, function(a, b) return a < b end)
 
   -- opts.fzf_opts['--preview'] = prev_act
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end
 
 M.registers = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.registers)
   if not opts then return end
 
@@ -227,18 +223,18 @@ M.registers = function(opts)
   local function register_escape_special(reg, nl)
     if not reg then return end
     local gsub_map = {
-      ["\3"]  = "^C",   -- <C-c>
-      ["\27"] = "^[",   -- <Esc>
-      ["\18"] = "^R",   -- <C-r>
+      ["\3"]  = "^C", -- <C-c>
+      ["\27"] = "^[", -- <Esc>
+      ["\18"] = "^R", -- <C-r>
     }
     for k, v in pairs(gsub_map) do
       reg = reg:gsub(k, utils.ansi_codes.magenta(v))
     end
     return not nl and reg or
-      reg:gsub("\n", utils.ansi_codes.magenta("\\n"))
+        reg:gsub("\n", utils.ansi_codes.magenta("\\n"))
   end
 
-  local prev_act = shell.action(function (args)
+  local prev_act = shell.action(function(args)
     local r = args[1]:match("%[(.*)%] ")
     local _, contents = pcall(vim.fn.getreg, r)
     return contents and register_escape_special(contents) or args[1]
@@ -257,14 +253,13 @@ M.registers = function(opts)
     end
   end
 
-  opts.fzf_opts['--no-multi'] = ''
-  opts.fzf_opts['--preview'] = prev_act
+  opts.fzf_opts["--no-multi"] = ""
+  opts.fzf_opts["--preview"] = prev_act
 
   core.fzf_exec(entries, opts)
 end
 
 M.keymaps = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.keymaps)
   if not opts then return end
 
@@ -278,11 +273,11 @@ M.keymaps = function(opts)
   local add_keymap = function(keymap)
     -- hijack fields
     local keymap_desc = keymap.desc or keymap.rhs
-    if not keymap_desc or #keymap_desc==0 then return end
+    if not keymap_desc or #keymap_desc == 0 then return end
     keymap.str = string.format("%s │ %-40s │ %s",
       utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
       keymap.lhs:gsub("%s", "<Space>"),
-      keymap_desc or '')
+      keymap_desc or "")
 
     local k = string.format("[%s:%s:%s]",
       keymap.buffer, keymap.mode, keymap.lhs)
@@ -305,13 +300,12 @@ M.keymaps = function(opts)
     table.insert(entries, v.str)
   end
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end
 
 M.spell_suggest = function(opts)
-
   -- if not vim.wo.spell then return false end
   opts = config.normalize_opts(opts, config.globals.spell_suggest)
   if not opts then return end
@@ -321,43 +315,37 @@ M.spell_suggest = function(opts)
 
   if vim.tbl_isempty(entries) then return end
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
-
 end
 
 M.filetypes = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.filetypes)
   if not opts then return end
 
-  local entries = vim.fn.getcompletion('', 'filetype')
+  local entries = vim.fn.getcompletion("", "filetype")
   if vim.tbl_isempty(entries) then return end
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
-
 end
 
 M.packadd = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.packadd)
   if not opts then return end
 
-  local entries = vim.fn.getcompletion('', 'packadd')
+  local entries = vim.fn.getcompletion("", "packadd")
 
   if vim.tbl_isempty(entries) then return end
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
-
 end
 
 M.menus = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.menus)
   if not opts then return end
 
@@ -377,19 +365,18 @@ M.menus = function(opts)
   end
 
   local entries = vim.tbl_flatten(vim.tbl_map(
-    function (x)
+    function(x)
       return gen_menu_entries(nil, x)
-    end, vim.fn.menu_get('')))
+    end, vim.fn.menu_get("")))
 
   if vim.tbl_isempty(entries) then
     utils.info("No menus available")
     return
   end
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
-
 end
 
 return M

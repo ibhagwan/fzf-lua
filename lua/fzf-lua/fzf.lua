@@ -14,7 +14,7 @@ local M = {}
 -- https://github.com/neovim/neovim/pull/11284
 local function tempname()
   local tmpname = vim.fn.tempname()
-  local parent = vim.fn.fnamemodify(tmpname, ':h')
+  local parent = vim.fn.fnamemodify(tmpname, ":h")
   -- parent must exist for `mkfifo` to succeed
   -- if the neovim temp dir was deleted or the
   -- tempname already exists we use 'os.tmpname'
@@ -37,7 +37,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
 
   if not opts then opts = {} end
   local cwd = opts.fzf_cwd or opts.cwd
-  local cmd = opts.fzf_bin or 'fzf'
+  local cmd = opts.fzf_bin or "fzf"
   local fifotmpname = tempname()
   local outputtmpname = tempname()
 
@@ -52,9 +52,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   if opts.fzf_cli_args then cmd = cmd .. " " .. opts.fzf_cli_args end
 
   if contents then
-    if type(contents) == "string" and #contents>0 then
+    if type(contents) == "string" and #contents > 0 then
       if opts.silent_fail ~= false then
-          contents = ("%s || true"):format(contents)
+        contents = ("%s || true"):format(contents)
       end
       FZF_DEFAULT_COMMAND = contents
     else
@@ -72,7 +72,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- We use tbl for perf reasons, from ':help system':
   --  If {cmd} is a List it runs directly (no 'shell')
   --  If {cmd} is a String it runs in the 'shell'
-  vim.fn.system({"mkfifo", fifotmpname})
+  vim.fn.system({ "mkfifo", fifotmpname })
 
   local function finish(_)
     -- mark finish if once called
@@ -117,10 +117,11 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       end
       return false
     end
+
     if nl then
       return function(usrdata, cb)
         if not end_of_data(usrdata, cb) then
-          write_cb(tostring(usrdata).."\n", cb)
+          write_cb(tostring(usrdata) .. "\n", cb)
         end
       end
     else
@@ -170,16 +171,16 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   --
   -- As a workaround we map buffer <C-c> to <Esc> for the fzf buffer
   -- `vim.keymap.set` to no break compatibility with older neovim versions
-  vim.api.nvim_buf_set_keymap(0, '', '<C-c>', '<Esc>', { noremap = false })
-  vim.api.nvim_buf_set_keymap(0, 't', '<C-c>', '<Esc>', { noremap = false })
+  vim.api.nvim_buf_set_keymap(0, "", "<C-c>", "<Esc>", { noremap = false })
+  vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = false })
 
   local co = coroutine.running()
-  vim.fn.termopen({"sh", "-c", cmd}, {
+  vim.fn.termopen({ "sh", "-c", cmd }, {
     cwd = cwd,
     env = {
-      ['SHELL'] = 'sh',
-      ['FZF_DEFAULT_COMMAND'] = FZF_DEFAULT_COMMAND,
-      ['SKIM_DEFAULT_COMMAND'] = FZF_DEFAULT_COMMAND,
+      ["SHELL"] = "sh",
+      ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
+      ["SKIM_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
     },
     on_exit = function(_, rc, _)
       local output = {}
@@ -197,7 +198,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       coroutine.resume(co, output, rc)
     end
   })
-  vim.cmd[[set ft=fzf]]
+  vim.cmd [[set ft=fzf]]
 
   -- terminal behavior seem to have changed after the introduction
   -- of 'nt' mode (terminal-normal mode) which is included in 0.6
@@ -214,12 +215,12 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- instead.
   -- this "retires" 'actions.ensure_insert_mode' and solves the
   -- issue of calling an fzf-lua mapping from insert mode (#429)
-  if vim.fn.has('nvim-0.6') == 1 then
+  if vim.fn.has("nvim-0.6") == 1 then
     vim.cmd([[noautocmd lua vim.api.nvim_feedkeys(]]
       .. [[vim.api.nvim_replace_termcodes("<Esc>i", true, false, true)]]
       .. [[, 'n', true)]])
   else
-    vim.cmd[[startinsert]]
+    vim.cmd [[startinsert]]
   end
 
   if not contents or type(contents) == "string" then
@@ -238,7 +239,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   if contents then
     if type(contents) == "table" then
       if not vim.tbl_isempty(contents) then
-        write_cb(vim.tbl_map(function(x) return x.."\n" end, contents))
+        write_cb(vim.tbl_map(function(x) return x .. "\n" end, contents))
       end
       finish(4)
     else
@@ -247,7 +248,6 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end
 
   ::wait_for_fzf::
-
   return coroutine.yield()
 end
 

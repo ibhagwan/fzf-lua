@@ -16,7 +16,7 @@ M.expect = function(actions)
     end
   end
   if #keys > 0 then
-    return string.format("--expect=%s", table.concat(keys, ','))
+    return string.format("--expect=%s", table.concat(keys, ","))
   end
   return nil
 end
@@ -35,7 +35,7 @@ M.normalize_selected = function(actions, selected)
   -- so it can always be enumerated safely
   if not actions or not selected then return end
   local action = _default_action
-  if utils.tbl_length(actions)>1 or not actions[_default_action] then
+  if utils.tbl_length(actions) > 1 or not actions[_default_action] then
     -- keybind should be in item #1
     -- default keybind is an empty string
     -- so we leave that as "default"
@@ -57,13 +57,13 @@ M.act = function(actions, selected, opts)
   if not actions or not selected then return end
   local keybind, entries = M.normalize_selected(actions, selected)
   local action = actions[keybind]
-  if type(action) == 'table' then
+  if type(action) == "table" then
     for _, f in ipairs(action) do
       f(entries, opts)
     end
-  elseif type(action) == 'function' then
+  elseif type(action) == "function" then
     action(entries, opts)
-  elseif type(action) == 'string' then
+  elseif type(action) == "string" then
     vim.cmd(action)
   elseif keybind ~= _default_action then
     utils.warn(("unsupported action: '%s', type:%s")
@@ -93,15 +93,15 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     entry.ctag = opts._ctag and path.entry_to_ctag(selected[i])
     local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
     if not path.starts_with_separator(fullpath) then
-      fullpath = path.join({opts.cwd or vim.loop.cwd(), fullpath})
+      fullpath = path.join({ opts.cwd or vim.loop.cwd(), fullpath })
     end
-    if vimcmd == 'e'
+    if vimcmd == "e"
         and curbuf ~= fullpath
         and not vim.o.hidden and
         utils.buffer_is_dirty(nil, true, true) then
-        -- warn the user when trying to switch from a dirty buffer
-        -- when `:set nohidden`
-        return
+      -- warn the user when trying to switch from a dirty buffer
+      -- when `:set nohidden`
+      return
     end
     -- add current location to jumplist
     if not is_term then vim.cmd("normal! m`") end
@@ -110,7 +110,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
       if entry.path then
         -- do not run ':<cmd> <file>' for uri entries (#341)
         vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
-      elseif vimcmd ~= 'e' then
+      elseif vimcmd ~= "e" then
         -- uri entries only execute new buffers (new|vnew|tabnew)
         vim.cmd(vimcmd)
       end
@@ -119,13 +119,13 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     if entry.uri then
       vim.lsp.util.jump_to_location(entry, "utf-16")
     elseif entry.ctag then
-      vim.api.nvim_win_set_cursor(0, {1, 0})
+      vim.api.nvim_win_set_cursor(0, { 1, 0 })
       vim.fn.search(entry.ctag, "W")
-    elseif entry.line>1 or entry.col>1 then
+    elseif entry.line > 1 or entry.col > 1 then
       -- make sure we have valid column
       -- 'nvim-dap' for example sets columns to 0
-      entry.col = entry.col and entry.col>0 and entry.col or 1
-      vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+      entry.col = entry.col and entry.col > 0 and entry.col or 1
+      vim.api.nvim_win_set_cursor(0, { tonumber(entry.line), tonumber(entry.col) - 1 })
     end
     if not is_term and not opts.no_action_zz then vim.cmd("norm! zvzz") end
   end
@@ -171,10 +171,10 @@ local sel_to_qf = function(selected, opts, is_loclist)
   end
   if is_loclist then
     vim.fn.setloclist(0, qf_list)
-    vim.cmd 'lopen'
+    vim.cmd "lopen"
   else
     vim.fn.setqflist(qf_list)
-    vim.cmd 'copen'
+    vim.cmd "copen"
   end
 end
 
@@ -187,7 +187,7 @@ M.file_sel_to_ll = function(selected, opts)
 end
 
 M.file_edit_or_qf = function(selected, opts)
-  if #selected>1 then
+  if #selected > 1 then
     return M.file_sel_to_qf(selected, opts)
   else
     return M.file_edit(selected, opts)
@@ -199,7 +199,7 @@ M.file_switch = function(selected, opts)
   local entry = path.entry_to_file(selected[1])
   local fullpath = entry.path
   if not path.starts_with_separator(fullpath) then
-    fullpath = path.join({opts.cwd or vim.loop.cwd(), fullpath})
+    fullpath = path.join({ opts.cwd or vim.loop.cwd(), fullpath })
   end
   for _, b in ipairs(vim.api.nvim_list_bufs()) do
     local bname = vim.api.nvim_buf_get_name(b)
@@ -213,8 +213,8 @@ M.file_switch = function(selected, opts)
   if not is_term then vim.cmd("normal! m`") end
   local winid = utils.winid_from_tab_buf(0, bufnr)
   if winid then vim.api.nvim_set_current_win(winid) end
-  if entry.line>1 or entry.col>1 then
-    vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+  if entry.line > 1 or entry.col > 1 then
+    vim.api.nvim_win_set_cursor(0, { tonumber(entry.line), tonumber(entry.col) - 1 })
   end
   if not is_term and not opts.no_action_zz then vim.cmd("norm! zvzz") end
   return true
@@ -233,11 +233,11 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
   for i = 1, #selected do
     local entry = path.entry_to_file(selected[i], opts)
     if not entry.bufnr then return end
-    assert(type(entry.bufnr) == 'number')
-    if vimcmd == 'b'
-      and curbuf ~= entry.bufnr
-      and not vim.o.hidden and
-      utils.buffer_is_dirty(nil, true, true) then
+    assert(type(entry.bufnr) == "number")
+    if vimcmd == "b"
+        and curbuf ~= entry.bufnr
+        and not vim.o.hidden and
+        utils.buffer_is_dirty(nil, true, true) then
       -- warn the user when trying to switch from a dirty buffer
       -- when `:set nohidden`
       return
@@ -254,8 +254,8 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
     if vimcmd ~= "bd" then
       if curbuf ~= entry.bufnr or lnum ~= entry.line then
         -- make sure we have valid column
-        entry.col = entry.col and entry.col>0 and entry.col or 1
-        vim.api.nvim_win_set_cursor(0, {tonumber(entry.line), tonumber(entry.col)-1})
+        entry.col = entry.col and entry.col > 0 and entry.col or 1
+        vim.api.nvim_win_set_cursor(0, { tonumber(entry.line), tonumber(entry.col) - 1 })
       end
       if not is_term and not opts.no_action_zz then vim.cmd("norm! zvzz") end
     end
@@ -322,7 +322,7 @@ M.buf_sel_to_ll = function(selected, opts)
 end
 
 M.buf_edit_or_qf = function(selected, opts)
-  if #selected>1 then
+  if #selected > 1 then
     return M.buf_sel_to_qf(selected, opts)
   else
     return M.buf_edit(selected, opts)
@@ -414,14 +414,14 @@ M.goto_jump = function(selected, opts)
   else
     local _, lnum, col, filepath = selected[1]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
     local ok, res = pcall(vim.fn.expand, filepath)
-    if not ok then filepath = ''
+    if not ok then filepath = ""
     else filepath = res end
     if not filepath or not vim.loop.fs_stat(filepath) then
       -- no accessible file
       -- jump is in current
       filepath = vim.api.nvim_buf_get_name(0)
     end
-    local entry = ("%s:%d:%d:"):format(filepath, tonumber(lnum), tonumber(col)+1)
+    local entry = ("%s:%d:%d:"):format(filepath, tonumber(lnum), tonumber(col) + 1)
     M.file_edit({ entry }, opts)
   end
 end
@@ -433,7 +433,7 @@ M.spell_apply = function(selected)
 end
 
 M.set_filetype = function(selected)
-  vim.api.nvim_buf_set_option(0, 'filetype', selected[1])
+  vim.api.nvim_buf_set_option(0, "filetype", selected[1])
 end
 
 M.packadd = function(selected)
@@ -486,11 +486,11 @@ end
 
 
 M.git_switch = function(selected, opts)
-  local cmd = path.git_cwd({"git", "checkout"}, opts)
+  local cmd = path.git_cwd({ "git", "checkout" }, opts)
   local git_ver = utils.git_version()
   -- git switch was added with git version 2.23
   if git_ver and git_ver >= 2.23 then
-    cmd = path.git_cwd({"git", "switch"}, opts)
+    cmd = path.git_cwd({ "git", "switch" }, opts)
   end
   -- remove anything past space
   local branch = selected[1]:match("[^ ]+")
@@ -510,12 +510,12 @@ M.git_switch = function(selected, opts)
 end
 
 M.git_checkout = function(selected, opts)
-  local cmd_checkout = path.git_cwd({"git", "checkout"}, opts)
-  local cmd_cur_commit = path.git_cwd({"git", "rev-parse", "--short HEAD"}, opts)
+  local cmd_checkout = path.git_cwd({ "git", "checkout" }, opts)
+  local cmd_cur_commit = path.git_cwd({ "git", "rev-parse", "--short HEAD" }, opts)
   local commit_hash = selected[1]:match("[^ ]+")
   if utils.input("Checkout commit " .. commit_hash .. "? [y/n] ") == "y" then
     local current_commit = utils.io_systemlist(cmd_cur_commit)
-    if(commit_hash == current_commit) then return end
+    if (commit_hash == current_commit) then return end
     table.insert(cmd_checkout, commit_hash)
     local output = utils.io_systemlist(cmd_checkout)
     if utils.shell_error() then
@@ -535,35 +535,35 @@ local git_exec = function(selected, opts, cmd)
     local output = utils.io_systemlist(_cmd)
     if utils.shell_error() then
       utils.err(unpack(output))
-    -- elseif not vim.tbl_isempty(output) then
-    --   utils.info(unpack(output))
+      -- elseif not vim.tbl_isempty(output) then
+      --   utils.info(unpack(output))
     end
   end
 end
 
 M.git_stage = function(selected, opts)
-  local cmd = path.git_cwd({"git", "add", "--"}, opts)
+  local cmd = path.git_cwd({ "git", "add", "--" }, opts)
   git_exec(selected, opts, cmd)
 end
 
 M.git_unstage = function(selected, opts)
-  local cmd = path.git_cwd({"git", "reset", "--"}, opts)
+  local cmd = path.git_cwd({ "git", "reset", "--" }, opts)
   git_exec(selected, opts, cmd)
 end
 
 M.git_reset = function(selected, opts)
-  local cmd = path.git_cwd({"git", "checkout", "HEAD", "--"}, opts)
+  local cmd = path.git_cwd({ "git", "checkout", "HEAD", "--" }, opts)
   git_exec(selected, opts, cmd)
 end
 
 M.git_stash_drop = function(selected, opts)
-  local cmd = path.git_cwd({"git", "stash", "drop"}, opts)
+  local cmd = path.git_cwd({ "git", "stash", "drop" }, opts)
   git_exec(selected, opts, cmd)
 end
 
 M.git_stash_pop = function(selected, opts)
   if utils.input("Pop " .. #selected .. " stash(es)? [y/n] ") == "y" then
-    local cmd = path.git_cwd({"git", "stash", "pop"}, opts)
+    local cmd = path.git_cwd({ "git", "stash", "pop" }, opts)
     git_exec(selected, opts, cmd)
     vim.cmd("e!")
   end
@@ -571,14 +571,14 @@ end
 
 M.git_stash_apply = function(selected, opts)
   if utils.input("Apply " .. #selected .. " stash(es)? [y/n] ") == "y" then
-    local cmd = path.git_cwd({"git", "stash", "apply"}, opts)
+    local cmd = path.git_cwd({ "git", "stash", "apply" }, opts)
     git_exec(selected, opts, cmd)
     vim.cmd("e!")
   end
 end
 
 M.git_buf_edit = function(selected, opts)
-  local cmd = path.git_cwd({"git", "show"}, opts)
+  local cmd = path.git_cwd({ "git", "show" }, opts)
   local git_root = path.git_root(opts, true)
   local win = vim.api.nvim_get_current_win()
   local buffer_filetype = vim.bo.filetype
@@ -587,28 +587,28 @@ M.git_buf_edit = function(selected, opts)
   table.insert(cmd, commit_hash .. ":" .. file)
   local git_file_contents = utils.io_systemlist(cmd)
   local buf = vim.api.nvim_create_buf(true, true)
-  local file_name = string.gsub(file,"$","[" .. commit_hash .. "]")
-  vim.api.nvim_buf_set_lines(buf,0,0,true,git_file_contents)
-  vim.api.nvim_buf_set_name(buf,file_name)
-  vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile')
-  vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-  vim.api.nvim_buf_set_option(buf, 'filetype', buffer_filetype)
-  vim.api.nvim_buf_set_option(buf, 'modifiable', false)
+  local file_name = string.gsub(file, "$", "[" .. commit_hash .. "]")
+  vim.api.nvim_buf_set_lines(buf, 0, 0, true, git_file_contents)
+  vim.api.nvim_buf_set_name(buf, file_name)
+  vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+  vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+  vim.api.nvim_buf_set_option(buf, "filetype", buffer_filetype)
+  vim.api.nvim_buf_set_option(buf, "modifiable", false)
   vim.api.nvim_win_set_buf(win, buf)
 end
 
 M.git_buf_tabedit = function(selected, opts)
-  vim.cmd('tab split')
+  vim.cmd("tab split")
   M.git_buf_edit(selected, opts)
 end
 
 M.git_buf_split = function(selected, opts)
-  vim.cmd('split')
+  vim.cmd("split")
   M.git_buf_edit(selected, opts)
 end
 
 M.git_buf_vsplit = function(selected, opts)
-  vim.cmd('vsplit')
+  vim.cmd("vsplit")
   M.git_buf_edit(selected, opts)
 end
 
@@ -623,26 +623,25 @@ M.arg_del = function(selected, opts)
 end
 
 M.grep_lgrep = function(_, opts)
-
   -- 'MODULE' is set on 'grep' and 'live_grep' calls
   assert(opts.__MODULE__
-    and type(opts.__MODULE__.grep) == 'function'
-    or type(opts.__MODULE__.live_grep) == 'function')
+    and type(opts.__MODULE__.grep) == "function"
+    or type(opts.__MODULE__.live_grep) == "function")
 
   local o = vim.tbl_extend("keep", {
-      search = false,
-      resume = true,
-      resume_search_default = '',
-      rg_glob = opts.rg_glob or opts.__call_opts.rg_glob,
-      -- globs always require command processing with 'multiprocess'
-      requires_processing = opts.rg_glob or opts.__call_opts.rg_glob,
-      -- grep has both search string and query prompt, when switching
-      -- from live_grep to grep we want to restore both:
-      --   * we save the last query prompt when exiting grep
-      --   * we set query to the last known when entering grep
-      __prev_query = not opts.fn_reload and opts.__resume_data.last_query,
-      query = opts.fn_reload and opts.__call_opts.__prev_query,
-    }, opts.__call_opts or {})
+    search = false,
+    resume = true,
+    resume_search_default = "",
+    rg_glob = opts.rg_glob or opts.__call_opts.rg_glob,
+    -- globs always require command processing with 'multiprocess'
+    requires_processing = opts.rg_glob or opts.__call_opts.rg_glob,
+    -- grep has both search string and query prompt, when switching
+    -- from live_grep to grep we want to restore both:
+    --   * we save the last query prompt when exiting grep
+    --   * we set query to the last known when entering grep
+    __prev_query = not opts.fn_reload and opts.__resume_data.last_query,
+    query = opts.fn_reload and opts.__call_opts.__prev_query,
+  }, opts.__call_opts or {})
 
   -- 'fn_reload' is set only on 'live_grep' calls
   if opts.fn_reload then
@@ -653,21 +652,20 @@ M.grep_lgrep = function(_, opts)
 end
 
 M.sym_lsym = function(_, opts)
-
   assert(opts.__MODULE__
-    and type(opts.__MODULE__.workspace_symbols) == 'function'
-    or type(opts.__MODULE__.live_workspace_symbols) == 'function')
+    and type(opts.__MODULE__.workspace_symbols) == "function"
+    or type(opts.__MODULE__.live_workspace_symbols) == "function")
 
   local o = vim.tbl_extend("keep", {
-      resume = true,
-      lsp_query = false,
-      -- ws has both search string and query prompt, when
-      -- switching from live_ws to ws we want to restore both:
-      --   * we save the last query prompt when exiting ws
-      --   * we set query to the last known when entering ws
-      __prev_query = not opts.fn_reload and opts.__resume_data.last_query,
-      query = opts.fn_reload and opts.__call_opts.__prev_query,
-    }, opts.__call_opts or {})
+    resume = true,
+    lsp_query = false,
+    -- ws has both search string and query prompt, when
+    -- switching from live_ws to ws we want to restore both:
+    --   * we save the last query prompt when exiting ws
+    --   * we set query to the last known when entering ws
+    __prev_query = not opts.fn_reload and opts.__resume_data.last_query,
+    query = opts.fn_reload and opts.__call_opts.__prev_query,
+  }, opts.__call_opts or {})
 
   -- 'fn_reload' is set only on 'live_xxx' calls
   if opts.fn_reload then
@@ -678,24 +676,24 @@ M.sym_lsym = function(_, opts)
 end
 
 M.tmux_buf_set_reg = function(selected, opts)
-    local buf = selected[1]:match("^%[(.-)%]")
-      local data = vim.fn.system({'tmux', 'show-buffer', '-b', buf})
-      if not utils.shell_error() and data and #data>0 then
-      opts.register = opts.register or [["]]
-      local ok, err = pcall(vim.fn.setreg, opts.register, data)
-      if ok then
-        utils.info(string.format("%d characters copied into register %s",
-          #data, opts.register))
-      else
-        utils.err(string.format("setreg(%s) failed: %s", opts.register, err))
-      end
+  local buf = selected[1]:match("^%[(.-)%]")
+  local data = vim.fn.system({ "tmux", "show-buffer", "-b", buf })
+  if not utils.shell_error() and data and #data > 0 then
+    opts.register = opts.register or [["]]
+    local ok, err = pcall(vim.fn.setreg, opts.register, data)
+    if ok then
+      utils.info(string.format("%d characters copied into register %s",
+        #data, opts.register))
+    else
+      utils.err(string.format("setreg(%s) failed: %s", opts.register, err))
     end
+  end
 end
 
 M.paste_register = function(selected)
   local reg = selected[1]:match("%[(.-)%]")
   local ok, data = pcall(vim.fn.getreg, reg)
-  if ok and #data>0 then
+  if ok and #data > 0 then
     vim.api.nvim_paste(data, false, -1)
   end
 end

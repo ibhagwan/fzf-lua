@@ -8,28 +8,27 @@ local function get_current_colorscheme()
   if vim.g.colors_name then
     return vim.g.colors_name
   else
-    return 'default'
+    return "default"
   end
 end
 
 local M = {}
 
 M.colorschemes = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.colorschemes)
   if not opts then return end
 
 
   local current_colorscheme = get_current_colorscheme()
   local current_background = vim.o.background
-  local colors = vim.list_extend(opts.colors or {}, vim.fn.getcompletion('', 'color'))
+  local colors = vim.list_extend(opts.colors or {}, vim.fn.getcompletion("", "color"))
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   if opts.live_preview then
     -- must add ':nohidden' or fzf ignores the preview action
-    opts.fzf_opts['--preview-window'] = 'nohidden:right:0'
-    opts.preview = shell.raw_action(function (args)
+    opts.fzf_opts["--preview-window"] = "nohidden:right:0"
+    opts.preview = shell.raw_action(function(args)
       if opts.live_preview and args then
         local colorscheme = args[1]
         vim.cmd("colorscheme " .. colorscheme)
@@ -40,7 +39,7 @@ M.colorschemes = function(opts)
   opts.fn_selected = function(selected)
     -- reset color scheme if live_preview is enabled
     -- and nothing or non-default action was selected
-    if opts.live_preview and (not selected or #selected[1]>0) then
+    if opts.live_preview and (not selected or #selected[1] > 0) then
       vim.o.background = current_background
       vim.cmd("colorscheme " .. current_colorscheme)
       vim.o.background = current_background
@@ -56,17 +55,15 @@ M.colorschemes = function(opts)
   end
 
   core.fzf_exec(colors, opts)
-
 end
 
 M.highlights = function(opts)
   opts = config.normalize_opts(opts, config.globals.highlights)
   if not opts then return end
 
-  local contents = function (cb)
-
+  local contents = function(cb)
     local colormap = vim.api.nvim_get_color_map()
-    local highlights = vim.fn.getcompletion('', 'highlight')
+    local highlights = vim.fn.getcompletion("", "highlight")
 
     local function add_entry(hl, co)
       -- translate the highlight using ansi escape sequences
@@ -91,7 +88,7 @@ M.highlights = function(opts)
       end)
     end
 
-    local coroutinify = (opts.coroutinify==nil) and false or opts.coroutinify
+    local coroutinify = (opts.coroutinify == nil) and false or opts.coroutinify
 
     if not coroutinify then
       populate(highlights, add_entry)
@@ -111,10 +108,9 @@ M.highlights = function(opts)
         coroutine.yield()
       end)()
     end
-
   end
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(contents, opts)
 end

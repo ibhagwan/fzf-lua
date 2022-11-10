@@ -5,7 +5,7 @@ do
   -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
   -- pluging '.vim' initialization sometimes doesn't get called
   local path = require "fzf-lua.path"
-  local currFile = debug.getinfo(1, 'S').source:gsub("^@", "")
+  local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
   vim.g.fzf_lua_directory = path.parent(currFile)
 
   -- Manually source the vimL script containing ':FzfLua' cmd
@@ -33,21 +33,20 @@ end
 local M = {}
 
 function M.setup_highlights()
-
   local highlights = {
-    FzfLuaNormal = { 'winopts.hl.normal', "Normal" },
-    FzfLuaBorder = { 'winopts.hl.border', "Normal" },
-    FzfLuaCursor = { 'winopts.hl.cursor', "Cursor" },
-    FzfLuaCursorLine = { 'winopts.hl.cursorline', "CursorLine" },
-    FzfLuaCursorLineNr = { 'winopts.hl.cursornr', "CursorLineNr" },
-    FzfLuaSearch = { 'winopts.hl.search', "IncSearch" },
-    FzfLuaTitle = { 'winopts.hl.title', "FzfLuaNormal" },
-    FzfLuaScrollBorderEmpty = { 'winopts.hl.scrollborder_e', "FzfLuaBorder" },
-    FzfLuaScrollBorderFull  = { 'winopts.hl.scrollborder_f', "FzfLuaBorder" },
-    FzfLuaScrollFloatEmpty  = { 'winopts.hl.scrollfloat_e', "PmenuSbar" },
-    FzfLuaScrollFloatFull   = { 'winopts.hl.scrollfloat_f', "PmenuThumb" },
-    FzfLuaHelpNormal = { 'winopts.hl.help_normal', "FzfLuaNormal" },
-    FzfLuaHelpBorder = { 'winopts.hl.help_border', "FzfLuaBorder" },
+    FzfLuaNormal            = { "winopts.hl.normal", "Normal" },
+    FzfLuaBorder            = { "winopts.hl.border", "Normal" },
+    FzfLuaCursor            = { "winopts.hl.cursor", "Cursor" },
+    FzfLuaCursorLine        = { "winopts.hl.cursorline", "CursorLine" },
+    FzfLuaCursorLineNr      = { "winopts.hl.cursornr", "CursorLineNr" },
+    FzfLuaSearch            = { "winopts.hl.search", "IncSearch" },
+    FzfLuaTitle             = { "winopts.hl.title", "FzfLuaNormal" },
+    FzfLuaScrollBorderEmpty = { "winopts.hl.scrollborder_e", "FzfLuaBorder" },
+    FzfLuaScrollBorderFull  = { "winopts.hl.scrollborder_f", "FzfLuaBorder" },
+    FzfLuaScrollFloatEmpty  = { "winopts.hl.scrollfloat_e", "PmenuSbar" },
+    FzfLuaScrollFloatFull   = { "winopts.hl.scrollfloat_f", "PmenuThumb" },
+    FzfLuaHelpNormal        = { "winopts.hl.help_normal", "FzfLuaNormal" },
+    FzfLuaHelpBorder        = { "winopts.hl.help_border", "FzfLuaBorder" },
   }
   for hl_name, v in pairs(highlights) do
     -- define a new linked highlight and then override the
@@ -58,7 +57,7 @@ function M.setup_highlights()
       -- revert to default if hl option or link doesn't exist
       hl_link = v[2]
     end
-    if vim.fn.has('nvim-0.7') == 1 then
+    if vim.fn.has("nvim-0.7") == 1 then
       vim.api.nvim_set_hl(0, hl_name, { default = true, link = hl_link })
     else
       vim.cmd(string.format("hi! link %s %s", hl_name, hl_link))
@@ -81,13 +80,14 @@ function M.setup(opts)
   end
   -- backward compatibility for 'fzf_binds'
   if opts.fzf_binds then
-    utils.warn("'fzf_binds' is deprecated, moved under 'keymap.fzf', see ':help fzf-lua-customization'")
+    utils.warn("'fzf_binds' is deprecated, moved under 'keymap.fzf', " ..
+      "see ':help fzf-lua-customization'")
     globals.keymap.fzf = opts.fzf_binds
   end
   -- do not merge, override the bind tables
   for t, v in pairs({
-    ['keymap']  = { 'fzf',   'builtin' },
-    ['actions'] = { 'files', 'buffers' },
+    ["keymap"]  = { "fzf", "builtin" },
+    ["actions"] = { "files", "buffers" },
   }) do
     for _, k in ipairs(v) do
       if opts[t] and opts[t][k] then
@@ -121,7 +121,7 @@ end
 M.defaults = config.globals
 
 M.redraw = function()
-  local winobj = require'fzf-lua'.win.__SELF()
+  local winobj = require "fzf-lua".win.__SELF()
   if winobj then
     winobj:redraw()
   end
@@ -131,87 +131,87 @@ do
   -- lazy load modules, run inside a local 'do' scope
   -- so 'lazyloaded_modules' is not stored in mem
   local lazyloaded_modules = {
-    resume = { 'fzf-lua.core', 'fzf_resume' },
-    files = { 'fzf-lua.providers.files', 'files' },
-    args = { 'fzf-lua.providers.files', 'args' },
-    grep = { 'fzf-lua.providers.grep', 'grep' },
-    grep_last = { 'fzf-lua.providers.grep', 'grep_last' },
-    grep_cword = { 'fzf-lua.providers.grep', 'grep_cword' },
-    grep_cWORD = { 'fzf-lua.providers.grep', 'grep_cWORD' },
-    grep_visual = { 'fzf-lua.providers.grep', 'grep_visual' },
-    grep_curbuf = { 'fzf-lua.providers.grep', 'grep_curbuf' },
-    grep_project = { 'fzf-lua.providers.grep', 'grep_project' },
-    live_grep = { 'fzf-lua.providers.grep', 'live_grep' },
-    live_grep_native = { 'fzf-lua.providers.grep', 'live_grep_native' },
-    live_grep_resume = { 'fzf-lua.providers.grep', 'live_grep_resume' },
-    live_grep_glob = { 'fzf-lua.providers.grep', 'live_grep_glob' },
-    lgrep_curbuf = { 'fzf-lua.providers.grep', 'lgrep_curbuf' },
-    tags = { 'fzf-lua.providers.tags', 'tags' },
-    btags = { 'fzf-lua.providers.tags', 'btags' },
-    tags_grep = { 'fzf-lua.providers.tags', 'grep' },
-    tags_grep_cword = { 'fzf-lua.providers.tags', 'grep_cword' },
-    tags_grep_cWORD = { 'fzf-lua.providers.tags', 'grep_cWORD' },
-    tags_grep_visual = { 'fzf-lua.providers.tags', 'grep_visual' },
-    tags_live_grep = { 'fzf-lua.providers.tags', 'live_grep' },
-    git_files = { 'fzf-lua.providers.git', 'files' },
-    git_status = { 'fzf-lua.providers.git', 'status' },
-    git_stash = { 'fzf-lua.providers.git', 'stash' },
-    git_commits = { 'fzf-lua.providers.git', 'commits' },
-    git_bcommits = { 'fzf-lua.providers.git', 'bcommits' },
-    git_branches = { 'fzf-lua.providers.git', 'branches' },
-    oldfiles = { 'fzf-lua.providers.oldfiles', 'oldfiles' },
-    quickfix = { 'fzf-lua.providers.quickfix', 'quickfix' },
-    loclist = { 'fzf-lua.providers.quickfix', 'loclist' },
-    buffers = { 'fzf-lua.providers.buffers', 'buffers' },
-    tabs = { 'fzf-lua.providers.buffers', 'tabs' },
-    lines = { 'fzf-lua.providers.buffers', 'lines' },
-    blines = { 'fzf-lua.providers.buffers', 'blines' },
-    help_tags = { 'fzf-lua.providers.helptags', 'helptags' },
-    man_pages = { 'fzf-lua.providers.manpages', 'manpages' },
-    colorschemes = { 'fzf-lua.providers.colorschemes', 'colorschemes' },
-    highlights = { 'fzf-lua.providers.colorschemes', 'highlights' },
-    jumps = { 'fzf-lua.providers.nvim', 'jumps' },
-    changes = { 'fzf-lua.providers.nvim', 'changes' },
-    tagstack = { 'fzf-lua.providers.nvim', 'tagstack' },
-    marks = { 'fzf-lua.providers.nvim', 'marks' },
-    menus = { 'fzf-lua.providers.nvim', 'menus' },
-    keymaps = { 'fzf-lua.providers.nvim', 'keymaps' },
-    registers = { 'fzf-lua.providers.nvim', 'registers' },
-    commands = { 'fzf-lua.providers.nvim', 'commands' },
-    command_history = { 'fzf-lua.providers.nvim', 'command_history' },
-    search_history = { 'fzf-lua.providers.nvim', 'search_history' },
-    spell_suggest = { 'fzf-lua.providers.nvim', 'spell_suggest' },
-    filetypes = { 'fzf-lua.providers.nvim', 'filetypes' },
-    packadd = { 'fzf-lua.providers.nvim', 'packadd' },
-    lsp_typedefs = { 'fzf-lua.providers.lsp', 'typedefs' },
-    lsp_references = { 'fzf-lua.providers.lsp', 'references' },
-    lsp_definitions = { 'fzf-lua.providers.lsp', 'definitions' },
-    lsp_declarations = { 'fzf-lua.providers.lsp', 'declarations' },
-    lsp_implementations = { 'fzf-lua.providers.lsp', 'implementations' },
-    lsp_document_symbols = { 'fzf-lua.providers.lsp', 'document_symbols' },
-    lsp_workspace_symbols = { 'fzf-lua.providers.lsp', 'workspace_symbols' },
-    lsp_live_workspace_symbols = { 'fzf-lua.providers.lsp', 'live_workspace_symbols' },
-    lsp_code_actions = { 'fzf-lua.providers.lsp', 'code_actions' },
-    lsp_incoming_calls = { 'fzf-lua.providers.lsp', 'incoming_calls' },
-    lsp_outgoing_calls = { 'fzf-lua.providers.lsp', 'outgoing_calls' },
-    lsp_document_diagnostics = { 'fzf-lua.providers.diagnostic', 'diagnostics' },
-    lsp_workspace_diagnostics = { 'fzf-lua.providers.diagnostic', 'all' },
-    diagnostics_document = { 'fzf-lua.providers.diagnostic', 'diagnostics' },
-    diagnostics_workspace = { 'fzf-lua.providers.diagnostic', 'all' },
-    dap_commands = { 'fzf-lua.providers.dap', 'commands' },
-    dap_configurations = { 'fzf-lua.providers.dap', 'configurations' },
-    dap_breakpoints = { 'fzf-lua.providers.dap', 'breakpoints' },
-    dap_variables = { 'fzf-lua.providers.dap', 'variables' },
-    dap_frames = { 'fzf-lua.providers.dap', 'frames' },
-    register_ui_select = { 'fzf-lua.providers.ui_select', 'register' },
-    deregister_ui_select = { 'fzf-lua.providers.ui_select', 'deregister' },
-    tmux_buffers = { 'fzf-lua.providers.tmux', 'buffers' },
+    resume = { "fzf-lua.core", "fzf_resume" },
+    files = { "fzf-lua.providers.files", "files" },
+    args = { "fzf-lua.providers.files", "args" },
+    grep = { "fzf-lua.providers.grep", "grep" },
+    grep_last = { "fzf-lua.providers.grep", "grep_last" },
+    grep_cword = { "fzf-lua.providers.grep", "grep_cword" },
+    grep_cWORD = { "fzf-lua.providers.grep", "grep_cWORD" },
+    grep_visual = { "fzf-lua.providers.grep", "grep_visual" },
+    grep_curbuf = { "fzf-lua.providers.grep", "grep_curbuf" },
+    grep_project = { "fzf-lua.providers.grep", "grep_project" },
+    live_grep = { "fzf-lua.providers.grep", "live_grep" },
+    live_grep_native = { "fzf-lua.providers.grep", "live_grep_native" },
+    live_grep_resume = { "fzf-lua.providers.grep", "live_grep_resume" },
+    live_grep_glob = { "fzf-lua.providers.grep", "live_grep_glob" },
+    lgrep_curbuf = { "fzf-lua.providers.grep", "lgrep_curbuf" },
+    tags = { "fzf-lua.providers.tags", "tags" },
+    btags = { "fzf-lua.providers.tags", "btags" },
+    tags_grep = { "fzf-lua.providers.tags", "grep" },
+    tags_grep_cword = { "fzf-lua.providers.tags", "grep_cword" },
+    tags_grep_cWORD = { "fzf-lua.providers.tags", "grep_cWORD" },
+    tags_grep_visual = { "fzf-lua.providers.tags", "grep_visual" },
+    tags_live_grep = { "fzf-lua.providers.tags", "live_grep" },
+    git_files = { "fzf-lua.providers.git", "files" },
+    git_status = { "fzf-lua.providers.git", "status" },
+    git_stash = { "fzf-lua.providers.git", "stash" },
+    git_commits = { "fzf-lua.providers.git", "commits" },
+    git_bcommits = { "fzf-lua.providers.git", "bcommits" },
+    git_branches = { "fzf-lua.providers.git", "branches" },
+    oldfiles = { "fzf-lua.providers.oldfiles", "oldfiles" },
+    quickfix = { "fzf-lua.providers.quickfix", "quickfix" },
+    loclist = { "fzf-lua.providers.quickfix", "loclist" },
+    buffers = { "fzf-lua.providers.buffers", "buffers" },
+    tabs = { "fzf-lua.providers.buffers", "tabs" },
+    lines = { "fzf-lua.providers.buffers", "lines" },
+    blines = { "fzf-lua.providers.buffers", "blines" },
+    help_tags = { "fzf-lua.providers.helptags", "helptags" },
+    man_pages = { "fzf-lua.providers.manpages", "manpages" },
+    colorschemes = { "fzf-lua.providers.colorschemes", "colorschemes" },
+    highlights = { "fzf-lua.providers.colorschemes", "highlights" },
+    jumps = { "fzf-lua.providers.nvim", "jumps" },
+    changes = { "fzf-lua.providers.nvim", "changes" },
+    tagstack = { "fzf-lua.providers.nvim", "tagstack" },
+    marks = { "fzf-lua.providers.nvim", "marks" },
+    menus = { "fzf-lua.providers.nvim", "menus" },
+    keymaps = { "fzf-lua.providers.nvim", "keymaps" },
+    registers = { "fzf-lua.providers.nvim", "registers" },
+    commands = { "fzf-lua.providers.nvim", "commands" },
+    command_history = { "fzf-lua.providers.nvim", "command_history" },
+    search_history = { "fzf-lua.providers.nvim", "search_history" },
+    spell_suggest = { "fzf-lua.providers.nvim", "spell_suggest" },
+    filetypes = { "fzf-lua.providers.nvim", "filetypes" },
+    packadd = { "fzf-lua.providers.nvim", "packadd" },
+    lsp_typedefs = { "fzf-lua.providers.lsp", "typedefs" },
+    lsp_references = { "fzf-lua.providers.lsp", "references" },
+    lsp_definitions = { "fzf-lua.providers.lsp", "definitions" },
+    lsp_declarations = { "fzf-lua.providers.lsp", "declarations" },
+    lsp_implementations = { "fzf-lua.providers.lsp", "implementations" },
+    lsp_document_symbols = { "fzf-lua.providers.lsp", "document_symbols" },
+    lsp_workspace_symbols = { "fzf-lua.providers.lsp", "workspace_symbols" },
+    lsp_live_workspace_symbols = { "fzf-lua.providers.lsp", "live_workspace_symbols" },
+    lsp_code_actions = { "fzf-lua.providers.lsp", "code_actions" },
+    lsp_incoming_calls = { "fzf-lua.providers.lsp", "incoming_calls" },
+    lsp_outgoing_calls = { "fzf-lua.providers.lsp", "outgoing_calls" },
+    lsp_document_diagnostics = { "fzf-lua.providers.diagnostic", "diagnostics" },
+    lsp_workspace_diagnostics = { "fzf-lua.providers.diagnostic", "all" },
+    diagnostics_document = { "fzf-lua.providers.diagnostic", "diagnostics" },
+    diagnostics_workspace = { "fzf-lua.providers.diagnostic", "all" },
+    dap_commands = { "fzf-lua.providers.dap", "commands" },
+    dap_configurations = { "fzf-lua.providers.dap", "configurations" },
+    dap_breakpoints = { "fzf-lua.providers.dap", "breakpoints" },
+    dap_variables = { "fzf-lua.providers.dap", "variables" },
+    dap_frames = { "fzf-lua.providers.dap", "frames" },
+    register_ui_select = { "fzf-lua.providers.ui_select", "register" },
+    deregister_ui_select = { "fzf-lua.providers.ui_select", "deregister" },
+    tmux_buffers = { "fzf-lua.providers.tmux", "buffers" },
     -- API shortcuts
-    fzf = { 'fzf-lua.core', 'fzf' },
-    fzf_raw = { 'fzf-lua.fzf', 'raw_fzf' },
-    fzf_wrap = { 'fzf-lua.core', 'fzf_wrap' },
-    fzf_exec = { 'fzf-lua.core', 'fzf_exec' },
-    fzf_live = { 'fzf-lua.core', 'fzf_live' },
+    fzf = { "fzf-lua.core", "fzf" },
+    fzf_raw = { "fzf-lua.fzf", "raw_fzf" },
+    fzf_wrap = { "fzf-lua.core", "fzf_wrap" },
+    fzf_exec = { "fzf-lua.core", "fzf_exec" },
+    fzf_live = { "fzf-lua.core", "fzf_live" },
   }
 
   for k, v in pairs(lazyloaded_modules) do
@@ -233,7 +233,7 @@ do
 end
 
 M.get_info = function(filter)
-  if filter and filter.winobj and type(M.__INFO) == 'table' then
+  if filter and filter.winobj and type(M.__INFO) == "table" then
     M.__INFO.winobj = utils.fzf_winobj()
   end
   return M.__INFO
@@ -245,32 +245,32 @@ end
 
 -- exported modules
 M._exported_modules = {
-  'win',
-  'core',
-  'path',
-  'utils',
-  'libuv',
-  'shell',
-  'config',
-  'actions',
-  'make_entry',
+  "win",
+  "core",
+  "path",
+  "utils",
+  "libuv",
+  "shell",
+  "config",
+  "actions",
+  "make_entry",
 }
 
 -- excluded from builtin / auto-complete
 M._excluded_meta = {
-  'setup',
-  'fzf',
-  'fzf_raw',
-  'fzf_wrap',
-  'fzf_exec',
-  'fzf_live',
-  'defaults',
-  '_excluded_meta',
-  '_excluded_metamap',
-  '_exported_modules',
-  '__INFO',
-  'get_info',
-  'set_info',
+  "setup",
+  "fzf",
+  "fzf_raw",
+  "fzf_wrap",
+  "fzf_exec",
+  "fzf_live",
+  "defaults",
+  "_excluded_meta",
+  "_excluded_metamap",
+  "_exported_modules",
+  "__INFO",
+  "get_info",
+  "set_info",
 }
 
 for _, m in ipairs(M._exported_modules) do
@@ -288,7 +288,7 @@ M.builtin = function(opts)
   if not opts then opts = {} end
   opts.metatable = M
   opts.metatable_exclude = M._excluded_metamap
-  return require'fzf-lua.providers.module'.metatable(opts)
+  return require "fzf-lua.providers.module".metatable(opts)
 end
 
 return M

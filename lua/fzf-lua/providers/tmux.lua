@@ -6,7 +6,6 @@ local config = require "fzf-lua.config"
 local M = {}
 
 M.buffers = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.tmux.buffers)
   if not opts then return end
 
@@ -15,9 +14,9 @@ M.buffers = function(opts)
     return string.format("[%s] %s", utils.ansi_codes.yellow(buf), data)
   end
 
-  opts.fzf_opts['--no-multi'] = ''
-  opts.fzf_opts['--delimiter'] = "'[:]'"
-  opts.fzf_opts['--preview'] = shell.preview_action_cmd(function(items)
+  opts.fzf_opts["--no-multi"] = ""
+  opts.fzf_opts["--delimiter"] = "'[:]'"
+  opts.fzf_opts["--preview"] = shell.preview_action_cmd(function(items)
     local buf = items[1]:match("^%[(.-)%]")
     return string.format("tmux show-buffer -b %s", buf)
   end, opts.debug)

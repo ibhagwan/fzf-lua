@@ -11,7 +11,7 @@ local convert_diagnostic_type = function(severity)
   if type(severity) == "string" and not tonumber(severity) then
     -- make sure that e.g. error is uppercased to Error
     return vim.diagnostic and vim.diagnostic.severity[severity:upper()] or
-      vim.lsp.protocol.DiagnosticSeverity[severity:gsub("^%l", string.upper)]
+        vim.lsp.protocol.DiagnosticSeverity[severity:gsub("^%l", string.upper)]
   else
     -- otherwise keep original value, incl. nil
     return tonumber(severity)
@@ -69,7 +69,7 @@ M.diagnostics = function(opts)
     -- vim.diagnostic.config({ signs = false })
     if vim.tbl_isempty(sign_def) then sign_def = nil end
     opts.__signs[v.severity].text = sign_def and sign_def[1].text and
-      vim.trim(sign_def[1].text) or v.default
+        vim.trim(sign_def[1].text) or v.default
     opts.__signs[v.severity].texthl = sign_def and sign_def[1].texthl or nil
     if opts.signs and opts.signs[k] and opts.signs[k].text then
       opts.__signs[v.severity].text = opts.signs[k].text
@@ -93,7 +93,8 @@ M.diagnostics = function(opts)
   local diag_opts = { severity = {}, namespace = opts.namespace }
   if opts.severity_only ~= nil then
     if opts.severity_limit ~= nil or opts.severity_bound ~= nil then
-      utils.warn("Invalid severity parameters. Both a specific severity and a limit/bound is not allowed")
+      utils.warn("Invalid severity parameters." ..
+        " Both a specific severity and a limit/bound is not allowed")
       return {}
     end
     diag_opts.severity = opts.severity_only
@@ -108,9 +109,9 @@ M.diagnostics = function(opts)
 
   local curbuf = vim.api.nvim_get_current_buf()
   local diag_results = vim.diagnostic and
-    vim.diagnostic.get(not opts.diag_all and curbuf or nil, diag_opts) or
-    opts.diag_all and vim.lsp.diagnostic.get_all() or
-    {[curbuf] = vim.lsp.diagnostic.get(curbuf, opts.client_id)}
+      vim.diagnostic.get(not opts.diag_all and curbuf or nil, diag_opts) or
+      opts.diag_all and vim.lsp.diagnostic.get_all() or
+      { [curbuf] = vim.lsp.diagnostic.get(curbuf, opts.client_id) }
 
   local has_diags = false
   if vim.diagnostic then
@@ -123,7 +124,7 @@ M.diagnostics = function(opts)
     end
   end
   if not has_diags then
-    utils.info(string.format('No %s found', 'diagnostics'))
+    utils.info(string.format("No %s found", "diagnostics"))
     return
   end
 
@@ -132,7 +133,7 @@ M.diagnostics = function(opts)
     local filename = vim.api.nvim_buf_get_name(bufnr)
     -- pre vim.diagnostic (vim.lsp.diagnostic)
     -- has 'start|finish' instead of 'end_col|end_lnum'
-    local start = diag.range and diag.range['start']
+    local start = diag.range and diag.range["start"]
     -- local finish = diag.range and diag.range['end']
     local row = diag.lnum or start.line
     local col = diag.col or start.character
@@ -148,8 +149,8 @@ M.diagnostics = function(opts)
     return buffer_diag
   end
 
-  local contents = function (fzf_cb)
-    coroutine.wrap(function ()
+  local contents = function(fzf_cb)
+    coroutine.wrap(function()
       local co = coroutine.running()
 
       local function process_diagnostics(diags, bufnr)
@@ -175,7 +176,7 @@ M.diagnostics = function(opts)
                     icon = utils.ansi_from_hl(value.texthl, icon)
                   end
                   entry = string.format("%s%s%s%s",
-                    icon, opts.icon_padding or '', utils.nbsp, entry)
+                    icon, opts.icon_padding or "", utils.nbsp, entry)
                 end
                 fzf_cb(entry, function() coroutine.resume(co) end)
               end
@@ -199,7 +200,7 @@ M.diagnostics = function(opts)
     end)()
   end
 
-  opts = core.set_header(opts, opts.headers or {"cwd"})
+  opts = core.set_header(opts, opts.headers or { "cwd" })
   opts = core.set_fzf_field_index(opts)
   return core.fzf_exec(contents, opts)
 end

@@ -28,7 +28,7 @@ M.files = function(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   local contents = core.mt_cmd_wrapper(opts)
-  opts = core.set_header(opts, opts.headers or {"cwd"})
+  opts = core.set_header(opts, opts.headers or { "cwd" })
   return core.fzf_exec(contents, opts)
 end
 
@@ -46,8 +46,8 @@ M.status = function(opts)
   if not opts.no_header then
     local stage = utils.ansi_codes.yellow("<left>")
     local unstage = utils.ansi_codes.yellow("<right>")
-    opts.fzf_opts['--header'] = vim.fn.shellescape(
-      ('+ - :: %s to stage, %s to unstage'):format(stage, unstage))
+    opts.fzf_opts["--header"] = vim.fn.shellescape(
+      ("+ - :: %s to stage, %s to unstage"):format(stage, unstage))
   end
   local function git_iconify(x)
     local icon = x
@@ -60,10 +60,11 @@ M.status = function(opts)
     end
     return icon
   end
+
   local contents = libuv.spawn_nvim_fzf_cmd(opts,
     function(x)
       -- unrecognizable format, return
-      if not x or #x<4 then return x end
+      if not x or #x < 4 then return x end
       -- `man git-status`
       -- we are guaranteed format of: XY <text>
       -- spaced files are wrapped with quotes
@@ -77,8 +78,8 @@ M.status = function(opts)
       -- accomodate 'file_ignore_patterns'
       if not f1 then return end
       f2 = f2 and make_entry.file(f2, opts)
-      local staged = git_iconify(x:sub(1,1):gsub("?", " "))
-      local unstaged = git_iconify(x:sub(2,2))
+      local staged = git_iconify(x:sub(1, 1):gsub("?", " "))
+      local unstaged = git_iconify(x:sub(2, 2))
       local entry = ("%s%s%s%s%s"):format(
         staged, utils.nbsp, unstaged, utils.nbsp .. utils.nbsp,
         (f2 and ("%s -> %s"):format(f1, f2) or f1))
@@ -87,14 +88,14 @@ M.status = function(opts)
     function(o)
       return make_entry.preprocess(o)
     end)
-  opts = core.set_header(opts, opts.headers or {"cwd"})
+  opts = core.set_header(opts, opts.headers or { "cwd" })
   return core.fzf_exec(contents, opts)
 end
 
 local function git_cmd(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
-  opts = core.set_header(opts, opts.headers or {"cwd"})
+  opts = core.set_header(opts, opts.headers or { "cwd" })
   core.fzf_exec(opts.cmd, opts)
 end
 
@@ -114,7 +115,7 @@ M.bcommits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.bcommits)
   if not opts then return end
   local bufname = vim.api.nvim_buf_get_name(0)
-  if not bufname or #bufname==0 then
+  if not bufname or #bufname == 0 then
     utils.info("'bcommits' is not available for unnamed buffers.")
     return
   end
@@ -134,7 +135,7 @@ M.bcommits = function(opts)
   else
     opts.cmd = opts.cmd .. " " .. file
   end
-  if type(opts.preview) == 'string' then
+  if type(opts.preview) == "string" then
     opts.preview = opts.preview:gsub("<file>", vim.fn.shellescape(file))
     opts.preview = path.git_cwd(opts.preview, opts)
     if opts.preview_pager then
@@ -147,7 +148,7 @@ end
 M.branches = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.branches)
   if not opts then return end
-  opts.fzf_opts["--no-multi"] = ''
+  opts.fzf_opts["--no-multi"] = ""
   if opts.preview then
     opts.__preview = path.git_cwd(opts.preview, opts)
     opts.preview = shell.raw_preview_action_cmd(function(items)
@@ -172,8 +173,8 @@ M.stash = function(opts)
     opts.preview = path.git_cwd(opts.preview, opts)
   end
 
-  if opts.fzf_opts['--header'] == nil then
-    opts.fzf_opts['--header'] = vim.fn.shellescape((':: %s to drop selected stash(es)')
+  if opts.fzf_opts["--header"] == nil then
+    opts.fzf_opts["--header"] = vim.fn.shellescape((":: %s to drop selected stash(es)")
       :format(utils.ansi_codes.yellow("<Ctrl-x>")))
   end
 

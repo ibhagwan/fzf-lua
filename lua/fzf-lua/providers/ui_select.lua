@@ -84,14 +84,14 @@ M.ui_select = function(items, opts, on_choice)
 
   local prompt = opts.prompt
   if not prompt then
-      prompt =  "Select one of:"
+    prompt = "Select one of:"
   end
 
   _opts = _opts or {}
   _opts.fzf_opts = {
-    ['--no-multi']        = '',
-    ['--prompt']          = prompt:gsub(":%s?$", "> "),
-    ['--preview-window']  = 'hidden:right:0',
+    ["--no-multi"]       = "",
+    ["--prompt"]         = prompt:gsub(":%s?$", "> "),
+    ["--preview-window"] = "hidden:right:0",
   }
 
   -- save items so we can access them from the action
@@ -106,10 +106,10 @@ M.ui_select = function(items, opts, on_choice)
       end
     })
 
-  config.set_action_helpstr(_opts.actions['default'], "accept-item")
+  config.set_action_helpstr(_opts.actions["default"], "accept-item")
 
   _opts.fn_selected = function(selected, o)
-    config.set_action_helpstr(_opts.actions['default'], nil)
+    config.set_action_helpstr(_opts.actions["default"], nil)
 
     if not selected then
       on_choice(nil, nil)
@@ -135,7 +135,6 @@ M.ui_select = function(items, opts, on_choice)
   end
 
   core.fzf_exec(entries, opts_once or _opts)
-
 end
 
 return M

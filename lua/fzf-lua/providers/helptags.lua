@@ -6,14 +6,15 @@ local config = require "fzf-lua.config"
 
 local M = {}
 
-local fzf_fn = function (cb)
+local fzf_fn = function(cb)
   local opts = {}
   opts.lang = config.globals.helptags.lang or vim.o.helplang
-  opts.fallback = utils._if(config.globals.helptags.fallback ~= nil, config.globals.helptags.fallback, true)
+  opts.fallback = utils._if(config.globals.helptags.fallback ~= nil, config.globals.helptags.fallback
+    , true)
 
-  local langs = vim.split(opts.lang, ',', true)
-  if opts.fallback and not vim.tbl_contains(langs, 'en') then
-    table.insert(langs, 'en')
+  local langs = vim.split(opts.lang, ",", true)
+  if opts.fallback and not vim.tbl_contains(langs, "en") then
+    table.insert(langs, "en")
   end
   local langs_map = {}
   for _, lang in ipairs(langs) do
@@ -26,18 +27,18 @@ local fzf_fn = function (cb)
       if tag_files[lang] then
         table.insert(tag_files[lang], file)
       else
-        tag_files[lang] = {file}
+        tag_files[lang] = { file }
       end
     end
   end
 
   local help_files = {}
-  local all_files = vim.fn.globpath(vim.o.runtimepath, 'doc/*', 1, 1)
+  local all_files = vim.fn.globpath(vim.o.runtimepath, "doc/*", 1, 1)
   for _, fullpath in ipairs(all_files) do
     local file = path.tail(fullpath)
-    if file == 'tags' then
-      add_tag_file('en', fullpath)
-    elseif file:match('^tags%-..$') then
+    if file == "tags" then
+      add_tag_file("en", fullpath)
+    elseif file:match("^tags%-..$") then
       local lang = file:sub(-2)
       add_tag_file(lang, fullpath)
     else
@@ -55,16 +56,16 @@ local fzf_fn = function (cb)
     end)
   end
 
-  coroutine.wrap(function ()
+  coroutine.wrap(function()
     local co = coroutine.running()
     local tags_map = {}
     local delimiter = string.char(9)
     for _, lang in ipairs(langs) do
       for _, file in ipairs(tag_files[lang] or {}) do
-        local lines = vim.split(utils.read_file(file), '\n', true)
+        local lines = vim.split(utils.read_file(file), "\n", true)
         for _, line in ipairs(lines) do
           -- TODO: also ignore tagComment starting with ';'
-          if not line:match'^!_TAG_' then
+          if not line:match "^!_TAG_" then
             local fields = vim.split(line, delimiter, true)
             if #fields == 3 and not tags_map[fields[1]] then
               add_tag({
@@ -87,14 +88,12 @@ end
 
 
 M.helptags = function(opts)
-
   opts = config.normalize_opts(opts, config.globals.helptags)
   if not opts then return end
 
-  opts.fzf_opts['--no-multi'] = ''
+  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(fzf_fn, opts)
-
 end
 
 return M
