@@ -469,7 +469,11 @@ M.grep_curbuf = function(opts)
 end
 
 M.lgrep_curbuf = function(opts)
-  if not opts then opts = {} end
+  if type(opts) == 'function' then
+    opts = opts()
+  elseif not opts then
+    opts = {}
+  end
   opts.lgrep = true
   return M.grep_curbuf(opts)
 end
