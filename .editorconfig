@@ -124,7 +124,7 @@ keep_line_after_expression_statement = keepLine
 enable_check_codestyle = true
 
 # [diagnostic.name_style]
-enable_name_style_check = false
+enable_name_style_check = true
 # the following is name style check rule 
 # base option off/camel_case/snake_case/upper_snake_case/pascal_case/same(filename/first_param/'<const string>', snake_case/pascal_case/camel_case)
 # all option can use '|' represent or 

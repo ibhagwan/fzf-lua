@@ -506,7 +506,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       local fs_stat = vim.loop.fs_stat(entry.path)
       if not entry.path or not fs_stat then
         lines = { string.format("Unable to stat file %s", entry.path) }
-      elseif utils.perl_file_is_binary(entry.path) then
+      elseif fs_stat.size > 0 and utils.perl_file_is_binary(entry.path) then
         lines = { "Preview is not supported for binary files." }
       elseif tonumber(self.limit_b) > 0 and fs_stat.size > self.limit_b then
         lines = {
