@@ -394,6 +394,13 @@ M.build_fzf_cli = function(opts)
   -- build the clip args
   local cli_args = ""
   for k, v in pairs(opts.fzf_opts) do
+    if type(v) == "table" then
+      -- table argument is meaningless here
+      v = nil
+    elseif type(v) == "number" then
+      -- convert to string
+      v = string.format("%d", v)
+    end
     if v then
       v = v:gsub(k .. "=", "")
       cli_args = cli_args ..
