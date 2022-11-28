@@ -185,8 +185,10 @@ M.buffers = function(opts)
     cb(nil)
   end
 
-  opts.fzf_opts["--header-lines"] =
-  (not opts.ignore_current_buffer and opts.sort_lastused) and "1"
+  if opts.fzf_opts["--header-lines"] == nil then
+    opts.fzf_opts["--header-lines"] =
+    (not opts.ignore_current_buffer and opts.sort_lastused) and "1"
+  end
 
   opts = core.set_fzf_field_index(opts)
 
