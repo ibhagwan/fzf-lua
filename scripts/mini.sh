@@ -36,7 +36,7 @@ download_plugin() {
 #     exit 1
 # fi
 
-download_plugin "kyazdani42" "nvim-web-devicons" 
+download_plugin "nvim-tree" "nvim-web-devicons"
 
 # if exists, link to local folder so we can test local changes
 if [ -d "${plug_dir}" ]; then
