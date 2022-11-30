@@ -234,16 +234,13 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
     local entry = path.entry_to_file(selected[i], opts)
     if not entry.bufnr then return end
     assert(type(entry.bufnr) == "number")
-    if vimcmd == "b" then
-      if curbuf == entry.bufnr then
-        -- same buffer, do nothing
-        return
-      elseif curbuf ~= entry.bufnr and not vim.o.hidden and
-          utils.buffer_is_dirty(nil, true, true) then
+    if vimcmd == "b"
+        and curbuf ~= entry.bufnr
+        and not vim.o.hidden and
         -- warn the user when trying to switch from a dirty buffer
         -- when `:set nohidden`
-        return
-      end
+        utils.buffer_is_dirty(nil, true, true) then
+      return
     end
     -- add current location to jumplist
     if not is_term then vim.cmd("normal! m`") end
