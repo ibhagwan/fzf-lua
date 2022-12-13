@@ -167,14 +167,14 @@ M.spawn = function(opts, fn_transform, fn_done)
     repeat
       local nl_idx = find_next_newline(data, start_idx)
       local line = data:sub(start_idx, nl_idx - 1)
-      -- makes no sense to feed lines
-      -- bigger than 1024 bytes into fzf
-      if #line > 1024 then
-        line = line:sub(1, 1024)
-        -- io.stderr:write(string.format("[Fzf-lua] long line detected (%db), "
-        --   .. "consider adding '--max-columns=512' to ripgrep options: %s\n",
-        --   #line, line:sub(1,256)))
-      end
+      -- We used to limit lines fed into fzf to 1K for perf reasons
+      -- but it turned out to have some negative consequnces (#580)
+      -- if #line > 1024 then
+      -- line = line:sub(1, 1024)
+      -- io.stderr:write(string.format("[Fzf-lua] long line detected (%db), "
+      --   .. "consider adding '--max-columns=512' to ripgrep options: %s\n",
+      --   #line, line:sub(1,256)))
+      -- end
       line = fn_transform(line)
       if line then table.insert(lines, line) end
       start_idx = nl_idx + 1
@@ -197,12 +197,12 @@ M.spawn = function(opts, fn_transform, fn_done)
     end
 
     if prev_line_content then
-      if #prev_line_content > 1024 then
-        -- chunk size is 64K, limit previous line length to 1K
-        -- max line length is therefor 1K + 64K (leftover + full chunk)
+      if #prev_line_content > 4096 then
+        -- chunk size is 64K, limit previous line length to 4K
+        -- max line length is therefor 4K + 64K (leftover + full chunk)
         -- without this we can memory fault on extremely long lines (#185)
         -- or have UI freezes (#211)
-        prev_line_content = prev_line_content:sub(1, 1024)
+        prev_line_content = prev_line_content:sub(1, 4096)
       end
       data = prev_line_content .. data
       prev_line_content = nil
