@@ -309,7 +309,7 @@ M.globals.grep = {
   grep_opts      = "--binary-files=without-match --line-number --recursive --color=auto " ..
       "--perl-regexp",
   rg_opts        = "--column --line-number --no-heading --color=always --smart-case " ..
-      "--max-columns=512",
+      "--max-columns=4096",
   _actions       = function() return M.globals.actions.files end,
   actions        = { ["ctrl-g"] = { actions.grep_lgrep } },
   -- live_grep_glob options
