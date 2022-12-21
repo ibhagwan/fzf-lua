@@ -12,7 +12,8 @@ local function CTX_UPDATE()
     __CTX = {
       winid = vim.api.nvim_get_current_win(),
       bufnr = vim.api.nvim_get_current_buf(),
-      bufname = vim.api.nvim_buf_get_name(0)
+      bufname = vim.api.nvim_buf_get_name(0),
+      cursor = vim.api.nvim_win_get_cursor(0),
     }
   end
 end
@@ -74,6 +75,15 @@ end
 local function location_handler(opts, cb, _, result, ctx, _)
   local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
   result = vim.tbl_islist(result) and result or { result }
+  if opts.ignore_current_line then
+    local cursor_line = __CTX.cursor[1] - 1
+    result = vim.tbl_filter(function(l)
+      if l.range and l.range.start and l.range.start.line == cursor_line then
+        return false
+      end
+      return true
+    end, result)
+  end
   -- Jump immediately if there is only one location
   if opts.jump_to_single_result and #result == 1 then
     jump_to_location(opts, result[1], encoding)
