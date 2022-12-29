@@ -479,7 +479,7 @@ function M.buffer_is_dirty(bufnr, warn, only_if_last_buffer)
     if only_if_last_buffer and 1 < M.tbl_length(vim.fn.win_findbuf(bufnr)) then
       return false
     end
-    if warn then
+    if warn and not vim.o.confirm then
       M.warn(('buffer %d has unsaved changes "%s"'):format(bufnr, info.name))
     end
     return true
