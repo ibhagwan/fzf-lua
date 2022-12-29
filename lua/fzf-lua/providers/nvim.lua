@@ -271,9 +271,11 @@ M.keymaps = function(opts)
   local keymaps = {}
 
   local add_keymap = function(keymap)
-    -- hijack fields
-    local keymap_desc = keymap.desc or keymap.rhs
-    if not keymap_desc or #keymap_desc == 0 then return end
+    local keymap_desc = keymap.desc or keymap.rhs or string.format("%s", keymap.callback);
+    -- ignore dummy mappings
+    if type(keymap.rhs) == "string" and #keymap.rhs == 0 then
+      return
+    end
     keymap.str = string.format("%s │ %-40s │ %s",
       utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
       keymap.lhs:gsub("%s", "<Space>"),
