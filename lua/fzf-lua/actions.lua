@@ -97,11 +97,17 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     end
     if vimcmd == "e"
         and curbuf ~= fullpath
-        and not vim.o.hidden and
-        utils.buffer_is_dirty(nil, true, true) then
-      -- warn the user when trying to switch from a dirty buffer
-      -- when `:set nohidden`
-      return
+        and not vim.o.hidden
+        and utils.buffer_is_dirty(nil, false, true) then
+      -- confirm with user when trying to switch
+      -- from a dirty buffer when `:set nohidden`
+      -- abort if the user declines
+      -- save the buffer if requested
+      if utils.save_dialog(nil) then
+        vimcmd = vimcmd .. "!"
+      else
+        return
+      end
     end
     -- add current location to jumplist
     if not is_term then vim.cmd("normal! m`") end
@@ -236,11 +242,17 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
     assert(type(entry.bufnr) == "number")
     if vimcmd == "b"
         and curbuf ~= entry.bufnr
-        and not vim.o.hidden and
-        -- warn the user when trying to switch from a dirty buffer
-        -- when `:set nohidden`
-        utils.buffer_is_dirty(nil, true, true) then
-      return
+        and not vim.o.hidden
+        and utils.buffer_is_dirty(nil, false, true) then
+      -- confirm with user when trying to switch
+      -- from a dirty buffer when `:set nohidden`
+      -- abort if the user declines
+      -- save the buffer if requested
+      if utils.save_dialog(nil) then
+        vimcmd = vimcmd .. "!"
+      else
+        return
+      end
     end
     -- add current location to jumplist
     if not is_term then vim.cmd("normal! m`") end

@@ -479,12 +479,35 @@ function M.buffer_is_dirty(bufnr, warn, only_if_last_buffer)
     if only_if_last_buffer and 1 < M.tbl_length(vim.fn.win_findbuf(bufnr)) then
       return false
     end
-    if warn and not vim.o.confirm then
-      M.warn(('buffer %d has unsaved changes "%s"'):format(bufnr, info.name))
+    if warn then
+      M.warn(("buffer %d:%s has unsaved changes"):format(bufnr,
+        info.name and #info.name > 0 and info.name or "<unnamed>"))
     end
     return true
   end
   return false
+end
+
+function M.save_dialog(bufnr)
+  bufnr = tonumber(bufnr) or vim.api.nvim_get_current_buf()
+  local info = bufnr and vim.fn.getbufinfo(bufnr)[1]
+  if not info.name or #info.name == 0 then
+    -- unnamed buffers can't be saved
+    M.warn(string.format("buffer %d has unsaved changes", bufnr))
+    return false
+  end
+  local res = vim.fn.confirm(string.format([[Save changes to "%s"?]], info.name),
+    "&Yes\n&No\n&Cancel")
+  if res == 3 then
+    -- user cancelled
+    return false
+  end
+  if res == 1 then
+    -- user requested save
+    local out = vim.api.nvim_cmd({ cmd = "update" }, { output = true })
+    M.info(out)
+  end
+  return true
 end
 
 -- returns:
