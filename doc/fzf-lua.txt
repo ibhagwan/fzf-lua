@@ -91,14 +91,14 @@ INSTALLATION                                            *fzf-lua-installation*
 
 Using vim-plug <https://github.com/junegunn/vim-plug>
 
->
+>vim
     Plug 'ibhagwan/fzf-lua', {'branch': 'main'}
     " optional for icon support
     Plug 'nvim-tree/nvim-web-devicons'
 <
 Using packer.nvim <https://github.com/wbthomason/packer.nvim>
 
->
+>lua
     use { 'ibhagwan/fzf-lua',
       -- optional for icon support
       requires = { 'nvim-tree/nvim-web-devicons' }
@@ -107,11 +107,11 @@ Using packer.nvim <https://github.com/wbthomason/packer.nvim>
   **Note:** if you already have fzf installed you do not need to install `fzf`
   or `fzf.vim`, however if you do not have it installed, **you only need** fzf
   which can be installed with (fzf.vim is not a requirement nor conflict):
->
+>vim
     Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 <
   or with packer.nvim <https://github.com/wbthomason/packer.nvim>:
->
+>lua
     use = { 'junegunn/fzf', run = './install --bin', }
 <
 
@@ -123,26 +123,26 @@ USAGE                                                          *fzf-lua-usage*
 Fzf-lua aims to be as plug and play as possible with sane defaults, you can
 run any fzf-lua command like this:
 
->
+>lua
     :lua require('fzf-lua').files()
     -- or using the `FzfLua` vim command:
     :FzfLua files
 <
 or with arguments:
 
->
+>lua
     :lua require('fzf-lua').files({ cwd = '~/.config' })
     -- or using the `FzfLua` vim command:
     :FzfLua files cwd=~/.config
 <
 which can be easily mapped to:
 
->
+>vim
     nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 <
 or if using `init.lua`:
 
->
+>lua
     vim.api.nvim_set_keymap('n', '<c-P>',
         "<cmd>lua require('fzf-lua').files()<CR>",
         { noremap = true, silent = true })
@@ -309,28 +309,28 @@ individually sending parameters to a builtin command, A few examples below:
 
   Different `fzf` layout:
 
->
+>lua
     :lua require('fzf-lua').files({ fzf_opts = {['--layout'] = 'reverse-list'} })
 <
   Using `files` with a different command and working directory:
 
->
+>lua
     :lua require'fzf-lua'.files({ prompt="LS> ", cmd = "ls", cwd="~/<folder>" })
 <
   Using `live_grep` with `git grep`:
 
->
+>lua
     :lua require'fzf-lua'.live_grep({ cmd = "git grep --line-number --column --color=always" })
 <
   `colorschemes` with non-default window size:
 
->
+>lua
     :lua require'fzf-lua'.colorschemes({ winopts = { height=0.33, width=0.33 } })
 <
 Use `setup()` If you wish for a setting to persist and not have to send it
 using the call arguments, e.g:
 
->
+>lua
     require('fzf-lua').setup{
       winopts = {
         ...
@@ -339,7 +339,7 @@ using the call arguments, e.g:
 <
 Can also be called from a `.vim` file:
 
->
+>lua
     lua << EOF
     require('fzf-lua').setup{
       ...
@@ -356,7 +356,7 @@ have been many obscure requests which have been fulfilled and are yet to be
 documented. If you're still having issues and/or questions do not hesitate to
 open an issue and I'll be more than happy to help.**
 
->
+>lua
     local actions = require "fzf-lua.actions"
     require'fzf-lua'.setup {
       -- fzf_bin         = 'sk',            -- use skim instead of fzf?
@@ -960,7 +960,7 @@ CUSTOMIZING HIGHLIGHTS                        *fzf-lua-customizing-highlights*
 
 FzfLua conviniently creates the below highlights:
 
->
+>lua
       -- key is the highlight group name
       -- value[1] is the setup/call arg option name
       -- value[2] is the default link if value[1] is undefined
@@ -980,24 +980,24 @@ FzfLua conviniently creates the below highlights:
 <
 These can be easily customized either via the lua API:
 
->
+>lua
     :lua vim.api.nvim_set_hl(0, "FzfLuaBorder", { link = "FloatBorder" })
 <
 Or vimscript:
 
->
+>vim
     :hi! link FzfLuaBorder FloatBorder
 <
 If you wish to further customize these highlights without having to modify
 your preset colorscheme highlight links you can define the corresponding
 `winopts.hl` option or even send it directly via a call argument:
 
->
+>lua
     :lua require'fzf-lua'.files({ winopts={hl={normal="IncSearch"}} })
 <
 Or via `setup`:
 
->
+>lua
     require('fzf-lua').setup{
       winopts = {
         hl = { border = "FloatBorder", }
