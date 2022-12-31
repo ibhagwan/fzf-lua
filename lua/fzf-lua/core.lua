@@ -390,6 +390,13 @@ M.build_fzf_cli = function(opts)
       -- inline for skim is defined as:
       opts.fzf_opts["--inline-info"] = ""
     end
+    -- skim doesn't accept border args
+    local border = opts.fzf_opts["--border"]
+    if border == "none" then
+      opts.fzf_opts["--border"] = nil
+    else
+      opts.fzf_opts["--border"] = ""
+    end
   end
   -- build the clip args
   local cli_args = ""
