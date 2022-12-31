@@ -1,3 +1,29 @@
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2022 December 31
+
+==============================================================================
+Table of Contents                                  *fzf-lua-table-of-contents*
+
+Rationale ................................................ |fzf-lua-rationale|
+Why Fzf-Lua ............................................ |fzf-lua-why-fzf-lua|
+Dependencies .......................................... |fzf-lua-dependencies|
+Optional dependencies ........................ |fzf-lua-optional-dependencies|
+Installation .......................................... |fzf-lua-installation|
+Usage ........................................................ |fzf-lua-usage|
+Commands .................................................. |fzf-lua-commands|
+Buffers and Files ................................ |fzf-lua-buffers-and-files|
+Search ...................................................... |fzf-lua-search|
+Tags .......................................................... |fzf-lua-tags|
+Git ............................................................ |fzf-lua-git|
+LSP/Diagnostics .................................... |fzf-lua-lsp/diagnostics|
+Misc .......................................................... |fzf-lua-misc|
+Neovim API .............................................. |fzf-lua-neovim-api|
+nvim-dap .................................................. |fzf-lua-nvim-dap|
+tmux .......................................................... |fzf-lua-tmux|
+Customization ........................................ |fzf-lua-customization|
+Default Options .................................... |fzf-lua-default-options|
+Customizing Highlights ...................... |fzf-lua-customizing-highlights|
+Credits .................................................... |fzf-lua-credits|
+
 ==============================================================================
 FZF :HEART: LUA                                      *fzf-lua-fzf-:heart:-lua*
 
