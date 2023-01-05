@@ -52,12 +52,15 @@ function Previewer.base:new(o, opts, fzf_win)
     utils.warn(("Invalid ueberzug image scaler '%s', option will be omitted.")
       :format(o.ueberzug_scaler))
   end
+  -- cached buffers
+  self.cached_buffers = {}
   return self
 end
 
 function Previewer.base:close()
   self:restore_winopts(self.win.preview_winid)
   self:clear_preview_buf()
+  self:clear_cached_buffers()
   self.backups = {}
 end
 
@@ -99,23 +102,51 @@ end
 
 function Previewer.base:get_tmp_buffer()
   local tmp_buf = api.nvim_create_buf(false, true)
-  api.nvim_buf_set_option(tmp_buf, "bufhidden", "wipe")
+  -- Not in use anymore since we now use a buffer cache
+  -- api.nvim_buf_set_option(tmp_buf, "bufhidden", "wipe")
   return tmp_buf
 end
 
 function Previewer.base:set_preview_buf(newbuf)
   if not self.win or not self.win:validate_preview() then return end
   api.nvim_win_set_buf(self.win.preview_winid, newbuf)
+  -- cache named buffers with paths
+  if self.loaded_entry and self.loaded_entry.path then
+    self.cached_buffers[self.loaded_entry.path] = {
+      bufnr = self.preview_bufnr,
+      do_not_unload = self.do_not_unload,
+    }
+  end
   self.preview_bufnr = newbuf
   -- set preview window options
   self:set_winopts(self.win.preview_winid)
 end
 
-function Previewer.base:clear_preview_buf()
+local function force_delete_buffer(bufnr)
+  if tonumber(bufnr) and vim.api.nvim_buf_is_valid(bufnr) then
+    api.nvim_buf_call(bufnr, function()
+      vim.cmd('delm \\"')
+    end)
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+  end
+end
+
+function Previewer.base:clear_cached_buffers()
+  -- clear the buffer cache
+  for _, c in pairs(self.cached_buffers) do
+    if not c.do_not_unload then
+      force_delete_buffer(c.bufnr)
+    end
+  end
+  self.cached_buffers = {}
+end
+
+function Previewer.base:clear_preview_buf(newbuf)
   local retbuf = nil
-  -- we don't use 'self.win:validate_preview()' because we want
-  -- to detach the buffer even when 'self.win.closing = true'
-  if self.win and self.win.preview_winid
+  if newbuf
+      -- we don't use 'self.win:validate_preview()' because we want
+      -- to detach the buffer even when 'self.win.closing = true'
+      and self.win and self.win.preview_winid
       and tonumber(self.win.preview_winid) > 0
       and api.nvim_win_is_valid(self.win.preview_winid) then
     -- attach a temp buffer to the window
@@ -133,13 +164,8 @@ function Previewer.base:clear_preview_buf()
   -- so technically this should never be executed unless the
   -- user wrote an fzf-lua extension and set the preview buffer to
   -- a random buffer without the 'bufhidden' property
-  if not self.do_not_unload
-      and self.preview_bufnr
-      and vim.api.nvim_buf_is_valid(self.preview_bufnr) then
-    api.nvim_buf_call(self.preview_bufnr, function()
-      vim.cmd('delm \\"')
-    end)
-    vim.api.nvim_buf_delete(self.preview_bufnr, { force = true })
+  if not self.do_not_unload then
+    force_delete_buffer(self.preview_bufnr)
   end
   self.preview_bufnr = nil
   self.loaded_entry = nil
@@ -290,6 +316,7 @@ end
 function Previewer.buffer_or_file:close()
   self:restore_winopts(self.win.preview_winid)
   self:clear_preview_buf()
+  self:clear_cached_buffers()
   self:stop_ueberzug()
   self.backups = {}
 end
@@ -437,6 +464,16 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
   return true
 end
 
+function Previewer.buffer_or_file:populate_from_cache(entry)
+  local cached = entry and entry.path and self.cached_buffers[entry.path]
+  if cached then
+    self:set_preview_buf(cached.bufnr)
+    self:preview_buf_post(entry)
+    return true
+  end
+  return false
+end
+
 function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
   local entry = self:parse_entry(entry_str)
@@ -461,7 +498,10 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   self.clear_on_redraw = false
   self.do_not_unload = (entry.uri ~= nil)
   self.do_not_set_winopts = entry.terminal
-  if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
+  if self:populate_from_cache(entry) then
+    -- already populated
+    return
+  elseif entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
     -- WE NO LONGER REUSE THE CURRENT BUFFER
     -- this changes the buffer's 'getbufinfo[1].lastused'
     -- which messes up our `buffers()` sort
@@ -487,6 +527,12 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       entry.path = path.relative(vim.api.nvim_buf_get_name(entry.bufnr), vim.loop.cwd())
     end
     assert(entry.path)
+    -- check the buffer cache again since the first check
+    -- may have missed it due to entry.path being nil
+    if self:populate_from_cache(entry) then
+      return
+    end
+    -- not found in cache, attempt to load
     local tmpbuf = self:get_tmp_buffer()
     if self.extensions and not vim.tbl_isempty(self.extensions) then
       local ext = path.extension(entry.path)
