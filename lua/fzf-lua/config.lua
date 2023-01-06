@@ -150,19 +150,24 @@ M.globals = {
     cat = {
       cmd   = "cat",
       args  = "--number",
-      _ctor = previewers.fzf.cmd_async,
+      _ctor = previewers.fzf.cmd,
     },
     bat = {
       cmd    = "bat",
       args   = "--italic-text=always --style=numbers,changes --color always",
       theme  = nil,
       config = nil,
-      _ctor  = previewers.fzf.bat_async,
+      _ctor  = previewers.fzf.bat,
     },
     bat_native = {
       cmd   = "bat",
       args  = "--italic-text=always --style=numbers,changes --color always",
       _ctor = previewers.fzf.bat,
+    },
+    bat_async = {
+      cmd    = "bat",
+      args   = "--italic-text=always --style=numbers,changes --color always",
+      _ctor  = previewers.fzf.bat_async,
     },
     head = {
       cmd   = "head",
