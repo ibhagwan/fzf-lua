@@ -65,7 +65,12 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   local call_args = ("fzf_lua_server=[[%s]], fnc_id=%d %s"):format(
     vim.g.fzf_lua_server, id, debug and ", debug=true" or "")
 
-  local action_cmd = ("%s -n --headless --clean --cmd %s %s"):format(
+  -- we need to add '--' to mark the end of command options otherwise
+  -- our preview command will fail when the selected items contain
+  -- special shell chars ('+', '-', etc), exmaples where this can
+  -- happen are the `git status` command and git brances from diff
+  -- worktrees (#600)
+  local action_cmd = ("%s -n --headless --clean --cmd %s -- %s"):format(
     libuv.shellescape(nvim_bin),
     libuv.shellescape(("lua loadfile([[%s]])().rpc_nvim_exec_lua({%s})")
       :format(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" }, call_args)),

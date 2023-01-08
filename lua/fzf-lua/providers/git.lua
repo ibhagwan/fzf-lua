@@ -159,7 +159,6 @@ M.branches = function(opts)
       --   (HEAD detached at origin/branch)
       local branch = items[1]:match("[^%s%*]*$"):gsub("%)$", "")
       return opts.__preview:gsub("{.*}", branch)
-      -- return "echo " .. branch
     end, nil, opts.debug)
   end
   return git_cmd(opts)

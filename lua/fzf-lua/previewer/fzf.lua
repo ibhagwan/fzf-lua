@@ -303,10 +303,7 @@ function Previewer.git_diff:cmdline(o)
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
-    -- we need to add '--' to mark the end of command options
-    -- as git icon customization may contain special shell chars
-    -- which will otherwise choke our preview cmd ('+', '-', etc)
-  end, "-- {}", self.opts.debug)
+  end, nil, self.opts.debug)
   return act
 end
 
