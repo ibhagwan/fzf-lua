@@ -125,6 +125,11 @@ local function force_delete_buffer(bufnr)
 end
 
 function Previewer.base:cache_buffer(bufnr, key, do_not_unload)
+  if not bufnr then
+    -- can happen with slow loading buffers such as image previews
+    -- with viu while spamming f5/f6 to rotate the preview window
+    return
+  end
   local cached = self.cached_buffers[key]
   if cached then
     if cached.bufnr == bufnr then
@@ -482,7 +487,7 @@ end
 
 function Previewer.buffer_or_file:populate_from_cache(entry)
   local cached = entry and entry.path and self.cached_buffers[entry.path]
-  if cached then
+  if cached and vim.api.nvim_buf_is_valid(cached.bufnr) then
     self:set_preview_buf(cached.bufnr)
     self:preview_buf_post(entry)
     return true
