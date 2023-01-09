@@ -108,16 +108,23 @@ end
 
 function Previewer.base:set_preview_buf(newbuf)
   if not self.win or not self.win:validate_preview() then return end
-  -- Remove buffer auto-delete since it's now a managed buffer
-  api.nvim_buf_set_option(newbuf, "bufhidden", "hide")
-  api.nvim_win_set_buf(self.win.preview_winid, newbuf)
-  -- cache named buffers with paths
-  if self.loaded_entry and self.loaded_entry.path then
+  -- Should we cache the current preview buffer?
+  -- we cache only named buffers with valid paths
+  if self.preview_bufnr
+      and tonumber(self.preview_bufnr) > 0
+      and vim.api.nvim_buf_is_valid(self.preview_bufnr)
+      and self.loaded_entry
+      and self.loaded_entry.path
+  then
     self.cached_buffers[self.loaded_entry.path] = {
       bufnr = self.preview_bufnr,
       do_not_unload = self.do_not_unload,
     }
+    -- remove buffer auto-delete since it's now cached
+    api.nvim_buf_set_option(self.preview_bufnr, "bufhidden", "hide")
   end
+  -- Set the preview window to the new buffer
+  api.nvim_win_set_buf(self.win.preview_winid, newbuf)
   self.preview_bufnr = newbuf
   -- set preview window options
   self:set_winopts(self.win.preview_winid)
