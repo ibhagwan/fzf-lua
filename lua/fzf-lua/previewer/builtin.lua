@@ -210,10 +210,8 @@ function Previewer.base:display_entry(entry_str)
   -- clears the current preview buffer and set to a new temp buffer
   -- recommended to return false from 'should_clear_preview' and use
   -- 'self:set_preview_buf()' instead for flicker-free experience
-  local should_clear = self.should_clear_preview and
-      self:should_clear_preview(entry_str)
-  if should_clear ~= false then
-    self.preview_bufnr = self:clear_preview_buf()
+  if self.should_clear_preview and self:should_clear_preview(entry_str) then
+    self.preview_bufnr = self:clear_preview_buf(true)
   end
 
   local populate_preview_buf = function(entry_str_)
