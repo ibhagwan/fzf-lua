@@ -102,13 +102,14 @@ end
 
 function Previewer.base:get_tmp_buffer()
   local tmp_buf = api.nvim_create_buf(false, true)
-  -- Not in use anymore since we now use a buffer cache
-  -- api.nvim_buf_set_option(tmp_buf, "bufhidden", "wipe")
+  api.nvim_buf_set_option(tmp_buf, "bufhidden", "wipe")
   return tmp_buf
 end
 
 function Previewer.base:set_preview_buf(newbuf)
   if not self.win or not self.win:validate_preview() then return end
+  -- Remove buffer auto-delete since it's now a managed buffer
+  api.nvim_buf_set_option(newbuf, "bufhidden", "hide")
   api.nvim_win_set_buf(self.win.preview_winid, newbuf)
   -- cache named buffers with paths
   if self.loaded_entry and self.loaded_entry.path then
@@ -143,8 +144,11 @@ end
 
 function Previewer.base:clear_preview_buf(newbuf)
   local retbuf = nil
-  if newbuf
-      -- we don't use 'self.win:validate_preview()' because we want
+  if ((self.win and self.win._reuse) or newbuf)
+      -- Attach a temp buffer to the window when reusing (`ctrl-g`)
+      -- so we don't invalidate the window when deting the buffer
+      -- in `force_delete_buffer` call below
+      -- We don't use 'self.win:validate_preview()' because we want
       -- to detach the buffer even when 'self.win.closing = true'
       and self.win and self.win.preview_winid
       and tonumber(self.win.preview_winid) > 0
