@@ -16,6 +16,10 @@ M.starts_with_separator = function(path)
   -- return path:find("^"..M.separator()) == 1
 end
 
+M.ends_with_separator = function(path)
+  return string_byte(path, #path) == M.separator_byte
+end
+
 M.starts_with_cwd = function(path)
   return #path > 1
       and string_byte(path, 1) == M.dot_byte

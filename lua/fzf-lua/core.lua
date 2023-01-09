@@ -538,7 +538,23 @@ M.set_fzf_field_index = function(opts, default_idx, default_expr)
 end
 
 M.set_header = function(opts, hdr_tbl)
+  local function normalize_cwd(cwd)
+    if path.starts_with_separator(cwd) and cwd ~= vim.loop.cwd() then
+      -- since we're always converting cwd to full path
+      -- try to convert it back to relative for display
+      cwd = path.relative(cwd, vim.loop.cwd())
+    end
+    -- make our home dir path look pretty
+    return path.HOME_to_tilde(cwd)
+  end
+
   if not opts then opts = {} end
+  if opts.cwd_prompt or opts.show_cwd_prompt then
+    opts.prompt = normalize_cwd(opts.cwd or vim.loop.cwd())
+    if not path.ends_with_separator(opts.prompt) then
+      opts.prompt = opts.prompt .. path.separator()
+    end
+  end
   if opts.no_header or opts.headers == false then
     return opts
   end
@@ -558,14 +574,7 @@ M.set_header = function(opts, hdr_tbl)
             (not opts.cwd or opts.cwd == vim.loop.cwd()) then
           return
         end
-        local cwd = opts.cwd or vim.loop.cwd()
-        if path.starts_with_separator(cwd) and cwd ~= vim.loop.cwd() then
-          -- since we're always converting cwd to full path
-          -- try to convert it back to relative for display
-          cwd = path.relative(cwd, vim.loop.cwd())
-        end
-        -- make our home dir path look pretty
-        return path.HOME_to_tilde(cwd)
+        return normalize_cwd(opts.cwd or vim.loop.cwd())
       end
     },
     search = {
