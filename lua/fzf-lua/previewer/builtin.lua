@@ -108,21 +108,6 @@ end
 
 function Previewer.base:set_preview_buf(newbuf)
   if not self.win or not self.win:validate_preview() then return end
-  -- Should we cache the current preview buffer?
-  -- we cache only named buffers with valid paths
-  if self.preview_bufnr
-      and tonumber(self.preview_bufnr) > 0
-      and vim.api.nvim_buf_is_valid(self.preview_bufnr)
-      and self.loaded_entry
-      and self.loaded_entry.path
-  then
-    self.cached_buffers[self.loaded_entry.path] = {
-      bufnr = self.preview_bufnr,
-      do_not_unload = self.do_not_unload,
-    }
-    -- remove buffer auto-delete since it's now cached
-    api.nvim_buf_set_option(self.preview_bufnr, "bufhidden", "hide")
-  end
   -- Set the preview window to the new buffer
   api.nvim_win_set_buf(self.win.preview_winid, newbuf)
   self.preview_bufnr = newbuf
@@ -137,6 +122,28 @@ local function force_delete_buffer(bufnr)
     end)
     vim.api.nvim_buf_delete(bufnr, { force = true })
   end
+end
+
+function Previewer.base:cache_buffer(bufnr, key, do_not_unload)
+  local cached = self.cached_buffers[key]
+  if cached then
+    if cached.bufnr == bufnr then
+      -- already cached, nothing to do
+      return
+    else
+      -- new cached buffer for key
+      -- wipe current cached buf
+      if not cached.do_not_unload then
+        force_delete_buffer(cached.bufnr)
+      end
+    end
+  end
+  self.cached_buffers[key] = {
+    bufnr = bufnr,
+    do_not_unload = do_not_unload,
+  }
+  -- remove buffer auto-delete since it's now cached
+  api.nvim_buf_set_option(bufnr, "bufhidden", "hide")
 end
 
 function Previewer.base:clear_cached_buffers()
@@ -685,11 +692,14 @@ end
 
 function Previewer.buffer_or_file:update_border(entry)
   if self.title then
-    if entry.path and self.opts.cwd then
-      entry.path = path.relative(entry.path, self.opts.cwd)
+    local filepath = entry.path
+    if filepath then
+      if self.opts.cwd then
+        filepath = path.relative(entry.path, self.opts.cwd)
+      end
+      filepath = path.HOME_to_tilde(filepath)
     end
-    entry.path = path.HOME_to_tilde(entry.path)
-    local title = (" %s "):format(entry.path or entry.uri)
+    local title = (" %s "):format(filepath or entry.uri)
     if entry.bufnr then
       -- local border_width = api.nvim_win_get_width(self.win.preview_winid)
       local buf_str = ("buf %d:"):format(entry.bufnr)
@@ -726,6 +736,12 @@ function Previewer.buffer_or_file:preview_buf_post(entry)
   -- bufnr|path with the next entry. If equal
   -- we can skip loading the buffer again
   self.loaded_entry = entry
+
+  -- Should we cache the current preview buffer?
+  -- we cache only named buffers with valid paths
+  if self.loaded_entry.path then
+    self:cache_buffer(self.preview_bufnr, self.loaded_entry.path, self.do_not_unload)
+  end
 end
 
 Previewer.help_tags = Previewer.base:extend()
