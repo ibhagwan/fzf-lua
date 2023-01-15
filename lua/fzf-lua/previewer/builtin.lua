@@ -444,6 +444,7 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
   -- for terminal image previews to have the
   -- correct size
   self.loaded_entry = nil
+  self.do_not_cache = true
   self.do_not_set_winopts = true
   -- both ueberzug and terminal cmds need a clear
   -- on redraw to fit the new window dimentions
@@ -532,6 +533,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   end
   -- mark terminal buffers so we don't call 'set_winopts'
   self.clear_on_redraw = false
+  self.do_not_cache = false
   self.do_not_unload = false
   self.do_not_set_winopts = entry.terminal
   if self:populate_from_cache(entry) then
@@ -763,8 +765,10 @@ function Previewer.buffer_or_file:preview_buf_post(entry)
 
   -- Should we cache the current preview buffer?
   -- we cache only named buffers with valid path/uri
-  local key = self.loaded_entry and (self.loaded_entry.path or self.loaded_entry.uri)
-  self:cache_buffer(self.preview_bufnr, key, self.do_not_unload)
+  if not self.do_not_cache then
+    local key = self.loaded_entry and (self.loaded_entry.path or self.loaded_entry.uri)
+    self:cache_buffer(self.preview_bufnr, key, self.do_not_unload)
+  end
 end
 
 Previewer.help_tags = Previewer.base:extend()
