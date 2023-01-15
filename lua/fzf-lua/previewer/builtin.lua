@@ -54,6 +54,20 @@ function Previewer.base:new(o, opts, fzf_win)
   end
   -- cached buffers
   self.cached_buffers = {}
+  -- store currently listed buffers, this helps us determine which buffers
+  -- navigaged with 'vim.lsp.util.jump_to_location' we can safely unload
+  -- since jump_to_location reuses buffers and I couldn't find a better way
+  -- to determine if the destination buffer was listed prior to the jump
+  self.listed_buffers = (function()
+    local map = {}
+    vim.tbl_map(function(b)
+      if vim.fn.buflisted(b) == 1 then
+        -- Save key as string or this gets treated as an array
+        map[tostring(b)] = true
+      end
+    end, vim.api.nvim_list_bufs())
+    return map
+  end)()
   return self
 end
 
@@ -125,6 +139,7 @@ local function force_delete_buffer(bufnr)
 end
 
 function Previewer.base:cache_buffer(bufnr, key, do_not_unload)
+  if not key then return end
   if not bufnr then
     -- can happen with slow loading buffers such as image previews
     -- with viu while spamming f5/f6 to rotate the preview window
@@ -486,7 +501,8 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
 end
 
 function Previewer.buffer_or_file:populate_from_cache(entry)
-  local cached = entry and entry.path and self.cached_buffers[entry.path]
+  local key = entry and (entry.path or entry.uri)
+  local cached = self.cached_buffers[key]
   if cached and vim.api.nvim_buf_is_valid(cached.bufnr) then
     self:set_preview_buf(cached.bufnr)
     self:preview_buf_post(entry)
@@ -515,9 +531,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     self._job_id = nil
   end
   -- mark terminal buffers so we don't call 'set_winopts'
-  -- mark uri entries so we do not delete the preview buffer
   self.clear_on_redraw = false
-  self.do_not_unload = (entry.uri ~= nil)
+  self.do_not_unload = false
   self.do_not_set_winopts = entry.terminal
   if self:populate_from_cache(entry) then
     -- already populated
@@ -536,8 +551,14 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- LSP 'jdt://' entries, see issue #195
     -- https://github.com/ibhagwan/fzf-lua/issues/195
     pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
-      vim.lsp.util.jump_to_location(entry, "utf-16")
+      vim.lsp.util.jump_to_location(entry, "utf-16", false)
       self.preview_bufnr = vim.api.nvim_get_current_buf()
+      -- since 'jump_to_location' reuses existing buffers we have to
+      -- make sure we aren't unloading an exisiting buffer (#609)
+      -- NOTE: listed buffers map key must use 'tostring'
+      if self.listed_buffers[tostring(self.preview_bufnr)] then
+        self.do_not_unload = true
+      end
     end)
     self:preview_buf_post(entry)
   else
@@ -741,10 +762,9 @@ function Previewer.buffer_or_file:preview_buf_post(entry)
   self.loaded_entry = entry
 
   -- Should we cache the current preview buffer?
-  -- we cache only named buffers with valid paths
-  if self.loaded_entry.path then
-    self:cache_buffer(self.preview_bufnr, self.loaded_entry.path, self.do_not_unload)
-  end
+  -- we cache only named buffers with valid path/uri
+  local key = self.loaded_entry and (self.loaded_entry.path or self.loaded_entry.uri)
+  self:cache_buffer(self.preview_bufnr, key, self.do_not_unload)
 end
 
 Previewer.help_tags = Previewer.base:extend()
