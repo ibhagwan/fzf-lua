@@ -299,10 +299,16 @@ M.tabs = function(opts)
 
     for t, bufnrs in pairs(opts._tab_to_buf) do
 
+      local highlight = opts.tab_title_hl and
+          function(s)
+            return utils.ansi_from_hl(opts.tab_title_hl, s);
+          end
+          or utils.ansi_codes.blue
+
       cb(("%d)%s%s\t%s"):format(t, utils.nbsp,
-        utils.ansi_codes.blue("%s%s#%d"):format(opts.tab_title, utils.nbsp, t),
+        highlight("%s%s#%d"):format(opts.tab_title, utils.nbsp, t),
         (t == __STATE.curtabidx) and
-        utils.ansi_codes.blue(utils.ansi_codes.bold(opts.tab_marker)) or ""))
+        highlight(utils.ansi_codes.bold(opts.tab_marker)) or ""))
 
       local bufnrs_flat = {}
       for b, _ in pairs(bufnrs) do
