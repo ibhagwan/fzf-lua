@@ -67,13 +67,15 @@ at it. That, **and colorful file icons and git indicators!**.
   using fzf's native previewer
 - [delta](https://github.com/dandavison/delta) - syntax highlighted git pager
   for git status previews
-- [viu](https://github.com/atanunq/viu) - terminal image previews (needs to be
-  configured via `previewer.builtin.extensions`)
-- [ueberzug](https://github.com/seebye/ueberzug) - X11 image previews (needs to
-  be configured via `previewer.builtin.extensions`)
 - [nvim-dap](https://github.com/mfussenegger/nvim-dap) - for Debug Adapter
   Protocol (DAP) support
 
+Below are a few optional dependencies for viewing media files (which you need
+to configure in `previewer.builtin.extensions`):
+- [chafa](https://github.com/hpjansson/chafa) - terminal image previewer
+  (recommended, supports most file formats)
+- [viu](https://github.com/atanunq/viu) - terminal image previewer
+- [ueberzug](https://github.com/seebye/ueberzug) - X11 image previewer
 
 ## Installation
 
@@ -532,6 +534,7 @@ require'fzf-lua'.setup {
       extensions      = {
         -- neovim terminal only supports `viu` block output
         ["png"]       = { "viu", "-b" },
+        ["svg"]       = { "chafa" },
         ["jpg"]       = { "ueberzug" },
       },
       -- if using `ueberzug` in the above extensions map
