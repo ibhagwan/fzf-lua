@@ -402,6 +402,7 @@ M.globals.lines = {
     ["--delimiter"] = "'[\\]:]'",
     ["--nth"]       = "2..",
     ["--tiebreak"]  = "index",
+    ["--tabstop"]   = "1",
   },
   _actions        = function() return M.globals.actions.buffers end,
   actions         = {
@@ -421,6 +422,7 @@ M.globals.blines = {
     ["--delimiter"] = "'[:]'",
     ["--with-nth"]  = "2..",
     ["--tiebreak"]  = "index",
+    ["--tabstop"]   = "1",
   },
   _actions        = function() return M.globals.actions.buffers end,
   actions         = {

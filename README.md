@@ -760,6 +760,7 @@ require'fzf-lua'.setup {
       ['--delimiter'] = "'[\\]:]'",
       ["--nth"]       = '2..',
       ["--tiebreak"]  = 'index',
+      ["--tabstop"]   = "1",
     },
     -- actions inherit from 'actions.buffers' and merge
     actions = {
@@ -778,6 +779,7 @@ require'fzf-lua'.setup {
       ['--delimiter'] = "'[\\]:]'",
       ["--with-nth"]  = '2..',
       ["--tiebreak"]  = 'index',
+      ["--tabstop"]   = "1",
     },
     -- actions inherit from 'actions.buffers' and merge
     actions = {
