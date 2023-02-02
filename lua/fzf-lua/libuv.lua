@@ -112,7 +112,7 @@ M.spawn = function(opts, fn_transform, fn_done)
 
   -- https://github.com/luvit/luv/blob/master/docs.md
   -- uv.spawn returns tuple: handle, pid
-  local handle, pid = uv.spawn(vim.env.SHELL or "sh", {
+  local handle, pid = uv.spawn("sh", {
     args = { "-c", opts.cmd },
     stdio = { nil, output_pipe, error_pipe },
     cwd = opts.cwd
