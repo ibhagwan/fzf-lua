@@ -65,15 +65,15 @@ function Previewer.cmd:new(o, opts)
   return self
 end
 
-function Previewer.cmd:sh_wrap(cmd, args, action, extra_args)
-  return [[sh -c "]] .. string.format([[%s %s %s $(%s)"]],
+function Previewer.cmd:format_cmd(cmd, args, action, extra_args)
+  return string.format([[%s %s %s $(%s)]],
     cmd, args or "", extra_args or "", action)
 end
 
 function Previewer.cmd:cmdline(o)
   o = o or {}
   o.action = o.action or self:action(o)
-  return self:sh_wrap(self.cmd, self.args, o.action)
+  return self:format_cmd(self.cmd, self.args, o.action)
 end
 
 function Previewer.cmd:action(o)
@@ -102,7 +102,7 @@ function Previewer.bat:cmdline(o)
   if self.opts.line_field_index then
     highlight_line = string.format("--highlight-line={%d}", self.opts.line_field_index)
   end
-  return self:sh_wrap(self.cmd, self.args, o.action, highlight_line)
+  return self:format_cmd(self.cmd, self.args, o.action, highlight_line)
 end
 
 -- Specialized head previewer
@@ -121,7 +121,7 @@ function Previewer.head:cmdline(o)
   -- if self.opts.line_field_index then
   --   lines = string.format("--lines={%d}", self.opts.line_field_index)
   -- end
-  return self:sh_wrap(self.cmd, self.args, o.action, lines)
+  return self:format_cmd(self.cmd, self.args, o.action, lines)
 end
 
 -- new async_action from nvim-fzf
