@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 01
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 02
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -830,6 +830,7 @@ open an issue and I'll be more than happy to help.**
           ['--delimiter'] = "'[\\]:]'",
           ["--nth"]       = '2..',
           ["--tiebreak"]  = 'index',
+          ["--tabstop"]   = "1",
         },
         -- actions inherit from 'actions.buffers' and merge
         actions = {
@@ -848,6 +849,7 @@ open an issue and I'll be more than happy to help.**
           ['--delimiter'] = "'[\\]:]'",
           ["--with-nth"]  = '2..',
           ["--tiebreak"]  = 'index',
+          ["--tabstop"]   = "1",
         },
         -- actions inherit from 'actions.buffers' and merge
         actions = {
