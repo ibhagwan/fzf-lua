@@ -321,8 +321,10 @@ M.tabs = function(opts)
           end
           or utils.ansi_codes.blue
 
-      cb(("%d)%s%s\t%s"):format(t, utils.nbsp,
-        highlight("%s%s#%d"):format(opts.tab_title, utils.nbsp, t),
+      cb(("%d)%s%s\t%s"):format(t, utils.nbsp, highlight(
+        type(opts.tab_title) == "function"
+        and opts.tab_title(t, t == __STATE.curtabidx)
+        or ("%s%s#%d"):format(opts.tab_title, utils.nbsp, t)),
         (t == __STATE.curtabidx) and
         highlight(utils.ansi_codes.bold(opts.tab_marker)) or ""))
 
