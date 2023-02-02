@@ -106,7 +106,7 @@ local populate_buffer_entries = function(opts, bufnrs, tabnr)
 end
 
 
-local function gen_buffer_entry(opts, buf, hl_curbuf)
+local function gen_buffer_entry(opts, buf, hl_curbuf, cwd)
   -- local hidden = buf.info.hidden == 1 and 'h' or 'a'
   local hidden = ""
   local readonly = vim.api.nvim_buf_get_option(buf.bufnr, "readonly") and "=" or " "
@@ -115,7 +115,7 @@ local function gen_buffer_entry(opts, buf, hl_curbuf)
   local leftbr = utils.ansi_codes.clear("[")
   local rightbr = utils.ansi_codes.clear("]")
   local bufname = #buf.info.name > 0 and
-      path.relative(buf.info.name, vim.loop.cwd()) or
+      path.relative(buf.info.name, cwd or vim.loop.cwd()) or
       utils.nvim_buf_get_name(buf.bufnr, buf.info)
   if opts.filename_only then
     bufname = path.basename(bufname)
@@ -315,6 +315,9 @@ M.tabs = function(opts)
 
     for t, bufnrs in pairs(opts._tab_to_buf) do
 
+      local tabnr = vim.api.nvim_list_tabpages()[t]
+      local tab_cwd = vim.fn.getcwd(-1, tabnr)
+
       local highlight = opts.tab_title_hl and
           function(s)
             return utils.ansi_from_hl(opts.tab_title_hl, s);
@@ -324,7 +327,10 @@ M.tabs = function(opts)
       cb(("%d)%s%s\t%s"):format(t, utils.nbsp, highlight(
         type(opts.tab_title) == "function"
         and opts.tab_title(t, t == __STATE.curtabidx)
-        or ("%s%s#%d"):format(opts.tab_title, utils.nbsp, t)),
+        or string.format("%s%s#%d%s",
+          opts.tab_title, utils.nbsp, t,
+          (vim.loop.cwd() == tab_cwd and ""
+              or string.format(": %s", path.HOME_to_tilde(tab_cwd))))),
         (t == __STATE.curtabidx) and
         highlight(utils.ansi_codes.bold(opts.tab_marker)) or ""))
 
@@ -335,10 +341,9 @@ M.tabs = function(opts)
 
       opts.sort_lastused = false
       opts._prefix = ("%d)%s%s%s"):format(t, utils.nbsp, utils.nbsp, utils.nbsp)
-      local tabnr = vim.api.nvim_list_tabpages()[t]
       local buffers = populate_buffer_entries(opts, bufnrs_flat, tabnr)
       for _, bufinfo in pairs(buffers) do
-        cb(gen_buffer_entry(opts, bufinfo, false))
+        cb(gen_buffer_entry(opts, bufinfo, false, tab_cwd))
       end
     end
     cb(nil)
