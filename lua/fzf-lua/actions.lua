@@ -217,7 +217,7 @@ M.file_switch = function(selected, opts)
   if not bufnr then return false end
   local is_term = utils.is_term_buffer(0)
   if not is_term then vim.cmd("normal! m`") end
-  local winid = utils.winid_from_tab_buf(0, bufnr)
+  local winid = utils.winid_from_tabh(0, bufnr)
   if winid then vim.api.nvim_set_current_win(winid) end
   if entry.line > 1 or entry.col > 1 then
     vim.api.nvim_win_set_cursor(0, { tonumber(entry.line), tonumber(entry.col) - 1 })
@@ -305,17 +305,17 @@ end
 
 M.buf_switch = function(selected, _)
   local tabidx = tonumber(selected[1]:match("(%d+)%)"))
-  local tabnr = tabidx and vim.api.nvim_list_tabpages()[tabidx]
-  if tabnr then
+  local tabh = tabidx and vim.api.nvim_list_tabpages()[tabidx]
+  if tabh then
     -- `:tabn` will result in the wrong tab
     -- if `:tabmove` was previously used (#515)
-    vim.api.nvim_set_current_tabpage(tabnr)
+    vim.api.nvim_set_current_tabpage(tabh)
   else
-    tabnr = vim.api.nvim_win_get_tabpage(0)
+    tabh = vim.api.nvim_win_get_tabpage(0)
   end
   local bufnr = tonumber(string.match(selected[1], "%[(%d+)"))
   if bufnr then
-    local winid = utils.winid_from_tab_buf(tabnr, bufnr)
+    local winid = utils.winid_from_tabh(tabh, bufnr)
     if winid then vim.api.nvim_set_current_win(winid) end
   end
 end

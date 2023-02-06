@@ -533,13 +533,32 @@ function M.buf_is_qf(bufnr, bufinfo)
   return false
 end
 
-function M.winid_from_tab_buf(tabnr, bufnr)
-  for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabnr)) do
+-- bufwinid from tab handle, different from tab idx (or "tabnr")
+-- NOTE:  When tabs are reordered they still maintain the same
+-- tab handle (also a number), example:
+-- open two tabs and examine `vim.api.nvim_list_tabpages()`
+-- the result should be { 1, 2 }
+-- However, after moving the first tab with `:tabm` the result
+-- is now { 2, 1 }
+-- After closing the second tab with `:tabc` and opening a new
+-- tab the result will be { 2, 3 } and after another `:tabm` on
+-- the first tab the final result will be { 3, 2 }
+-- At this point we have
+--   * 1st visual tab: index:1 handle:3
+--   * 2nd visual tab: index:2 handle:2
+function M.winid_from_tabh(tabh, bufnr)
+  for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabh)) do
     if bufnr == vim.api.nvim_win_get_buf(w) then
       return w
     end
   end
   return nil
+end
+
+-- bufwinid from visual tab index
+function M.winid_from_tabi(tabi, bufnr)
+  local tabh = vim.api.nvim_list_tabpages()[tabi]
+  return M.winid_from_tabh(tabh, bufnr)
 end
 
 function M.nvim_buf_get_name(bufnr, bufinfo)

@@ -75,7 +75,7 @@ local filter_buffers = function(opts, unfiltered)
   return bufnrs, excluded
 end
 
-local populate_buffer_entries = function(opts, bufnrs, tabnr)
+local populate_buffer_entries = function(opts, bufnrs, tabh)
   local buffers = {}
   for _, bufnr in ipairs(bufnrs) do
     local flag = (bufnr == __STATE.curbuf and "%") or
@@ -88,8 +88,8 @@ local populate_buffer_entries = function(opts, bufnrs, tabnr)
     }
 
     -- get the correct lnum for tabbed buffers
-    if tabnr then
-      local winid = utils.winid_from_tab_buf(tabnr, bufnr)
+    if tabh then
+      local winid = utils.winid_from_tabh(tabh, bufnr)
       if winid then
         element.info.lnum = vim.api.nvim_win_get_cursor(winid)[1]
       end
@@ -315,8 +315,7 @@ M.tabs = function(opts)
 
     for t, bufnrs in pairs(opts._tab_to_buf) do
 
-      local tabnr = vim.api.nvim_list_tabpages()[t]
-      local tab_cwd = vim.fn.getcwd(-1, tabnr)
+      local tab_cwd = vim.fn.getcwd(-1, t)
 
       local highlight = opts.tab_title_hl and
           function(s)
@@ -341,7 +340,8 @@ M.tabs = function(opts)
 
       opts.sort_lastused = false
       opts._prefix = ("%d)%s%s%s"):format(t, utils.nbsp, utils.nbsp, utils.nbsp)
-      local buffers = populate_buffer_entries(opts, bufnrs_flat, tabnr)
+      local tabh = vim.api.nvim_list_tabpages()[t]
+      local buffers = populate_buffer_entries(opts, bufnrs_flat, tabh)
       for _, bufinfo in pairs(buffers) do
         cb(gen_buffer_entry(opts, bufinfo, false, tab_cwd))
       end
