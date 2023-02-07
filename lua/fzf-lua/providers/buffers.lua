@@ -317,21 +317,45 @@ M.tabs = function(opts)
 
       local tab_cwd = vim.fn.getcwd(-1, t)
 
-      local highlight = opts.tab_title_hl and
-          function(s)
-            return utils.ansi_from_hl(opts.tab_title_hl, s);
+      local opt_hl = function(k, default_msg, default_hl)
+        local hl = default_hl
+        local msg = default_msg and default_msg(opts[k]) or opts[k]
+        if type(opts[k]) == "table" then
+          if type(opts[k][1]) == "function" then
+            msg = opts[k][1](t, t == __STATE.curtabidx)
+          elseif type(opts[k][1]) == "string" then
+            msg = default_msg(opts[k][1])
+          else
+            msg = default_msg("Tab")
           end
-          or utils.ansi_codes.blue
+          if type(opts[k][2]) == "string" then
+            hl = function(s)
+              return utils.ansi_from_hl(opts[k][2], s);
+            end
+          end
+        elseif type(opts[k]) == "function" then
+          msg = opts[k](t, t == __STATE.curtabidx)
+        end
+        return msg, hl
+      end
 
-      cb(("%d)%s%s\t%s"):format(t, utils.nbsp, highlight(
-        type(opts.tab_title) == "function"
-        and opts.tab_title(t, t == __STATE.curtabidx)
-        or string.format("%s%s#%d%s",
-          opts.tab_title, utils.nbsp, t,
-          (vim.loop.cwd() == tab_cwd and ""
-              or string.format(": %s", path.HOME_to_tilde(tab_cwd))))),
-        (t == __STATE.curtabidx) and
-        highlight(utils.ansi_codes.bold(opts.tab_marker)) or ""))
+      local title, fn_title_hl = opt_hl("tab_title",
+        function(s)
+          return string.format("%s%s#%d%s", s, utils.nbsp, t,
+            (vim.loop.cwd() == tab_cwd and ""
+                or string.format(": %s", path.HOME_to_tilde(tab_cwd))))
+        end,
+        utils.ansi_codes.blue)
+
+      local marker, fn_marker_hl = opt_hl("tab_marker",
+        function(s) return s end,
+        function(s)
+          return utils.ansi_codes.blue(utils.ansi_codes.bold(s));
+        end)
+
+      cb(string.format("%d)%s%s\t%s", t, utils.nbsp,
+        fn_title_hl(title),
+        (t == __STATE.curtabidx) and fn_marker_hl(marker) or ""))
 
       local bufnrs_flat = {}
       for b, _ in pairs(bufnrs) do
