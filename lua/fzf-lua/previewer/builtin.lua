@@ -1124,8 +1124,9 @@ end
 
 function Previewer.quickfix:gen_winopts()
   local winopts = {
-    wrap   = self.win.preview_wrap,
-    number = false
+    wrap       = self.win.preview_wrap,
+    cursorline = false,
+    number     = false
   }
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
