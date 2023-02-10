@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 02
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 10
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -191,7 +191,9 @@ BUFFERS AND FILES                                  *fzf-lua-buffers-and-files*
 | `files`            | `find` or `fd` on a path                       |
 | `oldfiles`         | opened files history                       |
 | `quickfix`         | quickfix list                              |
+| `quickfix_stack`   | quickfix stack                             |
 | `loclist`          | location list                              |
+| `loclist_stack`    | location stack                             |
 | `lines`            | open buffers lines                         |
 | `blines`           | current buffer lines                       |
 | `tabs`             | open tabs                                  |
@@ -907,6 +909,10 @@ open an issue and I'll be more than happy to help.**
       quickfix = {
         file_icons        = true,
         git_icons         = true,
+      },
+      quickfix_stack = {
+        prompt = "Quickfix Stack> ",
+        marker = ">",                   -- current list marker
       },
       lsp = {
         prompt_postfix    = '❯ ',       -- will be appended to the LSP label
