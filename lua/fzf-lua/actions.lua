@@ -176,10 +176,17 @@ local sel_to_qf = function(selected, opts, is_loclist)
     })
   end
   if is_loclist then
-    vim.fn.setloclist(0, qf_list)
+    vim.fn.setloclist(0, {}, "r", {
+      items = qf_list,
+      title = opts.__resume_data.last_query
+    })
     vim.cmd "lopen"
   else
-    vim.fn.setqflist(qf_list)
+    -- Set the quickfix title to last query (#635)
+    vim.fn.setqflist({}, "r", {
+      items = qf_list,
+      title = opts.__resume_data.last_query
+    })
     vim.cmd "copen"
   end
 end
