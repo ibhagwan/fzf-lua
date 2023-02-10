@@ -145,7 +145,9 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `files`            | `find` or `fd` on a path                       |
 | `oldfiles`         | opened files history                       |
 | `quickfix`         | quickfix list                              |
+| `quickfix_stack`   | quickfix stack                             |
 | `loclist`          | location list                              |
+| `loclist_stack`    | location stack                             |
 | `lines`            | open buffers lines                         |
 | `blines`           | current buffer lines                       |
 | `tabs`             | open tabs                                  |
@@ -837,6 +839,10 @@ require'fzf-lua'.setup {
   quickfix = {
     file_icons        = true,
     git_icons         = true,
+  },
+  quickfix_stack = {
+    prompt = "Quickfix Stack> ",
+    marker = ">",                   -- current list marker
   },
   lsp = {
     prompt_postfix    = '❯ ',       -- will be appended to the LSP label

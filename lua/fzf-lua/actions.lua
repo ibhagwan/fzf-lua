@@ -176,16 +176,20 @@ local sel_to_qf = function(selected, opts, is_loclist)
     })
   end
   if is_loclist then
-    vim.fn.setloclist(0, {}, "r", {
+    vim.fn.setloclist(0, {}, " ", {
+      nr = "$",
       items = qf_list,
-      title = opts.__resume_data.last_query
+      title = opts.__resume_data.last_query,
     })
     vim.cmd "lopen"
   else
-    -- Set the quickfix title to last query (#635)
-    vim.fn.setqflist({}, "r", {
+    -- Set the quickfix title to last query and
+    -- append a new list to end of the stack (#635)
+    vim.fn.setqflist({}, " ", {
+      nr = "$",
       items = qf_list,
-      title = opts.__resume_data.last_query
+      title = opts.__resume_data.last_query,
+      -- nr = nr,
     })
     vim.cmd "copen"
   end
@@ -715,6 +719,13 @@ M.paste_register = function(selected)
   if ok and #data > 0 then
     vim.api.nvim_paste(data, false, -1)
   end
+end
+
+M.set_qflist = function(selected, opts)
+  local nr = selected[1]:match("[(%d+)]")
+  vim.cmd(string.format("%d%s", tonumber(nr),
+    opts._is_loclist and "lhistory" or "chistory"))
+  vim.cmd(opts._is_loclist and "lopen" or "copen")
 end
 
 return M

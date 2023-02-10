@@ -2,6 +2,7 @@ local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local Object = require "fzf-lua.class"
+local make_entry = require "fzf-lua.make_entry"
 
 local api = vim.api
 local uv = vim.loop
@@ -1112,6 +1113,57 @@ function Previewer.highlights:populate_preview_buf(entry_str)
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
   end)
+  self.win:update_scrollbar()
+end
+
+Previewer.quickfix = Previewer.base:extend()
+
+function Previewer.quickfix:should_clear_preview(_)
+  return true
+end
+
+function Previewer.quickfix:gen_winopts()
+  local winopts = {
+    wrap   = self.win.preview_wrap,
+    number = false
+  }
+  return vim.tbl_extend("keep", winopts, self.winopts)
+end
+
+function Previewer.quickfix:new(o, opts, fzf_win)
+  Previewer.quickfix.super.new(self, o, opts, fzf_win)
+  return self
+end
+
+function Previewer.quickfix:close()
+  Previewer.highlights.super.close(self)
+end
+
+function Previewer.quickfix:populate_preview_buf(entry_str)
+  local nr = entry_str:match("[(%d+)]")
+  if not nr or tonumber(nr) <= 0 then
+    return
+  end
+
+  local qf_list = self.opts._is_loclist
+      and vim.fn.getloclist(self.win.src_winid, { all = "", nr = tonumber(nr) })
+      or vim.fn.getqflist({ all = "", nr = tonumber(nr) })
+  if vim.tbl_isempty(qf_list) or vim.tbl_isempty(qf_list.items) then
+    return
+  end
+
+  local lines = {}
+  for _, e in ipairs(qf_list.items) do
+    table.insert(lines, string.format("%s|%d col %d|%s",
+      path.HOME_to_tilde(path.relative(
+        vim.api.nvim_buf_get_name(e.bufnr), vim.loop.cwd())),
+      e.lnum, e.col, e.text))
+  end
+  self.tmpbuf = self:get_tmp_buffer()
+  vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, lines)
+  vim.api.nvim_buf_set_option(self.tmpbuf, "filetype", "qf")
+  self:set_preview_buf(self.tmpbuf)
+  self.win:update_title(string.format("%s: %s", nr, qf_list.title))
   self.win:update_scrollbar()
 end
 

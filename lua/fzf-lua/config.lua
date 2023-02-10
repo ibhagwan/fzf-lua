@@ -165,9 +165,9 @@ M.globals = {
       _ctor = previewers.fzf.bat,
     },
     bat_async = {
-      cmd    = "bat",
-      args   = "--italic-text=always --style=numbers,changes --color always",
-      _ctor  = previewers.fzf.bat_async,
+      cmd   = "bat",
+      args  = "--italic-text=always --style=numbers,changes --color always",
+      _ctor = previewers.fzf.bat_async,
     },
     head = {
       cmd   = "head",
@@ -351,6 +351,12 @@ M.globals.quickfix = {
   git_icons   = false,
   _actions    = function() return M.globals.actions.files end,
 }
+M.globals.quickfix_stack = {
+  prompt    = "Quickfix Stack> ",
+  marker    = ">",
+  previewer = { _ctor = previewers.builtin.quickfix, },
+  actions   = { ["default"] = actions.set_qflist, },
+}
 M.globals.loclist = {
   previewer   = M._default_previewer_fn,
   prompt      = "Locations> ",
@@ -359,6 +365,12 @@ M.globals.loclist = {
   color_icons = true,
   git_icons   = false,
   _actions    = function() return M.globals.actions.files end,
+}
+M.globals.loclist_stack = {
+  prompt    = "Locations Stack> ",
+  marker    = ">",
+  previewer = { _ctor = previewers.builtin.quickfix, },
+  actions   = { ["default"] = actions.set_qflist, },
 }
 M.globals.buffers = {
   previewer             = M._default_previewer_fn,
@@ -1079,6 +1091,7 @@ M._action_to_helpstr = {
   [actions.sym_lsym]            = "sym<->lsym",
   [actions.tmux_buf_set_reg]    = "set-register",
   [actions.paste_register]      = "paste-register",
+  [actions.set_qflist]          = "set-{qf|loc}list",
 }
 
 return M
