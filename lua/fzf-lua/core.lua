@@ -218,7 +218,8 @@ M.fzf = function(contents, opts)
   -- lose overrides by 'winopts_fn|winopts_raw'
   opts.winopts.preview = fzf_win.winopts.preview
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
-    { fzf_bin = opts.fzf_bin, cwd = opts.cwd, silent_fail = opts.silent_fail })
+    { fzf_bin = opts.fzf_bin, cwd = opts.cwd, silent_fail = opts.silent_fail,
+      is_fzf_tmux = opts._is_fzf_tmux })
   -- This was added by 'resume':
   -- when '--print-query' is specified
   -- we are guaranteed to have the query
@@ -400,6 +401,13 @@ M.build_fzf_cli = function(opts)
   end
   -- build the clip args
   local cli_args = ""
+  -- fzf-tmux args must be included first
+  if opts._is_fzf_tmux then
+    for k, v in pairs(opts.fzf_tmux_opts or {}) do
+      if v then cli_args = string.format("%s%s", k, v) end
+    end
+    cli_args = cli_args .. " -- "
+  end
   for k, v in pairs(opts.fzf_opts) do
     if type(v) == "table" then
       -- table argument is meaningless here

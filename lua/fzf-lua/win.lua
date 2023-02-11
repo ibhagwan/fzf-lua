@@ -756,6 +756,12 @@ function FzfWin:set_style_minimal(winid)
 end
 
 function FzfWin:create()
+  -- When using fzf-tmux we don't need to create windows
+  -- as tmux popups will be used instead
+  if self._o._is_fzf_tmux then
+    return
+  end
+
   if self._reuse then
     -- we can't reuse the fzf term buffer
     -- create a new tmp buffer for the fzf win

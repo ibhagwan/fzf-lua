@@ -183,8 +183,10 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = false })
 
   local co = coroutine.running()
-  vim.fn.termopen({ "sh", "-c", cmd }, {
+  local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or vim.fn.termopen
+  jobstart({ "sh", "-c", cmd }, {
     cwd = cwd,
+    pty = true,
     env = {
       ["SHELL"] = "sh",
       ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
@@ -206,29 +208,34 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       coroutine.resume(co, output, rc)
     end
   })
-  vim.cmd [[set ft=fzf]]
 
-  -- terminal behavior seems to have changed after the introduction
-  -- of 'nt' mode (terminal-normal mode) which is included in 0.6
-  -- https://github.com/neovim/neovim/pull/15878
-  -- Preferably I'd like to check if the vim patch is included using
-  --   vim.fn.has('patch-8.2.3461')
-  -- but this doesn't work for vim patches > 8.1 as explained in:
-  -- https://github.com/neovim/neovim/issues/9635
-  -- However, since this patch was included in 0.6 we can test
-  -- for neovim version 0.6
-  -- Beats me why 'nvim_get_mode().mode' still returns 'nt' even
-  -- after we're clearly in insert mode or why `:startinsert`
-  -- won't change the mode from 'nt' to 't' so we use feedkeys()
-  -- instead.
-  -- This "retires" 'actions.ensure_insert_mode' and solves the
-  -- issue of calling an fzf-lua mapping from insert mode (#429)
-  if vim.fn.has("nvim-0.6") == 1 then
-    vim.cmd([[noautocmd lua vim.api.nvim_feedkeys(]]
-      .. [[vim.api.nvim_replace_termcodes("<Esc>i", true, false, true)]]
-      .. [[, 'n', true)]])
-  else
-    vim.cmd [[startinsert]]
+  -- fzf-tmux spawns outside neovim, don't set filetype/insert mode
+  if not opts.is_fzf_tmux then
+    vim.cmd [[set ft=fzf]]
+
+    -- terminal behavior seems to have changed after the introduction
+    -- of 'nt' mode (terminal-normal mode) which is included in 0.6
+    -- https://github.com/neovim/neovim/pull/15878
+    -- Preferably I'd like to check if the vim patch is included using
+    --   vim.fn.has('patch-8.2.3461')
+    -- but this doesn't work for vim patches > 8.1 as explained in:
+    -- https://github.com/neovim/neovim/issues/9635
+    -- However, since this patch was included in 0.6 we can test
+    -- for neovim version 0.6
+    -- Beats me why 'nvim_get_mode().mode' still returns 'nt' even
+    -- after we're clearly in insert mode or why `:startinsert`
+    -- won't change the mode from 'nt' to 't' so we use feedkeys()
+    -- instead.
+    -- This "retires" 'actions.ensure_insert_mode' and solves the
+    -- issue of calling an fzf-lua mapping from insert mode (#429)
+
+    if vim.fn.has("nvim-0.6") == 1 then
+      vim.cmd([[noautocmd lua vim.api.nvim_feedkeys(]]
+        .. [[vim.api.nvim_replace_termcodes("<Esc>i", true, false, true)]]
+        .. [[, 'n', true)]])
+    else
+      vim.cmd [[startinsert]]
+    end
   end
 
   if not contents or type(contents) == "string" then

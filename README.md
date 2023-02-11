@@ -322,6 +322,7 @@ local actions = require "fzf-lua.actions"
 require'fzf-lua'.setup {
   -- fzf_bin         = 'sk',            -- use skim instead of fzf?
                                         -- https://github.com/lotabout/skim
+                                        -- can also be set to 'fzf-tmux'
   global_resume      = true,            -- enable global `resume`?
                                         -- can also be sent individually:
                                         -- `<any_function>.({ gl ... })`
@@ -482,6 +483,9 @@ require'fzf-lua'.setup {
     ['--layout']      = 'reverse',
     ['--border']      = 'none',
   },
+  -- Only used when fzf_bin = "fzf-tmux", by default opens as a
+  -- popup 80% width, 80% height (note `-p` requires tmux > 3.2)
+  fzf_tmux_opts       = { ["-p"] = "80%,80%" },
   -- fzf '--color=' options (optional)
   --[[ fzf_colors = {
       ["fg"]          = { "fg", "CursorLine" },

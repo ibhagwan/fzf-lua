@@ -146,6 +146,7 @@ M.globals = {
     ["--layout"] = "reverse",
     ["--border"] = "none",
   },
+  fzf_tmux_opts       = { ["-p"] = "80%,80%" },
   previewers          = {
     cat = {
       cmd   = "cat",
@@ -780,7 +781,9 @@ function M.normalize_opts(opts, defaults)
   opts = vim.tbl_deep_extend("keep", opts, utils.tbl_deep_clone(defaults))
 
   -- Merge required tables from globals
-  for _, k in ipairs({ "winopts", "keymap", "fzf_opts", "previewers" }) do
+  for _, k in ipairs({
+    "winopts", "keymap", "fzf_opts", "fzf_tmux_opts", "previewers"
+  }) do
     opts[k] = vim.tbl_deep_extend("keep",
       -- must clone or map will be saved as reference
       -- and then overwritten if found in 'backward_compat'
@@ -969,6 +972,9 @@ function M.normalize_opts(opts, defaults)
 
   -- are we using skim?
   opts._is_skim = opts.fzf_bin:find("sk") ~= nil
+
+  -- are we using fzf-tmux
+  opts._is_fzf_tmux = vim.env.TMUX and opts.fzf_bin:match("fzf%-tmux$")
 
   -- libuv.spawn_nvim_fzf_cmd() pid callback
   opts._pid_cb = function(pid) opts._pid = pid end
