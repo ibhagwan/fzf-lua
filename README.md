@@ -527,6 +527,7 @@ require'fzf-lua'.setup {
     },
     man = {
       -- NOTE: remove the `-c` flag when using man-db
+      -- replace with `man -P cat %s | col -bx` on OSX
       cmd             = "man -c %s | col -bx",
     },
     builtin = {

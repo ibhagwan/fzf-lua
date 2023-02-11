@@ -183,11 +183,11 @@ M.globals = {
       _ctor         = previewers.fzf.git_diff,
     },
     man = {
-      cmd   = "man -c %s | col -bx",
+      cmd   = utils.is_darwin() and "man -P cat %s | col -bx" or "man -c %s | col -bx",
       _ctor = previewers.builtin.man_pages,
     },
     man_native = {
-      cmd   = "man",
+      cmd   = utils.is_darwin() and "man -P cat %s" or "man %s",
       _ctor = previewers.fzf.man_pages,
     },
     help_tags = {

@@ -122,6 +122,10 @@ function M.shell_error()
   return vim.v.shell_error ~= 0
 end
 
+function M.is_darwin()
+  return vim.loop.os_uname().sysname == "Darwin"
+end
+
 function M.rg_escape(str)
   if not str then return str end
   --  [(~'"\/$?'`*&&||;[]<>)]

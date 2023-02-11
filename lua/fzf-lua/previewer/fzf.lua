@@ -311,7 +311,7 @@ Previewer.man_pages = Previewer.base:extend()
 
 function Previewer.man_pages:new(o, opts)
   Previewer.man_pages.super.new(self, o, opts)
-  self.cmd = self.cmd or "man"
+  self.cmd = self.cmd or "man %s"
   return self
 end
 
@@ -320,8 +320,7 @@ function Previewer.man_pages:cmdline(o)
   local act = shell.raw_preview_action_cmd(function(items)
     -- local manpage = require'fzf-lua.providers.manpages'.getmanpage(items[1])
     local manpage = items[1]:match("[^[,( ]+")
-    local cmd = ("%s %s %s"):format(
-      self.cmd, self.args, vim.fn.shellescape(manpage))
+    local cmd = self.cmd:format(vim.fn.shellescape(manpage))
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
