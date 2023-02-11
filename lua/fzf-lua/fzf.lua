@@ -58,7 +58,15 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       end
       FZF_DEFAULT_COMMAND = contents
     else
-      cmd = ("%s < %s"):format(cmd, vim.fn.shellescape(fifotmpname))
+      -- Note: for some unknown reason, even though 'termopen' cmd is wrapped with
+      -- `sh -c`, on rare occasions (or unique systems?) when using `fish` shell,
+      -- commands that use the input redirection will hang indefintely (#633)
+      -- Using `cat` instead to read from the FIFO named pipe seems to solve it,
+      -- this is also better as it lets fzf handle spawning and terminating the
+      -- command which is consistent with the behavior above (with string cmds)
+      FZF_DEFAULT_COMMAND = string.format("cat %s", vim.fn.shellescape(fifotmpname))
+      -- Previously used command, left commented for documentation reasons
+      -- cmd = ("%s < %s"):format(cmd, vim.fn.shellescape(fifotmpname))
     end
   end
 
