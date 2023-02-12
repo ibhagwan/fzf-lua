@@ -1,34 +1,30 @@
-local MODREV, SPECREV = "scm", "-1"
+local _MODREV, _SPECREV = 'scm', '-1'
 rockspec_format = "3.0"
-package = "fzf-lua"
-version = MODREV .. SPECREV
+package = 'fzf-lua'
+version = _MODREV .. _SPECREV
 
 description = {
-	summary = "Improved fzf.vim written in lua",
-	labels = { "neovim"},
-	homepage = "https://github.com/ibhagwan/fzf-lua",
-	license = "AGPL-3.0",
+   summary = 'Improved fzf.vim written in lua',
+   labels = {
+     'neovim',
+     'plugin'
+   },
+   homepage = 'http://github.com/ibhagwan/fzf-lua',
+   license = 'AGPL-3.0',
 }
 
 dependencies = {
-	"lua >= 5.1, < 5.4",
+   'lua >= 5.1',
 }
 
 source = {
-	url = "http://github.com/ibhagwan/fzf-lua/archive/v" .. MODREV .. ".zip",
+   url = 'git://github.com/ibhagwan/fzf-lua'
 }
-
-if MODREV == "scm" then
-	source = {
-		url = "git://github.com/ibhagwan/fzf-lua",
-	}
-end
 
 build = {
-   type = "builtin",
+   type = 'builtin',
    copy_directories = {
-   	  'after',
-	  'plugin'
-   }
+     'doc',
+     'plugin',
+   },
 }
-
