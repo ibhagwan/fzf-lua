@@ -311,7 +311,19 @@ Previewer.man_pages = Previewer.base:extend()
 
 function Previewer.man_pages:new(o, opts)
   Previewer.man_pages.super.new(self, o, opts)
-  self.cmd = self.cmd or "man %s"
+  if not self.cmd then
+    if utils.is_darwin() then
+      self.cmd = vim.fn.executable("bat") == 1
+        and [[man -P "bat -l man -p --color=always" %s]]
+        or "man -P cat %s"
+    else
+      self.cmd = vim.fn.executable("bat") == 1
+        and "man -c %s | bat -l man -p --color=always"
+        or "man %s"
+    end
+    self.cmd = self.cmd or vim.fn.executable("bat") == 1
+      and "bat -p -l help --color=always %s" or "cat %s"
+  end
   return self
 end
 
@@ -321,6 +333,41 @@ function Previewer.man_pages:cmdline(o)
     -- local manpage = require'fzf-lua.providers.manpages'.getmanpage(items[1])
     local manpage = items[1]:match("[^[,( ]+")
     local cmd = self.cmd:format(vim.fn.shellescape(manpage))
+    -- uncomment to see the command in the preview window
+    -- cmd = vim.fn.shellescape(cmd)
+    return cmd
+  end, "{}", self.opts.debug)
+  return act
+end
+
+Previewer.help_tags = Previewer.base:extend()
+
+function Previewer.help_tags:new(o, opts)
+  Previewer.help_tags.super.new(self, o, opts)
+  self.cmd = self.cmd or vim.fn.executable("bat") == 1
+    and "bat -p -l help --color=always %s"
+    or "cat %s"
+  return self
+end
+
+function Previewer.help_tags:cmdline(o)
+  o = o or {}
+  local act = shell.raw_preview_action_cmd(function(items)
+    local vimdoc = items[1]:match("[^%s]+$")
+    local tag = items[1]:match("^[^%s]+")
+    local ext = path.extension(vimdoc)
+    local cmd = self.cmd:format(vim.fn.shellescape(vimdoc))
+    -- If 'bat' is available attempt to get the helptag line
+    -- and start the display of the help file from the tag
+    if self.cmd:match("^bat ") then
+      local line = grep_tag(vimdoc, ext == "md" and tag or string.format("*%s*", tag))
+      if tonumber(line) > 0 then
+        -- this is a ctag without line numbers, since we can't
+        -- provide the preview file offset to fzf via the field
+        -- index expression we use '--line-range' instead
+        cmd = cmd .. string.format(" --line-range=%d:", tonumber(line))
+      end
+    end
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd

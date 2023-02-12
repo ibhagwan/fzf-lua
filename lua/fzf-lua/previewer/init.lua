@@ -8,6 +8,7 @@ Previewer.fzf.cmd_async = function() return require "fzf-lua.previewer.fzf".cmd_
 Previewer.fzf.bat_async = function() return require "fzf-lua.previewer.fzf".bat_async end
 Previewer.fzf.git_diff = function() return require "fzf-lua.previewer.fzf".git_diff end
 Previewer.fzf.man_pages = function() return require "fzf-lua.previewer.fzf".man_pages end
+Previewer.fzf.help_tags = function() return require "fzf-lua.previewer.fzf".help_tags end
 
 Previewer.builtin = {}
 Previewer.builtin.buffer_or_file = function()

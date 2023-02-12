@@ -187,7 +187,6 @@ M.globals = {
       _ctor = previewers.builtin.man_pages,
     },
     man_native = {
-      cmd   = utils.is_darwin() and "man -P cat %s" or "man %s",
       _ctor = previewers.fzf.man_pages,
     },
     help_tags = {
@@ -196,6 +195,9 @@ M.globals = {
     },
     help_file = {
       _ctor = previewers.builtin.help_file,
+    },
+    help_native = {
+      _ctor = previewers.fzf.help_tags,
     },
     builtin = {
       syntax          = true,

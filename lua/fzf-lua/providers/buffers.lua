@@ -353,9 +353,11 @@ M.tabs = function(opts)
           return utils.ansi_codes.blue(utils.ansi_codes.bold(s));
         end)
 
-      cb(string.format("%d)%s%s\t%s", t, utils.nbsp,
-        fn_title_hl(title),
-        (t == __STATE.curtabidx) and fn_marker_hl(marker) or ""))
+      if not opts.current_tab_only then
+        cb(string.format("%d)%s%s\t%s", t, utils.nbsp,
+          fn_title_hl(title),
+          (t == __STATE.curtabidx) and fn_marker_hl(marker) or ""))
+      end
 
       local bufnrs_flat = {}
       for b, _ in pairs(bufnrs) do
