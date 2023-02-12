@@ -4,13 +4,13 @@ package = 'fzf-lua'
 version = _MODREV .. _SPECREV
 
 description = {
-   summary = 'UI Component Library for Neovim',
+   summary = 'Improved fzf.vim written in lua',
    labels = {
      'neovim',
      'plugin'
    },
    homepage = 'http://github.com/ibhagwan/fzf-lua',
-   license = 'MIT',
+   license = 'AGPL-3.0',
 }
 
 dependencies = {
