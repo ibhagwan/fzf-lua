@@ -97,6 +97,8 @@ to configure in `previewer.builtin.extensions`):
 
 ## Installation
 
+[![LuaRocks](https://img.shields.io/luarocks/v/ibhagwan/fzf-lua?logo=lua&color=purple)](https://luarocks.org/modules/ibhagwan/fzf-lua)
+
 Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
