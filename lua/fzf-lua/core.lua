@@ -269,16 +269,20 @@ M.create_fzf_colors = function(opts)
 
   local tbl = {}
   for highlight, list in pairs(colors) do
-    local value = M.get_color(list[2], list[1])
-    local col = value:match("#[%x]+") or value:match("^[0-9]+")
-    if col then
-      table.insert(tbl, ("%s:%s"):format(highlight, col))
-    end
-    -- arguments in the 3rd slot onward are passed raw, this can
-    -- be used to pass styling arguments, for more info see #413
-    -- https://github.com/junegunn/fzf/issues/1663
-    for i = 3, #list do
-      table.insert(tbl, ("%s:%s"):format(highlight, list[i]))
+    if type(list) == "table" then
+      local value = M.get_color(list[2], list[1])
+      local col = value:match("#[%x]+") or value:match("^[0-9]+")
+      if col then
+        table.insert(tbl, ("%s:%s"):format(highlight, col))
+      end
+      -- arguments in the 3rd slot onward are passed raw, this can
+      -- be used to pass styling arguments, for more info see #413
+      -- https://github.com/junegunn/fzf/issues/1663
+      for i = 3, #list do
+        table.insert(tbl, ("%s:%s"):format(highlight, list[i]))
+      end
+    elseif type(list) == "string" then
+      table.insert(tbl, ("%s:%s"):format(highlight, list))
     end
   end
 
