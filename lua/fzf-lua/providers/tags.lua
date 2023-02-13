@@ -51,6 +51,9 @@ local function tags(opts)
   opts.__MODULE__ = opts.__MODULE__ or M
   opts.__module__ = opts.__module__ or "tags"
 
+  -- make sure we have the correct 'bat' previewer for tags
+  if opts.previewer == "bat" then opts.previewer = "bat_async" end
+
   -- signal actions this is a ctag
   opts._ctag = true
   opts.ctags_bin = opts.ctags_bin or "ctags"

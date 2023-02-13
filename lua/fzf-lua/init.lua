@@ -72,7 +72,11 @@ end
 M.setup_highlights()
 
 
-function M.setup(opts)
+function M.setup(opts, do_not_reset_defaults)
+  -- Reset to defaults and merge with user options
+  if not do_not_reset_defaults then
+    config.reset_defaults()
+  end
   local globals = vim.tbl_deep_extend("keep", opts, config.globals)
   -- backward compatibility before winopts was it's own struct
   for k, _ in pairs(globals.winopts) do
@@ -113,7 +117,7 @@ function M.setup(opts)
   -- reset our globals based on user opts
   -- this doesn't happen automatically
   config.globals = globals
-  globals = nil
+  config.DEFAULTS.globals = globals
   -- setup highlights
   M.setup_highlights()
 end

@@ -64,9 +64,13 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- Using `cat` instead to read from the FIFO named pipe seems to solve it,
       -- this is also better as it lets fzf handle spawning and terminating the
       -- command which is consistent with the behavior above (with string cmds)
-      FZF_DEFAULT_COMMAND = string.format("cat %s", vim.fn.shellescape(fifotmpname))
-      -- Previously used command, left commented for documentation reasons
-      -- cmd = ("%s < %s"):format(cmd, vim.fn.shellescape(fifotmpname))
+      -- TODO: why does {FZF|SKIM}_DEFAULT_COMMAND cause delay in opening skim?
+      -- use input redirection with skim to prevent interface opening delay
+      if opts.fzf_bin and opts.fzf_bin:match("sk$") then
+        cmd = ("%s < %s"):format(cmd, vim.fn.shellescape(fifotmpname))
+      else
+        FZF_DEFAULT_COMMAND = string.format("cat %s", vim.fn.shellescape(fifotmpname))
+      end
     end
   end
 
