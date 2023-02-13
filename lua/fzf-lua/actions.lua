@@ -71,6 +71,9 @@ M.act = function(actions, selected, opts)
   end
 end
 
+-- Dummy abort action for `esc|ctrl-c|ctrl-q`
+M.dummy_abort = function() end
+
 M.resume = function(_, _)
   -- must call via vim.cmd or we create
   -- circular 'require'

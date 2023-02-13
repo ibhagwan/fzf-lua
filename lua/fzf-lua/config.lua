@@ -1042,6 +1042,7 @@ M.get_action_helpstr = function(fn)
 end
 
 M._action_to_helpstr = {
+  [actions.dummy_abort]         = "abort",
   [actions.file_edit]           = "file-edit",
   [actions.file_edit_or_qf]     = "file-edit-or-qf",
   [actions.file_split]          = "file-split",

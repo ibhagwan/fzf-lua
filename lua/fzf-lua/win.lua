@@ -1185,7 +1185,7 @@ function FzfWin.toggle_help()
     for k, v in pairs(self.keymap[m]) do
       -- only add preview keybinds respective of
       -- the current preview mode
-      if not _preview_keymaps[v] or m == preview_mode then
+      if v and (not _preview_keymaps[v] or m == preview_mode) then
         if m == "builtin" then
           k = utils.neovim_bind_to_fzf(k)
         end

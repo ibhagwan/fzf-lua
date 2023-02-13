@@ -46,6 +46,11 @@ M.register = function(opts, silent, opts_once)
   return true
 end
 
+M.accept_item = function(selected, o)
+  local idx = selected and tonumber(selected[1]:match("^(%d+).")) or nil
+  o._on_choice(idx and o._items[idx] or nil, idx)
+end
+
 M.ui_select = function(items, opts, on_choice)
   --[[
   -- Code Actions
@@ -98,15 +103,10 @@ M.ui_select = function(items, opts, on_choice)
   _opts._items = items
   _opts._on_choice = on_choice
 
-  _opts.actions = vim.tbl_deep_extend("keep", _opts.actions or {},
-    {
-      ["default"] = function(selected, o)
-        local idx = selected and tonumber(selected[1]:match("^(%d+).")) or nil
-        o._on_choice(idx and o._items[idx] or nil, idx)
-      end
-    })
+  _opts.actions = vim.tbl_deep_extend("keep",
+    _opts.actions or {}, { ["default"] = M.accept_item })
 
-  config.set_action_helpstr(_opts.actions["default"], "accept-item")
+  config.set_action_helpstr(M.accept_item, "accept-item")
 
   _opts.fn_selected = function(selected, o)
     config.set_action_helpstr(_opts.actions["default"], nil)
@@ -114,7 +114,7 @@ M.ui_select = function(items, opts, on_choice)
     if not selected then
       on_choice(nil, nil)
     else
-      actions.act(_opts.actions, selected, o)
+      actions.act(o.actions, selected, o)
     end
 
     if _opts.post_action_cb then
