@@ -5,16 +5,27 @@ local config = require "fzf-lua.config"
 local libuv = require "fzf-lua.libuv"
 local make_entry = require "fzf-lua.make_entry"
 
-local function get_last_search(opts)
-  if opts.__MODULE__ and opts.__MODULE__.get_last_search then
+local function set_live_grep_prompt(prompt)
+  -- prefix all live_grep prompts with an asterisk
+  return prompt:match("^%*") and prompt or "*" .. prompt
+end
+
+local M = {}
+
+function M.get_last_search(opts)
+  if opts and opts.__MODULE__ and opts.__MODULE__.get_last_search and
+    utils.__FNCREF__() ~= opts.__MODULE__.get_last_search then
+    -- incase we are called from 'tags'
     return opts.__MODULE__.get_last_search(opts)
   end
   local last_search = config.globals.grep._last_search or {}
   return last_search.query, last_search.no_esc
 end
 
-local function set_last_search(opts, query, no_esc)
-  if opts.__MODULE__ and opts.__MODULE__.set_last_search then
+function M.set_last_search(opts, query, no_esc)
+  if opts and opts.__MODULE__ and opts.__MODULE__.set_last_search and
+    utils.__FNCREF__() ~= opts.__MODULE__.set_last_search then
+    -- incase we are called from 'tags'
     opts.__MODULE__.set_last_search(opts, query, no_esc)
     return
   end
@@ -26,13 +37,6 @@ local function set_last_search(opts, query, no_esc)
     config.__resume_data.last_query = query
   end
 end
-
-local function set_live_grep_prompt(prompt)
-  -- prefix all live_grep prompts with an asterisk
-  return prompt:match("^%*") and prompt or "*" .. prompt
-end
-
-local M = {}
 
 local get_grep_cmd = function(opts, search_query, no_esc)
   if opts.raw_cmd and #opts.raw_cmd > 0 then
@@ -115,7 +119,7 @@ M.grep = function(opts)
 
   local no_esc = false
   if not opts.search and opts.resume then
-    opts.search, no_esc = get_last_search(opts)
+    opts.search, no_esc = M.get_last_search(opts)
     opts.search = opts.search or opts.resume_search_default
   end
 
@@ -131,7 +135,7 @@ M.grep = function(opts)
 
   -- save the search query so we
   -- can call the same search again
-  set_last_search(opts, opts.search, no_esc or opts.no_esc)
+  M.set_last_search(opts, opts.search, no_esc or opts.no_esc)
 
   local contents = core.mt_cmd_wrapper(vim.tbl_deep_extend("force", opts,
     -- query was already parsed for globs inside 'get_grep_cmd'
@@ -151,11 +155,11 @@ M.grep = function(opts)
   -- considered the last search so we find out if that's the
   -- case and use the last typed prompt as the grep string
   opts.fn_post_fzf = function(o, _)
-    local last_search, _ = get_last_search(o)
+    local last_search, _ = M.get_last_search(o)
     local last_query = config.__resume_data and config.__resume_data.last_query
     if not last_search or #last_search == 0
         and (last_query and #last_query > 0) then
-      set_last_search(opts, last_query)
+      M.set_last_search(opts, last_query)
     end
   end
 
@@ -178,7 +182,7 @@ M.live_grep_st = function(opts)
 
   local no_esc = false
   if not opts.search and opts.resume then
-    opts.search, no_esc = get_last_search(opts)
+    opts.search, no_esc = M.get_last_search(opts)
   end
 
   opts.query = opts.search or ""
@@ -189,12 +193,12 @@ M.live_grep_st = function(opts)
     end
     -- save the search query so the user can
     -- call the same search again
-    set_last_search(opts, opts.query, true)
+    M.set_last_search(opts, opts.query, true)
   end
 
   opts.fn_reload = function(query)
     if query and not (opts.save_last_search == false) then
-      set_last_search(opts, query, true)
+      M.set_last_search(opts, query, true)
     end
     -- can be nil when called as fzf initial command
     query = query or ""
@@ -215,13 +219,12 @@ M.live_grep_st = function(opts)
 
   -- see notes for this section in 'live_grep_mt'
   if not opts._is_skim then
-    opts.save_query = true
     opts.fn_post_fzf = function(o, _)
-      local last_search, _ = get_last_search(o)
+      local last_search, _ = M.get_last_search(o)
       local last_query = config.__resume_data and config.__resume_data.last_query
       if not opts.exec_empty_query
           and last_search ~= last_query then
-        set_last_search(opts, last_query or "")
+        M.set_last_search(opts, last_query or "")
       end
     end
   end
@@ -255,7 +258,7 @@ M.live_grep_mt = function(opts)
 
   local no_esc = false
   if not opts.search and opts.resume then
-    opts.search, no_esc = get_last_search(opts)
+    opts.search, no_esc = M.get_last_search(opts)
   end
 
   -- interactive interface uses 'query' parameter
@@ -267,7 +270,7 @@ M.live_grep_mt = function(opts)
     end
     -- save the search query so the user can
     -- call the same search again
-    set_last_search(opts, opts.query, true)
+    M.set_last_search(opts, opts.query, true)
   end
 
   -- signal to preprocess we are looking to replace {argvz}
@@ -301,24 +304,23 @@ M.live_grep_mt = function(opts)
   -- command isn't executed, resulting in '_last_search.query' never
   -- cleared and always having a minimum of one characer.
   -- This signals 'core.fzf' to add the '--print-query' flag and
-  -- handle the typed query on process exit using 'opts.fn_save_query'.
+  -- handle the typed query post process exit
   -- Due to a skim bug, this doesn't work when used in conjunction with
   -- the '--interactive' flag: the line with the typed query is printed
   -- to stdout but is always empty.
   -- To understand this issue, run 'live_grep', type a query and then
-  -- delete it and press <C-i> to switch to 'grep'. Instead of an empty
+  -- delete it and press <C-g> to switch to 'grep'. Instead of an empty
   -- search, the last typed character will be used as the search string
   if not opts._is_skim then
-    opts.save_query = true
     opts.fn_post_fzf = function(o, _)
-      local last_search, _ = get_last_search(o)
+      local last_search, _ = M.get_last_search(o)
       local last_query = config.__resume_data and config.__resume_data.last_query
       if not opts.exec_empty_query and last_search ~= last_query or
           -- we should also save the query when we are piping the command
           -- directly without our headless wrapper, i.e. 'live_grep_native'
           (not opts.requires_processing and
               not opts.git_icons and not opts.file_icons) then
-        set_last_search(opts, last_query or "", true)
+        M.set_last_search(opts, last_query or "", true)
       end
     end
   end

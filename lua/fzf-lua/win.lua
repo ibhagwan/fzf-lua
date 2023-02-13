@@ -19,37 +19,6 @@ setmetatable(FzfWin, {
   end,
 })
 
-function FzfWin.save_query(key)
-  local self = _self
-  if not self then return end
-  local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
-  if not lines or vim.tbl_isempty(lines) then return end
-  local query = nil
-  if not self.prompt then
-    -- no prompt specified, assume default '> '
-    -- or 'c> ' in skim interactive mode
-    query = lines[1]:match(".->%s(.*)")
-  else
-    -- 'live_grep' prepends an asterisk to the prompt
-    -- remove '*' from the start of the line & prompt
-    query = lines[1]:gsub("^%*+", "")
-        :gsub("^" .. utils.lua_escape(self.prompt:match("[^%*]+")), "")
-  end
-  if query then
-    -- remove '--info=inline'
-    query = query:gsub("[<%-]%s%d+/%d+.*$", "")
-    -- remove '< [Command failed: ...]
-    query = query:gsub("<%s%[Command failed:.*$", "")
-    -- trim whitespaces at the end
-    query = query:gsub("%s*$", "")
-  end
-  if self.fn_save_query then
-    self.fn_save_query(query)
-  end
-  -- feed the original key back to the term
-  utils.feed_keys_termcodes(utils.fzf_bind_to_neovim(key))
-end
-
 local _preview_keymaps = {
   ["toggle-preview"]      = { module = "win", fnc = "toggle_preview()" },
   ["toggle-preview-wrap"] = { module = "win", fnc = "toggle_preview_wrap()" },
@@ -88,19 +57,6 @@ function FzfWin:setup_keybinds()
     if keymap and not vim.tbl_isempty(keymap) and action ~= false then
       api.nvim_buf_set_keymap(self.fzf_bufnr, "t", key,
         funcref_str(keymap), { nowait = true, noremap = true })
-    end
-  end
-  -- since '--print-query' only covers successful exits
-  -- we have to monitor <C-c> and <Esc> to save the query
-  if self.fn_save_query then
-    -- workaround, how to enter <Esc>/<C-c> in map as literals?
-    -- for now use the fzf notation and convert later, otherwise
-    -- the prevalence of '<Esc>' in the mapping will interrupt it
-    for _, key in ipairs({ "ctrl-c", "esc" }) do
-      api.nvim_buf_set_keymap(self.fzf_bufnr, "t",
-        utils.fzf_bind_to_neovim(key),
-        ("<Cmd>lua require('fzf-lua.win').save_query('%s')<CR>"):format(key),
-        { nowait = true, noremap = true })
     end
   end
 end
@@ -385,7 +341,6 @@ function FzfWin:new(o)
   self.keymap = o.keymap
   self.previewer = o.previewer
   self.prompt = o.prompt or o.fzf_opts["--prompt"]
-  self.fn_save_query = o.fn_save_query
   self._orphaned_bufs = {}
   self:_set_autoclose(o.autoclose)
   _self = self

@@ -131,34 +131,19 @@ M.fzf = function(contents, opts)
     end
     -- save a ref to resume data for 'grep_lgrep'
     opts.__resume_data = config.__resume_data
-  end
-  if opts.save_query or
-      opts.global_resume and opts.global_resume_query then
     -- We use this option to print the query on line 1
     -- later to be removed from the result by M.fzf()
     -- this provides a solution for saving the query
     -- when the user pressed a valid bind but not when
     -- aborting with <C-c> or <Esc>, see next comment
     opts.fzf_opts["--print-query"] = ""
-    -- Signals to the win object that resume is enabled
-    -- so we can setup the keypress event monitoring
-    -- since we already have the query on valid
-    -- exit codes we only need to monitor <C-c>, <Esc>
-    opts.fn_save_query = function(query)
-      config.__resume_data.last_query = query and #query > 0 and query or nil
+    -- setup dummy callbacks for the default fzf 'abort' keybinds
+    -- this way the query also gets saved when we do not 'accept'
+    for _, k in ipairs({ "ctrl-c", "ctrl-q", "esc" }) do
+      if opts.actions[k] == nil then
+        opts.actions[k] = function(_, _) end
+      end
     end
-    -- 'au InsertCharPre' would be the best option here
-    -- but it does not work for terminals:
-    -- https://github.com/neovim/neovim/issues/5018
-    -- this is causing lag when typing too fast (#271)
-    -- also not possible with skim (no 'change' event)
-    --[[ if not opts._is_skim then
-      local raw_act = shell.raw_action(function(args)
-        opts.fn_save_query(args[1])
-      end, "{q}")
-      opts._fzf_cli_args = ('--bind=change:execute-silent:%s'):
-        format(vim.fn.shellescape(raw_act))
-    end ]]
   end
   -- setup the fzf window and preview layout
   local fzf_win = win(opts)
@@ -220,18 +205,18 @@ M.fzf = function(contents, opts)
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     { fzf_bin = opts.fzf_bin, cwd = opts.cwd, silent_fail = opts.silent_fail,
       is_fzf_tmux = opts._is_fzf_tmux })
-  -- This was added by 'resume':
-  -- when '--print-query' is specified
-  -- we are guaranteed to have the query
-  -- in the first line, save&remove it
+  -- This was added by 'resume': when '--print-query' is specified
+  -- we are guaranteed to have the query in the first line, save&remove it
   if selected and #selected > 0 and
       opts.fzf_opts["--print-query"] ~= nil then
-    if opts.fn_save_query and not (opts._is_skim and opts.fn_reload) then
+    if not (opts._is_skim and opts.fn_reload) then
       -- reminder: this doesn't get called with 'live_grep' when using skim
       -- due to a bug where '--print-query --interactive' combo is broken:
       -- skim always prints an empty line where the typed query should be.
-      -- see addtional note above 'opts.save_query' inside 'live_grep_mt'
-      opts.fn_save_query(selected[1])
+      -- see addtional note above 'opts.fn_post_fzf' inside 'live_grep_mt'
+      local query = selected[1]
+      config.__resume_data = config.__resume_data or {}
+      config.__resume_data.last_query = type(query) == "string" and query or nil
     end
     table.remove(selected, 1)
   end

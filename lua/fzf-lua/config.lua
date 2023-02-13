@@ -27,7 +27,6 @@ M.__resume_data = {}
 M.globals = {
   nbsp                = utils.nbsp,
   global_resume       = true,
-  global_resume_query = true,
   winopts             = {
     height       = 0.85,
     width        = 0.80,
@@ -841,7 +840,6 @@ function M.normalize_opts(opts, defaults)
 
   -- Merge global resume options
   opts.global_resume = get_opt("global_resume", opts, M.globals)
-  opts.global_resume_query = get_opt("global_resume_query", opts, M.globals)
 
   -- Backward compat: renamed '{continue|repeat}_last_search'
   if opts.resume == nil then

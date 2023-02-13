@@ -476,18 +476,11 @@ M.document_symbols = function(opts)
   return core.fzf_exec(opts.fzf_fn, opts)
 end
 
-local function get_last_lspquery(opts)
-  if opts.__MODULE__ and opts.__MODULE__.get_last_search then
-    return opts.__MODULE__.get_last_lspquery(opts)
-  end
+local function get_last_lspquery(_)
   return M.__last_ws_lsp_query
 end
 
-local function set_last_lspquery(opts, query)
-  if opts.__MODULE__ and opts.__MODULE__.set_last_search then
-    opts.__MODULE__.set_last_lspquery(opts, query)
-    return
-  end
+local function set_last_lspquery(_, query)
   M.__last_ws_lsp_query = query
   if config.__resume_data then
     config.__resume_data.last_query = query
