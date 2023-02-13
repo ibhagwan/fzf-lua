@@ -139,6 +139,7 @@ M.fzf = function(contents, opts)
     opts.fzf_opts["--print-query"] = ""
     -- setup dummy callbacks for the default fzf 'abort' keybinds
     -- this way the query also gets saved when we do not 'accept'
+    opts.actions = opts.actions or {}
     for _, k in ipairs({ "ctrl-c", "ctrl-q", "esc" }) do
       if opts.actions[k] == nil then
         opts.actions[k] = function(_, _) end
