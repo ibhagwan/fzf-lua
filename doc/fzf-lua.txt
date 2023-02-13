@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 11
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 12
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -555,7 +555,8 @@ open an issue and I'll be more than happy to help.**
       },
       -- Only used when fzf_bin = "fzf-tmux", by default opens as a
       -- popup 80% width, 80% height (note `-p` requires tmux > 3.2)
-      fzf_tmux_opts       = { ["-p"] = "80%,80%" },
+      -- and removes the sides margin added by `fzf-tmux` (fzf#3162)
+      fzf_tmux_opts       = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
       -- fzf '--color=' options (optional)
       --[[ fzf_colors = {
           ["fg"]          = { "fg", "CursorLine" },
