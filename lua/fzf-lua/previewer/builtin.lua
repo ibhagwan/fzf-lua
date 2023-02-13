@@ -2,7 +2,6 @@ local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local Object = require "fzf-lua.class"
-local make_entry = require "fzf-lua.make_entry"
 
 local api = vim.api
 local uv = vim.loop
@@ -124,7 +123,7 @@ end
 function Previewer.base:set_preview_buf(newbuf)
   if not self.win or not self.win:validate_preview() then return end
   -- Set the preview window to the new buffer
-  api.nvim_win_set_buf(self.win.preview_winid, newbuf)
+  utils.win_set_buf_noautocmd(self.win.preview_winid, newbuf)
   self.preview_bufnr = newbuf
   -- set preview window options
   self:set_winopts(self.win.preview_winid)
@@ -192,7 +191,7 @@ function Previewer.base:clear_preview_buf(newbuf)
     -- so we can safely delete the buffer
     -- ('nvim_buf_delete' removes the attached win)
     retbuf = self:get_tmp_buffer()
-    api.nvim_win_set_buf(self.win.preview_winid, retbuf)
+    utils.win_set_buf_noautocmd(self.win.preview_winid, retbuf)
   end
   -- since our temp buffers have 'bufhidden=wipe' the tmp
   -- buffer will be automatically wiped and 'nvim_buf_is_valid'
@@ -846,7 +845,7 @@ function Previewer.help_tags:populate_preview_buf(entry_str)
     self.preview_bufnr = api.nvim_get_current_buf()
     self.orig_pos = api.nvim_win_get_cursor(0)
   end)
-  api.nvim_win_set_buf(self.win.preview_winid, self.preview_bufnr)
+  utils.win_set_buf_noautocmd(self.win.preview_winid, self.preview_bufnr)
   api.nvim_win_set_cursor(self.win.preview_winid, self.orig_pos)
   self.win:update_scrollbar()
   if self.prev_help_bufnr ~= self.preview_bufnr and

@@ -605,6 +605,14 @@ function M.zz()
   end
 end
 
+-- Set buffer for window without an autocmd
+function M.win_set_buf_noautocmd(win, buf)
+  local save_ei = vim.o.eventignore
+  vim.o.eventignore = "all"
+  vim.api.nvim_win_set_buf(win, buf)
+  vim.o.eventignore = save_ei
+end
+
 function M.nvim_win_call(winid, func)
   vim.validate({
     winid = {

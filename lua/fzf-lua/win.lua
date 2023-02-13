@@ -500,8 +500,7 @@ function FzfWin:redraw_preview()
   end
 
   if self.fullscreen then
-    self.prev_winopts, self.border_winopts =
-    self:fs_preview_layout(self.fullscreen)
+    self.prev_winopts, self.border_winopts = self:fs_preview_layout(self.fullscreen)
   end
 
   if self:validate_preview() then
@@ -515,12 +514,18 @@ function FzfWin:redraw_preview()
     end
   else
     local tmp_buf = api.nvim_create_buf(false, true)
+    -- No autocmds, can only be sent with 'nvim_open_win'
+    self.prev_winopts.noautocmd = true
+    self.border_winopts.noautocmd = true
     api.nvim_buf_set_option(tmp_buf, "bufhidden", "wipe")
     self.border_buf = self:update_border_buf()
     self.preview_winid = api.nvim_open_win(tmp_buf, false, self.prev_winopts)
     self.border_winid = api.nvim_open_win(self.border_buf, false, self.border_winopts)
     -- nowrap border or long filenames will mess things up
     api.nvim_win_set_option(self.border_winid, "wrap", false)
+    -- Add win local var for the preview|border windows
+    api.nvim_win_set_var(self.preview_winid, "fzf_lua_preview", true)
+    api.nvim_win_set_var(self.border_winid, "fzf_lua_preview", true)
   end
   self:reset_win_highlights(self.border_winid, true)
   self:reset_win_highlights(self.preview_winid)
