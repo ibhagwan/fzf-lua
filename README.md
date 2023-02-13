@@ -485,7 +485,8 @@ require'fzf-lua'.setup {
   },
   -- Only used when fzf_bin = "fzf-tmux", by default opens as a
   -- popup 80% width, 80% height (note `-p` requires tmux > 3.2)
-  fzf_tmux_opts       = { ["-p"] = "80%,80%" },
+  -- and removes the sides margin added by `fzf-tmux` (fzf#3162)
+  fzf_tmux_opts       = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
   -- fzf '--color=' options (optional)
   --[[ fzf_colors = {
       ["fg"]          = { "fg", "CursorLine" },
