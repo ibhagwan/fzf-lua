@@ -380,6 +380,7 @@ M.defaults.buffers = {
   show_all_buffers      = true,
   ignore_current_buffer = false,
   cwd_only              = false,
+  cwd                   = nil,
   _actions              = function() return M.globals.actions.buffers end,
   actions               = {
     ["ctrl-x"] = { actions.buf_del, actions.resume },
