@@ -7,6 +7,9 @@ local api = vim.api
 local uv = vim.loop
 local fn = vim.fn
 
+-- is treesitter available?
+local __has_ts, __ts_configs, __ts_parsers
+
 local Previewer = {}
 
 Previewer.base = Object:extend()
@@ -30,6 +33,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.syntax_limit_b = default(o.syntax_limit_b, 1024 * 1024)
   self.syntax_limit_l = default(o.syntax_limit_l, 0)
   self.limit_b = default(o.limit_b, 1024 * 1024 * 10)
+  self.treesitter = o.treesitter or {}
   self.backups = {}
   -- convert extension map to lower case
   if o.extensions then
@@ -630,6 +634,37 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   end
 end
 
+-- Attach ts highlighter
+local ts_attach = function(bufnr, ft)
+  if not __has_ts then
+    __has_ts, _ = pcall(require, "nvim-treesitter")
+    if __has_ts then
+      _, __ts_configs = pcall(require, "nvim-treesitter.configs")
+      _, __ts_parsers = pcall(require, "nvim-treesitter.parsers")
+    end
+  end
+
+  if not __has_ts or not ft or ft == "" then
+    return false
+  end
+
+  local lang = __ts_parsers.ft_to_lang(ft)
+  if not __ts_configs.is_enabled("highlight", lang, bufnr) then
+    return false
+  end
+
+  local config = __ts_configs.get_module "highlight"
+  vim.treesitter.highlighter.new(__ts_parsers.get_parser(bufnr, lang))
+  local is_table = type(config.additional_vim_regex_highlighting) == "table"
+  if
+    config.additional_vim_regex_highlighting
+    and (not is_table or vim.tbl_contains(config.additional_vim_regex_highlighting, lang))
+  then
+    vim.api.nvim_buf_set_option(bufnr, "syntax", ft)
+  end
+  return true
+end
+
 function Previewer.buffer_or_file:do_syntax(entry)
   if not self.preview_bufnr then return end
   if not entry or not entry.path then return end
@@ -660,28 +695,59 @@ function Previewer.buffer_or_file:do_syntax(entry)
         ))
       end
       if syntax_limit_reached == 0 then
-        if entry.filetype == "help" then
-          -- if entry.filetype and #entry.filetype>0 then
-          -- filetype was saved from a loaded buffer
-          -- this helps avoid losing highlights for help buffers
-          -- which are '.txt' files with 'ft=help'
-          -- api.nvim_buf_set_option(bufnr, 'filetype', entry.filetype)
-          pcall(api.nvim_buf_set_option, bufnr, "filetype", entry.filetype)
-        else
-          -- prepend the buffer number to the path and
-          -- set as buffer name, this makes sure 'filetype detect'
-          -- gets the right filetype which enables the syntax
-          local tempname = path.join({ tostring(bufnr), entry.path })
-          pcall(api.nvim_buf_set_name, bufnr, tempname)
+        -- 'vim.filetype' was added with v0.7
+        local fallback = vim.fn.has("nvim-0.7") == 0
+        if not fallback then
+          fallback = (function()
+            local ft = vim.filetype.match({ buf = bufnr, filename = entry.path })
+            if type(ft) ~= "string" then
+              return true
+            end
+            local ts_enabled = (function()
+              if not self.treesitter or
+                  self.treesitter.enable == false or
+                  self.treesitter.disable == true or
+                  (type(self.treesitter.enable) == "table" and
+                  not vim.tbl_contains(self.treesitter.enable, ft)) or
+                  (type(self.treesitter.disable) == "table" and
+                  vim.tbl_contains(self.treesitter.disable, ft)) then
+                return false
+              end
+              return true
+            end)()
+            local ts_success
+            if ts_enabled then
+              ts_success = ts_attach(bufnr, ft)
+            end
+            if not ts_enabled or not ts_success then
+              pcall(vim.api.nvim_buf_set_option, bufnr, "syntax", ft)
+            end
+          end)()
         end
-        -- nvim_buf_call has less side-effects than window switch
-        local ok, _ = pcall(api.nvim_buf_call, bufnr, function()
-          vim.cmd("filetype detect")
-        end)
-        if not ok then
-          utils.warn(("syntax highlighting failed for filetype '%s', ")
+        if fallback then
+          if entry.filetype == "help" then
+            -- if entry.filetype and #entry.filetype>0 then
+            -- filetype was saved from a loaded buffer
+            -- this helps avoid losing highlights for help buffers
+            -- which are '.txt' files with 'ft=help'
+            -- api.nvim_buf_set_option(bufnr, 'filetype', entry.filetype)
+            pcall(api.nvim_buf_set_option, bufnr, "filetype", entry.filetype)
+          else
+            -- prepend the buffer number to the path and
+            -- set as buffer name, this makes sure 'filetype detect'
+            -- gets the right filetype which enables the syntax
+            local tempname = path.join({ tostring(bufnr), entry.path })
+            pcall(api.nvim_buf_set_name, bufnr, tempname)
+          end
+          -- nvim_buf_call has less side-effects than window switch
+          local ok, _ = pcall(api.nvim_buf_call, bufnr, function()
+            vim.cmd("filetype detect")
+          end)
+          if not ok then
+            utils.warn(("syntax highlighting failed for filetype '%s', ")
             :format(entry.path and path.extension(entry.path) or "<null>") ..
             "open the file and run ':filetype detect' for more info.")
+          end
         end
       end
     end

@@ -534,6 +534,11 @@ require'fzf-lua'.setup {
       syntax_limit_l  = 0,            -- syntax limit (lines), 0=nolimit
       syntax_limit_b  = 1024*1024,    -- syntax limit (bytes), 0=nolimit
       limit_b         = 1024*1024*10, -- preview limit (bytes), 0=nolimit
+      -- previewer treesitter options:
+      -- enable specific filetypes with: `{ enable = { "lua" } }
+      -- exclude specific filetypes with: `{ disable = { "lua" } }
+      -- disable fully with: `{ enable = false }`
+      treesitter      = { enable = true, disable = {} },
       -- preview extensions using a custom shell command:
       -- for example, use `viu` for image previews
       -- will do nothing if `viu` isn't executable
