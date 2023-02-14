@@ -334,6 +334,7 @@ M.defaults.oldfiles = {
   color_icons = true,
   git_icons   = false,
   stat_file   = true,
+  fzf_opts    = { ["--tiebreak"] = "index", },
   _actions    = function() return M.globals.actions.files end,
 }
 
@@ -381,6 +382,7 @@ M.defaults.buffers = {
   ignore_current_buffer = false,
   cwd_only              = false,
   cwd                   = nil,
+  fzf_opts              = { ["--tiebreak"] = "index", },
   _actions              = function() return M.globals.actions.buffers end,
   actions               = {
     ["ctrl-x"] = { actions.buf_del, actions.resume },
