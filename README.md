@@ -214,6 +214,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | ---------------- | ------------------------------------------ |
 | `resume`           | resume last command/query                  |
 | `builtin`          | fzf-lua builtin commands                   |
+| `profiles`         | fzf-lua configuration profiles             |
 | `help_tags`        | help tags                                  |
 | `man_pages`        | man pages                                  |
 | `colorschemes`     | color schemes                              |
@@ -482,6 +483,7 @@ require'fzf-lua'.setup {
   -- Only used when fzf_bin = "fzf-tmux", by default opens as a
   -- popup 80% width, 80% height (note `-p` requires tmux > 3.2)
   -- and removes the sides margin added by `fzf-tmux` (fzf#3162)
+  -- for more options run `fzf-tmux --help`
   fzf_tmux_opts       = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
   -- fzf '--color=' options (optional)
   --[[ fzf_colors = {

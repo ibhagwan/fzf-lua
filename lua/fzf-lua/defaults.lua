@@ -589,6 +589,18 @@ M.defaults.builtin = {
   },
 }
 
+M.defaults.profiles = {
+  previewer = M._default_previewer_fn,
+  prompt    = "FzfLua profiles> ",
+  fzf_opts  = {
+    ["--delimiter"] = "'[:]'",
+    ["--with-nth"]  = "2..",
+  },
+  actions   = {
+    ["default"] = actions.apply_profile,
+  },
+}
+
 M.defaults.marks = {
   prompt    = "Marks> ",
   actions   = {
