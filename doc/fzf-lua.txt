@@ -798,6 +798,8 @@ open an issue and I'll be more than happy to help.**
         prompt            = 'Buffers❯ ',
         file_icons        = true,         -- show file icons?
         color_icons       = true,         -- colorize file|git icons
+        cwd_only          = false,        -- buffers for the cwd only
+        cwd               = nil,          -- buffers list for a given dir
         sort_lastused     = true,         -- sort buffers() by last used
         actions = {
           -- actions inherit from 'actions.buffers' and merge

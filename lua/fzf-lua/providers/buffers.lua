@@ -68,6 +68,8 @@ local filter_buffers = function(opts, unfiltered)
     end
     if opts.cwd_only and not path.is_relative(vim.api.nvim_buf_get_name(b), vim.loop.cwd()) then
       excluded[b] = true
+    elseif opts.cwd and not path.is_relative(vim.api.nvim_buf_get_name(b), opts.cwd) then
+      excluded[b] = true
     end
     return not excluded[b]
   end, unfiltered)
