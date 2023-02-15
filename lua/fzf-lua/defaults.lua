@@ -670,6 +670,9 @@ M.defaults.registers = {
 
 M.defaults.keymaps = {
   prompt = "Keymaps> ",
+  actions = {
+    ["default"] = actions.keymap_apply,
+  },
 }
 
 M.defaults.spell_suggest = {
