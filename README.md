@@ -307,6 +307,28 @@ require('fzf-lua').setup{
 EOF
 ```
 
+### Profiles
+
+Conviniently, fzf-lua comes with a set of preconfigured profiles, notably:
+| Profile          | Details                                    |
+| ---------------- | ------------------------------------------ |
+| `default`          | fzf-lua defaults, uses neovim "builtin" previewer and devicons (if available) for git/files/buffers |
+| `fzf-native`       | utilizes fzf's native previewing ability in the terminal where possible using `bat` for previews |
+| `fzf-tmux`         | similar to `fzf-native` and opens in a tmux popup (requires tmux > 3.2) |
+| `max-perf`         | similar to `fzf-native` and disables icons globally for max performance |
+| `telescope`        | closest match to telescope defaults in look and feel and keybinds |
+| `skim`             | uses [`skim`](https://github.com/lotabout/skim) as an fzf alternative, (requires the `sk` binary) |
+
+Use `:FzfLua profiles` to experiment with the different profiles, once you've found what
+you like and wish to make the profile persist, send a `string` argument to `setup`:
+```lua
+require('fzf-lua').setup('fzf-native')
+```
+> **Note:** `setup` can be called multiple times for profile "live" switching
+
+See [profiles](https://github.com/ibhagwan/fzf-lua/tree/main/lua/fzf-lua/profiles)
+for more info.
+
 ### Default Options
 
 **Below is a list of most (still, not all default settings), please also

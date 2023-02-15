@@ -736,24 +736,12 @@ M.set_qflist = function(selected, opts)
   vim.cmd(opts._is_loclist and "lopen" or "copen")
 end
 
-M.apply_profile = function(selected, _)
+M.apply_profile = function(selected, opts)
+  local fname = selected[1]:match("[^:]+")
   local profile = selected[1]:match(":([^%s]+)")
-  local req_profile = string.format("require'fzf-lua.profiles.%s'", profile)
-  local ok, res = pcall(loadstring("return " .. req_profile))
-  if not ok then
-    utils.warn(string.format(
-      "Unable to load profile '%s': %s", profile, res:match("[^\n]+")))
-  elseif type(res) ~= "table" then
-    utils.warn(string.format(
-      "Unable to load profile '%s': wrong type %s", profile, type(res)))
-  else
-    ok, res = pcall(loadstring(string.format("require'fzf-lua'.setup(%s)", req_profile)))
-    if not ok then
-      utils.warn(string.format(
-        "Unable to load profile '%s': %s", profile, res:match("[^\n]+")))
-    else
-      utils.info(string.format("Succefully loaded profile '%s'", profile))
-    end
+  local ok = utils.load_profile(fname, profile, opts.silent)
+  if ok then
+    vim.cmd(string.format([[lua require('fzf-lua').setup('%s')]], profile))
   end
 end
 

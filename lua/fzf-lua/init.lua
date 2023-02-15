@@ -1,3 +1,4 @@
+local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
@@ -84,10 +85,17 @@ M.setup_highlights()
 
 
 function M.setup(opts, do_not_reset_defaults)
+  if type(opts) == "string" then
+    -- Did the user request a specific profile?
+    local fname = path.join({ vim.g.fzf_lua_directory, "profiles", opts .. ".lua" })
+    opts = utils.load_profile(fname, nil, true)
+  end
   -- Reset to defaults and merge with user options
   if not do_not_reset_defaults then
     config.reset_defaults()
   end
+  -- Make sure opts is a table or override
+  opts = type(opts) == "table" and opts or {}
   local globals = vim.tbl_deep_extend("keep", opts, config.globals)
   -- backward compatibility before winopts was it's own struct
   for k, _ in pairs(globals.winopts) do

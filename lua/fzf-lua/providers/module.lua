@@ -46,7 +46,7 @@ local function ls(dir, fn)
       break
     end
 
-    local fname = path.HOME_to_tilde(path.join({ dir, name }))
+    local fname = path.join({ dir, name })
 
     -- HACK: type is not always returned due to a bug in luv,
     -- so fecth it with fs_stat instead when needed.
@@ -71,16 +71,15 @@ M.profiles = function(opts)
         ls(d, function(fname, name, type)
           local ext = path.extension(fname)
           if type == "file" and ext == "lua" then
-            local module = name:sub(1, #name - 4)
-            local ok, res = pcall(loadstring(
-              string.format("return require'fzf-lua.profiles.%s'", module)))
-            if ok then
-              cb(string.format("%s:%-30s%s", fname,
-                utils.ansi_codes.yellow(module), res.desc or ""),
-                function(err)
-                  coroutine.resume(co)
-                  if err then cb(nil) end
-                end)
+            local profile = name:sub(1, #name - 4)
+            local res = utils.load_profile(fname, profile, true)
+            if res then
+              local entry = string.format("%s:%-30s%s", fname,
+                utils.ansi_codes.yellow(profile), res.desc or "")
+              cb(entry, function(err)
+                coroutine.resume(co)
+                if err then cb(nil) end
+              end)
               coroutine.yield()
             end
           end

@@ -1,5 +1,5 @@
 return {
-  desc = "max performance (no icons)",
+  desc = "fzf-native with no git|files icons",
   winopts = { preview = { default = "bat" } },
   manpages = { previewer = "man_native" },
   helptags = { previewer = "help_native" },

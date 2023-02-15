@@ -94,28 +94,34 @@ function M.nvim_has_option(option)
   return vim.fn.exists("&" .. option) == 1
 end
 
-function M._echo_multiline(msg)
+function M._echo_multiline(msg, hl)
+  vim.cmd("echohl " .. hl)
   for _, s in ipairs(vim.fn.split(msg, "\n")) do
     vim.cmd("echom '" .. s:gsub("'", "''") .. "'")
+  end
+  vim.cmd("echohl None")
+end
+
+local fast_event_aware_echo = function(msg, hl)
+  if vim.in_fast_event() then
+    vim.schedule(function()
+      M._echo_multiline("[Fzf-lua] " .. msg, hl)
+    end)
+  else
+    M._echo_multiline("[Fzf-lua] " .. msg, hl)
   end
 end
 
 function M.info(msg)
-  vim.cmd("echohl Directory")
-  M._echo_multiline("[Fzf-lua] " .. msg)
-  vim.cmd("echohl None")
+  fast_event_aware_echo(msg, "Directory")
 end
 
 function M.warn(msg)
-  vim.cmd("echohl WarningMsg")
-  M._echo_multiline("[Fzf-lua] " .. msg)
-  vim.cmd("echohl None")
+  fast_event_aware_echo(msg, "WarningMsg")
 end
 
 function M.err(msg)
-  vim.cmd("echohl ErrorMsg")
-  M._echo_multiline("[Fzf-lua] " .. msg)
-  vim.cmd("echohl None")
+  fast_event_aware_echo(msg, "ErrorMsg")
 end
 
 function M.shell_error()
@@ -458,6 +464,25 @@ end
 
 function M.reset_info()
   pcall(loadstring("require'fzf-lua'.set_info(nil)"))
+end
+
+function M.load_profile(fname, name, silent)
+  local profile = name or fname:match("([^%p]+)%.lua$") or "<unknown>"
+  local ok, res = pcall(dofile, fname)
+  if ok and type(res) == "table" then
+    -- success
+    if not silent then
+      M.info(string.format("Succefully loaded profile '%s'", profile))
+    end
+    return res
+  elseif silent then
+    return
+  end
+  if not ok then
+    M.warn(string.format("Unable to load profile '%s': %s", profile, res:match("[^\n]+")))
+  elseif type(res) ~= "table" then
+    M.warn(string.format("Unable to load profile '%s': wrong type %s", profile, type(res)))
+  end
 end
 
 function M.send_ctrl_c()

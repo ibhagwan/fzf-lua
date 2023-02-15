@@ -1,5 +1,5 @@
 return {
-  desc = "fzf within a tmux popup",
+  desc = "fzf-native run inside a tmux popup",
   fzf_bin = "fzf-tmux",
   fzf_opts = { ["--border"] = "rounded" },
   fzf_tmux_opts = { ["-p"] = "80%,90%" },

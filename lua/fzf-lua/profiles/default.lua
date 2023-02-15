@@ -1,3 +1,3 @@
 return {
-  desc = "default options",
+  desc = "fzf-lua default options",
 }
