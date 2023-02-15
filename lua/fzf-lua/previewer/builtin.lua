@@ -99,7 +99,13 @@ end
 function Previewer.base:restore_winopts(win)
   if not win or not api.nvim_win_is_valid(win) then return end
   for opt, value in pairs(self.backups) do
-    vim.api.nvim_win_set_option(win, opt, value)
+    -- PROBABLY DOESN'T MATTER (WHO USES 0.5?) BUT WHY NOT LOL
+    -- minor backward compatibility fix, with neovim version < 0.7
+    -- nvim_win_get_option("scroloff") which should return -1
+    -- returns an invalid (really big number insead which panics
+    -- when called with nvim_win_set_option, wrapping in a pcall
+    -- ensures this plugin still works for neovim version as low as 0.5!
+    pcall(vim.api.nvim_win_set_option, win, opt, value)
   end
 end
 
@@ -695,8 +701,11 @@ function Previewer.buffer_or_file:do_syntax(entry)
         ))
       end
       if syntax_limit_reached == 0 then
-        -- 'vim.filetype' was added with v0.7
-        local fallback = vim.fn.has("nvim-0.7") == 0
+        -- 'vim.filetype' was added with v0.7 but panics with the below
+        -- limit treesitter manual attachment to 0.8 instead (0.7.2 also errs)
+        -- Error executing vim.schedule lua callback:
+        --   vim/filetype.lua:0: attempt to call method 'gsub' (a nil value)
+        local fallback = vim.fn.has("nvim-0.8") == 0
         if not fallback then
           fallback = (function()
             local ft = vim.filetype.match({ buf = bufnr, filename = entry.path })

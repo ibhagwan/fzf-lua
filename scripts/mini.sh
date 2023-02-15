@@ -8,7 +8,7 @@ trap 'echo "EXIT detected with exit status $?"' EXIT
 TEMPDIR=$(dirname $(mktemp -u))
 BASEDIR=$(cd "$(dirname "$0")" ; pwd -P)
 
-nvim_bin=nvim
+nvim_bin=${NVIM:-nvim}
 plug_name=fzf-lua
 plug_dir="${BASEDIR}/../../${plug_name}"
 tmp_dir="${TEMPDIR}/${plug_name}.tmp"
