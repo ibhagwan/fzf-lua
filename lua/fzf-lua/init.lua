@@ -65,6 +65,17 @@ function M.setup_highlights()
     -- save new highlight groups under 'winopts.__hl'
     config.set_global(v[1]:gsub("%.hl%.", ".__hl."), hl_name)
   end
+
+  for _, v in pairs(highlights) do
+    local opt_path = v[1]:gsub("%.hl%.", ".__hl.")
+    local hl = config.get_global(opt_path)
+    if utils.is_hl_cleared(hl) then
+      -- reset any invalid hl, this will cause our 'winhighlight'
+      -- string to look something akin to `Normal:,FloatBorder:`
+      -- which uses terminal fg|bg colors instead
+      config.set_global(opt_path, "")
+    end
+  end
 end
 
 -- Setup highlights at least once on load in
