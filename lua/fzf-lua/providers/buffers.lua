@@ -100,8 +100,16 @@ local populate_buffer_entries = function(opts, bufnrs, tabh)
     table.insert(buffers, element)
   end
   if opts.sort_lastused then
+    -- switching buffers and opening 'buffers' in quick succession
+    -- can lead to incorrect sort as 'lastused' isn't updated fast
+    -- enough (neovim bug?), this makes sure the current buffer is
+    -- always on top (#646)
     table.sort(buffers, function(a, b)
-      return a.info.lastused > b.info.lastused
+      if b.flag == "%" then
+        return false
+      else
+        return a.flag == "%" or a.info.lastused > b.info.lastused
+      end
     end)
   end
   return buffers
