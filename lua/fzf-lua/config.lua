@@ -347,6 +347,7 @@ M._action_to_helpstr = {
   [actions.search_cr]           = "exec-search",
   [actions.goto_mark]           = "goto-mark",
   [actions.goto_jump]           = "goto-jump",
+  [actions.keymap_apply]        = "keymap-apply",
   [actions.spell_apply]         = "spell-apply",
   [actions.set_filetype]        = "set-filetype",
   [actions.packadd]             = "packadd",

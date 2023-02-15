@@ -452,6 +452,11 @@ M.goto_jump = function(selected, opts)
   end
 end
 
+M.keymap_apply = function(selected)
+  local key = selected[1]:match("[│]%s+(.*)%s+[│]")
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), "t", true)
+end
+
 M.spell_apply = function(selected)
   local word = selected[1]
   vim.cmd("normal! ciw" .. word)
