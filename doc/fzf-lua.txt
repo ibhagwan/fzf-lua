@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 14
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 15
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -20,6 +20,7 @@ Neovim API .............................................. |fzf-lua-neovim-api|
 nvim-dap .................................................. |fzf-lua-nvim-dap|
 tmux .......................................................... |fzf-lua-tmux|
 Customization ........................................ |fzf-lua-customization|
+Profiles .................................................. |fzf-lua-profiles|
 Default Options .................................... |fzf-lua-default-options|
 Customizing Highlights ...................... |fzf-lua-customizing-highlights|
 Credits .................................................... |fzf-lua-credits|
@@ -378,6 +379,34 @@ Can also be called from a `.vim` file:
     }
     EOF
 <
+
+                                                                              
+PROFILES                                                    *fzf-lua-profiles*
+
+Conviniently, fzf-lua comes with a set of preconfigured profiles, notably:
+
+| Profile          | Details                                    |
+| ---------------- | ------------------------------------------ |
+| `default`          | fzf-lua defaults, uses neovim "builtin" previewer and devicons (if available) for git/files/buffers |
+| `fzf-native`       | utilizes fzf's native previewing ability in the terminal where possible using `bat` for previews |
+| `fzf-tmux`         | similar to `fzf-native` and opens in a tmux popup (requires tmux > 3.2) |
+| `max-perf`         | similar to `fzf-native` and disables icons globally for max performance |
+| `telescope`        | closest match to telescope defaults in look and feel and keybinds |
+| `skim`             | uses [`skim`](https://github.com/lotabout/skim) as an fzf alternative, (requires the `sk` binary) |
+
+Use `:FzfLua profiles` to experiment with the different profiles, once you've
+found what you like and wish to make the profile persist, send a `string`
+argument to `setup`:
+
+>lua
+    require('fzf-lua').setup('fzf-native')
+<
+  **Note:** `setup` can be called multiple times for profile "live" switching
+
+See profiles
+<https://github.com/ibhagwan/fzf-lua/tree/main/lua/fzf-lua/profiles> for more
+info.
+
 
                                                                               
 DEFAULT OPTIONS                                      *fzf-lua-default-options*
