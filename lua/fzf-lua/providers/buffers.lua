@@ -166,20 +166,6 @@ local function gen_buffer_entry(opts, buf, hl_curbuf, cwd)
   return item_str
 end
 
-local set_bufdel_header = function(opts)
-  if opts.fzf_opts["--header"] == nil then
-    -- search for the close buffer action
-    for k, v in pairs(opts.actions) do
-      local act = type(v) == "table" and v[1] or v
-      if act == actions.buf_del then
-        opts.fzf_opts["--header"] = vim.fn.shellescape(
-          string.format(":: <%s> to close", utils.ansi_codes.yellow(k)))
-      end
-    end
-  end
-  return opts
-end
-
 M.buffers = function(opts)
   opts = config.normalize_opts(opts, config.globals.buffers)
   if not opts then return end
@@ -205,7 +191,7 @@ M.buffers = function(opts)
     (not opts.ignore_current_buffer and opts.sort_lastused) and "1"
   end
 
-  opts = set_bufdel_header(opts)
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts)
 
   core.fzf_exec(contents, opts)
@@ -375,7 +361,7 @@ M.tabs = function(opts)
     cb(nil)
   end
 
-  opts = set_bufdel_header(opts)
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts, 3, "{}")
 
   core.fzf_exec(contents, opts)

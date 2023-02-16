@@ -10,6 +10,13 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+local ACTION_DEFINITIONS = {
+  -- list of supported actions with labels to be displayed in the headers
+  [actions.grep_lgrep] = { fn_reload = "Fuzzy Search", "Regex Search" },
+  [actions.sym_lsym] = { fn_reload = "Live Query", "Fuzzy Search" },
+  [actions.buf_del] = { fn_reload = "close", "close" },
+}
+
 -- Main API, see:
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
 M.fzf_exec = function(contents, opts)
@@ -569,12 +576,10 @@ M.set_header = function(opts, hdr_tbl)
       val = function()
         -- do not display header when we're inside our
         -- cwd unless the caller specifically requested
-        if opts.show_cwd_header == false or
-            not opts.show_cwd_header and
-            (not opts.cwd or opts.cwd == vim.loop.cwd()) then
-          return
+        if opts.show_cwd_header == true or opts.show_cwd_header then
+          return normalize_cwd(opts.cwd or vim.loop.cwd())
         end
-        return normalize_cwd(opts.cwd or vim.loop.cwd())
+        return nil
       end
     },
     search = {
@@ -605,19 +610,12 @@ M.set_header = function(opts, hdr_tbl)
       hdr_txt_opt = "interactive_header",
       hdr_txt_str = "",
       val = function()
-        local is_lsp = opts.__MODULE__.workspace_symbols
-        local o = {
-          action   = is_lsp and actions.sym_lsym or actions.grep_lgrep,
-          to_live  = is_lsp and "Live Query" or "Regex Search",
-          to_fuzzy = is_lsp and "Fuzzy Search" or "Fuzzy Search",
-        }
         if opts.no_header_i then return end
+        local defs = ACTION_DEFINITIONS
         for k, v in pairs(opts.actions) do
-          if type(v) == "table" and v[1] == o.action then
-            local to = opts.fn_reload and o.to_fuzzy or o.to_live
-            return (":: <%s> to %s"):format(
-              utils.ansi_codes.yellow(k),
-              utils.ansi_codes.red(to))
+          if type(v) == "table" and defs[v[1]] then
+            local to = opts.fn_reload and defs[v[1]].fn_reload or defs[v[1]][1]
+            return to and (":: <%s> to %s"):format( utils.ansi_codes.yellow(k), utils.ansi_codes.red(to))
           end
         end
       end,
