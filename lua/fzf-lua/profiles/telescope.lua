@@ -1,4 +1,9 @@
+local utils = require("fzf-lua").utils
 local actions = require("fzf-lua").actions
+
+local function hl_validate(hl)
+  return not utils.is_hl_cleared(hl) and hl or nil
+end
 
 return {
   desc       = "match telescope default highlights|keybinds",
@@ -14,16 +19,16 @@ return {
       flip_columns = 120,
     },
     hl      = {
-      normal       = "TelescopeNormal",
-      border       = "TelescopeBorder",
-      help_normal  = "TelescopeNormal",
-      help_border  = "TelescopeBorder",
+      normal       = hl_validate "TelescopeNormal",
+      border       = hl_validate "TelescopeBorder",
+      help_normal  = hl_validate "TelescopeNormal",
+      help_border  = hl_validate "TelescopeBorder",
       -- builtin preview only
-      cursor       = "Cursor",
-      cursorline   = "TelescopePreviewLine",
-      cursorlinenr = "TelescopePreviewLine",
-      search       = "IncSearch",
-      title        = "TelescopeTitle",
+      cursor       = hl_validate "Cursor",
+      cursorline   = hl_validate "TelescopePreviewLine",
+      cursorlinenr = hl_validate "TelescopePreviewLine",
+      search       = hl_validate "IncSearch",
+      title        = hl_validate "TelescopeTitle",
     },
   },
   fzf_colors = {
@@ -88,5 +93,6 @@ return {
   buffers    = {
     keymap = { builtin = { ["<C-d>"] = false } },
     actions = { ["ctrl-d"] = { actions.buf_del, actions.resume } },
-  }
+  },
+  global_git_icons = false,
 }

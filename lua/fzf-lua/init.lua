@@ -83,12 +83,15 @@ end
 -- case the user decides not to call `setup()`
 M.setup_highlights()
 
+function M.load_profile(profile)
+  local fname = path.join({ vim.g.fzf_lua_directory, "profiles", profile .. ".lua" })
+  return utils.load_profile(fname, nil, true)
+end
 
 function M.setup(opts, do_not_reset_defaults)
   if type(opts) == "string" then
     -- Did the user request a specific profile?
-    local fname = path.join({ vim.g.fzf_lua_directory, "profiles", opts .. ".lua" })
-    opts = utils.load_profile(fname, nil, true)
+    opts = M.load_profile(opts)
   end
   -- Reset to defaults and merge with user options
   if not do_not_reset_defaults then
@@ -284,6 +287,7 @@ M._exported_modules = {
 
 -- excluded from builtin / auto-complete
 M._excluded_meta = {
+  "load_profile",
   "setup",
   "fzf",
   "fzf_raw",
