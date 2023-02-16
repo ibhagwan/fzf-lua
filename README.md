@@ -4,7 +4,7 @@
 
 ![Neovim version](https://img.shields.io/badge/Neovim-0.5-57A143?style=flat-square&logo=neovim)
 
-[Installation](#installation) • [Usage](#usage) • [Commands](#commands) • [Customization](#customization) • [Wiki](https://github.com/ibhagwan/fzf-lua/wiki)
+[Quickstart](#quickstart) •[Installation](#installation) • [Usage](#usage) • [Commands](#commands) • [Customization](#customization) • [Wiki](https://github.com/ibhagwan/fzf-lua/wiki)
 
 ![Demo](https://raw.githubusercontent.com/wiki/ibhagwan/fzf-lua/demo.gif)
 
@@ -12,6 +12,24 @@
 yours too, if you allow it.
 
 </div>
+
+## Quickstart
+
+To quickly test this plugin without changing your configuration run (will run in it's own sandbox
+with the default keybinds below):
+```sh
+sh -c "$(curl -s https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/scripts/mini.sh)"
+```
+> **Note:** it's good practice to first
+> [read the script](https://github.com/ibhagwan/fzf-lua/blob/main/scripts/mini.sh)
+> before running `sh -c` directly from the web
+
+| Key       | Command           | Key       | Command           |
+| ----------| ------------------| ----------| ------------------|
+| `<C-\>`     | buffers           | `<C-p>`     | files             |
+| `<C-g>`     | grep              | `<C-l>`     | live_grep         |
+| `<C-k>`     | builtin commands  | `<F1>`      | neovim help       |
+
 
 ## Rationale
 

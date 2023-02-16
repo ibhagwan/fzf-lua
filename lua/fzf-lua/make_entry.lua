@@ -140,7 +140,9 @@ local function load_devicons()
     -- running without calling setup will generate an error:
     --  nvim-web-devicons.lua:972: E5560:
     --  nvim_command must not be called in a lua loop callback
-    M._devicons.setup()
+    -- running in a pcall to avoid panic with neovim <= 0.6
+    -- due to usage of new highlighting API introduced with v0.7
+    pcall(M._devicons.setup)
   end
   if M._devicons and M._devicons.has_loaded() then
     -- Setup devicon terminal ansi color codes

@@ -31,11 +31,6 @@ download_plugin() {
     fi
 }
 
-# if [ "$#" -ne 3 ]; then
-#     usage;
-#     exit 1
-# fi
-
 download_plugin "nvim-tree" "nvim-web-devicons"
 
 # if exists, link to local folder so we can test local changes
