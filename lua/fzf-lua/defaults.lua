@@ -136,7 +136,7 @@ M.defaults = {
   previewers    = {
     cat = {
       cmd   = "cat",
-      args  = "--number",
+      args  = "-n",
       _ctor = previewers.fzf.cmd,
     },
     bat = {
