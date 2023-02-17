@@ -186,10 +186,10 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   --
   -- Removed as an experiment since the removal of the `save_query` code
   -- that was running on WinLeave which seems to make the `<C-c>` issue
-  -- better or even non-existent?
+  -- better or even non-existent? RESTORED AGAIN
   --
-  -- vim.api.nvim_buf_set_keymap(0, "", "<C-c>", "<Esc>", { noremap = false })
-  -- vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = false })
+  vim.api.nvim_buf_set_keymap(0, "", "<C-c>", "<Esc>", { noremap = false })
+  vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = false })
 
   local co = coroutine.running()
   local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or vim.fn.termopen
