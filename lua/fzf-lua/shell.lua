@@ -141,10 +141,14 @@ M.raw_preview_action_cmd = function(fn, fzf_field_expression, debug)
       end
     end
 
+    libuv.process_kill(M.__pid_preview)
+    M.__pid_preview = nil
+
     return libuv.spawn({
       cmd = fn(...),
       cb_finish = on_finish,
       cb_write = on_write,
+      cb_pid = function(pid) M.__pid_preview = pid end,
     }, false)
   end, fzf_field_expression, debug)
 end

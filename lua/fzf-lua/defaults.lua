@@ -144,7 +144,7 @@ M.defaults = {
       args   = "--italic-text=always --style=numbers,changes --color always",
       theme  = nil,
       config = nil,
-      _ctor  = previewers.fzf.bat,
+      _ctor  = previewers.fzf.bat_async,
     },
     bat_native = {
       cmd   = "bat",
