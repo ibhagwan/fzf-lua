@@ -304,8 +304,9 @@ M.defaults.grep = {
   file_icons     = true and M._has_devicons,
   color_icons    = true,
   git_icons      = true,
-  grep_opts      = "--binary-files=without-match --line-number --recursive --color=auto " ..
-  "--perl-regexp",
+  grep_opts      = utils.is_darwin()
+    and "--binary-files=without-match --line-number --recursive --color=always --extended-regexp"
+    or "--binary-files=without-match --line-number --recursive --color=always --perl-regexp",
   rg_opts        = "--column --line-number --no-heading --color=always --smart-case " ..
   "--max-columns=4096",
   _actions       = function() return M.globals.actions.files end,
