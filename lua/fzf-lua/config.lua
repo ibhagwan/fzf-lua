@@ -39,6 +39,23 @@ function M.normalize_opts(opts, defaults)
     opts = opts()
   end
 
+  -- ignore case for keybinds or conflicts may occur (#654)
+  local keymap_tolower = function(m)
+    return m and {
+      fzf = utils.map_tolower(m.fzf),
+      builtin = utils.map_tolower(m.builtin)
+    } or nil
+  end
+  opts.keymap = keymap_tolower(opts.keymap)
+  opts.actions = utils.map_tolower(opts.actions)
+  defaults.keymap = keymap_tolower(defaults.keymap)
+  defaults.actions = utils.map_tolower(defaults.actions)
+  if M.globals.actions then
+    M.globals.actions.files = utils.map_tolower(M.globals.actions.files)
+    M.globals.actions.buffers = utils.map_tolower(M.globals.actions.buffers)
+  end
+  M.globals.keymap = keymap_tolower(M.globals.keymap)
+
   -- save the user's call parameters separately
   -- we reuse those with 'actions.grep_lgrep'
   opts.__call_opts = opts.__call_opts or utils.deepcopy(opts)

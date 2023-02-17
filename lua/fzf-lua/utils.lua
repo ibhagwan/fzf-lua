@@ -309,6 +309,17 @@ function M.tbl_unpack(t, i, j)
   return unpack(t, i or 1, j or t.n or #t)
 end
 
+function M.map_tolower(m)
+  if not m then
+    return
+  end
+  local ret = {}
+  for k, v in pairs(m) do
+    ret[k:lower()] = v
+  end
+  return ret
+end
+
 M.ansi_codes = {}
 M.ansi_colors = {
   -- the "\x1b" esc sequence causes issues
