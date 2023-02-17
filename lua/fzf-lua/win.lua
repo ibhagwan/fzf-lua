@@ -820,6 +820,7 @@ end
 function FzfWin:close()
   -- prevents race condition with 'win_leave'
   self.closing = true
+  self.close_help()
   self:close_preview()
   if self.fzf_winid and vim.api.nvim_win_is_valid(self.fzf_winid) then
     -- run in a pcall due to potential errors while closing the window
@@ -1146,6 +1147,23 @@ function FzfWin.preview_scroll(direction)
   end
 end
 
+function FzfWin.close_help()
+  if not _self or not _self.km_winid then
+    return
+  end
+
+  local self = _self
+
+  if vim.api.nvim_win_is_valid(self.km_winid) then
+    vim.api.nvim_win_close(self.km_winid, true)
+  end
+  if vim.api.nvim_buf_is_valid(self.km_bufnr) then
+    vim.api.nvim_buf_delete(self.km_bufnr, { force = true })
+  end
+  self.km_winid = nil
+  self.km_bufnr = nil
+end
+
 function FzfWin.toggle_help()
   if not _self then return end
   local self = _self
@@ -1153,14 +1171,7 @@ function FzfWin.toggle_help()
   if self.km_winid then
     -- help window is already open
     -- close and dispose resources
-    if vim.api.nvim_win_is_valid(self.km_winid) then
-      vim.api.nvim_win_close(self.km_winid, true)
-    end
-    if vim.api.nvim_buf_is_valid(self.km_bufnr) then
-      vim.api.nvim_buf_delete(self.km_bufnr, { force = true })
-    end
-    self.km_winid = nil
-    self.km_bufnr = nil
+    self.close_help()
     return
   end
 
