@@ -60,7 +60,7 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
 
   -- this is for windows WSL and AppImage users, their nvim path isn't just
   -- 'nvim', it can be something else
-  local nvim_bin = vim.v.progpath
+  local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
 
   local call_args = ("fzf_lua_server=[[%s]], fnc_id=%d %s"):format(
     vim.g.fzf_lua_server, id, debug and ", debug=true" or "")
