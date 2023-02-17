@@ -62,7 +62,7 @@ local arg_header = function(sel_key, edit_key, text)
   sel_key = utils.ansi_codes.yellow(sel_key)
   edit_key = utils.ansi_codes.yellow(edit_key)
   return vim.fn.shellescape((":: %s to %s, %s to edit")
-    :format(sel_key, text, edit_key))
+  :format(sel_key, text, edit_key))
 end
 
 M.command_history = function(opts)
@@ -171,7 +171,8 @@ M.marks = function(opts)
   opts = config.normalize_opts(opts, config.globals.marks)
   if not opts then return end
 
-  local marks = vim.fn.execute("marks")
+  local marks = vim.fn.execute(
+    string.format("marks %s", opts.marks and opts.marks or ""))
   marks = vim.split(marks, "\n")
 
   --[[ local prev_act = shell.action(function (args, fzf_lines, _)
