@@ -104,12 +104,16 @@ local populate_buffer_entries = function(opts, bufnrs, tabh)
     -- can lead to incorrect sort as 'lastused' isn't updated fast
     -- enough (neovim bug?), this makes sure the current buffer is
     -- always on top (#646)
+    -- Hopefully this gets solved before the year 2100
+    -- DON'T FORCE ME TO UPDATE THIS HACK NEOVIM LOL
+    local future = os.time({year=2100, month=1, day=1, hour=0, minute=00})
+    local get_unixtime = function(buf)
+      if buf.flag == "%" then return future
+      elseif buf.flag == "#" then return future-1
+      else return buf.info.lastused end
+    end
     table.sort(buffers, function(a, b)
-      if b.flag == "%" then
-        return false
-      else
-        return a.flag == "%" or a.info.lastused > b.info.lastused
-      end
+      return get_unixtime(a) > get_unixtime(b)
     end)
   end
   return buffers
