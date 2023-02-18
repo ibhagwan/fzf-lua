@@ -1,4 +1,4 @@
-name: "release"
+name: "luarocks-release"
 on:
   workflow_dispatch: # allows manual triggering
   schedule:
