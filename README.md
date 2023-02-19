@@ -340,11 +340,18 @@ Conviniently, fzf-lua comes with a set of preconfigured profiles, notably:
 | `skim`             | uses [`skim`](https://github.com/lotabout/skim) as an fzf alternative, (requires the `sk` binary) |
 
 Use `:FzfLua profiles` to experiment with the different profiles, once you've found what
-you like and wish to make the profile persist, send a `string` argument to `setup`:
+you like and wish to make the profile persist, send a `string` argument at the first index
+of the table sent to the `setup` function:
 ```lua
-require('fzf-lua').setup('fzf-native')
+require('fzf-lua').setup({'fzf-native'})
 ```
 > **Note:** `setup` can be called multiple times for profile "live" switching
+
+You can also start with a profile as "baseline" and customize it, for example,
+telescope defaults with `bat` previewer:
+```lua
+:lua require"fzf-lua".setup({"telescope",winopts={preview={default="bat"}}})
+```
 
 See [profiles](https://github.com/ibhagwan/fzf-lua/tree/main/lua/fzf-lua/profiles)
 for more info.

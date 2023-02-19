@@ -89,16 +89,19 @@ function M.load_profile(profile)
 end
 
 function M.setup(opts, do_not_reset_defaults)
-  if type(opts) == "string" then
+  opts = type(opts) == "table" and opts or {}
+  if type(opts[1]) == "string" then
     -- Did the user request a specific profile?
-    opts = M.load_profile(opts)
+    local profile_opts = M.load_profile(opts[1])
+    if type(profile_opts) == "table" then
+      opts = vim.tbl_deep_extend("keep", opts, profile_opts)
+    end
   end
   -- Reset to defaults and merge with user options
   if not do_not_reset_defaults then
     config.reset_defaults()
   end
   -- Make sure opts is a table or override
-  opts = type(opts) == "table" and opts or {}
   local globals = vim.tbl_deep_extend("keep", opts, config.globals)
   -- backward compatibility before winopts was it's own struct
   for k, _ in pairs(globals.winopts) do

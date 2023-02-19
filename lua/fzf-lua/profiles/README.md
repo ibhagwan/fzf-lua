@@ -1,12 +1,18 @@
 ## FzfLua Profiles
 
 This folder contains preconfigured fzf-lua profiles which can be activated using
-`:FzfLua profiles` or used as a string argument directly in the `setup` function,
-for example:
+`:FzfLua profiles` or used as a `string` argument at the first index of the table
+sent to the `setup` function:
 ```lua
-require("fzf-lua").setup("fzf-native")
+require("fzf-lua").setup({ "fzf-native" })
 ```
 > **Note:** `setup` can be called multiple times for profile "live" switching
+
+You can also start with a profile as "baseline" and customize it, for example,
+telescope defaults with `bat` previewer:
+```lua
+:lua require"fzf-lua".setup({"telescope",winopts={preview={default="bat"}}})
+```
 
 ### Current profiles list
 

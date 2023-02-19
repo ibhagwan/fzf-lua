@@ -741,7 +741,7 @@ M.apply_profile = function(selected, opts)
   local profile = selected[1]:match(":([^%s]+)")
   local ok = utils.load_profile(fname, profile, opts.silent)
   if ok then
-    vim.cmd(string.format([[lua require('fzf-lua').setup('%s')]], profile))
+    vim.cmd(string.format([[lua require("fzf-lua").setup({"%s"})]], profile))
   end
 end
 
