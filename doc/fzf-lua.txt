@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 17
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 19
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -421,13 +421,19 @@ Conviniently, fzf-lua comes with a set of preconfigured profiles, notably:
 
 Use `:FzfLua profiles` to experiment with the different profiles, once you've
 found what you like and wish to make the profile persist, send a `string`
-argument to `setup`:
+argument at the first index of the table sent to the `setup` function:
 
 >lua
-    require('fzf-lua').setup('fzf-native')
+    require('fzf-lua').setup({'fzf-native'})
 <
   **Note:** `setup` can be called multiple times for profile "live" switching
 
+You can also start with a profile as "baseline" and customize it, for example,
+telescope defaults with `bat` previewer:
+
+>lua
+    :lua require"fzf-lua".setup({"telescope",winopts={preview={default="bat"}}})
+<
 See profiles
 <https://github.com/ibhagwan/fzf-lua/tree/main/lua/fzf-lua/profiles> for more
 info.
