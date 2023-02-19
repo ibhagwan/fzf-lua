@@ -275,6 +275,15 @@ M.set_info = function(x)
   M.__INFO = x
 end
 
+M.get_last_query = function()
+  return M.config.__resume_data and M.config.__resume_data.last_query
+end
+
+M.set_last_query = function(query)
+  M.config.__resume_data = M.config.__resume_data or {}
+  M.config.__resume_data.last_query = query
+end
+
 -- exported modules
 M._exported_modules = {
   "win",
@@ -304,6 +313,8 @@ M._excluded_meta = {
   "__INFO",
   "get_info",
   "set_info",
+  "get_last_query",
+  "set_last_query",
 }
 
 for _, m in ipairs(M._exported_modules) do
