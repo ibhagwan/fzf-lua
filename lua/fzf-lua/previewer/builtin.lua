@@ -1242,4 +1242,44 @@ function Previewer.quickfix:populate_preview_buf(entry_str)
   self.win:update_scrollbar()
 end
 
+Previewer.autocmds = Previewer.buffer_or_file:extend()
+
+function Previewer.autocmds:new(o, opts, fzf_win)
+  Previewer.autocmds.super.new(self, o, opts, fzf_win)
+  return self
+end
+
+function Previewer.autocmds:gen_winopts()
+  if not self._is_vimL_command then
+    return self.winopts
+  end
+  -- set wrap and no cursorline/numbers for vimL commands
+  local winopts = {
+    wrap       = true,
+    cursorline = false,
+    number     = false
+  }
+  return vim.tbl_extend("keep", winopts, self.winopts)
+end
+
+function Previewer.autocmds:populate_preview_buf(entry_str)
+  if not self.win or not self.win:validate_preview() then return end
+  local entry = self:parse_entry(entry_str)
+  if vim.tbl_isempty(entry) then return end
+  self._is_vimL_command = false
+  if entry.path == "<none>" then
+    self._is_vimL_command = true
+    entry.path = entry_str:match("[^:]+│")
+    local viml = entry_str:match("[^│]+$")
+    local lines = vim.split(viml, "\n")
+    local tmpbuf = self:get_tmp_buffer()
+    vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+    vim.api.nvim_buf_set_option(tmpbuf, "filetype", "vim")
+    self:set_preview_buf(tmpbuf)
+    self:preview_buf_post(entry)
+  else
+    self.super.populate_preview_buf(self, entry_str)
+  end
+end
+
 return Previewer

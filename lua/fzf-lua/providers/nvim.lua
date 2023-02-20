@@ -382,4 +382,47 @@ M.menus = function(opts)
   core.fzf_exec(entries, opts)
 end
 
+M.autocmds = function(opts)
+  opts = config.normalize_opts(opts, config.globals.autocmds)
+  if not opts then return end
+
+  local autocmds = vim.api.nvim_get_autocmds({})
+  if not autocmds or vim.tbl_isempty(autocmds) then
+    return
+  end
+
+  local contents = function(cb)
+
+    coroutine.wrap(function()
+      local co = coroutine.running()
+      for _, a in ipairs(autocmds) do
+        local file, line = "<none>", 0
+        if a.callback then
+          local info = debug.getinfo(a.callback, "S")
+          file = info and info.source and info.source:sub(2) or  ""
+          line = info and info.linedefined or 0
+          if a.event == "BufWipeout" then
+            print(a.event, file, line)
+          end
+        end
+        local group = a.group_name and vim.trim(a.group_name) or " "
+        local entry = string.format("%s:%d:%-28s │ %-34s │ %-18s │ %s",
+          file, line,
+          utils.ansi_codes.yellow(a.event),
+          utils.ansi_codes.blue(group),
+          a.pattern,
+          a.callback and utils.ansi_codes.red(tostring(a.callback)) or a.command)
+        cb(entry, function(err)
+          coroutine.resume(co)
+          if err then cb(nil) end
+        end)
+        coroutine.yield()
+      end
+      cb(nil)
+    end)()
+  end
+
+  return core.fzf_exec(contents, opts)
+end
+
 return M

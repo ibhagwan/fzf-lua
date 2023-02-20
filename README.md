@@ -247,6 +247,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `changes`          | :changes                                   |
 | `registers`        | :registers                                 |
 | `tagstack`         | :tags                                      |
+| `autocmds`         | :autocmd                                   |
 | `keymaps`          | key mappings                               |
 | `filetypes`        | filetypes                                  |
 | `menus`            | menus                                      |

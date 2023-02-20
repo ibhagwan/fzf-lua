@@ -643,6 +643,16 @@ M.defaults.commands = {
   },
 }
 
+M.defaults.autocmds = {
+  prompt    = "Autocmds> ",
+  previewer = { _ctor = previewers.builtin.autocmds },
+  _actions    = function() return M.globals.actions.files end,
+  fzf_opts  = {
+    ["--delimiter"] = "'[:]'",
+    ["--with-nth"]  = "3..",
+  },
+}
+
 M.defaults.command_history = {
   prompt   = "Command History> ",
   fzf_opts = { ["--tiebreak"] = "index", },

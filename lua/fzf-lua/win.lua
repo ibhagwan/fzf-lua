@@ -1109,7 +1109,7 @@ end
 function FzfWin.toggle_preview_wrap()
   if not _self then return end
   local self = _self
-  self.preview_wrap = not self.preview_wrap
+  self.preview_wrap = not api.nvim_win_get_option(self.preview_winid, "wrap")
   if self and self:validate_preview() then
     api.nvim_win_set_option(self.preview_winid, "wrap", self.preview_wrap)
   end

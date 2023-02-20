@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 19
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 20
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -314,6 +314,7 @@ MISC                                                            *fzf-lua-misc*
 | `changes`          | :changes                                   |
 | `registers`        | :registers                                 |
 | `tagstack`         | :tags                                      |
+| `autocmds`         | :autocmd                                   |
 | `keymaps`          | key mappings                               |
 | `filetypes`        | filetypes                                  |
 | `menus`            | menus                                      |
