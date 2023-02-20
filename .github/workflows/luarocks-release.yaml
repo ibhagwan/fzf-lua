@@ -22,6 +22,7 @@ jobs:
           LUAROCKS_API_KEY: ${{ secrets.LUAROCKS_API_KEY }}
         with:
           version: ${{ env.LUAROCKS_VERSION }} 
+          license: "AGPL-3.0"
           copy_directories: |
             doc
             plugin
