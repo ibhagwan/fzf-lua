@@ -401,9 +401,6 @@ M.autocmds = function(opts)
           local info = debug.getinfo(a.callback, "S")
           file = info and info.source and info.source:sub(2) or  ""
           line = info and info.linedefined or 0
-          if a.event == "BufWipeout" then
-            print(a.event, file, line)
-          end
         end
         local group = a.group_name and vim.trim(a.group_name) or " "
         local entry = string.format("%s:%d:%-28s │ %-34s │ %-18s │ %s",
