@@ -342,6 +342,8 @@ local normalize_lsp_opts = function(opts, cfg)
   -- required for relative paths presentation
   if not opts.cwd or #opts.cwd == 0 then
     opts.cwd = vim.loop.cwd()
+  else
+    opts.cwd_only = true
   end
 
   -- save current win/buf context
