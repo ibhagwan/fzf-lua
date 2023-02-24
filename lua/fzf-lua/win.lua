@@ -798,25 +798,25 @@ function FzfWin:close_preview()
     self._previewer:close()
   end
   if self.border_winid and vim.api.nvim_win_is_valid(self.border_winid) then
-    api.nvim_win_close(self.border_winid, true)
+    utils.nvim_win_close(self.border_winid, true)
   end
   if self.border_buf and vim.api.nvim_buf_is_valid(self.border_buf) then
     vim.api.nvim_buf_delete(self.border_buf, { force = true })
   end
   if self.preview_winid and vim.api.nvim_win_is_valid(self.preview_winid) then
-    api.nvim_win_close(self.preview_winid, true)
+    utils.nvim_win_close(self.preview_winid, true)
   end
   if self._sbuf1 and vim.api.nvim_buf_is_valid(self._sbuf1) then
     vim.api.nvim_buf_delete(self._sbuf1, { force = true })
   end
   if self._swin1 and vim.api.nvim_win_is_valid(self._swin1) then
-    api.nvim_win_close(self._swin1, true)
+    utils.nvim_win_close(self._swin1, true)
   end
   if self._sbuf2 and vim.api.nvim_buf_is_valid(self._sbuf2) then
     vim.api.nvim_buf_delete(self._sbuf2, { force = true })
   end
   if self._swin2 and vim.api.nvim_win_is_valid(self._swin2) then
-    api.nvim_win_close(self._swin2, true)
+    utils.nvim_win_close(self._swin2, true)
   end
   self._sbuf1, self._sbuf2, self._swin1, self._swin2 = nil, nil, nil, nil
   self.border_buf = nil
@@ -833,7 +833,7 @@ function FzfWin:close()
     -- run in a pcall due to potential errors while closing the window
     -- Vim(lua):E5108: Error executing lua
     -- experienced while accessing 'vim.b[]' from my statusline code
-    pcall(vim.api.nvim_win_close, self.fzf_winid, { force = true })
+    pcall(utils.nvim_win_close, self.fzf_winid, true)
   end
   if self.fzf_bufnr and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
     vim.api.nvim_buf_delete(self.fzf_bufnr, { force = true })
@@ -1162,7 +1162,7 @@ function FzfWin.close_help()
   local self = _self
 
   if vim.api.nvim_win_is_valid(self.km_winid) then
-    vim.api.nvim_win_close(self.km_winid, true)
+    utils.nvim_win_close(self.km_winid, true)
   end
   if vim.api.nvim_buf_is_valid(self.km_bufnr) then
     vim.api.nvim_buf_delete(self.km_bufnr, { force = true })

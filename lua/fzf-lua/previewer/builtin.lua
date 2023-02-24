@@ -936,7 +936,7 @@ end
 
 function Previewer.help_tags:win_leave()
   if self.help_winid and vim.api.nvim_win_is_valid(self.help_winid) then
-    api.nvim_win_close(self.help_winid, true)
+    utils.nvim_win_close(self.help_winid, true)
   end
   if self.help_bufnr and vim.api.nvim_buf_is_valid(self.help_bufnr) then
     vim.api.nvim_buf_delete(self.help_bufnr, { force = true })

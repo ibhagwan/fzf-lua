@@ -660,6 +660,14 @@ function M.win_set_buf_noautocmd(win, buf)
   vim.o.eventignore = save_ei
 end
 
+-- Close a window without triggering an autocmd
+function M.nvim_win_close(win, opts)
+  local save_ei = vim.o.eventignore
+  vim.o.eventignore = "all"
+  vim.api.nvim_win_close(win, opts)
+  vim.o.eventignore = save_ei
+end
+
 function M.nvim_win_call(winid, func)
   vim.validate({
     winid = {
