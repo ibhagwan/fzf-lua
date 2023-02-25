@@ -833,7 +833,7 @@ function FzfWin:close()
     -- run in a pcall due to potential errors while closing the window
     -- Vim(lua):E5108: Error executing lua
     -- experienced while accessing 'vim.b[]' from my statusline code
-    pcall(utils.nvim_win_close, self.fzf_winid, true)
+    pcall(vim.api.nvim_win_close, self.fzf_winid, true)
   end
   if self.fzf_bufnr and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
     vim.api.nvim_buf_delete(self.fzf_bufnr, { force = true })
