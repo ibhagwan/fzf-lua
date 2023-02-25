@@ -23,13 +23,17 @@ download_plugin() {
     repo="https://github.com/${1}/${2}"
     folder="${tmp_rtp}/${2}"
     if [ ! -d $folder ]; then
-        echo "Downloading '${repo}' into '${folder}..."
+        echo "Downloading '${repo}' into ${folder}..."
         git clone --depth 1 ${repo} ${folder}
     else
-        echo "Updating '${repo}'..."
+        echo "Updating '${repo}' in ${folder}..."
         git -C "${folder}" pull --rebase
     fi
 }
+
+if [ ${1:-} == "reset" ]; then
+    rm -rf ${tmp_dir}
+fi
 
 download_plugin "nvim-tree" "nvim-web-devicons"
 
