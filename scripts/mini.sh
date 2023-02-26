@@ -31,7 +31,7 @@ download_plugin() {
     fi
 }
 
-if [ ${1:-} == "reset" ]; then
+if [ "${1:-}" = "reset" ]; then
     rm -rf ${tmp_dir}
 fi
 
