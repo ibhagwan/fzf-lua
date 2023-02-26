@@ -99,7 +99,7 @@ local setup_devicon_term_hls = function()
     return r, g, b
   end
 
-  for _, info in pairs(M._devicons.get_icons()) do
+  for _, info in pairs(M._devicons and M._devicons.get_icons() or M._devicons_map) do
     local r, g, b = hex(info.color)
     utils.add_ansi_code("DevIcon" .. info.name, string.format("[38;2;%s;%s;%sm", r, g, b))
   end
@@ -110,9 +110,15 @@ local function load_devicons()
     -- file was called from the primary instance
     -- acquire nvim-web-devicons from config
     M._devicons = config._devicons
-  elseif M._devicons_path and vim.loop.fs_stat(M._devicons_path) then
+  elseif M._fzf_lua_server and load_config_section("_has_devicons", "boolean") then
     -- file was called from a headless instance
-    -- load nvim-web-devicons manually
+    -- load nvim-web-devicons via the RPC to the main instance
+    M._devicons_map = load_config_section("_devicons_geticons()", "table")
+  end
+  if not M._devicons and not M._devicons_map
+      and M._devicons_path and vim.loop.fs_stat(M._devicons_path) then
+    -- file was called from a headless instance
+    -- fallback load nvim-web-devicons manually
     -- add nvim-web-devicons path to `package.path`
     -- so `require("nvim-web-devicons")` can find it
     package.path = (";%s/?.lua;"):format(vim.fn.fnamemodify(M._devicons_path, ":h"))
@@ -144,7 +150,7 @@ local function load_devicons()
     -- due to usage of new highlighting API introduced with v0.7
     pcall(M._devicons.setup)
   end
-  if M._devicons and M._devicons.has_loaded() then
+  if M._devicons and M._devicons.has_loaded() or M._devicons_map then
     -- Setup devicon terminal ansi color codes
     setup_devicon_term_hls()
   end
@@ -171,6 +177,14 @@ M.get_devicon = function(file, ext)
   local icon, hl
   if M._devicons then
     icon, hl = M._devicons.get_icon(file, ext:lower(), { default = true })
+  elseif M._devicons_map then
+    local info = M._devicons_map[ext:lower()] or M._devicons_map["<default>"]
+    -- the default icon is not a guranteed as nvim-web-devicons
+    -- can be configured with `default = false`
+    if info then
+      icon = info.icon
+      hl = "DevIcon" .. info.name
+    end
   else
     icon, hl = "", "dark_grey"
   end

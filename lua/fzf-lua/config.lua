@@ -15,6 +15,28 @@ M._has_devicons, M._devicons = pcall(require, "nvim-web-devicons")
 M._devicons_path = M._has_devicons and M._devicons and M._devicons.setup
     and debug.getinfo(M._devicons.setup, "S").source:gsub("^@", "")
 
+-- get icons proxy for the headless instance
+M._devicons_geticons = function()
+  if not M._has_devicons or not M._devicons or not M._devicons.get_icons then
+    return
+  end
+  -- rpc request cannot return a table that has mixed elements
+  -- of both indexed items and key value, it will fail with
+  -- "Cannot convert given lua table"
+  -- devicons.get_icons() returns the default icon in the first index
+  -- if we delete it the conversion succeeds as a key-value only map
+  -- must use 'tbl_deep_extend' or 'table.remove' will delete
+  -- nvim-web-devicons default icon as 'get_icons' returns a ref
+  local icons = vim.tbl_deep_extend("keep", {}, M._devicons.get_icons())
+  -- the default icon in [1] is not a gurantee as nvim-web-devicons
+  -- can be configured with `default = false`
+  if icons[1] and icons[1].name == "Default" then
+    local default = table.remove(icons, 1)
+    icons["<default>"] = default
+  end
+  return icons
+end
+
 -- set this so that make_entry won't
 -- get nil err when setting remotely
 M.__resume_data = {}
