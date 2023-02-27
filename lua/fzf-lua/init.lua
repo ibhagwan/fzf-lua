@@ -28,7 +28,6 @@ do
   if not vim.g.fzf_lua_server then
     vim.g.fzf_lua_server = vim.fn.serverstart()
   end
-
 end
 
 local M = {}
@@ -110,7 +109,7 @@ function M.setup(opts, do_not_reset_defaults)
   -- backward compatibility for 'fzf_binds'
   if opts.fzf_binds then
     utils.warn("'fzf_binds' is deprecated, moved under 'keymap.fzf', " ..
-      "see ':help fzf-lua-customization'")
+    "see ':help fzf-lua-customization'")
     globals.keymap.fzf = opts.fzf_binds
   end
   -- do not merge, override the bind tables
@@ -215,6 +214,7 @@ do
     spell_suggest = { "fzf-lua.providers.nvim", "spell_suggest" },
     filetypes = { "fzf-lua.providers.nvim", "filetypes" },
     packadd = { "fzf-lua.providers.nvim", "packadd" },
+    lsp_finder = { "fzf-lua.providers.lsp", "finder" },
     lsp_typedefs = { "fzf-lua.providers.lsp", "typedefs" },
     lsp_references = { "fzf-lua.providers.lsp", "references" },
     lsp_definitions = { "fzf-lua.providers.lsp", "definitions" },

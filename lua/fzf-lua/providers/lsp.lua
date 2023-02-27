@@ -22,20 +22,29 @@ local function check_capabilities(feature)
   -- update CTX since this gets called before normalize_lsp_opts (#490)
   CTX_UPDATE()
 
-  local clients = vim.lsp.buf_get_clients(__CTX and __CTX.bufnr or 0)
+  local clients = vim.lsp.get_active_clients({ bufnr = __CTX and __CTX.bufnr or 0 })
 
   -- return the number of clients supporting the feature
   -- so the async version knows how many callbacks to wait for
   local num_clients = 0
+  local features = {}
+
+  if type(feature) == "string" then
+    table.insert(features, feature)
+  elseif type(feature) == "table" then
+    features = feature
+  end
 
   for _, client in pairs(clients) do
-    if vim.fn.has("nvim-0.8") == 1 then
-      if client.server_capabilities[feature] then
-        num_clients = num_clients + 1
-      end
-    else
-      if client.resolved_capabilities[feature] then
-        num_clients = num_clients + 1
+    for _, ft in pairs(features) do
+      if vim.fn.has("nvim-0.8") == 1 then
+        if client.server_capabilities[ft] then
+          num_clients = num_clients + 1
+        end
+      else
+        if client.resolved_capabilities[ft] then
+          num_clients = num_clients + 1
+        end
       end
     end
   end
@@ -205,6 +214,75 @@ local function async_lsp_handler(co, handler, opts)
   end)
 end
 
+local function set_lsp_finder_fzf_fn(opts)
+  -- consider 'async_or_timeout' only if 'async' wasn't manually set
+  if opts.async == nil then
+    if type(opts.async_or_timeout) == "number" then
+      opts.async = false
+    elseif type(opts.async_or_timeout) == "boolean" then
+      opts.async = opts.async_or_timeout
+    end
+  end
+
+  -- build positional params for the LSP query
+  -- from the context buffer and cursor position
+  if not opts.lsp_params then
+    opts.lsp_params = vim.lsp.util.make_position_params(__CTX.winid)
+    opts.lsp_params.context = { includeDeclaration = true }
+  end
+
+  -- SYNC
+  local timeout = 5000
+  if type(opts.async_or_timeout) == "number" then
+    timeout = opts.async_or_timeout
+  end
+
+  local lsp_declaration_results, _ = vim.lsp.buf_request_sync(__CTX.bufnr,
+    "textDocument/declaration", opts.lsp_params, timeout)
+  local lsp_implementation_results, _ = vim.lsp.buf_request_sync(__CTX.bufnr,
+    "textDocument/implementation", opts.lsp_params, timeout)
+  local lsp_definition_results, _ = vim.lsp.buf_request_sync(__CTX.bufnr,
+    "textDocument/definition", opts.lsp_params, timeout)
+  local lsp_references_results, _ = vim.lsp.buf_request_sync(__CTX.bufnr,
+    "textDocument/references", opts.lsp_params, timeout)
+  local lsp_type_definition_results, _ = vim.lsp.buf_request_sync(__CTX.bufnr,
+    "textDocument/typeDefinition", opts.lsp_params, timeout)
+
+  local results = {}
+  local cb = function(text) table.insert(results, text) end
+  for _, lsp_results in pairs({ lsp_definition_results, lsp_references_results, lsp_declaration_results, lsp_type_definition_results, lsp_implementation_results }) do
+    for client_id, response in pairs(lsp_results) do
+      if response.result then
+        local context = { client_id = client_id }
+        opts.lsp_handler.handler(opts, cb, opts.lsp_handler.method, response.result, context)
+      end
+    end
+  end
+  if vim.tbl_isempty(results) then
+    if not opts.fn_reload then
+      utils.info(string.format("No %s found", string.lower(opts.lsp_handler.label)))
+    else
+      -- return an empty set or the results wouldn't be
+      -- cleared on live_workspace_symbols (#468)
+      opts.fzf_fn = {}
+    end
+  elseif not (opts.jump_to_single_result and #results == 1) then
+    -- LSP request was synchronous but
+    -- we still async the fzf feeding
+    opts.fzf_fn = function(fzf_cb)
+      coroutine.wrap(function()
+        local co = coroutine.running()
+        for _, e in ipairs(results) do
+          fzf_cb(e, function() coroutine.resume(co) end)
+          coroutine.yield()
+        end
+        fzf_cb(nil)
+      end)()
+    end
+  end
+  return opts
+end
+
 local function set_lsp_fzf_fn(opts)
   -- consider 'async_or_timeout' only if 'async' wasn't manually set
   if opts.async == nil then
@@ -223,7 +301,6 @@ local function set_lsp_fzf_fn(opts)
   end
 
   if not opts.async then
-
     -- SYNC
     local timeout = 5000
     if type(opts.async_or_timeout) == "number" then
@@ -267,7 +344,6 @@ local function set_lsp_fzf_fn(opts)
       end
     end
   else
-
     -- ASYNC
     -- cancel all remaining LSP requests once the user
     -- made their selection or closed the fzf popup
@@ -360,12 +436,20 @@ local function fzf_lsp_locations(opts)
   if not opts then return end
   if opts.force_uri == nil then opts.force_uri = true end
   opts = core.set_fzf_field_index(opts)
-  opts = set_lsp_fzf_fn(opts)
+  if type(opts.lsp_handler.method) == "table" then
+    opts = set_lsp_finder_fzf_fn(opts)
+  else
+    opts = set_lsp_fzf_fn(opts)
+  end
   if not opts.fzf_fn then return end
   return core.fzf_exec(opts.fzf_fn, opts)
 end
 
 -- define the functions for wrap_module_fncs
+M.finder = function(opts)
+  return fzf_lsp_locations(opts)
+end
+
 M.references = function(opts)
   return fzf_lsp_locations(opts)
 end
@@ -499,7 +583,7 @@ M.workspace_symbols = function(opts)
   set_last_lspquery(opts, opts.lsp_query)
   opts.lsp_params = { query = opts.lsp_query or "" }
   opts = core.set_header(opts, opts.headers or
-    { "actions", "cwd", "lsp_query", "regex_filter" })
+  { "actions", "cwd", "lsp_query", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = set_lsp_fzf_fn(opts)
@@ -575,26 +659,26 @@ local function get_line_diagnostics(_)
   end
   local diag = vim.diagnostic.get(__CTX.bufnr, { lnum = vim.api.nvim_win_get_cursor(0)[1] - 1 })
   return diag and diag[1] and { {
-    source = diag[1].source,
-    message = diag[1].message,
-    severity = diag[1].severity,
-    code = diag[1].user_data and diag[1].user_data.lsp and
+        source = diag[1].source,
+        message = diag[1].message,
+        severity = diag[1].severity,
+        code = diag[1].user_data and diag[1].user_data.lsp and
         diag[1].user_data.lsp.code,
-    codeDescription = diag[1].user_data and diag[1].user_data.lsp and
+        codeDescription = diag[1].user_data and diag[1].user_data.lsp and
         diag[1].user_data.lsp.codeDescription,
-    range = {
-      ["start"] = {
-        line = diag[1].lnum,
-        character = diag[1].col,
-      },
-      ["end"] = {
-        line = diag[1].end_lnum,
-        character = diag[1].end_col,
-      }
-    },
-    data = diag[1].user_data and diag[1].user_data.lsp and
+        range = {
+          ["start"] = {
+            line = diag[1].lnum,
+            character = diag[1].col,
+          },
+          ["end"] = {
+            line = diag[1].end_lnum,
+            character = diag[1].end_col,
+          }
+        },
+        data = diag[1].user_data and diag[1].user_data.lsp and
         diag[1].user_data.lsp.data
-  } } or nil
+      } } or nil
 end
 
 ---Returns true if the client has code_action capability and its
@@ -714,30 +798,30 @@ M.code_actions = function(opts)
   -- "apply action" as default function
   if not opts.actions then opts.actions = {} end
   opts.actions.default = (function(selected)
-    local idx = selected[1]:match("(%d+)")
-    local entry = opts.code_actions[idx]
-    local action = entry.command
-    local client = entry.client or vim.lsp.get_client_by_id(entry.client_id)
-    local offset_encoding = client and client.offset_encoding
+        local idx = selected[1]:match("(%d+)")
+        local entry = opts.code_actions[idx]
+        local action = entry.command
+        local client = entry.client or vim.lsp.get_client_by_id(entry.client_id)
+        local offset_encoding = client and client.offset_encoding
 
-    if not action.edit and client and code_action_resolves(client) then
-      local request = "codeAction/resolve"
-      client.request(request, action, function(resolved_err, resolved_action)
-        if resolved_err then
-          utils.err(("Error %d executing '%s': %s")
-            :format(resolved_err.code, request, resolved_err.message))
-          return
-        end
-        if resolved_action then
-          execute_action(transform_action(resolved_action), offset_encoding)
+        if not action.edit and client and code_action_resolves(client) then
+          local request = "codeAction/resolve"
+          client.request(request, action, function(resolved_err, resolved_action)
+            if resolved_err then
+              utils.err(("Error %d executing '%s': %s")
+              :format(resolved_err.code, request, resolved_err.message))
+              return
+            end
+            if resolved_action then
+              execute_action(transform_action(resolved_action), offset_encoding)
+            else
+              execute_action(transform_action(action), offset_encoding)
+            end
+          end)
         else
           execute_action(transform_action(action), offset_encoding)
         end
       end)
-    else
-      execute_action(transform_action(action), offset_encoding)
-    end
-  end)
 
   opts.previewer = false
   opts.fzf_opts["--no-multi"] = ""
@@ -753,6 +837,13 @@ local handlers = {
     server_capability = "codeActionProvider",
     method = "textDocument/codeAction",
     handler = code_action_handler
+  },
+  ["finder"] = {
+    label = "Finder",
+    resolved_capability = { "find_references", "goto_definition", "goto_declaration", "type_definition", "implementation" },
+    server_capability = { "referencesProvider", "definitionProvider", "declarationProvider", "typeDefinitionProvider", "implementationProvider" },
+    method = { "textDocument/references", "textDocument/definition", "textDocument/declaration", "textDocument/typeDefinition", "textDocument/implementation" },
+    handler = location_handler
   },
   ["references"] = {
     label = "References",
