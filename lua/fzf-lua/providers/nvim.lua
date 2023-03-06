@@ -305,6 +305,9 @@ M.keymaps = function(opts)
 
   opts.fzf_opts["--no-multi"] = ""
 
+  -- sort alphabetically
+  table.sort(entries)
+
   core.fzf_exec(entries, opts)
 end
 

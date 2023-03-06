@@ -681,6 +681,7 @@ M.defaults.registers = {
 
 M.defaults.keymaps = {
   prompt = "Keymaps> ",
+  fzf_opts = { ["--tiebreak"] = "index", },
   actions = {
     ["default"] = actions.keymap_apply,
   },
