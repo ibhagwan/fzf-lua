@@ -21,7 +21,7 @@ M.colorschemes = function(opts)
 
   local current_colorscheme = get_current_colorscheme()
   local current_background = vim.o.background
-  local colors = vim.list_extend(opts.colors or {}, vim.fn.getcompletion("", "color"))
+  local colors = opts.colors or vim.fn.getcompletion("", "color")
 
   opts.fzf_opts["--no-multi"] = ""
 
