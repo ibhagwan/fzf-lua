@@ -119,7 +119,8 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     if vimcmd ~= "e" or curbuf ~= fullpath then
       if entry.path then
         -- do not run ':<cmd> <file>' for uri entries (#341)
-        vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(entry.path))
+        local relpath = path.relative(entry.path, vim.loop.cwd())
+        vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(relpath))
       elseif vimcmd ~= "e" then
         -- uri entries only execute new buffers (new|vnew|tabnew)
         vim.cmd(vimcmd)
