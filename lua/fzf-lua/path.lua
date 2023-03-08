@@ -234,6 +234,7 @@ function M.entry_to_file(entry, opts, force_uri)
   if cwd and #cwd > 0 and not isURI and
       not M.starts_with_separator(stripped) then
     stripped = M.join({ cwd, stripped })
+    stripped = M.relative(stripped, vim.fn.getcwd())
   end
   -- #336: force LSP jumps using 'vim.lsp.util.jump_to_location'
   -- so that LSP entries are added to the tag stack
