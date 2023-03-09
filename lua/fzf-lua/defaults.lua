@@ -551,6 +551,7 @@ M.defaults.lsp.symbols = {
   symbol_style     = 1,
   symbol_hl_prefix = "CmpItemKind",
   symbol_fmt       = function(s, opts) return opts.symbol_style == 2 and s or "[" .. s .. "]" end,
+  -- Use a special UTF code for adding space, since fzf will trim normal spaces.
   child_prefix     = "\xc2\xa0\xc2\xa0",
   async_or_timeout = true,
   _actions         = function() return M.globals.actions.files end,

@@ -142,7 +142,6 @@ local function symbols_to_items(symbols, bufnr, child_prefix)
           text = prefix .. '[' .. kind .. '] ' .. symbol.name,
         })
         if symbol.children then
-          -- Use a special UTF code for adding space, since fzf will trim normal spaces.
           for _, v in ipairs(_symbols_to_items(symbol.children, _items, _bufnr, prefix .. child_prefix)) do
             for _, s in ipairs(v) do
               table.insert(_items, s)
