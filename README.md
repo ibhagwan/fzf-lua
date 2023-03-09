@@ -925,7 +925,10 @@ require'fzf-lua'.setup {
         -- or 'false' to disable highlighting
         symbol_hl_prefix  = "CmpItemKind",
         -- additional symbol formatting, works with or without style
-        symbol_fmt        = function(s) return "["..s.."]" end,
+        symbol_fmt        = function(s, opts) return opts.symbol_style == 2 and s or "[" .. s .. "]" end,
+        -- add prefix to child symbol. Default to use a special space to add
+        -- indentation while avoid being trimmed by fzf
+        child_prefix      = "\xc2\xa0\xc2\xa0",
     },
     code_actions = {
         prompt            = 'Code Actions> ',

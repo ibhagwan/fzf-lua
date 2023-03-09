@@ -116,9 +116,49 @@ local function call_hierarchy_handler(opts, cb, _, result, _, _)
   end
 end
 
+-- Copied from vim.lsp.util.symbols_to_items, then added space prefix to child symbols.
+local function symbols_to_items(symbols, bufnr, child_prefix)
+  ---@private
+  local function _symbols_to_items(_symbols, _items, _bufnr, prefix)
+    for _, symbol in ipairs(_symbols) do
+      if symbol.location then -- SymbolInformation type
+        local range = symbol.location.range
+        local kind = vim.lsp.util._get_symbol_kind_name(symbol.kind)
+        table.insert(_items, {
+          filename = vim.uri_to_fname(symbol.location.uri),
+          lnum = range.start.line + 1,
+          col = range.start.character + 1,
+          kind = kind,
+          text = prefix ..  '[' .. kind .. '] ' .. symbol.name,
+        })
+      elseif symbol.selectionRange then -- DocumentSymbole type
+        local kind = vim.lsp.util._get_symbol_kind_name(symbol.kind)
+        table.insert(_items, {
+          -- bufnr = _bufnr,
+          filename = vim.api.nvim_buf_get_name(_bufnr),
+          lnum = symbol.selectionRange.start.line + 1,
+          col = symbol.selectionRange.start.character + 1,
+          kind = kind,
+          text = prefix .. '[' .. kind .. '] ' .. symbol.name,
+        })
+        if symbol.children then
+          -- Use a special UTF code for adding space, since fzf will trim normal spaces.
+          for _, v in ipairs(_symbols_to_items(symbol.children, _items, _bufnr, prefix .. child_prefix)) do
+            for _, s in ipairs(v) do
+              table.insert(_items, s)
+            end
+          end
+        end
+      end
+    end
+    return _items
+  end
+  return _symbols_to_items(symbols, {}, bufnr or 0, '')
+end
+
 local function symbol_handler(opts, cb, _, result, _, _)
   result = vim.tbl_islist(result) and result or { result }
-  local items = vim.lsp.util.symbols_to_items(result, __CTX.bufnr)
+  local items = symbols_to_items(result, __CTX.bufnr, opts.child_prefix or "")
   for _, entry in ipairs(items) do
     if (not opts.current_buffer_only or __CTX.bufname == entry.filename) and
         (not opts.regex_filter or entry.text:match(opts.regex_filter)) then
@@ -452,7 +492,7 @@ local function gen_sym2style_map(opts)
   end
   if type(opts.symbol_fmt) == "function" then
     for k, v in pairs(M._sym2style) do
-      M._sym2style[k] = opts.symbol_fmt(v) or v
+      M._sym2style[k] = opts.symbol_fmt(v, opts) or v
     end
   end
 end
