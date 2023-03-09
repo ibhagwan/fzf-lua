@@ -7,8 +7,8 @@ local M = {}
 M._has_devicons = pcall(require, "nvim-web-devicons")
 
 function M._default_previewer_fn()
-  assert(M.globals ~= nil)
-  return M.globals.default_previewer or M.globals.winopts.preview.default
+  local previewer = M.globals.default_previewer or M.globals.winopts.preview.default
+  return type(previewer) == "function" and previewer() or previewer
 end
 
 M.defaults = {
