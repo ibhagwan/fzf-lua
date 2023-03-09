@@ -925,7 +925,9 @@ require'fzf-lua'.setup {
         -- or 'false' to disable highlighting
         symbol_hl_prefix  = "CmpItemKind",
         -- additional symbol formatting, works with or without style
-        symbol_fmt        = function(s) return "["..s.."]" end,
+        symbol_fmt        = function(s, opts) return "[" .. s .. "]" end,
+        -- prefix child symbols. set to any string or `false` to disable
+        child_prefix      = true,
     },
     code_actions = {
         prompt            = 'Code Actions> ',
