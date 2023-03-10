@@ -8,6 +8,10 @@ M._has_devicons = pcall(require, "nvim-web-devicons")
 
 function M._default_previewer_fn()
   local previewer = M.globals.default_previewer or M.globals.winopts.preview.default
+  -- the setup function cannot have a custom previewer as deepcopy
+  -- fails with stack overflow while trying to copy the custom class
+  -- the workaround is to define the previewer as a function instead
+  -- https://github.com/ibhagwan/fzf-lua/issues/677
   return type(previewer) == "function" and previewer() or previewer
 end
 
