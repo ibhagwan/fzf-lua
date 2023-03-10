@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 February 20
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 March 10
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1006,7 +1006,9 @@ open an issue and I'll be more than happy to help.**
             -- or 'false' to disable highlighting
             symbol_hl_prefix  = "CmpItemKind",
             -- additional symbol formatting, works with or without style
-            symbol_fmt        = function(s) return "["..s.."]" end,
+            symbol_fmt        = function(s, opts) return "[" .. s .. "]" end,
+            -- prefix child symbols. set to any string or `false` to disable
+            child_prefix      = true,
         },
         code_actions = {
             prompt            = 'Code Actions> ',
