@@ -121,9 +121,9 @@ local function symbols_to_items(symbols, bufnr, child_prefix)
   ---@private
   local function _symbols_to_items(_symbols, _items, _bufnr, prefix)
     for _, symbol in ipairs(_symbols) do
+      local kind = vim.lsp.protocol.SymbolKind[symbol.kind] or 'Unknown'
       if symbol.location then -- SymbolInformation type
         local range = symbol.location.range
-        local kind = vim.lsp.util._get_symbol_kind_name(symbol.kind)
         table.insert(_items, {
           filename = vim.uri_to_fname(symbol.location.uri),
           lnum = range.start.line + 1,
@@ -132,7 +132,6 @@ local function symbols_to_items(symbols, bufnr, child_prefix)
           text = prefix ..  '[' .. kind .. '] ' .. symbol.name,
         })
       elseif symbol.selectionRange then -- DocumentSymbole type
-        local kind = vim.lsp.util._get_symbol_kind_name(symbol.kind)
         table.insert(_items, {
           -- bufnr = _bufnr,
           filename = vim.api.nvim_buf_get_name(_bufnr),
@@ -157,7 +156,12 @@ end
 
 local function symbol_handler(opts, cb, _, result, _, _)
   result = vim.tbl_islist(result) and result or { result }
-  local items = symbols_to_items(result, __CTX.bufnr, opts.child_prefix or "")
+  local items
+  if opts.child_prefix then
+    items = symbols_to_items(result, __CTX.bufnr, opts.child_prefix)
+  else
+    items = vim.lsp.util.symbols_to_items(result, __CTX.bufnr)
+  end
   for _, entry in ipairs(items) do
     if (not opts.current_buffer_only or __CTX.bufname == entry.filename) and
         (not opts.regex_filter or entry.text:match(opts.regex_filter)) then
