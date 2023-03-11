@@ -5,6 +5,8 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+local _has_devicons = pcall(require, "nvim-web-devicons")
+
 local function CTX_UPDATE()
   -- save current win/buf context, ignore when fzf
   -- window is already open (actions.sym_lsym)
@@ -169,7 +171,7 @@ local function symbol_handler(opts, cb, _, result, _, _)
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
         if kind and M._sym2style[kind] then
-          entry.text = entry.text:gsub("%[.-%]", M._sym2style[kind])
+          entry.text = entry.text:gsub("%[.-%]", M._sym2style[kind], 1)
         end
       end
       entry = make_entry.lcol(entry, opts)
@@ -464,34 +466,25 @@ local function gen_sym2style_map(opts)
   assert(opts.symbol_style ~= nil)
   M._sym2style = {}
   local colormap = vim.api.nvim_get_color_map()
-  for k, v in pairs(vim.lsp.protocol.CompletionItemKind) do
-    if type(k) == "string" then
-      local icon = vim.lsp.protocol.CompletionItemKind[v]
-      -- style==1: "<icon> <kind>"
-      -- style==2: "<icon>"
-      -- style==3: "<kind>"
-      local s = nil
-      if opts.symbol_style == 1 then
-        -- if icons weren't set by the user
-        -- icon will match the kind
-        if icon ~= k then
-          s = ("%s %s"):format(icon, k)
-        else
-          s = k
-        end
-      elseif opts.symbol_style == 2 then
-        s = icon
-      elseif opts.symbol_style == 3 then
-        s = k
-      end
-      if s and opts.symbol_hl_prefix then
-        M._sym2style[k] = utils.ansi_from_hl(opts.symbol_hl_prefix .. k, s, colormap)
-      elseif s then
-        M._sym2style[k] = s
-      else
-        -- can get here when only 'opts.symbol_fmt' was set
-        M._sym2style[k] = k
-      end
+  for kind, icon in pairs(opts.symbol_icons) do
+    -- style==1: "<icon> <kind>"
+    -- style==2: "<icon>"
+    -- style==3: "<kind>"
+    local s = nil
+    if opts.symbol_style == 1 and _has_devicons then
+      s = ("%s %s"):format(icon, kind)
+    elseif opts.symbol_style == 2 and _has_devicons then
+      s = icon
+    elseif opts.symbol_style == 3 then
+      s = kind
+    end
+    if s and opts.symbol_hl then
+      M._sym2style[kind] = utils.ansi_from_hl(opts.symbol_hl(kind), s, colormap)
+    elseif s then
+      M._sym2style[kind] = s
+    else
+      -- can get here when only 'opts.symbol_fmt' was set
+      M._sym2style[kind] = kind
     end
   end
   if type(opts.symbol_fmt) == "function" then
