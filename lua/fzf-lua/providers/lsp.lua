@@ -159,7 +159,7 @@ local function symbol_handler(opts, cb, _, result, _, _)
   local items
   if opts.child_prefix then
     items = symbols_to_items(result, __CTX.bufnr,
-        opts.child_prefix == true and string.rep(utils.nbsp, 2) or opts.child_prefix)
+        opts.child_prefix == true and string.rep("\xc2\xa0", 2) or opts.child_prefix)
   else
     items = vim.lsp.util.symbols_to_items(result, __CTX.bufnr)
   end
