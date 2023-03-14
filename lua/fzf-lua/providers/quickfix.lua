@@ -26,7 +26,7 @@ local quickfix_run = function(opts, cfg, locations)
           if err then return end
           -- close the pipe to fzf, this
           -- removes the loading indicator in fzf
-          cb(nil, function() end)
+          cb(nil)
         end)
       end
     end

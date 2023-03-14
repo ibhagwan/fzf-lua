@@ -137,11 +137,11 @@ M.breakpoints = function(opts)
           if err then return end
           -- close the pipe to fzf, this
           -- removes the loading indicator in fzf
-          cb(nil, function() end)
+          cb(nil)
         end)
       end
     end
-    cb(nil, function() end)
+    cb(nil)
   end
 
   if opts.fzf_opts["--header"] == nil then

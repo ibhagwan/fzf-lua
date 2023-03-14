@@ -16,8 +16,11 @@ Previewer.base = Object:extend()
 
 function Previewer.base:new(o, opts, fzf_win)
   local function default(var, def)
-    if var ~= nil then return var
-    else return def end
+    if var ~= nil then
+      return var
+    else
+      return def
+    end
   end
 
   o = o or {}
@@ -142,7 +145,7 @@ end
 local function force_delete_buffer(bufnr)
   if tonumber(bufnr) and vim.api.nvim_buf_is_valid(bufnr) then
     api.nvim_buf_call(bufnr, function()
-      vim.cmd('delm \\"')
+      vim.cmd([[delm \"]])
     end)
     vim.api.nvim_buf_delete(bufnr, { force = true })
   end
@@ -225,7 +228,8 @@ function Previewer.base:display_last_entry()
 end
 
 function Previewer.base:display_entry(entry_str)
-  if not entry_str then return
+  if not entry_str then
+    return
   else
     -- save last entry even if we don't display
     self.last_entry = entry_str
@@ -265,8 +269,11 @@ function Previewer.base:display_entry(entry_str)
 
   -- debounce preview entries
   if tonumber(self.delay) > 0 then
-    if not self._entry_count then self._entry_count = 1
-    else self._entry_count = self._entry_count + 1 end
+    if not self._entry_count then
+      self._entry_count = 1
+    else
+      self._entry_count = self._entry_count + 1
+    end
     local entry_count = self._entry_count
     vim.defer_fn(function()
       -- only display if entry hasn't changed
@@ -330,7 +337,7 @@ function Previewer.base:scroll(direction)
     local input = direction > 0 and "<C-d>" or "<C-u>"
     vim.cmd("stopinsert")
     utils.feed_keys_termcodes((":noa lua vim.api.nvim_win_call(" ..
-        '%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>'):
+      [[%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>]]):
       format(tonumber(preview_winid), input))
   end
   -- 'cursorline' is effectively our match highlight. Once the
@@ -663,8 +670,8 @@ local ts_attach = function(bufnr, ft)
   vim.treesitter.highlighter.new(__ts_parsers.get_parser(bufnr, lang))
   local is_table = type(config.additional_vim_regex_highlighting) == "table"
   if
-    config.additional_vim_regex_highlighting
-    and (not is_table or vim.tbl_contains(config.additional_vim_regex_highlighting, lang))
+      config.additional_vim_regex_highlighting
+      and (not is_table or vim.tbl_contains(config.additional_vim_regex_highlighting, lang))
   then
     vim.api.nvim_buf_set_option(bufnr, "syntax", ft)
   end
@@ -754,8 +761,8 @@ function Previewer.buffer_or_file:do_syntax(entry)
           end)
           if not ok then
             utils.warn(("syntax highlighting failed for filetype '%s', ")
-            :format(entry.path and path.extension(entry.path) or "<null>") ..
-            "open the file and run ':filetype detect' for more info.")
+              :format(entry.path and path.extension(entry.path) or "<null>") ..
+              "open the file and run ':filetype detect' for more info.")
           end
         end
       end
@@ -815,7 +822,6 @@ function Previewer.buffer_or_file:preview_buf_post(entry)
   if not self.win or not self.win:validate_preview() then return end
 
   if not self:preview_is_terminal() then
-
     -- set cursor highlights for line|col or tag
     self:set_cursor_hl(entry)
 
@@ -1047,8 +1053,11 @@ function Previewer.marks:parse_entry(entry_str)
   end
   if filepath and #filepath > 0 then
     local ok, res = pcall(vim.fn.expand, filepath)
-    if not ok then filepath = ""
-    else filepath = res end
+    if not ok then
+      filepath = ""
+    else
+      filepath = res
+    end
     filepath = path.relative(filepath, vim.loop.cwd())
   end
   return {

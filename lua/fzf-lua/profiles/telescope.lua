@@ -6,9 +6,9 @@ local function hl_validate(hl)
 end
 
 return {
-  desc       = "match telescope default highlights|keybinds",
-  fzf_opts   = { ["--layout"] = "default", ["--marker"] = "+" },
-  winopts    = {
+  desc             = "match telescope default highlights|keybinds",
+  fzf_opts         = { ["--layout"] = "default",["--marker"] = "+" },
+  winopts          = {
     width   = 0.8,
     height  = 0.9,
     preview = {
@@ -31,7 +31,7 @@ return {
       title        = hl_validate "TelescopeTitle",
     },
   },
-  fzf_colors = {
+  fzf_colors       = {
     ["fg"] = { "fg", "TelescopeNormal" },
     ["bg"] = { "bg", "TelescopeNormal" },
     ["hl"] = { "fg", "TelescopeMatching" },
@@ -46,7 +46,7 @@ return {
     ["marker"] = { "fg", "TelescopeSelectionCaret" },
     ["header"] = { "fg", "TelescopeTitle" },
   },
-  keymap     = {
+  keymap           = {
     builtin = {
       ["<F1>"]     = "toggle-help",
       ["<F2>"]     = "toggle-fullscreen",
@@ -74,7 +74,7 @@ return {
       ["ctrl-q"] = "select-all+accept",
     },
   },
-  actions    = {
+  actions          = {
     files = {
       ["default"] = actions.file_edit_or_qf,
       ["ctrl-s"]  = actions.file_split,
@@ -90,9 +90,9 @@ return {
       ["ctrl-t"]  = actions.buf_tabedit,
     }
   },
-  buffers    = {
+  buffers          = {
     keymap = { builtin = { ["<C-d>"] = false } },
-    actions = { ["ctrl-x"] = false, ["ctrl-d"] = { actions.buf_del, actions.resume } },
+    actions = { ["ctrl-x"] = false,["ctrl-d"] = { actions.buf_del, actions.resume } },
   },
   global_git_icons = false,
 }

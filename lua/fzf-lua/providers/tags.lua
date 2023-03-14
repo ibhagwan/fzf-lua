@@ -34,11 +34,11 @@ local function get_tags_cmd(opts)
   if opts.filename and #opts.filename > 0 then
     query = libuv.shellescape(opts.filename)
   elseif opts.search and #opts.search > 0 then
-    filter = ('%s -v "^!"'):format(bin)
+    filter = ([[%s -v "^!"]]):format(bin)
     query = libuv.shellescape(opts.no_esc and opts.search or
       utils.rg_escape(opts.search))
   else
-    query = '-v "^!_TAG_"'
+    query = [[-v "^!_TAG_"]]
   end
   return ("%s %s %s %s"):format(
     bin, flags, query,

@@ -144,13 +144,17 @@ function FzfWin:generate_layout(winopts)
   end
   return {
     fzf = {
-      row = row, col = col,
-      height = height, width = width,
+      row = row,
+      col = col,
+      height = height,
+      width = width,
     },
     preview = {
       anchor = anchor,
-      row = prev_row, col = prev_col,
-      height = prev_height, width = prev_width,
+      row = prev_row,
+      col = prev_col,
+      height = prev_height,
+      width = prev_width,
     }
   }
 end
@@ -675,7 +679,7 @@ end
 
 function FzfWin:set_redraw_autocmd()
   vim.cmd("augroup FzfLua")
-  vim.cmd('au VimResized <buffer> lua require("fzf-lua").redraw()')
+  vim.cmd([[au VimResized <buffer> lua require("fzf-lua").redraw()]])
   vim.cmd("augroup END")
 end
 
@@ -710,7 +714,9 @@ end
 function FzfWin:set_style_minimal(winid)
   if not tonumber(winid) or
       not api.nvim_win_is_valid(winid)
-  then return end
+  then
+    return
+  end
   vim.wo[winid].number = false
   vim.wo[winid].relativenumber = false
   vim.wo[winid].cursorline = false

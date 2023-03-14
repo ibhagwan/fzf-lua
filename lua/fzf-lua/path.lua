@@ -169,8 +169,8 @@ function M.lengthen(path)
   -- we use 'glob_escape' to escape \{} (#548)
   path = utils.glob_escape(path)
   return vim.fn.glob(path:gsub(M.separator(), "%*" .. M.separator())
-    -- remove the starting '*/' if any
-    :gsub("^%*" .. M.separator(), M.separator())):match("[^\n]+")
+        -- remove the starting '*/' if any
+        :gsub("^%*" .. M.separator(), M.separator())):match("[^\n]+")
       or string.format("<glob expand failed for '%s'>", path)
 end
 
@@ -311,8 +311,8 @@ function M.git_cwd(cmd, opts)
     o = { cwd = o }
   end
   local git_args = {
-    { "cwd", "-C" },
-    { "git_dir", "--git-dir" },
+    { "cwd",          "-C" },
+    { "git_dir",      "--git-dir" },
     { "git_worktree", "--work-tree" },
   }
   if type(cmd) == "string" then

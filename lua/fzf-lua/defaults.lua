@@ -193,7 +193,7 @@ M.defaults = {
       syntax          = true,
       syntax_delay    = 0,
       syntax_limit_l  = 0,
-      syntax_limit_b  = 1024 * 1024, -- 1MB
+      syntax_limit_b  = 1024 * 1024,      -- 1MB
       limit_b         = 1024 * 1024 * 10, -- 10MB
       treesitter      = { enable = true, disable = {} },
       ueberzug_scaler = "cover",
@@ -246,7 +246,7 @@ M.defaults.git = {
   commits = {
     prompt  = "Commits> ",
     cmd     = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))" ..
-    "%Creset %s %C(blue)<%an>%Creset'",
+        "%Creset %s %C(blue)<%an>%Creset'",
     preview = "git show --pretty='%Cred%H%n%Cblue%an <%ae>%n%C(yellow)%cD%n%Cgreen%s' --color {1}",
     actions = {
       ["default"] = actions.git_checkout,
@@ -255,7 +255,7 @@ M.defaults.git = {
   bcommits = {
     prompt  = "BCommits> ",
     cmd     = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))" ..
-    "%Creset %s %C(blue)<%an>%Creset' <file>",
+        "%Creset %s %C(blue)<%an>%Creset' <file>",
     preview = "git diff --color {1}~1 {1} -- <file>",
     actions = {
       ["default"] = actions.git_buf_edit,
@@ -309,15 +309,15 @@ M.defaults.grep = {
   color_icons    = true,
   git_icons      = true,
   grep_opts      = utils.is_darwin()
-    and "--binary-files=without-match --line-number --recursive --color=always --extended-regexp"
-    or "--binary-files=without-match --line-number --recursive --color=always --perl-regexp",
+      and "--binary-files=without-match --line-number --recursive --color=always --extended-regexp"
+      or "--binary-files=without-match --line-number --recursive --color=always --perl-regexp",
   rg_opts        = "--column --line-number --no-heading --color=always --smart-case " ..
-  "--max-columns=4096",
+      "--max-columns=4096",
   _actions       = function() return M.globals.actions.files end,
   actions        = { ["ctrl-g"] = { actions.grep_lgrep } },
   -- live_grep_glob options
   glob_flag      = "--iglob", -- for case sensitive globs use '--glob'
-  glob_separator = "%s%-%-", -- query separator pattern (lua): ' --'
+  glob_separator = "%s%-%-",  -- query separator pattern (lua): ' --'
 }
 
 M.defaults.args = {
@@ -679,7 +679,7 @@ M.defaults.commands = {
 M.defaults.autocmds = {
   prompt    = "Autocmds> ",
   previewer = { _ctor = previewers.builtin.autocmds },
-  _actions    = function() return M.globals.actions.files end,
+  _actions  = function() return M.globals.actions.files end,
   fzf_opts  = {
     ["--delimiter"] = "'[:]'",
     ["--with-nth"]  = "3..",

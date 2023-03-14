@@ -69,7 +69,7 @@ M.status = function(opts)
       -- we are guaranteed format of: XY <text>
       -- spaced files are wrapped with quotes
       -- remove both git markers and quotes
-      local f1, f2 = x:sub(4):gsub('"', ""), nil
+      local f1, f2 = x:sub(4):gsub([["]], ""), nil
       -- renames separate files with '->'
       if f1:match("%s%->%s") then
         f1, f2 = f1:match("(.*)%s%->%s(.*)")

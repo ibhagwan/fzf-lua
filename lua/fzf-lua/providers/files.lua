@@ -63,7 +63,7 @@ M.args = function(opts)
         if err then
           -- close the pipe to fzf, this
           -- removes the loading indicator in fzf
-          cb(nil, function() end)
+          cb(nil)
         end
       end)
       coroutine.yield()

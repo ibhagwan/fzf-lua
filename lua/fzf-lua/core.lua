@@ -32,10 +32,10 @@ M.fzf_exec = function(contents, opts)
   if type(contents) == "string" and
       (opts.fn_transform or opts.fn_preprocess) then
     contents = libuv.spawn_nvim_fzf_cmd({
-      cmd = contents,
-      cwd = opts.cwd,
-      pid_cb = opts._pid_cb,
-    },
+        cmd = contents,
+        cwd = opts.cwd,
+        pid_cb = opts._pid_cb,
+      },
       opts.fn_transform or function(x) return x end,
       opts.fn_preprocess)
   end
@@ -151,7 +151,7 @@ M.fzf = function(contents, opts)
     opts.keymap.fzf = opts.keymap.fzf or {}
     for _, k in ipairs({ "ctrl-c", "ctrl-q", "esc" }) do
       if opts.actions[k] == nil and
-        (opts.keymap.fzf[k] == nil or opts.keymap.fzf[k] == "abort") then
+          (opts.keymap.fzf[k] == nil or opts.keymap.fzf[k] == "abort") then
         opts.actions[k] = actions.dummy_abort
       end
     end
@@ -214,8 +214,12 @@ M.fzf = function(contents, opts)
   -- lose overrides by 'winopts_fn|winopts_raw'
   opts.winopts.preview = fzf_win.winopts.preview
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
-    { fzf_bin = opts.fzf_bin, cwd = opts.cwd, silent_fail = opts.silent_fail,
-      is_fzf_tmux = opts._is_fzf_tmux })
+    {
+      fzf_bin = opts.fzf_bin,
+      cwd = opts.cwd,
+      silent_fail = opts.silent_fail,
+      is_fzf_tmux = opts._is_fzf_tmux
+    })
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
   if selected and #selected > 0 and
@@ -349,7 +353,7 @@ M.build_fzf_cli = function(opts)
   end
   if opts.preview_offset and #opts.preview_offset > 0 then
     opts.fzf_opts["--preview-window"] =
-    opts.fzf_opts["--preview-window"] .. ":" .. opts.preview_offset
+        opts.fzf_opts["--preview-window"] .. ":" .. opts.preview_offset
   end
   -- shell escape the prompt
   opts.fzf_opts["--prompt"] = (opts.prompt or opts.fzf_opts["--prompt"]) and
@@ -733,7 +737,7 @@ M.fzf_query_placeholder = "<query>"
 M.fzf_field_expression = function(opts)
   -- fzf already adds single quotes around the placeholder when expanding.
   -- for skim we surround it with double quotes or single quote searches fail
-  return opts and opts._is_skim and '"{}"' or "{q}"
+  return opts and opts._is_skim and [["{}"]] or "{q}"
 end
 
 -- Sets up the flags and commands required for running a "live" interface

@@ -72,7 +72,7 @@ M.highlights = function(opts)
         if co then coroutine.resume(co) end
         if err then
           -- error, close fzf pipe
-          cb(nil, function() end)
+          cb(nil)
         end
       end)
       if co then coroutine.yield() end

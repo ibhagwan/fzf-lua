@@ -43,7 +43,8 @@ if _VERSION and type(_VERSION) == "string" then
   local ver = tonumber(_VERSION:match("%d+.%d+"))
   if ver < 5.2 then
     M.nbsp = M.nbsp:gsub("\\x(%x%x)",
-      function(x) return string.char(tonumber(x, 16))
+      function(x)
+        return string.char(tonumber(x, 16))
       end)
   end
 end
@@ -302,7 +303,7 @@ function M.tbl_concat(...)
 end
 
 function M.tbl_pack(...)
-  return { n = select("#", ...); ... }
+  return { n = select("#", ...), ... }
 end
 
 function M.tbl_unpack(t, i, j)
@@ -671,9 +672,11 @@ end
 function M.nvim_win_call(winid, func)
   vim.validate({
     winid = {
-      winid, function(w)
+      winid,
+      function(w)
         return w and vim.api.nvim_win_is_valid(w)
-      end, "a valid window"
+      end,
+      "a valid window"
     },
     func = { func, "function" }
   })

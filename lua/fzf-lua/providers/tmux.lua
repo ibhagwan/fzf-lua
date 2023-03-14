@@ -10,7 +10,7 @@ M.buffers = function(opts)
   if not opts then return end
 
   opts.fn_transform = function(x)
-    local buf, data = x:match('^(.-):%s+%d+%s+bytes: "(.*)"$')
+    local buf, data = x:match([[^(.-):%s+%d+%s+bytes: "(.*)"$]])
     return string.format("[%s] %s", utils.ansi_codes.yellow(buf), data)
   end
 

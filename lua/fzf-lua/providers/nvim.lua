@@ -62,7 +62,7 @@ local arg_header = function(sel_key, edit_key, text)
   sel_key = utils.ansi_codes.yellow(sel_key)
   edit_key = utils.ansi_codes.yellow(edit_key)
   return vim.fn.shellescape((":: %s to %s, %s to edit")
-  :format(sel_key, text, edit_key))
+    :format(sel_key, text, edit_key))
 end
 
 M.command_history = function(opts)
@@ -188,7 +188,6 @@ M.marks = function(opts)
       return "UNLOADED: " .. name
     end
   end) ]]
-
   local entries = {}
   for i = #marks, 3, -1 do
     local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
@@ -211,7 +210,7 @@ M.registers = function(opts)
   opts = config.normalize_opts(opts, config.globals.registers)
   if not opts then return end
 
-  local registers = { '"', "_", "#", "=", "_", "/", "*", "+", ":", ".", "%" }
+  local registers = { [["]], "_", "#", "=", "_", "/", "*", "+", ":", ".", "%" }
   -- named
   for i = 0, 9 do
     table.insert(registers, tostring(i))
@@ -395,14 +394,13 @@ M.autocmds = function(opts)
   end
 
   local contents = function(cb)
-
     coroutine.wrap(function()
       local co = coroutine.running()
       for _, a in ipairs(autocmds) do
         local file, line = "<none>", 0
         if a.callback then
           local info = debug.getinfo(a.callback, "S")
-          file = info and info.source and info.source:sub(2) or  ""
+          file = info and info.source and info.source:sub(2) or ""
           line = info and info.linedefined or 0
         end
         local group = a.group_name and vim.trim(a.group_name) or " "

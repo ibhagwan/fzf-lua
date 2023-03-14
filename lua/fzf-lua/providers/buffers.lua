@@ -2,7 +2,6 @@ local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
 local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
@@ -106,11 +105,15 @@ local populate_buffer_entries = function(opts, bufnrs, tabh)
     -- always on top (#646)
     -- Hopefully this gets solved before the year 2100
     -- DON'T FORCE ME TO UPDATE THIS HACK NEOVIM LOL
-    local future = os.time({year=2100, month=1, day=1, hour=0, minute=00})
+    local future = os.time({ year = 2100, month = 1, day = 1, hour = 0, minute = 00 })
     local get_unixtime = function(buf)
-      if buf.flag == "%" then return future
-      elseif buf.flag == "#" then return future-1
-      else return buf.info.lastused end
+      if buf.flag == "%" then
+        return future
+      elseif buf.flag == "#" then
+        return future - 1
+      else
+        return buf.info.lastused
+      end
     end
     table.sort(buffers, function(a, b)
       return get_unixtime(a) > get_unixtime(b)
@@ -202,7 +205,7 @@ M.buffers = function(opts)
 
   if opts.fzf_opts["--header-lines"] == nil then
     opts.fzf_opts["--header-lines"] =
-    (not opts.ignore_current_buffer and opts.sort_lastused) and "1"
+        (not opts.ignore_current_buffer and opts.sort_lastused) and "1"
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
@@ -314,7 +317,6 @@ M.tabs = function(opts)
     end
 
     for t, bufnrs in pairs(opts._tab_to_buf) do
-
       local tab_cwd = vim.fn.getcwd(-1, t)
 
       local opt_hl = function(k, default_msg, default_hl)
@@ -343,7 +345,7 @@ M.tabs = function(opts)
         function(s)
           return string.format("%s%s#%d%s", s, utils.nbsp, t,
             (vim.loop.cwd() == tab_cwd and ""
-                or string.format(": %s", path.HOME_to_tilde(tab_cwd))))
+            or string.format(": %s", path.HOME_to_tilde(tab_cwd))))
         end,
         utils.ansi_codes.blue)
 

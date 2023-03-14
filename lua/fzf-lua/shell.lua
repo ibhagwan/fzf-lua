@@ -119,8 +119,7 @@ function M.action(fn, fzf_field_expression, debug)
 end
 
 M.preview_action_cmd = function(fn, fzf_field_expression, debug)
-  local action_string, id =
-  M.raw_preview_action_cmd(fn, fzf_field_expression, debug)
+  local action_string, id = M.raw_preview_action_cmd(fn, fzf_field_expression, debug)
   return vim.fn.shellescape(action_string), id
 end
 

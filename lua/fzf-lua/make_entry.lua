@@ -401,7 +401,7 @@ end
 M.tag = function(x, opts)
   local name, file, text = x:match("([^\t]+)\t([^\t]+)\t(.*)")
   if not file or not name or not text then return x end
-  text = text:match('(.*);"') or text -- remove ctag comments
+  text = text:match([[(.*);"]]) or text -- remove ctag comments
   -- unescape ctags special chars
   -- '\/' -> '/'
   -- '\\' -> '\'
@@ -414,8 +414,8 @@ M.tag = function(x, opts)
     M.file(file, opts),
     not line and "" or ":" .. utils.ansi_codes.green(tostring(line)),
     utils.ansi_codes.magenta(name),
-    utils.ansi_codes.green(tag))
-      , line
+    utils.ansi_codes.green(tag)
+  ), line
 end
 
 return M

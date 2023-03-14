@@ -72,7 +72,8 @@ M.act = function(actions, selected, opts)
 end
 
 -- Dummy abort action for `esc|ctrl-c|ctrl-q`
-M.dummy_abort = function() end
+M.dummy_abort = function()
+end
 
 M.resume = function(_, _)
   -- must call via vim.cmd or we create
@@ -443,8 +444,11 @@ M.goto_jump = function(selected, opts)
   else
     local _, lnum, col, filepath = selected[1]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
     local ok, res = pcall(vim.fn.expand, filepath)
-    if not ok then filepath = ""
-    else filepath = res end
+    if not ok then
+      filepath = ""
+    else
+      filepath = res
+    end
     if not filepath or not vim.loop.fs_stat(filepath) then
       -- no accessible file
       -- jump is in current

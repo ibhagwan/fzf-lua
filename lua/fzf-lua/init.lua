@@ -5,7 +5,6 @@ local config = require "fzf-lua.config"
 do
   -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
   -- plugin '.vim' initialization sometimes doesn't get called
-  local path = require "fzf-lua.path"
   local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
   vim.g.fzf_lua_directory = path.parent(currFile)
 
@@ -28,7 +27,6 @@ do
   if not vim.g.fzf_lua_server then
     vim.g.fzf_lua_server = vim.fn.serverstart()
   end
-
 end
 
 local M = {}

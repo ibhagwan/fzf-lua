@@ -160,7 +160,6 @@ M.spawn = function(opts, fn_transform, fn_done)
         return fn_transform(x)
       end))
   end ]]
-
   local function process_lines(data)
     local lines = {}
     local start_idx = 1
@@ -329,8 +328,11 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
 
   local function stderr_write(msg)
     -- prioritize writing errors to stderr
-    if stderr then stderr:write(msg)
-    else io.stderr:write(msg) end
+    if stderr then
+      stderr:write(msg)
+    else
+      io.stderr:write(msg)
+    end
   end
 
   local function exit(exit_code, msg)
@@ -416,12 +418,12 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
       end
 
   return M.spawn({
-    cwd = opts.cwd,
-    cmd = opts.cmd,
-    cb_finish = on_finish,
-    cb_write = on_write,
-    cb_err = on_err,
-  },
+      cwd = opts.cwd,
+      cmd = opts.cmd,
+      cb_finish = on_finish,
+      cb_write = on_write,
+      cb_err = on_err,
+    },
     fn_transform and function(x)
       return fn_transform(x, opts)
     end)

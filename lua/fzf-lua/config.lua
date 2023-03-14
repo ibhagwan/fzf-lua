@@ -64,9 +64,9 @@ function M.normalize_opts(opts, defaults)
   -- ignore case for keybinds or conflicts may occur (#654)
   local keymap_tolower = function(m)
     return m and {
-      fzf = utils.map_tolower(m.fzf),
-      builtin = utils.map_tolower(m.builtin)
-    } or nil
+          fzf = utils.map_tolower(m.fzf),
+          builtin = utils.map_tolower(m.builtin)
+        } or nil
   end
   opts.keymap = keymap_tolower(opts.keymap)
   opts.actions = utils.map_tolower(opts.actions)
@@ -149,8 +149,11 @@ function M.normalize_opts(opts, defaults)
   end
 
   local function get_opt(o, t1, t2)
-    if t1[o] ~= nil then return t1[o]
-    else return t2[o] end
+    if t1[o] ~= nil then
+      return t1[o]
+    else
+      return t2[o]
+    end
   end
 
   -- Merge global resume options
@@ -280,7 +283,7 @@ function M.normalize_opts(opts, defaults)
       end
     end
     if not executable(opts.fzf_bin, utils.err,
-      "aborting. Please make sure 'fzf' is in installed.") then
+          "aborting. Please make sure 'fzf' is in installed.") then
       return nil
     end
   end

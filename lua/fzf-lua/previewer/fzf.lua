@@ -183,7 +183,7 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   local errcmd = nil
   -- verify the file exists on disk and is accessible
   if #filepath == 0 or not vim.loop.fs_stat(filepath) then
-    errcmd = ('echo "%s: NO SUCH FILE OR ACCESS DENIED"'):format(
+    errcmd = ([[echo "%s: NO SUCH FILE OR ACCESS DENIED"]]):format(
       filepath and #filepath > 0 and vim.fn.shellescape(filepath) or "<null>")
   end
   return filepath, entry, errcmd
@@ -250,7 +250,7 @@ function Previewer.git_diff:new(o, opts)
     self.git_icons = {}
     for _, i in ipairs({ "D", "M", "R", "A", "C", "T", "?" }) do
       self.git_icons[i] =
-      icons_overrides and icons_overrides[i] and
+          icons_overrides and icons_overrides[i] and
           utils.lua_regex_escape(icons_overrides[i].icon) or i
     end
   end
@@ -266,20 +266,24 @@ function Previewer.git_diff:cmdline(o)
     end
     local is_deleted = items[1]:match(self.git_icons["D"] .. utils.nbsp) ~= nil
     local is_modified = items[1]:match("[" ..
-      self.git_icons["M"] ..
-      self.git_icons["R"] ..
-      self.git_icons["A"] ..
-      self.git_icons["T"] ..
-      "]" .. utils.nbsp) ~= nil
+          self.git_icons["M"] ..
+          self.git_icons["R"] ..
+          self.git_icons["A"] ..
+          self.git_icons["T"] ..
+          "]" .. utils.nbsp) ~= nil
     local is_untracked = items[1]:match("[" ..
-      self.git_icons["?"] ..
-      self.git_icons["C"] ..
-      "]" .. utils.nbsp) ~= nil
+          self.git_icons["?"] ..
+          self.git_icons["C"] ..
+          "]" .. utils.nbsp) ~= nil
     local file = path.entry_to_file(items[1], self.opts)
     local cmd = nil
-    if is_modified then cmd = self.cmd_modified
-    elseif is_deleted then cmd = self.cmd_deleted
-    elseif is_untracked then cmd = self.cmd_untracked end
+    if is_modified then
+      cmd = self.cmd_modified
+    elseif is_deleted then
+      cmd = self.cmd_deleted
+    elseif is_untracked then
+      cmd = self.cmd_untracked
+    end
     if not cmd then return "" end
     local pager = ""
     if self.pager and #self.pager > 0 and
@@ -314,15 +318,15 @@ function Previewer.man_pages:new(o, opts)
   if not self.cmd then
     if utils.is_darwin() then
       self.cmd = vim.fn.executable("bat") == 1
-        and [[man -P "bat -l man -p --color=always" %s]]
-        or "man -P cat %s"
+          and [[man -P "bat -l man -p --color=always" %s]]
+          or "man -P cat %s"
     else
       self.cmd = vim.fn.executable("bat") == 1
-        and "man -c %s | bat -l man -p --color=always"
-        or "man %s"
+          and "man -c %s | bat -l man -p --color=always"
+          or "man %s"
     end
     self.cmd = self.cmd or vim.fn.executable("bat") == 1
-      and "bat -p -l help --color=always %s" or "cat %s"
+        and "bat -p -l help --color=always %s" or "cat %s"
   end
   return self
 end
@@ -345,8 +349,8 @@ Previewer.help_tags = Previewer.base:extend()
 function Previewer.help_tags:new(o, opts)
   Previewer.help_tags.super.new(self, o, opts)
   self.cmd = self.cmd or vim.fn.executable("bat") == 1
-    and "bat -p -l help --color=always %s"
-    or "cat %s"
+      and "bat -p -l help --color=always %s"
+      or "cat %s"
   return self
 end
 

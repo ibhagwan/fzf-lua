@@ -9,8 +9,8 @@ local M = {}
 local fzf_fn = function(cb)
   local opts = {}
   opts.lang = config.globals.helptags.lang or vim.o.helplang
-  opts.fallback = utils._if(config.globals.helptags.fallback ~= nil, config.globals.helptags.fallback
-    , true)
+  opts.fallback = utils._if(config.globals.helptags.fallback ~= nil,
+    config.globals.helptags.fallback, true)
 
   local langs = vim.split(opts.lang, ",", true)
   if opts.fallback and not vim.tbl_contains(langs, "en") then

@@ -121,7 +121,7 @@ local function symbols_to_items(symbols, bufnr, child_prefix)
   ---@private
   local function _symbols_to_items(_symbols, _items, _bufnr, prefix)
     for _, symbol in ipairs(_symbols) do
-      local kind = vim.lsp.protocol.SymbolKind[symbol.kind] or 'Unknown'
+      local kind = vim.lsp.protocol.SymbolKind[symbol.kind] or "Unknown"
       if symbol.location then -- SymbolInformation type
         local range = symbol.location.range
         table.insert(_items, {
@@ -151,7 +151,7 @@ local function symbols_to_items(symbols, bufnr, child_prefix)
     end
     return _items
   end
-  return _symbols_to_items(symbols, {}, bufnr or 0, '')
+  return _symbols_to_items(symbols, {}, bufnr or 0, "")
 end
 
 local function symbol_handler(opts, cb, _, result, _, _)
@@ -159,7 +159,7 @@ local function symbol_handler(opts, cb, _, result, _, _)
   local items
   if opts.child_prefix then
     items = symbols_to_items(result, __CTX.bufnr,
-        opts.child_prefix == true and string.rep("\xc2\xa0", 2) or opts.child_prefix)
+      opts.child_prefix == true and string.rep("\xc2\xa0", 2) or opts.child_prefix)
   else
     items = vim.lsp.util.symbols_to_items(result, __CTX.bufnr)
   end
@@ -267,7 +267,6 @@ local function set_lsp_fzf_fn(opts)
   end
 
   if not opts.async then
-
     -- SYNC
     local timeout = 5000
     if type(opts.async_or_timeout) == "number" then
@@ -311,7 +310,6 @@ local function set_lsp_fzf_fn(opts)
       end
     end
   else
-
     -- ASYNC
     -- cancel all remaining LSP requests once the user
     -- made their selection or closed the fzf popup
@@ -610,26 +608,26 @@ local function get_line_diagnostics(_)
   end
   local diag = vim.diagnostic.get(__CTX.bufnr, { lnum = vim.api.nvim_win_get_cursor(0)[1] - 1 })
   return diag and diag[1] and { {
-    source = diag[1].source,
-    message = diag[1].message,
-    severity = diag[1].severity,
-    code = diag[1].user_data and diag[1].user_data.lsp and
-        diag[1].user_data.lsp.code,
-    codeDescription = diag[1].user_data and diag[1].user_data.lsp and
-        diag[1].user_data.lsp.codeDescription,
-    range = {
-      ["start"] = {
-        line = diag[1].lnum,
-        character = diag[1].col,
-      },
-      ["end"] = {
-        line = diag[1].end_lnum,
-        character = diag[1].end_col,
-      }
-    },
-    data = diag[1].user_data and diag[1].user_data.lsp and
-        diag[1].user_data.lsp.data
-  } } or nil
+        source = diag[1].source,
+        message = diag[1].message,
+        severity = diag[1].severity,
+        code = diag[1].user_data and diag[1].user_data.lsp and
+            diag[1].user_data.lsp.code,
+        codeDescription = diag[1].user_data and diag[1].user_data.lsp and
+            diag[1].user_data.lsp.codeDescription,
+        range = {
+          ["start"] = {
+            line = diag[1].lnum,
+            character = diag[1].col,
+          },
+          ["end"] = {
+            line = diag[1].end_lnum,
+            character = diag[1].end_col,
+          }
+        },
+        data = diag[1].user_data and diag[1].user_data.lsp and
+            diag[1].user_data.lsp.data
+      } } or nil
 end
 
 ---Returns true if the client has code_action capability and its
@@ -655,9 +653,7 @@ M.code_actions = function(opts)
   -- single results to be skipped with 'async = false'
   opts.jump_to_single_result = false
   opts.lsp_params = vim.lsp.util.make_range_params(0)
-  opts.lsp_params.context = {
-    diagnostics = get_line_diagnostics(opts)
-  }
+  opts.lsp_params.context = { diagnostics = get_line_diagnostics(opts) }
 
   -- we use `vim.ui.select` for neovim > 0.6
   -- so make sure 'set_lsp_fzf_fn' is run synchronously
