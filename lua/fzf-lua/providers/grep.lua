@@ -126,8 +126,16 @@ M.grep = function(opts)
   -- if user did not provide a search term
   -- provide an input prompt
   if not opts.search and not opts.raw_cmd then
-    opts.search = utils.input(opts.input_prompt) or ""
+    local search = utils.input(opts.input_prompt)
+    -- As empty string is not falsy in lua,
+    -- this will happen only if the user cancels the input
+    if search then
+      opts.search = search
+    else
+      return
+    end
   end
+
 
   -- get the grep command before saving the last search
   -- in case the search string is overwritten by 'rg_glob'
