@@ -176,7 +176,12 @@ M.grep = function(opts)
   end
 
   if not opts.search then
-    opts.search = utils.input(opts.input_prompt or "Grep For> ")
+    local search = utils.input(opts.input_prompt or "Grep For> ")
+    if search then
+      opts.search = search
+    else
+      return
+    end
   end
 
   return M.tags(opts)

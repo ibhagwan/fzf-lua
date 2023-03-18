@@ -127,8 +127,7 @@ M.grep = function(opts)
   -- provide an input prompt
   if not opts.search and not opts.raw_cmd then
     local search = utils.input(opts.input_prompt)
-    -- As empty string is not falsy in lua,
-    -- this will happen only if the user cancels the input
+    -- empty string is not falsy in lua, abort if the user cancels the input
     if search then
       opts.search = search
     else
