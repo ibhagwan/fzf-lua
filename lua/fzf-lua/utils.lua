@@ -758,15 +758,21 @@ end
 
 -- wrapper around |input()| to allow cancellation with `<C-c>`
 -- without "E5108: Error executing lua Keyboard interrupt"
-function M.input(prompt, default)
+function M.input(prompt)
   local ok, res
-  if vim.ui then
-    ok, _ = pcall(vim.ui.input, { prompt = prompt, default = default },
+  -- NOTE: do not use `vim.ui` yet, a conflcit with `dressing.nvim`
+  -- causes the return value to appear as cancellation
+  -- if vim.ui then
+  if false then
+    ok, _ = pcall(vim.ui.input, { prompt = prompt },
       function(input)
         res = input
       end)
   else
-    ok, res = pcall(vim.fn.input, prompt, default or "")
+    ok, res = pcall(vim.fn.input, { prompt = prompt, cancelreturn = 3 })
+    if res == 3 then
+      ok, res = false, nil
+    end
   end
   return ok and res or nil
 end
