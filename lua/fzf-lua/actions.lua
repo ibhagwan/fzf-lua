@@ -752,4 +752,22 @@ M.apply_profile = function(selected, opts)
   end
 end
 
+M.complete_insert = function(selected, opts)
+  local line = vim.api.nvim_get_current_line()
+  local before = opts.cmp_string_col > 1 and line:sub(1, opts.cmp_string_col - 1) or ""
+  local after = line:sub(opts.cmp_string_col + (opts.cmp_string and #opts.cmp_string or 0))
+  local entry = selected[1]
+  if opts.cmp_is_file then
+    entry = path.relative(path.entry_to_file(selected[1], opts).path, opts.cwd)
+  elseif opts.cmp_is_line then
+    entry = selected[1]:match("^.*:%d+:%s(.*)")
+  end
+  local subst = (opts.cmp_prefix or "") .. entry
+  vim.api.nvim_set_current_line(before .. subst .. after)
+  vim.api.nvim_win_set_cursor(0, { opts.cmp_string_row, opts.cmp_string_col + #subst - 2 })
+  if opts.cmp_mode == "i" then
+    vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('a', 'n', true)]]
+  end
+end
+
 return M

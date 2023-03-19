@@ -786,6 +786,26 @@ M.defaults.dap = {
   },
 }
 
+M.defaults.complete_path = {
+  cmd     = nil, -- default: auto detect fd|rg|find
+  actions = { ["default"] = actions.complete_insert },
+}
+
+M.defaults.complete_file = {
+  cmd          = nil, -- default: auto detect rg|fd|find
+  multiprocess = true,
+  file_icons   = true and M._has_devicons,
+  color_icons  = true,
+  git_icons    = false,
+  _actions     = function() return M.globals.actions.files end,
+  actions      = { ["default"] = actions.complete_insert },
+  previewer    = M._default_previewer_fn,
+  winopts      = { preview = { hidden = "hidden" } },
+}
+
+M.defaults.complete_line = {}
+M.defaults.complete_bline = {}
+
 M.defaults.file_icon_padding = ""
 
 M.defaults.file_icon_colors = {}

@@ -419,6 +419,7 @@ M._action_to_helpstr = {
   [actions.paste_register]      = "paste-register",
   [actions.set_qflist]          = "set-{qf|loc}list",
   [actions.apply_profile]       = "apply-profile",
+  [actions.complete_insert]     = "complete-insert",
 }
 
 return M

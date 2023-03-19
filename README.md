@@ -280,6 +280,15 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | -------------------- | ------------------------------------------ |
 | `tmux_buffers`         | list tmux paste buffers                    |
 
+### Completion functions
+| Command              | List                                       |
+| -------------------- | ------------------------------------------ |
+| `fzf_complete`         | custom completion (see below)              |
+| `complete_path`        | complete path under cursor (incl dirs)     |
+| `complete_file`        | complete file under cursor (excl dirs)     |
+| `complete_line`        | complete line (all open buffers)           |
+| `complete_bline`       | complete line (current buffer only)        |
+
 ## Customization
 
 > **[ADVANCED CUSTOMIZATION](https://github.com/ibhagwan/fzf-lua/wiki/Advanced)
@@ -356,6 +365,38 @@ telescope defaults with `bat` previewer:
 
 See [profiles](https://github.com/ibhagwan/fzf-lua/tree/main/lua/fzf-lua/profiles)
 for more info.
+
+### Completion functions
+
+Fzf-lua comes with a set of completion functions for paths/files and lines from open buffers as
+well as custom completion, for example, set path/completion using `<C-x><C-f>`:
+```vim
+inoremap <c-x><c-f> <cmd>lua require("fzf-lua").complete_path()<cr>
+```
+
+Or in all modes using lua:
+```lua
+vim.kepymap.set({ "n", "v", "i" }, "<C-x><C-f>",
+  function() require("fzf-lua").complete_path() end,
+  { silent = true, desc = "Fuzzy complete path" })
+```
+
+Or with a custom command and preview:
+```lua
+vim.kepymap.set({ "i" }, "<C-x><C-f>",
+  function()
+    require("fzf-lua").complete_file({
+      cmd = "rg --files",
+      winopts = { preview = { hidden = "nohidden" } }
+    })
+  end, { silent = true, desc = "Fuzzy complete file" })
+```
+> **Note:** only `complete_file` supports a previewer
+
+#### Custom completion
+
+Custom completion is also possible using `fzf_complete`, the signature for `fzf_complete` is
+equivalent to `fzf_exec = function(contents, [opts])`, for more info how to use the API, please refer to [Wiki/ADVANCED](https://github.com/ibhagwan/fzf-lua/wiki/Advanced).
 
 ### Default Options
 
@@ -998,6 +1039,20 @@ require'fzf-lua'.setup {
     -- severity_only:   keep any matching exact severity
     -- severity_limit:  keep any equal or more severe (lower)
     -- severity_bound:  keep any equal or less severe (higher)
+  },
+  complete_path = {
+    cmd          = nil, -- default: auto detect fd|rg|find
+    actions      = { ["default"] = actions.complete_insert },
+  },
+  complete_file = {
+    cmd          = nil, -- default: auto detect rg|fd|find
+    file_icons   = true,
+    color_icons  = true,
+    git_icons    = false,
+    -- actions inherit from 'actions.files' and merge
+    actions      = { ["default"] = actions.complete_insert },
+    -- previewer hidden by default
+    winopts      = { preview = { hidden = "hidden" } },
   },
   -- uncomment to use the old help previewer which used a
   -- minimized help window to generate the help tag preview

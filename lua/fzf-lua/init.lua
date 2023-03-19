@@ -243,6 +243,11 @@ do
     fzf_wrap = { "fzf-lua.core", "fzf_wrap" },
     fzf_exec = { "fzf-lua.core", "fzf_exec" },
     fzf_live = { "fzf-lua.core", "fzf_live" },
+    fzf_complete = { "fzf-lua.complete", "fzf_complete" },
+    complete_path = { "fzf-lua.complete", "path" },
+    complete_file = { "fzf-lua.complete", "file" },
+    complete_line = { "fzf-lua.complete", "line" },
+    complete_bline = { "fzf-lua.complete", "bline" },
   }
 
   for k, v in pairs(lazyloaded_modules) do
@@ -305,6 +310,11 @@ M._excluded_meta = {
   "fzf_wrap",
   "fzf_exec",
   "fzf_live",
+  "fzf_complete",
+  "complete_path",
+  "complete_file",
+  "complete_line",
+  "complete_bline",
   "defaults",
   "_excluded_meta",
   "_excluded_metamap",
