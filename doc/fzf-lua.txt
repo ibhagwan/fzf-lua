@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 March 19
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 March 20
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -468,14 +468,14 @@ path/completion using `<C-x><C-f>`:
 Or in all modes using lua:
 
 >lua
-    vim.kepymap.set({ "n", "v", "i" }, "<C-x><C-f>",
+    vim.keymap.set({ "n", "v", "i" }, "<C-x><C-f>",
       function() require("fzf-lua").complete_path() end,
       { silent = true, desc = "Fuzzy complete path" })
 <
 Or with a custom command and preview:
 
 >lua
-    vim.kepymap.set({ "i" }, "<C-x><C-f>",
+    vim.keymap.set({ "i" }, "<C-x><C-f>",
       function()
         require("fzf-lua").complete_file({
           cmd = "rg --files",
