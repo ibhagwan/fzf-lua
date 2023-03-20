@@ -376,14 +376,14 @@ inoremap <c-x><c-f> <cmd>lua require("fzf-lua").complete_path()<cr>
 
 Or in all modes using lua:
 ```lua
-vim.kepymap.set({ "n", "v", "i" }, "<C-x><C-f>",
+vim.keymap.set({ "n", "v", "i" }, "<C-x><C-f>",
   function() require("fzf-lua").complete_path() end,
   { silent = true, desc = "Fuzzy complete path" })
 ```
 
 Or with a custom command and preview:
 ```lua
-vim.kepymap.set({ "i" }, "<C-x><C-f>",
+vim.keymap.set({ "i" }, "<C-x><C-f>",
   function()
     require("fzf-lua").complete_file({
       cmd = "rg --files",
