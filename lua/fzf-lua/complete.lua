@@ -13,9 +13,10 @@ local M = {}
 -- when scanning for files/paths we use "[^%s\"']*" which stops at spaces
 -- and single/double quotes
 local get_cmp_params = function(match)
+  -- returns { row, col }, col is 0-index base
+  -- i.e. first col of first line is  { 1, 0 }
   local cursor = vim.api.nvim_win_get_cursor(0)
   local line = vim.api.nvim_get_current_line()
-  print("m", match, type(match))
   if type(match) == "string" then
     local after = cursor[2] > 0 and line:sub(cursor[2] + 1):match(match) or nil
     local before = line:sub(1, cursor[2]):reverse():match(match)
@@ -25,7 +26,7 @@ local get_cmp_params = function(match)
     local col = cursor[2] - (before and #before or 0) + 1
     return str, col, cursor[1]
   else
-    local str = cursor[2] > 1 and line:sub(1, cursor[2]) or ""
+    local str = cursor[2] > 0 and line:sub(1, cursor[2] + 1) or ""
     return str, 1, cursor[1]
   end
 end
