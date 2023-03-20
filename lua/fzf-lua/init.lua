@@ -213,6 +213,7 @@ do
     spell_suggest = { "fzf-lua.providers.nvim", "spell_suggest" },
     filetypes = { "fzf-lua.providers.nvim", "filetypes" },
     packadd = { "fzf-lua.providers.nvim", "packadd" },
+    lsp_finder = { "fzf-lua.providers.lsp", "finder" },
     lsp_typedefs = { "fzf-lua.providers.lsp", "typedefs" },
     lsp_references = { "fzf-lua.providers.lsp", "references" },
     lsp_definitions = { "fzf-lua.providers.lsp", "definitions" },

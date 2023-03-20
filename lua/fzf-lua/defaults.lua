@@ -589,9 +589,40 @@ M.defaults.lsp.symbols = {
   actions          = { ["ctrl-g"] = { actions.sym_lsym } },
 }
 
+M.defaults.lsp.finder = {
+  previewer   = M._default_previewer_fn,
+  prompt      = "LSP Finder> ",
+  file_icons  = true and M._has_devicons,
+  color_icons = true,
+  git_icons   = false,
+  async       = true,
+  silent      = true,
+  separator   = "| ",
+  _actions    = function() return M.globals.actions.files end,
+  -- currently supported providers, defined as map so we can query easily
+  _providers  = {
+    references      = true,
+    definitions     = true,
+    declarations    = true,
+    typedefs        = true,
+    implementations = true,
+    incoming_calls  = true,
+    outgoing_calls  = true,
+  },
+  -- by default display all supported providers
+  providers   = {
+    { "references",      prefix = utils.ansi_codes.blue("ref ") },
+    { "definitions",     prefix = utils.ansi_codes.green("def ") },
+    { "declarations",    prefix = utils.ansi_codes.magenta("decl") },
+    { "typedefs",        prefix = utils.ansi_codes.red("tdef") },
+    { "implementations", prefix = utils.ansi_codes.green("impl") },
+    { "incoming_calls",  prefix = utils.ansi_codes.cyan("in  ") },
+    { "outgoing_calls",  prefix = utils.ansi_codes.yellow("out ") },
+  },
+}
+
 M.defaults.lsp.code_actions = {
   prompt           = "Code Actions> ",
-  ui_select        = true,
   async_or_timeout = 5000,
   winopts          = {
     row    = 0.40,

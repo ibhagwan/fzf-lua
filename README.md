@@ -224,6 +224,7 @@ vim.api.nvim_set_keymap('n', '<c-P>',
 | `lsp_code_actions`           | Code Actions                     |
 | `lsp_incoming_calls`         | Incoming Calls                   |
 | `lsp_outgoing_calls`         | Outgoing Calls                   |
+| `lsp_finder`                 | All LSP locations, combined view |
 | `diagnostics_document`       | Document Diagnostics             |
 | `diagnostics_workspace`      | Workspace Diagnostics            |
 | `lsp_document_diagnostics`   | alias to `diagnostics_document`    |
@@ -953,6 +954,9 @@ require'fzf-lua'.setup {
     async_or_timeout  = 5000,       -- timeout(ms) or 'true' for async calls
     file_icons        = true,
     git_icons         = false,
+    -- The equivalent of using `includeDeclaration` in lsp buf calls, e.g:
+    -- :lua vim.lsp.buf.references({includeDeclaration = false})
+    includeDeclaration = true,      -- include current declaration in LSP context
     -- settings for 'lsp_{document|workspace|lsp_live_workspace}_symbols'
     symbols = {
         async_or_timeout  = true,       -- symbols are async by default
@@ -1002,12 +1006,32 @@ require'fzf-lua'.setup {
     },
     code_actions = {
         prompt            = 'Code Actions> ',
-        ui_select         = true,       -- use 'vim.ui.select'?
         async_or_timeout  = 5000,
         winopts = {
             row           = 0.40,
             height        = 0.35,
             width         = 0.60,
+        },
+    },
+    finder = {
+        prompt      = "LSP Finder> ",
+        file_icons  = true,
+        color_icons = true,
+        git_icons   = false,
+        async       = true,         -- async by default
+        silent      = true,         -- suppress "not found" 
+        separator   = "| ",         -- separator after provider prefix, `false` to disable
+        includeDeclaration = true,  -- include current declaration in LSP context
+        -- by default display all LSP locations
+        -- to customize, duplicate table and delete unwanted providers
+        providers   = {
+            { "references",      prefix = require("fzf-lua").utils.ansi_codes.blue("ref ") },
+            { "definitions",     prefix = require("fzf-lua").utils.ansi_codes.green("def ") },
+            { "declarations",    prefix = require("fzf-lua").utils.ansi_codes.magenta("decl") },
+            { "typedefs",        prefix = require("fzf-lua").utils.ansi_codes.red("tdef") },
+            { "implementations", prefix = require("fzf-lua").utils.ansi_codes.green("impl") },
+            { "incoming_calls",  prefix = require("fzf-lua").utils.ansi_codes.cyan("in  ") },
+            { "outgoing_calls",  prefix = require("fzf-lua").utils.ansi_codes.yellow("out ") },
         },
     }
   },

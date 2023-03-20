@@ -17,9 +17,62 @@ local ACTION_DEFINITIONS = {
   [actions.buf_del] = { fn_reload = "close", "close" },
 }
 
+-- converts contents array sent to `fzf_exec` into a single contents
+-- argument with an optional prefix, currently used to combine LSP providers
+local contents_from_arr = function(cont_arr)
+  -- must have at least one contents item in index 1
+  assert(cont_arr[1].contents)
+  local cont_type = type(cont_arr[1].contents)
+  local contents
+  if cont_type == "table" then
+    contents = {}
+    for _, t in ipairs(cont_arr) do
+      assert(type(t.contents) == cont_type, "Unable to combine contents of different types")
+      contents = utils.tbl_extend(contents, t.prefix and
+        vim.tbl_map(function(x)
+          return t.prefix .. x
+        end, t.contents)
+        or t.contents)
+    end
+  elseif cont_type == "function" then
+    contents = function(fzf_cb)
+      coroutine.wrap(function()
+        local co = coroutine.running()
+        for _, t in ipairs(cont_arr) do
+          assert(type(t.contents) == cont_type, "Unable to combine contents of different types")
+          local is_async = true
+          t.contents(function(entry, cb)
+            -- we need to hijack the EOF signal and only send it once the entire dataset
+            -- was sent to fzf, if the innner coroutine is different than outer, the caller's
+            -- callback is async and we need to yield|resume, otherwise ignore EOF
+            is_async = co ~= coroutine.running()
+            if entry then
+              fzf_cb(t.prefix and t.prefix .. entry or entry, cb)
+            elseif is_async then
+              coroutine.resume(co)
+            end
+          end)
+          -- wait for EOF if async
+          if is_async then
+            coroutine.yield()
+          end
+        end
+        -- done
+        fzf_cb()
+      end)()
+    end
+  elseif cont_type == "string" then
+    assert(false, "Not yet supported")
+  end
+  return contents
+end
+
 -- Main API, see:
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
 M.fzf_exec = function(contents, opts)
+  if type(contents) == "table" and type(contents[1]) == "table" then
+    contents = contents_from_arr(contents)
+  end
   if not opts or not opts._normalized then
     opts = config.normalize_opts(opts or {}, {})
     if not opts then return end
@@ -657,13 +710,6 @@ M.set_header = function(opts, hdr_tbl)
     opts.fzf_opts["--header"] = libuv.shellescape(hdr_str)
   end
   return opts
-end
-
--- NOT IN USE, here for backward compat
-M.fzf_files = function(opts, contents)
-  utils.warn("'core.fzf_files' is deprecated, use 'fzf_exec' instead,"
-    .. " see github@fzf-lua/wiki/Advanced.")
-  M.fzf_exec(contents or opts and opts.fzf_fn and opts.fzf_fn, opts)
 end
 
 M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)

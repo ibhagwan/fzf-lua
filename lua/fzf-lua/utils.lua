@@ -302,6 +302,10 @@ function M.tbl_concat(...)
   return result
 end
 
+function M.tbl_extend(t1, t2)
+  return table.move(t2, 1, #t2, #t1 + 1, t1)
+end
+
 function M.tbl_pack(...)
   return { n = select("#", ...), ... }
 end
