@@ -23,7 +23,7 @@ tmux .......................................................... |fzf-lua-tmux|
 Completion functions .......................... |fzf-lua-completion-functions|
 Customization ........................................ |fzf-lua-customization|
 Profiles .................................................. |fzf-lua-profiles|
-Completion functions .......................... |fzf-lua-completion-functions|
+Insert-mode completion ...................... |fzf-lua-insert-mode-completion|
 Custom completion ................................ |fzf-lua-custom-completion|
 Default Options .................................... |fzf-lua-default-options|
 Customizing Highlights ...................... |fzf-lua-customizing-highlights|
@@ -456,7 +456,7 @@ info.
 
 
                                                                               
-COMPLETION FUNCTIONS                            *fzf-lua-completion-functions*
+INSERT-MODE COMPLETION                        *fzf-lua-insert-mode-completion*
 
 Fzf-lua comes with a set of completion functions for paths/files and lines
 from open buffers as well as custom completion, for example, set

@@ -366,7 +366,7 @@ telescope defaults with `bat` previewer:
 See [profiles](https://github.com/ibhagwan/fzf-lua/tree/main/lua/fzf-lua/profiles)
 for more info.
 
-### Completion functions
+### Insert-mode completion
 
 Fzf-lua comes with a set of completion functions for paths/files and lines from open buffers as
 well as custom completion, for example, set path/completion using `<C-x><C-f>`:
