@@ -148,7 +148,7 @@ function M.tilde_to_HOME(path)
 end
 
 function M.HOME_to_tilde(path)
-  return path and path:gsub("^" .. M.HOME(), "~") or nil
+  return path and path:gsub("^" .. utils.lua_regex_escape(M.HOME()), "~") or nil
 end
 
 function M.shorten(path, max_len)
