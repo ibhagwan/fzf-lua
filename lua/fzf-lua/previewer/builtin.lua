@@ -712,7 +712,13 @@ function Previewer.buffer_or_file:do_syntax(entry)
         -- limit treesitter manual attachment to 0.8 instead (0.7.2 also errs)
         -- Error executing vim.schedule lua callback:
         --   vim/filetype.lua:0: attempt to call method 'gsub' (a nil value)
-        local fallback = vim.fn.has("nvim-0.8") == 0
+        local fallback = 0
+        if ( vim.fn.has("nvim-0.8") == 0 ) then
+          local fallback = 1
+        end
+        if( vim.fn.has("nvim-0.9") == 0 ) then
+          local fallback = 1
+        end
         if not fallback then
           fallback = (function()
             local ft = vim.filetype.match({ buf = bufnr, filename = entry.path })
