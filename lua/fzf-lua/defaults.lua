@@ -611,11 +611,11 @@ M.defaults.lsp.finder = {
   },
   -- by default display all supported providers
   providers   = {
-    { "references",      prefix = utils.ansi_codes.blue("ref ") },
-    { "definitions",     prefix = utils.ansi_codes.green("def ") },
     { "declarations",    prefix = utils.ansi_codes.magenta("decl") },
-    { "typedefs",        prefix = utils.ansi_codes.red("tdef") },
     { "implementations", prefix = utils.ansi_codes.green("impl") },
+    { "definitions",     prefix = utils.ansi_codes.green("def ") },
+    { "typedefs",        prefix = utils.ansi_codes.red("tdef") },
+    { "references",      prefix = utils.ansi_codes.blue("ref ") },
     { "incoming_calls",  prefix = utils.ansi_codes.cyan("in  ") },
     { "outgoing_calls",  prefix = utils.ansi_codes.yellow("out ") },
   },
