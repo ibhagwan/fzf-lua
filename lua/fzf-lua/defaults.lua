@@ -458,7 +458,7 @@ M.defaults.blines = {
 M.defaults.tags = {
   previewer    = { _ctor = previewers.builtin.tags },
   prompt       = "Tags> ",
-  ctags_file   = "tags",
+  ctags_file   = nil, -- auto-detect
   rg_opts      = "--no-heading --color=always --smart-case",
   grep_opts    = "--color=auto --perl-regexp",
   multiprocess = true,
@@ -472,7 +472,7 @@ M.defaults.tags = {
 M.defaults.btags = {
   previewer    = { _ctor = previewers.builtin.tags },
   prompt       = "BTags> ",
-  ctags_file   = "tags",
+  ctags_file   = nil, -- auto-detect
   rg_opts      = "--no-heading --color=always",
   grep_opts    = "--color=auto --perl-regexp",
   multiprocess = true,

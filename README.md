@@ -895,7 +895,7 @@ require'fzf-lua'.setup {
   },
   tags = {
     prompt                = 'Tags❯ ',
-    ctags_file            = "tags",
+    ctags_file            = nil,      -- auto-detect from tags-option
     multiprocess          = true,
     file_icons            = true,
     git_icons             = true,
@@ -913,7 +913,7 @@ require'fzf-lua'.setup {
   },
   btags = {
     prompt                = 'BTags❯ ',
-    ctags_file            = "tags",
+    ctags_file            = nil,      -- auto-detect from tags-option
     ctags_autogen         = false,    -- dynamically generate ctags each call
     multiprocess          = true,
     file_icons            = true,

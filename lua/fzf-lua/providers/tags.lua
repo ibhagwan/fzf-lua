@@ -46,6 +46,19 @@ local function get_tags_cmd(opts)
   ), filter
 end
 
+local get_ctags_file = function(opts)
+  if opts.ctags_file then
+    return vim.fn.expand(opts.ctags_file)
+  end
+  local tagfiles = vim.fn.tagfiles()
+  for _, f in ipairs(tagfiles) do
+    if vim.loop.fs_stat(vim.fn.expand(f)) then
+      return f
+    end
+  end
+  return "tags"
+end
+
 local function tags(opts)
   -- we need this for 'actions.grep_lgrep'
   opts.__MODULE__ = opts.__MODULE__ or M
@@ -57,7 +70,7 @@ local function tags(opts)
   -- signal actions this is a ctag
   opts._ctag = true
   opts.ctags_bin = opts.ctags_bin or "ctags"
-  opts.ctags_file = opts.ctags_file and vim.fn.expand(opts.ctags_file) or "tags"
+  opts.ctags_file = get_ctags_file(opts)
   opts._ctags_file = opts.ctags_file
   if not path.starts_with_separator(opts._ctags_file) and opts.cwd then
     opts._ctags_file = path.join({ opts.cwd, opts.ctags_file })
