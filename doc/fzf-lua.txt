@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 March 21
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 March 25
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -990,7 +990,7 @@ open an issue and I'll be more than happy to help.**
       },
       tags = {
         prompt                = 'Tags❯ ',
-        ctags_file            = "tags",
+        ctags_file            = nil,      -- auto-detect from tags-option
         multiprocess          = true,
         file_icons            = true,
         git_icons             = true,
@@ -1008,7 +1008,7 @@ open an issue and I'll be more than happy to help.**
       },
       btags = {
         prompt                = 'BTags❯ ',
-        ctags_file            = "tags",
+        ctags_file            = nil,      -- auto-detect from tags-option
         ctags_autogen         = false,    -- dynamically generate ctags each call
         multiprocess          = true,
         file_icons            = true,
