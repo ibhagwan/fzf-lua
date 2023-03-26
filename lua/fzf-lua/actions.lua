@@ -679,6 +679,9 @@ M.grep_lgrep = function(_, opts)
     --   * we set query to the last known when entering grep
     __prev_query = not opts.fn_reload and opts.__resume_data.last_query,
     query = opts.fn_reload and opts.__call_opts.__prev_query,
+    -- when used with tags pass the resolved ctags_file from tags-option as
+    -- `tagfiles()` might not return the correct file called from the float (#700)
+    ctags_file = opts.ctags_file,
   }, opts.__call_opts or {})
 
   -- 'fn_reload' is set only on 'live_grep' calls
