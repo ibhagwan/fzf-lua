@@ -592,6 +592,7 @@ end
 M.git_reset = function(selected, opts)
   local cmd = path.git_cwd({ "git", "checkout", "HEAD", "--" }, opts)
   git_exec(selected, opts, cmd)
+  vim.cmd("e!")
 end
 
 M.git_stash_drop = function(selected, opts)

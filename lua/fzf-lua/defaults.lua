@@ -241,6 +241,7 @@ M.defaults.git = {
     actions     = {
       ["right"] = { actions.git_unstage, actions.resume },
       ["left"]  = { actions.git_stage, actions.resume },
+      ["ctrl-x"] =  actions.git_reset,
     },
   },
   commits = {
