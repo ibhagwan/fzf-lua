@@ -386,6 +386,7 @@ M.defaults.buffers = {
   sort_lastused         = true,
   show_all_buffers      = true,
   ignore_current_buffer = false,
+  no_action_set_cursor  = true,
   cwd_only              = false,
   cwd                   = nil,
   fzf_opts              = { ["--tiebreak"] = "index", },

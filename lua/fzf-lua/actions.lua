@@ -281,7 +281,7 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
         utils.warn(("':%s' failed: %s"):format(cmd, res))
       end
     end
-    if vimcmd ~= "bd" and not opts.no_set_cursor then
+    if vimcmd ~= "bd" and not opts.no_action_set_cursor then
       if curbuf ~= entry.bufnr or lnum ~= entry.line then
         -- make sure we have valid column
         entry.col = entry.col and entry.col > 0 and entry.col or 1
@@ -294,22 +294,22 @@ end
 
 M.buf_edit = function(selected, opts)
   local vimcmd = "b"
-  M.vimcmd_buf(vimcmd, selected, vim.tbl_extend("keep", opts, { no_set_cursor = true }))
+  M.vimcmd_buf(vimcmd, selected, opts)
 end
 
 M.buf_split = function(selected, opts)
   local vimcmd = "split | b"
-  M.vimcmd_buf(vimcmd, selected, vim.tbl_extend("keep", opts, { no_set_cursor = true }))
+  M.vimcmd_buf(vimcmd, selected, opts)
 end
 
 M.buf_vsplit = function(selected, opts)
   local vimcmd = "vertical split | b"
-  M.vimcmd_buf(vimcmd, selected, vim.tbl_extend("keep", opts, { no_set_cursor = true }))
+  M.vimcmd_buf(vimcmd, selected, opts)
 end
 
 M.buf_tabedit = function(selected, opts)
   local vimcmd = "tab split | b"
-  M.vimcmd_buf(vimcmd, selected, vim.tbl_extend("keep", opts, { no_set_cursor = true }))
+  M.vimcmd_buf(vimcmd, selected, opts)
 end
 
 M.buf_del = function(selected, opts)
