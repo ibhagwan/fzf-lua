@@ -52,7 +52,9 @@ local get_ctags_file = function(opts)
   end
   local tagfiles = vim.fn.tagfiles()
   for _, f in ipairs(tagfiles) do
-    if vim.loop.fs_stat(vim.fn.expand(f)) then
+    -- NOTE: no need to use `vim.fn.expand`, tagfiles() result is already expanded
+    -- for some odd reason `vim.fn.expand('.tags')` returns nil for some users (#700)
+    if vim.loop.fs_stat(f) then
       return f
     end
   end
