@@ -805,25 +805,32 @@ M.code_actions = function(opts)
     return
   end
 
-  -- irrelevant for code actions and can cause
-  -- single results to be skipped with 'async = false'
-  opts.jump_to_single_result = false
-  opts.lsp_params = vim.lsp.util.make_range_params(0)
-  opts.lsp_params.context = { diagnostics = get_line_diagnostics(opts) }
-
-  -- make sure 'gen_lsp_contents' is run synchronously
-  opts.async = false
-
-  -- when 'opts.async == false' calls 'vim.lsp.buf_request_sync'
-  -- so we can avoid calling 'ui_select.register' when no code
-  -- actions are available
-  local _, has_code_actions = gen_lsp_contents(opts)
-
-  -- error or no sync request no results
-  if not has_code_actions then return end
-
   local ui_select = require "fzf-lua.providers.ui_select"
   local registered = ui_select.is_registered()
+
+  -- when fzf-lua isn't registered for ui.select we need to test if
+  -- code actions exist before calling `vim.lsp.buf.code_action()`
+  -- if code actions don't exist the deregister callback is never
+  -- called and we remain registered
+  if not registered then
+    -- irrelevant for code actions and can cause
+    -- single results to be skipped with 'async = false'
+    opts.jump_to_single_result = false
+    opts.lsp_params = vim.lsp.util.make_range_params(0)
+    opts.lsp_params.context = { diagnostics = get_line_diagnostics(opts) }
+
+    -- make sure 'gen_lsp_contents' is run synchronously
+    opts.async = false
+
+    -- when 'opts.async == false' calls 'vim.lsp.buf_request_sync'
+    -- so we can avoid calling 'ui_select.register' when no code
+    -- actions are available
+    local _, has_code_actions = gen_lsp_contents(opts)
+
+    -- error or no sync request no results
+    if not has_code_actions then return end
+  end
+
   opts.previewer = false
   opts.actions = opts.actions or {}
   opts.actions.default = nil
