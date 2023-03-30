@@ -232,7 +232,7 @@ M.defaults.git = {
   },
   status = {
     prompt      = "GitStatus> ",
-    cmd         = "git status -s",
+    cmd         = "git -c color.status=false status -s",
     previewer   = "git_diff",
     file_icons  = true and M._has_devicons,
     color_icons = true,
