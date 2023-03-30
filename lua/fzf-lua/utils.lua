@@ -432,7 +432,8 @@ function M.strip_ansi_coloring(str)
   -- remove escape sequences of the following formats:
   -- 1. ^[[34m
   -- 2. ^[[0;34m
-  return str:gsub("%[[%d;]+m", "")
+  -- 3. ^[[m
+  return str:gsub("%[[%d;]-m", "")
 end
 
 function M.get_visual_selection()

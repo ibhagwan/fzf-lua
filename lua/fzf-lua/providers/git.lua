@@ -65,6 +65,9 @@ M.status = function(opts)
     function(x)
       -- unrecognizable format, return
       if not x or #x < 4 then return x end
+      -- strip ansi coloring or the pattern matching fails
+      -- when git config has `color.status=always` (#706)
+      x = utils.strip_ansi_coloring(x)
       -- `man git-status`
       -- we are guaranteed format of: XY <text>
       -- spaced files are wrapped with quotes
