@@ -198,7 +198,7 @@ local sel_to_qf = function(selected, opts, is_loclist)
       title = opts.__resume_data.last_query,
       -- nr = nr,
     })
-    vim.cmd "copen"
+    vim.cmd "horizontal copen"
   end
 end
 
