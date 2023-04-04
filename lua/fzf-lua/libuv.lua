@@ -31,6 +31,13 @@ if not vim.g.fzf_lua_directory and #vim.api.nvim_list_uis() == 0 then
     vim.fn.delete(tmpdir, "rf")
     -- io.stdout:write("[DEBUG]: "..tmpdir.."\n")
   end
+  -- neovim might also automatically start the RPC server which will
+  -- generate a named pipe temp file, e.g. `/run/user/1000/nvim.14249.0`
+  -- we don't need the server in the headless "child" process, stopping
+  -- the server also deletes the temp file
+  if vim.v.servername and #vim.v.servername > 0 then
+    pcall(vim.fn.serverstop, vim.v.servername)
+  end
 end
 
 -- save to upvalue for performance reasons
