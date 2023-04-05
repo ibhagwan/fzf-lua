@@ -767,6 +767,9 @@ M.live_workspace_symbols = function(opts)
 end
 
 -- Converts 'vim.diagnostic.get' to legacy style 'get_line_diagnostics()'
+-- TODO: not needed anymore, it seems that `vim.lsp.buf.code_action` still
+-- uses the old `vim.lsp.diagnostic` API, we will do the same until neovim
+-- stops using this API
 local function get_line_diagnostics(_)
   if not vim.diagnostic then
     return vim.lsp.diagnostic.get_line_diagnostics()
@@ -792,7 +795,8 @@ local function get_line_diagnostics(_)
         },
         data = diag[1].user_data and diag[1].user_data.lsp and diag[1].user_data.lsp.data
       } }
-      or nil
+      -- Must return an empty table or some LSP servers fail (#707)
+      or {}
 end
 
 M.code_actions = function(opts)
@@ -817,7 +821,12 @@ M.code_actions = function(opts)
     -- single results to be skipped with 'async = false'
     opts.jump_to_single_result = false
     opts.lsp_params = vim.lsp.util.make_range_params(0)
-    opts.lsp_params.context = { diagnostics = get_line_diagnostics(opts) }
+    opts.lsp_params.context = {
+      -- Neovim still uses `vim.lsp.diagnostic` API in "nvim/runtime/lua/vim/lsp/buf.lua"
+      -- continue to use it until proven otherwise, this also fixes #707 as diagnostics
+      -- must not be nil or some LSP servers will fail (e.g. ruff_lsp, rust_analyzer)
+      diagnostics = vim.lsp.diagnostic.get_line_diagnostics(__CTX and __CTX.bufnr or 0) or {}
+    }
 
     -- make sure 'gen_lsp_contents' is run synchronously
     opts.async = false
