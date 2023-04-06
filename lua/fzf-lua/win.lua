@@ -601,7 +601,9 @@ end
 
 function FzfWin:redraw_main()
   if self.winopts.split then return end
-  local hidden = self._previewer and self.preview_hidden
+  local hidden = self._previewer
+      and self.preview_hidden
+      and self._previewer.toggle_behavior ~= "extend"
   local relative = self.winopts.relative or "editor"
   local columns, lines = vim.o.columns, vim.o.lines
   if relative == "win" then

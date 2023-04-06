@@ -631,6 +631,11 @@ require'fzf-lua'.setup {
       -- exclude specific filetypes with: `{ disable = { "lua" } }
       -- disable fully with: `{ enable = false }`
       treesitter      = { enable = true, disable = {} },
+      -- By default, the main window dimensions are calculted as if the
+      -- preview is visible, when hidden the main window will extend to
+      -- full size. Set the below to "extend" to prevent the main window
+      -- from being modified when toggling the preview.
+      toggle_behavior = "default",
       -- preview extensions using a custom shell command:
       -- for example, use `viu` for image previews
       -- will do nothing if `viu` isn't executable

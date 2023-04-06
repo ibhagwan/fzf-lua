@@ -37,6 +37,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.syntax_limit_l = default(o.syntax_limit_l, 0)
   self.limit_b = default(o.limit_b, 1024 * 1024 * 10)
   self.treesitter = o.treesitter or {}
+  self.toggle_behavior = o.toggle_behavior
   self.backups = {}
   -- convert extension map to lower case
   if o.extensions then
