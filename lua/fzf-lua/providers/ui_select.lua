@@ -86,10 +86,7 @@ M.ui_select = function(items, opts, on_choice)
         opts.format_item and opts.format_item(e) or tostring(e)))
   end
 
-  local prompt = opts.prompt
-  if not prompt then
-    prompt = "Select one of:"
-  end
+  local prompt = opts.prompt or "Select one of:"
 
   _opts = _opts or {}
   _opts.fzf_opts = {
@@ -101,6 +98,7 @@ M.ui_select = function(items, opts, on_choice)
   -- save items so we can access them from the action
   _opts._items = items
   _opts._on_choice = on_choice
+  _opts._ui_select = opts
 
   _opts.actions = vim.tbl_deep_extend("keep",
     _opts.actions or {}, { ["default"] = M.accept_item })
