@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 April 06
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 April 07
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -201,9 +201,8 @@ which can be easily mapped to:
 or if using `init.lua`:
 
 >lua
-    vim.api.nvim_set_keymap('n', '<c-P>',
-        "<cmd>lua require('fzf-lua').files()<CR>",
-        { noremap = true, silent = true })
+    vim.keymap.set("n", "<c-P>",
+      "<cmd>lua require('fzf-lua').files()<CR>", { silent = true })
 <
 
 ------------------------------------------------------------------------------
@@ -588,8 +587,7 @@ open an issue and I'll be more than happy to help.**
         on_create = function()
           -- called once upon creation of the fzf main window
           -- can be used to add custom fzf-lua mappings, e.g:
-          --   vim.api.nvim_buf_set_keymap(0, "t", "<C-j>", "<Down>",
-          --     { silent = true, noremap = true })
+          --   vim.keymap.set("t", "<C-j>", "<Down>", { silent = true, buffer = true })
         end,
       },
       keymap = {
