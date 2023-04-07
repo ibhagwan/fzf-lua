@@ -706,6 +706,27 @@ function M.nvim_win_call(winid, func)
   return ret
 end
 
+-- Backward compat 'vim.keymap.set', will probably be deprecated soon
+function M.keymap_set(mode, lhs, rhs, opts)
+  if vim.keymap then
+    vim.keymap.set(mode, lhs, rhs, opts)
+  else
+    assert(type(mode) == "string" and type(rhs) == "string")
+    opts = opts or {}
+    -- `noremap` is the inverse of the new API `remap`
+    opts.noremap = not opts.remap
+    if opts.buffer then
+      -- when `buffer` is true replace with `0` for local buffer
+      -- mapping and remove from options
+      local bufnr = type(opts.buffer) == "number" and opts.buffer or 0
+      opts.buffer = nil
+      vim.api.nvim_buf_set_keymap(bufnr, mode, lhs, rhs, opts)
+    else
+      vim.api.nvim_set_keymap(mode, lhs, rhs, opts)
+    end
+  end
+end
+
 function M.ft_detect(ext)
   local ft = ""
   if not ext then return ft end

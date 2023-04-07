@@ -188,7 +188,11 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- that was running on WinLeave which seems to make the `<C-c>` issue
   -- better or even non-existent? RESTORED AGAIN
   --
-  vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = true })
+  if vim.keymap then
+    vim.keymap.set("t", "<C-c>", "<Esc>", { buffer = 0 })
+  else
+    vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = true })
+  end
 
   local co = coroutine.running()
   local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or vim.fn.termopen

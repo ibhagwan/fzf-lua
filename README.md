@@ -151,9 +151,8 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 
 or if using `init.lua`:
 ```lua
-vim.api.nvim_set_keymap('n', '<c-P>',
-    "<cmd>lua require('fzf-lua').files()<CR>",
-    { noremap = true, silent = true })
+vim.keymap.set("n", "<c-P>",
+  "<cmd>lua require('fzf-lua').files()<CR>", { silent = true })
 ```
 
 ## Commands
@@ -493,8 +492,7 @@ require'fzf-lua'.setup {
     on_create = function()
       -- called once upon creation of the fzf main window
       -- can be used to add custom fzf-lua mappings, e.g:
-      --   vim.api.nvim_buf_set_keymap(0, "t", "<C-j>", "<Down>",
-      --     { silent = true, noremap = true })
+      --   vim.keymap.set("t", "<C-j>", "<Down>", { silent = true, buffer = true })
     end,
   },
   keymap = {
