@@ -370,12 +370,20 @@ end
 
 -- Helper func to test for invalid (cleared) highlights
 function M.is_hl_cleared(hl)
-  local ok, hl_def = pcall(vim.api.nvim_get_hl_by_name, hl, true)
-  -- Not sure if this is the right way but it seems that cleared
-  -- highlights return 'hl_def[true] == 6' (?) and 'hl_def[true]'
-  -- does not exist at all otherwise
-  if not ok or hl_def[true] then
-    return true
+  -- `vim.api.nvim_get_hl_by_name` is deprecated since v0.9.0
+  if vim.api.nvim_get_hl then
+    local ok, hl_def = pcall(vim.api.nvim_get_hl, 0, { name = hl, link = false })
+    if not ok or vim.tbl_isempty(hl_def) then
+      return true
+    end
+  else
+    local ok, hl_def = pcall(vim.api.nvim_get_hl_by_name, hl, true)
+    -- Not sure if this is the right way but it seems that cleared
+    -- highlights return 'hl_def[true] == 6' (?) and 'hl_def[true]'
+    -- does not exist at all otherwise
+    if not ok or hl_def[true] then
+      return true
+    end
   end
 end
 
