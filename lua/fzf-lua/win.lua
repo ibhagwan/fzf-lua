@@ -89,13 +89,9 @@ function FzfWin:generate_layout(winopts)
       if winopts.split then
         anchor = "NW"
         prev_row = 1
+        prev_col = 1
         prev_width = prev_width - 2
         prev_height = prev_height - 1
-        if vert_split then
-          prev_col = 1
-        else
-          prev_col = prev_col - 1
-        end
       else
         anchor = "SW"
         prev_row = row - 1
