@@ -132,6 +132,9 @@ M.diagnostics = function(opts)
 
   local preprocess_diag = function(diag, bufnr)
     bufnr = bufnr or diag.bufnr
+    if not vim.api.nvim_buf_is_valid(bufnr) then
+      return nil
+    end
     local filename = vim.api.nvim_buf_get_name(bufnr)
     -- pre vim.diagnostic (vim.lsp.diagnostic)
     -- has 'start|finish' instead of 'end_col|end_lnum'
@@ -164,6 +167,9 @@ M.diagnostics = function(opts)
             -- E5560: vimL function must not be called in a lua loop callback
             vim.schedule(function()
               local diag_entry = preprocess_diag(diag, bufnr)
+              if diag_entry == nil then
+                coroutine.resume(co)
+              end
               local entry = make_entry.lcol(diag_entry, opts)
               entry = make_entry.file(entry, opts)
               if not entry then
