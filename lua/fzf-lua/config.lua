@@ -37,9 +37,20 @@ M._devicons_geticons = function()
   return icons
 end
 
--- set this so that make_entry won't
--- get nil err when setting remotely
+-- set this so that make_entry won't get nil err when setting remotely
 M.__resume_data = {}
+
+-- set|get the latest wrapped process PID
+-- NOTE: we don't store this closure in `opts` (or store a ref to `opts`)
+-- as together with `__resume_data` it can create a memory leak having to
+-- store recursive copies of the `opts` table (#723)
+M.set_pid = function(pid)
+  M.__pid = pid
+end
+
+M.get_pid = function()
+  return M.__pid
+end
 
 -- Reset globals to default
 function M.reset_defaults()
@@ -295,7 +306,8 @@ function M.normalize_opts(opts, defaults)
   opts._is_fzf_tmux = vim.env.TMUX and opts.fzf_bin:match("fzf%-tmux$")
 
   -- libuv.spawn_nvim_fzf_cmd() pid callback
-  opts._pid_cb = function(pid) opts._pid = pid end
+  opts._set_pid = M.set_pid
+  opts._get_pid = M.get_pid
 
   -- mark as normalized
   opts._normalized = true

@@ -137,8 +137,6 @@ M.spawn = function(opts, fn_transform, fn_done)
 
   -- save current process pid
   if opts.cb_pid then opts.cb_pid(pid) end
-  if opts.pid_cb then opts.pid_cb(pid) end
-  if opts._pid_cb then opts._pid_cb(pid) end
 
   local function write_cb(data)
     write_cb_count = write_cb_count + 1
@@ -289,7 +287,7 @@ M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess)
       cmd = opts.cmd,
       cb_finish = on_finish,
       cb_write = on_write,
-      cb_pid = opts.pid_cb,
+      cb_pid = opts.cb_pid,
     }, fn_transform)
   end
 end

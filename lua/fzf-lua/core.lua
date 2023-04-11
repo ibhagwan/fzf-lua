@@ -82,12 +82,11 @@ M.fzf_exec = function(contents, opts)
     actions.act(opts.actions, selected, opts)
   end
   -- wrapper for command transformer
-  if type(contents) == "string" and
-      (opts.fn_transform or opts.fn_preprocess) then
+  if type(contents) == "string" and (opts.fn_transform or opts.fn_preprocess) then
     contents = libuv.spawn_nvim_fzf_cmd({
         cmd = contents,
         cwd = opts.cwd,
-        pid_cb = opts._pid_cb,
+        cb_pid = opts._set_pid,
       },
       opts.fn_transform or function(x) return x end,
       opts.fn_preprocess)
@@ -273,6 +272,13 @@ M.fzf = function(contents, opts)
       silent_fail = opts.silent_fail,
       is_fzf_tmux = opts._is_fzf_tmux
     })
+  -- kill fzf piped process PID
+  -- NOTE: might be an overkill since we're using $FZF_DEFAULT_COMMAND
+  -- to spawn the piped process and fzf is responsible for termination
+  -- when the fzf process exists
+  if type(opts._get_pid == "function") then
+    libuv.process_kill(opts._get_pid())
+  end
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
   if selected and #selected > 0 and
@@ -291,7 +297,6 @@ M.fzf = function(contents, opts)
   if opts.__fn_post_fzf then opts.__fn_post_fzf(opts, selected) end
   if opts._fn_post_fzf then opts._fn_post_fzf(opts, selected) end
   if opts.fn_post_fzf then opts.fn_post_fzf(opts, selected) end
-  libuv.process_kill(opts._pid)
   fzf_win:check_exit_status(exit_code)
   -- retrieve the future action and check:
   --   * if it's a single function we can close the window

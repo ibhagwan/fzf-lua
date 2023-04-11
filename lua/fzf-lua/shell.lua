@@ -6,17 +6,27 @@ local libuv = require "fzf-lua.libuv"
 
 local M = {}
 
-local _counter = 0
+-- Circular buffer used to store registered function IDs
+-- set max length to 5, ATM most actions used by a single
+-- provider are 2 (`live_grep` with `multiprocess=false`)
+-- we can always increase if we need more
+local _MAX_LEN = 5
+local _index = 0
 local _registry = {}
 
 function M.register_func(fn)
-  _counter = _counter + 1
-  _registry[_counter] = fn
-  return _counter
+  _index = _index % _MAX_LEN + 1
+  _registry[_index] = fn
+  return _index
 end
 
-function M.get_func(counter)
-  return _registry[counter]
+function M.get_func(id)
+  return _registry[id]
+end
+
+function M.free_registry()
+  _index = 0
+  _registry = {}
 end
 
 -- creates a new address to listen to messages from actions. This is important
@@ -213,8 +223,8 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
     if type(reload_contents) == "string" then
       -- string will be used as a shell command.
       -- terminate previously running commands
-      libuv.process_kill(opts.__pid)
-      opts.__pid = nil
+      libuv.process_kill(M.__pid_reload)
+      M.__pid_reload = nil
 
       -- spawn/async_spawn already async, no need to send opts.__co
       -- also, we can't call coroutine.yield inside a libuv callback
@@ -224,7 +234,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         cmd = reload_contents,
         cb_finish = on_finish,
         cb_write = on_write,
-        cb_pid = function(pid) opts.__pid = pid end,
+        cb_pid = function(pid) M.__pid_reload = pid end,
         -- must send false, 'coroutinify' adds callback as last argument
         -- which will conflict with the 'fn_transform' argument
       }, opts.__fn_transform or false)
