@@ -188,7 +188,7 @@ local sel_to_qf = function(selected, opts, is_loclist)
       items = qf_list,
       title = opts.__resume_data.last_query,
     })
-    vim.cmd "lopen"
+    vim.cmd(opts.lopen or "lopen")
   else
     -- Set the quickfix title to last query and
     -- append a new list to end of the stack (#635)
@@ -198,7 +198,7 @@ local sel_to_qf = function(selected, opts, is_loclist)
       title = opts.__resume_data.last_query,
       -- nr = nr,
     })
-    vim.cmd "horizontal copen"
+    vim.cmd(opts.copen or "copen")
   end
 end
 
