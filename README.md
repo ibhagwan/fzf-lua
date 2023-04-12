@@ -432,6 +432,10 @@ require'fzf-lua'.setup {
     -- window, can be set to 'false' to remove all borders or to
     -- 'none', 'single', 'double', 'thicc' or 'rounded' (default)
     border           = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
+    -- requires neovim > v0.9.0, passed as is to `nvim_open_win`
+    -- can be sent individually to any provider to set the win title
+    -- title         = "Title",
+    -- title_pos     = "center",    -- 'left', 'center' or 'right'
     fullscreen       = false,           -- start fullscreen?
     -- highlights should optimally be set by the colorscheme using
     -- FzfLuaXXX highlights. If your colorscheme doesn't set these

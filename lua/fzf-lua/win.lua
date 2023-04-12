@@ -5,6 +5,8 @@ local actions = require "fzf-lua.actions"
 local api = vim.api
 local fn = vim.fn
 
+local __HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
+
 local FzfWin = {}
 
 -- singleton instance used in win_leave
@@ -618,7 +620,9 @@ function FzfWin:redraw_main()
     height = winopts.height or math.min(lines - 4, math.max(20, lines - 10)),
     style = "minimal",
     relative = relative,
-    border = self.winopts.border
+    border = self.winopts.border,
+    title = __HAS_NVIM_09 and self.winopts.title or nil,
+    title_pos = __HAS_NVIM_09 and self.winopts.title_pos or nil,
   }
   win_opts.row = winopts.row or math.floor(((lines - win_opts.height) / 2) - 1)
   win_opts.col = winopts.col or math.floor((columns - win_opts.width) / 2)
