@@ -89,11 +89,11 @@ M.ui_select = function(items, opts, on_choice)
   local prompt = opts.prompt or "Select one of:"
 
   _opts = _opts or {}
-  _opts.fzf_opts = {
+  _opts.fzf_opts = vim.tbl_extend("keep", _opts.fzf_opts or {}, {
     ["--no-multi"]       = "",
     ["--prompt"]         = prompt:gsub(":%s?$", "> "),
     ["--preview-window"] = "hidden:right:0",
-  }
+  })
 
   -- save items so we can access them from the action
   _opts._items = items
