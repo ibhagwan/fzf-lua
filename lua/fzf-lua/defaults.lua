@@ -241,8 +241,9 @@ M.defaults.git = {
     git_icons   = true,
     _actions    = function() return M.globals.actions.files end,
     actions     = {
-      ["right"] = { actions.git_unstage, actions.resume },
-      ["left"]  = { actions.git_stage, actions.resume },
+      ["right"]  = { actions.git_unstage, actions.resume },
+      ["left"]   = { actions.git_stage, actions.resume },
+      ["ctrl-x"] = { actions.git_reset, actions.resume },
     },
   },
   commits = {

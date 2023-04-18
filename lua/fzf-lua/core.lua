@@ -12,9 +12,13 @@ local M = {}
 
 local ACTION_DEFINITIONS = {
   -- list of supported actions with labels to be displayed in the headers
-  [actions.grep_lgrep] = { fn_reload = "Fuzzy Search", "Regex Search" },
-  [actions.sym_lsym] = { fn_reload = "Fuzzy Search", "Live Query" },
-  [actions.buf_del] = { fn_reload = "close", "close" },
+  -- no pos implies an append to header array
+  [actions.grep_lgrep]  = { "Regex Search", fn_reload = "Fuzzy Search" },
+  [actions.sym_lsym]    = { "Live Query", fn_reload = "Fuzzy Search" },
+  [actions.buf_del]     = { "close" },
+  [actions.git_stage]   = { "stage", pos = 1 },
+  [actions.git_unstage] = { "unstage", pos = 2 },
+  [actions.git_reset]   = { "reset" },
 }
 
 -- converts contents array sent to `fzf_exec` into a single contents
@@ -180,13 +184,13 @@ M.fzf = function(contents, opts)
     config.__resume_data.opts = utils.deepcopy(opts)
     config.__resume_data.contents = contents and utils.deepcopy(contents) or nil
     if not opts.__resume then
-      -- since the shell callback isn't called
-      -- until the user first types something
-      -- delete the stored query unless called
-      -- from within 'fzf_resume', this prevents
-      -- using the stored query between different
-      -- providers
+      -- since the shell callback isn't called until the user first types something
+      -- delete the stored query unless called from within 'fzf_resume', this prevents
+      -- using the stored query between different providers
       config.__resume_data.last_query = nil
+      -- since we are changing providers it's also safe to clear the shell protected
+      -- functions registry
+      shell.clear_protected()
     end
     -- save a ref to resume data for 'grep_lgrep'
     opts.__resume_data = config.__resume_data
@@ -675,13 +679,26 @@ M.set_header = function(opts, hdr_tbl)
       val = function()
         if opts.no_header_i then return end
         local defs = ACTION_DEFINITIONS
+        local ret = {}
         for k, v in pairs(opts.actions) do
           if type(v) == "table" and defs[v[1]] then
-            local to = opts.fn_reload and defs[v[1]].fn_reload or defs[v[1]][1]
-            return to and (":: <%s> to %s"):format(
-              utils.ansi_codes.yellow(k), utils.ansi_codes.red(to))
+            local def = defs[v[1]]
+            local to = opts.fn_reload and def.fn_reload or def[1]
+            table.insert(ret, def.pos or #ret + 1,
+              string.format("<%s> to %s",
+                utils.ansi_codes.yellow(k),
+                utils.ansi_codes.red(to)))
           end
         end
+        -- table.concat fails if the table indexes aren't consecutive
+        return (function()
+          local t = {}
+          for _, i in pairs(ret) do
+            table.insert(t, i)
+          end
+          t[1] = (opts.header_prefix or ":: ") .. t[1]
+          return table.concat(t, opts.header_separator or "")
+        end)()
       end,
     },
   }

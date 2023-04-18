@@ -4,6 +4,7 @@ local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
+local actions = require "fzf-lua.actions"
 local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
@@ -43,12 +44,7 @@ M.status = function(opts)
   -- we don't need git icons since we get them
   -- as part of our `git status -s`
   opts.git_icons = false
-  if not opts.no_header then
-    local stage = utils.ansi_codes.yellow("<left>")
-    local unstage = utils.ansi_codes.yellow("<right>")
-    opts.fzf_opts["--header"] = vim.fn.shellescape(
-      ("+ - :: %s to stage, %s to unstage"):format(stage, unstage))
-  end
+
   local function git_iconify(x)
     local icon = x
     local git_icon = config.globals.git.icons[x]
@@ -61,37 +57,82 @@ M.status = function(opts)
     return icon
   end
 
-  local contents = libuv.spawn_nvim_fzf_cmd(opts,
-    function(x)
-      -- unrecognizable format, return
-      if not x or #x < 4 then return x end
-      -- strip ansi coloring or the pattern matching fails
-      -- when git config has `color.status=always` (#706)
-      x = utils.strip_ansi_coloring(x)
-      -- `man git-status`
-      -- we are guaranteed format of: XY <text>
-      -- spaced files are wrapped with quotes
-      -- remove both git markers and quotes
-      local f1, f2 = x:sub(4):gsub([["]], ""), nil
-      -- renames separate files with '->'
-      if f1:match("%s%->%s") then
-        f1, f2 = f1:match("(.*)%s%->%s(.*)")
+  opts.__fn_transform = opts.__fn_transform or
+      function(x)
+        -- unrecognizable format, return
+        if not x or #x < 4 then return x end
+        -- strip ansi coloring or the pattern matching fails
+        -- when git config has `color.status=always` (#706)
+        x = utils.strip_ansi_coloring(x)
+        -- `man git-status`
+        -- we are guaranteed format of: XY <text>
+        -- spaced files are wrapped with quotes
+        -- remove both git markers and quotes
+        local f1, f2 = x:sub(4):gsub([["]], ""), nil
+        -- renames separate files with '->'
+        if f1:match("%s%->%s") then
+          f1, f2 = f1:match("(.*)%s%->%s(.*)")
+        end
+        f1 = f1 and make_entry.file(f1, opts)
+        -- accomodate 'file_ignore_patterns'
+        if not f1 then return end
+        f2 = f2 and make_entry.file(f2, opts)
+        local staged = git_iconify(x:sub(1, 1):gsub("?", " "))
+        local unstaged = git_iconify(x:sub(2, 2))
+        local entry = ("%s%s%s%s%s"):format(
+          staged, utils.nbsp, unstaged, utils.nbsp .. utils.nbsp,
+          (f2 and ("%s -> %s"):format(f1, f2) or f1))
+        return entry
       end
-      f1 = f1 and make_entry.file(f1, opts)
-      -- accomodate 'file_ignore_patterns'
-      if not f1 then return end
-      f2 = f2 and make_entry.file(f2, opts)
-      local staged = git_iconify(x:sub(1, 1):gsub("?", " "))
-      local unstaged = git_iconify(x:sub(2, 2))
-      local entry = ("%s%s%s%s%s"):format(
-        staged, utils.nbsp, unstaged, utils.nbsp .. utils.nbsp,
-        (f2 and ("%s -> %s"):format(f1, f2) or f1))
-      return entry
-    end,
-    function(o)
-      return make_entry.preprocess(o)
-    end)
-  opts = core.set_header(opts, opts.headers or { "cwd" })
+
+  opts.fn_preprocess = opts.fn_preprocess or
+      function(o)
+        return make_entry.preprocess(o)
+      end
+
+  -- we are reusing the "live" reload action, this gets called once
+  -- on init and every reload and should return the command we wish
+  -- to execute, i.e. `git status -sb`
+  opts.__fn_reload = function(_)
+    return opts.cmd
+  end
+
+  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
+  local reload, id = shell.reload_action_cmd(opts, "{+}")
+  local contents = reload:gsub("%-%-%s+{%+}$", "")
+
+  -- when the action resumes the preview re-attaches which registers
+  -- a new shell function id, done enough times it will overwrite the
+  -- regisered function assigned to the reload action and the headless
+  -- cmd will err with "sh: 0: -c requires an argument"
+  -- gets cleared when resume data recycles
+  opts._fn_pre_fzf = function()
+    shell.set_protected(id)
+  end
+
+  opts.header_prefix = opts.header_prefix or "+ -  "
+  opts.header_separator = opts.header_separator or "|"
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
+
+  -- use fzf's `reload` bind if we're not using skim
+  if not opts._is_skim then
+    local act_overrides = {
+      [actions.git_stage]   = true,
+      [actions.git_unstage] = true,
+      [actions.git_reset]   = true,
+    }
+    for k, v in pairs(opts.actions) do
+      if type(v) == "table" and act_overrides[v[1]] then
+        -- replace the action with shell cmd proxy to the original action
+        local action = shell.raw_action(function(items, _, _)
+          v[1](items, opts)
+        end, "{+}", opts.debug)
+        opts.keymap.fzf[k] = string.format("execute-silent(%s)+reload(%s)", action, reload)
+        opts.actions[k] = nil
+      end
+    end
+  end
+
   return core.fzf_exec(contents, opts)
 end
 

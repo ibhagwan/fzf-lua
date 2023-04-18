@@ -715,6 +715,7 @@ require'fzf-lua'.setup {
         -- actions inherit from 'actions.files' and merge
         ["right"]   = { actions.git_unstage, actions.resume },
         ["left"]    = { actions.git_stage, actions.resume },
+        ["ctrl-x"]  = { actions.git_reset, actions.resume },
       },
     },
     commits = {

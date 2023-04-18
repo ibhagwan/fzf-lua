@@ -590,8 +590,14 @@ M.git_unstage = function(selected, opts)
 end
 
 M.git_reset = function(selected, opts)
-  local cmd = path.git_cwd({ "git", "checkout", "HEAD", "--" }, opts)
-  git_exec(selected, opts, cmd)
+  for _, s in ipairs(selected) do
+    s = utils.strip_ansi_coloring(s)
+    local is_untracked = s:sub(5, 5) == "?"
+    local cmd = is_untracked
+        and path.git_cwd({ "git", "clean", "-f" }, opts)
+        or path.git_cwd({ "git", "checkout", "HEAD", "--" }, opts)
+    git_exec({ s }, opts, cmd)
+  end
 end
 
 M.git_stash_drop = function(selected, opts)

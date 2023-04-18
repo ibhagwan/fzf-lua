@@ -7,15 +7,19 @@ local libuv = require "fzf-lua.libuv"
 local M = {}
 
 -- Circular buffer used to store registered function IDs
--- set max length to 5, ATM most actions used by a single
+-- set max length to 10, ATM most actions used by a single
 -- provider are 2 (`live_grep` with `multiprocess=false`)
+-- and 4 (`git_status` with preview and 3 reload binds)
 -- we can always increase if we need more
 local _MAX_LEN = 5
 local _index = 0
 local _registry = {}
+local _protected = {}
 
 function M.register_func(fn)
-  _index = _index % _MAX_LEN + 1
+  repeat
+    _index = _index % _MAX_LEN + 1
+  until not _protected[_index]
   _registry[_index] = fn
   return _index
 end
@@ -24,9 +28,13 @@ function M.get_func(id)
   return _registry[id]
 end
 
-function M.free_registry()
-  _index = 0
-  _registry = {}
+function M.set_protected(id)
+  _protected[id] = true
+  assert(_MAX_LEN > vim.tbl_count(_protected))
+end
+
+function M.clear_protected()
+  _protected = {}
 end
 
 -- creates a new address to listen to messages from actions. This is important
