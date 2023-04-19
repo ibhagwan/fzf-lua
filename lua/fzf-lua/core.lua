@@ -691,14 +691,14 @@ M.set_header = function(opts, hdr_tbl)
           end
         end
         -- table.concat fails if the table indexes aren't consecutive
-        return (function()
-          local t = {}
-          for _, i in pairs(ret) do
-            table.insert(t, i)
-          end
-          t[1] = (opts.header_prefix or ":: ") .. t[1]
-          return table.concat(t, opts.header_separator or "")
-        end)()
+        return not vim.tbl_isempty(ret) and (function()
+              local t = {}
+              for _, i in pairs(ret) do
+                table.insert(t, i)
+              end
+              t[1] = (opts.header_prefix or ":: ") .. t[1]
+              return table.concat(t, opts.header_separator or "")
+            end)() or nil
       end,
     },
   }
