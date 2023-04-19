@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 April 12
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 April 18
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -810,6 +810,7 @@ open an issue and I'll be more than happy to help.**
             -- actions inherit from 'actions.files' and merge
             ["right"]   = { actions.git_unstage, actions.resume },
             ["left"]    = { actions.git_stage, actions.resume },
+            ["ctrl-x"]  = { actions.git_reset, actions.resume },
           },
         },
         commits = {
