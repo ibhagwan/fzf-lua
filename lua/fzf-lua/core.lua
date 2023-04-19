@@ -400,7 +400,7 @@ M.build_fzf_cli = function(opts)
     if opts[o] ~= nil then
       -- opt can be 'false' (disabled)
       -- don't shellescape in this case
-      opts.fzf_opts[flag] = opts[o] and vim.fn.shellescape(opts[o])
+      opts.fzf_opts[flag] = opts[o] and libuv.shellescape(opts[o])
     else
       opts.fzf_opts[flag] = opts.fzf_opts[flag]
     end
