@@ -358,6 +358,13 @@ end
 function FzfWin:attach_previewer(previewer)
   -- clear the previous previewer if existed
   if self._previewer and self._previewer.close then
+    -- if we press ctrl-g too quickly 'previewer.preview_bufnr' will be nil
+    -- and even though the temp buffer is set to 'bufhidden:wipe' the buffer
+    -- won't be closed properly and remain lingering (visible in `:ls!`)
+    -- make sure the previewer is aware of this buffer
+    if not self._previewer.preview_bufnr and self:validate_preview() then
+      self._previewer.preview_bufnr = vim.api.nvim_win_get_buf(self.preview_winid)
+    end
     self._previewer:close()
   end
   if self._previewer and self._previewer.win_leave then

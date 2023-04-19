@@ -134,15 +134,6 @@ function Previewer.base:get_tmp_buffer()
   return tmp_buf
 end
 
-function Previewer.base:set_preview_buf(newbuf)
-  if not self.win or not self.win:validate_preview() then return end
-  -- Set the preview window to the new buffer
-  utils.win_set_buf_noautocmd(self.win.preview_winid, newbuf)
-  self.preview_bufnr = newbuf
-  -- set preview window options
-  self:set_winopts(self.win.preview_winid)
-end
-
 local function force_delete_buffer(bufnr)
   if tonumber(bufnr) and vim.api.nvim_buf_is_valid(bufnr) then
     api.nvim_buf_call(bufnr, function()
@@ -150,6 +141,19 @@ local function force_delete_buffer(bufnr)
     end)
     vim.api.nvim_buf_delete(bufnr, { force = true })
   end
+end
+
+function Previewer.base:set_preview_buf(newbuf)
+  if not self.win or not self.win:validate_preview() then return end
+  -- Set the preview window to the new buffer
+  local curbuf = vim.api.nvim_win_get_buf(self.win.preview_winid)
+  utils.win_set_buf_noautocmd(self.win.preview_winid, newbuf)
+  -- althought the buffer has 'bufhidden:wipe' it sometimes doesn't
+  -- get wiped when pressing `ctrl-g` too quickly
+  force_delete_buffer(curbuf)
+  self.preview_bufnr = newbuf
+  -- set preview window options
+  self:set_winopts(self.win.preview_winid)
 end
 
 function Previewer.base:cache_buffer(bufnr, key, do_not_unload)
