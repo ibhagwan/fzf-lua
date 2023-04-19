@@ -350,7 +350,6 @@ function FzfWin:new(o)
   self.keymap = o.keymap
   self.previewer = o.previewer
   self.prompt = o.prompt or o.fzf_opts["--prompt"]
-  self._orphaned_bufs = {}
   self:_set_autoclose(o.autoclose)
   _self = self
   return self
@@ -681,15 +680,16 @@ end
 
 function FzfWin:set_redraw_autocmd()
   vim.cmd("augroup FzfLua")
-  vim.cmd([[au VimResized <buffer> lua require("fzf-lua").redraw()]])
+  vim.cmd(string.format(
+    [[au VimResized <buffer=%d> lua require("fzf-lua").redraw()]], self.fzf_bufnr))
   vim.cmd("augroup END")
 end
 
 function FzfWin:set_winleave_autocmd()
   vim.cmd("augroup FzfLua")
   vim.cmd("au!")
-  vim.cmd(("au WinLeave <buffer> %s"):format(
-    [[lua require('fzf-lua.win').win_leave()]]))
+  vim.cmd(string.format("au WinLeave <buffer=%d> %s",
+    self.fzf_bufnr, [[lua require('fzf-lua.win').win_leave()]]))
   vim.cmd("augroup END")
 end
 
@@ -697,14 +697,14 @@ function FzfWin:set_tmp_buffer()
   if not self:validate() then return end
   local tmp_buf = api.nvim_create_buf(false, true)
   vim.api.nvim_win_set_buf(self.fzf_winid, tmp_buf)
+  -- close the main fzf buffer without triggering autocmds
+  utils.nvim_buf_delete(self.fzf_bufnr, { force = true })
+  -- setting autocmds requires a valid 'self.fzf_bufnr'
+  self.fzf_bufnr = tmp_buf
+  -- in case buffer exists prematurely
   self:set_winleave_autocmd()
   -- automatically resize fzf window
   self:set_redraw_autocmd()
-  -- closing the buffer here causes the win to close
-  -- shouldn't happen since the win is already associated
-  -- with tmp_buf... use this table instead
-  table.insert(self._orphaned_bufs, self.fzf_bufnr)
-  self.fzf_bufnr = tmp_buf
   -- since we have the cursorline workaround from
   -- issue #254, resume shows an ugly cursorline.
   -- remove it, nvim_win API is better than vim.wo?
@@ -846,13 +846,6 @@ function FzfWin:close()
   if self.fzf_bufnr and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
     vim.api.nvim_buf_delete(self.fzf_bufnr, { force = true })
   end
-  if self._orphaned_bufs then
-    for _, b in ipairs(self._orphaned_bufs) do
-      if vim.api.nvim_buf_is_valid(b) then
-        vim.api.nvim_buf_delete(b, { force = true })
-      end
-    end
-  end
   -- when using `split = "belowright new"` closing the fzf
   -- window may not always return to the correct source win
   -- depending on the user's split configuration (#397)
@@ -864,7 +857,6 @@ function FzfWin:close()
   end
   self.closing = nil
   self._reuse = nil
-  self._orphaned_bufs = nil
   _self = nil
   -- clear the main module picker __INFO
   utils.reset_info()

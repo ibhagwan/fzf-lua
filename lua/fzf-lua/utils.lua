@@ -682,28 +682,15 @@ function M.nvim_win_close(win, opts)
   vim.o.eventignore = save_ei
 end
 
-function M.nvim_win_call(winid, func)
-  vim.validate({
-    winid = {
-      winid,
-      function(w)
-        return w and vim.api.nvim_win_is_valid(w)
-      end,
-      "a valid window"
-    },
-    func = { func, "function" }
-  })
-
-  local cur_winid = vim.api.nvim_get_current_win()
-  local noa_set_win = "noa call nvim_set_current_win(%d)"
-  if cur_winid ~= winid then
-    vim.cmd(noa_set_win:format(winid))
+-- Close a buffer without triggering an autocmd
+function M.nvim_buf_delete(bufnr, opts)
+  if not vim.api.nvim_buf_is_valid(bufnr) then
+    return
   end
-  local ret = func()
-  if cur_winid ~= winid then
-    vim.cmd(noa_set_win:format(cur_winid))
-  end
-  return ret
+  local save_ei = vim.o.eventignore
+  vim.o.eventignore = "all"
+  vim.api.nvim_buf_delete(bufnr, opts)
+  vim.o.eventignore = save_ei
 end
 
 -- Backward compat 'vim.keymap.set', will probably be deprecated soon
@@ -725,24 +712,6 @@ function M.keymap_set(mode, lhs, rhs, opts)
       vim.api.nvim_set_keymap(mode, lhs, rhs, opts)
     end
   end
-end
-
-function M.ft_detect(ext)
-  local ft = ""
-  if not ext then return ft end
-  local tmp_buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_option(tmp_buf, "bufhidden", "wipe")
-  pcall(vim.api.nvim_buf_call, tmp_buf, function()
-    local filename = (vim.fn.tempname() .. "." .. ext)
-    vim.cmd("file " .. filename)
-    vim.cmd("doautocmd BufEnter")
-    vim.cmd("filetype detect")
-    ft = vim.api.nvim_buf_get_option(tmp_buf, "filetype")
-  end)
-  if vim.api.nvim_buf_is_valid(tmp_buf) then
-    vim.api.nvim_buf_delete(tmp_buf, { force = true })
-  end
-  return ft
 end
 
 -- speed up exteral commands (issue #126)
