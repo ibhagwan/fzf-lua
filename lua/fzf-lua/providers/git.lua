@@ -117,17 +117,22 @@ M.status = function(opts)
   -- use fzf's `reload` bind if we're not using skim
   if not opts._is_skim then
     local act_overrides = {
-      [actions.git_stage]   = true,
-      [actions.git_unstage] = true,
-      [actions.git_reset]   = true,
+      [actions.git_reset]         = true,
+      [actions.git_stage]         = true,
+      [actions.git_unstage]       = true,
+      [actions.git_stage_unstage] = true,
     }
     for k, v in pairs(opts.actions) do
-      if type(v) == "table" and act_overrides[v[1]] then
+      local action = type(v) == "function" and v or type(v) == "table" and v[1]
+      if type(action) == "function" and act_overrides[action] then
         -- replace the action with shell cmd proxy to the original action
-        local action = shell.raw_action(function(items, _, _)
-          v[1](items, opts)
+        local shell_action = shell.raw_action(function(items, _, _)
+          action(items, opts)
         end, "{+}", opts.debug)
-        opts.keymap.fzf[k] = string.format("execute-silent(%s)+reload(%s)", action, reload)
+        opts.keymap.fzf[k] = {
+          string.format("execute-silent(%s)+reload(%s)", shell_action, reload),
+          desc = config.get_action_helpstr(action)
+        }
         opts.actions[k] = nil
       end
     end

@@ -13,12 +13,13 @@ local M = {}
 local ACTION_DEFINITIONS = {
   -- list of supported actions with labels to be displayed in the headers
   -- no pos implies an append to header array
-  [actions.grep_lgrep]  = { "Regex Search", fn_reload = "Fuzzy Search" },
-  [actions.sym_lsym]    = { "Live Query", fn_reload = "Fuzzy Search" },
-  [actions.buf_del]     = { "close" },
-  [actions.git_stage]   = { "stage", pos = 1 },
-  [actions.git_unstage] = { "unstage", pos = 2 },
-  [actions.git_reset]   = { "reset" },
+  [actions.grep_lgrep]        = { "Regex Search", fn_reload = "Fuzzy Search" },
+  [actions.sym_lsym]          = { "Live Query", fn_reload = "Fuzzy Search" },
+  [actions.buf_del]           = { "close" },
+  [actions.git_reset]         = { "reset" },
+  [actions.git_stage]         = { "stage", pos = 1 },
+  [actions.git_unstage]       = { "unstage", pos = 2 },
+  [actions.git_stage_unstage] = { "[un-]stage", pos = 1 },
 }
 
 -- converts contents array sent to `fzf_exec` into a single contents
@@ -367,6 +368,10 @@ M.create_fzf_binds = function(binds)
   local tbl = {}
   local dedup = {}
   for k, v in pairs(binds) do
+    -- value can be defined as a table with addl properties (help string)
+    if type(v) == "table" then
+      v = v[1]
+    end
     -- backward compatibility to when binds
     -- where defined as one string '<key>:<command>'
     if v then
@@ -681,8 +686,9 @@ M.set_header = function(opts, hdr_tbl)
         local defs = ACTION_DEFINITIONS
         local ret = {}
         for k, v in pairs(opts.actions) do
-          if type(v) == "table" and defs[v[1]] then
-            local def = defs[v[1]]
+          local action = type(v) == "function" and v or type(v) == "table" and v[1]
+          if type(action) == "function" and defs[action] then
+            local def = defs[action]
             local to = opts.fn_reload and def.fn_reload or def[1]
             table.insert(ret, def.pos or #ret + 1,
               string.format("<%s> to %s",

@@ -1213,6 +1213,10 @@ function FzfWin.toggle_help()
   -- fzf and neovim (builtin) keymaps
   for _, m in ipairs({ "builtin", "fzf" }) do
     for k, v in pairs(self.keymap[m]) do
+      -- value can be defined as a table with addl properties (help string)
+      if type(v) == "table" then
+        v = v.desc or v[1]
+      end
       -- only add preview keybinds respective of
       -- the current preview mode
       if v and (not _preview_keymaps[v] or m == preview_mode) then

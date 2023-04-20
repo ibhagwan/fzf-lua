@@ -717,6 +717,14 @@ require'fzf-lua'.setup {
         ["left"]    = { actions.git_stage, actions.resume },
         ["ctrl-x"]  = { actions.git_reset, actions.resume },
       },
+      -- If you wish to use a single stage|unstage toggle instead
+      -- using 'ctrl-s' modify the 'actions' table as shown below
+      -- actions = {
+      --   ["right"]   = false,
+      --   ["left"]    = false,
+      --   ["ctrl-x"]  = { actions.git_reset, actions.resume },
+      --   ["ctrl-s"]  = { actions.git_stage_unstage, actions.resume },
+      -- },
     },
     commits = {
       prompt        = 'Commits❯ ',

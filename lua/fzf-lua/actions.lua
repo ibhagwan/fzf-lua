@@ -565,18 +565,19 @@ M.git_checkout = function(selected, opts)
   end
 end
 
-local git_exec = function(selected, opts, cmd)
+local git_exec = function(selected, opts, cmd, silent)
+  local success
   for _, e in ipairs(selected) do
     local file = path.relative(path.entry_to_file(e, opts).path, opts.cwd)
     local _cmd = vim.deepcopy(cmd)
     table.insert(_cmd, file)
     local output = utils.io_systemlist(_cmd)
-    if utils.shell_error() then
-      utils.err(unpack(output))
-      -- elseif not vim.tbl_isempty(output) then
-      --   utils.info(unpack(output))
+    success = not utils.shell_error()
+    if not success and not silent then
+      utils.err(unpack(output) or string.format("exit code %d", vim.v.shell_error))
     end
   end
+  return success
 end
 
 M.git_stage = function(selected, opts)
@@ -587,6 +588,18 @@ end
 M.git_unstage = function(selected, opts)
   local cmd = path.git_cwd({ "git", "reset", "--" }, opts)
   git_exec(selected, opts, cmd)
+end
+
+M.git_stage_unstage = function(selected, opts)
+  for _, s in ipairs(selected) do
+    local cmd = path.git_cwd({ "git", "diff", "--cached", "--quiet", "--" }, opts)
+    local is_unstaged = git_exec({ s }, opts, cmd, true)
+    if is_unstaged then
+      M.git_stage({ s }, opts)
+    else
+      M.git_unstage({ s }, opts)
+    end
+  end
 end
 
 M.git_reset = function(selected, opts)
