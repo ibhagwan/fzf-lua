@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 April 18
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 April 20
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -812,6 +812,14 @@ open an issue and I'll be more than happy to help.**
             ["left"]    = { actions.git_stage, actions.resume },
             ["ctrl-x"]  = { actions.git_reset, actions.resume },
           },
+          -- If you wish to use a single stage|unstage toggle instead
+          -- using 'ctrl-s' modify the 'actions' table as shown below
+          -- actions = {
+          --   ["right"]   = false,
+          --   ["left"]    = false,
+          --   ["ctrl-x"]  = { actions.git_reset, actions.resume },
+          --   ["ctrl-s"]  = { actions.git_stage_unstage, actions.resume },
+          -- },
         },
         commits = {
           prompt        = 'Commits❯ ',
