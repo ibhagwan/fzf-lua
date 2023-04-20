@@ -16,10 +16,12 @@ local ACTION_DEFINITIONS = {
   [actions.grep_lgrep]        = { "Regex Search", fn_reload = "Fuzzy Search" },
   [actions.sym_lsym]          = { "Live Query", fn_reload = "Fuzzy Search" },
   [actions.buf_del]           = { "close" },
+  [actions.arg_del]           = { "delete" },
   [actions.git_reset]         = { "reset" },
   [actions.git_stage]         = { "stage", pos = 1 },
   [actions.git_unstage]       = { "unstage", pos = 2 },
   [actions.git_stage_unstage] = { "[un-]stage", pos = 1 },
+  [actions.git_stash_drop]    = { "drop a stash" },
 }
 
 -- converts contents array sent to `fzf_exec` into a single contents
@@ -736,6 +738,30 @@ M.set_header = function(opts, hdr_tbl)
   end
   if hdr_str and #hdr_str > 0 then
     opts.fzf_opts["--header"] = libuv.shellescape(hdr_str)
+  end
+  return opts
+end
+
+-- converts actions defined inside 'reload_actions' to use fzf's 'reload'
+-- bind, provides a better UI experience without a visible interface refresh
+M.convert_reload_actions = function(reload_cmd, opts)
+  assert(type(reload_cmd) == "string")
+  if opts._is_skim or not opts.reload_actions then
+    return opts
+  end
+  for k, v in pairs(opts.actions) do
+    local action = type(v) == "function" and v or type(v) == "table" and v[1]
+    if type(action) == "function" and opts.reload_actions[action] then
+      -- replace the action with shell cmd proxy to the original action
+      local shell_action = shell.raw_action(function(items, _, _)
+        action(items, opts)
+      end, "{+}", opts.debug)
+      opts.keymap.fzf[k] = {
+        string.format("execute-silent(%s)+reload(%s)", shell_action, reload_cmd),
+        desc = config.get_action_helpstr(action)
+      }
+      opts.actions[k] = nil
+    end
   end
   return opts
 end

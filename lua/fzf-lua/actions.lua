@@ -316,7 +316,7 @@ M.buf_del = function(selected, opts)
   local vimcmd = "bd"
   local bufnrs = vim.tbl_filter(function(line)
     local b = tonumber(line:match("%[(%d+)"))
-    return not utils.buffer_is_dirty(b, true, false)
+    return b and not utils.buffer_is_dirty(b, true, false)
   end, selected)
   M.vimcmd_buf(vimcmd, bufnrs, opts)
 end

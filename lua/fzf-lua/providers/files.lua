@@ -1,5 +1,6 @@
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
+local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
 
@@ -49,32 +50,11 @@ M.args = function(opts)
   opts = config.normalize_opts(opts, config.globals.args)
   if not opts then return end
 
-  if opts.fzf_opts["--header"] == nil then
-    opts.fzf_opts["--header"] = vim.fn.shellescape((":: %s to delete")
-      :format(utils.ansi_codes.yellow("<Ctrl-x>")))
-  end
+  opts.__fn_reload = opts.__fn_reload or function(_)
+    local entries = vim.fn.execute("args")
+    entries = utils.strsplit(entries, "%s\n")
 
-  local contents = function(cb)
-    local function add_entry(x, co)
-      x = make_entry.file(x, opts)
-      if not x then return end
-      cb(x, function(err)
-        coroutine.resume(co)
-        if err then
-          -- close the pipe to fzf, this
-          -- removes the loading indicator in fzf
-          cb(nil)
-        end
-      end)
-      coroutine.yield()
-    end
-
-    -- run in a coroutine for async progress indication
-    coroutine.wrap(function()
-      local co = coroutine.running()
-
-      local entries = vim.fn.execute("args")
-      entries = utils.strsplit(entries, "%s\n")
+    return function(cb)
       -- remove the current file indicator
       -- remove all non-files
       -- local start = os.time(); for _ = 1,10000,1 do
@@ -83,19 +63,28 @@ M.args = function(opts)
           s = s:gsub("^%[", ""):gsub("%]$", "")
         end
         local st = vim.loop.fs_stat(s)
-        if opts.files_only == false or
-            st and st.type == "file" then
-          add_entry(s, co)
+        if opts.files_only == false or st and st.type == "file" then
+          s = make_entry.file(s, opts)
+          cb(s)
         end
       end
       -- end; print("took", os.time()-start, "seconds.")
 
       -- done
       cb(nil)
-    end)()
+    end
   end
 
-  opts = core.set_header(opts, opts.headers or { "cwd" })
+  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
+  local reload, id = shell.reload_action_cmd(opts, "{+}")
+  local contents = reload:gsub("%-%-%s+{%+}$", "")
+
+  opts._fn_pre_fzf = function()
+    shell.set_protected(id)
+  end
+
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
+  opts = core.convert_reload_actions(reload, opts)
   return core.fzf_exec(contents, opts)
 end
 

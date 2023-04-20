@@ -4,7 +4,6 @@ local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
-local actions = require "fzf-lua.actions"
 local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
@@ -115,28 +114,8 @@ M.status = function(opts)
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
 
   -- use fzf's `reload` bind if we're not using skim
-  if not opts._is_skim then
-    local act_overrides = {
-      [actions.git_reset]         = true,
-      [actions.git_stage]         = true,
-      [actions.git_unstage]       = true,
-      [actions.git_stage_unstage] = true,
-    }
-    for k, v in pairs(opts.actions) do
-      local action = type(v) == "function" and v or type(v) == "table" and v[1]
-      if type(action) == "function" and act_overrides[action] then
-        -- replace the action with shell cmd proxy to the original action
-        local shell_action = shell.raw_action(function(items, _, _)
-          action(items, opts)
-        end, "{+}", opts.debug)
-        opts.keymap.fzf[k] = {
-          string.format("execute-silent(%s)+reload(%s)", shell_action, reload),
-          desc = config.get_action_helpstr(action)
-        }
-        opts.actions[k] = nil
-      end
-    end
-  end
+  -- must be called after 'set_header' as this modifies 'actions'
+  opts = core.convert_reload_actions(reload, opts)
 
   return core.fzf_exec(contents, opts)
 end
@@ -216,30 +195,40 @@ end
 M.stash = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.stash)
   if not opts then return end
+  opts = set_git_cwd_args(opts)
+  if not opts.cwd then return end
 
   if opts.preview then
     opts.preview = path.git_cwd(opts.preview, opts)
   end
 
-  if opts.fzf_opts["--header"] == nil then
-    opts.fzf_opts["--header"] = vim.fn.shellescape((":: %s to drop selected stash(es)")
-      :format(utils.ansi_codes.yellow("<Ctrl-x>")))
+  opts.__fn_transform = opts.__fn_transform or
+      function(x)
+        local stash, rest = x:match("([^:]+)(.*)")
+        if stash then
+          stash = utils.ansi_codes.yellow(stash)
+          stash = stash:gsub("{%d+}", function(s)
+            return ("%s"):format(utils.ansi_codes.green(tostring(s)))
+          end)
+        end
+        return (not stash or not rest) and x or stash .. rest
+      end
+
+  opts.__fn_reload = function(_)
+    return opts.cmd
   end
 
-  opts.cmd = libuv.spawn_nvim_fzf_cmd(
-    { cmd = opts.cmd, cwd = opts.cwd },
-    function(x)
-      local stash, rest = x:match("([^:]+)(.*)")
-      if stash then
-        stash = utils.ansi_codes.yellow(stash)
-        stash = stash:gsub("{%d+}", function(s)
-          return ("%s"):format(utils.ansi_codes.green(tostring(s)))
-        end)
-      end
-      return (not stash or not rest) and x or stash .. rest
-    end)
+  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
+  local reload, id = shell.reload_action_cmd(opts, "{+}")
+  local contents = reload:gsub("%-%-%s+{%+}$", "")
 
-  return git_cmd(opts)
+  opts._fn_pre_fzf = function()
+    shell.set_protected(id)
+  end
+
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
+  opts = core.convert_reload_actions(reload, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 return M

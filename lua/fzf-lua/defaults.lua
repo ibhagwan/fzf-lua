@@ -231,19 +231,26 @@ M.defaults.git = {
     _actions     = function() return M.globals.actions.files end,
   },
   status = {
-    prompt      = "GitStatus> ",
+    prompt         = "GitStatus> ",
     -- override `color.status=always`, techincally not required
     -- since we now also call `utils.strip_ansi_coloring` (#706)
-    cmd         = "git -c color.status=false status -s",
-    previewer   = "git_diff",
-    file_icons  = true and M._has_devicons,
-    color_icons = true,
-    git_icons   = true,
-    _actions    = function() return M.globals.actions.files end,
-    actions     = {
+    cmd            = "git -c color.status=false status -s",
+    previewer      = "git_diff",
+    file_icons     = true and M._has_devicons,
+    color_icons    = true,
+    git_icons      = true,
+    _actions       = function() return M.globals.actions.files end,
+    actions        = {
       ["right"]  = { actions.git_unstage, actions.resume },
       ["left"]   = { actions.git_stage, actions.resume },
       ["ctrl-x"] = { actions.git_reset, actions.resume },
+    },
+    -- actions listed below will be converted to fzf's 'reload'
+    reload_actions = {
+      [actions.git_reset]         = true,
+      [actions.git_stage]         = true,
+      [actions.git_unstage]       = true,
+      [actions.git_stage_unstage] = true,
     },
   },
   commits = {
@@ -276,14 +283,15 @@ M.defaults.git = {
     },
   },
   stash = {
-    prompt   = "Stash> ",
-    cmd      = "git --no-pager stash list",
-    preview  = "git --no-pager stash show --patch --color {1}",
-    actions  = {
+    prompt         = "Stash> ",
+    cmd            = "git --no-pager stash list",
+    preview        = "git --no-pager stash show --patch --color {1}",
+    actions        = {
       ["default"] = actions.git_stash_apply,
       ["ctrl-x"]  = { actions.git_stash_drop, actions.resume },
     },
-    fzf_opts = {
+    reload_actions = { [actions.git_stash_drop] = true },
+    fzf_opts       = {
       -- TODO: multiselect requires more work as dropping
       -- a stash changes the stash index, causing an error
       -- when the next stash is attempted
@@ -324,16 +332,15 @@ M.defaults.grep = {
 }
 
 M.defaults.args = {
-  previewer   = M._default_previewer_fn,
-  prompt      = "Args> ",
-  files_only  = true,
-  file_icons  = true and M._has_devicons,
-  color_icons = true,
-  git_icons   = true,
-  _actions    = function() return M.globals.actions.files end,
-  actions     = {
-    ["ctrl-x"] = { actions.arg_del, actions.resume }
-  },
+  previewer      = M._default_previewer_fn,
+  prompt         = "Args> ",
+  files_only     = true,
+  file_icons     = true and M._has_devicons,
+  color_icons    = true,
+  git_icons      = true,
+  _actions       = function() return M.globals.actions.files end,
+  actions        = { ["ctrl-x"] = { actions.arg_del, actions.resume } },
+  reload_actions = { [actions.arg_del] = true },
 }
 
 M.defaults.oldfiles = {
@@ -394,24 +401,24 @@ M.defaults.buffers = {
   cwd                   = nil,
   fzf_opts              = { ["--tiebreak"] = "index", },
   _actions              = function() return M.globals.actions.buffers end,
-  actions               = {
-    ["ctrl-x"] = { actions.buf_del, actions.resume },
-  },
+  actions               = { ["ctrl-x"] = { actions.buf_del, actions.resume } },
+  reload_actions        = { [actions.buf_del] = true },
 }
 
 M.defaults.tabs = {
-  previewer   = M._default_previewer_fn,
-  prompt      = "Tabs> ",
-  tab_title   = "Tab",
-  tab_marker  = "<<",
-  file_icons  = true and M._has_devicons,
-  color_icons = true,
-  _actions    = function() return M.globals.actions.buffers end,
-  actions     = {
+  previewer      = M._default_previewer_fn,
+  prompt         = "Tabs> ",
+  tab_title      = "Tab",
+  tab_marker     = "<<",
+  file_icons     = true and M._has_devicons,
+  color_icons    = true,
+  _actions       = function() return M.globals.actions.buffers end,
+  actions        = {
     ["default"] = actions.buf_switch,
     ["ctrl-x"]  = { actions.buf_del, actions.resume },
   },
-  fzf_opts    = {
+  reload_actions = { [actions.buf_del] = true },
+  fzf_opts       = {
     ["--delimiter"] = "'[\\):]'",
     ["--with-nth"]  = "2..",
   },
