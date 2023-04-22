@@ -282,6 +282,7 @@ function M.normalize_opts(opts, defaults)
   end
 
   opts.fzf_bin = opts.fzf_bin or M.globals.fzf_bin
+  opts.fzf_bin = opts.fzf_bin and vim.fn.expand(opts.fzf_bin) or nil
   if not opts.fzf_bin or
       not executable(opts.fzf_bin, utils.warn, "fallback to 'fzf'.") then
     -- default|fallback to fzf
