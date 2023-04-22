@@ -749,6 +749,12 @@ M.convert_reload_actions = function(reload_cmd, opts)
   if opts._is_skim or not opts.reload_actions then
     return opts
   end
+  -- Does not work with fzf version < 0.36, fzf fails with
+  -- "error 2: bind action not specified:" (#735)
+  local version = utils.fzf_version(opts)
+  if version < 0.36 then
+    return opts
+  end
   for k, v in pairs(opts.actions) do
     local action = type(v) == "function" and v or type(v) == "table" and v[1]
     if type(action) == "function" and opts.reload_actions[action] then

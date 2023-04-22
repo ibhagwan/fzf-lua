@@ -806,6 +806,11 @@ function M.neovim_bind_to_fzf(key)
   return key
 end
 
+function M.fzf_version(opts)
+  local out = M.io_system({ opts.fzf_bin or "fzf", "--version" })
+  return tonumber(out:match("(%d+.%d+)."))
+end
+
 function M.git_version()
   local out = M.io_system({ "git", "--version" })
   return tonumber(out:match("(%d+.%d+)."))
