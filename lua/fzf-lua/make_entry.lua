@@ -211,10 +211,14 @@ M.get_diff_files = function(opts)
   local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts))
   if ok and err == 0 then
     for i = 1, #status do
-      local icon = status[i]:match("[MUDARCT?]+")
-      local file = status[i]:match("[^ ]*$")
+      local line = status[i]
+      local icon = line:match("[MUDARCT?]+")
+      local file = line:match("[^ ]*$")
       if icon and file then
-        diff_files[file] = icon:gsub("%?%?", "?")
+        -- Extract first char, staged if not space or ? (32 or 63)
+        local first = #line > 0 and string.byte(line, 1)
+        local is_staged = first ~= 32 and first ~= 63 or nil
+        diff_files[file] = { icon:gsub("%?%?", "?"), is_staged }
       end
     end
   end
@@ -366,14 +370,17 @@ M.file = function(x, opts)
     filepath = path.shorten(filepath, tonumber(opts.path_shorten))
   end
   if opts.git_icons then
-    local indicators = opts.diff_files and opts.diff_files[origpath] or utils.nbsp
+    local diff_info = opts.diff_files and opts.diff_files[origpath]
+    local indicators = diff_info and diff_info[1] or utils.nbsp
     for i = 1, #indicators do
       icon = indicators:sub(i, i)
       local git_icon = config.globals.git.icons[icon]
       if git_icon then
         icon = git_icon.icon
         if opts.color_icons then
-          icon = utils.ansi_codes[git_icon.color or "dark_grey"](icon)
+          -- diff_info[2] contains 'is_staged' var, only the first indicator can be "staged"
+          local git_color = diff_info[2] and i == 1 and "green" or git_icon.color or "dark_grey"
+          icon = utils.ansi_codes[git_color](icon)
         end
       end
       ret[#ret + 1] = icon

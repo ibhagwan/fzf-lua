@@ -44,13 +44,13 @@ M.status = function(opts)
   -- as part of our `git status -s`
   opts.git_icons = false
 
-  local function git_iconify(x)
+  local function git_iconify(x, staged)
     local icon = x
     local git_icon = config.globals.git.icons[x]
     if git_icon then
       icon = git_icon.icon
       if opts.color_icons then
-        icon = utils.ansi_codes[git_icon.color or "dark_grey"](icon)
+        icon = utils.ansi_codes[staged and "green" or git_icon.color or "dark_grey"](icon)
       end
     end
     return icon
@@ -76,7 +76,7 @@ M.status = function(opts)
         -- accomodate 'file_ignore_patterns'
         if not f1 then return end
         f2 = f2 and make_entry.file(f2, opts)
-        local staged = git_iconify(x:sub(1, 1):gsub("?", " "))
+        local staged = git_iconify(x:sub(1, 1):gsub("?", " "), true)
         local unstaged = git_iconify(x:sub(2, 2))
         local entry = ("%s%s%s%s%s"):format(
           staged, utils.nbsp, unstaged, utils.nbsp .. utils.nbsp,

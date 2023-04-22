@@ -210,7 +210,7 @@ M.defaults.files = {
   file_icons     = true and M._has_devicons,
   color_icons    = true,
   git_icons      = true,
-  git_status_cmd = { "git", "status", "-s" },
+  git_status_cmd = { "git", "-c", "color.status=false", "status", "-s" },
   find_opts      = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
   rg_opts        = "--color=never --files --hidden --follow -g '!.git'",
   fd_opts        = "--color=never --type f --hidden --follow --exclude .git",
