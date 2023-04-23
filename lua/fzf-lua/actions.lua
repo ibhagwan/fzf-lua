@@ -581,8 +581,15 @@ local git_exec = function(selected, opts, cmd, silent)
 end
 
 M.git_stage = function(selected, opts)
-  local cmd = path.git_cwd({ "git", "add", "--" }, opts)
-  git_exec(selected, opts, cmd)
+  for _, s in ipairs(selected) do
+    -- calling stage on an already deleted file will err:
+    -- "fatal: pathspec '<file>' did not match any files
+    -- string.byte("D", 1) = 68
+    if string.byte(s, 1) ~= 68 then
+      local cmd = path.git_cwd({ "git", "add", "--" }, opts)
+      git_exec({ s }, opts, cmd)
+    end
+  end
 end
 
 M.git_unstage = function(selected, opts)

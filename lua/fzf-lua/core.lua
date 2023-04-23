@@ -755,6 +755,21 @@ M.convert_reload_actions = function(reload_cmd, opts)
   if version < 0.36 then
     return opts
   end
+  local reload_binds = {}
+  for k, v in pairs(opts.actions) do
+    local action = type(v) == "function" and v or type(v) == "table" and v[1]
+    if type(action) == "function" and opts.reload_actions[action] then
+      table.insert(reload_binds, k)
+    end
+  end
+  local bind_concat = function(tbl, act)
+    if #tbl == 0 then return nil end
+    return table.concat(vim.tbl_map(function(x)
+      return string.format("%s(%s)", act, x)
+    end, tbl), "+")
+  end
+  local unbind = bind_concat(reload_binds, "unbind")
+  local rebind = bind_concat(reload_binds, "rebind")
   for k, v in pairs(opts.actions) do
     local action = type(v) == "function" and v or type(v) == "table" and v[1]
     if type(action) == "function" and opts.reload_actions[action] then
@@ -763,12 +778,17 @@ M.convert_reload_actions = function(reload_cmd, opts)
         action(items, opts)
       end, "{+}", opts.debug)
       opts.keymap.fzf[k] = {
-        string.format("execute-silent(%s)+reload(%s)", shell_action, reload_cmd),
+        string.format("%sexecute-silent(%s)+reload(%s)",
+          unbind and (unbind .. "+") or "",
+          shell_action,
+          reload_cmd),
         desc = config.get_action_helpstr(action)
       }
       opts.actions[k] = nil
     end
   end
+  -- Does nothing when 'rebind' is nil
+  opts.keymap.fzf["load"] = rebind
   return opts
 end
 
