@@ -191,11 +191,15 @@ M.marks = function(opts)
   local entries = {}
   for i = #marks, 3, -1 do
     local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
+    if opts.marks_chars and not vim.tbl_contains(opts.marks_chars, mark) then
+      goto continue
+    end
     table.insert(entries, string.format("%-15s %-15s %-15s %s",
       utils.ansi_codes.yellow(mark),
       utils.ansi_codes.blue(line),
       utils.ansi_codes.green(col),
       text))
+    ::continue::
   end
 
   table.sort(entries, function(a, b) return a < b end)
