@@ -7,7 +7,7 @@ end
 
 return {
   desc             = "match telescope default highlights|keybinds",
-  fzf_opts         = { ["--layout"] = "default",["--marker"] = "+" },
+  fzf_opts         = { ["--layout"] = "default", ["--marker"] = "+" },
   winopts          = {
     width   = 0.8,
     height  = 0.9,
@@ -92,7 +92,7 @@ return {
   },
   buffers          = {
     keymap = { builtin = { ["<C-d>"] = false } },
-    actions = { ["ctrl-x"] = false,["ctrl-d"] = { actions.buf_del, actions.resume } },
+    actions = { ["ctrl-x"] = false, ["ctrl-d"] = { actions.buf_del, actions.resume } },
   },
   global_git_icons = false,
 }

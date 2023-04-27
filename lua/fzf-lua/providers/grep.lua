@@ -326,7 +326,7 @@ M.live_grep_mt = function(opts)
           -- we should also save the query when we are piping the command
           -- directly without our headless wrapper, i.e. 'live_grep_native'
           (not opts.requires_processing and
-          not opts.git_icons and not opts.file_icons) then
+            not opts.git_icons and not opts.file_icons) then
         M.set_last_search(opts, last_query or "", true)
       end
     end

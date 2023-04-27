@@ -370,7 +370,7 @@ M.tabs = function(opts)
           function(s)
             return string.format("%s%s#%d%s", s, utils.nbsp, t,
               (vim.loop.cwd() == tab_cwd and ""
-              or string.format(": %s", path.HOME_to_tilde(tab_cwd))))
+                or string.format(": %s", path.HOME_to_tilde(tab_cwd))))
           end,
           utils.ansi_codes.blue)
 

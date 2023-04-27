@@ -75,9 +75,9 @@ function M.normalize_opts(opts, defaults)
   -- ignore case for keybinds or conflicts may occur (#654)
   local keymap_tolower = function(m)
     return m and {
-          fzf = utils.map_tolower(m.fzf),
-          builtin = utils.map_tolower(m.builtin)
-        } or nil
+      fzf = utils.map_tolower(m.fzf),
+      builtin = utils.map_tolower(m.builtin)
+    } or nil
   end
   opts.keymap = keymap_tolower(opts.keymap)
   opts.actions = utils.map_tolower(opts.actions)

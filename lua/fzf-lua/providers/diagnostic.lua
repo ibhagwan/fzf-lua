@@ -51,17 +51,17 @@ M.diagnostics = function(opts)
 
   -- configure signs and highlights
   local signs = vim.diagnostic and {
-        ["Error"] = { severity = 1, default = "E", sign = "DiagnosticSignError" },
-        ["Warn"]  = { severity = 2, default = "W", sign = "DiagnosticSignWarn" },
-        ["Info"]  = { severity = 3, default = "I", sign = "DiagnosticSignInfo" },
-        ["Hint"]  = { severity = 4, default = "H", sign = "DiagnosticSignHint" },
-      } or {
-        -- At one point or another, we'll drop support for the old LSP diag
-        ["Error"] = { severity = 1, default = "E", sign = "LspDiagnosticsSignError" },
-        ["Warn"]  = { severity = 2, default = "W", sign = "LspDiagnosticsSignWarning" },
-        ["Info"]  = { severity = 3, default = "I", sign = "LspDiagnosticsSignInformation" },
-        ["Hint"]  = { severity = 4, default = "H", sign = "LspDiagnosticsSignHint" },
-      }
+    ["Error"] = { severity = 1, default = "E", sign = "DiagnosticSignError" },
+    ["Warn"]  = { severity = 2, default = "W", sign = "DiagnosticSignWarn" },
+    ["Info"]  = { severity = 3, default = "I", sign = "DiagnosticSignInfo" },
+    ["Hint"]  = { severity = 4, default = "H", sign = "DiagnosticSignHint" },
+  } or {
+    -- At one point or another, we'll drop support for the old LSP diag
+    ["Error"] = { severity = 1, default = "E", sign = "LspDiagnosticsSignError" },
+    ["Warn"]  = { severity = 2, default = "W", sign = "LspDiagnosticsSignWarning" },
+    ["Info"]  = { severity = 3, default = "I", sign = "LspDiagnosticsSignInformation" },
+    ["Hint"]  = { severity = 4, default = "H", sign = "LspDiagnosticsSignHint" },
+  }
 
   opts.__signs = {}
   for k, v in pairs(signs) do

@@ -136,7 +136,7 @@ M.defaults = {
     ["--layout"] = "reverse",
     ["--border"] = "none",
   },
-  fzf_tmux_opts = { ["-p"] = "80%,80%",["--margin"] = "0,0" },
+  fzf_tmux_opts = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
   previewers    = {
     cat = {
       cmd   = "cat",

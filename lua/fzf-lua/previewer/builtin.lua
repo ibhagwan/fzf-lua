@@ -342,8 +342,8 @@ function Previewer.base:scroll(direction)
     local input = direction > 0 and "<C-d>" or "<C-u>"
     vim.cmd("stopinsert")
     utils.feed_keys_termcodes((":noa lua vim.api.nvim_win_call(" ..
-      [[%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>]]):
-      format(tonumber(preview_winid), input))
+        [[%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>]])
+      :format(tonumber(preview_winid), input))
   end
   -- 'cursorline' is effectively our match highlight. Once the
   -- user scrolls, the highlight is no longer relevant (#462).
@@ -729,9 +729,9 @@ function Previewer.buffer_or_file:do_syntax(entry)
                   self.treesitter.enable == false or
                   self.treesitter.disable == true or
                   (type(self.treesitter.enable) == "table" and
-                  not vim.tbl_contains(self.treesitter.enable, ft)) or
+                    not vim.tbl_contains(self.treesitter.enable, ft)) or
                   (type(self.treesitter.disable) == "table" and
-                  vim.tbl_contains(self.treesitter.disable, ft)) then
+                    vim.tbl_contains(self.treesitter.disable, ft)) then
                 return false
               end
               return true

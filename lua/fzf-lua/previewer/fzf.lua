@@ -266,15 +266,15 @@ function Previewer.git_diff:cmdline(o)
     end
     local is_deleted = items[1]:match(self.git_icons["D"] .. utils.nbsp) ~= nil
     local is_modified = items[1]:match("[" ..
-          self.git_icons["M"] ..
-          self.git_icons["R"] ..
-          self.git_icons["A"] ..
-          self.git_icons["T"] ..
-          "]" .. utils.nbsp) ~= nil
+      self.git_icons["M"] ..
+      self.git_icons["R"] ..
+      self.git_icons["A"] ..
+      self.git_icons["T"] ..
+      "]" .. utils.nbsp) ~= nil
     local is_untracked = items[1]:match("[" ..
-          self.git_icons["?"] ..
-          self.git_icons["C"] ..
-          "]" .. utils.nbsp) ~= nil
+      self.git_icons["?"] ..
+      self.git_icons["C"] ..
+      "]" .. utils.nbsp) ~= nil
     local file = path.entry_to_file(items[1], self.opts)
     local cmd = nil
     if is_modified then
