@@ -808,6 +808,7 @@ end
 
 function M.fzf_version(opts)
   local out = M.io_system({ opts.fzf_bin or "fzf", "--version" })
+  if out:match("HEAD") then return 4 end
   return tonumber(out:match("(%d+.%d+)."))
 end
 
