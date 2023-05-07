@@ -403,8 +403,8 @@ M.ex_run = function(selected)
 end
 
 M.ex_run_cr = function(selected)
-  local cmd = M.ex_run(selected)
-  utils.feed_keys_termcodes("<CR>")
+  local cmd = selected[1]
+  vim.cmd(cmd)
   vim.fn.histadd("cmd", cmd)
 end
 
