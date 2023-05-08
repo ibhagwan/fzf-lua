@@ -1,6 +1,7 @@
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
+local logger = require "fzf-lua.logger"
 
 do
   -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
@@ -141,6 +142,14 @@ function M.setup(opts, do_not_reset_defaults)
   -- this doesn't happen automatically
   config.globals = globals
   config.DEFAULTS.globals = globals
+  logger.setup({
+    level = globals.debug.enable and "DEBUG" or "INFO",
+    console = globals.debug.cmdline,
+    file = globals.debug.file,
+    file_name = globals.debug.file_log_name,
+    file_dir = globals.debug.file_log_dir,
+  })
+  logger.debug("[init|M.setup] setup config.globals:%s", vim.inspect(config.globals))
   -- setup highlights
   M.setup_highlights()
 end

@@ -852,4 +852,12 @@ M.defaults.file_icon_padding = ""
 
 M.defaults.file_icon_colors = {}
 
+M.defaults.debug = {
+  enable = false,
+  cmdline = true,
+  file = false,
+  file_log_name = "fzf-lua.log",
+  file_log_dir = vim.fn.stdpath("data"),
+}
+
 return M
