@@ -3,6 +3,7 @@ local utils = require "fzf-lua.utils"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
+local logger = require "fzf-lua.logger"
 
 local M = {}
 

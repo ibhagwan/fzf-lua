@@ -7,6 +7,7 @@ local win = require "fzf-lua.win"
 local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
 local make_entry = require "fzf-lua.make_entry"
+local logger = require "fzf-lua.logger"
 
 local M = {}
 
@@ -217,6 +218,7 @@ M.fzf = function(contents, opts)
   end
   -- setup the fzf window and preview layout
   local fzf_win = win(opts)
+  logger.debug('[core|M.fzf] get fzf_win, fzf_win:%s, opts:%s', vim.inspect(fzf_win), vim.inspect(opts))
   if not fzf_win then return end
   -- instantiate the previewer
   local previewer, preview_opts = nil, nil
@@ -225,19 +227,25 @@ M.fzf = function(contents, opts)
     if not preview_opts then
       utils.warn(("invalid previewer '%s'"):format(opts.previewer))
     end
+    logger.debug('[core|M.fzf] preview_opts-1, opts.previewer(%s):%s, preview_opts(%s):%s', type(opts.previewer), vim.inspect(opts.previewer), type(preview_opts), vim.inspect(preview_opts))
   elseif opts.previewer and type(opts.previewer) == "table" then
     preview_opts = opts.previewer
+    logger.debug('[core|M.fzf] preview_opts-2, opts.previewer(%s):%s, preview_opts(%s):%s', type(opts.previewer), vim.inspect(opts.previewer), type(preview_opts), vim.inspect(preview_opts))
   end
   if preview_opts and type(preview_opts.new) == "function" then
     previewer = preview_opts:new(preview_opts, opts, fzf_win)
+    logger.debug('[core|M.fzf] previewer-1, previewer(%s):%s', type(previewer), vim.inspect(previewer))
   elseif preview_opts and type(preview_opts._new) == "function" then
     previewer = preview_opts._new()(preview_opts, opts, fzf_win)
+    logger.debug('[core|M.fzf] previewer-2, previewer(%s):%s', type(previewer), vim.inspect(previewer))
   elseif preview_opts and type(preview_opts._ctor) == "function" then
     previewer = preview_opts._ctor()(preview_opts, opts, fzf_win)
+    logger.debug('[core|M.fzf] previewer-3, previewer(%s):%s', type(previewer), vim.inspect(previewer))
   end
   if previewer then
     -- Set the preview command line
     opts.preview = previewer:cmdline()
+    logger.debug('[core|M.fzf] opts.preview(%s):%s', type(opts.preview), vim.inspect(opts.preview))
     if type(previewer.preview_window) == "function" then
       -- do we need to override the preview_window args?
       -- this can happen with the builtin previewer
@@ -245,12 +253,14 @@ M.fzf = function(contents, opts)
       -- (2) we use 'nohidden:right:0' to trigger preview function
       --     calls without displaying the native fzf previewer split
       opts.fzf_opts["--preview-window"] = previewer:preview_window(opts.preview_window)
+      logger.debug('[core|M.fzf] opts.fzf_opts-1, opts.fzf_opts(%s):%s', type(opts.fzf_opts), vim.inspect(opts.fzf_opts))
     end
     -- provides preview offset when using native previewers
     -- (bat/cat/etc) with providers that supply line numbers
     -- (grep/quickfix/LSP)
     if type(previewer.fzf_delimiter) == "function" then
       opts.fzf_opts["--delimiter"] = previewer:fzf_delimiter()
+      logger.debug('[core|M.fzf] opts.fzf_opts-2, opts.fzf_opts(%s):%s', type(opts.fzf_opts), vim.inspect(opts.fzf_opts))
     end
     if type(previewer.preview_offset) == "function" then
       opts.preview_offset = previewer:preview_offset()
@@ -259,6 +269,7 @@ M.fzf = function(contents, opts)
     -- no preview available, override in case $FZF_DEFAULT_OPTS
     -- contains a preview which will most likely fail
     opts.fzf_opts["--preview-window"] = "hidden:right:0"
+    logger.debug('[core|M.fzf] opts.fzf_opts-3, opts.fzf_opts(%s):%s', type(opts.fzf_opts), vim.inspect(opts.fzf_opts))
   end
 
   -- some functions such as buffers|tabs
@@ -272,6 +283,7 @@ M.fzf = function(contents, opts)
   -- save the normalized winopts, otherwise we
   -- lose overrides by 'winopts_fn|winopts_raw'
   opts.winopts.preview = fzf_win.winopts.preview
+  logger.debug('[core|M.fzf] before raw_fzf, fzf_bin(%s):%s, cwd(%s):%s, contents(%s):%s', type(opts.fzf_bin), vim.inspect(opts.fzf_bin), type(opts.cwd), vim.inspect(opts.cwd), type(contents), vim.inspect(contents))
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     {
       fzf_bin = opts.fzf_bin,
@@ -279,6 +291,7 @@ M.fzf = function(contents, opts)
       silent_fail = opts.silent_fail,
       is_fzf_tmux = opts._is_fzf_tmux
     })
+  logger.debug('[core|M.fzf] after raw_fzf, selected(%s):%s, exit_code(%s):%s', type(selected), vim.inspect(selected), type(exit_code), vim.inspect(exit_code))
   -- kill fzf piped process PID
   -- NOTE: might be an overkill since we're using $FZF_DEFAULT_COMMAND
   -- to spawn the piped process and fzf is responsible for termination

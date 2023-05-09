@@ -1,3 +1,4 @@
+local PATH_SEPARATOR = vim.loop.os_uname().sysname:match("Windows") and "\\" or "/"
 local ECHOHL = {
   ["ERROR"] = "ErrorMsg",
   ["WARN"] = "ErrorMsg",
@@ -5,16 +6,23 @@ local ECHOHL = {
   ["DEBUG"] = "Comment",
 }
 local DEFAULTS = {
-  level = "INFO",
-  console = true,
+  level = "DEBUG",
   name = "fzf-lua:",
-  file = false,
-  file_name = nil,
+  console = false,
+  file = true,
+  file_name = "fzf-lua.log",
   file_dir = vim.fn.stdpath("data"),
   file_path = nil,
 }
-local config = {}
-local PATH_SEPARATOR = vim.loop.os_uname().sysname:match("Windows") and "\\" or "/"
+local config = {
+  level = "DEBUG",
+  name = "fzf-lua:",
+  console = false,
+  file = true,
+  file_name = "fzf-lua.log",
+  file_dir = vim.fn.stdpath("data"),
+  file_path = string.format("%s%s%s", vim.fn.stdpath("data"), PATH_SEPARATOR, "fzf-lua.log"),
+}
 
 local M = {}
 
