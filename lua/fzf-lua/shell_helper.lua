@@ -29,6 +29,7 @@ local function get_preview_socket()
 end
 
 local preview_socket, preview_socket_path = get_preview_socket()
+log_debug('[shell_helper] preview_socket(%s):%s, preview_socket_path(%s):%s', type(preview_socket), vim.inspect(preview_socket), type(preview_socket_path), vim.inspect(preview_socket_path))
 
 uv.listen(preview_socket, 100, function(_)
   local preview_receive_socket = uv.new_pipe(false)
