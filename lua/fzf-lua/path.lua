@@ -1,10 +1,12 @@
 local utils = require "fzf-lua.utils"
 local string_sub = string.sub
 local string_byte = string.byte
+local logger = require "fzf-lua.logger"
 
 local M = {}
 
 M.separator = function()
+  -- return vim.loop.os_uname().sysname:match("Windows") and "\\" or "/"
   return "/"
 end
 
@@ -58,9 +60,13 @@ function M.to_matching_str(path)
 end
 
 function M.join(paths)
+  logger.debug('[path|M.join] paths(%s):%s', type(paths), vim.inspect(paths))
+  logger.debug('[path|M.join] separator(%s):%s', type(M.separator()), vim.inspect(M.separator()))
   -- gsub to remove double separator
-  return table.concat(paths, M.separator()):gsub(
+  local result = table.concat(paths, M.separator()):gsub(
     M.separator() .. M.separator(), M.separator())
+  logger.debug('[path|M.join] result(%s):%s', type(result), vim.inspect(result))
+  return result
 end
 
 function M.split(path)
@@ -83,13 +89,18 @@ end
 ---@param remove_trailing boolean
 ---@return string|nil
 function M.parent(path, remove_trailing)
+  logger.debug('[path|M.parent] path(%s):%s, remove_trailing(%s):%s', type(path), vim.inspect(path), type(remove_trailing), vim.inspect(remove_trailing))
   path = " " .. M.remove_trailing(path)
+  logger.debug('[path|M.parent] path-2(%s):%s', type(path), vim.inspect(path))
   local i = path:match("^.+()" .. M.separator())
   if not i then return nil end
   path = path:sub(2, i)
+  logger.debug('[path|M.parent] path-3(%s):%s', type(path), vim.inspect(path))
   if remove_trailing then
     path = M.remove_trailing(path)
+    logger.debug('[path|M.parent] path-4(%s):%s', type(path), vim.inspect(path))
   end
+  logger.debug('[path|M.parent] path-5(%s):%s', type(path), vim.inspect(path))
   return path
 end
 

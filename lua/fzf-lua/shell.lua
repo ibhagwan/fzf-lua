@@ -3,6 +3,7 @@
 local uv = vim.loop
 local path = require "fzf-lua.path"
 local libuv = require "fzf-lua.libuv"
+local logger = require "fzf-lua.logger"
 
 local M = {}
 
@@ -88,11 +89,17 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- special shell chars ('+', '-', etc), exmaples where this can
   -- happen are the `git status` command and git brances from diff
   -- worktrees (#600)
+  logger.debug('[shell|M.raw_async_action] nvim_bin(%s):%s', type(libuv.shellescape(nvim_bin)), vim.inspect(libuv.shellescape(nvim_bin)))
+  logger.debug('[shell|M.raw_async_action] path.join, 1(%s):%s, 2(%s):%s', type(vim.g.fzf_lua_directory), vim.inspect(vim.g.fzf_lua_directory), type("shell_helper.lua"), vim.inspect("shell_helper.lua"))
+  local tmp2 = libuv.shellescape(("lua loadfile([[%s]])().rpc_nvim_exec_lua({%s})")
+    :format(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" }, call_args))
+  logger.debug('[shell|M.raw_async_action] libuv.shellescape2(%s):%s', type(tmp2), vim.inspect(tmp2))
   local action_cmd = ("%s -n --headless --clean --cmd %s -- %s"):format(
     libuv.shellescape(nvim_bin),
     libuv.shellescape(("lua loadfile([[%s]])().rpc_nvim_exec_lua({%s})")
       :format(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" }, call_args)),
     fzf_field_expression)
+  logger.debug('[shell|M.raw_async_action] action_cmd(%s):%s', type(action_cmd), vim.inspect(action_cmd))
 
   return action_cmd, id
 end

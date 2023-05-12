@@ -8,6 +8,7 @@ do
   -- plugin '.vim' initialization sometimes doesn't get called
   local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
   vim.g.fzf_lua_directory = path.parent(currFile)
+  logger.debug('[init|do-end] currFile(%s):%s, vim.g.fzf_lua_directory(%s):%s', type(currFile), vim.inspect(currFile), type(vim.g.fzf_lua_directory), vim.inspect(vim.g.fzf_lua_directory))
 
   -- Manually source the vimL script containing ':FzfLua' cmd
   if not vim.g.loaded_fzf_lua then
@@ -27,6 +28,7 @@ do
   -- as their address and messages won't be received on older instances
   if not vim.g.fzf_lua_server then
     vim.g.fzf_lua_server = vim.fn.serverstart()
+    logger.debug('[init|do-end] fzf_lua_server(%s):%s', type(vim.g.fzf_lua_server), vim.inspect(vim.g.fzf_lua_server))
   end
 end
 
