@@ -7,8 +7,9 @@ local api = vim.api
 local uv = vim.loop
 local fn = vim.fn
 
--- is treesitter available?
-local __has_ts, __ts_configs, __ts_parsers
+
+local __HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
+local __HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
 
 local Previewer = {}
 
@@ -652,8 +653,11 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   end
 end
 
--- Attach ts highlighter
-local ts_attach = function(bufnr, ft)
+-- is treesitter available?
+local __has_ts, __ts_configs, __ts_parsers
+
+-- Attach ts highlighter, neovim v0.7/0.8
+local ts_attach_08 = function(bufnr, ft)
   if not __has_ts then
     __has_ts, _ = pcall(require, "nvim-treesitter")
     if __has_ts then
@@ -681,6 +685,20 @@ local ts_attach = function(bufnr, ft)
     vim.api.nvim_buf_set_option(bufnr, "syntax", ft)
   end
   return true
+end
+
+-- Attach ts highlighter, neovim >= v0.9
+local ts_attach = function(bufnr, ft)
+  local lang = vim.treesitter.language.get_lang(ft)
+  local loaded = pcall(vim.treesitter.language.add, lang)
+  if lang and loaded then
+    local ok, err = pcall(vim.treesitter.start, bufnr, lang)
+    if not ok then
+      utils.warn(string.format(
+        "unable to attach treesitter highlighter for filetype '%s': %s", ft, err))
+    end
+    return ok
+  end
 end
 
 function Previewer.buffer_or_file:do_syntax(entry)
@@ -717,8 +735,8 @@ function Previewer.buffer_or_file:do_syntax(entry)
         -- limit treesitter manual attachment to 0.8 instead (0.7.2 also errs)
         -- Error executing vim.schedule lua callback:
         --   vim/filetype.lua:0: attempt to call method 'gsub' (a nil value)
-        local fallback = vim.fn.has("nvim-0.8") == 0
-        if not fallback then
+        local fallback = not __HAS_NVIM_08
+        if __HAS_NVIM_08 then
           fallback = (function()
             local ft = vim.filetype.match({ buf = bufnr, filename = entry.path })
             if type(ft) ~= "string" then
@@ -738,7 +756,11 @@ function Previewer.buffer_or_file:do_syntax(entry)
             end)()
             local ts_success
             if ts_enabled then
-              ts_success = ts_attach(bufnr, ft)
+              if __HAS_NVIM_09 then
+                ts_success = ts_attach(bufnr, ft)
+              else
+                ts_success = ts_attach_08(bufnr, ft)
+              end
             end
             if not ts_enabled or not ts_success then
               pcall(vim.api.nvim_buf_set_option, bufnr, "syntax", ft)
