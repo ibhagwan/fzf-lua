@@ -7,9 +7,6 @@ local api = vim.api
 local uv = vim.loop
 local fn = vim.fn
 
--- is treesitter available?
-local __has_ts, __ts_configs, __ts_parsers
-
 local Previewer = {}
 
 Previewer.base = Object:extend()
@@ -654,33 +651,7 @@ end
 
 -- Attach ts highlighter
 local ts_attach = function(bufnr, ft)
-  if not __has_ts then
-    __has_ts, _ = pcall(require, "nvim-treesitter")
-    if __has_ts then
-      _, __ts_configs = pcall(require, "nvim-treesitter.configs")
-      _, __ts_parsers = pcall(require, "nvim-treesitter.parsers")
-    end
-  end
-
-  if not __has_ts or not ft or ft == "" then
-    return false
-  end
-
-  local lang = __ts_parsers.ft_to_lang(ft)
-  if not __ts_configs.is_enabled("highlight", lang, bufnr) then
-    return false
-  end
-
-  local config = __ts_configs.get_module "highlight"
-  vim.treesitter.highlighter.new(__ts_parsers.get_parser(bufnr, lang))
-  local is_table = type(config.additional_vim_regex_highlighting) == "table"
-  if
-      config.additional_vim_regex_highlighting
-      and (not is_table or vim.tbl_contains(config.additional_vim_regex_highlighting, lang))
-  then
-    vim.api.nvim_buf_set_option(bufnr, "syntax", ft)
-  end
-  return true
+  return pcall(vim.treesitter.start, bufnr, ft)
 end
 
 function Previewer.buffer_or_file:do_syntax(entry)
