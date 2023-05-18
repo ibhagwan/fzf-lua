@@ -150,6 +150,9 @@ local function gen_buffer_entry(opts, buf, hl_curbuf, cwd)
   end
   -- replace $HOME with '~' for paths outside of cwd
   bufname = path.HOME_to_tilde(bufname)
+  if opts.path_shorten and not bufname:match("^%a+://") then
+    bufname = path.shorten(bufname, tonumber(opts.path_shorten))
+  end
   -- add line number
   bufname = ("%s:%s"):format(bufname, buf.info.lnum > 0 and buf.info.lnum or "")
   if buf.flag == "%" then

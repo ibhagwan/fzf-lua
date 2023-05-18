@@ -289,7 +289,7 @@ function M.entry_to_file(entry, opts, force_uri)
       file, line = stripped:match("([^:]+):(%d+)")
     end
   end
-  if opts.path_shorten then
+  if opts.path_shorten and not stripped:match("^%a+://") then
     file = M.lengthen(file)
   end
   return {
