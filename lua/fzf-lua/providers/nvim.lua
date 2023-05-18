@@ -24,6 +24,26 @@ M.commands = function(opts)
   end, nil, opts.debug)
 
   local entries = {}
+
+  if opts.sort_lastused then
+    -- display last used commands at the top of the list (#748)
+    -- iterate the command history from last used backwards
+    -- each command found gets added to the top of the list
+    -- and removed from the command map
+    local history = vim.split(vim.fn.execute("history"), "\n")
+    for i = #history, #history - 3, -1 do
+      local cmd = history[i]:match("%d+%s+([^%s]+)")
+      if buf_commands[cmd] then
+        table.insert(entries, utils.ansi_codes.green(cmd))
+        buf_commands[cmd] = nil
+      end
+      if global_commands[cmd] then
+        table.insert(entries, utils.ansi_codes.magenta(cmd))
+        global_commands[cmd] = nil
+      end
+    end
+  end
+
   for k, _ in pairs(global_commands) do
     table.insert(entries, utils.ansi_codes.magenta(k))
   end
@@ -34,7 +54,9 @@ M.commands = function(opts)
     end
   end
 
-  table.sort(entries, function(a, b) return a < b end)
+  if not opts.sort_lastused then
+    table.sort(entries, function(a, b) return a < b end)
+  end
 
   opts.fzf_opts["--no-multi"] = ""
   opts.fzf_opts["--preview"] = prev_act
