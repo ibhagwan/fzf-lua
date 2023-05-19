@@ -51,11 +51,21 @@ local filter_buffers = function(opts, unfiltered)
 
   local excluded = {}
   local bufnrs = vim.tbl_filter(function(b)
-    if not opts.show_unlisted and 1 ~= vim.fn.buflisted(b) then
+    if not vim.api.nvim_buf_is_valid(b) then
       excluded[b] = true
-    end
-    -- only hide unloaded buffers if opts.show_all_buffers is false, keep them listed if true or nil
-    if opts.show_all_buffers == false and not vim.api.nvim_buf_is_loaded(b) then
+    elseif not opts.show_unlisted and vim.fn.buflisted(b) ~= 1 then
+      excluded[b] = true
+    elseif not opts.show_unloaded and not vim.api.nvim_buf_is_loaded(b) then
+      excluded[b] = true
+    elseif opts.ignore_current_buffer and b == __STATE.curbuf then
+      excluded[b] = true
+    elseif opts.current_tab_only and not curtab_bufnrs[b] then
+      excluded[b] = true
+    elseif opts.no_term_buffers and utils.is_term_buffer(b) then
+      excluded[b] = true
+    elseif opts.cwd_only and not path.is_relative(vim.api.nvim_buf_get_name(b), vim.loop.cwd()) then
+      excluded[b] = true
+    elseif opts.cwd and not path.is_relative(vim.api.nvim_buf_get_name(b), opts.cwd) then
       excluded[b] = true
     end
     if utils.buf_is_qf(b) then
@@ -65,20 +75,6 @@ local filter_buffers = function(opts, unfiltered)
       else
         excluded[b] = true
       end
-    end
-    if opts.ignore_current_buffer and b == __STATE.curbuf then
-      excluded[b] = true
-    end
-    if opts.current_tab_only and not curtab_bufnrs[b] then
-      excluded[b] = true
-    end
-    if opts.no_term_buffers and utils.is_term_buffer(b) then
-      excluded[b] = true
-    end
-    if opts.cwd_only and not path.is_relative(vim.api.nvim_buf_get_name(b), vim.loop.cwd()) then
-      excluded[b] = true
-    elseif opts.cwd and not path.is_relative(vim.api.nvim_buf_get_name(b), opts.cwd) then
-      excluded[b] = true
     end
     return not excluded[b]
   end, unfiltered)
@@ -98,6 +94,12 @@ local populate_buffer_entries = function(opts, bufnrs, tabh)
       info = vim.fn.getbufinfo(bufnr)[1],
       readonly = vim.api.nvim_buf_get_option(bufnr, "readonly")
     }
+
+    -- Get the name for missing/quickfix/location list buffers
+    -- NOTE: we get it here due to `gen_buffer_entry` called within a fast event
+    if not element.info.name or #element.info.name == 0 then
+      element.info.name = utils.nvim_buf_get_name(element.bufnr, element.info)
+    end
 
     -- get the correct lnum for tabbed buffers
     if tabh then
@@ -142,9 +144,7 @@ local function gen_buffer_entry(opts, buf, hl_curbuf, cwd)
   local flags = hidden .. readonly .. changed
   local leftbr = utils.ansi_codes.clear("[")
   local rightbr = utils.ansi_codes.clear("]")
-  local bufname = #buf.info.name > 0 and
-      path.relative(buf.info.name, cwd or vim.loop.cwd()) or
-      utils.nvim_buf_get_name(buf.bufnr, buf.info)
+  local bufname = #buf.info.name > 0 and path.relative(buf.info.name, cwd or vim.loop.cwd())
   if opts.filename_only then
     bufname = path.basename(bufname)
   end

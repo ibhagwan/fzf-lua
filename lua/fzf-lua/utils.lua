@@ -627,6 +627,7 @@ function M.winid_from_tabi(tabi, bufnr)
 end
 
 function M.nvim_buf_get_name(bufnr, bufinfo)
+  assert(not vim.in_fast_event())
   if not vim.api.nvim_buf_is_valid(bufnr) then return end
   if bufinfo and bufinfo.name and #bufinfo.name > 0 then
     return bufinfo.name
