@@ -205,11 +205,13 @@ M.defaults = {
 M.defaults.files = {
   previewer      = M._default_previewer_fn,
   prompt         = "> ",
-  cmd            = nil, -- default: auto detect find|fd
+  cmd            = nil,  -- default: auto detect find|fd
   multiprocess   = true,
   file_icons     = true and M._has_devicons,
   color_icons    = true,
   git_icons      = true,
+  cwd_prompt     = true,
+  fzf_opts       = { ["--info"] = "default", },
   git_status_cmd = { "git", "-c", "color.status=false", "status", "-s" },
   find_opts      = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
   rg_opts        = "--color=never --files --hidden --follow -g '!.git'",
@@ -319,6 +321,7 @@ M.defaults.grep = {
   file_icons     = true and M._has_devicons,
   color_icons    = true,
   git_icons      = true,
+  fzf_opts       = { ["--info"] = "default", },
   grep_opts      = utils.is_darwin()
       and "--binary-files=without-match --line-number --recursive --color=always --extended-regexp"
       or "--binary-files=without-match --line-number --recursive --color=always --perl-regexp",

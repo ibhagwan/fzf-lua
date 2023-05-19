@@ -678,8 +678,8 @@ require'fzf-lua'.setup {
     -- parameter to a different folder than the current working directory
     -- uncomment if you wish to force display of the cwd as part of the
     -- query prompt string (fzf.vim style), header line or both
-    -- show_cwd_prompt = true,
-    -- show_cwd_header = true,
+    -- cwd_header = true,
+    cwd_prompt = true,
     actions = {
       -- inherits from 'actions.files', here we can override
       -- or set bind to 'false' to disable a default action
@@ -698,7 +698,7 @@ require'fzf-lua'.setup {
       color_icons   = true,           -- colorize file|git icons
       -- force display the cwd header line regardles of your current working
       -- directory can also be used to hide the header when not wanted
-      -- show_cwd_header = true
+      -- cwd_header = true
     },
     status = {
       prompt        = 'GitStatus❯ ',

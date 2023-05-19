@@ -629,7 +629,7 @@ M.set_header = function(opts, hdr_tbl)
   end
 
   if not opts then opts = {} end
-  if opts.cwd_prompt or opts.show_cwd_prompt then
+  if opts.cwd_prompt then
     opts.prompt = normalize_cwd(opts.cwd or vim.loop.cwd())
     if not path.ends_with_separator(opts.prompt) then
       opts.prompt = opts.prompt .. path.separator()
@@ -643,21 +643,22 @@ M.set_header = function(opts, hdr_tbl)
     -- val.hdr_txt_opt: opt header string name
     -- val.hdr_txt_str: opt header string text
     cwd = {
-      hdr_txt_opt = "cwd_header",
+      hdr_txt_opt = "cwd_header_txt",
       hdr_txt_str = "cwd: ",
       hdr_txt_col = "red",
       val = function()
         -- do not display header when we're inside our
         -- cwd unless the caller specifically requested
-        if opts.show_cwd_header == false or opts.show_cwd_header == nil and
-            (not opts.cwd or opts.cwd == vim.loop.cwd()) then
+        if opts.cwd_header == false or
+            opts.cwd_prompt and opts.cwd_header == nil or
+            opts.cwd_header == nil and (not opts.cwd or opts.cwd == vim.loop.cwd()) then
           return
         end
         return normalize_cwd(opts.cwd or vim.loop.cwd())
       end
     },
     search = {
-      hdr_txt_opt = "grep_header",
+      hdr_txt_opt = "grep_header_txt",
       hdr_txt_str = "Grep string: ",
       hdr_txt_col = "red",
       val = function()
@@ -665,7 +666,7 @@ M.set_header = function(opts, hdr_tbl)
       end,
     },
     lsp_query = {
-      hdr_txt_opt = "lsp_query_header",
+      hdr_txt_opt = "lsp_query_header_txt",
       hdr_txt_str = "Query: ",
       hdr_txt_col = "red",
       val = function()
@@ -673,7 +674,7 @@ M.set_header = function(opts, hdr_tbl)
       end,
     },
     regex_filter = {
-      hdr_txt_opt = "regex_header",
+      hdr_txt_opt = "regex_header_txt",
       hdr_txt_str = "Regex filter: ",
       hdr_txt_col = "red",
       val = function()
@@ -681,7 +682,7 @@ M.set_header = function(opts, hdr_tbl)
       end,
     },
     actions = {
-      hdr_txt_opt = "interactive_header",
+      hdr_txt_opt = "interactive_header_txt",
       hdr_txt_str = "",
       val = function()
         if opts.no_header_i then return end
