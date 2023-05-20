@@ -203,20 +203,22 @@ M.defaults = {
 }
 
 M.defaults.files = {
-  previewer      = M._default_previewer_fn,
-  prompt         = "> ",
-  cmd            = nil,  -- default: auto detect find|fd
-  multiprocess   = true,
-  file_icons     = true and M._has_devicons,
-  color_icons    = true,
-  git_icons      = true,
-  cwd_prompt     = true,
-  fzf_opts       = { ["--info"] = "default", },
-  git_status_cmd = { "git", "-c", "color.status=false", "status", "-s" },
-  find_opts      = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
-  rg_opts        = "--color=never --files --hidden --follow -g '!.git'",
-  fd_opts        = "--color=never --type f --hidden --follow --exclude .git",
-  _actions       = function() return M.globals.actions.files end,
+  previewer              = M._default_previewer_fn,
+  prompt                 = "> ",
+  cmd                    = nil,   -- default: auto detect find|fd
+  multiprocess           = true,
+  file_icons             = true and M._has_devicons,
+  color_icons            = true,
+  git_icons              = true,
+  cwd_prompt             = true,
+  cwd_prompt_shorten_len = 32,
+  cwd_prompt_shorten_val = 1,
+  fzf_opts               = { ["--info"] = "default", },
+  git_status_cmd         = { "git", "-c", "color.status=false", "status", "-s" },
+  find_opts              = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
+  rg_opts                = "--color=never --files --hidden --follow -g '!.git'",
+  fd_opts                = "--color=never --type f --hidden --follow --exclude .git",
+  _actions               = function() return M.globals.actions.files end,
 }
 
 -- Must construct our opts table in stages

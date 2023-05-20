@@ -679,7 +679,9 @@ require'fzf-lua'.setup {
     -- uncomment if you wish to force display of the cwd as part of the
     -- query prompt string (fzf.vim style), header line or both
     -- cwd_header = true,
-    cwd_prompt = true,
+    cwd_prompt             = true,
+    cwd_prompt_shorten_len = 32,      -- shorten prompt beyond this length
+    cwd_prompt_shorten_val = 1,       -- shortened path parts length
     actions = {
       -- inherits from 'actions.files', here we can override
       -- or set bind to 'false' to disable a default action
