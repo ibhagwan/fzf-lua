@@ -876,6 +876,7 @@ require'fzf-lua'.setup {
   lines = {
     previewer         = "builtin",    -- set to 'false' to disable
     prompt            = 'Lines❯ ',
+    show_unloaded     = true,         -- show unloaded buffers
     show_unlisted     = false,        -- exclude 'help' buffers
     no_term_buffers   = true,         -- exclude 'term' buffers
     fzf_opts = {

@@ -434,6 +434,7 @@ M.defaults.lines = {
   prompt          = "Lines> ",
   file_icons      = true and M._has_devicons,
   color_icons     = true,
+  show_unloaded   = true,
   show_unlisted   = false,
   no_term_buffers = true,
   fzf_opts        = {
