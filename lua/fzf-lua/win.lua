@@ -674,6 +674,11 @@ function FzfWin:redraw_main()
     local cursorline = vim.o.cursorline
     self.fzf_bufnr = vim.api.nvim_create_buf(false, true)
     self.fzf_winid = utils.nvim_open_win(self.fzf_bufnr, true, win_opts)
+    -- disable search highlights as they interfere with fzf's highlights
+    if vim.o.hlsearch and vim.v.hlsearch == 1 then
+      self.hls_on_close = true
+      vim.cmd("nohls")
+    end
     -- `:help nvim_open_win`
     -- 'minimal' sets 'nocursorline', normally this shouldn't
     -- be an issue but for some reason this is affecting opening
@@ -861,6 +866,12 @@ function FzfWin:close()
       and self.src_winid ~= vim.api.nvim_get_current_win()
       and vim.api.nvim_win_is_valid(self.src_winid) then
     vim.api.nvim_set_current_win(self.src_winid)
+  end
+  if self.hls_on_close then
+    -- restore search highlighting if we disabled it
+    -- use `vim.o.hlsearch` as `vim.cmd("hls")` is invalid
+    vim.o.hlsearch = true
+    self.hls_on_close = nil
   end
   self.closing = nil
   self._reuse = nil
