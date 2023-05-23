@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0           Last change: 2023 May 20
+*fzf-lua.txt*           For Neovim >= 0.5.0           Last change: 2023 May 23
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -939,6 +939,7 @@ open an issue and I'll be more than happy to help.**
         file_icons        = true,         -- show file icons?
         color_icons       = true,         -- colorize file|git icons
         sort_lastused     = true,         -- sort buffers() by last used
+        show_unloaded     = true,         -- show unloaded buffers
         cwd_only          = false,        -- buffers for the cwd only
         cwd               = nil,          -- buffers list for a given dir
         actions = {
