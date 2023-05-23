@@ -675,6 +675,15 @@ function M.win_set_buf_noautocmd(win, buf)
   vim.o.eventignore = save_ei
 end
 
+-- Open a window without triggering an autocmd
+function M.nvim_open_win(bufnr, enter, config)
+  local save_ei = vim.o.eventignore
+  vim.o.eventignore = "all"
+  local winid = vim.api.nvim_open_win(bufnr, enter, config)
+  vim.o.eventignore = save_ei
+  return winid
+end
+
 -- Close a window without triggering an autocmd
 function M.nvim_win_close(win, opts)
   local save_ei = vim.o.eventignore

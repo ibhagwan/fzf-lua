@@ -673,7 +673,7 @@ function FzfWin:redraw_main()
     -- save 'cursorline' setting prior to opening the popup
     local cursorline = vim.o.cursorline
     self.fzf_bufnr = vim.api.nvim_create_buf(false, true)
-    self.fzf_winid = vim.api.nvim_open_win(self.fzf_bufnr, true, win_opts)
+    self.fzf_winid = utils.nvim_open_win(self.fzf_bufnr, true, win_opts)
     -- `:help nvim_open_win`
     -- 'minimal' sets 'nocursorline', normally this shouldn't
     -- be an issue but for some reason this is affecting opening
