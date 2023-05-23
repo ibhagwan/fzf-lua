@@ -31,7 +31,7 @@ local UPDATE_STATE_IF_NOT_FZF = function()
   -- do not update if we're called from the main fzf window as this would
   -- cause incorrect current/previous tab markers when wiping buffers with skim
   local wininfo = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1]
-  if wininfo.terminal ~= 1 then
+  if wininfo.terminal ~= 1 or vim.bo[wininfo.bufnr].ft ~= "fzf" then
     UPDATE_STATE()
   end
 end
