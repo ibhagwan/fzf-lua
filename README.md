@@ -844,6 +844,7 @@ require'fzf-lua'.setup {
     file_icons        = true,         -- show file icons?
     color_icons       = true,         -- colorize file|git icons
     sort_lastused     = true,         -- sort buffers() by last used
+    show_unloaded     = true,         -- show unloaded buffers
     cwd_only          = false,        -- buffers for the cwd only
     cwd               = nil,          -- buffers list for a given dir
     actions = {
