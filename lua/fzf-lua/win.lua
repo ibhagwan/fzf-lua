@@ -711,12 +711,16 @@ end
 
 function FzfWin:set_tmp_buffer()
   if not self:validate() then return end
-  local tmp_buf = api.nvim_create_buf(false, true)
-  vim.api.nvim_win_set_buf(self.fzf_winid, tmp_buf)
-  -- close the main fzf buffer without triggering autocmds
-  utils.nvim_buf_delete(self.fzf_bufnr, { force = true })
-  -- setting autocmds requires a valid 'self.fzf_bufnr'
-  self.fzf_bufnr = tmp_buf
+  -- Store the [would be] detached buffer number
+  local detached = self.fzf_bufnr
+  -- replace the attached buffer with a new temp buffer, setting `self.fzf_bufnr`
+  -- makes sure the call to `fzf_win:close` (which is triggered by the buf del)
+  -- won't trigger a close due to mismatched buffers condition on `self:close`
+  self.fzf_bufnr = api.nvim_create_buf(false, true)
+  vim.api.nvim_win_set_buf(self.fzf_winid, self.fzf_bufnr)
+  -- close the previous fzf term buffer without triggering autocmds
+  -- this also kills the previous fzf process if its still running
+  utils.nvim_buf_delete(detached, { force = true })
   -- in case buffer exists prematurely
   self:set_winleave_autocmd()
   -- automatically resize fzf window
