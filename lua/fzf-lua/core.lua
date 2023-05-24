@@ -268,7 +268,7 @@ M.fzf = function(contents, opts)
   if opts.fn_pre_fzf then opts.fn_pre_fzf(opts) end
 
   fzf_win:attach_previewer(previewer)
-  fzf_win:create()
+  local fzf_bufnr = fzf_win:create()
   -- save the normalized winopts, otherwise we
   -- lose overrides by 'winopts_fn|winopts_raw'
   opts.winopts.preview = fzf_win.winopts.preview
@@ -304,7 +304,7 @@ M.fzf = function(contents, opts)
   if opts.__fn_post_fzf then opts.__fn_post_fzf(opts, selected) end
   if opts._fn_post_fzf then opts._fn_post_fzf(opts, selected) end
   if opts.fn_post_fzf then opts.fn_post_fzf(opts, selected) end
-  fzf_win:check_exit_status(exit_code)
+  fzf_win:check_exit_status(exit_code, fzf_bufnr)
   -- retrieve the future action and check:
   --   * if it's a single function we can close the window
   --   * if it's a table of functions we do not close the window
@@ -312,7 +312,7 @@ M.fzf = function(contents, opts)
   local action = keybind and opts.actions and opts.actions[keybind]
   -- only close the window if autoclose wasn't specified or is 'true'
   if (not fzf_win:autoclose() == false) and type(action) ~= "table" then
-    fzf_win:close()
+    fzf_win:close(fzf_bufnr)
   end
   return selected
 end

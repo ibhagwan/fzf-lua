@@ -288,7 +288,11 @@ function FzfWin:reset_win_highlights(win, is_border)
   vim.api.nvim_win_set_option(win, "winhighlight", hl)
 end
 
-function FzfWin:check_exit_status(exit_code)
+function FzfWin:check_exit_status(exit_code, fzf_bufnr)
+  -- see the comment in `FzfWin:close` for more info
+  if fzf_bufnr and fzf_bufnr ~= self.fzf_bufnr then
+    return
+  end
   if not self:validate() then return end
   -- from 'man fzf':
   --    0      Normal exit
@@ -763,7 +767,7 @@ function FzfWin:create()
     -- fzf will not use all the avialable width until 'redraw' is
     -- called resulting in misaligned native and builtin previews
     vim.cmd("redraw")
-    return
+    return self.fzf_bufnr
   end
 
   if not self.winopts.split and self.previewer_is_builtin then
@@ -805,12 +809,7 @@ function FzfWin:create()
   -- setup the keybinds
   self:setup_keybinds()
 
-  return {
-    src_bufnr = self.src_bufnr,
-    src_winid = self.src_winid,
-    fzf_bufnr = self.fzf_bufnr,
-    fzf_winid = self.fzf_winid,
-  }
+  return self.fzf_bufnr
 end
 
 function FzfWin:close_preview()
@@ -844,7 +843,15 @@ function FzfWin:close_preview()
   self.preview_winid = nil
 end
 
-function FzfWin:close()
+function FzfWin:close(fzf_bufnr)
+  -- When a window is reused, (e.g. open any fzf-lua interface, press <C-\-n> and run
+  -- ":FzfLua") `FzfWin:set_tmp_buffer()` will call `nvim_buf_delete` on the original
+  -- fzf terminal buffer which will terminate the fzf process and trigger the call to
+  -- `fzf_win:close()` within `core.fzf()`. We need to avoid the close in this case. 
+  if fzf_bufnr and fzf_bufnr ~= self.fzf_bufnr then
+    return
+  end
+  --
   -- prevents race condition with 'win_leave'
   self.closing = true
   self.close_help()
