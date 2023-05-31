@@ -1,11 +1,16 @@
 local utils = require "fzf-lua.utils"
 local string_sub = string.sub
 local string_byte = string.byte
+local is_windows = vim.fn.has("win32") == 1
 
 local M = {}
 
 M.separator = function()
-  return vim.loop.os_uname().sysname:match("Windows") and "\\" or "/"
+  if is_windows then
+    return "\\"
+  else
+    return "/"
+  end
 end
 
 M.dot_byte = string_byte(".")
