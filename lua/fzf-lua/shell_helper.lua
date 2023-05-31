@@ -1,5 +1,3 @@
-local PATH_SEPARATOR = vim.loop.os_uname().sysname:match("Windows") and "\\" or "/"
-local LOG_FILE = string.format("%s%s%s", vim.fn.stdpath("data"), PATH_SEPARATOR, "fzf-lua-shell-helper.log")
 local is_windows = vim.fn.has("win32") == 1
 
 -- modified version of:
