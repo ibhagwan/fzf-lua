@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0           Last change: 2023 May 23
+*fzf-lua.txt*           For Neovim >= 0.5.0           Last change: 2023 May 31
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1130,6 +1130,7 @@ open an issue and I'll be more than happy to help.**
         },
         finder = {
             prompt      = "LSP Finder> ",
+            fzf_opts    = { ["--info"] = "default" },
             file_icons  = true,
             color_icons = true,
             git_icons   = false,
