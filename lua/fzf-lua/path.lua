@@ -59,9 +59,8 @@ end
 
 function M.join(paths)
   -- gsub to remove double separator
-  local result = table.concat(paths, M.separator()):gsub(
+  return table.concat(paths, M.separator()):gsub(
     M.separator() .. M.separator(), M.separator())
-  return result
 end
 
 function M.split(path)
