@@ -2,7 +2,6 @@ local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local Object = require "fzf-lua.class"
-local logger = require "fzf-lua.logger"
 
 local api = vim.api
 local uv = vim.loop
@@ -478,7 +477,6 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
     if not fifo then return end
     local wincfg = vim.api.nvim_win_get_config(self.win.preview_winid)
     local winpos = vim.api.nvim_win_get_position(self.win.preview_winid)
-    logger.debug('[previewer.builtin|Previewer.buffer_or_file:populate_terminal_cmd] path.join, 1(%s):%s, 2(%s):%s', type(self.opts.cwd or uv.cwd()), vim.inspect(self.opts.cwd or uv.cwd()), type(entry.path),vim.inspect(entry.path))
     local params = {
       action     = "add",
       identifier = "preview",
