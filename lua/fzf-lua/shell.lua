@@ -46,8 +46,6 @@ end
 -- local action_server_address = nil
 
 function M.raw_async_action(fn, fzf_field_expression, debug)
-  debug = true
-
   if not fzf_field_expression then
     fzf_field_expression = "{+}"
   end
