@@ -1,7 +1,6 @@
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
-local logger = require "fzf-lua.logger"
 
 local api = vim.api
 local fn = vim.fn
@@ -478,7 +477,6 @@ function FzfWin:validate_preview()
       and api.nvim_win_is_valid(self.preview_winid)
       and self.border_winid and self.border_winid > 0
       and api.nvim_win_is_valid(self.border_winid)
-  logger.debug('[win|FzfWin:validate_preview] result:%s', vim.inspect(result))
   return result
 end
 
@@ -511,7 +509,6 @@ end
 
 function FzfWin:redraw_preview()
   if not self.previewer_is_builtin or self.preview_hidden then
-    logger.debug('[win|FzfWin:redraw_preview] previewer not builtin')
     return
   end
 
@@ -525,7 +522,6 @@ function FzfWin:redraw_preview()
   end
 
   if self:validate_preview() then
-    logger.debug('[win|FzfWin:redraw_preview] validate-1')
     self.border_buf = api.nvim_win_get_buf(self.border_winid)
     self:update_border_buf()
     api.nvim_win_set_config(self.border_winid, self.border_winopts)
@@ -535,7 +531,6 @@ function FzfWin:redraw_preview()
       self._previewer:display_last_entry()
     end
   else
-    logger.debug('[win|FzfWin:redraw_preview] validate-2')
     local tmp_buf = api.nvim_create_buf(false, true)
     -- No autocmds, can only be sent with 'nvim_open_win'
     self.prev_winopts.noautocmd = true
@@ -552,7 +547,6 @@ function FzfWin:redraw_preview()
   end
   self:reset_win_highlights(self.border_winid, true)
   self:reset_win_highlights(self.preview_winid)
-  logger.debug('[win|FzfWin:redraw_preview] validate-3')
   return self.preview_winid, self.border_winid
 end
 
@@ -747,7 +741,6 @@ function FzfWin:set_style_minimal(winid)
 end
 
 function FzfWin:create()
-  logger.debug('[win|FzfWin:create] enter function')
   -- When using fzf-tmux we don't need to create windows
   -- as tmux popups will be used instead
   if self._o._is_fzf_tmux then
@@ -805,7 +798,6 @@ function FzfWin:create()
   end
 
   -- create or redraw the preview win
-  logger.debug('[win|FzfWin:create] redraw preview')
   self:redraw_preview()
 
   -- setup the keybinds
