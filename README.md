@@ -1114,13 +1114,6 @@ require'fzf-lua'.setup {
   -- uncomment if your terminal/font does not support unicode character
   -- 'EN SPACE' (U+2002), the below sets it to 'NBSP' (U+00A0) instead
   -- nbsp = '\xc2\xa0',
-  debug = {
-    enable = false,
-    cmdline = true,
-    file = false,
-    file_log_name = "fzf-lua.log",
-    file_log_dir = vim.fn.stdpath("data"),
-  },
 }
 ```
 

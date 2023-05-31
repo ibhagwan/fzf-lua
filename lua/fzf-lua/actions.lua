@@ -1,6 +1,5 @@
 local utils = require "fzf-lua.utils"
 local path = require "fzf-lua.path"
-local logger = require "fzf-lua.logger"
 
 local M = {}
 
@@ -99,7 +98,6 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     entry.ctag = opts._ctag and path.entry_to_ctag(selected[i])
     local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
     if not path.starts_with_separator(fullpath) then
-      logger.debug('[actions|M.vimcmd_file] path.join, 1(%s):%s, 2(%s):%s', type(opts.cwd or vim.loop.cwd()), vim.inspect(opts.cwd or vim.loop.cwd()), type(fullpath), vim.inspect(fullpath))
       fullpath = path.join({ opts.cwd or vim.loop.cwd(), fullpath })
     end
     if vimcmd == "e"
@@ -225,7 +223,6 @@ M.file_switch = function(selected, opts)
   local entry = path.entry_to_file(selected[1])
   local fullpath = entry.path
   if not path.starts_with_separator(fullpath) then
-    logger.debug('[actions|M.file_switch] path.join, 1(%s):%s, 2(%s):%s', type(opts.cwd or vim.loop.cwd()), vim.inspect(opts.cwd or vim.loop.cwd()), type(fullpath), vim.inspect(fullpath))
     fullpath = path.join({ opts.cwd or vim.loop.cwd(), fullpath })
   end
   for _, b in ipairs(vim.api.nvim_list_bufs()) do
