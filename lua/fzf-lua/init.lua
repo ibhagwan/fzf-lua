@@ -1,7 +1,6 @@
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
-local logger = require "fzf-lua.logger"
 local is_windows = vim.fn.has("win32") == 1
 
 do
@@ -9,7 +8,6 @@ do
   -- plugin '.vim' initialization sometimes doesn't get called
   local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
   vim.g.fzf_lua_directory = path.parent(currFile)
-  logger.debug('[init|do-end] currFile(%s):%s, vim.g.fzf_lua_directory(%s):%s', type(currFile), vim.inspect(currFile), type(vim.g.fzf_lua_directory), vim.inspect(vim.g.fzf_lua_directory))
 
   -- Manually source the vimL script containing ':FzfLua' cmd
   if not vim.g.loaded_fzf_lua then
@@ -148,7 +146,6 @@ function M.setup(opts, do_not_reset_defaults)
   -- this doesn't happen automatically
   config.globals = globals
   config.DEFAULTS.globals = globals
-  logger.debug("[init|M.setup] setup config.globals:%s", vim.inspect(config.globals))
   -- setup highlights
   M.setup_highlights()
 end
