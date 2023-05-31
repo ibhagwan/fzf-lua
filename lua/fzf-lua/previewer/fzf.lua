@@ -2,7 +2,6 @@ local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local Object = require "fzf-lua.class"
-local logger = require "fzf-lua.logger"
 
 local Previewer = {}
 
@@ -15,7 +14,6 @@ function Previewer.base:new(o, opts)
   self.cmd = o.cmd;
   self.args = o.args or "";
   self.opts = opts;
-  logger.debug("[previewer.fzf|Previewer.base.new] self(%s):%s", type(self), vim.inspect(self))
   return self
 end
 
@@ -94,7 +92,6 @@ Previewer.bat = Previewer.cmd:extend()
 function Previewer.bat:new(o, opts)
   Previewer.bat.super.new(self, o, opts)
   self.theme = o.theme
-  logger.debug("[previewer.fzf|Previewer.bat.new] self(%s):%s", type(self), vim.inspect(self))
   return self
 end
 
