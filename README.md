@@ -1035,6 +1035,7 @@ require'fzf-lua'.setup {
     },
     finder = {
         prompt      = "LSP Finder> ",
+        fzf_opts    = { ["--info"] = "default" },
         file_icons  = true,
         color_icons = true,
         git_icons   = false,

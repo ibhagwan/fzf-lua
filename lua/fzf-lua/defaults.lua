@@ -205,7 +205,7 @@ M.defaults = {
 M.defaults.files = {
   previewer              = M._default_previewer_fn,
   prompt                 = "> ",
-  cmd                    = nil,   -- default: auto detect find|fd
+  cmd                    = nil, -- default: auto detect find|fd
   multiprocess           = true,
   file_icons             = true and M._has_devicons,
   color_icons            = true,
@@ -609,6 +609,7 @@ M.defaults.lsp.symbols = {
 M.defaults.lsp.finder = {
   previewer   = M._default_previewer_fn,
   prompt      = "LSP Finder> ",
+  fzf_opts    = { ["--info"] = "default" },
   file_icons  = true and M._has_devicons,
   color_icons = true,
   git_icons   = false,
