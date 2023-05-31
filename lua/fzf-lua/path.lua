@@ -5,8 +5,7 @@ local string_byte = string.byte
 local M = {}
 
 M.separator = function()
-  -- return vim.loop.os_uname().sysname:match("Windows") and "\\" or "/"
-  return "/"
+  return vim.loop.os_uname().sysname:match("Windows") and "\\" or "/"
 end
 
 M.dot_byte = string_byte(".")
