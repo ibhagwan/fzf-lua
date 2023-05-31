@@ -5,34 +5,34 @@ local actions = require "fzf-lua.actions"
 
 local M = {}
 
-local _opts = nil
-local _opts_once = nil
-local _old_ui_select = nil
+local _OPTS = nil
+local _OPTS_ONCE = nil
+local _OLD_UI_SELECT = nil
 
 M.is_registered = function()
   return vim.ui.select == M.ui_select
 end
 
 M.deregister = function(_, silent, noclear)
-  if not _old_ui_select then
+  if not _OLD_UI_SELECT then
     if not silent then
       utils.info("vim.ui.select in not registered to fzf-lua")
     end
     return false
   end
-  vim.ui.select = _old_ui_select
-  _old_ui_select = nil
+  vim.ui.select = _OLD_UI_SELECT
+  _OLD_UI_SELECT = nil
   -- do not empty _opts in case when
   -- resume from `lsp_code_actions`
   if not noclear then
-    _opts = nil
+    _OPTS = nil
   end
   return true
 end
 
 M.register = function(opts, silent, opts_once)
   -- save "once" opts sent from lsp_code_actions
-  _opts_once = opts_once
+  _OPTS_ONCE = opts_once
   if vim.ui.select == M.ui_select then
     -- already registered
     if not silent then
@@ -40,8 +40,8 @@ M.register = function(opts, silent, opts_once)
     end
     return false
   end
-  _opts = opts
-  _old_ui_select = vim.ui.select
+  _OPTS = opts
+  _OLD_UI_SELECT = vim.ui.select
   vim.ui.select = M.ui_select
   return true
 end
@@ -51,7 +51,7 @@ M.accept_item = function(selected, o)
   o._on_choice(idx and o._items[idx] or nil, idx)
 end
 
-M.ui_select = function(items, opts, on_choice)
+M.ui_select = function(items, ui_opts, on_choice)
   --[[
   -- Code Actions
   opts = {
@@ -83,12 +83,16 @@ M.ui_select = function(items, opts, on_choice)
   for i, e in ipairs(items) do
     table.insert(entries,
       ("%s. %s"):format(utils.ansi_codes.magenta(tostring(i)),
-        opts.format_item and opts.format_item(e) or tostring(e)))
+        ui_opts.format_item and ui_opts.format_item(e) or tostring(e)))
   end
 
-  local prompt = opts.prompt or "Select one of:"
+  local prompt = ui_opts.prompt or "Select one of:"
 
-  _opts = _opts or {}
+  local _opts = _OPTS or {}
+  -- enables customization per kind (#755)
+  if type(_opts) == "function" then
+    _opts = _opts(ui_opts)
+  end
   _opts.fzf_opts = vim.tbl_extend("keep", _opts.fzf_opts or {}, {
     ["--no-multi"]       = "",
     ["--prompt"]         = prompt:gsub(":%s?$", "> "),
@@ -98,7 +102,7 @@ M.ui_select = function(items, opts, on_choice)
   -- save items so we can access them from the action
   _opts._items = items
   _opts._on_choice = on_choice
-  _opts._ui_select = opts
+  _opts._ui_select = ui_opts
 
   _opts.actions = vim.tbl_deep_extend("keep",
     _opts.actions or {}, { ["default"] = M.accept_item })
@@ -120,15 +124,15 @@ M.ui_select = function(items, opts, on_choice)
   end
 
   -- was this triggered by lsp_code_actions?
-  local opts_once = _opts_once
-  if _opts_once then
+  local opts_once = _OPTS_ONCE
+  if _OPTS_ONCE then
     -- merge and clear the once opts sent from lsp_code_actions.
     -- We also override actions to guarantee a single default
     -- action, otherwise selected[1] will be empty due to
     -- multiple keybinds trigger, sending `--expect` to fzf
-    _opts_once.actions = _opts.actions
-    opts_once = vim.tbl_deep_extend("keep", _opts_once, _opts)
-    _opts_once = nil
+    opts_once = vim.tbl_deep_extend("keep", _OPTS_ONCE, _opts)
+    opts_once.actions = _opts.actions
+    _OPTS_ONCE = nil
   end
 
   core.fzf_exec(entries, opts_once or _opts)

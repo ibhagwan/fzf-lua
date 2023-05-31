@@ -168,7 +168,11 @@ function M.shorten(path, max_len)
   repeat
     local i = find_next(path, sep, start_idx)
     local end_idx = i and start_idx + math.min(i - start_idx, max_len) - 1 or nil
-    table.insert(parts, string_sub(path, start_idx, end_idx))
+    local part = string_sub(path, start_idx, end_idx)
+    if end_idx and part == "." and i - start_idx > 1 then
+      part = string_sub(path, start_idx, end_idx + 1)
+    end
+    table.insert(parts, part)
     if i then start_idx = i + 1 end
   until not i
   return table.concat(parts, sep)
@@ -298,7 +302,7 @@ function M.entry_to_file(entry, opts, force_uri)
       file, line = stripped:match("([^:]+):(%d+)")
     end
   end
-  if opts.path_shorten then
+  if opts.path_shorten and not stripped:match("^%a+://") then
     file = M.lengthen(file)
   end
   return {

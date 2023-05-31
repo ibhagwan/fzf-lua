@@ -243,6 +243,19 @@ function M.normalize_opts(opts, defaults)
     -- ,("'%s' is now defined under '%s'"):format(v, k))
   end
 
+  -- renamed options
+  local renamed = {
+    ["cwd_header"] = "show_cwd_header",
+    ["cwd_prompt"] = "show_cwd_prompt",
+  }
+
+  for k, v in pairs(renamed) do
+    if opts[v] ~= nil then
+      opts[k] = opts[v]
+      opts[v] = nil
+    end
+  end
+
   if type(opts.previewer) == "function" then
     -- we use a function so the user can override
     -- globals.winopts.preview.default

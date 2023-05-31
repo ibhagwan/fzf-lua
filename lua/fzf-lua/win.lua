@@ -288,7 +288,11 @@ function FzfWin:reset_win_highlights(win, is_border)
   vim.api.nvim_win_set_option(win, "winhighlight", hl)
 end
 
-function FzfWin:check_exit_status(exit_code)
+function FzfWin:check_exit_status(exit_code, fzf_bufnr)
+  -- see the comment in `FzfWin:close` for more info
+  if fzf_bufnr and fzf_bufnr ~= self.fzf_bufnr then
+    return
+  end
   if not self:validate() then return end
   -- from 'man fzf':
   --    0      Normal exit
@@ -673,7 +677,12 @@ function FzfWin:redraw_main()
     -- save 'cursorline' setting prior to opening the popup
     local cursorline = vim.o.cursorline
     self.fzf_bufnr = vim.api.nvim_create_buf(false, true)
-    self.fzf_winid = vim.api.nvim_open_win(self.fzf_bufnr, true, win_opts)
+    self.fzf_winid = utils.nvim_open_win(self.fzf_bufnr, true, win_opts)
+    -- disable search highlights as they interfere with fzf's highlights
+    if vim.o.hlsearch and vim.v.hlsearch == 1 then
+      self.hls_on_close = true
+      vim.cmd("nohls")
+    end
     -- `:help nvim_open_win`
     -- 'minimal' sets 'nocursorline', normally this shouldn't
     -- be an issue but for some reason this is affecting opening
@@ -702,12 +711,16 @@ end
 
 function FzfWin:set_tmp_buffer()
   if not self:validate() then return end
-  local tmp_buf = api.nvim_create_buf(false, true)
-  vim.api.nvim_win_set_buf(self.fzf_winid, tmp_buf)
-  -- close the main fzf buffer without triggering autocmds
-  utils.nvim_buf_delete(self.fzf_bufnr, { force = true })
-  -- setting autocmds requires a valid 'self.fzf_bufnr'
-  self.fzf_bufnr = tmp_buf
+  -- Store the [would be] detached buffer number
+  local detached = self.fzf_bufnr
+  -- replace the attached buffer with a new temp buffer, setting `self.fzf_bufnr`
+  -- makes sure the call to `fzf_win:close` (which is triggered by the buf del)
+  -- won't trigger a close due to mismatched buffers condition on `self:close`
+  self.fzf_bufnr = api.nvim_create_buf(false, true)
+  vim.api.nvim_win_set_buf(self.fzf_winid, self.fzf_bufnr)
+  -- close the previous fzf term buffer without triggering autocmds
+  -- this also kills the previous fzf process if its still running
+  utils.nvim_buf_delete(detached, { force = true })
   -- in case buffer exists prematurely
   self:set_winleave_autocmd()
   -- automatically resize fzf window
@@ -758,7 +771,7 @@ function FzfWin:create()
     -- fzf will not use all the avialable width until 'redraw' is
     -- called resulting in misaligned native and builtin previews
     vim.cmd("redraw")
-    return
+    return self.fzf_bufnr
   end
 
   if not self.winopts.split and self.previewer_is_builtin then
@@ -800,12 +813,7 @@ function FzfWin:create()
   -- setup the keybinds
   self:setup_keybinds()
 
-  return {
-    src_bufnr = self.src_bufnr,
-    src_winid = self.src_winid,
-    fzf_bufnr = self.fzf_bufnr,
-    fzf_winid = self.fzf_winid,
-  }
+  return self.fzf_bufnr
 end
 
 function FzfWin:close_preview()
@@ -839,7 +847,15 @@ function FzfWin:close_preview()
   self.preview_winid = nil
 end
 
-function FzfWin:close()
+function FzfWin:close(fzf_bufnr)
+  -- When a window is reused, (e.g. open any fzf-lua interface, press <C-\-n> and run
+  -- ":FzfLua") `FzfWin:set_tmp_buffer()` will call `nvim_buf_delete` on the original
+  -- fzf terminal buffer which will terminate the fzf process and trigger the call to
+  -- `fzf_win:close()` within `core.fzf()`. We need to avoid the close in this case. 
+  if fzf_bufnr and fzf_bufnr ~= self.fzf_bufnr then
+    return
+  end
+  --
   -- prevents race condition with 'win_leave'
   self.closing = true
   self.close_help()
@@ -861,6 +877,12 @@ function FzfWin:close()
       and self.src_winid ~= vim.api.nvim_get_current_win()
       and vim.api.nvim_win_is_valid(self.src_winid) then
     vim.api.nvim_set_current_win(self.src_winid)
+  end
+  if self.hls_on_close then
+    -- restore search highlighting if we disabled it
+    -- use `vim.o.hlsearch` as `vim.cmd("hls")` is invalid
+    vim.o.hlsearch = true
+    self.hls_on_close = nil
   end
   self.closing = nil
   self._reuse = nil

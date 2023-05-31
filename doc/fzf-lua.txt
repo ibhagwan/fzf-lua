@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2023 April 20
+*fzf-lua.txt*           For Neovim >= 0.5.0           Last change: 2023 May 23
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -773,8 +773,10 @@ open an issue and I'll be more than happy to help.**
         -- parameter to a different folder than the current working directory
         -- uncomment if you wish to force display of the cwd as part of the
         -- query prompt string (fzf.vim style), header line or both
-        -- show_cwd_prompt = true,
-        -- show_cwd_header = true,
+        -- cwd_header = true,
+        cwd_prompt             = true,
+        cwd_prompt_shorten_len = 32,      -- shorten prompt beyond this length
+        cwd_prompt_shorten_val = 1,       -- shortened path parts length
         actions = {
           -- inherits from 'actions.files', here we can override
           -- or set bind to 'false' to disable a default action
@@ -793,7 +795,7 @@ open an issue and I'll be more than happy to help.**
           color_icons   = true,           -- colorize file|git icons
           -- force display the cwd header line regardles of your current working
           -- directory can also be used to hide the header when not wanted
-          -- show_cwd_header = true
+          -- cwd_header = true
         },
         status = {
           prompt        = 'GitStatus❯ ',
@@ -937,6 +939,7 @@ open an issue and I'll be more than happy to help.**
         file_icons        = true,         -- show file icons?
         color_icons       = true,         -- colorize file|git icons
         sort_lastused     = true,         -- sort buffers() by last used
+        show_unloaded     = true,         -- show unloaded buffers
         cwd_only          = false,        -- buffers for the cwd only
         cwd               = nil,          -- buffers list for a given dir
         actions = {
@@ -968,6 +971,7 @@ open an issue and I'll be more than happy to help.**
       lines = {
         previewer         = "builtin",    -- set to 'false' to disable
         prompt            = 'Lines❯ ',
+        show_unloaded     = true,         -- show unloaded buffers
         show_unlisted     = false,        -- exclude 'help' buffers
         no_term_buffers   = true,         -- exclude 'term' buffers
         fzf_opts = {
@@ -1080,31 +1084,31 @@ open an issue and I'll be more than happy to help.**
             -- see https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#symbolKind
             -- see https://github.com/neovim/neovim/blob/829d92eca3d72a701adc6e6aa17ccd9fe2082479/runtime/lua/vim/lsp/protocol.lua#L117
             symbol_icons     = {
-              File          = "",
+              File          = "󰈙",
               Module        = "",
               Namespace     = "󰦮",
               Package       = "",
-              Class         = "",
-              Method        = "",
+              Class         = "󰆧",
+              Method        = "󰊕",
               Property      = "",
               Field         = "",
               Constructor   = "",
               Enum          = "",
               Interface     = "",
-              Function      = "",
-              Variable      = "",
-              Constant      = "",
+              Function      = "󰊕",
+              Variable      = "󰀫",
+              Constant      = "󰏿",
               String        = "",
               Number        = "󰎠",
               Boolean       = "󰨙",
               Array         = "󱡠",
               Object        = "",
-              Key           = "",
+              Key           = "󰌋",
               Null          = "󰟢",
               EnumMember    = "",
-              Struct        = "",
+              Struct        = "󰆼",
               Event         = "",
-              Operator      = "",
+              Operator      = "󰆕",
               TypeParameter = "󰗴",
             },
             -- colorize using Treesitter '@' highlight groups ("@function", etc).
@@ -1164,7 +1168,7 @@ open an issue and I'll be more than happy to help.**
         --   ["Error"] = { text = "", texthl = "DiagnosticError" },
         --   ["Warn"]  = { text = "", texthl = "DiagnosticWarn" },
         --   ["Info"]  = { text = "", texthl = "DiagnosticInfo" },
-        --   ["Hint"]  = { text = "", texthl = "DiagnosticHint" },
+        --   ["Hint"]  = { text = "󰌵", texthl = "DiagnosticHint" },
         -- },
         -- limit to specific severity, use either a string or num:
         --   1 or "hint"
