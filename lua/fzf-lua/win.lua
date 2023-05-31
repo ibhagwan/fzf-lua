@@ -472,12 +472,11 @@ function FzfWin:preview_layout()
 end
 
 function FzfWin:validate_preview()
-  local result = not self.closing
+  return not self.closing
       and self.preview_winid and self.preview_winid > 0
       and api.nvim_win_is_valid(self.preview_winid)
       and self.border_winid and self.border_winid > 0
       and api.nvim_win_is_valid(self.border_winid)
-  return result
 end
 
 function FzfWin:preview_winids()
@@ -508,9 +507,7 @@ function FzfWin:update_border_buf()
 end
 
 function FzfWin:redraw_preview()
-  if not self.previewer_is_builtin or self.preview_hidden then
-    return
-  end
+  if not self.previewer_is_builtin or self.preview_hidden then return end
 
   self.prev_winopts, self.border_winopts = self:preview_layout()
   if vim.tbl_isempty(self.prev_winopts) or vim.tbl_isempty(self.border_winopts) then
