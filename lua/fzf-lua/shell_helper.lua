@@ -2,22 +2,6 @@ local PATH_SEPARATOR = vim.loop.os_uname().sysname:match("Windows") and "\\" or 
 local LOG_FILE = string.format("%s%s%s", vim.fn.stdpath("data"), PATH_SEPARATOR, "fzf-lua-shell-helper.log")
 local is_windows = vim.fn.has("win32") == 1
 
-local function log_debug(fmt, ...)
-  local msg = string.format(fmt, ...)
-
-  local msg_lines = vim.split(msg, "\n")
-  local fp = io.open(LOG_FILE, "a")
-  if fp then
-    for _, line in ipairs(msg_lines) do
-      fp:write(
-        string.format("fzf-lua: %s - %s\n", os.date("%Y-%m-%d %H:%M:%S"), line)
-      )
-    end
-    fp:close()
-  end
-end
-
-
 -- modified version of:
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/action_helper.lua
 local uv = vim.loop
@@ -40,7 +24,6 @@ local function get_preview_socket()
 end
 
 local preview_socket, preview_socket_path = get_preview_socket()
-log_debug('[shell_helper] preview_socket(%s):%s, preview_socket_path(%s):%s', type(preview_socket), vim.inspect(preview_socket), type(preview_socket_path), vim.inspect(preview_socket_path))
 
 uv.listen(preview_socket, 100, function(_)
   local preview_receive_socket = uv.new_pipe(false)
@@ -67,9 +50,7 @@ local function rpc_nvim_exec_lua(opts)
     local fzf_selection = {}
     for i = 1, vim.fn.argc() do
       table.insert(fzf_selection, vim.fn.argv(i - 1))
-      log_debug('[shell_helper|rpc_nvim_exec_lua] argv[%s](%s):%s', vim.inspect(i-1), type(vim.fn.argv(i - 1)), vim.inspect(vim.fn.argv(i - 1)))
     end
-    log_debug('[shell_helper|rpc_nvim_exec_lua] fzf_selection(%s):%s', type(fzf_selection), vim.inspect(fzf_selection))
     -- for skim compatibility
     local preview_lines = vim.env.FZF_PREVIEW_LINES or vim.env.LINES
     local preview_cols = vim.env.FZF_PREVIEW_COLUMNS or vim.env.COLUMNS
