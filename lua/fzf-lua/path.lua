@@ -149,7 +149,11 @@ M.HOME = function()
     -- use 'os.getenv' instead of 'vim.env' due to (#452):
     -- E5560: nvim_exec must not be called in a lua loop callback
     -- M.__HOME = vim.env.HOME
-    M.__HOME = os.getenv("HOME")
+    if is_windows then
+      M.__HOME = os.getenv("USERPROFILE")
+    else
+      M.__HOME = os.getenv("HOME")
+    end
   end
   return M.__HOME
 end

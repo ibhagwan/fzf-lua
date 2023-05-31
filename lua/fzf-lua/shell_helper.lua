@@ -1,5 +1,6 @@
 local PATH_SEPARATOR = vim.loop.os_uname().sysname:match("Windows") and "\\" or "/"
 local LOG_FILE = string.format("%s%s%s", vim.fn.stdpath("data"), PATH_SEPARATOR, "fzf-lua-shell-helper.log")
+local is_windows = vim.fn.has("win32") == 1
 
 local function log_debug(fmt, ...)
   local msg = string.format(fmt, ...)
@@ -21,8 +22,18 @@ end
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/action_helper.lua
 local uv = vim.loop
 
+local function get_temporary_pipe_name()
+  if is_windows then
+    local random_filename = string.gsub(vim.fn.tempname(), "/", "")
+    random_filename = string.gsub(random_filename, "\\", "")
+    return ([[\\.\pipe\%s]]):format(random_filename)
+  else
+    return vim.fn.tempname()
+  end
+end
+
 local function get_preview_socket()
-  local tmp = vim.fn.tempname()
+  local tmp = get_temporary_pipe_name()
   local socket = uv.new_pipe(false)
   uv.pipe_bind(socket, tmp)
   return socket, tmp
@@ -51,7 +62,6 @@ end)
 
 
 local function rpc_nvim_exec_lua(opts)
-  log_debug('[shell_helper|rpc_nvim_exec_lua] opts(%s):%s', type(opts), vim.inspect(opts))
   local success, errmsg = pcall(function()
     -- fzf selection is unpacked as the argument list
     local fzf_selection = {}
@@ -63,9 +73,11 @@ local function rpc_nvim_exec_lua(opts)
     -- for skim compatibility
     local preview_lines = vim.env.FZF_PREVIEW_LINES or vim.env.LINES
     local preview_cols = vim.env.FZF_PREVIEW_COLUMNS or vim.env.COLUMNS
-    local chan_id = vim.fn.sockconnect("pipe", opts.fzf_lua_server, { rpc = true })
-    log_debug('[shell_helper|rpc_nvim_exec_lua] opts.fzf_lua_server(%s):%s', type(opts), vim.inspect(opts))
-    log_debug('[shell_helper|rpc_nvim_exec_lua] preview_lines(%s):%s, preview_cols(%s):%s, chan_id(%s):%s', type(preview_lines), vim.inspect(preview_lines), type(preview_cols), vim.inspect(preview_cols), type(chan_id), vim.inspect(chan_id))
+    if is_windows then
+      local chan_id = vim.fn.sockconnect("tcp", opts.fzf_lua_server, { rpc = true })
+    else
+      local chan_id = vim.fn.sockconnect("pipe", opts.fzf_lua_server, { rpc = true })
+    end
     vim.rpcrequest(chan_id, "nvim_exec_lua", [[
       local luaargs = {...}
       local function_id = luaargs[1]

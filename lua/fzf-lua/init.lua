@@ -2,6 +2,7 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local logger = require "fzf-lua.logger"
+local is_windows = vim.fn.has("win32") == 1
 
 do
   -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
@@ -27,8 +28,11 @@ do
   -- fixed $NVIM_LISTEN_ADDRESS, different neovim instances will use the same path
   -- as their address and messages won't be received on older instances
   if not vim.g.fzf_lua_server then
-    vim.g.fzf_lua_server = vim.fn.serverstart()
-    logger.debug('[init|do-end] fzf_lua_server(%s):%s', type(vim.g.fzf_lua_server), vim.inspect(vim.g.fzf_lua_server))
+    if is_windows then
+      vim.g.fzf_lua_server = vim.fn.serverstart('127.0.0.1:0')
+    else
+      vim.g.fzf_lua_server = vim.fn.serverstart()
+    end
   end
 end
 
