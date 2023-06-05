@@ -4,6 +4,7 @@
 -- option to not add '\n' on content function callbacks
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf.lua
 local uv = vim.loop
+local log = require('fzf-lua.log')
 
 local M = {}
 
@@ -196,6 +197,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
 
   local co = coroutine.running()
   local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or vim.fn.termopen
+  log.info("[fzf|M.raw_fzf] opts.is_fzf_tmux(%s):%s, jobstart(%s):%s, cmd(%s):%s", type(opts.is_fzf_tmux), vim.inspect(opts.is_fzf_tmux), type(jobstart), vim.inspect(jobstart), type(cmd), vim.inspect(cmd))
   jobstart({ "sh", "-c", cmd }, {
     cwd = cwd,
     pty = true,
