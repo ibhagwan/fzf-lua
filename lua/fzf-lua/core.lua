@@ -84,6 +84,9 @@ M.fzf_exec = function(contents, opts)
     opts = config.normalize_opts(opts or {}, {})
     if not opts then return end
   end
+  -- save a copy of cprovider info in the opts, we later use it for better named
+  -- quickfix lists, use `pcall` because we will circular ref main object (#776)
+  _, opts.__INFO = pcall(loadstring("return require'fzf-lua'.get_info()"))
   opts.fn_selected = opts.fn_selected or function(selected)
     if not selected then return end
     actions.act(opts.actions, selected, opts)

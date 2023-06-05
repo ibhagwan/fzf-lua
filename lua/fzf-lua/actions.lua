@@ -182,11 +182,14 @@ local sel_to_qf = function(selected, opts, is_loclist)
       text = text,
     })
   end
+  local title = string.format("[FzfLua] %s%s",
+    opts.__INFO and opts.__INFO.cmd .. ": " or "",
+    opts.__resume_data.last_query)
   if is_loclist then
     vim.fn.setloclist(0, {}, " ", {
       nr = "$",
       items = qf_list,
-      title = opts.__resume_data.last_query,
+      title = title,
     })
     vim.cmd(opts.lopen or "lopen")
   else
@@ -195,7 +198,7 @@ local sel_to_qf = function(selected, opts, is_loclist)
     vim.fn.setqflist({}, " ", {
       nr = "$",
       items = qf_list,
-      title = opts.__resume_data.last_query,
+      title = title,
       -- nr = nr,
     })
     vim.cmd(opts.copen or "copen")
