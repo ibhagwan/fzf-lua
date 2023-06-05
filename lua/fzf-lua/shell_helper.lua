@@ -60,6 +60,7 @@ end)
 
 
 local function rpc_nvim_exec_lua(opts)
+  opts.debug=true
   local success, errmsg = pcall(function()
     -- fzf selection is unpacked as the argument list
     local fzf_selection = {}
