@@ -4,6 +4,23 @@ local is_windows = vim.fn.has("win32") == 1
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/action_helper.lua
 local uv = vim.loop
 
+local PathSeparator = vim.fn.has('win32') > 0 and "\\" or "/"
+local LogPath = vim.fn.stdpath('data') .. PathSeparator .. "fzf-lua-shell-helper.log"
+
+local function log_info(fmt, ...)
+    local messages = string.format(fmt, ...)
+    local split_messages = vim.split(messages, "\n")
+    local fp = io.open(LogPath, "a")
+    if fp then
+        for _, line in ipairs(split_messages) do
+            fp:write(
+                string.format( "%s: %s\n", os.date("%Y-%m-%d %H:%M:%S"), line)
+            )
+        end
+        fp:close()
+    end
+end
+
 local function get_temporary_pipe_name()
   if is_windows then
     local random_filename = string.gsub(vim.fn.tempname(), "/", "")
@@ -54,6 +71,7 @@ local function rpc_nvim_exec_lua(opts)
     local preview_cols = vim.env.FZF_PREVIEW_COLUMNS or vim.env.COLUMNS
     if is_windows then
       local chan_id = vim.fn.sockconnect("tcp", opts.fzf_lua_server, { rpc = true })
+      log_info("[shell_helper|rpc_nvim_exec_lua] chan_id(%s):%s, opts(%s):%s", type(chan_id), vim.inspect(chan_id), type(opts), vim.inspect(opts))
     else
       local chan_id = vim.fn.sockconnect("pipe", opts.fzf_lua_server, { rpc = true })
     end
@@ -65,6 +83,7 @@ local function rpc_nvim_exec_lua(opts)
       local fzf_lines = luaargs[4]
       local fzf_columns = luaargs[5]
       local usr_func = require"fzf-lua.shell".get_func(function_id)
+      log_info("[shell_helper|rpc_nvim_exec_lua.rpcrequest] chan_id(%s):%s, luaargs(%s):%s", type(chan_id), vim.inspect(chan_id), type(luaargs), vim.inspect(luaargs))
       return usr_func(preview_socket_path, fzf_selection, fzf_lines, fzf_columns)
     ]], {
       opts.fnc_id,

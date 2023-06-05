@@ -6,11 +6,7 @@ local is_windows = vim.fn.has("win32") == 1
 local M = {}
 
 M.separator = function()
-  if is_windows then
-    return "\\"
-  else
     return "/"
-  end
 end
 
 M.dot_byte = string_byte(".")

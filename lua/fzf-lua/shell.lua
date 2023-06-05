@@ -3,6 +3,7 @@
 local uv = vim.loop
 local path = require "fzf-lua.path"
 local libuv = require "fzf-lua.libuv"
+local log = require"fzf-lua.log"
 
 local M = {}
 
@@ -94,6 +95,7 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
       :format(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" }, call_args)),
     fzf_field_expression)
 
+  log.info("[shell|M.raw_async_action] id(%s):%s, action_cmd(%s):%s", type(id), vim.inspect(id), type(action_cmd), vim.inspect(action_cmd))
   return action_cmd, id
 end
 

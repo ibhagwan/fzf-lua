@@ -832,4 +832,16 @@ function M.find_version()
   return rc == 0 and tonumber(out[1]:match("(%d+.%d+)")) or nil
 end
 
+function M.get_temporary_pipe_name()
+  local is_windows = vim.fn.has("win32") == 1
+  if is_windows then
+    local random_filename = string.gsub(vim.fn.tempname(), "/", "")
+    random_filename = string.gsub(random_filename, "\\", "")
+    return ([[\\.\pipe\%s]]):format(random_filename)
+  else
+    return vim.fn.tempname()
+  end
+end
+
+
 return M
