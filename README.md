@@ -1144,6 +1144,7 @@ FzfLua conviniently creates the below highlights:
   FzfLuaScrollFloatFull   = { 'winopts.hl.scrollfloat_f', "PmenuThumb" },
   FzfLuaHelpNormal = { 'winopts.hl.help_normal', "FzfLuaNormal" },
   FzfLuaHelpBorder = { 'winopts.hl.help_border', "FzfLuaBorder" },
+  FzfLuaPreviewBorder     = { "winopts.hl.preview_border", "Normal" },
 ```
 
 

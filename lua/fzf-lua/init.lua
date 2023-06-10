@@ -46,6 +46,7 @@ function M.setup_highlights()
     FzfLuaScrollFloatFull   = { "winopts.hl.scrollfloat_f", "PmenuThumb" },
     FzfLuaHelpNormal        = { "winopts.hl.help_normal", "FzfLuaNormal" },
     FzfLuaHelpBorder        = { "winopts.hl.help_border", "FzfLuaBorder" },
+    FzfLuaPreviewBorder     = { "winopts.hl.preview_border", "FzfLuaBorder" },
   }
   for hl_name, v in pairs(highlights) do
     -- define a new linked highlight and then override the

@@ -283,7 +283,7 @@ function FzfWin:reset_win_highlights(win, is_border)
   if is_border then
     -- our border is manually drawn so we need
     -- to replace Normal with the border color
-    hl = ("Normal:%s"):format(self.winopts.__hl.border)
+    hl = ("Normal:%s"):format(self.winopts.__hl.preview_border)
   end
   vim.api.nvim_win_set_option(win, "winhighlight", hl)
 end
@@ -851,7 +851,7 @@ function FzfWin:close(fzf_bufnr)
   -- When a window is reused, (e.g. open any fzf-lua interface, press <C-\-n> and run
   -- ":FzfLua") `FzfWin:set_tmp_buffer()` will call `nvim_buf_delete` on the original
   -- fzf terminal buffer which will terminate the fzf process and trigger the call to
-  -- `fzf_win:close()` within `core.fzf()`. We need to avoid the close in this case. 
+  -- `fzf_win:close()` within `core.fzf()`. We need to avoid the close in this case.
   if fzf_bufnr and fzf_bufnr ~= self.fzf_bufnr then
     return
   end
