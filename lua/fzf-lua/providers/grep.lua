@@ -100,7 +100,13 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   end
 
   -- construct the final command
-  command = ("%s %s %s"):format(command, search_query, search_path)
+  -- "-e" flag will be added during make_entry.preprocess
+  -- for multiprocess case
+  if opts.multiprocess then
+    command = ("%s %s %s"):format(command, search_query, search_path)
+  else
+    command = ("%s -e %s %s"):format(command, search_query, search_path)
+  end
 
   -- piped command filter, used for filtering ctags
   if opts.filter and #opts.filter > 0 then
@@ -299,7 +305,7 @@ M.live_grep_mt = function(opts)
     -- NOTE: since we cannot guarantee the positional index
     -- of arguments (#291), we use the last argument instead
     command = command:gsub(core.fzf_query_placeholder, "{argvz}")
-        .. " " .. core.fzf_query_placeholder
+        .. " -- " .. core.fzf_query_placeholder
   end
 
   -- signal 'fzf_exec' to set 'change:reload' parameters

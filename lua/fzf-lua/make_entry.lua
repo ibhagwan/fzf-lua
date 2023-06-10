@@ -287,7 +287,7 @@ M.preprocess = function(opts)
       search_query = search_query:gsub("%%", "%%%%")
       -- reset argvz so it doesn't get replaced again below
       opts.cmd = opts.cmd:gsub(argvz,
-        glob_args .. vim.fn.shellescape(search_query))
+        glob_args .. "-e " .. vim.fn.shellescape(search_query))
     end
   end
 
@@ -297,7 +297,7 @@ M.preprocess = function(opts)
     opts.cmd = opts.cmd:gsub("{argv.*}",
       function(x)
         local idx = x:match("{argv(.*)}")
-        return vim.fn.shellescape(argv(idx))
+        return "-e " .. vim.fn.shellescape(argv(idx))
       end)
   end
 
