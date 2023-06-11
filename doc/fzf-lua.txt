@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0           Last change: 2023 May 31
+*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 June 10
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1239,6 +1239,7 @@ FzfLua conviniently creates the below highlights:
       FzfLuaScrollFloatFull   = { 'winopts.hl.scrollfloat_f', "PmenuThumb" },
       FzfLuaHelpNormal = { 'winopts.hl.help_normal', "FzfLuaNormal" },
       FzfLuaHelpBorder = { 'winopts.hl.help_border', "FzfLuaBorder" },
+      FzfLuaPreviewBorder = { "winopts.hl.preview_border", "Normal" },
 <
 These can be easily customized either via the lua API:
 
