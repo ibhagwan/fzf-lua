@@ -33,21 +33,21 @@ local M = {}
 
 function M.setup_highlights()
   local highlights = {
-    { "FzfLuaNormal",             { "winopts.hl.normal", "Normal" } },
-    { "FzfLuaBorder",             { "winopts.hl.border", "Normal" } },
-    { "FzfLuaCursor",             { "winopts.hl.cursor", "Cursor" } },
-    { "FzfLuaCursorLine",         { "winopts.hl.cursorline", "CursorLine" } },
-    { "FzfLuaCursorLineNr",       { "winopts.hl.cursornr", "CursorLineNr" } },
-    { "FzfLuaSearch",             { "winopts.hl.search", "IncSearch" } },
-    { "FzfLuaTitle",              { "winopts.hl.title", "FzfLuaNormal" } },
-    { "FzfLuaScrollBorderEmpty",  { "winopts.hl.scrollborder_e", "FzfLuaBorder" } },
-    { "FzfLuaScrollBorderFull",   { "winopts.hl.scrollborder_f", "FzfLuaBorder" } },
-    { "FzfLuaScrollFloatEmpty",   { "winopts.hl.scrollfloat_e", "PmenuSbar" } },
-    { "FzfLuaScrollFloatFull",    { "winopts.hl.scrollfloat_f", "PmenuThumb" } },
-    { "FzfLuaHelpNormal",         { "winopts.hl.help_normal", "FzfLuaNormal" } },
-    { "FzfLuaHelpBorder",         { "winopts.hl.help_border", "FzfLuaBorder" } },
-    { "FzfLuaPreviewNormal",      { "winopts.hl.preview_normal", "FzfLuaNormal" } },
-    { "FzfLuaPreviewBorder",      { "winopts.hl.preview_border", "FzfLuaBorder" } },
+    { "FzfLuaNormal",            { "winopts.hl.normal", "Normal" } },
+    { "FzfLuaBorder",            { "winopts.hl.border", "Normal" } },
+    { "FzfLuaCursor",            { "winopts.hl.cursor", "Cursor" } },
+    { "FzfLuaCursorLine",        { "winopts.hl.cursorline", "CursorLine" } },
+    { "FzfLuaCursorLineNr",      { "winopts.hl.cursornr", "CursorLineNr" } },
+    { "FzfLuaSearch",            { "winopts.hl.search", "IncSearch" } },
+    { "FzfLuaTitle",             { "winopts.hl.title", "FzfLuaNormal" } },
+    { "FzfLuaScrollBorderEmpty", { "winopts.hl.scrollborder_e", "FzfLuaBorder" } },
+    { "FzfLuaScrollBorderFull",  { "winopts.hl.scrollborder_f", "FzfLuaBorder" } },
+    { "FzfLuaScrollFloatEmpty",  { "winopts.hl.scrollfloat_e", "PmenuSbar" } },
+    { "FzfLuaScrollFloatFull",   { "winopts.hl.scrollfloat_f", "PmenuThumb" } },
+    { "FzfLuaHelpNormal",        { "winopts.hl.help_normal", "FzfLuaNormal" } },
+    { "FzfLuaHelpBorder",        { "winopts.hl.help_border", "FzfLuaBorder" } },
+    { "FzfLuaPreviewNormal",     { "winopts.hl.preview_normal", "FzfLuaNormal" } },
+    { "FzfLuaPreviewBorder",     { "winopts.hl.preview_border", "FzfLuaBorder" } },
   }
   for _, a in pairs(highlights) do
     local hl_name, v = a[1], a[2]
@@ -68,15 +68,19 @@ function M.setup_highlights()
     config.set_global(v[1]:gsub("%.hl%.", ".__hl."), hl_name)
   end
 
-  for _, a in pairs(highlights) do
-    local _, v = a[1], a[2]
-    local opt_path = v[1]:gsub("%.hl%.", ".__hl.")
-    local hl = config.get_global(opt_path)
-    if utils.is_hl_cleared(hl) then
-      -- reset any invalid hl, this will cause our 'winhighlight'
-      -- string to look something akin to `Normal:,FloatBorder:`
-      -- which uses terminal fg|bg colors instead
-      config.set_global(opt_path, "")
+  -- linking to a cleared hl is bugged in neovim 0.8.x
+  -- resulting in a pink background for hls linked to `Normal`
+  if vim.fn.has("nvim-0.9") == 0 and vim.fn.has("nvim-0.8") == 1 then
+    for _, a in pairs(highlights) do
+      local _, v = a[1], a[2]
+      local opt_path = v[1]:gsub("%.hl%.", ".__hl.")
+      local hl = config.get_global(opt_path)
+      if utils.is_hl_cleared(hl) then
+        -- reset any invalid hl, this will cause our 'winhighlight'
+        -- string to look something akin to `Normal:,FloatBorder:`
+        -- which uses terminal fg|bg colors instead
+        config.set_global(opt_path, "")
+      end
     end
   end
 end
