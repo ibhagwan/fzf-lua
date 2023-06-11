@@ -33,23 +33,24 @@ local M = {}
 
 function M.setup_highlights()
   local highlights = {
-    FzfLuaNormal            = { "winopts.hl.normal", "Normal" },
-    FzfLuaBorder            = { "winopts.hl.border", "Normal" },
-    FzfLuaCursor            = { "winopts.hl.cursor", "Cursor" },
-    FzfLuaCursorLine        = { "winopts.hl.cursorline", "CursorLine" },
-    FzfLuaCursorLineNr      = { "winopts.hl.cursornr", "CursorLineNr" },
-    FzfLuaSearch            = { "winopts.hl.search", "IncSearch" },
-    FzfLuaTitle             = { "winopts.hl.title", "FzfLuaNormal" },
-    FzfLuaScrollBorderEmpty = { "winopts.hl.scrollborder_e", "FzfLuaBorder" },
-    FzfLuaScrollBorderFull  = { "winopts.hl.scrollborder_f", "FzfLuaBorder" },
-    FzfLuaScrollFloatEmpty  = { "winopts.hl.scrollfloat_e", "PmenuSbar" },
-    FzfLuaScrollFloatFull   = { "winopts.hl.scrollfloat_f", "PmenuThumb" },
-    FzfLuaHelpNormal        = { "winopts.hl.help_normal", "FzfLuaNormal" },
-    FzfLuaHelpBorder        = { "winopts.hl.help_border", "FzfLuaBorder" },
-    FzfLuaPreviewNormal     = { "winopts.hl.preview_normal", "FzfLuaNormal" },
-    FzfLuaPreviewBorder     = { "winopts.hl.preview_border", "FzfLuaBorder" },
+    { "FzfLuaNormal",             { "winopts.hl.normal", "Normal" } },
+    { "FzfLuaBorder",             { "winopts.hl.border", "Normal" } },
+    { "FzfLuaCursor",             { "winopts.hl.cursor", "Cursor" } },
+    { "FzfLuaCursorLine",         { "winopts.hl.cursorline", "CursorLine" } },
+    { "FzfLuaCursorLineNr",       { "winopts.hl.cursornr", "CursorLineNr" } },
+    { "FzfLuaSearch",             { "winopts.hl.search", "IncSearch" } },
+    { "FzfLuaTitle",              { "winopts.hl.title", "FzfLuaNormal" } },
+    { "FzfLuaScrollBorderEmpty",  { "winopts.hl.scrollborder_e", "FzfLuaBorder" } },
+    { "FzfLuaScrollBorderFull",   { "winopts.hl.scrollborder_f", "FzfLuaBorder" } },
+    { "FzfLuaScrollFloatEmpty",   { "winopts.hl.scrollfloat_e", "PmenuSbar" } },
+    { "FzfLuaScrollFloatFull",    { "winopts.hl.scrollfloat_f", "PmenuThumb" } },
+    { "FzfLuaHelpNormal",         { "winopts.hl.help_normal", "FzfLuaNormal" } },
+    { "FzfLuaHelpBorder",         { "winopts.hl.help_border", "FzfLuaBorder" } },
+    { "FzfLuaPreviewNormal",      { "winopts.hl.preview_normal", "FzfLuaNormal" } },
+    { "FzfLuaPreviewBorder",      { "winopts.hl.preview_border", "FzfLuaBorder" } },
   }
-  for hl_name, v in pairs(highlights) do
+  for _, a in pairs(highlights) do
+    local hl_name, v = a[1], a[2]
     -- define a new linked highlight and then override the
     -- default config with the new FzfLuaXXX hl. This leaves
     -- the choice for direct call option overrides (via winopts)
