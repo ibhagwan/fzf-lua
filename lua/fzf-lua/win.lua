@@ -297,7 +297,9 @@ function FzfWin:reset_win_highlights(win)
   end
   local hl
   for _, h in ipairs(self.winopts.__winhls[key]) do
-    hl = string.format("%s%s:%s", hl and hl .. "," or "", h[1], h[2])
+    if h[2] then
+      hl = string.format("%s%s:%s", hl and hl .. "," or "", h[1], h[2])
+    end
   end
   vim.api.nvim_win_set_option(win, "winhighlight", hl)
 end

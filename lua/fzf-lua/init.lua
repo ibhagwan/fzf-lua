@@ -68,7 +68,8 @@ function M.setup_highlights()
     config.set_global(v[1]:gsub("%.hl%.", ".__hl."), hl_name)
   end
 
-  for _, v in pairs(highlights) do
+  for _, a in pairs(highlights) do
+    local _, v = a[1], a[2]
     local opt_path = v[1]:gsub("%.hl%.", ".__hl.")
     local hl = config.get_global(opt_path)
     if utils.is_hl_cleared(hl) then
