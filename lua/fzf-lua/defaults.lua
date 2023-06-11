@@ -219,6 +219,7 @@ M.defaults.files = {
   rg_opts                = "--color=never --files --hidden --follow -g '!.git'",
   fd_opts                = "--color=never --type f --hidden --follow --exclude .git",
   _actions               = function() return M.globals.actions.files end,
+  winopts                = { preview = { winopts = { cursorline = false } } },
 }
 
 -- Must construct our opts table in stages
@@ -233,6 +234,7 @@ M.defaults.git = {
     color_icons  = true,
     git_icons    = true,
     _actions     = function() return M.globals.actions.files end,
+    winopts      = { preview = { winopts = { cursorline = false } } },
   },
   status = {
     prompt         = "GitStatus> ",
