@@ -203,6 +203,23 @@ local normalize_winopts = function(o)
 
   -- overwrite highlights if supplied by the caller/provider setup
   winopts.__hl = vim.tbl_deep_extend("force", winopts.__hl, winopts.hl or {})
+  winopts.__winhls = {
+    main = {
+      { "Normal",      winopts.__hl.normal },
+      { "FloatBorder", winopts.__hl.border },
+      { "CursorLine",   winopts.__hl.cursorline },
+      { "CursorLineNr", winopts.__hl.cursorlinenr },
+    },
+    prev = {
+      { "Normal",       winopts.__hl.preview_normal },
+      { "FloatBorder",  winopts.__hl.preview_border },
+      { "CursorLine",   winopts.__hl.cursorline },
+      { "CursorLineNr", winopts.__hl.cursorlinenr },
+    },
+    -- our border is manually drawn so we need
+    -- to replace Normal with the border color
+    prev_border = { { "Normal", winopts.__hl.preview_border } },
+  }
 
   local max_width = vim.o.columns - 2
   local max_height = vim.o.lines - vim.o.cmdheight - 2
@@ -270,20 +287,17 @@ local normalize_winopts = function(o)
   return winopts
 end
 
-function FzfWin:reset_win_highlights(win, is_border)
-  local hl = ("Normal:%s,FloatBorder:%s"):format(
-    self.winopts.__hl.normal, self.winopts.__hl.border)
-  if self._previewer then
-    for _, h in ipairs({ "CursorLine", "CursorLineNr" }) do
-      if self.winopts.__hl[h:lower()] then
-        hl = hl .. (",%s:%s"):format(h, self.winopts.__hl[h:lower()])
-      end
-    end
+function FzfWin:reset_win_highlights(win)
+  -- derive the highlights from the window type
+  local key = "main"
+  if win == self.preview_winid then
+    key = "prev"
+  elseif win == self.border_winid then
+    key = "prev_border"
   end
-  if is_border then
-    -- our border is manually drawn so we need
-    -- to replace Normal with the border color
-    hl = ("Normal:%s"):format(self.winopts.__hl.preview_border)
+  local hl
+  for _, h in ipairs(self.winopts.__winhls[key]) do
+    hl = string.format("%s%s:%s", hl and hl .. "," or "", h[1], h[2])
   end
   vim.api.nvim_win_set_option(win, "winhighlight", hl)
 end
@@ -546,7 +560,7 @@ function FzfWin:redraw_preview()
     api.nvim_win_set_var(self.preview_winid, "fzf_lua_preview", true)
     api.nvim_win_set_var(self.border_winid, "fzf_lua_preview", true)
   end
-  self:reset_win_highlights(self.border_winid, true)
+  self:reset_win_highlights(self.border_winid)
   self:reset_win_highlights(self.preview_winid)
   return self.preview_winid, self.border_winid
 end
