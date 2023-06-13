@@ -431,9 +431,12 @@ M.grep_project = function(opts)
   if not opts then opts = {} end
   if not opts.search then opts.search = "" end
   -- by default, do not include filename in search
-  if not opts.fzf_opts or opts.fzf_opts["--nth"] == nil then
-    opts.fzf_opts = opts.fzf_opts or {}
-    opts.fzf_opts["--nth"] = "2.."
+  opts.fzf_opts = opts.fzf_opts or {}
+  if opts.fzf_opts["--delimiter"] == nil then
+    opts.fzf_opts["--delimiter"] = ":"
+  end
+  if opts.fzf_opts["--nth"] == nil then
+    opts.fzf_opts["--nth"] = "3.."
   end
   return M.grep(opts)
 end
