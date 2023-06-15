@@ -86,18 +86,21 @@ M.ui_select = function(items, ui_opts, on_choice)
         ui_opts.format_item and ui_opts.format_item(e) or tostring(e)))
   end
 
-  local prompt = ui_opts.prompt or "Select one of:"
-
   local _opts = _OPTS or {}
+
   -- enables customization per kind (#755)
   if type(_opts) == "function" then
     _opts = _opts(ui_opts)
   end
+
   _opts.fzf_opts = vim.tbl_extend("keep", _opts.fzf_opts or {}, {
     ["--no-multi"]       = "",
-    ["--prompt"]         = prompt:gsub(":%s?$", "> "),
     ["--preview-window"] = "hidden:right:0",
   })
+
+  -- Force override prompt or it stays cached (#786)
+  local prompt = ui_opts.prompt or "Select one of:"
+  _opts.fzf_opts["--prompt"] = prompt:gsub(":%s?$", "> ")
 
   -- save items so we can access them from the action
   _opts._items = items
