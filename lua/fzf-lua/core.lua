@@ -850,7 +850,7 @@ M.convert_exec_silent_actions = function(opts)
       -- replace the action with shell cmd proxy to the original action
       local shell_action = shell.raw_action(function(items, _, _)
         v.fn(items, opts)
-      end, "{}", opts.debug)
+      end, "{+}", opts.debug)
       opts.keymap.fzf[k] = {
         string.format("execute-silent(%s)", shell_action),
         desc = config.get_action_helpstr(v.fn)

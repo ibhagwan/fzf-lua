@@ -264,6 +264,7 @@ M.defaults.git = {
       ["default"] = actions.git_checkout,
       ["ctrl-y"]  = { fn = actions.git_yank_commit, exec_silent = true },
     },
+    fzf_opts = { ["--no-multi"] = "" },
   },
   bcommits = {
     prompt  = "BCommits> ",
@@ -277,6 +278,7 @@ M.defaults.git = {
       ["ctrl-t"]  = actions.git_buf_tabedit,
       ["ctrl-y"]  = { fn = actions.git_yank_commit, exec_silent = true },
     },
+    fzf_opts = { ["--no-multi"] = "" },
   },
   branches = {
     prompt  = "Branches> ",
