@@ -287,7 +287,7 @@ M.preprocess = function(opts)
       search_query = search_query:gsub("%%", "%%%%")
       -- reset argvz so it doesn't get replaced again below
       -- also move the `-- ` query separator added by `get_grep_cmd`
-      opts.cmd = opts.cmd:gsub("-- " .. argvz,
+      opts.cmd = opts.cmd:gsub("%-%- " .. argvz,
         glob_args .. " -- " .. vim.fn.shellescape(search_query))
     end
   end
