@@ -278,7 +278,7 @@ M.fzf = function(contents, opts)
   opts.winopts.preview = fzf_win.winopts.preview
   -- convert "reload" actions to fzf's `reload` binds
   -- convert "exec_silent" actions to fzf's `execute-silent` binds
-  opts = M.convert_reload_actions(opts)
+  opts = M.convert_reload_actions(opts.__reload_cmd or contents, opts)
   opts = M.convert_exec_silent_actions(opts)
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     {
@@ -760,9 +760,10 @@ end
 
 -- converts actions defined with "reload=true" to use fzf's `reload` bind
 -- provides a better UI experience without a visible interface refresh
-M.convert_reload_actions = function(opts)
+M.convert_reload_actions = function(reload_cmd, opts)
   local fallback
-  if opts._is_skim or not opts.__reload_cmd then
+  local has_reload
+  if opts._is_skim or type(reload_cmd) ~= "string" then
     fallback = true
   end
   -- Does not work with fzf version < 0.36, fzf fails with
@@ -777,11 +778,14 @@ M.convert_reload_actions = function(opts)
   -- CANNOT HAVE MIXED DEFINITIONS
   for k, v in pairs(opts.actions) do
     assert(type(v) == "function" or (v.fn and v[1] == nil) or (v[1] and v.fn == nil))
-    if fallback and type(v) == "table" and v.reload then
+    if type(v) == "table" and v.reload then
+      has_reload = true
+      assert(type(v.fn) == "function")
       -- fallback: we cannot use the `reload` event (old fzf or skim)
       -- convert to "old-style" interface reload using `resume`
-      assert(type(v.fn) == "function")
-      opts.actions[k] = { v.fn, actions.resume }
+      if fallback then
+        opts.actions[k] = { v.fn, actions.resume }
+      end
     elseif not fallback and type(v) == "table"
         and type(v[1]) == "function" and v[2] == actions.resume then
       -- backward compat: we can use the `reload` event but action
@@ -789,6 +793,10 @@ M.convert_reload_actions = function(opts)
       -- convert to the new style using { fn = <function>, reload = true }
       opts.actions[k] = { fn = v[1], reload = true }
     end
+  end
+  if has_reload and reload_cmd and type(reload_cmd) ~= "string" then
+    utils.warn(
+      "actions with `reload` are only supported with string commands, using resume fallback")
   end
   if fallback then
     -- for fallback, conversion to "old-style" actions is sufficient
@@ -801,7 +809,6 @@ M.convert_reload_actions = function(opts)
       table.insert(reload_binds, k)
     end
   end
-  assert(type(opts.__reload_cmd) == "string")
   local bind_concat = function(tbl, act)
     if #tbl == 0 then return nil end
     return table.concat(vim.tbl_map(function(x)
@@ -820,7 +827,7 @@ M.convert_reload_actions = function(opts)
         string.format("%sexecute-silent(%s)+reload(%s)",
           unbind and (unbind .. "+") or "",
           shell_action,
-          opts.__reload_cmd),
+          reload_cmd),
         desc = config.get_action_helpstr(v.fn)
       }
       opts.actions[k] = nil
