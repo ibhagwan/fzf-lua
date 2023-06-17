@@ -99,6 +99,7 @@ M.status = function(opts)
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
   local reload, id = shell.reload_action_cmd(opts, "{+}")
   local contents = reload:gsub("%-%-%s+{%+}$", "")
+  opts.__reload_cmd = reload
 
   -- when the action resumes the preview re-attaches which registers
   -- a new shell function id, done enough times it will overwrite the
@@ -112,10 +113,6 @@ M.status = function(opts)
   opts.header_prefix = opts.header_prefix or "+ -  "
   opts.header_separator = opts.header_separator or "|"
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
-
-  -- use fzf's `reload` bind if we're not using skim
-  -- must be called after 'set_header' as this modifies 'actions'
-  opts = core.convert_reload_actions(reload, opts)
 
   return core.fzf_exec(contents, opts)
 end
@@ -136,6 +133,7 @@ M.commits = function(opts)
       opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
     end
   end
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   return git_cmd(opts)
 end
 
@@ -170,6 +168,7 @@ M.bcommits = function(opts)
       opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
     end
   end
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   return git_cmd(opts)
 end
 
@@ -221,13 +220,13 @@ M.stash = function(opts)
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
   local reload, id = shell.reload_action_cmd(opts, "{+}")
   local contents = reload:gsub("%-%-%s+{%+}$", "")
+  opts.__reload_cmd = reload
 
   opts._fn_pre_fzf = function()
     shell.set_protected(id)
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
-  opts = core.convert_reload_actions(reload, opts)
   return core.fzf_exec(contents, opts)
 end
 

@@ -22,6 +22,7 @@ local ACTION_DEFINITIONS = {
   [actions.git_unstage]       = { "unstage", pos = 2 },
   [actions.git_stage_unstage] = { "[un-]stage", pos = 1 },
   [actions.git_stash_drop]    = { "drop a stash" },
+  [actions.git_yank_commit]   = { "copy commit hash" },
 }
 
 -- converts contents array sent to `fzf_exec` into a single contents
@@ -275,6 +276,10 @@ M.fzf = function(contents, opts)
   -- save the normalized winopts, otherwise we
   -- lose overrides by 'winopts_fn|winopts_raw'
   opts.winopts.preview = fzf_win.winopts.preview
+  -- convert "reload" actions to fzf's `reload` binds
+  -- convert "exec_silent" actions to fzf's `execute-silent` binds
+  opts = M.convert_reload_actions(opts)
+  opts = M.convert_exec_silent_actions(opts)
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     {
       fzf_bin = opts.fzf_bin,
@@ -314,7 +319,10 @@ M.fzf = function(contents, opts)
   local keybind = actions.normalize_selected(opts.actions, selected)
   local action = keybind and opts.actions and opts.actions[keybind]
   -- only close the window if autoclose wasn't specified or is 'true'
-  if (not fzf_win:autoclose() == false) and type(action) ~= "table" then
+  -- or if the action wasn't a table or defined with `reload|noclose`
+  local noclose = type(action) == "table"
+      and (action[1] ~= nil or action.reload or action.noclose)
+  if (not fzf_win:autoclose() == false) and not noclose then
     fzf_win:close(fzf_bufnr)
   end
   return selected
@@ -696,7 +704,7 @@ M.set_header = function(opts, hdr_tbl)
         local defs = ACTION_DEFINITIONS
         local ret = {}
         for k, v in pairs(opts.actions) do
-          local action = type(v) == "function" and v or type(v) == "table" and v[1]
+          local action = type(v) == "function" and v or type(v) == "table" and (v.fn or v[1])
           if type(action) == "function" and defs[action] then
             local def = defs[action]
             local to = opts.fn_reload and def.fn_reload or def[1]
@@ -750,26 +758,50 @@ M.set_header = function(opts, hdr_tbl)
   return opts
 end
 
--- converts actions defined inside 'reload_actions' to use fzf's 'reload'
--- bind, provides a better UI experience without a visible interface refresh
-M.convert_reload_actions = function(reload_cmd, opts)
-  assert(type(reload_cmd) == "string")
-  if opts._is_skim or not opts.reload_actions then
-    return opts
+-- converts actions defined with "reload=true" to use fzf's `reload` bind
+-- provides a better UI experience without a visible interface refresh
+M.convert_reload_actions = function(opts)
+  local fallback
+  if opts._is_skim or not opts.__reload_cmd then
+    fallback = true
   end
   -- Does not work with fzf version < 0.36, fzf fails with
   -- "error 2: bind action not specified:" (#735)
   local version = utils.fzf_version(opts)
   if version < 0.36 then
+    fallback = true
+  end
+  -- Two types of action as table:
+  --   (1) map containing action properties (reload, noclose, etc)
+  --   (2) array of actions to be executed serially
+  -- CANNOT HAVE MIXED DEFINITIONS
+  for k, v in pairs(opts.actions) do
+    assert(type(v) == "function" or (v.fn and v[1] == nil) or (v[1] and v.fn == nil))
+    if fallback and type(v) == "table" and v.reload then
+      -- fallback: we cannot use the `reload` event (old fzf or skim)
+      -- convert to "old-style" interface reload using `resume`
+      assert(type(v.fn) == "function")
+      opts.actions[k] = { v.fn, actions.resume }
+    elseif not fallback and type(v) == "table"
+        and type(v[1]) == "function" and v[2] == actions.resume then
+      -- backward compat: we can use the `reload` event but action
+      -- definition is still using the old style using `actions.resume`
+      -- convert to the new style using { fn = <function>, reload = true }
+      opts.actions[k] = { fn = v[1], reload = true }
+    end
+  end
+  if fallback then
+    -- for fallback, conversion to "old-style" actions is sufficient
     return opts
   end
   local reload_binds = {}
   for k, v in pairs(opts.actions) do
-    local action = type(v) == "function" and v or type(v) == "table" and v[1]
-    if type(action) == "function" and opts.reload_actions[action] then
+    if type(v) == "table" and v.reload then
+      assert(type(v.fn) == "function")
       table.insert(reload_binds, k)
     end
   end
+  assert(type(opts.__reload_cmd) == "string")
   local bind_concat = function(tbl, act)
     if #tbl == 0 then return nil end
     return table.concat(vim.tbl_map(function(x)
@@ -779,24 +811,46 @@ M.convert_reload_actions = function(reload_cmd, opts)
   local unbind = bind_concat(reload_binds, "unbind")
   local rebind = bind_concat(reload_binds, "rebind")
   for k, v in pairs(opts.actions) do
-    local action = type(v) == "function" and v or type(v) == "table" and v[1]
-    if type(action) == "function" and opts.reload_actions[action] then
+    if type(v) == "table" and v.reload then
       -- replace the action with shell cmd proxy to the original action
       local shell_action = shell.raw_action(function(items, _, _)
-        action(items, opts)
+        v.fn(items, opts)
       end, "{+}", opts.debug)
       opts.keymap.fzf[k] = {
         string.format("%sexecute-silent(%s)+reload(%s)",
           unbind and (unbind .. "+") or "",
           shell_action,
-          reload_cmd),
-        desc = config.get_action_helpstr(action)
+          opts.__reload_cmd),
+        desc = config.get_action_helpstr(v.fn)
       }
       opts.actions[k] = nil
     end
   end
   -- Does nothing when 'rebind' is nil
   opts.keymap.fzf["load"] = rebind
+  return opts
+end
+
+-- converts actions defined inside 'silent_actions' to use fzf's 'execute-silent'
+-- bind, these actions will not close the UI, e.g. commits|bcommits yank commit sha
+M.convert_exec_silent_actions = function(opts)
+  if opts._is_skim then
+    return opts
+  end
+  for k, v in pairs(opts.actions) do
+    if type(v) == "table" and v.exec_silent then
+      assert(type(v.fn) == "function")
+      -- replace the action with shell cmd proxy to the original action
+      local shell_action = shell.raw_action(function(items, _, _)
+        v.fn(items, opts)
+      end, "{}", opts.debug)
+      opts.keymap.fzf[k] = {
+        string.format("execute-silent(%s)", shell_action),
+        desc = config.get_action_helpstr(v.fn)
+      }
+      opts.actions[k] = nil
+    end
+  end
   return opts
 end
 

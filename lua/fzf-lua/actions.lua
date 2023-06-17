@@ -58,8 +58,15 @@ M.act = function(actions, selected, opts)
   local keybind, entries = M.normalize_selected(actions, selected)
   local action = actions[keybind]
   if type(action) == "table" then
-    for _, f in ipairs(action) do
-      f(entries, opts)
+    -- Two types of action as table:
+    --   (1) map containing action properties (reload, noclose, etc)
+    --   (2) array of actions to be executed serially
+    if action.fn then
+      action.fn(entries, opts)
+    else
+      for _, f in ipairs(action) do
+        f(entries, opts)
+      end
     end
   elseif type(action) == "function" then
     action(entries, opts)
@@ -548,6 +555,12 @@ M.git_switch = function(selected, opts)
     utils.info(unpack(output))
     vim.cmd("edit!")
   end
+end
+
+M.git_yank_commit = function(selected, _)
+  local commit_hash = selected[1]:match("[^ ]+")
+  vim.fn.setreg([[0]], commit_hash)
+  vim.fn.setreg([["]], commit_hash)
 end
 
 M.git_checkout = function(selected, opts)

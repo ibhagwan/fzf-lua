@@ -715,17 +715,17 @@ require'fzf-lua'.setup {
       --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS",
       actions = {
         -- actions inherit from 'actions.files' and merge
-        ["right"]   = { actions.git_unstage, actions.resume },
-        ["left"]    = { actions.git_stage, actions.resume },
-        ["ctrl-x"]  = { actions.git_reset, actions.resume },
+        ["right"]  = { fn = actions.git_unstage, reload = true },
+        ["left"]   = { fn = actions.git_stage, reload = true },
+        ["ctrl-x"] = { fn = actions.git_reset, reload = true },
       },
       -- If you wish to use a single stage|unstage toggle instead
       -- using 'ctrl-s' modify the 'actions' table as shown below
       -- actions = {
       --   ["right"]   = false,
       --   ["left"]    = false,
-      --   ["ctrl-x"]  = { actions.git_reset, actions.resume },
-      --   ["ctrl-s"]  = { actions.git_stage_unstage, actions.resume },
+      --   ["ctrl-x"]  = { fn = actions.git_reset, reload = true },
+      --   ["ctrl-s"]  = { fn = actions.git_stage_unstage, reload = true },
       -- },
     },
     commits = {
@@ -736,6 +736,8 @@ require'fzf-lua'.setup {
       --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS",
       actions = {
         ["default"] = actions.git_checkout,
+        -- remove `exec_silent` or set to `false` to exit after yank
+        ["ctrl-y"]  = { fn = actions.git_yank_commit, exec_silent = true },
       },
     },
     bcommits = {
@@ -754,6 +756,7 @@ require'fzf-lua'.setup {
         ["ctrl-s"]  = actions.git_buf_split,
         ["ctrl-v"]  = actions.git_buf_vsplit,
         ["ctrl-t"]  = actions.git_buf_tabedit,
+        ["ctrl-y"]  = { fn = actions.git_yank_commit, exec_silent = true },
       },
     },
     branches = {
@@ -770,7 +773,7 @@ require'fzf-lua'.setup {
       preview         = "git --no-pager stash show --patch --color {1}",
       actions = {
         ["default"]   = actions.git_stash_apply,
-        ["ctrl-x"]    = { actions.git_stash_drop, actions.resume },
+        ["ctrl-x"]    = { fn = actions.git_stash_drop, reload = true },
       },
       fzf_opts = {
         ["--no-multi"]  = '',
@@ -831,7 +834,7 @@ require'fzf-lua'.setup {
     prompt            = 'Args❯ ',
     files_only        = true,
     -- actions inherit from 'actions.files' and merge
-    actions           = { ["ctrl-x"] = { actions.arg_del, actions.resume } }
+    actions           = { ["ctrl-x"] = { fn = actions.arg_del, reload = true } },
   },
   oldfiles = {
     prompt            = 'History❯ ',
@@ -853,7 +856,7 @@ require'fzf-lua'.setup {
       -- fzf-lua to not close the fzf window, this way we
       -- can resume the buffers picker on the same window
       -- eliminating an otherwise unaesthetic win "flash"
-      ["ctrl-x"]      = { actions.buf_del, actions.resume },
+      ["ctrl-x"]      = { fn = actions.buf_del, reload = true },
     }
   },
   tabs = {
@@ -865,7 +868,7 @@ require'fzf-lua'.setup {
     actions = {
       -- actions inherit from 'actions.buffers' and merge
       ["default"]     = actions.buf_switch,
-      ["ctrl-x"]      = { actions.buf_del, actions.resume },
+      ["ctrl-x"]      = { fn = actions.buf_del, reload = true },
     },
     fzf_opts = {
       -- hide tabnr

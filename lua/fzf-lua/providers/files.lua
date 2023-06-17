@@ -78,13 +78,13 @@ M.args = function(opts)
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
   local reload, id = shell.reload_action_cmd(opts, "{+}")
   local contents = reload:gsub("%-%-%s+{%+}$", "")
+  opts.__reload_cmd = reload
 
   opts._fn_pre_fzf = function()
     shell.set_protected(id)
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
-  opts = core.convert_reload_actions(reload, opts)
   return core.fzf_exec(contents, opts)
 end
 

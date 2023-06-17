@@ -220,6 +220,7 @@ M.buffers = function(opts)
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
   local reload, id = shell.reload_action_cmd(opts, "{+}")
   local contents = reload:gsub("%-%-%s+{%+}$", "")
+  opts.__reload_cmd = reload
 
   -- get current tab/buffer/previous buffer
   -- save as a func ref for resume to reuse
@@ -234,7 +235,6 @@ M.buffers = function(opts)
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
-  opts = core.convert_reload_actions(reload, opts)
   opts = core.set_fzf_field_index(opts)
 
   core.fzf_exec(contents, opts)
@@ -415,6 +415,7 @@ M.tabs = function(opts)
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
   local reload, id = shell.reload_action_cmd(opts, "{+}")
   local contents = reload:gsub("%-%-%s+{%+}$", "")
+  opts.__reload_cmd = reload
 
   -- get current tab/buffer/previous buffer
   -- save as a func ref for resume to reuse
@@ -424,7 +425,6 @@ M.tabs = function(opts)
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
-  opts = core.convert_reload_actions(reload, opts)
   opts = core.set_fzf_field_index(opts, 3, "{}")
 
   core.fzf_exec(contents, opts)
