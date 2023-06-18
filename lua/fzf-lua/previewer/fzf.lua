@@ -307,7 +307,7 @@ function Previewer.git_diff:cmdline(o)
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd
-  end, nil, self.opts.debug)
+  end, "{}", self.opts.debug)
   return act
 end
 
