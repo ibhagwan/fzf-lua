@@ -4,6 +4,34 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+local file_existence_checker
+do
+  ---@type {[string]: boolean}
+  local facts = {}
+
+  local function check(fpath)
+    -- todo: what if fpath is not absolute?
+    -- todo: what if the filesystem changes either inside or outside nvim?
+    if facts[fpath] == nil then
+      local stat, _, err = vim.loop.fs_stat(fpath)
+      facts[fpath] = not (stat == nil and err == "ENOENT")
+    end
+    return facts[fpath]
+  end
+
+  ---@diagnostic disable-next-line: unused-local
+  local function nocheck(fpath)
+    return true
+  end
+
+  ---@param do_stat boolean
+  ---@return fun(fpath: string): boolean
+  function file_existence_checker(do_stat)
+    do_stat = do_stat or true
+    return do_stat and check or nocheck
+  end
+end
+
 M.oldfiles = function(opts)
   opts = config.normalize_opts(opts, config.globals.oldfiles)
   if not opts then return end
@@ -13,13 +41,14 @@ M.oldfiles = function(opts)
   local sess_tbl = {}
   local sess_map = {}
 
+  local file_exists = file_existence_checker(opts.stat_file)
+
   if opts.include_current_session then
     for _, buffer in ipairs(vim.split(vim.fn.execute(":buffers! t"), "\n")) do
       local bufnr = tonumber(buffer:match("%s*(%d+)"))
       if bufnr then
         local file = vim.api.nvim_buf_get_name(bufnr)
-        local fs_stat = not opts.stat_file and true or vim.loop.fs_stat(file)
-        if #file > 0 and fs_stat and bufnr ~= current_buffer then
+        if #file > 0 and file_exists(file) and bufnr ~= current_buffer then
           sess_map[file] = true
           table.insert(sess_tbl, file)
         end
@@ -52,8 +81,7 @@ M.oldfiles = function(opts)
 
       -- local start = os.time(); for _ = 1,10000,1 do
       for _, file in ipairs(vim.v.oldfiles) do
-        local fs_stat = not opts.stat_file and true or vim.loop.fs_stat(file)
-        if fs_stat and file ~= current_file and not sess_map[file] then
+        if file_exists(file) and file ~= current_file and not sess_map[file] then
           add_entry(file, co)
         end
       end
