@@ -165,7 +165,11 @@ if not config then
   _config.globals.file_icon_colors = load_config_section("globals.file_icon_colors", "table") or {}
   _config.globals.file_icon_padding = load_config_section("globals.file_icon_padding", "string")
   _config.globals.files.git_status_cmd = load_config_section("globals.files.git_status_cmd", "table")
-  _config.globals.grep.rg_glob_fn = load_config_section("globals.grep.rg_glob_fn", "function", true)
+
+  -- prioritize `opts.rg_glob_fn` over globals
+  _config.globals.grep.rg_glob_fn =
+      load_config_section("__resume_data.opts.rg_glob_fn", "function", true) or
+      load_config_section("globals.grep.rg_glob_fn", "function", true)
 
   _config.globals.nbsp = load_config_section("globals.nbsp", "string")
   if _config.globals.nbsp then utils.nbsp = _config.globals.nbsp end
@@ -230,8 +234,9 @@ M.glob_parse = function(query, opts)
   if not query or not query:find(opts.glob_separator) then
     return query, nil
   end
-  if config.globals.grep.rg_glob_fn then
-    return config.globals.grep.rg_glob_fn(query, opts)
+  local rg_glob_fn = opts.rg_glob_fn or config.globals.grep.rg_glob_fn
+  if rg_glob_fn then
+    return rg_glob_fn(query, opts)
   end
   local glob_args = ""
   local search_query, glob_str = query:match("(.*)" .. opts.glob_separator .. "(.*)")
