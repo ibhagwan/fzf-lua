@@ -1305,8 +1305,8 @@ function Previewer.autocmds:populate_preview_buf(entry_str)
   self._is_vimL_command = false
   if entry.path == "<none>" then
     self._is_vimL_command = true
-    entry.path = entry_str:match("[^:]+│")
-    local viml = entry_str:match("[^│]+$")
+    entry.path = entry_str:match("[^:]+|")
+    local viml = entry_str:match("[^|]+$")
     local lines = vim.split(viml, "\n")
     local tmpbuf = self:get_tmp_buffer()
     vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)

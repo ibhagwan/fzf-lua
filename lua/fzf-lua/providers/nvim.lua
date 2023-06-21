@@ -301,7 +301,7 @@ M.keymaps = function(opts)
     if type(keymap.rhs) == "string" and #keymap.rhs == 0 then
       return
     end
-    keymap.str = string.format("%s │ %-40s │ %s",
+    keymap.str = string.format("%s | %-40s | %s",
       utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
       keymap.lhs:gsub("%s", "<Space>"),
       keymap_desc or "")
@@ -429,7 +429,7 @@ M.autocmds = function(opts)
           line = info and info.linedefined or 0
         end
         local group = a.group_name and vim.trim(a.group_name) or " "
-        local entry = string.format("%s:%d:%-28s │ %-34s │ %-18s │ %s",
+        local entry = string.format("%s:%d:%-28s | %-34s | %-18s | %s",
           file, line,
           utils.ansi_codes.yellow(a.event),
           utils.ansi_codes.blue(group),
