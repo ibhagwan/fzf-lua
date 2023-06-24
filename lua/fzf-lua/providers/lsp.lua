@@ -105,6 +105,9 @@ local function location_handler(opts, cb, _, result, ctx, _)
     jump_to_location(opts, result[1], encoding)
   end
   local items = vim.lsp.util.locations_to_items(result, encoding)
+  if opts.filter and type(opts.filter) == "function" then
+    items = opts.filter(items)
+  end
   for _, entry in ipairs(items) do
     if not opts.current_buffer_only or __CTX.bufname == entry.filename then
       entry = make_entry.lcol(entry, opts)
