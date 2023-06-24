@@ -291,9 +291,23 @@ M.preprocess = function(opts)
       -- gsub doesn't like single % on rhs
       search_query = search_query:gsub("%%", "%%%%")
       -- reset argvz so it doesn't get replaced again below
-      -- also move the `-- ` query separator added by `get_grep_cmd`
-      opts.cmd = opts.cmd:gsub("%-%- " .. argvz,
-        glob_args .. " -- " .. vim.fn.shellescape(search_query))
+      -- Check if the command ends with `--` or `-e` these args must be
+      -- repositioned at the end preceding the search query (#781, #794)
+      local prefix_g = "" -- gsub match prefix (lua regex)
+      local prefix_q = "" -- query string prefix (shell string)
+      for _, a in ipairs({
+        { "%s+%-e%s+",  "-e " },
+        { "%s+%-%-%s+", "-- " },
+      }) do
+        if opts.cmd:match(a[1] .. argvz .. "%s-$") then
+          -- `:sub(4)` removes the "%s+" prefix so that
+          -- we do not `gsub` the args preceding spaces
+          prefix_g, prefix_q = a[1]:sub(4), a[2]
+          break
+        end
+      end
+      opts.cmd = opts.cmd:gsub(prefix_g .. argvz,
+        glob_args .. prefix_q .. vim.fn.shellescape(search_query))
     end
   end
 

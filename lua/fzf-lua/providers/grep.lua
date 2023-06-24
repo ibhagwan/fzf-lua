@@ -68,7 +68,20 @@ local get_grep_cmd = function(opts, search_query, no_esc)
           search_query:match(opts.glob_separator .. ".*"))
       end
       search_query = new_query
-      command = ("%s %s"):format(command, glob_args)
+      -- Check if the command ends with `--` or `-e` these args must be
+      -- repositioned at the end preceding the search query (#781, #794)
+      local postfix = ""
+      for _, a in ipairs({
+        { "%s+%-e%s-$",  " -e" },
+        { "%s+%-%-%s-$", " --" },
+      }) do
+        if command:match(a[1]) then
+          command = command:gsub(a[1], "")
+          postfix = a[2]
+          break
+        end
+      end
+      command = string.format("%s %s%s", command, glob_args, postfix)
     end
   end
 
@@ -100,8 +113,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   end
 
   -- construct the final command
-  -- prefix the query with `--` so we can support `--fixed-strings` (#781)
-  command = ("%s -- %s %s"):format(command, search_query, search_path)
+  command = ("%s %s %s"):format(command, search_query, search_path)
 
   -- piped command filter, used for filtering ctags
   if opts.filter and #opts.filter > 0 then
