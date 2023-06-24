@@ -326,10 +326,10 @@ M.defaults.grep = {
   git_icons      = true,
   fzf_opts       = { ["--info"] = "default", },
   grep_opts      = utils.is_darwin()
-      and "--binary-files=without-match --line-number --recursive --color=always --extended-regexp"
-      or "--binary-files=without-match --line-number --recursive --color=always --perl-regexp",
+      and "--binary-files=without-match --line-number --recursive --color=always --extended-regexp -e"
+      or "--binary-files=without-match --line-number --recursive --color=always --perl-regexp -e",
   rg_opts        = "--column --line-number --no-heading --color=always --smart-case " ..
-      "--max-columns=4096",
+      "--max-columns=4096 -e",
   _actions       = function() return M.globals.actions.files end,
   actions        = { ["ctrl-g"] = { actions.grep_lgrep } },
   -- live_grep_glob options
