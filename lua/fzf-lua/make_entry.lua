@@ -247,6 +247,39 @@ M.glob_parse = function(query, opts)
   return search_query, glob_args
 end
 
+-- reposition args before ` -e <pattern>` or ` -- <pattern>`
+-- enables "-e" and "--fixed-strings --" in `rg_opts` (#781, #794)
+M.rg_insert_args = function(cmd, args, relocate_pattern)
+  local patterns = {}
+  for _, a in ipairs({
+    { "%s+%-e",  "-e" },
+    { "%s+%-%-", "--" },
+  }) do
+    -- if pattern was specified search for `-e <pattern>`
+    -- if pattern was not specified search for `-e<SPACE>` or `-e<EOL>`
+    if relocate_pattern and #relocate_pattern > 0 then
+      table.insert(patterns, {
+        a[1] .. "%s-" .. relocate_pattern,
+        a[2] .. " " .. relocate_pattern,
+      })
+    else
+      table.insert(patterns, { a[1] .. "$", a[2] })
+      table.insert(patterns, { a[1] .. "%s", a[2] })
+    end
+  end
+  -- if pattern was specified also search for `<pattern>` directly
+  if relocate_pattern and #relocate_pattern > 0 then
+    table.insert(patterns, { relocate_pattern, relocate_pattern })
+  end
+  for _, a in ipairs(patterns) do
+    if cmd:match(a[1]) then
+      return string.format("%s %s %s", cmd:gsub(a[1], " "), args, a[2])
+    end
+  end
+  -- cmd doesn't contain `-e` or `--` or <pattern>, concat args
+  return string.format("%s %s", cmd, args)
+end
+
 M.preprocess = function(opts)
   if opts.cwd_only and not opts.cwd then
     opts.cwd = vim.loop.cwd()
@@ -291,23 +324,10 @@ M.preprocess = function(opts)
       -- gsub doesn't like single % on rhs
       search_query = search_query:gsub("%%", "%%%%")
       -- reset argvz so it doesn't get replaced again below
-      -- Check if the command ends with `--` or `-e` these args must be
-      -- repositioned at the end preceding the search query (#781, #794)
-      local prefix_g = "" -- gsub match prefix (lua regex)
-      local prefix_q = "" -- query string prefix (shell string)
-      for _, a in ipairs({
-        { "%s+%-e%s+",  "-e " },
-        { "%s+%-%-%s+", "-- " },
-      }) do
-        if opts.cmd:match(a[1] .. argvz .. "%s-$") then
-          -- `:sub(4)` removes the "%s+" prefix so that
-          -- we do not `gsub` the args preceding spaces
-          prefix_g, prefix_q = a[1]:sub(4), a[2]
-          break
-        end
-      end
-      opts.cmd = opts.cmd:gsub(prefix_g .. argvz,
-        glob_args .. prefix_q .. vim.fn.shellescape(search_query))
+      -- insert glob args before `-- {argvz}` or `-e {argvz}` repositioned
+      -- at the end of the command preceding the search query (#781, #794)
+      opts.cmd = M.rg_insert_args(opts.cmd, glob_args, argvz)
+      opts.cmd = opts.cmd:gsub(argvz, vim.fn.shellescape(search_query))
     end
   end
 

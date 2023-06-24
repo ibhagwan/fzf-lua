@@ -68,20 +68,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
           search_query:match(opts.glob_separator .. ".*"))
       end
       search_query = new_query
-      -- Check if the command ends with `--` or `-e` these args must be
-      -- repositioned at the end preceding the search query (#781, #794)
-      local postfix = ""
-      for _, a in ipairs({
-        { "%s+%-e%s-$",  " -e" },
-        { "%s+%-%-%s-$", " --" },
-      }) do
-        if command:match(a[1]) then
-          command = command:gsub(a[1], "")
-          postfix = a[2]
-          break
-        end
-      end
-      command = string.format("%s %s%s", command, glob_args, postfix)
+      command = make_entry.rg_insert_args(command, glob_args)
     end
   end
 
@@ -466,8 +453,9 @@ M.grep_curbuf = function(opts)
   -- rg globs are meaningless here since we searching
   -- a single file
   opts.rg_glob = false
-  opts.rg_opts = config.globals.grep.rg_opts .. " --with-filename"
-  opts.grep_opts = config.globals.grep.grep_opts .. " --with-filename"
+  opts.rg_opts = make_entry.rg_insert_args(config.globals.grep.rg_opts, " --with-filename")
+  opts.grep_opts = make_entry.rg_insert_args(config.globals.grep.grep_opts, " --with-filename")
+  print("rg_opts", opts.rg_opts)
   if opts.exec_empty_query == nil then
     opts.exec_empty_query = true
   end
