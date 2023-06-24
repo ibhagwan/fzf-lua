@@ -90,7 +90,7 @@ M.ui_select = function(items, ui_opts, on_choice)
 
   -- enables customization per kind (#755)
   if type(_opts) == "function" then
-    _opts = _opts(ui_opts)
+    _opts = _opts(ui_opts, items)
   end
 
   _opts.fzf_opts = vim.tbl_extend("keep", _opts.fzf_opts or {}, {
