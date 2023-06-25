@@ -917,19 +917,17 @@ function FzfWin.win_leave()
   _self:close()
 end
 
-function FzfWin:clear_border_highlights()
-  if self.border_winid and vim.api.nvim_win_is_valid(self.border_winid) then
-    vim.fn.clearmatches(self.border_winid)
-  end
-end
-
 function FzfWin:set_title_hl()
-  if self.winopts.__hl.title and self._title_len and self._title_len > 0 then
-    pcall(vim.api.nvim_win_call, self.border_winid, function()
-      fn.matchaddpos(self.winopts.__hl.title, { { 1, self._title_position, self._title_len + 1 } },
-        11)
-    end)
-  end
+  pcall(vim.api.nvim_win_call, self.border_winid, function()
+    -- Clear all highlights before adding new ones.
+    fn.clearmatches()
+    -- Add the title highlight, if needed.
+    if self.winopts.__hl.title and self._title_len and self._title_len > 0 then
+      fn.matchaddpos(self.winopts.__hl.title, {
+        { 1, self._title_position, self._title_len + 1 }
+      }, 11)
+    end
+  end)
 end
 
 function FzfWin:update_scrollbar_border(o)
@@ -1077,7 +1075,6 @@ function FzfWin:update_scrollbar()
   o.bar_offset = math.min(height - o.bar_height, math.floor(height * topline / o.line_count))
 
   -- reset highlights before we move the scrollbar
-  self:clear_border_highlights()
   self:set_title_hl()
 
   if self.winopts.preview.scrollbar == "float" then
