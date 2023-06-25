@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 June 24
+*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 June 25
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -525,7 +525,7 @@ open an issue and I'll be more than happy to help.**
         -- border argument passthrough to nvim_open_win(), also used
         -- to manually draw the border characters around the preview
         -- window, can be set to 'false' to remove all borders or to
-        -- 'none', 'single', 'double', 'thicc' or 'rounded' (default)
+        -- 'none', 'single', 'double', 'thicc' (+cc) or 'rounded' (default)
         border           = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
         -- requires neovim > v0.9.0, passed as is to `nvim_open_win`
         -- can be sent individually to any provider to set the win title
