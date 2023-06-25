@@ -257,6 +257,10 @@ function Previewer.base:display_entry(entry_str)
   local populate_preview_buf = function(entry_str_)
     if not self.win or not self.win:validate_preview() then return end
 
+    -- redraw the preview border, resets title
+    -- border scrollbar and border highlights
+    self.win:redraw_preview_border()
+
     -- specialized previewer populate function
     self:populate_preview_buf(entry_str_)
 

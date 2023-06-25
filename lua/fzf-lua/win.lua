@@ -205,8 +205,8 @@ local normalize_winopts = function(o)
   winopts.__hl = vim.tbl_deep_extend("force", winopts.__hl, winopts.hl or {})
   winopts.__winhls = {
     main = {
-      { "Normal",      winopts.__hl.normal },
-      { "FloatBorder", winopts.__hl.border },
+      { "Normal",       winopts.__hl.normal },
+      { "FloatBorder",  winopts.__hl.border },
       { "CursorLine",   winopts.__hl.cursorline },
       { "CursorLineNr", winopts.__hl.cursorlinenr },
     },
@@ -503,7 +503,7 @@ function FzfWin:preview_winids()
   return self.preview_winid, self.border_winid
 end
 
-function FzfWin:update_border_buf()
+function FzfWin:redraw_preview_border()
   local border_buf = self.border_buf
   local border_winopts = self.border_winopts
   local borderchars = self.winopts.nohl_borderchars
@@ -523,6 +523,10 @@ function FzfWin:update_border_buf()
     vim.bo[border_buf].bufhidden = "wipe"
   end
   api.nvim_buf_set_lines(border_buf, 0, -1, 1, lines)
+  -- reset botder window highlights
+  if self.border_winid and vim.api.nvim_win_is_valid(self.border_winid) then
+    vim.fn.clearmatches(self.border_winid)
+  end
   return border_buf
 end
 
@@ -540,7 +544,7 @@ function FzfWin:redraw_preview()
 
   if self:validate_preview() then
     self.border_buf = api.nvim_win_get_buf(self.border_winid)
-    self:update_border_buf()
+    self:redraw_preview_border()
     api.nvim_win_set_config(self.border_winid, self.border_winopts)
     api.nvim_win_set_config(self.preview_winid, self.prev_winopts)
     if self._previewer and self._previewer.display_last_entry then
@@ -553,7 +557,7 @@ function FzfWin:redraw_preview()
     self.prev_winopts.noautocmd = true
     self.border_winopts.noautocmd = true
     api.nvim_buf_set_option(tmp_buf, "bufhidden", "wipe")
-    self.border_buf = self:update_border_buf()
+    self.border_buf = self:redraw_preview_border()
     self.preview_winid = api.nvim_open_win(tmp_buf, false, self.prev_winopts)
     self.border_winid = api.nvim_open_win(self.border_buf, false, self.border_winopts)
     -- nowrap border or long filenames will mess things up
@@ -917,30 +921,14 @@ function FzfWin.win_leave()
   _self:close()
 end
 
-function FzfWin:clear_border_highlights()
-  if self.border_winid and vim.api.nvim_win_is_valid(self.border_winid) then
-    vim.fn.clearmatches(self.border_winid)
-  end
-end
-
-function FzfWin:set_title_hl()
-  if self.winopts.__hl.title and self._title_len and self._title_len > 0 then
-    pcall(vim.api.nvim_win_call, self.border_winid, function()
-      fn.matchaddpos(self.winopts.__hl.title, { { 1, self._title_position, self._title_len + 1 } },
-        11)
-    end)
-  end
-end
-
 function FzfWin:update_scrollbar_border(o)
   -- do not display on files that are fully contained
   if o.bar_height >= o.line_count then return end
 
   local borderchars = self.winopts.nohl_borderchars
   local scrollchars = self.winopts.preview.scrollchars
-
-  -- bar_offset starts at 0, first line is 1
-  o.bar_offset = o.bar_offset + 1
+  local hl_f = self.winopts.__hl.scrollborder_f
+  local hl_e = self.winopts.__hl.scrollborder_e
 
   -- backward compatibility before 'scrollchar' was a table
   if type(self.winopts.preview.scrollchar) == "string" and
@@ -952,6 +940,9 @@ function FzfWin:update_scrollbar_border(o)
       scrollchars[i] = borderchars[4]
     end
   end
+
+  -- bar_offset starts at 0, first line is 1
+  o.bar_offset = o.bar_offset + 1
 
   -- matchaddpos() can't handle more than 8 items at once
   local add_to_tbl = function(tbl, item)
@@ -978,17 +969,18 @@ function FzfWin:update_scrollbar_border(o)
     lines[i] = fn.strcharpart(line, 0, linew - 1) .. bar_char
   end
   api.nvim_buf_set_lines(self.border_buf, 1, -2, 0, lines)
+
   -- border highlights
-  if self.winopts.__hl.scrollborder_f or self.winopts.__hl.scrollborder_e then
+  if hl_f or hl_e then
     pcall(vim.api.nvim_win_call, self.border_winid, function()
-      if self.winopts.hl.scrollborder_f then
+      if hl_f then
         for i = 1, #full do
-          fn.matchaddpos(self.winopts.__hl.scrollborder_f, full[i], 11)
+          fn.matchaddpos(hl_f, full[i], 11)
         end
       end
-      if self.winopts.__hl.scrollborder_e then
+      if hl_e then
         for i = 1, #empty do
-          fn.matchaddpos(self.winopts.__hl.scrollborder_e, empty[i], 11)
+          fn.matchaddpos(hl_e, empty[i], 11)
         end
       end
     end)
@@ -1076,10 +1068,6 @@ function FzfWin:update_scrollbar()
   o.bar_height = math.min(height, math.ceil(height * height / o.line_count))
   o.bar_offset = math.min(height - o.bar_height, math.floor(height * topline / o.line_count))
 
-  -- reset highlights before we move the scrollbar
-  self:clear_border_highlights()
-  self:set_title_hl()
-
   if self.winopts.preview.scrollbar == "float" then
     self:update_scrollbar_float(o)
   else
@@ -1088,7 +1076,6 @@ function FzfWin:update_scrollbar()
 end
 
 function FzfWin:update_title(title)
-  self:update_border_buf()
   local right_pad = 7
   local border_buf = api.nvim_win_get_buf(self.border_winid)
   local top = api.nvim_buf_get_lines(border_buf, 0, 1, 0)[1]
@@ -1096,8 +1083,6 @@ function FzfWin:update_title(title)
   if #title > width - right_pad then
     title = title:sub(1, width - right_pad) .. " "
   end
-  -- save for set_title_hl
-  self._title_len = #title
   local width_title = fn.strwidth(title)
   local prefix = fn.strcharpart(top, 0, 3)
   if self.winopts.preview.title_align == "center" then
@@ -1107,11 +1092,16 @@ function FzfWin:update_title(title)
   end
 
   local suffix = fn.strcharpart(top, width_title + fn.strwidth(prefix), width)
-  title = ("%s%s%s"):format(prefix, title, suffix)
-  api.nvim_buf_set_lines(border_buf, 0, 1, 1, { title })
-  -- will be used later in set_title_hl()
-  self._title_position = #prefix
-  self:set_title_hl()
+  local line = ("%s%s%s"):format(prefix, title, suffix)
+  api.nvim_buf_set_lines(border_buf, 0, 1, 1, { line })
+
+  local title_len = #title
+  local title_pos = #prefix
+  if self.winopts.__hl.title and title_len and title_len > 0 then
+    pcall(vim.api.nvim_win_call, self.border_winid, function()
+      fn.matchaddpos(self.winopts.__hl.title, { { 1, title_pos, title_len + 1 } }, 11)
+    end)
+  end
 end
 
 -- keybind methods below

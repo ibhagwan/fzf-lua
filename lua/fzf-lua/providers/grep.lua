@@ -455,7 +455,6 @@ M.grep_curbuf = function(opts)
   opts.rg_glob = false
   opts.rg_opts = make_entry.rg_insert_args(config.globals.grep.rg_opts, " --with-filename")
   opts.grep_opts = make_entry.rg_insert_args(config.globals.grep.grep_opts, " --with-filename")
-  print("rg_opts", opts.rg_opts)
   if opts.exec_empty_query == nil then
     opts.exec_empty_query = true
   end
