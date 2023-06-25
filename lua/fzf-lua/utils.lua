@@ -387,6 +387,21 @@ function M.is_hl_cleared(hl)
   end
 end
 
+function M.hexcol_from_hl(hlgroup, what, colormap)
+  if not hlgroup or not what then return end
+  local hexcol = synIDattr(hlgroup, what)
+  if hexcol and not hexcol:match("^#") and colormap then
+    -- try to acquire the color from the map
+    -- some schemes don't capitalize first letter?
+    local col = colormap[hexcol:sub(1, 1):upper() .. hexcol:sub(2)]
+    if col then
+      -- format as 6 digit hex for hex2rgb()
+      hexcol = ("#%06x"):format(col)
+    end
+  end
+  return hexcol
+end
+
 function M.ansi_from_hl(hl, s, colormap)
   if vim.fn.hlexists(hl) == 1 then
     -- https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797#rgb-colors
@@ -405,16 +420,7 @@ function M.ansi_from_hl(hl, s, colormap)
     for w, p in pairs(what) do
       local escseq = nil
       if p.rgb then
-        local hexcol = synIDattr(hl, w)
-        if hexcol and not hexcol:match("^#") and colormap then
-          -- try to acquire the color from the map
-          -- some schemes don't capitalize first letter?
-          local col = colormap[hexcol:sub(1, 1):upper() .. hexcol:sub(2)]
-          if col then
-            -- format as 6 digit hex for hex2rgb()
-            hexcol = ("#%06x"):format(col)
-          end
-        end
+        local hexcol = M.hexcol_from_hl(hl, w, colormap)
         local r, g, b = hex2rgb(hexcol)
         if r and g and b then
           escseq = ("[%d;2;%d;%d;%dm"):format(p.code, r, g, b)

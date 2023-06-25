@@ -354,13 +354,13 @@ M.create_fzf_colors = function(opts)
   end
   if not colors then return end
 
+  local colormap = vim.api.nvim_get_color_map()
   local tbl = {}
   for highlight, list in pairs(colors) do
     if type(list) == "table" then
-      local value = M.get_color(list[2], list[1])
-      local col = value:match("#[%x]+") or value:match("^[0-9]+")
-      if col then
-        table.insert(tbl, ("%s:%s"):format(highlight, col))
+      local hexcol = utils.hexcol_from_hl(list[2], list[1], colormap)
+      if hexcol and #hexcol > 0 then
+        table.insert(tbl, ("%s:%s"):format(highlight, hexcol))
       end
       -- arguments in the 3rd slot onward are passed raw, this can
       -- be used to pass styling arguments, for more info see #413

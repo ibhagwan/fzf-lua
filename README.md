@@ -430,7 +430,7 @@ require'fzf-lua'.setup {
     -- border argument passthrough to nvim_open_win(), also used
     -- to manually draw the border characters around the preview
     -- window, can be set to 'false' to remove all borders or to
-    -- 'none', 'single', 'double', 'thicc' or 'rounded' (default)
+    -- 'none', 'single', 'double', 'thicc' (+cc) or 'rounded' (default)
     border           = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
     -- requires neovim > v0.9.0, passed as is to `nvim_open_win`
     -- can be sent individually to any provider to set the win title

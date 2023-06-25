@@ -79,6 +79,8 @@ M.defaults = {
       ["double"]  = { "╔", "═", "╗", "║", "╝", "═", "╚", "║" },
       ["rounded"] = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
       ["thicc"]   = { "┏", "━", "┓", "┃", "┛", "━", "┗", "┃" },
+      ["thiccc"]  = { "▛", "▀", "▜", "▐", "▟", "▄", "▙", "▌" },
+      ["thicccc"] = { "█", "█", "█", "█", "█", "█", "█", "█" },
     },
     on_create    = function()
       -- vim.cmd("set winhl=Normal:Normal,FloatBorder:Normal")
@@ -256,22 +258,23 @@ M.defaults.git = {
     },
   },
   commits = {
-    prompt  = "Commits> ",
-    cmd     = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))" ..
-        "%Creset %s %C(blue)<%an>%Creset'",
-    preview = "git show --pretty='%Cred%H%n%Cblue%an <%ae>%n%C(yellow)%cD%n%Cgreen%s' --color {1}",
-    actions = {
+    prompt   = "Commits> ",
+    cmd      = "git log --color --pretty=format:'%C(yellow)%h%Creset "
+        .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset'",
+    preview  = "git show --pretty='%Cred%H%n%Cblue%an <%ae>%n%C(yellow)%cD%n%Cgreen%s'"
+        .. " --color {1}",
+    actions  = {
       ["default"] = actions.git_checkout,
       ["ctrl-y"]  = { fn = actions.git_yank_commit, exec_silent = true },
     },
     fzf_opts = { ["--no-multi"] = "" },
   },
   bcommits = {
-    prompt  = "BCommits> ",
-    cmd     = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))" ..
-        "%Creset %s %C(blue)<%an>%Creset' <file>",
-    preview = "git diff --color {1}~1 {1} -- <file>",
-    actions = {
+    prompt   = "BCommits> ",
+    cmd      = "git log --color --pretty=format:'%C(yellow)%h%Creset "
+        .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' <file>",
+    preview  = "git diff --color {1}~1 {1} -- <file>",
+    actions  = {
       ["default"] = actions.git_buf_edit,
       ["ctrl-s"]  = actions.git_buf_split,
       ["ctrl-v"]  = actions.git_buf_vsplit,
@@ -326,10 +329,12 @@ M.defaults.grep = {
   git_icons      = true,
   fzf_opts       = { ["--info"] = "default", },
   grep_opts      = utils.is_darwin()
-      and "--binary-files=without-match --line-number --recursive --color=always --extended-regexp -e"
-      or "--binary-files=without-match --line-number --recursive --color=always --perl-regexp -e",
-  rg_opts        = "--column --line-number --no-heading --color=always --smart-case " ..
-      "--max-columns=4096 -e",
+      and "--binary-files=without-match --line-number --recursive --color=always "
+      .. "--extended-regexp -e"
+      or "--binary-files=without-match --line-number --recursive --color=always "
+      .. "--perl-regexp -e",
+  rg_opts        = "--column --line-number --no-heading --color=always --smart-case "
+      .. "--max-columns=4096 -e",
   _actions       = function() return M.globals.actions.files end,
   actions        = { ["ctrl-g"] = { actions.grep_lgrep } },
   -- live_grep_glob options
@@ -613,7 +618,7 @@ M.defaults.lsp.finder = {
   git_icons   = false,
   async       = true,
   silent      = true,
-  separator   = "| ",
+  separator   = "|" .. utils.nbsp,
   _actions    = function() return M.globals.actions.files end,
   -- currently supported providers, defined as map so we can query easily
   _providers  = {
