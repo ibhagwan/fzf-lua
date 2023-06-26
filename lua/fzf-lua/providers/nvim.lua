@@ -74,7 +74,7 @@ local history = function(opts, str)
     local _, finish = string.find(item, "%d+ +")
     table.insert(
       entries,
-      opts.reverse and 1 or #entries + 1,
+      opts.reverse_list and 1 or #entries + 1,
       string.sub(item, finish + 1))
   end
 

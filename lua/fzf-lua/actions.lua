@@ -424,15 +424,16 @@ M.exec_menu = function(selected)
 end
 
 
-M.search = function(selected)
+M.search = function(selected, opts)
   local query = selected[1]
   vim.cmd("stopinsert")
-  vim.fn.feedkeys(string.format("/%s", query), "n")
+  vim.fn.feedkeys(
+    string.format("%s%s", opts.reverse_search and "?" or "/", query), "n")
   return query
 end
 
-M.search_cr = function(selected)
-  M.search(selected)
+M.search_cr = function(selected, opts)
+  M.search(selected, opts)
   utils.feed_keys_termcodes("<CR>")
 end
 
