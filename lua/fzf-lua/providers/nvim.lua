@@ -72,7 +72,10 @@ local history = function(opts, str)
   for i = #history, 3, -1 do
     local item = history[i]
     local _, finish = string.find(item, "%d+ +")
-    table.insert(entries, string.sub(item, finish + 1))
+    table.insert(
+      entries,
+      opts.reverse and 1 or #entries + 1,
+      string.sub(item, finish + 1))
   end
 
   opts.fzf_opts["--no-multi"] = ""
