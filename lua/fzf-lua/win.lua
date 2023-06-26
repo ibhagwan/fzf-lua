@@ -1095,11 +1095,9 @@ function FzfWin:update_title(title)
   local line = ("%s%s%s"):format(prefix, title, suffix)
   api.nvim_buf_set_lines(border_buf, 0, 1, 1, { line })
 
-  local title_len = #title
-  local title_pos = #prefix
-  if self.winopts.__hl.title and title_len and title_len > 0 then
+  if self.winopts.__hl.title and #title > 0 then
     pcall(vim.api.nvim_win_call, self.border_winid, function()
-      fn.matchaddpos(self.winopts.__hl.title, { { 1, title_pos, title_len + 1 } }, 11)
+      fn.matchaddpos(self.winopts.__hl.title, { { 1, #prefix + 1, #title } }, 11)
     end)
   end
 end

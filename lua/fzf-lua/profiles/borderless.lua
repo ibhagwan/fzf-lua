@@ -20,7 +20,7 @@ return {
       title          = hls.sel,
       border         = hls.bg,
       preview_border = hls.bg,
-      scrollfloat_e  = hls.bg,
+      scrollfloat_e  = "",
       scrollfloat_f  = hls.sel,
       -- TODO: not working with `scrollbar = "border"` when `border = "none"
       -- scrollborder_f = "@function",
