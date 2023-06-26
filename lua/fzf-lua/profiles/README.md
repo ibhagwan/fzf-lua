@@ -25,6 +25,7 @@ telescope defaults with `bat` previewer:
 | `telescope`        | closest match to telescope defaults in look and feel and keybinds |
 | `skim`             | uses [`skim`](https://github.com/lotabout/skim) as an fzf alternative, (requires the `sk` binary) |
 | `borderless`       | borderless and minimalistic seamless look &amp; feel |
+| `borderless_full`  | borderless with description in window title (instead of prompt)  |
 
 
 **Custom user settings which make sense and aren't mere duplications with minimal modifications
