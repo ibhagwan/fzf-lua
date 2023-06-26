@@ -432,9 +432,8 @@ M.search = function(selected)
 end
 
 M.search_cr = function(selected)
-  local query = M.search(selected)
+  M.search(selected)
   utils.feed_keys_termcodes("<CR>")
-  vim.fn.histadd("search", query)
 end
 
 M.goto_mark = function(selected)
