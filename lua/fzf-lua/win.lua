@@ -548,7 +548,6 @@ function FzfWin:redraw_preview()
     api.nvim_win_set_config(self.border_winid, self.border_winopts)
     api.nvim_win_set_config(self.preview_winid, self.prev_winopts)
     if self._previewer and self._previewer.display_last_entry then
-      self._previewer:set_winopts(self.preview_winid)
       self._previewer:display_last_entry()
     end
   else
@@ -1051,10 +1050,17 @@ function FzfWin:update_scrollbar_float(o)
   end
 end
 
-function FzfWin:update_scrollbar()
+function FzfWin:update_scrollbar(hide)
   if not self.winopts.preview.scrollbar
       or self.winopts.preview.scrollbar == "none"
       or not self:validate_preview() then
+    return
+  end
+
+  if hide then
+    if self.winopts.preview.scrollbar == "float" then
+      self:hide_scrollbar()
+    end
     return
   end
 

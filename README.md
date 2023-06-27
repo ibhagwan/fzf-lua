@@ -1102,12 +1102,10 @@ require'fzf-lua'.setup {
     -- previewer hidden by default
     winopts      = { preview = { hidden = "hidden" } },
   },
-  -- uncomment to use the old help previewer which used a
-  -- minimized help window to generate the help tag preview
-  -- helptags = { previewer = "help_tags" },
-  -- uncomment to use `man` command as native fzf previewer
+  -- uncomment to use fzf native previewers
   -- (instead of using a neovim floating window)
   -- manpages = { previewer = "man_native" },
+  -- helptags = { previewer = "help_native" },
   -- 
   -- optional override of file extension icon colors
   -- available colors (terminal):

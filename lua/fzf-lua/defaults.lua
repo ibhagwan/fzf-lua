@@ -182,11 +182,7 @@ M.defaults = {
       _ctor = previewers.fzf.man_pages,
     },
     help_tags = {
-      split = "botright", -- "topleft"
       _ctor = previewers.builtin.help_tags,
-    },
-    help_file = {
-      _ctor = previewers.builtin.help_file,
     },
     help_native = {
       _ctor = previewers.fzf.help_tags,
@@ -538,7 +534,7 @@ M.defaults.helptags = {
     ["--with-nth"]  = "..-2",
   },
   previewer = {
-    _ctor = previewers.builtin.help_file,
+    _ctor = previewers.builtin.help_tags,
   },
 }
 
