@@ -229,6 +229,9 @@ function Previewer.base:clear_preview_buf(newbuf)
     -- ('nvim_buf_delete' removes the attached win)
     retbuf = self:get_tmp_buffer()
     utils.win_set_buf_noautocmd(self.win.preview_winid, retbuf)
+    -- redraw the title line and clear the scrollbar
+    self.win:redraw_preview_border()
+    self.win:update_scrollbar(true)
   end
   -- since our temp buffers have 'bufhidden=wipe' the tmp
   -- buffer will be automatically wiped and 'nvim_buf_is_valid'
@@ -308,6 +311,15 @@ function Previewer.base:cmdline(_)
     self:display_entry(items[1])
     return ""
   end, "{}", self.opts.debug)
+  return act
+end
+
+function Previewer.base:zero(_)
+  local act = string.format("execute-silent(%s)",
+    shell.raw_action(function(_, _, _)
+      self:clear_preview_buf(true)
+      self.last_entry = nil
+    end, "", self.opts.debug))
   return act
 end
 

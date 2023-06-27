@@ -316,6 +316,26 @@ function M.normalize_opts(opts, defaults)
   -- are we using skim?
   opts._is_skim = opts.fzf_bin:find("sk") ~= nil
 
+  -- enforce fzf minimum requirements
+  if not opts._is_skim then
+    local FZF_VERSION, rc, err = utils.fzf_version(opts)
+    opts.__FZF_VERSION = FZF_VERSION
+    if not opts.__FZF_VERSION then
+      utils.err(string.format(
+        "'fzf --version' failed with error %s: %s", rc, err))
+      return nil
+    elseif opts.__FZF_VERSION < 0.25 then
+      utils.err(string.format(
+        "fzf version %.2f is lower than minimum (0.25), aborting.",
+        opts.__FZF_VERSION))
+      return nil
+    elseif opts.__FZF_VERSION < 0.27 then
+      -- remove `--border=none`, fails when < 0.27
+      opts.fzf_opts = opts.fzf_opts or {}
+      opts.fzf_opts["--border"] = false
+    end
+  end
+
   -- are we using fzf-tmux
   opts._is_fzf_tmux = vim.env.TMUX and opts.fzf_bin:match("fzf%-tmux$")
 

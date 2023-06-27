@@ -242,6 +242,13 @@ M.fzf = function(contents, opts)
   if previewer then
     -- Set the preview command line
     opts.preview = previewer:cmdline()
+    -- fzf 0.40 added 'zero' event for when there's no match
+    -- clears the preview when there are no matching entries
+    if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.40 and previewer.zero then
+      opts.keymap = opts.keymap or {}
+      opts.keymap.fzf = opts.keymap.fzf or {}
+      opts.keymap.fzf["zero"] = previewer:zero()
+    end
     if type(previewer.preview_window) == "function" then
       -- do we need to override the preview_window args?
       -- this can happen with the builtin previewer
@@ -768,8 +775,7 @@ M.convert_reload_actions = function(reload_cmd, opts)
   end
   -- Does not work with fzf version < 0.36, fzf fails with
   -- "error 2: bind action not specified:" (#735)
-  local version = utils.fzf_version(opts)
-  if version < 0.36 then
+  if not opts.__FZF_VERSION or opts.__FZF_VERSION < 0.36 then
     fallback = true
   end
   -- Two types of action as table:

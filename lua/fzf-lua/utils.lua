@@ -823,9 +823,14 @@ function M.neovim_bind_to_fzf(key)
 end
 
 function M.fzf_version(opts)
-  local out = M.io_system({ opts.fzf_bin or "fzf", "--version" })
+  -- temp unset "FZF_DEFAULT_OPTS" as it might fail `--version`
+  -- if it contains options aren't compatible with fzf's version
+  local FZF_DEFAULT_OPTS = vim.env.FZF_DEFAULT_OPTS
+  vim.env.FZF_DEFAULT_OPTS = nil
+  local out, rc = M.io_system({ opts.fzf_bin or "fzf", "--version" })
+  vim.env.FZF_DEFAULT_OPTS = FZF_DEFAULT_OPTS
   if out:match("HEAD") then return 4 end
-  return tonumber(out:match("(%d+.%d+)."))
+  return tonumber(out:match("(%d+.%d+).")), rc, out
 end
 
 function M.git_version()

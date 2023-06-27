@@ -68,14 +68,10 @@ at it. That, **and colorful file icons and git indicators!**.
 
 - `Linux` or `MacOS`
 - [`neovim`](https://github.com/neovim/neovim/releases) version > `0.5.0`
-- [`fzf`](https://github.com/junegunn/fzf) version > `0.27` (see note below)
+- [`fzf`](https://github.com/junegunn/fzf) version > `0.25`
   **or** [`skim`](https://github.com/lotabout/skim) binary installed
 - [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons)
   (optional)
-
-> `fzf` version > `0.27` is recommended but it's still possible to use `fzf`
-> version > `0.25` by setting `fzf_opts = { ['--border'] = false }`, see
-> [Customization](#customization).
 
 ### Optional dependencies
 
