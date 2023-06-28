@@ -99,9 +99,17 @@ local setup_devicon_term_hls = function()
     return r, g, b
   end
 
+  local colormap = vim.api.nvim_get_color_map()
   for _, info in pairs(M._devicons and M._devicons.get_icons() or M._devicons_map) do
-    local r, g, b = hex(info.color)
-    utils.add_ansi_code("DevIcon" .. info.name, string.format("[38;2;%s;%s;%sm", r, g, b))
+    assert(info.name)
+    local hlgroup = "DevIcon" .. info.name
+    -- some devicons customizations remove `info.color`
+    -- retrieve the color from the highlight group (#801)
+    local hexcol = info.color or utils.hexcol_from_hl(hlgroup, "fg", colormap)
+    if hexcol and #hexcol > 0 then
+      local r, g, b = hex(hexcol)
+      utils.add_ansi_code(hlgroup, string.format("[38;2;%s;%s;%sm", r, g, b))
+    end
   end
 end
 

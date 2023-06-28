@@ -34,6 +34,18 @@ M._devicons_geticons = function()
     local default = table.remove(icons, 1)
     icons["<default>"] = default
   end
+  -- some devicons customizations remove `info.color`
+  -- retrieve the color from the highlight group (#801)
+  local colormap = vim.api.nvim_get_color_map()
+  for k, info in pairs(icons) do
+    if not info.color then
+      local hlgroup = "DevIcon" .. info.name
+      local hexcol = utils.hexcol_from_hl(hlgroup, "fg", colormap)
+      if hexcol and #hexcol > 0 then
+        icons[k].color = hexcol
+      end
+    end
+  end
   return icons
 end
 
