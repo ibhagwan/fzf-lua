@@ -1242,9 +1242,13 @@ function FzfWin.toggle_help()
   local keymaps = {}
   local preview_mode = self.previewer_is_builtin and "builtin" or "fzf"
 
+  -- ignore fzf event bind as they aren't valid keymaps
+  local keymap_ignore = { ["load"] = true, ["zero"] = true }
+
   -- fzf and neovim (builtin) keymaps
   for _, m in ipairs({ "builtin", "fzf" }) do
     for k, v in pairs(self.keymap[m]) do
+      if keymap_ignore[k] then goto continue end
       -- value can be defined as a table with addl properties (help string)
       if type(v) == "table" then
         v = v.desc or v[1]
@@ -1256,9 +1260,9 @@ function FzfWin.toggle_help()
           k = utils.neovim_bind_to_fzf(k)
         end
         table.insert(keymaps,
-          format_bind(m, k, v,
-            opts.mode_width, opts.keybind_width, opts.name_width))
+          format_bind(m, k, v, opts.mode_width, opts.keybind_width, opts.name_width))
       end
+      ::continue::
     end
   end
 
