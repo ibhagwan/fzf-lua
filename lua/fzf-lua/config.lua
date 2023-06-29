@@ -228,7 +228,7 @@ function M.normalize_opts(opts, defaults)
     ["winopts.hl.cursorline"]        = "previewers.builtin.hl_cursorline",
     ["winopts.preview.delay"]        = "previewers.builtin.delay",
     ["winopts.preview.title"]        = "previewers.builtin.title",
-    ["winopts.preview.title_align"]  = "previewers.builtin.title_align",
+    ["winopts.preview.title_pos"]    = "winopts.preview.title_align",
     ["winopts.preview.scrollbar"]    = "previewers.builtin.scrollbar",
     ["winopts.preview.scrollchar"]   = "previewers.builtin.scrollchar",
     -- Diagnostics & LSP symbols separation options

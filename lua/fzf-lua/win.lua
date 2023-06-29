@@ -221,6 +221,11 @@ local normalize_winopts = function(o)
     prev_border = { { "Normal", winopts.__hl.preview_border } },
   }
 
+  -- add title hl if wasn't provided by the user
+  if winopts.title and type(winopts.title) == "string" then
+    winopts.title = { { " " .. winopts.title .. " ", winopts.__hl.title } }
+  end
+
   local max_width = vim.o.columns - 2
   local max_height = vim.o.lines - vim.o.cmdheight - 2
   winopts.width = math.min(max_width, winopts.width)
@@ -1091,9 +1096,9 @@ function FzfWin:update_title(title)
   end
   local width_title = fn.strwidth(title)
   local prefix = fn.strcharpart(top, 0, 3)
-  if self.winopts.preview.title_align == "center" then
+  if self.winopts.preview.title_pos == "center" then
     prefix = fn.strcharpart(top, 0, utils.round((width - width_title) / 2))
-  elseif self.winopts.preview.title_align == "right" then
+  elseif self.winopts.preview.title_pos == "right" then
     prefix = fn.strcharpart(top, 0, width - (width_title + 3))
   end
 
@@ -1101,9 +1106,9 @@ function FzfWin:update_title(title)
   local line = ("%s%s%s"):format(prefix, title, suffix)
   api.nvim_buf_set_lines(border_buf, 0, 1, 1, { line })
 
-  if self.winopts.__hl.title and #title > 0 then
+  if self.winopts.__hl.preview_title and #title > 0 then
     pcall(vim.api.nvim_win_call, self.border_winid, function()
-      fn.matchaddpos(self.winopts.__hl.title, { { 1, #prefix + 1, #title } }, 11)
+      fn.matchaddpos(self.winopts.__hl.preview_title, { { 1, #prefix + 1, #title } }, 11)
     end)
   end
 end

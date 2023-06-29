@@ -13,6 +13,35 @@ yours too, if you allow it.
 
 </div>
 
+# Table of Contents
+
+- [Quickstart](#quickstart)
+- [Rationale](#rationale)
+- [Why Fzf-lua](#why-fzf-lua)
+- [Dependencies](#dependencies)
+  + [Optional Dependencies](#optional-dependencies)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Commands](#commands)
+  + [Buffers and Files](#buffers-and-files)
+  + [Search](#search)
+  + [Tags](#tags)
+  + [Git](#git)
+  + [LSP | Diagnostics](#lspdiagnostics)
+  + [Misc](#misc)
+  + [Neovim API](#neovim-api)
+  + [`nvim-dap`](#nvim-dap)
+  + [`tmux`](#tmux)
+  + [Completion Functions](#completion-functions)
+- [Customization](#customization)
+  + [Profiles](#profiles)
+- [Insert-mode Completion](#insert-mode-completion)
+  + [Custom Completion](#custom-completion)
+- [Default Options](#default-options)
+- [Highlights](#highlights)
+- [Credits](#credits)
+
+
 ## Quickstart
 
 To quickly test this plugin without changing your configuration run (will run in it's own sandbox
@@ -98,28 +127,46 @@ to configure in `previewer.builtin.extensions`):
 Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
-Plug 'ibhagwan/fzf-lua', {'branch': 'main'}
+Plug "ibhagwan/fzf-lua", {"branch": "main"}
 " optional for icon support
-Plug 'nvim-tree/nvim-web-devicons'
+Plug "nvim-tree/nvim-web-devicons"
 ```
 
 Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
 
 ```lua
-use { 'ibhagwan/fzf-lua',
+use { "ibhagwan/fzf-lua",
   -- optional for icon support
-  requires = { 'nvim-tree/nvim-web-devicons' }
+  requires = { "nvim-tree/nvim-web-devicons" }
+}
+```
+
+Using [lazy.nvim](https://github.com/folke/lazy.nvim)
+
+```lua
+{
+  "ibhagwan/fzf-lua",
+  -- optional for icon support
+  dependencies = { "nvim-tree/nvim-web-devicons" },
+  config = function()
+    -- calling `setup` is optional for customization
+    require("fzf-lua").setup({})
+  end
 }
 ```
 > **Note:** if you already have fzf installed you do not need to install `fzf`
 > or `fzf.vim`, however if you do not have it installed, **you only need** fzf
 > which can be installed with (fzf.vim is not a requirement nor conflict):
 > ```vim
-> Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+> Plug "junegunn/fzf", { "do": { -> fzf#install() } }
 > ```
 > or with [packer.nvim](https://github.com/wbthomason/packer.nvim):
 >```lua
->use = { 'junegunn/fzf', run = './install --bin', }
+>use = { "junegunn/fzf", run = "./install --bin" }
+>```
+> or with [lazy.nvim](https://github.com/folke/lazy.nvim)
+>```lua
+>{ "junegunn/fzf", build = "./install --bin" }
 >```
 
 ## Usage
@@ -276,7 +323,7 @@ vim.keymap.set("n", "<c-P>",
 | -------------------- | ------------------------------------------ |
 | `tmux_buffers`         | list tmux paste buffers                    |
 
-### Completion functions
+### Completion Functions
 | Command              | List                                       |
 | -------------------- | ------------------------------------------ |
 | `fzf_complete`         | custom completion (see below)              |
@@ -362,7 +409,7 @@ telescope defaults with `bat` previewer:
 See [profiles](https://github.com/ibhagwan/fzf-lua/tree/main/lua/fzf-lua/profiles)
 for more info.
 
-### Insert-mode completion
+### Insert-mode Completion
 
 Fzf-lua comes with a set of completion functions for paths/files and lines from open buffers as
 well as custom completion, for example, set path/completion using `<C-x><C-f>`:
@@ -389,7 +436,7 @@ vim.keymap.set({ "i" }, "<C-x><C-f>",
 ```
 > **Note:** only `complete_file` supports a previewer
 
-#### Custom completion
+#### Custom Completion
 
 Custom completion is also possible using `fzf_complete`, the signature for `fzf_complete` is
 equivalent to `fzf_exec = function(contents, [opts])`, for more info how to use the API, please refer to [Wiki/ADVANCED](https://github.com/ibhagwan/fzf-lua/wiki/Advanced).
@@ -467,7 +514,7 @@ require'fzf-lua'.setup {
       flip_columns   = 120,             -- #cols to switch to horizontal on flex
       -- Only used with the builtin previewer:
       title          = true,            -- preview border title (file/buf)?
-      title_align    = "left",          -- left|center|right, title alignment
+      title_pos      = "center",        -- left|center|right, title alignment
       scrollbar      = 'float',         -- `false` or string:'float|border'
                                         -- float:  in-window floating border
                                         -- border: in-border chars (see below)
@@ -634,6 +681,8 @@ require'fzf-lua'.setup {
       -- full size. Set the below to "extend" to prevent the main window
       -- from being modified when toggling the preview.
       toggle_behavior = "default",
+      -- Title transform function, by default only displays the tail
+      -- title_fnamemodify = function(s) vim.fn.fnamemodify(s, ":t") end,
       -- preview extensions using a custom shell command:
       -- for example, use `viu` for image previews
       -- will do nothing if `viu` isn't executable
@@ -1121,29 +1170,29 @@ require'fzf-lua'.setup {
 
 </details>
 
-### Customizing Highlights
+### Highlights
 
-FzfLua conviniently creates the below highlights:
-```lua
-  -- key is the highlight group name
-  -- value[1] is the setup/call arg option name
-  -- value[2] is the default link if value[1] is undefined
-  FzfLuaNormal = { 'winopts.hl.normal', "Normal" },
-  FzfLuaBorder = { 'winopts.hl.border', "Normal" },
-  FzfLuaCursor = { 'winopts.hl.cursor', "Cursor" },
-  FzfLuaCursorLine = { 'winopts.hl.cursorline', "CursorLine" },
-  FzfLuaCursorLineNr = { 'winopts.hl.cursornr', "CursorLineNr" },
-  FzfLuaSearch = { 'winopts.hl.search', "IncSearch" },
-  FzfLuaTitle = { 'winopts.hl.title', "FzfLuaNormal" },
-  FzfLuaScrollBorderEmpty = { 'winopts.hl.scrollborder_e', "FzfLuaBorder" },
-  FzfLuaScrollBorderFull  = { 'winopts.hl.scrollborder_f', "FzfLuaBorder" },
-  FzfLuaScrollFloatEmpty  = { 'winopts.hl.scrollfloat_e', "PmenuSbar" },
-  FzfLuaScrollFloatFull   = { 'winopts.hl.scrollfloat_f', "PmenuThumb" },
-  FzfLuaHelpNormal = { 'winopts.hl.help_normal', "FzfLuaNormal" },
-  FzfLuaHelpBorder = { 'winopts.hl.help_border', "FzfLuaBorder" },
-  FzfLuaPreviewNormal = { "winopts.hl.preview_normal", "FzfLuaNormal" },
-  FzfLuaPreviewBorder = { "winopts.hl.preview_border", "FzfLuaBorder" },
-```
+FzfLua conviniently creates the below highlights, each hlgroup can be
+temporarily overridden by its corresponding `winopts` option:
+
+| Highlight Group       | Default     | Override Via              | Notes |
+|-----------------------|-------------|---------------------------|-------|
+|FzfLuaNormal           |Normal       |`winopts.hl.normal`        |Main win `fg/bg`|
+|FzfLuaBorder           |Normal       |`winopts.hl.border`        |Main win border|
+|FzfLuaTitle            |FzfLuaNormal |`winopts.hl.title`         |Main win title|
+|FzfLuaPreviewNormal    |FzfLuaNormal |`winopts.hl.preview_normal`|Builtin preview `fg/bg`|
+|FzfLuaPreviewBorder    |FzfLuaBorder |`winopts.hl.preview_border`|Builtin preview border|
+|FzfLuaPreviewTitle     |FzfLuaTitle  |`winopts.hl.preview_title` |Builtin preview title|
+|FzfLuaCursor           |Cursor       |`winopts.hl.cursor`        |Builtin preview `Cursor`|
+|FzfLuaCursorLine       |CursorLine   |`winopts.hl.cursorline`    |Builtin preview `Cursorline`|
+|FzfLuaCursorLineNr     |CursorLineNr |`winopts.hl.cursorlinenr`  |Builtin preview `CursorLineNr`|
+|FzfLuaSearch           |IncSearch    |`winopts.hl.search`        |Builtin preview search matches|
+|FzfLuaScrollBorderEmpty|FzfLuaBorder |`winopts.hl.scrollborder_e`|Builtin preview `border` scroll empty|
+|FzfLuaScrollBorderFull |FzfLuaBorder |`winopts.hl.scrollborder_f`|Builtin preview `border` scroll full|
+|FzfLuaScrollFloatEmpty |PmenuSbar    |`winopts.hl.scrollfloat_e` |Builtin preview `float` scroll empty|
+|FzfLuaScrollFloatFull  |PmenuThumb   |`winopts.hl.scrollfloat_f` |Builtin preview `float` scroll full|
+|FzfLuaHelpNormal       |FzfLuaNormal |`winopts.hl.help_normal`   |Help win `fg/bg`|
+|FzfLuaHelpBorder       |FzfLuaBorder |`winopts.hl.help_border`   |Help win border|
 
 
 These can be easily customized either via the lua API:
@@ -1156,15 +1205,16 @@ Or vimscript:
 :hi! link FzfLuaBorder FloatBorder
 ```
 
-If you wish to further customize these highlights without having to
-modify your preset colorscheme highlight links you can define the corresponding
-`winopts.hl` option or even send it directly via a call argument:
+If you wish to override a highlight without having to modify your
+colorscheme highlights, set the corresponding `winopts.hl` override
+or specify it directly via a call argument.
 
+Temporary highlight override:
 ```lua
-:lua require'fzf-lua'.files({ winopts={hl={normal="IncSearch"}} })
+:lua require'fzf-lua'.files({ winopts={hl={preview_title="IncSearch"}} })
 ```
 
-Or via `setup`:
+Permanent global override via `setup`:
 ```lua
 require('fzf-lua').setup{
   winopts = {

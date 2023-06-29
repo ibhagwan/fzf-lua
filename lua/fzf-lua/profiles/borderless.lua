@@ -14,12 +14,12 @@ return {
     preview = {
       scrollbar   = "float",
       scrolloff   = "-2",
-      title_align = "center",
+      title_pos   = "center",
     },
     hl      = {
-      title          = hls.sel,
       border         = hls.bg,
       preview_border = hls.bg,
+      preview_title  = hls.sel,
       scrollfloat_e  = "",
       scrollfloat_f  = hls.sel,
       -- TODO: not working with `scrollbar = "border"` when `border = "none"

@@ -1,3 +1,4 @@
+local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
 local previewers = require "fzf-lua.previewer"
@@ -51,7 +52,7 @@ M.defaults = {
       layout       = "flex",
       flip_columns = 120,
       title        = true,
-      title_align  = "left",
+      title_pos    = "center",
       scrollbar    = "border",
       scrolloff    = "-2",
       scrollchar   = "",
@@ -188,14 +189,15 @@ M.defaults = {
       _ctor = previewers.fzf.help_tags,
     },
     builtin = {
-      syntax          = true,
-      syntax_delay    = 0,
-      syntax_limit_l  = 0,
-      syntax_limit_b  = 1024 * 1024,      -- 1MB
-      limit_b         = 1024 * 1024 * 10, -- 10MB
-      treesitter      = { enable = true, disable = {} },
-      ueberzug_scaler = "cover",
-      _ctor           = previewers.builtin.buffer_or_file,
+      syntax            = true,
+      syntax_delay      = 0,
+      syntax_limit_l    = 0,
+      syntax_limit_b    = 1024 * 1024,    -- 1MB
+      limit_b           = 1024 * 1024 * 10, -- 10MB
+      treesitter        = { enable = true, disable = {} },
+      ueberzug_scaler   = "cover",
+      title_fnamemodify = function(s) return path.tail(s) end,
+      _ctor             = previewers.builtin.buffer_or_file,
     },
   },
 }

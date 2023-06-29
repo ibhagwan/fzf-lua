@@ -30,7 +30,8 @@ function Previewer.base:new(o, opts, fzf_win)
   self.win = fzf_win
   self.delay = self.win.winopts.preview.delay or 100
   self.title = self.win.winopts.preview.title
-  self.title_align = self.win.winopts.preview.title_align
+  self.title_fnamemodify = o.title_fnamemodify
+  self.title_pos = self.win.winopts.preview.title_pos
   self.winopts = self.win.winopts.preview.winopts
   self.syntax = default(o.syntax, true)
   self.syntax_delay = default(o.syntax_delay, 0)
@@ -867,13 +868,15 @@ function Previewer.buffer_or_file:update_border(entry)
       end
       filepath = path.HOME_to_tilde(filepath)
     end
-    local title = (" %s "):format(filepath or entry.uri)
-    if entry.bufnr then
-      -- local border_width = api.nvim_win_get_width(self.win.preview_winid)
-      local buf_str = ("buf %d:"):format(entry.bufnr)
-      title = (" %s %s "):format(buf_str, entry.path)
+    local title = filepath or entry.uri
+    -- was transform function defined?
+    if self.title_fnamemodify then
+      title = self.title_fnamemodify(title)
     end
-    self.win:update_title(title)
+    if entry.bufnr then
+      title = string.format("buf %d: %s", entry.bufnr, title)
+    end
+    self.win:update_title(" " .. title .. " ")
   end
   self.win:update_scrollbar(entry.no_scrollbar)
 end

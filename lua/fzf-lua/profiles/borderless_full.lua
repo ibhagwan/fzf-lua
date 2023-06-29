@@ -8,7 +8,8 @@ local function title(str, opts)
     {
       prompt = "❯ ",
       winopts = {
-        title = { { " " .. str .. " ", hls.title } },
+        -- title = { { " " .. str .. " ", hls.title } },
+        title = " " .. str .. " ",
         title_pos = "center",
       }
     })
@@ -18,13 +19,14 @@ return {
   winopts = {
     border  = { " ", " ", " ", " ", " ", " ", " ", " " },
     preview = {
-      scrollbar   = "float",
-      scrolloff   = "-2",
-      title_align = "center",
+      scrollbar = "float",
+      scrolloff = "-2",
+      title_pos = "center",
     },
     hl      = {
       title          = hls.title,
       border         = hls.bg,
+      preview_title  = hls.title,
       preview_border = hls.bg,
       scrollfloat_e  = "",
       scrollfloat_f  = hls.sel,

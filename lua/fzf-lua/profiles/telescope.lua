@@ -21,16 +21,17 @@ return {
     hl      = {
       normal         = hl_validate "TelescopeNormal",
       border         = hl_validate "TelescopeBorder",
+      title          = hl_validate "TelescopeTitle",
       help_normal    = hl_validate "TelescopeNormal",
       help_border    = hl_validate "TelescopeBorder",
       preview_normal = hl_validate "TelescopeNormal",
       preview_border = hl_validate "TelescopeBorder",
+      preview_title  = hl_validate "TelescopeTitle",
       -- builtin preview only
       cursor         = hl_validate "Cursor",
       cursorline     = hl_validate "TelescopePreviewLine",
       cursorlinenr   = hl_validate "TelescopePreviewLine",
       search         = hl_validate "IncSearch",
-      title          = hl_validate "TelescopeTitle",
     },
   },
   fzf_colors       = {
