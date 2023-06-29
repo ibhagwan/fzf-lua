@@ -222,8 +222,8 @@ local normalize_winopts = function(o)
   }
 
   -- add title hl if wasn't provided by the user
-  if winopts.title and type(winopts.title) == "string" then
-    winopts.title = { { " " .. winopts.title .. " ", winopts.__hl.title } }
+  if type(winopts.title) == "string" and type(winopts.__hl.title) == "string" then
+    winopts.title = { { winopts.title, winopts.__hl.title } }
   end
 
   local max_width = vim.o.columns - 2
