@@ -13,7 +13,7 @@ yours too, if you allow it.
 
 </div>
 
-# Table of Contents
+# Contents
 
 - [Quickstart](#quickstart)
 - [Rationale](#rationale)
