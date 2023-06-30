@@ -885,6 +885,9 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
   end
 
   local reload_command = initial_command
+  if type(opts.query_delay) == "number" then
+    reload_command = string.format("sleep %.2f; %s", opts.query_delay / 1000, reload_command)
+  end
   if not opts.exec_empty_query then
     reload_command = ("[ -z %s ] || %s"):format(fzf_field_expression, reload_command)
   end
