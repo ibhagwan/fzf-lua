@@ -47,7 +47,7 @@ yours too, if you allow it.
 
 
 ==============================================================================
-TABLE OF CONTENTS                                  *fzf-lua-table-of-contents*
+CONTENTS                                                    *fzf-lua-contents*
 
 
 - Quickstart <#quickstart>
