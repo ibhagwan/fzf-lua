@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 June 29
+*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 June 30
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -785,6 +785,9 @@ open an issue and I'll be more than happy to help.**
           --   "contain", "forced_cover", "cover"
           -- https://github.com/seebye/ueberzug
           ueberzug_scaler = "cover",
+          -- Custom filetype autocmds aren't triggered on
+          -- the preview buffer, define them here instead
+          -- ext_ft_override = { ["ksql"] = "sql", ... },
         },
       },
       -- provider setup
