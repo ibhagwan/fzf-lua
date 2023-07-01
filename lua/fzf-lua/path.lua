@@ -205,13 +205,10 @@ function M.entry_to_ctag(entry, noesc)
   return ctag
 end
 
-function M.entry_to_location(entry, opts)
+function M.entry_to_location(entry, _)
   local uri, line, col = entry:match("^(.*://.*):(%d+):(%d+):")
   line = line and tonumber(line) or 1
   col = col and tonumber(col) or 1
-  if opts and opts.path_shorten then
-    uri = uri:match("^.*://") .. M.lengthen(uri:match("^.*://(.*)"))
-  end
   return {
     stripped = entry,
     line = line,
