@@ -255,18 +255,13 @@ function Previewer.base:display_last_entry()
 end
 
 function Previewer.base:display_entry(entry_str)
-  if not entry_str then
-    return
-  else
-    -- save last entry even if we don't display
-    self.last_entry = entry_str
-  end
+  if not entry_str then return end
+  -- save last entry even if we don't display
+  self.last_entry = entry_str
   if not self.win or not self.win:validate_preview() then return end
   if rawequal(next(self.backups), nil) then
     self:backup_winopts(self.win.src_winid)
   end
-  local previous_bufnr = api.nvim_win_get_buf(self.win.preview_winid)
-  assert(not self.preview_bufnr or previous_bufnr == self.preview_bufnr)
 
   -- clears the current preview buffer and set to a new temp buffer
   -- recommended to return false from 'should_clear_preview' and use
