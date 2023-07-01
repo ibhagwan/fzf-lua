@@ -698,6 +698,9 @@ require'fzf-lua'.setup {
       --   "contain", "forced_cover", "cover"
       -- https://github.com/seebye/ueberzug
       ueberzug_scaler = "cover",
+      -- Custom filetype autocmds aren't triggered on
+      -- the preview buffer, define them here instead
+      -- ext_ft_override = { ["ksql"] = "sql", ... },
     },
   },
   -- provider setup
