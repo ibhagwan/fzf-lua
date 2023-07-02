@@ -832,7 +832,7 @@ M.convert_reload_actions = function(reload_cmd, opts)
       -- replace the action with shell cmd proxy to the original action
       local shell_action = shell.raw_action(function(items, _, _)
         v.fn(items, opts)
-      end, "{+}", opts.debug)
+      end, v.field_index == false and "" or v.field_index or "{+}", opts.debug)
       opts.keymap.fzf[k] = {
         string.format("%sexecute-silent(%s)+reload(%s)",
           unbind and (unbind .. "+") or "",
@@ -860,7 +860,7 @@ M.convert_exec_silent_actions = function(opts)
       -- replace the action with shell cmd proxy to the original action
       local shell_action = shell.raw_action(function(items, _, _)
         v.fn(items, opts)
-      end, "{+}", opts.debug)
+      end, v.field_index == false and "" or v.field_index or "{+}", opts.debug)
       opts.keymap.fzf[k] = {
         string.format("execute-silent(%s)", shell_action),
         desc = config.get_action_helpstr(v.fn)
