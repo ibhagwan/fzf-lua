@@ -372,6 +372,8 @@ end
 M.colorscheme = function(selected)
   local colorscheme = selected[1]
   vim.cmd("colorscheme " .. colorscheme)
+  -- setup fzf-lua's own highlight groups
+  utils.setup_highlights()
 end
 
 M.ensure_insert_mode = function()

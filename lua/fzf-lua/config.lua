@@ -36,11 +36,10 @@ M._devicons_geticons = function()
   end
   -- some devicons customizations remove `info.color`
   -- retrieve the color from the highlight group (#801)
-  local colormap = vim.api.nvim_get_color_map()
   for k, info in pairs(icons) do
     if not info.color then
       local hlgroup = "DevIcon" .. info.name
-      local hexcol = utils.hexcol_from_hl(hlgroup, "fg", colormap)
+      local hexcol = utils.hexcol_from_hl(hlgroup, "fg")
       if hexcol and #hexcol > 0 then
         icons[k].color = hexcol
       end
@@ -214,6 +213,7 @@ function M.normalize_opts(opts, defaults)
     ["winopts.height"]               = "winopts.win_height",
     ["winopts.border"]               = "winopts.win_border",
     ["winopts.on_create"]            = "winopts.window_on_create",
+    ["winopts.winopts_fn"]           = "winopts.window_raw",
     ["winopts.preview.wrap"]         = "preview_wrap",
     ["winopts.preview.border"]       = "preview_border",
     ["winopts.preview.hidden"]       = "preview_opts",
@@ -267,6 +267,14 @@ function M.normalize_opts(opts, defaults)
       opts[v] = nil
     end
   end
+
+  -- Normalize `winopts`: merge with outputs from `winopts_fn` and default highlights
+  local winopts_fn = opts.winopts_fn or M.globals.winopts_fn
+  if type(winopts_fn) == "function" then
+    opts.winopts = vim.tbl_deep_extend("force", opts.winopts, winopts_fn() or {})
+  end
+  opts.winopts.hl = vim.tbl_deep_extend("keep", opts.winopts.hl or {}, opts.winopts.__hl)
+  opts.winopts.__hl = nil
 
   if type(opts.previewer) == "function" then
     -- we use a function so the user can override

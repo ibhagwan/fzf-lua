@@ -629,7 +629,6 @@ local function gen_sym2style_map(opts)
   assert(M._sym2style == nil)
   assert(opts.symbol_style ~= nil)
   M._sym2style = {}
-  local colormap = vim.api.nvim_get_color_map()
   for kind, icon in pairs(opts.symbol_icons) do
     -- style==1: "<icon> <kind>"
     -- style==2: "<icon>"
@@ -643,7 +642,7 @@ local function gen_sym2style_map(opts)
       s = kind
     end
     if s and opts.symbol_hl then
-      M._sym2style[kind] = utils.ansi_from_hl(opts.symbol_hl(kind), s, colormap)
+      M._sym2style[kind] = utils.ansi_from_hl(opts.symbol_hl(kind), s)
     elseif s then
       M._sym2style[kind] = s
     else

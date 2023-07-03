@@ -375,12 +375,14 @@ M.tabs = function(opts)
               (vim.loop.cwd() == tab_cwd and ""
                 or string.format(": %s", path.HOME_to_tilde(tab_cwd))))
           end,
-          utils.ansi_codes.blue)
+          function(s)
+            return utils.ansi_from_hl(opts.winopts.hl.tab_title, s)
+          end)
 
         local marker, fn_marker_hl = opt_hl("tab_marker",
           function(s) return s end,
           function(s)
-            return utils.ansi_codes.blue(utils.ansi_codes.bold(s));
+            return utils.ansi_from_hl(opts.winopts.hl.tab_marker, s)
           end)
 
         if not opts.current_tab_only then

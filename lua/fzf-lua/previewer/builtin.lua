@@ -850,8 +850,8 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
 
     fn.clearmatches()
 
-    if self.win.winopts.__hl.cursor and not (lnum <= 1 and col <= 1) then
-      fn.matchaddpos(self.win.winopts.__hl.cursor, { { lnum, math.max(1, col) } }, 11)
+    if self.win.winopts.hl.cursor and not (lnum <= 1 and col <= 1) then
+      fn.matchaddpos(self.win.winopts.hl.cursor, { { lnum, math.max(1, col) } }, 11)
     end
   end)
 end
@@ -943,8 +943,8 @@ function Previewer.help_tags:set_cursor_hl(entry)
     api.nvim_win_set_cursor(0, { 1, 0 })
     fn.clearmatches()
     fn.search(entry.hregex, "W")
-    if self.win.winopts.__hl.search then
-      fn.matchadd(self.win.winopts.__hl.search, entry.hregex)
+    if self.win.winopts.hl.search then
+      fn.matchadd(self.win.winopts.hl.search, entry.hregex)
     end
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
@@ -1080,8 +1080,8 @@ function Previewer.tags:set_cursor_hl(entry)
     api.nvim_win_set_cursor(0, { 1, 0 })
     fn.clearmatches()
     fn.search(entry.ctag, "W")
-    if self.win.winopts.__hl.search then
-      fn.matchadd(self.win.winopts.__hl.search, entry.ctag)
+    if self.win.winopts.hl.search then
+      fn.matchadd(self.win.winopts.hl.search, entry.ctag)
     end
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
@@ -1147,8 +1147,8 @@ function Previewer.highlights:populate_preview_buf(entry_str)
     api.nvim_win_set_cursor(0, { 1, 0 })
     fn.clearmatches()
     fn.search(selected_hl, "W")
-    if self.win.winopts.__hl.search then
-      fn.matchadd(self.win.winopts.__hl.search, selected_hl)
+    if self.win.winopts.hl.search then
+      fn.matchadd(self.win.winopts.hl.search, selected_hl)
     end
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()

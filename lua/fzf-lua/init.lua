@@ -2,6 +2,8 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
+local __HAS_NVIM_07 = vim.fn.has("nvim-0.7") == 1
+
 do
   -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
   -- plugin '.vim' initialization sometimes doesn't get called
@@ -49,6 +51,12 @@ function M.setup_highlights()
     { "FzfLuaScrollBorderFull",  { "winopts.hl.scrollborder_f", "FzfLuaBorder" } },
     { "FzfLuaScrollFloatEmpty",  { "winopts.hl.scrollfloat_e", "PmenuSbar" } },
     { "FzfLuaScrollFloatFull",   { "winopts.hl.scrollfloat_f", "PmenuThumb" } },
+    -- Fzf terminal hls, colors from `vim.api.nvim_get_color_map()`
+    { "FzfLuaHeaderBind",        { "winopts.hl.header_bind", { fg = "BlanchedAlmond" } } },
+    { "FzfLuaHeaderText",        { "winopts.hl.header_text", { fg = "LightCoral" } } },
+    -- Provider specific highlights
+    { "FzfLuaTabTitle",          { "winopts.hl.tab_title", { fg = "LightSkyBlue2", bold = true } } },
+    { "FzfLuaTabMarker",         { "winopts.hl.tab_marker", { fg = "BlanchedAlmond", bold = true } } },
   }
   for _, a in pairs(highlights) do
     local hl_name, v = a[1], a[2]
@@ -60,12 +68,25 @@ function M.setup_highlights()
       -- revert to default if hl option or link doesn't exist
       hl_link = v[2]
     end
-    if vim.fn.has("nvim-0.7") == 1 then
-      vim.api.nvim_set_hl(0, hl_name, { default = true, link = hl_link })
+    if type(hl_link) == "string" then
+      if __HAS_NVIM_07 then
+        vim.api.nvim_set_hl(0, hl_name, { default = true, link = hl_link })
+      else
+        vim.cmd(string.format("hi! link %s %s", hl_name, hl_link))
+      end
     else
-      vim.cmd(string.format("hi! link %s %s", hl_name, hl_link))
+      -- not a link, create the group instead
+      if __HAS_NVIM_07 then
+        vim.api.nvim_set_hl(0, hl_name, hl_link)
+      else
+        vim.cmd(string.format("hi! %s %s%s%s", hl_name,
+          hl_link.fg and string.format(" guifg=%s", hl_link.fg) or "",
+          hl_link.bg and string.format(" guibg=%s", hl_link.bg) or "",
+          hl_link.bold and " gui=bold" or ""))
+      end
     end
-    -- save new highlight groups under 'winopts.__hl'
+    -- save default highlight groups under 'config.globals.winopts.__hl'
+    -- we will later merge the table when calling `config.normalize_opts`
     config.set_global(v[1]:gsub("%.hl%.", ".__hl."), hl_name)
   end
 

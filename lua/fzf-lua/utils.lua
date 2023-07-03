@@ -387,13 +387,20 @@ function M.is_hl_cleared(hl)
   end
 end
 
-function M.hexcol_from_hl(hlgroup, what, colormap)
+function M.COLORMAP()
+  if not M.__COLORMAP then
+    M.__COLORMAP = vim.api.nvim_get_color_map()
+  end
+  return M.__COLORMAP
+end
+
+function M.hexcol_from_hl(hlgroup, what)
   if not hlgroup or not what then return end
   local hexcol = synIDattr(hlgroup, what)
-  if hexcol and not hexcol:match("^#") and colormap then
+  if hexcol and not hexcol:match("^#") then
     -- try to acquire the color from the map
     -- some schemes don't capitalize first letter?
-    local col = colormap[hexcol:sub(1, 1):upper() .. hexcol:sub(2)]
+    local col = M.COLORMAP()[hexcol:sub(1, 1):upper() .. hexcol:sub(2)]
     if col then
       -- format as 6 digit hex for hex2rgb()
       hexcol = ("#%06x"):format(col)
@@ -402,7 +409,7 @@ function M.hexcol_from_hl(hlgroup, what, colormap)
   return hexcol
 end
 
-function M.ansi_from_hl(hl, s, colormap)
+function M.ansi_from_hl(hl, s)
   if vim.fn.hlexists(hl) == 1 then
     -- https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797#rgb-colors
     -- Set foreground color as RGB: 'ESC[38;2;{r};{g};{b}m'
@@ -420,12 +427,12 @@ function M.ansi_from_hl(hl, s, colormap)
     for w, p in pairs(what) do
       local escseq = nil
       if p.rgb then
-        local hexcol = M.hexcol_from_hl(hl, w, colormap)
+        local hexcol = M.hexcol_from_hl(hl, w)
         local r, g, b = hex2rgb(hexcol)
         if r and g and b then
           escseq = ("[%d;2;%d;%d;%dm"):format(p.code, r, g, b)
           -- elseif #hexcol>0 then
-          --   print("unresolved", hl, w, hexcol, colormap[synIDattr(hl, w)])
+          --   print("unresolved", hl, w, hexcol, M.COLORMAP()[synIDattr(hl, w)])
         end
       else
         local value = synIDattr(hl, w)
@@ -495,6 +502,10 @@ end
 
 function M.reset_info()
   pcall(loadstring("require'fzf-lua'.set_info(nil)"))
+end
+
+function M.setup_highlights()
+  pcall(loadstring("require'fzf-lua'.setup_highlights()"))
 end
 
 function M.load_profile(fname, name, silent)

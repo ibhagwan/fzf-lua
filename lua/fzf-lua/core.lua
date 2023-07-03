@@ -361,11 +361,10 @@ M.create_fzf_colors = function(opts)
   end
   if not colors then return end
 
-  local colormap = vim.api.nvim_get_color_map()
   local tbl = {}
   for highlight, list in pairs(colors) do
     if type(list) == "table" then
-      local hexcol = utils.hexcol_from_hl(list[2], list[1], colormap)
+      local hexcol = utils.hexcol_from_hl(list[2], list[1])
       if hexcol and #hexcol > 0 then
         table.insert(tbl, ("%s:%s"):format(highlight, hexcol))
       end
@@ -667,7 +666,7 @@ M.set_header = function(opts, hdr_tbl)
     cwd = {
       hdr_txt_opt = "cwd_header_txt",
       hdr_txt_str = "cwd: ",
-      hdr_txt_col = "red",
+      hdr_txt_col = opts.winopts.hl.header_text,
       val = function()
         -- do not display header when we're inside our
         -- cwd unless the caller specifically requested
@@ -682,7 +681,7 @@ M.set_header = function(opts, hdr_tbl)
     search = {
       hdr_txt_opt = "grep_header_txt",
       hdr_txt_str = "Grep string: ",
-      hdr_txt_col = "red",
+      hdr_txt_col = opts.winopts.hl.header_text,
       val = function()
         return opts.search and #opts.search > 0 and opts.search
       end,
@@ -690,7 +689,7 @@ M.set_header = function(opts, hdr_tbl)
     lsp_query = {
       hdr_txt_opt = "lsp_query_header_txt",
       hdr_txt_str = "Query: ",
-      hdr_txt_col = "red",
+      hdr_txt_col = opts.winopts.hl.header_text,
       val = function()
         return opts.lsp_query and #opts.lsp_query > 0 and opts.lsp_query
       end,
@@ -698,7 +697,7 @@ M.set_header = function(opts, hdr_tbl)
     regex_filter = {
       hdr_txt_opt = "regex_header_txt",
       hdr_txt_str = "Regex filter: ",
-      hdr_txt_col = "red",
+      hdr_txt_col = opts.winopts.hl.header_text,
       val = function()
         return opts.regex_filter and #opts.regex_filter > 0 and opts.regex_filter
       end,
@@ -717,8 +716,8 @@ M.set_header = function(opts, hdr_tbl)
             local to = opts.fn_reload and def.fn_reload or def[1]
             table.insert(ret, def.pos or #ret + 1,
               string.format("<%s> to %s",
-                utils.ansi_codes.yellow(k),
-                utils.ansi_codes.red(to)))
+                utils.ansi_from_hl(opts.winopts.hl.header_bind, k),
+                utils.ansi_from_hl(opts.winopts.hl.header_text, to)))
           end
         end
         -- table.concat fails if the table indexes aren't consecutive
@@ -756,7 +755,7 @@ M.set_header = function(opts, hdr_tbl)
       hdr_str = not hdr_str and "" or (hdr_str .. ", ")
       hdr_str = ("%s%s%s"):format(hdr_str, def.hdr_txt_str,
         not def.hdr_txt_col and txt or
-        utils.ansi_codes[def.hdr_txt_col](txt))
+        utils.ansi_from_hl(def.hdr_txt_col, txt))
     end
   end
   if hdr_str and #hdr_str > 0 then
