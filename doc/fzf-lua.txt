@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 June 30
+*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 July 03
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1282,6 +1282,13 @@ temporarily overridden by its corresponding `winopts` option:
 |FzfLuaScrollFloatFull  |PmenuThumb   |`winopts.hl.scrollfloat_f` |Builtin preview `float` scroll full|
 |FzfLuaHelpNormal       |FzfLuaNormal |`winopts.hl.help_normal`   |Help win `fg/bg`|
 |FzfLuaHelpBorder       |FzfLuaBorder |`winopts.hl.help_border`   |Help win border|
+|FzfLuaHeaderBind       |*BlanchedAlmond |`winopts.hl.header_bind`|Header keybind|
+|FzfLuaHeaderText       |*LightCoral     |`winopts.hl.header_text`|Header text|
+|FzfLuaTabTitle         |*LightSkyBlue2  |`winopts.hl.tab_title`  |Tab title (`tabs`)|
+|FzfLuaTabMarker        |*BlanchedAlmond |`winopts.hl.tab_marker` |Tab marker (`tabs`)|
+
+<sup><sub>&ast;Not a highlight group, RGB color from
+`nvim_get_color_map`</sub></sup>
 
 These can be easily customized either via the lua API:
 
