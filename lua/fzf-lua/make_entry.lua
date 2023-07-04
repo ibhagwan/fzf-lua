@@ -107,7 +107,7 @@ local setup_devicon_term_hls = function()
     local hexcol = info.color or utils.hexcol_from_hl(hlgroup, "fg")
     if hexcol and #hexcol > 0 then
       local r, g, b = hex(hexcol)
-      utils.add_ansi_code(hlgroup, string.format("[38;2;%s;%s;%sm", r, g, b))
+      utils.cache_ansi_escseq(hlgroup, string.format("[38;2;%s;%s;%sm", r, g, b))
     end
   end
 end

@@ -1,5 +1,4 @@
 local core = require "fzf-lua.core"
-local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
 local M = {}
@@ -11,8 +10,7 @@ M.manpages = function(opts)
   opts.fn_transform = function(x)
     -- split by first occurence of ' - ' (spaced hyphen)
     local man, desc = x:match("^(.-) %- (.*)$")
-    return string.format("%-45s %s",
-      utils.ansi_codes.magenta(man), desc)
+    return string.format("%-45s %s", man, desc)
   end
 
   opts.fzf_opts["--no-multi"] = ""

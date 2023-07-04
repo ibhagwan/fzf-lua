@@ -7,10 +7,6 @@ local api = vim.api
 local uv = vim.loop
 local fn = vim.fn
 
-
-local __HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
-local __HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
-
 local Previewer = {}
 
 Previewer.base = Object:extend()
@@ -764,8 +760,8 @@ function Previewer.buffer_or_file:do_syntax(entry)
         -- limit treesitter manual attachment to 0.8 instead (0.7.2 also errs)
         -- Error executing vim.schedule lua callback:
         --   vim/filetype.lua:0: attempt to call method 'gsub' (a nil value)
-        local fallback = not __HAS_NVIM_08
-        if __HAS_NVIM_08 then
+        local fallback = not utils.__HAS_NVIM_08
+        if utils.__HAS_NVIM_08 then
           fallback = (function()
             local ft = entry.filetype
                 or self.ext_ft_override and self.ext_ft_override[path.extension(entry.path)]
@@ -787,7 +783,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
             end)()
             local ts_success
             if ts_enabled then
-              if __HAS_NVIM_09 then
+              if utils.__HAS_NVIM_09 then
                 ts_success = ts_attach(bufnr, ft)
               else
                 ts_success = ts_attach_08(bufnr, ft)
@@ -850,8 +846,8 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
 
     fn.clearmatches()
 
-    if self.win.winopts.hl.cursor and not (lnum <= 1 and col <= 1) then
-      fn.matchaddpos(self.win.winopts.hl.cursor, { { lnum, math.max(1, col) } }, 11)
+    if self.win.hls.cursor and not (lnum <= 1 and col <= 1) then
+      fn.matchaddpos(self.win.hls.cursor, { { lnum, math.max(1, col) } }, 11)
     end
   end)
 end
@@ -943,8 +939,8 @@ function Previewer.help_tags:set_cursor_hl(entry)
     api.nvim_win_set_cursor(0, { 1, 0 })
     fn.clearmatches()
     fn.search(entry.hregex, "W")
-    if self.win.winopts.hl.search then
-      fn.matchadd(self.win.winopts.hl.search, entry.hregex)
+    if self.win.hls.search then
+      fn.matchadd(self.win.hls.search, entry.hregex)
     end
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
@@ -1080,8 +1076,8 @@ function Previewer.tags:set_cursor_hl(entry)
     api.nvim_win_set_cursor(0, { 1, 0 })
     fn.clearmatches()
     fn.search(entry.ctag, "W")
-    if self.win.winopts.hl.search then
-      fn.matchadd(self.win.winopts.hl.search, entry.ctag)
+    if self.win.hls.search then
+      fn.matchadd(self.win.hls.search, entry.ctag)
     end
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
@@ -1109,6 +1105,8 @@ function Previewer.highlights:new(o, opts, fzf_win)
 end
 
 function Previewer.highlights:close()
+  -- Remove our scratch buffer from "listed" so it gets wiped
+  self.listed_buffers[tostring(self.tmpbuf)] = nil
   Previewer.highlights.super.close(self)
   self.tmpbuf = nil
 end
@@ -1128,7 +1126,11 @@ function Previewer.highlights:populate_preview_buf(entry_str)
       end
     end
 
-    self.tmpbuf = self:get_tmp_buffer()
+    -- Get a scratch buffer that doesn't wipe on hide (vs `self:get_tmp_buffer`)
+    -- and mark it as "listed" so it doesn't get cleared on fzf's zero event
+    self.tmpbuf = api.nvim_create_buf(false, true)
+    self.listed_buffers[tostring(self.tmpbuf)] = true
+
     vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, hl_groups)
     for k, v in ipairs(hl_groups) do
       local startPos = string.find(v, "xxx", 1, true) - 1
@@ -1136,6 +1138,10 @@ function Previewer.highlights:populate_preview_buf(entry_str)
       local hlgroup = string.match(v, "([^ ]*)%s+.*")
       pcall(vim.api.nvim_buf_add_highlight, self.tmpbuf, 0, hlgroup, k - 1, startPos, endPos)
     end
+  end
+
+  -- Preview buffer isn't set on init and after fzf's zero event
+  if not self.preview_bufnr then
     self:set_preview_buf(self.tmpbuf)
   end
 
@@ -1147,8 +1153,8 @@ function Previewer.highlights:populate_preview_buf(entry_str)
     api.nvim_win_set_cursor(0, { 1, 0 })
     fn.clearmatches()
     fn.search(selected_hl, "W")
-    if self.win.winopts.hl.search then
-      fn.matchadd(self.win.winopts.hl.search, selected_hl)
+    if self.win.hls.search then
+      fn.matchadd(self.win.hls.search, selected_hl)
     end
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
@@ -1177,7 +1183,7 @@ function Previewer.quickfix:new(o, opts, fzf_win)
 end
 
 function Previewer.quickfix:close()
-  Previewer.highlights.super.close(self)
+  Previewer.quickfix.super.close(self)
 end
 
 function Previewer.quickfix:populate_preview_buf(entry_str)

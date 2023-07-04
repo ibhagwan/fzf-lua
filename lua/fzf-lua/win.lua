@@ -5,8 +5,6 @@ local actions = require "fzf-lua.actions"
 local api = vim.api
 local fn = vim.fn
 
-local __HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
-
 local FzfWin = {}
 
 -- singleton instance used in win_leave
@@ -190,25 +188,25 @@ local normalize_winopts = function(o)
 
   winopts.__winhls = {
     main = {
-      { "Normal",       winopts.hl.normal },
-      { "FloatBorder",  winopts.hl.border },
-      { "CursorLine",   winopts.hl.cursorline },
-      { "CursorLineNr", winopts.hl.cursorlinenr },
+      { "Normal",       o.hls.normal },
+      { "FloatBorder",  o.hls.border },
+      { "CursorLine",   o.hls.cursorline },
+      { "CursorLineNr", o.hls.cursorlinenr },
     },
     prev = {
-      { "Normal",       winopts.hl.preview_normal },
-      { "FloatBorder",  winopts.hl.preview_border },
-      { "CursorLine",   winopts.hl.cursorline },
-      { "CursorLineNr", winopts.hl.cursorlinenr },
+      { "Normal",       o.hls.preview_normal },
+      { "FloatBorder",  o.hls.preview_border },
+      { "CursorLine",   o.hls.cursorline },
+      { "CursorLineNr", o.hls.cursorlinenr },
     },
     -- our border is manually drawn so we need
     -- to replace Normal with the border color
-    prev_border = { { "Normal", winopts.hl.preview_border } },
+    prev_border = { { "Normal", o.hls.preview_border } },
   }
 
   -- add title hl if wasn't provided by the user
-  if type(winopts.title) == "string" and type(winopts.hl.title) == "string" then
-    winopts.title = { { winopts.title, winopts.hl.title } }
+  if type(winopts.title) == "string" and type(o.hls.title) == "string" then
+    winopts.title = { { winopts.title, o.hls.title } }
   end
 
   local max_width = vim.o.columns - 2
@@ -351,6 +349,7 @@ function FzfWin:new(o)
   o = o or {}
   self._o = o
   self = setmetatable({}, { __index = self })
+  self.hls = o.hls
   self.actions = o.actions
   self.winopts = normalize_winopts(o)
   self.fullscreen = self.winopts.fullscreen
@@ -640,8 +639,8 @@ function FzfWin:redraw_main()
     style = "minimal",
     relative = relative,
     border = self.winopts.border,
-    title = __HAS_NVIM_09 and self.winopts.title or nil,
-    title_pos = __HAS_NVIM_09 and self.winopts.title_pos or nil,
+    title = utils.__HAS_NVIM_09 and self.winopts.title or nil,
+    title_pos = utils.__HAS_NVIM_09 and self.winopts.title_pos or nil,
   }
   win_opts.row = winopts.row or math.floor(((lines - win_opts.height) / 2) - 1)
   win_opts.col = winopts.col or math.floor((columns - win_opts.width) / 2)
@@ -916,8 +915,8 @@ function FzfWin:update_scrollbar_border(o)
 
   local borderchars = self.winopts.nohl_borderchars
   local scrollchars = self.winopts.preview.scrollchars
-  local hl_f = self.winopts.hl.scrollborder_f
-  local hl_e = self.winopts.hl.scrollborder_e
+  local hl_f = self.hls.scrollborder_f
+  local hl_e = self.hls.scrollborder_e
 
   -- backward compatibility before 'scrollchar' was a table
   if type(self.winopts.preview.scrollchar) == "string" and
@@ -1019,7 +1018,7 @@ function FzfWin:update_scrollbar_float(o)
       style1.noautocmd = true
       self._sbuf1 = ensure_tmp_buf(self._sbuf1)
       self._swin1 = vim.api.nvim_open_win(self._sbuf1, false, style1)
-      local hl = self.winopts.hl.scrollfloat_e or "PmenuSbar"
+      local hl = self.hls.scrollfloat_e or "PmenuSbar"
       vim.api.nvim_win_set_option(self._swin1, "winhighlight",
         ("Normal:%s,NormalNC:%s,NormalFloat:%s"):format(hl, hl, hl))
     end
@@ -1033,7 +1032,7 @@ function FzfWin:update_scrollbar_float(o)
       style2.noautocmd = true
       self._sbuf2 = ensure_tmp_buf(self._sbuf2)
       self._swin2 = vim.api.nvim_open_win(self._sbuf2, false, style2)
-      local hl = self.winopts.hl.scrollfloat_f or "PmenuThumb"
+      local hl = self.hls.scrollfloat_f or "PmenuThumb"
       vim.api.nvim_win_set_option(self._swin2, "winhighlight",
         ("Normal:%s,NormalNC:%s,NormalFloat:%s"):format(hl, hl, hl))
     end
@@ -1091,9 +1090,9 @@ function FzfWin:update_title(title)
   local line = ("%s%s%s"):format(prefix, title, suffix)
   api.nvim_buf_set_lines(border_buf, 0, 1, 1, { line })
 
-  if self.winopts.hl.preview_title and #title > 0 then
+  if self.hls.preview_title and #title > 0 then
     pcall(vim.api.nvim_win_call, self.border_winid, function()
-      fn.matchaddpos(self.winopts.hl.preview_title, { { 1, #prefix + 1, #title } }, 11)
+      fn.matchaddpos(self.hls.preview_title, { { 1, #prefix + 1, #title } }, 11)
     end)
   end
 end
@@ -1216,8 +1215,8 @@ function FzfWin.toggle_help()
   opts.mode_width = opts.mode_width or 10
   opts.name_width = opts.name_width or 28
   opts.keybind_width = opts.keybind_width or 14
-  opts.normal_hl = opts.normal_hl or self.winopts.hl.help_normal
-  opts.border_hl = opts.border_hl or self.winopts.hl.help_border
+  opts.normal_hl = opts.normal_hl or self.hls.help_normal
+  opts.border_hl = opts.border_hl or self.hls.help_border
   opts.winblend = opts.winblend or 0
   opts.column_padding = opts.column_padding or "  "
   opts.column_width = opts.keybind_width + opts.name_width + #opts.column_padding + 2

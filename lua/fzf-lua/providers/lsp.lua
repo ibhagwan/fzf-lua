@@ -5,10 +5,6 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
--- Save once since this can't be run in a fast event and will err with:
--- E5560: vimL function must not be called in a lua loop callback
-local __HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
-
 local function CTX_UPDATE()
   -- save current win/buf context, ignore when fzf
   -- window is already open (actions.sym_lsym)
@@ -23,7 +19,7 @@ local function CTX_UPDATE()
 end
 
 local function handler_capabilty(handler)
-  if __HAS_NVIM_08 then
+  if utils.__HAS_NVIM_08 then
     return handler.server_capability
   else
     return handler.resolved_capability
@@ -41,7 +37,7 @@ local function check_capabilities(feature, silent)
   local num_clients = 0
 
   for _, client in pairs(clients) do
-    if __HAS_NVIM_08 then
+    if utils.__HAS_NVIM_08 then
       if client.server_capabilities[feature] then
         num_clients = num_clients + 1
       end

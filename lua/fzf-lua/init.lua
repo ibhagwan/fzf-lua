@@ -2,8 +2,6 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
-local __HAS_NVIM_07 = vim.fn.has("nvim-0.7") == 1
-
 do
   -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
   -- plugin '.vim' initialization sometimes doesn't get called
@@ -33,78 +31,76 @@ end
 
 local M = {}
 
-function M.setup_highlights()
+-- Setup fzf-lua's highlights, use `override=true` to reset all highlights
+function M.setup_highlights(override)
+  -- we use `default = true` so calling this function doesn't override the colorscheme
+  local default = not override
   local highlights = {
-    { "FzfLuaNormal",            { "winopts.hl.normal", "Normal" } },
-    { "FzfLuaBorder",            { "winopts.hl.border", "Normal" } },
-    { "FzfLuaTitle",             { "winopts.hl.title", "FzfLuaNormal" } },
-    { "FzfLuaHelpNormal",        { "winopts.hl.help_normal", "FzfLuaNormal" } },
-    { "FzfLuaHelpBorder",        { "winopts.hl.help_border", "FzfLuaBorder" } },
-    { "FzfLuaPreviewNormal",     { "winopts.hl.preview_normal", "FzfLuaNormal" } },
-    { "FzfLuaPreviewBorder",     { "winopts.hl.preview_border", "FzfLuaBorder" } },
-    { "FzfLuaPreviewTitle",      { "winopts.hl.preview_title", "FzfLuaTitle" } },
-    { "FzfLuaCursor",            { "winopts.hl.cursor", "Cursor" } },
-    { "FzfLuaCursorLine",        { "winopts.hl.cursorline", "CursorLine" } },
-    { "FzfLuaCursorLineNr",      { "winopts.hl.cursorlinenr", "CursorLineNr" } },
-    { "FzfLuaSearch",            { "winopts.hl.search", "IncSearch" } },
-    { "FzfLuaScrollBorderEmpty", { "winopts.hl.scrollborder_e", "FzfLuaBorder" } },
-    { "FzfLuaScrollBorderFull",  { "winopts.hl.scrollborder_f", "FzfLuaBorder" } },
-    { "FzfLuaScrollFloatEmpty",  { "winopts.hl.scrollfloat_e", "PmenuSbar" } },
-    { "FzfLuaScrollFloatFull",   { "winopts.hl.scrollfloat_f", "PmenuThumb" } },
+    { "FzfLuaNormal",            "normal",         { default = default, link = "Normal" } },
+    { "FzfLuaBorder",            "border",         { default = default, link = "Normal" } },
+    { "FzfLuaTitle",             "title",          { default = default, link = "FzfLuaNormal" } },
+    { "FzfLuaHelpNormal",        "help_normal",    { default = default, link = "FzfLuaNormal" } },
+    { "FzfLuaHelpBorder",        "help_border",    { default = default, link = "FzfLuaBorder" } },
+    { "FzfLuaPreviewNormal",     "preview_normal", { default = default, link = "FzfLuaNormal" } },
+    { "FzfLuaPreviewBorder",     "preview_border", { default = default, link = "FzfLuaBorder" } },
+    { "FzfLuaPreviewTitle",      "preview_title",  { default = default, link = "FzfLuaTitle" } },
+    { "FzfLuaCursor",            "cursor",         { default = default, link = "Cursor" } },
+    { "FzfLuaCursorLine",        "cursorline",     { default = default, link = "CursorLine" } },
+    { "FzfLuaCursorLineNr",      "cursorlinenr",   { default = default, link = "CursorLineNr" } },
+    { "FzfLuaSearch",            "search",         { default = default, link = "IncSearch" } },
+    { "FzfLuaScrollBorderEmpty", "scrollborder_e", { default = default, link = "FzfLuaBorder" } },
+    { "FzfLuaScrollBorderFull",  "scrollborder_f", { default = default, link = "FzfLuaBorder" } },
+    { "FzfLuaScrollFloatEmpty",  "scrollfloat_e",  { default = default, link = "PmenuSbar" } },
+    { "FzfLuaScrollFloatFull",   "scrollfloat_f",  { default = default, link = "PmenuThumb" } },
     -- Fzf terminal hls, colors from `vim.api.nvim_get_color_map()`
-    { "FzfLuaHeaderBind",        { "winopts.hl.header_bind", { fg = "BlanchedAlmond" } } },
-    { "FzfLuaHeaderText",        { "winopts.hl.header_text", { fg = "LightCoral" } } },
+    { "FzfLuaHeaderBind",        "header_bind",    { default = default, fg = "BlanchedAlmond" } },
+    { "FzfLuaHeaderText",        "header_text",    { default = default, fg = "Brown1" } },
     -- Provider specific highlights
-    { "FzfLuaTabTitle",          { "winopts.hl.tab_title", { fg = "LightSkyBlue2", bold = true } } },
-    { "FzfLuaTabMarker",         { "winopts.hl.tab_marker", { fg = "BlanchedAlmond", bold = true } } },
+    { "FzfLuaBufName",           "buf_name",       { default = default, fg = "LightMagenta" } },
+    { "FzfLuaBufNr",             "buf_nr",         { default = default, fg = "BlanchedAlmond" } },
+    { "FzfLuaBufLineNr",         "buf_linenr",     { default = default, fg = "MediumSpringGreen" } },
+    { "FzfLuaBufFlagCur",        "buf_flag_cur",   { default = default, fg = "Brown1" } },
+    { "FzfLuaBufFlagAlt",        "buf_flag_alt",   { default = default, fg = "CadetBlue1" } },
+    { "FzfLuaTabTitle", "tab_title",
+      { default = default, fg = "LightSkyBlue1", bold = true } },
+    { "FzfLuaTabMarker", "tab_marker",
+      { default = default, fg = "BlanchedAlmond", bold = true } },
   }
-  for _, a in pairs(highlights) do
-    local hl_name, v = a[1], a[2]
-    -- define a new linked highlight and then override the
-    -- default config with the new FzfLuaXXX hl. This leaves
-    -- the choice for direct call option overrides (via winopts)
-    local hl_link = config.get_global(v[1])
-    if not hl_link or vim.fn.hlID(hl_link) == 0 then
-      -- revert to default if hl option or link doesn't exist
-      hl_link = v[2]
-    end
-    if type(hl_link) == "string" then
-      if __HAS_NVIM_07 then
-        vim.api.nvim_set_hl(0, hl_name, { default = true, link = hl_link })
-      else
-        vim.cmd(string.format("hi! link %s %s", hl_name, hl_link))
-      end
+  for _, a in ipairs(highlights) do
+    local hl_name, _, hl_def = a[1], a[2], a[3]
+    if utils.__HAS_NVIM_07 then
+      vim.api.nvim_set_hl(0, hl_name, hl_def)
     else
-      -- not a link, create the group instead
-      if __HAS_NVIM_07 then
-        vim.api.nvim_set_hl(0, hl_name, hl_link)
+      if hl_def.link then
+        vim.cmd(string.format("hi! %s link %s %s",
+          hl_def.default and "default" or "",
+          hl_name, hl_def.link))
       else
-        vim.cmd(string.format("hi! %s %s%s%s", hl_name,
-          hl_link.fg and string.format(" guifg=%s", hl_link.fg) or "",
-          hl_link.bg and string.format(" guibg=%s", hl_link.bg) or "",
-          hl_link.bold and " gui=bold" or ""))
+        vim.cmd(string.format("hi! %s %s %s%s%s",
+          hl_def.default and "default" or "", hl_name,
+          hl_def.fg and string.format(" guifg=%s", hl_def.fg) or "",
+          hl_def.bg and string.format(" guibg=%s", hl_def.bg) or "",
+          hl_def.bold and " gui=bold" or ""))
       end
     end
-    -- save default highlight groups under 'config.globals.winopts.__hl'
-    -- we will later merge the table when calling `config.normalize_opts`
-    config.set_global(v[1]:gsub("%.hl%.", ".__hl."), hl_name)
   end
 
   -- linking to a cleared hl is bugged in neovim 0.8.x
   -- resulting in a pink background for hls linked to `Normal`
   if vim.fn.has("nvim-0.9") == 0 and vim.fn.has("nvim-0.8") == 1 then
-    for _, a in pairs(highlights) do
-      local _, v = a[1], a[2]
-      local opt_path = v[1]:gsub("%.hl%.", ".__hl.")
-      local hl = config.get_global(opt_path)
-      if utils.is_hl_cleared(hl) then
+    for _, a in ipairs(highlights) do
+      local hl_name, opt_name = a[1], a[2]
+      if utils.is_hl_cleared(hl_name) then
         -- reset any invalid hl, this will cause our 'winhighlight'
         -- string to look something akin to `Normal:,FloatBorder:`
         -- which uses terminal fg|bg colors instead
-        config.set_global(opt_path, "")
+        config.set_global("__HLS." .. opt_name, "")
       end
     end
   end
+
+  -- Init the colormap singleton
+  utils.COLORMAP()
 end
 
 -- Setup highlights at least once on load in
@@ -131,16 +127,6 @@ function M.setup(opts, do_not_reset_defaults)
   end
   -- Make sure opts is a table or override
   local globals = vim.tbl_deep_extend("keep", opts, config.globals)
-  -- backward compatibility before winopts was it's own struct
-  for k, _ in pairs(globals.winopts) do
-    if opts[k] ~= nil then globals.winopts[k] = opts[k] end
-  end
-  -- backward compatibility for 'fzf_binds'
-  if opts.fzf_binds then
-    utils.warn("'fzf_binds' is deprecated, moved under 'keymap.fzf', " ..
-      "see ':help fzf-lua-customization'")
-    globals.keymap.fzf = opts.fzf_binds
-  end
   -- do not merge, override the bind tables
   for t, v in pairs({
     ["keymap"]  = { "fzf", "builtin" },
@@ -151,17 +137,6 @@ function M.setup(opts, do_not_reset_defaults)
         globals[t][k] = opts[t][k]
       end
     end
-  end
-  -- override BAT_CONFIG_PATH to prevent a
-  -- conflict with '$XDG_DATA_HOME/bat/config'
-  local bat_theme = globals.previewers.bat.theme or globals.previewers.bat_native.theme
-  local bat_config = globals.previewers.bat.config or globals.previewers.bat_native.config
-  if bat_config then
-    vim.env.BAT_CONFIG_PATH = vim.fn.expand(bat_config)
-  end
-  -- override the bat preview theme if set by caller
-  if bat_theme and #bat_theme > 0 then
-    vim.env.BAT_THEME = bat_theme
   end
   -- set lua_io if caller requested
   utils.set_lua_io(globals.lua_io)

@@ -98,11 +98,14 @@ end
 function Previewer.bat:cmdline(o)
   o = o or {}
   o.action = o.action or self:action(o)
-  local highlight_line = ""
-  if self.opts.line_field_index then
-    highlight_line = string.format("--highlight-line={%d}", self.opts.line_field_index)
+  local extra_args = ""
+  if self.theme then
+    extra_args = string.format([[ --theme="%s"]], self.theme)
   end
-  return self:format_cmd(self.cmd, self.args, o.action, highlight_line)
+  if self.opts.line_field_index then
+    extra_args = extra_args .. string.format(" --highlight-line={%d}", self.opts.line_field_index)
+  end
+  return self:format_cmd(self.cmd, self.args, o.action, extra_args)
 end
 
 -- Specialized head previewer
@@ -223,10 +226,11 @@ function Previewer.bat_async:cmdline(o)
       local end_line = start_line + fzf_lines - 1
       line_range = ("--line-range=%d:%d"):format(start_line, end_line)
     end
-    local cmd = errcmd or ("%s %s %s %s %s"):format(
+    local cmd = errcmd or ("%s %s %s %s %s %s"):format(
       self.cmd, self.args,
+      self.theme and string.format([[--theme="%s"]], self.theme) or "",
       self.opts.line_field_index and
-      ("--highlight-line=%d"):format(entry.line) or "",
+      string.format("--highlight-line=%d", entry.line) or "",
       line_range,
       vim.fn.shellescape(filepath))
     -- uncomment to see the command in the preview window

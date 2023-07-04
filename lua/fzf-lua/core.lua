@@ -349,10 +349,6 @@ M.preview_window = function(o)
   return preview_args
 end
 
-M.get_color = function(hl_group, what)
-  return vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl_group)), what)
-end
-
 -- Create fzf --color arguments from a table of vim highlight groups.
 M.create_fzf_colors = function(opts)
   local colors = opts and opts.fzf_colors
@@ -666,7 +662,7 @@ M.set_header = function(opts, hdr_tbl)
     cwd = {
       hdr_txt_opt = "cwd_header_txt",
       hdr_txt_str = "cwd: ",
-      hdr_txt_col = opts.winopts.hl.header_text,
+      hdr_txt_col = opts.hls.header_text,
       val = function()
         -- do not display header when we're inside our
         -- cwd unless the caller specifically requested
@@ -681,7 +677,7 @@ M.set_header = function(opts, hdr_tbl)
     search = {
       hdr_txt_opt = "grep_header_txt",
       hdr_txt_str = "Grep string: ",
-      hdr_txt_col = opts.winopts.hl.header_text,
+      hdr_txt_col = opts.hls.header_text,
       val = function()
         return opts.search and #opts.search > 0 and opts.search
       end,
@@ -689,7 +685,7 @@ M.set_header = function(opts, hdr_tbl)
     lsp_query = {
       hdr_txt_opt = "lsp_query_header_txt",
       hdr_txt_str = "Query: ",
-      hdr_txt_col = opts.winopts.hl.header_text,
+      hdr_txt_col = opts.hls.header_text,
       val = function()
         return opts.lsp_query and #opts.lsp_query > 0 and opts.lsp_query
       end,
@@ -697,7 +693,7 @@ M.set_header = function(opts, hdr_tbl)
     regex_filter = {
       hdr_txt_opt = "regex_header_txt",
       hdr_txt_str = "Regex filter: ",
-      hdr_txt_col = opts.winopts.hl.header_text,
+      hdr_txt_col = opts.hls.header_text,
       val = function()
         return opts.regex_filter and #opts.regex_filter > 0 and opts.regex_filter
       end,
@@ -716,8 +712,8 @@ M.set_header = function(opts, hdr_tbl)
             local to = opts.fn_reload and def.fn_reload or def[1]
             table.insert(ret, def.pos or #ret + 1,
               string.format("<%s> to %s",
-                utils.ansi_from_hl(opts.winopts.hl.header_bind, k),
-                utils.ansi_from_hl(opts.winopts.hl.header_text, to)))
+                utils.ansi_from_hl(opts.hls.header_bind, k),
+                utils.ansi_from_hl(opts.hls.header_text, to)))
           end
         end
         -- table.concat fails if the table indexes aren't consecutive

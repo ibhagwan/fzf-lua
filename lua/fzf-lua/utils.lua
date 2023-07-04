@@ -8,6 +8,10 @@ end
 
 local M = {}
 
+M.__HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
+M.__HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
+M.__HAS_NVIM_07 = vim.fn.has("nvim-0.7") == 1
+
 function M.__FILE__() return debug.getinfo(2, "S").source end
 
 function M.__LINE__() return debug.getinfo(2, "l").currentline end
@@ -288,30 +292,45 @@ function M.tbl_isempty(T)
   return false
 end
 
-function M.tbl_concat(...)
-  local result = {}
-  local n = 0
-
-  for _, t in ipairs({ ... }) do
-    for i, v in ipairs(t) do
-      result[n + i] = v
-    end
-    n = n + #t
-  end
-
-  return result
-end
-
 function M.tbl_extend(t1, t2)
   return table.move(t2, 1, #t2, #t1 + 1, t1)
 end
 
-function M.tbl_pack(...)
-  return { n = select("#", ...), ... }
+-- Get map value from string key
+-- e.g. `map_get(m, "key.sub1.sub2")`
+function M.map_get(m, k)
+  if not m then return end
+  if not k then return m end
+  local keys = M.strsplit(k, ".")
+  local next, map = m, nil
+  for i = 1, #keys do
+    map = next
+    next = map[keys[i]]
+    if i == #keys then
+      return next
+    elseif type(next) ~= "table" then
+      break
+    end
+  end
 end
 
-function M.tbl_unpack(t, i, j)
-  return unpack(t, i or 1, j or t.n or #t)
+-- Set map value for string key
+-- e.g. `map_set(m, "key.sub1.sub2", value)`
+-- if need be, build map tree as we go along
+function M.map_set(m, k, v)
+  m = m or {}
+  local keys = M.strsplit(k, ".")
+  local map = m
+  for i = 1, #keys do
+    local key = keys[i]
+    if i == #keys then
+      map[key] = v
+    else
+      map[key] = type(map[key]) == "table" and map[key] or {}
+      map = map[key]
+    end
+  end
+  return m
 end
 
 function M.map_tolower(m)
@@ -326,7 +345,7 @@ function M.map_tolower(m)
 end
 
 M.ansi_codes = {}
-M.ansi_colors = {
+M.ansi_escseq = {
   -- the "\x1b" esc sequence causes issues
   -- with older Lua versions
   -- clear    = "\x1b[0m",
@@ -346,15 +365,17 @@ M.ansi_colors = {
   dark_grey = "[0;97m",
 }
 
-M.add_ansi_code = function(name, escseq)
+M.cache_ansi_escseq = function(name, escseq)
   M.ansi_codes[name] = function(string)
     if string == nil or #string == 0 then return "" end
-    return escseq .. string .. M.ansi_colors.clear
+    if not escseq or #escseq == 0 then return string end
+    return escseq .. string .. M.ansi_escseq.clear
   end
 end
 
-for color, escseq in pairs(M.ansi_colors) do
-  M.add_ansi_code(color, escseq)
+-- Generate a cached ansi sequence function for all basic colors
+for color, escseq in pairs(M.ansi_escseq) do
+  M.cache_ansi_escseq(color, escseq)
 end
 
 local function hex2rgb(hexcol)
@@ -362,10 +383,6 @@ local function hex2rgb(hexcol)
   if not r or not g or not b then return end
   r, g, b = tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
   return r, g, b
-end
-
-local function synIDattr(hl, w)
-  return vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl)), w)
 end
 
 -- Helper func to test for invalid (cleared) highlights
@@ -394,6 +411,10 @@ function M.COLORMAP()
   return M.__COLORMAP
 end
 
+local function synIDattr(hl, w)
+  return vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl)), w)
+end
+
 function M.hexcol_from_hl(hlgroup, what)
   if not hlgroup or not what then return end
   local hexcol = synIDattr(hlgroup, what)
@@ -410,42 +431,45 @@ function M.hexcol_from_hl(hlgroup, what)
 end
 
 function M.ansi_from_hl(hl, s)
-  if vim.fn.hlexists(hl) == 1 then
-    -- https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797#rgb-colors
-    -- Set foreground color as RGB: 'ESC[38;2;{r};{g};{b}m'
-    -- Set background color as RGB: 'ESC[48;2;{r};{g};{b}m'
-    local what = {
-      ["fg"]            = { rgb = true, code = 38 },
-      ["bg"]            = { rgb = true, code = 48 },
-      ["bold"]          = { code = 1 },
-      ["italic"]        = { code = 3 },
-      ["underline"]     = { code = 4 },
-      ["inverse"]       = { code = 7 },
-      ["reverse"]       = { code = 7 },
-      ["strikethrough"] = { code = 9 },
-    }
-    for w, p in pairs(what) do
-      local escseq = nil
-      if p.rgb then
-        local hexcol = M.hexcol_from_hl(hl, w)
-        local r, g, b = hex2rgb(hexcol)
-        if r and g and b then
-          escseq = ("[%d;2;%d;%d;%dm"):format(p.code, r, g, b)
-          -- elseif #hexcol>0 then
-          --   print("unresolved", hl, w, hexcol, M.COLORMAP()[synIDattr(hl, w)])
-        end
-      else
-        local value = synIDattr(hl, w)
-        if value and tonumber(value) == 1 then
-          escseq = ("[%dm"):format(p.code)
-        end
+  if not hl or #hl == 0 or vim.fn.hlexists(hl) ~= 1 then
+    return s, nil
+  end
+  -- https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797#rgb-colors
+  -- Set foreground color as RGB: 'ESC[38;2;{r};{g};{b}m'
+  -- Set background color as RGB: 'ESC[48;2;{r};{g};{b}m'
+  local what = {
+    ["fg"]            = { rgb = true, code = 38 },
+    ["bg"]            = { rgb = true, code = 48 },
+    ["bold"]          = { code = 1 },
+    ["italic"]        = { code = 3 },
+    ["underline"]     = { code = 4 },
+    ["inverse"]       = { code = 7 },
+    ["reverse"]       = { code = 7 },
+    ["strikethrough"] = { code = 9 },
+  }
+  -- List of ansi sequences to apply
+  local escseqs = {}
+  for w, p in pairs(what) do
+    if p.rgb then
+      local hexcol = M.hexcol_from_hl(hl, w)
+      local r, g, b = hex2rgb(hexcol)
+      if r and g and b then
+        table.insert(escseqs, string.format("[%d;2;%d;%d;%dm", p.code, r, g, b))
+        -- elseif #hexcol>0 then
+        --   print("unresolved", hl, w, hexcol, M.COLORMAP()[synIDattr(hl, w)])
       end
-      if escseq then
-        s = ("%s%s%s"):format(escseq, s, M.ansi_colors.clear)
+    else
+      local value = synIDattr(hl, w)
+      if value and tonumber(value) == 1 then
+        table.insert(escseqs, string.format("[%dm", p.code))
       end
     end
   end
-  return s
+  local escseq = #escseqs > 0 and table.concat(escseqs) or nil
+  if escseq then
+    s = string.format("%s%s%s", escseq, s or "", M.ansi_escseq.clear)
+  end
+  return s, escseq
 end
 
 function M.strip_ansi_coloring(str)

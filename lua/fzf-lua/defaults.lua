@@ -20,28 +20,12 @@ M.defaults = {
   nbsp          = utils.nbsp,
   global_resume = true,
   winopts       = {
-    height     = 0.85,
-    width      = 0.80,
-    row        = 0.35,
-    col        = 0.55,
-    border     = "rounded",
-    fullscreen = false,
-    --[[ hl = {
-      normal            = 'Normal',
-      border            = 'FloatBorder',
-      help_normal       = 'Normal',
-      help_border       = 'FloatBorder',
-      -- builtin preview only
-      cursor            = 'Cursor',
-      cursorline        = 'CursorLine',
-      cursorlinenr      = 'CursorLineNr',
-      search            = 'IncSearch',
-      title             = 'Normal',
-      scrollfloat_e     = 'PmenuSbar',
-      scrollfloat_f     = 'PmenuThumb',
-      scrollborder_e    = 'FloatBorder',
-      scrollborder_f    = 'FloatBorder',
-    }, ]]
+    height       = 0.85,
+    width        = 0.80,
+    row          = 0.35,
+    col          = 0.55,
+    border       = "rounded",
+    fullscreen   = false,
     preview      = {
       default      = "builtin",
       border       = "border",
@@ -147,20 +131,18 @@ M.defaults = {
       _ctor = previewers.fzf.cmd,
     },
     bat = {
-      cmd    = "bat",
-      args   = "--italic-text=always --style=numbers,changes --color always",
-      theme  = nil,
-      config = nil,
-      _ctor  = previewers.fzf.bat_async,
+      cmd   = "bat",
+      args  = "--color=always --style=numbers,changes",
+      _ctor = previewers.fzf.bat_async,
     },
     bat_native = {
       cmd   = "bat",
-      args  = "--italic-text=always --style=numbers,changes --color always",
+      args  = "--color=always --style=numbers,changes",
       _ctor = previewers.fzf.bat,
     },
     bat_async = {
       cmd   = "bat",
-      args  = "--italic-text=always --style=numbers,changes --color always",
+      args  = "--color=always --style=numbers,changes",
       _ctor = previewers.fzf.bat_async,
     },
     head = {
@@ -192,7 +174,7 @@ M.defaults = {
       syntax            = true,
       syntax_delay      = 0,
       syntax_limit_l    = 0,
-      syntax_limit_b    = 1024 * 1024,    -- 1MB
+      syntax_limit_b    = 1024 * 1024,      -- 1MB
       limit_b           = 1024 * 1024 * 10, -- 10MB
       treesitter        = { enable = true, disable = {} },
       ueberzug_scaler   = "cover",
@@ -410,6 +392,7 @@ M.defaults.buffers = {
   fzf_opts              = { ["--tiebreak"] = "index", },
   _actions              = function() return M.globals.actions.buffers end,
   actions               = { ["ctrl-x"] = { fn = actions.buf_del, reload = true } },
+  _cached_hls           = { "buf_nr", "buf_flag_cur", "buf_flag_alt" },
 }
 
 M.defaults.tabs = {
@@ -428,6 +411,7 @@ M.defaults.tabs = {
     ["--delimiter"] = "'[\\):]'",
     ["--with-nth"]  = "2..",
   },
+  _cached_hls = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "tab_title", "tab_marker" },
 }
 
 M.defaults.lines = {
@@ -450,6 +434,7 @@ M.defaults.lines = {
     ["alt-q"]   = actions.buf_sel_to_qf,
     ["alt-l"]   = actions.buf_sel_to_ll
   },
+  _cached_hls     = { "buf_name", "buf_nr", "buf_linenr" },
 }
 
 M.defaults.blines = {
@@ -471,6 +456,7 @@ M.defaults.blines = {
     ["alt-q"]   = actions.buf_sel_to_qf,
     ["alt-l"]   = actions.buf_sel_to_ll
   },
+  _cached_hls     = { "buf_name", "buf_nr", "buf_linenr" },
 }
 
 M.defaults.tags = {
@@ -859,5 +845,33 @@ M.defaults.complete_bline = {}
 M.defaults.file_icon_padding = ""
 
 M.defaults.file_icon_colors = {}
+
+M.defaults.__HLS = {
+  normal         = "FzfLuaNormal",
+  border         = "FzfLuaBorder",
+  title          = "FzfLuaTitle",
+  help_normal    = "FzfLuaHelpNormal",
+  help_border    = "FzfLuaHelpBorder",
+  preview_normal = "FzfLuaPreviewNormal",
+  preview_border = "FzfLuaPreviewBorder",
+  preview_title  = "FzfLuaPreviewTitle",
+  cursor         = "FzfLuaCursor",
+  cursorline     = "FzfLuaCursorLine",
+  cursorlinenr   = "FzfLuaCursorLineNr",
+  search         = "FzfLuaSearch",
+  scrollborder_e = "FzfLuaScrollBorderEmpty",
+  scrollborder_f = "FzfLuaScrollBorderFull",
+  scrollfloat_e  = "FzfLuaScrollFloatEmpty",
+  scrollfloat_f  = "FzfLuaScrollFloatFull",
+  header_bind    = "FzfLuaHeaderBind",
+  header_text    = "FzfLuaHeaderText",
+  buf_name       = "FzfLuaBufName",
+  buf_nr         = "FzfLuaBufNr",
+  buf_linenr     = "FzfLuaBufLineNr",
+  buf_flag_cur   = "FzfLuaBufFlagCur",
+  buf_flag_alt   = "FzfLuaBufFlagAlt",
+  tab_title      = "FzfLuaTabTitle",
+  tab_marker     = "FzfLuaTabMarker",
+}
 
 return M
