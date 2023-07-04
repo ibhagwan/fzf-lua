@@ -302,13 +302,12 @@ function M.map_get(m, k)
   if not m then return end
   if not k then return m end
   local keys = M.strsplit(k, ".")
-  local next, map = m, nil
+  local iter = m
   for i = 1, #keys do
-    map = next
-    next = map[keys[i]]
+    iter = iter[keys[i]]
     if i == #keys then
-      return next
-    elseif type(next) ~= "table" then
+      return iter
+    elseif type(iter) ~= "table" then
       break
     end
   end

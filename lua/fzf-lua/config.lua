@@ -125,7 +125,7 @@ function M.normalize_opts(opts, defaults)
     opts[k] = vim.tbl_deep_extend("keep",
       -- must clone or map will be saved as reference
       -- and then overwritten if found in 'backward_compat'
-      type(opts[k]) == "function" and opts[k] or opts[k] or {},
+      type(opts[k]) == "function" and opts[k]() or opts[k] or {},
       type(M.globals[k]) == "function" and M.globals[k]() or
       type(M.globals[k]) == "table" and utils.tbl_deep_clone(M.globals[k]) or {})
   end
@@ -225,7 +225,6 @@ function M.normalize_opts(opts, defaults)
     { "winopts.preview.title_pos",    "winopts.preview.title_align" },
     { "winopts.preview.scrollbar",    "previewers.builtin.scrollbar" },
     { "winopts.preview.scrollchar",   "previewers.builtin.scrollchar" },
-    { "winopts_fn",                   "winopts_raw" },
     { "diag_icons",                   "lsp.lsp_icons" },
     { "cwd_header",                   "show_cwd_header" },
     { "cwd_prompt",                   "show_cwd_prompt" },
@@ -372,38 +371,6 @@ M.bytecode = function(s, datatype)
       -- can't find any references for it other than
       -- it being used in packer.nvim
       return string.dump(iter, true)
-    end
-  end
-end
-
--- returns nil if not found
-M.get_global = function(s)
-  local keys = utils.strsplit(s, ".")
-  local iter = M.globals
-  for i = 1, #keys do
-    iter = iter[keys[i]]
-    if not iter then break end
-    if i == #keys then
-      return iter
-    end
-  end
-end
-
--- builds the tree if needed
-M.set_global = function(s, value)
-  local keys = utils.strsplit(s, ".")
-  local iter = M.globals
-  for i = 1, #keys do
-    if i == #keys then
-      iter[keys[i]] = value
-    else
-      -- build the new leaf on parent
-      -- to preserve original table ref
-      local parent = iter
-      if not parent[keys[i]] then
-        parent[keys[i]] = {}
-      end
-      iter = parent[keys[i]]
     end
   end
 end

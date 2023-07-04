@@ -94,7 +94,7 @@ function M.setup_highlights(override)
         -- reset any invalid hl, this will cause our 'winhighlight'
         -- string to look something akin to `Normal:,FloatBorder:`
         -- which uses terminal fg|bg colors instead
-        config.set_global("__HLS." .. opt_name, "")
+        utils.map_set(config.globals, "__HLS." .. opt_name, "")
       end
     end
   end

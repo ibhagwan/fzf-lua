@@ -142,8 +142,6 @@ local function gen_buffer_entry(opts, buf, cwd)
   local readonly = buf.readonly and "=" or " "
   local changed = buf.info.changed == 1 and "+" or " "
   local flags = hidden .. readonly .. changed
-  -- artificially lenghen the string so it matches
-  -- the same width whe `hl_curbuf` is used
   local leftbr = "["
   local rightbr = "]"
   local bufname = #buf.info.name > 0 and path.relative(buf.info.name, cwd or vim.loop.cwd())
