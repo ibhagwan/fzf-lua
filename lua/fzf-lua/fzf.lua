@@ -194,6 +194,10 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = true })
   end
 
+  if opts.debug then
+    print("[Fzf-lua]: fzf cmd:", cmd)
+  end
+
   local co = coroutine.running()
   local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or vim.fn.termopen
   jobstart({ "sh", "-c", cmd }, {

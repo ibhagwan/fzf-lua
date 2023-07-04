@@ -292,7 +292,8 @@ M.fzf = function(contents, opts)
       fzf_bin = opts.fzf_bin,
       cwd = opts.cwd,
       silent_fail = opts.silent_fail,
-      is_fzf_tmux = opts._is_fzf_tmux
+      is_fzf_tmux = opts._is_fzf_tmux,
+      debug = opts.debug_cmd or opts.debug and not (opts.debug_cmd == false)
     })
   -- kill fzf piped process PID
   -- NOTE: might be an overkill since we're using $FZF_DEFAULT_COMMAND
@@ -587,10 +588,9 @@ M.mt_cmd_wrapper = function(opts)
         libuv.shellescape(config._devicons_path),
         fn_transform)
     end
-    local cmd = libuv.wrap_spawn_stdio(opts_to_str(opts),
-      fn_transform, fn_preprocess)
+    local cmd = libuv.wrap_spawn_stdio(opts_to_str(opts), fn_transform, fn_preprocess)
     if opts.debug_cmd or opts.debug and not (opts.debug_cmd == false) then
-      print(cmd)
+      utils.info(string.format("multiprocess cmd: %s", cmd))
     end
     return cmd
   else
@@ -829,7 +829,8 @@ M.convert_reload_actions = function(reload_cmd, opts)
         v.fn(items, opts)
       end, v.field_index == false and "" or v.field_index or "{+}", opts.debug)
       opts.keymap.fzf[k] = {
-        string.format("%sexecute-silent(%s)+reload(%s)",
+        string.format("%s%sexecute-silent(%s)+reload(%s)",
+          type(v.prefix) == "string" and v.prefix or "",
           unbind and (unbind .. "+") or "",
           shell_action,
           reload_cmd),
@@ -857,7 +858,9 @@ M.convert_exec_silent_actions = function(opts)
         v.fn(items, opts)
       end, v.field_index == false and "" or v.field_index or "{+}", opts.debug)
       opts.keymap.fzf[k] = {
-        string.format("execute-silent(%s)", shell_action),
+        string.format("%sexecute-silent(%s)",
+          type(v.prefix) == "string" and v.prefix or "",
+          shell_action),
         desc = config.get_action_helpstr(v.fn)
       }
       opts.actions[k] = nil
