@@ -253,42 +253,64 @@ M.buffer_lines = function(opts)
   opts.fn_pre_fzf = UPDATE_STATE
   opts.fn_pre_fzf()
 
-  local buffers = filter_buffers(opts,
-    opts.current_buffer_only and { __STATE.curbuf } or __STATE.buflist)
-
-  local items = {}
-
-  for _, bufnr in ipairs(buffers) do
-    local data = {}
-    local filepath = vim.api.nvim_buf_get_name(bufnr)
-    if vim.api.nvim_buf_is_loaded(bufnr) then
-      data = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-    elseif vim.fn.filereadable(filepath) ~= 0 then
-      data = vim.fn.readfile(filepath, "")
+  local contents = function(cb)
+    local function add_entry(x, co)
+      cb(x, function(err)
+        coroutine.resume(co)
+        if err then cb(nil) end
+      end)
+      coroutine.yield()
     end
-    local bufname = path.basename(filepath)
-    local buficon, hl
-    if opts.file_icons then
-      local filename = path.tail(bufname)
-      local extension = path.extension(filename)
-      buficon, hl = make_entry.get_devicon(filename, extension)
-      if opts.color_icons then
-        buficon = utils.ansi_codes[hl](buficon)
+
+    coroutine.wrap(function()
+      local co = coroutine.running()
+
+      local buffers = filter_buffers(opts,
+        opts.current_buffer_only and { __STATE.curbuf } or __STATE.buflist)
+
+      for _, bufnr in ipairs(buffers) do
+        local data = {}
+        local bufname, buficon, hl
+        -- use vim.schedule to avoid
+        -- E5560: vimL function must not be called in a lua loop callback
+        vim.schedule(function()
+          local filepath = vim.api.nvim_buf_get_name(bufnr)
+          if vim.api.nvim_buf_is_loaded(bufnr) then
+            data = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+          elseif vim.fn.filereadable(filepath) ~= 0 then
+            data = vim.fn.readfile(filepath, "")
+          end
+          bufname = path.basename(filepath)
+          if opts.file_icons then
+            local filename = path.tail(bufname)
+            local extension = path.extension(filename)
+            buficon, hl = make_entry.get_devicon(filename, extension)
+            if opts.color_icons then
+              buficon = utils.ansi_codes[hl](buficon)
+            end
+          end
+          if not bufname or #bufname == 0 then
+            bufname = utils.nvim_buf_get_name(bufnr)
+          end
+          coroutine.resume(co)
+        end)
+
+        -- wait for vim.schedule
+        coroutine.yield()
+
+        for l, text in ipairs(data) do
+          add_entry(string.format("[%s]%s%s%s%s:%s: %s",
+            utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr)),
+            utils.nbsp,
+            buficon or "",
+            buficon and utils.nbsp or "",
+            utils.ansi_codes[opts.hls.buf_name](bufname),
+            utils.ansi_codes[opts.hls.buf_linenr](tostring(l)),
+            text), co)
+        end
       end
-    end
-    if not bufname or #bufname == 0 then
-      bufname = utils.nvim_buf_get_name(bufnr)
-    end
-    for l, text in ipairs(data) do
-      table.insert(items, ("[%s]%s%s%s%s:%s: %s"):format(
-        utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr)),
-        utils.nbsp,
-        buficon or "",
-        buficon and utils.nbsp or "",
-        utils.ansi_codes[opts.hls.buf_name](bufname),
-        utils.ansi_codes[opts.hls.buf_linenr](tostring(l)),
-        text))
-    end
+      cb(nil)
+    end)()
   end
 
   if opts.search and #opts.search > 0 then
@@ -297,7 +319,7 @@ M.buffer_lines = function(opts)
 
   opts = core.set_fzf_field_index(opts, 3, opts._is_skim and "{}" or "{..-2}")
 
-  core.fzf_exec(items, opts)
+  core.fzf_exec(contents, opts)
 end
 
 M.tabs = function(opts)
