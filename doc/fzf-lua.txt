@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 July 03
+*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 July 04
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -567,27 +567,6 @@ open an issue and I'll be more than happy to help.**
         -- title         = "Title",
         -- title_pos     = "center",    -- 'left', 'center' or 'right'
         fullscreen       = false,           -- start fullscreen?
-        -- highlights should optimally be set by the colorscheme using
-        -- FzfLuaXXX highlights. If your colorscheme doesn't set these
-        -- or you wish to override its defaults use these:
-        --[[ hl = {
-          normal         = 'Normal',        -- window normal color (fg+bg)
-          border         = 'FloatBorder',   -- border color
-          help_normal    = 'Normal',        -- <F1> window normal
-          help_border    = 'FloatBorder',   -- <F1> window border
-          -- Only used with the builtin previewer:
-          cursor         = 'Cursor',        -- cursor highlight (grep/LSP matches)
-          cursorline     = 'CursorLine',    -- cursor line
-          cursorlinenr   = 'CursorLineNr',  -- cursor line number
-          search         = 'IncSearch',     -- search matches (ctags|help)
-          title          = 'Normal',        -- preview border title (file/buffer)
-          -- Only used with 'winopts.preview.scrollbar = 'float'
-          scrollfloat_e  = 'PmenuSbar',     -- scrollbar "empty" section highlight
-          scrollfloat_f  = 'PmenuThumb',    -- scrollbar "full" section highlight
-          -- Only used with 'winopts.preview.scrollbar = 'border'
-          scrollborder_e = 'FloatBorder',   -- scrollbar "empty" section highlight
-          scrollborder_f = 'FloatBorder',   -- scrollbar "full" section highlight
-        }, ]]
         preview = {
           -- default     = 'bat',           -- override the default previewer?
                                             -- default uses the 'builtin' previewer
@@ -732,9 +711,9 @@ open an issue and I'll be more than happy to help.**
         },
         bat = {
           cmd             = "bat",
-          args            = "--style=numbers,changes --color always",
-          theme           = 'Coldark-Dark', -- bat preview theme (bat --list-themes)
-          config          = nil,            -- nil uses $BAT_CONFIG_PATH
+          args            = "--color=always --style=numbers,changes",
+          -- uncomment to set a bat theme, `bat --list-themes`
+          -- theme           = 'Coldark-Dark',
         },
         head = {
           cmd             = "head",
@@ -1266,26 +1245,31 @@ temporarily overridden by its corresponding `winopts` option:
 
 | Highlight Group       | Default     | Override Via              | Notes |
 |-----------------------|-------------|---------------------------|-------|
-|FzfLuaNormal           |Normal       |`winopts.hl.normal`        |Main win `fg/bg`|
-|FzfLuaBorder           |Normal       |`winopts.hl.border`        |Main win border|
-|FzfLuaTitle            |FzfLuaNormal |`winopts.hl.title`         |Main win title|
-|FzfLuaPreviewNormal    |FzfLuaNormal |`winopts.hl.preview_normal`|Builtin preview `fg/bg`|
-|FzfLuaPreviewBorder    |FzfLuaBorder |`winopts.hl.preview_border`|Builtin preview border|
-|FzfLuaPreviewTitle     |FzfLuaTitle  |`winopts.hl.preview_title` |Builtin preview title|
-|FzfLuaCursor           |Cursor       |`winopts.hl.cursor`        |Builtin preview `Cursor`|
-|FzfLuaCursorLine       |CursorLine   |`winopts.hl.cursorline`    |Builtin preview `Cursorline`|
-|FzfLuaCursorLineNr     |CursorLineNr |`winopts.hl.cursorlinenr`  |Builtin preview `CursorLineNr`|
-|FzfLuaSearch           |IncSearch    |`winopts.hl.search`        |Builtin preview search matches|
-|FzfLuaScrollBorderEmpty|FzfLuaBorder |`winopts.hl.scrollborder_e`|Builtin preview `border` scroll empty|
-|FzfLuaScrollBorderFull |FzfLuaBorder |`winopts.hl.scrollborder_f`|Builtin preview `border` scroll full|
-|FzfLuaScrollFloatEmpty |PmenuSbar    |`winopts.hl.scrollfloat_e` |Builtin preview `float` scroll empty|
-|FzfLuaScrollFloatFull  |PmenuThumb   |`winopts.hl.scrollfloat_f` |Builtin preview `float` scroll full|
-|FzfLuaHelpNormal       |FzfLuaNormal |`winopts.hl.help_normal`   |Help win `fg/bg`|
-|FzfLuaHelpBorder       |FzfLuaBorder |`winopts.hl.help_border`   |Help win border|
-|FzfLuaHeaderBind       |*BlanchedAlmond |`winopts.hl.header_bind`|Header keybind|
-|FzfLuaHeaderText       |*LightCoral     |`winopts.hl.header_text`|Header text|
-|FzfLuaTabTitle         |*LightSkyBlue2  |`winopts.hl.tab_title`  |Tab title (`tabs`)|
-|FzfLuaTabMarker        |*BlanchedAlmond |`winopts.hl.tab_marker` |Tab marker (`tabs`)|
+|FzfLuaNormal           |Normal       |`hls.normal`        |Main win `fg/bg`|
+|FzfLuaBorder           |Normal       |`hls.border`        |Main win border|
+|FzfLuaTitle            |FzfLuaNormal |`hls.title`         |Main win title|
+|FzfLuaPreviewNormal    |FzfLuaNormal |`hls.preview_normal`|Builtin preview `fg/bg`|
+|FzfLuaPreviewBorder    |FzfLuaBorder |`hls.preview_border`|Builtin preview border|
+|FzfLuaPreviewTitle     |FzfLuaTitle  |`hls.preview_title` |Builtin preview title|
+|FzfLuaCursor           |Cursor       |`hls.cursor`        |Builtin preview `Cursor`|
+|FzfLuaCursorLine       |CursorLine   |`hls.cursorline`    |Builtin preview `Cursorline`|
+|FzfLuaCursorLineNr     |CursorLineNr |`hls.cursorlinenr`  |Builtin preview `CursorLineNr`|
+|FzfLuaSearch           |IncSearch    |`hls.search`        |Builtin preview search matches|
+|FzfLuaScrollBorderEmpty|FzfLuaBorder |`hls.scrollborder_e`|Builtin preview `border` scroll empty|
+|FzfLuaScrollBorderFull |FzfLuaBorder |`hls.scrollborder_f`|Builtin preview `border` scroll full|
+|FzfLuaScrollFloatEmpty |PmenuSbar    |`hls.scrollfloat_e` |Builtin preview `float` scroll empty|
+|FzfLuaScrollFloatFull  |PmenuThumb   |`hls.scrollfloat_f` |Builtin preview `float` scroll full|
+|FzfLuaHelpNormal       |FzfLuaNormal |`hls.help_normal`   |Help win `fg/bg`|
+|FzfLuaHelpBorder       |FzfLuaBorder |`hls.help_border`   |Help win border|
+|FzfLuaHeaderBind  |*BlanchedAlmond   |`hls.header_bind`   |Header keybind|
+|FzfLuaHeaderText  |*Brown1           |`hls.header_text`   |Header text|
+|FzfLuaBufName     |*LightMagenta     |`hls.buf_name`      |Buffer name (`lines`)|
+|FzfLuaBufNr       |*BlanchedAlmond   |`hls.buf_nr`        |Buffer number (all buffers)|
+|FzfLuaBufLineNr   |*MediumSpringGreen|`hls.buf_linenr`    |Buffer line (`lines`)|
+|FzfLuaBufFlagCur  |*Brown1           |`hls.buf_flag_cur`  |Buffer line (`buffers`)|
+|FzfLuaBufFlagAlt  |*CadetBlue1       |`hls.buf_flag_alt`  |Buffer line (`buffers`)|
+|FzfLuaTabTitle    |*LightSkyBlue1    |`hls.tab_title`     |Tab title (`tabs`)|
+|FzfLuaTabMarker   |*BlanchedAlmond   |`hls.tab_marker`    |Tab marker (`tabs`)|
 
 <sup><sub>&ast;Not a highlight group, RGB color from
 `nvim_get_color_map`</sub></sup>
@@ -1301,21 +1285,19 @@ Or vimscript:
     :hi! link FzfLuaBorder FloatBorder
 <
 If you wish to override a highlight without having to modify your colorscheme
-highlights, set the corresponding `winopts.hl` override or specify it directly
-via a call argument.
+highlights, set the corresponding `hls` override or specify it directly via a
+call argument.
 
 Temporary highlight override:
 
 >lua
-    :lua require'fzf-lua'.files({ winopts={hl={preview_title="IncSearch"}} })
+    :lua require'fzf-lua'.files({ hls={preview_title="IncSearch"} })
 <
 Permanent global override via `setup`:
 
 >lua
     require('fzf-lua').setup{
-      winopts = {
-        hl = { border = "FloatBorder", }
-      }
+      hls = { border = "FloatBorder" }
     }
 <
 
