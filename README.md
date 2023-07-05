@@ -983,11 +983,11 @@ require'fzf-lua'.setup {
     live_preview      = true,       -- apply the colorscheme on preview?
     actions           = { ["default"] = actions.colorscheme, },
     winopts           = { height = 0.55, width = 0.30, },
-    post_reset_cb     = function()
-      -- reset statusline highlights after
-      -- a live_preview of the colorscheme
-      -- require('feline').reset_highlights()
-    end,
+    -- uncomment to ignore colorschemes names (lua patterns)
+    -- ignore_patterns   = { "^delek$", "^blue$" },
+    -- uncomment to execute a callback after interface is closed
+    -- e.g. a call to reset statusline highlights
+    -- post_reset_cb     = function() ... end,
   },
   quickfix = {
     file_icons        = true,
