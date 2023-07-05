@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 July 04
+*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 July 05
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1070,11 +1070,11 @@ open an issue and I'll be more than happy to help.**
         live_preview      = true,       -- apply the colorscheme on preview?
         actions           = { ["default"] = actions.colorscheme, },
         winopts           = { height = 0.55, width = 0.30, },
-        post_reset_cb     = function()
-          -- reset statusline highlights after
-          -- a live_preview of the colorscheme
-          -- require('feline').reset_highlights()
-        end,
+        -- uncomment to ignore colorschemes names (lua patterns)
+        -- ignore_patterns   = { "^delek$", "^blue$" },
+        -- uncomment to execute a callback after interface is closed
+        -- e.g. a call to reset statusline highlights
+        -- post_reset_cb     = function() ... end,
       },
       quickfix = {
         file_icons        = true,
