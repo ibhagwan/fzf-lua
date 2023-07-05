@@ -177,6 +177,12 @@ M.fzf_wrap = function(opts, contents, fn_selected)
 end
 
 M.fzf = function(contents, opts)
+  -- Disable opening from the command-line window `:q`
+  -- creates all kinds of issues, will fail on `nvim_win_close`
+  if vim.fn.win_gettype() == "command" then
+    utils.info("Unable to open from the command-line window. See `:help E11`.")
+    return
+  end
   -- normalize with globals if not already normalized
   if not opts or not opts._normalized then
     opts = config.normalize_opts(opts or {}, {})
