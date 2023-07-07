@@ -303,16 +303,10 @@ function FzfWin:check_exit_status(exit_code, fzf_bufnr)
   --    1      No match
   --    2      Error
   --    130    Interrupted with CTRL-C or ESC
-  if exit_code ~= 0 and exit_code ~= 130 then
+  if exit_code == 2 then
     local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
-    -- the reason we're not ignoring error 1 is due
-    -- to skim returning 1 for unexpected arguments
-    -- only warn about there is an actual error msg
-    if exit_code ~= 1 or (lines and #lines[1] > 0) then
-      utils.warn(("fzf error %s: %s"):format(
-        exit_code or "<null>",
-        lines and #lines[1] > 0 and lines[1] or "<null>"))
-    end
+    utils.warn(string.format("fzf error %d: %s", exit_code,
+      lines and #lines[1] > 0 and lines[1] or "<null>"))
   end
 end
 
