@@ -1183,9 +1183,13 @@ function FzfWin.toggle_preview_cw(direction)
   if newidx > #pos then newidx = 1 end
   self.winopts.preview_pos = pos[newidx]
   self.layout = self:generate_layout(self.winopts)
-  self:close_preview()
-  self:redraw_main()
-  self:redraw_preview()
+  self:hide_scrollbar()
+  if self:validate() then
+    self:redraw_main()
+  end
+  if self:validate_preview() then
+    self:redraw_preview()
+  end
 end
 
 function FzfWin.preview_scroll(direction)
