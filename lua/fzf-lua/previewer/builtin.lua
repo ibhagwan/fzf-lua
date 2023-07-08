@@ -37,7 +37,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.treesitter = o.treesitter or {}
   self.toggle_behavior = o.toggle_behavior
   self.ext_ft_override = o.ext_ft_override
-  self.backups = {}
+  self.winopts_orig = {}
   -- convert extension map to lower case
   if o.extensions then
     self.extensions = {}
@@ -80,10 +80,10 @@ function Previewer.base:new(o, opts, fzf_win)
 end
 
 function Previewer.base:close()
-  self:restore_winopts(self.win.preview_winid)
+  self:restore_winopts()
   self:clear_preview_buf()
   self:clear_cached_buffers()
-  self.backups = {}
+  self.winopts_orig = {}
 end
 
 function Previewer.base:gen_winopts()
@@ -91,35 +91,18 @@ function Previewer.base:gen_winopts()
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
-function Previewer.base:backup_winopts(win)
-  if not win or not api.nvim_win_is_valid(win) then return end
-  for opt, _ in pairs(self:gen_winopts()) do
-    if utils.nvim_has_option(opt) then
-      self.backups[opt] = api.nvim_win_get_option(win, opt)
-    end
+function Previewer.base:backup_winopts()
+  if rawequal(next(self.winopts_orig), nil) then
+    self.winopts_orig = self.win:get_winopts(self.win.src_winid, self:gen_winopts())
   end
 end
 
-function Previewer.base:restore_winopts(win)
-  if not win or not api.nvim_win_is_valid(win) then return end
-  for opt, value in pairs(self.backups) do
-    -- PROBABLY DOESN'T MATTER (WHO USES 0.5?) BUT WHY NOT LOL
-    -- minor backward compatibility fix, with neovim version < 0.7
-    -- nvim_win_get_option("scroloff") which should return -1
-    -- returns an invalid (really big number insead which panics
-    -- when called with nvim_win_set_option, wrapping in a pcall
-    -- ensures this plugin still works for neovim version as low as 0.5!
-    pcall(vim.api.nvim_win_set_option, win, opt, value)
-  end
+function Previewer.base:restore_winopts()
+  self.win:set_winopts(self.win.preview_winid, self.winopts_orig)
 end
 
-function Previewer.base:set_winopts(win)
-  if not win or not api.nvim_win_is_valid(win) then return end
-  for opt, v in pairs(self:gen_winopts()) do
-    if utils.nvim_has_option(opt) then
-      api.nvim_win_set_option(win, opt, v)
-    end
-  end
+function Previewer.base:set_style_winopts()
+  self.win:set_winopts(self.win.preview_winid, self:gen_winopts())
 end
 
 function Previewer.base:preview_is_terminal()
@@ -171,7 +154,8 @@ function Previewer.base:set_preview_buf(newbuf, min_winopts)
     -- removes 'number', 'signcolumn', 'cursorline', etc
     self.win:set_style_minimal(self.win.preview_winid)
   else
-    self:set_winopts(self.win.preview_winid)
+    -- sets the style defined by `winopts.preview.winopts`
+    self:set_style_winopts()
   end
   -- although the buffer has 'bufhidden:wipe' it sometimes doesn't
   -- get wiped when pressing `ctrl-g` too quickly
@@ -255,9 +239,10 @@ function Previewer.base:display_entry(entry_str)
   -- save last entry even if we don't display
   self.last_entry = entry_str
   if not self.win or not self.win:validate_preview() then return end
-  if rawequal(next(self.backups), nil) then
-    self:backup_winopts(self.win.src_winid)
-  end
+
+  -- verify backup the current window options
+  -- will store only of `winopts_orig` is nil
+  self:backup_winopts()
 
   -- clears the current preview buffer and set to a new temp buffer
   -- recommended to return false from 'should_clear_preview' and use
@@ -389,11 +374,11 @@ function Previewer.buffer_or_file:new(o, opts, fzf_win)
 end
 
 function Previewer.buffer_or_file:close()
-  self:restore_winopts(self.win.preview_winid)
+  self:restore_winopts()
   self:clear_preview_buf()
   self:clear_cached_buffers()
   self:stop_ueberzug()
-  self.backups = {}
+  self.winopts_orig = {}
 end
 
 function Previewer.buffer_or_file:parse_entry(entry_str)

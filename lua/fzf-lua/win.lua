@@ -358,6 +358,32 @@ function FzfWin:new(o)
   return self
 end
 
+function FzfWin:get_winopts(win, opts)
+  if not win or not api.nvim_win_is_valid(win) then return end
+  local ret = {}
+  for opt, _ in pairs(opts) do
+    if utils.nvim_has_option(opt) then
+      ret[opt] = api.nvim_win_get_option(win, opt)
+    end
+  end
+  return ret
+end
+
+function FzfWin:set_winopts(win, opts)
+  if not win or not api.nvim_win_is_valid(win) then return end
+  for opt, value in pairs(opts) do
+    if utils.nvim_has_option(opt) then
+      -- PROBABLY DOESN'T MATTER (WHO USES 0.5?) BUT WHY NOT LOL
+      -- minor backward compatibility fix, with neovim version < 0.7
+      -- nvim_win_get_option("scroloff") which should return -1
+      -- returns an invalid (really big number insead which panics
+      -- when called with nvim_win_set_option, wrapping in a pcall
+      -- ensures this plugin still works for neovim version as low as 0.5!
+      pcall(vim.api.nvim_win_set_option, win, opt, value)
+    end
+  end
+end
+
 function FzfWin:attach_previewer(previewer)
   -- clear the previous previewer if existed
   if self._previewer and self._previewer.close then
@@ -529,10 +555,11 @@ function FzfWin:redraw_preview()
     self.border_buf = api.nvim_win_get_buf(self.border_winid)
     self:redraw_preview_border()
     api.nvim_win_set_config(self.border_winid, self.border_winopts)
+    -- since `nvim_win_set_config` removes all styling, save backup
+    -- of the current options and restore after the call (#813)
+    local style = self:get_winopts(self.preview_winid, self._previewer:gen_winopts())
     api.nvim_win_set_config(self.preview_winid, self.prev_winopts)
-    if self._previewer and self._previewer.display_last_entry then
-      self._previewer:display_last_entry()
-    end
+    self:set_winopts(self.preview_winid, style)
   else
     local tmp_buf = api.nvim_create_buf(false, true)
     -- No autocmds, can only be sent with 'nvim_open_win'
@@ -550,6 +577,7 @@ function FzfWin:redraw_preview()
   end
   self:reset_win_highlights(self.border_winid)
   self:reset_win_highlights(self.preview_winid)
+  self._previewer:display_last_entry()
   return self.preview_winid, self.border_winid
 end
 
@@ -1097,10 +1125,10 @@ function FzfWin.toggle_fullscreen()
   local self = _self
   self.fullscreen = not self.fullscreen
   self:hide_scrollbar()
-  if self and self:validate() then
+  if self:validate() then
     self:redraw_main()
   end
-  if self and self:validate_preview() then
+  if self:validate_preview() then
     self:redraw_preview()
   end
 end
@@ -1118,9 +1146,6 @@ function FzfWin.toggle_preview()
   elseif not self.preview_hidden then
     self:redraw_main()
     self:redraw_preview()
-    if self._previewer and self._previewer.display_last_entry then
-      self._previewer:display_last_entry()
-    end
   end
   -- close_preview() calls FzfWin:close()
   -- which will clear out our singleton so
@@ -1161,9 +1186,6 @@ function FzfWin.toggle_preview_cw(direction)
   self:close_preview()
   self:redraw_main()
   self:redraw_preview()
-  if self._previewer and self._previewer.display_last_entry then
-    self._previewer:display_last_entry()
-  end
 end
 
 function FzfWin.preview_scroll(direction)
