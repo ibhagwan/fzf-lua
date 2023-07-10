@@ -2,7 +2,6 @@ local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
-local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
 local make_entry = require "fzf-lua.make_entry"
 
