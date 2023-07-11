@@ -335,9 +335,9 @@ function M.normalize_opts(opts, defaults)
       utils.err(string.format(
         "'fzf --version' failed with error %s: %s", rc, err))
       return nil
-    elseif opts.__FZF_VERSION < 0.25 then
+    elseif opts.__FZF_VERSION < 0.24 then
       utils.err(string.format(
-        "fzf version %.2f is lower than minimum (0.25), aborting.",
+        "fzf version %.2f is lower than minimum (0.24), aborting.",
         opts.__FZF_VERSION))
       return nil
     elseif opts.__FZF_VERSION < 0.27 then
