@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 July 05
+*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 July 11
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -862,7 +862,7 @@ open an issue and I'll be more than happy to help.**
           --   {1}    : commit SHA (fzf field index expression)
           --   <file> : filepath placement within the commands
           cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' <file>",
-          preview       = "git diff --color {1}~1 {1} -- <file>",
+          preview       = "git diff --color {1}^! -- <file>",
           -- uncomment if you wish to use git-delta as pager
           --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS",
           actions = {
