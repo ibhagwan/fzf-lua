@@ -480,6 +480,23 @@ function M.strip_ansi_coloring(str)
   return str:gsub("%[[%d;]-m", "")
 end
 
+function M.mode_is_visual()
+  local visual_modes = {
+    v   = true,
+    vs  = true,
+    V   = true,
+    Vs  = true,
+    nov = true,
+    noV = true,
+    niV = true,
+    Rv  = true,
+    Rvc = true,
+    Rvx = true,
+  }
+  local mode = vim.api.nvim_get_mode()
+  return visual_modes[mode.mode]
+end
+
 function M.get_visual_selection()
   -- this will exit visual mode
   -- use 'gv' to reselect the text
@@ -511,7 +528,10 @@ function M.get_visual_selection()
   if n <= 0 then return "" end
   lines[n] = string.sub(lines[n], 1, cecol)
   lines[1] = string.sub(lines[1], cscol)
-  return table.concat(lines, "\n")
+  return table.concat(lines, "\n"), {
+    start   = { line = csrow, char = cscol },
+    ["end"] = { line = cerow, char = cecol },
+  }
 end
 
 function M.fzf_exit()

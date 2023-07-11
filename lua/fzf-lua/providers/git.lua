@@ -155,10 +155,15 @@ M.bcommits = function(opts)
   local git_root = path.git_root(opts)
   if not git_root then return end
   local file = path.relative(vim.fn.expand("%:p"), git_root)
+  local range
+  if utils.mode_is_visual() then
+    local _, sel = utils.get_visual_selection()
+    range = string.format("-L %d,%d:%s --no-patch", sel.start.line, sel["end"].line, file)
+  end
   if opts.cmd:match("<file") then
-    opts.cmd = opts.cmd:gsub("<file>", file)
+    opts.cmd = opts.cmd:gsub("<file>", range or file)
   else
-    opts.cmd = opts.cmd .. " " .. file
+    opts.cmd = opts.cmd .. " " .. (range or file)
   end
   if type(opts.preview) == "string" then
     opts.preview = opts.preview:gsub("<file>", vim.fn.shellescape(file))
