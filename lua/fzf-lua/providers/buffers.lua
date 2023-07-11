@@ -49,7 +49,7 @@ local filter_buffers = function(opts, unfiltered)
     end
   end
 
-  local excluded = {}
+  local excluded, max_bufnr = {}, 0
   local bufnrs = vim.tbl_filter(function(b)
     if not vim.api.nvim_buf_is_valid(b) then
       excluded[b] = true
@@ -76,10 +76,13 @@ local filter_buffers = function(opts, unfiltered)
         excluded[b] = true
       end
     end
+    if not excluded[b] and b > max_bufnr then
+      max_bufnr = b
+    end
     return not excluded[b]
   end, unfiltered)
 
-  return bufnrs, excluded
+  return bufnrs, excluded, max_bufnr
 end
 
 local populate_buffer_entries = function(opts, bufnrs, tabh)
@@ -136,7 +139,7 @@ local populate_buffer_entries = function(opts, bufnrs, tabh)
 end
 
 
-local function gen_buffer_entry(opts, buf, cwd)
+local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
   -- local hidden = buf.info.hidden == 1 and 'h' or 'a'
   local hidden = ""
   local readonly = buf.readonly and "=" or " "
@@ -179,9 +182,10 @@ local function gen_buffer_entry(opts, buf, cwd)
       buficon = utils.ansi_codes[hl](buficon)
     end
   end
+  local max_bufnr_w = 26 + #tostring(max_bufnr)
   local item_str = string.format("%s%s%s%s%s%s%s%s",
     utils._if(opts._prefix, opts._prefix, ""),
-    string.format("%-32s", bufnrstr),
+    string.format("%-" .. tostring(max_bufnr_w) .. "s", bufnrstr),
     utils.nbsp,
     flags,
     utils.nbsp,
@@ -197,12 +201,12 @@ M.buffers = function(opts)
 
   opts.__fn_reload = opts.__fn_reload or function(_)
     return function(cb)
-      local filtered = filter_buffers(opts, __STATE.buflist)
+      local filtered, _, max_bufnr = filter_buffers(opts, __STATE.buflist)
 
       if next(filtered) then
         local buffers = populate_buffer_entries(opts, filtered)
         for _, bufinfo in pairs(buffers) do
-          local ok, entry = pcall(gen_buffer_entry, opts, bufinfo)
+          local ok, entry = pcall(gen_buffer_entry, opts, bufinfo, max_bufnr)
           assert(ok and entry)
           cb(entry)
         end
@@ -350,7 +354,7 @@ M.tabs = function(opts)
     local populate = function(cb)
       opts._tab_to_buf = {}
 
-      local filtered, excluded = filter_buffers(opts, opts._list_bufs)
+      local filtered, excluded, max_bufnr = filter_buffers(opts, opts._list_bufs)
       if not next(filtered) then return end
 
       -- remove the filtered-out buffers
@@ -413,7 +417,7 @@ M.tabs = function(opts)
         local tabh = vim.api.nvim_list_tabpages()[t]
         local buffers = populate_buffer_entries(opts, bufnrs_flat, tabh)
         for _, bufinfo in pairs(buffers) do
-          cb(gen_buffer_entry(opts, bufinfo, tab_cwd))
+          cb(gen_buffer_entry(opts, bufinfo, max_bufnr, tab_cwd))
         end
       end
       cb(nil)
