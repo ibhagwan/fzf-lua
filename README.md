@@ -775,7 +775,7 @@ require'fzf-lua'.setup {
       --   {1}    : commit SHA (fzf field index expression)
       --   <file> : filepath placement within the commands
       cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' <file>",
-      preview       = "git diff --color {1}~1 {1} -- <file>",
+      preview       = "git diff --color {1}^! -- <file>",
       -- uncomment if you wish to use git-delta as pager
       --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS",
       actions = {
