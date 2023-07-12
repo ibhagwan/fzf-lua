@@ -179,7 +179,9 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
       buficon, hl = make_entry.get_devicon(filename, extension)
     end
     if opts.color_icons then
-      buficon = utils.ansi_codes[hl](buficon)
+      -- fallback to "grey" color (#817)
+      local fn = utils.ansi_codes[hl] or utils.ansi_codes["dark_grey"]
+      buficon = fn(buficon)
     end
   end
   local max_bufnr_w = 26 + #tostring(max_bufnr)
