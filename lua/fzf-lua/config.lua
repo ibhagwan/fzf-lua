@@ -27,14 +27,19 @@ M._devicons_geticons = function()
   -- if we delete it the conversion succeeds as a key-value only map
   -- must use 'tbl_deep_extend' or 'table.remove' will delete
   -- nvim-web-devicons default icon as 'get_icons' returns a ref
-  local icons = vim.tbl_deep_extend("keep", {}, M._devicons.get_icons())
+  local icons = vim.tbl_deep_extend("keep", {
+    -- default icon in case of a malformed devicons default (#817)
+    ["<default>"] = { name = "Default", icon = "" }
+  }, M._devicons.get_icons())
   -- the default icon in [1] is not a gurantee as nvim-web-devicons
   -- can be configured with `default = false`
-  if icons[1] and icons[1].name == "Default" then
+  if icons[1] then
     local default = table.remove(icons, 1)
-    icons["<default>"] = default
-  else
-    icons["<default>"] = { name = "Default", icon = "" }
+    icons["<default>"] = vim.tbl_extend("force", icons["<default>"], default)
+  end
+  -- Remove all mixed array numbered items
+  for i, _ in ipairs(icons) do
+    table.remove(icons, i)
   end
   -- some devicons customizations remove `info.color`
   -- retrieve the color from the highlight group (#801)
