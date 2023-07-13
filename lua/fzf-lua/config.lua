@@ -20,39 +20,50 @@ M._devicons_geticons = function()
   if not M._has_devicons or not M._devicons or not M._devicons.get_icons then
     return
   end
+  if M.__DEVICONS then
+    return M.__DEVICONS
+  end
   -- rpc request cannot return a table that has mixed elements
   -- of both indexed items and key value, it will fail with
   -- "Cannot convert given lua table"
-  -- devicons.get_icons() returns the default icon in the first index
-  -- if we delete it the conversion succeeds as a key-value only map
-  -- must use 'tbl_deep_extend' or 'table.remove' will delete
-  -- nvim-web-devicons default icon as 'get_icons' returns a ref
-  local icons = vim.tbl_deep_extend("keep", {
-    -- default icon in case of a malformed devicons default (#817)
-    ["<default>"] = { name = "Default", icon = "" }
-  }, M._devicons.get_icons())
-  -- the default icon in [1] is not a gurantee as nvim-web-devicons
-  -- can be configured with `default = false`
-  if icons[1] then
-    local default = table.remove(icons, 1)
-    icons["<default>"] = vim.tbl_extend("force", icons["<default>"], default)
+  -- NOTES:
+  -- (1) devicons.get_icons() returns the default icon in [1]
+  -- (2) we cannot rely on having either .name or .color (#817)
+  local all_devicons = M._devicons.get_icons()
+  if not all_devicons or vim.tbl_isempty(all_devicons) then
+    -- something is wrong with devicons
+    -- can't use `error` due to fast event
+    print("[Fzf-lua] error: devicons.get_icons() is nil or empty!")
+    return
   end
-  -- Remove all mixed array numbered items
-  for i, _ in ipairs(icons) do
-    table.remove(icons, i)
-  end
-  -- some devicons customizations remove `info.color`
-  -- retrieve the color from the highlight group (#801)
-  for k, info in pairs(icons) do
-    if not info.color and type(info.name) == "string" then
-      local hlgroup = "DevIcon" .. info.name
-      local hexcol = utils.hexcol_from_hl(hlgroup, "fg")
-      if hexcol and #hexcol > 0 then
-        icons[k].color = hexcol
-      end
+  -- We only need the name, icon and color properties
+  local default_icon = all_devicons[1] or {}
+  M.__DEVICONS = {
+    ["<default>"] = {
+      name = default_icon.name or "Default",
+      icon = default_icon.icon or "",
+      color = default_icon.color or "#6d8086",
+    }
+  }
+  for k, v in pairs(all_devicons) do
+    -- skip all indexed (numeric) entries
+    if type(k) == "string" then
+      M.__DEVICONS[k] = {
+        name = v.name or k,
+        icon = v.icon or "",
+        color = v.color or (function()
+          -- some devicons customizations remove `info.color`
+          -- retrieve the color from the highlight group (#801)
+          local hlgroup = "DevIcon" .. (v.name or k)
+          local hexcol = utils.hexcol_from_hl(hlgroup, "fg")
+          if hexcol and #hexcol > 0 then
+            return hexcol
+          end
+        end)(),
+      }
     end
   end
-  return icons
+  return M.__DEVICONS
 end
 
 -- set this so that make_entry won't get nil err when setting remotely
