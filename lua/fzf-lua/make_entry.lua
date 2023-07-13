@@ -99,15 +99,18 @@ local setup_devicon_term_hls = function()
     return r, g, b
   end
 
-  for _, info in pairs(M._devicons and M._devicons.get_icons() or M._devicons_map) do
-    assert(info.name)
-    local hlgroup = "DevIcon" .. info.name
-    -- some devicons customizations remove `info.color`
-    -- retrieve the color from the highlight group (#801)
-    local hexcol = info.color or utils.hexcol_from_hl(hlgroup, "fg")
-    if hexcol and #hexcol > 0 then
-      local r, g, b = hex(hexcol)
-      utils.cache_ansi_escseq(hlgroup, string.format("[38;2;%s;%s;%sm", r, g, b))
+  for k, info in pairs(M._devicons and M._devicons.get_icons() or M._devicons_map) do
+    -- info.name can be missing (#817)
+    local name = info.name or type(k) == "string" and k
+    if name then
+      local hlgroup = "DevIcon" .. name
+      -- some devicons customizations remove `info.color`
+      -- retrieve the color from the highlight group (#801)
+      local hexcol = info.color or utils.hexcol_from_hl(hlgroup, "fg")
+      if hexcol and #hexcol > 0 then
+        local r, g, b = hex(hexcol)
+        utils.cache_ansi_escseq(hlgroup, string.format("[38;2;%s;%s;%sm", r, g, b))
+      end
     end
   end
 end
