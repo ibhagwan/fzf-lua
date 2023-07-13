@@ -33,11 +33,13 @@ M._devicons_geticons = function()
   if icons[1] and icons[1].name == "Default" then
     local default = table.remove(icons, 1)
     icons["<default>"] = default
+  else
+    icons["<default>"] = { name = "Default", icon = "" }
   end
   -- some devicons customizations remove `info.color`
   -- retrieve the color from the highlight group (#801)
   for k, info in pairs(icons) do
-    if not info.color then
+    if not info.color and type(info.name) == "string" then
       local hlgroup = "DevIcon" .. info.name
       local hexcol = utils.hexcol_from_hl(hlgroup, "fg")
       if hexcol and #hexcol > 0 then
