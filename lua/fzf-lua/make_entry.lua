@@ -382,7 +382,8 @@ M.file = function(x, opts)
   -- TODO: we only support path modification without ANSI
   -- escape sequences, it becomes too expensive to modify
   -- and restore the path with escape sequences
-  local filepath, file_is_ansi = utils.strip_ansi_coloring(file_part)
+  local stripped_filepath, file_is_ansi = utils.strip_ansi_coloring(file_part)
+  local filepath = stripped_filepath
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
   -- the './' prefix, will not work with '--color=always'
   -- https://github.com/sharkdp/fd/blob/master/CHANGELOG.md
@@ -450,7 +451,10 @@ M.file = function(x, opts)
     ret[#ret + 1] = icon
     ret[#ret + 1] = utils.nbsp
   end
-  ret[#ret + 1] = file_is_ansi > 0 and file_part or filepath
+  ret[#ret + 1] = file_is_ansi > 0
+      -- filename is ansi escape colored, replace the inner string (#819)
+      and file_part:gsub(utils.lua_regex_escape(stripped_filepath), filepath)
+      or filepath
   ret[#ret + 1] = rest_of_line
   return table.concat(ret)
 end

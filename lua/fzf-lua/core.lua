@@ -566,8 +566,10 @@ M.mt_cmd_wrapper = function(opts)
     return "{" .. str .. "}"
   end
 
-  if not opts.requires_processing and
-      not opts.git_icons and not opts.file_icons then
+  if not opts.requires_processing
+      and not opts.git_icons
+      and not opts.file_icons
+      and not opts.path_shorten then
     -- command does not require any processing
     return opts.cmd
   elseif opts.multiprocess then
