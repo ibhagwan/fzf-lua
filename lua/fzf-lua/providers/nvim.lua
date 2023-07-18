@@ -294,7 +294,8 @@ M.keymaps = function(opts)
   local modes = {
     n = "blue",
     i = "red",
-    c = "yellow"
+    c = "yellow",
+    v = "magenta"
   }
   local keymaps = {}
 
