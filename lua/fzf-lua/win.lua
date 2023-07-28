@@ -914,6 +914,9 @@ function FzfWin:close(fzf_bufnr)
     vim.o.hlsearch = true
     self.hls_on_close = nil
   end
+  if self.winopts and type(self.winopts.on_close) == "function" then
+    self.winopts.on_close()
+  end
   self.closing = nil
   self._reuse = nil
   _self = nil
