@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 July 11
+*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 July 28
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -607,6 +607,8 @@ open an issue and I'll be more than happy to help.**
           -- can be used to add custom fzf-lua mappings, e.g:
           --   vim.keymap.set("t", "<C-j>", "<Down>", { silent = true, buffer = true })
         end,
+        -- called once *after* the fzf interface is closed
+        -- on_close = function() ... end
       },
       keymap = {
         -- These override the default tables completely
