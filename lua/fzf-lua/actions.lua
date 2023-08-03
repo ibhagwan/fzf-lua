@@ -476,6 +476,15 @@ M.keymap_apply = function(selected)
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), "t", true)
 end
 
+for _, fname in ipairs({ "edit", "split", "vsplit", "tabedit" }) do
+  M["keymap_" .. fname] = function(selected, opts)
+    local entry = path.keymap_to_entry(selected[1], opts)
+    if entry.path then
+      M["file_" .. fname]({ entry.stripped }, opts)
+    end
+  end
+end
+
 M.spell_apply = function(selected)
   local word = selected[1]
   vim.cmd("normal! ciw" .. word)

@@ -1246,28 +1246,8 @@ function Previewer.autocmds:keymaps(o, opts, fzf_win)
   return self
 end
 
-local valid_modes = {
-  n = true,
-  i = true,
-  c = true,
-  v = true,
-  t = true,
-}
-
 function Previewer.keymaps:parse_entry(entry_str)
-  local mode, keymap = string.match(entry_str, "^(.*)│(.*)│")
-  mode, keymap = vim.trim(mode), vim.trim(keymap)
-  mode = valid_modes[mode] and mode or ""   -- only valid modes
-  local vmap = utils.strsplit(
-    vim.fn.execute(string.format("verbose %smap %s", mode, keymap)), "\n")[1]
-  local out = utils.strsplit(vmap, "\n")
-  local entry
-  for i = #out, 1, -1 do
-    if out[i]:match(utils.lua_regex_escape(keymap)) then
-      entry = out[i]:match("<.-:%s+(.*)>")
-    end
-  end
-  return entry and path.entry_to_file(entry) or { mode = mode, key = keymap, vmap = vmap }
+  return path.keymap_to_entry(entry_str, self.opts)
 end
 
 function Previewer.keymaps:populate_preview_buf(entry_str)

@@ -749,12 +749,15 @@ M.defaults.registers = {
 }
 
 M.defaults.keymaps = {
-  prompt = "Keymaps> ",
+  prompt    = "Keymaps> ",
   previewer = { _ctor = previewers.builtin.keymaps },
-  winopts = { preview = { layout = "vertical" } },
-  fzf_opts = { ["--tiebreak"] = "index", },
-  actions = {
+  winopts   = { preview = { layout = "vertical" } },
+  fzf_opts  = { ["--tiebreak"] = "index", },
+  actions   = {
     ["default"] = actions.keymap_apply,
+    ["ctrl-s"]  = actions.keymap_split,
+    ["ctrl-v"]  = actions.keymap_vsplit,
+    ["ctrl-t"]  = actions.keymap_tabedit,
   },
 }
 

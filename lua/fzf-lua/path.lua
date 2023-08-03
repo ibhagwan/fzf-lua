@@ -355,4 +355,27 @@ function M.git_root(opts, noerr)
   return output[1]
 end
 
+function M.keymap_to_entry(str, opts)
+  local valid_modes = {
+    n = true,
+    i = true,
+    c = true,
+    v = true,
+    t = true,
+  }
+  local mode, keymap = string.match(str, "^(.*)│(.*)│")
+  mode, keymap = vim.trim(mode), vim.trim(keymap)
+  mode = valid_modes[mode] and mode or "" -- only valid modes
+  local vmap = utils.strsplit(
+    vim.fn.execute(string.format("verbose %smap %s", mode, keymap)), "\n")[1]
+  local out = utils.strsplit(vmap, "\n")
+  local entry
+  for i = #out, 1, -1 do
+    if out[i]:match(utils.lua_regex_escape(keymap)) then
+      entry = out[i]:match("<.-:%s+(.*)>")
+    end
+  end
+  return entry and M.entry_to_file(entry, opts) or { mode = mode, key = keymap, vmap = vmap }
+end
+
 return M
