@@ -1239,4 +1239,56 @@ function Previewer.autocmds:populate_preview_buf(entry_str)
   end
 end
 
+Previewer.keymaps = Previewer.buffer_or_file:extend()
+
+function Previewer.autocmds:keymaps(o, opts, fzf_win)
+  Previewer.autocmds.super.new(self, o, opts, fzf_win)
+  return self
+end
+
+local valid_modes = {
+  n = true,
+  i = true,
+  c = true,
+  v = true,
+  t = true,
+}
+
+function Previewer.keymaps:parse_entry(entry_str)
+  local mode, keymap = string.match(entry_str, "^(.*)│(.*)│")
+  mode, keymap = vim.trim(mode), vim.trim(keymap)
+  mode = valid_modes[mode] and mode or ""   -- only valid modes
+  local vmap = utils.strsplit(
+    vim.fn.execute(string.format("verbose %smap %s", mode, keymap)), "\n")[1]
+  local out = utils.strsplit(vmap, "\n")
+  local entry
+  for i = #out, 1, -1 do
+    if out[i]:match(utils.lua_regex_escape(keymap)) then
+      entry = out[i]:match("<.-:%s+(.*)>")
+    end
+  end
+  return entry and path.entry_to_file(entry) or { mode = mode, key = keymap, vmap = vmap }
+end
+
+function Previewer.keymaps:populate_preview_buf(entry_str)
+  if not self.win or not self.win:validate_preview() then return end
+  local entry = self:parse_entry(entry_str)
+  if entry.vmap then
+    -- keymap is vimL, there is no source file info
+    -- so we display the vimL code instead
+    local lines = utils.strsplit(entry.vmap:match("[^%s]+$"), "\n")
+    local tmpbuf = self:get_tmp_buffer()
+    vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+    vim.api.nvim_buf_set_option(tmpbuf, "filetype", "vim")
+    self:set_preview_buf(tmpbuf)
+    local title_fnamemodify = self.title_fnamemodify
+    self.title_fnamemodify = nil
+    -- hack entry.uri for title display
+    self:preview_buf_post({ uri = string.format("%s:%s", entry.mode, entry.key) })
+    self.title_fnamemodify = title_fnamemodify
+    return
+  end
+  Previewer.autocmds.super.populate_preview_buf(self, entry_str)
+end
+
 return Previewer

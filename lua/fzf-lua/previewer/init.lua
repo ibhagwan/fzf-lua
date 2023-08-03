@@ -22,5 +22,6 @@ Previewer.builtin.tags = function() return require "fzf-lua.previewer.builtin".t
 Previewer.builtin.quickfix = function() return require "fzf-lua.previewer.builtin".quickfix end
 Previewer.builtin.highlights = function() return require "fzf-lua.previewer.builtin".highlights end
 Previewer.builtin.autocmds = function() return require "fzf-lua.previewer.builtin".autocmds end
+Previewer.builtin.keymaps = function() return require "fzf-lua.previewer.builtin".keymaps end
 
 return Previewer
