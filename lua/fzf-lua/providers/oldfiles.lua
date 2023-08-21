@@ -1,4 +1,5 @@
 local core = require "fzf-lua.core"
+local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
 
@@ -52,7 +53,7 @@ M.oldfiles = function(opts)
 
       -- local start = os.time(); for _ = 1,10000,1 do
       for _, file in ipairs(vim.v.oldfiles) do
-        local fs_stat = not opts.stat_file and true or vim.fn.filereadable(file) == 1
+        local fs_stat = not opts.stat_file and true or utils.file_is_readable(file)
         if fs_stat and file ~= current_file and not sess_map[file] then
           add_entry(file, co)
         end

@@ -207,6 +207,15 @@ M.file_is_binary = function(filepath)
   return out:match("charset=binary") ~= nil
 end
 
+M.file_is_readable = function(filepath)
+  local fd = vim.loop.fs_open(filepath, "r", 438)
+  if fd then
+    vim.loop.fs_close(fd)
+    return true
+  end
+  return false
+end
+
 M.perl_file_is_binary = function(filepath)
   filepath = M.pcall_expand(filepath)
   if vim.fn.executable("perl") ~= 1 or
