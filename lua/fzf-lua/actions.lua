@@ -158,17 +158,17 @@ M.file_edit = function(selected, opts)
 end
 
 M.file_split = function(selected, opts)
-  local vimcmd = "new"
+  local vimcmd = "split"
   M.vimcmd_file(vimcmd, selected, opts)
 end
 
 M.file_vsplit = function(selected, opts)
-  local vimcmd = "vnew"
+  local vimcmd = "vsplit"
   M.vimcmd_file(vimcmd, selected, opts)
 end
 
 M.file_tabedit = function(selected, opts)
-  local vimcmd = "tabnew"
+  local vimcmd = "tab split"
   M.vimcmd_file(vimcmd, selected, opts)
 end
 
