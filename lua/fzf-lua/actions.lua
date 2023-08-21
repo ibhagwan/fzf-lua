@@ -568,8 +568,16 @@ M.git_switch = function(selected, opts)
   end
 end
 
-M.git_yank_commit = function(selected, _)
-  local commit_hash = selected[1]:match("[^ ]+")
+local match_commit_hash = function(line, opts)
+  if type(opts.fn_match_commit_hash) == "function" then
+    return opts.fn_match_commit_hash(line, opts)
+  else
+    return line:match("[^ ]+")
+  end
+end
+
+M.git_yank_commit = function(selected, opts)
+  local commit_hash = match_commit_hash(selected[1], opts)
   vim.fn.setreg([[0]], commit_hash)
   vim.fn.setreg([["]], commit_hash)
 end
@@ -577,7 +585,7 @@ end
 M.git_checkout = function(selected, opts)
   local cmd_checkout = path.git_cwd({ "git", "checkout" }, opts)
   local cmd_cur_commit = path.git_cwd({ "git", "rev-parse", "--short HEAD" }, opts)
-  local commit_hash = selected[1]:match("[^ ]+")
+  local commit_hash = match_commit_hash(selected[1], opts)
   if utils.input("Checkout commit " .. commit_hash .. "? [y/n] ") == "y" then
     local current_commit = utils.io_systemlist(cmd_cur_commit)
     if (commit_hash == current_commit) then return end
@@ -674,7 +682,7 @@ M.git_buf_edit = function(selected, opts)
   local win = vim.api.nvim_get_current_win()
   local buffer_filetype = vim.bo.filetype
   local file = path.relative(vim.fn.expand("%:p"), git_root)
-  local commit_hash = selected[1]:match("[^ ]+")
+  local commit_hash = match_commit_hash(selected[1], opts)
   table.insert(cmd, commit_hash .. ":" .. file)
   local git_file_contents = utils.io_systemlist(cmd)
   local buf = vim.api.nvim_create_buf(true, true)
