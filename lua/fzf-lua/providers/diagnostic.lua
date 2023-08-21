@@ -115,6 +115,16 @@ M.diagnostics = function(opts)
       opts.diag_all and vim.lsp.diagnostic.get_all() or
       { [curbuf] = vim.lsp.diagnostic.get(curbuf, opts.client_id) }
 
+  if opts.sort then
+    if opts.sort == 2 or opts.sort == "2" then
+      -- ascending: hint, info, warn, error
+      table.sort(diag_results, function(a, b) return a.severity > b.severity end)
+    else
+      -- descending: error, warn, info, hint
+      table.sort(diag_results, function(a, b) return a.severity < b.severity end)
+    end
+  end
+
   local has_diags = false
   if vim.diagnostic then
     -- format: { <diag array> }
