@@ -101,12 +101,8 @@ M.diagnostics = function(opts)
     end
     diag_opts.severity = opts.severity_only
   else
-    if opts.severity_limit ~= nil then
-      diag_opts.severity["min"] = opts.severity_limit
-    end
-    if opts.severity_bound ~= nil then
-      diag_opts.severity["max"] = opts.severity_bound
-    end
+    diag_opts.severity["min"] = opts.severity_limit or 4
+    diag_opts.severity["max"] = opts.severity_bound or 1
   end
 
   local curbuf = vim.api.nvim_get_current_buf()
