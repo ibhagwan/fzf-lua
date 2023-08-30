@@ -127,9 +127,9 @@ to configure in `previewer.builtin.extensions`):
 Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
-Plug "ibhagwan/fzf-lua", {"branch": "main"}
+Plug 'ibhagwan/fzf-lua', {'branch': 'main'}
 " optional for icon support
-Plug "nvim-tree/nvim-web-devicons"
+Plug 'nvim-tree/nvim-web-devicons'
 ```
 
 Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
