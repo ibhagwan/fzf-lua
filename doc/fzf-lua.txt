@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2023 July 28
+*fzf-lua.txt*          For Neovim >= 0.5.0         Last change: 2023 August 30
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -168,9 +168,9 @@ INSTALLATION                                            *fzf-lua-installation*
 Using vim-plug <https://github.com/junegunn/vim-plug>
 
 >vim
-    Plug "ibhagwan/fzf-lua", {"branch": "main"}
+    Plug 'ibhagwan/fzf-lua', {'branch': 'main'}
     " optional for icon support
-    Plug "nvim-tree/nvim-web-devicons"
+    Plug 'nvim-tree/nvim-web-devicons'
 <
 Using packer.nvim <https://github.com/wbthomason/packer.nvim>
 
