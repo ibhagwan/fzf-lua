@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0         Last change: 2023 August 30
+*fzf-lua.txt*          For Neovim >= 0.5.0         Last change: 2023 August 31
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1182,6 +1182,8 @@ open an issue and I'll be more than happy to help.**
         git_icons         = false,
         diag_icons        = true,
         icon_padding      = '',     -- add padding for wide diagnostics signs
+        multiline         = true,   -- concatenate multi-line diags into a single line
+                                    -- set to `false` to display the first line only
         -- by default icons and highlights are extracted from 'DiagnosticSignXXX'
         -- and highlighted by a highlight group of the same name (which is usually
         -- set by your colorscheme, for more info see:
