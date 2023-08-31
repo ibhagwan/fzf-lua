@@ -503,8 +503,18 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
       end)
     end
   else
-    -- add filename as last parameter
-    table.insert(cmd, entry.path)
+    -- replace `<file>` placeholder with the filename
+    local add_file = true
+    for i, arg in ipairs(cmd) do
+      if arg == "<file>" then
+        cmd[i] = entry.path
+        add_file = false
+      end
+    end
+    -- or add filename as last parameter
+    if add_file then
+      table.insert(cmd, entry.path)
+    end
     -- must be modifiable or 'termopen' fails
     vim.bo[tmpbuf].modifiable = true
     vim.api.nvim_buf_call(tmpbuf, function()

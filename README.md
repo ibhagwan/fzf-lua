@@ -670,7 +670,9 @@ require'fzf-lua'.setup {
       extensions      = {
         -- neovim terminal only supports `viu` block output
         ["png"]       = { "viu", "-b" },
-        ["svg"]       = { "chafa" },
+        -- by default the filename is added as last argument
+        -- if required, use `<file>` for argument positioning
+        ["svg"]       = { "chafa", "<file>" },
         ["jpg"]       = { "ueberzug" },
       },
       -- if using `ueberzug` in the above extensions map
