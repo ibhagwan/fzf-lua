@@ -643,6 +643,7 @@ M.defaults.diagnostics = {
   color_icons = true,
   git_icons   = false,
   diag_icons  = true,
+  multiline   = true,
   _actions    = function() return M.globals.actions.files end,
   -- signs = {
   --   ["Error"] = { text = "e", texthl = "DiagnosticError" },

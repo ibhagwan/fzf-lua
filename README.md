@@ -1095,6 +1095,8 @@ require'fzf-lua'.setup {
     git_icons         = false,
     diag_icons        = true,
     icon_padding      = '',     -- add padding for wide diagnostics signs
+    multiline         = true,   -- concatenate multi-line diags into a single line
+                                -- set to `false` to display the first line only
     -- by default icons and highlights are extracted from 'DiagnosticSignXXX'
     -- and highlighted by a highlight group of the same name (which is usually
     -- set by your colorscheme, for more info see:
