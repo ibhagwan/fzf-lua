@@ -20,9 +20,12 @@ M._devicons_geticons = function()
   if not M._has_devicons or not M._devicons or not M._devicons.get_icons then
     return
   end
-  if M.__DEVICONS then
+  -- force refresh if `bg` changed from dark/light (#855)
+  if M.__DEVICONS and vim.o.bg == M.__DEVICONS_BG then
     return M.__DEVICONS
   end
+  -- save the current background
+  M.__DEVICONS_BG = vim.o.bg
   -- rpc request cannot return a table that has mixed elements
   -- of both indexed items and key value, it will fail with
   -- "Cannot convert given lua table"
