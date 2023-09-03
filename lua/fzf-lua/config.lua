@@ -151,6 +151,16 @@ function M.normalize_opts(opts, defaults)
       type(M.globals[k]) == "table" and utils.tbl_deep_clone(M.globals[k]) or {})
   end
 
+  -- prioritize fzf-tmux split pane flags over the
+  -- popup flag `-p` from fzf-lua defaults (#865)
+  if type(opts.fzf_tmux_opts) == "table" then
+    for _, flag in ipairs({ "-u", "-d", "-l", "-r" }) do
+      if opts.fzf_tmux_opts[flag] then
+        opts.fzf_tmux_opts["-p"] = nil
+      end
+    end
+  end
+
   -- Merge `winopts` with outputs from `winopts_fn`
   local winopts_fn = opts.winopts_fn or M.globals.winopts_fn
   if type(winopts_fn) == "function" then
