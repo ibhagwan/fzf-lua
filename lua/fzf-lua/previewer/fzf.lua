@@ -279,7 +279,12 @@ function Previewer.git_diff:cmdline(o)
       self.git_icons["?"] ..
       self.git_icons["C"] ..
       "]" .. utils.nbsp) ~= nil
-    local file = path.entry_to_file(items[1], self.opts)
+    local file = items[1]
+    if file:match("%s%->%s") then
+      -- for renames, we take only the last part (#864)
+      file = file:match("%s%->%s(.*)$")
+    end
+    file = path.entry_to_file(file, self.opts)
     local cmd = nil
     if is_modified then
       cmd = self.cmd_modified
