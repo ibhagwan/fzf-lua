@@ -192,13 +192,12 @@ M.get_devicon = function(file, ext)
   if M._devicons then
     icon, hl = M._devicons.get_icon(file, ext:lower(), { default = true })
   elseif M._devicons_map then
-    local info = M._devicons_map[ext:lower()] or M._devicons_map["<default>"]
-    -- the default icon is not a guranteed as nvim-web-devicons
-    -- can be configured with `default = false`
-    if info then
-      icon = info.icon
-      hl = "DevIcon" .. info.name
-    end
+    -- Lookup first by name, then by ext (devicons `strict=true`)
+    -- "<default>" is added by fzf-lua and is thus guaranteed
+    local info = M._devicons_map[file:lower()]
+        or M._devicons_map[ext:lower()]
+        or M._devicons_map["<default>"]
+    icon, hl = info.icon, "DevIcon" .. info.name
   else
     icon, hl = "", "dark_grey"
   end
