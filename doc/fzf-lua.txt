@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0         Last change: 2023 August 31
+*fzf-lua.txt*        For Neovim >= 0.5.0        Last change: 2023 September 07
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -822,9 +822,7 @@ open an issue and I'll be more than happy to help.**
         },
         status = {
           prompt        = 'GitStatus❯ ',
-          -- consider using `git status -su` if you wish to see
-          -- untracked files individually under their subfolders
-          cmd           = "git -c color.status=false status -s",
+          cmd           = "git -c color.status=false status -su",
           file_icons    = true,
           git_icons     = true,
           color_icons   = true,
