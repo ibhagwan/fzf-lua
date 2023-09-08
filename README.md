@@ -735,9 +735,7 @@ require'fzf-lua'.setup {
     },
     status = {
       prompt        = 'GitStatus❯ ',
-      -- consider using `git status -su` if you wish to see
-      -- untracked files individually under their subfolders
-      cmd           = "git -c color.status=false status -s",
+      cmd           = "git -c color.status=false status -su",
       file_icons    = true,
       git_icons     = true,
       color_icons   = true,

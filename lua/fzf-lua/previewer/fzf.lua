@@ -291,7 +291,12 @@ function Previewer.git_diff:cmdline(o)
     elseif is_deleted then
       cmd = self.cmd_deleted
     elseif is_untracked then
-      cmd = self.cmd_untracked
+      local stat = vim.loop.fs_stat(file.path)
+      if stat and stat.type == "directory" then
+        cmd = "ls -la"
+      else
+        cmd = self.cmd_untracked
+      end
     end
     if not cmd then return "" end
     local pager = ""

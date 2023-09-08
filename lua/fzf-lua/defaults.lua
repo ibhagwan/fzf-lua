@@ -222,7 +222,7 @@ M.defaults.git = {
     prompt      = "GitStatus> ",
     -- override `color.status=always`, techincally not required
     -- since we now also call `utils.strip_ansi_coloring` (#706)
-    cmd         = "git -c color.status=false status -s",
+    cmd         = "git -c color.status=false status -su",
     previewer   = "git_diff",
     file_icons  = true and M._has_devicons,
     color_icons = true,
