@@ -1,4 +1,4 @@
-*fzf-lua.txt*        For Neovim >= 0.5.0        Last change: 2023 September 07
+*fzf-lua.txt*        For Neovim >= 0.5.0        Last change: 2023 September 10
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1018,6 +1018,7 @@ open an issue and I'll be more than happy to help.**
         prompt            = 'BLines❯ ',
         show_unlisted     = true,         -- include 'help' buffers
         no_term_buffers   = false,        -- include 'term' buffers
+        -- start          = "cursor"      -- start display from cursor?
         fzf_opts = {
           -- hide filename, tiebreak by line no.
           ['--delimiter'] = "'[\\]:]'",
