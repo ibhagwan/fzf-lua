@@ -931,6 +931,7 @@ require'fzf-lua'.setup {
     prompt            = 'BLines❯ ',
     show_unlisted     = true,         -- include 'help' buffers
     no_term_buffers   = false,        -- include 'term' buffers
+    -- start          = "cursor"      -- start display from cursor?
     fzf_opts = {
       -- hide filename, tiebreak by line no.
       ['--delimiter'] = "'[\\]:]'",

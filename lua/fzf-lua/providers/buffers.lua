@@ -15,6 +15,7 @@ local UPDATE_STATE = function()
     curtabidx = vim.fn.tabpagenr(),
     curtab = vim.api.nvim_win_get_tabpage(0),
     curbuf = vim.api.nvim_get_current_buf(),
+    curwin = vim.api.nvim_get_current_win(),
     prevbuf = vim.fn.bufnr("#"),
     buflist = vim.api.nvim_list_bufs(),
     bufmap = (function()
@@ -306,15 +307,25 @@ M.buffer_lines = function(opts)
         -- wait for vim.schedule
         coroutine.yield()
 
-        for l, text in ipairs(data) do
+        local offset, lines = 0, #data
+        if opts.current_buffer_only and opts.start == "cursor" then
+          -- start display from current line and wrap from bottom (#822)
+          offset = vim.api.nvim_win_get_cursor(__STATE.curwin)[1] - 1
+        end
+
+        for i = 1, lines do
+          local lnum = i + offset
+          if lnum > lines then
+            lnum = lnum % lines
+          end
           add_entry(string.format("[%s]%s%s%s%s:%s: %s",
             utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr)),
             utils.nbsp,
             buficon or "",
             buficon and utils.nbsp or "",
             utils.ansi_codes[opts.hls.buf_name](bufname),
-            utils.ansi_codes[opts.hls.buf_linenr](tostring(l)),
-            text), co)
+            utils.ansi_codes[opts.hls.buf_linenr](tostring(lnum)),
+            data[lnum]), co)
         end
       end
       cb(nil)
