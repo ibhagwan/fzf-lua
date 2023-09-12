@@ -8,9 +8,10 @@ end
 
 local M = {}
 
-M.__HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
-M.__HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
 M.__HAS_NVIM_07 = vim.fn.has("nvim-0.7") == 1
+M.__HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
+M.__HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
+M.__HAS_NVIM_010 = vim.fn.has("nvim-0.10") == 1
 
 function M.__FILE__() return debug.getinfo(2, "S").source end
 

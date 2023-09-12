@@ -26,7 +26,7 @@ local function handler_capabilty(handler)
   end
 end
 
-local function check_capabilities(feature, silent)
+local function check_capabilities(handler, silent)
   -- update CTX since this gets called before normalize_lsp_opts (#490)
   CTX_UPDATE()
 
@@ -37,12 +37,22 @@ local function check_capabilities(feature, silent)
   local num_clients = 0
 
   for _, client in pairs(clients) do
-    if utils.__HAS_NVIM_08 then
-      if client.server_capabilities[feature] then
+    if utils.__HAS_NVIM_09 then
+      -- https://github.com/neovim/neovim/blob/65738202f8be3ca63b75197d48f2c7a9324c035b/runtime/doc/news.txt#L118-L122
+      -- Dynamic registration of LSP capabilities. An implication of this change is
+      -- that checking a client's `server_capabilities` is no longer a sufficient
+      -- indicator to see if a server supports a feature. Instead use
+      -- `client.supports_method(<method>)`. It considers both the dynamic
+      -- capabilities and static `server_capabilities`.
+      if client.supports_method(handler.method) then
+        num_clients = num_clients + 1
+      end
+    elseif utils.__HAS_NVIM_08 then
+      if client.server_capabilities[handler.server_capability] then
         num_clients = num_clients + 1
       end
     else
-      if client.resolved_capabilities[feature] then
+      if client.resolved_capabilities[handler.resolved_capability] then
         num_clients = num_clients + 1
       end
     end
@@ -59,7 +69,7 @@ local function check_capabilities(feature, silent)
     return nil
   else
     if not silent then
-      utils.info("LSP: server does not support " .. feature)
+      utils.info("LSP: server does not support " .. handler.method)
     end
     return false
   end
@@ -433,7 +443,7 @@ local function gen_lsp_contents(opts)
         local async_opts = {
           num_results   = 0,
           num_callbacks = 0,
-          num_clients   = check_capabilities(lsp_handler.capability, opts.silent),
+          num_clients   = check_capabilities(lsp_handler, opts.silent),
           -- signals the handler to not print a warning when empty result set
           -- is returned, important for `live_workspace_symbols` when the user
           -- inputs a query that returns no results
@@ -592,7 +602,7 @@ M.finder = function(opts)
 
       -- returns nil for no client attached, false for unsupported capability
       -- we only abort if no client is attached
-      local check = check_capabilities(opts.lsp_handler.capability, true)
+      local check = check_capabilities(opts.lsp_handler, true)
       if check == nil then
         utils.info("LSP: no client attached")
         return
@@ -863,7 +873,7 @@ local function wrap_fn(key, fn)
     opts.lsp_handler.capability = handler_capabilty(opts.lsp_handler)
 
     -- check_capabilities will print the approperiate warning
-    if not check_capabilities(opts.lsp_handler.capability) then
+    if not check_capabilities(opts.lsp_handler) then
       return
     end
 
