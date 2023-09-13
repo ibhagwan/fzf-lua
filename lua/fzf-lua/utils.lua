@@ -172,7 +172,7 @@ end
 
 function M.glob_escape(str)
   if not str then return str end
-  return str:gsub("[\\%{}]", function(x)
+  return str:gsub("[\\%{}[%]]", function(x)
     return [[\]] .. x
   end)
 end
@@ -187,8 +187,7 @@ function M.pcall_expand(filepath)
   -- :lua print(vim.fn.expand("~/file[2-1].ext"))
   -- but not when escaping the hyphen:
   -- :lua print(vim.fn.expand("~/file[2\\-1].ext"))
-  local ok, expanded = pcall(vim.fn.expand,
-    filepath:gsub("%-", "\\-"))
+  local ok, expanded = pcall(vim.fn.expand, filepath:gsub("%-", "\\-"))
   if ok and expanded and #expanded > 0 then
     return expanded
   else
