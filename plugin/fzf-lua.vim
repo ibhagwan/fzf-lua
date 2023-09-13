@@ -9,7 +9,7 @@ if exists('g:loaded_fzf_lua') | finish | endif
 let g:loaded_fzf_lua = 1
 
 " FzfLua builtin lists
-function! s:fzflua_complete(arg,line,pos)
+function! s:fzflua_complete(arg, line, pos) abort
   let l:builtin_list = luaeval('vim.tbl_filter(
     \ function(k)
     \   if require("fzf-lua")._excluded_metamap[k] then
@@ -18,6 +18,7 @@ function! s:fzflua_complete(arg,line,pos)
     \   return true
     \ end,
     \ vim.tbl_keys(require("fzf-lua")))')
+  call sort(l:builtin_list)
 
   let list = [l:builtin_list]
   let l = split(a:line[:a:pos-1], '\%(\%(\%(^\|[^\\]\)\\\)\@<!\s\)\+', 1)
