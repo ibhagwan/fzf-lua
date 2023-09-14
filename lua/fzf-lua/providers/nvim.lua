@@ -306,6 +306,8 @@ M.keymaps = function(opts)
     if type(keymap.rhs) == "string" and #keymap.rhs == 0 then
       return
     end
+    -- desc can be a multi-line string, normalize it
+    keymap_desc = string.gsub(keymap_desc, "\n%s+", "\r")
     keymap.str = string.format("%s │ %-40s │ %s",
       utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
       keymap.lhs:gsub("%s", "<Space>"),
