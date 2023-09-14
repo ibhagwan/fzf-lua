@@ -472,7 +472,8 @@ M.goto_jump = function(selected, opts)
 end
 
 M.keymap_apply = function(selected)
-  local key = selected[1]:match("[│]%s+(.*)%s+[│]")
+  -- extract lhs in the keymap. The lhs can't contain a whitespace.
+  local key = selected[1]:match("[│]%s+([^%s]*)%s+[│]")
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), "t", true)
 end
 
