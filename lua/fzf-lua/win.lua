@@ -559,6 +559,23 @@ function FzfWin:redraw_preview()
     self.prev_winopts, self.border_winopts = self:fs_preview_layout(self.fullscreen)
   end
 
+  -- manual border chars looks horrible with ambiwdith="double", override border
+  -- window with preview window dimensions and use builtin `nvim_open_win` border
+  -- NOTES:
+  --    (1) there will be no border scroll
+  --    (2) preview title only when nvim >= 0.9
+  if vim.o.ambiwidth == "double" then
+    assert(type(self.winopts._border) == "string")
+    self.border_winopts = vim.tbl_extend("force", self.border_winopts, { zindex = 990 })
+    self.prev_winopts = vim.tbl_extend("force", self.prev_winopts, {
+      zindex = 991,
+      col = self.border_winopts.col,
+      row = self.border_winopts.row,
+      border = self.winopts._border,
+    })
+    self.prev_single_win = true
+  end
+
   if self:validate_preview() then
     self.border_buf = api.nvim_win_get_buf(self.border_winid)
     self:redraw_preview_border()
@@ -1038,14 +1055,15 @@ function FzfWin:update_scrollbar_float(o)
   if o.bar_height >= o.line_count then
     self:hide_scrollbar()
   else
+    local offset = self.prev_single_win and 1 or 0
     local info = o.wininfo
     local style1 = {}
     style1.relative = "editor"
     style1.style = "minimal"
     style1.width = 1
     style1.height = info.height
-    style1.row = info.winrow - 1
-    style1.col = info.wincol + info.width +
+    style1.row = info.winrow - 1 + offset
+    style1.col = info.wincol + info.width + offset +
         (tonumber(self.winopts.preview.scrolloff) or -2)
     style1.zindex = info.zindex or 997
     if self._swin1 and vim.api.nvim_win_is_valid(self._swin1) then
@@ -1107,6 +1125,27 @@ function FzfWin:update_scrollbar(hide)
 end
 
 function FzfWin:update_title(title)
+  if self.prev_single_win then
+    -- we are using a single window, the border window is hidden
+    -- under the preview window and thus meaningless to update
+    -- if neovim >= 0.9 we can use the builtin title params instead
+    if utils.__HAS_NVIM_09 then
+      -- since `nvim_win_set_config` removes all styling, save backup
+      -- of the current options and restore after the call (#813)
+      local style = self:get_winopts(self.preview_winid, self._previewer:gen_winopts())
+      -- `nvim_win_set_config`: Invalid key: 'noautocmd'
+      self.prev_winopts.noautocmd = nil
+      api.nvim_win_set_config(self.preview_winid, vim.tbl_extend("keep", {
+          title = type(self.hls.preview_title) == "string"
+              and { { title, self.hls.preview_title } }
+              or title,
+          title_pos = self.winopts.preview.title_pos,
+        },
+        self.prev_winopts))
+      self:set_winopts(self.preview_winid, style)
+    end
+    return
+  end
   local right_pad = 7
   local border_buf = api.nvim_win_get_buf(self.border_winid)
   local top = api.nvim_buf_get_lines(border_buf, 0, 1, 0)[1]

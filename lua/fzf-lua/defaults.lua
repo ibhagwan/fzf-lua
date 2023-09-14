@@ -60,6 +60,7 @@ M.defaults = {
     },
     _borderchars = {
       ["none"]    = { " ", " ", " ", " ", " ", " ", " ", " " },
+      ["solid"]   = { " ", " ", " ", " ", " ", " ", " ", " " },
       ["single"]  = { "┌", "─", "┐", "│", "┘", "─", "└", "│" },
       ["double"]  = { "╔", "═", "╗", "║", "╝", "═", "╚", "║" },
       ["rounded"] = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
@@ -69,7 +70,7 @@ M.defaults = {
     },
     -- border chars reverse lookup for ambiwidth="double"
     _border2string = {
-      [" "] = "none",
+      [" "] = "solid",
       ["┌"] = "single",
       ["╔"] = "double",
       ["╭"] = "rounded",
