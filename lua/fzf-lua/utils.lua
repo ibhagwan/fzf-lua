@@ -838,18 +838,50 @@ function M.io_system(cmd, use_lua_io)
   end
 end
 
+-- Wrap a function so it can be executed inside a new coroutine.
+-- Example:
+--   utils.wrap_coroutine(function()
+--      local res = utils.input("Prompt with *asynchronous* vim.ui.input >")
+--      print(res)
+--   end)
+function M.wrap_coroutine(f)
+  if coroutine == nil then  -- neovim < 0.8, coroutine not available
+    return f
+  end
+  return function(...)
+    local coro = coroutine.create(f)
+    local _, fn = coroutine.resume(coro, ...)
+    if coroutine.status(coro) == "suspended" then
+      assert(fn and type(fn) == "function")
+      fn()
+    end
+  end
+end
+
 -- wrapper around |input()| to allow cancellation with `<C-c>`
 -- without "E5108: Error executing lua Keyboard interrupt"
+---@return string|nil
 function M.input(prompt)
   local ok, res
-  -- NOTE: do not use `vim.ui` yet, a conflcit with `dressing.nvim`
-  -- causes the return value to appear as cancellation
-  -- if vim.ui then
-  if false then
-    ok, _ = pcall(vim.ui.input, { prompt = prompt },
-      function(input)
-        res = input
-      end)
+  local coro = coroutine and coroutine.running() ---@type thread|nil
+  if M.__HAS_NVIM_09 and coro then
+    -- vim.ui.input() is asynchronous, resolving when on_confirm() is called.
+    -- we wrap vim.ui.input() (possibly dressing.nvim) with a coroutine
+    -- so that its return value can be retrieved in a synchronous fashion.
+    -- This is available only when this function is used inside a coroutine;
+    -- see also M.wrap_coroutine().
+    -- Note: Due to the behavior change since neovim 0.9.0 (neovim#21006),
+    -- the on_confirm callback is ALWAYS called even if aborted with <ctrl-c>.
+    -- It is expected that any third-party override of vim.ui.input()
+    -- (e.g., dressing.nvim) also conform with this specification; otherwise
+    -- the coroutine will never resolve and this function will never return.
+    res = coroutine.yield(function()
+      vim.ui.input({ prompt = prompt },
+        function(user_input)  -- on_confirm callback
+          coroutine.resume(coro, user_input)
+        end)
+    end)
+    return res
   else
     ok, res = pcall(vim.fn.input, { prompt = prompt, cancelreturn = 3 })
     if res == 3 then

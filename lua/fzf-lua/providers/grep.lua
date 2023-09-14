@@ -110,7 +110,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   return command
 end
 
-M.grep = function(opts)
+M.grep = utils.wrap_coroutine(function(opts)
   opts = config.normalize_opts(opts, config.globals.grep)
   if not opts then return end
 
@@ -174,7 +174,7 @@ M.grep = function(opts)
   opts = core.set_header(opts, opts.headers or { "actions", "cwd", "search" })
   opts = core.set_fzf_field_index(opts)
   core.fzf_exec(contents, opts)
-end
+end)
 
 -- single threaded version
 M.live_grep_st = function(opts)

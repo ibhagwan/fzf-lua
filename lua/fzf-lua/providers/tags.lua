@@ -182,7 +182,7 @@ M.btags = function(opts)
   return tags(opts)
 end
 
-M.grep = function(opts)
+M.grep = utils.wrap_coroutine(function(opts)
   opts = opts or {}
 
   if not opts.search and opts.resume then
@@ -191,7 +191,7 @@ M.grep = function(opts)
   end
 
   if not opts.search then
-    local search = utils.input(opts.input_prompt or "Grep For> ")
+    local search = utils.input(opts.input_prompt or "(Tags) Grep For> ")
     if search then
       opts.search = search
     else
@@ -200,7 +200,7 @@ M.grep = function(opts)
   end
 
   return M.tags(opts)
-end
+end)
 
 M.live_grep = function(opts)
   opts = config.normalize_opts(opts, config.globals.tags)
