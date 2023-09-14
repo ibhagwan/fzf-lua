@@ -67,6 +67,16 @@ M.defaults = {
       ["thiccc"]  = { "▛", "▀", "▜", "▐", "▟", "▄", "▙", "▌" },
       ["thicccc"] = { "█", "█", "█", "█", "█", "█", "█", "█" },
     },
+    -- border chars reverse lookup for ambiwidth="double"
+    _border2string = {
+      [" "] = "none",
+      ["┌"] = "single",
+      ["╔"] = "double",
+      ["╭"] = "rounded",
+      ["┏"] = "double",
+      ["▛"] = "double",
+      ["█"] = "double",
+    },
     on_create    = function()
       -- vim.cmd("set winhl=Normal:Normal,FloatBorder:Normal")
     end,

@@ -245,6 +245,14 @@ local normalize_winopts = function(o)
     winopts.border = "rounded"
   end
 
+  -- when ambiwdith="double" `nvim_open_win` with border chars fails:
+  -- with "border chars must be one cell", force string border (#874)
+  if vim.o.ambiwidth == "double" and type(winopts.border) == "table" then
+    local topleft = winopts.border[1]
+    winopts.border = topleft
+        and config.globals.winopts._border2string[topleft] or "rounded"
+  end
+
   -- We only allow 'none|single|double|rounded'
   if type(winopts.border) == "string" then
     -- save the original string so we can pass it
@@ -667,11 +675,14 @@ function FzfWin:redraw_main()
   win_opts.row = winopts.row or math.floor(((lines - win_opts.height) / 2) - 1)
   win_opts.col = winopts.col or math.floor((columns - win_opts.width) / 2)
 
-  -- adjust for borderless main window (#364)
-  if self.winopts._border and self.winopts._border == "none" then
+  -- prioritize using border string argument in `nvim_open_win`
+  if self.winopts._border then
     win_opts.border = self.winopts._border
-    win_opts.width = win_opts.width + 2
-    win_opts.height = win_opts.height + 2
+    -- adjust for borderless main window (#364)
+    if self.winopts._border == "none" then
+      win_opts.width = win_opts.width + 2
+      win_opts.height = win_opts.height + 2
+    end
   end
 
   -- When border chars are empty strings 'nvim_open_win' adjusts
@@ -1348,6 +1359,13 @@ function FzfWin.toggle_help()
     -- topmost popup
     zindex = 999,
   }
+
+  -- "border chars mustbe one cell" (#874)
+  if vim.o.ambiwidth == "double" then
+    -- "single" looks better
+    -- winopts.border[2] = "-"
+    winopts.border = "single"
+  end
 
   self.km_bufnr = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_option(self.km_bufnr, "bufhidden", "wipe")
