@@ -366,7 +366,7 @@ function M.keymap_to_entry(str, opts)
     v = true,
     t = true,
   }
-  local mode, keymap = string.match(str, "^(.*)│(.*)│")
+  local mode, keymap = string.match(str, "^(.-)│(.-)│")
   mode, keymap = vim.trim(mode), vim.trim(keymap)
   mode = valid_modes[mode] and mode or "" -- only valid modes
   local vmap = utils.strsplit(

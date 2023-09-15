@@ -291,6 +291,8 @@ M.keymaps = function(opts)
   opts = config.normalize_opts(opts, config.globals.keymaps)
   if not opts then return end
 
+  local formatter = opts.formatter or "%s │ %-14s │ %-33s │ %s"
+  local key_modes = opts.modes or { "n", "i", "c", "v", "t" }
   local modes = {
     n = "blue",
     i = "red",
@@ -300,25 +302,39 @@ M.keymaps = function(opts)
   }
   local keymaps = {}
 
+
   local add_keymap = function(keymap)
-    local keymap_desc = keymap.desc or keymap.rhs or string.format("%s", keymap.callback);
+    local callback_str = string.format("%s", keymap.callback)
+
     -- ignore dummy mappings
     if type(keymap.rhs) == "string" and #keymap.rhs == 0 then
       return
     end
-    -- desc can be a multi-line string, normalize it
-    keymap_desc = string.gsub(keymap_desc, "\n%s+", "\r")
-    keymap.str = string.format("%s │ %-40s │ %s",
+
+    -- ignore Plug mappings
+    local plug = "<Plug>"
+    if type(keymap.lhs) == "string" and (string.sub(keymap.lhs, 1, #plug) == plug) then
+      return
+    end
+
+    -- ignore SNR mappings
+    local snr = "<SNR>"
+    if type(keymap.lhs) == "string" and (string.sub(keymap.lhs, 1, #snr) == snr) then
+      return
+    end
+
+    keymap.str = string.format(formatter,
       utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
       keymap.lhs:gsub("%s", "<Space>"),
-      keymap_desc or "")
+      string.sub(keymap.desc or "", 1, 30),
+      (keymap.rhs or callback_str))
 
     local k = string.format("[%s:%s:%s]",
       keymap.buffer, keymap.mode, keymap.lhs)
     keymaps[k] = keymap
   end
 
-  for mode, _ in pairs(modes) do
+  for _, mode in pairs(key_modes) do
     local global = vim.api.nvim_get_keymap(mode)
     for _, keymap in pairs(global) do
       add_keymap(keymap)
@@ -335,9 +351,13 @@ M.keymaps = function(opts)
   end
 
   opts.fzf_opts["--no-multi"] = ""
+  opts.fzf_opts["--header-lines"] = "1"
 
   -- sort alphabetically
   table.sort(entries)
+
+  local header_str = string.format(formatter, "m", "keymap", "description", "detail")
+  table.insert(entries, 1, header_str)
 
   core.fzf_exec(entries, opts)
 end
