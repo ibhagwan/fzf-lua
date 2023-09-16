@@ -20,13 +20,13 @@ M.defaults = {
   nbsp          = utils.nbsp,
   global_resume = true,
   winopts       = {
-    height       = 0.85,
-    width        = 0.80,
-    row          = 0.35,
-    col          = 0.55,
-    border       = "rounded",
-    fullscreen   = false,
-    preview      = {
+    height         = 0.85,
+    width          = 0.80,
+    row            = 0.35,
+    col            = 0.55,
+    border         = "rounded",
+    fullscreen     = false,
+    preview        = {
       default      = "builtin",
       border       = "border",
       wrap         = "nowrap",
@@ -58,7 +58,7 @@ M.defaults = {
         scrolloff      = 1,
       },
     },
-    _borderchars = {
+    _borderchars   = {
       ["none"]    = { " ", " ", " ", " ", " ", " ", " ", " " },
       ["solid"]   = { " ", " ", " ", " ", " ", " ", " ", " " },
       ["single"]  = { "┌", "─", "┐", "│", "┘", "─", "└", "│" },
@@ -78,7 +78,7 @@ M.defaults = {
       ["▛"] = "double",
       ["█"] = "double",
     },
-    on_create    = function()
+    on_create      = function()
       -- vim.cmd("set winhl=Normal:Normal,FloatBorder:Normal")
     end,
   },
@@ -761,11 +761,12 @@ M.defaults.registers = {
 }
 
 M.defaults.keymaps = {
-  prompt    = "Keymaps> ",
-  previewer = { _ctor = previewers.builtin.keymaps },
-  winopts   = { preview = { layout = "vertical" } },
-  fzf_opts  = { ["--tiebreak"] = "index", },
-  actions   = {
+  prompt          = "Keymaps> ",
+  previewer       = { _ctor = previewers.builtin.keymaps },
+  winopts         = { preview = { layout = "vertical" } },
+  fzf_opts        = { ["--tiebreak"] = "index", },
+  ignore_patterns = { "^<SNR>", "^<Plug>" },
+  actions         = {
     ["default"] = actions.keymap_apply,
     ["ctrl-s"]  = actions.keymap_split,
     ["ctrl-v"]  = actions.keymap_vsplit,

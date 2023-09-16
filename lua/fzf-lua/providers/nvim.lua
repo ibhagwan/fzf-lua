@@ -304,33 +304,30 @@ M.keymaps = function(opts)
 
 
   local add_keymap = function(keymap)
-    local callback_str = string.format("%s", keymap.callback)
-
     -- ignore dummy mappings
     if type(keymap.rhs) == "string" and #keymap.rhs == 0 then
       return
     end
 
-    -- ignore Plug mappings
-    local plug = "<Plug>"
-    if type(keymap.lhs) == "string" and (string.sub(keymap.lhs, 1, #plug) == plug) then
-      return
-    end
-
-    -- ignore SNR mappings
-    local snr = "<SNR>"
-    if type(keymap.lhs) == "string" and (string.sub(keymap.lhs, 1, #snr) == snr) then
-      return
+    -- by default we ignore <SNR> and <Plug> mappings
+    if type(keymap.lhs) == "string" and type(opts.ignore_patterns) == "table" then
+      for _, p in ipairs(opts.ignore_patterns) do
+        -- case insensitive pattern match
+        local pattern, lhs = p:lower(), vim.trim(keymap.lhs:lower())
+        if lhs:match(pattern) then
+          return
+        end
+      end
     end
 
     keymap.str = string.format(formatter,
       utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
       keymap.lhs:gsub("%s", "<Space>"),
-      string.sub(keymap.desc or "", 1, 30),
-      (keymap.rhs or callback_str))
+      -- desc can be a multi-line string, normalize it
+      string.sub(string.gsub(keymap.desc or "", "\n%s+", "\r") or "", 1, 30),
+      (keymap.rhs or string.format("%s", keymap.callback)))
 
-    local k = string.format("[%s:%s:%s]",
-      keymap.buffer, keymap.mode, keymap.lhs)
+    local k = string.format("[%s:%s:%s]", keymap.buffer, keymap.mode, keymap.lhs)
     keymaps[k] = keymap
   end
 

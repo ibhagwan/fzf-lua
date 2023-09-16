@@ -992,6 +992,20 @@ require'fzf-lua'.setup {
     -- e.g. a call to reset statusline highlights
     -- post_reset_cb     = function() ... end,
   },
+  keymaps = {
+    prompt            = "Keymaps> ",
+    winopts           = { preview = { layout = "vertical" } },
+    fzf_opts          = { ["--tiebreak"] = "index", },
+    -- by default, we ignore <Plug> and <SNR> mappings
+    -- set `ignore_patterns = false` to disable filtering
+    ignore_patterns   = { "^<SNR>", "^<Plug>" },
+    actions           = {
+      ["default"]     = actions.keymap_apply,
+      ["ctrl-s"]      = actions.keymap_split,
+      ["ctrl-v"]      = actions.keymap_vsplit,
+      ["ctrl-t"]      = actions.keymap_tabedit,
+    },
+  },
   quickfix = {
     file_icons        = true,
     git_icons         = true,
