@@ -1,4 +1,4 @@
-*fzf-lua.txt*        For Neovim >= 0.5.0        Last change: 2023 September 10
+*fzf-lua.txt*        For Neovim >= 0.5.0        Last change: 2023 September 16
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1078,6 +1078,20 @@ open an issue and I'll be more than happy to help.**
         -- uncomment to execute a callback after interface is closed
         -- e.g. a call to reset statusline highlights
         -- post_reset_cb     = function() ... end,
+      },
+      keymaps = {
+        prompt            = "Keymaps> ",
+        winopts           = { preview = { layout = "vertical" } },
+        fzf_opts          = { ["--tiebreak"] = "index", },
+        -- by default, we ignore <Plug> and <SNR> mappings
+        -- set `ignore_patterns = false` to disable filtering
+        ignore_patterns   = { "^<SNR>", "^<Plug>" },
+        actions           = {
+          ["default"]     = actions.keymap_apply,
+          ["ctrl-s"]      = actions.keymap_split,
+          ["ctrl-v"]      = actions.keymap_vsplit,
+          ["ctrl-t"]      = actions.keymap_tabedit,
+        },
       },
       quickfix = {
         file_icons        = true,
