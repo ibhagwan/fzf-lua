@@ -171,7 +171,15 @@ M.fzf_wrap = function(opts, contents, fn_selected)
     opts.fn_selected = opts.fn_selected or fn_selected
     local selected = M.fzf(contents, opts)
     if opts.fn_selected then
-      opts.fn_selected(selected, opts)
+      -- errors thrown here gets silenced possibly due to a coroutine, so catch explicitly
+      xpcall(function()
+        opts.fn_selected(selected, opts)
+      end, function(err)
+        local msg = "fn_selected threw an error: " .. debug.traceback(err, 1)
+        -- Note: we could use utils.err, but this somehow doesn't show error message
+        -- perhaps due to execution inside a coroutine. See also #878
+        vim.notify(msg, vim.log.levels.ERROR, { title = "fzf-lua" })
+      end)
     end
   end)
 end
