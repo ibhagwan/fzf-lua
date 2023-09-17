@@ -516,7 +516,7 @@ M.defaults.colorschemes = {
 }
 
 M.defaults.highlights = {
-  prompt    = "highlights> ",
+  prompt    = "Highlights> ",
   previewer = { _ctor = previewers.builtin.highlights, },
 }
 
