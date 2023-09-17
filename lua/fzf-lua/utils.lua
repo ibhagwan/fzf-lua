@@ -100,34 +100,26 @@ function M.nvim_has_option(option)
   return vim.fn.exists("&" .. option) == 1
 end
 
-function M._echo_multiline(msg, hl)
-  vim.cmd("echohl " .. hl)
-  for _, s in ipairs(vim.fn.split(msg, "\n")) do
-    vim.cmd("echom '" .. s:gsub("'", "''") .. "'")
-  end
-  vim.cmd("echohl None")
-end
-
-local fast_event_aware_echo = function(msg, hl)
+local fast_event_aware_notify = function(msg, level, opts)
   if vim.in_fast_event() then
     vim.schedule(function()
-      M._echo_multiline("[Fzf-lua] " .. msg, hl)
+      vim.notify("[Fzf-lua] " .. msg, level, opts)
     end)
   else
-    M._echo_multiline("[Fzf-lua] " .. msg, hl)
+    vim.notify("[Fzf-lua] " .. msg, level, opts)
   end
 end
 
 function M.info(msg)
-  fast_event_aware_echo(msg, "Directory")
+  fast_event_aware_notify(msg, vim.log.levels.INFO, {})
 end
 
 function M.warn(msg)
-  fast_event_aware_echo(msg, "WarningMsg")
+  fast_event_aware_notify(msg, vim.log.levels.WARN, {})
 end
 
 function M.err(msg)
-  fast_event_aware_echo(msg, "ErrorMsg")
+  fast_event_aware_notify(msg, vim.log.levels.ERROR, {})
 end
 
 function M.shell_error()
