@@ -93,14 +93,18 @@ end
 M.command_history = function(opts)
   opts = config.normalize_opts(opts, config.globals.command_history)
   if not opts then return end
-  opts.fzf_opts["--header"] = arg_header("<CR>", "<Ctrl-e>", "execute")
+  if opts.fzf_opts["--header"] == nil then
+    opts.fzf_opts["--header"] = arg_header("<CR>", "<Ctrl-e>", "execute")
+  end
   history(opts, "cmd")
 end
 
 M.search_history = function(opts)
   opts = config.normalize_opts(opts, config.globals.search_history)
   if not opts then return end
-  opts.fzf_opts["--header"] = arg_header("<CR>", "<Ctrl-e>", "search")
+  if opts.fzf_opts["--header"] == nil then
+    opts.fzf_opts["--header"] = arg_header("<CR>", "<Ctrl-e>", "search")
+  end
   history(opts, "search")
 end
 
