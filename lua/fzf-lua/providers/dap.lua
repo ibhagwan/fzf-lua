@@ -145,7 +145,7 @@ M.breakpoints = function(opts)
   end
 
   if opts.fzf_opts["--header"] == nil then
-    opts.fzf_opts["--header"] = vim.fn.shellescape((":: %s to delete a Breakpoint")
+    opts.fzf_opts["--header"] = ((":: %s to delete a Breakpoint")
       :format(utils.ansi_codes.yellow("<Ctrl-x>")))
   end
 

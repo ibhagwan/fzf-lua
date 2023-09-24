@@ -3,11 +3,11 @@ PLENARY-REPO=https://github.com/nvim-lua/plenary.nvim.git
 
 .PHONY: test
 test:
-	nvim --headless --noplugin -u tests/minimal_init.vim -c "lua require('plenary.test_harness').test_directory('tests/', { minimal_init = 'tests/minimal_init.vim', sequential = true, timeout = 120000 })"
+	nvim --headless --clean --noplugin -u tests/minimal_init.vim -c "lua require('plenary.test_harness').test_directory('tests/', { minimal_init = 'tests/minimal_init.vim', sequential = true, timeout = 120000 })"
 
 .PHONY: test-file
 test-file:
-	nvim --headless --noplugin -u tests/minimal_init.vim -c "lua require('plenary.busted').run(vim.loop.cwd()..'/'..[[$(FILE)]])"
+	nvim --headless --clean --noplugin -u tests/minimal_init.vim -c "lua require('plenary.busted').run(vim.loop.cwd()..'/'..[[$(FILE)]])"
 
 
 .PHONY: plenary

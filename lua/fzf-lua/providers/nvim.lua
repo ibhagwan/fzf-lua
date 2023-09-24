@@ -86,8 +86,10 @@ end
 local arg_header = function(sel_key, edit_key, text)
   sel_key = utils.ansi_codes.yellow(sel_key)
   edit_key = utils.ansi_codes.yellow(edit_key)
-  return vim.fn.shellescape((":: %s to %s, %s to edit")
-    :format(sel_key, text, edit_key))
+  local msg = (":: %s to %s, %s to edit"):format(sel_key, text, edit_key)
+  -- Note: fzf_args['--header'] will be ALWAYS shell escaped.
+  -- return vim.fn.shellescape(msg)
+  return msg
 end
 
 M.command_history = function(opts)

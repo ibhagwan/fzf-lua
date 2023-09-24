@@ -438,6 +438,10 @@ M.build_fzf_cli = function(opts)
       opts.fzf_opts[flag] = opts.fzf_opts[flag]
     end
   end
+  -- shell escape the header. Note: '--header=', '--header', '' are all different!
+  if opts.fzf_opts["--header"] then
+    opts.fzf_opts["--header"] = libuv.shellescape(opts.fzf_opts["--header"])
+  end
   opts.fzf_opts["--bind"] = M.create_fzf_binds(opts.keymap.fzf)
   if opts.fzf_colors then
     opts.fzf_opts["--color"] = M.create_fzf_colors(opts)
@@ -516,8 +520,9 @@ M.build_fzf_cli = function(opts)
     end
     if v then
       v = v:gsub(k .. "=", "")
-      cli_args = cli_args ..
-          (" %s%s"):format(k, #v > 0 and "=" .. v or "")
+      -- assumes v are well normalized and shell-escaped
+      local value_repr = (#v > 0 and "=" .. v or "")
+      cli_args = cli_args .. (" %s%s"):format(k, value_repr)
     end
   end
   return cli_args .. extra_args
@@ -769,7 +774,7 @@ M.set_header = function(opts, hdr_tbl)
     end
   end
   if hdr_str and #hdr_str > 0 then
-    opts.fzf_opts["--header"] = libuv.shellescape(hdr_str)
+    opts.fzf_opts["--header"] = hdr_str   -- escape in build_fzf_cli
   end
   return opts
 end
