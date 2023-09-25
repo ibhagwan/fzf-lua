@@ -1,4 +1,5 @@
 local core = require "fzf-lua.core"
+local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
@@ -40,6 +41,14 @@ end
 M.files = function(opts)
   opts = config.normalize_opts(opts, config.globals.files)
   if not opts then return end
+  if opts.ignore_current_file then
+    local curbuf = vim.api.nvim_buf_get_name(0)
+    if type(curbuf) and #curbuf > 0 then
+      curbuf = path.relative(curbuf, opts.cwd or vim.loop.cwd())
+      opts.file_ignore_patterns = opts.file_ignore_patterns or {}
+      table.insert(opts.file_ignore_patterns, "^" .. curbuf .. "$")
+    end
+  end
   opts.cmd = get_files_cmd(opts)
   local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, opts.headers or { "cwd" })
