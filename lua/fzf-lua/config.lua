@@ -309,6 +309,13 @@ function M.normalize_opts(opts, defaults)
       opts.previewer, M.globals.previewers.builtin)
   end
 
+  -- we need the original `cwd` with `autochdir=true` (#882)
+  -- use `_cwd` to not interfere with supplied users' options
+  -- as this can have unintended effects (e.g. in "buffers")
+  if vim.o.autochdir and not opts.cwd then
+    opts._cwd = vim.loop.cwd()
+  end
+
   if opts.cwd and #opts.cwd > 0 then
     opts.cwd = vim.fn.expand(opts.cwd)
     if not vim.loop.fs_stat(opts.cwd) then

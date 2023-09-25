@@ -105,7 +105,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     entry.ctag = opts._ctag and path.entry_to_ctag(selected[i])
     local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
     if not path.starts_with_separator(fullpath) then
-      fullpath = path.join({ opts.cwd or vim.loop.cwd(), fullpath })
+      fullpath = path.join({ opts.cwd or opts._cwd or vim.loop.cwd(), fullpath })
     end
     if vimcmd == "e"
         and curbuf ~= fullpath
@@ -128,6 +128,10 @@ M.vimcmd_file = function(vimcmd, selected, opts)
       if entry.path then
         -- do not run ':<cmd> <file>' for uri entries (#341)
         local relpath = path.relative(entry.path, vim.loop.cwd())
+        if vim.o.autochdir then
+          -- force full paths when `autochdir=true` (#882)
+          relpath = fullpath
+        end
         vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(relpath))
       elseif vimcmd ~= "e" then
         -- uri entries only execute new buffers (new|vnew|tabnew)
