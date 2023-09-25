@@ -66,7 +66,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- command which is consistent with the behavior above (with string cmds)
       -- TODO: why does {FZF|SKIM}_DEFAULT_COMMAND cause delay in opening skim?
       -- use input redirection with skim to prevent interface opening delay
-      if opts.fzf_bin and opts.fzf_bin:match("sk$") then
+      local bin_is_sk = opts.fzf_bin and opts.fzf_bin:match("sk$")
+      local fish_shell = vim.o.shell and vim.o.shell:match("fish$")
+      if not fish_shell or bin_is_sk then
         cmd = ("%s < %s"):format(cmd, vim.fn.shellescape(fifotmpname))
       else
         FZF_DEFAULT_COMMAND = string.format("cat %s", vim.fn.shellescape(fifotmpname))
