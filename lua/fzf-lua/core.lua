@@ -575,6 +575,7 @@ M.mt_cmd_wrapper = function(opts)
   if not opts.requires_processing
       and not opts.git_icons
       and not opts.file_icons
+      and not opts.file_ignore_patterns
       and not opts.path_shorten then
     -- command does not require any processing
     return opts.cmd
