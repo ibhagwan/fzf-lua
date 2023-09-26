@@ -999,7 +999,7 @@ function Previewer.marks:parse_entry(entry_str)
     bufnr = self.win.src_bufnr
     filepath = api.nvim_buf_get_name(bufnr)
   end
-  if filepath and #filepath > 0 then
+  if #filepath > 0 then
     local ok, res = pcall(vim.fn.expand, filepath)
     if not ok then
       filepath = ""
