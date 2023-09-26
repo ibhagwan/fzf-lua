@@ -46,7 +46,8 @@ M.files = function(opts)
     if #curbuf > 0 then
       curbuf = path.relative(curbuf, opts.cwd or vim.loop.cwd())
       opts.file_ignore_patterns = opts.file_ignore_patterns or {}
-      table.insert(opts.file_ignore_patterns, "^" .. curbuf .. "$")
+      table.insert(opts.file_ignore_patterns,
+        "^" .. utils.lua_regex_escape(curbuf) .. "$")
     end
   end
   opts.cmd = get_files_cmd(opts)
