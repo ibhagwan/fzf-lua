@@ -164,7 +164,7 @@ M.btags = function(opts)
   opts = config.normalize_opts(opts, config.globals.btags)
   if not opts then return end
   opts.filename = vim.api.nvim_buf_get_name(0)
-  if not opts.filename or #opts.filename == 0 then
+  if #opts.filename == 0 then
     utils.info("'btags' is not available for unnamed buffers.")
     return
   end

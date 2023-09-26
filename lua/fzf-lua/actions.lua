@@ -241,7 +241,7 @@ M.file_switch = function(selected, opts)
   end
   for _, b in ipairs(vim.api.nvim_list_bufs()) do
     local bname = vim.api.nvim_buf_get_name(b)
-    if bname and bname == fullpath then
+    if bname == fullpath then
       bufnr = b
       break
     end

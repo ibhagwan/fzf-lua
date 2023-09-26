@@ -140,7 +140,7 @@ M.bcommits = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.bcommits)
   if not opts then return end
   local bufname = vim.api.nvim_buf_get_name(0)
-  if not bufname or #bufname == 0 then
+  if #bufname == 0 then
     utils.info("'bcommits' is not available for unnamed buffers.")
     return
   end

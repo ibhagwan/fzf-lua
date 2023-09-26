@@ -43,7 +43,7 @@ M.files = function(opts)
   if not opts then return end
   if opts.ignore_current_file then
     local curbuf = vim.api.nvim_buf_get_name(0)
-    if type(curbuf) and #curbuf > 0 then
+    if #curbuf > 0 then
       curbuf = path.relative(curbuf, opts.cwd or vim.loop.cwd())
       opts.file_ignore_patterns = opts.file_ignore_patterns or {}
       table.insert(opts.file_ignore_patterns, "^" .. curbuf .. "$")
