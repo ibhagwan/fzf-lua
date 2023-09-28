@@ -223,15 +223,20 @@ M.get_diff_files = function(opts)
   if not cmd then return {} end
   local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts))
   if ok and err == 0 then
+    -- Parse git status, expecting --porcelain=v1 format (or git status --short)
+    -- https://git-scm.com/docs/git-status#_short_format
     for i = 1, #status do
       local line = status[i]
-      local icon = line:match("[MUDARCT?]+")
-      local file = line:match("[^ ]*$")
+      local icon, file = line:match("^([ MTADRCU?][ MTADRCU?]) (.*)$")
+      -- Note: file that contains space might "be quoted"
       if icon and file then
         -- Extract first char, staged if not space or ? (32 or 63)
         local first = #line > 0 and string.byte(line, 1)
         local is_staged = first ~= 32 and first ~= 63 or nil
-        diff_files[file] = { icon:gsub("%?%?", "?"), is_staged }
+        -- Untracked files (??) are shown as a single icon
+        -- Display icon as a single letter (' M' and 'M ' -> 'M')
+        icon = vim.trim(icon:gsub("%?%?", "?"))
+        diff_files[file] = { icon, is_staged }
       end
     end
   end
@@ -419,8 +424,22 @@ M.file = function(x, opts)
   if opts.path_shorten then
     filepath = path.shorten(filepath, tonumber(opts.path_shorten))
   end
+  -- We assume diff_files was generated without `git status --untracked` option,
+  -- so we search upward path segment to see if any ancestor directory is untracked.
+  -- TODO: Make git_status_cmd not configurable.
+  local get_diff_info = function(p)
+    while p and p ~= "" do
+      local info = opts.diff_files[p]  -- (icon, is_staged)
+      if info then
+        return info
+      end
+      p = path.parent(p, false)
+    end
+    return nil
+  end
   if opts.git_icons then
-    local diff_info = opts.diff_files and opts.diff_files[origpath]
+    -- files that did not appear in git status output is assumed to be clean.
+    local diff_info = opts.diff_files and get_diff_info(origpath) or nil
     local indicators = diff_info and diff_info[1] or utils.nbsp
     for i = 1, #indicators do
       icon = indicators:sub(i, i)
