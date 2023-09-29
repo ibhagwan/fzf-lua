@@ -208,6 +208,7 @@ do
     changes = { "fzf-lua.providers.nvim", "changes" },
     tagstack = { "fzf-lua.providers.nvim", "tagstack" },
     marks = { "fzf-lua.providers.nvim", "marks" },
+    marks_line = { "fzf-lua.providers.nvim", "marks_line" },
     menus = { "fzf-lua.providers.nvim", "menus" },
     keymaps = { "fzf-lua.providers.nvim", "keymaps" },
     autocmds = { "fzf-lua.providers.nvim", "autocmds" },
