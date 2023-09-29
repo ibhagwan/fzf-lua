@@ -238,6 +238,49 @@ M.marks = function(opts)
   core.fzf_exec(entries, opts)
 end
 
+
+M.marks_line = function(opts)
+  opts = config.normalize_opts(opts, config.globals.marks_line)
+  if not opts then return end
+
+  local marks = vim.fn.execute(
+    string.format("marks %s", opts.marks and opts.marks or ""))
+  marks = vim.split(marks, "\n")
+
+  --[[ local prev_act = shell.action(function (args, fzf_lines, _)
+    local mark = args[1]:match("[^ ]+")
+    local bufnr, lnum, _, _ = unpack(vim.fn.getpos("'"..mark))
+    if vim.api.nvim_buf_is_loaded(bufnr) then
+      return vim.api.nvim_buf_get_lines(bufnr, lnum, fzf_lines+lnum, false)
+    else
+      local name = vim.fn.expand(args[1]:match(".* (.*)"))
+      if vim.fn.filereadable(name) ~= 0 then
+        return vim.fn.readfile(name, "", fzf_lines)
+      end
+      return "UNLOADED: " .. name
+    end
+  end) ]]
+  local entries = {}
+  local filter = opts.marks and vim.split(opts.marks, "")
+  for i = #marks, 3, -1 do
+    local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
+    if not filter or vim.tbl_contains(filter, mark) then
+      table.insert(entries, string.format("%-15s %-15s %-15s %s",
+        utils.ansi_codes.yellow(mark),
+        utils.ansi_codes.blue(line),
+        utils.ansi_codes.green(col),
+        text))
+    end
+  end
+
+  table.sort(entries, function(a, b) return a < b end)
+
+  -- opts.fzf_opts['--preview'] = prev_act
+  opts.fzf_opts["--no-multi"] = ""
+
+  core.fzf_exec(entries, opts)
+end
+
 M.registers = function(opts)
   opts = config.normalize_opts(opts, config.globals.registers)
   if not opts then return end

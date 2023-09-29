@@ -447,6 +447,14 @@ M.goto_mark = function(selected)
   local mark = selected[1]
   mark = mark:match("[^ ]+")
   vim.cmd("stopinsert")
+  vim.cmd("normal! `" .. mark)
+  -- vim.fn.feedkeys(string.format("'%s", mark))
+end
+
+M.goto_mark_line = function(selected)
+  local mark = selected[1]
+  mark = mark:match("[^ ]+")
+  vim.cmd("stopinsert")
   vim.cmd("normal! '" .. mark)
   -- vim.fn.feedkeys(string.format("'%s", mark))
 end

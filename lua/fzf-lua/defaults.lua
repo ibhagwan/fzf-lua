@@ -697,6 +697,16 @@ M.defaults.marks = {
   },
 }
 
+M.defaults.marks_line = {
+  prompt    = "Marks> ",
+  actions   = {
+    ["default"] = actions.goto_mark_line,
+  },
+  previewer = {
+    _ctor = previewers.builtin.marks,
+  },
+}
+
 M.defaults.jumps = {
   prompt    = "Jumps> ",
   cmd       = "jumps",
