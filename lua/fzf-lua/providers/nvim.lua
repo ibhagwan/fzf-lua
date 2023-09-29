@@ -221,6 +221,7 @@ M.marks = function(opts)
   local filter = opts.marks and vim.split(opts.marks, "")
   for i = #marks, 3, -1 do
     local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
+    col = tostring(tonumber(col)+1)
     if not filter or vim.tbl_contains(filter, mark) then
       table.insert(entries, string.format("%-15s %-15s %-15s %s",
         utils.ansi_codes.yellow(mark),
