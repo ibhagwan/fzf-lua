@@ -1,5 +1,6 @@
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
+local libuv = require "fzf-lua.libuv"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local shell = require "fzf-lua.shell"
@@ -166,7 +167,7 @@ M.bcommits = function(opts)
     opts.cmd = opts.cmd .. " " .. (range or file)
   end
   if type(opts.preview) == "string" then
-    opts.preview = opts.preview:gsub("<file>", vim.fn.shellescape(file))
+    opts.preview = opts.preview:gsub("<file>", libuv.shellescape(file))
     opts.preview = path.git_cwd(opts.preview, opts)
     if opts.preview_pager then
       opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
@@ -204,6 +205,11 @@ M.stash = function(opts)
   if opts.preview then
     opts.preview = path.git_cwd(opts.preview, opts)
   end
+  if opts.search and opts.search ~= "" then
+    -- search by stash content, git stash -G<regex>
+    assert(type(opts.search) == "string")
+    opts.cmd = opts.cmd .. " -G " .. libuv.shellescape(opts.search)
+  end
 
   opts.__fn_transform = opts.__fn_transform or
       function(x)
@@ -230,7 +236,7 @@ M.stash = function(opts)
     shell.set_protected(id)
   end
 
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd", "search" })
   return core.fzf_exec(contents, opts)
 end
 
