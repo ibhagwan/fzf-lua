@@ -552,6 +552,10 @@ function M.setup_highlights()
   pcall(loadstring("require'fzf-lua'.setup_highlights()"))
 end
 
+function M.setup_devicon_term_hls()
+  pcall(loadstring("require'fzf-lua.make_entry'.setup_devicon_term_hls()"))
+end
+
 function M.load_profile(fname, name, silent)
   local profile = name or fname:match("([^%p]+)%.lua$") or "<unknown>"
   local ok, res = pcall(dofile, fname)

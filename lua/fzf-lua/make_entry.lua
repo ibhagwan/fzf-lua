@@ -92,14 +92,27 @@ local function set_config_section(s, data)
 end
 
 -- Setup the terminal colors codes for nvim-web-devicons colors
-local setup_devicon_term_hls = function()
+M.setup_devicon_term_hls = function()
+  if M.__HL_BG and vim.o.bg == M.__HL_BG then
+    -- already setup for the current `bg`, do nothing (#893)
+    -- this was already taken care of for multiprocess in
+    -- `config._devicons_geticons` in #855
+    return
+  end
+  local icons = M._devicons and M._devicons.get_icons() or M._devicons_map
+  if not icons then
+    return
+  end
+  -- save the current neovim background
+  M.__HL_BG = vim.o.bg
+
   local function hex(hexstr)
     local r, g, b = hexstr:match(".(..)(..)(..)")
     r, g, b = tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
     return r, g, b
   end
 
-  for k, info in pairs(M._devicons and M._devicons.get_icons() or M._devicons_map) do
+  for k, info in pairs(icons) do
     -- info.name can be missing (#817)
     local name = info.name or type(k) == "string" and k
     if name then
@@ -160,10 +173,8 @@ local function load_devicons()
     -- due to usage of new highlighting API introduced with v0.7
     pcall(M._devicons.setup)
   end
-  if M._devicons and M._devicons.has_loaded() or M._devicons_map then
-    -- Setup devicon terminal ansi color codes
-    setup_devicon_term_hls()
-  end
+  -- Setup devicon terminal ansi color codes
+  M.setup_devicon_term_hls()
 end
 
 -- Load remote config and devicons

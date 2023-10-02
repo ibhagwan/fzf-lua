@@ -392,6 +392,13 @@ function M.normalize_opts(opts, defaults)
   opts._set_pid = M.set_pid
   opts._get_pid = M.get_pid
 
+  -- setup devicons terminal highlight groups does nothing unless
+  -- neovim `bg` is changed, call via utils/loadstring to prevent
+  -- circular require and also make sure "make_entry.lua" isn't
+  -- loaded before devicons vars are setup by this module
+  -- TODO: cleanup the background update and devicons load logic
+  utils.setup_devicon_term_hls()
+
   -- mark as normalized
   opts._normalized = true
 
