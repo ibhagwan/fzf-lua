@@ -910,11 +910,12 @@ function Previewer.help_tags:new(o, opts, fzf_win)
 end
 
 function Previewer.help_tags:parse_entry(entry_str)
-  local tag, filename = entry_str:match("(.*)%s+(.*)$")
+  local tag = entry_str:match("^[^%s]+")
+  local vimdoc = entry_str:match("[^%s]+$")
   return {
     htag = tag,
     hregex = ([[\V*%s*]]):format(tag:gsub([[\]], [[\\]])),
-    path = filename,
+    path = vimdoc,
     filetype = "help",
   }
 end

@@ -59,6 +59,13 @@ sh -c "$(curl -s https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/scripts
 | `<C-g>`     | grep              | `<C-l>`     | live_grep         |
 | `<C-k>`     | builtin commands  | `<F1>`      | neovim help       |
 
+#### Coming from fzf.vim?
+
+Easy! run `:FzfLua setup_fzfvim_cmds` and use the same familiar commands
+used by fzf.vim, i.e. `:Files`, `:Rg`, etc.
+
+> Using the builtin `fzf-vim` profile will also create fzf.vim's user
+> commands, i.e. `require("fzf-lua").setup({ "fzf-vim" })`
 
 ## Rationale
 
@@ -388,6 +395,7 @@ Conviniently, fzf-lua comes with a set of preconfigured profiles, notably:
 | `default`          | fzf-lua defaults, uses neovim "builtin" previewer and devicons (if available) for git/files/buffers |
 | `fzf-native`       | utilizes fzf's native previewing ability in the terminal where possible using `bat` for previews |
 | `fzf-tmux`         | similar to `fzf-native` and opens in a tmux popup (requires tmux > 3.2) |
+| `fzf-vim`          | closest to `fzf.vim`'s defaults (+icons), also sets up user commands (`:Files`, `:Rg`, etc) |
 | `max-perf`         | similar to `fzf-native` and disables icons globally for max performance |
 | `telescope`        | closest match to telescope defaults in look and feel and keybinds |
 | `skim`             | uses [`skim`](https://github.com/lotabout/skim) as an fzf alternative, (requires the `sk` binary) |

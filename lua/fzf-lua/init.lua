@@ -118,6 +118,10 @@ function M.setup(opts, do_not_reset_defaults)
     -- Did the user request a specific profile?
     local profile_opts = M.load_profile(opts[1])
     if type(profile_opts) == "table" then
+      if type(profile_opts.fn_load) == "function" then
+        profile_opts.fn_load()
+        profile_opts.fn_load = nil
+      end
       opts = vim.tbl_deep_extend("keep", opts, profile_opts)
     end
   end
@@ -292,6 +296,11 @@ end
 M.set_last_query = function(query)
   M.config.__resume_data = M.config.__resume_data or {}
   M.config.__resume_data.last_query = query
+end
+
+M.setup_fzfvim_cmds = function(...)
+  local fn = loadstring("return require'fzf-lua.profiles.fzf-vim'.fn_load")()
+  return fn(...)
 end
 
 -- exported modules

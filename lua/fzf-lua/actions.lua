@@ -408,7 +408,7 @@ end
 
 M.run_builtin = function(selected)
   local method = selected[1]
-  vim.cmd(string.format("lua require'fzf-lua'.%s()", method))
+  pcall(loadstring(string.format("require'fzf-lua'.%s()", method)))
 end
 
 M.ex_run = function(selected)

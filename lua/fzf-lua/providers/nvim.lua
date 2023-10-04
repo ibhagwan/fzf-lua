@@ -112,6 +112,7 @@ M.changes = function(opts)
   opts = opts or {}
   opts.cmd = "changes"
   opts.prompt = opts.prompt or "Changes> "
+  opts.h1 = opts.h1 or "change"
   return M.jumps(opts)
 end
 
@@ -125,14 +126,18 @@ M.jumps = function(opts)
   local entries = {}
   for i = #jumps - 1, 3, -1 do
     local jump, line, col, text = jumps[i]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
-    table.insert(entries, string.format("%-15s %-15s %-15s %s",
+    table.insert(entries, string.format(" %16s %15s %15s %s",
       utils.ansi_codes.yellow(jump),
       utils.ansi_codes.blue(line),
       utils.ansi_codes.green(col),
       text))
   end
 
+  table.insert(entries, 1,
+    string.format("%6s %s  %s %s", opts.h1 or "jump", "line", "col", "file/text"))
+
   opts.fzf_opts["--no-multi"] = ""
+  opts.fzf_opts["--header-lines"] = "1"
 
   core.fzf_exec(entries, opts)
 end
@@ -221,9 +226,12 @@ M.marks = function(opts)
   local filter = opts.marks and vim.split(opts.marks, "")
   for i = #marks, 3, -1 do
     local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
-    col = tostring(tonumber(col)+1)
+    col = tostring(tonumber(col) + 1)
+    if path.starts_with_separator(text) then
+      text = path.HOME_to_tilde(text)
+    end
     if not filter or vim.tbl_contains(filter, mark) then
-      table.insert(entries, string.format("%-15s %-15s %-15s %s",
+      table.insert(entries, string.format(" %-15s %15s %15s %s",
         utils.ansi_codes.yellow(mark),
         utils.ansi_codes.blue(line),
         utils.ansi_codes.green(col),
@@ -232,9 +240,12 @@ M.marks = function(opts)
   end
 
   table.sort(entries, function(a, b) return a < b end)
+  table.insert(entries, 1,
+    string.format("%-5s %s  %s %s", "mark", "line", "col", "file/text"))
 
   -- opts.fzf_opts['--preview'] = prev_act
   opts.fzf_opts["--no-multi"] = ""
+  opts.fzf_opts["--header-lines"] = "1"
 
   core.fzf_exec(entries, opts)
 end

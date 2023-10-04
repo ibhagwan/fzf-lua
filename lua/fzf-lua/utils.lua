@@ -466,10 +466,13 @@ function M.ansi_from_hl(hl, s)
     end
   end
   local escseq = #escseqs > 0 and table.concat(escseqs) or nil
-  if escseq then
-    s = string.format("%s%s%s", escseq, s or "", M.ansi_escseq.clear)
+  local escfn = function(str)
+    if escseq then
+      str = string.format("%s%s%s", escseq, str or "", M.ansi_escseq.clear)
+    end
+    return str
   end
-  return s, escseq
+  return escfn(s), escseq, escfn
 end
 
 function M.strip_ansi_coloring(str)
