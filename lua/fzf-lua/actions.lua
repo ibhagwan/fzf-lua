@@ -569,7 +569,9 @@ M.git_switch = function(selected, opts)
     utils.err(unpack(output))
   else
     utils.info(unpack(output))
-    vim.cmd("edit!")
+    if #vim.api.nvim_buf_get_name(0) > 0 then
+      vim.cmd("edit!")
+    end
   end
 end
 
