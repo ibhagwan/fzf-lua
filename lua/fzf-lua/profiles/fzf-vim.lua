@@ -67,7 +67,7 @@ local function setup_commands(no_override, prefix)
   }
 
   for cmd, cb in pairs(cmds) do
-    cmd = (prefix or "L") .. cmd
+    cmd = (prefix or "") .. cmd
     if not cmd_exists(cmd) or no_override ~= true then
       pcall(vim.api.nvim_del_user_command, cmd)
       vim.api.nvim_create_user_command(cmd, cb, { bang = true, nargs = "?" })
