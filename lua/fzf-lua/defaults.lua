@@ -842,7 +842,7 @@ M.defaults.dap = {
 
 M.defaults.complete_path = {
   cmd     = nil, -- default: auto detect fd|rg|find
-  actions = { ["default"] = actions.complete_insert },
+  actions = { ["default"] = actions.complete },
 }
 
 M.defaults.complete_file = {
@@ -852,13 +852,12 @@ M.defaults.complete_file = {
   color_icons  = true,
   git_icons    = false,
   _actions     = function() return M.globals.actions.files end,
-  actions      = { ["default"] = actions.complete_insert },
+  actions      = { ["default"] = actions.complete },
   previewer    = M._default_previewer_fn,
   winopts      = { preview = { hidden = "hidden" } },
 }
 
-M.defaults.complete_line = {}
-M.defaults.complete_bline = {}
+M.defaults.complete_line = { complete = true }
 
 M.defaults.file_icon_padding = ""
 

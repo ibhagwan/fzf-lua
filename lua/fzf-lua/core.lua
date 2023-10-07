@@ -182,6 +182,39 @@ M.fzf_wrap = function(opts, contents, fn_selected)
   end)
 end
 
+-- conditionally update the context if fzf-lua
+-- interface isn't open
+M.CTX = function(includeBuflist)
+  -- save caller win/buf context, ignore when fzf
+  -- is already open (actions.sym_lsym|grep_lgrep)
+  if not M.__CTX then
+    M.__CTX = {
+      mode = vim.api.nvim_get_mode().mode,
+      bufnr = vim.api.nvim_get_current_buf(),
+      bname = vim.api.nvim_buf_get_name(0),
+      winid = vim.api.nvim_get_current_win(),
+      alt_bufnr = vim.fn.bufnr("#"),
+      tabnr = vim.fn.tabpagenr(),
+      tabh = vim.api.nvim_win_get_tabpage(0),
+      cursor = vim.api.nvim_win_get_cursor(0),
+      line = vim.api.nvim_get_current_line(),
+    }
+  end
+  -- perhaps a min impact optimization but since only
+  -- buffers/tabs use these we only include the current
+  -- list of buffers when requested
+  if includeBuflist and not M.__CTX.buflist then
+    -- also add a map for faster lookups than `vim.tbl_contains`
+    -- TODO: is it really faster since we must use string keys?
+    M.__CTX.bufmap = {}
+    M.__CTX.buflist = vim.api.nvim_list_bufs()
+    for _, b in ipairs(M.__CTX.buflist) do
+      M.__CTX.bufmap[tostring(b)] = true
+    end
+  end
+  return M.__CTX
+end
+
 M.fzf = function(contents, opts)
   -- Disable opening from the command-line window `:q`
   -- creates all kinds of issues, will fail on `nvim_win_close`
@@ -194,6 +227,9 @@ M.fzf = function(contents, opts)
     opts = config.normalize_opts(opts or {}, {})
     if not opts then return end
   end
+  -- update context and save a copy in options (for actions)
+  -- call before creating the window or fzf_winobj is not nil
+  opts.__CTX = M.CTX()
   if opts.fn_pre_win then
     opts.fn_pre_win(opts)
   end
@@ -344,6 +380,7 @@ M.fzf = function(contents, opts)
       and (action[1] ~= nil or action.reload or action.noclose)
   if (not fzf_win:autoclose() == false) and not noclose then
     fzf_win:close(fzf_bufnr)
+    M.__CTX = nil
   end
   return selected
 end

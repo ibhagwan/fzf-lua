@@ -1,107 +1,69 @@
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
 
 local M = {}
-
--- get the completion string under the cursor, this is the string
--- that will be replaced by `actions.complete_insert` once the user
--- has made their selection
--- we match the string before and after using a lua pattern
--- by default, we use "[^%p%s]" which stop at spaces and punctuation marks
--- when scanning for files/paths we use "[^%s\"']*" which stops at spaces
--- and single/double quotes
-local get_cmp_params = function(match)
-  -- returns { row, col }, col is 0-index base
-  -- i.e. first col of first line is  { 1, 0 }
-  local cursor = vim.api.nvim_win_get_cursor(0)
-  local line = vim.api.nvim_get_current_line()
-  if type(match) == "string" then
-    local after = cursor[2] > 0 and line:sub(cursor[2] + 1):match(match) or nil
-    local before = line:sub(1, cursor[2]):reverse():match(match)
-    -- can be nil if cursor is at col 1
-    before = before and before:reverse() or nil
-    local str = before and before .. (after or "") or nil
-    local col = cursor[2] - (before and #before or 0) + 1
-    return str, col, cursor[1]
-  else
-    local str = cursor[2] > 0 and line:sub(1, cursor[2] + 1) or ""
-    return str, 1, cursor[1]
-  end
-end
 
 -- Given a path, attempt to find the first existing directory
 -- returns a pair: the directory to be used as `cwd` and fzf's
 -- "--query" argument to be entered into the prompt automatically
 local function find_toplevel_cwd(maybe_cwd, postfix)
-  if not maybe_cwd or #maybe_cwd == 0 then
-    return "./", nil
+  -- expand can fail on open curly braces with:
+  -- E5108: Error executing lua Vim:E220: Missing }.
+  local ok, _ = pcall(vim.fn.expand, maybe_cwd)
+  if not maybe_cwd or #maybe_cwd == 0 or not ok then
+    return "./", vim.loop.cwd(), nil
   end
   if vim.fn.isdirectory(vim.fn.expand(maybe_cwd)) == 1 then
-    return maybe_cwd, postfix
+    local prompt, cwd = maybe_cwd, vim.fn.expand(maybe_cwd)
+    -- returned cwd must be full path
+    if cwd:sub(1, 1) == "." then
+      cwd = vim.loop.cwd() .. (#cwd > 1 and cwd:sub(2) or "")
+    elseif not path.starts_with_separator(cwd) then
+      cwd = path.join({ vim.loop.cwd(), cwd })
+    end
+    return prompt, cwd, postfix
   end
   postfix = vim.fn.fnamemodify(maybe_cwd, ":t")
   maybe_cwd = vim.fn.fnamemodify(maybe_cwd, ":h")
   return find_toplevel_cwd(maybe_cwd, postfix)
 end
 
--- Set generic options for completion functions
--- extracts the completion string to be substituted, row/col and mode
-local set_cmp_opts = function(opts)
-  opts = vim.tbl_deep_extend("keep", opts or {}, {
-    cmp_match = "[^%p%s]*",
-    actions = { default = actions.complete_insert }
-  })
-  -- NOTE: `__fn_pre_fzf` is called before (non-underscore) `fn_pre_fzf`
-  -- so that `set_cmp_opts_path` can rely on `opts.cmp_string` being set
-  opts.__fn_pre_fzf = function(o)
-    o.cmp_mode = vim.api.nvim_get_mode().mode
-    o.cmp_string, o.cmp_string_col, o.cmp_string_row = get_cmp_params(o.cmp_match)
-  end
-  return opts
-end
-
--- Set specific options for path completions
--- splits the completion string to a valid cwd and postfix
--- which will then be sent to fzf as "--query"
+-- forward and reverse match spaces and single/double quotes
+-- and attepmpt to find the top level existing directory
+-- set the cwd and prompt top the top level directory and
+-- the leftover match to the input query
 local set_cmp_opts_path = function(opts)
-  opts = opts or {}
-  opts.cmp_match = opts.cmp_match or "[^%s\"']*"
-  opts._fn_pre_fzf = function(o)
-    o.cwd, o.query = find_toplevel_cwd(o.cmp_string, nil)
-    o.prompt = o.cwd
-    if not path.ends_with_separator(o.prompt) then
-      o.prompt = o.prompt .. path.separator()
-    end
-    o.cwd = vim.fn.expand(o.cwd)
-    o.cmp_prefix = o.prompt
+  local match = "[^%s\"']*"
+  local line = vim.api.nvim_get_current_line()
+  local col = vim.api.nvim_win_get_cursor(0)[2] + 1
+  local before = col > 1 and line:sub(1, col - 1):reverse():match(match):reverse() or ""
+  local after = line:sub(col):match(match) or ""
+  -- special case when the cursor is on the left surrounding char
+  if #before == 0 and #after == 0 and #line > col then
+    col = col + 1
+    after = line:sub(col):match(match) or ""
   end
-  -- set generic options after setting the above so `cmp_match`
-  -- doesn't get ignored
-  opts = set_cmp_opts(opts)
-  return opts
-end
-
-local set_cmp_opts_line = function(opts)
-  opts = opts or {}
-  -- false tells `get_cmp_params` to replace col 1 to cursor
-  opts.cmp_match = false
-  opts.cmp_is_line = true
-  opts._fn_pre_fzf = function(o)
-    o.query = o.cmp_string
+  opts.prompt, opts.cwd, opts.query = find_toplevel_cwd(before .. after, nil)
+  if not path.ends_with_separator(opts.prompt) then
+    opts.prompt = opts.prompt .. path.separator()
   end
-  opts = set_cmp_opts(opts)
+  -- completion function rebuilds the line with the full path
+  opts.complete = function(selected, o, l, _)
+    local replace_at = col - #before
+    local relpath = path.relative(path.entry_to_file(selected[1], o).path, opts.cwd)
+    local before_path = replace_at > 1 and l:sub(1, replace_at - 1) or ""
+    local rest_of_line = #l > (col + #after) and l:sub(col + #after) or ""
+    return before_path .. o.prompt .. relpath .. rest_of_line,
+        -- this goes to `nvim_win_set_cursor` which is 0-based
+        replace_at + #o.prompt + #relpath - 2
+  end
   return opts
-end
-
-M.fzf_complete = function(contents, opts)
-  opts = set_cmp_opts(opts)
-  return core.fzf_exec(contents, opts)
 end
 
 M.path = function(opts)
-  opts = opts or {}
+  opts = config.normalize_opts(opts, config.globals.complete_path)
+  if not opts then return end
   opts.cmd = opts.cmd or (function()
     if vim.fn.executable("fdfind") == 1 then
       return "fdfind"
@@ -114,7 +76,8 @@ M.path = function(opts)
     end
   end)()
   opts = set_cmp_opts_path(opts)
-  return core.fzf_exec(opts.cmd, opts)
+  local contents = core.mt_cmd_wrapper(opts)
+  return core.fzf_exec(contents, opts)
 end
 
 M.file = function(opts)
@@ -139,14 +102,22 @@ end
 
 M.line = function(opts)
   opts = config.normalize_opts(opts, config.globals.complete_line)
-  opts = set_cmp_opts_line(opts)
+  opts.query = (function()
+    local col = vim.api.nvim_win_get_cursor(0)[2] + 1
+    local line = vim.api.nvim_get_current_line()
+    return #line > col and vim.trim(line:sub(1, col)) or nil
+  end)()
+  opts.complete = function(selected, _, _, _)
+    local newline = selected[1]:match("^.*:%d+:%s(.*)")
+    return newline, #newline
+  end
   return require "fzf-lua.providers.buffers".lines(opts)
 end
 
 M.bline = function(opts)
-  opts = config.normalize_opts(opts, config.globals.complete_bline)
-  opts = set_cmp_opts_line(opts)
-  return require "fzf-lua.providers.buffers".blines(opts)
+  opts = opts or {}
+  opts.current_buffer_only = true
+  return M.line(opts)
 end
 
 return M

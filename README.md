@@ -333,7 +333,6 @@ vim.keymap.set("n", "<c-P>",
 ### Completion Functions
 | Command              | List                                       |
 | -------------------- | ------------------------------------------ |
-| `fzf_complete`         | custom completion (see below)              |
 | `complete_path`        | complete path under cursor (incl dirs)     |
 | `complete_file`        | complete file under cursor (excl dirs)     |
 | `complete_line`        | complete line (all open buffers)           |
@@ -446,8 +445,32 @@ vim.keymap.set({ "i" }, "<C-x><C-f>",
 
 #### Custom Completion
 
-Custom completion is also possible using `fzf_complete`, the signature for `fzf_complete` is
-equivalent to `fzf_exec = function(contents, [opts])`, for more info how to use the API, please refer to [Wiki/ADVANCED](https://github.com/ibhagwan/fzf-lua/wiki/Advanced).
+Every fzf-lua function can be easily converted to a completion function by sending
+`complete = true` in the options:
+> By default fzf-lua will insert the entry at the cursor location as if you used
+> `p` to paste the selected entry.
+```lua
+require("fzf-lua").fzf_exec({"foo", "bar"}, {complete = true})
+```
+
+Custom completion is possible using a custom completion callback, the example below
+will replace the text from the current cursor column with the selected entry:
+```lua
+require("fzf-lua").fzf_exec({"foo", "bar"}, {
+  -- @param selected: the selected entry or entries
+  -- @param opts: fzf-lua caller/provider options
+  -- @param line: originating buffer completed line
+  -- @param col: originating cursor column location
+  -- @return newline: will replace the current buffer line
+  -- @return newcol?: optional, sets the new cursor column
+  complete = function(selected, opts, line, col)
+    local newline = line:sub(1, col) .. selected[1]
+    -- set cursor to EOL, since `nvim_win_set_cursor`
+    -- is 0-based we have to lower the col value by 1
+    return newline, #newline - 1
+  end
+})
+```
 
 ### Default Options
 
@@ -1144,7 +1167,7 @@ require'fzf-lua'.setup {
   },
   complete_path = {
     cmd          = nil, -- default: auto detect fd|rg|find
-    actions      = { ["default"] = actions.complete_insert },
+    complete     = { ["default"] = actions.complete },
   },
   complete_file = {
     cmd          = nil, -- default: auto detect rg|fd|find
@@ -1152,7 +1175,7 @@ require'fzf-lua'.setup {
     color_icons  = true,
     git_icons    = false,
     -- actions inherit from 'actions.files' and merge
-    actions      = { ["default"] = actions.complete_insert },
+    actions      = { ["default"] = actions.complete },
     -- previewer hidden by default
     winopts      = { preview = { hidden = "hidden" } },
   },

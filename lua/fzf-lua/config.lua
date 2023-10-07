@@ -284,6 +284,12 @@ function M.normalize_opts(opts, defaults)
     end
   end
 
+  -- Setup completion options
+  if opts.complete then
+    opts.actions = opts.actions or {}
+    opts.actions["default"] = actions.complete
+  end
+
   -- Merge highlight overrides with defaults, we only do this after the
   -- backward compat copy due to the migration of `winopts.hl` -> `hls`
   opts.hls = vim.tbl_deep_extend("keep", opts.hls or {}, M.globals.__HLS)
@@ -495,7 +501,7 @@ M._action_to_helpstr = {
   [actions.paste_register]      = "paste-register",
   [actions.set_qflist]          = "set-{qf|loc}list",
   [actions.apply_profile]       = "apply-profile",
-  [actions.complete_insert]     = "complete-insert",
+  [actions.complete]            = "complete",
 }
 
 return M

@@ -5,19 +5,6 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
-local function CTX_UPDATE()
-  -- save current win/buf context, ignore when fzf
-  -- window is already open (actions.sym_lsym)
-  if not __CTX or not utils.fzf_winobj() then
-    __CTX = {
-      winid = vim.api.nvim_get_current_win(),
-      bufnr = vim.api.nvim_get_current_buf(),
-      bufname = vim.api.nvim_buf_get_name(0),
-      cursor = vim.api.nvim_win_get_cursor(0),
-    }
-  end
-end
-
 local function handler_capabilty(handler)
   if utils.__HAS_NVIM_08 then
     return handler.server_capability
@@ -27,10 +14,7 @@ local function handler_capabilty(handler)
 end
 
 local function check_capabilities(handler, silent)
-  -- update CTX since this gets called before normalize_lsp_opts (#490)
-  CTX_UPDATE()
-
-  local clients = vim.lsp.buf_get_clients(__CTX and __CTX.bufnr or 0)
+  local clients = vim.lsp.buf_get_clients(core.CTX().bufnr)
 
   -- return the number of clients supporting the feature
   -- so the async version knows how many callbacks to wait for
@@ -98,7 +82,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
   local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
   result = vim.tbl_islist(result) and result or { result }
   if opts.ignore_current_line then
-    local cursor_line = __CTX.cursor[1] - 1
+    local cursor_line = core.CTX().cursor[1] - 1
     result = vim.tbl_filter(function(l)
       if l.range and l.range.start and l.range.start.line == cursor_line then
         return false
@@ -115,7 +99,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
     items = opts.filter(items)
   end
   for _, entry in ipairs(items) do
-    if not opts.current_buffer_only or __CTX.bufname == entry.filename then
+    if not opts.current_buffer_only or core.CTX().bname == entry.filename then
       entry = make_entry.lcol(entry, opts)
       entry = make_entry.file(entry, opts)
       if entry then cb(entry) end
@@ -183,13 +167,13 @@ local function symbol_handler(opts, cb, _, result, _, _)
   result = vim.tbl_islist(result) and result or { result }
   local items
   if opts.child_prefix then
-    items = symbols_to_items(result, __CTX.bufnr,
+    items = symbols_to_items(result, core.CTX().bufnr,
       opts.child_prefix == true and string.rep("\xc2\xa0", 2) or opts.child_prefix)
   else
-    items = vim.lsp.util.symbols_to_items(result, __CTX.bufnr)
+    items = vim.lsp.util.symbols_to_items(result, core.CTX().bufnr)
   end
   for _, entry in ipairs(items) do
-    if (not opts.current_buffer_only or __CTX.bufname == entry.filename) and
+    if (not opts.current_buffer_only or core.CTX().bname == entry.filename) and
         (not opts.regex_filter or entry.text:match(opts.regex_filter)) then
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
@@ -375,7 +359,7 @@ local function gen_lsp_contents(opts)
   -- build positional params for the LSP query
   -- from the context buffer and cursor position
   if not lsp_params then
-    lsp_params = vim.lsp.util.make_position_params(__CTX.winid)
+    lsp_params = vim.lsp.util.make_position_params(core.CTX().winid)
     lsp_params.context = {
       includeDeclaration = opts.includeDeclaration == nil and true or opts.includeDeclaration
     }
@@ -387,7 +371,7 @@ local function gen_lsp_contents(opts)
     if type(opts.async_or_timeout) == "number" then
       timeout = opts.async_or_timeout
     end
-    local lsp_results, err = vim.lsp.buf_request_sync(__CTX.bufnr,
+    local lsp_results, err = vim.lsp.buf_request_sync(core.CTX().bufnr,
       lsp_handler.method, lsp_params, timeout)
     if err then
       utils.err(string.format("Error executing '%s': %s", lsp_handler.method, err))
@@ -459,7 +443,7 @@ local function gen_lsp_contents(opts)
         local async_buf_reqeust = function()
           -- save cancel all fnref so we can cancel all requests
           -- when using `live_ws_symbols`
-          _, opts._cancel_all = vim.lsp.buf_request(__CTX.bufnr,
+          _, opts._cancel_all = vim.lsp.buf_request(core.CTX().bufnr,
             lsp_handler.method, lsp_params,
             async_lsp_handler(co, lsp_handler, async_opts))
         end
@@ -504,7 +488,7 @@ end
 
 -- see $VIMRUNTIME/lua/vim/buf.lua:pick_call_hierarchy_item()
 local function gen_lsp_contents_call_hierarchy(opts)
-  local lsp_params = vim.lsp.util.make_position_params(__CTX and __CTX.winid or 0)
+  local lsp_params = vim.lsp.util.make_position_params(core.CTX().winid)
   local method = "textDocument/prepareCallHierarchy"
   local res, err = vim.lsp.buf_request_sync(0, method, lsp_params, 2000)
   if err then
@@ -537,10 +521,6 @@ local normalize_lsp_opts = function(opts, cfg)
   else
     opts.cwd_only = true
   end
-
-  -- save current win/buf context
-  -- moved to 'check_capabilities' (#490)
-  -- CTX_UPDATE()
 
   return opts
 end
@@ -782,7 +762,7 @@ local function get_line_diagnostics(_)
   if not vim.diagnostic then
     return vim.lsp.diagnostic.get_line_diagnostics()
   end
-  local diag = vim.diagnostic.get(__CTX.bufnr, { lnum = vim.api.nvim_win_get_cursor(0)[1] - 1 })
+  local diag = vim.diagnostic.get(core.CTX().bufnr, { lnum = vim.api.nvim_win_get_cursor(0)[1] - 1 })
   return diag and diag[1]
       and { {
         source = diag[1].source,
@@ -833,7 +813,7 @@ M.code_actions = function(opts)
       -- Neovim still uses `vim.lsp.diagnostic` API in "nvim/runtime/lua/vim/lsp/buf.lua"
       -- continue to use it until proven otherwise, this also fixes #707 as diagnostics
       -- must not be nil or some LSP servers will fail (e.g. ruff_lsp, rust_analyzer)
-      diagnostics = vim.lsp.diagnostic.get_line_diagnostics(__CTX and __CTX.bufnr or 0) or {}
+      diagnostics = vim.lsp.diagnostic.get_line_diagnostics(core.CTX().bufnr) or {}
     }
 
     -- make sure 'gen_lsp_contents' is run synchronously

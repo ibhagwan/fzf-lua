@@ -7,38 +7,6 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
--- will hold current/previous buffer/tab
-local __STATE = {}
-
-local UPDATE_STATE = function()
-  __STATE = {
-    curtabidx = vim.fn.tabpagenr(),
-    curtab = vim.api.nvim_win_get_tabpage(0),
-    curbuf = vim.api.nvim_get_current_buf(),
-    curwin = vim.api.nvim_get_current_win(),
-    prevbuf = vim.fn.bufnr("#"),
-    buflist = vim.api.nvim_list_bufs(),
-    bufmap = (function()
-      local map = {}
-      for _, b in ipairs(vim.api.nvim_list_bufs()) do
-        map[b] = true
-      end
-      return map
-    end)()
-  }
-end
-
-local UPDATE_STATE_IF_NOT_FZF = function()
-  -- do not update if we're called from the main fzf window as this would
-  -- cause incorrect current/previous tab markers when wiping buffers with skim
-  local wininfo = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1]
-  if vim.tbl_isempty(__STATE)
-      or wininfo.terminal ~= 1
-      or vim.bo[wininfo.bufnr].ft ~= "fzf" then
-    UPDATE_STATE()
-  end
-end
-
 local filter_buffers = function(opts, unfiltered)
   if type(unfiltered) == "function" then
     unfiltered = unfiltered()
@@ -46,7 +14,7 @@ local filter_buffers = function(opts, unfiltered)
 
   local curtab_bufnrs = {}
   if opts.current_tab_only then
-    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(__STATE.curtab)) do
+    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(core.CTX().tabh)) do
       local b = vim.api.nvim_win_get_buf(w)
       curtab_bufnrs[b] = true
     end
@@ -60,7 +28,7 @@ local filter_buffers = function(opts, unfiltered)
       excluded[b] = true
     elseif not opts.show_unloaded and not vim.api.nvim_buf_is_loaded(b) then
       excluded[b] = true
-    elseif opts.ignore_current_buffer and b == __STATE.curbuf then
+    elseif opts.ignore_current_buffer and b == core.CTX().bufnr then
       excluded[b] = true
     elseif opts.current_tab_only and not curtab_bufnrs[b] then
       excluded[b] = true
@@ -91,8 +59,8 @@ end
 local populate_buffer_entries = function(opts, bufnrs, tabh)
   local buffers = {}
   for _, bufnr in ipairs(bufnrs) do
-    local flag = (bufnr == __STATE.curbuf and "%") or
-        (bufnr == __STATE.prevbuf and "#") or " "
+    local flag = (bufnr == core.CTX().bufnr and "%")
+        or (bufnr == core.CTX().alt_bufnr and "#") or " "
 
     local element = {
       bufnr = bufnr,
@@ -206,7 +174,7 @@ M.buffers = function(opts)
 
   opts.__fn_reload = opts.__fn_reload or function(_)
     return function(cb)
-      local filtered, _, max_bufnr = filter_buffers(opts, __STATE.buflist)
+      local filtered, _, max_bufnr = filter_buffers(opts, core.CTX().buflist)
 
       if next(filtered) then
         local buffers = populate_buffer_entries(opts, filtered)
@@ -229,7 +197,7 @@ M.buffers = function(opts)
   -- save as a func ref for resume to reuse
   opts._fn_pre_fzf = function()
     shell.set_protected(id)
-    UPDATE_STATE_IF_NOT_FZF()
+    core.CTX(true) -- include `nvim_list_bufs` in context
   end
 
   if opts.fzf_opts["--header-lines"] == nil then
@@ -245,6 +213,7 @@ end
 
 M.lines = function(opts)
   opts = config.normalize_opts(opts, config.globals.lines)
+  opts.line_field_index = opts.line_field_index or 2
   M.buffer_lines(opts)
 end
 
@@ -259,7 +228,7 @@ end
 M.buffer_lines = function(opts)
   if not opts then return end
 
-  opts.fn_pre_fzf = UPDATE_STATE
+  opts.fn_pre_fzf = function() core.CTX(true) end
   opts.fn_pre_fzf()
 
   local contents = function(cb)
@@ -275,7 +244,7 @@ M.buffer_lines = function(opts)
       local co = coroutine.running()
 
       local buffers = filter_buffers(opts,
-        opts.current_buffer_only and { __STATE.curbuf } or __STATE.buflist)
+        opts.current_buffer_only and { core.CTX().bufnr } or core.CTX().buflist)
 
       for _, bufnr in ipairs(buffers) do
         local data = {}
@@ -310,7 +279,7 @@ M.buffer_lines = function(opts)
         local offset, lines = 0, #data
         if opts.current_buffer_only and opts.start == "cursor" then
           -- start display from current line and wrap from bottom (#822)
-          offset = vim.api.nvim_win_get_cursor(__STATE.curwin)[1] - 1
+          offset = core.CTX().cursor[1] - 1
         end
 
         for i = 1, lines do
@@ -352,7 +321,7 @@ M.tabs = function(opts)
         local b = vim.api.nvim_win_get_buf(w)
         -- since this function is called after fzf window
         -- is created, exclude the scratch fzf buffers
-        if __STATE.bufmap[b] then
+        if core.CTX().bufmap[tostring(b)] then
           opts._tab_to_buf[i] = opts._tab_to_buf[i] or {}
           opts._tab_to_buf[i][b] = t
           table.insert(res, b)
@@ -387,7 +356,7 @@ M.tabs = function(opts)
           local msg = default_msg and default_msg(opts[k]) or opts[k]
           if type(opts[k]) == "table" then
             if type(opts[k][1]) == "function" then
-              msg = opts[k][1](t, t == __STATE.curtabidx)
+              msg = opts[k][1](t, t == core.CTX().tabnr)
             elseif type(opts[k][1]) == "string" then
               msg = default_msg(opts[k][1])
             else
@@ -399,7 +368,7 @@ M.tabs = function(opts)
               end
             end
           elseif type(opts[k]) == "function" then
-            msg = opts[k](t, t == __STATE.curtabidx)
+            msg = opts[k](t, t == core.CTX().tabnr)
           end
           return msg, hl
         end
@@ -419,7 +388,7 @@ M.tabs = function(opts)
         if not opts.current_tab_only then
           cb(string.format("%d)%s%s\t%s", t, utils.nbsp,
             fn_title_hl(title),
-            (t == __STATE.curtabidx) and fn_marker_hl(marker) or ""))
+            (t == core.CTX().tabnr) and fn_marker_hl(marker) or ""))
         end
 
         local bufnrs_flat = {}
@@ -454,7 +423,7 @@ M.tabs = function(opts)
   -- save as a func ref for resume to reuse
   opts._fn_pre_fzf = function()
     shell.set_protected(id)
-    UPDATE_STATE_IF_NOT_FZF()
+    core.CTX(true) -- include `nvim_list_bufs` in context
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
