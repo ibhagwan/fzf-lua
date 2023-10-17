@@ -187,7 +187,12 @@ end
 M.CTX = function(includeBuflist)
   -- save caller win/buf context, ignore when fzf
   -- is already open (actions.sym_lsym|grep_lgrep)
-  if not M.__CTX then
+  if not M.__CTX or
+      -- when called from the LSP module in "sync" mode when no results are found
+      -- the fzf window won't open (e.g. "No refernces found") and the context is
+      -- never cleared. The below condition validates the source window when the
+      -- UI is not open (#907)
+      (not utils.fzf_winobj() and M.__CTX.winid ~= vim.api.nvim_get_current_win()) then
     M.__CTX = {
       mode = vim.api.nvim_get_mode().mode,
       bufnr = vim.api.nvim_get_current_buf(),
