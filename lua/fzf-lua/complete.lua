@@ -5,28 +5,39 @@ local config = require "fzf-lua.config"
 local M = {}
 
 -- Given a path, attempt to find the first existing directory
--- returns a pair: the directory to be used as `cwd` and fzf's
--- "--query" argument to be entered into the prompt automatically
-local function find_toplevel_cwd(maybe_cwd, postfix)
+-- returns a tuple:
+--   display cwd: to be joined with the completed path, maintains
+--                the original cwd format (i.e $HOME, ~, "./", etc)
+--   fullpath cwd and postfix which will be used as fzf's "--query"
+--   argument to be entered into the prompt automatically
+local function find_toplevel_cwd(maybe_cwd, postfix, orig_cwd)
   -- expand can fail on open curly braces with:
   -- E5108: Error executing lua Vim:E220: Missing }.
   local ok, _ = pcall(vim.fn.expand, maybe_cwd)
   if not maybe_cwd or #maybe_cwd == 0 or not ok then
-    return "./", vim.loop.cwd(), nil
+    return nil, vim.loop.cwd(), nil
+  end
+  if not orig_cwd then
+    orig_cwd = maybe_cwd
   end
   if vim.fn.isdirectory(vim.fn.expand(maybe_cwd)) == 1 then
-    local prompt, cwd = maybe_cwd, vim.fn.expand(maybe_cwd)
+    local disp_cwd, cwd = maybe_cwd, vim.fn.expand(maybe_cwd)
     -- returned cwd must be full path
     if cwd:sub(1, 1) == "." then
       cwd = vim.loop.cwd() .. (#cwd > 1 and cwd:sub(2) or "")
+      -- inject "./" only if original path started with it
+      -- otherwise ignore the "." retval from fnamemodify
+      if #orig_cwd > 0 and orig_cwd:sub(1, 1) ~= "." then
+        disp_cwd = nil
+      end
     elseif not path.starts_with_separator(cwd) then
       cwd = path.join({ vim.loop.cwd(), cwd })
     end
-    return prompt, cwd, postfix
+    return disp_cwd, cwd, postfix
   end
   postfix = vim.fn.fnamemodify(maybe_cwd, ":t")
   maybe_cwd = vim.fn.fnamemodify(maybe_cwd, ":h")
-  return find_toplevel_cwd(maybe_cwd, postfix)
+  return find_toplevel_cwd(maybe_cwd, postfix, orig_cwd)
 end
 
 -- forward and reverse match spaces and single/double quotes
@@ -44,7 +55,11 @@ local set_cmp_opts_path = function(opts)
     col = col + 1
     after = line:sub(col):match(match) or ""
   end
-  opts.prompt, opts.cwd, opts.query = find_toplevel_cwd(before .. after, nil)
+  opts._cwd, opts.cwd, opts.query = find_toplevel_cwd(before .. after, nil, nil)
+  opts.prompt = opts._cwd
+  if not opts.prompt then
+    opts.prompt = "."
+  end
   if not path.ends_with_separator(opts.prompt) then
     opts.prompt = opts.prompt .. path.separator()
   end
@@ -53,10 +68,11 @@ local set_cmp_opts_path = function(opts)
     local replace_at = col - #before
     local relpath = path.relative(path.entry_to_file(selected[1], o).path, opts.cwd)
     local before_path = replace_at > 1 and l:sub(1, replace_at - 1) or ""
-    local rest_of_line = #l > (col + #after) and l:sub(col + #after) or ""
-    return before_path .. o.prompt .. relpath .. rest_of_line,
+    local rest_of_line = #l >= (col + #after) and l:sub(col + #after) or ""
+    local resolved_path = opts._cwd and path.join({ opts._cwd, relpath }) or relpath
+    return before_path .. resolved_path .. rest_of_line,
         -- this goes to `nvim_win_set_cursor` which is 0-based
-        replace_at + #o.prompt + #relpath - 2
+        replace_at + #resolved_path - 2
   end
   return opts
 end
