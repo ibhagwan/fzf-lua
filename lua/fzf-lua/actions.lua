@@ -56,7 +56,6 @@ end
 M.act = function(actions, selected, opts)
   if not actions or not selected then return end
   local keybind, entries = M.normalize_selected(actions, selected)
-  if #entries == 0 then return end -- no items selected
   local action = actions[keybind]
   if type(action) == "table" then
     -- Two types of action as table:

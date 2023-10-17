@@ -65,6 +65,8 @@ local set_cmp_opts_path = function(opts)
   end
   -- completion function rebuilds the line with the full path
   opts.complete = function(selected, o, l, _)
+    -- query fuzzy matching is empty
+    if #selected == 0 then return end
     local replace_at = col - #before
     local relpath = path.relative(path.entry_to_file(selected[1], o).path, opts.cwd)
     local before_path = replace_at > 1 and l:sub(1, replace_at - 1) or ""
