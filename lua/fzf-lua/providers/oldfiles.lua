@@ -53,7 +53,9 @@ M.oldfiles = function(opts)
 
       -- local start = os.time(); for _ = 1,10000,1 do
       for _, file in ipairs(vim.v.oldfiles) do
-        local fs_stat = not opts.stat_file and true or utils.file_is_readable(file)
+        local fs_stat = not opts.stat_file and true
+            -- FIFO blocks `fs_open` indefinitely (#908)
+            or (not utils.file_is_fifo(file) and utils.file_is_readable(file))
         if fs_stat and file ~= current_file and not sess_map[file] then
           add_entry(file, co)
         end
