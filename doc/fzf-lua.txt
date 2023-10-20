@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0         Last change: 2023 October 07
+*fzf-lua.txt*         For Neovim >= 0.5.0         Last change: 2023 October 20
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -808,7 +808,13 @@ open an issue and I'll be more than happy to help.**
           -- ext_ft_override = { ["ksql"] = "sql", ... },
         },
       },
-      -- provider setup
+      -- PROVIDERS SETUP
+      -- use `defaults` (table or function) if you wish to set "global-provider" defaults
+      -- for exmaple, disabling file icons globally and open the quickfix list at the top
+      --   defaults = {
+      --     file_icons   = false,
+      --     copen        = "topleft copen",
+      --   },
       files = {
         -- previewer      = "bat",          -- uncomment to override previewer
                                             -- (name from 'previewers' table)
