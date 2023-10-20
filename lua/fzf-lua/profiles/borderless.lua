@@ -3,11 +3,9 @@ local hls = {
   sel = "PmenuSel",
 }
 return {
-  desc              = "borderless and minimalistic",
-  global_git_icons  = false,
-  global_file_icons = false,
-  fzf_opts          = {},
-  winopts           = {
+  desc       = "borderless and minimalistic",
+  fzf_opts   = {},
+  winopts    = {
     -- border  = "none",
     -- border  = "thicccc",
     border  = { " ", " ", " ", " ", " ", " ", " ", " " },
@@ -17,7 +15,7 @@ return {
       title_pos = "center",
     },
   },
-  hls               = {
+  hls        = {
     border         = hls.bg,
     preview_border = hls.bg,
     preview_title  = hls.sel,
@@ -26,11 +24,15 @@ return {
     -- TODO: not working with `scrollbar = "border"` when `border = "none"
     -- scrollborder_f = "@function",
   },
-  fzf_colors        = {
+  fzf_colors = {
     ["gutter"] = { "bg", hls.bg },
     ["bg"]     = { "bg", hls.bg },
     ["bg+"]    = { "bg", hls.sel },
     ["fg+"]    = { "fg", hls.sel },
     -- ["fg+"]    = { "fg", "", "reverse:-1" },
+  },
+  defaults   = {
+    git_icons = false,
+    file_icons = false,
   },
 }

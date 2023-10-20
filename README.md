@@ -717,7 +717,13 @@ require'fzf-lua'.setup {
       -- ext_ft_override = { ["ksql"] = "sql", ... },
     },
   },
-  -- provider setup
+  -- PROVIDERS SETUP
+  -- use `defaults` (table or function) if you wish to set "global-provider" defaults
+  -- for exmaple, disabling file icons globally and open the quickfix list at the top
+  --   defaults = {
+  --     file_icons   = false,
+  --     copen        = "topleft copen",
+  --   },
   files = {
     -- previewer      = "bat",          -- uncomment to override previewer
                                         -- (name from 'previewers' table)

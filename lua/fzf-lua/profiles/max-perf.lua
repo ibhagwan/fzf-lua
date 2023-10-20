@@ -6,6 +6,8 @@ return {
   tags = { previewer = "bat" },
   btags = { previewer = "bat" },
   files = { fzf_opts = { ["--ansi"] = false } },
-  global_git_icons = false,
-  global_file_icons = false,
+  defaults = {
+    git_icons = false,
+    file_icons = false,
+  },
 }

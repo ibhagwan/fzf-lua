@@ -132,7 +132,14 @@ function M.normalize_opts(opts, defaults)
       defaults._actions())
   end
 
-  -- First, merge with provider defaults
+  -- First merge with the users' "provider-global" defaults
+  if type(M.globals.defaults) == "table" then
+    opts = vim.tbl_deep_extend("keep", opts, utils.tbl_deep_clone(M.globals.defaults))
+  elseif type(M.globals.defaults) == "function" then
+    opts = vim.tbl_deep_extend("keep", opts, utils.tbl_deep_clone(M.globals.defaults()))
+  end
+
+  -- Then merge with provider defaults "keeping" provider-globals
   -- we must clone the 'defaults' tbl, otherwise 'opts.actions.default'
   -- overrides 'config.globals.lsp.actions.default' in neovim 6.0
   -- which then prevents the default action of all other LSP providers
@@ -220,6 +227,7 @@ function M.normalize_opts(opts, defaults)
   -- Merge global resume options
   opts.global_resume = get_opt("global_resume", opts, M.globals)
 
+  -- DEPRECATED: use `defaults` (provider-defaults) table
   -- global option overrides. If exists, these options will
   -- be used in a "LOGICAL AND" against the local option (#188)
   -- e.g.:

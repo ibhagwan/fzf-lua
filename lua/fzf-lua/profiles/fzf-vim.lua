@@ -152,6 +152,4 @@ return {
     git_icons = false,
     exec_empty_query = true,
   },
-  -- global_git_icons = false,
-  -- global_file_icons = false,
 }
