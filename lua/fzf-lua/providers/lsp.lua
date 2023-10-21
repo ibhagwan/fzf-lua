@@ -612,8 +612,8 @@ M.finder = function(opts)
 end
 
 local function gen_sym2style_map(opts)
-  assert(M._sym2style == nil)
   assert(opts.symbol_style ~= nil)
+  if M._sym2style then return end
   M._sym2style = {}
   for kind, icon in pairs(opts.symbol_icons) do
     -- style==1: "<icon> <kind>"
@@ -655,12 +655,14 @@ M.document_symbols = function(opts)
     opts.fzf_opts["--with-nth"] = "2.."
     opts.fzf_opts["--tiebreak"] = "index"
   end
-  opts = gen_lsp_contents(opts)
-  if not opts.__contents then return end
   if opts.symbol_style or opts.symbol_fmt then
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
+    -- run once in case we're not running async
+    opts.fn_pre_fzf()
   end
+  opts = gen_lsp_contents(opts)
+  if not opts.__contents then return end
   return core.fzf_exec(opts.__contents, opts)
 end
 
