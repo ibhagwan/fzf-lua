@@ -202,7 +202,9 @@ local sel_to_qf = function(selected, opts, is_loclist)
       items = qf_list,
       title = title,
     })
-    if opts.lopen ~= false then
+    if type(opts.lopen) == "function" then
+      opts.lopen(selected, opts)
+    elseif opts.lopen ~= false then
       vim.cmd(opts.lopen or "botright lopen")
     end
   else
@@ -214,7 +216,9 @@ local sel_to_qf = function(selected, opts, is_loclist)
       title = title,
       -- nr = nr,
     })
-    if opts.copen ~= false then
+    if type(opts.copen) == "function" then
+      opts.copen(selected, opts)
+    elseif opts.copen ~= false then
       vim.cmd(opts.copen or "botright copen")
     end
   end
