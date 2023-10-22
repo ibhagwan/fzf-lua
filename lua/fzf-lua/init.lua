@@ -25,7 +25,7 @@ do
   -- fixed $NVIM_LISTEN_ADDRESS, different neovim instances will use the same path
   -- as their address and messages won't be received on older instances
   if not vim.g.fzf_lua_server then
-    vim.g.fzf_lua_server = vim.fn.serverstart()
+    vim.g.fzf_lua_server = vim.fn.serverstart("fzf-lua." .. os.time())
   end
 end
 
