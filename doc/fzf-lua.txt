@@ -954,7 +954,7 @@ open an issue and I'll be more than happy to help.**
       grep = {
         prompt            = 'Rg❯ ',
         input_prompt      = 'Grep For❯ ',
-        search            = nil,            -- string to search for
+        search            = nil,            -- default search string
         multiprocess      = true,           -- run command in a separate process
         git_icons         = true,           -- show git icons?
         file_icons        = true,           -- show file icons?
