@@ -886,11 +886,12 @@ M.convert_reload_actions = function(reload_cmd, opts)
         v.fn(items, opts)
       end, v.field_index == false and "" or v.field_index or "{+}", opts.debug)
       opts.keymap.fzf[k] = {
-        string.format("%s%sexecute-silent(%s)+reload(%s)",
+        string.format("%s%sexecute-silent(%s)+reload(%s)%s",
           type(v.prefix) == "string" and v.prefix or "",
           unbind and (unbind .. "+") or "",
           shell_action,
-          reload_cmd),
+          reload_cmd,
+          type(v.postfix) == "string" and v.postfix or ""),
         desc = config.get_action_helpstr(v.fn)
       }
       opts.actions[k] = nil
@@ -915,9 +916,10 @@ M.convert_exec_silent_actions = function(opts)
         v.fn(items, opts)
       end, v.field_index == false and "" or v.field_index or "{+}", opts.debug)
       opts.keymap.fzf[k] = {
-        string.format("%sexecute-silent(%s)",
+        string.format("%sexecute-silent(%s)%s",
           type(v.prefix) == "string" and v.prefix or "",
-          shell_action),
+          shell_action,
+          type(v.postfix) == "string" and v.postfix or ""),
         desc = config.get_action_helpstr(v.fn)
       }
       opts.actions[k] = nil
