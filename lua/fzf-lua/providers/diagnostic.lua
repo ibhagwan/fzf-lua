@@ -70,8 +70,9 @@ M.diagnostics = function(opts)
     -- can be empty when config set to (#480):
     -- vim.diagnostic.config({ signs = false })
     if vim.tbl_isempty(sign_def) then sign_def = nil end
-    opts.__signs[v.severity].text = sign_def and sign_def[1].text and
-        vim.trim(sign_def[1].text) or v.default
+    opts.__signs[v.severity].text =
+        (not opts.diag_icons or not sign_def or not sign_def[1].text)
+        and v.default or vim.trim(sign_def[1].text)
     opts.__signs[v.severity].texthl = sign_def and sign_def[1].texthl or nil
     if opts.signs and opts.signs[k] and opts.signs[k].text then
       opts.__signs[v.severity].text = opts.signs[k].text
@@ -184,16 +185,25 @@ M.diagnostics = function(opts)
                 -- entry to be skipped (e.g. 'cwd_only')
                 coroutine.resume(co)
               else
-                local type = diag_entry.type
-                if opts.diag_icons and opts.__signs[type] then
-                  local value = opts.__signs[type]
-                  local icon = value.text
+                local icon = nil
+                if opts.__signs[diag.severity] then
+                  local sign_def = opts.__signs[diag.severity]
+                  icon = sign_def.text
                   if opts.color_icons then
-                    icon = utils.ansi_from_hl(value.texthl, icon)
+                    icon = utils.ansi_from_hl(sign_def.texthl, icon)
                   end
-                  entry = string.format("%s%s%s%s",
-                    icon, opts.icon_padding or "", utils.nbsp, entry)
                 end
+                entry = string.format("%s%s%s",
+                  icon and string.format("%s%s%s", icon, opts.icon_padding or "", utils.nbsp)
+                  or "",
+                  opts.diag_source and string.format(
+                    "%s%s%s%s",
+                    "[", --utils.ansi_codes.bold("["),
+                    diag.source,
+                    "]", --utils.ansi_codes.bold("]"),
+                    utils.nbsp)
+                  or "",
+                  entry)
                 fzf_cb(entry, function() coroutine.resume(co) end)
               end
             end)

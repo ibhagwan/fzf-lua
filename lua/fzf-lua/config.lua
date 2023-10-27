@@ -264,7 +264,6 @@ function M.normalize_opts(opts, defaults)
     { "winopts.preview.title_pos",    "winopts.preview.title_align" },
     { "winopts.preview.scrollbar",    "previewers.builtin.scrollbar" },
     { "winopts.preview.scrollchar",   "previewers.builtin.scrollchar" },
-    { "diag_icons",                   "lsp.lsp_icons" },
     { "cwd_header",                   "show_cwd_header" },
     { "cwd_prompt",                   "show_cwd_prompt" },
     { "resume",                       "continue_last_search" },

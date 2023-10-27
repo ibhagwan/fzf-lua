@@ -1146,6 +1146,7 @@ require'fzf-lua'.setup {
     file_icons        = true,
     git_icons         = false,
     diag_icons        = true,
+    diag_source       = true,   -- display diag source (e.g. [pycodestyle])
     icon_padding      = '',     -- add padding for wide diagnostics signs
     multiline         = true,   -- concatenate multi-line diags into a single line
                                 -- set to `false` to display the first line only
