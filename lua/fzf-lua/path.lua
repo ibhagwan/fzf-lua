@@ -229,6 +229,9 @@ end
 function M.entry_to_file(entry, opts, force_uri)
   opts = opts or {}
   local cwd = opts.cwd
+  if opts._fmt and type(opts._fmt.from) == "function" then
+    entry = opts._fmt.from(entry, opts)
+  end
   -- Remove ansi coloring and prefixed icons
   entry = utils.strip_ansi_coloring(entry)
   local stripped, idx = stripBeforeLastOccurrenceOf(entry, utils.nbsp)

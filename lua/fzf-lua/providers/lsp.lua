@@ -183,7 +183,9 @@ local function symbol_handler(opts, cb, _, result, _, _)
       end
       entry = make_entry.lcol(entry, opts)
       entry = make_entry.file(entry, opts)
-      if entry then cb(entry) end
+      if entry then
+        cb(opts._fmt and opts._fmt.to and opts._fmt.to(entry, opts) or entry)
+      end
     end
   end
 end
@@ -651,7 +653,7 @@ M.document_symbols = function(opts)
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   if not opts.fzf_opts or opts.fzf_opts["--with-nth"] == nil then
-    opts.fzf_opts               = opts.fzf_opts or {}
+    opts.fzf_opts = opts.fzf_opts or {}
     opts.fzf_opts["--with-nth"] = "2.."
     opts.fzf_opts["--tiebreak"] = "index"
   end
