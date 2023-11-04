@@ -196,6 +196,12 @@ M.branches = function(opts)
   return git_cmd(opts)
 end
 
+M.tags = function(opts)
+  opts = config.normalize_opts(opts, config.globals.git.tags)
+  if not opts then return end
+  return git_cmd(opts)
+end
+
 M.stash = function(opts)
   opts = config.normalize_opts(opts, config.globals.git.stash)
   if not opts then return end

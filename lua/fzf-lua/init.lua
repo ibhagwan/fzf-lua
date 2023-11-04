@@ -195,6 +195,7 @@ do
     git_commits = { "fzf-lua.providers.git", "commits" },
     git_bcommits = { "fzf-lua.providers.git", "bcommits" },
     git_branches = { "fzf-lua.providers.git", "branches" },
+    git_tags = { "fzf-lua.providers.git", "tags" },
     oldfiles = { "fzf-lua.providers.oldfiles", "oldfiles" },
     quickfix = { "fzf-lua.providers.quickfix", "quickfix" },
     quickfix_stack = { "fzf-lua.providers.quickfix", "quickfix_stack" },

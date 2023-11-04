@@ -257,6 +257,7 @@ vim.keymap.set("n", "<c-P>",
 | `git_commits`      | git commit log (project)                   |
 | `git_bcommits`     | git commit log (buffer)                    |
 | `git_branches`     | git branches                               |
+| `git_tags`         | git tags                                   |
 | `git_stash`        | git stash                                  |
 
 ### LSP/Diagnostics
@@ -826,12 +827,23 @@ require'fzf-lua'.setup {
       },
     },
     branches = {
-      prompt          = 'Branches❯ ',
-      cmd             = "git branch --all --color",
-      preview         = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
-      actions = {
+      prompt   = 'Branches❯ ',
+      cmd      = "git branch --all --color",
+      preview  = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
+      actions  = {
         ["default"] = actions.git_switch,
       },
+    },
+    tags = {
+      prompt   = "Tags> ",
+      cmd      = "git for-each-ref --color --sort=-taggerdate --format "
+          .. "'%(color:yellow)%(refname:short)%(color:reset) "
+          .. "%(color:green)(%(taggerdate:relative))%(color:reset)"
+          .. " %(subject) %(color:blue)%(taggername)%(color:reset)' refs/tags",
+      preview  = "git log --graph --color --pretty=format:'%C(yellow)%h%Creset "
+          .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' {1}",
+      fzf_opts = { ["--no-multi"] = "" },
+      actions  = { ["default"] = actions.git_checkout },
     },
     stash = {
       prompt          = 'Stash> ',
