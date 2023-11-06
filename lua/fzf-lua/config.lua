@@ -502,6 +502,7 @@ M._action_to_helpstr = {
   [actions.git_yank_commit]     = "git-yank-commit",
   [actions.arg_add]             = "arg-list-add",
   [actions.arg_del]             = "arg-list-delete",
+  [actions.toggle_ignore]       = "toggle-ignore",
   [actions.grep_lgrep]          = "grep<->lgrep",
   [actions.sym_lsym]            = "sym<->lsym",
   [actions.tmux_buf_set_reg]    = "set-register",

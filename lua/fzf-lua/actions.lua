@@ -794,6 +794,27 @@ M.sym_lsym = function(_, opts)
   end
 end
 
+M.toggle_ignore = function(_, opts)
+  local o = vim.tbl_extend("keep", {
+    resume = true,
+    query = opts.__resume_data.last_query,
+  }, opts.__call_opts or {})
+  local flag = opts.toggle_ignore_flag or "--no-ignore"
+  if not flag:match("^%s") then
+    -- flag must be preceded by whitespace
+    flag = " " .. flag
+  end
+  if opts.cmd:match(utils.lua_regex_escape(flag)) then
+    o._hdr_to = nil
+    o.cmd = opts.cmd:gsub(utils.lua_regex_escape(flag), "")
+  else
+    -- signals "core.set_header" to set the correct "to" header
+    o._hdr_to = true
+    o.cmd = opts.cmd .. flag
+  end
+  opts.__MODULE__.files(o)
+end
+
 M.tmux_buf_set_reg = function(selected, opts)
   local buf = selected[1]:match("^%[(.-)%]")
   local data = vim.fn.system({ "tmux", "show-buffer", "-b", buf })

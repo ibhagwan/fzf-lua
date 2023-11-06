@@ -13,6 +13,7 @@ local M = {}
 local ACTION_DEFINITIONS = {
   -- list of supported actions with labels to be displayed in the headers
   -- no pos implies an append to header array
+  [actions.toggle_ignore]     = { "Disable .gitignore", fn_reload = "Respect .gitignore" },
   [actions.grep_lgrep]        = { "Regex Search", fn_reload = "Fuzzy Search" },
   [actions.sym_lsym]          = { "Live Query", fn_reload = "Fuzzy Search" },
   [actions.buf_del]           = { "close" },
@@ -766,7 +767,7 @@ M.set_header = function(opts, hdr_tbl)
           local action = type(v) == "function" and v or type(v) == "table" and (v.fn or v[1])
           if type(action) == "function" and defs[action] then
             local def = defs[action]
-            local to = opts.fn_reload and def.fn_reload or def[1]
+            local to = (opts.fn_reload or opts._hdr_to) and def.fn_reload or def[1]
             table.insert(ret, def.pos or #ret + 1,
               string.format("<%s> to %s",
                 utils.ansi_from_hl(opts.hls.header_bind, k),

@@ -749,14 +749,17 @@ require'fzf-lua'.setup {
     -- query prompt string (fzf.vim style), header line or both
     -- cwd_header = true,
     cwd_prompt             = true,
-    cwd_prompt_shorten_len = 32,      -- shorten prompt beyond this length
-    cwd_prompt_shorten_val = 1,       -- shortened path parts length
+    cwd_prompt_shorten_len = 32,        -- shorten prompt beyond this length
+    cwd_prompt_shorten_val = 1,         -- shortened path parts length
+    toggle_ignore_flag = "--no-ignore", -- flag toggled in `actions.toggle_ignore`
     actions = {
       -- inherits from 'actions.files', here we can override
       -- or set bind to 'false' to disable a default action
-      ["default"]     = actions.file_edit,
+      --   ["default"]   = actions.file_edit,
       -- custom actions are available too
-      ["ctrl-y"]      = function(selected) print(selected[1]) end,
+      --   ["ctrl-y"]    = function(selected) print(selected[1]) end,
+      -- action to toggle `--no-ignore`, requires fd or rg installed
+      --   ["ctrl-g"]    = { actions.toggle_ignore },
     }
   },
   git = {
