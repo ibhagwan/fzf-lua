@@ -570,7 +570,9 @@ M.mt_cmd_wrapper = function(opts)
   assert(opts and opts.cmd)
 
   local str_to_str = function(s)
-    return "[[" .. s:gsub("[%]]", function(x) return "\\" .. x end) .. "]]"
+    -- use long format of bracket escape so we can include "]" (#925)
+    -- https://www.lua.org/manual/5.4/manual.html#3.1
+    return "[==[" .. s .. "]==]"
   end
 
   local opts_to_str = function(o)
