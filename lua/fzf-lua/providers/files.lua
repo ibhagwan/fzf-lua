@@ -7,6 +7,21 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+function M.get_last_query(_)
+  local query = config.globals.files._last_query
+  return query and #query > 0 and query or nil
+end
+
+function M.set_last_query(query, _)
+  if query and #query == 0 then
+    query = nil
+  end
+  config.globals.files._last_query = query
+  if config.__resume_data then
+    config.__resume_data.last_query = query
+  end
+end
+
 local function POSIX_find_compat(opts)
   local ver = utils.find_version()
   -- POSIX find does not have '--version'
@@ -51,6 +66,13 @@ M.files = function(opts)
     end
   end
   opts.__MODULE__ = opts.__MODULE__ or M
+  if opts.query == nil and opts.resume then
+    opts.query = M.get_last_query(opts)
+  end
+  opts.fn_post_fzf = function(o, _)
+    local query = config.__resume_data and config.__resume_data.last_query
+    M.set_last_query(query, opts)
+  end
   opts.cmd = get_files_cmd(opts)
   local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
