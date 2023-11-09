@@ -63,7 +63,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.cached_bufnrs = {}
   self.cached_buffers = {}
   -- store currently listed buffers, this helps us determine which buffers
-  -- navigaged with 'vim.lsp.util.jump_to_location' we can safely unload
+  -- navigated with 'vim.lsp.util.jump_to_location' we can safely unload
   -- since jump_to_location reuses buffers and I couldn't find a better way
   -- to determine if the destination buffer was listed prior to the jump
   self.listed_buffers = (function()
