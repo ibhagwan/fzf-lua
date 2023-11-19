@@ -61,6 +61,8 @@ local get_ctags_file = function(opts)
   return "tags"
 end
 
+M._TAGS2CWD = {}
+
 local function tags(opts)
   -- we need this for 'actions.grep_lgrep'
   opts.__MODULE__ = opts.__MODULE__ or M
@@ -74,8 +76,24 @@ local function tags(opts)
   opts.ctags_bin = opts.ctags_bin or "ctags"
   opts.ctags_file = get_ctags_file(opts)
   opts._ctags_file = opts.ctags_file
-  if not path.starts_with_separator(opts._ctags_file) and opts.cwd then
-    opts._ctags_file = path.join({ opts.cwd, opts.ctags_file })
+
+  -- tags file should always resolve to an absolute path, already "expanded" by
+  -- `get_ctags_file` we take care of the case where `opts.ctags_file = "tags"`
+  if not path.starts_with_separator(opts._ctags_file) then
+    opts._ctags_file = path.join({ opts.cwd or vim.loop.cwd(), opts.ctags_file })
+  end
+
+  -- vim.fn.tagfiles() returns tags file for open buffers even after changing
+  -- the working directory. Since tags file contains relative paths we need to
+  -- set the `cwd`, while we can use `fnamemodify` with ":h" (parent folder),
+  -- this assumes the tags file is always generated at "$PWD/tags" which then
+  -- fails with custom tags paths. Instead, we create a map of fullpaths tags
+  -- files and their "first-seen" cwd (#933)
+  if M._TAGS2CWD[opts._ctags_file] then
+    opts.cwd = opts.cwd or M._TAGS2CWD[opts._ctags_file]
+  else
+    opts.cwd = opts.cwd or vim.loop.cwd()
+    M._TAGS2CWD[opts._ctags_file] = opts.cwd
   end
 
   if not opts.ctags_autogen and not vim.loop.fs_stat(opts._ctags_file) then
