@@ -32,7 +32,9 @@ local function get_tags_cmd(opts)
   -- filename (i.e. btags) takes precedence over
   -- search query as we can't search for both
   if opts.filename and #opts.filename > 0 then
-    query = libuv.shellescape(opts.filename)
+    -- tags use relative paths, by now we should
+    -- have the correct cwd from `get_ctags_cwd`
+    query = libuv.shellescape(path.relative(opts.filename, opts.cwd or vim.loop.cwd()))
   elseif opts.search and #opts.search > 0 then
     filter = ([[%s -v "^!"]]):format(bin)
     query = libuv.shellescape(opts.no_esc and opts.search or
@@ -61,6 +63,20 @@ local get_ctags_file = function(opts)
   return "tags"
 end
 
+-- search the headers of the tags file for "!TAG_PROC_CWD"
+local get_ctags_cwd = function(ctags_file)
+  if vim.fn.filereadable(ctags_file) == 0 then return end
+  local lines = vim.fn.readfile(ctags_file, "", 10)
+  if vim.tbl_isempty(lines) then return end
+  for _, l in ipairs(lines) do
+    local cwd = l:match("^!_TAG_PROC_CWD%s+(.*)%s+//$")
+    if cwd then
+      -- return without ending separator
+      return path.ends_with_separator(cwd) and cwd:sub(1, #cwd - 1) or cwd
+    end
+  end
+end
+
 M._TAGS2CWD = {}
 
 local function tags(opts)
@@ -83,19 +99,6 @@ local function tags(opts)
     opts._ctags_file = path.join({ opts.cwd or vim.loop.cwd(), opts.ctags_file })
   end
 
-  -- vim.fn.tagfiles() returns tags file for open buffers even after changing
-  -- the working directory. Since tags file contains relative paths we need to
-  -- set the `cwd`, while we can use `fnamemodify` with ":h" (parent folder),
-  -- this assumes the tags file is always generated at "$PWD/tags" which then
-  -- fails with custom tags paths. Instead, we create a map of fullpaths tags
-  -- files and their "first-seen" cwd (#933)
-  if M._TAGS2CWD[opts._ctags_file] then
-    opts.cwd = opts.cwd or M._TAGS2CWD[opts._ctags_file]
-  else
-    opts.cwd = opts.cwd or vim.loop.cwd()
-    M._TAGS2CWD[opts._ctags_file] = opts.cwd
-  end
-
   if not opts.ctags_autogen and not vim.loop.fs_stat(opts._ctags_file) then
     -- are we using btags and have the `ctags` binary?
     -- btags with no tag file, try to autogen using `ctags`
@@ -111,6 +114,22 @@ local function tags(opts)
       utils.info(("Tags file ('%s') does not exist. Create one with ctags -R")
         :format(opts._ctags_file))
       return
+    end
+  end
+
+  -- vim.fn.tagfiles() returns tags file for open buffers even after changing
+  -- the working directory. Since tags file contains relative paths we need to
+  -- set the `cwd`, while we can use `fnamemodify` with ":h" (parent folder),
+  -- this assumes the tags file is always generated at "$PWD/tags" which then
+  -- fails with custom tags paths. Instead, we create a map of fullpaths tags
+  -- files and their "first-seen" cwd, which can be either user specified,
+  -- auto-detected from the tags file headers or the cwd (#933)
+  if not opts.ctags_autogen then
+    if M._TAGS2CWD[opts._ctags_file] then
+      opts.cwd = opts.cwd or M._TAGS2CWD[opts._ctags_file]
+    else
+      opts.cwd = opts.cwd or get_ctags_cwd(opts._ctags_file) or vim.loop.cwd()
+      M._TAGS2CWD[opts._ctags_file] = opts.cwd
     end
   end
 
@@ -195,8 +214,6 @@ M.btags = function(opts)
   if opts.ctags_autogen then
     opts.cmd = opts.cmd or opts._btags_cmd
   end
-  -- tags use relative paths
-  opts.filename = path.relative(opts.filename, opts.cwd or vim.loop.cwd())
   return tags(opts)
 end
 
