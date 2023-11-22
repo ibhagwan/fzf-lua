@@ -181,8 +181,14 @@ local function symbol_handler(opts, cb, _, result, _, _)
           entry.text = entry.text:gsub("%[.-%]", M._sym2style[kind], 1)
         end
       end
+      -- move symbol `entry.text` to the start of the line
+      -- will be restored in preview/actions by `opts._fmt.from`
+      local symbol = entry.text
+      local align = 56 + utils.ansi_col_len(symbol)
+      entry.text = nil
       entry = make_entry.lcol(entry, opts)
       entry = make_entry.file(entry, opts)
+      entry = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry)
       if entry then
         cb(opts._fmt and opts._fmt.to and opts._fmt.to(entry, opts) or entry)
       end

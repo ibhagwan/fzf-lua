@@ -490,6 +490,11 @@ function M.has_ansi_coloring(str)
   return str:match("%[[%d;]-m")
 end
 
+function M.ansi_col_len(str)
+  local match = M.has_ansi_coloring(str)
+  return match and #match or 0
+end
+
 function M.strip_ansi_coloring(str)
   if not str then return str end
   -- remove escape sequences of the following formats:

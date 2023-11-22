@@ -624,17 +624,22 @@ M.defaults.lsp.symbols = {
   fzf_opts         = {
     ["--delimiter"] = string.format("'[:%s]'", utils.nbsp),
     ["--tiebreak"]  = "begin",
+    ["--info"]      = "default",
   },
   line_field_index = "{-2}", -- line field index
   field_index_expr = "{}",   -- entry field index
   _fmt             = {
-    to = function(s, _)
-      local file, text = s:match("^(.+:.+:.+:)%s(.*)")
-      -- fzf has alignment issues with ansi colorings of differnt escape length
-      local align = 56 + #utils.has_ansi_coloring(text)
-      return string.format("%-" .. align .. "s%s%s", text, utils.nbsp, file)
-    end,
+    -- NOT NEEDED: we format at the source in `lsp.symbol_handler`
+    -- to = function(s, _)
+    --   local file, text = s:match("^(.+:.+:.+:)%s(.*)")
+    --   -- fzf has alignment issues with ansi colorings of differnt escape length
+    --   local align = 56 + utils.ansi_col_len(text)
+    --   return string.format("%-" .. align .. "s%s%s", text, utils.nbsp, file)
+    -- end,
     from = function(s, _)
+      -- restore the format to something that `path.entry_to_file` can
+      -- handle more robustly, while this can stil work due to the `utils.nbsp`
+      -- it will fail when the symbol contains "[%d]" (which we use as bufnr)
       local text, file = s:match(string.format("^(.-)%s(.*)", utils.nbsp))
       return string.format("%s %s", file, text)
     end
