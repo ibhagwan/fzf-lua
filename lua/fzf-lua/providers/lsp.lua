@@ -175,16 +175,24 @@ local function symbol_handler(opts, cb, _, result, _, _)
   for _, entry in ipairs(items) do
     if (not opts.current_buffer_only or core.CTX().bname == entry.filename) and
         (not opts.regex_filter or entry.text:match(opts.regex_filter)) then
+      local mbicon_align = 0
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
-        if kind and M._sym2style[kind] then
-          entry.text = entry.text:gsub("%[.-%]", M._sym2style[kind], 1)
+        local styled = kind and M._sym2style[kind]
+        if styled then
+          entry.text = entry.text:gsub("%[.-%]", styled, 1)
+        end
+        -- align formatting to single byte and multi-byte icons
+        -- only styles 1,2 contain an icon
+        if tonumber(opts.symbol_style) == 1 or tonumber(opts.symbol_style) == 2 then
+          local icon = opts.symbol_icons and opts.symbol_icons[kind]
+          mbicon_align = icon and #icon or mbicon_align
         end
       end
       -- move symbol `entry.text` to the start of the line
       -- will be restored in preview/actions by `opts._fmt.from`
       local symbol = entry.text
-      local align = 56 + utils.ansi_col_len(symbol)
+      local align = 52 + mbicon_align + utils.ansi_col_len(symbol)
       entry.text = nil
       entry = make_entry.lcol(entry, opts)
       entry = make_entry.file(entry, opts)
@@ -628,11 +636,11 @@ local function gen_sym2style_map(opts)
     -- style==2: "<icon>"
     -- style==3: "<kind>"
     local s = nil
-    if opts.symbol_style == 1 and config._has_devicons then
+    if tonumber(opts.symbol_style) == 1 and config._has_devicons then
       s = ("%s %s"):format(icon, kind)
-    elseif opts.symbol_style == 2 and config._has_devicons then
+    elseif tonumber(opts.symbol_style) == 2 and config._has_devicons then
       s = icon
-    elseif opts.symbol_style == 3 then
+    elseif tonumber(opts.symbol_style) == 3 then
       s = kind
     end
     if s and opts.symbol_hl then
