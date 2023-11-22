@@ -440,48 +440,50 @@ M.defaults.tabs = {
 }
 
 M.defaults.lines = {
-  previewer       = M._default_previewer_fn,
-  prompt          = "Lines> ",
-  file_icons      = true and M._has_devicons,
-  color_icons     = true,
-  show_unloaded   = true,
-  show_unlisted   = false,
-  no_term_buffers = true,
-  fzf_opts        = {
+  previewer        = M._default_previewer_fn,
+  prompt           = "Lines> ",
+  file_icons       = true and M._has_devicons,
+  color_icons      = true,
+  show_unloaded    = true,
+  show_unlisted    = false,
+  no_term_buffers  = true,
+  fzf_opts         = {
     ["--delimiter"] = "'[\\]:]'",
     ["--nth"]       = "2..",
     ["--tiebreak"]  = "index",
     ["--tabstop"]   = "1",
   },
-  _actions        = function() return M.globals.actions.buffers end,
-  actions         = {
+  line_field_index = "{3}",
+  _actions         = function() return M.globals.actions.buffers end,
+  actions          = {
     ["default"] = actions.buf_edit_or_qf,
     ["alt-q"]   = actions.buf_sel_to_qf,
     ["alt-l"]   = actions.buf_sel_to_ll
   },
-  _cached_hls     = { "buf_name", "buf_nr", "buf_linenr" },
+  _cached_hls      = { "buf_name", "buf_nr", "buf_linenr" },
 }
 
 M.defaults.blines = {
-  previewer       = M._default_previewer_fn,
-  prompt          = "BLines> ",
-  file_icons      = false,
-  color_icons     = false,
-  show_unlisted   = true,
-  no_term_buffers = false,
-  fzf_opts        = {
+  previewer        = M._default_previewer_fn,
+  prompt           = "BLines> ",
+  file_icons       = false,
+  color_icons      = false,
+  show_unlisted    = true,
+  no_term_buffers  = false,
+  fzf_opts         = {
     ["--delimiter"] = "'[:]'",
     ["--with-nth"]  = "2..",
     ["--tiebreak"]  = "index",
     ["--tabstop"]   = "1",
   },
-  _actions        = function() return M.globals.actions.buffers end,
-  actions         = {
+  line_field_index = "{2}",
+  _actions         = function() return M.globals.actions.buffers end,
+  actions          = {
     ["default"] = actions.buf_edit_or_qf,
     ["alt-q"]   = actions.buf_sel_to_qf,
     ["alt-l"]   = actions.buf_sel_to_ll
   },
-  _cached_hls     = { "buf_name", "buf_nr", "buf_linenr" },
+  _cached_hls      = { "buf_name", "buf_nr", "buf_linenr" },
 }
 
 M.defaults.tags = {
@@ -492,7 +494,7 @@ M.defaults.tags = {
   grep_opts    = "--color=auto --perl-regexp",
   multiprocess = true,
   file_icons   = true and M._has_devicons,
-  git_icons    = true,
+  git_icons    = false,
   color_icons  = true,
   fzf_opts     = {
     ["--delimiter"] = string.format("'[:%s]'", utils.nbsp),
@@ -618,6 +620,25 @@ M.defaults.lsp.symbols = {
   symbol_fmt       = function(s, _) return "[" .. s .. "]" end,
   child_prefix     = true,
   async_or_timeout = true,
+  -- new formatting options with symbol name at the start
+  fzf_opts         = {
+    ["--delimiter"] = string.format("'[:%s]'", utils.nbsp),
+    ["--tiebreak"]  = "begin",
+  },
+  line_field_index = "{-2}", -- line field index
+  field_index_expr = "{}",   -- entry field index
+  _fmt             = {
+    to = function(s, _)
+      local file, text = s:match("^(.+:.+:.+:)%s(.*)")
+      -- fzf has alignment issues with ansi colorings of differnt escape length
+      local align = 56 + #utils.has_ansi_coloring(text)
+      return string.format("%-" .. align .. "s%s%s", text, utils.nbsp, file)
+    end,
+    from = function(s, _)
+      local text, file = s:match(string.format("^(.-)%s(.*)", utils.nbsp))
+      return string.format("%s %s", file, text)
+    end
+  },
   _actions         = function() return M.globals.actions.files end,
   actions          = { ["ctrl-g"] = { actions.sym_lsym } },
 }

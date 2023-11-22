@@ -168,7 +168,7 @@ local function symbol_handler(opts, cb, _, result, _, _)
   local items
   if opts.child_prefix then
     items = symbols_to_items(result, core.CTX().bufnr,
-      opts.child_prefix == true and string.rep("\xc2\xa0", 2) or opts.child_prefix)
+      opts.child_prefix == true and string.rep(" ", 2) or opts.child_prefix)
   else
     items = vim.lsp.util.symbols_to_items(result, core.CTX().bufnr)
   end
@@ -654,8 +654,7 @@ M.document_symbols = function(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   if not opts.fzf_opts or opts.fzf_opts["--with-nth"] == nil then
     opts.fzf_opts = opts.fzf_opts or {}
-    opts.fzf_opts["--with-nth"] = "2.."
-    opts.fzf_opts["--tiebreak"] = "index"
+    opts.fzf_opts["--with-nth"] = "1"
   end
   if opts.symbol_style or opts.symbol_fmt then
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end

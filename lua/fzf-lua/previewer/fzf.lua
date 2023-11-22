@@ -34,7 +34,7 @@ function Previewer.base:preview_offset()
     '--preview-window '~3:+{2}+3/2''
   ]]
   if self.opts.line_field_index then
-    return ("+{%d}-/2"):format(self.opts.line_field_index)
+    return ("+%s-/2"):format(self.opts.line_field_index)
   end
 end
 
@@ -66,7 +66,7 @@ function Previewer.cmd:new(o, opts)
 end
 
 function Previewer.cmd:format_cmd(cmd, args, action, extra_args)
-  return string.format([[%s %s %s $(%s)]],
+  return string.format([[%s %s %s "$(%s)"]],
     cmd, args or "", extra_args or "", action)
 end
 
@@ -79,7 +79,6 @@ end
 function Previewer.cmd:action(o)
   o = o or {}
   local act = shell.raw_action(function(items, _, _)
-    -- only preview first item
     local entry = path.entry_to_file(items[1], self.opts)
     return entry.bufname or entry.path
   end, self.opts.field_index_expr or "{}", self.opts.debug)
@@ -103,7 +102,7 @@ function Previewer.bat:cmdline(o)
     extra_args = string.format([[ --theme="%s"]], self.theme)
   end
   if self.opts.line_field_index then
-    extra_args = extra_args .. string.format(" --highlight-line={%d}", self.opts.line_field_index)
+    extra_args = extra_args .. string.format(" --highlight-line=%s", self.opts.line_field_index)
   end
   return self:format_cmd(self.cmd, self.args, o.action, extra_args)
 end
@@ -122,7 +121,7 @@ function Previewer.head:cmdline(o)
   local lines = "--lines=-0"
   -- print all lines instead
   -- if self.opts.line_field_index then
-  --   lines = string.format("--lines={%d}", self.opts.line_field_index)
+  --   lines = string.format("--lines=%s", self.opts.line_field_index)
   -- end
   return self:format_cmd(self.cmd, self.args, o.action, lines)
 end
@@ -138,7 +137,7 @@ end
 local grep_tag = function(file, tag)
   local line = 1
   local filepath = file
-  local pattern = utils.rg_escape(tag)
+  local pattern = utils.rg_escape(vim.trim(tag))
   if not pattern or not filepath then return line end
   local grep_cmd = vim.fn.executable("rg") == 1
       and { "rg", "--line-number" }
@@ -172,15 +171,16 @@ end
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   local entry = path.entry_to_file(entrystr, self.opts)
   local filepath = entry.bufname or entry.path or ""
-  if self.opts._ctag and entry.line <= 1 then
-    -- tags without line numbers
-    -- make sure we don't already have line #
-    -- (in the case the line no. is actually 1)
-    local line = entry.stripped:match("[^:]+(%d+):")
-    local ctag = path.entry_to_ctag(entry.stripped, true)
-    if not line and ctag then
-      entry.ctag = ctag
-      entry.line = grep_tag(filepath, entry.ctag)
+  if self.opts._ctag then
+    entry.ctag = path.entry_to_ctag(entry.stripped, true)
+    if entry.line <= 1 then
+      -- default tags are without line numbers
+      -- make sure we don't already have line #
+      -- (in the case the line no. is actually 1)
+      local line = entry.stripped:match("[^:]+(%d+):")
+      if not line and entry.ctag then
+        entry.line = grep_tag(filepath, entry.ctag)
+      end
     end
   end
   local errcmd = nil
@@ -229,8 +229,7 @@ function Previewer.bat_async:cmdline(o)
     local cmd = errcmd or ("%s %s %s %s %s %s"):format(
       self.cmd, self.args,
       self.theme and string.format([[--theme="%s"]], self.theme) or "",
-      self.opts.line_field_index and
-      string.format("--highlight-line=%d", entry.line) or "",
+      self.opts.line_field_index and string.format("--highlight-line=%d", entry.line) or "",
       line_range,
       vim.fn.shellescape(filepath))
     -- uncomment to see the command in the preview window

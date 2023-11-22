@@ -133,7 +133,8 @@ local function tags(opts)
     end
   end
 
-  if opts.line_field_index == nil then
+  -- NOT NEEDED ANYMORE SINCE WE ARE FORCING BAT ASYNC PREVIEWER
+  --[[ if opts.line_field_index == nil then
     -- if caller did not specify the line field index
     -- grep the first tag with '-m 1' and test for line presence
     local cmd = get_tags_cmd({
@@ -150,7 +151,7 @@ local function tags(opts)
         opts.line_field_index = 0
       end
     end
-  end
+  end ]]
 
   -- prevents 'file|git_icons=false' from overriding processing
   opts.requires_processing = true

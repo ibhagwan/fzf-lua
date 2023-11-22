@@ -678,7 +678,7 @@ end
 -- for setting the preview offset (and on some
 -- cases the highlighted line)
 M.set_fzf_field_index = function(opts, default_idx, default_expr)
-  opts.line_field_index = opts.line_field_index or default_idx or 2
+  opts.line_field_index = opts.line_field_index or default_idx or "{2}"
   -- when entry contains lines we set the fzf FIELD INDEX EXPRESSION
   -- to the below so that only the filename is sent to the preview
   -- action, otherwise we will have issues with entries with text

@@ -213,14 +213,12 @@ end
 
 M.lines = function(opts)
   opts = config.normalize_opts(opts, config.globals.lines)
-  opts.line_field_index = opts.line_field_index or 2
   M.buffer_lines(opts)
 end
 
 M.blines = function(opts)
   opts = config.normalize_opts(opts, config.globals.blines)
   opts.current_buffer_only = true
-  opts.line_field_index = opts.line_field_index or 2
   M.buffer_lines(opts)
 end
 
@@ -305,7 +303,7 @@ M.buffer_lines = function(opts)
     opts.fzf_opts["--query"] = vim.fn.shellescape(opts.search)
   end
 
-  opts = core.set_fzf_field_index(opts, 3, opts._is_skim and "{}" or "{..-2}")
+  opts = core.set_fzf_field_index(opts, "{3}", opts._is_skim and "{}" or "{..-2}")
 
   core.fzf_exec(contents, opts)
 end
@@ -427,7 +425,7 @@ M.tabs = function(opts)
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
-  opts = core.set_fzf_field_index(opts, 3, "{}")
+  opts = core.set_fzf_field_index(opts, "{3}", "{}")
 
   core.fzf_exec(contents, opts)
 end
