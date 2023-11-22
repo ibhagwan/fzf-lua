@@ -986,7 +986,7 @@ require'fzf-lua'.setup {
     -- start          = "cursor"      -- start display from cursor?
     fzf_opts = {
       -- hide filename, tiebreak by line no.
-      ['--delimiter'] = "'[\\]:]'",
+      ["--delimiter"] = "'[:]'",
       ["--with-nth"]  = '2..',
       ["--tiebreak"]  = 'index',
       ["--tabstop"]   = "1",
@@ -1008,6 +1008,7 @@ require'fzf-lua'.setup {
     -- 'tags_live_grep' options, `rg` prioritizes over `grep`
     rg_opts               = "--no-heading --color=always --smart-case",
     grep_opts             = "--color=auto --perl-regexp",
+    fzf_opts              = { ["--tiebreak"] = "begin" },
     actions = {
       -- actions inherit from 'actions.files' and merge
       -- this action toggles between 'grep' and 'live_grep'
@@ -1021,16 +1022,11 @@ require'fzf-lua'.setup {
     ctags_file            = nil,      -- auto-detect from tags-option
     ctags_autogen         = false,    -- dynamically generate ctags each call
     multiprocess          = true,
-    file_icons            = true,
-    git_icons             = true,
-    color_icons           = true,
-    rg_opts               = "--no-heading --color=always",
-    grep_opts             = "--color=auto --perl-regexp",
-    fzf_opts = {
-      ['--delimiter']     = "'[\\]:]'",
-      ["--with-nth"]      = '2..',
-      ["--tiebreak"]      = 'index',
-    },
+    file_icons            = false,
+    git_icons             = false,
+    rg_opts               = "--color=never --no-heading",
+    grep_opts             = "--color=never --perl-regexp",
+    fzf_opts              = { ["--tiebreak"] = "begin" },
     -- actions inherit from 'actions.files'
   },
   colorschemes = {
@@ -1122,6 +1118,10 @@ require'fzf-lua'.setup {
         symbol_fmt        = function(s, opts) return "[" .. s .. "]" end,
         -- prefix child symbols. set to any string or `false` to disable
         child_prefix      = true,
+        fzf_opts          = {
+          ["--tiebreak"] = "begin",
+          ["--info"]     = "default",
+        },
     },
     code_actions = {
         prompt            = 'Code Actions> ',
