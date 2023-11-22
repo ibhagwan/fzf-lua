@@ -486,6 +486,10 @@ function M.ansi_from_hl(hl, s)
   return escfn(s), escseq, escfn
 end
 
+function M.has_ansi_coloring(str)
+  return str:match("%[[%d;]-m")
+end
+
 function M.strip_ansi_coloring(str)
   if not str then return str end
   -- remove escape sequences of the following formats:

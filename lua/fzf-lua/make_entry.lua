@@ -479,13 +479,17 @@ M.tag = function(x, opts)
   for _, s in ipairs({ "/", "\\" }) do
     text = text:gsub([[\]] .. s, s)
   end
+  -- different alignment fmt if string contains ansi coloring
+  -- from rg/grep output when using `tags_grep_xxx` 
+  local align = utils.has_ansi_coloring(name) and 47 or 30
   local line, tag = text:match("(%d-);?(/.*/)")
   line = line and #line > 0 and tonumber(line)
-  return ("%s%s: %s %s"):format(
+  return string.format("%-" .. tostring(align) .. "s%s%s%s: %s",
+    name,
+    utils.nbsp,
     M.file(file, opts),
     not line and "" or ":" .. utils.ansi_codes.green(tostring(line)),
-    utils.ansi_codes.magenta(name),
-    utils.ansi_codes.green(tag)
+    utils.ansi_codes.blue(tag)
   ), line
 end
 
