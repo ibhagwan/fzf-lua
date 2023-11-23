@@ -624,11 +624,11 @@ require'fzf-lua'.setup {
     -- set to `false` to remove a flag
     -- set to '' for a non-value flag
     -- for raw args use `fzf_args` instead
-    ['--ansi']        = '',
-    ['--info']        = 'inline',
-    ['--height']      = '100%',
-    ['--layout']      = 'reverse',
-    ['--border']      = 'none',
+    ["--ansi"]        = "",
+    ["--info"]        = "inline",
+    ["--height"]      = "100%",
+    ["--layout"]      = "reverse",
+    ["--border"]      = "none",
   },
   -- Only used when fzf_bin = "fzf-tmux", by default opens as a
   -- popup 80% width, 80% height (note `-p` requires tmux > 3.2)
@@ -1008,7 +1008,7 @@ require'fzf-lua'.setup {
     -- 'tags_live_grep' options, `rg` prioritizes over `grep`
     rg_opts               = "--no-heading --color=always --smart-case",
     grep_opts             = "--color=auto --perl-regexp",
-    fzf_opts              = { ["--tiebreak"] = "begin" },
+    fzf_opts              = { ["--info"] = "default", ["--tiebreak"] = "begin" },
     actions = {
       -- actions inherit from 'actions.files' and merge
       -- this action toggles between 'grep' and 'live_grep'
@@ -1026,7 +1026,7 @@ require'fzf-lua'.setup {
     git_icons             = false,
     rg_opts               = "--color=never --no-heading",
     grep_opts             = "--color=never --perl-regexp",
-    fzf_opts              = { ["--tiebreak"] = "begin" },
+    fzf_opts              = { ["--info"] = "default", ["--tiebreak"] = "begin" },
     -- actions inherit from 'actions.files'
   },
   colorschemes = {

@@ -499,6 +499,7 @@ M.defaults.tags = {
   fzf_opts     = {
     ["--delimiter"] = string.format("'[:%s]'", utils.nbsp),
     ["--tiebreak"]  = "begin",
+    ["--info"]      = "default",
   },
   _actions     = function() return M.globals.actions.files end,
   actions      = { ["ctrl-g"] = { actions.grep_lgrep } },
@@ -518,6 +519,7 @@ M.defaults.btags = {
     ["--delimiter"] = string.format("'[:%s]'", utils.nbsp),
     ["--with-nth"]  = "1,-1",
     ["--tiebreak"]  = "begin",
+    ["--info"]      = "default",
   },
   _actions     = function() return M.globals.actions.files end,
   actions      = { ["ctrl-g"] = false },
