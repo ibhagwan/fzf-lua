@@ -192,12 +192,12 @@ local function symbol_handler(opts, cb, _, result, _, _)
       -- move symbol `entry.text` to the start of the line
       -- will be restored in preview/actions by `opts._fmt.from`
       local symbol = entry.text
-      local align = 52 + mbicon_align + utils.ansi_col_len(symbol)
       entry.text = nil
       entry = make_entry.lcol(entry, opts)
       entry = make_entry.file(entry, opts)
-      entry = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry)
       if entry then
+        local align = 52 + mbicon_align + utils.ansi_col_len(symbol)
+        entry = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry)
         cb(opts._fmt and opts._fmt.to and opts._fmt.to(entry, opts) or entry)
       end
     end
@@ -667,8 +667,12 @@ M.document_symbols = function(opts)
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   if not opts.fzf_opts or opts.fzf_opts["--with-nth"] == nil then
+    -- our delims are {nbsp,:} make sure entry has no icons
+    -- "{nbsp}file:line:col:" and hide the last 4 fields
+    opts.git_icons = false
+    opts.file_icons = false
     opts.fzf_opts = opts.fzf_opts or {}
-    opts.fzf_opts["--with-nth"] = "1"
+    opts.fzf_opts["--with-nth"] = "..-4"
   end
   if opts.symbol_style or opts.symbol_fmt then
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
