@@ -7,7 +7,6 @@ local config = require "fzf-lua.config"
 local M = {}
 
 M.metatable = function(opts)
-  opts = config.normalize_opts(opts, config.globals.builtin)
   if not opts then return end
 
   if not opts.metatable then opts.metatable = getmetatable("").__index end
@@ -33,7 +32,7 @@ M.metatable = function(opts)
 
   -- builtin is excluded from global resume
   -- as the behavior might confuse users (#267)
-  opts.global_resume = false
+  opts.no_resume = true
 
   core.fzf_exec(methods, opts)
 end
@@ -56,7 +55,7 @@ local function ls(dir, fn)
 end
 
 M.profiles = function(opts)
-  opts = config.normalize_opts(opts, config.globals.profiles)
+  opts = config.normalize_opts(opts, "profiles")
   if not opts then return end
 
   local dirs = {

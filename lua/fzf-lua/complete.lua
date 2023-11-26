@@ -80,7 +80,7 @@ local set_cmp_opts_path = function(opts)
 end
 
 M.path = function(opts)
-  opts = config.normalize_opts(opts, config.globals.complete_path)
+  opts = config.normalize_opts(opts, "complete_path")
   if not opts then return end
   opts.cmd = opts.cmd or (function()
     if vim.fn.executable("fdfind") == 1 then
@@ -99,7 +99,7 @@ M.path = function(opts)
 end
 
 M.file = function(opts)
-  opts = config.normalize_opts(opts, config.globals.complete_file)
+  opts = config.normalize_opts(opts, "complete_file")
   if not opts then return end
   opts.cmp_is_file = true
   opts.cmd = opts.cmd or (function()
@@ -119,7 +119,7 @@ M.file = function(opts)
 end
 
 M.line = function(opts)
-  opts = config.normalize_opts(opts, config.globals.complete_line)
+  opts = config.normalize_opts(opts, "complete_line")
   opts.query = (function()
     local col = vim.api.nvim_win_get_cursor(0)[2] + 1
     local line = vim.api.nvim_get_current_line()

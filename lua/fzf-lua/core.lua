@@ -130,9 +130,7 @@ M.fzf_exec = function(contents, opts)
   if type(opts.fn_reload) == "function" then
     opts.__fn_transform = opts.fn_transform
     opts.__fn_reload = function(query)
-      if config.__resume_data then
-        config.__resume_data.last_query = query
-      end
+      config.resume_set("query", query, opts)
       return opts.fn_reload(query)
     end
     opts = M.setup_fzf_interactive_wrap(opts)
@@ -150,19 +148,11 @@ end
 
 M.fzf_resume = function(opts)
   if not config.__resume_data or not config.__resume_data.opts then
-    utils.info("No resume data available, is 'global_resume' enabled?")
+    utils.info("No resume data available.")
     return
   end
   opts = vim.tbl_deep_extend("force", config.__resume_data.opts, opts or {})
-  local last_query = config.__resume_data.last_query
-  if not last_query or #last_query == 0 then
-    -- in case we continue from another resume,
-    -- reset the previous query which was saved
-    -- inside "fzf_opts['--query']" argument
-    last_query = false
-  end
-  opts.__resume = true
-  opts.query = last_query
+  opts.__resuming = true
   M.fzf_exec(config.__resume_data.contents, opts)
 end
 
@@ -233,45 +223,43 @@ M.fzf = function(contents, opts)
     opts = config.normalize_opts(opts or {}, {})
     if not opts then return end
   end
+  -- flag used to print the query on stdout line 1
+  -- later to be removed from the result by M.fzf()
+  -- this provides a solution for saving the query
+  -- when the user pressed a valid bind but not when
+  -- aborting with <C-c> or <Esc>, see next comment
+  opts.fzf_opts["--print-query"] = ""
+  -- setup dummy callbacks for the default fzf 'abort' keybinds
+  -- this way the query also gets saved when we do not 'accept'
+  opts.actions = opts.actions or {}
+  opts.keymap = opts.keymap or {}
+  opts.keymap.fzf = opts.keymap.fzf or {}
+  for _, k in ipairs({ "ctrl-c", "ctrl-q", "esc" }) do
+    if opts.actions[k] == nil and
+        (opts.keymap.fzf[k] == nil or opts.keymap.fzf[k] == "abort") then
+      opts.actions[k] = actions.dummy_abort
+    end
+  end
+  if not opts.__resuming then
+    -- `opts.__resuming` is only set from `fzf_resume`, since we
+    -- not resuming clear the shell protected functions registry
+    shell.clear_protected()
+  end
+  -- store last call opts for resume
+  config.resume_set(nil, opts.__call_opts, opts)
+  -- caller specified not to resume this call (used by "builtin" provider)
+  if not opts.no_resume then
+    config.__resume_data = config.__resume_data or {}
+    config.__resume_data.opts = utils.deepcopy(opts)
+    config.__resume_data.contents = contents and utils.deepcopy(contents) or nil
+    -- save a ref to resume data for 'grep_lgrep'
+    opts.__resume_data = config.__resume_data
+  end
   -- update context and save a copy in options (for actions)
   -- call before creating the window or fzf_winobj is not nil
   opts.__CTX = M.CTX()
   if opts.fn_pre_win then
     opts.fn_pre_win(opts)
-  end
-  -- support global resume?
-  if opts.global_resume then
-    config.__resume_data = config.__resume_data or {}
-    config.__resume_data.opts = utils.deepcopy(opts)
-    config.__resume_data.contents = contents and utils.deepcopy(contents) or nil
-    if not opts.__resume then
-      -- since the shell callback isn't called until the user first types something
-      -- delete the stored query unless called from within 'fzf_resume', this prevents
-      -- using the stored query between different providers
-      config.__resume_data.last_query = nil
-      -- since we are changing providers it's also safe to clear the shell protected
-      -- functions registry
-      shell.clear_protected()
-    end
-    -- save a ref to resume data for 'grep_lgrep'
-    opts.__resume_data = config.__resume_data
-    -- We use this option to print the query on line 1
-    -- later to be removed from the result by M.fzf()
-    -- this provides a solution for saving the query
-    -- when the user pressed a valid bind but not when
-    -- aborting with <C-c> or <Esc>, see next comment
-    opts.fzf_opts["--print-query"] = ""
-    -- setup dummy callbacks for the default fzf 'abort' keybinds
-    -- this way the query also gets saved when we do not 'accept'
-    opts.actions = opts.actions or {}
-    opts.keymap = opts.keymap or {}
-    opts.keymap.fzf = opts.keymap.fzf or {}
-    for _, k in ipairs({ "ctrl-c", "ctrl-q", "esc" }) do
-      if opts.actions[k] == nil and
-          (opts.keymap.fzf[k] == nil or opts.keymap.fzf[k] == "abort") then
-        opts.actions[k] = actions.dummy_abort
-      end
-    end
   end
   -- setup the fzf window and preview layout
   local fzf_win = win(opts)
@@ -358,16 +346,13 @@ M.fzf = function(contents, opts)
   end
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
-  if selected and #selected > 0 and
-      opts.fzf_opts["--print-query"] ~= nil then
+  if selected and #selected > 0 then
     if not (opts._is_skim and opts.fn_reload) then
       -- reminder: this doesn't get called with 'live_grep' when using skim
       -- due to a bug where '--print-query --interactive' combo is broken:
       -- skim always prints an empty line where the typed query should be.
       -- see addtional note above 'opts.fn_post_fzf' inside 'live_grep_mt'
-      local query = selected[1]
-      config.__resume_data = config.__resume_data or {}
-      config.__resume_data.last_query = type(query) == "string" and query or nil
+      config.resume_set("query", selected[1], opts)
     end
     table.remove(selected, 1)
   end

@@ -24,7 +24,7 @@ end
 M.commands = function(opts)
   if not dap() then return end
 
-  opts = config.normalize_opts(opts, config.globals.dap.commands)
+  opts = config.normalize_opts(opts, "dap.commands")
   if not opts then return end
 
   local entries = {}
@@ -49,7 +49,7 @@ end
 M.configurations = function(opts)
   if not dap() then return end
 
-  opts = config.normalize_opts(opts, config.globals.dap.configurations)
+  opts = config.normalize_opts(opts, "dap.configurations")
   if not opts then return end
 
   local entries = {}
@@ -86,7 +86,7 @@ M.breakpoints = function(opts)
   if not dap() then return end
   local dap_bps = require "dap.breakpoints"
 
-  opts = config.normalize_opts(opts, config.globals.dap.breakpoints)
+  opts = config.normalize_opts(opts, "dap.breakpoints")
   if not opts then return end
 
   -- so we can have accurate info on resume
@@ -157,7 +157,7 @@ end
 M.variables = function(opts)
   if not dap() then return end
 
-  opts = config.normalize_opts(opts, config.globals.dap.variables)
+  opts = config.normalize_opts(opts, "dap.variables")
   if not opts then return end
 
   local session = _dap.session()
@@ -188,7 +188,7 @@ end
 M.frames = function(opts)
   if not dap() then return end
 
-  opts = config.normalize_opts(opts, config.globals.dap.frames)
+  opts = config.normalize_opts(opts, "dap.frames")
   if not opts then return end
 
   local session = _dap.session()

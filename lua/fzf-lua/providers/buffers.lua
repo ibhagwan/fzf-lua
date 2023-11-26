@@ -169,7 +169,7 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
 end
 
 M.buffers = function(opts)
-  opts = config.normalize_opts(opts, config.globals.buffers)
+  opts = config.normalize_opts(opts, "buffers")
   if not opts then return end
 
   opts.__fn_reload = opts.__fn_reload or function(_)
@@ -212,12 +212,12 @@ M.buffers = function(opts)
 end
 
 M.lines = function(opts)
-  opts = config.normalize_opts(opts, config.globals.lines)
+  opts = config.normalize_opts(opts, "lines")
   M.buffer_lines(opts)
 end
 
 M.blines = function(opts)
-  opts = config.normalize_opts(opts, config.globals.blines)
+  opts = config.normalize_opts(opts, "blines")
   opts.current_buffer_only = true
   M.buffer_lines(opts)
 end
@@ -309,7 +309,7 @@ M.buffer_lines = function(opts)
 end
 
 M.tabs = function(opts)
-  opts = config.normalize_opts(opts, config.globals.tabs)
+  opts = config.normalize_opts(opts, "tabs")
   if not opts then return end
 
   opts._list_bufs = function()

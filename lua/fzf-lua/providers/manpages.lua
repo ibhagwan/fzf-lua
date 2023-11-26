@@ -4,7 +4,7 @@ local config = require "fzf-lua.config"
 local M = {}
 
 M.manpages = function(opts)
-  opts = config.normalize_opts(opts, config.globals.manpages)
+  opts = config.normalize_opts(opts, "manpages")
   if not opts then return end
 
   opts.fn_transform = function(x)

@@ -15,7 +15,7 @@ end
 local M = {}
 
 M.colorschemes = function(opts)
-  opts = config.normalize_opts(opts, config.globals.colorschemes)
+  opts = config.normalize_opts(opts, "colorschemes")
   if not opts then return end
 
 
@@ -69,7 +69,7 @@ M.colorschemes = function(opts)
 end
 
 M.highlights = function(opts)
-  opts = config.normalize_opts(opts, config.globals.highlights)
+  opts = config.normalize_opts(opts, "highlights")
   if not opts then return end
 
   local contents = function(cb)

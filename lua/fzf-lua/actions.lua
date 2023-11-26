@@ -195,7 +195,7 @@ local sel_to_qf = function(selected, opts, is_loclist)
   end
   local title = string.format("[FzfLua] %s%s",
     opts.__INFO and opts.__INFO.cmd .. ": " or "",
-    opts.__resume_data.last_query)
+    utils.resume_get("query", opts) or "")
   if is_loclist then
     vim.fn.setloclist(0, {}, " ", {
       nr = "$",
@@ -739,80 +739,39 @@ M.arg_del = function(selected, opts)
 end
 
 M.grep_lgrep = function(_, opts)
-  -- 'MODULE' is set on 'grep' and 'live_grep' calls
-  assert(opts.__MODULE__
-    and type(opts.__MODULE__.grep) == "function"
-    or type(opts.__MODULE__.live_grep) == "function")
-
-  local o = vim.tbl_extend("keep", {
-    search = false,
+  opts.__ACT_TO({
     resume = true,
-    resume_search_default = "",
+    -- different lookup key for grep|lgrep_curbuf
+    __resume_key = opts.__resume_key,
     rg_glob = opts.rg_glob or opts.__call_opts.rg_glob,
     -- globs always require command processing with 'multiprocess'
     requires_processing = opts.rg_glob or opts.__call_opts.rg_glob,
-    -- grep has both search string and query prompt, when switching
-    -- from live_grep to grep we want to restore both:
-    --   * we save the last query prompt when exiting grep
-    --   * we set query to the last known when entering grep
-    __prev_query = not opts.fn_reload and opts.__resume_data.last_query,
-    query = opts.fn_reload and opts.__call_opts.__prev_query,
     -- when used with tags pass the resolved ctags_file from tags-option as
     -- `tagfiles()` might not return the correct file called from the float (#700)
     ctags_file = opts.ctags_file,
-  }, opts.__call_opts or {})
-
-  -- 'fn_reload' is set only on 'live_grep' calls
-  if opts.fn_reload then
-    opts.__MODULE__.grep(o)
-  else
-    opts.__MODULE__.live_grep(o)
-  end
+  })
 end
 
 M.sym_lsym = function(_, opts)
-  assert(opts.__MODULE__
-    and type(opts.__MODULE__.workspace_symbols) == "function"
-    or type(opts.__MODULE__.live_workspace_symbols) == "function")
-
-  local o = vim.tbl_extend("keep", {
-    resume = true,
-    lsp_query = false,
-    -- ws has both search string and query prompt, when
-    -- switching from live_ws to ws we want to restore both:
-    --   * we save the last query prompt when exiting ws
-    --   * we set query to the last known when entering ws
-    __prev_query = not opts.fn_reload and opts.__resume_data.last_query,
-    query = opts.fn_reload and opts.__call_opts.__prev_query,
-  }, opts.__call_opts or {})
-
-  -- 'fn_reload' is set only on 'live_xxx' calls
-  if opts.fn_reload then
-    opts.__MODULE__.workspace_symbols(o)
-  else
-    opts.__MODULE__.live_workspace_symbols(o)
-  end
+  opts.__ACT_TO({ resume = true })
 end
 
 M.toggle_ignore = function(_, opts)
-  local o = vim.tbl_extend("keep", {
-    resume = true,
-    query = opts.__resume_data.last_query,
-  }, opts.__call_opts or {})
+  local o = { resume = true }
   local flag = opts.toggle_ignore_flag or "--no-ignore"
   if not flag:match("^%s") then
     -- flag must be preceded by whitespace
     flag = " " .. flag
   end
   if opts.cmd:match(utils.lua_regex_escape(flag)) then
-    o._hdr_to = nil
+    o._hdr_to = false
     o.cmd = opts.cmd:gsub(utils.lua_regex_escape(flag), "")
   else
     -- signals "core.set_header" to set the correct "to" header
     o._hdr_to = true
     o.cmd = opts.cmd .. flag
   end
-  opts.__MODULE__.files(o)
+  opts.__ACT_TO(o)
 end
 
 M.tmux_buf_set_reg = function(selected, opts)

@@ -6,7 +6,7 @@ local config = require "fzf-lua.config"
 local M = {}
 
 M.buffers = function(opts)
-  opts = config.normalize_opts(opts, config.globals.tmux.buffers)
+  opts = config.normalize_opts(opts, "tmux.buffers")
   if not opts then return end
 
   opts.fn_transform = function(x)

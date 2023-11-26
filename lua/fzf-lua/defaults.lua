@@ -18,7 +18,6 @@ end
 
 M.defaults = {
   nbsp          = utils.nbsp,
-  global_resume = true,
   winopts       = {
     height         = 0.85,
     width          = 0.80,
@@ -489,6 +488,7 @@ M.defaults.blines = {
 M.defaults.tags = {
   previewer    = { _ctor = previewers.builtin.tags },
   prompt       = "Tags> ",
+  input_prompt = "[tags] Grep For> ",
   ctags_file   = nil, -- auto-detect
   rg_opts      = "--no-heading --color=always --smart-case",
   grep_opts    = "--color=auto --perl-regexp",
@@ -622,6 +622,7 @@ M.defaults.lsp.symbols = {
   symbol_fmt       = function(s, _) return "[" .. s .. "]" end,
   child_prefix     = true,
   async_or_timeout = true,
+  exec_empty_query = true,
   -- new formatting options with symbol name at the start
   fzf_opts         = {
     ["--delimiter"] = string.format("'[:%s]'", utils.nbsp),

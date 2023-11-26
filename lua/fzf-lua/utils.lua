@@ -19,7 +19,16 @@ function M.__LINE__() return debug.getinfo(2, "l").currentline end
 
 function M.__FNC__() return debug.getinfo(2, "n").name end
 
+-- current function ref, since `M.__FNCREF__` is itself a function
+-- we need to go backwards once in stack (i.e. "2")
 function M.__FNCREF__() return debug.getinfo(2, "f").func end
+
+-- calling function ref, go backwards in stack twice first
+-- out of `utils.__FNCREF2__`, second out of calling function
+function M.__FNCREF2__()
+  local dbginfo = debug.getinfo(3, "f")
+  return dbginfo and dbginfo.func
+end
 
 -- sets an invisible unicode character as icon separator
 -- the below was reached after many iterations, a short summary of everything
@@ -572,6 +581,16 @@ end
 function M.fzf_winobj()
   -- use 'loadstring' to prevent circular require
   return loadstring("return require'fzf-lua'.win.__SELF()")()
+end
+
+function M.resume_get(what, opts)
+  local f = loadstring("return require'fzf-lua'.config.resume_get")()
+  return f(what, opts)
+end
+
+M.resume_set = function(what, val, opts)
+  local f = loadstring("return require'fzf-lua'.config.resume_set")()
+  return f(what, val, opts)
 end
 
 function M.reset_info()

@@ -23,7 +23,7 @@ local function set_git_cwd_args(opts)
 end
 
 M.files = function(opts)
-  opts = config.normalize_opts(opts, config.globals.git.files)
+  opts = config.normalize_opts(opts, "git.files")
   if not opts then return end
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
@@ -33,7 +33,7 @@ M.files = function(opts)
 end
 
 M.status = function(opts)
-  opts = config.normalize_opts(opts, config.globals.git.status)
+  opts = config.normalize_opts(opts, "git.status")
   if not opts then return end
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
@@ -125,7 +125,7 @@ local function git_cmd(opts)
 end
 
 M.commits = function(opts)
-  opts = config.normalize_opts(opts, config.globals.git.commits)
+  opts = config.normalize_opts(opts, "git.commits")
   if not opts then return end
   if opts.preview then
     opts.preview = path.git_cwd(opts.preview, opts)
@@ -138,7 +138,7 @@ M.commits = function(opts)
 end
 
 M.bcommits = function(opts)
-  opts = config.normalize_opts(opts, config.globals.git.bcommits)
+  opts = config.normalize_opts(opts, "git.bcommits")
   if not opts then return end
   local bufname = vim.api.nvim_buf_get_name(0)
   if #bufname == 0 then
@@ -178,7 +178,7 @@ M.bcommits = function(opts)
 end
 
 M.branches = function(opts)
-  opts = config.normalize_opts(opts, config.globals.git.branches)
+  opts = config.normalize_opts(opts, "git.branches")
   if not opts then return end
   opts.fzf_opts["--no-multi"] = ""
   if opts.preview then
@@ -197,13 +197,13 @@ M.branches = function(opts)
 end
 
 M.tags = function(opts)
-  opts = config.normalize_opts(opts, config.globals.git.tags)
+  opts = config.normalize_opts(opts, "git.tags")
   if not opts then return end
   return git_cmd(opts)
 end
 
 M.stash = function(opts)
-  opts = config.normalize_opts(opts, config.globals.git.stash)
+  opts = config.normalize_opts(opts, "git.stash")
   if not opts then return end
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end

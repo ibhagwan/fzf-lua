@@ -5,38 +5,7 @@ local config = require "fzf-lua.config"
 local libuv = require "fzf-lua.libuv"
 local make_entry = require "fzf-lua.make_entry"
 
-local function set_live_grep_prompt(prompt)
-  -- prefix all live_grep prompts with an asterisk
-  return prompt:match("^%*") and prompt or "*" .. prompt
-end
-
 local M = {}
-
-function M.get_last_search(opts)
-  if opts and opts.__MODULE__ and opts.__MODULE__.get_last_search and
-      utils.__FNCREF__() ~= opts.__MODULE__.get_last_search then
-    -- incase we are called from 'tags'
-    return opts.__MODULE__.get_last_search(opts)
-  end
-  local last_search = config.globals.grep._last_search or {}
-  return last_search.query, last_search.no_esc
-end
-
-function M.set_last_search(opts, query, no_esc)
-  if opts and opts.__MODULE__ and opts.__MODULE__.set_last_search and
-      utils.__FNCREF__() ~= opts.__MODULE__.set_last_search then
-    -- incase we are called from 'tags'
-    opts.__MODULE__.set_last_search(opts, query, no_esc)
-    return
-  end
-  config.globals.grep._last_search = {
-    query = query,
-    no_esc = no_esc
-  }
-  if config.__resume_data then
-    config.__resume_data.last_query = query
-  end
-end
 
 local get_grep_cmd = function(opts, search_query, no_esc)
   if opts.raw_cmd and #opts.raw_cmd > 0 then
@@ -111,38 +80,33 @@ local get_grep_cmd = function(opts, search_query, no_esc)
 end
 
 M.grep = function(opts)
-  opts = config.normalize_opts(opts, config.globals.grep)
+  opts = config.normalize_opts(opts, "grep")
   if not opts then return end
 
-  -- we need this for 'actions.grep_lgrep'
-  opts.__MODULE__ = opts.__MODULE__ or M
+  -- we need this for `actions.grep_lgrep`
+  opts.__ACT_TO = opts.__ACT_TO or M.live_grep
 
-  local no_esc = false
-  if not opts.search and opts.resume then
-    opts.search, no_esc = M.get_last_search(opts)
-    opts.search = opts.search or opts.resume_search_default
-  end
-
-  -- if user did not provide a search term
-  -- provide an input prompt
   if not opts.search and not opts.raw_cmd then
-    local search = utils.input(opts.input_prompt)
-    -- empty string is not falsy in lua, abort if the user cancels the input
-    if search then
-      opts.search = search
+    -- resume implies no input prompt
+    if opts.resume then
+      opts.search = ""
     else
-      return
+      -- if user did not provide a search term prompt for one
+      local search = utils.input(opts.input_prompt)
+      -- empty string is not falsy in lua, abort if the user cancels the input
+      if search then
+        opts.search = search
+        -- save the search query for `resume=true`
+        opts.__call_opts.search = search
+      else
+        return
+      end
     end
   end
 
-
   -- get the grep command before saving the last search
   -- in case the search string is overwritten by 'rg_glob'
-  opts.cmd = get_grep_cmd(opts, opts.search, no_esc)
-
-  -- save the search query so we
-  -- can call the same search again
-  M.set_last_search(opts, opts.search, no_esc or opts.no_esc)
+  opts.cmd = get_grep_cmd(opts, opts.search, opts.no_esc)
 
   local contents = core.mt_cmd_wrapper(vim.tbl_deep_extend("force", opts,
     -- query was already parsed for globs inside 'get_grep_cmd'
@@ -156,57 +120,79 @@ M.grep = function(opts)
     contents = contents .. " 2>&1"
   end
 
-  -- when using an empty string grep (as in 'grep_project') or
-  -- when switching from grep to live_grep using 'ctrl-g' users
-  -- may find it confusing why is the last typed query not
-  -- considered the last search so we find out if that's the
-  -- case and use the last typed prompt as the grep string
-  opts.fn_post_fzf = function(o, _)
-    local last_search, _ = M.get_last_search(o)
-    local last_query = config.__resume_data and config.__resume_data.last_query
-    if not last_search or #last_search == 0
-        and (last_query and #last_query > 0) then
-      M.set_last_search(opts, last_query)
-    end
-  end
-
   -- search query in header line
   opts = core.set_header(opts, opts.headers or { "actions", "cwd", "search" })
   opts = core.set_fzf_field_index(opts)
   core.fzf_exec(contents, opts)
 end
 
--- single threaded version
-M.live_grep_st = function(opts)
-  opts = config.normalize_opts(opts, config.globals.grep)
+local function normalize_live_grep_opts(opts)
+  opts = config.normalize_opts(opts, "grep")
   if not opts then return end
 
-  -- we need this for 'actions.grep_lgrep'
-  opts.__MODULE__ = opts.__MODULE__ or M
-  opts.prompt = set_live_grep_prompt(opts.prompt)
+  -- we need this for 'actions.grep_lgrep`
+  opts.__ACT_TO = opts.__ACT_TO or M.grep
 
-  assert(not opts.multiprocess)
+  -- NOT NEEDED SINCE RESUME DATA REFACTOR
+  -- (was used by `make_entry.set_config_section`
+  -- opts.__module__ = opts.__module__ or "grep"
 
-  local no_esc = false
-  if not opts.search and opts.resume then
-    opts.search, no_esc = M.get_last_search(opts)
+  -- prepend prompt with "*" to indicate "live" query
+  opts.prompt = opts.prompt and opts.prompt:match("^%*") or "*" .. opts.prompt
+
+  -- when using live_grep there is no "query", the prompt input
+  -- is a regex expression and should be saved as last "search"
+  -- this callback overrides setting "query" with "search"
+  opts.__resume_set = function(what, val, o)
+    if what == "query" then
+      config.resume_set("search", val, { __resume_key = o.__resume_key })
+      config.resume_set("no_esc", true, { __resume_key = o.__resume_key })
+    else
+      config.resume_set(what, val, { __resume_key = o.__resume_key })
+    end
+  end
+  -- we also override the getter for the quickfix list name
+  opts.__resume_get = function(what, o)
+    return config.resume_get(
+      what == "query" and "search" or what,
+      { __resume_key = o.__resume_key })
   end
 
+  -- when using an empty string grep (as in 'grep_project') or
+  -- when switching from grep to live_grep using 'ctrl-g' users
+  -- may find it confusing why is the last typed query not
+  -- considered the last search so we find out if that's the
+  -- case and use the last typed prompt as the grep string
+  if not opts.search or #opts.search == 0 and (opts.query and #opts.query > 0) then
+    -- fuzzy match query needs to be regex escaped
+    opts.no_esc = nil
+    opts.search = opts.query
+    -- also replace in `__call_opts` for `resume=true`
+    opts.__call_opts.query = nil
+    opts.__call_opts.no_esc = nil
+    opts.__call_opts.search = opts.query
+  end
+
+  -- interactive interface uses 'query' parameter
   opts.query = opts.search or ""
   if opts.search and #opts.search > 0 then
     -- escape unless the user requested not to
-    if not (no_esc or opts.no_esc) then
+    if not (opts.no_esc) then
       opts.query = utils.rg_escape(opts.search)
     end
-    -- save the search query so the user can
-    -- call the same search again
-    M.set_last_search(opts, opts.query, true)
   end
 
+  return opts
+end
+
+-- single threaded version
+M.live_grep_st = function(opts)
+  opts = normalize_live_grep_opts(opts)
+  if not opts then return end
+
+  assert(not opts.multiprocess)
+
   opts.fn_reload = function(query)
-    if query and not (opts.save_last_search == false) then
-      M.set_last_search(opts, query, true)
-    end
     -- can be nil when called as fzf initial command
     query = query or ""
     opts.no_esc = nil
@@ -224,18 +210,6 @@ M.live_grep_st = function(opts)
         end
   end
 
-  -- see notes for this section in 'live_grep_mt'
-  if not opts._is_skim then
-    opts.fn_post_fzf = function(o, _)
-      local last_search, _ = M.get_last_search(o)
-      local last_query = config.__resume_data and config.__resume_data.last_query
-      if not opts.exec_empty_query
-          and last_search ~= last_query then
-        M.set_last_search(opts, last_query or "")
-      end
-    end
-  end
-
   -- search query in header line
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts)
@@ -245,13 +219,10 @@ end
 
 -- multi threaded (multi-process actually) version
 M.live_grep_mt = function(opts)
-  opts = config.normalize_opts(opts, config.globals.grep)
+  opts = normalize_live_grep_opts(opts)
   if not opts then return end
 
-  -- we need this for 'actions.grep_lgrep'
-  opts.__MODULE__ = opts.__MODULE__ or M
-  opts.__module__ = opts.__module__ or "grep"
-  opts.prompt = set_live_grep_prompt(opts.prompt)
+  assert(opts.multiprocess)
 
   -- when using glob parsing, we must use the external
   -- headless instance for processing the query. This
@@ -259,25 +230,6 @@ M.live_grep_mt = function(opts)
   -- processing inside 'core.mt_cmd_wrapper'
   if opts.rg_glob then
     opts.requires_processing = true
-  end
-
-  assert(opts.multiprocess)
-
-  local no_esc = false
-  if not opts.search and opts.resume then
-    opts.search, no_esc = M.get_last_search(opts)
-  end
-
-  -- interactive interface uses 'query' parameter
-  opts.query = opts.search or ""
-  if opts.search and #opts.search > 0 then
-    -- escape unless the user requested not to
-    if not (no_esc or opts.no_esc) then
-      opts.query = utils.rg_escape(opts.search)
-    end
-    -- save the search query so the user can
-    -- call the same search again
-    M.set_last_search(opts, opts.query, true)
   end
 
   -- signal to preprocess we are looking to replace {argvz}
@@ -306,32 +258,6 @@ M.live_grep_mt = function(opts)
   -- signal 'fzf_exec' to set 'change:reload' parameters
   -- or skim's "interactive" mode (AKA "live query")
   opts.fn_reload = command
-
-  -- when running 'live_grep' with 'exec_empty_query=false' (default)
-  -- an empty typed query will not be saved as the 'neovim --headless'
-  -- command isn't executed, resulting in '_last_search.query' never
-  -- cleared and always having a minimum of one characer.
-  -- This signals 'core.fzf' to add the '--print-query' flag and
-  -- handle the typed query post process exit
-  -- Due to a skim bug, this doesn't work when used in conjunction with
-  -- the '--interactive' flag: the line with the typed query is printed
-  -- to stdout but is always empty.
-  -- To understand this issue, run 'live_grep', type a query and then
-  -- delete it and press <C-g> to switch to 'grep'. Instead of an empty
-  -- search, the last typed character will be used as the search string
-  if not opts._is_skim then
-    opts.fn_post_fzf = function(o, _)
-      local last_search, _ = M.get_last_search(o)
-      local last_query = config.__resume_data and config.__resume_data.last_query
-      if not opts.exec_empty_query and last_search ~= last_query or
-          -- we should also save the query when we are piping the command
-          -- directly without our headless wrapper, i.e. 'live_grep_native'
-          (not opts.requires_processing and
-            not opts.git_icons and not opts.file_icons) then
-        M.set_last_search(opts, last_query or "", true)
-      end
-    end
-  end
 
   -- search query in header line
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
@@ -374,11 +300,12 @@ M.live_grep_native = function(opts)
   opts.file_icons = false
   opts.path_shorten = false
   opts.rg_glob = false
+  opts.multiprocess = true
   return M.live_grep_mt(opts)
 end
 
 M.live_grep = function(opts)
-  opts = config.normalize_opts(opts, config.globals.grep)
+  opts = config.normalize_opts(opts, "grep")
   if not opts then return end
 
   if opts.multiprocess then
@@ -389,7 +316,7 @@ M.live_grep = function(opts)
 end
 
 M.live_grep_glob = function(opts)
-  opts = config.normalize_opts(opts, config.globals.grep)
+  opts = config.normalize_opts(opts, "grep")
   if not opts then return end
 
   if opts.multiprocess then
@@ -443,47 +370,41 @@ M.grep_project = function(opts)
   return M.grep(opts)
 end
 
-M.grep_curbuf = function(opts)
-  -- we can't call 'normalize_opts' here because it will override
-  -- 'opts.__call_opts' which will confuse 'actions.grep_lgrep'
+M.grep_curbuf = function(opts, lgrep)
   if type(opts) == "function" then
     opts = opts()
   elseif not opts then
     opts = {}
   end
-  -- rg globs are meaningless here since we searching
-  -- a single file
+  opts.filename = vim.api.nvim_buf_get_name(0)
+  if #opts.filename == 0 or not vim.loop.fs_stat(opts.filename) then
+    utils.info("Rg current buffer requires file on disk")
+    return
+  else
+    opts.filename = path.relative(opts.filename, vim.loop.cwd())
+  end
+  -- rg globs are meaningless here since we searching a single file
   opts.rg_glob = false
   opts.rg_opts = make_entry.rg_insert_args(config.globals.grep.rg_opts, " --with-filename")
   opts.grep_opts = make_entry.rg_insert_args(config.globals.grep.grep_opts, " --with-filename")
-  if opts.exec_empty_query == nil then
-    opts.exec_empty_query = true
-  end
-  opts.fzf_opts = vim.tbl_extend("keep",
-    opts.fzf_opts or {}, config.globals.blines.fzf_opts)
-  opts.filename = vim.api.nvim_buf_get_name(0)
-  if #opts.filename > 0 and vim.loop.fs_stat(opts.filename) then
-    opts.filename = path.relative(opts.filename, vim.loop.cwd())
-    if opts.lgrep then
-      return M.live_grep(opts)
-    else
-      opts.search = opts.search or ""
-      return M.grep(opts)
-    end
+  opts.exec_empty_query = opts.exec_empty_query == nil and true
+  opts.fzf_opts = vim.tbl_extend("keep", opts.fzf_opts or {}, config.globals.blines.fzf_opts)
+  -- call `normalize_opts` here as we want to strore all previous
+  -- optios in the resume data store under the key "bgrep"
+  -- 3rd arg is an override for resume data store lookup key
+  opts = config.normalize_opts(opts, "grep", "bgrep")
+  if not opts then return end
+  if lgrep then
+    return M.live_grep(opts)
   else
-    utils.info("Rg current buffer requires file on disk")
-    return
+    opts.search = opts.search or ""
+    return M.grep(opts)
   end
 end
 
 M.lgrep_curbuf = function(opts)
-  if type(opts) == "function" then
-    opts = opts()
-  elseif not opts then
-    opts = {}
-  end
-  opts.lgrep = true
-  return M.grep_curbuf(opts)
+  -- 2nd arg implies `opts.lgrep=true`
+  return M.grep_curbuf(opts, true)
 end
 
 return M

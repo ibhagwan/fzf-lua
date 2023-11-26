@@ -294,11 +294,6 @@ M.get_last_query = function()
   return M.config.__resume_data and M.config.__resume_data.last_query
 end
 
-M.set_last_query = function(query)
-  M.config.__resume_data = M.config.__resume_data or {}
-  M.config.__resume_data.last_query = query
-end
-
 M.setup_fzfvim_cmds = function(...)
   local fn = loadstring("return require'fzf-lua.profiles.fzf-vim'.fn_load")()
   return fn(...)
@@ -335,7 +330,6 @@ M._excluded_meta = {
   "get_info",
   "set_info",
   "get_last_query",
-  "set_last_query",
 }
 
 for _, m in ipairs(M._exported_modules) do
@@ -350,7 +344,8 @@ for _, t in pairs({ M._excluded_meta, M._exported_modules }) do
 end
 
 M.builtin = function(opts)
-  if not opts then opts = {} end
+  opts = config.normalize_opts(opts, "builtin")
+  if not opts then return end
   opts.metatable = M
   opts.metatable_exclude = M._excluded_metamap
   return require "fzf-lua.providers.module".metatable(opts)

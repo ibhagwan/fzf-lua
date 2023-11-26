@@ -44,7 +44,7 @@ M.quickfix = function(opts)
     return
   end
 
-  return quickfix_run(opts, config.globals.quickfix, locations)
+  return quickfix_run(opts, "quickfix", locations)
 end
 
 M.loclist = function(opts)
@@ -59,7 +59,7 @@ M.loclist = function(opts)
     return
   end
 
-  return quickfix_run(opts, config.globals.loclist, locations)
+  return quickfix_run(opts, "loclist", locations)
 end
 
 
@@ -107,13 +107,13 @@ local qfstack_exec = function(opts, cfg, is_loclist)
 end
 
 M.quickfix_stack = function(opts)
-  return qfstack_exec(opts, config.globals.quickfix_stack)
+  return qfstack_exec(opts, "quickfix_stack")
 end
 
 M.loclist_stack = function(opts)
   opts = opts or {}
   opts._is_loclist = true
-  return qfstack_exec(opts, config.globals.loclist_stack, true)
+  return qfstack_exec(opts, "loclist_stack", true)
 end
 
 return M

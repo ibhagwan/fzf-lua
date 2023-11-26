@@ -1,6 +1,7 @@
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
+local actions = require "fzf-lua.actions"
 local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
@@ -523,8 +524,8 @@ local function gen_lsp_contents_call_hierarchy(opts)
   end
 end
 
-local normalize_lsp_opts = function(opts, cfg)
-  opts = config.normalize_opts(opts, cfg)
+local normalize_lsp_opts = function(opts, cfg, __resume_key)
+  opts = config.normalize_opts(opts, cfg, __resume_key)
   if not opts then return end
 
   if not opts.prompt and opts.prompt_postfix then
@@ -542,7 +543,7 @@ local normalize_lsp_opts = function(opts, cfg)
 end
 
 local function fzf_lsp_locations(opts, fn_contents)
-  opts = normalize_lsp_opts(opts, config.globals.lsp)
+  opts = normalize_lsp_opts(opts, "lsp")
   if not opts then return end
   if opts.force_uri == nil then opts.force_uri = true end
   opts = core.set_fzf_field_index(opts)
@@ -581,7 +582,7 @@ M.outgoing_calls = function(opts)
 end
 
 M.finder = function(opts)
-  opts = normalize_lsp_opts(opts, config.globals.lsp.finder)
+  opts = normalize_lsp_opts(opts, "lsp.finder")
   if not opts then return end
   if opts.force_uri == nil then opts.force_uri = true end
   local contents = {}
@@ -660,9 +661,15 @@ local function gen_sym2style_map(opts)
 end
 
 M.document_symbols = function(opts)
-  opts = normalize_lsp_opts(opts, config.globals.lsp.symbols)
+  opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_document_symbols")
   if not opts then return end
-  opts.__MODULE__ = opts.__MODULE__ or M
+  -- no support for sym_lsym
+  for k, fn in pairs(opts.actions or {}) do
+    if type(fn) == "table" and
+        (fn[1] == actions.sym_lsym or fn.fn == actions.sym_lsym) then
+      opts.actions[k] = nil
+    end
+  end
   opts = core.set_header(opts, opts.headers or { "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
@@ -685,25 +692,10 @@ M.document_symbols = function(opts)
   return core.fzf_exec(opts.__contents, opts)
 end
 
-local function get_last_lspquery(_)
-  return M.__last_ws_lsp_query
-end
-
-local function set_last_lspquery(_, query)
-  M.__last_ws_lsp_query = query
-  if config.__resume_data then
-    config.__resume_data.last_query = query
-  end
-end
-
 M.workspace_symbols = function(opts)
-  opts = normalize_lsp_opts(opts, config.globals.lsp.symbols)
+  opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
   if not opts then return end
-  opts.__MODULE__ = opts.__MODULE__ or M
-  if not opts.lsp_query and opts.resume then
-    opts.lsp_query = get_last_lspquery(opts)
-  end
-  set_last_lspquery(opts, opts.lsp_query)
+  opts.__ACT_TO = opts.__ACT_TO or M.live_workspace_symbols
   opts.lsp_params = { query = opts.lsp_query or "" }
   opts = core.set_header(opts, opts.headers or
     { "actions", "cwd", "lsp_query", "regex_filter" })
@@ -713,40 +705,41 @@ M.workspace_symbols = function(opts)
   if not opts.__contents then return end
   if opts.symbol_style or opts.symbol_fmt then
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
-    -- when using an empty string grep (as in 'grep_project') or
-    -- when switching from grep to live_grep using 'ctrl-g', users
-    -- may find it confusing why the last typed query is not
-    -- considered the last search. So we find out if that's the
-    -- case and use the last typed prompt as the grep string
-    opts.fn_post_fzf = function(o, _)
-      M._sym2style = nil
-      local last_lspquery = get_last_lspquery(o)
-      local last_query = config.__resume_data and config.__resume_data.last_query
-      if not last_lspquery or #last_lspquery == 0
-          and (last_query and #last_query > 0) then
-        set_last_lspquery(opts, last_query)
-      end
-    end
+    opts.fn_post_fzf = function() M._sym2style = nil end
   end
   return core.fzf_exec(opts.__contents, opts)
 end
 
+
 M.live_workspace_symbols = function(opts)
-  opts = normalize_lsp_opts(opts, config.globals.lsp.symbols)
+  opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
   if not opts then return end
 
   -- needed by 'actions.sym_lsym'
-  -- prepend the prompt with asterisk
-  opts.__MODULE__ = opts.__MODULE__ or M
+  opts.__ACT_TO = opts.__ACT_TO or M.workspace_symbols
+
+  -- prepend prompt with "*" to indicate "live" query
   opts.prompt = opts.prompt and opts.prompt:match("^%*") or "*" .. opts.prompt
 
-  -- exec empty query is the default here
-  if opts.exec_empty_query == nil then
-    opts.exec_empty_query = true
+  -- when using live_workspace_symbols there is no "query"
+  -- the prompt input is the LSP query, store as "lsp_query"
+  opts.__resume_set = function(what, val, o)
+    config.resume_set(
+      what == "query" and "lsp_query" or what, val,
+      { __resume_key = o.__resume_key })
+  end
+  opts.__resume_get = function(what, o)
+    return config.resume_get(
+      what == "query" and "lsp_query" or what,
+      { __resume_key = o.__resume_key })
   end
 
-  if not opts.lsp_query and opts.resume then
-    opts.lsp_query = get_last_lspquery(opts)
+  -- if no lsp_query was set, use previous prompt query (from the non-live version)
+  if not opts.lsp_query or #opts.lsp_query == 0 and (opts.query and #opts.query > 0) then
+    opts.lsp_query = opts.query
+    -- also replace in `__call_opts` for `resume=true`
+    opts.__call_opts.query = nil
+    opts.__call_opts.lsp_query = opts.query
   end
 
   -- sent to the LSP server
@@ -757,9 +750,6 @@ M.live_workspace_symbols = function(opts)
   -- use our own
   opts.func_async_callback = false
   opts.fn_reload = function(query)
-    if query and not (opts.save_last_search == false) then
-      set_last_lspquery(opts, query)
-    end
     opts.lsp_params = { query = query or "" }
     opts = gen_lsp_contents(opts)
     return opts.__contents
@@ -779,7 +769,7 @@ end
 -- TODO: not needed anymore, it seems that `vim.lsp.buf.code_action` still
 -- uses the old `vim.lsp.diagnostic` API, we will do the same until neovim
 -- stops using this API
-local function get_line_diagnostics(_)
+--[[ local function get_line_diagnostics(_)
   if not vim.diagnostic then
     return vim.lsp.diagnostic.get_line_diagnostics()
   end
@@ -806,10 +796,10 @@ local function get_line_diagnostics(_)
       } }
       -- Must return an empty table or some LSP servers fail (#707)
       or {}
-end
+end ]]
 
 M.code_actions = function(opts)
-  opts = normalize_lsp_opts(opts, config.globals.lsp.code_actions)
+  opts = normalize_lsp_opts(opts, "lsp.code_actions")
   if not opts then return end
 
   -- code actions uses `vim.ui.select`, requires neovim >= 0.6

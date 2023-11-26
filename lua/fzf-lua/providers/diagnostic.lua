@@ -31,7 +31,7 @@ local filter_diag_severity = function(opts, severity)
 end
 
 M.diagnostics = function(opts)
-  opts = config.normalize_opts(opts, config.globals.diagnostics)
+  opts = config.normalize_opts(opts, "diagnostics")
   if not opts then return end
 
   -- required for relative paths presentation

@@ -6,7 +6,7 @@ local make_entry = require "fzf-lua.make_entry"
 local M = {}
 
 M.oldfiles = function(opts)
-  opts = config.normalize_opts(opts, config.globals.oldfiles)
+  opts = config.normalize_opts(opts, "oldfiles")
   if not opts then return end
 
   local current_buffer = vim.api.nvim_get_current_buf()

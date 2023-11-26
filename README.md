@@ -22,6 +22,7 @@ yours too, if you allow it.
   + [Optional Dependencies](#optional-dependencies)
 - [Installation](#installation)
 - [Usage](#usage)
+  + [Resume](#resume)
 - [Commands](#commands)
   + [Buffers and Files](#buffers-and-files)
   + [Search](#search)
@@ -203,6 +204,22 @@ or if using `init.lua`:
 ```lua
 vim.keymap.set("n", "<c-P>",
   "<cmd>lua require('fzf-lua').files()<CR>", { silent = true })
+```
+
+### Resume
+
+Resuming work from where you left off is as easy as:
+```lua
+:lua require('fzf-lua').resume()
+-- or
+:FzfLua resume
+```
+
+Alternatively, resuming work on a specific provider:
+```lua
+:lua require('fzf-lua').files({ resume = true })
+-- or
+:FzfLua files resume=true
 ```
 
 ## Commands
