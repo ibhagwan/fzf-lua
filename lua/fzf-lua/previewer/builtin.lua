@@ -1,6 +1,7 @@
 local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local Object = require "fzf-lua.class"
 
 local api = vim.api
@@ -293,10 +294,26 @@ function Previewer.base:cmdline(_)
 end
 
 function Previewer.base:zero(_)
-  local act = string.format("execute-silent(%s)",
+  --
+  -- debounce the zero event call to prevent reentry which may
+  -- cause a hang of fzf  or the nvim RPC server (#909)
+  -- mkdir is an atomic operation and will fail if the directory
+  -- already exists effectively creating a singleton shell command
+  --
+  -- currently awaiting an upstream fix:
+  -- https://github.com/junegunn/fzf/issues/3516
+  --
+  self._zero_lock = self._zero_lock or vim.fn.tempname()
+  local act = string.format("execute-silent(mkdir %s && %s)",
+    libuv.shellescape(self._zero_lock),
     shell.raw_action(function(_, _, _)
-      self:clear_preview_buf(true)
-      self.last_entry = nil
+      vim.defer_fn(function()
+        if self.loaded_entry then
+          self:clear_preview_buf(true)
+          self.last_entry = nil
+        end
+        vim.fn.delete(self._zero_lock, "d")
+      end, self.delay)
     end, "", self.opts.debug))
   return act
 end
