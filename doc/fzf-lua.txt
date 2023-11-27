@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 November 22
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 November 26
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -11,6 +11,7 @@ Dependencies .......................................... |fzf-lua-dependencies|
 Optional dependencies ........................ |fzf-lua-optional-dependencies|
 Installation .......................................... |fzf-lua-installation|
 Usage ........................................................ |fzf-lua-usage|
+Resume ...................................................... |fzf-lua-resume|
 Commands .................................................. |fzf-lua-commands|
 Buffers and Files ................................ |fzf-lua-buffers-and-files|
 Search ...................................................... |fzf-lua-search|
@@ -57,7 +58,7 @@ CONTENTS                                                    *fzf-lua-contents*
 - Dependencies <#dependencies> + Optional Dependencies
   <#optional-dependencies>
 - Installation <#installation>
-- Usage <#usage>
+- Usage <#usage> + Resume <#resume>
 - Commands <#commands> + Buffers and Files <#buffers-and-files> + Search
   <#search> + Tags <#tags> + Git <#git> + LSP | Diagnostics <#lspdiagnostics>
   + Misc <#misc> + Neovim API <#neovim-api> + `nvim-dap` <#nvim-dap> + `tmux`
@@ -249,6 +250,24 @@ or if using `init.lua`:
 >lua
     vim.keymap.set("n", "<c-P>",
       "<cmd>lua require('fzf-lua').files()<CR>", { silent = true })
+<
+
+                                                                              
+RESUME                                                        *fzf-lua-resume*
+
+Resuming work from where you left off is as easy as:
+
+>lua
+    :lua require('fzf-lua').resume()
+    -- or
+    :FzfLua resume
+<
+Alternatively, resuming work on a specific provider:
+
+>lua
+    :lua require('fzf-lua').files({ resume = true })
+    -- or
+    :FzfLua files resume=true
 <
 
 ------------------------------------------------------------------------------
