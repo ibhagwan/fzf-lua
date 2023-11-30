@@ -138,7 +138,8 @@ local function normalize_live_grep_opts(opts)
   -- opts.__module__ = opts.__module__ or "grep"
 
   -- prepend prompt with "*" to indicate "live" query
-  opts.prompt = opts.prompt and opts.prompt:match("^%*") or "*" .. opts.prompt
+  opts.prompt = type(opts.prompt) == "string" and opts.prompt or ""
+  opts.prompt = opts.prompt:match("^%*") and opts.prompt or ("*" .. opts.prompt)
 
   -- when using live_grep there is no "query", the prompt input
   -- is a regex expression and should be saved as last "search"
