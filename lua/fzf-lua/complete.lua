@@ -95,6 +95,11 @@ local set_cmp_opts_path = function(opts)
   end
   local before = col > 1 and line:sub(1, col - 1):reverse():match(match):reverse() or ""
   opts.cwd = find_file_path(before)
+  -- if not valid path, give message to user instead of open dialog
+  print(string.format("Not an valid path"))
+  if opts.cwd == nil then
+    return
+  end
   opts.prompt = get_prompt(opts.cwd)
   opts.complete = function(selected, o, l, _)
     -- query fuzzy matching is empty
