@@ -67,6 +67,20 @@ local function find_file_path(cursor_before_line)
   return nil
 end
 
+-- get search prompt
+local function get_prompt(filepath)
+  local cwd = vim.fn.getcwd()
+  -- if path include "-", replace it
+  local pattern = cwd:gsub("-", "")
+  local input_string = filepath:gsub("-", "")
+  local relative_path = input_string:gsub(pattern, "")
+  local prompt = relative_path:gsub(vim.env.HOME, "~")
+  if prompt:sub(1, 1) == "/" then
+    prompt = "~" .. prompt:sub(1)
+  end
+  return prompt
+end
+
 -- forward and reverse match spaces and single/double quotes
 -- and attepmpt to find the top level existing directory
 -- set the cwd and prompt top the top level directory and
@@ -83,10 +97,11 @@ local set_cmp_opts_path = function(opts)
     after = line:sub(col):match(match) or ""
   end
   opts.cwd = find_file_path(before)
+  opts.prompt = get_prompt(opts.cwd)
   opts.complete = function(selected, o, l, _)
     -- query fuzzy matching is empty
     if #selected == 0 then return end
-    return line:sub(1, col - 1) .. selected[1] .. line:sub(col)
+    return line:sub(1, col - 1) .. selected[1] .. line:sub(col), col + #selected[1]
   end
   return opts
 end
