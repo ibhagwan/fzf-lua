@@ -23,7 +23,7 @@ local function find_toplevel_cwd(maybe_cwd, postfix, orig_cwd)
   if vim.fn.isdirectory(vim.fn.expand(maybe_cwd)) == 1 then
     local disp_cwd, cwd = maybe_cwd, vim.fn.expand(maybe_cwd)
     -- returned cwd must be full path
-    if cwd:sub(1, 1) == "." then
+    if cwd:sub(1, 1) == "." and cwd:sub(2, 2) == path.separator() then
       cwd = vim.loop.cwd() .. (#cwd > 1 and cwd:sub(2) or "")
       -- inject "./" only if original path started with it
       -- otherwise ignore the "." retval from fnamemodify
