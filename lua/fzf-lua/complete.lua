@@ -89,13 +89,11 @@ local set_cmp_opts_path = function(opts)
   local match = "[^%s\"'()[]*"
   local line = vim.api.nvim_get_current_line()
   local col = vim.api.nvim_win_get_cursor(0)[2] + 1
-  local before = col > 1 and line:sub(1, col - 1):reverse():match(match):reverse() or ""
-  local after = line:sub(col):match(match) or ""
-  -- special case when the cursor is on the left surrounding char
-  if #before == 0 and #after == 0 and #line > col then
+  -- for normal mode, the col position need include char under cursor
+  if col > 1 and vim.fn.mode() == "n" then
     col = col + 1
-    after = line:sub(col):match(match) or ""
   end
+  local before = col > 1 and line:sub(1, col - 1):reverse():match(match):reverse() or ""
   opts.cwd = find_file_path(before)
   opts.prompt = get_prompt(opts.cwd)
   opts.complete = function(selected, o, l, _)
