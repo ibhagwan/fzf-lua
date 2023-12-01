@@ -728,6 +728,7 @@ M.live_workspace_symbols = function(opts)
     config.resume_set(
       what == "query" and "lsp_query" or what, val,
       { __resume_key = o.__resume_key })
+    utils.map_set(config, "__resume_data.last_query", val)
   end
   opts.__resume_get = function(what, o)
     return config.resume_get(
