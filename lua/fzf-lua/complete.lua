@@ -86,9 +86,6 @@ local set_cmp_opts_path = function(opts)
   opts.complete = function(selected, o, l, _)
     -- query fuzzy matching is empty
     if #selected == 0 then return end
-    print(o)
-    print("l: " .. l)
-    print("_: " .. _)
     return line:sub(1, col - 1) .. selected[1] .. line:sub(col)
   end
   return opts
