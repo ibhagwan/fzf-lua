@@ -47,7 +47,7 @@ M.register = function(opts, silent, opts_once)
 end
 
 M.accept_item = function(selected, o)
-  local idx = selected and tonumber(selected[1]:match("^(%d+).")) or nil
+  local idx = selected and tonumber(selected[1]:match("^(%d+)%.")) or nil
   o._on_choice(idx and o._items[idx] or nil, idx)
 end
 
@@ -86,34 +86,34 @@ M.ui_select = function(items, ui_opts, on_choice)
         ui_opts.format_item and ui_opts.format_item(e) or tostring(e)))
   end
 
-  local _opts = _OPTS or {}
+  local opts = _OPTS or {}
 
   -- enables customization per kind (#755)
-  if type(_opts) == "function" then
-    _opts = _opts(ui_opts, items)
+  if type(opts) == "function" then
+    opts = opts(ui_opts, items)
   end
 
-  _opts.fzf_opts = vim.tbl_extend("keep", _opts.fzf_opts or {}, {
+  opts.fzf_opts = vim.tbl_extend("keep", opts.fzf_opts or {}, {
     ["--no-multi"]       = "",
     ["--preview-window"] = "hidden:right:0",
   })
 
   -- Force override prompt or it stays cached (#786)
   local prompt = ui_opts.prompt or "Select one of:"
-  _opts.fzf_opts["--prompt"] = prompt:gsub(":%s?$", "> ")
+  opts.fzf_opts["--prompt"] = prompt:gsub(":%s?$", "> ")
 
   -- save items so we can access them from the action
-  _opts._items = items
-  _opts._on_choice = on_choice
-  _opts._ui_select = ui_opts
+  opts._items = items
+  opts._on_choice = on_choice
+  opts._ui_select = ui_opts
 
-  _opts.actions = vim.tbl_deep_extend("keep",
-    _opts.actions or {}, { ["default"] = M.accept_item })
+  opts.actions = vim.tbl_deep_extend("keep",
+    opts.actions or {}, { ["default"] = M.accept_item })
 
   config.set_action_helpstr(M.accept_item, "accept-item")
 
-  _opts.fn_selected = function(selected, o)
-    config.set_action_helpstr(_opts.actions["default"], nil)
+  opts.fn_selected = function(selected, o)
+    config.set_action_helpstr(opts.actions["default"], nil)
 
     if not selected then
       on_choice(nil, nil)
@@ -121,24 +121,31 @@ M.ui_select = function(items, ui_opts, on_choice)
       actions.act(o.actions, selected, o)
     end
 
-    if _opts.post_action_cb then
-      _opts.post_action_cb()
+    if opts.post_action_cb then
+      opts.post_action_cb()
     end
   end
 
-  -- was this triggered by lsp_code_actions?
-  local opts_once = _OPTS_ONCE
+
+  -- ui.select is code actions
+  -- inherit from defaults if not triggered by lsp_code_actions
+  if not _OPTS_ONCE and ui_opts.kind == "codeaction" then
+    _OPTS_ONCE = config.normalize_opts({}, "lsp.code_actions")
+  end
   if _OPTS_ONCE then
     -- merge and clear the once opts sent from lsp_code_actions.
     -- We also override actions to guarantee a single default
     -- action, otherwise selected[1] will be empty due to
     -- multiple keybinds trigger, sending `--expect` to fzf
-    opts_once = vim.tbl_deep_extend("keep", _OPTS_ONCE, _opts)
-    opts_once.actions = _opts.actions
+    local previewer = _OPTS_ONCE.previewer
+    _OPTS_ONCE.previewer = nil -- can't copy the previewer object
+    opts = vim.tbl_deep_extend("keep", _OPTS_ONCE, opts)
+    opts.actions = { ["default"] = opts.actions["default"] }
+    opts.previewer = previewer
     _OPTS_ONCE = nil
   end
 
-  core.fzf_exec(entries, opts_once or _opts)
+  core.fzf_exec(entries, opts)
 end
 
 return M

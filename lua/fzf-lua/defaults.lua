@@ -191,6 +191,16 @@ M.defaults = {
       title_fnamemodify = function(s) return path.tail(s) end,
       _ctor             = previewers.builtin.buffer_or_file,
     },
+    codeaction = {
+      _ctor     = previewers.builtin.codeaction,
+      diff_opts = { ctxlen = 3 },
+    },
+    codeaction_native = {
+      _ctor     = previewers.fzf.codeaction,
+      diff_opts = { ctxlen = 3 },
+      pager     = vim.fn.executable("delta") == 1
+          and "delta --width=$FZF_PREVIEW_COLUMNS" or nil,
+    },
   },
 }
 
@@ -687,11 +697,8 @@ M.defaults.lsp.finder = {
 M.defaults.lsp.code_actions = {
   prompt           = "Code Actions> ",
   async_or_timeout = 5000,
-  winopts          = {
-    row    = 0.40,
-    height = 0.35,
-    width  = 0.60,
-  },
+  previewer        = "codeaction",
+  -- previewer        = "codeaction_native",
 }
 
 M.defaults.diagnostics = {

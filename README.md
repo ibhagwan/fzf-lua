@@ -734,6 +734,17 @@ require'fzf-lua'.setup {
       -- the preview buffer, define them here instead
       -- ext_ft_override = { ["ksql"] = "sql", ... },
     },
+    -- Code Action previewers, default is "codeaction" (set via `lsp.code_actions.previewer`)
+    -- "codeaction_native" uses fzf's native previewer, recommended when combined with git-delta
+    codeaction = {
+      -- options for vim.diff(): https://neovim.io/doc/user/lua.html#vim.diff()
+      diff_opts = { ctxlen = 3 },
+    },
+    codeaction_native = {
+      diff_opts = { ctxlen = 3 },
+      pager     = vim.fn.executable("delta") == 1
+          and "delta --width=$FZF_PREVIEW_COLUMNS" or nil,
+    },
   },
   -- PROVIDERS SETUP
   -- use `defaults` (table or function) if you wish to set "global-provider" defaults
@@ -1143,11 +1154,10 @@ require'fzf-lua'.setup {
     code_actions = {
         prompt            = 'Code Actions> ',
         async_or_timeout  = 5000,
-        winopts = {
-            row           = 0.40,
-            height        = 0.35,
-            width         = 0.60,
-        },
+        -- when git-delta is installed use "codeaction_native" for beautiful diffs
+        -- try it out with `:FzfLua lsp_code_actions previewer=codeaction_native`
+        -- scroll up to `previewers.codeaction{_native}` for more previewer options
+        previewer        = "codeaction",
     },
     finder = {
         prompt      = "LSP Finder> ",

@@ -841,7 +841,6 @@ M.code_actions = function(opts)
     if not has_code_actions then return end
   end
 
-  opts.previewer = false
   opts.actions = opts.actions or {}
   opts.actions.default = nil
   -- only dereg if we aren't registered

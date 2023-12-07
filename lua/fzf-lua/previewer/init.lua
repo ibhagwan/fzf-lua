@@ -9,6 +9,7 @@ Previewer.fzf.bat_async = function() return require "fzf-lua.previewer.fzf".bat_
 Previewer.fzf.git_diff = function() return require "fzf-lua.previewer.fzf".git_diff end
 Previewer.fzf.man_pages = function() return require "fzf-lua.previewer.fzf".man_pages end
 Previewer.fzf.help_tags = function() return require "fzf-lua.previewer.fzf".help_tags end
+Previewer.fzf.codeaction = function() return require "fzf-lua.previewer.codeaction".native end
 
 Previewer.builtin = {}
 Previewer.builtin.buffer_or_file = function()
@@ -23,5 +24,6 @@ Previewer.builtin.quickfix = function() return require "fzf-lua.previewer.builti
 Previewer.builtin.highlights = function() return require "fzf-lua.previewer.builtin".highlights end
 Previewer.builtin.autocmds = function() return require "fzf-lua.previewer.builtin".autocmds end
 Previewer.builtin.keymaps = function() return require "fzf-lua.previewer.builtin".keymaps end
+Previewer.builtin.codeaction = function() return require "fzf-lua.previewer.codeaction".builtin end
 
 return Previewer
