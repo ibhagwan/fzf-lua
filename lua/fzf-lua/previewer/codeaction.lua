@@ -116,12 +116,10 @@ local function diff_workspace_edit(workspace_edit, offset_encoding, diff_opts)
   return diff
 end
 
--- https://github.com/neovim/neovim/blob/v0.9.4/runtime/lua/vim/lsp/buf.lua#L666
-local function preview_from_tuple(tuple, diff_opts)
-  assert(type(tuple) == "table" and #tuple > 1)
+local function diff_tuple(tuple, diff_opts)
   local action = tuple[2]
   if action.edit then
-    local client = assert(vim.lsp.get_client_by_id(tuple[1]))
+    local client = vim.lsp.get_client_by_id(tuple[1])
     return diff_workspace_edit(action.edit, client.offset_encoding, diff_opts)
   else
     local command = type(action.command) == "table" and action.command or action
@@ -132,6 +130,39 @@ local function preview_from_tuple(tuple, diff_opts)
         and string.format("command:%s", command.command)
         or string.format("kind:%s", action.kind))
     }
+  end
+end
+
+-- https://github.com/neovim/neovim/blob/v0.9.4/runtime/lua/vim/lsp/buf.lua#L666
+local function preview_action_tuple(tuple, diff_opts, callback)
+  local client = assert(vim.lsp.get_client_by_id(tuple[1]))
+  local action = tuple[2]
+  if
+      not action.edit
+      and client
+      and vim.tbl_get(client.server_capabilities, "codeActionProvider", "resolveProvider")
+  then
+    local function on_result(diff_callback, err, resolved_action)
+      if err then
+        vim.notify(err.code .. ": " .. err.message, vim.log.levels.ERROR)
+        return diff_callback(tuple, diff_opts)
+      else
+        return diff_callback({ tuple[1], resolved_action }, diff_opts)
+      end
+    end
+
+    if callback then
+      client.request("codeAction/resolve", action, function(err, resolved_action)
+        on_result(callback, err, resolved_action)
+      end)
+      return { string.format("Resolving action (%s)...", action.kind) }
+    else
+      local res = client.request_sync("codeAction/resolve", action)
+      local err, resolved_action = res.err, res.result
+      return on_result(diff_tuple, err, resolved_action)
+    end
+  else
+    return diff_tuple(tuple, diff_opts)
   end
 end
 
@@ -160,7 +191,14 @@ function M.builtin:populate_preview_buf(entry_str)
   local idx = tonumber(entry_str:match("^%d+%."))
   assert(type(idx) == "number")
   local tuple = self.opts._items[idx]
-  local lines = preview_from_tuple(tuple, self.diff_opts)
+  local lines = preview_action_tuple(tuple, self.diff_opts,
+    -- use the async version for "codeAction/resolve"
+    function(resolved_tuple)
+      if vim.api.nvim_buf_is_valid(self.tmpbuf) then
+        vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false,
+          diff_tuple(resolved_tuple, self.diff_opts))
+      end
+    end)
   self.tmpbuf = self:get_tmp_buffer()
   vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(self.tmpbuf, "filetype", "git")
@@ -186,7 +224,7 @@ function M.native:cmdline(o)
     local idx = tonumber(entries[1]:match("^%d+%."))
     assert(type(idx) == "number")
     local tuple = self.opts._items[idx]
-    local lines = preview_from_tuple(tuple, self.diff_opts)
+    local lines = preview_action_tuple(tuple, self.diff_opts)
     return table.concat(lines, "\r\n")
   end, "{}", self.opts.debug)
   if self.pager and #self.pager > 0 and vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
