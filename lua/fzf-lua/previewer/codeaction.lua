@@ -213,7 +213,7 @@ function M.native:new(o, opts, fzf_win)
   assert(opts._ui_select and opts._ui_select.kind == "codeaction")
   M.native.super.new(self, o, opts, fzf_win)
   setmetatable(self, M.native)
-  self.pager = o.pager or opts.preview_pager
+  self.pager = opts.preview_pager == nil and o.pager or opts.preview_pager
   self.diff_opts = o.diff_opts
   return self
 end
