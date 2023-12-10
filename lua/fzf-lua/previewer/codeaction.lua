@@ -125,7 +125,7 @@ local function diff_tuple(tuple, diff_opts)
     local command = type(action.command) == "table" and action.command or action
     return {
       string.format(
-        "Code action preview is only available for document/worksapce edits (%s).",
+        "Code action preview is only available for document/workspace edits (%s).",
         command and type(command.command) == "string"
         and string.format("command:%s", command.command)
         or string.format("kind:%s", action.kind))
