@@ -135,6 +135,11 @@ end
 
 -- https://github.com/neovim/neovim/blob/v0.9.4/runtime/lua/vim/lsp/buf.lua#L666
 local function preview_action_tuple(tuple, diff_opts, callback)
+  -- neovim changed the ui.select params with 0.10.0 (#947)
+  -- { client_id, action } ==> { ctx = <LSP context>, action = <action> }
+  if tuple.ctx then
+    tuple = { tuple.ctx.client_id, tuple.action }
+  end
   local client = assert(vim.lsp.get_client_by_id(tuple[1]))
   local action = tuple[2]
   if
