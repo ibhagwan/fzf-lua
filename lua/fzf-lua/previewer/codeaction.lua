@@ -167,8 +167,13 @@ local function preview_action_tuple(tuple, diff_opts, callback)
       return { string.format("Resolving action (%s)...", action.kind) }
     else
       local res = client.request_sync("codeAction/resolve", action)
-      local err, resolved_action = res.err, res.result
-      return on_result(diff_tuple, err, resolved_action)
+      local err, resolved_action = res and res.err, res and res.result
+      if type(err) == "table" or type(resolved_action) == "table" then
+        return on_result(diff_tuple, err, resolved_action)
+      else
+        -- display the default "unsupported" message
+        return diff_tuple(nil, tuple, diff_opts)
+      end
     end
   else
     return diff_tuple(nil, tuple, diff_opts)
