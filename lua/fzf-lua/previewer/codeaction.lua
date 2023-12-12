@@ -116,7 +116,12 @@ local function diff_workspace_edit(workspace_edit, offset_encoding, diff_opts)
   return diff
 end
 
-local function diff_tuple(tuple, diff_opts)
+local function diff_tuple(err, tuple, diff_opts)
+  if err then
+    return {
+      string.format('"codeAction/resolve" failed with error %d: %s', err.code, err.message)
+    }
+  end
   local action = tuple[2]
   if action.edit then
     local client = vim.lsp.get_client_by_id(tuple[1])
@@ -149,10 +154,9 @@ local function preview_action_tuple(tuple, diff_opts, callback)
   then
     local function on_result(diff_callback, err, resolved_action)
       if err then
-        vim.notify(err.code .. ": " .. err.message, vim.log.levels.ERROR)
-        return diff_callback(tuple, diff_opts)
+        return diff_callback(err, tuple, diff_opts)
       else
-        return diff_callback({ tuple[1], resolved_action }, diff_opts)
+        return diff_callback(err, { tuple[1], resolved_action }, diff_opts)
       end
     end
 
@@ -167,7 +171,7 @@ local function preview_action_tuple(tuple, diff_opts, callback)
       return on_result(diff_tuple, err, resolved_action)
     end
   else
-    return diff_tuple(tuple, diff_opts)
+    return diff_tuple(nil, tuple, diff_opts)
   end
 end
 
@@ -198,10 +202,10 @@ function M.builtin:populate_preview_buf(entry_str)
   local tuple = self.opts._items[idx]
   local lines = preview_action_tuple(tuple, self.diff_opts,
     -- use the async version for "codeAction/resolve"
-    function(resolved_tuple)
+    function(err, resolved_tuple)
       if vim.api.nvim_buf_is_valid(self.tmpbuf) then
         vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false,
-          diff_tuple(resolved_tuple, self.diff_opts))
+          diff_tuple(err, resolved_tuple, self.diff_opts))
       end
     end)
   self.tmpbuf = self:get_tmp_buffer()
