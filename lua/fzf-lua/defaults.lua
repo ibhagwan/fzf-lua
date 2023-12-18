@@ -141,17 +141,17 @@ M.defaults = {
       _ctor = previewers.fzf.cmd,
     },
     bat = {
-      cmd   = "bat",
+      cmd   = vim.fn.executable("batcat") == 1 and "batcat" or "bat",
       args  = "--color=always --style=numbers,changes",
       _ctor = previewers.fzf.bat_async,
     },
     bat_native = {
-      cmd   = "bat",
+      cmd   = vim.fn.executable("batcat") == 1 and "batcat" or "bat",
       args  = "--color=always --style=numbers,changes",
       _ctor = previewers.fzf.bat,
     },
     bat_async = {
-      cmd   = "bat",
+      cmd   = vim.fn.executable("batcat") == 1 and "batcat" or "bat",
       args  = "--color=always --style=numbers,changes",
       _ctor = previewers.fzf.bat_async,
     },
