@@ -7,6 +7,10 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+---@param opts table
+---@param search_query string
+---@param no_esc boolean
+---@return string
 local get_grep_cmd = function(opts, search_query, no_esc)
   if opts.raw_cmd and #opts.raw_cmd > 0 then
     return opts.raw_cmd
@@ -191,7 +195,7 @@ local function normalize_live_grep_opts(opts)
   opts.query = opts.search or ""
   if opts.search and #opts.search > 0 then
     -- escape unless the user requested not to
-    if not (opts.no_esc) then
+    if not opts.no_esc then
       opts.query = utils.rg_escape(opts.search)
     end
   end
@@ -230,7 +234,6 @@ M.live_grep_st = function(opts)
   core.fzf_exec(nil, opts)
 end
 
-
 -- multi threaded (multi-process actually) version
 M.live_grep_mt = function(opts)
   opts = normalize_live_grep_opts(opts)
@@ -253,7 +256,7 @@ M.live_grep_mt = function(opts)
   -- FIELD INDEX EXPRESSION by 'fzf_exec'
   opts.cmd = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
   local command = core.mt_cmd_wrapper(opts)
-  if command ~= opts.cmd then
+  if command ~= opts.cmd then --[[@cast command -function]]
     -- this means mt_cmd_wrapper wrapped the command.
     -- Since now the `rg` command is wrapped inside
     -- the shell escaped '--headless .. --cmd', we won't

@@ -5,6 +5,8 @@
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf.lua
 local uv = vim.loop
 
+local utils = require "fzf-lua.utils"
+
 local M = {}
 
 -- workaround to a potential 'tempname' bug? (#222)
@@ -27,9 +29,72 @@ local function tempname()
   return tmpname
 end
 
+---Escaping `"` inside a pair of `"` by converting it to `""` as vim.fn.shellescape does, doesn't work.
+---
+---This function escapes `"` inside a pair of `"` doing the following:
+--- - If there is two quotes (`""`), it's interpreted as a quote that should be sended to the nested
+--- cmd intance spawned by fzf, so it becomes `\"`. E.g. `--cwd=""C:/users/some path/with spaces""`
+--- -> `--cwd=\"C:/users/some path/with spaces\"`
+--- - If there is at least three quotes (`"""`), it's interpreted as a lua string (should be ignored
+--- by cmd), so it becomes `"""""""""`. E.g. `require(""""make_entry"""")` -> `require("""""""""make_entry""""""""")`
+---@param str string
+---@return string
+local function windows_cmd_escape(str)
+  ---@type string[]
+  local out = {}
+
+  local inside_quotes = false
+
+  local quote = string.byte('"')
+
+  ---@type integer?
+  local last_quote
+
+  local n = 1
+  while n <= #str do
+    local previous = str:byte(n - 1)
+    local current = str:byte(n)
+    local next = str:byte(n + 1)
+    local next_next = str:byte(n + 2)
+
+    if inside_quotes and current == quote and next ~= quote and (previous ~= quote or last_quote == n - 1) then
+      -- current is closing quote
+      inside_quotes = false
+      last_quote = nil
+      table.insert(out, string.char(current))
+    elseif not inside_quotes and current == quote then
+      -- current is opening quote
+      inside_quotes = true
+      last_quote = n
+      table.insert(out, string.char(current))
+    elseif inside_quotes and current == quote and next == quote and next_next == quote then
+      -- current is lua string
+
+      while next == quote do
+        n = n + 1
+        next = str:byte(n + 1)
+      end
+
+      table.insert(out, '"""""""""') -- needed because the quotes have to go through 2 cmd.exe
+    elseif inside_quotes and current == quote and next == quote then
+      -- current is nested quote
+      table.insert(out, "\\")
+    else
+      table.insert(out, string.char(current))
+    end
+    n = n + 1
+  end
+  return table.concat(out)
+end
+
 -- contents can be either a table with tostring()able items, or a function that
 -- can be called repeatedly for values. The latter can use coroutines for async
 -- behavior.
+---@param contents string[]|table|function?
+---@param fzf_cli_args string?
+---@param opts table
+---@return table selected
+---@return integer exit_code
 function M.raw_fzf(contents, fzf_cli_args, opts)
   if not coroutine.running() then
     error("[Fzf-lua] function must be called inside a coroutine.")
@@ -38,7 +103,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   if not opts then opts = {} end
   local cwd = opts.fzf_cwd or opts.cwd
   local cmd = opts.fzf_bin or "fzf"
-  local fifotmpname = tempname()
+  local fifotmpname = utils.__IS_WINDOWS and utils.windows_pipename() or tempname()
   local outputtmpname = tempname()
 
   -- we use a temporary env $FZF_DEFAULT_COMMAND instead of piping
@@ -81,12 +146,25 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   local fd, output_pipe = nil, nil
   local finish_called = false
   local write_cb_count = 0
+  local windows_pipe_server = nil
+  ---@type function|nil
+  local handle_contents
 
-  -- Create the output pipe
-  -- We use tbl for perf reasons, from ':help system':
-  --  If {cmd} is a List it runs directly (no 'shell')
-  --  If {cmd} is a String it runs in the 'shell'
-  vim.fn.system({ "mkfifo", fifotmpname })
+  if utils.__IS_WINDOWS then
+    windows_pipe_server = uv.new_pipe(false)
+    windows_pipe_server:bind(fifotmpname)
+    windows_pipe_server:listen(16, function()
+      output_pipe = uv.new_pipe(false)
+      windows_pipe_server:accept(output_pipe)
+      handle_contents()
+    end)
+  else
+    -- Create the output pipe
+    -- We use tbl for perf reasons, from ':help system':
+    --  If {cmd} is a List it runs directly (no 'shell')
+    --  If {cmd} is a String it runs in the 'shell'
+    vim.fn.system({ "mkfifo", fifotmpname })
+  end
 
   local function finish(_)
     -- mark finish once called
@@ -147,6 +225,23 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     end
   end
 
+  handle_contents = vim.schedule_wrap(function()
+    -- this part runs in the background. When the user has selected, it will
+    -- error out, but that doesn't matter so we just break out of the loop.
+    if contents then
+      if type(contents) == "table" then
+        if not vim.tbl_isempty(contents) then
+          write_cb(vim.tbl_map(function(x)
+            return x .. "\n"
+          end, contents))
+        end
+        finish(4)
+      else
+        contents(usr_write_cb(true), usr_write_cb(false), output_pipe)
+      end
+    end
+  end)
+
   -- I'm not sure why this happens (probably a neovim bug) but when pressing
   -- <C-c> in quick successsion immediately after opening the window neovim
   -- hangs the CPU at 100% at the last `coroutine.yield` before returning from
@@ -202,11 +297,21 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
 
   local co = coroutine.running()
   local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or vim.fn.termopen
-  jobstart({ "sh", "-c", cmd }, {
+  local shell = utils.__IS_WINDOWS and "cmd" or "sh"
+  ---@type string
+  local shell_cmd
+  if utils.__IS_WINDOWS then
+    cmd = windows_cmd_escape(cmd)
+    shell_cmd = { shell, "/d", "/e:off", "/f:off", "/v:off", "/c", cmd }
+  else
+    shell_cmd = { shell, "-c", cmd }
+  end
+
+  jobstart(shell_cmd, {
     cwd = cwd,
     pty = true,
     env = {
-      ["SHELL"] = "sh",
+      ["SHELL"] = shell,
       ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
       ["SKIM_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
     },
@@ -220,7 +325,11 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
         f:close()
       end
       finish(1)
-      vim.fn.delete(fifotmpname)
+      if windows_pipe_server then
+        windows_pipe_server:close()
+      end
+      -- in windows, pipes that are not used are automatically cleaned up
+      if not utils.__IS_WINDOWS then vim.fn.delete(fifotmpname) end
       vim.fn.delete(outputtmpname)
       if #output == 0 then output = nil end
       coroutine.resume(co, output, rc)
@@ -260,25 +369,16 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     goto wait_for_fzf
   end
 
-  -- have to open this after there is a reader (termopen)
-  -- otherwise this will block
-  fd = uv.fs_open(fifotmpname, "w", -1)
-  output_pipe = uv.new_pipe(false)
-  output_pipe:open(fd)
-  -- print(output_pipe:getpeername())
-
-  -- this part runs in the background. When the user has selected, it will
-  -- error out, but that doesn't matter so we just break out of the loop.
-  if contents then
-    if type(contents) == "table" then
-      if not vim.tbl_isempty(contents) then
-        write_cb(vim.tbl_map(function(x) return x .. "\n" end, contents))
-      end
-      finish(4)
-    else
-      contents(usr_write_cb(true), usr_write_cb(false), output_pipe)
-    end
+  if not utils.__IS_WINDOWS then
+    -- have to open this after there is a reader (termopen)
+    -- otherwise this will block
+    fd = uv.fs_open(fifotmpname, "w", -1)
+    output_pipe = uv.new_pipe(false)
+    output_pipe:open(fd)
+    -- print(output_pipe:getpeername())
+    handle_contents()
   end
+
 
   ::wait_for_fzf::
   return coroutine.yield()

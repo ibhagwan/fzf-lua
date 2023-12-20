@@ -259,6 +259,10 @@ M.get_diff_files = function(opts)
   return diff_files
 end
 
+---@param query string
+---@param opts table
+---@return string search_query
+---@return string? glob_args
 M.glob_parse = function(query, opts)
   if not query or not query:find(opts.glob_separator) then
     return query, nil
@@ -278,6 +282,10 @@ end
 
 -- reposition args before ` -e <pattern>` or ` -- <pattern>`
 -- enables "-e" and "--fixed-strings --" in `rg_opts` (#781, #794)
+---@param cmd string
+---@param args string
+---@param relocate_pattern string?
+---@return string
 M.rg_insert_args = function(cmd, args, relocate_pattern)
   local patterns = {}
   for _, a in ipairs({
@@ -361,7 +369,10 @@ M.preprocess = function(opts)
     opts.cmd = opts.cmd:gsub("{argv.*}",
       function(x)
         local idx = x:match("{argv(.*)}")
-        return vim.fn.shellescape(argv(idx))
+        -- \\ -> \ characters from a regular lua strings being inserted into a literal lua strings cause problems
+        -- " -> """ vim.fn.shellescape wrongly adds an additional final "
+        return utils.__IS_WINDOWS and argv(idx):gsub([[\\]], [[\]]):gsub('"', '"""')
+            or vim.fn.shellescape(argv(idx))
       end)
   end
 
@@ -384,11 +395,15 @@ end
 
 local COLON_BYTE = string.byte(":")
 
+---@param x string
+---@param opts table
+---@return string entry
 M.file = function(x, opts)
   opts = opts or {}
   local ret = {}
   local icon, hl
   local colon_idx = utils.find_next_char(x, COLON_BYTE) or 0
+  if utils.__IS_WINDOWS then colon_idx = utils.find_next_char(x, COLON_BYTE, colon_idx) or 0 end
   local file_part = colon_idx > 1 and x:sub(1, colon_idx - 1) or x
   local rest_of_line = colon_idx > 1 and x:sub(colon_idx) or nil
   -- strip ansi coloring from path so we can use filters

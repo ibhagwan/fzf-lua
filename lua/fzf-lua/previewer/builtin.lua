@@ -304,6 +304,7 @@ function Previewer.base:zero(_)
   -- https://github.com/junegunn/fzf/issues/3516
   --
   self._zero_lock = self._zero_lock or vim.fn.tempname()
+  if utils.__IS_WINDOWS then self._zero_lock = vim.fs.normalize(self._zero_lock) end
   local act = string.format("execute-silent(mkdir %s && %s)",
     libuv.shellescape(self._zero_lock),
     shell.raw_action(function(_, _, _)

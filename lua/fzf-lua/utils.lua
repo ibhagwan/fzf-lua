@@ -12,6 +12,7 @@ M.__HAS_NVIM_07 = vim.fn.has("nvim-0.7") == 1
 M.__HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
 M.__HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
 M.__HAS_NVIM_010 = vim.fn.has("nvim-0.10") == 1
+M.__IS_WINDOWS = vim.fn.has("win32") == 1
 
 
 -- limit devicons support to nvim >=0.8, although official support is >=0.7
@@ -83,6 +84,9 @@ M._if = function(bool, a, b)
   end
 end
 
+---@param inputstr string
+---@param sep string
+---@return string[]
 M.strsplit = function(inputstr, sep)
   local t = {}
   for str in string.gmatch(inputstr, "([^" .. sep .. "]+)") do
@@ -101,6 +105,9 @@ M.find_last_char = function(str, c)
   end
 end
 
+---@param str string
+---@param c integer
+---@param start_idx integer
 M.find_next_char = function(str, c, start_idx)
   for i = start_idx or 1, #str do
     if string_byte(str, i) == c then
@@ -147,13 +154,16 @@ function M.is_darwin()
   return vim.loop.os_uname().sysname == "Darwin"
 end
 
+---@param str string
+---@return string
 function M.rg_escape(str)
   if not str then return str end
   --  [(~'"\/$?'`*&&||;[]<>)]
   --  escape "\~$?*|[()^-."
-  return str:gsub("[\\~$?*|{\\[()^%-%.%+]", function(x)
+  local ret = str:gsub("[\\~$?*|{\\[()^%-%.%+]", function(x)
     return "\\" .. x
   end)
+  return ret
 end
 
 function M.sk_escape(str)
@@ -282,7 +292,6 @@ M.read_file_async = function(filepath, callback)
   end)
 end
 
-
 -- deepcopy can fail with: "Cannot deepcopy object of type userdata" (#353)
 -- this can happen when copying items/on_choice params of vim.ui.select
 -- run in a pcall and fallback to our poor man's clone
@@ -345,6 +354,10 @@ end
 -- Set map value for string key
 -- e.g. `map_set(m, "key.sub1.sub2", value)`
 -- if need be, build map tree as we go along
+---@param m table?
+---@param k string
+---@param v unknown
+---@return table<string, unknown>
 function M.map_set(m, k, v)
   m = m or {}
   local keys = M.strsplit(k, ".")
@@ -361,6 +374,8 @@ function M.map_set(m, k, v)
   return m
 end
 
+---@param m table<string, unknown>?
+---@return table<string, unknown>?
 function M.map_tolower(m)
   if not m then
     return
@@ -627,6 +642,9 @@ function M.setup_devicon_term_hls()
   pcall(loadstring("require'fzf-lua.make_entry'.setup_devicon_term_hls()"))
 end
 
+---@param fname string
+---@param name string
+---@param silent boolean
 function M.load_profile(fname, name, silent)
   local profile = name or fname:match("([^%p]+)%.lua$") or "<unknown>"
   local ok, res = pcall(dofile, fname)
@@ -830,9 +848,7 @@ end
 
 -- Close a buffer without triggering an autocmd
 function M.nvim_buf_delete(bufnr, opts)
-  if not vim.api.nvim_buf_is_valid(bufnr) then
-    return
-  end
+  if not vim.api.nvim_buf_is_valid(bufnr) then return end
   local save_ei = vim.o.eventignore
   vim.o.eventignore = "all"
   vim.api.nvim_buf_delete(bufnr, opts)
@@ -928,6 +944,7 @@ function M.neovim_bind_to_fzf(key)
     ["c"] = "ctrl",
     ["s"] = "shift",
   }
+
   key            = key:lower():gsub("[<>]", "")
   for k, v in pairs(conv_map) do
     key = key:gsub(k .. "%-", v .. "-")
@@ -955,6 +972,13 @@ end
 function M.find_version()
   local out, rc = M.io_systemlist({ "find", "--version" })
   return rc == 0 and tonumber(out[1]:match("(%d+.%d+)")) or nil
+end
+
+---@return string
+function M.windows_pipename()
+  local tmpname = vim.fn.tempname()
+  tmpname = string.gsub(tmpname, "\\", "")
+  return ([[\\.\pipe\%s]]):format(tmpname)
 end
 
 return M

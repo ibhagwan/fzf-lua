@@ -10,6 +10,7 @@ if utils.__HAS_DEVICONS then
   -- get the devicons module path
   M._devicons_path = M._has_devicons and M._devicons and M._devicons.setup
       and debug.getinfo(M._devicons.setup, "S").source:gsub("^@", "")
+  if utils.__IS_WINDOWS then M._devicons_path = vim.fs.normalize(M._devicons_path) end
 end
 
 M._diricon_escseq = function()
@@ -120,6 +121,8 @@ M.resume_set = function(what, val, opts)
   -- _G.dump("resume_set", key1, utils.map_get(M, key1))
 end
 
+---@param opts {resume: boolean, __call_opts: table}
+---@return table
 function M.resume_opts(opts)
   assert(opts.resume and opts.__call_opts)
   local __call_opts = M.resume_get(nil, opts)
@@ -191,6 +194,9 @@ do
   m.globals = M.globals
 end
 
+---@param opts table<string, unknown>|fun():table?
+---@param globals string|table?
+---@param __resume_key string?
 function M.normalize_opts(opts, globals, __resume_key)
   if not opts then opts = {} end
 
@@ -236,6 +242,8 @@ function M.normalize_opts(opts, globals, __resume_key)
   end
 
   -- normalize all binds as lowercase or we can have duplicate keys (#654)
+  ---@param m {fzf: table<string, unknown>, builtin: table<string, unknown>}
+  ---@return {fzf: table<string, unknown>, builtin: table<string, unknown>}?
   local keymap_tolower = function(m)
     return m and {
       fzf = utils.map_tolower(m.fzf),
