@@ -300,6 +300,8 @@ function FzfWin:reset_win_highlights(win)
   vim.api.nvim_win_set_option(win, "winhighlight", hl)
 end
 
+---@param exit_code integer
+---@param fzf_bufnr integer
 function FzfWin:check_exit_status(exit_code, fzf_bufnr)
   -- see the comment in `FzfWin:close` for more info
   if fzf_bufnr and fzf_bufnr ~= self.fzf_bufnr then
@@ -342,6 +344,8 @@ local function opt_matches(opts, key, str)
   return opt and opt:match(str)
 end
 
+---@param o table
+---@return FzfWin
 function FzfWin:new(o)
   if _self then
     -- utils.warn("Please close fzf-lua before starting a new instance")

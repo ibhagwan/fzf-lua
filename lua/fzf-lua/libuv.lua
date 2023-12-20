@@ -1,5 +1,7 @@
 local uv = vim.loop
 
+local is_windows = vim.fn.has("win32") == 1
+
 local M = {}
 
 -- path to current file
@@ -97,6 +99,9 @@ local function coroutinify(fn)
   end
 end
 
+---@param opts {cwd: string, cmd: string, cb_finish: function, cb_write: function, cb_pid: function, fn_transform: function?}
+---@param fn_transform function?
+---@param fn_done function?
 M.spawn = function(opts, fn_transform, fn_done)
   local output_pipe = uv.new_pipe(false)
   local error_pipe = uv.new_pipe(false)
@@ -119,10 +124,14 @@ M.spawn = function(opts, fn_transform, fn_done)
 
   -- https://github.com/luvit/luv/blob/master/docs.md
   -- uv.spawn returns tuple: handle, pid
-  local handle, pid = uv.spawn("sh", {
-    args = { "-c", opts.cmd },
+  local shell = is_windows and "cmd" or "sh"
+  local args = is_windows and { "/d", "/e:off", "/f:off", "/v:off", "/c", opts.cmd }
+      or { "-c", opts.cmd }
+  local handle, pid = uv.spawn(shell, {
+    args = args,
     stdio = { nil, output_pipe, error_pipe },
-    cwd = opts.cwd
+    cwd = opts.cwd,
+    verbatim = is_windows,
   }, function(code, signal)
     output_pipe:read_stop()
     error_pipe:read_stop()
@@ -256,7 +265,9 @@ end
 
 M.async_spawn = coroutinify(M.spawn)
 
-
+---@param opts {cmd: string, cwd: string, cb_pid: function, cb_finish: function, cb_write: function}
+---@param fn_transform function?
+---@param fn_preprocess function?
 M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess)
   assert(not fn_transform or type(fn_transform) == "function")
 
@@ -292,7 +303,12 @@ M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess)
   end
 end
 
+---@param opts table
+---@param fn_transform string
+---@param fn_preprocess string
 M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
+  ---@param fn_str string
+  ---@return function?
   local function load_fn(fn_str)
     if type(fn_str) ~= "string" then return end
     local fn_loaded = nil
@@ -323,7 +339,6 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
 
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
-
 
   if opts.debug then
     io.stdout:write("[DEBUG]: " .. opts.cmd .. "\n")
@@ -469,23 +484,34 @@ M.shellescape = function(s)
   end
 end
 
+---@param opts string
+---@param fn_transform string?
+---@param fn_preprocess string?
+---@return string
 M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
   assert(opts and type(opts) == "string")
   assert(not fn_transform or type(fn_transform) == "string")
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and ""
-      or string.format("VIMRUNTIME=%s ", M.shellescape(vim.env.VIMRUNTIME))
+      or string.format(
+        is_windows and 'set "VIMRUNTIME=%s" & ' or "VIMRUNTIME=%s ",
+        is_windows and vim.fs.normalize(vim.env.VIMRUNTIME) or M.shellescape(vim.env.VIMRUNTIME)
+      )
   local call_args = opts
   for _, fn in ipairs({ fn_transform, fn_preprocess }) do
     if type(fn) == "string" then
       call_args = ("%s,[[%s]]"):format(call_args, fn)
     end
   end
+  local cmd = ("lua loadfile([[%s]])().spawn_stdio(%s)"):format(
+    is_windows and vim.fs.normalize(__FILE__) or __FILE__,
+    call_args
+  )
   local cmd_str = ("%s%s -n --headless --clean --cmd %s"):format(
     nvim_runtime,
     M.shellescape(nvim_bin),
-    M.shellescape(("lua loadfile([[%s]])().spawn_stdio(%s)")
-      :format(__FILE__, call_args)))
+    M.shellescape(cmd)
+  )
   return cmd_str
 end
 

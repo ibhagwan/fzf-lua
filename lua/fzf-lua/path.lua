@@ -42,6 +42,8 @@ function M.tail(path)
   return path
 end
 
+---@param path string
+---@return string
 function M.extension(path)
   for i = #path, 1, -1 do
     if string_byte(path, i) == 46 then
@@ -57,6 +59,8 @@ function M.to_matching_str(path)
   return utils.lua_regex_escape(path)
 end
 
+---@param paths string[]
+---@return string
 function M.join(paths)
   -- gsub to remove double separator
   local ret = table.concat(paths, M.SEPARATOR):gsub(M.SEPARATOR .. M.SEPARATOR, M.SEPARATOR)
@@ -138,15 +142,19 @@ M.HOME = function()
     -- use 'os.getenv' instead of 'vim.env' due to (#452):
     -- E5560: nvim_exec must not be called in a lua loop callback
     -- M.__HOME = vim.env.HOME
-    M.__HOME = os.getenv("HOME")
+    M.__HOME = utils.__IS_WINDOWS and os.getenv("USERPROFILE") or os.getenv("HOME")
   end
   return M.__HOME
 end
 
+---@param path string?
+---@return string?
 function M.tilde_to_HOME(path)
   return path and path:gsub("^~", M.HOME()) or nil
 end
 
+---@param path string?
+---@return string?
 function M.HOME_to_tilde(path)
   return path and path:gsub("^" .. utils.lua_regex_escape(M.HOME()), "~") or nil
 end

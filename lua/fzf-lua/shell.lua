@@ -1,6 +1,7 @@
 -- modified version of:
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf/actions.lua
 local uv = vim.loop
+local utils = require "fzf-lua.utils"
 local path = require "fzf-lua.path"
 local libuv = require "fzf-lua.libuv"
 
@@ -80,7 +81,10 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- 'nvim', it can be something else
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and ""
-      or string.format("VIMRUNTIME=%s ", libuv.shellescape(vim.env.VIMRUNTIME))
+      or string.format(utils.__IS_WINDOWS
+        and [[set "VIMRUNTIME=%s" & ]] or "VIMRUNTIME=%s ",
+        utils.__IS_WINDOWS and vim.fs.normalize(vim.env.VIMRUNTIME) or
+        libuv.shellescape(vim.env.VIMRUNTIME))
 
   local call_args = ("fzf_lua_server=[[%s]], fnc_id=%d %s"):format(
     vim.g.fzf_lua_server, id, debug and ", debug=true" or "")

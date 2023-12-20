@@ -76,8 +76,12 @@ local contents_from_arr = function(cont_arr)
   return contents
 end
 
+---@alias content table|function|string
+
 -- Main API, see:
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
+---@param contents content
+---@param opts {fn_reload: string|function, fn_transform: function, __fzf_init_cmd: string, _normalized: boolean}
 M.fzf_exec = function(contents, opts)
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
@@ -117,7 +121,7 @@ M.fzf_exec = function(contents, opts)
       -- the caller requested to transform, we need to convert
       -- to a function that returns string so that libuv.spawn
       -- is called
-      local cmd = opts.fn_reload
+      local cmd = opts.fn_reload --[[@as string]]
       opts.fn_reload = function(q)
         if cmd:match(M.fzf_query_placeholder) then
           return cmd:gsub(M.fzf_query_placeholder, q or "")
@@ -156,6 +160,10 @@ M.fzf_resume = function(opts)
   M.fzf_exec(config.__resume_data.contents, opts)
 end
 
+---@param opts table
+---@param contents content
+---@param fn_selected function?
+---@return function
 M.fzf_wrap = function(opts, contents, fn_selected)
   opts = opts or {}
   return coroutine.wrap(function()
@@ -211,6 +219,9 @@ M.CTX = function(includeBuflist)
   return M.__CTX
 end
 
+---@param contents content
+---@param opts table?
+---@return string[]?
 M.fzf = function(contents, opts)
   -- Disable opening from the command-line window `:q`
   -- creates all kinds of issues, will fail on `nvim_win_close`
@@ -376,7 +387,8 @@ M.fzf = function(contents, opts)
   return selected
 end
 
-
+---@param o table
+---@return string
 M.preview_window = function(o)
   local preview_args = ("%s:%s:%s:"):format(
     o.winopts.preview.hidden, o.winopts.preview.border, o.winopts.preview.wrap)
@@ -428,11 +440,7 @@ M.create_fzf_binds = function(binds)
     if type(v) == "table" then
       v = v[1]
     end
-    -- backward compatibility to when binds
-    -- where defined as one string '<key>:<command>'
     if v then
-      local key, action = v:match("(.*):(.*)")
-      if action then k, v = key, action end
       dedup[k] = v
     end
   end
@@ -442,6 +450,8 @@ M.create_fzf_binds = function(binds)
   return vim.fn.shellescape(table.concat(tbl, ","))
 end
 
+---@param opts table
+---@return string
 M.build_fzf_cli = function(opts)
   opts.fzf_opts = vim.tbl_extend("force", config.globals.fzf_opts, opts.fzf_opts or {})
   -- copy from globals
@@ -541,6 +551,9 @@ M.build_fzf_cli = function(opts)
     elseif type(v) == "number" then
       -- convert to string
       v = string.format("%d", v)
+    elseif utils.__IS_WINDOWS and
+        type(v) == "string" and k == "--delimiter" and v:sub(1, 1) == "'" and v:sub(#v, #v) == "'" then
+      v = '"' .. v:sub(2, #v - 1) .. '"'
     end
     if v then
       v = v:gsub(k .. "=", "")
@@ -551,15 +564,21 @@ M.build_fzf_cli = function(opts)
   return cli_args .. extra_args
 end
 
+---@param opts table
+---@return string|function
 M.mt_cmd_wrapper = function(opts)
   assert(opts and opts.cmd)
 
+  ---@param s string
+  ---@return string
   local str_to_str = function(s)
     -- use long format of bracket escape so we can include "]" (#925)
     -- https://www.lua.org/manual/5.4/manual.html#3.1
     return "[==[" .. s .. "]==]"
   end
 
+  ---@param o table<string, unknown>
+  ---@return string
   local opts_to_str = function(o)
     local names = {
       "debug",
@@ -620,7 +639,9 @@ M.mt_cmd_wrapper = function(opts)
     -- due to fzf replacing ' with \ (no idea why)
     if not opts.no_remote_config then
       fn_transform = ([[_G._fzf_lua_server=%s; %s]]):format(
-        libuv.shellescape(vim.g.fzf_lua_server),
+      -- since the server adress is passed inside of `[[]]`, single `\`
+      -- gives an error when trying to eval the string as lua code
+        libuv.shellescape(utils.__IS_WINDOWS and vim.g.fzf_lua_server:gsub("\\", "\\\\") or vim.g.fzf_lua_server),
         fn_transform)
     end
     if config._devicons_setup then
@@ -677,10 +698,15 @@ end
 
 M.set_header = function(opts, hdr_tbl)
   local function normalize_cwd(cwd)
-    if path.starts_with_separator(cwd) and cwd ~= vim.loop.cwd() then
+    local _cwd = vim.loop.cwd()
+    if utils.__IS_WINDOWS then
+      cwd = vim.fs.normalize(cwd)
+      _cwd = vim.fs.normalize(_cwd)
+    end
+    if path.starts_with_separator(cwd) and cwd ~= _cwd then
       -- since we're always converting cwd to full path
       -- try to convert it back to relative for display
-      cwd = path.relative(cwd, vim.loop.cwd())
+      cwd = path.relative(cwd, _cwd)
     end
     -- make our home dir path look pretty
     return path.HOME_to_tilde(cwd)
@@ -807,9 +833,12 @@ end
 
 -- converts actions defined with "reload=true" to use fzf's `reload` bind
 -- provides a better UI experience without a visible interface refresh
+---@param reload_cmd content
+---@param opts table
+---@return table
 M.convert_reload_actions = function(reload_cmd, opts)
-  local fallback
-  local has_reload
+  local fallback ---@type boolean?
+  local has_reload ---@type boolean?
   if opts._is_skim or type(reload_cmd) ~= "string" then
     fallback = true
   end
@@ -892,6 +921,8 @@ end
 
 -- converts actions defined inside 'silent_actions' to use fzf's 'execute-silent'
 -- bind, these actions will not close the UI, e.g. commits|bcommits yank commit sha
+---@param opts table
+---@return table
 M.convert_exec_silent_actions = function(opts)
   if opts._is_skim then
     return opts
@@ -916,6 +947,10 @@ M.convert_exec_silent_actions = function(opts)
   return opts
 end
 
+---@param command string
+---@param fzf_field_expression string
+---@param opts table
+---@return table
 M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
   -- query cannot be 'nil'
   opts.query = opts.query or ""
@@ -987,6 +1022,8 @@ end
 -- query placeholder for "live" queries
 M.fzf_query_placeholder = "<query>"
 
+---@param opts {_is_skim: boolean}
+---@return string
 M.fzf_field_expression = function(opts)
   -- fzf already adds single quotes around the placeholder when expanding.
   -- for skim we surround it with double quotes or single quote searches fail

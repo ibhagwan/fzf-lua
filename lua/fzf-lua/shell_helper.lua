@@ -2,8 +2,17 @@
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/action_helper.lua
 local uv = vim.loop
 
+local is_windows = vim.fn.has("win32") == 1
+
+---@return string
+local function windows_pipename()
+  local tmpname = vim.fn.tempname()
+  tmpname = string.gsub(tmpname, "\\", "")
+  return ([[\\.\pipe\%s]]):format(tmpname)
+end
+
 local function get_preview_socket()
-  local tmp = vim.fn.tempname()
+  local tmp = is_windows and windows_pipename() or vim.fn.tempname()
   local socket = uv.new_pipe(false)
   uv.pipe_bind(socket, tmp)
   return socket, tmp
@@ -21,14 +30,13 @@ uv.listen(preview_socket, 100, function(_)
       uv.close(preview_receive_socket)
       uv.close(preview_socket)
       vim.schedule(function()
-        vim.cmd [[qall]]
+        vim.cmd([[qall]])
       end)
       return
     end
     io.write(data)
   end)
 end)
-
 
 local function rpc_nvim_exec_lua(opts)
   local success, errmsg = pcall(function()
@@ -55,7 +63,7 @@ local function rpc_nvim_exec_lua(opts)
       preview_socket_path,
       fzf_selection,
       tonumber(preview_lines),
-      tonumber(preview_cols)
+      tonumber(preview_cols),
     })
     vim.fn.chanclose(chan_id)
   end)
@@ -74,10 +82,10 @@ local function rpc_nvim_exec_lua(opts)
 
   if not success then
     io.stderr:write(("FzfLua Error: %s\n"):format(errmsg or "<null>"))
-    vim.cmd [[qall]]
+    vim.cmd([[qall]])
   end
 end
 
 return {
-  rpc_nvim_exec_lua = rpc_nvim_exec_lua
+  rpc_nvim_exec_lua = rpc_nvim_exec_lua,
 }

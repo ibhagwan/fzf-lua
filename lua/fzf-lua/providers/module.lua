@@ -37,6 +37,8 @@ M.metatable = function(opts)
   core.fzf_exec(methods, opts)
 end
 
+---@param dir string
+---@param fn fun(fname: string, name: string, type: string)
 local function ls(dir, fn)
   local handle = vim.loop.fs_scandir(dir)
   while handle do

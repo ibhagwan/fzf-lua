@@ -812,8 +812,10 @@ M.set_qflist = function(selected, opts)
   vim.cmd(opts._is_loclist and "lopen" or "copen")
 end
 
+---@param selected string[]
+---@param opts table
 M.apply_profile = function(selected, opts)
-  local fname = selected[1]:match("[^:]+")
+  local fname = utils.__IS_WINDOWS and selected[1]:match("%u?:?[^:]+") or selected[1]:match("[^:]+")
   local profile = selected[1]:match(":([^%s]+)")
   local ok = utils.load_profile(fname, profile, opts.silent)
   if ok then
