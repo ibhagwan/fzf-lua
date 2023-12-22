@@ -149,6 +149,8 @@ local function normalize_live_grep_opts(opts)
       config.resume_set("search", val, { __resume_key = o.__resume_key })
       config.resume_set("no_esc", true, { __resume_key = o.__resume_key })
       utils.map_set(config, "__resume_data.last_query", val)
+      -- also store query for `fzf_resume` (#963)
+      utils.map_set(config, "__resume_data.opts.query", val)
     else
       config.resume_set(what, val, { __resume_key = o.__resume_key })
     end
