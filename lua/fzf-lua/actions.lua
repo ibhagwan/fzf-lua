@@ -593,8 +593,15 @@ end
 
 M.git_yank_commit = function(selected, opts)
   local commit_hash = match_commit_hash(selected[1], opts)
+  if vim.o.clipboard == "unnamed" then
+    vim.fn.setreg([[*]], commit_hash)
+  elseif vim.o.clipboard == "unnamedplus" then
+    vim.fn.setreg([[+]], commit_hash)
+  else
+    vim.fn.setreg([["]], commit_hash)
+  end
+  -- copy to the yank register regardless
   vim.fn.setreg([[0]], commit_hash)
-  vim.fn.setreg([["]], commit_hash)
 end
 
 M.git_checkout = function(selected, opts)
