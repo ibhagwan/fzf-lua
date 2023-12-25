@@ -13,6 +13,13 @@ M.__HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
 M.__HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
 M.__HAS_NVIM_010 = vim.fn.has("nvim-0.10") == 1
 
+
+-- limit devicons support to nvim >=0.8, although official support is >=0.7
+-- running setup on 0.7 errs with "W18: Invalid character in group name"
+if M.__HAS_NVIM_08 then
+  M.__HAS_DEVICONS = pcall(require, "nvim-web-devicons")
+end
+
 function M.__FILE__() return debug.getinfo(2, "S").source end
 
 function M.__LINE__() return debug.getinfo(2, "l").currentline end

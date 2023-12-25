@@ -5,7 +5,7 @@ local previewers = require "fzf-lua.previewer"
 
 local M = {}
 
-M._has_devicons = pcall(require, "nvim-web-devicons")
+M._has_devicons = utils.__HAS_DEVICONS
 
 function M._default_previewer_fn()
   local previewer = M.globals.default_previewer or M.globals.winopts.preview.default

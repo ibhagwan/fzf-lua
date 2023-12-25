@@ -2,18 +2,15 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
 
--- Clear the default command or it would interfere with our options
--- not needed anymore, we are pretty much overriding all options
--- with our cli args, in addition this could conflict with fzf.vim
--- vim.env.FZF_DEFAULT_OPTS = ''
-
 local M = {}
 
-M._has_devicons, M._devicons = pcall(require, "nvim-web-devicons")
+if utils.__HAS_DEVICONS then
+  M._has_devicons, M._devicons = pcall(require, "nvim-web-devicons")
 
--- get the devicons module path
-M._devicons_path = M._has_devicons and M._devicons and M._devicons.setup
-    and debug.getinfo(M._devicons.setup, "S").source:gsub("^@", "")
+  -- get the devicons module path
+  M._devicons_path = M._has_devicons and M._devicons and M._devicons.setup
+      and debug.getinfo(M._devicons.setup, "S").source:gsub("^@", "")
+end
 
 -- get icons proxy for the headless instance
 M._devicons_geticons = function()
@@ -84,18 +81,6 @@ M.get_pid = function()
   return M.__pid
 end
 
--- Reset globals to default
-function M.reset_defaults()
-  local m = require("fzf-lua.defaults")
-  M.DEFAULTS = m
-  M.defaults = m.defaults
-  M.globals = utils.deepcopy(M.defaults)
-  m.globals = M.globals
-end
-
--- Call once so we aren't dependent on calling setup()
-M.reset_defaults()
-
 M.resume_get = function(what, opts)
   assert(opts.__resume_key)
   if type(opts.__resume_get) == "function" then
@@ -138,7 +123,69 @@ function M.resume_opts(opts)
   return opts
 end
 
-function M.normalize_opts(opts, defaults, __resume_key)
+-- proxy table (with logic) for accessing the global config
+M.setup_opts = {}
+M.globals = setmetatable({}, {
+  __index = function(_, index)
+    -- bind tables are logical exception, if specified, do not merge with defaults
+    -- normalize all binds as lowercase or we can have duplicate keys (#654)
+    if index == "actions" then
+      return {
+        files = utils.map_tolower(
+          utils.map_get(M.setup_opts, "actions.files") or M.defaults.actions.files),
+        buffers = utils.map_tolower(
+          utils.map_get(M.setup_opts, "actions.buffers") or M.defaults.actions.buffers),
+      }
+    elseif index == "keymap" then
+      return {
+        fzf = utils.map_tolower(
+          utils.map_get(M.setup_opts, "keymap.fzf") or M.defaults.keymap.fzf),
+        builtin = utils.map_tolower(
+          utils.map_get(M.setup_opts, "keymap.builtin") or M.defaults.keymap.builtin),
+      }
+    end
+    -- build normalized globals, option priority below:
+    --   (1) provider specific globals (post-setup)
+    --   (2) generic global-defaults (post-setup), i.e. `setup({ defaults = { ... } })`
+    --   (3) fzf-lua's true defaults (pre-setup, static)
+    local fzflua_default = utils.map_get(M.defaults, index)
+    local setup_default = utils.map_get(M.setup_opts.defaults, index)
+    local setup_value = utils.map_get(M.setup_opts, index)
+    -- values that aren't tables can't get merged, return highest priority
+    if setup_value ~= nil and type(setup_value) ~= "table" then
+      return setup_value
+    elseif setup_default ~= nil and type(setup_default) ~= "table" then
+      return setup_default
+    elseif fzflua_default ~= nil and type(fzflua_default) ~= "table" then
+      return fzflua_default
+    elseif fzflua_default == nil and setup_value == nil then
+      return
+    end
+    -- (1) use fzf-lua's true defaults (pre-setup) as our options base
+    local ret = utils.tbl_deep_clone(fzflua_default) or {}
+    if (fzflua_default and fzflua_default.prompt) or (setup_value and setup_value.prompt) then
+      -- (2) the existence of the `prompt` key implies we're dealing with a provider
+      -- override global provider defaults supplied by the user's setup `defaults` table
+      ret = vim.tbl_deep_extend("force", ret, M.setup_opts.defaults or {})
+    end
+    -- (3) override with the specific provider options from the users's `setup` option
+    ret = vim.tbl_deep_extend("force", ret, utils.map_get(M.setup_opts, index) or {})
+    return ret
+  end,
+  __newindex = function(_, index, _)
+    assert(false, string.format("modifying globals directly isn't allowed [index: %s]", index))
+  end
+})
+
+do
+  -- store circular refs for globals/defaults
+  -- used by M.globals.__index and M.defaults.<provider>._actions
+  local m = require("fzf-lua.defaults")
+  M.defaults = m.defaults
+  m.globals = M.globals
+end
+
+function M.normalize_opts(opts, globals, __resume_key)
   if not opts then opts = {} end
 
   -- opts can also be a function that returns an opts table
@@ -162,14 +209,18 @@ function M.normalize_opts(opts, defaults, __resume_key)
   -- __FNCREF2__ will use the 2nd function ref in the stack (calling fn)
   opts.__resume_key = __resume_key
       or opts.__resume_key
-      or (type(defaults) == "string" and defaults)
-      or (type(defaults) == "table" and defaults.__resume_key)
+      or (type(globals) == "string" and globals)
+      or (type(globals) == "table" and globals.__resume_key)
       or utils.__FNCREF2__()
 
-  -- if defaults is string retrieve from M.globals
-  if type(defaults) == "string" then
-    defaults = utils.map_get(M.globals, defaults)
-    assert(type(defaults) == "table")
+  if type(globals) == "string" then
+    -- globals is a string, generate provider globals
+    globals = M.globals[globals]
+    assert(type(globals) == "table")
+  else
+    -- backward compat: globals sent directly as table
+    -- merge with setup options "defaults" table
+    globals = vim.tbl_deep_extend("keep", globals, M.setup_opts.defaults or {})
   end
 
   -- merge current opts with revious __call_opts on resume
@@ -177,7 +228,7 @@ function M.normalize_opts(opts, defaults, __resume_key)
     opts = M.resume_opts(opts)
   end
 
-  -- ignore case for keybinds or conflicts may occur (#654)
+  -- normalize all binds as lowercase or we can have duplicate keys (#654)
   local keymap_tolower = function(m)
     return m and {
       fzf = utils.map_tolower(m.fzf),
@@ -186,34 +237,16 @@ function M.normalize_opts(opts, defaults, __resume_key)
   end
   opts.keymap = keymap_tolower(opts.keymap)
   opts.actions = utils.map_tolower(opts.actions)
-  defaults.keymap = keymap_tolower(defaults.keymap)
-  defaults.actions = utils.map_tolower(defaults.actions)
-  if M.globals.actions then
-    M.globals.actions.files = utils.map_tolower(M.globals.actions.files)
-    M.globals.actions.buffers = utils.map_tolower(M.globals.actions.buffers)
-  end
-  M.globals.keymap = keymap_tolower(M.globals.keymap)
+  globals.keymap = keymap_tolower(globals.keymap)
+  globals.actions = utils.map_tolower(globals.actions)
 
   -- inherit from globals.actions?
-  if type(defaults._actions) == "function" then
-    defaults.actions = vim.tbl_deep_extend("keep",
-      defaults.actions or {},
-      defaults._actions())
+  if type(globals._actions) == "function" then
+    globals.actions = vim.tbl_deep_extend("keep", globals.actions or {}, globals._actions())
   end
 
-  -- First merge with the users' "provider-global" defaults
-  if type(M.globals.defaults) == "table" then
-    opts = vim.tbl_deep_extend("keep", opts, utils.tbl_deep_clone(M.globals.defaults))
-  elseif type(M.globals.defaults) == "function" then
-    opts = vim.tbl_deep_extend("keep", opts, utils.tbl_deep_clone(M.globals.defaults()))
-  end
-
-  -- Then merge with provider defaults "keeping" provider-globals
-  -- we must clone the 'defaults' tbl, otherwise 'opts.actions.default'
-  -- overrides 'config.globals.lsp.actions.default' in neovim 6.0
-  -- which then prevents the default action of all other LSP providers
-  -- https://github.com/ibhagwan/fzf-lua/issues/197
-  opts = vim.tbl_deep_extend("keep", opts, utils.tbl_deep_clone(defaults))
+  -- merge with provider defaults from globals (defaults + setup options)
+  opts = vim.tbl_deep_extend("keep", opts, utils.tbl_deep_clone(globals))
 
   -- Merge required tables from globals
   for _, k in ipairs({
@@ -246,7 +279,7 @@ function M.normalize_opts(opts, defaults, __resume_key)
   -- Merge arrays from globals|defaults, can't use 'vim.tbl_xxx'
   -- for these as they only work for maps, ie. '{ key = value }'
   for _, k in ipairs({ "file_ignore_patterns" }) do
-    for _, m in ipairs({ defaults, M.globals }) do
+    for _, m in ipairs({ globals, M.globals }) do
       if m[k] then
         for _, item in ipairs(m[k]) do
           if not opts[k] then opts[k] = {} end
@@ -282,29 +315,6 @@ function M.normalize_opts(opts, defaults, __resume_key)
         opts.prompt = opts[s]:match(pattern_capture)
         opts[s] = opts[s]:gsub(pattern_gsub, "")
       end
-    end
-  end
-
-  local function get_opt(o, t1, t2)
-    if t1[o] ~= nil then
-      return t1[o]
-    else
-      return t2[o]
-    end
-  end
-
-  -- DEPRECATED: use `defaults` (provider-defaults) table
-  -- global option overrides. If exists, these options will
-  -- be used in a "LOGICAL AND" against the local option (#188)
-  -- e.g.:
-  --    git_icons = TRUE
-  --    global_git_icons = FALSE
-  -- the resulting 'git_icons' would be:
-  --    git_icons = TRUE && FALSE (==FALSE)
-  for _, o in ipairs({ "file_icons", "git_icons", "color_icons" }) do
-    local g_opt = get_opt("global_" .. o, opts, M.globals)
-    if g_opt ~= nil then
-      opts[o] = opts[o] and g_opt
     end
   end
 
