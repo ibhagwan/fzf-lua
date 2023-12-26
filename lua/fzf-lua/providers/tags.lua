@@ -233,13 +233,16 @@ end
 
 M.grep_cword = function(opts)
   if not opts then opts = {} end
-  opts.search = vim.fn.expand("<cword>")
+  opts.no_esc = true
+  opts.search = [[\b]] .. utils.rg_escape(vim.fn.expand("<cword>")) .. [[\b]]
   return M.grep(opts)
 end
 
 M.grep_cWORD = function(opts)
   if not opts then opts = {} end
-  opts.search = vim.fn.expand("<cWORD>")
+  opts.no_esc = true
+  -- since we're searching a tags file also search for surrounding literals ^ $
+  opts.search = [[(^|\^|\s)]] .. utils.rg_escape(vim.fn.expand("<cWORD>")) .. [[($|\$|\s)]]
   return M.grep(opts)
 end
 
