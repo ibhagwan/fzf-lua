@@ -12,6 +12,9 @@ function Previewer.base:new(o, opts)
   o = o or {}
   self.type = "cmd";
   self.cmd = o.cmd;
+  if type(self.cmd) == "function" then
+    self.cmd = self.cmd()
+  end
   self.args = o.args or "";
   self.opts = opts;
   return self

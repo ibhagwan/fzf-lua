@@ -228,6 +228,9 @@ function M.native:new(o, opts, fzf_win)
   M.native.super.new(self, o, opts, fzf_win)
   setmetatable(self, M.native)
   self.pager = opts.preview_pager == nil and o.pager or opts.preview_pager
+  if type(self.pager) == "function" then
+    self.pager = self.pager()
+  end
   self.diff_opts = o.diff_opts
   return self
 end

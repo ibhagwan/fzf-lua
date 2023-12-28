@@ -141,17 +141,18 @@ M.defaults = {
       _ctor = previewers.fzf.cmd,
     },
     bat = {
-      cmd   = vim.fn.executable("batcat") == 1 and "batcat" or "bat",
+      -- reduce startup time by deferring executable check to previewer constructor (#970)
+      cmd   = function() return vim.fn.executable("batcat") == 1 and "batcat" or "bat" end,
       args  = "--color=always --style=numbers,changes",
       _ctor = previewers.fzf.bat_async,
     },
     bat_native = {
-      cmd   = vim.fn.executable("batcat") == 1 and "batcat" or "bat",
+      cmd   = function() return vim.fn.executable("batcat") == 1 and "batcat" or "bat" end,
       args  = "--color=always --style=numbers,changes",
       _ctor = previewers.fzf.bat,
     },
     bat_async = {
-      cmd   = vim.fn.executable("batcat") == 1 and "batcat" or "bat",
+      cmd   = function() return vim.fn.executable("batcat") == 1 and "batcat" or "bat" end,
       args  = "--color=always --style=numbers,changes",
       _ctor = previewers.fzf.bat_async,
     },
@@ -198,8 +199,9 @@ M.defaults = {
     codeaction_native = {
       _ctor     = previewers.fzf.codeaction,
       diff_opts = { ctxlen = 3 },
-      pager     = vim.fn.executable("delta") == 1
-          and "delta --width=$FZF_PREVIEW_COLUMNS" or nil,
+      pager     = function()
+        return vim.fn.executable("delta") == 1 and "delta --width=$FZF_PREVIEW_COLUMNS" or nil
+      end,
     },
   },
 }
