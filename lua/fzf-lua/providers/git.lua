@@ -44,70 +44,41 @@ M.status = function(opts)
   -- as part of our `git status -s`
   opts.git_icons = false
 
-  local function git_iconify(x, staged)
-    local icon = x
-    local git_icon = config.globals.git.icons[x]
-    if git_icon then
-      icon = git_icon.icon
-      if opts.color_icons then
-        icon = utils.ansi_codes[staged and "green" or git_icon.color or "dark_grey"](icon)
-      end
-    end
-    return icon
-  end
+  -- we always require processing (can't send the raw command to fzf)
+  opts.requires_processing = true
 
-  opts.__fn_transform = opts.__fn_transform or
-      function(x)
-        -- unrecognizable format, return
-        if not x or #x < 4 then return x end
-        -- strip ansi coloring or the pattern matching fails
-        -- when git config has `color.status=always` (#706)
-        x = utils.strip_ansi_coloring(x)
-        -- `man git-status`
-        -- we are guaranteed format of: XY <text>
-        -- spaced files are wrapped with quotes
-        -- remove both git markers and quotes
-        local f1, f2 = x:sub(4):gsub([["]], ""), nil
-        -- renames separate files with '->'
-        if f1:match("%s%->%s") then
-          f1, f2 = f1:match("(.*)%s%->%s(.*)")
+  local contents
+  if opts.multiprocess then
+    -- git status does not require preprocessing
+    opts.__mt_preprocess = [[return true]]
+    opts.__mt_transform = [[return require("make_entry").git_status]]
+    contents = core.mt_cmd_wrapper(opts)
+  else
+    opts.__fn_transform = opts.__fn_transform or
+        function(x)
+          return make_entry.git_status(x, opts)
         end
-        f1 = f1 and make_entry.file(f1, opts)
-        -- accomodate 'file_ignore_patterns'
-        if not f1 then return end
-        f2 = f2 and make_entry.file(f2, opts)
-        local staged = git_iconify(x:sub(1, 1):gsub("?", " "), true)
-        local unstaged = git_iconify(x:sub(2, 2))
-        local entry = ("%s%s%s%s%s"):format(
-          staged, utils.nbsp, unstaged, utils.nbsp .. utils.nbsp,
-          (f2 and ("%s -> %s"):format(f1, f2) or f1))
-        return entry
-      end
 
-  opts.fn_preprocess = opts.fn_preprocess or
-      function(o)
-        return make_entry.preprocess(o)
-      end
+    -- we are reusing the "live" reload action, this gets called once
+    -- on init and every reload and should return the command we wish
+    -- to execute, i.e. `git status -sb`
+    opts.__fn_reload = function(_)
+      return opts.cmd
+    end
 
-  -- we are reusing the "live" reload action, this gets called once
-  -- on init and every reload and should return the command we wish
-  -- to execute, i.e. `git status -sb`
-  opts.__fn_reload = function(_)
-    return opts.cmd
-  end
+    -- build the "reload" cmd and remove '-- {+}' from the initial cmd
+    local reload, id = shell.reload_action_cmd(opts, "{+}")
+    contents = reload:gsub("%-%-%s+{%+}$", "")
+    opts.__reload_cmd = reload
 
-  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local reload, id = shell.reload_action_cmd(opts, "{+}")
-  local contents = reload:gsub("%-%-%s+{%+}$", "")
-  opts.__reload_cmd = reload
-
-  -- when the action resumes the preview re-attaches which registers
-  -- a new shell function id, done enough times it will overwrite the
-  -- regisered function assigned to the reload action and the headless
-  -- cmd will err with "sh: 0: -c requires an argument"
-  -- gets cleared when resume data recycles
-  opts._fn_pre_fzf = function()
-    shell.set_protected(id)
+    -- when the action resumes the preview re-attaches which registers
+    -- a new shell function id, done enough times it will overwrite the
+    -- regisered function assigned to the reload action and the headless
+    -- cmd will err with "sh: 0: -c requires an argument"
+    -- gets cleared when resume data recycles
+    opts._fn_pre_fzf = function()
+      shell.set_protected(id)
+    end
   end
 
   opts.header_prefix = opts.header_prefix or "+ -  "

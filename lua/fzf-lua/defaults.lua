@@ -243,16 +243,17 @@ M.defaults.git = {
     winopts      = { preview = { winopts = { cursorline = false } } },
   },
   status = {
-    prompt      = "GitStatus> ",
+    prompt       = "GitStatus> ",
     -- override `color.status=always`, techincally not required
     -- since we now also call `utils.strip_ansi_coloring` (#706)
-    cmd         = "git -c color.status=false status -su",
-    previewer   = "git_diff",
-    file_icons  = true and M._has_devicons,
-    color_icons = true,
-    git_icons   = true,
-    _actions    = function() return M.globals.actions.files end,
-    actions     = {
+    cmd          = "git -c color.status=false status -su",
+    previewer    = "git_diff",
+    multiprocess = true,
+    file_icons   = true and M._has_devicons,
+    color_icons  = true,
+    git_icons    = true,
+    _actions     = function() return M.globals.actions.files end,
+    actions      = {
       ["right"]  = { fn = actions.git_unstage, reload = true },
       ["left"]   = { fn = actions.git_stage, reload = true },
       ["ctrl-x"] = { fn = actions.git_reset, reload = true },

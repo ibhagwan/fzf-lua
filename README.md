@@ -805,6 +805,7 @@ require'fzf-lua'.setup {
     status = {
       prompt        = 'GitStatus❯ ',
       cmd           = "git -c color.status=false status -su",
+      multiprocess  = true,           -- run command in a separate process
       file_icons    = true,
       git_icons     = true,
       color_icons   = true,

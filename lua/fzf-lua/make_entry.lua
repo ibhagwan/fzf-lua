@@ -463,7 +463,7 @@ M.tag = function(x, opts)
     text = text:gsub([[\]] .. s, s)
   end
   -- different alignment fmt if string contains ansi coloring
-  -- from rg/grep output when using `tags_grep_xxx` 
+  -- from rg/grep output when using `tags_grep_xxx`
   local align = utils.has_ansi_coloring(name) and 47 or 30
   local line, tag = text:match("(%d-);?(/.*/)")
   line = line and #line > 0 and tonumber(line)
@@ -474,6 +474,43 @@ M.tag = function(x, opts)
     not line and "" or ":" .. utils.ansi_codes.green(tostring(line)),
     utils.ansi_codes.blue(tag)
   ), line
+end
+
+M.git_status = function(x, opts)
+  local function git_iconify(icon, staged)
+    local git_icon = config.globals.git.icons[icon]
+    if git_icon then
+      icon = git_icon.icon
+      if opts.color_icons then
+        icon = utils.ansi_codes[staged and "green" or git_icon.color or "dark_grey"](icon)
+      end
+    end
+    return icon
+  end
+  -- unrecognizable format, return
+  if not x or #x < 4 then return x end
+  -- strip ansi coloring or the pattern matching fails
+  -- when git config has `color.status=always` (#706)
+  x = utils.strip_ansi_coloring(x)
+  -- `man git-status`
+  -- we are guaranteed format of: XY <text>
+  -- spaced files are wrapped with quotes
+  -- remove both git markers and quotes
+  local f1, f2 = x:sub(4):gsub([["]], ""), nil
+  -- renames separate files with '->'
+  if f1:match("%s%->%s") then
+    f1, f2 = f1:match("(.*)%s%->%s(.*)")
+  end
+  f1 = f1 and M.file(f1, opts)
+  -- accomodate 'file_ignore_patterns'
+  if not f1 then return end
+  f2 = f2 and M.file(f2, opts)
+  local staged = git_iconify(x:sub(1, 1):gsub("?", " "), true)
+  local unstaged = git_iconify(x:sub(2, 2))
+  local entry = ("%s%s%s%s%s"):format(
+    staged, utils.nbsp, unstaged, utils.nbsp .. utils.nbsp,
+    (f2 and ("%s -> %s"):format(f1, f2) or f1))
+  return entry
 end
 
 return M
