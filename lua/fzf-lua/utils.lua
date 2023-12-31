@@ -452,6 +452,12 @@ function M.hexcol_from_hl(hlgroup, what)
     if col then
       -- format as 6 digit hex for hex2rgb()
       hexcol = ("#%06x"):format(col)
+    else
+      -- some colorschemes set fg=fg/bg or bg=fg/bg which have no value
+      -- in the colormap, in this case reset `hexcol` to prevent fzf to
+      -- err with "invalid color specification: bg:bg" (#976)
+      -- TODO: should we extract `fg|bg` from `Normal` hlgroup?
+      hexcol = ""
     end
   end
   return hexcol
