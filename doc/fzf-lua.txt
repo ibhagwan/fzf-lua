@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 December 07
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2023 December 30
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -898,6 +898,7 @@ open an issue and I'll be more than happy to help.**
         status = {
           prompt        = 'GitStatus❯ ',
           cmd           = "git -c color.status=false status -su",
+          multiprocess  = true,           -- run command in a separate process
           file_icons    = true,
           git_icons     = true,
           color_icons   = true,
