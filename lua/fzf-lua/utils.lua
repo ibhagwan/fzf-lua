@@ -445,6 +445,11 @@ end
 function M.hexcol_from_hl(hlgroup, what)
   if not hlgroup or not what then return end
   local hexcol = synIDattr(hlgroup, what)
+  -- some colorschemes set fg=fg/bg or bg=fg/bg
+  -- which causes hexcol to be "fg" or "bg"
+  if hexcol == "fg" or hexcol == "bg" then
+    return ""
+  end
   if hexcol and not hexcol:match("^#") then
     -- try to acquire the color from the map
     -- some schemes don't capitalize first letter?
