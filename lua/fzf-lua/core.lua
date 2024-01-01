@@ -10,7 +10,7 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
-local ACTION_DEFINITIONS = {
+M.ACTION_DEFINITIONS = {
   -- list of supported actions with labels to be displayed in the headers
   -- no pos implies an append to header array
   [actions.toggle_ignore]     = { "Disable .gitignore", fn_reload = "Respect .gitignore" },
@@ -748,7 +748,7 @@ M.set_header = function(opts, hdr_tbl)
       hdr_txt_str = "",
       val = function()
         if opts.no_header_i then return end
-        local defs = ACTION_DEFINITIONS
+        local defs = M.ACTION_DEFINITIONS
         local ret = {}
         for k, v in pairs(opts.actions) do
           local action = type(v) == "function" and v or type(v) == "table" and (v.fn or v[1])
@@ -768,7 +768,7 @@ M.set_header = function(opts, hdr_tbl)
             table.insert(t, i)
           end
           t[1] = (opts.header_prefix or ":: ") .. t[1]
-          return table.concat(t, opts.header_separator or "")
+          return table.concat(t, opts.header_separator or "|")
         end)() or nil
       end,
     },
