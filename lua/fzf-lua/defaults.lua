@@ -649,7 +649,7 @@ M.defaults.lsp.symbols = {
     -- to = function(s, _)
     --   local file, text = s:match("^(.+:.+:.+:)%s(.*)")
     --   -- fzf has alignment issues with ansi colorings of differnt escape length
-    --   local align = 56 + utils.ansi_col_len(text)
+    --   local align = 56 + utils.ansi_escseq_len(text)
     --   return string.format("%-" .. align .. "s%s%s", text, utils.nbsp, file)
     -- end,
     from = function(s, _)

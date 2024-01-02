@@ -512,11 +512,6 @@ function M.has_ansi_coloring(str)
   return str:match("%[[%d;]-m")
 end
 
-function M.ansi_col_len(str)
-  local match = M.has_ansi_coloring(str)
-  return match and #match or 0
-end
-
 function M.strip_ansi_coloring(str)
   if not str then return str end
   -- remove escape sequences of the following formats:
@@ -524,6 +519,11 @@ function M.strip_ansi_coloring(str)
   -- 2. ^[[0;34m
   -- 3. ^[[m
   return str:gsub("%[[%d;]-m", "")
+end
+
+function M.ansi_escseq_len(str)
+  local stripped = M.strip_ansi_coloring(str)
+  return #str - #stripped
 end
 
 function M.mode_is_visual()

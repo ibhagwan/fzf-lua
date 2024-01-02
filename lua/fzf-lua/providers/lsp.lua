@@ -197,7 +197,7 @@ local function symbol_handler(opts, cb, _, result, _, _)
       entry = make_entry.lcol(entry, opts)
       entry = make_entry.file(entry, opts)
       if entry then
-        local align = 52 + mbicon_align + utils.ansi_col_len(symbol)
+        local align = 48 + mbicon_align + utils.ansi_escseq_len(symbol)
         entry = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry)
         cb(opts._fmt and opts._fmt.to and opts._fmt.to(entry, opts) or entry)
       end
