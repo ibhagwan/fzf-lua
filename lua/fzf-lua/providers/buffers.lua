@@ -59,8 +59,10 @@ end
 local populate_buffer_entries = function(opts, bufnrs, tabh)
   local buffers = {}
   for _, bufnr in ipairs(bufnrs) do
-    local flag = (bufnr == core.CTX().bufnr and "%")
-        or (bufnr == core.CTX().alt_bufnr and "#") or " "
+    local flag = (opts.buf_flags and opts.buf_flags[bufnr])
+        or (bufnr == core.CTX().bufnr and "%")
+        or (bufnr == core.CTX().alt_bufnr and "#")
+        or " "
 
     local element = {
       bufnr = bufnr,
@@ -94,9 +96,9 @@ local populate_buffer_entries = function(opts, bufnrs, tabh)
     -- DON'T FORCE ME TO UPDATE THIS HACK NEOVIM LOL
     local future = os.time({ year = 2100, month = 1, day = 1, hour = 0, minute = 00 })
     local get_unixtime = function(buf)
-      if buf.flag == "%" then
+      if buf.flag:match("%%") then
         return future
-      elseif buf.flag == "#" then
+      elseif buf.flag:match("#") then
         return future - 1
       else
         return buf.info.lastused
@@ -111,11 +113,10 @@ end
 
 
 local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
-  -- local hidden = buf.info.hidden == 1 and 'h' or 'a'
-  local hidden = ""
-  local readonly = buf.readonly and "=" or " "
-  local changed = buf.info.changed == 1 and "+" or " "
-  local flags = hidden .. readonly .. changed
+  -- if opts.buf_flags is set, buf.flag already includes all the flag
+  -- we need, so don't add extra flags here
+  local flags = opts.buf_flags and ""
+      or ((buf.readonly and "=" or " ") .. (buf.info.changed == 1 and "+" or " "))
   local leftbr = "["
   local rightbr = "]"
   local bufname = #buf.info.name > 0 and path.relative(buf.info.name, cwd or vim.loop.cwd())
@@ -129,15 +130,13 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
   end
   -- add line number
   bufname = ("%s:%s"):format(bufname, buf.info.lnum > 0 and buf.info.lnum or "")
-  if buf.flag == "%" then
+  if buf.flag:match("%%") then
     flags = utils.ansi_codes[opts.hls.buf_flag_cur](buf.flag) .. flags
-  elseif buf.flag == "#" then
+  elseif buf.flag:match("#") then
     flags = utils.ansi_codes[opts.hls.buf_flag_alt](buf.flag) .. flags
   else
-    flags = utils.nbsp .. flags
+    flags = buf.flag .. flags
   end
-  local bufnrstr = string.format("%s%s%s", leftbr,
-    utils.ansi_codes[opts.hls.buf_nr](tostring(buf.bufnr)), rightbr)
   local buficon = ""
   local hl = ""
   if opts.file_icons then
@@ -155,10 +154,15 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
       buficon = fn(buficon)
     end
   end
-  local max_bufnr_w = 26 + #tostring(max_bufnr)
-  local item_str = string.format("%s%s%s%s%s%s%s%s",
+  local max_bufnr_w = #(leftbr .. max_bufnr .. rightbr)
+  local bufnr_str = leftbr .. buf.bufnr .. rightbr
+  local pad = math.max(0, max_bufnr_w - #bufnr_str)
+  local bufnr_str_ansi = leftbr ..
+      utils.ansi_codes[opts.hls.buf_nr](tostring(buf.bufnr)) .. rightbr .. string.rep(" ", pad)
+  local item_str = string.format(
+    "%s%s%s%s%s%s%s%s",
     utils._if(opts._prefix, opts._prefix, ""),
-    string.format("%-" .. tostring(max_bufnr_w) .. "s", bufnrstr),
+    bufnr_str_ansi,
     utils.nbsp,
     flags,
     utils.nbsp,
@@ -174,7 +178,26 @@ M.buffers = function(opts)
 
   opts.__fn_reload = opts.__fn_reload or function(_)
     return function(cb)
-      local filtered, _, max_bufnr = filter_buffers(opts, core.CTX().buflist)
+      local buflist = {}
+      if not opts.ls_cmd then
+        buflist = core.CTX().buflist
+      else -- use `:ls` output as buffer list
+        -- use buffer flags from `:ls` output instead of generating
+        -- new buffer flags in `populate_buffer_entries()`
+        opts.buf_flags = {}
+        local alt_win = vim.fn.win_getid(vim.fn.winnr("#"))
+        -- call ls command in alternate window to get correct buffer flags
+        -- for current and alternate buffers ('%' and '#')
+        local ls_output = vim.split(vim.api.nvim_win_call(alt_win, function()
+          return vim.fn.execute(opts.ls_cmd)
+        end), "\n", { trimempty = true })
+        for _, line in ipairs(ls_output) do
+          local bufnr = tonumber(line:match("^%s*(%d+)"))
+          table.insert(buflist, bufnr)
+          opts.buf_flags[bufnr] = line:match("^%s*%d+([^\"]*)")
+        end
+      end
+      local filtered, _, max_bufnr = filter_buffers(opts, buflist)
 
       if next(filtered) then
         local buffers = populate_buffer_entries(opts, filtered)

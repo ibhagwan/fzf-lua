@@ -425,6 +425,7 @@ M.defaults.buffers = {
   ignore_current_buffer = false,
   no_action_set_cursor  = true,
   cwd_only              = false,
+  ls_cmd                = nil,
   cwd                   = nil,
   fzf_opts              = { ["--tiebreak"] = "index", },
   _actions              = function() return M.globals.actions.buffers end,
