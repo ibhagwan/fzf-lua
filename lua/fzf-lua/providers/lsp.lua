@@ -92,23 +92,21 @@ local function location_handler(opts, cb, _, result, ctx, _)
       return true
     end, result)
   end
+  local items = {}
   -- Although `make_entry.file` filters for `cwd_only` we filter
   -- here to accurately determine `jump_to_single_result` (#980)
-  if opts.cwd_only then
-    result = vim.tbl_filter(function(x)
-      local fname = vim.uri_to_fname(x.targetUri)
-      if not path.is_relative(fname, opts.cwd) then
-        return false
-      end
-      return true
-    end, result)
-  end
+  result = vim.tbl_filter(function(x)
+    local item = vim.lsp.util.locations_to_items({ x }, encoding)[1]
+    table.insert(items, item)
+    if opts.cwd_only and not path.is_relative(item.filename, opts.cwd) then
+      return false
+    end
+    return true
+  end, result)
   -- Jump immediately if there is only one location
   if opts.jump_to_single_result and #result == 1 then
     jump_to_location(opts, result[1], encoding)
-    return
   end
-  local items = vim.lsp.util.locations_to_items(result, encoding)
   if opts.filter and type(opts.filter) == "function" then
     items = opts.filter(items)
   end
