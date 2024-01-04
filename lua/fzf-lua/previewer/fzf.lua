@@ -1,6 +1,7 @@
 local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local Object = require "fzf-lua.class"
 
 local Previewer = {}
@@ -16,6 +17,7 @@ function Previewer.base:new(o, opts)
     self.cmd = self.cmd()
   end
   self.args = o.args or "";
+  self.preview_offset = o.preview_offset
   self.opts = opts;
   return self
 end
@@ -24,7 +26,10 @@ function Previewer.base:preview_window(_)
   return nil
 end
 
-function Previewer.base:preview_offset()
+function Previewer.base:_preview_offset()
+  if self.opts.preview_offset or self.preview_offset then
+    return self.opts.preview_offset or self.preview_offset
+  end
   --[[
     #
     #   Explanation of the fzf preview offset options:
@@ -172,7 +177,8 @@ end
 
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   local entry = path.entry_to_file(entrystr, self.opts)
-  local filepath = entry.bufname or entry.path or ""
+  -- make relative for bat's header display
+  local filepath = path.relative_to(entry.bufname or entry.path or "", vim.loop.cwd())
   if self.opts._ctag then
     entry.ctag = path.entry_to_ctag(entry.stripped, true)
     if entry.line <= 1 then
@@ -188,8 +194,9 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   local errcmd = nil
   -- verify the file exists on disk and is accessible
   if #filepath == 0 or not vim.loop.fs_stat(filepath) then
-    errcmd = ([[echo "%s: NO SUCH FILE OR ACCESS DENIED"]]):format(
-      filepath and #filepath > 0 and vim.fn.shellescape(filepath) or "<null>")
+    errcmd = "echo " .. libuv.shellescape(
+      string.format("'%s: NO SUCH FILE OR ACCESS DENIED",
+        filepath and #filepath > 0 and filepath or "<null>"))
   end
   return filepath, entry, errcmd
 end
@@ -199,15 +206,44 @@ function Previewer.cmd_async:cmdline(o)
   local act = shell.raw_preview_action_cmd(function(items)
     local filepath, _, errcmd = self:parse_entry_and_verify(items[1])
     local cmd = errcmd or ("%s %s %s"):format(
-      self.cmd, self.args, vim.fn.shellescape(filepath))
-    -- uncomment to see the command in the preview window
-    -- cmd = vim.fn.shellescape(cmd)
+      self.cmd, self.args, libuv.shellescape(filepath))
     return cmd
   end, "{}", self.opts.debug)
   return act
 end
 
 Previewer.bat_async = Previewer.cmd_async:extend()
+
+function Previewer.bat_async:_preview_offset()
+  if self.opts.preview_offset or self.preview_offset then
+    return self.opts.preview_offset or self.preview_offset
+  end
+  --[[
+    #
+    #   Explanation of the fzf preview offset options:
+    #
+    #   ~3    Top 3 lines as the fixed header
+    #   +{2}  Base scroll offset extracted from the second field
+    #   +3    Extra offset to compensate for the 3-line header
+    #   /2    Put in the middle of the preview area
+    #
+    '--preview-window '~3:+{2}+3/2''
+  ]]
+  if not self.args or not self.args:match("%-%-style=default") then
+    -- we don't need affixed header unless we use bat default style
+    -- TODO: shuld also adjust for "--style=header-filename"
+    if self.opts.line_field_index then
+      return ("+%s-/2"):format(self.opts.line_field_index)
+    end
+  else
+    if self.opts.line_field_index then
+      return ("~3:+%s+3/2"):format(self.opts.line_field_index)
+    else
+      -- no line offset, affix header
+      return "~3"
+    end
+  end
+end
 
 function Previewer.bat_async:new(o, opts)
   Previewer.bat_async.super.new(self, o, opts)
@@ -233,9 +269,7 @@ function Previewer.bat_async:cmdline(o)
       self.theme and string.format([[--theme="%s"]], self.theme) or "",
       self.opts.line_field_index and string.format("--highlight-line=%d", entry.line) or "",
       line_range,
-      vim.fn.shellescape(filepath))
-    -- uncomment to see the command in the preview window
-    -- cmd = vim.fn.shellescape(cmd)
+      libuv.shellescape(filepath))
     return cmd
   end, "{}", self.opts.debug)
   return act
@@ -297,7 +331,7 @@ function Previewer.git_diff:cmdline(o)
     elseif is_untracked then
       local stat = vim.loop.fs_stat(file.path)
       if stat and stat.type == "directory" then
-        cmd = "ls -la"
+        cmd = utils._if_win({ "dir" }, { "ls", "-la" })
       else
         cmd = self.cmd_untracked
       end
@@ -307,6 +341,12 @@ function Previewer.git_diff:cmdline(o)
     if self.pager and #self.pager > 0 and
         vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
       pager = "| " .. self.pager
+      if utils.__IS_WINDOWS then
+        -- we are unable to use variables within a "cmd /c" without "!var!" variable expansion
+        -- https://superuser.com/questions/223104/setting-and-using-variable-within-same-command-line-in-windows-cmd-ex
+        pager = pager:gsub("%$[%a%d]+", function(x) return "!" .. x:sub(2) .. "!" end)
+        pager = pager:gsub("%%[%a%d]+%%", function(x) return "!" .. x:sub(2, #x - 1) .. "!" end)
+      end
     end
     -- with default commands we add the filepath at the end.
     -- If the user configured a more complex command, e.g.:
@@ -315,7 +355,7 @@ function Previewer.git_diff:cmdline(o)
     -- }
     -- we use ':format' directly on the user's command, see
     -- issue #392 for more info (limiting diff output width)
-    local fname_escaped = vim.fn.shellescape(file.path)
+    local fname_escaped = libuv.shellescape(file.path)
     if cmd:match("[<{]file[}>]") then
       cmd = cmd:gsub("[<{]file[}>]", fname_escaped)
     elseif cmd:match("%%s") then
@@ -323,12 +363,17 @@ function Previewer.git_diff:cmdline(o)
     else
       cmd = string.format("%s %s", cmd, fname_escaped)
     end
-    cmd = ("LINES=%d;COLUMNS=%d;FZF_PREVIEW_LINES=%d;FZF_PREVIEW_COLUMNS=%d;%s %s")
-        :format(fzf_lines, fzf_columns, fzf_lines, fzf_columns, cmd, pager)
-    cmd = "sh -c " .. vim.fn.shellescape(cmd)
-    -- uncomment to see the command in the preview window
-    -- cmd = vim.fn.shellescape(cmd)
-    return cmd
+    local env = {
+      ["LINES"]               = fzf_lines,
+      ["COLUMNS"]             = fzf_columns,
+      ["FZF_PREVIEW_LINES"]   = fzf_lines,
+      ["FZF_PREVIEW_COLUMNS"] = fzf_columns,
+    }
+    local setenv = utils.shell_setenv_str(env)
+    cmd = string.format("%s %s %s", table.concat(setenv, " "), cmd, pager)
+    -- TODO: exlpore why passing env (which we btw don't need anymore)
+    -- makes git-delta use a different syntax theme
+    return { cmd = cmd, env = nil }
   end, "{}", self.opts.debug)
   return act
 end
@@ -358,9 +403,7 @@ function Previewer.man_pages:cmdline(o)
   local act = shell.raw_preview_action_cmd(function(items)
     -- local manpage = require'fzf-lua.providers.manpages'.getmanpage(items[1])
     local manpage = items[1]:match("[^[,( ]+")
-    local cmd = self.cmd:format(vim.fn.shellescape(manpage))
-    -- uncomment to see the command in the preview window
-    -- cmd = vim.fn.shellescape(cmd)
+    local cmd = self.cmd:format(libuv.shellescape(manpage))
     return cmd
   end, "{}", self.opts.debug)
   return act
@@ -382,7 +425,7 @@ function Previewer.help_tags:cmdline(o)
     local vimdoc = items[1]:match("[^%s]+$")
     local tag = items[1]:match("^[^%s]+")
     local ext = path.extension(vimdoc)
-    local cmd = self.cmd:format(vim.fn.shellescape(vimdoc))
+    local cmd = self.cmd:format(libuv.shellescape(vimdoc))
     -- If 'bat' is available attempt to get the helptag line
     -- and start the display of the help file from the tag
     if self.cmd:match("^bat ") then
@@ -394,8 +437,6 @@ function Previewer.help_tags:cmdline(o)
         cmd = cmd .. string.format(" --line-range=%d:", tonumber(line))
       end
     end
-    -- uncomment to see the command in the preview window
-    -- cmd = vim.fn.shellescape(cmd)
     return cmd
   end, "{}", self.opts.debug)
   return act

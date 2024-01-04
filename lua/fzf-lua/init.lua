@@ -1,3 +1,9 @@
+-- make value truthy so we can load the path module and subsequently
+-- the libuv module without overriding the global require used only
+-- for spawn_stdio headless instances, this way we can call
+-- require("fzf-lua") from test specs (which also run headless)
+vim.g.fzf_lua_directory = ""
+
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
@@ -6,8 +12,7 @@ do
   -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
   -- plugin '.vim' initialization sometimes doesn't get called
   local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
-  vim.g.fzf_lua_directory = path.parent(currFile)
-  if utils.__IS_WINDOWS then vim.g.fzf_lua_directory = vim.fs.normalize(vim.g.fzf_lua_directory) end
+  vim.g.fzf_lua_directory = path.normalize(path.parent(currFile))
 
   -- Manually source the vimL script containing ':FzfLua' cmd
   if not vim.g.loaded_fzf_lua then

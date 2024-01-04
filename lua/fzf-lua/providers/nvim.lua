@@ -1,6 +1,7 @@
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
@@ -14,14 +15,6 @@ M.commands = function(opts)
   local global_commands = vim.api.nvim_get_commands {}
   local buf_commands = vim.api.nvim_buf_get_commands(0, {})
   local commands = vim.tbl_extend("force", {}, global_commands, buf_commands)
-
-  local prev_act = shell.action(function(args)
-    local cmd = args[1]
-    if commands[cmd] then
-      cmd = vim.inspect(commands[cmd])
-    end
-    return cmd
-  end, nil, opts.debug)
 
   local entries = {}
 
@@ -58,8 +51,13 @@ M.commands = function(opts)
     table.sort(entries, function(a, b) return a < b end)
   end
 
-  opts.fzf_opts["--no-multi"] = ""
-  opts.fzf_opts["--preview"] = prev_act
+  opts.preview = shell.raw_action(function(args)
+    local cmd = args[1]
+    if commands[cmd] then
+      cmd = vim.inspect(commands[cmd])
+    end
+    return cmd
+  end, nil, opts.debug)
 
   core.fzf_exec(entries, opts)
 end
@@ -78,16 +76,13 @@ local history = function(opts, str)
       string.sub(item, finish + 1))
   end
 
-  opts.fzf_opts["--no-multi"] = ""
-
   core.fzf_exec(entries, opts)
 end
 
 local arg_header = function(sel_key, edit_key, text)
   sel_key = utils.ansi_codes.yellow(sel_key)
   edit_key = utils.ansi_codes.yellow(edit_key)
-  return vim.fn.shellescape((":: %s to %s, %s to edit")
-    :format(sel_key, text, edit_key))
+  return (":: %s to %s, %s to edit"):format(sel_key, text, edit_key)
 end
 
 M.command_history = function(opts)
@@ -133,8 +128,7 @@ M.jumps = function(opts)
   table.insert(entries, 1,
     string.format("%6s %s  %s %s", opts.h1 or "jump", "line", "col", "file/text"))
 
-  opts.fzf_opts["--no-multi"] = ""
-  opts.fzf_opts["--header-lines"] = "1"
+  opts.fzf_opts["--header-lines"] = 1
 
   core.fzf_exec(entries, opts)
 end
@@ -166,8 +160,7 @@ M.tagstack = function(opts)
 
   local entries = {}
   for i, tag in ipairs(tags) do
-    local bufname = path.HOME_to_tilde(
-      path.relative(tag.filename, vim.loop.cwd()))
+    local bufname = path.HOME_to_tilde(path.relative_to(tag.filename, vim.loop.cwd()))
     local buficon, hl
     if opts.file_icons then
       local filename = path.tail(bufname)
@@ -192,8 +185,6 @@ M.tagstack = function(opts)
       tag.text))
   end
 
-  opts.fzf_opts["--no-multi"] = ""
-
   core.fzf_exec(entries, opts)
 end
 
@@ -206,25 +197,12 @@ M.marks = function(opts)
     string.format("marks %s", opts.marks and opts.marks or ""))
   marks = vim.split(marks, "\n")
 
-  --[[ local prev_act = shell.action(function (args, fzf_lines, _)
-    local mark = args[1]:match("[^ ]+")
-    local bufnr, lnum, _, _ = unpack(vim.fn.getpos("'"..mark))
-    if vim.api.nvim_buf_is_loaded(bufnr) then
-      return vim.api.nvim_buf_get_lines(bufnr, lnum, fzf_lines+lnum, false)
-    else
-      local name = vim.fn.expand(args[1]:match(".* (.*)"))
-      if vim.fn.filereadable(name) ~= 0 then
-        return vim.fn.readfile(name, "", fzf_lines)
-      end
-      return "UNLOADED: " .. name
-    end
-  end) ]]
   local entries = {}
   local filter = opts.marks and vim.split(opts.marks, "")
   for i = #marks, 3, -1 do
     local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
     col = tostring(tonumber(col) + 1)
-    if path.starts_with_separator(text) then
+    if path.is_absolute(text) then
       text = path.HOME_to_tilde(text)
     end
     if not filter or vim.tbl_contains(filter, mark) then
@@ -240,9 +218,20 @@ M.marks = function(opts)
   table.insert(entries, 1,
     string.format("%-5s %s  %s %s", "mark", "line", "col", "file/text"))
 
-  -- opts.fzf_opts['--preview'] = prev_act
-  opts.fzf_opts["--no-multi"] = ""
-  opts.fzf_opts["--header-lines"] = "1"
+  opts.fzf_opts["--header-lines"] = 1
+  --[[ opts.preview = shell.raw_action(function (args, fzf_lines, _)
+    local mark = args[1]:match("[^ ]+")
+    local bufnr, lnum, _, _ = unpack(vim.fn.getpos("'"..mark))
+    if vim.api.nvim_buf_is_loaded(bufnr) then
+      return vim.api.nvim_buf_get_lines(bufnr, lnum, fzf_lines+lnum, false)
+    else
+      local name = vim.fn.expand(args[1]:match(".* (.*)"))
+      if vim.fn.filereadable(name) ~= 0 then
+        return vim.fn.readfile(name, "", fzf_lines)
+      end
+      return "UNLOADED: " .. name
+    end
+  end) ]]
 
   core.fzf_exec(entries, opts)
 end
@@ -275,12 +264,6 @@ M.registers = function(opts)
         reg:gsub("\n", utils.ansi_codes.magenta("\\n"))
   end
 
-  local prev_act = shell.action(function(args)
-    local r = args[1]:match("%[(.*)%] ")
-    local _, contents = pcall(vim.fn.getreg, r)
-    return contents and register_escape_special(contents) or args[1]
-  end, nil, opts.debug)
-
   local entries = {}
   for _, r in ipairs(registers) do
     -- pcall as this could fail with:
@@ -294,8 +277,11 @@ M.registers = function(opts)
     end
   end
 
-  opts.fzf_opts["--no-multi"] = ""
-  opts.fzf_opts["--preview"] = prev_act
+  opts.preview = shell.raw_action(function(args)
+    local r = args[1]:match("%[(.*)%] ")
+    local _, contents = pcall(vim.fn.getreg, r)
+    return contents and register_escape_special(contents) or args[1]
+  end, nil, opts.debug)
 
   core.fzf_exec(entries, opts)
 end
@@ -360,7 +346,6 @@ M.keymaps = function(opts)
     table.insert(entries, v.str)
   end
 
-  opts.fzf_opts["--no-multi"] = ""
   opts.fzf_opts["--header-lines"] = "1"
 
   -- sort alphabetically
@@ -382,8 +367,6 @@ M.spell_suggest = function(opts)
 
   if vim.tbl_isempty(entries) then return end
 
-  opts.fzf_opts["--no-multi"] = ""
-
   core.fzf_exec(entries, opts)
 end
 
@@ -393,8 +376,6 @@ M.filetypes = function(opts)
 
   local entries = vim.fn.getcompletion("", "filetype")
   if vim.tbl_isempty(entries) then return end
-
-  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end
@@ -406,8 +387,6 @@ M.packadd = function(opts)
   local entries = vim.fn.getcompletion("", "packadd")
 
   if vim.tbl_isempty(entries) then return end
-
-  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end
@@ -441,8 +420,6 @@ M.menus = function(opts)
     return
   end
 
-  opts.fzf_opts["--no-multi"] = ""
-
   core.fzf_exec(entries, opts)
 end
 
@@ -466,7 +443,7 @@ M.autocmds = function(opts)
           line = info and info.linedefined or 0
         end
         local group = a.group_name and vim.trim(a.group_name) or " "
-        local entry = string.format("%s:%d:%-28s │ %-34s │ %-18s │ %s",
+        local entry = string.format("%s:%d:|%-28s │ %-34s │ %-18s │ %s",
           file, line,
           utils.ansi_codes.yellow(a.event),
           utils.ansi_codes.blue(group),

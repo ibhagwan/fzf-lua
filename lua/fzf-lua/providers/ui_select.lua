@@ -95,7 +95,7 @@ M.ui_select = function(items, ui_opts, on_choice)
   end
 
   opts.fzf_opts = vim.tbl_extend("keep", opts.fzf_opts or {}, {
-    ["--no-multi"]       = "",
+    ["--no-multi"]       = true,
     ["--preview-window"] = "hidden:right:0",
   })
 

@@ -20,6 +20,7 @@ yours too, if you allow it.
 - [Why Fzf-lua](#why-fzf-lua)
 - [Dependencies](#dependencies)
   + [Optional Dependencies](#optional-dependencies)
+  + [Windows Notes](#windows-notes)
 - [Installation](#installation)
 - [Usage](#usage)
   + [Resume](#resume)
@@ -103,7 +104,6 @@ at it. That, **and colorful file icons and git indicators!**.
 
 ## Dependencies
 
-- `Linux` or `MacOS`
 - [`neovim`](https://github.com/neovim/neovim/releases) version > `0.5.0`
 - [`fzf`](https://github.com/junegunn/fzf) version > `0.24`
   **or** [`skim`](https://github.com/lotabout/skim) binary installed
@@ -127,6 +127,22 @@ to configure in `previewer.builtin.extensions`):
   (recommended, supports most file formats)
 - [viu](https://github.com/atanunq/viu) - terminal image previewer
 - [ueberzug](https://github.com/seebye/ueberzug) - X11 image previewer
+
+### Windows Notes
+
+- [rg](https://github.com/BurntSushi/ripgrep) is required for `grep` and `tags`
+- [git](https://git-scm.com/download/win) for Windows is required for `git`
+  (though installing `git-bash`|`sh` **is not required**).
+
+- Installation of dependencies (fzf, rg, fd, etc) is possible via
+  [scoop](https://github.com/ScoopInstaller/Install),
+  [chocolatey](https://chocolatey.org/install) or
+  [winget-cli](https://github.com/microsoft/winget-cli)
+
+- Although almost everything works on Windows exactly as the *NIX/OSX check out
+  the [Windows README](https://github.com/ibhagwan/fzf-lua/blob/main/README-Win.md)
+  for known issues and limitations.
+
 
 ## Installation
 
@@ -288,9 +304,9 @@ Alternatively, resuming work on a specific provider:
 | `lsp_document_symbols`       | Document Symbols                 |
 | `lsp_workspace_symbols`      | Workspace Symbols                |
 | `lsp_live_workspace_symbols` | Workspace Symbols (live query)   |
-| `lsp_code_actions`           | Code Actions                     |
 | `lsp_incoming_calls`         | Incoming Calls                   |
 | `lsp_outgoing_calls`         | Outgoing Calls                   |
+| `lsp_code_actions`           | Code Actions                     |
 | `lsp_finder`                 | All LSP locations, combined view |
 | `diagnostics_document`       | Document Diagnostics             |
 | `diagnostics_workspace`      | Workspace Diagnostics            |
@@ -639,9 +655,9 @@ require'fzf-lua'.setup {
   fzf_opts = {
     -- options are sent as `<left>=<right>`
     -- set to `false` to remove a flag
-    -- set to '' for a non-value flag
+    -- set to `true` for a no-value flag
     -- for raw args use `fzf_args` instead
-    ["--ansi"]        = "",
+    ["--ansi"]        = true,
     ["--info"]        = "inline",
     ["--height"]      = "100%",
     ["--layout"]      = "reverse",
@@ -671,7 +687,7 @@ require'fzf-lua'.setup {
   previewers = {
     cat = {
       cmd             = "cat",
-      args            = "--number",
+      args            = "-n",
     },
     bat = {
       cmd             = "bat",
@@ -772,8 +788,8 @@ require'fzf-lua'.setup {
     -- NOTE: 'find -printf' requires GNU find
     -- cmd            = "find . -type f -printf '%P\n'",
     find_opts         = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
-    rg_opts           = "--color=never --files --hidden --follow -g '!.git'",
-    fd_opts           = "--color=never --type f --hidden --follow --exclude .git",
+    rg_opts           = [[--color=never --files --hidden --follow -g "!.git"]],
+    fd_opts           = [[--color=never --type f --hidden --follow --exclude .git]],
     -- by default, cwd appears in the header only if {opts} contain a cwd
     -- parameter to a different folder than the current working directory
     -- uncomment if you wish to force display of the cwd as part of the
@@ -808,7 +824,7 @@ require'fzf-lua'.setup {
     },
     status = {
       prompt        = 'GitStatus❯ ',
-      cmd           = "git -c color.status=false status -su",
+      cmd           = "git -c color.status=false --no-optional-locks status --porcelain=v1 -u",
       multiprocess  = true,           -- run command in a separate process
       file_icons    = true,
       git_icons     = true,
@@ -833,7 +849,8 @@ require'fzf-lua'.setup {
     },
     commits = {
       prompt        = 'Commits❯ ',
-      cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset'",
+      cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
+          .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
       preview       = "git show --color {1}",
       -- git-delta is automatically detected as pager, uncomment to disable
       -- preview_pager = false,
@@ -850,7 +867,8 @@ require'fzf-lua'.setup {
       --   git show --color {1} --rotate-to={file}
       --   {1}    : commit SHA (fzf field index expression)
       --   {file} : filepath placement within the commands
-      cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' {file}",
+      cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
+          .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {file}]],
       preview       = "git show --color {1} -- {file}",
       -- git-delta is automatically detected as pager, uncomment to disable
       -- preview_pager = false,
@@ -872,13 +890,12 @@ require'fzf-lua'.setup {
     },
     tags = {
       prompt   = "Tags> ",
-      cmd      = "git for-each-ref --color --sort=-taggerdate --format "
-          .. "'%(color:yellow)%(refname:short)%(color:reset) "
-          .. "%(color:green)(%(taggerdate:relative))%(color:reset)"
-          .. " %(subject) %(color:blue)%(taggername)%(color:reset)' refs/tags",
-      preview  = "git log --graph --color --pretty=format:'%C(yellow)%h%Creset "
-          .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' {1}",
-      fzf_opts = { ["--no-multi"] = "" },
+      cmd      = [[git for-each-ref --color --sort="-taggerdate" --format ]]
+          .. [["%(color:yellow)%(refname:short)%(color:reset) ]]
+          .. [[%(color:green)(%(taggerdate:relative))%(color:reset)]]
+          .. [[ %(subject) %(color:blue)%(taggername)%(color:reset)" refs/tags]],
+      preview  = [[git log --graph --color --pretty=format:"%C(yellow)%h%Creset ]]
+          .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {1}]],
       actions  = { ["default"] = actions.git_checkout },
     },
     stash = {
@@ -888,10 +905,6 @@ require'fzf-lua'.setup {
       actions = {
         ["default"]   = actions.git_stash_apply,
         ["ctrl-x"]    = { fn = actions.git_stash_drop, reload = true },
-      },
-      fzf_opts = {
-        ["--no-multi"]  = '',
-        ['--delimiter'] = "'[:]'",
       },
     },
     icons = {
@@ -988,7 +1001,7 @@ require'fzf-lua'.setup {
     },
     fzf_opts = {
       -- hide tabnr
-      ['--delimiter'] = "'[\\):]'",
+      ["--delimiter"] = "[\\):]",
       ["--with-nth"]  = '2..',
     },
   },
@@ -1001,7 +1014,7 @@ require'fzf-lua'.setup {
     fzf_opts = {
       -- do not include bufnr in fuzzy matching
       -- tiebreak by line no.
-      ['--delimiter'] = "'[\\]:]'",
+      ["--delimiter"] = "[\\]:]",
       ["--nth"]       = '2..',
       ["--tiebreak"]  = 'index',
       ["--tabstop"]   = "1",
@@ -1021,7 +1034,7 @@ require'fzf-lua'.setup {
     -- start          = "cursor"      -- start display from cursor?
     fzf_opts = {
       -- hide filename, tiebreak by line no.
-      ["--delimiter"] = "'[:]'",
+      ["--delimiter"] = "[:]",
       ["--with-nth"]  = '2..',
       ["--tiebreak"]  = 'index',
       ["--tabstop"]   = "1",
@@ -1055,7 +1068,7 @@ require'fzf-lua'.setup {
   btags = {
     prompt                = 'BTags❯ ',
     ctags_file            = nil,      -- auto-detect from tags-option
-    ctags_autogen         = false,    -- dynamically generate ctags each call
+    ctags_autogen         = true,     -- dynamically generate ctags each call
     multiprocess          = true,
     file_icons            = false,
     git_icons             = false,

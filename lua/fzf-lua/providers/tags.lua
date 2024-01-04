@@ -7,10 +7,15 @@ local make_entry = require "fzf-lua.make_entry"
 local M = {}
 
 local function get_tags_cmd(opts)
+  -- command already set by `ctags_autogen`?
+  if opts.cmd then return opts.cmd end
   local query, filter = nil, nil
   local bin, flags = nil, nil
   if vim.fn.executable("rg") == 1 then
     bin, flags = "rg", opts.rg_opts
+  elseif utils.__IS_WINDOWS then
+    utils.warn("Tags requires installing 'rg' on Windows.")
+    return nil, nil
   else
     bin, flags = "grep", opts.grep_opts
   end
@@ -19,7 +24,8 @@ local function get_tags_cmd(opts)
   if opts.filename and #opts.filename > 0 then
     -- tags use relative paths, by now we should
     -- have the correct cwd from `get_ctags_cwd`
-    query = libuv.shellescape(path.relative(opts.filename, opts.cwd or vim.loop.cwd()))
+    query = libuv.shellescape(
+      utils.rg_escape(path.relative_to(opts.filename, opts.cwd or vim.loop.cwd())))
   elseif opts.search and #opts.search > 0 then
     filter = ([[%s -v "^!"]]):format(bin)
     query = libuv.shellescape(opts.no_esc and opts.search or
@@ -29,7 +35,7 @@ local function get_tags_cmd(opts)
   end
   return ("%s %s %s %s"):format(
     bin, flags, query,
-    opts._ctags_file and vim.fn.shellescape(opts._ctags_file) or ""
+    opts._ctags_file and libuv.shellescape(opts._ctags_file) or ""
   ), filter
 end
 
@@ -66,7 +72,7 @@ M._TAGS2CWD = {}
 
 local function tags(opts)
   -- make sure we have the correct 'bat' previewer for tags
-  if opts.previewer == "bat_native" then opts.previewer = "bat_async" end
+  if opts.previewer == "bat_native" then opts.previewer = "bat" end
 
   -- signal actions this is a ctag
   opts._ctag = true
@@ -76,7 +82,7 @@ local function tags(opts)
 
   -- tags file should always resolve to an absolute path, already "expanded" by
   -- `get_ctags_file` we take care of the case where `opts.ctags_file = "tags"`
-  if not path.starts_with_separator(opts._ctags_file) then
+  if not path.is_absolute(opts._ctags_file) then
     opts._ctags_file = path.join({ opts.cwd or vim.loop.cwd(), opts.ctags_file })
   end
 
@@ -146,7 +152,8 @@ local function tags(opts)
     -- we need this for 'actions.grep_lgrep'
     opts.__ACT_TO = opts.__ACT_TO or M.grep
     -- live_grep requested by caller ('tags_live_grep')
-    local _, filter = get_tags_cmd({ search = "dummy" })
+    local cmd, filter = get_tags_cmd({ search = "dummy" })
+    if not cmd then return end -- cmd only used for this test
     opts.filter = (opts.filter == nil) and filter or opts.filter
     -- rg globs are meaningless here since we are searching
     -- a single file
@@ -168,7 +175,8 @@ local function tags(opts)
     -- Since we cannot use include and exclude in the
     -- same grep command, we need to use a pipe to filter
     local cmd, filter = get_tags_cmd(opts)
-    opts.raw_cmd = opts.cmd or cmd
+    if not cmd then return end
+    opts.raw_cmd = cmd
     opts.filter = (opts.filter == nil) and filter or opts.filter
     if opts.filter and #opts.filter > 0 then
       opts.raw_cmd = ("%s | %s"):format(opts.raw_cmd, opts.filter)

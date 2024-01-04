@@ -93,9 +93,6 @@ end
 M.helptags = function(opts)
   opts = config.normalize_opts(opts, "helptags")
   if not opts then return end
-
-  opts.fzf_opts["--no-multi"] = ""
-
   core.fzf_exec(fzf_fn, opts)
 end
 

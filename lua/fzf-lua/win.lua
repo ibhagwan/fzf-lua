@@ -344,6 +344,7 @@ local function opt_matches(opts, key, str)
   return opt and opt:match(str)
 end
 
+---@alias FzfWin table
 ---@param o table
 ---@return FzfWin
 function FzfWin:new(o)
@@ -982,7 +983,7 @@ function FzfWin.win_leave()
     self._previewer:win_leave()
   end
   if not self or self.closing then return end
-  _self:close()
+  self:close()
 end
 
 function FzfWin:update_scrollbar_border(o)

@@ -9,6 +9,11 @@ M.oldfiles = function(opts)
   opts = config.normalize_opts(opts, "oldfiles")
   if not opts then return end
 
+  -- cwd implies we want `cwd_only=true`
+  if opts.cwd and opts.cwd_only == nil then
+    opts.cwd_only = true
+  end
+
   local current_buffer = vim.api.nvim_get_current_buf()
   local current_file = vim.api.nvim_buf_get_name(current_buffer)
   local sess_tbl = {}

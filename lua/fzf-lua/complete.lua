@@ -1,5 +1,6 @@
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
+local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
 local M = {}
@@ -23,14 +24,14 @@ local function find_toplevel_cwd(maybe_cwd, postfix, orig_cwd)
   if vim.fn.isdirectory(vim.fn.expand(maybe_cwd)) == 1 then
     local disp_cwd, cwd = maybe_cwd, vim.fn.expand(maybe_cwd)
     -- returned cwd must be full path
-    if cwd:sub(1, 1) == "." and cwd:sub(2, 2) == path.SEPARATOR then
+    if path.has_cwd_prefix(cwd) then
       cwd = vim.loop.cwd() .. (#cwd > 1 and cwd:sub(2) or "")
       -- inject "./" only if original path started with it
       -- otherwise ignore the "." retval from fnamemodify
       if #orig_cwd > 0 and orig_cwd:sub(1, 1) ~= "." then
         disp_cwd = nil
       end
-    elseif not path.starts_with_separator(cwd) then
+    elseif not path.is_absolute(cwd) then
       cwd = path.join({ vim.loop.cwd(), cwd })
     end
     return disp_cwd, cwd, postfix
@@ -60,15 +61,13 @@ local set_cmp_opts_path = function(opts)
   if not opts.prompt then
     opts.prompt = "."
   end
-  if not path.ends_with_separator(opts.prompt) then
-    opts.prompt = opts.prompt .. path.SEPARATOR
-  end
+  opts.prompt = path.add_trailing(opts.prompt)
   -- completion function rebuilds the line with the full path
   opts.complete = function(selected, o, l, _)
     -- query fuzzy matching is empty
     if #selected == 0 then return end
     local replace_at = col - #before
-    local relpath = path.relative(path.entry_to_file(selected[1], o).path, opts.cwd)
+    local relpath = path.relative_to(path.entry_to_file(selected[1], o).path, opts.cwd)
     local before_path = replace_at > 1 and l:sub(1, replace_at - 1) or ""
     local rest_of_line = #l >= (col + #after) and l:sub(col + #after) or ""
     local resolved_path = opts._cwd and path.join({ opts._cwd, relpath }) or relpath
@@ -87,8 +86,8 @@ M.path = function(opts)
       return "fdfind"
     elseif vim.fn.executable("fd") == 1 then
       return "fd"
-    elseif vim.fn.executable("rg") == 1 then
-      return "rg --files"
+    elseif utils.__IS_WINDOWS then
+      return "dir /s/b"
     else
       return [[find ! -path '.' ! -path '*/\.git/*' -printf '%P\n']]
     end
@@ -103,12 +102,14 @@ M.file = function(opts)
   if not opts then return end
   opts.cmp_is_file = true
   opts.cmd = opts.cmd or (function()
-    if vim.fn.executable("rg") == 1 then
-      return "rg --files"
-    elseif vim.fn.executable("fdfind") == 1 then
+    if vim.fn.executable("fdfind") == 1 then
       return "fdfind --type f --exclude .git"
     elseif vim.fn.executable("fd") == 1 then
       return "fd --type f --exclude .git"
+    elseif vim.fn.executable("rg") == 1 then
+      return "rg --files"
+    elseif utils.__IS_WINDOWS then
+      return "dir /s/b"
     else
       return [[find -type f ! -path '*/\.git/*' -printf '%P\n']]
     end
@@ -123,7 +124,7 @@ M.line = function(opts)
   opts.query = (function()
     local col = vim.api.nvim_win_get_cursor(0)[2] + 1
     local line = vim.api.nvim_get_current_line()
-    return #line > col and vim.trim(line:sub(1, col)) or nil
+    return vim.trim(line:sub(1, col))
   end)()
   opts.complete = function(selected, _, _, _)
     local newline = selected[1]:match("^.*:%d+:%s(.*)")

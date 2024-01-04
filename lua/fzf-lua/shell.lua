@@ -54,6 +54,10 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   local receiving_function = function(pipe_path, ...)
     local pipe = uv.new_pipe(false)
     local args = { ... }
+    -- unesacpe double backslashes on windows
+    if type(args[1]) == "table" then
+      args[1] = vim.tbl_map(function(x) return libuv.unescape_fzf(x) end, args[1])
+    end
     -- save selected item in main module's __INFO
     -- use loadstring to avoid circular require
     pcall(function()
@@ -80,11 +84,10 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- this is for windows WSL and AppImage users, their nvim path isn't just
   -- 'nvim', it can be something else
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
-  local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and ""
-      or string.format(utils.__IS_WINDOWS
-        and [[set "VIMRUNTIME=%s" & ]] or "VIMRUNTIME=%s ",
-        utils.__IS_WINDOWS and vim.fs.normalize(vim.env.VIMRUNTIME) or
-        libuv.shellescape(vim.env.VIMRUNTIME))
+  local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and "" or string.format(
+    utils._if_win([[set VIMRUNTIME=%s& ]], "VIMRUNTIME=%s "),
+    utils._if_win(path.normalize(vim.env.VIMRUNTIME),
+      libuv.shellescape(vim.env.VIMRUNTIME)))
 
   local call_args = ("fzf_lua_server=[[%s]], fnc_id=%d %s"):format(
     vim.g.fzf_lua_server, id, debug and ", debug=true" or "")
@@ -96,7 +99,7 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- worktrees (#600)
   local action_cmd = ("%s%s -n --headless --clean --cmd %s -- %s"):format(
     nvim_runtime,
-    libuv.shellescape(nvim_bin),
+    libuv.shellescape(path.normalize(nvim_bin)),
     libuv.shellescape(("lua loadfile([[%s]])().rpc_nvim_exec_lua({%s})")
       :format(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" }, call_args)),
     fzf_field_expression)
@@ -106,7 +109,7 @@ end
 
 function M.async_action(fn, fzf_field_expression, debug)
   local action_string, id = M.raw_async_action(fn, fzf_field_expression, debug)
-  return vim.fn.shellescape(action_string), id
+  return libuv.shellescape(action_string), id
 end
 
 function M.raw_action(fn, fzf_field_expression, debug)
@@ -140,12 +143,12 @@ end
 
 function M.action(fn, fzf_field_expression, debug)
   local action_string, id = M.raw_action(fn, fzf_field_expression, debug)
-  return vim.fn.shellescape(action_string), id
+  return libuv.shellescape(action_string), id
 end
 
 M.preview_action_cmd = function(fn, fzf_field_expression, debug)
   local action_string, id = M.raw_preview_action_cmd(fn, fzf_field_expression, debug)
-  return vim.fn.shellescape(action_string), id
+  return libuv.shellescape(action_string), id
 end
 
 M.raw_preview_action_cmd = function(fn, fzf_field_expression, debug)
@@ -168,12 +171,17 @@ M.raw_preview_action_cmd = function(fn, fzf_field_expression, debug)
     libuv.process_kill(M.__pid_preview)
     M.__pid_preview = nil
 
-    return libuv.spawn({
-      cmd = fn(...),
+    local opts = fn(...)
+    if type(opts) == "string" then
+      --backward compat
+      opts = { cmd = opts }
+    end
+
+    return libuv.spawn(vim.tbl_extend("force", opts, {
       cb_finish = on_finish,
       cb_write = on_write,
       cb_pid = function(pid) M.__pid_preview = pid end,
-    }, false)
+    }))
   end, fzf_field_expression, debug)
 end
 

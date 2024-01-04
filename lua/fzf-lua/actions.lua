@@ -16,7 +16,7 @@ M.expect = function(actions)
     end
   end
   if #keys > 0 then
-    return string.format("--expect=%s", table.concat(keys, ","))
+    return table.concat(keys, ",")
   end
   return nil
 end
@@ -96,7 +96,7 @@ M.vimcmd = function(vimcmd, selected, noesc)
   end
 end
 
-M.vimcmd_file = function(vimcmd, selected, opts)
+M.vimcmd_file = function(vimcmd, selected, opts, pcall_vimcmd)
   local curbuf = vim.api.nvim_buf_get_name(0)
   local is_term = utils.is_term_buffer(0)
   for i = 1, #selected do
@@ -104,7 +104,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     if entry.path == "<none>" then goto continue end
     entry.ctag = opts._ctag and path.entry_to_ctag(selected[i])
     local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
-    if not path.starts_with_separator(fullpath) then
+    if not path.is_absolute(fullpath) then
       fullpath = path.join({ opts.cwd or opts._cwd or vim.loop.cwd(), fullpath })
     end
     if vimcmd == "e"
@@ -125,15 +125,20 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     -- add current location to jumplist
     if not is_term then vim.cmd("normal! m`") end
     -- only change buffer if we need to (issue #122)
-    if vimcmd ~= "e" or curbuf ~= fullpath then
+    if vimcmd ~= "e" or not path.equals(curbuf, fullpath) then
       if entry.path then
         -- do not run ':<cmd> <file>' for uri entries (#341)
-        local relpath = path.relative(entry.path, vim.loop.cwd())
+        local relpath = path.relative_to(entry.path, vim.loop.cwd())
         if vim.o.autochdir then
           -- force full paths when `autochdir=true` (#882)
           relpath = fullpath
         end
-        vim.cmd(vimcmd .. " " .. vim.fn.fnameescape(relpath))
+        local cmd = vimcmd .. " " .. vim.fn.fnameescape(relpath)
+        if pcall_vimcmd then
+          pcall(vim.cmd, cmd)
+        else
+          vim.cmd(cmd)
+        end
       elseif vimcmd ~= "e" then
         -- uri entries only execute new buffers (new|vnew|tabnew)
         vim.cmd(vimcmd)
@@ -245,7 +250,7 @@ M.file_switch = function(selected, opts)
   local bufnr = nil
   local entry = path.entry_to_file(selected[1])
   local fullpath = entry.path
-  if not path.starts_with_separator(fullpath) then
+  if not path.is_absolute(fullpath) then
     fullpath = path.join({ opts.cwd or vim.loop.cwd(), fullpath })
   end
   for _, b in ipairs(vim.api.nvim_list_bufs()) do
@@ -629,7 +634,7 @@ end
 local git_exec = function(selected, opts, cmd, silent)
   local success
   for _, e in ipairs(selected) do
-    local file = path.relative(path.entry_to_file(e, opts).path, opts.cwd)
+    local file = path.relative_to(path.entry_to_file(e, opts).path, opts.cwd)
     local _cmd = vim.deepcopy(cmd)
     table.insert(_cmd, file)
     local output, rc = utils.io_systemlist(_cmd)
@@ -692,7 +697,8 @@ M.git_stash_pop = function(selected, opts)
   if utils.input("Pop " .. #selected .. " stash(es)? [y/n] ") == "y" then
     local cmd = path.git_cwd({ "git", "stash", "pop" }, opts)
     git_exec(selected, opts, cmd)
-    vim.cmd("e!")
+    -- trigger autoread or warn the users buffer(s) was changed
+    vim.cmd.checktime()
   end
 end
 
@@ -700,7 +706,8 @@ M.git_stash_apply = function(selected, opts)
   if utils.input("Apply " .. #selected .. " stash(es)? [y/n] ") == "y" then
     local cmd = path.git_cwd({ "git", "stash", "apply" }, opts)
     git_exec(selected, opts, cmd)
-    vim.cmd("e!")
+    -- trigger autoread or warn the users buffer(s) was changed
+    vim.cmd.checktime()
   end
 end
 
@@ -709,7 +716,7 @@ M.git_buf_edit = function(selected, opts)
   local git_root = path.git_root(opts, true)
   local win = vim.api.nvim_get_current_win()
   local buffer_filetype = vim.bo.filetype
-  local file = path.relative(vim.fn.expand("%:p"), git_root)
+  local file = path.relative_to(path.normalize(vim.fn.expand("%:p")), git_root)
   local commit_hash = match_commit_hash(selected[1], opts)
   table.insert(cmd, commit_hash .. ":" .. file)
   local git_file_contents = utils.io_systemlist(cmd)
@@ -746,7 +753,9 @@ end
 
 M.arg_del = function(selected, opts)
   local vimcmd = "argdel"
-  M.vimcmd_file(vimcmd, selected, opts)
+  -- since we don't dedup argdel can fail if file is added
+  -- more than once into the arglist
+  M.vimcmd_file(vimcmd, selected, opts, true)
 end
 
 M.grep_lgrep = function(_, opts)
@@ -819,8 +828,9 @@ end
 ---@param selected string[]
 ---@param opts table
 M.apply_profile = function(selected, opts)
-  local fname = utils.__IS_WINDOWS and selected[1]:match("%u?:?[^:]+") or selected[1]:match("[^:]+")
-  local profile = selected[1]:match(":([^%s]+)")
+  local entry = path.entry_to_file(selected[1])
+  local fname = entry.path
+  local profile = entry.stripped:sub(#fname + 2):match("[^%s]+")
   local ok = utils.load_profile(fname, profile, opts.silent)
   if ok then
     vim.cmd(string.format([[lua require("fzf-lua").setup({"%s"})]], profile))

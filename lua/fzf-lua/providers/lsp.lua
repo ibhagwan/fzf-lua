@@ -101,7 +101,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
   result = vim.tbl_filter(function(x)
     local item = vim.lsp.util.locations_to_items({ x }, encoding)[1]
     table.insert(items, item)
-    if opts.cwd_only and not path.is_relative(item.filename, opts.cwd) then
+    if opts.cwd_only and not path.is_relative_to(item.filename, opts.cwd) then
       return false
     end
     return true

@@ -9,8 +9,7 @@ if utils.__HAS_DEVICONS then
 
   -- get the devicons module path
   M._devicons_path = M._has_devicons and M._devicons and M._devicons.setup
-      and debug.getinfo(M._devicons.setup, "S").source:gsub("^@", "")
-  if utils.__IS_WINDOWS then M._devicons_path = vim.fs.normalize(M._devicons_path) end
+      and path.normalize(debug.getinfo(M._devicons.setup, "S").source:gsub("^@", ""))
 end
 
 M._diricon_escseq = function()
@@ -275,6 +274,13 @@ function M.normalize_opts(opts, globals, __resume_key)
       type(M.globals[k]) == "table" and utils.tbl_deep_clone(M.globals[k]) or {})
   end
 
+  -- backward compat: no-value flags should be set to `true`, in the past these
+  -- would be set to an empty string which would now translate into a shell escaped
+  -- string as we automatically shell escape all fzf_opts
+  for k, v in pairs(opts.fzf_opts) do
+    if v == "" then opts.fzf_opts[k] = true end
+  end
+
   -- prioritize fzf-tmux split pane flags over the
   -- popup flag `-p` from fzf-lua defaults (#865)
   if type(opts.fzf_tmux_opts) == "table" then
@@ -421,20 +427,25 @@ function M.normalize_opts(opts, globals, __resume_key)
   end
 
   if opts.cwd and #opts.cwd > 0 then
+    -- NOTE: on Windows, `expand` will replace all backslashes with forward slashes
+    -- i.e. C:/Users -> c:\Users
     opts.cwd = vim.fn.expand(opts.cwd)
     if not vim.loop.fs_stat(opts.cwd) then
       utils.warn(("Unable to access '%s', removing 'cwd' option."):format(opts.cwd))
       opts.cwd = nil
     else
-      -- relative paths in cwd are inaccessible when using multiprocess
-      -- as the external process have no awareness of our current working
-      -- directory so we must convert to full path (#375)
-      if not path.starts_with_separator(opts.cwd) then
+      if not path.is_absolute(opts.cwd) then
+        -- relative paths in cwd are inaccessible when using multiprocess
+        -- as the external process have no awareness of our current working
+        -- directory so we must convert to full path (#375)
         opts.cwd = path.join({ vim.loop.cwd(), opts.cwd })
+      elseif utils.__IS_WINDOWS and opts.cwd:sub(2) == ":" then
+        -- TODO: upstream bug? on Windoows: starting jobs with `cwd = C:` (without separator)
+        -- ignores the cwd argument and starts the job in the current working directory
+        opts.cwd = path.add_trailing(opts.cwd)
       end
     end
   end
-
 
   -- test for valid git_repo
   opts.git_icons = opts.git_icons and path.is_git_repo(opts, true)

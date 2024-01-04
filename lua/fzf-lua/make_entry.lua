@@ -2,6 +2,7 @@ local M = {}
 
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local config = nil
 
 -- attempt to load the current config
@@ -274,8 +275,7 @@ M.glob_parse = function(query, opts)
   local glob_args = ""
   local search_query, glob_str = query:match("(.*)" .. opts.glob_separator .. "(.*)")
   for _, s in ipairs(utils.strsplit(glob_str, "%s")) do
-    glob_args = glob_args .. ("%s %s ")
-        :format(opts.glob_flag, vim.fn.shellescape(s))
+    glob_args = glob_args .. ("%s %s "):format(opts.glob_flag, libuv.shellescape(s))
   end
   return search_query, glob_args
 end
@@ -318,6 +318,88 @@ M.rg_insert_args = function(cmd, args, relocate_pattern)
 end
 
 M.preprocess = function(opts)
+  local argv = function(i, debug)
+    -- argv1 is actually the 7th argument if we count
+    -- arguments already supplied by 'wrap_spawn_stdio'.
+    -- If no index was supplied use the last argument
+    local idx = tonumber(i) and tonumber(i) + 6 or #vim.v.argv
+    local arg = vim.v.argv[idx]
+    if debug == "v" or debug == "verbose" then
+      io.stdout:write(("[DEBUGV]: raw_argv(%d) = %s\n"):format(idx, arg))
+    end
+    if utils.__IS_WINDOWS then
+      arg = libuv.unescape_fzf(arg)
+    end
+    if debug == "v" or debug == "verbose" then
+      io.stdout:write(("[DEBUGV]: esc_argv(%d) = %s\n"):format(idx, libuv.shellescape(arg)))
+    end
+    return arg
+  end
+
+  -- live_grep replace pattern with last argument
+  local argvz = "{argvz}"
+  if opts.cmd and opts.cmd:match(argvz) then
+    -- The NEQ condition on Windows turned out to be a real pain in the butt
+    -- so I decided to move the empty query test into our cmd proxy wrapper
+    -- For obvious reasons this cannot work with `live_grep_native` and thus
+    -- the NEQ condition remains for the "native" version
+    if not opts.exec_empty_query then
+      -- query is always be the last argument
+      if argv(nil, opts.debug) == "" then
+        opts.cmd = utils.shell_nop()
+        return opts
+      end
+    end
+
+    -- did the caller request rg with glob support?
+    -- manipulation needs to be done before the argv replacement
+    if opts.rg_glob then
+      local query = argv(nil, opts.debug)
+      local search_query, glob_args = M.glob_parse(query, opts)
+      if glob_args then
+        -- gsub doesn't like single % on rhs
+        search_query = search_query:gsub("%%", "%%%%")
+        -- reset argvz so it doesn't get replaced again below
+        -- insert glob args before `-- {argvz}` or `-e {argvz}` repositioned
+        -- at the end of the command preceding the search query (#781, #794)
+        opts.cmd = M.rg_insert_args(opts.cmd, glob_args, argvz)
+        opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(search_query))
+      end
+    end
+  end
+
+  -- nifty hack to avoid having to double escape quotations
+  -- see my comment inside 'live_grep' initial_command code
+  if opts.argv_expr then
+    opts.cmd = opts.cmd:gsub("{argv.*}",
+      function(x)
+        local idx = x:match("{argv(.*)}")
+        return libuv.shellescape(argv(idx, not opts.rg_glob and opts.debug))
+      end)
+  end
+
+  if utils.__IS_WINDOWS and opts.cmd:match("!") then
+    -- https://ss64.com/nt/syntax-esc.html
+    -- This changes slightly if you are running with DelayedExpansion of variables:
+    -- if any part of the command line includes an '!' then CMD will escape a second
+    -- time, so ^^^^ will become ^
+    -- replace in sections, only double the relevant pipe sections with !
+    local escaped_cmd = {}
+    for _, str in ipairs(utils.strsplit(opts.cmd, "%s+|")) do
+      if str:match("!") then
+        str = str:gsub('[%(%)%%!%^<>&|"]', function(x)
+          return "^" .. x
+        end)
+        -- make sure all ! are escaped at least twice
+        str = str:gsub("[^%^]%^!", function(x)
+          return x:sub(1, 1) .. "^" .. x:sub(2)
+        end)
+      end
+      table.insert(escaped_cmd, str)
+    end
+    opts.cmd = table.concat(escaped_cmd, " |")
+  end
+
   if opts.cwd_only and not opts.cwd then
     opts.cwd = vim.loop.cwd()
   end
@@ -329,51 +411,6 @@ M.preprocess = function(opts)
 
   if opts.git_icons then
     opts.diff_files = M.get_diff_files(opts)
-  end
-
-  local argv = function(i, debug)
-    -- argv1 is actually the 7th argument if we count
-    -- arguments already supplied by 'wrap_spawn_stdio'.
-    -- If no index was supplied use the last argument
-    local idx = tonumber(i) and tonumber(i) + 6 or #vim.v.argv
-    if debug then
-      io.stdout:write(("[DEBUG]: argv(%d) = %s\n")
-        :format(idx, vim.fn.shellescape(vim.v.argv[idx])))
-    end
-    return vim.v.argv[idx]
-  end
-
-  -- live_grep replace pattern with last argument
-  local argvz = "{argvz}"
-  local has_argvz = opts.cmd and opts.cmd:match(argvz)
-
-  -- did the caller request rg with glob support?
-  -- manipulation needs to be done before the argv hack
-  if opts.rg_glob and has_argvz then
-    local query = argv()
-    local search_query, glob_args = M.glob_parse(query, opts)
-    if glob_args then
-      -- gsub doesn't like single % on rhs
-      search_query = search_query:gsub("%%", "%%%%")
-      -- reset argvz so it doesn't get replaced again below
-      -- insert glob args before `-- {argvz}` or `-e {argvz}` repositioned
-      -- at the end of the command preceding the search query (#781, #794)
-      opts.cmd = M.rg_insert_args(opts.cmd, glob_args, argvz)
-      opts.cmd = opts.cmd:gsub(argvz, vim.fn.shellescape(search_query))
-    end
-  end
-
-  -- nifty hack to avoid having to double escape quotations
-  -- see my comment inside 'live_grep' initial_command code
-  if opts.argv_expr then
-    opts.cmd = opts.cmd:gsub("{argv.*}",
-      function(x)
-        local idx = x:match("{argv(.*)}")
-        -- \\ -> \ characters from a regular lua strings being inserted into a literal lua strings cause problems
-        -- " -> """ vim.fn.shellescape wrongly adds an additional final "
-        return utils.__IS_WINDOWS and argv(idx):gsub([[\\]], [[\]]):gsub('"', '"""')
-            or vim.fn.shellescape(argv(idx))
-      end)
   end
 
   return opts
@@ -397,13 +434,23 @@ local COLON_BYTE = string.byte(":")
 
 ---@param x string
 ---@param opts table
----@return string entry
+---@return string? entry
 M.file = function(x, opts)
   opts = opts or {}
   local ret = {}
   local icon, hl
-  local colon_idx = utils.find_next_char(x, COLON_BYTE) or 0
-  if utils.__IS_WINDOWS then colon_idx = utils.find_next_char(x, COLON_BYTE, colon_idx) or 0 end
+  local colon_start_idx = 1
+  if utils.__IS_WINDOWS then
+    if string.byte(x, #x) == 13 then
+      -- strip ^M added by the "dir /s/b" command
+      x = x:sub(1, #x - 1)
+    end
+    if path.is_absolute(x) then
+      -- ignore the first colon in the drive spec, e.g c:\
+      colon_start_idx = 3
+    end
+  end
+  local colon_idx = utils.find_next_char(x, COLON_BYTE, colon_start_idx) or 0
   local file_part = colon_idx > 1 and x:sub(1, colon_idx - 1) or x
   local rest_of_line = colon_idx > 1 and x:sub(colon_idx) or nil
   -- strip ansi coloring from path so we can use filters
@@ -416,18 +463,18 @@ M.file = function(x, opts)
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
   -- the './' prefix, will not work with '--color=always'
   -- https://github.com/sharkdp/fd/blob/master/CHANGELOG.md
-  if not (opts.strip_cwd_prefix == false) and path.starts_with_cwd(filepath) then
+  if not (opts.strip_cwd_prefix == false) then
     filepath = path.strip_cwd_prefix(filepath)
   end
   -- make path relative
   if opts.cwd and #opts.cwd > 0 then
-    filepath = path.relative(filepath, opts.cwd)
+    filepath = path.relative_to(filepath, opts.cwd)
   end
-  if path.starts_with_separator(filepath) then
+  if path.is_absolute(filepath) then
     -- filter for cwd only
     if opts.cwd_only then
       local cwd = opts.cwd or vim.loop.cwd()
-      if not path.is_relative(filepath, cwd) then
+      if not path.is_relative_to(filepath, cwd) then
         return nil
       end
     end
@@ -447,10 +494,15 @@ M.file = function(x, opts)
   -- save a copy for git indicator and icon lookups
   local origpath = filepath
   if opts.path_shorten then
-    filepath = path.shorten(filepath, tonumber(opts.path_shorten))
+    filepath = path.shorten(filepath, tonumber(opts.path_shorten),
+      -- On Windows we want to shorten using the separator used by the `cwd` arg
+      -- otherwise we might haave issues "lenghening" as in the case of git which
+      -- uses normalized paths (using /) for `rev-parse --show-toplevel` and `ls-files`
+      utils.__IS_WINDOWS and opts.cwd and path.separator(opts.cwd))
   end
   if opts.git_icons then
-    local diff_info = opts.diff_files and opts.diff_files[origpath]
+    local diff_info = opts.diff_files
+        and opts.diff_files[utils._if_win(path.normalize(origpath), origpath)]
     local indicators = diff_info and diff_info[1] or utils.nbsp
     for i = 1, #indicators do
       icon = indicators:sub(i, i)
