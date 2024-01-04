@@ -34,9 +34,9 @@ local filter_buffers = function(opts, unfiltered)
       excluded[b] = true
     elseif opts.no_term_buffers and utils.is_term_buffer(b) then
       excluded[b] = true
-    elseif opts.cwd_only and not path.is_relative(vim.api.nvim_buf_get_name(b), vim.loop.cwd()) then
+    elseif opts.cwd_only and not path.is_relative_to(vim.api.nvim_buf_get_name(b), vim.loop.cwd()) then
       excluded[b] = true
-    elseif opts.cwd and not path.is_relative(vim.api.nvim_buf_get_name(b), opts.cwd) then
+    elseif opts.cwd and not path.is_relative_to(vim.api.nvim_buf_get_name(b), opts.cwd) then
       excluded[b] = true
     end
     if utils.buf_is_qf(b) then
@@ -118,7 +118,7 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
   local flags = hidden .. readonly .. changed
   local leftbr = "["
   local rightbr = "]"
-  local bufname = #buf.info.name > 0 and path.relative(buf.info.name, cwd or vim.loop.cwd())
+  local bufname = #buf.info.name > 0 and path.relative_to(buf.info.name, cwd or vim.loop.cwd())
   if opts.filename_only then
     bufname = path.basename(bufname)
   end
@@ -297,10 +297,6 @@ M.buffer_lines = function(opts)
       end
       cb(nil)
     end)()
-  end
-
-  if opts.search and #opts.search > 0 then
-    opts.fzf_opts["--query"] = vim.fn.shellescape(opts.search)
   end
 
   opts = core.set_fzf_field_index(opts, "{3}", opts._is_skim and "{}" or "{..-2}")

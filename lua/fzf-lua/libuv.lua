@@ -1,6 +1,6 @@
 local uv = vim.loop
 
-local is_windows = vim.fn.has("win32") == 1
+local is_windows = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 
 local M = {}
 
@@ -46,21 +46,30 @@ end
 local string_byte = string.byte
 local string_sub = string.sub
 
-local function find_last_newline(str)
+local function find_last(str, bytecode)
   for i = #str, 1, -1 do
-    if string_byte(str, i) == 10 then
+    if string_byte(str, i) == bytecode then
       return i
     end
   end
 end
 
-local function find_next_newline(str, start_idx)
+local function find_next(str, bytecode, start_idx)
   for i = start_idx or 1, #str do
-    if string_byte(str, i) == 10 then
+    if string_byte(str, i) == bytecode then
       return i
     end
   end
 end
+
+local function find_last_newline(str)
+  return find_last(str, 10)
+end
+
+local function find_next_newline(str, start_idx)
+  return find_next(str, 10, start_idx)
+end
+
 
 local function process_kill(pid, signal)
   if not pid or not tonumber(pid) then return false end
@@ -304,9 +313,9 @@ M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess)
 end
 
 ---@param opts table
----@param fn_transform string
----@param fn_preprocess string
-M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
+---@param fn_transform_str string
+---@param fn_preprocess_str string
+M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str)
   ---@param fn_str string
   ---@return function?
   local function load_fn(fn_str)
@@ -334,13 +343,24 @@ M.spawn_stdio = function(opts, fn_transform, fn_preprocess)
     opts.stderr_to_stdout = true
   end
 
-  fn_transform = load_fn(fn_transform)
-  fn_preprocess = load_fn(fn_preprocess)
+  local fn_transform = load_fn(fn_transform_str)
+  local fn_preprocess = load_fn(fn_preprocess_str)
 
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
 
-  if opts.debug then
+  if opts.debug == "v" or opts.debug == "verbose" then
+    for k, v in pairs(opts) do
+      io.stdout:write(string.format("[DEBUGV]: %s=%s\n", k, v))
+    end
+    for _, o in ipairs({ "_fzf_lua_server", "_devicons_path", "_devicons_setup" }) do
+      if _G[o] then
+        io.stdout:write(string.format("[DEBUGV]: %s=%s\n", o, _G[o]))
+      end
+    end
+    io.stdout:write(string.format("[DEBUGV]: fn_transform=%s\n", fn_transform_str))
+    io.stdout:write(string.format("[DEBUGV]: fn_preprocess=%s\n", fn_preprocess_str))
+  elseif opts.debug then
     io.stdout:write("[DEBUG]: " .. opts.cmd .. "\n")
   end
 
@@ -456,9 +476,82 @@ end
 --    If 'shell' contains "fish" in the tail, the "\" character will
 --    be escaped because in fish it is used as an escape character
 --    inside single quotes.
+--
+-- for windows, we assume we want to keep all quotes as literals
+-- to avoid the quotes being stripped when run from fzf actions
+-- we therefore have to escape the quotes with blackslashes and
+-- for nested quotes we double the blackslashes due to windows
+-- quirks, further reading:
+-- https://stackoverflow.com/questions/6714165/powershell-stripping-double-quotes-from-command-line-arguments
+-- https://learn.microsoft.com/en-us/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
+--
 -- this function is a better fit for utils but we're
 -- trying to avoid having any 'require' in this file
-M.shellescape = function(s)
+M.shellescape = function(s, force_win)
+  if is_windows or force_win then
+    -- From the above stackoverflow link:
+    --
+    -- (2n) + 1 backslashes followed by a quotation mark again produce n backslashes
+    -- followed by a quotation mark literal ("). This does not toggle the "in quotes"
+    -- mode.
+    --
+    -- Therefore our logic is to first, always wrap the escaped string with quotes
+    -- and any quotes inside teh string are escaped with blackslashes, doubling
+    -- the amount of blackslashes with each iteration:
+    --   foo"bar            -> "foo\"bar"
+    --   "foo\"bar"         -> "\"foo\\\"bar\""
+    --   "\"foo\\\"bar\""   -> "\"\\\"foo\\\\\\\"bar\\\"\""
+    --
+    -- print("before:", s)
+    local quote_byte = 34 -- string.byte([["]])
+    local escaped = { [["]] }
+    local quote_idx, quote_idx_prev = 0, 0
+    repeat
+      quote_idx_prev = quote_idx
+      quote_idx = find_next(s, quote_byte, quote_idx_prev + 1)
+      if not quote_idx then
+        -- no quotes were found, insert from previous quotes to end
+        -- of string, this also works for when no quotes are found
+        -- in the string as it will effectively translate to `sub(1)`
+        table.insert(escaped, s:sub(quote_idx_prev + 1))
+        quote_idx = #s -- trigger our "until" cond
+      else
+        -- quotes found, retrieve the substring prior to the quotes
+        -- if quotes are the first character, the substring will be
+        -- empty, this also covers when then original string starts
+        -- with quotes
+        local substr = quote_idx == (quote_idx_prev + 1) and ""
+            or s:sub(quote_idx_prev + 1, quote_idx - 1)
+        -- match the backslashes at the end of the substring only
+        -- this way we double only the blackslashes prepending the
+        -- quotes and not blackslashes in other positions, e.g:
+        --   foo\bar\" -> "foo\bar\\\""     // RIGHT
+        --   foo\bar\" -> "foo\\bar\\\""    // WRONG
+        --                    ^^
+        local bslash_prefix = #substr > 0 and substr:match("([%\\]+)$")
+        if bslash_prefix then
+          -- quote is prepended by one or more backslashes
+          -- double the prepending slashes so we end up with:
+          -- 2(n) + 1 (prepending the quotes)
+          substr = substr .. string.rep([[\]], #bslash_prefix)
+        end
+        -- if quotes are at index:1 substr is empty
+        if #substr > 0 then
+          table.insert(escaped, substr)
+        end
+        table.insert(escaped, [[\"]])
+      end
+    until not quote_idx or quote_idx >= #s
+    -- adjust when escaping a string that ends with a blackslash
+    -- otherwise the ending sequence will appear as a literal quote
+    -- and will be missing the end quotes
+    --   c:\foo\  -> "c:\foo\"    // WRONG
+    --   c:\foo\  -> "c:\foo\\"   // RIGHT
+    local last_char = #escaped > 0 and escaped[#escaped]:sub(-1)
+    table.insert(escaped, last_char == [[\]] and [[\"]] or [["]])
+    -- print("after:", table.concat(escaped))
+    return table.concat(escaped)
+  end
   local shell = vim.o.shell
   if not shell or not shell:match("fish$") then
     return vim.fn.shellescape(s)
@@ -494,7 +587,7 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and ""
       or string.format(
-        is_windows and 'set "VIMRUNTIME=%s" & ' or "VIMRUNTIME=%s ",
+        is_windows and [[set VIMRUNTIME=%s& ]] or "VIMRUNTIME=%s ",
         is_windows and vim.fs.normalize(vim.env.VIMRUNTIME) or M.shellescape(vim.env.VIMRUNTIME)
       )
   local call_args = opts
@@ -509,7 +602,7 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
   )
   local cmd_str = ("%s%s -n --headless --clean --cmd %s"):format(
     nvim_runtime,
-    M.shellescape(nvim_bin),
+    M.shellescape(is_windows and vim.fs.normalize(nvim_bin) or nvim_bin),
     M.shellescape(cmd)
   )
   return cmd_str

@@ -44,7 +44,7 @@ M.files = function(opts)
   if opts.ignore_current_file then
     local curbuf = vim.api.nvim_buf_get_name(0)
     if #curbuf > 0 then
-      curbuf = path.relative(curbuf, opts.cwd or vim.loop.cwd())
+      curbuf = path.relative_to(curbuf, opts.cwd or vim.loop.cwd())
       opts.file_ignore_patterns = opts.file_ignore_patterns or {}
       table.insert(opts.file_ignore_patterns,
         "^" .. utils.lua_regex_escape(curbuf) .. "$")

@@ -16,7 +16,7 @@ M.expect = function(actions)
     end
   end
   if #keys > 0 then
-    return string.format("--expect=%s", table.concat(keys, ","))
+    return table.concat(keys, ",")
   end
   return nil
 end
@@ -104,7 +104,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     if entry.path == "<none>" then goto continue end
     entry.ctag = opts._ctag and path.entry_to_ctag(selected[i])
     local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
-    if not path.starts_with_separator(fullpath) then
+    if not path.is_absolute(fullpath) then
       fullpath = path.join({ opts.cwd or opts._cwd or vim.loop.cwd(), fullpath })
     end
     if vimcmd == "e"
@@ -128,7 +128,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     if vimcmd ~= "e" or curbuf ~= fullpath then
       if entry.path then
         -- do not run ':<cmd> <file>' for uri entries (#341)
-        local relpath = path.relative(entry.path, vim.loop.cwd())
+        local relpath = path.relative_to(entry.path, vim.loop.cwd())
         if vim.o.autochdir then
           -- force full paths when `autochdir=true` (#882)
           relpath = fullpath
@@ -245,7 +245,7 @@ M.file_switch = function(selected, opts)
   local bufnr = nil
   local entry = path.entry_to_file(selected[1])
   local fullpath = entry.path
-  if not path.starts_with_separator(fullpath) then
+  if not path.is_absolute(fullpath) then
     fullpath = path.join({ opts.cwd or vim.loop.cwd(), fullpath })
   end
   for _, b in ipairs(vim.api.nvim_list_bufs()) do
@@ -629,7 +629,7 @@ end
 local git_exec = function(selected, opts, cmd, silent)
   local success
   for _, e in ipairs(selected) do
-    local file = path.relative(path.entry_to_file(e, opts).path, opts.cwd)
+    local file = path.relative_to(path.entry_to_file(e, opts).path, opts.cwd)
     local _cmd = vim.deepcopy(cmd)
     table.insert(_cmd, file)
     local output, rc = utils.io_systemlist(_cmd)
@@ -706,7 +706,7 @@ M.git_buf_edit = function(selected, opts)
   local git_root = path.git_root(opts, true)
   local win = vim.api.nvim_get_current_win()
   local buffer_filetype = vim.bo.filetype
-  local file = path.relative(vim.fn.expand("%:p"), git_root)
+  local file = path.relative_to(vim.fn.expand("%:p"), git_root)
   local commit_hash = match_commit_hash(selected[1], opts)
   table.insert(cmd, commit_hash .. ":" .. file)
   local git_file_contents = utils.io_systemlist(cmd)
@@ -815,8 +815,10 @@ end
 ---@param selected string[]
 ---@param opts table
 M.apply_profile = function(selected, opts)
-  local fname = utils.__IS_WINDOWS and selected[1]:match("%u?:?[^:]+") or selected[1]:match("[^:]+")
-  local profile = selected[1]:match(":([^%s]+)")
+  local entry = path.entry_to_file(selected[1])
+  local fname = entry.path
+  local profile = entry.stripped:sub(#fname + 2):match("[^%s]+")
+  print(profile, fname)
   local ok = utils.load_profile(fname, profile, opts.silent)
   if ok then
     vim.cmd(string.format([[lua require("fzf-lua").setup({"%s"})]], profile))

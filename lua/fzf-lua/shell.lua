@@ -80,11 +80,10 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- this is for windows WSL and AppImage users, their nvim path isn't just
   -- 'nvim', it can be something else
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
-  local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and ""
-      or string.format(utils.__IS_WINDOWS
-        and [[set "VIMRUNTIME=%s" & ]] or "VIMRUNTIME=%s ",
-        utils.__IS_WINDOWS and vim.fs.normalize(vim.env.VIMRUNTIME) or
-        libuv.shellescape(vim.env.VIMRUNTIME))
+  local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and "" or string.format(
+    utils._if_win([[set VIMRUNTIME=%s& ]], "VIMRUNTIME=%s "),
+    utils._if_win(path.normalize(vim.env.VIMRUNTIME),
+      libuv.shellescape(vim.env.VIMRUNTIME)))
 
   local call_args = ("fzf_lua_server=[[%s]], fnc_id=%d %s"):format(
     vim.g.fzf_lua_server, id, debug and ", debug=true" or "")
@@ -96,7 +95,7 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- worktrees (#600)
   local action_cmd = ("%s%s -n --headless --clean --cmd %s -- %s"):format(
     nvim_runtime,
-    libuv.shellescape(nvim_bin),
+    libuv.shellescape(path.normalize(nvim_bin)),
     libuv.shellescape(("lua loadfile([[%s]])().rpc_nvim_exec_lua({%s})")
       :format(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" }, call_args)),
     fzf_field_expression)
@@ -106,7 +105,7 @@ end
 
 function M.async_action(fn, fzf_field_expression, debug)
   local action_string, id = M.raw_async_action(fn, fzf_field_expression, debug)
-  return vim.fn.shellescape(action_string), id
+  return libuv.shellescape(action_string), id
 end
 
 function M.raw_action(fn, fzf_field_expression, debug)
@@ -140,12 +139,12 @@ end
 
 function M.action(fn, fzf_field_expression, debug)
   local action_string, id = M.raw_action(fn, fzf_field_expression, debug)
-  return vim.fn.shellescape(action_string), id
+  return libuv.shellescape(action_string), id
 end
 
 M.preview_action_cmd = function(fn, fzf_field_expression, debug)
   local action_string, id = M.raw_preview_action_cmd(fn, fzf_field_expression, debug)
-  return vim.fn.shellescape(action_string), id
+  return libuv.shellescape(action_string), id
 end
 
 M.raw_preview_action_cmd = function(fn, fzf_field_expression, debug)

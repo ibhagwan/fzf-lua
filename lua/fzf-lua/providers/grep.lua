@@ -392,7 +392,7 @@ M.grep_curbuf = function(opts, lgrep)
     utils.info("Rg current buffer requires file on disk")
     return
   else
-    opts.filename = path.relative(opts.filename, vim.loop.cwd())
+    opts.filename = path.relative_to(opts.filename, vim.loop.cwd())
   end
   -- rg globs are meaningless here since we searching a single file
   opts.rg_glob = false

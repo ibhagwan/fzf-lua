@@ -2,6 +2,7 @@ local M = {}
 
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local config = nil
 
 -- attempt to load the current config
@@ -274,8 +275,7 @@ M.glob_parse = function(query, opts)
   local glob_args = ""
   local search_query, glob_str = query:match("(.*)" .. opts.glob_separator .. "(.*)")
   for _, s in ipairs(utils.strsplit(glob_str, "%s")) do
-    glob_args = glob_args .. ("%s %s ")
-        :format(opts.glob_flag, vim.fn.shellescape(s))
+    glob_args = glob_args .. ("%s %s "):format(opts.glob_flag, libuv.shellescape(s))
   end
   return search_query, glob_args
 end
@@ -338,7 +338,7 @@ M.preprocess = function(opts)
     local idx = tonumber(i) and tonumber(i) + 6 or #vim.v.argv
     if debug then
       io.stdout:write(("[DEBUG]: argv(%d) = %s\n")
-        :format(idx, vim.fn.shellescape(vim.v.argv[idx])))
+        :format(idx, libuv.shellescape(vim.v.argv[idx])))
     end
     return vim.v.argv[idx]
   end
@@ -359,7 +359,7 @@ M.preprocess = function(opts)
       -- insert glob args before `-- {argvz}` or `-e {argvz}` repositioned
       -- at the end of the command preceding the search query (#781, #794)
       opts.cmd = M.rg_insert_args(opts.cmd, glob_args, argvz)
-      opts.cmd = opts.cmd:gsub(argvz, vim.fn.shellescape(search_query))
+      opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(search_query))
     end
   end
 
@@ -369,10 +369,10 @@ M.preprocess = function(opts)
     opts.cmd = opts.cmd:gsub("{argv.*}",
       function(x)
         local idx = x:match("{argv(.*)}")
-        -- \\ -> \ characters from a regular lua strings being inserted into a literal lua strings cause problems
-        -- " -> """ vim.fn.shellescape wrongly adds an additional final "
-        return utils.__IS_WINDOWS and argv(idx):gsub([[\\]], [[\]]):gsub('"', '"""')
-            or vim.fn.shellescape(argv(idx))
+        -- \\ -> \ characters from a regular lua strings being
+        -- inserted into a literal lua string cause problems
+        return utils.__IS_WINDOWS and argv(idx):gsub([[\\]], [[\]])
+            or libuv.shellescape(argv(idx))
       end)
   end
 
@@ -416,18 +416,18 @@ M.file = function(x, opts)
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
   -- the './' prefix, will not work with '--color=always'
   -- https://github.com/sharkdp/fd/blob/master/CHANGELOG.md
-  if not (opts.strip_cwd_prefix == false) and path.starts_with_cwd(filepath) then
+  if not (opts.strip_cwd_prefix == false) then
     filepath = path.strip_cwd_prefix(filepath)
   end
   -- make path relative
   if opts.cwd and #opts.cwd > 0 then
-    filepath = path.relative(filepath, opts.cwd)
+    filepath = path.relative_to(filepath, opts.cwd)
   end
-  if path.starts_with_separator(filepath) then
+  if path.is_absolute(filepath) then
     -- filter for cwd only
     if opts.cwd_only then
       local cwd = opts.cwd or vim.loop.cwd()
-      if not path.is_relative(filepath, cwd) then
+      if not path.is_relative_to(filepath, cwd) then
         return nil
       end
     end

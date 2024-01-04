@@ -129,7 +129,7 @@ M.bcommits = function(opts)
   end
   local git_root = path.git_root(opts)
   if not git_root then return end
-  local file = path.relative(vim.fn.expand("%:p"), git_root)
+  local file = path.relative_to(vim.fn.expand("%:p"), git_root)
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
@@ -157,7 +157,6 @@ end
 M.branches = function(opts)
   opts = config.normalize_opts(opts, "git.branches")
   if not opts then return end
-  opts.fzf_opts["--no-multi"] = ""
   if opts.preview then
     opts.__preview = path.git_cwd(opts.preview, opts)
     opts.preview = shell.raw_preview_action_cmd(function(items)

@@ -28,7 +28,6 @@ M.metatable = function(opts)
 
   opts.fzf_opts["--preview"] = prev_act
   opts.fzf_opts["--preview-window"] = "hidden:down:10"
-  opts.fzf_opts["--no-multi"] = ""
 
   -- builtin is excluded from global resume
   -- as the behavior might confuse users (#267)

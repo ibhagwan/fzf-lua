@@ -29,69 +29,11 @@ local function tempname()
   return tmpname
 end
 
----Escaping `"` inside a pair of `"` by converting it to `""` as vim.fn.shellescape does, doesn't work.
----
----This function escapes `"` inside a pair of `"` doing the following:
---- - If there is two quotes (`""`), it's interpreted as a quote that should be sended to the nested
---- cmd intance spawned by fzf, so it becomes `\"`. E.g. `--cwd=""C:/users/some path/with spaces""`
---- -> `--cwd=\"C:/users/some path/with spaces\"`
---- - If there is at least three quotes (`"""`), it's interpreted as a lua string (should be ignored
---- by cmd), so it becomes `"""""""""`. E.g. `require(""""make_entry"""")` -> `require("""""""""make_entry""""""""")`
----@param str string
----@return string
-local function windows_cmd_escape(str)
-  ---@type string[]
-  local out = {}
-
-  local inside_quotes = false
-
-  local quote = string.byte('"')
-
-  ---@type integer?
-  local last_quote
-
-  local n = 1
-  while n <= #str do
-    local previous = str:byte(n - 1)
-    local current = str:byte(n)
-    local next = str:byte(n + 1)
-    local next_next = str:byte(n + 2)
-
-    if inside_quotes and current == quote and next ~= quote and (previous ~= quote or last_quote == n - 1) then
-      -- current is closing quote
-      inside_quotes = false
-      last_quote = nil
-      table.insert(out, string.char(current))
-    elseif not inside_quotes and current == quote then
-      -- current is opening quote
-      inside_quotes = true
-      last_quote = n
-      table.insert(out, string.char(current))
-    elseif inside_quotes and current == quote and next == quote and next_next == quote then
-      -- current is lua string
-
-      while next == quote do
-        n = n + 1
-        next = str:byte(n + 1)
-      end
-
-      table.insert(out, '"""""""""') -- needed because the quotes have to go through 2 cmd.exe
-    elseif inside_quotes and current == quote and next == quote then
-      -- current is nested quote
-      table.insert(out, "\\")
-    else
-      table.insert(out, string.char(current))
-    end
-    n = n + 1
-  end
-  return table.concat(out)
-end
-
 -- contents can be either a table with tostring()able items, or a function that
 -- can be called repeatedly for values. The latter can use coroutines for async
 -- behavior.
 ---@param contents string[]|table|function?
----@param fzf_cli_args string?
+---@param fzf_cli_args string[]
 ---@param opts table
 ---@return table selected
 ---@return integer exit_code
@@ -102,7 +44,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
 
   if not opts then opts = {} end
   local cwd = opts.fzf_cwd or opts.cwd
-  local cmd = opts.fzf_bin or "fzf"
+  local cmd = { opts.fzf_bin or "fzf" }
   local fifotmpname = utils.__IS_WINDOWS and utils.windows_pipename() or tempname()
   local outputtmpname = tempname()
 
@@ -113,8 +55,12 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- instance never terminates which hangs fzf on exit
   local FZF_DEFAULT_COMMAND = nil
 
-  if fzf_cli_args then cmd = cmd .. " " .. fzf_cli_args end
-  if opts.fzf_cli_args then cmd = cmd .. " " .. opts.fzf_cli_args end
+  utils.tbl_extend(cmd, fzf_cli_args or {})
+  if type(opts.fzf_cli_args) == "table" then
+    utils.tbl_extend(cmd, opts.fzf_cli_args)
+  elseif type(opts.fzf_cli_args) == "string" then
+    utils.tbl_extend(cmd, { opts.fzf_cli_args })
+  end
 
   if contents then
     if type(contents) == "string" and #contents > 0 then
@@ -134,14 +80,16 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       local bin_is_sk = opts.fzf_bin and opts.fzf_bin:match("sk$")
       local fish_shell = vim.o.shell and vim.o.shell:match("fish$")
       if not fish_shell or bin_is_sk then
-        cmd = ("%s < %s"):format(cmd, vim.fn.shellescape(fifotmpname))
+        table.insert(cmd, "<")
+        table.insert(cmd, vim.fn.fnameescape(fifotmpname))
       else
-        FZF_DEFAULT_COMMAND = string.format("cat %s", vim.fn.shellescape(fifotmpname))
+        FZF_DEFAULT_COMMAND = string.format("cat %s", vim.fn.fnameescape(fifotmpname))
       end
     end
   end
 
-  cmd = ("%s > %s"):format(cmd, vim.fn.shellescape(outputtmpname))
+  table.insert(cmd, ">")
+  table.insert(cmd, vim.fn.fnameescape(outputtmpname))
 
   local fd, output_pipe = nil, nil
   local finish_called = false
@@ -292,26 +240,23 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end
 
   if opts.debug then
-    print("[Fzf-lua]: fzf cmd:", cmd)
+    print("[Fzf-lua]: fzf cmd:", table.concat(cmd, " "))
   end
 
   local co = coroutine.running()
   local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or vim.fn.termopen
-  local shell = utils.__IS_WINDOWS and "cmd" or "sh"
-  ---@type string
-  local shell_cmd
+  -- windows aware shell wrapper
+  local shell_cmd = utils.shell_wrap_args()
   if utils.__IS_WINDOWS then
-    cmd = windows_cmd_escape(cmd)
-    shell_cmd = { shell, "/d", "/e:off", "/f:off", "/v:off", "/c", cmd }
+    utils.tbl_extend(shell_cmd, cmd)
   else
-    shell_cmd = { shell, "-c", cmd }
+    table.insert(shell_cmd, table.concat(cmd, " "))
   end
-
   jobstart(shell_cmd, {
     cwd = cwd,
     pty = true,
     env = {
-      ["SHELL"] = shell,
+      ["SHELL"] = shell_cmd[1],
       ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
       ["SKIM_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
     },

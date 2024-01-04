@@ -34,8 +34,6 @@ M.colorschemes = function(opts)
     end, colors)
   end
 
-  opts.fzf_opts["--no-multi"] = ""
-
   if opts.live_preview then
     -- must add ':nohidden' or fzf ignores the preview action
     opts.fzf_opts["--preview-window"] = "nohidden:right:0"
@@ -119,8 +117,6 @@ M.highlights = function(opts)
       end)()
     end
   end
-
-  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(contents, opts)
 end

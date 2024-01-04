@@ -2,7 +2,7 @@
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/action_helper.lua
 local uv = vim.loop
 
-local is_windows = vim.fn.has("win32") == 1
+local is_windows = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 
 ---@return string
 local function windows_pipename()

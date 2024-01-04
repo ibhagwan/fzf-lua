@@ -9,8 +9,7 @@ if utils.__HAS_DEVICONS then
 
   -- get the devicons module path
   M._devicons_path = M._has_devicons and M._devicons and M._devicons.setup
-      and debug.getinfo(M._devicons.setup, "S").source:gsub("^@", "")
-  if utils.__IS_WINDOWS then M._devicons_path = vim.fs.normalize(M._devicons_path) end
+      and path.normalize(debug.getinfo(M._devicons.setup, "S").source:gsub("^@", ""))
 end
 
 M._diricon_escseq = function()
@@ -428,7 +427,7 @@ function M.normalize_opts(opts, globals, __resume_key)
       -- relative paths in cwd are inaccessible when using multiprocess
       -- as the external process have no awareness of our current working
       -- directory so we must convert to full path (#375)
-      if not path.starts_with_separator(opts.cwd) then
+      if not path.is_absolute(opts.cwd) then
         opts.cwd = path.join({ vim.loop.cwd(), opts.cwd })
       end
     end

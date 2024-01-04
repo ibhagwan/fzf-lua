@@ -12,7 +12,7 @@ M.__HAS_NVIM_07 = vim.fn.has("nvim-0.7") == 1
 M.__HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
 M.__HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
 M.__HAS_NVIM_010 = vim.fn.has("nvim-0.10") == 1
-M.__IS_WINDOWS = vim.fn.has("win32") == 1
+M.__IS_WINDOWS = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 
 
 -- limit devicons support to nvim >=0.8, although official support is >=0.7
@@ -77,6 +77,36 @@ M._if = function(bool, a, b)
   else
     return b
   end
+end
+
+M._if_win = function(a, b)
+  if M.__IS_WINDOWS then
+    return a
+  else
+    return b
+  end
+end
+
+---@return table
+M.shell_wrap_args = function()
+  return M._if_win(
+    { "cmd", "/d", "/e:off", "/f:off", "/v:on", "/c" },
+    -- { "cmd", "/d", "/e:off", "/f:off", "/v:on", "/s", "/c" },
+    { "sh", "-c" }
+  )
+end
+
+---@param vars table
+---@return string
+M.shell_setenv_str = function(vars)
+  local ret = {}
+  for k, v in pairs(vars or {}) do
+    table.insert(ret, M._if_win(
+      string.format([[set %s=%s&&]], tostring(k), tostring(v)),
+      string.format("%s=%s;", tostring(k), tostring(v))
+    ))
+  end
+  return table.concat(ret, " ")
 end
 
 ---@param inputstr string
@@ -186,7 +216,7 @@ end
 
 function M.glob_escape(str)
   if not str then return str end
-  return str:gsub("[\\%{}[%]]", function(x)
+  return str:gsub("[%{}[%]]", function(x)
     return [[\]] .. x
   end)
 end
@@ -326,6 +356,7 @@ function M.tbl_isempty(T)
 end
 
 function M.tbl_extend(t1, t2)
+  ---@diagnostic disable-next-line: deprecated
   return table.move(t2, 1, #t2, #t1 + 1, t1)
 end
 
@@ -638,7 +669,7 @@ function M.setup_devicon_term_hls()
 end
 
 ---@param fname string
----@param name string
+---@param name string|nil
 ---@param silent boolean
 function M.load_profile(fname, name, silent)
   local profile = name or fname:match("([^%p]+)%.lua$") or "<unknown>"
