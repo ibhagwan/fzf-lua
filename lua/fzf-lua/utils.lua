@@ -463,6 +463,14 @@ function M.hexcol_from_hl(hlgroup, what)
   return hexcol
 end
 
+function M.ansi_from_rgb(rgb, s)
+  local r, g, b = hex2rgb(rgb)
+  if r and g and b then
+    return string.format("[38;2;%d;%d;%dm%s%s", r, g, b, s, M.ansi_escseq.clear)
+  end
+  return s
+end
+
 function M.ansi_from_hl(hl, s)
   if not hl or #hl == 0 or vim.fn.hlexists(hl) ~= 1 then
     return s, nil

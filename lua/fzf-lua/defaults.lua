@@ -899,8 +899,11 @@ M.defaults.dap = {
 }
 
 M.defaults.complete_path = {
-  cmd     = nil, -- default: auto detect fd|rg|find
-  actions = { ["default"] = actions.complete },
+  cmd         = nil, -- default: auto detect fd|rg|find
+  file_icons  = false,
+  git_icons   = false,
+  color_icons = true,
+  actions     = { ["default"] = actions.complete },
 }
 
 M.defaults.complete_file = {
@@ -920,6 +923,9 @@ M.defaults.complete_line = { complete = true }
 M.defaults.file_icon_padding = ""
 
 M.defaults.file_icon_colors = {}
+
+M.defaults.dir_icon  = ""
+M.defaults.dir_icon_color = "#519aba"
 
 M.defaults.__HLS = {
   normal         = "FzfLuaNormal",

@@ -694,7 +694,7 @@ M.set_header = function(opts, hdr_tbl)
       opts.prompt = path.shorten(opts.prompt, tonumber(opts.cwd_prompt_shorten_val) or 1)
     end
     if not path.ends_with_separator(opts.prompt) then
-      opts.prompt = opts.prompt .. path.separator()
+      opts.prompt = opts.prompt .. path.SEPARATOR
     end
   end
   if opts.no_header or opts.headers == false then

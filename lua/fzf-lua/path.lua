@@ -4,16 +4,17 @@ local string_byte = string.byte
 
 local M = {}
 
+M.SEPARATOR = "/"
+
 M.separator = function()
-  return "/"
+  return M.SEPARATOR
 end
 
 M.dot_byte = string_byte(".")
-M.separator_byte = string_byte(M.separator())
+M.separator_byte = string_byte(M.SEPARATOR)
 
 M.starts_with_separator = function(path)
   return string_byte(path, 1) == M.separator_byte
-  -- return path:find("^"..M.separator()) == 1
 end
 
 M.ends_with_separator = function(path)
@@ -24,7 +25,7 @@ M.starts_with_cwd = function(path)
   return #path > 1
       and string_byte(path, 1) == M.dot_byte
       and string_byte(path, 2) == M.separator_byte
-  -- return path:match("^."..M.separator()) ~= nil
+  -- return path:match("^."..M.SEPARATOR) ~= nil
 end
 
 M.strip_cwd_prefix = function(path)
@@ -32,10 +33,9 @@ M.strip_cwd_prefix = function(path)
 end
 
 function M.tail(path)
-  local os_sep = string_byte(M.separator())
-
-  for i = #path, 1, -1 do
-    if string_byte(path, i) == os_sep then
+  local end_idx = M.ends_with_separator(path) and (#path - 1) or #path
+  for i = end_idx, 1, -1 do
+    if string_byte(path, i) == M.separator_byte then
       return path:sub(i + 1)
     end
   end
@@ -59,12 +59,12 @@ end
 
 function M.join(paths)
   -- gsub to remove double separator
-  return table.concat(paths, M.separator()):gsub(
-    M.separator() .. M.separator(), M.separator())
+  local ret = table.concat(paths, M.SEPARATOR):gsub(M.SEPARATOR .. M.SEPARATOR, M.SEPARATOR)
+  return ret
 end
 
 function M.split(path)
-  return path:gmatch("[^" .. M.separator() .. "]+" .. M.separator() .. "?")
+  return path:gmatch("[^" .. M.SEPARATOR .. "]+" .. M.SEPARATOR .. "?")
 end
 
 ---Get the basename of the given path.
@@ -72,7 +72,7 @@ end
 ---@return string
 function M.basename(path)
   path = M.remove_trailing(path)
-  local i = path:match("^.*()" .. M.separator())
+  local i = path:match("^.*()" .. M.SEPARATOR)
   if not i then return path end
   return path:sub(i + 1, #path)
 end
@@ -84,7 +84,7 @@ end
 ---@return string|nil
 function M.parent(path, remove_trailing)
   path = " " .. M.remove_trailing(path)
-  local i = path:match("^.+()" .. M.separator())
+  local i = path:match("^.+()" .. M.SEPARATOR)
   if not i then return nil end
   path = path:sub(2, i)
   if remove_trailing then
@@ -108,15 +108,15 @@ function M.is_relative(path, relative_to)
 end
 
 function M.add_trailing(path)
-  if path:sub(-1) == M.separator() then
+  if path:sub(-1) == M.SEPARATOR then
     return path
   end
 
-  return path .. M.separator()
+  return path .. M.SEPARATOR
 end
 
 function M.remove_trailing(path)
-  local p, _ = path:gsub(M.separator() .. "$", "")
+  local p, _ = path:gsub(M.SEPARATOR .. "$", "")
   return p
 end
 
@@ -152,7 +152,7 @@ function M.HOME_to_tilde(path)
 end
 
 function M.shorten(path, max_len)
-  local sep = M.separator()
+  local sep = M.SEPARATOR
   local parts = {}
   local start_idx = 1
   max_len = max_len and tonumber(max_len) > 0 and max_len or 1
@@ -172,9 +172,9 @@ end
 function M.lengthen(path)
   -- we use 'glob_escape' to escape \{} (#548)
   path = utils.glob_escape(path)
-  return vim.fn.glob(path:gsub(M.separator(), "%*" .. M.separator())
+  return vim.fn.glob(path:gsub(M.SEPARATOR, "%*" .. M.SEPARATOR)
         -- remove the starting '*/' if any
-        :gsub("^%*" .. M.separator(), M.separator())):match("[^\n]+")
+        :gsub("^%*" .. M.SEPARATOR, M.SEPARATOR)):match("[^\n]+")
       or string.format("<glob expand failed for '%s'>", path)
 end
 
