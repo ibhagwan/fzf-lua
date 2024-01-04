@@ -14,24 +14,14 @@
     "neededFileStatus": {
       "codestyle-check": "Any"
     },
-    "disable": [
-      "need-check-nil",
-      "missing-parameter",
-      "cast-local-type"
-    ]
+    "disable": ["need-check-nil", "missing-parameter", "cast-local-type"]
   },
   "workspace": {
-    "library": [
-      "$VIMRUNTIME/lua",
-      "lua",
-      "${3rd}/luv/library"
-    ],
+    "library": ["lua", "$VIMRUNTIME/lua", "${3rd}/luv/library"],
     "checkThirdParty": false,
     "maxPreload": 2000,
     "preloadFileSize": 1000,
-    "ignoreDir": [
-      "tests/"
-    ]
+    "ignoreDir": ["tests/"]
   },
   "type": {
     "weakNilCheck": true,

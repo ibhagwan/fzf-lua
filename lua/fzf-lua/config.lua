@@ -9,8 +9,7 @@ if utils.__HAS_DEVICONS then
 
   -- get the devicons module path
   M._devicons_path = M._has_devicons and M._devicons and M._devicons.setup
-      and debug.getinfo(M._devicons.setup, "S").source:gsub("^@", "")
-  if utils.__IS_WINDOWS then M._devicons_path = vim.fs.normalize(M._devicons_path) end
+      and utils._if_win_fs_norm(debug.getinfo(M._devicons.setup, "S").source:gsub("^@", ""))
 end
 
 M._diricon_escseq = function()

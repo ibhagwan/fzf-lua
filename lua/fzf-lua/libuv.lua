@@ -494,7 +494,7 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and ""
       or string.format(
-        is_windows and 'set "VIMRUNTIME=%s" & ' or "VIMRUNTIME=%s ",
+        is_windows and [[set "VIMRUNTIME=%s" & ]] or "VIMRUNTIME=%s ",
         is_windows and vim.fs.normalize(vim.env.VIMRUNTIME) or M.shellescape(vim.env.VIMRUNTIME)
       )
   local call_args = opts

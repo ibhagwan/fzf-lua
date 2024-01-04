@@ -6,8 +6,7 @@ do
   -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
   -- plugin '.vim' initialization sometimes doesn't get called
   local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
-  vim.g.fzf_lua_directory = path.parent(currFile)
-  if utils.__IS_WINDOWS then vim.g.fzf_lua_directory = vim.fs.normalize(vim.g.fzf_lua_directory) end
+  vim.g.fzf_lua_directory = utils._if_win_fs_norm(path.parent(currFile))
 
   -- Manually source the vimL script containing ':FzfLua' cmd
   if not vim.g.loaded_fzf_lua then

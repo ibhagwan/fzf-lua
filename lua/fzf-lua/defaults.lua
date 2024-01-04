@@ -17,7 +17,10 @@ function M._default_previewer_fn()
 end
 
 function M._preview_pager_fn()
-  return vim.fn.executable("delta") == 1 and "delta --width=$FZF_PREVIEW_COLUMNS" or nil
+  if vim.fn.executable("delta") ~= 1 then
+    return nil
+  end
+  return "delta --width=" .. utils._if_win("%COLUMNS%", "$COLUMNS")
 end
 
 M.defaults = {
@@ -223,7 +226,7 @@ M.defaults.files = {
   fzf_opts               = { ["--info"] = "default", },
   git_status_cmd         = { "git", "-c", "color.status=false", "status", "-s" },
   find_opts              = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
-  rg_opts                = "--color=never --files --hidden --follow -g '!.git'",
+  rg_opts                = [[--color=never --files --hidden --follow -g "!.git"]],
   fd_opts                = "--color=never --type f --hidden --follow --exclude .git",
   toggle_ignore_flag     = "--no-ignore",
   _actions               = function() return M.globals.actions.files end,
@@ -267,8 +270,8 @@ M.defaults.git = {
   },
   commits = {
     prompt   = "Commits> ",
-    cmd      = "git log --color --pretty=format:'%C(yellow)%h%Creset "
-        .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset'",
+    cmd      = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
+        .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
     preview  = "git show --color {1}",
     preview_pager = M._preview_pager_fn,
     actions  = {
@@ -279,8 +282,8 @@ M.defaults.git = {
   },
   bcommits = {
     prompt   = "BCommits> ",
-    cmd      = "git log --color --pretty=format:'%C(yellow)%h%Creset "
-        .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' {file}",
+    cmd      = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
+        .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {file}]],
     preview  = "git show --color {1} -- {file}",
     preview_pager = M._preview_pager_fn,
     actions  = {
@@ -303,12 +306,12 @@ M.defaults.git = {
   },
   tags = {
     prompt   = "Tags> ",
-    cmd      = "git for-each-ref --color --sort='-taggerdate' --format "
-        .. "'%(color:yellow)%(refname:short)%(color:reset) "
-        .. "%(color:green)(%(taggerdate:relative))%(color:reset)"
-        .. " %(subject) %(color:blue)%(taggername)%(color:reset)' refs/tags",
-    preview  = "git log --graph --color --pretty=format:'%C(yellow)%h%Creset "
-        .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' {1}",
+    cmd      = [[git for-each-ref --color --sort="-taggerdate" --format ]]
+        .. [["%(color:yellow)%(refname:short)%(color:reset) ]]
+        .. [[%(color:green)(%(taggerdate:relative))%(color:reset)]]
+        .. [[ %(subject) %(color:blue)%(taggername)%(color:reset)" refs/tags]],
+    preview  = [[git log --graph --color --pretty=format:"%C(yellow)%h%Creset ]]
+        .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {1}]],
     fzf_opts = { ["--no-multi"] = "" },
     actions  = { ["default"] = actions.git_checkout },
   },

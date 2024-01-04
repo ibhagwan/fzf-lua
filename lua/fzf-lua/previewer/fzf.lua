@@ -308,6 +308,12 @@ function Previewer.git_diff:cmdline(o)
     if self.pager and #self.pager > 0 and
         vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
       pager = "| " .. self.pager
+      if utils.__IS_WINDOWS then
+        -- we are unable to use variables within a "cmd /c" without "!var!" variable expansion
+        -- https://superuser.com/questions/223104/setting-and-using-variable-within-same-command-line-in-windows-cmd-ex
+        pager = pager:gsub("%$[%a%d]+", function(x) return "!" .. x:sub(2) .. "!" end)
+        pager = pager:gsub("%%[%a%d]+%%", function(x) return "!" .. x:sub(2, #x - 1) .. "!" end)
+      end
     end
     -- with default commands we add the filepath at the end.
     -- If the user configured a more complex command, e.g.:
@@ -324,9 +330,15 @@ function Previewer.git_diff:cmdline(o)
     else
       cmd = string.format("%s %s", cmd, fname_escaped)
     end
-    cmd = ("LINES=%d;COLUMNS=%d;FZF_PREVIEW_LINES=%d;FZF_PREVIEW_COLUMNS=%d;%s %s")
-        :format(fzf_lines, fzf_columns, fzf_lines, fzf_columns, cmd, pager)
-    cmd = "sh -c " .. vim.fn.shellescape(cmd)
+    cmd = string.format("%s %s %s", utils.shell_setenv_str({
+      ["LINES"]               = fzf_lines,
+      ["COLUMNS"]             = fzf_columns,
+      ["FZF_PREVIEW_LINES"]   = fzf_lines,
+      ["FZF_PREVIEW_COLUMNS"] = fzf_columns,
+    }), cmd, pager)
+    cmd = string.format("%s %s",
+      table.concat(utils.shell_wrap_args(), " "),
+      vim.fn.shellescape(cmd))
     -- uncomment to see the command in the preview window
     -- cmd = vim.fn.shellescape(cmd)
     return cmd

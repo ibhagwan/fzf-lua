@@ -297,21 +297,14 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
 
   local co = coroutine.running()
   local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or vim.fn.termopen
-  local shell = utils.__IS_WINDOWS and "cmd" or "sh"
-  ---@type string
-  local shell_cmd
-  if utils.__IS_WINDOWS then
-    cmd = windows_cmd_escape(cmd)
-    shell_cmd = { shell, "/d", "/e:off", "/f:off", "/v:off", "/c", cmd }
-  else
-    shell_cmd = { shell, "-c", cmd }
-  end
-
+  -- windows aware shell wrapper
+  local shell_cmd = utils.shell_wrap_args()
+  table.insert(shell_cmd, utils._if_win(windows_cmd_escape(cmd), cmd))
   jobstart(shell_cmd, {
     cwd = cwd,
     pty = true,
     env = {
-      ["SHELL"] = shell,
+      ["SHELL"] = shell_cmd[1],
       ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
       ["SKIM_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
     },

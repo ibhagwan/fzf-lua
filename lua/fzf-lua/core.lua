@@ -76,7 +76,7 @@ local contents_from_arr = function(cont_arr)
   return contents
 end
 
----@alias content table|function|string
+---@alias content table|function|string|nil
 
 -- Main API, see:
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
@@ -641,7 +641,8 @@ M.mt_cmd_wrapper = function(opts)
       fn_transform = ([[_G._fzf_lua_server=%s; %s]]):format(
       -- since the server adress is passed inside of `[[]]`, single `\`
       -- gives an error when trying to eval the string as lua code
-        libuv.shellescape(utils.__IS_WINDOWS and vim.g.fzf_lua_server:gsub("\\", "\\\\") or vim.g.fzf_lua_server),
+        libuv.shellescape(utils.__IS_WINDOWS
+          and vim.g.fzf_lua_server:gsub("\\", "\\\\") or vim.g.fzf_lua_server),
         fn_transform)
     end
     if config._devicons_setup then
@@ -699,10 +700,8 @@ end
 M.set_header = function(opts, hdr_tbl)
   local function normalize_cwd(cwd)
     local _cwd = vim.loop.cwd()
-    if utils.__IS_WINDOWS then
-      cwd = vim.fs.normalize(cwd)
-      _cwd = vim.fs.normalize(_cwd)
-    end
+    cwd = utils._if_win_fs_norm(cwd)
+    _cwd = utils._if_win_fs_norm(cwd)
     if path.starts_with_separator(cwd) and cwd ~= _cwd then
       -- since we're always converting cwd to full path
       -- try to convert it back to relative for display
@@ -739,7 +738,8 @@ M.set_header = function(opts, hdr_tbl)
         -- cwd unless the caller specifically requested
         if opts.cwd_header == false or
             opts.cwd_prompt and opts.cwd_header == nil or
-            opts.cwd_header == nil and (not opts.cwd or opts.cwd == vim.loop.cwd()) then
+            opts.cwd_header == nil and (not opts.cwd or
+              utils._if_win_fs_norm(opts.cwd) == utils._if_win_fs_norm(vim.loop.cwd())) then
           return
         end
         return normalize_cwd(opts.cwd or vim.loop.cwd())

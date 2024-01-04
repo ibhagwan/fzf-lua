@@ -11,10 +11,13 @@ M.separator = function()
 end
 
 M.dot_byte = string_byte(".")
+M.colon_byte = string_byte(":")
 M.separator_byte = string_byte(M.SEPARATOR)
 
 M.starts_with_separator = function(path)
-  return string_byte(path, 1) == M.separator_byte
+  return utils._if_win(
+    string_byte(path, 2) == M.colon_byte,
+    string_byte(path, 1) == M.separator_byte)
 end
 
 M.ends_with_separator = function(path)
