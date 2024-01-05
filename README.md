@@ -684,12 +684,13 @@ require'fzf-lua'.setup {
       args            = nil,
     },
     git_diff = {
+      -- if required, use `{file}` for argument positioning
+      -- e.g. `cmd_modified = "git diff --color HEAD {file} | cut -c -30"`
       cmd_deleted     = "git diff --color HEAD --",
       cmd_modified    = "git diff --color HEAD",
       cmd_untracked   = "git diff --color --no-index /dev/null",
-      -- uncomment if you wish to use git-delta as pager
-      -- can also be set under 'git.status.preview_pager'
-      -- pager        = "delta --width=$FZF_PREVIEW_COLUMNS",
+      -- git-delta is automatically detected as pager, set `pager=false`
+      -- to disable, can also be set under 'git.status.preview_pager'
     },
     man = {
       -- NOTE: remove the `-c` flag when using man-db
@@ -720,8 +721,8 @@ require'fzf-lua'.setup {
         -- neovim terminal only supports `viu` block output
         ["png"]       = { "viu", "-b" },
         -- by default the filename is added as last argument
-        -- if required, use `<file>` for argument positioning
-        ["svg"]       = { "chafa", "<file>" },
+        -- if required, use `{file}` for argument positioning
+        ["svg"]       = { "chafa", "{file}" },
         ["jpg"]       = { "ueberzug" },
       },
       -- if using `ueberzug` in the above extensions map
@@ -742,8 +743,10 @@ require'fzf-lua'.setup {
     },
     codeaction_native = {
       diff_opts = { ctxlen = 3 },
-      pager     = vim.fn.executable("delta") == 1
-          and "delta --width=$FZF_PREVIEW_COLUMNS" or nil,
+      -- git-delta is automatically detected as pager, set `pager=false`
+      -- to disable, can also be set under 'lsp.code_actions.preview_pager'
+      -- recommended styling for delta
+      --pager = [[delta --width=$COLUMNS --hunk-header-style="omit" --file-style="omit"]],
     },
   },
   -- PROVIDERS SETUP
@@ -810,8 +813,8 @@ require'fzf-lua'.setup {
       git_icons     = true,
       color_icons   = true,
       previewer     = "git_diff",
-      -- uncomment if you wish to use git-delta as pager
-      --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS",
+      -- git-delta is automatically detected as pager, uncomment to disable
+      -- preview_pager = false,
       actions = {
         -- actions inherit from 'actions.files' and merge
         ["right"]  = { fn = actions.git_unstage, reload = true },
@@ -830,9 +833,9 @@ require'fzf-lua'.setup {
     commits = {
       prompt        = 'Commits❯ ',
       cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset'",
-      preview       = "git show --pretty='%Cred%H%n%Cblue%an <%ae>%n%C(yellow)%cD%n%Cgreen%s' --color {1}",
-      -- uncomment if you wish to use git-delta as pager
-      --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS",
+      preview       = "git show --color {1}",
+      -- git-delta is automatically detected as pager, uncomment to disable
+      -- preview_pager = false,
       actions = {
         ["default"] = actions.git_checkout,
         -- remove `exec_silent` or set to `false` to exit after yank
@@ -843,13 +846,13 @@ require'fzf-lua'.setup {
       prompt        = 'BCommits❯ ',
       -- default preview shows a git diff vs the previous commit
       -- if you prefer to see the entire commit you can use:
-      --   git show --color {1} --rotate-to=<file>
+      --   git show --color {1} --rotate-to={file}
       --   {1}    : commit SHA (fzf field index expression)
-      --   <file> : filepath placement within the commands
-      cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' <file>",
-      preview       = "git diff --color {1}^! -- <file>",
-      -- uncomment if you wish to use git-delta as pager
-      --preview_pager = "delta --width=$FZF_PREVIEW_COLUMNS",
+      --   {file} : filepath placement within the commands
+      cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' {file}",
+      preview       = "git show --color {1} -- {file}",
+      -- git-delta is automatically detected as pager, uncomment to disable
+      -- preview_pager = false,
       actions = {
         ["default"] = actions.git_buf_edit,
         ["ctrl-s"]  = actions.git_buf_split,

@@ -250,6 +250,9 @@ function Previewer.git_diff:new(o, opts)
   self.cmd_modified = path.git_cwd(o.cmd_modified, opts)
   self.cmd_untracked = path.git_cwd(o.cmd_untracked, opts)
   self.pager = opts.preview_pager == nil and o.pager or opts.preview_pager
+  if type(self.pager) == "function" then
+    self.pager = self.pager()
+  end
   do
     -- populate the icon mappings
     local icons_overrides = o._fn_git_icons and o._fn_git_icons()
@@ -313,10 +316,14 @@ function Previewer.git_diff:cmdline(o)
     -- }
     -- we use ':format' directly on the user's command, see
     -- issue #392 for more info (limiting diff output width)
-    if not cmd:match("%%s") then
-      cmd = cmd .. " %s"
+    local fname_escaped = vim.fn.shellescape(file.path)
+    if cmd:match("[<{]file[}>]") then
+      cmd = cmd:gsub("[<{]file[}>]", fname_escaped)
+    elseif cmd:match("%%s") then
+      cmd:format(fname_escaped)
+    else
+      cmd = string.format("%s %s", cmd, fname_escaped)
     end
-    cmd = cmd:format(vim.fn.shellescape(file.path))
     cmd = ("LINES=%d;COLUMNS=%d;FZF_PREVIEW_LINES=%d;FZF_PREVIEW_COLUMNS=%d;%s %s")
         :format(fzf_lines, fzf_columns, fzf_lines, fzf_columns, cmd, pager)
     cmd = "sh -c " .. vim.fn.shellescape(cmd)

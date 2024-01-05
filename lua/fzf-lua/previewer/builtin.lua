@@ -520,10 +520,10 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
       end)
     end
   else
-    -- replace `<file>` placeholder with the filename
+    -- replace `{file}` placeholder with the filename
     local add_file = true
     for i, arg in ipairs(cmd) do
-      if arg == "<file>" then
+      if type(arg) == "string" and arg:match("[<{]file[}>]") then
         cmd[i] = entry.path
         add_file = false
       end

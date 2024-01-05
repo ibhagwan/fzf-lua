@@ -16,6 +16,10 @@ function M._default_previewer_fn()
   return type(previewer) == "function" and previewer() or previewer
 end
 
+function M._preview_pager_fn()
+  return vim.fn.executable("delta") == 1 and "delta --width=$FZF_PREVIEW_COLUMNS" or nil
+end
+
 M.defaults = {
   nbsp          = utils.nbsp,
   winopts       = {
@@ -162,6 +166,7 @@ M.defaults = {
       _ctor = previewers.fzf.head,
     },
     git_diff = {
+      pager         = M._preview_pager_fn,
       cmd_deleted   = "git diff --color HEAD --",
       cmd_modified  = "git diff --color HEAD",
       cmd_untracked = "git diff --color --no-index /dev/null",
@@ -199,9 +204,7 @@ M.defaults = {
     codeaction_native = {
       _ctor     = previewers.fzf.codeaction,
       diff_opts = { ctxlen = 3 },
-      pager     = function()
-        return vim.fn.executable("delta") == 1 and "delta --width=$FZF_PREVIEW_COLUMNS" or nil
-      end,
+      pager     = M._preview_pager_fn,
     },
   },
 }
@@ -224,7 +227,7 @@ M.defaults.files = {
   fd_opts                = "--color=never --type f --hidden --follow --exclude .git",
   toggle_ignore_flag     = "--no-ignore",
   _actions               = function() return M.globals.actions.files end,
-  -- actions                = { ["ctrl-g"] = { actions.toggle_ignore } },
+  actions                = { ["ctrl-g"] = { actions.toggle_ignore } },
   winopts                = { preview = { winopts = { cursorline = false } } },
 }
 
@@ -266,8 +269,8 @@ M.defaults.git = {
     prompt   = "Commits> ",
     cmd      = "git log --color --pretty=format:'%C(yellow)%h%Creset "
         .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset'",
-    preview  = "git show --pretty='%Cred%H%n%Cblue%an <%ae>%n%C(yellow)%cD%n%Cgreen%s'"
-        .. " --color {1}",
+    preview  = "git show --color {1}",
+    preview_pager = M._preview_pager_fn,
     actions  = {
       ["default"] = actions.git_checkout,
       ["ctrl-y"]  = { fn = actions.git_yank_commit, exec_silent = true },
@@ -277,8 +280,9 @@ M.defaults.git = {
   bcommits = {
     prompt   = "BCommits> ",
     cmd      = "git log --color --pretty=format:'%C(yellow)%h%Creset "
-        .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' <file>",
-    preview  = "git diff --color {1}^! -- <file>",
+        .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' {file}",
+    preview  = "git show --color {1} -- {file}",
+    preview_pager = M._preview_pager_fn,
     actions  = {
       ["default"] = actions.git_buf_edit,
       ["ctrl-s"]  = actions.git_buf_split,

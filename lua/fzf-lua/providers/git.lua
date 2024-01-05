@@ -100,6 +100,9 @@ M.commits = function(opts)
   if not opts then return end
   if opts.preview then
     opts.preview = path.git_cwd(opts.preview, opts)
+    if type(opts.preview_pager) == "function" then
+      opts.preview_pager = opts.preview_pager()
+    end
     if opts.preview_pager then
       opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
     end
@@ -132,14 +135,17 @@ M.bcommits = function(opts)
     local _, sel = utils.get_visual_selection()
     range = string.format("-L %d,%d:%s --no-patch", sel.start.line, sel["end"].line, file)
   end
-  if opts.cmd:match("<file") then
-    opts.cmd = opts.cmd:gsub("<file>", range or file)
+  if opts.cmd:match("[<{]file") then
+    opts.cmd = opts.cmd:gsub("[<{]file[}>]", range or file)
   else
     opts.cmd = opts.cmd .. " " .. (range or file)
   end
   if type(opts.preview) == "string" then
-    opts.preview = opts.preview:gsub("<file>", libuv.shellescape(file))
+    opts.preview = opts.preview:gsub("[<{]file[}>]", libuv.shellescape(file))
     opts.preview = path.git_cwd(opts.preview, opts)
+    if type(opts.preview_pager) == "function" then
+      opts.preview_pager = opts.preview_pager()
+    end
     if opts.preview_pager then
       opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
     end
