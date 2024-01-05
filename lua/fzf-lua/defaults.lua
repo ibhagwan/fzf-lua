@@ -953,6 +953,7 @@ M.defaults.__HLS = {
   buf_flag_alt   = "FzfLuaBufFlagAlt",
   tab_title      = "FzfLuaTabTitle",
   tab_marker     = "FzfLuaTabMarker",
+  dir_icon       = "FzfLuaDirIcon",
 }
 
 return M

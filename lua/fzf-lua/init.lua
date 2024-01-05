@@ -61,10 +61,9 @@ function M.setup_highlights(override)
     { "FzfLuaBufLineNr",         "buf_linenr",     { default = default, fg = "MediumSpringGreen" } },
     { "FzfLuaBufFlagCur",        "buf_flag_cur",   { default = default, fg = "Brown1" } },
     { "FzfLuaBufFlagAlt",        "buf_flag_alt",   { default = default, fg = "CadetBlue1" } },
-    { "FzfLuaTabTitle", "tab_title",
-      { default = default, fg = "LightSkyBlue1", bold = true } },
-    { "FzfLuaTabMarker", "tab_marker",
-      { default = default, fg = "BlanchedAlmond", bold = true } },
+    { "FzfLuaTabTitle",          "tab_title",      { default = default, fg = "LightSkyBlue1", bold = true } },
+    { "FzfLuaTabMarker",         "tab_marker",     { default = default, fg = "BlanchedAlmond", bold = true } },
+    { "FzfLuaDirIcon",           "dir_icon",       { default = default, link = "Directory" } },
   }
   for _, a in ipairs(highlights) do
     local hl_name, _, hl_def = a[1], a[2], a[3]

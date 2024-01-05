@@ -260,12 +260,12 @@ M.async_spawn = coroutinify(M.spawn)
 M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess)
   assert(not fn_transform or type(fn_transform) == "function")
 
-  if fn_preprocess and type(fn_preprocess) == "function" then
-    -- run the preprocessing fn
-    fn_preprocess(opts)
-  end
-
   return function(_, fzf_cb, _)
+    if fn_preprocess and type(fn_preprocess) == "function" then
+      -- run the preprocessing fn
+      fn_preprocess(opts)
+    end
+
     local function on_finish(_, _)
       fzf_cb(nil)
     end

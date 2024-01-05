@@ -12,6 +12,12 @@ if utils.__HAS_DEVICONS then
       and debug.getinfo(M._devicons.setup, "S").source:gsub("^@", "")
 end
 
+M._diricon_escseq = function()
+  local hlgroup = utils.map_get(M, "__resume_data.opts.hls.dir_icon") or M.globals.__HLS.dir_icon
+  local _, escseq = utils.ansi_from_hl(hlgroup)
+  return escseq
+end
+
 -- get icons proxy for the headless instance
 M._devicons_geticons = function()
   if not M._has_devicons or not M._devicons or not M._devicons.get_icons then

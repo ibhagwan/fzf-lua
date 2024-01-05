@@ -121,6 +121,17 @@ M.setup_devicon_term_hls = function()
   end
 end
 
+-- cache directory icon coloring escape sequence
+M.__DIR_ICON = nil
+M.__DIR_ICON_HL = "FzfLuaDirIcon"
+
+M.setup_directory_icon = function()
+  M.__DIR_ICON = config.globals.dir_icon
+  -- `M._diricon_escseq` cab be nil if hlgroup is cleared or non-existent
+  local escseq = M._diricon_escseq or config._diricon_escseq and config._diricon_escseq()
+  utils.cache_ansi_escseq(M.__DIR_ICON_HL, escseq)
+end
+
 local function load_devicons()
   if config and config._has_devicons then
     -- file was called from the primary instance
@@ -130,6 +141,7 @@ local function load_devicons()
     -- file was called from a headless instance
     -- load nvim-web-devicons via the RPC to the main instance
     M._devicons_map = load_config_section("_devicons_geticons()", "table")
+    M._diricon_escseq = load_config_section("_diricon_escseq()", "string")
   end
   if not M._devicons and not M._devicons_map
       and M._devicons_path and vim.loop.fs_stat(M._devicons_path) then
@@ -168,6 +180,7 @@ local function load_devicons()
   end
   -- Setup devicon terminal ansi color codes
   M.setup_devicon_term_hls()
+  M.setup_directory_icon()
 end
 
 -- Load remote config and devicons
@@ -177,7 +190,6 @@ if not config then
   local _config = { globals = { git = {}, files = {}, grep = {} } }
   _config.globals.git.icons = load_config_section("globals.git.icons", "table") or {}
   _config.globals.dir_icon = load_config_section("globals.dir_icon", "string")
-  _config.globals.dir_icon_color = load_config_section("globals.dir_icon_color", "string")
   _config.globals.file_icon_colors = load_config_section("globals.file_icon_colors", "table") or {}
   _config.globals.file_icon_padding = load_config_section("globals.file_icon_padding", "string")
   _config.globals.files.git_status_cmd = load_config_section("globals.files.git_status_cmd", "table")
@@ -195,7 +207,9 @@ end
 
 M.get_devicon = function(file, ext)
   local icon, hl
-  if M._devicons then
+  if path.ends_with_separator(file) then
+    icon, hl = M.__DIR_ICON, M.__DIR_ICON_HL
+  elseif M._devicons then
     icon, hl = M._devicons.get_icon(file, ext:lower(), { default = true })
   elseif M._devicons_map then
     -- Lookup first by name, then by ext (devicons `strict=true`)
@@ -298,6 +312,11 @@ end
 M.preprocess = function(opts)
   if opts.cwd_only and not opts.cwd then
     opts.cwd = vim.loop.cwd()
+  end
+
+  if opts.file_icons then
+    -- refersh the directory icon hlgroup
+    M.setup_directory_icon()
   end
 
   if opts.git_icons then
@@ -434,21 +453,14 @@ M.file = function(x, opts)
     ret[#ret + 1] = utils.nbsp
   end
   if opts.file_icons then
-    if path.ends_with_separator(origpath) then
-      icon = config.globals.dir_icon
-      if opts.color_icons then
-        icon = utils.ansi_from_rgb(config.globals.dir_icon_color, icon)
-      end
-    else
-      local filename = path.tail(origpath)
-      local ext = path.extension(filename)
-      icon, hl = M.get_devicon(filename, ext)
-      if opts.color_icons then
-        -- extra workaround for issue #119 (or similars)
-        -- use default if we can't find the highlight ansi
-        local fn = utils.ansi_codes[hl] or utils.ansi_codes["dark_grey"]
-        icon = fn(icon)
-      end
+    local filename = path.tail(origpath)
+    local ext = path.extension(filename)
+    icon, hl = M.get_devicon(filename, ext)
+    if opts.color_icons then
+      -- extra workaround for issue #119 (or similars)
+      -- use default if we can't find the highlight ansi
+      local fn = utils.ansi_codes[hl] or utils.ansi_codes["dark_grey"]
+      icon = fn(icon)
     end
     ret[#ret + 1] = icon
     ret[#ret + 1] = utils.nbsp
