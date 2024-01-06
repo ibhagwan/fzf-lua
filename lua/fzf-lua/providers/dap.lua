@@ -1,6 +1,7 @@
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 local make_entry = require "fzf-lua.make_entry"
@@ -28,7 +29,7 @@ M.commands = function(opts)
   if not opts then return end
 
   local entries = {}
-  for k, v in pairs(_dap) do
+  for k, v in pairs(dap) do
     if type(v) == "function" then
       table.insert(entries, k)
     end
@@ -145,7 +146,7 @@ M.breakpoints = function(opts)
   end
 
   if opts.fzf_opts["--header"] == nil then
-    opts.fzf_opts["--header"] = vim.fn.shellescape((":: %s to delete a Breakpoint")
+    opts.fzf_opts["--header"] = libuv.shellescape((":: %s to delete a Breakpoint")
       :format(utils.ansi_codes.yellow("<Ctrl-x>")))
   end
 

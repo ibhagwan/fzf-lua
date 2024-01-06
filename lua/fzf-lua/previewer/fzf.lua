@@ -1,6 +1,7 @@
 local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local Object = require "fzf-lua.class"
 
 local Previewer = {}
@@ -190,7 +191,7 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   -- verify the file exists on disk and is accessible
   if #filepath == 0 or not vim.loop.fs_stat(filepath) then
     errcmd = ([[echo "%s: NO SUCH FILE OR ACCESS DENIED"]]):format(
-      filepath and #filepath > 0 and vim.fn.shellescape(filepath) or "<null>")
+      filepath and #filepath > 0 and vim.fn.fnameescape(filepath) or "<null>")
   end
   return filepath, entry, errcmd
 end
@@ -200,9 +201,7 @@ function Previewer.cmd_async:cmdline(o)
   local act = shell.raw_preview_action_cmd(function(items)
     local filepath, _, errcmd = self:parse_entry_and_verify(items[1])
     local cmd = errcmd or ("%s %s %s"):format(
-      self.cmd, self.args, vim.fn.shellescape(filepath))
-    -- uncomment to see the command in the preview window
-    -- cmd = vim.fn.shellescape(cmd)
+      self.cmd, self.args, vim.fn.fnameescape(filepath))
     return cmd
   end, "{}", self.opts.debug)
   return act
@@ -234,9 +233,7 @@ function Previewer.bat_async:cmdline(o)
       self.theme and string.format([[--theme="%s"]], self.theme) or "",
       self.opts.line_field_index and string.format("--highlight-line=%d", entry.line) or "",
       line_range,
-      vim.fn.shellescape(filepath))
-    -- uncomment to see the command in the preview window
-    -- cmd = vim.fn.shellescape(cmd)
+      vim.fn.fnameescape(filepath))
     return cmd
   end, "{}", self.opts.debug)
   return act
@@ -322,7 +319,7 @@ function Previewer.git_diff:cmdline(o)
     -- }
     -- we use ':format' directly on the user's command, see
     -- issue #392 for more info (limiting diff output width)
-    local fname_escaped = vim.fn.shellescape(file.path)
+    local fname_escaped = vim.fn.fnameescape(file.path)
     if cmd:match("[<{]file[}>]") then
       cmd = cmd:gsub("[<{]file[}>]", fname_escaped)
     elseif cmd:match("%%s") then
@@ -338,9 +335,7 @@ function Previewer.git_diff:cmdline(o)
     }), cmd, pager)
     cmd = string.format("%s %s",
       table.concat(utils.shell_wrap_args(), " "),
-      vim.fn.shellescape(cmd))
-    -- uncomment to see the command in the preview window
-    -- cmd = vim.fn.shellescape(cmd)
+      libuv.shellescape(cmd))
     return cmd
   end, "{}", self.opts.debug)
   return act
@@ -371,9 +366,7 @@ function Previewer.man_pages:cmdline(o)
   local act = shell.raw_preview_action_cmd(function(items)
     -- local manpage = require'fzf-lua.providers.manpages'.getmanpage(items[1])
     local manpage = items[1]:match("[^[,( ]+")
-    local cmd = self.cmd:format(vim.fn.shellescape(manpage))
-    -- uncomment to see the command in the preview window
-    -- cmd = vim.fn.shellescape(cmd)
+    local cmd = self.cmd:format(libuv.shellescape(manpage))
     return cmd
   end, "{}", self.opts.debug)
   return act
@@ -395,7 +388,7 @@ function Previewer.help_tags:cmdline(o)
     local vimdoc = items[1]:match("[^%s]+$")
     local tag = items[1]:match("^[^%s]+")
     local ext = path.extension(vimdoc)
-    local cmd = self.cmd:format(vim.fn.shellescape(vimdoc))
+    local cmd = self.cmd:format(vim.fn.fnameescape(vimdoc))
     -- If 'bat' is available attempt to get the helptag line
     -- and start the display of the help file from the tag
     if self.cmd:match("^bat ") then
@@ -407,8 +400,6 @@ function Previewer.help_tags:cmdline(o)
         cmd = cmd .. string.format(" --line-range=%d:", tonumber(line))
       end
     end
-    -- uncomment to see the command in the preview window
-    -- cmd = vim.fn.shellescape(cmd)
     return cmd
   end, "{}", self.opts.debug)
   return act

@@ -1,6 +1,7 @@
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
@@ -86,8 +87,7 @@ end
 local arg_header = function(sel_key, edit_key, text)
   sel_key = utils.ansi_codes.yellow(sel_key)
   edit_key = utils.ansi_codes.yellow(edit_key)
-  return vim.fn.shellescape((":: %s to %s, %s to edit")
-    :format(sel_key, text, edit_key))
+  return libuv.shellescape((":: %s to %s, %s to edit"):format(sel_key, text, edit_key))
 end
 
 M.command_history = function(opts)

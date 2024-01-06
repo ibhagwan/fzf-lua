@@ -29,7 +29,7 @@ local function get_tags_cmd(opts)
   end
   return ("%s %s %s %s"):format(
     bin, flags, query,
-    opts._ctags_file and vim.fn.shellescape(opts._ctags_file) or ""
+    opts._ctags_file and vim.fn.fnameescape(opts._ctags_file) or ""
   ), filter
 end
 

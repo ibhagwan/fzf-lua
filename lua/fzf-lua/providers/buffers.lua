@@ -299,10 +299,6 @@ M.buffer_lines = function(opts)
     end)()
   end
 
-  if opts.search and #opts.search > 0 then
-    opts.fzf_opts["--query"] = vim.fn.shellescape(opts.search)
-  end
-
   opts = core.set_fzf_field_index(opts, "{3}", opts._is_skim and "{}" or "{..-2}")
 
   core.fzf_exec(contents, opts)

@@ -9,7 +9,9 @@ if utils.__HAS_DEVICONS then
 
   -- get the devicons module path
   M._devicons_path = M._has_devicons and M._devicons and M._devicons.setup
-      and utils._if_win_fs_norm(debug.getinfo(M._devicons.setup, "S").source:gsub("^@", ""))
+      and debug.getinfo(M._devicons.setup, "S").source:gsub("^@", "")
+  -- can't wrap `debug.getinfo` output as the tuple will override "b"
+  M._devicons_path = utils._if_win_fs_norm(M._devicons_path)
 end
 
 M._diricon_escseq = function()

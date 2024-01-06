@@ -16,7 +16,7 @@ M.expect = function(actions)
     end
   end
   if #keys > 0 then
-    return string.format("--expect=%s", table.concat(keys, ","))
+    return table.concat(keys, ",")
   end
   return nil
 end

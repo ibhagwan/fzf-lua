@@ -447,11 +447,11 @@ M.create_fzf_binds = function(binds)
   for key, action in pairs(dedup) do
     table.insert(tbl, string.format("%s:%s", key, action))
   end
-  return vim.fn.shellescape(table.concat(tbl, ","))
+  return libuv.shellescape(table.concat(tbl, ","))
 end
 
 ---@param opts table
----@return string
+---@return string[]
 M.build_fzf_cli = function(opts)
   opts.fzf_opts = vim.tbl_extend("force", config.globals.fzf_opts, opts.fzf_opts or {})
   -- copy from globals
@@ -469,17 +469,16 @@ M.build_fzf_cli = function(opts)
   for _, o in ipairs({ "query", "preview" }) do
     local flag = string.format("--%s", o)
     if opts[o] ~= nil then
-      -- opt can be 'false' (disabled)
-      -- don't shellescape in this case
-      opts.fzf_opts[flag] = opts[o] and libuv.shellescape(opts[o])
-    else
-      opts.fzf_opts[flag] = opts.fzf_opts[flag]
+      -- opt can be 'false' (disabled), don't shellescape in this case
+      if type(opts[o]) == "string" then
+        opts.fzf_opts[flag] = libuv.shellescape(opts[o])
+      else
+        opts.fzf_opts[flag] = opts[o]
+      end
     end
   end
   opts.fzf_opts["--bind"] = M.create_fzf_binds(opts.keymap.fzf)
-  if opts.fzf_colors then
-    opts.fzf_opts["--color"] = M.create_fzf_colors(opts)
-  end
+  opts.fzf_opts["--color"] = M.create_fzf_colors(opts)
   opts.fzf_opts["--expect"] = actions.expect(opts.actions)
   if opts.fzf_opts["--preview-window"] == nil then
     opts.fzf_opts["--preview-window"] = M.preview_window(opts)
@@ -490,39 +489,10 @@ M.build_fzf_cli = function(opts)
   end
   -- shell escape the prompt
   opts.fzf_opts["--prompt"] = (opts.prompt or opts.fzf_opts["--prompt"]) and
-      vim.fn.shellescape(opts.prompt or opts.fzf_opts["--prompt"])
-  -- multi | no-multi (select)
-  if opts.nomulti or opts.fzf_opts["--no-multi"] then
-    opts.fzf_opts["--multi"] = nil
-    opts.fzf_opts["--no-multi"] = ""
-  else
-    opts.fzf_opts["--multi"] = ""
-    opts.fzf_opts["--no-multi"] = nil
-  end
-  -- backward compatibility, add all previously known options
-  for k, v in pairs({
-    ["--ansi"] = "fzf_ansi",
-    ["--layout"] = "fzf_layout"
-  }) do
-    if opts[v] and #opts[v] == 0 then
-      opts.fzf_opts[k] = nil
-    elseif opts[v] then
-      opts.fzf_opts[k] = opts[v]
-    end
-  end
-  local extra_args = ""
-  for _, o in ipairs({
-    "fzf_args",
-    "fzf_raw_args",
-    "fzf_cli_args",
-    "_fzf_cli_args",
-  }) do
-    if opts[o] then extra_args = extra_args .. " " .. opts[o] end
-  end
+      libuv.shellescape(opts.prompt or opts.fzf_opts["--prompt"])
   if opts._is_skim then
+    -- skim (rust version of fzf) doesn't support the '--info=' flag
     local info = opts.fzf_opts["--info"]
-    -- skim (rust version of fzf) doesn't
-    -- support the '--info=' flag
     opts.fzf_opts["--info"] = nil
     if info == "inline" then
       -- inline for skim is defined as:
@@ -536,32 +506,38 @@ M.build_fzf_cli = function(opts)
       opts.fzf_opts["--border"] = ""
     end
   end
-  -- build the clip args
-  local cli_args = ""
+  -- build the cli args
+  local cli_args = {}
   -- fzf-tmux args must be included first
   if opts._is_fzf_tmux then
     for k, v in pairs(opts.fzf_tmux_opts or {}) do
-      if v then cli_args = cli_args .. string.format(" %s %s", k, v) end
+      table.insert(cli_args, k)
+      if type(v) == "string" and #v > 0 then
+        table.insert(cli_args, v)
+      end
     end
   end
   for k, v in pairs(opts.fzf_opts) do
-    if type(v) == "table" then
-      -- table argument is meaningless here
-      v = nil
-    elseif type(v) == "number" then
-      -- convert to string
-      v = string.format("%d", v)
-    elseif utils.__IS_WINDOWS and
-        type(v) == "string" and k == "--delimiter" and v:sub(1, 1) == "'" and v:sub(#v, #v) == "'" then
-      v = '"' .. v:sub(2, #v - 1) .. '"'
-    end
-    if v then
-      v = v:gsub(k .. "=", "")
-      cli_args = cli_args ..
-          (" %s%s"):format(k, #v > 0 and "=" .. v or "")
+    if type(v) == "string" or type(v) == "number" then
+      -- convert number type to string
+      v = tostring(v)
+      if utils.__IS_WINDOWS and v:match([[^'.*'$]]) then
+        -- replace single quote shellescape
+        -- TODO: replace all so we never get here
+        v = [["]] .. v:sub(2, #v - 1) .. [["]]
+      end
+      table.insert(cli_args, k)
+      if #v > 0 then
+        table.insert(cli_args, v)
+      end
     end
   end
-  return cli_args .. extra_args
+  for _, o in ipairs({ "fzf_args", "fzf_raw_args", "fzf_cli_args", "_fzf_cli_args" }) do
+    if opts[o] then
+      table.insert(cli_args, type(opts[o]) == "table" and opts[o] or tostring(opts[o]))
+    end
+  end
+  return cli_args
 end
 
 ---@param opts table

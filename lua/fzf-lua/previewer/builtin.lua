@@ -429,7 +429,7 @@ function Previewer.buffer_or_file:start_ueberzug()
   utils.io_system({ "mkfifo", self._ueberzug_fifo })
   self._ueberzug_job = vim.fn.jobstart({ "sh", "-c",
     ("tail --follow %s | ueberzug layer --parser json")
-        :format(vim.fn.shellescape(self._ueberzug_fifo))
+        :format(vim.fn.fnameescape(self._ueberzug_fifo))
   }, {
     on_exit = function(_, rc, _)
       if rc ~= 0 and rc ~= 143 then

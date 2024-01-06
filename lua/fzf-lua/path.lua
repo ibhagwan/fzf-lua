@@ -339,7 +339,7 @@ function M.git_cwd(cmd, opts)
     for _, a in ipairs(git_args) do
       if o[a[1]] then
         o[a[1]] = a.noexpand and o[a[1]] or vim.fn.expand(o[a[1]])
-        args = args .. ("%s %s "):format(a[2], vim.fn.shellescape(o[a[1]]))
+        args = args .. ("%s %s "):format(a[2], vim.fn.fnameescape(o[a[1]]))
       end
     end
     cmd = cmd:gsub("^git ", "git " .. args)
