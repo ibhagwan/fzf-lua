@@ -299,6 +299,7 @@ M._exported_modules = {
   "shell",
   "config",
   "actions",
+  "defaults",
   "make_entry",
 }
 
