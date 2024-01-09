@@ -952,6 +952,7 @@ function M.neovim_bind_to_fzf(key)
 end
 
 function M.fzf_version(opts)
+  opts = opts or {}
   -- temp unset "FZF_DEFAULT_OPTS" as it might fail `--version`
   -- if it contains options aren't compatible with fzf's version
   local FZF_DEFAULT_OPTS = vim.env.FZF_DEFAULT_OPTS
