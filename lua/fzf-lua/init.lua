@@ -138,8 +138,6 @@ function M.setup(opts, do_not_reset_defaults)
       opts[gopt] = nil
     end
   end
-  -- set lua_io if caller requested
-  utils.set_lua_io(opts.lua_io)
   -- set custom &nbsp if caller requested
   if opts.nbsp then utils.nbsp = opts.nbsp end
   -- store the setup options

@@ -859,46 +859,27 @@ function M.keymap_set(mode, lhs, rhs, opts)
   end
 end
 
--- speed up exteral commands (issue #126)
-local _use_lua_io = false
-function M.set_lua_io(b)
-  _use_lua_io = b
-  if _use_lua_io then
-    M.warn("using experimental feature 'lua_io'")
-  end
-end
-
-function M.io_systemlist(cmd, use_lua_io)
-  if not use_lua_io then use_lua_io = _use_lua_io end
-  -- only supported with string cmds (no tables)
-  if use_lua_io and cmd == "string" then
-    local rc = 0
-    local stdout = ""
-    local handle = io.popen(cmd .. " 2>&1; echo $?", "r")
-    if handle then
-      stdout = {}
-      for h in handle:lines() do
-        stdout[#stdout + 1] = h
-      end
-      -- last line contains the exit status
-      rc = tonumber(stdout[#stdout])
-      stdout[#stdout] = nil
-      handle:close()
-    end
-    return stdout, rc
+---@param cmd string[]
+---@return string[] lines in the stdout or stderr, separated by '\n'
+---@return integer exit_code (0: success)
+function M.io_systemlist(cmd)
+  if vim.system ~= nil then -- nvim 0.10+
+    local proc = vim.system(cmd):wait()
+    local output = proc.code == 0 and proc.stdout or proc.stderr
+    return vim.split(output, "\n", { trimempty = true }), proc.code
   else
     return vim.fn.systemlist(cmd), vim.v.shell_error
   end
 end
 
-function M.io_system(cmd, use_lua_io)
-  if not use_lua_io then use_lua_io = _use_lua_io end
-  if use_lua_io then
-    local stdout, rc = M.io_systemlist(cmd, true)
-    if type(stdout) == "table" then
-      stdout = table.concat(stdout, "\n")
-    end
-    return stdout, rc
+---@param cmd string[]
+---@return string stdout or stderr
+---@return integer exit_code (0: success)
+function M.io_system(cmd)
+  if vim.system ~= nil then -- nvim 0.10+
+    local proc = vim.system(cmd):wait()
+    local output = proc.code == 0 and proc.stdout or proc.stderr
+    return output, proc.code
   else
     return vim.fn.system(cmd), vim.v.shell_error
   end
