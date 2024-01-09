@@ -162,8 +162,8 @@ local grep_tag = function(file, tag)
   local cmd = utils.tbl_deep_clone(grep_cmd)
   table.insert(cmd, pattern)
   table.insert(cmd, filepath)
-  local out = utils.io_system(cmd)
-  if not utils.shell_error() then
+  local out, rc = utils.io_system(cmd)
+  if rc == 0 then
     line = tonumber(out:match("[^:]+")) or 1
   else
     utils.warn(("previewer: unable to find pattern '%s' in file '%s'"):format(pattern, file))

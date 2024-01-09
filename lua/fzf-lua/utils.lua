@@ -138,14 +138,6 @@ function M.err(msg)
   fast_event_aware_notify(msg, vim.log.levels.ERROR, {})
 end
 
-function M.shell_error()
-  if vim.system ~= nil then
-    return M._shell_error ~= 0
-  else
-    return vim.v.shell_error ~= 0
-  end
-end
-
 function M.is_darwin()
   return vim.loop.os_uname().sysname == "Darwin"
 end
@@ -247,8 +239,8 @@ M.perl_file_is_binary = function(filepath)
   end
   -- can also use '-T' to test for text files
   -- `perldoc -f -x` to learn more about '-B|-T'
-  M.io_system({ "perl", "-E", "exit((-B $ARGV[0])?0:1);", filepath })
-  return not M.shell_error()
+  local _, rc = M.io_system({ "perl", "-E", "exit((-B $ARGV[0])?0:1);", filepath })
+  return rc == 0
 end
 
 M.read_file = function(filepath)
@@ -870,7 +862,6 @@ function M.io_systemlist(cmd)
   if vim.system ~= nil then -- nvim 0.10+
     local proc = vim.system(cmd):wait()
     local output = proc.code == 0 and proc.stdout or proc.stderr
-    M._shell_error = proc.code
     return vim.split(output, "\n", { trimempty = true }), proc.code
   else
     return vim.fn.systemlist(cmd), vim.v.shell_error
@@ -884,7 +875,6 @@ function M.io_system(cmd)
   if vim.system ~= nil then -- nvim 0.10+
     local proc = vim.system(cmd):wait()
     local output = proc.code == 0 and proc.stdout or proc.stderr
-    M._shell_error = proc.code
     return output, proc.code
   else
     return vim.fn.system(cmd), vim.v.shell_error

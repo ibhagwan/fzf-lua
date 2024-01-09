@@ -572,8 +572,8 @@ M.git_switch = function(selected, opts)
     table.insert(cmd, "--detach")
   end
   table.insert(cmd, branch)
-  local output = utils.io_systemlist(cmd)
-  if utils.shell_error() then
+  local output, rc = utils.io_systemlist(cmd)
+  if rc ~= 0 then
     utils.err(unpack(output))
   else
     utils.info(unpack(output))
@@ -612,8 +612,8 @@ M.git_checkout = function(selected, opts)
     local current_commit = utils.io_systemlist(cmd_cur_commit)
     if (commit_hash == current_commit) then return end
     table.insert(cmd_checkout, commit_hash)
-    local output = utils.io_systemlist(cmd_checkout)
-    if utils.shell_error() then
+    local output, rc = utils.io_systemlist(cmd_checkout)
+    if rc ~= 0 then
       utils.err(unpack(output))
     else
       utils.info(unpack(output))
@@ -630,10 +630,9 @@ local git_exec = function(selected, opts, cmd, silent)
     local file = path.relative(path.entry_to_file(e, opts).path, opts.cwd)
     local _cmd = vim.deepcopy(cmd)
     table.insert(_cmd, file)
-    local output = utils.io_systemlist(_cmd)
-    success = not utils.shell_error()
-    if not success and not silent then
-      utils.err(unpack(output) or string.format("exit code %d", vim.v.shell_error))
+    local output, rc = utils.io_systemlist(_cmd)
+    if rc ~= 0 and not silent then
+      utils.err(unpack(output) or string.format("exit code %d", rc))
     end
   end
   return success
@@ -783,8 +782,8 @@ end
 
 M.tmux_buf_set_reg = function(selected, opts)
   local buf = selected[1]:match("^%[(.-)%]")
-  local data = vim.fn.system({ "tmux", "show-buffer", "-b", buf })
-  if not utils.shell_error() and data and #data > 0 then
+  local data, rc = utils.io_system({ "tmux", "show-buffer", "-b", buf })
+  if rc ~= 0 and data and #data > 0 then
     opts.register = opts.register or [["]]
     local ok, err = pcall(vim.fn.setreg, opts.register, data)
     if ok then
