@@ -877,7 +877,6 @@ require'fzf-lua'.setup {
           .. " %(subject) %(color:blue)%(taggername)%(color:reset)' refs/tags",
       preview  = "git log --graph --color --pretty=format:'%C(yellow)%h%Creset "
           .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' {1}",
-      fzf_opts = { ["--no-multi"] = "" },
       actions  = { ["default"] = actions.git_checkout },
     },
     stash = {
@@ -887,10 +886,6 @@ require'fzf-lua'.setup {
       actions = {
         ["default"]   = actions.git_stash_apply,
         ["ctrl-x"]    = { fn = actions.git_stash_drop, reload = true },
-      },
-      fzf_opts = {
-        ["--no-multi"]  = '',
-        ['--delimiter'] = "'[:]'",
       },
     },
     icons = {

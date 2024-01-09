@@ -13,8 +13,6 @@ M.manpages = function(opts)
     return string.format("%-45s %s", man, desc)
   end
 
-  opts.fzf_opts["--no-multi"] = ""
-
   core.fzf_exec(opts.cmd, opts)
 end
 

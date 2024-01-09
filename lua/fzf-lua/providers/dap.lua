@@ -42,8 +42,6 @@ M.commands = function(opts)
         end,
   }
 
-  opts.fzf_opts["--no-multi"] = ""
-
   core.fzf_exec(entries, opts)
 end
 
@@ -77,8 +75,6 @@ M.configurations = function(opts)
           end
         end,
   }
-
-  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end
@@ -226,8 +222,6 @@ M.frames = function(opts)
       f.line and ((":%d"):format(f.line)) or ""
     ))
   end
-
-  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end

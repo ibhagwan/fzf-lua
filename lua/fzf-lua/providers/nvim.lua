@@ -59,7 +59,6 @@ M.commands = function(opts)
     table.sort(entries, function(a, b) return a < b end)
   end
 
-  opts.fzf_opts["--no-multi"] = ""
   opts.fzf_opts["--preview"] = prev_act
 
   core.fzf_exec(entries, opts)
@@ -78,8 +77,6 @@ local history = function(opts, str)
       opts.reverse_list and 1 or #entries + 1,
       string.sub(item, finish + 1))
   end
-
-  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end
@@ -136,7 +133,6 @@ M.jumps = function(opts)
   table.insert(entries, 1,
     string.format("%6s %s  %s %s", opts.h1 or "jump", "line", "col", "file/text"))
 
-  opts.fzf_opts["--no-multi"] = ""
   opts.fzf_opts["--header-lines"] = "1"
 
   core.fzf_exec(entries, opts)
@@ -195,8 +191,6 @@ M.tagstack = function(opts)
       tag.text))
   end
 
-  opts.fzf_opts["--no-multi"] = ""
-
   core.fzf_exec(entries, opts)
 end
 
@@ -244,7 +238,6 @@ M.marks = function(opts)
     string.format("%-5s %s  %s %s", "mark", "line", "col", "file/text"))
 
   -- opts.fzf_opts['--preview'] = prev_act
-  opts.fzf_opts["--no-multi"] = ""
   opts.fzf_opts["--header-lines"] = "1"
 
   core.fzf_exec(entries, opts)
@@ -297,7 +290,6 @@ M.registers = function(opts)
     end
   end
 
-  opts.fzf_opts["--no-multi"] = ""
   opts.fzf_opts["--preview"] = prev_act
 
   core.fzf_exec(entries, opts)
@@ -363,7 +355,6 @@ M.keymaps = function(opts)
     table.insert(entries, v.str)
   end
 
-  opts.fzf_opts["--no-multi"] = ""
   opts.fzf_opts["--header-lines"] = "1"
 
   -- sort alphabetically
@@ -385,8 +376,6 @@ M.spell_suggest = function(opts)
 
   if vim.tbl_isempty(entries) then return end
 
-  opts.fzf_opts["--no-multi"] = ""
-
   core.fzf_exec(entries, opts)
 end
 
@@ -396,8 +385,6 @@ M.filetypes = function(opts)
 
   local entries = vim.fn.getcompletion("", "filetype")
   if vim.tbl_isempty(entries) then return end
-
-  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end
@@ -409,8 +396,6 @@ M.packadd = function(opts)
   local entries = vim.fn.getcompletion("", "packadd")
 
   if vim.tbl_isempty(entries) then return end
-
-  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end
@@ -443,8 +428,6 @@ M.menus = function(opts)
     utils.info("No menus available")
     return
   end
-
-  opts.fzf_opts["--no-multi"] = ""
 
   core.fzf_exec(entries, opts)
 end

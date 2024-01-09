@@ -157,7 +157,6 @@ end
 M.branches = function(opts)
   opts = config.normalize_opts(opts, "git.branches")
   if not opts then return end
-  opts.fzf_opts["--no-multi"] = ""
   if opts.preview then
     opts.__preview = path.git_cwd(opts.preview, opts)
     opts.preview = shell.raw_preview_action_cmd(function(items)
