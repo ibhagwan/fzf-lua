@@ -165,8 +165,7 @@ M.tagstack = function(opts)
 
   local entries = {}
   for i, tag in ipairs(tags) do
-    local bufname = path.HOME_to_tilde(
-      path.relative(tag.filename, vim.loop.cwd()))
+    local bufname = path.HOME_to_tilde(path.relative_to(tag.filename, vim.loop.cwd()))
     local buficon, hl
     if opts.file_icons then
       local filename = path.tail(bufname)
@@ -221,7 +220,7 @@ M.marks = function(opts)
   for i = #marks, 3, -1 do
     local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
     col = tostring(tonumber(col) + 1)
-    if path.starts_with_separator(text) then
+    if path.is_absolute(text) then
       text = path.HOME_to_tilde(text)
     end
     if not filter or vim.tbl_contains(filter, mark) then

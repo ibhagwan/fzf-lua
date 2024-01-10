@@ -19,7 +19,7 @@ local function get_tags_cmd(opts)
   if opts.filename and #opts.filename > 0 then
     -- tags use relative paths, by now we should
     -- have the correct cwd from `get_ctags_cwd`
-    query = libuv.shellescape(path.relative(opts.filename, opts.cwd or vim.loop.cwd()))
+    query = libuv.shellescape(path.relative_to(opts.filename, opts.cwd or vim.loop.cwd()))
   elseif opts.search and #opts.search > 0 then
     filter = ([[%s -v "^!"]]):format(bin)
     query = libuv.shellescape(opts.no_esc and opts.search or
@@ -76,7 +76,7 @@ local function tags(opts)
 
   -- tags file should always resolve to an absolute path, already "expanded" by
   -- `get_ctags_file` we take care of the case where `opts.ctags_file = "tags"`
-  if not path.starts_with_separator(opts._ctags_file) then
+  if not path.is_absolute(opts._ctags_file) then
     opts._ctags_file = path.join({ opts.cwd or vim.loop.cwd(), opts.ctags_file })
   end
 

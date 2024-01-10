@@ -303,7 +303,7 @@ function Previewer.base:zero(_)
   -- currently awaiting an upstream fix:
   -- https://github.com/junegunn/fzf/issues/3516
   --
-  self._zero_lock = self._zero_lock or utils._if_win_fs_norm(vim.fn.tempname())
+  self._zero_lock = self._zero_lock or path.normalize(vim.fn.tempname())
   local act = string.format("execute-silent(mkdir %s && %s)",
     libuv.shellescape(self._zero_lock),
     shell.raw_action(function(_, _, _)
@@ -505,7 +505,7 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
       width      = wincfg.width,
       height     = wincfg.height,
       scaler     = self.ueberzug_scaler,
-      path       = path.starts_with_separator(entry.path) and entry.path or
+      path       = path.is_absolute(entry.path) and entry.path or
           path.join({ self.opts.cwd or uv.cwd(), entry.path }),
     }
     local json = vim.json.encode(params)
@@ -583,7 +583,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- buffer is not loaded, can happen when calling "lines" with `set nohidden`
     -- or when starting nvim with an arglist, fix entry.path since it contains
     -- filename only
-    entry.path = path.relative(vim.api.nvim_buf_get_name(entry.bufnr), vim.loop.cwd())
+    entry.path = path.relative_to(vim.api.nvim_buf_get_name(entry.bufnr), vim.loop.cwd())
   end
   if not self:should_load_buffer(entry) then
     -- same file/buffer as previous entry
@@ -869,7 +869,7 @@ function Previewer.buffer_or_file:update_border(entry)
     local filepath = entry.path
     if filepath then
       if self.opts.cwd then
-        filepath = path.relative(entry.path, self.opts.cwd)
+        filepath = path.relative_to(entry.path, self.opts.cwd)
       end
       filepath = path.HOME_to_tilde(filepath)
     end
@@ -1024,7 +1024,7 @@ function Previewer.marks:parse_entry(entry_str)
     else
       filepath = res
     end
-    filepath = path.relative(filepath, vim.loop.cwd())
+    filepath = path.relative_to(filepath, vim.loop.cwd())
   end
   return {
     bufnr = bufnr,
@@ -1047,7 +1047,7 @@ function Previewer.jumps:parse_entry(entry_str)
   if filepath then
     local ok, res = pcall(vim.fn.expand, filepath)
     if ok then
-      filepath = path.relative(res, vim.loop.cwd())
+      filepath = path.relative_to(res, vim.loop.cwd())
     end
     if not vim.loop.fs_stat(filepath) then
       -- file is not accessible,
@@ -1215,7 +1215,7 @@ function Previewer.quickfix:populate_preview_buf(entry_str)
   local lines = {}
   for _, e in ipairs(qf_list.items) do
     table.insert(lines, string.format("%s|%d col %d|%s",
-      path.HOME_to_tilde(path.relative(
+      path.HOME_to_tilde(path.relative_to(
         vim.api.nvim_buf_get_name(e.bufnr), vim.loop.cwd())),
       e.lnum, e.col, e.text))
   end

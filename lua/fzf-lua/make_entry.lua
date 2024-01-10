@@ -416,18 +416,18 @@ M.file = function(x, opts)
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
   -- the './' prefix, will not work with '--color=always'
   -- https://github.com/sharkdp/fd/blob/master/CHANGELOG.md
-  if not (opts.strip_cwd_prefix == false) and path.starts_with_cwd(filepath) then
+  if not (opts.strip_cwd_prefix == false) then
     filepath = path.strip_cwd_prefix(filepath)
   end
   -- make path relative
   if opts.cwd and #opts.cwd > 0 then
-    filepath = path.relative(filepath, opts.cwd)
+    filepath = path.relative_to(filepath, opts.cwd)
   end
-  if path.starts_with_separator(filepath) then
+  if path.is_absolute(filepath) then
     -- filter for cwd only
     if opts.cwd_only then
       local cwd = opts.cwd or vim.loop.cwd()
-      if not path.is_relative(filepath, cwd) then
+      if not path.is_relative_to(filepath, cwd) then
         return nil
       end
     end

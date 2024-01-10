@@ -527,7 +527,7 @@ M.shellescape = function(s, force_win)
         -- quotes and not blackslashes in other positions, e.g:
         --   foo\bar\" -> "foo\bar\\\""     // RIGHT
         --   foo\bar\" -> "foo\\bar\\\""    // WRONG
-        --                    ^^ 
+        --                    ^^
         local bslash_prefix = #substr > 0 and substr:match("([%\\]+)$")
         if bslash_prefix then
           -- quote is prepended by one or more backslashes
@@ -542,7 +542,13 @@ M.shellescape = function(s, force_win)
         table.insert(escaped, [[\"]])
       end
     until not quote_idx or quote_idx >= #s
-    table.insert(escaped, [["]])
+    -- adjust when escaping a string that ends with a blackslash
+    -- otherwise the ending sequence will appear as a literal quote
+    -- and will be missing the end quotes
+    --   c:\foo\  -> "c:\foo\"    // WRONG
+    --   c:\foo\  -> "c:\foo\\"   // RIGHT
+    local last_char = #escaped > 0 and escaped[#escaped]:sub(-1)
+    table.insert(escaped, last_char == [[\]] and [[\"]] or [["]])
     -- print("after:", table.concat(escaped))
     return table.concat(escaped)
   end
@@ -596,7 +602,7 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
   )
   local cmd_str = ("%s%s -n --headless --clean --cmd %s"):format(
     nvim_runtime,
-    M.shellescape(nvim_bin),
+    M.shellescape(is_windows and vim.fs.normalize(nvim_bin) or nvim_bin),
     M.shellescape(cmd)
   )
   return cmd_str

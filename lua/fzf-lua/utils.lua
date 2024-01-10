@@ -87,13 +87,6 @@ M._if_win = function(a, b)
   end
 end
 
----@param a string
----@param b string
----@return string
-M._if_win_fs_norm = function(a, b)
-  return M._if_win(vim.fs.normalize(a), b or a)
-end
-
 ---@return table
 M.shell_wrap_args = function()
   return M._if_win(

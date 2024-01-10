@@ -82,7 +82,8 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and "" or string.format(
     utils._if_win([[set VIMRUNTIME=%s& ]], "VIMRUNTIME=%s "),
-    utils._if_win_fs_norm(vim.env.VIMRUNTIME, libuv.shellescape(vim.env.VIMRUNTIME)))
+    utils._if_win(path.normalize(vim.env.VIMRUNTIME),
+      libuv.shellescape(vim.env.VIMRUNTIME)))
 
   local call_args = ("fzf_lua_server=[[%s]], fnc_id=%d %s"):format(
     vim.g.fzf_lua_server, id, debug and ", debug=true" or "")
@@ -94,7 +95,7 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- worktrees (#600)
   local action_cmd = ("%s%s -n --headless --clean --cmd %s -- %s"):format(
     nvim_runtime,
-    libuv.shellescape(nvim_bin),
+    libuv.shellescape(path.normalize(nvim_bin)),
     libuv.shellescape(("lua loadfile([[%s]])().rpc_nvim_exec_lua({%s})")
       :format(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" }, call_args)),
     fzf_field_expression)

@@ -3,21 +3,20 @@
   "runtime.version": "LuaJIT",
   "diagnostics": {
     "enable": true,
-    "globals": [
-      "vim",
-      "describe",
-      "pending",
-      "it",
-      "before_each",
-      "after_each"
-    ],
+    "globals": ["vim"],
     "neededFileStatus": {
       "codestyle-check": "Any"
     },
     "disable": ["need-check-nil", "missing-parameter", "cast-local-type"]
   },
   "workspace": {
-    "library": ["lua", "$VIMRUNTIME/lua", "${3rd}/luv/library"],
+    "library": [
+      "lua",
+      "$VIMRUNTIME/lua",
+      "${3rd}/luv/library",
+      "$XDG_DATA_HOME/nvim/lazy/plenary.nvim/lua",
+      "$LOCALAPPDATA/nvim-data/lazy/plenary.nvim/lua"
+    ],
     "checkThirdParty": false,
     "maxPreload": 2000,
     "preloadFileSize": 1000,

@@ -675,13 +675,10 @@ end
 
 M.set_header = function(opts, hdr_tbl)
   local function normalize_cwd(cwd)
-    local _cwd = vim.loop.cwd()
-    cwd = utils._if_win_fs_norm(cwd)
-    _cwd = utils._if_win_fs_norm(cwd)
-    if path.starts_with_separator(cwd) and cwd ~= _cwd then
+    if path.is_absolute(cwd) and not path.equals(cwd, vim.loop.cwd()) then
       -- since we're always converting cwd to full path
       -- try to convert it back to relative for display
-      cwd = path.relative(cwd, _cwd)
+      cwd = path.relative_to(cwd, vim.loop.cwd())
     end
     -- make our home dir path look pretty
     return path.HOME_to_tilde(cwd)
@@ -694,9 +691,7 @@ M.set_header = function(opts, hdr_tbl)
         #opts.prompt >= tonumber(opts.cwd_prompt_shorten_len) then
       opts.prompt = path.shorten(opts.prompt, tonumber(opts.cwd_prompt_shorten_val) or 1)
     end
-    if not path.ends_with_separator(opts.prompt) then
-      opts.prompt = opts.prompt .. path.SEPARATOR
-    end
+    opts.prompt = path.add_trailing(opts.prompt)
   end
   if opts.no_header or opts.headers == false then
     return opts
@@ -714,8 +709,8 @@ M.set_header = function(opts, hdr_tbl)
         -- cwd unless the caller specifically requested
         if opts.cwd_header == false or
             opts.cwd_prompt and opts.cwd_header == nil or
-            opts.cwd_header == nil and (not opts.cwd or
-              utils._if_win_fs_norm(opts.cwd) == utils._if_win_fs_norm(vim.loop.cwd())) then
+            opts.cwd_header == nil and
+            (not opts.cwd or path.equals(opts.cwd, vim.loop.cwd())) then
           return
         end
         return normalize_cwd(opts.cwd or vim.loop.cwd())

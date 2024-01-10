@@ -4,136 +4,227 @@ local string_byte = string.byte
 
 local M = {}
 
-M.SEPARATOR = "/"
-
-M.separator = function()
-  return M.SEPARATOR
-end
-
 M.dot_byte = string_byte(".")
 M.colon_byte = string_byte(":")
-M.separator_byte = string_byte(M.SEPARATOR)
+M.fslash_byte = string_byte("/")
+M.bslash_byte = string_byte([[\]])
 
-M.starts_with_separator = function(path)
+---@param path string?
+---@return string
+M.separator = function(path)
+  -- auto-detect separator from fully qualified paths, e.g. "C:\..." or "~/..."
+  if utils.__IS_WINDOWS and path then
+    local maybe_separators = { string_byte(path, 3), string_byte(path, 2) }
+    for _, s in ipairs(maybe_separators) do
+      if M.byte_is_separator(s) then
+        return string.char(s)
+      end
+    end
+  end
+  return string.char(utils._if_win(M.bslash_byte, M.fslash_byte))
+end
+
+M.separator_byte = function(path)
+  return string_byte(M.separator(path), 1)
+end
+
+---@param byte number
+---@return boolean
+M.byte_is_separator = function(byte)
+  if utils.__IS_WINDOWS then
+    -- path on windows can also be the result of `vim.fs.normalize`
+    -- so we need to test for the presense of both slash types
+    return byte == M.bslash_byte or byte == M.fslash_byte
+  else
+    return byte == M.fslash_byte
+  end
+end
+
+M.is_separator = function(c)
+  return M.byte_is_separator(string_byte(c, 1))
+end
+
+---@param path string
+---@return boolean
+M.ends_with_separator = function(path)
+  return M.byte_is_separator(string_byte(path, #path))
+end
+
+---@param path string
+---@return string
+function M.add_trailing(path)
+  if M.ends_with_separator(path) then
+    return path
+  end
+  return path .. M.separator(path)
+end
+
+---@param path string
+---@return string
+function M.remove_trailing(path)
+  while M.ends_with_separator(path) do
+    path = path:sub(1, #path - 1)
+  end
+  return path
+end
+
+---@param path string
+---@return boolean
+M.is_absolute = function(path)
   return utils._if_win(
     string_byte(path, 2) == M.colon_byte,
-    string_byte(path, 1) == M.separator_byte)
+    string_byte(path, 1) == M.fslash_byte)
 end
 
-M.ends_with_separator = function(path)
-  return string_byte(path, #path) == M.separator_byte
-end
-
-M.starts_with_cwd = function(path)
+---@param path string
+---@return boolean
+M.has_cwd_prefix = function(path)
   return #path > 1
       and string_byte(path, 1) == M.dot_byte
-      and string_byte(path, 2) == M.separator_byte
-  -- return path:match("^."..M.SEPARATOR) ~= nil
+      and M.byte_is_separator(string_byte(path, 2))
 end
 
+---@param path string
+---@return string
 M.strip_cwd_prefix = function(path)
-  return #path > 2 and path:sub(3)
+  if M.has_cwd_prefix(path) then
+    return #path > 2 and path:sub(3) or ""
+  else
+    return path
+  end
 end
 
+---Get the basename|tail of the given path.
+---@param path string
+---@return string
 function M.tail(path)
-  local end_idx = M.ends_with_separator(path) and (#path - 1) or #path
+  local end_idx = M.ends_with_separator(path) and #path - 1 or #path
   for i = end_idx, 1, -1 do
-    if string_byte(path, i) == M.separator_byte then
+    if M.byte_is_separator(string_byte(path, i)) then
       return path:sub(i + 1)
     end
   end
   return path
 end
 
----@param path string
----@return string
-function M.extension(path)
-  for i = #path, 1, -1 do
-    if string_byte(path, i) == 46 then
-      return path:sub(i + 1)
-    end
-  end
-  return path
-end
+M.basename = M.tail
 
-function M.to_matching_str(path)
-  -- return path:gsub('(%-)', '(%%-)'):gsub('(%.)', '(%%.)'):gsub('(%_)', '(%%_)')
-  -- above is missing other lua special chars like '+' etc (#315)
-  return utils.lua_regex_escape(path)
-end
-
----@param paths string[]
----@return string
-function M.join(paths)
-  -- gsub to remove double separator
-  local ret = table.concat(paths, M.SEPARATOR):gsub(M.SEPARATOR .. M.SEPARATOR, M.SEPARATOR)
-  return ret
-end
-
-function M.split(path)
-  return path:gmatch("[^" .. M.SEPARATOR .. "]+" .. M.SEPARATOR .. "?")
-end
-
----Get the basename of the given path.
----@param path string
----@return string
-function M.basename(path)
-  path = M.remove_trailing(path)
-  local i = path:match("^.*()" .. M.SEPARATOR)
-  if not i then return path end
-  return path:sub(i + 1, #path)
-end
-
----Get the path to the parent directory of the given path. Returns `nil` if the
----path has no parent.
+---Get the path to the parent directory of the given path.
+-- Returns `nil` if the path has no parent.
 ---@param path string
 ---@param remove_trailing boolean
----@return string|nil
+---@return string?
 function M.parent(path, remove_trailing)
-  path = " " .. M.remove_trailing(path)
-  local i = path:match("^.+()" .. M.SEPARATOR)
-  if not i then return nil end
-  path = path:sub(2, i)
-  if remove_trailing then
-    path = M.remove_trailing(path)
+  path = M.remove_trailing(path)
+  for i = #path, 1, -1 do
+    if M.byte_is_separator(string_byte(path, i)) then
+      local parent = path:sub(1, i)
+      if remove_trailing then
+        parent = M.remove_trailing(parent)
+      end
+      return parent
+    end
   end
-  return path
+end
+
+---@param path string
+---@return string
+function M.normalize(path)
+  local p = M.tilde_to_HOME(path)
+  if utils.__IS_WINDOWS then
+    p = p:gsub([[\]], [[/]])
+  end
+  return p
+end
+
+---@param p1 string
+---@param p2 string
+---@return boolean
+function M.equals(p1, p2)
+  p1 = M.normalize(M.remove_trailing(p1))
+  p2 = M.normalize(M.remove_trailing(p2))
+  if utils.__IS_WINDOWS then
+    p1 = string.lower(p1)
+    p2 = string.lower(p2)
+  end
+  return p1 == p2
+end
+
+---@param path string
+---@param relative_to string
+---@return boolean, string?
+function M.is_relative_to(path, relative_to)
+  -- make sure paths end with a separator
+  local path_no_trailing = M.tilde_to_HOME(path)
+  path = M.add_trailing(path_no_trailing)
+  relative_to = M.add_trailing(M.tilde_to_HOME(relative_to))
+  local pidx, ridx = 1, 1
+  repeat
+    local pbyte = string.byte(path, pidx)
+    local rbyte = string.byte(relative_to, ridx)
+    if M.byte_is_separator(pbyte) and M.byte_is_separator(rbyte) then
+      -- both path and relative_to have a separator part
+      -- which may differ in length if there are multiple
+      -- separators, e.g. "/some/path" and "//some//path"
+      repeat
+        pidx = pidx + 1
+      until not M.byte_is_separator(string.byte(path, pidx))
+      repeat
+        ridx = ridx + 1
+      until not M.byte_is_separator(string.byte(relative_to, ridx))
+    elseif utils.__IS_WINDOWS
+        -- case insensitive matching on windows
+        and string.char(pbyte):lower() == string.char(rbyte):lower()
+        -- byte matching on Unix/BSD
+        or pbyte == rbyte then
+      -- character matches, move to next
+      pidx = pidx + 1
+      ridx = ridx + 1
+    else
+      -- characters don't match
+      return false, nil
+    end
+  until ridx > #relative_to
+  return true, pidx <= #path_no_trailing and path_no_trailing:sub(pidx) or "."
 end
 
 ---Get a path relative to another path.
 ---@param path string
 ---@param relative_to string
 ---@return string
-function M.relative(path, relative_to)
-  local p, _ = path:gsub("^" .. M.to_matching_str(M.add_trailing(relative_to)), "")
-  return p
+function M.relative_to(path, relative_to)
+  local is_relative_to, relative_path = M.is_relative_to(path, relative_to)
+  return is_relative_to and relative_path or path
 end
 
-function M.is_relative(path, relative_to)
-  local p = path:match("^" .. M.to_matching_str(M.add_trailing(relative_to)))
-  return p ~= nil
-end
-
-function M.add_trailing(path)
-  if path:sub(-1) == M.SEPARATOR then
-    return path
-  end
-
-  return path .. M.SEPARATOR
-end
-
-function M.remove_trailing(path)
-  local p, _ = path:gsub(M.SEPARATOR .. "$", "")
-  return p
-end
-
-local function find_next(str, char, start_idx)
-  local i_char = string_byte(char, 1)
-  for i = start_idx or 1, #str do
-    if string_byte(str, i) == i_char then
-      return i
+---@param path string
+---@return string
+function M.extension(path)
+  for i = #path, 1, -1 do
+    if string_byte(path, i) == M.dot_byte then
+      return path:sub(i + 1)
     end
   end
+  return ""
+end
+
+---@param paths string[]
+---@return string
+function M.join(paths)
+  -- Separator is always / (even on windows) unless we
+  -- detect it from fully qualified paths, e.g. "C:\..."
+  local separator = M.separator(paths[1])
+  local ret = ""
+  for i = 1, #paths do
+    local p = paths[i]
+    if p then
+      if i < #paths and not M.ends_with_separator(p) then
+        p = p .. separator
+      end
+      ret = ret .. p
+    end
+  end
+  return ret
 end
 
 -- I'm not sure why this happens given that neovim is single threaded
@@ -144,8 +235,7 @@ M.HOME = function()
   if not M.__HOME then
     -- use 'os.getenv' instead of 'vim.env' due to (#452):
     -- E5560: nvim_exec must not be called in a lua loop callback
-    -- M.__HOME = vim.env.HOME
-    M.__HOME = utils.__IS_WINDOWS and os.getenv("USERPROFILE") or os.getenv("HOME")
+    M.__HOME = utils._if_win(os.getenv("USERPROFILE"), os.getenv("HOME"))
   end
   return M.__HOME
 end
@@ -162,13 +252,25 @@ function M.HOME_to_tilde(path)
   return path and path:gsub("^" .. utils.lua_regex_escape(M.HOME()), "~") or nil
 end
 
+local function find_next_separator(str, start_idx)
+  local SEPARATOR_BYTES = utils._if_win(
+    { M.fslash_byte, M.bslash_byte }, { M.fslash_byte })
+  for i = start_idx or 1, #str do
+    for _, byte in ipairs(SEPARATOR_BYTES) do
+      if string_byte(str, i) == byte then
+        return i
+      end
+    end
+  end
+end
+
 function M.shorten(path, max_len)
-  local sep = M.SEPARATOR
+  local sep = M.separator(path)
   local parts = {}
   local start_idx = 1
   max_len = max_len and tonumber(max_len) > 0 and max_len or 1
   repeat
-    local i = find_next(path, sep, start_idx)
+    local i = find_next_separator(path, start_idx)
     local end_idx = i and start_idx + math.min(i - start_idx, max_len) - 1 or nil
     local part = string_sub(path, start_idx, end_idx)
     if end_idx and part == "." and i - start_idx > 1 then
@@ -182,10 +284,11 @@ end
 
 function M.lengthen(path)
   -- we use 'glob_escape' to escape \{} (#548)
+  local separator = M.separator(path)
   path = utils.glob_escape(path)
-  return vim.fn.glob(path:gsub(M.SEPARATOR, "%*" .. M.SEPARATOR)
+  return vim.fn.glob(path:gsub(separator, "%*" .. separator)
         -- remove the starting '*/' if any
-        :gsub("^%*" .. M.SEPARATOR, M.SEPARATOR)):match("[^\n]+")
+        :gsub("^%*" .. separator, separator)):match("[^\n]+")
       or string.format("<glob expand failed for '%s'>", path)
 end
 
@@ -249,8 +352,7 @@ function M.entry_to_file(entry, opts, force_uri)
   stripped = M.tilde_to_HOME(stripped)
   local isURI = stripped:match("^%a+://")
   -- Prepend cwd before constructing the URI (#341)
-  if cwd and #cwd > 0 and not isURI and
-      not M.starts_with_separator(stripped) then
+  if cwd and #cwd > 0 and not isURI and not M.is_absolute(stripped) then
     stripped = M.join({ cwd, stripped })
   end
   -- #336: force LSP jumps using 'vim.lsp.util.jump_to_location'
@@ -275,6 +377,11 @@ function M.entry_to_file(entry, opts, force_uri)
   end
   local s = utils.strsplit(stripped, ":")
   if not s[1] then return {} end
+  if utils.__IS_WINDOWS and M.is_absolute(stripped) then
+    -- adjust split for "C:\..."
+    s[1] = s[1] .. ":" .. s[2]
+    table.remove(s, 2)
+  end
   local file = s[1]
   local line = tonumber(s[2])
   local col  = tonumber(s[3])

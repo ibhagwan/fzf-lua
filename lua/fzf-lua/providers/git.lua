@@ -129,7 +129,7 @@ M.bcommits = function(opts)
   end
   local git_root = path.git_root(opts)
   if not git_root then return end
-  local file = path.relative(vim.fn.expand("%:p"), git_root)
+  local file = path.relative_to(vim.fn.expand("%:p"), git_root)
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()

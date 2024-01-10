@@ -758,7 +758,7 @@ M.defaults.profiles = {
   prompt    = "FzfLua profiles> ",
   fzf_opts  = {
     ["--delimiter"] = "'[:]'",
-    ["--with-nth"]  = "2..",
+    ["--with-nth"]  = "-1..",
     ["--no-multi"]  = "",
   },
   actions   = { ["default"] = actions.apply_profile },
