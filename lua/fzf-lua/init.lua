@@ -289,6 +289,9 @@ M.setup_fzfvim_cmds = function(...)
   return fn(...)
 end
 
+-- export the defaults module and deref
+M.defaults = require("fzf-lua.defaults").defaults
+
 -- exported modules
 M._exported_modules = {
   "win",
@@ -299,7 +302,6 @@ M._exported_modules = {
   "shell",
   "config",
   "actions",
-  "defaults",
   "make_entry",
 }
 
