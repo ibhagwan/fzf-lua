@@ -110,6 +110,7 @@ M.vimcmd_file = function(vimcmd, selected, opts)
     if vimcmd == "e"
         and curbuf ~= fullpath
         and not vim.o.hidden
+        and not vim.o.autowriteall
         and utils.buffer_is_dirty(nil, false, true) then
       -- confirm with user when trying to switch
       -- from a dirty buffer when `:set nohidden`
@@ -283,6 +284,7 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
     if vimcmd == "b"
         and curbuf ~= entry.bufnr
         and not vim.o.hidden
+        and not vim.o.autowriteall
         and utils.buffer_is_dirty(nil, false, true) then
       -- confirm with user when trying to switch
       -- from a dirty buffer when `:set nohidden`
