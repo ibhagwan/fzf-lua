@@ -129,8 +129,12 @@ M.ui_select = function(items, ui_opts, on_choice)
 
   -- ui.select is code actions
   -- inherit from defaults if not triggered by lsp_code_actions
+  local opts_merge_strategy = "keep"
   if not _OPTS_ONCE and ui_opts.kind == "codeaction" then
     _OPTS_ONCE = config.normalize_opts({}, "lsp.code_actions")
+    -- auto-detected code actions, prioritize the ui_select
+    -- options over `lsp.code_actions` (#999)
+    opts_merge_strategy = "force"
   end
   if _OPTS_ONCE then
     -- merge and clear the once opts sent from lsp_code_actions.
@@ -139,7 +143,7 @@ M.ui_select = function(items, ui_opts, on_choice)
     -- multiple keybinds trigger, sending `--expect` to fzf
     local previewer = _OPTS_ONCE.previewer
     _OPTS_ONCE.previewer = nil -- can't copy the previewer object
-    opts = vim.tbl_deep_extend("keep", _OPTS_ONCE, opts)
+    opts = vim.tbl_deep_extend(opts_merge_strategy, _OPTS_ONCE, opts)
     opts.actions = { ["default"] = opts.actions["default"] }
     opts.previewer = previewer
     _OPTS_ONCE = nil
