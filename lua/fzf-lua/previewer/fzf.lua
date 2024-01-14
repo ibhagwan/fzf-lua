@@ -320,7 +320,7 @@ function Previewer.git_diff:cmdline(o)
     if cmd:match("[<{]file[}>]") then
       cmd = cmd:gsub("[<{]file[}>]", fname_escaped)
     elseif cmd:match("%%s") then
-      cmd:format(fname_escaped)
+      cmd = cmd:format(fname_escaped)
     else
       cmd = string.format("%s %s", cmd, fname_escaped)
     end
