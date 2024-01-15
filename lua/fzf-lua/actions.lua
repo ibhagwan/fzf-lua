@@ -636,6 +636,7 @@ local git_exec = function(selected, opts, cmd, silent)
     if rc ~= 0 and not silent then
       utils.err(unpack(output) or string.format("exit code %d", rc))
     end
+    success = rc == 0
   end
   return success
 end
