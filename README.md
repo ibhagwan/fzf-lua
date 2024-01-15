@@ -1336,3 +1336,4 @@ I missed your name feel free to contact me and I'll add it below:
 - [@kevinhwang91](https://github.com/kevinhwang91) for using his previewer
   code as baseline for the builtin previewer and his must have plugin
   [nvim-bqf](https://github.com/kevinhwang91/nvim-bqf)
+
