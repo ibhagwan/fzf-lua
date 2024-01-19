@@ -384,7 +384,9 @@ M.tabs = function(opts)
           function(s) return s end,
           utils.ansi_codes[opts.hls.tab_marker])
 
-        local tab_cwd_tilde_base64 = vim.base64.encode(tab_cwd_tilde)
+        local tab_cwd_tilde_base64 = vim.base64
+            and vim.base64.encode(tab_cwd_tilde)
+            or tab_cwd_tilde
         if not opts.current_tab_only then
           cb(string.format("%d)%s:%s%s\t%s", t, tab_cwd_tilde_base64, utils.nbsp,
             fn_title_hl(title),
