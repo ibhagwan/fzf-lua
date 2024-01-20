@@ -759,6 +759,12 @@ M.defaults.marks = {
   },
 }
 
+M.defaults.changes = {
+  cmd = "changes",
+  prompt = "Changes> ",
+  h1 = "change",
+}
+
 M.defaults.jumps = {
   prompt    = "Jumps> ",
   cmd       = "jumps",

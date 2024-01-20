@@ -109,10 +109,7 @@ M.search_history = function(opts)
 end
 
 M.changes = function(opts)
-  opts = opts or {}
-  opts.cmd = "changes"
-  opts.prompt = opts.prompt or "Changes> "
-  opts.h1 = opts.h1 or "change"
+  opts = config.normalize_opts(opts, "changes")
   return M.jumps(opts)
 end
 
