@@ -221,7 +221,8 @@ M.defaults.files = {
   cwd_prompt_shorten_len = 32,
   cwd_prompt_shorten_val = 1,
   fzf_opts               = { ["--info"] = "default", },
-  git_status_cmd         = { "git", "-c", "color.status=false", "status", "-s" },
+  git_status_cmd         = {
+    "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" },
   find_opts              = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
   rg_opts                = "--color=never --files --hidden --follow -g '!.git'",
   fd_opts                = "--color=never --type f --hidden --follow --exclude .git",
@@ -249,7 +250,7 @@ M.defaults.git = {
     prompt       = "GitStatus> ",
     -- override `color.status=always`, techincally not required
     -- since we now also call `utils.strip_ansi_coloring` (#706)
-    cmd          = "git -c color.status=false status -su",
+    cmd          = "git -c color.status=false --no-optional-locks status --porcelain=v1 -u",
     previewer    = "git_diff",
     multiprocess = true,
     file_icons   = true and M._has_devicons,
