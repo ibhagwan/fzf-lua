@@ -838,6 +838,8 @@ function FzfWin:create()
   -- save sending bufnr/winid
   self.src_bufnr = vim.api.nvim_get_current_buf()
   self.src_winid = vim.api.nvim_get_current_win()
+  -- save current window layout cmd
+  self.winrestcmd = vim.fn.winrestcmd()
 
   if self.winopts.split then
     vim.cmd(self.winopts.split)
@@ -935,6 +937,9 @@ function FzfWin:close(fzf_bufnr)
       and self.src_winid ~= vim.api.nvim_get_current_win()
       and vim.api.nvim_win_is_valid(self.src_winid) then
     vim.api.nvim_set_current_win(self.src_winid)
+  end
+  if self.winopts.split then
+    vim.cmd(self.winrestcmd)
   end
   if self.hls_on_close then
     -- restore search highlighting if we disabled it
