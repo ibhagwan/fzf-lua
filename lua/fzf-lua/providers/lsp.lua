@@ -48,6 +48,9 @@ local function check_capabilities(handler, silent)
     return num_clients
   end
 
+  -- UI won't open, reset the CTX
+  core.__CTX = nil
+
   if utils.tbl_isempty(clients) then
     if not silent then
       utils.info("LSP: no client attached")
@@ -559,7 +562,10 @@ local function fzf_lsp_locations(opts, fn_contents)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = core.set_fzf_field_index(opts)
   opts = fn_contents(opts)
-  if not opts.__contents then return end
+  if not opts.__contents then
+    core.__CTX = nil
+    return
+  end
   return core.fzf_exec(opts.__contents, opts)
 end
 
@@ -633,6 +639,7 @@ M.finder = function(opts)
   end
   if #contents == 0 then
     utils.info("LSP: no locations found")
+    core.__CTX = nil
     return
   end
   opts = core.set_fzf_field_index(opts)
@@ -699,7 +706,10 @@ M.document_symbols = function(opts)
     opts.fn_pre_fzf()
   end
   opts = gen_lsp_contents(opts)
-  if not opts.__contents then return end
+  if not opts.__contents then
+    core.__CTX = nil
+    return
+  end
   return core.fzf_exec(opts.__contents, opts)
 end
 
@@ -713,7 +723,10 @@ M.workspace_symbols = function(opts)
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = gen_lsp_contents(opts)
-  if not opts.__contents then return end
+  if not opts.__contents then
+    core.__CTX = nil
+    return
+  end
   if opts.symbol_style or opts.symbol_fmt then
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
