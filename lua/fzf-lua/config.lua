@@ -210,6 +210,7 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- save the user's original call params separately
   opts.__call_opts = opts.__call_opts or utils.deepcopy(opts)
+  opts.__call_fn = utils.__FNCREF2__()
 
   -- resume storage data lookup key, default to the calling function ref
   -- __FNCREF2__ will use the 2nd function ref in the stack (calling fn)
@@ -256,7 +257,7 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- Merge required tables from globals
   for _, k in ipairs({
-    "winopts", "keymap", "fzf_opts", "fzf_tmux_opts", "previewers", "hls"
+    "winopts", "keymap", "fzf_opts", "fzf_tmux_opts", "hls"
   }) do
     opts[k] = vim.tbl_deep_extend("keep",
       -- must clone or map will be saved as reference

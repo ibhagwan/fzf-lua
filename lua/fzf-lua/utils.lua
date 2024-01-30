@@ -37,6 +37,11 @@ function M.__FNCREF2__()
   return dbginfo and dbginfo.func
 end
 
+function M.__FNCREF3__()
+  local dbginfo = debug.getinfo(4, "f")
+  return dbginfo and dbginfo.func
+end
+
 -- sets an invisible unicode character as icon separator
 -- the below was reached after many iterations, a short summary of everything
 -- that was tried and why it failed:

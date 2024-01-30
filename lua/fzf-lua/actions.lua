@@ -772,15 +772,19 @@ M.toggle_ignore = function(_, opts)
     -- flag must be preceded by whitespace
     flag = " " .. flag
   end
-  if opts.cmd:match(utils.lua_regex_escape(flag)) then
+  -- grep|live_grep sets `opts._cmd` to the original
+  -- command without the search argument
+  local cmd = opts._cmd or opts.cmd
+  if cmd:match(utils.lua_regex_escape(flag)) then
+    o.cmd = cmd:gsub(utils.lua_regex_escape(flag), "")
     o._hdr_to = false
-    o.cmd = opts.cmd:gsub(utils.lua_regex_escape(flag), "")
   else
     -- signals "core.set_header" to set the correct "to" header
+    local bin, args = cmd:match("([^%s]+)(.*)$")
+    o.cmd = string.format("%s%s%s", bin, flag, args)
     o._hdr_to = true
-    o.cmd = opts.cmd .. flag
   end
-  opts.__ACT_TO(o)
+  opts.__call_fn(o)
 end
 
 M.tmux_buf_set_reg = function(selected, opts)

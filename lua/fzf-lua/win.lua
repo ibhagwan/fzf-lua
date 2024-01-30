@@ -158,10 +158,10 @@ end
 local strip_borderchars_hl = function(border)
   local default = nil
   if type(border) == "string" then
-    default = config.globals.winopts._borderchars[border]
+    default = config.globals.__WINOPTS.borderchars[border]
   end
   if not default then
-    default = config.globals.winopts._borderchars["rounded"]
+    default = config.globals.__WINOPTS.borderchars["rounded"]
   end
   if not border or type(border) ~= "table" or #border < 8 then
     return default
@@ -250,7 +250,7 @@ local normalize_winopts = function(o)
   if vim.o.ambiwidth == "double" and type(winopts.border) == "table" then
     local topleft = winopts.border[1]
     winopts.border = topleft
-        and config.globals.winopts._border2string[topleft] or "rounded"
+        and config.globals.__WINOPTS.border2string[topleft] or "rounded"
   end
 
   -- We only allow 'none|single|double|rounded'
@@ -258,8 +258,8 @@ local normalize_winopts = function(o)
     -- save the original string so we can pass it
     -- to the main fzf window 'nvim_open_win' (#364)
     winopts._border = winopts.border
-    winopts.border = config.globals.winopts._borderchars[winopts.border] or
-        config.globals.winopts._borderchars["rounded"]
+    winopts.border = config.globals.__WINOPTS.borderchars[winopts.border] or
+        config.globals.__WINOPTS.borderchars["rounded"]
   end
 
   -- Store a version of borderchars with no highlights

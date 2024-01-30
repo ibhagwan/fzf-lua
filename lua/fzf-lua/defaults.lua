@@ -61,26 +61,6 @@ M.defaults = {
         scrolloff      = 1,
       },
     },
-    _borderchars   = {
-      ["none"]    = { " ", " ", " ", " ", " ", " ", " ", " " },
-      ["solid"]   = { " ", " ", " ", " ", " ", " ", " ", " " },
-      ["single"]  = { "┌", "─", "┐", "│", "┘", "─", "└", "│" },
-      ["double"]  = { "╔", "═", "╗", "║", "╝", "═", "╚", "║" },
-      ["rounded"] = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
-      ["thicc"]   = { "┏", "━", "┓", "┃", "┛", "━", "┗", "┃" },
-      ["thiccc"]  = { "▛", "▀", "▜", "▐", "▟", "▄", "▙", "▌" },
-      ["thicccc"] = { "█", "█", "█", "█", "█", "█", "█", "█" },
-    },
-    -- border chars reverse lookup for ambiwidth="double"
-    _border2string = {
-      [" "] = "solid",
-      ["┌"] = "single",
-      ["╔"] = "double",
-      ["╭"] = "rounded",
-      ["┏"] = "double",
-      ["▛"] = "double",
-      ["█"] = "double",
-    },
     on_create      = function()
       -- vim.cmd("set winhl=Normal:Normal,FloatBorder:Normal")
     end,
@@ -965,6 +945,29 @@ M.defaults.__HLS = {
   tab_title      = "FzfLuaTabTitle",
   tab_marker     = "FzfLuaTabMarker",
   dir_icon       = "FzfLuaDirIcon",
+}
+
+M.defaults.__WINOPTS = {
+  borderchars   = {
+    ["none"]    = { " ", " ", " ", " ", " ", " ", " ", " " },
+    ["solid"]   = { " ", " ", " ", " ", " ", " ", " ", " " },
+    ["single"]  = { "┌", "─", "┐", "│", "┘", "─", "└", "│" },
+    ["double"]  = { "╔", "═", "╗", "║", "╝", "═", "╚", "║" },
+    ["rounded"] = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
+    ["thicc"]   = { "┏", "━", "┓", "┃", "┛", "━", "┗", "┃" },
+    ["thiccc"]  = { "▛", "▀", "▜", "▐", "▟", "▄", "▙", "▌" },
+    ["thicccc"] = { "█", "█", "█", "█", "█", "█", "█", "█" },
+  },
+  -- border chars reverse lookup for ambiwidth="double"
+  _border2string = {
+    [" "] = "solid",
+    ["┌"] = "single",
+    ["╔"] = "double",
+    ["╭"] = "rounded",
+    ["┏"] = "double",
+    ["▛"] = "double",
+    ["█"] = "double",
+  },
 }
 
 return M

@@ -50,7 +50,6 @@ M.files = function(opts)
         "^" .. utils.lua_regex_escape(curbuf) .. "$")
     end
   end
-  opts.__ACT_TO = opts.__ACT_TO or M.files
   opts.cmd = get_files_cmd(opts)
   local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })

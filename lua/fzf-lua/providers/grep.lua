@@ -20,6 +20,11 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     command = string.format("grep %s", opts.grep_opts)
   end
 
+  -- save a copy of the command for `actions.toggle_ignore`
+  -- TODO: both `get_grep_cmd` and `get_files_cmd` need to
+  -- be reworked into a table of arguments
+  opts._cmd = command
+
   if opts.rg_glob and not command:match("^rg") then
     opts.rg_glob = false
     utils.warn("'--glob|iglob' flags require 'rg', ignoring 'rg_glob' option.")
@@ -130,8 +135,13 @@ local function normalize_live_grep_opts(opts)
   opts = config.normalize_opts(opts, "grep")
   if not opts then return end
 
-  -- we need this for 'actions.grep_lgrep`
+  -- we need this for `actions.grep_lgrep`
   opts.__ACT_TO = opts.__ACT_TO or M.grep
+
+  -- used by `actions.toggle_ignore', normalize_opts sets `__call_fn`
+  -- to the calling function  which will resolve to this fn), we need
+  -- to deref one level up to get to `live_grep_{mt|st}`
+  opts.__call_fn = utils.__FNCREF2__()
 
   -- NOT NEEDED SINCE RESUME DATA REFACTOR
   -- (was used by `make_entry.set_config_section`

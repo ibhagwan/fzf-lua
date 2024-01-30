@@ -252,8 +252,6 @@ M.fzf = function(contents, opts)
     config.__resume_data = config.__resume_data or {}
     config.__resume_data.opts = utils.deepcopy(opts)
     config.__resume_data.contents = contents and utils.deepcopy(contents) or nil
-    -- save a ref to resume data for 'grep_lgrep'
-    opts.__resume_data = config.__resume_data
   end
   -- update context and save a copy in options (for actions)
   -- call before creating the window or fzf_winobj is not nil
@@ -754,7 +752,8 @@ M.set_header = function(opts, hdr_tbl)
           local action = type(v) == "function" and v or type(v) == "table" and (v.fn or v[1])
           if type(action) == "function" and defs[action] then
             local def = defs[action]
-            local to = (opts.fn_reload or opts._hdr_to) and def.fn_reload or def[1]
+            local to = (opts._hdr_to == nil and opts.fn_reload or opts._hdr_to)
+                and def.fn_reload or def[1]
             table.insert(ret, def.pos or #ret + 1,
               string.format("<%s> to %s",
                 utils.ansi_from_hl(opts.hls.header_bind, k),
