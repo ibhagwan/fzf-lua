@@ -786,11 +786,12 @@ require'fzf-lua'.setup {
     actions = {
       -- inherits from 'actions.files', here we can override
       -- or set bind to 'false' to disable a default action
+      -- action to toggle `--no-ignore`, requires fd or rg installed
+      ["ctrl-g"]         = { actions.toggle_ignore },
+      -- uncomment to override `actions.file_edit_or_qf`
       --   ["default"]   = actions.file_edit,
       -- custom actions are available too
       --   ["ctrl-y"]    = function(selected) print(selected[1]) end,
-      -- action to toggle `--no-ignore`, requires fd or rg installed
-      --   ["ctrl-g"]    = { actions.toggle_ignore },
     }
   },
   git = {
@@ -939,6 +940,8 @@ require'fzf-lua'.setup {
       -- actions inherit from 'actions.files' and merge
       -- this action toggles between 'grep' and 'live_grep'
       ["ctrl-g"]      = { actions.grep_lgrep }
+      -- uncomment to enable '.gitignore' toggle for grep
+      -- ["ctrl-r"]   = { actions.toggle_ignore }
     },
     no_header             = false,    -- hide grep|cwd header?
     no_header_i           = false,    -- hide interactive header?
