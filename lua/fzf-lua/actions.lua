@@ -777,12 +777,9 @@ M.toggle_ignore = function(_, opts)
   local cmd = opts._cmd or opts.cmd
   if cmd:match(utils.lua_regex_escape(flag)) then
     o.cmd = cmd:gsub(utils.lua_regex_escape(flag), "")
-    o._hdr_to = false
   else
-    -- signals "core.set_header" to set the correct "to" header
     local bin, args = cmd:match("([^%s]+)(.*)$")
     o.cmd = string.format("%s%s%s", bin, flag, args)
-    o._hdr_to = true
   end
   opts.__call_fn(o)
 end

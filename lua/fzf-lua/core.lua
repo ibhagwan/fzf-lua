@@ -13,9 +13,34 @@ local M = {}
 M.ACTION_DEFINITIONS = {
   -- list of supported actions with labels to be displayed in the headers
   -- no pos implies an append to header array
-  [actions.toggle_ignore]     = { "Disable .gitignore", fn_reload = "Respect .gitignore", _hdr_to = true },
-  [actions.grep_lgrep]        = { "Regex Search", fn_reload = "Fuzzy Search" },
-  [actions.sym_lsym]          = { "Live Query", fn_reload = "Fuzzy Search" },
+  [actions.toggle_ignore]     = {
+    function(o)
+      local flag = o.toggle_ignore_flag or "--no-ignore"
+      if o.cmd:match(utils.lua_regex_escape(flag)) then
+        return "Respect .gitignore"
+      else
+        return "Disable .gitignore"
+      end
+    end,
+  },
+  [actions.grep_lgrep]        = {
+    function(o)
+      if o.fn_reload then
+        return "Fuzzy Search"
+      else
+        return "Regex Search"
+      end
+    end,
+  },
+  [actions.sym_lsym]          = {
+    function(o)
+      if o.fn_reload then
+        return "Fuzzy Search"
+      else
+        return "Live Query"
+      end
+    end,
+  },
   [actions.buf_del]           = { "close" },
   [actions.arg_del]           = { "delete" },
   [actions.git_reset]         = { "reset" },
@@ -744,7 +769,7 @@ M.set_header = function(opts, hdr_tbl)
     actions = {
       hdr_txt_opt = "interactive_header_txt",
       hdr_txt_str = "",
-      val = function()
+      val = function(o)
         if opts.no_header_i then return end
         local defs = M.ACTION_DEFINITIONS
         local ret = {}
@@ -752,13 +777,9 @@ M.set_header = function(opts, hdr_tbl)
           local action = type(v) == "function" and v or type(v) == "table" and (v.fn or v[1])
           if type(action) == "function" and defs[action] then
             local def = defs[action]
-            local to
-            if
-                not def._hdr_to and opts.fn_reload   -- grep_lgrep|sym_lsym
-                or def._hdr_to and opts._hdr_to then -- toggle_ignore
-              to = def.fn_reload
-            else
-              to = def[1]
+            local to = def[1]
+            if type(to) == "function" then
+              to = to(o)
             end
             table.insert(ret, def.pos or #ret + 1,
               string.format("<%s> to %s",
@@ -796,7 +817,7 @@ M.set_header = function(opts, hdr_tbl)
   for _, h in ipairs(opts.headers) do
     assert(definitions[h])
     local def = definitions[h]
-    local txt = def.val()
+    local txt = def.val(opts)
     if def and txt then
       hdr_str = not hdr_str and "" or (hdr_str .. ", ")
       hdr_str = ("%s%s%s"):format(hdr_str, def.hdr_txt_str,
