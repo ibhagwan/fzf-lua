@@ -942,18 +942,18 @@ function FzfWin:close(fzf_bufnr)
     -- remove all windows from the restore cmd that have been closed in the meantime
     -- if we're not doing this the result might be all over the place
     local winnrs = vim.tbl_map(function(win)
-      return vim.api.nvim_win_get_number(win)
+      return vim.api.nvim_win_get_number(win) .. ""
     end, vim.api.nvim_tabpage_list_wins(0))
 
-    local cmd = ""
+    local cmd = {}
     for cmd_part in string.gmatch(self.winrestcmd, "[^|]+") do
       local winnr = cmd_part:match("(.)resize")
       if vim.tbl_contains(winnrs, winnr) then
-        cmd = cmd .. cmd_part
+        table.insert(cmd, cmd_part)
       end
     end
 
-    vim.cmd(cmd)
+    vim.cmd(table.concat(cmd, "|"))
   end
   if self.hls_on_close then
     -- restore search highlighting if we disabled it
