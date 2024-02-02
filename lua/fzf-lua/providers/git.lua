@@ -106,6 +106,11 @@ M.commits = function(opts)
     if opts.preview_pager then
       opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
     end
+    if vim.o.shell and vim.o.shell:match("fish$") then
+      -- TODO: why does fish shell refuse to pass along $COLUMNS
+      -- to delta while the same exact commands works with bcommits?
+      opts.preview = "sh -c " .. libuv.shellescape(opts.preview)
+    end
   end
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   return git_cmd(opts)
