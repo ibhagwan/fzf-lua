@@ -42,7 +42,6 @@ function Previewer.base:preview_offset()
 end
 
 function Previewer.base:fzf_delimiter()
-  if not self.opts.line_field_index then return end
   -- set delimiter to ':'
   -- entry format is 'file:line:col: text'
   local delim = self.opts.fzf_opts and self.opts.fzf_opts["--delimiter"]
