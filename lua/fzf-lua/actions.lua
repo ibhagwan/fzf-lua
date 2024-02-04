@@ -766,7 +766,7 @@ M.sym_lsym = function(_, opts)
 end
 
 M.toggle_ignore = function(_, opts)
-  local o = { resume = true }
+  local o = { resume = true, cwd = opts.cwd }
   local flag = opts.toggle_ignore_flag or "--no-ignore"
   if not flag:match("^%s") then
     -- flag must be preceded by whitespace
