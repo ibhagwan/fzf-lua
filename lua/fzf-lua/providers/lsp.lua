@@ -191,6 +191,12 @@ local function symbol_handler(opts, cb, _, result, _, _)
     if (not opts.current_buffer_only or core.CTX().bname == entry.filename) and
         (not opts.regex_filter or entry.text:match(opts.regex_filter)) then
       local mbicon_align = 0
+      if opts.fn_reload and type(opts.query) == "string" and #opts.query > 0 then
+        -- highlight exact matches with `live_workspace_symbols` (#1028)
+        local sym, text = entry.text:match("^(.+%])(.*)$")
+        entry.text = sym .. text:gsub(utils.lua_regex_escape(opts.query),
+          utils.ansi_codes.red(opts.query))
+      end
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
         local styled = kind and M._sym2style[kind]
@@ -778,6 +784,7 @@ M.live_workspace_symbols = function(opts)
   -- use our own
   opts.func_async_callback = false
   opts.fn_reload = function(query)
+    opts.query = query
     opts.lsp_params = { query = query or "" }
     opts = gen_lsp_contents(opts)
     return opts.__contents
