@@ -678,6 +678,8 @@ M.git_reset = function(selected, opts)
         and path.git_cwd({ "git", "clean", "-f" }, opts)
         or path.git_cwd({ "git", "checkout", "HEAD", "--" }, opts)
     git_exec({ s }, opts, cmd)
+    -- trigger autoread or warn the users buffer(s) was changed
+    vim.cmd.checktime()
   end
 end
 
