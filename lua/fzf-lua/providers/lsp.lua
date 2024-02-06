@@ -194,8 +194,14 @@ local function symbol_handler(opts, cb, _, result, _, _)
       if opts.fn_reload and type(opts.query) == "string" and #opts.query > 0 then
         -- highlight exact matches with `live_workspace_symbols` (#1028)
         local sym, text = entry.text:match("^(.+%])(.*)$")
-        entry.text = sym .. text:gsub(utils.lua_regex_escape(opts.query),
-          utils.ansi_codes.red(opts.query))
+        local pattern = "[" .. utils.lua_regex_escape(
+          opts.query:gsub("%a", function(x)
+            return string.upper(x) .. string.lower(x)
+          end)
+        ) .. "]+"
+        entry.text = sym .. text:gsub(pattern, function(x)
+          return utils.ansi_codes.red(x)
+        end)
       end
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
@@ -218,7 +224,12 @@ local function symbol_handler(opts, cb, _, result, _, _)
       entry = make_entry.file(entry, opts)
       if entry then
         local align = 48 + mbicon_align + utils.ansi_escseq_len(symbol)
-        entry = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry)
+        -- TODO: string.format %-{n}s fails with align > ~100?
+        -- entry = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry)
+        if align > #symbol then
+          symbol = symbol .. string.rep(" ", align - #symbol)
+        end
+        entry = symbol .. utils.nbsp .. entry
         cb(opts._fmt and opts._fmt.to and opts._fmt.to(entry, opts) or entry)
       end
     end
