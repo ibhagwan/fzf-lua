@@ -192,6 +192,11 @@ M.fzf_wrap = function(opts, contents, fn_selected)
       xpcall(function()
         opts.fn_selected(selected, opts)
       end, function(err)
+        -- ignore existing swap file error, the choices dialog will still be
+        -- displayed to user to make a selection once fzf-lua exits (#1011)
+        if err:match("Vim%(edit%):E325") then
+          return
+        end
         utils.err("fn_selected threw an error: " .. debug.traceback(err, 1))
       end)
     end
