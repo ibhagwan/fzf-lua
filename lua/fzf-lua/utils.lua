@@ -866,7 +866,8 @@ end
 function M.io_systemlist(cmd)
   if vim.system ~= nil then -- nvim 0.10+
     local proc = vim.system(cmd):wait()
-    local output = proc.code == 0 and proc.stdout or proc.stderr
+    local output = (type(proc.stderr) == "string" and proc.stderr or "")
+        .. (type(proc.stdout) == "string" and proc.stdout or "")
     return vim.split(output, "\n", { trimempty = true }), proc.code
   else
     return vim.fn.systemlist(cmd), vim.v.shell_error
@@ -879,7 +880,8 @@ end
 function M.io_system(cmd)
   if vim.system ~= nil then -- nvim 0.10+
     local proc = vim.system(cmd):wait()
-    local output = proc.code == 0 and proc.stdout or proc.stderr
+    local output = (type(proc.stderr) == "string" and proc.stderr or "")
+        .. (type(proc.stdout) == "string" and proc.stdout or "")
     return output, proc.code
   else
     return vim.fn.system(cmd), vim.v.shell_error
