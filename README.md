@@ -406,7 +406,7 @@ EOF
 
 ### Profiles
 
-Conviniently, fzf-lua comes with a set of preconfigured profiles, notably:
+Conveniently, fzf-lua comes with a set of preconfigured profiles, notably:
 | Profile          | Details                                    |
 | ---------------- | ------------------------------------------ |
 | `default`          | fzf-lua defaults, uses neovim "builtin" previewer and devicons (if available) for git/files/buffers |
@@ -707,7 +707,7 @@ require'fzf-lua'.setup {
       -- exclude specific filetypes with: `{ disable = { "lua" } }
       -- disable fully with: `{ enable = false }`
       treesitter      = { enable = true, disable = {} },
-      -- By default, the main window dimensions are calculted as if the
+      -- By default, the main window dimensions are calculated as if the
       -- preview is visible, when hidden the main window will extend to
       -- full size. Set the below to "extend" to prevent the main window
       -- from being modified when toggling the preview.
@@ -751,7 +751,7 @@ require'fzf-lua'.setup {
   },
   -- PROVIDERS SETUP
   -- use `defaults` (table or function) if you wish to set "global-provider" defaults
-  -- for exmaple, disabling file icons globally and open the quickfix list at the top
+  -- for example, disabling file icons globally and open the quickfix list at the top
   --   defaults = {
   --     file_icons   = false,
   --     copen        = "topleft copen",
@@ -802,7 +802,7 @@ require'fzf-lua'.setup {
       git_icons     = true,           -- show git icons?
       file_icons    = true,           -- show file icons?
       color_icons   = true,           -- colorize file|git icons
-      -- force display the cwd header line regardles of your current working
+      -- force display the cwd header line regardless of your current working
       -- directory can also be used to hide the header when not wanted
       -- cwd_header = true
     },
@@ -931,7 +931,7 @@ require'fzf-lua'.setup {
     -- advanced usage: for custom argument parsing define
     -- 'rg_glob_fn' to return a pair:
     --   first returned argument is the new search query
-    --   second returned argument are addtional rg flags
+    --   second returned argument are additional rg flags
     -- rg_glob_fn = function(query, opts)
     --   ...
     --   return new_query, flags
@@ -1260,7 +1260,7 @@ require'fzf-lua'.setup {
 
 ### Highlights
 
-FzfLua conviniently creates the below highlights, each hlgroup can be
+FzfLua conveniently creates the below highlights, each hlgroup can be
 temporarily overridden by its corresponding `winopts` option:
 
 | Highlight Group       | Default     | Override Via              | Notes |
