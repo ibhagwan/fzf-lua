@@ -502,7 +502,7 @@ M.build_fzf_cli = function(opts)
   if opts.fzf_opts["--preview-window"] == nil then
     opts.fzf_opts["--preview-window"] = M.preview_window(opts)
   end
-  if opts.preview_offset and #opts.preview_offset > 0 then
+  if opts.fzf_opts["--preview-window"] and opts.preview_offset and #opts.preview_offset > 0 then
     opts.fzf_opts["--preview-window"] =
         opts.fzf_opts["--preview-window"] .. ":" .. opts.preview_offset
   end
