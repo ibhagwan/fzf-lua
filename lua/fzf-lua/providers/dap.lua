@@ -1,9 +1,7 @@
 local core = require "fzf-lua.core"
-local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
-local libuv = require "fzf-lua.libuv"
+local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
 local make_entry = require "fzf-lua.make_entry"
 
 local _has_dap, _dap = nil, nil
@@ -80,72 +78,54 @@ M.configurations = function(opts)
 end
 
 M.breakpoints = function(opts)
-  if not dap() then return end
-  local dap_bps = require "dap.breakpoints"
-
   opts = config.normalize_opts(opts, "dap.breakpoints")
   if not opts then return end
 
-  -- so we can have accurate info on resume
-  opts.fn_pre_fzf = function()
-    opts._locations = dap_bps.to_qf_list(dap_bps.get())
-  end
+  if not dap() then return end
+  local dap_bps = require "dap.breakpoints"
 
-  -- run once to prevent opening an empty dialog
-  opts.fn_pre_fzf()
-
-  if vim.tbl_isempty(opts._locations) then
+  if vim.tbl_isempty(dap_bps.get()) then
     utils.info("Breakpoint list is empty.")
     return
   end
 
-  if not opts.cwd then opts.cwd = vim.loop.cwd() end
+  -- display relative paths by default
+  if opts.cwd == nil then opts.cwd = vim.loop.cwd() end
 
-  opts.actions = vim.tbl_deep_extend("keep", opts.actions or {},
-    {
-      ["ctrl-x"] = opts.actions and opts.actions["ctrl-x"] or
-          {
-            function(selected, o)
-              for _, e in ipairs(selected) do
-                local entry = path.entry_to_file(e, o)
-                if entry.bufnr > 0 and entry.line then
-                  dap_bps.remove(entry.bufnr, entry.line)
-                end
-              end
-            end,
-            -- resume after bp deletion
-            actions.resume
-          }
-    })
-
-  local contents = function(cb)
-    local entries = {}
-    for _, entry in ipairs(opts._locations) do
-      table.insert(entries, make_entry.lcol(entry, opts))
+  opts.func_async_callback = false
+  opts.__fn_reload = opts.__fn_reload or function(_)
+    return function(cb)
+      coroutine.wrap(function()
+        local co = coroutine.running()
+        local bps = dap_bps.to_qf_list(dap_bps.get())
+        for _, b in ipairs(bps) do
+          vim.schedule(function()
+            local entry = make_entry.lcol(b, opts)
+            entry = string.format("[%s] %s",
+              -- tostring(opts._locations[i].bufnr),
+              utils.ansi_codes.yellow(tostring(b.bufnr)),
+              make_entry.file(entry, opts))
+            cb(entry, function()
+              coroutine.resume(co)
+            end)
+          end)
+          coroutine.yield()
+        end
+        cb(nil)
+      end)()
     end
-
-    for i, x in ipairs(entries) do
-      x = ("[%s] %s"):format(
-      -- tostring(opts._locations[i].bufnr),
-        utils.ansi_codes.yellow(tostring(opts._locations[i].bufnr)),
-        make_entry.file(x, opts))
-      if x then
-        cb(x, function(err)
-          if err then return end
-          -- close the pipe to fzf, this
-          -- removes the loading indicator in fzf
-          cb(nil)
-        end)
-      end
-    end
-    cb(nil)
   end
 
-  if opts.fzf_opts["--header"] == nil then
-    opts.fzf_opts["--header"] = (":: %s to delete a Breakpoint")
-        :format(utils.ansi_codes.yellow("<Ctrl-x>"))
+  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
+  local reload, id = shell.reload_action_cmd(opts, "{+}")
+  local contents = reload:gsub("%-%-%s+{%+}$", "")
+  opts.__reload_cmd = reload
+
+  opts._fn_pre_fzf = function()
+    shell.set_protected(id)
   end
 
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts, "{3}", opts._is_skim and "{}" or "{..-2}")
 
   core.fzf_exec(contents, opts)

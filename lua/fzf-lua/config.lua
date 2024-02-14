@@ -612,6 +612,7 @@ M._action_to_helpstr = {
   [actions.set_qflist]          = "set-{qf|loc}list",
   [actions.apply_profile]       = "apply-profile",
   [actions.complete]            = "complete",
+  [actions.dap_bp_del]          = "dap-bp-delete",
 }
 
 return M

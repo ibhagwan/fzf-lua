@@ -45,6 +45,7 @@ M.ACTION_DEFINITIONS = {
   },
   [actions.buf_del]           = { "close" },
   [actions.arg_del]           = { "delete" },
+  [actions.dap_bp_del]        = { "delete" },
   [actions.git_reset]         = { "reset" },
   [actions.git_stage]         = { "stage", pos = 1 },
   [actions.git_unstage]       = { "unstage", pos = 2 },

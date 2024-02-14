@@ -895,13 +895,13 @@ M.defaults.dap = {
     prompt      = "DAP Breakpoints> ",
     file_icons  = true and M._has_devicons,
     color_icons = true,
-    git_icons   = true,
+    git_icons   = false,
     previewer   = M._default_previewer_fn,
     _actions    = function() return M.globals.actions.files end,
+    actions     = { ["ctrl-x"] = { fn = actions.dap_bp_del, reload = true } },
     fzf_opts    = {
       ["--delimiter"] = "[\\]:]",
       ["--with-nth"]  = "2..",
-      ["--no-multi"]  = true,
     },
   },
 }

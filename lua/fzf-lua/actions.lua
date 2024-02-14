@@ -856,4 +856,14 @@ M.complete = function(selected, opts)
   end
 end
 
+M.dap_bp_del = function(selected, opts)
+  local dap_bps = require("dap.breakpoints")
+  for _, e in ipairs(selected) do
+    local entry = path.entry_to_file(e, opts)
+    if entry.bufnr > 0 and entry.line then
+      dap_bps.remove(entry.bufnr, entry.line)
+    end
+  end
+end
+
 return M
