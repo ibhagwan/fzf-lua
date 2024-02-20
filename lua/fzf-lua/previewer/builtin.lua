@@ -31,10 +31,10 @@ function Previewer.base:new(o, opts, fzf_win)
   self.title_pos = self.win.winopts.preview.title_pos
   self.winopts = self.win.winopts.preview.winopts
   self.syntax = default(o.syntax, true)
-  self.syntax_delay = default(o.syntax_delay, 0)
-  self.syntax_limit_b = default(o.syntax_limit_b, 1024 * 1024)
-  self.syntax_limit_l = default(o.syntax_limit_l, 0)
-  self.limit_b = default(o.limit_b, 1024 * 1024 * 10)
+  self.syntax_delay = tonumber(default(o.syntax_delay, 0))
+  self.syntax_limit_b = tonumber(default(o.syntax_limit_b, 1024 * 1024))
+  self.syntax_limit_l = tonumber(default(o.syntax_limit_l, 0))
+  self.limit_b = tonumber(default(o.limit_b, 1024 * 1024 * 10))
   self.treesitter = o.treesitter or {}
   self.toggle_behavior = o.toggle_behavior
   self.ext_ft_override = o.ext_ft_override
@@ -896,8 +896,11 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
     -- syntax highlighting
     if self.syntax then
       if self.syntax_delay > 0 then
+        local syntax_bufnr = self.preview_bufnr
         vim.defer_fn(function()
-          self:do_syntax(entry)
+          if self.preview_bufnr == syntax_bufnr then
+            self:do_syntax(entry)
+          end
         end, self.syntax_delay)
       else
         self:do_syntax(entry)
