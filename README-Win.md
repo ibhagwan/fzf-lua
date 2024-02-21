@@ -37,8 +37,7 @@ However, when using the native version we need to escape the caret twice:
 ```
 
 More so, I couldn't find a way to send special regex chars `[(|.*^$` as the backslash
-is always doubled by fzf's `{q}`, this probably has a solution, **requires more research
-or opening an issue upstream**.
+is always doubled by fzf's `{q}`<sub><sup>&ast; see bottom note</sup></sub>.
 
 For example, if we run:
 ```cmd
@@ -54,3 +53,5 @@ If we double the blackslashes by typing `\\[` we get the error:
 ```
 [Command failed: rg --line-number --column --color=always ^"\\\\[^"]
 ```
+
+<sub><sup>&ast; upstream issue: https://github.com/junegunn/fzf/issues/3626</sup></sub>
