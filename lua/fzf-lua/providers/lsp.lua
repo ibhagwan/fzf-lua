@@ -761,7 +761,9 @@ M.live_workspace_symbols = function(opts)
 
   -- prepend prompt with "*" to indicate "live" query
   opts.prompt = type(opts.prompt) == "string" and opts.prompt or ""
-  opts.prompt = opts.prompt:match("^%*") and opts.prompt or ("*" .. opts.prompt)
+  if opts.live_ast_prefix ~= false then
+    opts.prompt = opts.prompt:match("^%*") and opts.prompt or ("*" .. opts.prompt)
+  end
 
   -- when using live_workspace_symbols there is no "query"
   -- the prompt input is the LSP query, store as "lsp_query"

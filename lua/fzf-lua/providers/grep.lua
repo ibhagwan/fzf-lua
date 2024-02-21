@@ -153,7 +153,9 @@ local function normalize_live_grep_opts(opts)
 
   -- prepend prompt with "*" to indicate "live" query
   opts.prompt = type(opts.prompt) == "string" and opts.prompt or ""
-  opts.prompt = opts.prompt:match("^%*") and opts.prompt or ("*" .. opts.prompt)
+  if opts.live_ast_prefix ~= false then
+    opts.prompt = opts.prompt:match("^%*") and opts.prompt or ("*" .. opts.prompt)
+  end
 
   -- when using live_grep there is no "query", the prompt input
   -- is a regex expression and should be saved as last "search"
