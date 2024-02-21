@@ -439,10 +439,13 @@ M.create_fzf_colors = function(opts)
   if type(colors) == "function" then
     colors = colors(opts)
   end
-  if not colors then return end
 
   local tbl = {}
-  for highlight, list in pairs(colors) do
+
+  -- In case the user alredy set fzf_opts["--color"] (#1052)
+  table.insert(tbl, opts.fzf_opts and opts.fzf_opts["--color"])
+
+  for highlight, list in pairs(colors or {}) do
     if type(list) == "table" then
       local hexcol = utils.hexcol_from_hl(list[2], list[1])
       if hexcol and #hexcol > 0 then
