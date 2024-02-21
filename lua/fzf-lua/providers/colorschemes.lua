@@ -18,7 +18,6 @@ M.colorschemes = function(opts)
   opts = config.normalize_opts(opts, "colorschemes")
   if not opts then return end
 
-
   local current_colorscheme = get_current_colorscheme()
   local current_background = vim.o.background
   local colors = opts.colors or vim.fn.getcompletion("", "color")
@@ -32,6 +31,15 @@ M.colorschemes = function(opts)
       end
       return true
     end, colors)
+  end
+
+  -- make sure active colorscheme is first entry (#1045)
+  for i, c in ipairs(colors) do
+    if c == current_colorscheme then
+      table.remove(colors, i)
+      table.insert(colors, 1, c)
+      break
+    end
   end
 
   if opts.live_preview then
