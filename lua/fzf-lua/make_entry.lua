@@ -5,6 +5,24 @@ local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local config = nil
 
+-- Supports multi-part extensions
+-- e.g.
+--    "file.js" -> "js"
+--    "file.test.js" -> "test.js"
+--    "file.spec.js" -> "spec.js"
+local function get_extension_from_file_name(file_name)
+  local name, extension = file_name:match("(.+)%.(.+)$")
+
+  if name and extension then
+    local preExtension = name:match(".+%.(.+)$")
+    if preExtension then
+      return (preExtension .. "." .. extension):lower()
+    else
+      return extension:lower()
+    end
+  end
+end
+
 -- attempt to load the current config
 -- should fail if we're running headless
 do
@@ -206,17 +224,21 @@ if not config then
   config = _config
 end
 
-M.get_devicon = function(file, ext)
+-- by default the extension will be derived from `file`, but you can
+-- override it by passing `extensionOverride`
+M.get_devicon = function(file, extensionOverride)
+  local ext = extensionOverride or get_extension_from_file_name(file)
+
   local icon, hl
   if path.ends_with_separator(file) then
     icon, hl = M.__DIR_ICON, M.__DIR_ICON_HL
   elseif M._devicons then
-    icon, hl = M._devicons.get_icon(file, ext:lower(), { default = true })
+    icon, hl = M._devicons.get_icon(file, ext, { default = true })
   elseif M._devicons_map then
     -- Lookup first by name, then by ext (devicons `strict=true`)
     -- "<default>" is added by fzf-lua and is thus guaranteed
     local info = M._devicons_map[file:lower()]
-        or M._devicons_map[ext:lower()]
+        or M._devicons_map[ext]
         or M._devicons_map["<default>"]
     icon, hl = info.icon, "DevIcon" .. info.name
   else
@@ -521,8 +543,7 @@ M.file = function(x, opts)
   end
   if opts.file_icons then
     local filename = path.tail(origpath)
-    local ext = path.extension(filename)
-    icon, hl = M.get_devicon(filename, ext)
+    icon, hl = M.get_devicon(filename)
     if opts.color_icons then
       -- extra workaround for issue #119 (or similars)
       -- use default if we can't find the highlight ansi

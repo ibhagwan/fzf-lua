@@ -164,8 +164,7 @@ M.tagstack = function(opts)
     local buficon, hl
     if opts.file_icons then
       local filename = path.tail(bufname)
-      local extension = path.extension(filename)
-      buficon, hl = make_entry.get_devicon(filename, extension)
+      buficon, hl = make_entry.get_devicon(filename)
       if opts.color_icons then
         buficon = utils.ansi_codes[hl](buficon)
       end
