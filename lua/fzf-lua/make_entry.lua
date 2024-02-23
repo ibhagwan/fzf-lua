@@ -5,18 +5,36 @@ local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local config = nil
 
+-- These are the supported multi-part extensions from nvim-web-devicons
+-- https://github.com/nvim-tree/nvim-web-devicons/blob/master/lua/nvim-web-devicons/icons-default.lua
+local supported_multi_part_icon_extensions = {
+  ["spec.js"] = true,
+  ["spec.jsx"] = true,
+  ["spec.ts"] = true,
+  ["spec.tsx"] = true,
+  ["test.js"] = true,
+  ["test.jsx"] = true,
+  ["test.ts"] = true,
+  ["test.tsx"] = true,
+}
 -- Supports multi-part extensions
 -- e.g.
 --    "file.js" -> "js"
 --    "file.test.js" -> "test.js"
 --    "file.spec.js" -> "spec.js"
-local function get_extension_from_file_name(file_name)
+local function get_icon_extension_from_file_name(file_name)
   local name, extension = file_name:match("(.+)%.(.+)$")
 
   if name and extension then
     local preExtension = name:match(".+%.(.+)$")
     if preExtension then
-      return (preExtension .. "." .. extension):lower()
+      local combined = (preExtension .. "." .. extension):lower()
+      
+      if supported_multi_part_icon_extensions[combined] then
+        return combined
+      end
+
+      return extension:lower()
     else
       return extension:lower()
     end
@@ -227,7 +245,7 @@ end
 -- by default the extension will be derived from `file`, but you can
 -- override it by passing `extensionOverride`
 M.get_devicon = function(file, extensionOverride)
-  local ext = extensionOverride or get_extension_from_file_name(file)
+  local ext = extensionOverride or get_icon_extension_from_file_name(file)
 
   local icon, hl
   if path.ends_with_separator(file) then
