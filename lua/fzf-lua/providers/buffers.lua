@@ -146,8 +146,7 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
       buficon, hl = make_entry.get_devicon(buf.info.name, "sh")
     else
       local filename = path.tail(buf.info.name)
-      local extension = path.extension(filename)
-      buficon, hl = make_entry.get_devicon(filename, extension)
+      buficon, hl = make_entry.get_devicon(filename)
     end
     if opts.color_icons then
       -- fallback to "grey" color (#817)
@@ -259,8 +258,7 @@ M.buffer_lines = function(opts)
           bufname = path.basename(filepath)
           if opts.file_icons then
             local filename = path.tail(bufname)
-            local extension = path.extension(filename)
-            buficon, hl = make_entry.get_devicon(filename, extension)
+            buficon, hl = make_entry.get_devicon(filename)
             if opts.color_icons then
               buficon = utils.ansi_codes[hl](buficon)
             end
