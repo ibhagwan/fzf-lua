@@ -68,7 +68,10 @@ local function diff_workspace_edit(workspace_edit, offset_encoding, diff_opts)
         local path = vim.fn.fnamemodify(vim.uri_to_fname(change.uri), ":.")
 
         table.insert(diff, string.format("diff --code-actions a/%s b/%s", path, path))
-        table.insert(diff, "new file")
+        -- delta needs file mode
+        table.insert(diff, "new file mode 100644")
+        -- diff-so-fancy needs index
+        table.insert(diff, "index 0000000..fffffff")
         table.insert(diff, "")
       elseif change.kind == "delete" then
         local path = vim.fn.fnamemodify(vim.uri_to_fname(change.uri), ":.")
