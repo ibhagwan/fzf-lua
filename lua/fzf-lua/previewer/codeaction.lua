@@ -248,7 +248,7 @@ function M.native:cmdline(o)
     return table.concat(lines, "\r\n")
   end, "{}", self.opts.debug)
   if self.pager and #self.pager > 0 and vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
-    act = act .. " | " .. self.pager
+    act = act .. " | " .. utils._if_win_normalize_vars(self.pager)
   end
   return act
 end

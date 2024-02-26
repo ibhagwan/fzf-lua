@@ -104,7 +104,8 @@ M.commits = function(opts)
       opts.preview_pager = opts.preview_pager()
     end
     if opts.preview_pager then
-      opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
+      opts.preview = string.format("%s | %s", opts.preview,
+        utils._if_win_normalize_vars(opts.preview_pager))
     end
     if vim.o.shell and vim.o.shell:match("fish$") then
       -- TODO: why does fish shell refuse to pass along $COLUMNS
@@ -152,7 +153,8 @@ M.bcommits = function(opts)
       opts.preview_pager = opts.preview_pager()
     end
     if opts.preview_pager then
-      opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
+      opts.preview = string.format("%s | %s", opts.preview,
+        utils._if_win_normalize_vars(opts.preview_pager))
     end
   end
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })

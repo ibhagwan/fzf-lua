@@ -94,6 +94,21 @@ M._if_win = function(a, b)
   end
 end
 
+
+-- Substitute unix style $VAR with
+--   Style 1: %VAR%
+--   Style 2: !VAR!
+M._if_win_normalize_vars = function(cmd, style)
+  if not M.__IS_WINDOWS then return cmd end
+  local expander = style == 2 and "!" or "%"
+  cmd = cmd:gsub("%$[^%s]+", function(x) return expander .. x:sub(2) .. expander end)
+  if style == 2 then
+    -- also sub %VAR% for !VAR!
+    cmd = cmd:gsub("%%[^%s]+%%", function(x) return "!" .. x:sub(2, #x - 1) .. "!" end)
+  end
+  return cmd
+end
+
 M.shell_nop = function()
   return M._if_win("break", "true")
 end

@@ -340,13 +340,9 @@ function Previewer.git_diff:cmdline(o)
     local pager = ""
     if self.pager and #self.pager > 0 and
         vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
-      pager = "| " .. self.pager
-      if utils.__IS_WINDOWS then
-        -- we are unable to use variables within a "cmd /c" without "!var!" variable expansion
-        -- https://superuser.com/questions/223104/setting-and-using-variable-within-same-command-line-in-windows-cmd-ex
-        pager = pager:gsub("%$[%a%d]+", function(x) return "!" .. x:sub(2) .. "!" end)
-        pager = pager:gsub("%%[%a%d]+%%", function(x) return "!" .. x:sub(2, #x - 1) .. "!" end)
-      end
+      -- style 2: as we are unable to use %var% within a "cmd /c" without !var! expansion
+      -- https://superuser.com/questions/223104/setting-and-using-variable-within-same-command-line-in-windows-cmd-ex
+      pager = "| " .. utils._if_win_normalize_vars(self.pager, 2)
     end
     -- with default commands we add the filepath at the end.
     -- If the user configured a more complex command, e.g.:

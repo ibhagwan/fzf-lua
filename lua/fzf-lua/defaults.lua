@@ -17,10 +17,7 @@ function M._default_previewer_fn()
 end
 
 function M._preview_pager_fn()
-  if vim.fn.executable("delta") ~= 1 then
-    return nil
-  end
-  return "delta --width=" .. utils._if_win("%COLUMNS%", "$COLUMNS")
+  return vim.fn.executable("delta") == 1 and "delta --width=$COLUMNS" or nil
 end
 
 M.defaults = {
