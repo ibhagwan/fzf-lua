@@ -255,6 +255,10 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   else
     table.insert(shell_cmd, table.concat(cmd, " "))
   end
+  -- This obscure option makes jobstart fail with: "The syntax of the command is incorrect"
+  -- temporarily set to `false`, for more info see `:help shellslash` (#1055)
+  local nvim_opt_shellslash = utils.__WIN_HAS_SHELLSLASH and vim.o.shellslash
+  if nvim_opt_shellslash then vim.o.shellslash = false end
   jobstart(shell_cmd, {
     cwd = cwd,
     pty = true,
@@ -278,6 +282,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       end
       -- in windows, pipes that are not used are automatically cleaned up
       if not utils.__IS_WINDOWS then vim.fn.delete(fifotmpname) end
+      -- Windows only, restore `shellslash` if was true before `jobstart`
+      if nvim_opt_shellslash then vim.o.shellslash = nvim_opt_shellslash end
       vim.fn.delete(outputtmpname)
       if #output == 0 then output = nil end
       coroutine.resume(co, output, rc)
