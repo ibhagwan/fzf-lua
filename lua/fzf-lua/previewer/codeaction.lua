@@ -142,7 +142,7 @@ local function diff_tuple(err, tuple, diff_opts)
 end
 
 -- https://github.com/neovim/neovim/blob/v0.9.4/runtime/lua/vim/lsp/buf.lua#L666
-local function preview_action_tuple(tuple, diff_opts, callback)
+local function preview_action_tuple(self, tuple, idx, callback)
   -- neovim changed the ui.select params with 0.10.0 (#947)
   -- { client_id, action } ==> { ctx = <LSP context>, action = <action> }
   if tuple.ctx then
@@ -157,29 +157,34 @@ local function preview_action_tuple(tuple, diff_opts, callback)
   then
     local function on_result(diff_callback, err, resolved_action)
       if err then
-        return diff_callback(err, tuple, diff_opts)
+        return diff_callback(err, tuple, self.diff_opts)
       else
-        return diff_callback(err, { tuple[1], resolved_action }, diff_opts)
+        return diff_callback(err, { tuple[1], resolved_action }, self.diff_opts)
       end
+    end
+    local function update_internal_items(resolved_action)
+      self.opts._items[idx] = { tuple[1], resolved_action }
     end
 
     if callback then
       client.request("codeAction/resolve", action, function(err, resolved_action)
+        update_internal_items(resolved_action)
         on_result(callback, err, resolved_action)
       end)
       return { string.format("Resolving action (%s)...", action.kind) }
     else
       local res = client.request_sync("codeAction/resolve", action)
       local err, resolved_action = res and res.err, res and res.result
+      update_internal_items(resolved_action)
       if type(err) == "table" or type(resolved_action) == "table" then
         return on_result(diff_tuple, err, resolved_action)
       else
         -- display the default "unsupported" message
-        return diff_tuple(nil, tuple, diff_opts)
+        return diff_tuple(nil, tuple, self.diff_opts)
       end
     end
   else
-    return diff_tuple(nil, tuple, diff_opts)
+    return diff_tuple(nil, tuple, self.diff_opts)
   end
 end
 
@@ -208,7 +213,7 @@ function M.builtin:populate_preview_buf(entry_str)
   local idx = tonumber(entry_str:match("^%d+%."))
   assert(type(idx) == "number")
   local tuple = self.opts._items[idx]
-  local lines = preview_action_tuple(tuple, self.diff_opts,
+  local lines = preview_action_tuple(self, tuple, idx,
     -- use the async version for "codeAction/resolve"
     function(err, resolved_tuple)
       if vim.api.nvim_buf_is_valid(self.tmpbuf) then
@@ -244,7 +249,7 @@ function M.native:cmdline(o)
     local idx = tonumber(entries[1]:match("^%d+%."))
     assert(type(idx) == "number")
     local tuple = self.opts._items[idx]
-    local lines = preview_action_tuple(tuple, self.diff_opts)
+    local lines = preview_action_tuple(self, tuple, idx)
     return table.concat(lines, "\r\n")
   end, "{}", self.opts.debug)
   if self.pager and #self.pager > 0 and vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
