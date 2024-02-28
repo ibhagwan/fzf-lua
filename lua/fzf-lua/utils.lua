@@ -382,8 +382,10 @@ function M.tbl_isempty(T)
 end
 
 function M.tbl_extend(t1, t2)
-  ---@diagnostic disable-next-line: deprecated
-  return table.move(t2, 1, #t2, #t1 + 1, t1)
+  for _, v in ipairs(t2) do
+    table.insert(t1, v)
+  end
+  return t1
 end
 
 -- Get map value from string key
