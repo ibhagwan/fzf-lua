@@ -3,6 +3,7 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
+local base64 = require "fzf-lua.lib.base64"
 local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
@@ -380,11 +381,12 @@ M.tabs = function(opts)
           function(s) return s end,
           utils.ansi_codes[opts.hls.tab_marker])
 
-        local tab_cwd_tilde_base64 = vim.base64
-            and vim.base64.encode(tab_cwd_tilde)
-            or tab_cwd_tilde
+        local tab_cwd_tilde_base64 = base64.encode(tab_cwd_tilde)
         if not opts.current_tab_only then
-          cb(string.format("%d)%s:%s%s\t%s", t, tab_cwd_tilde_base64, utils.nbsp,
+          cb(string.format("%s:%d)%s%s\t%s",
+            tab_cwd_tilde_base64,
+            t,
+            utils.nbsp,
             fn_title_hl(title),
             (t == core.CTX().tabnr) and fn_marker_hl(marker) or ""))
         end
@@ -395,8 +397,8 @@ M.tabs = function(opts)
         end
 
         opts.sort_lastused = false
-        opts._prefix = string.format("%d)%s:%s%s%s",
-          t, tab_cwd_tilde_base64, utils.nbsp, utils.nbsp, utils.nbsp)
+        opts._prefix = string.format("%s:%d)%s%s%s",
+          tab_cwd_tilde_base64, t, utils.nbsp, utils.nbsp, utils.nbsp)
         local tabh = vim.api.nvim_list_tabpages()[t]
         local buffers = populate_buffer_entries(opts, bufnrs_flat, tabh)
         for _, bufinfo in pairs(buffers) do
