@@ -6,6 +6,7 @@ return {
   winopts = { preview = { default = "bat", layout = "horizontal" } },
   manpages = { previewer = "man_native" },
   helptags = { previewer = "help_native" },
+  lsp = { code_actions = { previewer = "codeaction_native" } },
   tags = { previewer = "bat" },
   btags = { previewer = "bat" },
 }
