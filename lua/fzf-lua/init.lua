@@ -70,6 +70,7 @@ function M.setup_highlights(override)
     { "FzfLuaTabTitle",          "tab_title",      { default = default, fg = "LightSkyBlue1", bold = true } },
     { "FzfLuaTabMarker",         "tab_marker",     { default = default, fg = "BlanchedAlmond", bold = true } },
     { "FzfLuaDirIcon",           "dir_icon",       { default = default, link = "Directory" } },
+    { "FzfLuaLiveSym",           "live_sym",       { default = default, fg = "Brown1" } },
   }
   for _, a in ipairs(highlights) do
     local hl_name, _, hl_def = a[1], a[2], a[3]

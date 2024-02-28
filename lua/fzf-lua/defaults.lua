@@ -662,6 +662,7 @@ M.defaults.lsp.symbols = {
   },
   _actions         = function() return M.globals.actions.files end,
   actions          = { ["ctrl-g"] = { actions.sym_lsym } },
+  _cached_hls      = { "live_sym" },
 }
 
 M.defaults.lsp.finder = {
@@ -962,6 +963,7 @@ M.defaults.__HLS = {
   tab_title      = "FzfLuaTabTitle",
   tab_marker     = "FzfLuaTabMarker",
   dir_icon       = "FzfLuaDirIcon",
+  live_sym       = "FzfLuaLiveSym",
 }
 
 M.defaults.__WINOPTS = {

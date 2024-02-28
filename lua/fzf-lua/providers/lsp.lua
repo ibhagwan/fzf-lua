@@ -200,7 +200,7 @@ local function symbol_handler(opts, cb, _, result, _, _)
           end)
         ) .. "]+"
         entry.text = sym .. text:gsub(pattern, function(x)
-          return utils.ansi_codes.red(x)
+          return utils.ansi_codes[opts.hls.live_sym](x)
         end)
       end
       if M._sym2style then
