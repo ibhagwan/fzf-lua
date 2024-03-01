@@ -154,7 +154,7 @@ local function preview_action_tuple(self, idx, callback)
   -- and display the default "unsupported" message from the original action
   if self._resolved_actions[idx] then
     local resolved = self._resolved_actions[idx]
-    return diff_tuple(nil, resolved.err and tuple or resolved.tuple, self.diff_opts)
+    return diff_tuple(nil, not resolved.err and resolved.tuple or tuple, self.diff_opts)
   end
   -- Not found in cache, check if the client supports code action resolving
   local client_id = tuple[1]
@@ -181,7 +181,12 @@ local function preview_action_tuple(self, idx, callback)
         -- alert the user "codeAction/resolve" request  failed
         utils.warn(diff_tuple(err, nil, self.diff_opts)[1])
       end
-      local resolved = { err = err, tuple = { client_id, resolved_action } }
+      local resolved = {
+        err = err,
+        -- Due to a bug in `typescript-tools.nvim` only the first call to `codeAction/resolve`
+        -- returns a valid action (non-nil), return nil tuple if the action is nil (#949)
+        tuple = resolved_action and { client_id, resolved_action } or nil
+      }
       self._resolved_actions[idx] = resolved
       -- HACK: due to upstream bug with jdtls calling resolve messes
       -- errs the workspace edit with "-32603: Internal error." (#1007)
@@ -197,14 +202,14 @@ local function preview_action_tuple(self, idx, callback)
     if callback then
       client.request("codeAction/resolve", action, function(err, resolved_action)
         local resolved_tuple = handle_resolved_response(err, resolved_action)
-        callback(nil, err and tuple or resolved_tuple)
+        callback(nil, not err and resolved_tuple or tuple)
       end)
       return { string.format("Resolving action (%s)...", action.kind) }
     else
       local res = client.request_sync("codeAction/resolve", action)
       local err, resolved_action = res and res.err, res and res.result
       local resolved_tuple = handle_resolved_response(err, resolved_action)
-      return diff_tuple(nil, err and tuple or resolved_tuple, self.diff_opts)
+      return diff_tuple(nil, not err and resolved_tuple or tuple, self.diff_opts)
     end
   else
     return diff_tuple(nil, tuple, self.diff_opts)
