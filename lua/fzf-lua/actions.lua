@@ -543,9 +543,7 @@ M.help_tab = function(selected)
 end
 
 local function mantags(s)
-  return vim.tbl_map(function(x)
-    return x:match("[^[,( ]+")
-  end, s)
+  return vim.tbl_map(require'fzf-lua.providers.manpages'.manpage_vim_arg, s)
 end
 
 M.man = function(selected)
