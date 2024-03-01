@@ -986,8 +986,7 @@ function Previewer.man_pages:new(o, opts, fzf_win)
 end
 
 function Previewer.man_pages:parse_entry(entry_str)
-  return entry_str:match("[^[,( ]+")
-  -- return require'fzf-lua.providers.manpages'.getmanpage(entry_str)
+  return require'fzf-lua.providers.manpages'.manpage_sh_arg(entry_str)
 end
 
 function Previewer.man_pages:populate_preview_buf(entry_str)

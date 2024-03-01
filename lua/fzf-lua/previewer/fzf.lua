@@ -397,9 +397,8 @@ end
 function Previewer.man_pages:cmdline(o)
   o = o or {}
   local act = shell.raw_preview_action_cmd(function(items)
-    -- local manpage = require'fzf-lua.providers.manpages'.getmanpage(items[1])
-    local manpage = items[1]:match("[^[,( ]+")
-    local cmd = self.cmd:format(libuv.shellescape(manpage))
+    local manpage = require'fzf-lua.providers.manpages'.manpage_sh_arg(items[1])
+    local cmd = self.cmd:format(manpage)
     return cmd
   end, "{}", self.opts.debug)
   return act
