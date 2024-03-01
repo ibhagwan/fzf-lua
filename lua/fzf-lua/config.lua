@@ -116,6 +116,8 @@ M.resume_set = function(what, val, opts)
   -- backward compatibility for users using `get_last_query`
   if what == "query" then
     utils.map_set(M, "__resume_data.last_query", val)
+    -- store in opts for convinience in action callbacks
+    opts.last_query = val
   end
   -- _G.dump("resume_set", key1, utils.map_get(M, key1))
 end

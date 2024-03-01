@@ -53,7 +53,7 @@ M.colorschemes = function(opts)
     end, nil, opts.debug)
   end
 
-  opts.fn_selected = function(selected)
+  opts.fn_selected = function(selected, o)
     -- reset color scheme if live_preview is enabled
     -- and nothing or non-default action was selected
     if opts.live_preview and (not selected or #selected[1] > 0) then
@@ -63,7 +63,7 @@ M.colorschemes = function(opts)
     end
 
     if selected then
-      actions.act(opts.actions, selected)
+      actions.act(opts.actions, selected, o)
     end
 
     if opts.post_reset_cb then

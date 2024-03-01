@@ -774,6 +774,8 @@ M.live_workspace_symbols = function(opts)
     utils.map_set(config, "__resume_data.last_query", val)
     -- also store query for `fzf_resume` (#963)
     utils.map_set(config, "__resume_data.opts.query", val)
+    -- store in opts for convinience in action callbacks
+    o.last_query = val
   end
   opts.__resume_get = function(what, o)
     return config.resume_get(

@@ -167,6 +167,8 @@ local function normalize_live_grep_opts(opts)
       utils.map_set(config, "__resume_data.last_query", val)
       -- also store query for `fzf_resume` (#963)
       utils.map_set(config, "__resume_data.opts.query", val)
+      -- store in opts for convinience in action callbacks
+      o.last_query = val
     else
       config.resume_set(what, val, { __resume_key = o.__resume_key })
     end

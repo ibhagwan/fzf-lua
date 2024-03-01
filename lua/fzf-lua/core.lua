@@ -121,9 +121,9 @@ M.fzf_exec = function(contents, opts)
   -- save a copy of cprovider info in the opts, we later use it for better named
   -- quickfix lists, use `pcall` because we will circular ref main object (#776)
   _, opts.__INFO = pcall(loadstring("return require'fzf-lua'.get_info()"))
-  opts.fn_selected = opts.fn_selected or function(selected)
+  opts.fn_selected = opts.fn_selected or function(selected, o)
     if not selected then return end
-    actions.act(opts.actions, selected, opts)
+    actions.act(opts.actions, selected, o)
   end
   -- wrapper for command transformer
   if type(contents) == "string" and (opts.fn_transform or opts.fn_preprocess) then
