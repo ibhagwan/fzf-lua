@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2024 February 27
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 March 02
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1197,6 +1197,7 @@ open an issue and I'll be more than happy to help.**
       quickfix = {
         file_icons        = true,
         git_icons         = true,
+        only_valid        = false, -- select among only the valid quickfix entries
       },
       quickfix_stack = {
         prompt = "Quickfix Stack> ",
