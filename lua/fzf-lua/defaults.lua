@@ -380,6 +380,7 @@ M.defaults.quickfix = {
   git_icons   = false,
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
+  only_valid  = false,
 }
 
 M.defaults.quickfix_stack = {
@@ -399,6 +400,7 @@ M.defaults.loclist = {
   git_icons   = false,
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
+  only_valid  = false,
 }
 
 M.defaults.loclist_stack = {
