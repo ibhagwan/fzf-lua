@@ -182,6 +182,21 @@ local strip_borderchars_hl = function(border)
   return borderchars
 end
 
+function FzfWin:preview_splits_horizontally(winopts, winid)
+  local columns = winopts.split and vim.api.nvim_win_get_width(winid) or vim.o.columns
+  return winopts.preview.layout == "horizontal" or
+      winopts.preview.layout == "flex" and
+      columns > winopts.preview.flip_columns
+end
+
+local function update_preview_split(winopts, winid)
+  local hsplit = FzfWin:preview_splits_horizontally(winopts, winid)
+  local preview = hsplit and winopts.preview.horizontal or winopts.preview.vertical
+  -- builtin previewer params
+  winopts.preview_pos = preview:match("[^:]+") or "right"
+  winopts.preview_size = tonumber(preview:match(":(%d+)%%")) or 50
+end
+
 local normalize_winopts = function(o)
   -- make a local copy of opts so we don't pollute the user's options
   local winopts = utils.tbl_deep_clone(o.winopts)
@@ -267,18 +282,7 @@ local normalize_winopts = function(o)
   winopts.nohl_borderchars = strip_borderchars_hl(winopts.border)
 
   -- parse preview options
-  local preview
-  if winopts.preview.layout == "horizontal" or
-      winopts.preview.layout == "flex" and
-      vim.o.columns > winopts.preview.flip_columns then
-    preview = winopts.preview.horizontal
-  else
-    preview = winopts.preview.vertical
-  end
-
-  -- builtin previewer params
-  winopts.preview_pos = preview:match("[^:]+") or "right"
-  winopts.preview_size = tonumber(preview:match(":(%d+)%%")) or 50
+  update_preview_split(winopts, 0)
 
   return winopts
 end
@@ -852,6 +856,7 @@ function FzfWin:create()
     self.fzf_winid = vim.api.nvim_get_current_win()
     -- match window options with 'nvim_open_win' style:minimal
     self:set_style_minimal(self.fzf_winid)
+    update_preview_split(self.winopts, self.fzf_winid)
   else
     -- draw the main window
     self:redraw_main()
