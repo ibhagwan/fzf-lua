@@ -421,16 +421,10 @@ end
 ---@param o table
 ---@return string
 M.preview_window = function(o)
-  local preview_args = ("%s:%s:%s:"):format(
-    o.winopts.preview.hidden, o.winopts.preview.border, o.winopts.preview.wrap)
-  if o.winopts.preview.layout == "horizontal" or
-      o.winopts.preview.layout == "flex" and
-      vim.o.columns > o.winopts.preview.flip_columns then
-    preview_args = preview_args .. o.winopts.preview.horizontal
-  else
-    preview_args = preview_args .. o.winopts.preview.vertical
-  end
-  return preview_args
+  local hsplit = win:preview_splits_horizontally(o.winopts, 0)
+  local split = hsplit and o.winopts.preview.horizontal or o.winopts.preview.vertical
+  return ("%s:%s:%s:%s"):format(
+    o.winopts.preview.hidden, o.winopts.preview.border, o.winopts.preview.wrap, split)
 end
 
 -- Create fzf --color arguments from a table of vim highlight groups.
