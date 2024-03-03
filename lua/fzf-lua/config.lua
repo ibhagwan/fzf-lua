@@ -285,9 +285,11 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- prioritize fzf-tmux split pane flags over the
   -- popup flag `-p` from fzf-lua defaults (#865)
+  opts._is_fzf_tmux_popup = true
   if type(opts.fzf_tmux_opts) == "table" then
     for _, flag in ipairs({ "-u", "-d", "-l", "-r" }) do
       if opts.fzf_tmux_opts[flag] then
+        opts._is_fzf_tmux_popup = false
         opts.fzf_tmux_opts["-p"] = nil
       end
     end
