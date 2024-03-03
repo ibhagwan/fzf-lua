@@ -183,7 +183,7 @@ local strip_borderchars_hl = function(border)
 end
 
 function FzfWin:preview_splits_horizontally(winopts, winid)
-  local columns = self._o._is_fzf_tmux and self._o._tmux_columns
+  local columns = self._o._is_fzf_tmux and self._o._is_fzf_tmux_popup and self._o._tmux_columns
       or winopts.split and vim.api.nvim_win_get_width(winid)
       or vim.o.columns
   return winopts.preview.layout == "horizontal"
