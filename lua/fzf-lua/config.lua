@@ -502,8 +502,12 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
-  -- are we using fzf-tmux
+  -- are we using fzf-tmux, if so get available columns
   opts._is_fzf_tmux = vim.env.TMUX and opts.fzf_bin:match("fzf%-tmux$")
+  if opts._is_fzf_tmux then
+    local out = utils.io_system({ "tmux", "display-message", "-p", "#{window_width}" })
+    opts._tmux_columns = tonumber(out:match("%d+"))
+  end
 
   -- libuv.spawn_nvim_fzf_cmd() pid callback
   opts._set_pid = M.set_pid
