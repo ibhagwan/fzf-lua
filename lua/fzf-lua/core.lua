@@ -439,20 +439,33 @@ M.create_fzf_colors = function(opts)
   -- In case the user alredy set fzf_opts["--color"] (#1052)
   table.insert(tbl, opts.fzf_opts and opts.fzf_opts["--color"])
 
-  for highlight, list in pairs(colors or {}) do
+  for flag, list in pairs(colors or {}) do
     if type(list) == "table" then
-      local hexcol = utils.hexcol_from_hl(list[2], list[1])
-      if hexcol and #hexcol > 0 then
-        table.insert(tbl, ("%s:%s"):format(highlight, hexcol))
+      local spec = {}
+      local what = list[1]
+      -- [2] can be one or more highlights, first existing hl wins
+      local hls = type(list[2]) == "table" and list[2] or { list[2] }
+      for _, hl in ipairs(hls) do
+        local hexcol = utils.hexcol_from_hl(hl, what)
+        if hexcol and #hexcol > 0 then
+          table.insert(spec, hexcol)
+          break
+        end
       end
       -- arguments in the 3rd slot onward are passed raw, this can
       -- be used to pass styling arguments, for more info see #413
       -- https://github.com/junegunn/fzf/issues/1663
       for i = 3, #list do
-        table.insert(tbl, ("%s:%s"):format(highlight, list[i]))
+        if type(list[i]) == "string" then
+          table.insert(spec, list[i])
+        end
+      end
+      if not vim.tbl_isempty(spec) then
+        table.insert(spec, 1, flag)
+        table.insert(tbl, table.concat(spec, ":"))
       end
     elseif type(list) == "string" then
-      table.insert(tbl, ("%s:%s"):format(highlight, list))
+      table.insert(tbl, ("%s:%s"):format(flag, list))
     end
   end
 

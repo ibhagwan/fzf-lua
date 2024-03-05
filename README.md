@@ -668,7 +668,19 @@ require'fzf-lua'.setup {
   -- and removes the sides margin added by `fzf-tmux` (fzf#3162)
   -- for more options run `fzf-tmux --help`
   fzf_tmux_opts       = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
-  -- fzf '--color=' options (optional)
+  -- fzf's `--color=` arguments (optional)
+  -- If rhs is of type "string" rhs will be passed raw, e.g.:
+  --   `["fg"] = "underline"` will be translated to `--color fg:underline`
+  -- If rhs is of type "table", the following convention is used:
+  --   [1] "what" field to extract from the hlgroup, i.e "fg", "bg", etc.
+  --   [2] Neovim highlight group(s), can be either "string" or "table"
+  --       when type is "table" the first existing highlight group is used
+  --   [3+] any additional fields are passed raw to fzf's command line args
+  -- Example of a "fully loaded" color option:
+  --   `["fg"] = { "fg", { "NonExistentHl", "Comment" }, "underline", "bold" }`
+  -- Assuming `Comment.fg=#010101` the resulting fzf command line will be:
+  --   `--color fg:#010101:underline:bold`
+  -- NOTE: to pass raw arguments `fzf_opts["--color"]` or `fzf_args`
   --[[ fzf_colors = {
       ["fg"]          = { "fg", "CursorLine" },
       ["bg"]          = { "bg", "Normal" },
