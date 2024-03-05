@@ -245,13 +245,6 @@ do
     deregister_ui_select = { "fzf-lua.providers.ui_select", "deregister" },
     tmux_buffers = { "fzf-lua.providers.tmux", "buffers" },
     profiles = { "fzf-lua.providers.module", "profiles" },
-    -- API shortcuts
-    fzf = { "fzf-lua.core", "fzf" },
-    fzf_raw = { "fzf-lua.fzf", "raw_fzf" },
-    fzf_wrap = { "fzf-lua.core", "fzf_wrap" },
-    fzf_exec = { "fzf-lua.core", "fzf_exec" },
-    fzf_live = { "fzf-lua.core", "fzf_live" },
-    fzf_complete = { "fzf-lua.complete", "fzf_complete" },
     complete_path = { "fzf-lua.complete", "path" },
     complete_file = { "fzf-lua.complete", "file" },
     complete_line = { "fzf-lua.complete", "line" },
@@ -299,6 +292,12 @@ end
 -- export the defaults module and deref
 M.defaults = require("fzf-lua.defaults").defaults
 
+-- API shortcuts
+M.fzf_exec = require("fzf-lua.core").fzf_exec
+M.fzf_live = require("fzf-lua.core").fzf_live
+M.fzf_wrap = require("fzf-lua.core").fzf_wrap
+-- M.fzf_raw = require( "fzf-lua.fzf").raw_fzf
+
 -- exported modules
 M._exported_modules = {
   "win",
@@ -321,7 +320,6 @@ M._excluded_meta = {
   "fzf_wrap",
   "fzf_exec",
   "fzf_live",
-  "fzf_complete",
   "defaults",
   "_excluded_meta",
   "_excluded_metamap",
