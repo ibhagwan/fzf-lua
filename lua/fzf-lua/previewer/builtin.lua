@@ -576,6 +576,8 @@ end
 
 function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
+  -- stop ueberzug shell job
+  self:stop_ueberzug()
   local entry = self:parse_entry(entry_str)
   if vim.tbl_isempty(entry) then return end
   if entry.bufnr and not api.nvim_buf_is_loaded(entry.bufnr)
@@ -595,9 +597,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- already populated
     return
   end
-  -- stop ueberzug shell job
   self.clear_on_redraw = false
-  self:stop_ueberzug()
   -- kill previously running terminal jobs
   -- when using external commands extension map
   if self._job_id and self._job_id > 0 then
