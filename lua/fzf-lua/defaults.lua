@@ -298,14 +298,15 @@ M.defaults.git = {
     actions  = { ["default"] = actions.git_checkout },
   },
   stash = {
-    prompt   = "Stash> ",
-    cmd      = "git --no-pager stash list",
-    preview  = "git --no-pager stash show --patch --color {1}",
-    actions  = {
+    prompt        = "Stash> ",
+    cmd           = "git --no-pager stash list",
+    preview       = "git --no-pager stash show --patch --color {1}",
+    preview_pager = M._preview_pager_fn,
+    actions       = {
       ["default"] = actions.git_stash_apply,
       ["ctrl-x"]  = { fn = actions.git_stash_drop, reload = true },
     },
-    fzf_opts = {
+    fzf_opts      = {
       -- TODO: multiselect requires more work as dropping
       -- a stash changes the stash index, causing an error
       -- when the next stash is attempted
