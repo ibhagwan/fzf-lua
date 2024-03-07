@@ -491,6 +491,7 @@ function M.is_hl_cleared(hl)
       return true
     end
   else
+    ---@diagnostic disable-next-line: deprecated
     local ok, hl_def = pcall(vim.api.nvim_get_hl_by_name, hl, true)
     -- Not sure if this is the right way but it seems that cleared
     -- highlights return 'hl_def[true] == 6' (?) and 'hl_def[true]'

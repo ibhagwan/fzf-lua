@@ -13,7 +13,7 @@ local function get_lines(bufnr)
 end
 
 local function get_eol(bufnr)
-  local ff = vim.api.nvim_buf_get_option(bufnr, "fileformat")
+  local ff = vim.bo[bufnr].fileformat
   if ff == "dos" then
     return "\r\n"
   elseif ff == "unix" then
@@ -255,7 +255,7 @@ function M.builtin:populate_preview_buf(entry_str)
     end)
   self.tmpbuf = self:get_tmp_buffer()
   vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(self.tmpbuf, "filetype", "git")
+  vim.bo[self.tmpbuf].filetype = "git"
   self:set_preview_buf(self.tmpbuf)
   self.win:update_title(string.format(" Action #%d ", idx))
   self.win:update_scrollbar()

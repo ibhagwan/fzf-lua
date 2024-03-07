@@ -512,7 +512,7 @@ M.spell_apply = function(selected)
 end
 
 M.set_filetype = function(selected)
-  vim.api.nvim_buf_set_option(0, "filetype", selected[1])
+  vim.bo.filetype = selected[1]
 end
 
 M.packadd = function(selected)
@@ -543,7 +543,7 @@ M.help_tab = function(selected)
 end
 
 local function mantags(s)
-  return vim.tbl_map(require'fzf-lua.providers.manpages'.manpage_vim_arg, s)
+  return vim.tbl_map(require("fzf-lua.providers.manpages").manpage_vim_arg, s)
 end
 
 M.man = function(selected)
@@ -722,10 +722,10 @@ M.git_buf_edit = function(selected, opts)
   local file_name = string.gsub(file, "$", "[" .. commit_hash .. "]")
   vim.api.nvim_buf_set_lines(buf, 0, 0, true, git_file_contents)
   vim.api.nvim_buf_set_name(buf, file_name)
-  vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
-  vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
-  vim.api.nvim_buf_set_option(buf, "filetype", buffer_filetype)
-  vim.api.nvim_buf_set_option(buf, "modifiable", false)
+  vim.bo[buf].buftype = "nofile"
+  vim.bo[buf].bufhidden = "wipe"
+  vim.bo[buf].modifiable = false
+  vim.bo[buf].filetype = buffer_filetype
   vim.api.nvim_win_set_buf(win, buf)
 end
 

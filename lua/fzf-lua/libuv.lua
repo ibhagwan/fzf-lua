@@ -114,7 +114,7 @@ local function coroutinify(fn)
   end
 end
 
----@param opts {cwd: string, cmd: string|table, env: table?, cb_finish: function, cb_write: function, cb_pid: function, fn_transform: function?}
+---@param opts {cwd: string, cmd: string|table, env: table?, cb_finish: function, cb_write: function, cb_err: function, cb_pid: function, fn_transform: function?}
 ---@param fn_transform function?
 ---@param fn_done function?
 M.spawn = function(opts, fn_transform, fn_done)

@@ -113,7 +113,7 @@ end
 
 function Previewer.base:get_tmp_buffer()
   local tmp_buf = api.nvim_create_buf(false, true)
-  api.nvim_buf_set_option(tmp_buf, "bufhidden", "wipe")
+  vim.bo[tmp_buf].bufhidden = "wipe"
   return tmp_buf
 end
 
@@ -184,7 +184,7 @@ function Previewer.base:cache_buffer(bufnr, key, min_winopts)
   self.cached_bufnrs[tostring(bufnr)] = true
   self.cached_buffers[key] = { bufnr = bufnr, min_winopts = min_winopts }
   -- remove buffer auto-delete since it's now cached
-  api.nvim_buf_set_option(bufnr, "bufhidden", "hide")
+  vim.bo[bufnr].bufhidden = "hide"
 end
 
 function Previewer.base:clear_cached_buffers()
@@ -375,9 +375,9 @@ function Previewer.base:scroll(direction)
       -- reset cursor pos even when it's already there, no bigggie
       -- local curpos = vim.api.nvim_win_get_cursor(preview_winid)
       vim.api.nvim_win_set_cursor(preview_winid, self.orig_pos)
-      vim.api.nvim_win_set_option(preview_winid, "cursorline", true)
+      vim.wo[preview_winid].cursorline = true
     else
-      vim.api.nvim_win_set_option(preview_winid, "cursorline", false)
+      vim.wo[preview_winid].cursorline = false
     end
   end
   self.win:update_scrollbar()
@@ -608,7 +608,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- WE NO LONGER REUSE THE CURRENT BUFFER
     -- this changes the buffer's 'getbufinfo[1].lastused'
     -- which messes up our `buffers()` sort
-    entry.filetype = vim.api.nvim_buf_get_option(entry.bufnr, "filetype")
+    entry.filetype = vim.bo[entry.bufnr].filetype
     local lines = vim.api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
     local tmpbuf = self:get_tmp_buffer()
     vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
@@ -719,7 +719,7 @@ local ts_attach_08 = function(bufnr, ft)
       config.additional_vim_regex_highlighting
       and (not is_table or vim.tbl_contains(config.additional_vim_regex_highlighting, lang))
   then
-    vim.api.nvim_buf_set_option(bufnr, "syntax", ft)
+    vim.bo[bufnr].syntax = ft
   end
   return true
 end
@@ -802,7 +802,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
               end
             end
             if not ts_enabled or not ts_success then
-              pcall(vim.api.nvim_buf_set_option, bufnr, "syntax", ft)
+              pcall(function() vim.bo[bufnr].syntax = ft end)
             end
           end)()
         end
@@ -812,8 +812,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
             -- filetype was saved from a loaded buffer
             -- this helps avoid losing highlights for help buffers
             -- which are '.txt' files with 'ft=help'
-            -- api.nvim_buf_set_option(bufnr, 'filetype', entry.filetype)
-            pcall(api.nvim_buf_set_option, bufnr, "filetype", entry.filetype)
+            pcall(function() vim.bo[bufnr].syntax = "help" end)
           else
             -- prepend the buffer number to the path and
             -- set as buffer name, this makes sure 'filetype detect'
@@ -986,7 +985,7 @@ function Previewer.man_pages:new(o, opts, fzf_win)
 end
 
 function Previewer.man_pages:parse_entry(entry_str)
-  return require'fzf-lua.providers.manpages'.manpage_sh_arg(entry_str)
+  return require("fzf-lua.providers.manpages").manpage_sh_arg(entry_str)
 end
 
 function Previewer.man_pages:populate_preview_buf(entry_str)
@@ -997,7 +996,7 @@ function Previewer.man_pages:populate_preview_buf(entry_str)
   local tmpbuf = self:get_tmp_buffer()
   -- vim.api.nvim_buf_set_option(tmpbuf, 'modifiable', true)
   vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, output)
-  vim.api.nvim_buf_set_option(tmpbuf, "filetype", self.filetype)
+  vim.bo[tmpbuf].filetype = self.filetype
   self:set_preview_buf(tmpbuf)
   self.win:update_scrollbar()
 end
@@ -1223,7 +1222,7 @@ function Previewer.quickfix:populate_preview_buf(entry_str)
   end
   self.tmpbuf = self:get_tmp_buffer()
   vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(self.tmpbuf, "filetype", "qf")
+  vim.bo[self.tmpbuf].filetype = "qf"
   self:set_preview_buf(self.tmpbuf)
   self.win:update_title(string.format("%s: %s", nr, qf_list.title))
   self.win:update_scrollbar()
@@ -1261,7 +1260,7 @@ function Previewer.autocmds:populate_preview_buf(entry_str)
     local lines = vim.split(viml, "\n")
     local tmpbuf = self:get_tmp_buffer()
     vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(tmpbuf, "filetype", "vim")
+    vim.bo[tmpbuf].filetype = "vim"
     self:set_preview_buf(tmpbuf)
     self:preview_buf_post(entry)
   else
@@ -1289,7 +1288,7 @@ function Previewer.keymaps:populate_preview_buf(entry_str)
     local lines = utils.strsplit(entry.vmap:match("[^%s]+$"), "\n")
     local tmpbuf = self:get_tmp_buffer()
     vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(tmpbuf, "filetype", "vim")
+    vim.bo[tmpbuf].filetype = "vim"
     self:set_preview_buf(tmpbuf)
     local title_fnamemodify = self.title_fnamemodify
     self.title_fnamemodify = nil

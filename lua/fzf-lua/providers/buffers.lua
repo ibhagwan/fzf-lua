@@ -67,7 +67,7 @@ local populate_buffer_entries = function(opts, bufnrs, tabh)
       bufnr = bufnr,
       flag = flag,
       info = vim.fn.getbufinfo(bufnr)[1],
-      readonly = vim.api.nvim_buf_get_option(bufnr, "readonly")
+      readonly = vim.bo[bufnr].readonly
     }
 
     -- Get the name for missing/quickfix/location list buffers
