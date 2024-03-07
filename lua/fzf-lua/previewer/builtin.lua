@@ -812,7 +812,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
             -- filetype was saved from a loaded buffer
             -- this helps avoid losing highlights for help buffers
             -- which are '.txt' files with 'ft=help'
-            pcall(function() vim.bo[bufnr].syntax = "help" end)
+            pcall(function() vim.bo[bufnr].filetype = "help" end)
           else
             -- prepend the buffer number to the path and
             -- set as buffer name, this makes sure 'filetype detect'
