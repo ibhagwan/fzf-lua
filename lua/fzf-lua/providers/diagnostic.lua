@@ -73,7 +73,7 @@ M.diagnostics = function(opts)
       local level = vim.diagnostic.severity[k:upper()]
       if type(sign_confs) ~= "table" or vim.tbl_isempty(sign_confs) then sign_confs = nil end
       opts.__signs[v.severity].text =
-          (not opts.diag_icons or not sign_confs or not sign_confs.text[level])
+          (not opts.diag_icons or not sign_confs or not sign_confs.text or not sign_confs.text[level])
           and v.default or vim.trim(sign_confs.text[level])
       opts.__signs[v.severity].texthl = v.name
     else
