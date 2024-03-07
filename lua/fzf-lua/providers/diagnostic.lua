@@ -68,14 +68,24 @@ M.diagnostics = function(opts)
     opts.__signs[v.severity] = {}
 
     -- from vim.diagnostic
-    local sign_def = vim.fn.sign_getdefined(v.name)
-    -- can be empty when config set to (#480):
-    -- vim.diagnostic.config({ signs = false })
-    if vim.tbl_isempty(sign_def) then sign_def = nil end
-    opts.__signs[v.severity].text =
-        (not opts.diag_icons or not sign_def or not sign_def[1].text)
-        and v.default or vim.trim(sign_def[1].text)
-    opts.__signs[v.severity].texthl = sign_def and sign_def[1].texthl or nil
+    if vim.fn.has("nvim-0.10") > 0 then
+      local sign_confs = vim.diagnostic.config().signs
+      local level = vim.diagnostic.severity[k:upper()]
+      if vim.tbl_isempty(sign_confs) then sign_confs = nil end
+      opts.__signs[v.severity].text =
+          (not opts.diag_icons or not sign_confs or not sign_confs.text[level])
+          and v.default or vim.trim(sign_confs.text[level])
+      opts.__signs[v.severity].texthl = v.name
+    else
+      local sign_def = vim.fn.sign_getdefined(v.name)
+      -- can be empty when config set to (#480):
+      -- vim.diagnostic.config({ signs = false })
+      if vim.tbl_isempty(sign_def) then sign_def = nil end
+      opts.__signs[v.severity].text =
+          (not opts.diag_icons or not sign_def or not sign_def[1].text)
+          and v.default or vim.trim(sign_def[1].text)
+      opts.__signs[v.severity].texthl = sign_def and sign_def[1].texthl or nil
+    end
 
     -- from user config
     if opts.signs and opts.signs[k] and opts.signs[k].text then
