@@ -442,6 +442,60 @@ function M.map_tolower(m)
   return ret
 end
 
+local function hex2rgb(hexcol)
+  local r, g, b = hexcol:match("#(%x%x)(%x%x)(%x%x)")
+  if not r or not g or not b then return end
+  r, g, b = tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
+  return r, g, b
+end
+
+-- auto genreate ansi escape sequence from RGB or neovim highlights
+--[[ M.ansi_auto = setmetatable({}, {
+  -- __index metamethod only gets called when the item does not exist
+  -- we use this to auto-cache the ansi escape sequence
+  __index = function(self, k)
+    print("get", k)
+    local escseq
+    -- if not an existing highlight group lookup
+    -- in the neovim colormap and convert to RGB
+    if not k:match("^#") and vim.fn.hlexists(k) ~= 1 then
+      local col = M.COLORMAP()[k:sub(1, 1):upper() .. k:sub(2):lower()]
+      if col then
+        -- format as 6 digit hex for hex2rgb()
+        k = ("#%06x"):format(col)
+      end
+    end
+    if k:match("#%x%x%x%x%x%x") then -- index is RGB
+      -- cache the sequence as all lowercase
+      k = k:lower()
+      local v = rawget(self, k)
+      if v then return v end
+      local r, g, b = hex2rgb(k)
+      escseq = string.format("[38;2;%d;%d;%dm", r, g, b)
+    else -- index is neovim hl
+      _, escseq = M.ansi_from_hl(k, "foo")
+      print("esc", k, escseq)
+    end
+    -- We always set the item, if not RGB and hl isn't valid
+    -- create a dummy function that returns the string instead
+    local v = type(escseq) == "string" and #escseq > 0
+        and function(s)
+          if type(s) ~= "string" or #s == 0 then return "" end
+          return escseq .. s .. M.ansi_escseq.clear
+        end
+        or function(s) return s end
+    rawset(self, k, v)
+    return v
+  end,
+  __newindex = function(self, k, v)
+    assert(false,
+      string.format("modifying the ansi cache directly isn't allowed [index: %s]", k))
+    -- rawset doesn't trigger __new_index, otherwise stack overflow
+    -- we never get here but this masks the "unused local" warnings
+    rawset(self, k, v)
+  end
+}) ]]
+
 M.ansi_codes = {}
 M.ansi_escseq = {
   -- the "\x1b" esc sequence causes issues
@@ -474,13 +528,6 @@ end
 -- Generate a cached ansi sequence function for all basic colors
 for color, escseq in pairs(M.ansi_escseq) do
   M.cache_ansi_escseq(color, escseq)
-end
-
-local function hex2rgb(hexcol)
-  local r, g, b = hexcol:match("#(..)(..)(..)")
-  if not r or not g or not b then return end
-  r, g, b = tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
-  return r, g, b
 end
 
 -- Helper func to test for invalid (cleared) highlights
@@ -538,7 +585,7 @@ end
 function M.ansi_from_rgb(rgb, s)
   local r, g, b = hex2rgb(rgb)
   if r and g and b then
-    return string.format("[38;2;%d;%d;%dm%s%s", r, g, b, s, M.ansi_escseq.clear)
+    return string.format("[38;2;%d;%d;%dm%s%s", r, g, b, s, "[0m")
   end
   return s
 end
@@ -693,10 +740,6 @@ end
 
 function M.setup_highlights()
   pcall(loadstring("require'fzf-lua'.setup_highlights()"))
-end
-
-function M.setup_devicon_term_hls()
-  pcall(loadstring("require'fzf-lua.make_entry'.setup_devicon_term_hls()"))
 end
 
 ---@param fname string

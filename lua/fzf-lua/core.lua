@@ -6,6 +6,7 @@ local actions = require "fzf-lua.actions"
 local win = require "fzf-lua.win"
 local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
+local devicons = require "fzf-lua.devicons"
 local make_entry = require "fzf-lua.make_entry"
 local base64 = require "fzf-lua.lib.base64"
 local serpent = require "fzf-lua.lib.serpent"
@@ -635,7 +636,7 @@ M.mt_cmd_wrapper = function(opts)
     t.g = {}
     for k, v in pairs({
       ["_fzf_lua_server"] = vim.g.fzf_lua_server,
-      ["_devicons_path"] = config._devicons_path,
+      ["_devicons_path"] = devicons.plugin_path(),
       ["_devicons_setup"] = config._devicons_setup,
     }) do
       t.g[k] = v

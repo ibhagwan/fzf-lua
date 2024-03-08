@@ -13,6 +13,9 @@ local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
 -- effects (as 'vim.g.fzf_lua_directory=nil'). Run an additional
 -- check if we are running headless with 'vim.api.nvim_list_uis'
 if not vim.g.fzf_lua_directory and #vim.api.nvim_list_uis() == 0 then
+  -- global var indicating a headless instance
+  vim.g.fzf_lua_is_headless = true
+
   -- prepend this folder first, so our modules always get first
   -- priority over some unknown random module with the same name
   package.path = (";%s/?.lua;"):format(vim.fn.fnamemodify(__FILE__, ":h"))

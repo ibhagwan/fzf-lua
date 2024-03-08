@@ -967,10 +967,7 @@ M.defaults.complete_line        = { complete = true }
 
 M.defaults.file_icon_padding    = ""
 
-M.defaults.file_icon_colors     = {}
-
-M.defaults.dir_icon             = ""
-M.defaults.dir_icon_color       = "#519aba"
+M.defaults.dir_icon             = ""
 
 M.defaults.__HLS                = {
   normal         = "FzfLuaNormal",

@@ -5,6 +5,7 @@ local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local base64 = require "fzf-lua.lib.base64"
 local make_entry = require "fzf-lua.make_entry"
+local devicons = require "fzf-lua.devicons"
 
 local M = {}
 
@@ -142,17 +143,11 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
   local buficon = ""
   local hl = ""
   if opts.file_icons then
-    if utils.is_term_bufname(buf.info.name) then
-      -- get shell-like icon for terminal buffers
-      buficon, hl = make_entry.get_devicon(buf.info.name, "sh")
-    else
-      local filename = path.tail(buf.info.name)
-      buficon, hl = make_entry.get_devicon(filename)
-    end
-    if opts.color_icons then
-      -- fallback to "grey" color (#817)
-      local fn = utils.ansi_codes[hl] or utils.ansi_codes["dark_grey"]
-      buficon = fn(buficon)
+    buficon, hl = devicons.get_devicon(buf.info.name,
+      -- shell-like icon for terminal buffers
+      utils.is_term_bufname(buf.info.name) and "sh" or nil)
+    if hl and opts.color_icons then
+      buficon = utils.ansi_from_rgb(hl, buficon)
     end
   end
   local max_bufnr_w = 3 + #tostring(max_bufnr) + utils.ansi_escseq_len(bufnrstr)
@@ -258,10 +253,9 @@ M.buffer_lines = function(opts)
           end
           bufname = path.basename(filepath)
           if opts.file_icons then
-            local filename = path.tail(bufname)
-            buficon, hl = make_entry.get_devicon(filename)
-            if opts.color_icons then
-              buficon = utils.ansi_codes[hl](buficon)
+            buficon, hl = devicons.get_devicon(bufname)
+            if hl and opts.color_icons then
+              buficon = utils.ansi_from_rgb(hl, buficon)
             end
           end
           if not bufname or #bufname == 0 then

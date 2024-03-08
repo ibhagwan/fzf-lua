@@ -1382,15 +1382,7 @@ open an issue and I'll be more than happy to help.**
       -- manpages = { previewer = "man_native" },
       -- helptags = { previewer = "help_native" },
       -- 
-      -- optional override of file extension icon colors
-      -- available colors (terminal):
-      --    clear, bold, black, red, green, yellow
-      --    blue, magenta, cyan, grey, dark_grey, white
-      file_icon_colors = {
-        ["sh"] = "green",
-      },
-      -- padding can help kitty term users with
-      -- double-width icon rendering
+      -- padding can help kitty term users with double-width icon rendering
       file_icon_padding = '',
       -- uncomment if your terminal/font does not support unicode character
       -- 'EN SPACE' (U+2002), the below sets it to 'NBSP' (U+00A0) instead

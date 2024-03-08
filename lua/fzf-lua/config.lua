@@ -1,76 +1,9 @@
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
+local devicons = require "fzf-lua.devicons"
 
 local M = {}
-
-if utils.__HAS_DEVICONS then
-  M._has_devicons, M._devicons = pcall(require, "nvim-web-devicons")
-
-  -- get the devicons module path
-  M._devicons_path = M._has_devicons and M._devicons and M._devicons.setup
-      and path.normalize(debug.getinfo(M._devicons.setup, "S").source:gsub("^@", ""))
-end
-
-M._diricon_escseq = function()
-  local hlgroup = utils.map_get(M, "__resume_data.opts.hls.dir_icon") or M.globals.__HLS.dir_icon
-  local _, escseq = utils.ansi_from_hl(hlgroup)
-  return escseq
-end
-
--- get icons proxy for the headless instance
-M._devicons_geticons = function()
-  if not M._has_devicons or not M._devicons or not M._devicons.get_icons then
-    return
-  end
-  -- force refresh if `bg` changed from dark/light (#855)
-  if M.__DEVICONS and vim.o.bg == M.__DEVICONS_BG then
-    return M.__DEVICONS
-  end
-  -- save the current background
-  M.__DEVICONS_BG = vim.o.bg
-  -- rpc request cannot return a table that has mixed elements
-  -- of both indexed items and key value, it will fail with
-  -- "Cannot convert given lua table"
-  -- NOTES:
-  -- (1) devicons.get_icons() returns the default icon in [1]
-  -- (2) we cannot rely on having either .name or .color (#817)
-  local all_devicons = M._devicons.get_icons()
-  if not all_devicons or vim.tbl_isempty(all_devicons) then
-    -- something is wrong with devicons
-    -- can't use `error` due to fast event
-    print("[Fzf-lua] error: devicons.get_icons() is nil or empty!")
-    return
-  end
-  -- We only need the name, icon and color properties
-  local default_icon = all_devicons[1] or {}
-  M.__DEVICONS = {
-    ["<default>"] = {
-      name = default_icon.name or "Default",
-      icon = default_icon.icon or "",
-      color = default_icon.color or "#6d8086",
-    }
-  }
-  for k, v in pairs(all_devicons) do
-    -- skip all indexed (numeric) entries
-    if type(k) == "string" then
-      M.__DEVICONS[k] = {
-        name = v.name or k,
-        icon = v.icon or "",
-        color = v.color or (function()
-          -- some devicons customizations remove `info.color`
-          -- retrieve the color from the highlight group (#801)
-          local hlgroup = "DevIcon" .. (v.name or k)
-          local hexcol = utils.hexcol_from_hl(hlgroup, "fg")
-          if hexcol and #hexcol > 0 then
-            return hexcol
-          end
-        end)(),
-      }
-    end
-  end
-  return M.__DEVICONS
-end
 
 -- set this so that make_entry won't get nil err when setting remotely
 M.__resume_data = {}
@@ -283,9 +216,6 @@ function M.normalize_opts(opts, globals, __resume_key)
     if v == "" then opts.fzf_opts[k] = true end
   end
 
-  -- Disable devicons if not available
-  opts.file_icons = utils.__HAS_DEVICONS and opts.file_icons or nil
-
   -- Execlude file icons from the fuzzy matching (#1080)
   if opts.file_icons and opts._fzf_nth_devicons and not opts.fzf_opts["--delimiter"] then
     opts.fzf_opts["--nth"] = opts.fzf_opts["--nth"] or "-1.."
@@ -327,7 +257,13 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- also check if we need to override 'opts.prompt' from cli args
   -- if we don't override 'opts.prompt' 'FzfWin.save_query' will
   -- fail to remove the prompt part from resume saved query (#434)
-  for _, s in ipairs({ "fzf_args", "fzf_cli_args", "fzf_raw_args" }) do
+  for _, s in ipairs({
+    "fzf_args",
+    "fzf_cli_args",
+    "fzf_raw_args",
+    "file_icon_padding",
+    "dir_icon",
+  }) do
     if opts[s] == nil then
       opts[s] = M.globals[s]
     end
@@ -521,16 +457,21 @@ function M.normalize_opts(opts, globals, __resume_key)
     opts.winopts.split = nil
   end
 
+  if devicons.plugin_loaded() then
+    -- refresh icons, does nothing if "vim.o.bg" didn't change
+    devicons.load({
+      icon_padding = opts.file_icon_padding,
+      dir_icon = { icon = opts.dir_icon, color = utils.hexcol_from_hl(opts.hls.dir_icon, "fg") }
+    })
+  elseif opts.file_icons then
+    -- Disable devicons if not available
+    utils.warn("nvim-web-devicons isn't available, disabling 'file_icons'.")
+    opts.file_icons = nil
+  end
+
   -- libuv.spawn_nvim_fzf_cmd() pid callback
   opts._set_pid = M.set_pid
   opts._get_pid = M.get_pid
-
-  -- setup devicons terminal highlight groups does nothing unless
-  -- neovim `bg` is changed, call via utils/loadstring to prevent
-  -- circular require and also make sure "make_entry.lua" isn't
-  -- loaded before devicons vars are setup by this module
-  -- TODO: cleanup the background update and devicons load logic
-  utils.setup_devicon_term_hls()
 
   -- mark as normalized
   opts._normalized = true

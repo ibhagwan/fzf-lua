@@ -5,6 +5,7 @@ local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
+local devicons = require "fzf-lua.devicons"
 
 local M = {}
 
@@ -163,10 +164,9 @@ M.tagstack = function(opts)
     local bufname = path.HOME_to_tilde(path.relative_to(tag.filename, vim.loop.cwd()))
     local buficon, hl
     if opts.file_icons then
-      local filename = path.tail(bufname)
-      buficon, hl = make_entry.get_devicon(filename)
-      if opts.color_icons then
-        buficon = utils.ansi_codes[hl](buficon)
+      buficon, hl = devicons.get_devicon(bufname)
+      if hl and opts.color_icons then
+        buficon = utils.ansi_from_rgb(hl, buficon)
       end
     end
     -- table.insert(entries, ("%s)%s[%s]%s%s%s%s:%s:%s: %s %s"):format(

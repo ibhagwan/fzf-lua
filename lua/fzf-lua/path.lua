@@ -199,14 +199,14 @@ function M.relative_to(path, relative_to)
 end
 
 ---@param path string
----@return string
-function M.extension(path)
-  for i = #path, 1, -1 do
-    if string_byte(path, i) == M.dot_byte then
-      return path:sub(i + 1)
+---@return string?
+function M.extension(path, no_tail)
+  local file = no_tail and path or M.tail(path)
+  for i = #file, 1, -1 do
+    if string_byte(file, i) == M.dot_byte then
+      return file:sub(i + 1)
     end
   end
-  return ""
 end
 
 ---@param paths string[]
