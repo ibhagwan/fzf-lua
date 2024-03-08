@@ -43,9 +43,17 @@ M.ACTION_DEFINITIONS = {
       end
     end,
   },
+  [actions.toggle_bg]         = {
+    function(_)
+      -- return string.format("set bg=%s", vim.o.background == "dark" and "light" or "dark")
+      return "toggle bg"
+    end,
+  },
   [actions.buf_del]           = { "close" },
   [actions.arg_del]           = { "delete" },
   [actions.dap_bp_del]        = { "delete" },
+  [actions.cs_delete]         = { "uninstall" },
+  [actions.cs_update]         = { "[down|re]-load" },
   [actions.git_reset]         = { "reset" },
   [actions.git_stage]         = { "stage", pos = 1 },
   [actions.git_unstage]       = { "unstage", pos = 2 },

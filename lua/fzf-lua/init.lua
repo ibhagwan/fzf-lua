@@ -206,6 +206,7 @@ do
     man_pages = { "fzf-lua.providers.manpages", "manpages" },
     colorschemes = { "fzf-lua.providers.colorschemes", "colorschemes" },
     highlights = { "fzf-lua.providers.colorschemes", "highlights" },
+    awesome_colorschemes = { "fzf-lua.providers.colorschemes", "awesome_colorschemes" },
     jumps = { "fzf-lua.providers.nvim", "jumps" },
     changes = { "fzf-lua.providers.nvim", "changes" },
     tagstack = { "fzf-lua.providers.nvim", "tagstack" },

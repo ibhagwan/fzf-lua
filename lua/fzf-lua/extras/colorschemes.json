@@ -1,0 +1,330 @@
+{
+  "kanagawa.nvim": {
+    "disp_name": "Kanagawa",
+    "url": "rebelot/kanagawa.nvim",
+    "package": "kanagawa",
+    "variants": [
+      "kanagawa",
+      { "name": "kanagawa-wave", "disp_name": "Kanagawa Wave" },
+      { "name": "kanagawa-dragon", "disp_name": "Kanagawa Dragon" },
+      { "name": "kanagawa-lotus", "disp_name": "Kanagawa Lotus" }
+    ]
+  },
+  "tokyonight.nvim": {
+    "disp_name": "Tokyo Night",
+    "url": "folke/tokyonight.nvim",
+    "package": "tokyonight",
+    "setup": true,
+    "variants": [
+      "tokyonight",
+      { "name": "tokyonight-night", "disp_name": "Tokyo Night" },
+      { "name": "tokyonight-storm", "disp_name": "Tokyo Storm" },
+      { "name": "tokyonight-day", "disp_name": "Tokyo Day" },
+      { "name": "tokyonight-moon", "disp_name": "Tokyo Moon" }
+    ]
+  },
+  "catppuccin.nvim": {
+    "disp_name": "Catppuccin",
+    "url": "catppuccin/nvim",
+    "package": "catppuccin",
+    "variants": [
+      "catppuccin",
+      { "name": "catppuccin-latte", "disp_name": "Catppuccin Latte" },
+      { "name": "catppuccin-frappe", "disp_name": "Catppuccin Frappe" },
+      { "name": "catppuccin-macchiato", "disp_name": "Catppuccin Macchiato" },
+      { "name": "catppuccin-mocha", "disp_name": "Catppuccin Mocha" }
+    ]
+  },
+  "mini.base16": {
+    "disp_name": "Mini Base16",
+    "url": "echasnovski/mini.base16",
+    "variants": [
+      { "name": "minischeme", "disp_name": "Mini Scheme" },
+      { "name": "minicyan", "disp_name": "Mini Cyan" }
+    ]
+  },
+  "vim-nightfly-colors": {
+    "disp_name": "Nightfly",
+    "url": "bluz71/vim-nightfly-colors",
+    "variants": ["nightfly"]
+  },
+  "vim-moonfly-colors": {
+    "disp_name": "Moonfly",
+    "url": "bluz71/vim-moonfly-colors",
+    "variants": ["moonfly"]
+  },
+  "neovim-ayu": {
+    "disp_name": "Neovim Ayu",
+    "url": "Shatur/neovim-ayu",
+    "package": "ayu",
+    "variants": [
+      {
+        "disp_name": "Ayu Dark",
+        "lua": "require('ayu').setup({mirage = false}); vim.cmd.colorscheme('ayu')"
+      },
+      {
+        "disp_name": "Ayu Mirage",
+        "lua": "require('ayu').setup({mirage = true}); vim.cmd.colorscheme('ayu')"
+      }
+    ]
+  },
+  "rose-pine.nvim": {
+    "disp_name": "Rose Pine",
+    "url": "rose-pine/neovim",
+    "package": "rose-pine",
+    "variants": [
+      "rose-pine-main",
+      { "name": "rose-pine-moon", "disp_name": "Rose Pine Moon" },
+      { "name": "rose-pine-dawn", "disp_name": "Rose Pine Dawn" }
+    ]
+  },
+  "everforest-nvim": {
+    "disp_name": "Everforest",
+    "url": "neanias/everforest-nvim",
+    "package": "everforest",
+    "variants": [
+      {
+        "lua": "require('everforest').setup({background='medium'}); vim.cmd.colorscheme('everforest')"
+      },
+      {
+        "disp_name": "Everforest Hard",
+        "lua": "require('everforest').setup({background='hard'}); vim.cmd.colorscheme('everforest')"
+      },
+      {
+        "disp_name": "Everforest Soft",
+        "lua": "require('everforest').setup({background='soft'}); vim.cmd.colorscheme('everforest')"
+      }
+    ]
+  },
+  "onedark.nvim": {
+    "disp_name": "OneDark.nvim",
+    "url": "navarasu/onedark.nvim",
+    "package": "onedark",
+    "variants": [
+      {
+        "lua": "require('onedark').setup({style='dark'}); vim.cmd.colorscheme('onedark')"
+      },
+      {
+        "disp_name": "OneDark Darker",
+        "lua": "require('onedark').setup({style='darker'}); vim.cmd.colorscheme('onedark')"
+      },
+      {
+        "disp_name": "OneDark Cool",
+        "lua": "require('onedark').setup({style='cool'}); vim.cmd.colorscheme('onedark')"
+      },
+      {
+        "disp_name": "OneDark Deep",
+        "lua": "require('onedark').setup({style='deep'}); vim.cmd.colorscheme('onedark')"
+      },
+      {
+        "disp_name": "OneDark Warm",
+        "lua": "require('onedark').setup({style='warm'}); vim.cmd.colorscheme('onedark')"
+      },
+      {
+        "disp_name": "OneDark Warmer",
+        "lua": "require('onedark').setup({style='warmer'}); vim.cmd.colorscheme('onedark')"
+      }
+    ]
+  },
+  "onedarkpro.nvim": {
+    "disp_name": "OneDarkPro",
+    "url": "olimorris/onedarkpro.nvim",
+    "package": "onedarkpro",
+    "variants": [
+      "onedark",
+      { "name": "onelight", "disp_name": "OneDarkPro Light" },
+      { "name": "onedark_vivid", "disp_name": "OneDarkPro Vidid" },
+      { "name": "onedark_dark", "disp_name": "OneDarkPro Dark" }
+    ]
+  },
+  "embark-theme": {
+    "disp_name": "Embark",
+    "url": "embark-theme/vim",
+    "variants": ["embark"]
+  },
+  "nightfox.nvim": {
+    "disp_name": "Nightfox",
+    "url": "EdenEast/nightfox.nvim",
+    "package": "nightfox",
+    "variants": [
+      "nightfox",
+      { "name": "dayfox", "disp_name": "Dayfox" },
+      { "name": "dawnfox", "disp_name": "Dawnfox" },
+      { "name": "duskfox", "disp_name": "Duskfox" },
+      { "name": "nordfox", "disp_name": "Nordfox" },
+      { "name": "terafox", "disp_name": "Terafox" },
+      { "name": "carbonfox", "disp_name": "Carbonfox" }
+    ]
+  },
+  "embark-theme": {
+    "disp_name": "Embark",
+    "url": "embark-theme/vim",
+    "variants": ["embark"]
+  },
+  "github-nvim-theme": {
+    "disp_name": "Github Nvim",
+    "url": "projekt0n/github-nvim-theme",
+    "package": "github-theme",
+    "variants": [
+      "github_dark",
+      { "name": "github_dark_default", "disp_name": "Github Dark Default" },
+      { "name": "github_dark_dimmed", "disp_name": "Github Dark Dimmed" },
+      {
+        "name": "github_dark_high_contrast",
+        "disp_name": "Github Dark High Contrast"
+      },
+      {
+        "name": "github_dark_colorblind",
+        "disp_name": "Github Dark Colorblind"
+      },
+      {
+        "name": "github_dark_tritanopia",
+        "disp_name": "Github Dark Tritanopia"
+      },
+      { "name": "github_light_default", "disp_name": "Github Light Default" },
+      {
+        "name": "github_light_high_contrast",
+        "disp_name": "Github Dark High Contrast"
+      },
+      {
+        "name": "github_light_colorblind",
+        "disp_name": "Github Light Colorblind"
+      },
+      {
+        "name": "github_light_tritanopia",
+        "disp_name": "Github Light Tritanopia"
+      }
+    ]
+  },
+  "vscode.nvim": {
+    "disp_name": "VSCode.Nvim",
+    "url": "Mofiqul/vscode.nvim",
+    "variants": ["vscode"]
+  },
+  "darcula.nvim": {
+    "disp_name": "Dracula.Nvim",
+    "url": "Mofiqul/dracula.nvim",
+    "variants": ["dracula"]
+  },
+  "oxocarbon.nvim": {
+    "disp_name": "Oxocarbon",
+    "url": "nyoom-engineering/oxocarbon.nvim",
+    "variants": ["oxocarbon"]
+  },
+  "material.nvim": {
+    "disp_name": "Material",
+    "url": "marko-cerovac/material.nvim",
+    "variants": [
+      "material",
+      {
+        "disp_name": "Material Oceanic",
+        "lua": "vim.g.material_style='oceanic'; vim.cmd.colorscheme('material')"
+      },
+      {
+        "disp_name": "Material Deep Ocean",
+        "lua": "vim.g.material_style='deep ocean'; vim.cmd.colorscheme('material')"
+      },
+      {
+        "disp_name": "Material Pale Night",
+        "lua": "vim.g.material_style='palenight'; vim.cmd.colorscheme('material')"
+      },
+      {
+        "disp_name": "Material Lighter",
+        "lua": "vim.g.material_style='lighter'; vim.cmd.colorscheme('material')"
+      },
+      {
+        "disp_name": "Material Darker",
+        "lua": "vim.g.material_style='darker'; vim.cmd.colorscheme('material')"
+      }
+    ]
+  },
+  "gruvbox-material": {
+    "disp_name": "Gruvbox Material",
+    "url": "sainnhe/gruvbox-material",
+    "variants": ["gruvbox-material"]
+  },
+  "sonokai": {
+    "disp_name": "Sonokai",
+    "url": "sainnhe/sonokai",
+    "variants": [
+      {
+        "lua": "vim.g.sonokai_style='default'; vim.cmd.colorscheme('sonokai')"
+      },
+      {
+        "disp_name": "Sonokai Atlandis",
+        "lua": "vim.g.sonokai_style='atlandis'; vim.cmd.colorscheme('sonokai')"
+      },
+      {
+        "disp_name": "Sonokai Andromeda",
+        "lua": "vim.g.sonokai_style='andromeda'; vim.cmd.colorscheme('sonokai')"
+      },
+      {
+        "disp_name": "Sonokai Shusia",
+        "lua": "vim.g.sonokai_style='shusia'; vim.cmd.colorscheme('sonokai')"
+      },
+      {
+        "disp_name": "Sonokai Maia",
+        "lua": "vim.g.sonokai_style='maia'; vim.cmd.colorscheme('sonokai')"
+      },
+      {
+        "disp_name": "Sonokai Espresso",
+        "lua": "vim.g.sonokai_style='espresso'; vim.cmd.colorscheme('sonokai')"
+      }
+    ]
+  },
+  "edge": {
+    "disp_name": "Edge",
+    "url": "sainnhe/edge",
+    "variants": [
+      {
+        "lua": "vim.g.edge_style='default'; vim.cmd.colorscheme('edge')"
+      },
+      {
+        "disp_name": "Edge Aura",
+        "lua": "vim.g.edge_style='aura'; vim.cmd.colorscheme('edge')"
+      },
+      {
+        "disp_name": "Edge Neon",
+        "lua": "vim.g.edge_style='neon'; vim.cmd.colorscheme('edge')"
+      }
+    ]
+  },
+  "nord.nvim": {
+    "disp_name": "Nord.Nvim",
+    "url": "shaunsingh/nord.nvim",
+    "variants": ["nord"]
+  },
+  "nordic.nvim": {
+    "disp_name": "Nordic.Nvim",
+    "url": "AlexvZyl/nordic.nvim",
+    "variants": ["nordic"]
+  },
+  "solarized-osaka.nvim": {
+    "disp_name": "Solarized Osaka",
+    "url": "craftzdog/solarized-osaka.nvim",
+    "variants": ["solarized-osaka"]
+  },
+  "melange-nvim": {
+    "disp_name": "Melange",
+    "url": "savq/melange-nvim",
+    "variants": ["melange"]
+  },
+  "zenbones.nvim": {
+    "disp_name": "Zenbones",
+    "url": "mcchrish/zenbones.nvim",
+    "variants": [
+      "zenwritten",
+      { "name": "neobones", "disp_name": "Zenbones Neobones" },
+      { "name": "vimbones", "disp_name": "Zenbones Vimbones" },
+      { "name": "rosebones", "disp_name": "Zenbones Rosebones" },
+      { "name": "forestbones", "disp_name": "Zenbones Forestbones" },
+      { "name": "nordbones", "disp_name": "Zenbones Nordbones" },
+      { "name": "tokyobones", "disp_name": "Zenbones Tokyobones" },
+      { "name": "seolbones", "disp_name": "Zenbones Seolbones" },
+      { "name": "duckbones", "disp_name": "Zenbones Duckbones" },
+      { "name": "zenburned", "disp_name": "Zenbones Zenburned" },
+      { "name": "kanagawabones", "disp_name": "Zenbones Kanagawabones" },
+      { "name": "randombones", "disp_name": "Zenbones Randombones" }
+    ]
+  }
+}

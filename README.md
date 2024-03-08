@@ -316,27 +316,28 @@ Alternatively, resuming work on a specific provider:
 ### Misc
 | Command          | List                                       |
 | ---------------- | ------------------------------------------ |
-| `resume`           | resume last command/query                  |
-| `builtin`          | fzf-lua builtin commands                   |
-| `profiles`         | fzf-lua configuration profiles             |
-| `help_tags`        | help tags                                  |
-| `man_pages`        | man pages                                  |
-| `colorschemes`     | color schemes                              |
-| `highlights`       | highlight groups                           |
-| `commands`         | neovim commands                            |
-| `command_history`  | command history                            |
-| `search_history`   | search history                             |
-| `marks`            | :marks                                     |
-| `jumps`            | :jumps                                     |
-| `changes`          | :changes                                   |
-| `registers`        | :registers                                 |
-| `tagstack`         | :tags                                      |
-| `autocmds`         | :autocmd                                   |
-| `keymaps`          | key mappings                               |
-| `filetypes`        | filetypes                                  |
-| `menus`            | menus                                      |
-| `spell_suggest`    | spelling suggestions                       |
-| `packadd`          | :packadd <package>                         |
+| `resume`               | resume last command/query              |
+| `builtin`              | fzf-lua builtin commands               |
+| `profiles`             | fzf-lua configuration profiles         |
+| `help_tags`            | help tags                              |
+| `man_pages`            | man pages                              |
+| `colorschemes`         | color schemes                          |
+| `awesome_colorschemes` | Awesome Neovim color schemes           | 
+| `highlights`           | highlight groups                       |
+| `commands`             | neovim commands                        |
+| `command_history`      | command history                        |
+| `search_history`       | search history                         |
+| `marks`                | :marks                                 |
+| `jumps`                | :jumps                                 |
+| `changes`              | :changes                               |
+| `registers`            | :registers                             |
+| `tagstack`             | :tags                                  |
+| `autocmds`             | :autocmd                               |
+| `keymaps`              | key mappings                           |
+| `filetypes`            | filetypes                              |
+| `menus`                | menus                                  |
+| `spell_suggest`        | spelling suggestions                   |
+| `packadd`              | :packadd <package>                     |
 
 ### Neovim API
 
@@ -1092,13 +1093,36 @@ require'fzf-lua'.setup {
   colorschemes = {
     prompt            = 'Colorschemes❯ ',
     live_preview      = true,       -- apply the colorscheme on preview?
-    actions           = { ["default"] = actions.colorscheme, },
+    actions           = { ["default"] = actions.colorscheme },
     winopts           = { height = 0.55, width = 0.30, },
     -- uncomment to ignore colorschemes names (lua patterns)
     -- ignore_patterns   = { "^delek$", "^blue$" },
-    -- uncomment to execute a callback after interface is closed
+    -- uncomment to execute a callback on preview|close
     -- e.g. a call to reset statusline highlights
-    -- post_reset_cb     = function() ... end,
+    -- cb_preview        = function() ... end,
+    -- cb_exit           = function() ... end,
+  },
+  awesome_colorschemes = {
+    prompt            = 'Colorschemes❯ ',
+    live_preview      = true,       -- apply the colorscheme on preview?
+    max_threads       = 5,          -- max download/update threads
+    winopts           = { row = 0, col = 0.99, width = 0.50 },
+    fzf_opts          = {
+      ["--info"]      = "default",
+      ["--multi"]     = true,
+      ["--delimiter"] = "[:]",
+      ["--with-nth"]  = "3..",
+      ["--tiebreak"]  = "index",
+    },
+    actions           = {
+      ["default"] = actions.colorscheme,
+      ["ctrl-g"]  = { fn = actions.toggle_bg, exec_silent = true },
+      ["ctrl-r"]  = { fn = actions.cs_update, reload = true },
+      ["ctrl-x"]  = { fn = actions.cs_delete, reload = true },
+    },
+    -- uncomment to execute a callback on preview|close
+    -- cb_preview        = function() ... end,
+    -- cb_exit           = function() ... end,
   },
   keymaps = {
     prompt            = "Keymaps> ",

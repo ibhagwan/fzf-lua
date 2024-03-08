@@ -388,11 +388,46 @@ M.buf_edit_or_qf = function(selected, opts)
   end
 end
 
-M.colorscheme = function(selected)
-  local colorscheme = selected[1]
-  vim.cmd("colorscheme " .. colorscheme)
-  -- setup fzf-lua's own highlight groups
+M.colorscheme = function(selected, opts)
+  local dbkey, idx = selected[1]:match("^(.-):(%d+):")
+  if dbkey then
+    local info = opts._adm:get(dbkey)
+    local cs = info.variants[tonumber(idx)]
+    if cs.vim then
+      pcall(vim.cmd, cs.vim)
+    elseif cs.lua then
+      pcall(function() loadstring(cs.lua)() end)
+    else
+      pcall(vim.cmd.colorscheme, cs.name)
+    end
+  else
+    local colorscheme = selected[1]:match("^[^:]+")
+    pcall(vim.cmd.colorscheme, colorscheme)
+  end
+end
+
+M.cs_delete = function(selected, opts)
+  for _, s in ipairs(selected) do
+    local dbkey = s:match("^(.-):%d+:")
+    opts._adm:delete(dbkey)
+  end
+end
+
+M.cs_update = function(selected, opts)
+  local dedup = {}
+  for _, s in ipairs(selected) do
+    local dbkey = s:match("^(.-):%d+:")
+    if dbkey then dedup[dbkey] = true end
+  end
+  for k, _ in pairs(dedup) do
+    opts._adm:update(k)
+  end
+end
+
+M.toggle_bg = function(_, _)
+  vim.o.background = vim.o.background == "dark" and "light" or "dark"
   utils.setup_highlights()
+  utils.info(string.format([[background set to "%s"]], vim.o.background))
 end
 
 M.ensure_insert_mode = function()

@@ -574,7 +574,6 @@ M._action_to_helpstr = {
   [actions.buf_del]             = "buffer-delete",
   [actions.buf_switch]          = "buffer-switch",
   [actions.buf_switch_or_edit]  = "buffer-switch-or-edit",
-  [actions.colorscheme]         = "set-colorscheme",
   [actions.run_builtin]         = "run-builtin",
   [actions.ex_run]              = "edit-cmd",
   [actions.ex_run_cr]           = "exec-cmd",
@@ -622,6 +621,10 @@ M._action_to_helpstr = {
   [actions.apply_profile]       = "apply-profile",
   [actions.complete]            = "complete",
   [actions.dap_bp_del]          = "dap-bp-delete",
+  [actions.colorscheme]         = "colorscheme-apply",
+  [actions.cs_delete]           = "colorscheme-delete",
+  [actions.cs_update]           = "colorscheme-update",
+  [actions.toggle_bg]           = "toggle-background",
 }
 
 return M
