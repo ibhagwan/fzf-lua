@@ -304,6 +304,10 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
     -- add current location to jumplist
     if not is_term then vim.cmd("normal! m`") end
     if vimcmd ~= "b" or curbuf ~= entry.bufnr then
+      if vimcmd == "bd" and utils.is_term_bufname(entry.bufname) then
+        -- killing terminal buffers requires ! (#1078)
+        vimcmd = vimcmd .. "!"
+      end
       local cmd = vimcmd .. " " .. entry.bufnr
       local ok, res = pcall(vim.cmd, cmd)
       if not ok then
