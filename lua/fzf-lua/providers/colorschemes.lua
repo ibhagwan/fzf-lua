@@ -157,7 +157,9 @@ function AsyncDownloadManager:new(opts)
       return
     end
   end
-  self:load_db(opts.db)
+  if not self:load_db(opts.db) then
+    return
+  end
   self.job_ids = {}
   self.job_stack = {}
   return self
@@ -184,7 +186,14 @@ function AsyncDownloadManager:load_db(db)
   -- store db ref and update package params
   self.db = db
   for k, p in pairs(self.db or {}) do
-    assert(p.url, "package entry must contain a 'url'")
+    if type(p.url) ~= "string" then
+      utils.warn(string.format("package %s: missing 'url'", k))
+      return false
+    end
+    if type(p.colorschemes) ~= "table" or vim.tbl_isempty(p.colorschemes) then
+      utils.warn(string.format("package %s: missing or empty 'colorschemes'", k))
+      return false
+    end
     local github_url = "https://github.com/"
     p.dir = p.dir or k
     p.path = path.normalize(path.join({ self.path, p.dir }))
@@ -195,15 +204,16 @@ function AsyncDownloadManager:load_db(db)
     if not p.url:match("^https://") then
       p.url = github_url .. p.url
     end
-    if not p.colorschemes then
-      p.colorschemes = { name = p.package }
-    end
     if type(p.colorschemes[1]) == "string" then
       p.colorschemes[1] = { name = p.colorschemes[1] }
     end
     for i, v in ipairs(p.colorschemes) do
       p.colorschemes[i].disp_name = v.disp_name or p.disp_name
-      assert(v.name or v.lua or v.vim, "colorscheme must contain at least 'name|lua|vim'")
+      if not v.name and not v.lua and not v.vim then
+        utils.warn(string.format(
+          "package %s: colorschemes[%d], must contain at least 'name|lua|vim'", k, i))
+        return false
+      end
     end
     self.db[k] = p
   end
@@ -217,6 +227,7 @@ function AsyncDownloadManager:load_db(db)
       end
     end
   end
+  return true
 end
 
 function AsyncDownloadManager:downloaded(plugin)
@@ -282,7 +293,6 @@ function AsyncDownloadManager:jobstart(plugin, job_args)
   job_args[2] = vim.tbl_extend("keep", job_args[2] or {},
     {
       on_exit = function(_, rc, _)
-        -- if rc == 0 then pcall(vim.cmd.packadd, plugin) end
         utils.info(string.format("%s [job_id:%d] finished with exit code %s", plugin, job_id, rc))
         if type(info.on_exit) == "function" then
           -- this calls `coroutine.resume` and resumes fzf's reload input stream
@@ -334,10 +344,12 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
   assert(p, "colorscheme package is nil")
   assert(tonumber(idx) > 0, "colorscheme index is invalid")
   local cs = p.colorschemes[tonumber(idx)]
-  if not package.loaded[p.package] then
-    pcall(vim.cmd.packadd, p.dir)
+  -- TODO: should we check `package.loaded[...]` before packadd?
+  local ok, out = pcall(vim.cmd.packadd, p.dir)
+  if not ok then
+    utils.warn(string.format("Unable to packadd  %s: %s", p.dir, tostring(out)))
+    return
   end
-  local ok, out
   if cs.vim then
     ok, out = pcall(vim.api.nvim_exec2, cs.vim, { output = true })
   elseif cs.lua then
@@ -482,8 +494,9 @@ M.awesome_colorschemes = function(opts)
   end
 
   opts.fn_selected = function(sel, o)
-    -- remove our cache path from packpath
-    vim.opt.packpath:remove(o._packpath)
+    -- do not remove our cache path from packpath
+    -- or packadd in `apply_awesome_theme` fails
+    -- vim.opt.packpath:remove(o._packpath)
 
     -- cleanup AsyncDownloadManager
     o._adm:destruct()

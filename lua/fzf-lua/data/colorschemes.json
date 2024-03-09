@@ -2,7 +2,6 @@
   "kanagawa.nvim": {
     "disp_name": "Kanagawa",
     "url": "rebelot/kanagawa.nvim",
-    "package": "kanagawa",
     "colorschemes": [
       "kanagawa",
       { "name": "kanagawa-wave", "disp_name": "Kanagawa Wave" },
@@ -13,7 +12,6 @@
   "tokyonight.nvim": {
     "disp_name": "Tokyo Night",
     "url": "folke/tokyonight.nvim",
-    "package": "tokyonight",
     "colorschemes": [
       "tokyonight",
       { "name": "tokyonight-night", "disp_name": "Tokyo Night" },
@@ -25,7 +23,6 @@
   "catppuccin.nvim": {
     "disp_name": "Catppuccin",
     "url": "catppuccin/nvim",
-    "package": "catppuccin",
     "colorschemes": [
       "catppuccin",
       { "name": "catppuccin-latte", "disp_name": "Catppuccin Latte" },
@@ -55,7 +52,6 @@
   "neovim-ayu": {
     "disp_name": "Neovim Ayu",
     "url": "Shatur/neovim-ayu",
-    "package": "ayu",
     "colorschemes": [
       {
         "disp_name": "Ayu Dark",
@@ -70,7 +66,6 @@
   "rose-pine.nvim": {
     "disp_name": "Rose Pine",
     "url": "rose-pine/neovim",
-    "package": "rose-pine",
     "colorschemes": [
       "rose-pine-main",
       { "name": "rose-pine-moon", "disp_name": "Rose Pine Moon" },
@@ -80,7 +75,6 @@
   "everforest-nvim": {
     "disp_name": "Everforest",
     "url": "neanias/everforest-nvim",
-    "package": "everforest",
     "colorschemes": [
       {
         "lua": "require('everforest').setup({background='medium'}); vim.cmd.colorscheme('everforest')"
@@ -98,7 +92,6 @@
   "onedark.nvim": {
     "disp_name": "OneDark.nvim",
     "url": "navarasu/onedark.nvim",
-    "package": "onedark",
     "colorschemes": [
       {
         "lua": "require('onedark').setup({style='dark'}); vim.cmd.colorscheme('onedark')"
@@ -128,7 +121,6 @@
   "onedarkpro.nvim": {
     "disp_name": "OneDarkPro",
     "url": "olimorris/onedarkpro.nvim",
-    "package": "onedarkpro",
     "colorschemes": [
       "onedark",
       { "name": "onelight", "disp_name": "OneDarkPro Light" },
@@ -144,7 +136,6 @@
   "nightfox.nvim": {
     "disp_name": "Nightfox",
     "url": "EdenEast/nightfox.nvim",
-    "package": "nightfox",
     "colorschemes": [
       "nightfox",
       { "name": "dayfox", "disp_name": "Dayfox" },
@@ -161,9 +152,8 @@
     "colorschemes": ["embark"]
   },
   "github-nvim-theme": {
-    "disp_name": "Github Nvim",
+    "disp_name": "Github",
     "url": "projekt0n/github-nvim-theme",
-    "package": "github-theme",
     "colorschemes": [
       "github_dark",
       { "name": "github_dark_default", "disp_name": "Github Dark Default" },
@@ -196,12 +186,12 @@
     ]
   },
   "vscode.nvim": {
-    "disp_name": "VSCode.Nvim",
+    "disp_name": "VSCode",
     "url": "Mofiqul/vscode.nvim",
     "colorschemes": ["vscode"]
   },
   "darcula.nvim": {
-    "disp_name": "Dracula.Nvim",
+    "disp_name": "Dracula",
     "url": "Mofiqul/dracula.nvim",
     "colorschemes": ["dracula"]
   },
@@ -289,13 +279,18 @@
     ]
   },
   "nord.nvim": {
-    "disp_name": "Nord.Nvim",
+    "disp_name": "Nord",
     "url": "shaunsingh/nord.nvim",
     "colorschemes": ["nord"]
   },
   "nordic.nvim": {
-    "disp_name": "Nordic.Nvim",
+    "disp_name": "Nordic",
     "url": "AlexvZyl/nordic.nvim",
+    "colorschemes": ["nordic"]
+  },
+  "nordic.nvim.2": {
+    "disp_name": "Nordic",
+    "url": "andersevenrud/nordic.nvim",
     "colorschemes": ["nordic"]
   },
   "solarized-osaka.nvim": {
@@ -307,6 +302,329 @@
     "disp_name": "Melange",
     "url": "savq/melange-nvim",
     "colorschemes": ["melange"]
+  },
+  "tokyodark.nvim": {
+    "disp_name": "Tokyodark",
+    "url": "tiagovla/tokyodark.nvim",
+    "colorschemes": ["tokyodark"]
+  },
+  "gruvbox-baby": {
+    "disp_name": "Gruvbox Baby",
+    "url": "luisiacc/gruvbox-baby",
+    "colorschemes": ["gruvbox-baby"]
+  },
+  "monokai.nvim": {
+    "disp_name": "Monokai Neovim",
+    "url": "tanvirtin/monokai.nvim",
+    "colorschemes": [
+      "monokai",
+      { "name": "monokai_pro", "disp_name": "Monokai Pro" },
+      { "name": "monokai_soda", "disp_name": "Monokai Soda" },
+      { "name": "monokai_ristretto", "disp_name": "Monokai Ristretto" }
+    ]
+  },
+  "mellifluous.nvim": {
+    "disp_name": "Mellifluous",
+    "url": "ramojus/mellifluous.nvim",
+    "colorschemes": ["mellifluous"]
+  },
+  "night-owl.nvim": {
+    "disp_name": "Nightowl",
+    "url": "oxfist/night-owl.nvim",
+    "colorschemes": ["night-owl"]
+  },
+  "oceanic-next": {
+    "disp_name": "Oceanic Next",
+    "url": "mhartington/oceanic-next",
+    "colorschemes": ["OceanicNext"]
+  },
+  "poimandres.nvim": {
+    "disp_name": "Poimandres",
+    "url": "olivercederborg/poimandres.nvim",
+    "colorschemes": ["poimandres"]
+  },
+  "cyberdream.nvim": {
+    "disp_name": "Cyberdream",
+    "url": "scottmckendry/cyberdream.nvim",
+    "colorschemes": ["cyberdream"]
+  },
+  "mellow.nvim": {
+    "disp_name": "Mellow",
+    "url": "kvrohit/mellow.nvim",
+    "colorschemes": ["mellow"]
+  },
+  "rasmus.nvim": {
+    "disp_name": "Rasmus",
+    "url": "kvrohit/rasmus.nvim",
+    "colorschemes": ["rasmus"]
+  },
+  "substrata.nvim": {
+    "disp_name": "Substrata",
+    "url": "kvrohit/substrata.nvim",
+    "colorschemes": ["substrata"]
+  },
+  "bamboo.nvim": {
+    "disp_name": "Bamboo",
+    "url": "ribru17/bamboo.nvim",
+    "colorschemes": [
+      {
+        "lua": "require('bamboo').setup({style='vulgaris'}); vim.cmd.colorscheme('bamboo')"
+      },
+      {
+        "disp_name": "Bamboo Multiplex",
+        "lua": "require('bamboo').setup({style='multiplex'}); vim.cmd.colorscheme('bamboo')"
+      },
+      {
+        "disp_name": "Bamboo Light",
+        "lua": "require('bamboo').setup({style='light'}); vim.cmd.colorscheme('bamboo')"
+      }
+    ]
+  },
+  "nvim-solarized-lua": {
+    "disp_name": "Solarized",
+    "url": "ishan9299/nvim-solarized-lua",
+    "colorschemes": [
+      "solarized",
+      { "name": "solarized-high", "disp_name": "Solarized High" },
+      { "name": "solarized-flat", "disp_name": "Solarized Flat" },
+      { "name": "solarized-low", "disp_name": "Solarized Low" }
+    ]
+  },
+  "neon": {
+    "disp_name": "Neon",
+    "url": "rafamadriz/neon",
+    "colorschemes": [
+      {
+        "lua": "vim.g.neon_style='default'; vim.cmd.colorscheme('neon')"
+      },
+      {
+        "disp_name": "Neon Doom",
+        "lua": "vim.g.neon_style='doom'; vim.cmd.colorscheme('neon')"
+      },
+      {
+        "disp_name": "Neon Dark",
+        "lua": "vim.g.neon_style='dark'; vim.cmd.colorscheme('neon')"
+      },
+      {
+        "disp_name": "Neon Light",
+        "lua": "vim.g.neon_style='light'; vim.cmd.colorscheme('neon')"
+      }
+    ]
+  },
+  "modus-theme-vim": {
+    "disp_name": "Modus Theme (vim)",
+    "url": "ishan9299/modus-theme-vim",
+    "colorschemes": [
+      { "name": "modus-vivendi", "disp_name": "Modus Vivendi (vim)" },
+      { "name": "modus-operandi", "disp_name": "Modus Operandi (vim)" }
+    ]
+  },
+  "modus-themes.nvim": {
+    "disp_name": "Modus Theme (nvim)",
+    "url": "miikanissi/modus-themes.nvim",
+    "colorschemes": [
+      { "name": "modus_vivendi", "disp_name": "Modus Vivendi (nvim)" },
+      { "name": "modus_operandi", "disp_name": "Modus Operandi (nvim)" }
+    ]
+  },
+  "moonlight.nvim": {
+    "disp_name": "Moonlight",
+    "url": "shaunsingh/moonlight.nvim",
+    "colorschemes": ["moonlight"]
+  },
+  "aurora": {
+    "disp_name": "Aurora",
+    "url": "ray-x/aurora",
+    "colorschemes": ["aurora"]
+  },
+  "starry.nvim": {
+    "disp_name": "Starry",
+    "url": "ray-x/starry.nvim",
+    "colorschemes": [
+      {
+        "disp_name": "Starry Material",
+        "lua": "require('starry').setup({style={name='material'}}); vim.cmd.colorscheme('starry')"
+      },
+      {
+        "disp_name": "Starry Moonlight",
+        "lua": "require('starry').setup({style={name='moonlight'}}); vim.cmd.colorscheme('starry')"
+      },
+      {
+        "disp_name": "Starry Darcula",
+        "lua": "require('starry').setup({style={name='dracula'}}); vim.cmd.colorscheme('starry')"
+      },
+      {
+        "disp_name": "Starry Darcula Blood",
+        "lua": "require('starry').setup({style={name='dracula_blood'}}); vim.cmd.colorscheme('starry')"
+      },
+      {
+        "disp_name": "Starry Mariana",
+        "lua": "require('starry').setup({style={name='mariana'}}); vim.cmd.colorscheme('starry')"
+      },
+      {
+        "disp_name": "Starry Emerald",
+        "lua": "require('starry').setup({style={name='emerald'}}); vim.cmd.colorscheme('starry')"
+      },
+      {
+        "disp_name": "Starry Middlenight Blue",
+        "lua": "require('starry').setup({style={name='middlenight_blue'}}); vim.cmd.colorscheme('starry')"
+      },
+      {
+        "disp_name": "Starry Early Summer",
+        "lua": "require('starry').setup({style={name='earlysummer'}}); vim.cmd.colorscheme('starry')"
+      },
+      {
+        "disp_name": "Starry Dark Solar",
+        "lua": "require('starry').setup({style={name='darksolar'}}); vim.cmd.colorscheme('starry')"
+      },
+      {
+        "disp_name": "Starry Ukraine",
+        "lua": "require('starry').setup({style={name='ukraine'}}); vim.cmd.colorscheme('starry')"
+      }
+    ]
+  },
+  "bluloco.nvim": {
+    "disp_name": "Bluloco",
+    "url": "uloco/bluloco.nvim",
+    "colorschemes": [
+      {
+        "disp_name": "Bluloco Dark",
+        "lua": "require('bluloco').setup({style='dark'}); vim.cmd.colorscheme('bluloco')"
+      },
+      {
+        "disp_name": "Bluloco Light",
+        "lua": "require('bluloco').setup({style='light'}); vim.cmd.colorscheme('bluloco')"
+      }
+    ]
+  },
+  "doom-one.nvim": {
+    "disp_name": "Doom One",
+    "url": "NTBBloodbath/doom-one.nvim",
+    "colorschemes": ["doom-one"]
+  },
+  "nvimgelion": {
+    "disp_name": "Nvimgelion",
+    "url": "nyngwang/nvimgelion",
+    "colorschemes": ["nvimgelion"]
+  },
+  "boo-colorscheme-nvim": {
+    "disp_name": "Boo",
+    "url": "rockerBOO/boo-colorscheme-nvim",
+    "colorschemes": ["boo"]
+  },
+  "zephyr-nvim": {
+    "disp_name": "Zephyr",
+    "url": "glepnir/zephyr-nvim",
+    "colorschemes": ["zephyr"]
+  },
+  "everblush.nvim": {
+    "disp_name": "Everblush",
+    "url": "Everblush/everblush.nvim",
+    "colorschemes": ["everblush"]
+  },
+  "blue-moon": {
+    "disp_name": "Blue Moon",
+    "url": "kyazdani42/blue-moon",
+    "colorschemes": ["blue-moon"]
+  },
+  "one_monokai.nvim": {
+    "disp_name": "One Monokai",
+    "url": "cpea2506/one_monokai.nvim",
+    "colorschemes": ["one_monokai"]
+  },
+  "arctic.nvim": {
+    "disp_name": "Arctic",
+    "url": "rockyzhang24/arctic.nvim",
+    "colorschemes": ["arctic"]
+  },
+  "calvera-dark.nvim": {
+    "disp_name": "Calvera Dark",
+    "url": "yashguptaz/calvera-dark.nvim",
+    "colorschemes": ["calvera"]
+  },
+  "adwaita.nvim": {
+    "disp_name": "Adwaita",
+    "url": "Mofiqul/adwaita.nvim",
+    "colorschemes": ["adwaita"]
+  },
+  "synthweave.nvim": {
+    "disp_name": "Synthweave",
+    "url": "samharju/synthweave.nvim",
+    "colorschemes": ["synthweave"]
+  },
+  "minimal.nvim": {
+    "disp_name": "Minimal",
+    "url": "Yazeed1s/minimal.nvim",
+    "colorschemes": [
+      "minimal",
+      { "name": "minimal-base16", "disp_name": "Minimal Base16" }
+    ]
+  },
+  "oh-lucy.nvim": {
+    "disp_name": "Oh Lucy",
+    "url": "Yazeed1s/oh-lucy.nvim",
+    "colorschemes": [
+      "oh-lucy",
+      { "name": "oh-lucy-evening", "disp_name": "Oh Lucy Evening" }
+    ]
+  },
+  "monochrome.nvim": {
+    "disp_name": "Monochrome",
+    "url": "kdheepak/monochrome.nvim",
+    "colorschemes": ["monochrome"]
+  },
+  "miasma.nvim": {
+    "disp_name": "Miasma",
+    "url": "xero/miasma.nvim",
+    "colorschemes": ["miasma"]
+  },
+  "citruszest.nvim": {
+    "disp_name": "Citruszest",
+    "url": "zootedb0t/citruszest.nvim",
+    "colorschemes": ["citruszest"]
+  },
+  "neosolarized.nvim": {
+    "disp_name": "NeoSolarized",
+    "url": "Tsuzat/NeoSolarized.nvim",
+    "colorschemes": [
+      {
+        "disp_name": "NeoSolarized Dark",
+        "lua": "require('NeoSolarized').setup({style='dark'}); vim.cmd.colorscheme('NeoSolarized')"
+      },
+      {
+        "disp_name": "NeoSolarized Light",
+        "lua": "require('NeoSolarized').setup({style='light'}); vim.cmd.colorscheme('NeoSolarized')"
+      }
+    ]
+  },
+  "visual_studio_code": {
+    "disp_name": "Visual Studio Code",
+    "url": "askfiy/visual_studio_code",
+    "colorschemes": [
+      {
+        "disp_name": "Visual Studio Code Dark",
+        "lua": "require('visual_studio_code').setup({mode='dark'}); vim.cmd.colorscheme('visual_studio_code')"
+      },
+      {
+        "disp_name": "Visual Studio Code Light",
+        "lua": "require('visual_studio_code').setup({mode='light'}); vim.cmd.colorscheme('visual_studio_code')"
+      }
+    ]
+  },
+  "falcon": {
+    "disp_name": "Falcon",
+    "url": "fenetikm/falcon",
+    "colorschemes": ["falcon"]
+  },
+  "one-nvim": {
+    "disp_name": "One Neovim",
+    "url": "Th3Whit3Wolf/one-nvim",
+    "colorschemes": ["one-nvim"]
+  },
+  "apprentice.nvim": {
+    "disp_name": "Apprentice",
+    "url": "adisen99/apprentice.nvim",
+    "colorschemes": ["apprentice"]
   },
   "zenbones.nvim": {
     "disp_name": "Zenbones",
