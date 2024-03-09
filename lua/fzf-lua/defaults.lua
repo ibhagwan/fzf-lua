@@ -567,7 +567,7 @@ M.defaults.awesome_colorschemes = {
     ["--with-nth"]  = "3..",
     ["--tiebreak"]  = "index",
   },
-  dbfile       = "extras/colorschemes.json",
+  dbfile       = "data/colorschemes.json",
   icons        = { utils.ansi_codes.blue("󰇚"), utils.ansi_codes.yellow(""), " " },
   packpath     = function()
     return path.join({ vim.fn.stdpath("cache"), "fzf-lua" })

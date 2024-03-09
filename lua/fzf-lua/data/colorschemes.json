@@ -3,7 +3,7 @@
     "disp_name": "Kanagawa",
     "url": "rebelot/kanagawa.nvim",
     "package": "kanagawa",
-    "variants": [
+    "colorschemes": [
       "kanagawa",
       { "name": "kanagawa-wave", "disp_name": "Kanagawa Wave" },
       { "name": "kanagawa-dragon", "disp_name": "Kanagawa Dragon" },
@@ -14,8 +14,7 @@
     "disp_name": "Tokyo Night",
     "url": "folke/tokyonight.nvim",
     "package": "tokyonight",
-    "setup": true,
-    "variants": [
+    "colorschemes": [
       "tokyonight",
       { "name": "tokyonight-night", "disp_name": "Tokyo Night" },
       { "name": "tokyonight-storm", "disp_name": "Tokyo Storm" },
@@ -27,7 +26,7 @@
     "disp_name": "Catppuccin",
     "url": "catppuccin/nvim",
     "package": "catppuccin",
-    "variants": [
+    "colorschemes": [
       "catppuccin",
       { "name": "catppuccin-latte", "disp_name": "Catppuccin Latte" },
       { "name": "catppuccin-frappe", "disp_name": "Catppuccin Frappe" },
@@ -38,7 +37,7 @@
   "mini.base16": {
     "disp_name": "Mini Base16",
     "url": "echasnovski/mini.base16",
-    "variants": [
+    "colorschemes": [
       { "name": "minischeme", "disp_name": "Mini Scheme" },
       { "name": "minicyan", "disp_name": "Mini Cyan" }
     ]
@@ -46,18 +45,18 @@
   "vim-nightfly-colors": {
     "disp_name": "Nightfly",
     "url": "bluz71/vim-nightfly-colors",
-    "variants": ["nightfly"]
+    "colorschemes": ["nightfly"]
   },
   "vim-moonfly-colors": {
     "disp_name": "Moonfly",
     "url": "bluz71/vim-moonfly-colors",
-    "variants": ["moonfly"]
+    "colorschemes": ["moonfly"]
   },
   "neovim-ayu": {
     "disp_name": "Neovim Ayu",
     "url": "Shatur/neovim-ayu",
     "package": "ayu",
-    "variants": [
+    "colorschemes": [
       {
         "disp_name": "Ayu Dark",
         "lua": "require('ayu').setup({mirage = false}); vim.cmd.colorscheme('ayu')"
@@ -72,7 +71,7 @@
     "disp_name": "Rose Pine",
     "url": "rose-pine/neovim",
     "package": "rose-pine",
-    "variants": [
+    "colorschemes": [
       "rose-pine-main",
       { "name": "rose-pine-moon", "disp_name": "Rose Pine Moon" },
       { "name": "rose-pine-dawn", "disp_name": "Rose Pine Dawn" }
@@ -82,7 +81,7 @@
     "disp_name": "Everforest",
     "url": "neanias/everforest-nvim",
     "package": "everforest",
-    "variants": [
+    "colorschemes": [
       {
         "lua": "require('everforest').setup({background='medium'}); vim.cmd.colorscheme('everforest')"
       },
@@ -100,7 +99,7 @@
     "disp_name": "OneDark.nvim",
     "url": "navarasu/onedark.nvim",
     "package": "onedark",
-    "variants": [
+    "colorschemes": [
       {
         "lua": "require('onedark').setup({style='dark'}); vim.cmd.colorscheme('onedark')"
       },
@@ -130,7 +129,7 @@
     "disp_name": "OneDarkPro",
     "url": "olimorris/onedarkpro.nvim",
     "package": "onedarkpro",
-    "variants": [
+    "colorschemes": [
       "onedark",
       { "name": "onelight", "disp_name": "OneDarkPro Light" },
       { "name": "onedark_vivid", "disp_name": "OneDarkPro Vidid" },
@@ -140,13 +139,13 @@
   "embark-theme": {
     "disp_name": "Embark",
     "url": "embark-theme/vim",
-    "variants": ["embark"]
+    "colorschemes": ["embark"]
   },
   "nightfox.nvim": {
     "disp_name": "Nightfox",
     "url": "EdenEast/nightfox.nvim",
     "package": "nightfox",
-    "variants": [
+    "colorschemes": [
       "nightfox",
       { "name": "dayfox", "disp_name": "Dayfox" },
       { "name": "dawnfox", "disp_name": "Dawnfox" },
@@ -159,13 +158,13 @@
   "embark-theme": {
     "disp_name": "Embark",
     "url": "embark-theme/vim",
-    "variants": ["embark"]
+    "colorschemes": ["embark"]
   },
   "github-nvim-theme": {
     "disp_name": "Github Nvim",
     "url": "projekt0n/github-nvim-theme",
     "package": "github-theme",
-    "variants": [
+    "colorschemes": [
       "github_dark",
       { "name": "github_dark_default", "disp_name": "Github Dark Default" },
       { "name": "github_dark_dimmed", "disp_name": "Github Dark Dimmed" },
@@ -199,26 +198,26 @@
   "vscode.nvim": {
     "disp_name": "VSCode.Nvim",
     "url": "Mofiqul/vscode.nvim",
-    "variants": ["vscode"]
+    "colorschemes": ["vscode"]
   },
   "darcula.nvim": {
     "disp_name": "Dracula.Nvim",
     "url": "Mofiqul/dracula.nvim",
-    "variants": ["dracula"]
+    "colorschemes": ["dracula"]
   },
   "oxocarbon.nvim": {
     "disp_name": "Oxocarbon",
     "url": "nyoom-engineering/oxocarbon.nvim",
-    "variants": ["oxocarbon"]
+    "colorschemes": ["oxocarbon"]
   },
   "material.nvim": {
     "disp_name": "Material",
     "url": "marko-cerovac/material.nvim",
-    "variants": [
+    "colorschemes": [
       "material",
       {
         "disp_name": "Material Oceanic",
-        "lua": "vim.g.material_style='oceanic'; vim.cmd.colorscheme('material')"
+        "vim": "let g:material_style='oceanic' | colorscheme material"
       },
       {
         "disp_name": "Material Deep Ocean",
@@ -241,12 +240,12 @@
   "gruvbox-material": {
     "disp_name": "Gruvbox Material",
     "url": "sainnhe/gruvbox-material",
-    "variants": ["gruvbox-material"]
+    "colorschemes": ["gruvbox-material"]
   },
   "sonokai": {
     "disp_name": "Sonokai",
     "url": "sainnhe/sonokai",
-    "variants": [
+    "colorschemes": [
       {
         "lua": "vim.g.sonokai_style='default'; vim.cmd.colorscheme('sonokai')"
       },
@@ -275,7 +274,7 @@
   "edge": {
     "disp_name": "Edge",
     "url": "sainnhe/edge",
-    "variants": [
+    "colorschemes": [
       {
         "lua": "vim.g.edge_style='default'; vim.cmd.colorscheme('edge')"
       },
@@ -292,27 +291,27 @@
   "nord.nvim": {
     "disp_name": "Nord.Nvim",
     "url": "shaunsingh/nord.nvim",
-    "variants": ["nord"]
+    "colorschemes": ["nord"]
   },
   "nordic.nvim": {
     "disp_name": "Nordic.Nvim",
     "url": "AlexvZyl/nordic.nvim",
-    "variants": ["nordic"]
+    "colorschemes": ["nordic"]
   },
   "solarized-osaka.nvim": {
     "disp_name": "Solarized Osaka",
     "url": "craftzdog/solarized-osaka.nvim",
-    "variants": ["solarized-osaka"]
+    "colorschemes": ["solarized-osaka"]
   },
   "melange-nvim": {
     "disp_name": "Melange",
     "url": "savq/melange-nvim",
-    "variants": ["melange"]
+    "colorschemes": ["melange"]
   },
   "zenbones.nvim": {
     "disp_name": "Zenbones",
     "url": "mcchrish/zenbones.nvim",
-    "variants": [
+    "colorschemes": [
       "zenwritten",
       { "name": "neobones", "disp_name": "Zenbones Neobones" },
       { "name": "vimbones", "disp_name": "Zenbones Vimbones" },

@@ -395,15 +395,7 @@ end
 M.colorscheme = function(selected, opts)
   local dbkey, idx = selected[1]:match("^(.-):(%d+):")
   if dbkey then
-    local info = opts._adm:get(dbkey)
-    local cs = info.variants[tonumber(idx)]
-    if cs.vim then
-      pcall(vim.cmd, cs.vim)
-    elseif cs.lua then
-      pcall(function() loadstring(cs.lua)() end)
-    else
-      pcall(vim.cmd.colorscheme, cs.name)
-    end
+    opts._apply_awesome_theme(dbkey, idx, opts)
   else
     local colorscheme = selected[1]:match("^[^:]+")
     pcall(vim.cmd.colorscheme, colorscheme)

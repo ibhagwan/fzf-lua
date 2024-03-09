@@ -143,7 +143,8 @@ local AsyncDownloadManager = Object:extend()
 
 function AsyncDownloadManager:new(opts)
   self.path = opts.path
-  self.max_threads = tonumber(opts.max_threads) > 0 and opts.max_threads or 5
+  self.dl_status = tonumber(opts.dl_status)
+  self.max_threads = tonumber(opts.max_threads) > 0 and tonumber(opts.max_threads) or 5
   local stat, _ = uv.fs_stat(self.path)
   if stat and stat.type ~= "directory" then
     utils.warn(string.format(
@@ -182,29 +183,52 @@ end
 function AsyncDownloadManager:load_db(db)
   -- store db ref and update package params
   self.db = db
-  for k, v in pairs(self.db or {}) do
-    v.dir = v.dir or k
-    v.path = path.join({ self.path, v.dir })
-    v.package = v.package or k
-    v.short_url = v.url
-    if not v.url:match("^https://") then
-      v.url = "https://github.com/" .. v.url .. ".git"
+  for k, p in pairs(self.db or {}) do
+    assert(p.url, "package entry must contain a 'url'")
+    local github_url = "https://github.com/"
+    p.dir = p.dir or k
+    p.path = path.normalize(path.join({ self.path, p.dir }))
+    p.package = p.package or k
+    p.disp_name = p.disp_name or k
+    p.disp_url = p.disp_url or p.url
+    p.disp_url = p.disp_url:gsub("^" .. github_url, "")
+    if not p.url:match("^https://") then
+      p.url = github_url .. p.url
     end
-    if not v.variants then
-      v.variants = { name = v.package }
+    if not p.colorschemes then
+      p.colorschemes = { name = p.package }
     end
-    if type(v.variants[1]) == "string" then
-      v.variants[1] = { name = v.variants[1] }
+    if type(p.colorschemes[1]) == "string" then
+      p.colorschemes[1] = { name = p.colorschemes[1] }
     end
-    self.db[k] = v
+    for i, v in ipairs(p.colorschemes) do
+      p.colorschemes[i].disp_name = v.disp_name or p.disp_name
+      assert(v.name or v.lua or v.vim, "colorscheme must contain at least 'name|lua|vim'")
+    end
+    self.db[k] = p
+  end
+  -- caller requested a download filter
+  if self.dl_status == 0 or self.dl_status == 1 then
+    for k, _ in pairs(self.db or {}) do
+      local downloaded = self:downloaded(k)
+      if self.dl_status == 0 and downloaded
+          or self.dl_status == 1 and not downloaded then
+        self.db[k] = nil
+      end
+    end
   end
 end
 
-function AsyncDownloadManager:exists(plugin)
+function AsyncDownloadManager:downloaded(plugin)
   local info = plugin and self.db[plugin]
   if not info then return end
   local stat = uv.fs_stat(info.path)
   return stat and stat.type == "directory"
+end
+
+function AsyncDownloadManager:downloading(plugin)
+  local info = plugin and self.db[plugin]
+  return info and info.job_id
 end
 
 function AsyncDownloadManager:get(plugin)
@@ -219,11 +243,6 @@ function AsyncDownloadManager:set_once_on_exit(plugin, fn)
   end
 end
 
-function AsyncDownloadManager:downloading(plugin)
-  local info = plugin and self.db[plugin]
-  return info and info.job_id
-end
-
 function AsyncDownloadManager:jobwait(plugin)
   local info = plugin and self.db[plugin]
   if not info or not info.job_id then return end
@@ -232,7 +251,7 @@ end
 
 function AsyncDownloadManager:delete(plugin)
   if not plugin or not self.db[plugin] then return end
-  if self:exists(plugin) then
+  if self:downloaded(plugin) then
     vim.fn.delete(self.db[plugin].path, "rf")
   end
 end
@@ -258,7 +277,7 @@ function AsyncDownloadManager:jobstart(plugin, job_args)
   if not plugin then return end
   local info = plugin and self.db[plugin]
   local msg = string.format("%s %s (%s)",
-    job_args[1][2] == "clone" and "Cloning" or "Updating", info.name, info.dir)
+    job_args[1][2] == "clone" and "Cloning" or "Updating", info.disp_name, info.dir)
   local job_id
   job_args[2] = vim.tbl_extend("keep", job_args[2] or {},
     {
@@ -292,7 +311,7 @@ end
 function AsyncDownloadManager:update(plugin)
   local info = plugin and self.db[plugin]
   if not info then return end
-  if self:exists(plugin) then
+  if self:downloaded(plugin) then
     -- git pull
     self:queue(plugin, {
       ---@format disable-next
@@ -308,6 +327,29 @@ function AsyncDownloadManager:update(plugin)
   end
 end
 
+M.apply_awesome_theme = function(dbkey, idx, opts)
+  assert(dbkey, "colorscheme dbkey is nil")
+  assert(opts._adm, "async download manager is nil")
+  local p = opts._adm:get(dbkey)
+  assert(p, "colorscheme package is nil")
+  assert(tonumber(idx) > 0, "colorscheme index is invalid")
+  local cs = p.colorschemes[tonumber(idx)]
+  if not package.loaded[p.package] then
+    pcall(vim.cmd.packadd, p.dir)
+  end
+  local ok, out
+  if cs.vim then
+    ok, out = pcall(vim.api.nvim_exec2, cs.vim, { output = true })
+  elseif cs.lua then
+    ok, out = pcall(function() loadstring(cs.lua)() end)
+  else
+    ok, out = pcall(vim.cmd.colorscheme, cs.name)
+  end
+  if not ok then
+    utils.warn(string.format("Unable to apply colorscheme %s: %s", cs.disp_name, tostring(out)))
+  end
+end
+
 M.awesome_colorschemes = function(opts)
   opts = config.normalize_opts(opts, "awesome_colorschemes")
   if not opts then return end
@@ -317,7 +359,7 @@ M.awesome_colorschemes = function(opts)
 
   local dbfile = vim.fn.expand(opts.dbfile)
   if not path.is_absolute(dbfile) then
-    dbfile = path.join({ vim.g.fzf_lua_directory, opts.dbfile }) or dbfile
+    dbfile = path.normalize(path.join({ vim.g.fzf_lua_directory, opts.dbfile })) or dbfile
   end
 
   local json_string = utils.read_file(dbfile)
@@ -332,11 +374,15 @@ M.awesome_colorschemes = function(opts)
     return
   end
 
+  -- save a ref for action
+  opts._apply_awesome_theme = M.apply_awesome_theme
+
   opts._packpath = type(opts.packpath) == "function"
       and opts.packpath() or tostring(opts.packpath)
 
   opts._adm = AsyncDownloadManager:new({
     db = json_db,
+    dl_status = opts.dl_status,
     max_threads = opts.max_threads,
     path = path.join({ opts._packpath, "pack", "fzf-lua", "opt" })
   })
@@ -356,7 +402,7 @@ M.awesome_colorschemes = function(opts)
 
         -- since resume uses deepcopy having multiple db's is going to
         -- create all sorts of voodoo issues when running resume
-        -- HACK: seriously, find a better solution
+        -- HACK: find a better solution (singleton?)
         if config.__resume_data and type(config.__resume_data.opts) == "table" then
           config.__resume_data.opts._adm.db = opts._adm.db
         end
@@ -365,8 +411,9 @@ M.awesome_colorschemes = function(opts)
         table.sort(sorted)
 
         for _, dbkey in ipairs(sorted) do
-          local cs = opts._adm:get(dbkey)
-          for i, variant in ipairs(cs.variants) do
+          local downloaded = opts._adm:downloaded(dbkey)
+          local info = opts._adm:get(dbkey)
+          for i, cs in ipairs(info.colorschemes) do
             if opts._adm:downloading(dbkey) then
               -- downloading, set `on_exit` callback and wait for resume
               opts._adm:set_once_on_exit(dbkey, function(_, _, _)
@@ -375,16 +422,16 @@ M.awesome_colorschemes = function(opts)
               coroutine.yield()
             end
             vim.schedule(function()
-              local exists = not opts._adm:exists(dbkey)
-                  and opts.icons[1]             -- download icon
-                  or i == 1 and opts.icons[2]   -- colorscheme (main) icon
-                  or opts.icons[3]              -- colorscheme (variant) noicon
+              local icon = not downloaded
+                  and opts.icons[1]           -- download icon
+                  or i == 1 and opts.icons[2] -- colorscheme (package) icon
+                  or opts.icons[3]            -- colorscheme (variant) noicon
               local entry = string.format("%s:%d:%s  %s %s",
                 dbkey,
                 i,
-                exists,
-                variant.disp_name or cs.disp_name,
-                i == 1 and string.format("(%s)", cs.short_url) or "")
+                icon,
+                cs.disp_name,
+                i == 1 and string.format("(%s)", info.disp_url) or "")
               cb(entry, function()
                 coroutine.resume(co)
               end)
@@ -405,27 +452,12 @@ M.awesome_colorschemes = function(opts)
     opts.preview, prev_act_id = shell.raw_action(function(sel)
       if opts.live_preview and sel then
         local dbkey, idx = sel[1]:match("^(.-):(%d+):")
-        if opts._adm:exists(dbkey) then
-          local info = opts._adm:get(dbkey)
-          local cs = info.variants[tonumber(idx)]
+        if opts._adm:downloaded(dbkey) then
           -- some colorschemes choose a different theme based on dark|light bg
           -- restore to the original background when interface was opened
-          vim.o.background = opts._cur_background
-          if not package.loaded[info.package] then
-            pcall(vim.cmd.packadd, info.dir)
-            if info.setup == true then
-              pcall(function() require[info.package].setup() end)
-            elseif type(info.setup) == "string" then
-              pcall(function() loadstring(info.setup)() end)
-            end
-          end
-          if cs.vim then
-            pcall(vim.cmd, cs.vim)
-          elseif cs.lua then
-            pcall(function() loadstring(cs.lua)() end)
-          else
-            pcall(vim.cmd.colorscheme, cs.name)
-          end
+          -- wrap in pcall as some colorschemes have bg triggers that can fail
+          pcall(function() vim.o.background = opts._cur_background end)
+          M.apply_awesome_theme(dbkey, idx, opts)
           if type(opts.cb_preview) == "function" then
             opts.cb_preview(sel, opts)
           end
