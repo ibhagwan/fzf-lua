@@ -558,11 +558,11 @@ M.build_fzf_cli = function(opts)
   for k, v in pairs(opts.fzf_opts) do
     -- flag can be set to `false` to negate a default
     if v then
-      table.insert(cli_args, k)
+      local opt_v
       if type(v) == "string" or type(v) == "number" then
         v = tostring(v) -- convert number type to string
         if k == "--query" then
-          table.insert(cli_args, libuv.shellescape(v))
+          opt_v = libuv.shellescape(v)
         else
           if utils.__IS_WINDOWS and type(v) == "string" and v:match([[^'.*'$]]) then
             -- replace single quote shellescape
@@ -573,8 +573,16 @@ M.build_fzf_cli = function(opts)
             utils.warn(string.format("`fzf_opts` are automatically shellescaped."
               .. " Please remove surrounding quotes from %s=%s", k, v))
           end
-          table.insert(cli_args, libuv.is_escaped(v) and v or libuv.shellescape(v))
+          opt_v = libuv.is_escaped(v) and v or libuv.shellescape(v)
         end
+      end
+      if opts._is_skim then
+        -- skim has a bug with flag values that start with `-`, for example
+        -- specifying `--nth "-1.."` will fail but `--nth="-1.."` works (#1085)
+        table.insert(cli_args, not opt_v and k or string.format("%s=%s", k, opt_v))
+      else
+        table.insert(cli_args, k)
+        if opt_v then table.insert(cli_args, opt_v) end
       end
     end
   end
