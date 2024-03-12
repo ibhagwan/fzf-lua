@@ -378,16 +378,15 @@ M.defaults.oldfiles             = {
 }
 
 M.defaults.quickfix             = {
-  previewer         = M._default_previewer_fn,
-  prompt            = "Quickfix> ",
-  separator         = "▏",
-  file_icons        = true and M._has_devicons,
-  color_icons       = true,
-  git_icons         = false,
-  fzf_opts          = { ["--multi"] = true },
-  _fzf_nth_devicons = true,
-  _actions          = function() return M.globals.actions.files end,
-  only_valid        = false,
+  previewer   = M._default_previewer_fn,
+  prompt      = "Quickfix> ",
+  separator   = "▏",
+  file_icons  = true and M._has_devicons,
+  color_icons = true,
+  git_icons   = false,
+  fzf_opts    = { ["--multi"] = true },
+  _actions    = function() return M.globals.actions.files end,
+  only_valid  = false,
 }
 
 M.defaults.quickfix_stack       = {
@@ -940,7 +939,7 @@ M.defaults.dap                  = {
 }
 
 M.defaults.complete_path        = {
-  cmd               = nil,      -- default: auto detect fd|rg|find
+  cmd               = nil, -- default: auto detect fd|rg|find
   file_icons        = false,
   git_icons         = false,
   color_icons       = true,
@@ -951,7 +950,7 @@ M.defaults.complete_path        = {
 }
 
 M.defaults.complete_file        = {
-  cmd               = nil,      -- default: auto detect rg|fd|find
+  cmd               = nil, -- default: auto detect rg|fd|find
   multiprocess      = true,
   file_icons        = true and M._has_devicons,
   color_icons       = true,
