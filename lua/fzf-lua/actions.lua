@@ -133,7 +133,10 @@ M.vimcmd_file = function(vimcmd, selected, opts, pcall_vimcmd)
           -- force full paths when `autochdir=true` (#882)
           relpath = fullpath
         end
-        local cmd = vimcmd .. " " .. vim.fn.fnameescape(relpath)
+        -- we normalize the path or Windows will fail with directories starting
+        -- with special characters, for example "C:\app\(web)" will be traslated
+        -- by neovim to "c:\app(web)" (#1082)
+        local cmd = vimcmd .. " " .. vim.fn.fnameescape(path.normalize(relpath))
         if pcall_vimcmd then
           pcall(vim.cmd, cmd)
         else
