@@ -283,6 +283,15 @@ function M.normalize_opts(opts, globals, __resume_key)
     if v == "" then opts.fzf_opts[k] = true end
   end
 
+  -- Disable devicons if not available
+  opts.file_icons = utils.__HAS_DEVICONS and opts.file_icons or nil
+
+  -- Execlude file icons from the fuzzy matching (#1080)
+  if opts.file_icons and opts._fzf_nth_devicons and not opts.fzf_opts["--delimiter"] then
+    opts.fzf_opts["--nth"] = opts.fzf_opts["--nth"] or "-1.."
+    opts.fzf_opts["--delimiter"] = string.format("[%s]", utils.nbsp)
+  end
+
   -- prioritize fzf-tmux split pane flags over the
   -- popup flag `-p` from fzf-lua defaults (#865)
   opts._is_fzf_tmux_popup = true

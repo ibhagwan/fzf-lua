@@ -203,6 +203,7 @@ M.defaults.files                = {
   cwd_prompt_shorten_len = 32,
   cwd_prompt_shorten_val = 1,
   fzf_opts               = { ["--info"] = "default", ["--multi"] = true },
+  _fzf_nth_devicons      = true,
   git_status_cmd         = {
     "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" },
   find_opts              = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
@@ -218,30 +219,32 @@ M.defaults.files                = {
 -- so we can reference 'M.globals.files'
 M.defaults.git                  = {
   files = {
-    previewer    = M._default_previewer_fn,
-    prompt       = "GitFiles> ",
-    cmd          = "git ls-files --exclude-standard",
-    multiprocess = true,
-    file_icons   = true and M._has_devicons,
-    color_icons  = true,
-    git_icons    = true,
-    fzf_opts     = { ["--multi"] = true },
-    _actions     = function() return M.globals.actions.files end,
-    winopts      = { preview = { winopts = { cursorline = false } } },
+    previewer         = M._default_previewer_fn,
+    prompt            = "GitFiles> ",
+    cmd               = "git ls-files --exclude-standard",
+    multiprocess      = true,
+    file_icons        = true and M._has_devicons,
+    color_icons       = true,
+    git_icons         = true,
+    fzf_opts          = { ["--multi"] = true },
+    _fzf_nth_devicons = true,
+    _actions          = function() return M.globals.actions.files end,
+    winopts           = { preview = { winopts = { cursorline = false } } },
   },
   status = {
-    prompt       = "GitStatus> ",
+    prompt            = "GitStatus> ",
     -- override `color.status=always`, techincally not required
     -- since we now also call `utils.strip_ansi_coloring` (#706)
-    cmd          = "git -c color.status=false --no-optional-locks status --porcelain=v1 -u",
-    previewer    = "git_diff",
-    multiprocess = true,
-    file_icons   = true and M._has_devicons,
-    color_icons  = true,
-    git_icons    = true,
-    fzf_opts     = { ["--multi"] = true },
-    _actions     = function() return M.globals.actions.files end,
-    actions      = {
+    cmd               = "git -c color.status=false --no-optional-locks status --porcelain=v1 -u",
+    previewer         = "git_diff",
+    multiprocess      = true,
+    file_icons        = true and M._has_devicons,
+    color_icons       = true,
+    git_icons         = true,
+    fzf_opts          = { ["--multi"] = true },
+    _fzf_nth_devicons = true,
+    _actions          = function() return M.globals.actions.files end,
+    actions           = {
       ["right"]  = { fn = actions.git_unstage, reload = true },
       ["left"]   = { fn = actions.git_stage, reload = true },
       ["ctrl-x"] = { fn = actions.git_reset, reload = true },
@@ -350,38 +353,41 @@ M.defaults.grep                 = {
 }
 
 M.defaults.args                 = {
-  previewer   = M._default_previewer_fn,
-  prompt      = "Args> ",
-  files_only  = true,
-  file_icons  = true and M._has_devicons,
-  color_icons = true,
-  git_icons   = true,
-  fzf_opts    = { ["--multi"] = true },
-  _actions    = function() return M.globals.actions.files end,
-  actions     = { ["ctrl-x"] = { fn = actions.arg_del, reload = true } },
+  previewer         = M._default_previewer_fn,
+  prompt            = "Args> ",
+  files_only        = true,
+  file_icons        = true and M._has_devicons,
+  color_icons       = true,
+  git_icons         = true,
+  fzf_opts          = { ["--multi"] = true },
+  _fzf_nth_devicons = true,
+  _actions          = function() return M.globals.actions.files end,
+  actions           = { ["ctrl-x"] = { fn = actions.arg_del, reload = true } },
 }
 
 M.defaults.oldfiles             = {
-  previewer   = M._default_previewer_fn,
-  prompt      = "History> ",
-  file_icons  = true and M._has_devicons,
-  color_icons = true,
-  git_icons   = false,
-  stat_file   = true,
-  fzf_opts    = { ["--tiebreak"] = "index", ["--multi"] = true },
-  _actions    = function() return M.globals.actions.files end,
+  previewer         = M._default_previewer_fn,
+  prompt            = "History> ",
+  file_icons        = true and M._has_devicons,
+  color_icons       = true,
+  git_icons         = false,
+  stat_file         = true,
+  fzf_opts          = { ["--tiebreak"] = "index", ["--multi"] = true },
+  _fzf_nth_devicons = true,
+  _actions          = function() return M.globals.actions.files end,
 }
 
 M.defaults.quickfix             = {
-  previewer   = M._default_previewer_fn,
-  prompt      = "Quickfix> ",
-  separator   = "▏",
-  file_icons  = true and M._has_devicons,
-  color_icons = true,
-  git_icons   = false,
-  fzf_opts    = { ["--multi"] = true },
-  _actions    = function() return M.globals.actions.files end,
-  only_valid  = false,
+  previewer         = M._default_previewer_fn,
+  prompt            = "Quickfix> ",
+  separator         = "▏",
+  file_icons        = true and M._has_devicons,
+  color_icons       = true,
+  git_icons         = false,
+  fzf_opts          = { ["--multi"] = true },
+  _fzf_nth_devicons = true,
+  _actions          = function() return M.globals.actions.files end,
+  only_valid        = false,
 }
 
 M.defaults.quickfix_stack       = {
@@ -424,6 +430,7 @@ M.defaults.buffers              = {
   cwd_only              = false,
   cwd                   = nil,
   fzf_opts              = { ["--tiebreak"] = "index", ["--multi"] = true },
+  _fzf_nth_devicons     = true,
   _actions              = function() return M.globals.actions.buffers end,
   actions               = { ["ctrl-x"] = { fn = actions.buf_del, reload = true } },
   _cached_hls           = { "buf_nr", "buf_flag_cur", "buf_flag_alt" },
@@ -933,26 +940,28 @@ M.defaults.dap                  = {
 }
 
 M.defaults.complete_path        = {
-  cmd          = nil, -- default: auto detect fd|rg|find
-  file_icons   = false,
-  git_icons    = false,
-  color_icons  = true,
-  multiprocess = true,
-  fzf_opts     = { ["--no-multi"] = true },
-  actions      = { ["default"] = actions.complete },
+  cmd               = nil,      -- default: auto detect fd|rg|find
+  file_icons        = false,
+  git_icons         = false,
+  color_icons       = true,
+  multiprocess      = true,
+  fzf_opts          = { ["--no-multi"] = true },
+  _fzf_nth_devicons = true,
+  actions           = { ["default"] = actions.complete },
 }
 
 M.defaults.complete_file        = {
-  cmd          = nil, -- default: auto detect rg|fd|find
-  multiprocess = true,
-  file_icons   = true and M._has_devicons,
-  color_icons  = true,
-  git_icons    = false,
-  _actions     = function() return M.globals.actions.files end,
-  actions      = { ["default"] = actions.complete },
-  previewer    = M._default_previewer_fn,
-  winopts      = { preview = { hidden = "hidden" } },
-  fzf_opts     = { ["--no-multi"] = true },
+  cmd               = nil,      -- default: auto detect rg|fd|find
+  multiprocess      = true,
+  file_icons        = true and M._has_devicons,
+  color_icons       = true,
+  git_icons         = false,
+  _actions          = function() return M.globals.actions.files end,
+  actions           = { ["default"] = actions.complete },
+  previewer         = M._default_previewer_fn,
+  winopts           = { preview = { hidden = "hidden" } },
+  fzf_opts          = { ["--no-multi"] = true },
+  _fzf_nth_devicons = true,
 }
 
 M.defaults.complete_line        = { complete = true }
