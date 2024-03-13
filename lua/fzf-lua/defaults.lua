@@ -429,7 +429,6 @@ M.defaults.buffers              = {
   cwd_only              = false,
   cwd                   = nil,
   fzf_opts              = { ["--tiebreak"] = "index", ["--multi"] = true },
-  _fzf_nth_devicons     = true,
   _actions              = function() return M.globals.actions.buffers end,
   actions               = { ["ctrl-x"] = { fn = actions.buf_del, reload = true } },
   _cached_hls           = { "buf_nr", "buf_flag_cur", "buf_flag_alt" },
