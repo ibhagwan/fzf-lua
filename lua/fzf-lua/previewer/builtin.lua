@@ -408,10 +408,10 @@ function Previewer.buffer_or_file:should_clear_preview(_)
 end
 
 function Previewer.buffer_or_file:should_load_buffer(entry)
-  -- we don't have a previous entry to compare to
-  -- return 'true' so the buffer will be loaded in
-  -- ::populate_preview_buf
-  if not self.loaded_entry then return true end
+  -- we don't have a previous entry to compare to or `do_not_cache` is set meaning
+  -- it's a terminal command (chafa, viu, ueberzug) which requires a reload
+  -- return 'true' so the buffer will be loaded in ::populate_preview_buf
+  if not self.loaded_entry or self.loaded_entry.do_not_cache then return true end
   if type(entry) == "string" then
     entry = self:parse_entry(entry)
   end
