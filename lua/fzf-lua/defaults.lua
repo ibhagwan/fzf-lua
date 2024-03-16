@@ -597,6 +597,7 @@ M.defaults.helptags             = {
     ["--no-multi"]  = true,
     ["--delimiter"] = "[ ]",
     ["--with-nth"]  = "..-2",
+    ["--tiebreak"]  = "begin",
   },
   previewer = {
     _ctor = previewers.builtin.help_tags,
