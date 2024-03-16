@@ -294,26 +294,16 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   if not opts.is_fzf_tmux then
     vim.cmd [[set ft=fzf]]
 
-    -- terminal behavior seems to have changed after the introduction
-    -- of 'nt' mode (terminal-normal mode) which is included in 0.6
     -- https://github.com/neovim/neovim/pull/15878
-    -- Preferably I'd like to check if the vim patch is included using
-    --   vim.fn.has('patch-8.2.3461')
-    -- but this doesn't work for vim patches > 8.1 as explained in:
-    -- https://github.com/neovim/neovim/issues/9635
-    -- However, since this patch was included in 0.6 we can test
-    -- for neovim version 0.6
-    -- Beats me why 'nvim_get_mode().mode' still returns 'nt' even
-    -- after we're clearly in insert mode or why `:startinsert`
-    -- won't change the mode from 'nt' to 't' so we use feedkeys()
-    -- instead.
-    -- This "retires" 'actions.ensure_insert_mode' and solves the
-    -- issue of calling an fzf-lua mapping from insert mode (#429)
-
-    if vim.fn.has("nvim-0.6") == 1 and vim.api.nvim_get_mode().mode ~= "i" then
-      vim.cmd([[noautocmd lua vim.api.nvim_feedkeys(]]
-        .. [[vim.api.nvim_replace_termcodes("<Esc>i", true, false, true)]]
-        .. [[, 'n', true)]])
+    -- Since patch-8.2.3461 which was released with 0.6 neovim distinguishes between
+    -- Normal mode and Terminal-Normal mode. However, this seems to have also introduced
+    -- a bug with `startinsert`: When fzf-lua reuses interfaces (e.g. called from "builtin"
+    -- or grep<->live_grep toggle) the current mode will be "t" which is Terminal (INSERT)
+    -- mode but our interface is still opened in NORMAL mode, either `startinsert` is not
+    -- working (as it's technically already in INSERT) or creating a new terminal buffer
+    -- within the same window starts in NORMAL mode while returning the wrong `nvim_get_mode
+    if utils.__HAS_NVIM_06 and vim.api.nvim_get_mode().mode == "t" then
+      utils.feed_keys_termcodes("i")
     else
       vim.cmd [[startinsert]]
     end

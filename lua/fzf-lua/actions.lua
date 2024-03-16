@@ -429,32 +429,6 @@ M.toggle_bg = function(_, _)
   utils.info(string.format([[background set to "%s"]], vim.o.background))
 end
 
-M.ensure_insert_mode = function()
-  -- not sure what is causing this, tested with
-  -- 'NVIM v0.6.0-dev+575-g2ef9d2a66'
-  -- vim.cmd("startinsert") doesn't start INSERT mode
-  -- 'mode' returns { blocking = false, mode = "t" }
-  -- manually input 'i' seems to workaround this issue
-  -- **only if fzf term window was succefully opened (#235)
-  -- this is only required after the 'nt' (normal-terminal)
-  -- mode was introduced along with the 'ModeChanged' event
-  -- https://github.com/neovim/neovim/pull/15878
-  -- https://github.com/neovim/neovim/pull/15840
-  -- local has_mode_nt = not vim.tbl_isempty(
-  --   vim.fn.getcompletion('ModeChanged', 'event'))
-  --   or vim.fn.has('nvim-0.6') == 1
-  -- if has_mode_nt then
-  --   local mode = vim.api.nvim_get_mode()
-  --   local wininfo = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1]
-  --   if vim.bo.ft == 'fzf'
-  --     and wininfo.terminal == 1
-  --     and mode and mode.mode == 't' then
-  --     vim.cmd[[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
-  --   end
-  -- end
-  utils.warn("calling 'ensure_insert_mode' is no longer required and can be safely omitted.")
-end
-
 M.run_builtin = function(selected)
   local method = selected[1]
   pcall(loadstring(string.format("require'fzf-lua'.%s()", method)))
