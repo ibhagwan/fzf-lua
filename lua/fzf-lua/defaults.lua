@@ -1,11 +1,12 @@
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
+local devicons = require "fzf-lua.devicons"
 local previewers = require "fzf-lua.previewer"
 
 local M = {}
 
-M._has_devicons = utils.__HAS_DEVICONS
+M._has_devicons = devicons.plugin_loaded()
 
 function M._default_previewer_fn()
   local previewer = M.globals.default_previewer or M.globals.winopts.preview.default

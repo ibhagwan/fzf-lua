@@ -17,13 +17,6 @@ M.__IS_WINDOWS = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 -- `:help shellslash` (for more info see #1055)
 M.__WIN_HAS_SHELLSLASH = M.__IS_WINDOWS and vim.fn.exists("+shellslash")
 
-
--- limit devicons support to nvim >=0.8, although official support is >=0.7
--- running setup on 0.7 errs with "W18: Invalid character in group name"
-if M.__HAS_NVIM_08 then
-  M.__HAS_DEVICONS = pcall(require, "nvim-web-devicons")
-end
-
 function M.__FILE__() return debug.getinfo(2, "S").source end
 
 function M.__LINE__() return debug.getinfo(2, "l").currentline end
