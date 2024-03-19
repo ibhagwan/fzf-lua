@@ -708,7 +708,7 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
         _is_win and [[set VIMRUNTIME=%s& ]] or "VIMRUNTIME=%s ",
         _is_win and vim.fs.normalize(vim.env.VIMRUNTIME) or M.shellescape(vim.env.VIMRUNTIME)
       )
-  local lua_cmd = ("lua loadfile([[%s]])().spawn_stdio(%s,%s,%s)")
+  local lua_cmd = ("lua vim.g.did_load_filetypes=1; loadfile([[%s]])().spawn_stdio(%s,%s,%s)")
       :format(
         _is_win and vim.fs.normalize(__FILE__) or __FILE__,
         opts, fn_transform, fn_preprocess

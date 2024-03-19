@@ -130,7 +130,7 @@ if [ $# -gt 0 ]; then
 fi
 
 VIMRUNTIME=/usr/share/nvim/runtime \
-/usr/bin/nvim -n --headless --clean --cmd "lua loadfile(
+/usr/bin/nvim -n --headless --clean --cmd "lua vim.g.did_load_filetypes=1; loadfile(
   [[${BASEDIR}/../lua/fzf-lua/libuv.lua]])().spawn_stdio(
   -- opts
   {
