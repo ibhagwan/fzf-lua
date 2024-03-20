@@ -672,9 +672,9 @@ local function gen_sym2style_map(opts)
     -- style==2: "<icon>"
     -- style==3: "<kind>"
     local s = nil
-    if tonumber(opts.symbol_style) == 1 and config._has_devicons then
+    if tonumber(opts.symbol_style) == 1 then
       s = ("%s %s"):format(icon, kind)
-    elseif tonumber(opts.symbol_style) == 2 and config._has_devicons then
+    elseif tonumber(opts.symbol_style) == 2 then
       s = icon
     elseif tonumber(opts.symbol_style) == 3 then
       s = kind
