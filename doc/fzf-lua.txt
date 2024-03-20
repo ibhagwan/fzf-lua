@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 March 17
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 March 20
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -39,7 +39,7 @@ FZF :HEART: LUA                                      *fzf-lua-fzf-:heart:-lua*
 Neovim version
 <https://img.shields.io/badge/Neovim-0.5-57A143?style=flat-square&logo=neovim>
 
-Quickstart <#quickstart> •Installation <#installation> • Usage <#usage>
+Quickstart <#quickstart> • Installation <#installation> • Usage <#usage>
 • Commands <#commands> • Customization <#customization> • Wiki
 <https://github.com/ibhagwan/fzf-lua/wiki>
 
