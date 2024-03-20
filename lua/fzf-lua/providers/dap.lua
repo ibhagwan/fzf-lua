@@ -101,9 +101,10 @@ M.breakpoints = function(opts)
         for _, b in ipairs(bps) do
           vim.schedule(function()
             local entry = make_entry.lcol(b, opts)
-            entry = string.format("[%s] %s",
+            entry = string.format("[%s]%s%s",
               -- tostring(opts._locations[i].bufnr),
               utils.ansi_codes.yellow(tostring(b.bufnr)),
+              utils.nbsp,
               make_entry.file(entry, opts))
             cb(entry, function()
               coroutine.resume(co)
