@@ -192,6 +192,7 @@ M.diagnostics = function(opts)
               local diag_entry = preprocess_diag(diag, bufnr)
               if diag_entry == nil then
                 coroutine.resume(co)
+                return
               end
               local entry = make_entry.lcol(diag_entry, opts)
               entry = make_entry.file(entry, opts)
