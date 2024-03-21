@@ -873,6 +873,10 @@ function FzfWin:create()
 
   self:reset_win_highlights(self.fzf_winid)
 
+  -- potential workarond for `<C-c>` freezing neovim (#1091)
+  -- https://github.com/neovim/neovim/issues/20726
+  vim.wo[self.fzf_winid].foldmethod = "manual"
+
   if self.winopts.on_create and
       type(self.winopts.on_create) == "function" then
     self.winopts.on_create()
