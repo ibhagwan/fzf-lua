@@ -196,7 +196,7 @@ local sel_to_qf = function(selected, opts, is_loclist)
     local file = path.entry_to_file(selected[i], opts)
     local text = selected[i]:match(":%d+:%d?%d?%d?%d?:?(.*)$")
     table.insert(qf_list, {
-      filename = file.bufname or file.path,
+      filename = file.bufname or file.path or file.uri,
       lnum = file.line,
       col = file.col,
       text = text,
