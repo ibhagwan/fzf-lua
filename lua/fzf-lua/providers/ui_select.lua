@@ -74,12 +74,6 @@ M.ui_select = function(items, ui_opts, on_choice)
     kind = "quickfix",
     title = "Mark `mymainmenu` as defined global."
   } } ]]
-  -- exit visual mode if needed
-  local mode = vim.api.nvim_get_mode()
-  if not mode.mode:match("^n") then
-    utils.feed_keys_termcodes("<Esc>")
-  end
-
   local entries = {}
   for i, e in ipairs(items) do
     table.insert(entries,
