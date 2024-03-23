@@ -347,16 +347,6 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- backward compat copy due to the migration of `winopts.hl` -> `hls`
   opts.hls = vim.tbl_deep_extend("keep", opts.hls or {}, M.globals.__HLS)
 
-  -- Cache provider specific highlights so we don't call vim functions
-  -- within a "fast event" (`vim.in_fast_event()`) and err with:
-  -- E5560: vimL function must not be called in a lua loop callback
-  for _, hl_opt in ipairs(opts._cached_hls or {}) do
-    local hlgroup = opts.hls[hl_opt]
-    assert(hlgroup ~= nil) -- must exist
-    local _, escseq = utils.ansi_from_hl(hlgroup)
-    utils.cache_ansi_escseq(hlgroup, escseq)
-  end
-
   if type(opts.previewer) == "function" then
     -- we use a function so the user can override
     -- globals.winopts.preview.default
@@ -456,6 +446,24 @@ function M.normalize_opts(opts, globals, __resume_key)
     opts._tmux_columns = tonumber(out:match("%d+"))
     opts.winopts.split = nil
   end
+
+  -- refresh highlights if background/colorscheme changed (#1092)
+  if not M.__HLS_STATE
+      or M.__HLS_STATE.bg ~= vim.o.bg
+      or M.__HLS_STATE.colorscheme ~= vim.g.colors_name then
+    utils.setup_highlights()
+  end
+
+  -- Cache provider specific highlights so we don't call vim functions
+  -- within a "fast event" (`vim.in_fast_event()`) and err with:
+  -- E5560: vimL function must not be called in a lua loop callback
+  for _, hl_opt in ipairs(opts._cached_hls or {}) do
+    local hlgroup = opts.hls[hl_opt]
+    assert(hlgroup ~= nil) -- must exist
+    local _, escseq = utils.ansi_from_hl(hlgroup)
+    utils.cache_ansi_escseq(hlgroup, escseq)
+  end
+
 
   if devicons.plugin_loaded() then
     -- refresh icons, does nothing if "vim.o.bg" didn't change

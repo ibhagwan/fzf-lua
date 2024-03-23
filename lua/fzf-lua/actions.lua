@@ -401,7 +401,7 @@ M.colorscheme = function(selected, opts)
     opts._apply_awesome_theme(dbkey, idx, opts)
   else
     local colorscheme = selected[1]:match("^[^:]+")
-    pcall(vim.cmd.colorscheme, colorscheme)
+    pcall(function() vim.cmd("colorscheme " .. colorscheme) end)
   end
 end
 
@@ -690,7 +690,7 @@ M.git_reset = function(selected, opts)
         or path.git_cwd({ "git", "checkout", "HEAD", "--" }, opts)
     git_exec({ s }, opts, cmd)
     -- trigger autoread or warn the users buffer(s) was changed
-    vim.cmd.checktime()
+    vim.cmd("checktime")
   end
 end
 
@@ -704,7 +704,7 @@ M.git_stash_pop = function(selected, opts)
     local cmd = path.git_cwd({ "git", "stash", "pop" }, opts)
     git_exec(selected, opts, cmd)
     -- trigger autoread or warn the users buffer(s) was changed
-    vim.cmd.checktime()
+    vim.cmd("checktime")
   end
 end
 
@@ -713,7 +713,7 @@ M.git_stash_apply = function(selected, opts)
     local cmd = path.git_cwd({ "git", "stash", "apply" }, opts)
     git_exec(selected, opts, cmd)
     -- trigger autoread or warn the users buffer(s) was changed
-    vim.cmd.checktime()
+    vim.cmd("checktime")
   end
 end
 

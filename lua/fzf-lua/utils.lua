@@ -731,8 +731,9 @@ function M.reset_info()
   pcall(loadstring("require'fzf-lua'.set_info(nil)"))
 end
 
-function M.setup_highlights()
-  pcall(loadstring("require'fzf-lua'.setup_highlights()"))
+function M.setup_highlights(override)
+  pcall(loadstring(string.format(
+    "require'fzf-lua'.setup_highlights(%s)", override and "true" or "")))
 end
 
 ---@param fname string

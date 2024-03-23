@@ -39,6 +39,9 @@ local M = {}
 
 -- Setup fzf-lua's highlights, use `override=true` to reset all highlights
 function M.setup_highlights(override)
+  local is_light = vim.o.bg == "light"
+  local bg_changed = config.__HLS_STATE and config.__HLS_STATE.bg ~= vim.o.bg
+  config.__HLS_STATE = { colorscheme = vim.g.colors_name, bg = vim.o.bg }
   -- we use `default = true` so calling this function doesn't override the colorscheme
   local default = not override
   local highlights = {
@@ -58,22 +61,39 @@ function M.setup_highlights(override)
     { "FzfLuaScrollBorderFull",  "scrollborder_f", { default = default, link = "FzfLuaBorder" } },
     { "FzfLuaScrollFloatEmpty",  "scrollfloat_e",  { default = default, link = "PmenuSbar" } },
     { "FzfLuaScrollFloatFull",   "scrollfloat_f",  { default = default, link = "PmenuThumb" } },
-    -- Fzf terminal hls, colors from `vim.api.nvim_get_color_map()`
-    { "FzfLuaHeaderBind",        "header_bind",    { default = default, fg = "BlanchedAlmond" } },
-    { "FzfLuaHeaderText",        "header_text",    { default = default, fg = "Brown1" } },
-    -- Provider specific highlights
-    { "FzfLuaBufName",           "buf_name",       { default = default, fg = "LightMagenta" } },
-    { "FzfLuaBufNr",             "buf_nr",         { default = default, fg = "BlanchedAlmond" } },
-    { "FzfLuaBufLineNr",         "buf_linenr",     { default = default, fg = "MediumSpringGreen" } },
-    { "FzfLuaBufFlagCur",        "buf_flag_cur",   { default = default, fg = "Brown1" } },
-    { "FzfLuaBufFlagAlt",        "buf_flag_alt",   { default = default, fg = "CadetBlue1" } },
-    { "FzfLuaTabTitle",          "tab_title",      { default = default, fg = "LightSkyBlue1", bold = true } },
-    { "FzfLuaTabMarker",         "tab_marker",     { default = default, fg = "BlanchedAlmond", bold = true } },
     { "FzfLuaDirIcon",           "dir_icon",       { default = default, link = "Directory" } },
-    { "FzfLuaLiveSym",           "live_sym",       { default = default, fg = "Brown1" } },
+    -- Fzf terminal hls, colors from `vim.api.nvim_get_color_map()`
+    { "FzfLuaHeaderBind", "header_bind",
+      { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond" } },
+    { "FzfLuaHeaderText", "header_text",
+      { default = default, fg = is_light and "Brown4" or "Brown1" } },
+    { "FzfLuaLiveSym", "live_sym",
+      { default = default, fg = is_light and "Brown4" or "Brown1" } },
+    -- Provider specific highlights
+    { "FzfLuaBufName", "buf_name",        -- lines|blines (hidden)
+      { default = default, fg = is_light and "DarkOrchid3" or "LightMagenta" } },
+    { "FzfLuaBufLineNr", "buf_linenr",    -- lines|blines
+      { default = default, fg = is_light and "MediumSpringGreen" or "MediumSpringGreen" } },
+    { "FzfLuaBufNr", "buf_nr",            -- buffers|tabs|lines|blines
+      { default = default, fg = is_light and "AquaMarine3" or "BlanchedAlmond" } },
+    { "FzfLuaBufFlagCur", "buf_flag_cur", -- buffers|tabs
+      { default = default, fg = is_light and "Brown4" or "Brown1" } },
+    { "FzfLuaBufFlagAlt", "buf_flag_alt", -- buffers|tabs
+      { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" } },
+    { "FzfLuaTabTitle", "tab_title",      -- tabs
+      { default = default, fg = is_light and "CadetBlue4" or "LightSkyBlue1", bold = true } },
+    { "FzfLuaTabMarker", "tab_marker",    -- tabs
+      { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond", bold = true } },
   }
   for _, a in ipairs(highlights) do
     local hl_name, _, hl_def = a[1], a[2], a[3]
+    -- If color was a linked colormap and bg changed set definition to override
+    if hl_def.fg and bg_changed then
+      local fg_current = vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl_name)), "fg")
+      if fg_current and not fg_current:match("^#") and fg_current ~= hl_def.fg then
+        hl_def.default = false
+      end
+    end
     if utils.__HAS_NVIM_07 then
       vim.api.nvim_set_hl(0, hl_name, hl_def)
     else

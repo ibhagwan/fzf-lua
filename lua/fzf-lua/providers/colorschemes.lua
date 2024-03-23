@@ -52,7 +52,7 @@ M.colorschemes = function(opts)
     opts.fzf_opts["--preview-window"] = "nohidden:right:0"
     opts.preview = shell.raw_action(function(sel)
       if opts.live_preview and sel then
-        vim.cmd.colorscheme(sel[1])
+        vim.cmd("colorscheme " .. sel[1])
         if type(opts.cb_preview) == "function" then
           opts.cb_preview(sel, opts)
         end
@@ -64,7 +64,7 @@ M.colorschemes = function(opts)
     -- reset color scheme if live_preview is enabled
     -- and nothing or non-default action was selected
     if opts.live_preview and (not selected or #selected[1] > 0) then
-      vim.cmd.colorscheme(current_colorscheme)
+      vim.cmd("colorscheme " .. current_colorscheme)
       vim.o.background = current_background
     end
 
@@ -345,7 +345,7 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
   assert(tonumber(idx) > 0, "colorscheme index is invalid")
   local cs = p.colorschemes[tonumber(idx)]
   -- TODO: should we check `package.loaded[...]` before packadd?
-  local ok, out = pcall(vim.cmd.packadd, p.dir)
+  local ok, out = pcall(function() vim.cmd("packadd " .. p.dir) end)
   if not ok then
     utils.warn(string.format("Unable to packadd  %s: %s", p.dir, tostring(out)))
     return
@@ -355,7 +355,7 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
   elseif cs.lua then
     ok, out = pcall(function() loadstring(cs.lua)() end)
   else
-    ok, out = pcall(vim.cmd.colorscheme, cs.name)
+    ok, out = pcall(function() vim.cmd("colorscheme " .. cs.name) end)
   end
   if not ok then
     utils.warn(string.format("Unable to apply colorscheme %s: %s", cs.disp_name, tostring(out)))
@@ -474,7 +474,7 @@ M.awesome_colorschemes = function(opts)
             opts.cb_preview(sel, opts)
           end
         else
-          vim.cmd.colorscheme(opts._cur_colorscheme)
+          vim.cmd("colorscheme " .. opts._cur_colorscheme)
           vim.o.background = opts._cur_background
         end
       end
@@ -504,7 +504,7 @@ M.awesome_colorschemes = function(opts)
     -- reset color scheme if live_preview is enabled
     -- and nothing or non-default action was selected
     if o.live_preview and (not sel or #sel[1] > 0) then
-      vim.cmd.colorscheme(o._cur_colorscheme)
+      vim.cmd("colorscheme " .. o._cur_colorscheme)
       vim.o.background = o._cur_background
     end
 
