@@ -99,6 +99,10 @@ return {
     ["--layout"] = false,
   },
   fzf_colors = (function()
+    if type(vim.g.fzf_colors) ~= "table" then
+      return vim.g.fzf_colors
+    end
+
     return vim.tbl_map(function(v)
       local new_v = { v[1], { v[2] } }
       for i = 3, #v do
