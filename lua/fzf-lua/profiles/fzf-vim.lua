@@ -105,7 +105,7 @@ return {
         table.insert(new_v[2], v[i])
       end
       return new_v
-    end, vim.g.fzf_colors)
+    end, type(vim.g.fzf_colors) == "table" and vim.g.fzf_colors or {})
   end)(),
   keymap = {
     builtin = {
