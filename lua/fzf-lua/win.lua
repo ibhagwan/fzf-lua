@@ -942,7 +942,7 @@ function FzfWin:close(fzf_bufnr)
     pcall(vim.api.nvim_win_close, self.fzf_winid, true)
   end
   if self.fzf_bufnr and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
-    vim.api.nvim_buf_delete(self.fzf_bufnr, { force = true })
+    util.nvim_buf_delete(self.fzf_bufnr, { force = true })
   end
   -- when using `split = "belowright new"` closing the fzf
   -- window may not always return to the correct source win
