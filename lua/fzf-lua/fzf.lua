@@ -266,6 +266,23 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       ["SHELL"] = shell_cmd[1],
       ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
       ["SKIM_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
+      ["FZF_DEFAULT_OPTS"] = (function()
+        -- Newer style `--preview-window` options in FZF_DEFAULT_OPTS such as:
+        --   --preview-window "right,50%,hidden,<60(up,70%,hidden)"
+        -- prevents our previewer from working properly, since there is never
+        -- a reason to inherit `preview-window` options it can be safely stripped
+        -- from FZF_DEFAULT_OPTS (#1107)
+        local default_opts = os.getenv("FZF_DEFAULT_OPTS")
+        if not default_opts then return end
+        local patterns = { "--preview-window" }
+        for _, p in ipairs(patterns) do
+          -- remove flag end of string
+          default_opts = default_opts:gsub(utils.lua_regex_escape(p) .. "[=%s]+[^%-]+%s-$", "")
+          -- remove flag start/mid of string
+          default_opts = default_opts:gsub(utils.lua_regex_escape(p) .. "[=%s]+.-%s+%-%-", " --")
+        end
+        return default_opts
+      end)()
     },
     on_exit = function(_, rc, _)
       local output = {}
