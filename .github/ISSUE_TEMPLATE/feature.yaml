@@ -1,0 +1,26 @@
+name: 💡 Feature Request
+description: Suggest a new feature or improvement
+labels: [feature request]
+title: "Feature: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before submitting a feature request, please make sure to search the [Issues](https://github.com/ibhagwan/fzf-lua/issues)/[Discussions](https://github.com/ibhagwan/fzf-lua/discussions) and read the [Wiki](https://github.com/ibhagwan/fzf-lua/wiki) including the [Advanced section](https://github.com/ibhagwan/fzf-lua/wiki/Advanced) (if relevant)**
+
+        Many esoteric and lesser known options can be found by searching the above links, if you still have questions after that please use the [Discussions page](https://github.com/ibhagwan/fzf-lua/discussions), rest assured I will answer your quesion in the same priority as if it was an issue.
+  - type: checkboxes
+    attributes:
+      label: Have you RTFM'd?
+      description: Please search the issues/discussions and read the Wiki first
+      options:
+        - label: I have done proper research
+          required: true
+  - type: textarea
+    id: feature
+    attributes:
+      label: Feature Request
+      description: |-
+        Please describe your request with as much details as you can. Helpful examples can include how your request works in other plugins/software as well as links to discussions/issues and implementation details if such exist.
+    validations:
+      required: true

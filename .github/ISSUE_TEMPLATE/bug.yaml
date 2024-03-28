@@ -1,0 +1,88 @@
+name: 🐞 Bug Report
+description: File a bug/issue
+labels: [bug]
+title: "Bug: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before submitting an issue, please make sure to search the [Issues](https://github.com/ibhagwan/fzf-lua/issues)/[Discussions](https://github.com/ibhagwan/fzf-lua/discussions) and read the [Wiki](https://github.com/ibhagwan/fzf-lua/wiki) including the [Advanced section](https://github.com/ibhagwan/fzf-lua/wiki/Advanced) (if relevant)**
+
+        Many esoteric and lesser known options can be found by searching the above links, if you still have questions after that please use the [Discussions page](https://github.com/ibhagwan/fzf-lua/discussions), rest assured I will answer your quesion in the same priority as if it was an issue.
+  - type: checkboxes
+    attributes:
+      label: RTFM Checklist
+      description: |-
+        Please make sure to search the issues first and check only the relevant boxes below, if you don't think your issue is relevant to the Wiki/Advanced API or you aren't well versed in `fzf` (or unsure what that means) do not check these boxes, this mostly helps me understand where you're coming from so I can better assist you when troubleshooting.
+      options:
+        - label: I have searched exisiting issues / discussions
+          required: true
+        - label: I have read the Wiki including the Advanced section
+          required: false
+        - label: I have read `man fzf` / I am well versed in shell fzf
+          required: false
+  - type: input
+    attributes:
+      label: "Operating system"
+      placeholder: "e.g. Linux, Windows, Mac, etc"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Shell"
+      placeholder: "e.g. bash, zsh, fish, etc"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Neovim version (`nvim --version`)"
+      placeholder: "NVIM v0.10.0-dev-2739+ge2224a793"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Fzf version (`fzf --version`)"
+      placeholder: "e.g. 0.48.1 (d579e33)"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Output of `:lua print(os.getenv('FZF_DEFAULT_OPTS'))`"
+      placeholder: "e.g. --layout=reverse ..."
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: "Is the problem reproducible with `mini.sh`?"
+      description: |-
+        **Please mark a single checbox from the below options.**
+        Unless you're on Windows, you can quickly test fzf-lua with minimal config in its own sandbox by running the below command in the shell:
+          ```sh
+          sh -c "$(curl -s https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/scripts/mini.sh)"
+          ```
+      options:
+        - label: My issue is reproducible with `mini.sh`
+          required: false
+        - label: My issue **IS NOT** reproducible with `mini.sh`
+          required: false
+        - label: I have not tested with `mini.sh` (not relevant, requires LSP, Windows, etc)
+          required: false
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Fzf-lua configuration
+      description: Fzf-lua setup options
+      render: lua
+      value: |-
+        ```lua
+        require('fzf-lua').setup({
+        })
+        ```
+  - type: textarea
+    attributes:
+      label: Describe the bug / steps to reproduce
+      description: |-
+        Please describe your issue with as much details as you can, let me know what you've tested and your findings, bonus points if you can provide reproduction steps / code as this will help me get to the solution faster.
+    validations:
+      required: true
