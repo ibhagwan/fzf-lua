@@ -342,6 +342,23 @@ M.fzf = function(contents, opts)
       opts.keymap.fzf = opts.keymap.fzf or {}
       opts.keymap.fzf["zero"] = previewer:zero()
     end
+    if opts.__FZF_VERSION
+        and opts.__FZF_VERSION >= 0.46
+        and opts.winopts.preview.layout == "flex"
+        and tonumber(opts.winopts.preview.flip_columns) > 0
+    then
+      local transformer = string.format(utils.__IS_WINDOWS
+        and "IF %%FZF_COLUMNS%% LEQ %d (echo change-preview-window:%s) "
+        .. "ELSE (echo change-preview-window:%s)"
+        or "[ $FZF_COLUMNS -le %d ] && echo change-preview-window:%s "
+        .. "|| echo change-preview-window:%s",
+        tonumber(opts.winopts.preview.flip_columns),
+        opts.winopts.preview.vertical,
+        opts.winopts.preview.horizontal)
+      opts.keymap = opts.keymap or {}
+      opts.keymap.fzf = opts.keymap.fzf or {}
+      opts.keymap.fzf["resize"] = string.format("transform(%s)", transformer)
+    end
     if type(previewer.preview_window) == "function" then
       -- do we need to override the preview_window args?
       -- this can happen with the builtin previewer
