@@ -1,0 +1,23 @@
+on: [push, pull_request, delete]
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    if: github.repository == 'ibhagwan/fzf-lua'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Sync remote repositories
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GIT_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          # Ignore hosts keys, since we accept them as-is
+          git config --global core.sshCommand 'ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+          # Codeberg
+          git remote add codeberg ssh://git@codeberg.org/ibhagwan/fzf-lua.git
+          git push --tags --force --prune codeberg 'refs/remotes/origin/*:refs/heads/*'
+          # GitLab
+          git remote add gitlab ssh://git@gitlab.com/ibhagwan/fzf-lua.git
+          git push --tags --force --prune gitlab 'refs/remotes/origin/*:refs/heads/*'
