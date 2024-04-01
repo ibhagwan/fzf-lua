@@ -341,8 +341,9 @@ M.fzf = function(contents, opts)
       opts.keymap = opts.keymap or {}
       opts.keymap.fzf = opts.keymap.fzf or {}
       opts.keymap.fzf["zero"] = previewer:zero()
-    end
-    if opts.__FZF_VERSION
+      -- Only enable flex layout native roitate if zero event wasn't
+      -- set as it's most likely set by the default builtin previewer
+    elseif opts.__FZF_VERSION
         and opts.__FZF_VERSION >= 0.46
         and opts.winopts.preview.layout == "flex"
         and tonumber(opts.winopts.preview.flip_columns) > 0
