@@ -536,7 +536,7 @@ end
 
 -- see $VIMRUNTIME/lua/vim/buf.lua:pick_call_hierarchy_item()
 local function gen_lsp_contents_call_hierarchy(opts)
-  local lsp_params = vim.lsp.util.make_position_params(core.CTX().winid)
+  local lsp_params = opts.lsp_params or vim.lsp.util.make_position_params(core.CTX().winid)
   local method = "textDocument/prepareCallHierarchy"
   local res, err = vim.lsp.buf_request_sync(0, method, lsp_params, 2000)
   if err then
@@ -620,6 +620,7 @@ M.finder = function(opts)
   if not opts then return end
   if opts.force_uri == nil then opts.force_uri = true end
   local contents = {}
+  local lsp_params = opts.lsp_params
   for _, p in ipairs(opts.providers) do
     local method = p[1]
     if not opts._providers[method] then
@@ -629,7 +630,7 @@ M.finder = function(opts)
       opts.no_autoclose = true
       opts.lsp_handler = handlers[method]
       opts.lsp_handler.capability = handler_capabilty(opts.lsp_handler)
-      opts.lsp_params = nil -- empty out previous calls params if existed
+      opts.lsp_params = lsp_params -- reset previous calls params if existed
 
       -- returns nil for no client attached, false for unsupported capability
       -- we only abort if no client is attached
