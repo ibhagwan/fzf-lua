@@ -1077,7 +1077,11 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
       local escaped_q = libuv.shellescape(libuv.escape_fzf(opts.query)):gsub("%%", "%%%%")
       opts.__fzf_init_cmd = initial_command:gsub(fzf_field_expression, escaped_q)
     end
-    opts.fzf_opts["--disabled"] = true
+    if opts.__FZF_VERSION >= 0.25 then
+      opts.fzf_opts["--disabled"] = true
+    else
+      opts.fzf_opts["--phony"] = true
+    end
     opts.fzf_opts["--query"] = opts.query
     -- OR with true to avoid fzf's "Command failed:" message
     if opts.silent_fail ~= false then
