@@ -899,7 +899,15 @@ require'fzf-lua'.setup {
       preview  = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
       actions  = {
         ["default"] = actions.git_switch,
+        ["ctrl-x"]  = { fn = actions.git_branch_del, reload = true },
+        ["ctrl-a"]  = { fn = actions.git_branch_add, field_index = "{q}", reload = true },
       },
+      -- If you wish to add branch and switch immediately
+      -- cmd_add  = { "git", "checkout", "-b" },
+      cmd_add  = { "git", "branch" },
+      -- If you wish to delete unmerged branches add "--force"
+      -- cmd_del  = { "git", "branch", "--delete", "--force" },
+      cmd_del  = { "git", "branch", "--delete" },
     },
     tags = {
       prompt   = "Tags> ",

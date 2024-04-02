@@ -61,6 +61,8 @@ M.ACTION_DEFINITIONS = {
   [actions.git_stage_unstage] = { "[un-]stage", pos = 1 },
   [actions.git_stash_drop]    = { "drop a stash" },
   [actions.git_yank_commit]   = { "copy commit hash" },
+  [actions.git_branch_add]    = { "add branch" },
+  [actions.git_branch_del]    = { "delete branch" },
 }
 
 -- converts contents array sent to `fzf_exec` into a single contents

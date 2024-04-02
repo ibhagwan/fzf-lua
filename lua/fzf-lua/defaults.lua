@@ -288,7 +288,11 @@ M.defaults.git                  = {
     fzf_opts = { ["--no-multi"] = true },
     actions  = {
       ["default"] = actions.git_switch,
+      ["ctrl-x"]  = { fn = actions.git_branch_del, reload = true },
+      ["ctrl-a"]  = { fn = actions.git_branch_add, field_index = "{q}", reload = true },
     },
+    cmd_add  = { "git", "branch" },
+    cmd_del  = { "git", "branch", "--delete" },
   },
   tags = {
     prompt   = "Tags> ",

@@ -178,6 +178,7 @@ M.branches = function(opts)
       return opts.__preview:gsub("{.*}", branch)
     end, nil, opts.debug)
   end
+  opts.headers = opts.headers or { "cwd", "actions" }
   return git_cmd(opts)
 end
 

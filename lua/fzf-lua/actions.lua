@@ -571,6 +571,7 @@ end
 
 
 M.git_switch = function(selected, opts)
+  if not selected[1] then return end
   local cmd = path.git_cwd({ "git", "checkout" }, opts)
   local git_ver = utils.git_version()
   -- git switch was added with git version 2.23
@@ -590,8 +591,46 @@ M.git_switch = function(selected, opts)
     utils.err(unpack(output))
   else
     utils.info(unpack(output))
-    if #vim.api.nvim_buf_get_name(0) > 0 then
-      vim.cmd("edit!")
+    vim.cmd("checktime")
+  end
+end
+
+M.git_branch_add = function(selected, opts)
+  -- "reload" actions (fzf version >= 0.36) use field_index = "{q}" 
+  -- so the prompt input will be found in `selected[1]`
+  -- previous fzf versions (or skim) restart the process instead
+  -- so the prompt input will be found in `opts.last_query`
+  local branch = opts.last_query or selected[1]
+  if type(branch) ~= "string" or #branch == 0 then
+    utils.warn("Branch name cannot be empty, use prompt for input.")
+  else
+    local cmd_add_branch = path.git_cwd(opts.cmd_add, opts)
+    table.insert(cmd_add_branch, branch)
+    local output, rc = utils.io_systemlist(cmd_add_branch)
+    if rc ~= 0 then
+      utils.err(unpack(output))
+    else
+      utils.info(string.format("Created branch '%s'.", branch))
+    end
+  end
+end
+
+M.git_branch_del = function(selected, opts)
+  local cmd_del_branch = path.git_cwd(opts.cmd_del, opts)
+  local cmd_cur_branch = path.git_cwd({ "git", "rev-parse", "--abbrev-ref", "HEAD" }, opts)
+  local branch = selected[1]:match("[^%s%*]+")
+  local cur_branch = utils.io_systemlist(cmd_cur_branch)[1]
+  if branch == cur_branch then
+    utils.warn(string.format("Cannot delete active branch '%s'", branch))
+    return
+  end
+  if utils.input("Delete branch " .. branch .. "? [y/n] ") == "y" then
+    table.insert(cmd_del_branch, branch)
+    local output, rc = utils.io_systemlist(cmd_del_branch)
+    if rc ~= 0 then
+      utils.err(unpack(output))
+    else
+      utils.info(unpack(output))
     end
   end
 end
@@ -618,21 +657,19 @@ M.git_yank_commit = function(selected, opts)
 end
 
 M.git_checkout = function(selected, opts)
-  local cmd_checkout = path.git_cwd({ "git", "checkout" }, opts)
-  local cmd_cur_commit = path.git_cwd({ "git", "rev-parse", "--short HEAD" }, opts)
+  local cmd_cur_commit = path.git_cwd({ "git", "rev-parse", "--short", "HEAD" }, opts)
   local commit_hash = match_commit_hash(selected[1], opts)
+  local current_commit = utils.io_systemlist(cmd_cur_commit)[1]
+  if commit_hash == current_commit then return end
   if utils.input("Checkout commit " .. commit_hash .. "? [y/n] ") == "y" then
-    local current_commit = utils.io_systemlist(cmd_cur_commit)
-    if (commit_hash == current_commit) then return end
+    local cmd_checkout = path.git_cwd({ "git", "checkout" }, opts)
     table.insert(cmd_checkout, commit_hash)
     local output, rc = utils.io_systemlist(cmd_checkout)
     if rc ~= 0 then
       utils.err(unpack(output))
     else
       utils.info(unpack(output))
-      if #vim.api.nvim_buf_get_name(0) > 0 then
-        vim.cmd("edit!")
-      end
+      vim.cmd("checktime")
     end
   end
 end
