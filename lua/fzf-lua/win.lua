@@ -1449,6 +1449,7 @@ function FzfWin.toggle_help()
   vim.wo[self.km_winid].winblend = opts.winblend
   vim.wo[self.km_winid].foldenable = false
   vim.wo[self.km_winid].wrap = false
+  vim.wo[self.km_winid].spell = false
   vim.bo[self.km_bufnr].filetype = "help"
 
   vim.cmd(string.format(
