@@ -406,6 +406,10 @@ end
 
 Previewer.help_tags = Previewer.base:extend()
 
+function Previewer.help_tags:fzf_delimiter()
+  return self.opts.fzf_opts and self.opts.fzf_opts["--delimiter"] or nil
+end
+
 function Previewer.help_tags:new(o, opts)
   Previewer.help_tags.super.new(self, o, opts)
   self.cmd = self.cmd or vim.fn.executable("bat") == 1
@@ -417,7 +421,7 @@ end
 function Previewer.help_tags:cmdline(o)
   o = o or {}
   local act = shell.raw_preview_action_cmd(function(items)
-    local vimdoc = items[1]:match("[^%s]+$")
+    local vimdoc = items[1]:match(string.format("[^%s]+$", utils.nbsp))
     local tag = items[1]:match("^[^%s]+")
     local ext = path.extension(vimdoc)
     local cmd = self.cmd:format(libuv.shellescape(vimdoc))

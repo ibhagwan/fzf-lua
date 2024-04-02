@@ -596,7 +596,7 @@ M.defaults.helptags             = {
   },
   fzf_opts  = {
     ["--no-multi"]  = true,
-    ["--delimiter"] = "[ ]",
+    ["--delimiter"] = string.format("[%s]", utils.nbsp),
     ["--with-nth"]  = "..-2",
     ["--tiebreak"]  = "begin",
   },

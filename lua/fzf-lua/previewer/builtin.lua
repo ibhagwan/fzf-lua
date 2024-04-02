@@ -930,7 +930,7 @@ end
 
 function Previewer.help_tags:parse_entry(entry_str)
   local tag = entry_str:match("^[^%s]+")
-  local vimdoc = entry_str:match("[^%s]+$")
+  local vimdoc = entry_str:match(string.format("[^%s]+$", utils.nbsp))
   return {
     htag = tag,
     hregex = ([[\V*%s*]]):format(tag:gsub([[\]], [[\\]])),

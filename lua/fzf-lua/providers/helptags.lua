@@ -52,7 +52,7 @@ local fzf_fn = function(cb)
   end)()
 
   local add_tag = function(t, fzf_cb, co)
-    local tag = string.format("%-80s %s %s", hl(t.tag), t.filename, t.filepath)
+    local tag = string.format("%-80s %s%s%s", hl(t.tag), t.filename, utils.nbsp, t.filepath)
     fzf_cb(tag, function()
       coroutine.resume(co)
     end)
