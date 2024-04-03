@@ -596,7 +596,7 @@ M.git_switch = function(selected, opts)
 end
 
 M.git_branch_add = function(selected, opts)
-  -- "reload" actions (fzf version >= 0.36) use field_index = "{q}" 
+  -- "reload" actions (fzf version >= 0.36) use field_index = "{q}"
   -- so the prompt input will be found in `selected[1]`
   -- previous fzf versions (or skim) restart the process instead
   -- so the prompt input will be found in `opts.last_query`
@@ -906,6 +906,13 @@ M.dap_bp_del = function(selected, opts)
     if entry.bufnr > 0 and entry.line then
       dap_bps.remove(entry.bufnr, entry.line)
     end
+  end
+  -- removing the BP will update the UI, if we're in session
+  -- we also need to broadcast the BP delete to the DAP server
+  local session = require("dap").session()
+  if session then
+    local bps = dap_bps.get()
+    session:set_breakpoints(bps)
   end
 end
 
