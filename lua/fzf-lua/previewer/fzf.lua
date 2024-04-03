@@ -1,3 +1,4 @@
+local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
@@ -23,7 +24,7 @@ function Previewer.base:new(o, opts)
 end
 
 function Previewer.base:preview_window(_)
-  return nil
+  return core.preview_window(self.opts)
 end
 
 function Previewer.base:_preview_offset()
