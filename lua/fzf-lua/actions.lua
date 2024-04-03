@@ -900,11 +900,13 @@ M.complete = function(selected, opts)
 end
 
 M.dap_bp_del = function(selected, opts)
+  local bufnrs = {}
   local dap_bps = require("dap.breakpoints")
   for _, e in ipairs(selected) do
     local entry = path.entry_to_file(e, opts)
     if entry.bufnr > 0 and entry.line then
       dap_bps.remove(entry.bufnr, entry.line)
+      table.insert(bufnrs, tonumber(entry.bufnr))
     end
   end
   -- removing the BP will update the UI, if we're in session
@@ -912,6 +914,11 @@ M.dap_bp_del = function(selected, opts)
   local session = require("dap").session()
   if session then
     local bps = dap_bps.get()
+    for _, b in ipairs(bufnrs) do
+      -- If all BPs were removed from a buffer we must clear the buffer
+      -- by sending an empty table in the bufnr index
+      bps[b] = bps[b] or {}
+    end
     session:set_breakpoints(bps)
   end
 end
