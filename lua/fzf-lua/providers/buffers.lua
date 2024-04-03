@@ -26,7 +26,7 @@ local filter_buffers = function(opts, unfiltered)
   local bufnrs = vim.tbl_filter(function(b)
     if not vim.api.nvim_buf_is_valid(b) then
       excluded[b] = true
-    elseif not opts.show_unlisted and vim.fn.buflisted(b) ~= 1 then
+    elseif not opts.show_unlisted and b ~= core.CTX().bufnr and vim.fn.buflisted(b) ~= 1 then
       excluded[b] = true
     elseif not opts.show_unloaded and not vim.api.nvim_buf_is_loaded(b) then
       excluded[b] = true
