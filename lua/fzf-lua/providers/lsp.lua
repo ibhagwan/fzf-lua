@@ -543,7 +543,7 @@ local function gen_lsp_contents_call_hierarchy(opts)
     utils.err(("Error executing '%s': %s"):format(method, err))
   else
     local _, response = next(res)
-    if vim.tbl_isempty(response) or not response.result[1] then
+    if not response or not response.result or not response.result[1] then
       if not opts.silent then
         utils.info(("No %s found"):format(opts.lsp_handler.label:lower()))
       end
