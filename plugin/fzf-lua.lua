@@ -32,40 +32,49 @@ end, {
       end, commands)
     end
 
-    local defaults = require("fzf-lua.defaults").defaults
-    local cmd_opts = defaults[l[2]] or {}
-    local opts = vim.tbl_filter(function(k)
-      return not k:match("^_")
-    end, vim.tbl_keys(cmd_opts))
-
-    -- Flatten map's keys recursively
-    --   { a = { a1 = ..., a2 = ... } }
-    -- will be transformed to:
-    --   {
-    --     ["a.a1"] = ...,
-    --     ["a.a2"] = ...,
-    --   }
-    local function map_flatten(t, prefix)
-      if vim.tbl_isempty(t) then return {} end
-      local ret = {}
-      prefix = prefix and string.format("%s.", prefix) or ""
-      for k, v in pairs(t) do
-        if type(v) == "table" then
-          local inner = map_flatten(v)
-          for ki, vi in pairs(inner) do
-            ret[prefix .. k .. "." .. ki] = vi
-          end
-        else
-          ret[prefix .. k] = v
+    -- Not all commands have their opts under the same key
+    local function cmd2key(cmd)
+      local cmd2cfg = {
+        {
+          patterns = { "^git_", "^dap", "^tmux_" },
+          transform = function(c) return c:gsub("_", ".") end
+        },
+        {
+          patterns = { "^lsp_code_actions$" },
+          transform = function(_) return "lsp.code_actions" end
+        },
+        { patterns = { "^lsp_.*_symbols$" }, transform = function(_) return "lsp.symbols" end },
+        { patterns = { "^lsp_" },            transform = function(_) return "lsp" end },
+        { patterns = { "^diagnostics_" },    transform = function(_) return "dianostics" end },
+        { patterns = { "^tags" },            transform = function(_) return "tags" end },
+        { patterns = { "grep" },             transform = function(_) return "grep" end },
+        { patterns = { "^complete_bline$" }, transform = function(_) return "complete_line" end },
+      }
+      for _, v in pairs(cmd2cfg) do
+        for _, p in ipairs(v.patterns) do
+          if cmd:match(p) then return v.transform(cmd) end
         end
       end
-      return ret
+      return cmd
     end
+
+    local utils = require("fzf-lua.utils")
+    local defaults = require("fzf-lua.defaults").defaults
+    local cmd_opts = utils.map_get(defaults, cmd2key(l[2])) or {}
+    local opts = vim.tbl_filter(function(k)
+      return not k:match("^_")
+    end, vim.tbl_keys(utils.map_flatten(cmd_opts)))
 
     -- Add globals recursively, e.g. `winopts.fullscreen`
     -- will be later retrieved using `utils.map_get(...)`
-    for _, k in ipairs({ "winopts", "keymap", "fzf_opts", "fzf_tmux_opts", "hls" }) do
-      opts = vim.tbl_flatten({ opts, vim.tbl_keys(map_flatten(defaults[k] or {}, k)) })
+    for k, v in pairs({
+      winopts       = false,
+      keymap        = false,
+      fzf_opts      = false,
+      fzf_tmux_opts = false,
+      __HLS         = "hls", -- rename prefix
+    }) do
+      opts = vim.tbl_flatten({ opts, vim.tbl_keys(utils.map_flatten(defaults[k] or {}, v or k)) })
     end
 
     -- Add generic options that apply to all pickers

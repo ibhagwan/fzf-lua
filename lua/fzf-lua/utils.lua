@@ -435,6 +435,32 @@ function M.map_tolower(m)
   return ret
 end
 
+-- Flatten map's keys recursively
+--   { a = { a1 = ..., a2 = ... } }
+-- will be transformed to:
+--   {
+--     ["a.a1"] = ...,
+--     ["a.a2"] = ...,
+--   }
+---@param m table<string, unknown>?
+---@return table<string, unknown>?
+function M.map_flatten(m, prefix)
+  if vim.tbl_isempty(m) then return {} end
+  local ret = {}
+  prefix = prefix and string.format("%s.", prefix) or ""
+  for k, v in pairs(m) do
+    if type(v) == "table" and not v[1] then
+      local inner = M.map_flatten(v)
+      for ki, vi in pairs(inner) do
+        ret[prefix .. k .. "." .. ki] = vi
+      end
+    else
+      ret[prefix .. k] = v
+    end
+  end
+  return ret
+end
+
 local function hex2rgb(hexcol)
   local r, g, b = hexcol:match("#(%x%x)(%x%x)(%x%x)")
   if not r or not g or not b then return end
