@@ -16,7 +16,7 @@ jobs:
       - name: Get new commit count
         run: echo "NEW_COMMIT_COUNT=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_ENV
       - name: LuaRocks Upload
-        uses: nvim-neorocks/luarocks-tag-release@v3
+        uses: nvim-neorocks/luarocks-tag-release@v5
         if: ${{ env.NEW_COMMIT_COUNT > 0 }}
         env:
           LUAROCKS_API_KEY: ${{ secrets.LUAROCKS_API_KEY }}
