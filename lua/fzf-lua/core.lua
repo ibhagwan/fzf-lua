@@ -340,9 +340,7 @@ M.fzf = function(contents, opts)
     -- fzf 0.40 added 'zero' event for when there's no match
     -- clears the preview when there are no matching entries
     if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.40 and previewer.zero then
-      opts.keymap = opts.keymap or {}
-      opts.keymap.fzf = opts.keymap.fzf or {}
-      opts.keymap.fzf["zero"] = previewer:zero()
+      utils.map_set(opts, "keymap.fzf.zero", previewer:zero())
     end
     if opts.__FZF_VERSION
         and opts.__FZF_VERSION >= 0.46
@@ -361,9 +359,7 @@ M.fzf = function(contents, opts)
         tonumber(opts.winopts.preview.flip_columns),
         opts.winopts.preview.vertical,
         opts.winopts.preview.horizontal)
-      opts.keymap = opts.keymap or {}
-      opts.keymap.fzf = opts.keymap.fzf or {}
-      opts.keymap.fzf["resize"] = string.format("transform(%s)", transformer)
+      utils.map_set(opts, "keymap.fzf.resize", string.format("transform(%s)", transformer))
     end
     if type(previewer.preview_window) == "function" then
       -- do we need to override the preview_window args?

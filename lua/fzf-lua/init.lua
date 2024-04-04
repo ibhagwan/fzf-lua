@@ -222,6 +222,9 @@ do
     tabs = { "fzf-lua.providers.buffers", "tabs" },
     lines = { "fzf-lua.providers.buffers", "lines" },
     blines = { "fzf-lua.providers.buffers", "blines" },
+    helptags = { "fzf-lua.providers.helptags", "helptags" },
+    manpages = { "fzf-lua.providers.manpages", "manpages" },
+    -- backward compat
     help_tags = { "fzf-lua.providers.helptags", "helptags" },
     man_pages = { "fzf-lua.providers.manpages", "manpages" },
     colorschemes = { "fzf-lua.providers.colorschemes", "colorschemes" },
@@ -349,6 +352,11 @@ M._excluded_meta = {
   "get_info",
   "set_info",
   "get_last_query",
+  -- Exclude due to rename:
+  --   help_tags -> helptags
+  --   man_pages -> manpages
+  "help_tags",
+  "man_pages",
 }
 
 for _, m in ipairs(M._exported_modules) do

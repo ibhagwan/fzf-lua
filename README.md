@@ -319,8 +319,8 @@ Alternatively, resuming work on a specific provider:
 | `resume`               | resume last command/query              |
 | `builtin`              | fzf-lua builtin commands               |
 | `profiles`             | fzf-lua configuration profiles         |
-| `help_tags`            | help tags                              |
-| `man_pages`            | man pages                              |
+| `helptags`             | help tags                              |
+| `manpages`             | man pages                              |
 | `colorschemes`         | color schemes                          |
 | `awesome_colorschemes` | Awesome Neovim color schemes           | 
 | `highlights`           | highlight groups                       |
