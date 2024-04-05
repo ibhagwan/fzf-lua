@@ -141,9 +141,17 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- expand opts that were specified with a dot
   -- e.g. `:FzfLua files winopts.border=single`
-  for k, v in pairs(opts) do
-    if k:match("%.") then
-      utils.map_set(opts, k, v)
+  do
+    -- convert keys only after full iteration or we will
+    -- miss keys due to messing with map ordering
+    local to_convert = {}
+    for k, _ in pairs(opts) do
+      if k:match("%.") then
+        table.insert(to_convert, k)
+      end
+    end
+    for _, k in ipairs(to_convert) do
+      utils.map_set(opts, k, opts[k])
       opts[k] = nil
     end
   end

@@ -7,7 +7,7 @@ return {
   { "default-title" }, -- base profile
   desc       = "borderless and not so minimalistic",
   winopts    = {
-    border  = { " ", " ", " ", " ", " ", " ", " ", " " },
+    border  = "empty",
     preview = {
       scrollbar = "float",
       scrolloff = "-2",

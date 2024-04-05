@@ -6,9 +6,7 @@ return {
   desc       = "borderless and minimalistic",
   fzf_opts   = {},
   winopts    = {
-    -- border  = "none",
-    -- border  = "thicccc",
-    border  = { " ", " ", " ", " ", " ", " ", " ", " " },
+    border  = "none",
     preview = {
       scrollbar = "float",
       scrolloff = "-2",

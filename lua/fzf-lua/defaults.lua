@@ -43,7 +43,6 @@ M.defaults                      = {
       title_pos    = "center",
       scrollbar    = "border",
       scrolloff    = "-2",
-      scrollchar   = "",
       scrollchars  = { "█", "" },
       -- default preview delay 100ms, same as native fzf preview
       -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
@@ -1043,8 +1042,8 @@ M.defaults.__HLS                = {
 
 M.defaults.__WINOPTS            = {
   borderchars    = {
-    ["none"]    = { " ", " ", " ", " ", " ", " ", " ", " " },
-    ["solid"]   = { " ", " ", " ", " ", " ", " ", " ", " " },
+    ["none"]    = { "", "", "", "", "", "", "", "" },
+    ["empty"]   = { " ", " ", " ", " ", " ", " ", " ", " " },
     ["single"]  = { "┌", "─", "┐", "│", "┘", "─", "└", "│" },
     ["double"]  = { "╔", "═", "╗", "║", "╝", "═", "╚", "║" },
     ["rounded"] = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
@@ -1053,8 +1052,8 @@ M.defaults.__WINOPTS            = {
     ["thicccc"] = { "█", "█", "█", "█", "█", "█", "█", "█" },
   },
   -- border chars reverse lookup for ambiwidth="double"
-  _border2string = {
-    [" "] = "solid",
+  border2string = {
+    [" "] = "empty",
     ["┌"] = "single",
     ["╔"] = "double",
     ["╭"] = "rounded",

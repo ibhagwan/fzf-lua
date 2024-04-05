@@ -1,0 +1,1008 @@
+# NOTE: THIS DOCUMENT IS CURRENTLY WIP
+
+**This document does not yet contain all of fzf-lua's options, there are a lot of esoteric and
+undocumented options which can be found in issues/discussions which I will slowly but surely
+add to this document.**
+
+---
+
+# Fzf-Lua Commands and Options
+
+- [General Usage](#general-usage)
+- [Setup Options](#setup-options)
+- [Global Options](#global-options)
+- [Commands](#commands)
+  + [Buffers and Files](#buffers-and-files)
+  + [Search](#search)
+  + [Tags](#tags)
+  + [Git](#git)
+  + [LSP | Diagnostics](#lspdiagnostics)
+  + [Misc](#misc)
+  + [Neovim API](#neovim-api)
+  + [`nvim-dap`](#nvim-dap)
+  + [`tmux`](#tmux)
+  + [Completion Functions](#completion-functions)
+
+---
+
+## General Usage
+
+Options in fzf-lua can be specified in a few different ways:
+- Global setup options
+- Provider-defaults setup options
+- Provider-specific setup options
+- Command call options
+
+Most of fzf-lua's options are applicable in all of the above, a few examples below:
+
+Global setup, applies to all fzf-lua interfaces:
+```lua
+-- Places the floating window at the bottom left corner
+require("fzf-lua").setup({ winopts = { row = 1, col = 0 } })
+```
+
+Disable `file_icons` globally (files, grep, etc) via provider defaults setup options:
+```lua
+require("fzf-lua").setup({ defaults = { file_icons = false } })
+```
+
+Disable `file_icons` in `files` only via provider specific setup options:
+```lua
+require("fzf-lua").setup({ files = { file_icons = false } })
+```
+
+Disable `file_icons` in `files`, applies to this call only:
+```lua
+:lua require("fzf-lua").files({ file_icons = false  })
+-- Or
+:FzfLua files file_icons=false
+```
+
+Fzf-lua conviniently enables setting lua tables recursively using dotted keys, for exmaple, if we
+wanted to call `files` in "split" mode (instead of the default floating window), we would normally call:
+
+```lua
+:lua require("fzf-lua").files({ winopts = { split = "belowright new" } })
+```
+
+But we can also use the dotted key format (unique to fzf-lua):
+```lua
+:lua require("fzf-lua").files({ ["winopts.split"] = "belowright new" })
+```
+
+This makes it possible to send nested lua values via the `:FzfLua` user command:
+```lua
+-- Escape spaces with \
+:FzfLua files winopts.split=belowright\ new
+```
+
+Lua string serialization is also possible:
+```lua
+-- Places the floating window at the top left corner
+:FzfLua files winopts={row=0,col=0}
+```
+
+---
+
+## Setup Options
+
+Most of fzf-lua's options are global, meaning they can be specified in any of the different ways
+explained in [General Usage](#general-usage) and are described in detail in the [Global Options](#global-options) section below.
+
+There are however a few options that can be specified only during the call to `setup`, these are
+described below.
+
+#### setup.nbsp
+
+Type: `string`, Default: `nil`
+
+Fzf-lua uses a special invisible unicode character `EN SPACE` (U+2002) as text delimiter.
+
+It is not recommended to modify this value as this can have uninteded consequnces when entries contain the character designated as `nbsp`, but if your terminal/font does not support `EN_SPACE` you can use `NBSP` (U+00A0) instead:
+```lua
+require("fzf-lua").setup({ nbsp = "\xc2\xa0" })
+```
+
+#### setup.winopts.preview.default
+
+Type: `string|function|object`, Default: `builtin`
+
+Default previewer for file pickers, possible values `builtin|bat|cat|head`, for example:
+
+```lua
+require("fzf-lua").setup({ winopts = { preview = { default = "bat" } } })
+```
+
+If set to a `function` the return value will be used (`string|object`).
+
+If set to an `object`, fzf-lua expects a previewer class that will be initlaized with `object:new(...)`, see the advanced Wiki "Neovim builtin previewer" section for more info.
+
+---
+
+## Global Options
+
+Globals are options that aren't picker-specific and can be used with all fzf-lua commands, for
+example, positioning the floating window at the bottom line using `globals.winopts.row`:
+
+> The `globals` prefix denotates the scope of the option and is therefore omitted 
+
+Using `FzfLua` user command:
+```lua
+:FzfLua files winopts.row=1
+```
+
+Using Lua:
+```lua
+:lua require("fzf-lua").files({ winopts = { row = 1 } })
+-- Using the recursive option format
+:lua require("fzf-lua").files({ ["winopts.row"] = 1 })
+```
+
+#### globals.cwd
+
+Type: `string`, Default: `nil`
+
+Sets the current working directory.
+
+#### globals.query
+
+Type: `string`, Default: `nil`
+
+Initial query (prompt text), passed to fzf as `--query` flag.
+
+#### globals.prompt
+
+Type: `string`, Default: `nil`
+
+Fzf prompt, passed to fzf as `--prompt` flag.
+
+#### globals.header
+
+Type: `string|false`, Default: `nil`
+
+Header line, set to any string to display a header line, set to `false` to disable fzf-lua
+interactive headers (e.g. "ctrl-g to disable .gitignore", etc), passed to fzf as `--header` flag.
+
+#### globals.previewer
+
+Type: `string`, Default: `nil`
+
+Previewer override, set to `false` to disable the previewer.
+
+By default files pickers use the "builtin" previewer, possible values for file pickers `bat|cat|head`.
+
+Other overrides include:
+```lua
+:FzfLua helptags previewer=help_native
+:FzfLua manpages previewer=man_native
+```
+
+#### globals.file_icons
+
+Type: `boolean`, Default: `true`
+
+If available, add devicons to files.
+
+#### globals.git_icons
+
+Type: `boolean`, Default: `true`
+
+If inside a git-repo add git status indicator icons e.g. `M` for modified files.
+
+#### globals.color_icons
+
+Type: `boolean`, Default: `true`
+
+Add coloring of file|git icons.
+
+#### globals.winopts.split
+
+Type: `string`, Default: `nil`
+
+Neovim split command to use for fzf-lua interface, e.g `belowright new`.
+
+#### globals.winopts.col
+
+Type: `number`, Default: `0.55`
+
+Screen column where to place the fzf-lua float window, between 0-1 will represent precentage of `vim.o.columns` (0: leftmost, 1: rightmost), if >= 1 will attempt to place the float in the exact screen column.
+
+#### globals.winopts.row
+
+Type: `number`, Default: `0.35`
+
+Screen row where to place the fzf-lua float window, between 0-1 will represent precentage of `vim.o.lines` (0: top, 1: bottom), if >= 1 will attempt to place the float in the exact screen line.
+
+#### globals.winopts.width
+
+Type: `number`, Default: `0.80`
+
+Width of the fzf-lua float, between 0-1 will represent precentage of `vim.o.columns` (1: max width), if >= 1 will use fixed number of columns.
+
+#### globals.winopts.height
+
+Type: `number`, Default: `0.85`
+
+Height of the fzf-lua float, between 0-1 will represent precentage of `vim.o.lines` (1: max height), if >= 1 will use fixed number of lines.
+
+#### globals.winopts.border
+
+Type: `string|table`, Default: `rounded`
+
+Border of the fzf-lua float, possible values are `none|single|double|rounded|thicc|thiccc|thicccc`
+or a custom border character array passed as is to `nvim_open_win`.
+
+#### globals.winopts.fullscreen
+
+Type: `fullscreen`, Default: `false`
+
+Use fullscreen for the fzf-load floating window.
+
+#### globals.winopts.on_create
+
+Type: `function`, Default: `nil`
+
+Callback after the creation of the fzf-lua main terminal window.
+
+#### globals.winopts.preview.delay
+
+Type: `number`, Default: `100`
+
+Debounce time (miliseconds) for displaying the preview buffer in the builtin previewer.
+
+#### globals.winopts.preview.wrap
+
+Type: `string`, Default: `nowrap`
+
+Line wrap in both native fzf and the builtin previewer, mapped to fzf's `--preview-window:[no]wrap` flag.
+
+#### globals.winopts.preview.hidden
+
+Type: `string`, Default: `nohidden`
+
+Preview startup visibility in both native fzf and the builtin previewer, mapped to fzf's `--preview-window:[no]hidden` flag.
+
+> **NOTE**: this is different than setting `previewer=false` which disables the previewer
+> altogether with no toggle ability.
+
+#### globals.winopts.preview.border
+
+Type: `string`, Default: `border`
+
+Preview border for native fzf previewers (i.e. `bat`, `git_status`), set to `noborder` to hide the preview border, consult `man fzf` for all vailable options.
+
+#### globals.winopts.preview.layout
+
+Type: `string`, Default: `flex`
+
+Preview layout, possible values are `horizontal|vertical|flex`, when set to `flex` neovim width is
+tested against `winopts.preview.flip_columns`, when <= `vertical` is used, otherwise `horizontal`.
+
+#### globals.winopts.preview.flip_columns
+
+Type: `number`, Default: `120`
+
+Auto-detect the preview layout based on available widht, see above note in `winopts.preview.layout`.
+
+#### globals.winopts.preview.horizontal
+
+Type: `string`, Default: `right:60%`
+
+Horizontal preview layout, mapped to fzf's `--preview-window:...` flag.
+
+<sub><sup>*Requires `winopts.preview.layout={horizontal|flex}`</sup></sub>
+
+#### globals.winopts.preview.vertical
+
+Type: `string`, Default: `down:45%`
+
+Vertical preview layout, mapped to fzf's `--preview-window:...` flag.
+
+<sub><sup>*Requires `winopts.preview.layout={vertical|flex}`</sup></sub>
+
+#### globals.winopts.preview.title
+
+Type: `boolean`, Default: `true`
+
+Controls title display in the builtin previewer.
+
+#### globals.winopts.preview.title_pos
+
+Type: `string`, Default: `center`
+
+Controls title display in the builtin previewer, possible values are `left|right|center`.
+
+#### globals.winopts.preview.scrollbar
+
+Type: `string|boolean`, Default: `float`
+
+Scrollbar style in the builtin previewer, set to `false` to disable, possible values are
+`float|border`.
+
+#### globals.winopts.preview.scrolloff
+
+Type: `number`, Default: `-2`
+
+Float style scrollbar offset from the right edge of the preview window.
+
+<sub><sup>*Requires `winopts.preview.scrollbar=float`</sup></sub>
+
+#### globals.winopts.preview.scrollchars
+
+Type: `table`, Default: `{'█', '' }`
+
+Border style scrollbar characters `{ <full>, <empty> }`.
+
+<sub><sup>*Requires `winopts.preview.scrollbar=border`</sup></sub>
+
+#### globals.winopts.preview.winopts.number
+
+Type: `boolean`, Default: `true`
+
+Builtin previewer buffer local option, see `:help 'number'`.
+
+#### globals.winopts.preview.winopts.relativenumber
+
+Type: `boolean`, Default: `false`
+
+Builtin previewer buffer local option, see `:help 'relativenumber'`.
+
+#### globals.winopts.preview.winopts.cursorline
+
+Type: `boolean`, Default: `true`
+
+Builtin previewer buffer local option, see `:help 'cursorline'`.
+
+#### globals.winopts.preview.winopts.cursorcolumn
+
+Type: `boolean`, Default: `false`
+
+Builtin previewer buffer local option, see `:help 'cursorcolumn'`.
+
+#### globals.winopts.preview.winopts.cursorlineopt
+
+Type: `string`, Default: `both`
+
+Builtin previewer buffer local option, see `:help 'cursorlineopt'`.
+
+#### globals.winopts.preview.winopts.signcolumn
+
+Type: `string`, Default: `no`
+
+Builtin previewer buffer local option, see `:help 'signcolumn'`.
+
+#### globals.winopts.preview.winopts.list
+
+Type: `boolean`, Default: `false`
+
+Builtin previewer buffer local option, see `:help 'list'`.
+
+#### globals.winopts.preview.winopts.foldenable
+
+Type: `boolean`, Default: `false`
+
+Builtin previewer buffer local option, see `:help 'foldenable'`.
+
+#### globals.winopts.preview.winopts.foldmethod
+
+Type: `string`, Default: `manual`
+
+Builtin previewer buffer local option, see `:help 'foldmethod'`.
+
+#### globals.winopts.preview.winopts.scrolloff
+
+Type: `number`, Default: `1`
+
+Builtin previewer buffer local option, see `:help 'scrolloff'`.
+
+#### globals.hls.normal
+
+Type: `string`, Default: `FzfLuaNormal`
+
+Main fzf (terminal) window normal (text/bg) highlight group.
+
+#### globals.hls.border
+
+Type: `string`, Default: `FzfLuaBorder`
+
+Main fzf (terminal) window border highlight group.
+
+#### globals.hls.title
+
+Type: `string`, Default: `FzfLuaTitle`
+
+Main fzf (terminal) window title highlight group.
+
+#### globals.hls.preview_normal
+
+Type: `string`, Default: `FzfLuaPreviewNormal`
+
+Builtin previewer window normal (text/bg) highlight group.
+
+#### globals.hls.preview_border
+
+Type: `string`, Default: `FzfLuaPreviewBorder`
+
+Builtin previewer window border highlight group.
+
+#### globals.hls.preview_title
+
+Type: `string`, Default: `FzfLuaPreviewTitle`
+
+Builtin previewer window title highlight group.
+
+#### globals.hls.cursor
+
+Type: `string`, Default: `FzfLuaCursor`
+
+Builtin previewer window `Cursor` highlight group.
+
+#### globals.hls.cursorline
+
+Type: `string`, Default: `FzfLuaCursorLine`
+
+Builtin previewer window `CursorLine` highlight group.
+
+#### globals.hls.cursorlinenr
+
+Type: `string`, Default: `FzfLuaCursorLineNr`
+
+Builtin previewer window `CursorLineNr` highlight group.
+
+#### globals.hls.search
+
+Type: `string`, Default: `FzfLuaSearch`
+
+Builtin previewer window search matches highlight group.
+
+#### globals.hls.scrollborder_e
+
+Type: `string`, Default: `FzfLuaScrollBorderEmpty`
+
+Builtin previewer window `border` scrollbar empty highlight group.
+
+#### globals.hls.scrollborder_f
+
+Type: `string`, Default: `FzfLuaScrollBorderFull`
+
+Builtin previewer window `border` scrollbar full highlight group.
+
+#### globals.hls.scrollfloat_e
+
+Type: `string`, Default: `FzfLuaScrollFloatEmpty`
+
+Builtin previewer window `float` scrollbar empty highlight group.
+
+#### globals.hls.scrollfloat_f
+
+Type: `string`, Default: `FzfLuaScrollFloatFull`
+
+Builtin previewer window `float` scrollbar full highlight group.
+
+#### globals.hls.help_normal
+
+Type: `string`, Default: `FzfLuaHelpNormal`
+
+Help window (F1) normal (text/bg) highlight group.
+
+#### globals.hls.help_border
+
+Type: `string`, Default: `FzfLuaHelpBorder`
+
+Help window (F1) border highlight group.
+
+#### globals.hls.header_bind
+
+Type: `string`, Default: `FzfLuaHeaderBind`
+
+Interactive headers keybind highlight group, e.g. `<ctrl-g> to Disable .gitignore`.
+
+#### globals.hls.header_text
+
+Type: `string`, Default: `FzfLuaHeaderText`
+
+Interactive headers description highlight group, e.g. `<ctrl-g> to Disable .gitignore`.
+
+#### globals.hls.path_linenr
+
+Type: `string`, Default: `FzfLuaPathLineNr`
+
+Highlight group for the line part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `bufers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
+
+#### globals.hls.path_colnr
+
+Type: `string`, Default: `FzfLuaPathColNr`
+
+Highlight group for the column part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `bufers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
+
+#### globals.hls.buf_name
+
+Type: `string`, Default: `FzfLuaBufName`
+
+Highlight group for buffer name in `lines`.
+
+#### globals.hls.buf_nr
+
+Type: `string`, Default: `FzfLuaBufNr`
+
+Highlight group for buffer number in buffer type pickers, i.e. `buffers`, `tabs`, `lines`.
+
+#### globals.hls.buf_flag_cur
+
+Type: `string`, Default: `FzfLuaBufFlagCur`
+
+Highlight group for the current buffer flag in `buffers`, `tabs`.
+
+#### globals.hls.buf_flag_alt
+
+Type: `string`, Default: `FzfLuaBufFlagAlt`
+
+Highlight group for the alternate buffer flag in `buffers`, `tabs`.
+
+#### globals.hls.tab_title
+
+Type: `string`, Default: `FzfLuaTabTitle`
+
+Highlight group for the tab title in `tabs`.
+
+#### globals.hls.tab_marker
+
+Type: `string`, Default: `FzfLuaTabMarker`
+
+Highlight group for the current tab marker in `tabs`.
+
+#### globals.hls.dir_icon
+
+Type: `string`, Default: `FzfLuaDirIcon`
+
+Highlight group for the directory icon in paths that end with a separator, usually used in path
+completion, e.g. `complete_path`.
+
+#### globals.hls.live_sym
+
+Type: `string`, Default: `FzfLuaLiveSym`
+
+Highlight group for the matched characters in `lsp_live_workspace_symbols`.
+
+---
+
+## Commands
+
+### Buffers and Files
+
+#### buffers
+
+Open buffers
+
+#### tabs
+
+Open buffers in tabs
+
+#### oldfiles
+
+File history (output of `:oldfiles`)
+
+#### quickfix
+
+Quickfix list (output of `:copen`)
+
+#### quickfix_stack
+
+Quickfix list history (output of `:chistory`)
+
+#### loclist
+
+Location list (output of `:lopen`)
+
+#### loclist_stack
+
+Location list history (output of `:lhistory`)
+
+#### blines
+
+Current buffer lines
+
+#### lines
+
+Open buffers lines
+
+#### args
+
+Neovim's argument list (output of `:args`)
+
+##### args.files_only
+
+Type: `boolean`, Default: `true`
+
+Exclude non-file entries (directories).
+
+#### files
+
+Files finder, will enumrate the filesystem of the current working directory using `fd`, `rg` and `grep` or `dir.exe`.
+
+##### files.cwd_prompt
+
+Type: `boolean`, Default: `true`
+
+Display the current working directory in the prompt (`fzf.vim` style).
+
+##### files.cwd_prompt_shorten_len
+
+Type: `number`, Default: `32`
+
+Prompt over this length will be shortened, e.g.  `~/.config/nvim/lua/` will be shortened to `~/.c/n/lua/` (for more info see `:help pathshorten`).
+
+<sub><sup>*Requires `cwd_prompt=true`</sup></sub>
+
+##### files.cwd_prompt_shorten_val
+
+Type: `number`, Default: `1`
+
+Length of shortened prompt path parts, e.g. set to `2`, `~/.config/nvim/lua/` will be shortened to `~/.co/nv/lua/` (for more info see `:help pathshorten`).
+
+<sub><sup>*Requires `cwd_prompt=true`</sup></sub>
+
+---
+
+### Search
+
+#### grep
+
+Search for strings/regexes using `rg`, `grep` or any other compatible grep'er binary (e.g. `ag`).
+
+Unless `search=...` is specified will prompt for the search string.
+
+#### live_grep
+
+Search for strings/regexes using `rg`, `grep` or any other compatible grep'er binary (e.g. `ag`).
+
+Unlike `grep` which uses a fixed search string/regex each keypress generates a new underlying grep command with the prompt input text, this can be more performant on large monorepos to narrow down the result set before switching to fuzzy matching with `ctrl-g` for further refinement.
+
+#### live_grep_native
+
+Performant "live" grep variant piping the underlying command directly to fzf (without any processing by fzf-lua), disables all the bells and whistles (icons, path manipulation, etc).
+
+#### live_grep_glob
+
+"Live" grep variant with add support for `rg --iglob` flag, use the default separator `--` to specify globs, for exmaple, `pcall -- *.lua !*spec*` will search for `pcall` in any lua file that doesn't contain `spec`.
+
+#### live_grep_resume
+
+Alias to `:FzfLua live_grep resume=true`
+
+#### grep_project
+
+Alias to `:FzfLua grep search=""`, feeds all lines of the project into fzf for fuzzy matching.
+
+**NOTE**: on large monorepos feeding all lines of the project into fzf isn't very efficient, consider using `live_grep` first with a regex to narrow down the result set and then switch to fuzzy finding for further refinement by pressing `ctrl-g`.
+
+#### grep_last
+
+Alias to `:FzfLua grep resume=true`
+
+#### grep_cword
+
+Grep word under cursor
+
+#### grep_cWORD
+
+Grep WORD under cursor
+
+#### grep_visual
+
+Grep visual selection
+
+#### grep_curbuf
+
+Grep on current buffer only
+
+#### lgrep_curbuf
+
+"Live" grep on current buffer only
+
+---
+
+### Tags
+
+#### tags
+
+Search project ctags
+
+#### btags
+
+Search current buffer ctags
+
+#### tags_grep
+
+"Grep" for tags, see `grep` for more info.
+
+#### tags_live_grep
+
+"Live-Grep" for tags, see `live_grep` for more info.
+
+#### tags_grep_cword
+
+Tags-Grep word under cursor
+
+#### tags_grep_cWORD
+
+Tags-Grep WORD under cursor
+
+#### tags_grep_visual
+
+Tags-Grep visual selection
+
+---
+
+### Git
+
+#### git_files
+
+Git files
+
+#### git_status
+
+Git status
+
+#### git_commits
+
+Git commits (project)
+
+#### git_bcommits
+
+Git commits (buffer)
+
+#### git_branches
+
+Git branches
+
+#### git_tags
+
+Git tags
+
+#### git_stash
+
+Git stashes
+
+---
+
+### LSP/Diagnostics
+
+#### lsp_references
+
+LSP references
+
+#### lsp_definitions
+
+LSP Definitions
+
+#### lsp_declarations
+
+LSP Declarations
+
+#### lsp_typedefs
+
+LSP Type Definitions
+
+#### lsp_implementations
+
+LSP Implementations
+
+#### lsp_document_symbols
+
+LSP Document Symbols
+
+#### lsp_workspace_symbols
+
+LSP Workspace Symbols
+
+#### lsp_live_workspace_symbols
+
+LSP Workspace Symbols "live" query
+
+#### lsp_incoming_calls
+
+LSP Incoming Calls
+
+#### lsp_outgoing_calls
+
+LSP Outgoing Calls
+
+#### lsp_code_actions
+
+LSP Code Actions
+
+#### lsp_finder
+
+All LSP locations, combined view
+
+#### lsp_document_diagnostics
+
+Document Diagnostics (alias to `diagnostics_document`)
+
+#### lsp_workspace_diagnostics
+
+Workspace Diagnostics (alias to `diagnostics_workspace`)
+
+#### diagnostics_document
+
+Document Diagnostics
+
+#### diagnostics_workspace
+
+Workspace Diagnostics
+
+##### lsp.async_or_timeout
+
+Type: `number|boolean`, Default: `5000`
+
+Whether LSP calls are made block, set to `true` for asynchronous, otherwise defines the timeout
+(ms) for the LPS request via `vim.lsp.buf_request_sync`.
+ 
+---
+
+### Misc
+
+#### resume
+
+Resume last command/query
+
+#### builtin
+
+fzf-lua builtin commands
+
+#### profiles
+
+Fzf-lua configuration profiles
+
+#### helptags
+
+Search Helptags
+
+#### manpages
+
+Search man pages
+
+#### colorschemes
+
+Installed colorschemes
+
+#### awesome_colorschemes
+
+"Awesome Neovim" colorschemes
+
+#### highlights
+
+Neovim's highlight groups
+
+#### commands
+
+Neovim commands
+
+#### command_history
+
+Executed command history
+
+#### search_history
+
+Search history
+
+#### marks
+
+Search `:marks`
+
+#### jumps
+
+Search `:jumps`
+
+#### changes
+
+Search `:changes`
+
+#### registers
+
+Search `:registers`
+
+#### tagstack
+
+Search `:tags`
+
+#### autocmds
+
+Neovim's autocmds
+
+#### keymaps
+
+Neovims key mappings
+
+#### filetypes
+
+Filetypes
+
+#### menus
+
+Neovim's menus
+
+#### spell_suggest
+
+Spelling suggestions
+
+#### packadd
+
+`:packadd <package>`
+
+#### setup_highlights
+
+Setup/Reset fzf-lua highlight groups.
+
+#### setup_fzfvim_cmds
+
+Setup `fzf.vim` user commands mapped to their fzf-lua equivalents (e.g. `:Files`, `:Rg`, etc).
+
+
+---
+
+### Neovim API
+
+#### register_ui_select
+
+Register fzf-lua as the UI interface for `vim.ui.select`
+
+#### deregister_ui_select
+
+De-register fzf-lua with `vim.ui.select`
+
+---
+
+### nvim-dap
+
+#### dap_commands
+
+DAP builtin commands
+
+#### dap_configurations
+
+DAP configurations
+
+#### dap_breakpoints
+
+DAP breakpoints
+
+#### dap_variables
+
+DAP active session variables
+
+#### dap_frames
+
+DAP active session jump to frame
+
+
+### tmux
+
+#### tmux_buffers
+
+Tmux paste buffers
+
+---
+
+### Completion Functions
+
+#### complete_path
+
+Complete path under cursor (incl dirs)
+
+#### complete_file
+
+Complete file under cursor (excl dirs)
+
+#### complete_line
+
+Complete line (all open buffers)
+
+#### complete_bline
+
+Complete line (current buffer only)
+
+---
+
+<!--- vim: set nospell: -->
