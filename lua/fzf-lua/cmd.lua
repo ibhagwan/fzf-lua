@@ -1,103 +1,179 @@
--- Modified from Telescope 'command.lua'
 local builtin = require "fzf-lua"
+local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
-local command = {}
+local defaults = require "fzf-lua.defaults".defaults
+local serpent = require "fzf-lua.lib.serpent"
 
-local arg_value = {
-  ["nil"] = nil,
-  ['""'] = "",
-  ['"'] = "",
-}
+local M = {}
 
-local bool_type = {
-  ["false"] = false,
-  ["true"] = true,
-}
-
--- convert command line string arguments to
--- lua number boolean type and nil values
-local function convert_user_opts(user_opts)
-  local _switch = {
-    ["boolean"] = function(key, val)
-      if val == "false" then
-        user_opts[key] = false
-        return
-      end
-      user_opts[key] = true
-    end,
-    ["number"] = function(key, val)
-      user_opts[key] = tonumber(val)
-    end,
-    ["string"] = function(key, val)
-      if arg_value[val] ~= nil then
-        user_opts[key] = arg_value[val]
-        return
-      end
-
-      if bool_type[val] ~= nil then
-        user_opts[key] = bool_type[val]
-      end
-    end,
-  }
-
-  local _switch_metatable = {
-    __index = function(_, k)
-      utils.info(string.format("Type of %s does not match", k))
-    end,
-  }
-
-  setmetatable(_switch, _switch_metatable)
-
-  for key, val in pairs(user_opts) do
-    _switch["string"](key, val)
-  end
-end
-
--- receive the viml command args
--- it should output a table value like
--- {
---   cmd = 'files',
---   opts = {
---      cwd = '***',
--- }
-local function run_command(args)
-  local user_opts = args or {}
-  if next(user_opts) == nil or not user_opts.cmd then
-    utils.info("missing command args")
-    return
-  end
-
-  local cmd = user_opts.cmd
-  local opts = user_opts.opts or {}
-
-  if next(opts) ~= nil then
-    convert_user_opts(opts)
-  end
-
-  if builtin[cmd] then
-    builtin[cmd](opts)
-  else
-    utils.info(string.format("invalid command '%s'", cmd))
-  end
-end
-
-function command.load_command(cmd, ...)
+function M.run_command(cmd, ...)
   local args = { ... }
-  if cmd == nil then
-    run_command { cmd = "builtin" }
+  cmd = cmd or "builtin"
+
+  if not builtin[cmd] then
+    utils.info(string.format("invalid command '%s'", cmd))
     return
   end
 
-  local user_opts = {}
-  user_opts["cmd"] = cmd
-  user_opts.opts = {}
+  local opts = {}
 
   for _, arg in ipairs(args) do
-    local param = vim.split(arg, "=")
-    user_opts.opts[param[1]] = param[2]
+    local key = arg:match("^[^=]+")
+    local val = arg:match("=") and arg:match("=(.*)$")
+    if val and #val > 0 then
+      local ok, loaded = serpent.load(val)
+      if ok and (type(loaded) ~= "table" or not vim.tbl_isempty(loaded)) then
+        opts[key] = loaded
+      else
+        opts[key] = val
+      end
+    end
   end
 
-  run_command(user_opts)
+  builtin[cmd](opts)
 end
 
-return command
+---@return table
+function M.options_md()
+  -- Only attempt to load from file once, if failed we ditch the docs
+  if M._options_md ~= nil then return M._options_md end
+  M._options_md = {}
+  local filepath = path.join({ vim.g.fzf_lua_root, "OPTIONS.md" })
+  local lines = vim.split(utils.read_file(filepath), "\n")
+  local section
+  for _, l in ipairs(lines or {}) do
+    if l:match("^#") or l:match("<!%-%-") or l:match("%-%-%-") then
+      -- Match markdown atx header levels 3-5 only
+      section = l:match("^####?#?%s+(.*)")
+      if section then
+        -- Use only the non-spaced rightmost part of the line
+        -- "Opts: files" will be translated to "files" section
+        section = section:match("[^%s]+$")
+        M._options_md[section] = {}
+        goto continue
+      end
+    end
+    if section then
+      table.insert(M._options_md[section], l)
+    end
+    ::continue::
+  end
+  -- Trim surrounding lines and replace newline with literal \n
+  M._options_md = vim.tbl_map(function(v)
+    while rawget(v, 1) == "" do
+      table.remove(v, 1)
+    end
+    while rawget(v, #v) == "" do
+      table.remove(v)
+    end
+    return table.concat(v, "\n")
+  end, M._options_md)
+  return M._options_md
+end
+
+function M._candidates(line, cmp_items)
+  local function to_cmp_items(t, data)
+    local cmp = require("cmp")
+    return vim.tbl_map(function(v)
+      return {
+        label = v,
+        filterText = v,
+        insertText = v,
+        kind = cmp.lsp.CompletionItemKind.Variable,
+        data = data,
+      }
+    end, t)
+  end
+  local builtin_list = vim.tbl_filter(function(k)
+    return builtin._excluded_metamap[k] == nil
+  end, vim.tbl_keys(builtin))
+
+  local l = vim.split(line, "%s+")
+  local n = #l - 2
+
+  -- We can reach here after on :FzfLua+<+Space>+<BS>
+  if n < 0 then return end
+
+  if n == 0 then
+    local commands = vim.tbl_flatten({ builtin_list })
+    table.sort(commands)
+
+    commands = vim.tbl_filter(function(val)
+      return vim.startswith(val, l[2])
+    end, commands)
+
+    return cmp_items and to_cmp_items(commands) or commands
+  end
+
+  -- Not all commands have their opts under the same key
+  local function cmd2key(cmd)
+    if not cmd then return end
+    local cmd2cfg = {
+      {
+        patterns = { "^git_", "^dap", "^tmux_" },
+        transform = function(c) return c:gsub("_", ".") end
+      },
+      {
+        patterns = { "^lsp_code_actions$" },
+        transform = function(_) return "lsp.code_actions" end
+      },
+      { patterns = { "^lsp_.*_symbols$" }, transform = function(_) return "lsp.symbols" end },
+      { patterns = { "^lsp_" },            transform = function(_) return "lsp" end },
+      { patterns = { "^diagnostics_" },    transform = function(_) return "dianostics" end },
+      { patterns = { "^tags" },            transform = function(_) return "tags" end },
+      { patterns = { "grep" },             transform = function(_) return "grep" end },
+      { patterns = { "^complete_bline$" }, transform = function(_) return "complete_line" end },
+    }
+    for _, v in pairs(cmd2cfg) do
+      for _, p in ipairs(v.patterns) do
+        if cmd:match(p) then return v.transform(cmd) end
+      end
+    end
+    return cmd
+  end
+
+  local cmd_cfg_key = cmd2key(l[2])
+  local cmd_opts = utils.map_get(defaults, cmd_cfg_key) or {}
+  local opts = vim.tbl_filter(function(k)
+    -- Exclude options starting with "_"
+    return not k:match("^_")
+  end, vim.tbl_keys(utils.map_flatten(cmd_opts)))
+
+  -- Add globals recursively, e.g. `winopts.fullscreen`
+  -- will be later retrieved using `utils.map_get(...)`
+  for k, v in pairs({
+    winopts       = false,
+    keymap        = false,
+    fzf_opts      = false,
+    __HLS         = "hls", -- rename prefix
+  }) do
+    opts = vim.tbl_flatten({ opts, vim.tbl_filter(function(x)
+        -- Exclude global options that can be specified only during `setup`,
+        -- e.g.'`winopts.preview.default` as this might confuse the user
+        return not M.options_md()["setup." .. x]
+      end,
+      vim.tbl_keys(utils.map_flatten(defaults[k] or {}, v or k))) })
+  end
+
+  -- Add options from docs, so we also have options defaulting to `nil`
+  local opts_from_docs = vim.tbl_filter(function(o)
+    return vim.startswith(o, cmd_cfg_key .. ".") or vim.startswith(o, "globals.")
+  end, vim.tbl_keys(M.options_md()))
+  vim.tbl_map(function(o)
+    -- Cut the first part, e.g. "files.cwd" -> "cwd"
+    o = o:match("%..*$"):sub(2)
+    if not vim.tbl_contains(opts, o) then
+      table.insert(opts, o)
+    end
+  end, opts_from_docs)
+
+  table.sort(opts)
+
+  opts = vim.tbl_filter(function(val)
+    return vim.startswith(val, l[#l])
+  end, opts)
+
+  return cmp_items and to_cmp_items(opts, { cmd = cmd_cfg_key }) or opts
+end
+
+return M

@@ -15,7 +15,10 @@
       "$VIMRUNTIME/lua",
       "${3rd}/luv/library",
       "$XDG_DATA_HOME/nvim/lazy/plenary.nvim/lua",
-      "$LOCALAPPDATA/nvim-data/lazy/plenary.nvim/lua"
+      "$LOCALAPPDATA/nvim-data/lazy/plenary.nvim/lua",
+      // For "cmp_src.lua" type resolving
+      "$XDG_DATA_HOME/nvim/lazy/nvim-cmp/lua",
+      "$LOCALAPPDATA/nvim-data/lazy/nvim-cmp/lua"
     ],
     "checkThirdParty": false,
     "maxPreload": 2000,

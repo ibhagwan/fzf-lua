@@ -276,15 +276,12 @@ local normalize_winopts = function(o)
   -- with "border chars must be one cell", force string border (#874)
   if vim.o.ambiwidth == "double" and type(winopts.border) == "table" then
     local topleft = winopts.border[1]
-    winopts.border = topleft
-        and config.globals.__WINOPTS.border2string[topleft] or "rounded"
+    winopts.border = topleft and config.globals.__WINOPTS.border2string[topleft] or "rounded"
+    winopts._border = winopts.border
   end
 
-  -- We only allow 'none|single|double|rounded'
+  -- We only allow 'none|empty|single|double|rounded|thicc|thiccc|thiccc'
   if type(winopts.border) == "string" then
-    -- save the original string so we can pass it
-    -- to the main fzf window 'nvim_open_win' (#364)
-    winopts._border = winopts.border
     winopts.border = config.globals.__WINOPTS.borderchars[winopts.border] or
         config.globals.__WINOPTS.borderchars["rounded"]
   end
@@ -713,16 +710,6 @@ function FzfWin:redraw_main()
   win_opts.row = winopts.row or math.floor(((lines - win_opts.height) / 2) - 1)
   win_opts.col = winopts.col or math.floor((columns - win_opts.width) / 2)
 
-  -- prioritize using border string argument in `nvim_open_win`
-  if self.winopts._border then
-    win_opts.border = self.winopts._border
-    -- adjust for borderless main window (#364)
-    if self.winopts._border == "none" then
-      win_opts.width = win_opts.width + 2
-      win_opts.height = win_opts.height + 2
-    end
-  end
-
   -- When border chars are empty strings 'nvim_open_win' adjusts
   -- the layout to take all avialable space, we use these to adjust
   -- our main window height to use all available lines (#364)
@@ -1016,11 +1003,6 @@ function FzfWin:update_scrollbar_border(o)
   local hl_f = self.hls.scrollborder_f
   local hl_e = self.hls.scrollborder_e
 
-  -- backward compatibility before 'scrollchar' was a table
-  if type(self.winopts.preview.scrollchar) == "string" and
-      #self.winopts.preview.scrollchar > 0 then
-    scrollchars[1] = self.winopts.preview.scrollchar
-  end
   for i = 1, 2 do
     if not scrollchars[i] or #scrollchars[i] == 0 then
       scrollchars[i] = borderchars[4]

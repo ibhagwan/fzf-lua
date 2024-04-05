@@ -19,14 +19,14 @@ do
 
   local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
   vim.g.fzf_lua_directory = path.normalize(path.parent(currFile))
-  local fzf_lua_root = path.parent(path.parent(vim.g.fzf_lua_directory))
+  vim.g.fzf_lua_root = path.parent(path.parent(vim.g.fzf_lua_directory))
 
   -- Manually source the vimL script containing ':FzfLua' cmd
   -- does nothing if already loaded due to `vim.g.loaded_fzf_lua`
-  source_vimL({ fzf_lua_root, "plugin", "fzf-lua.vim" })
+  source_vimL({ vim.g.fzf_lua_root, "plugin", "fzf-lua.vim" })
   -- Autoload scipts dynamically loaded on `vim.fn[fzf_lua#...]` call
   -- `vim.fn.exists("*fzf_lua#...")` will return 0 unless we manuall source
-  source_vimL({ fzf_lua_root, "autoload", "fzf_lua.vim" })
+  source_vimL({ vim.g.fzf_lua_root, "autoload", "fzf_lua.vim" })
   -- Set var post source as the top of the file `require` will return 0
   -- due to it potentially being loaded before "autoload/fzf_lua.vim"
   utils.__HAS_AUTOLOAD_FNS = vim.fn.exists("*fzf_lua#getbufinfo") == 1
@@ -357,6 +357,7 @@ M._exported_modules = {
 -- excluded from builtin / auto-complete
 M._excluded_meta = {
   "setup",
+  "redraw",
   "fzf",
   "fzf_raw",
   "fzf_wrap",

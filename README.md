@@ -24,6 +24,7 @@ yours too, if you allow it.
 - [Installation](#installation)
 - [Usage](#usage)
   + [Resume](#resume)
+  + [Options](#options)
 - [Commands](#commands)
   + [Buffers and Files](#buffers-and-files)
   + [Search](#search)
@@ -239,6 +240,11 @@ Alternatively, resuming work on a specific provider:
 -- or
 :FzfLua files resume=true
 ```
+
+### Options
+
+**Refer to [OPTIONS](https://github.com/ibhagwan/fzf-lua/blob/main/OPTIONS.md)
+to see detailed usage notes and a comprehensive list of all available options.**
 
 ## Commands
 
