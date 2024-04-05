@@ -67,7 +67,7 @@ local populate_buffer_entries = function(opts, bufnrs, tabh)
     local element = {
       bufnr = bufnr,
       flag = flag,
-      info = vim.fn.getbufinfo(bufnr)[1],
+      info = vim.fn["fzf_lua#getbufinfo"](bufnr),
       readonly = vim.bo[bufnr].readonly
     }
 
