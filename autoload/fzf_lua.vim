@@ -5,9 +5,15 @@
 function! fzf_lua#getbufinfo(bufnr) abort
   let info = getbufinfo(a:bufnr)
   if empty(info)
-    return v:false " there is no way to return `nil` from vimscript
+    return [] " there is no way to return `nil` from vimscript
   endif
+  let vars = info[0].variables
   unlet! info[0].variables
+  " Make sure we copy 'current_syntax' as `utils.buf_is_qf`
+  " uses it to detect quickfix buffers
+  if !empty(vars) && has_key(vars, "current_syntax")
+    let info[0].variables = { "current_syntax": vars.current_syntax }
+  endif
   return info[0]
 endfunction
 
@@ -15,7 +21,7 @@ endfunction
 function! fzf_lua#getwininfo(winid) abort
   let info = getwininfo(a:winid)
   if empty(info)
-    return v:false
+    return []
   endif
   unlet! info[0].variables
   return info[0]

@@ -4,7 +4,6 @@ local utils = require "fzf-lua.utils"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local base64 = require "fzf-lua.lib.base64"
-local make_entry = require "fzf-lua.make_entry"
 local devicons = require "fzf-lua.devicons"
 
 local M = {}
@@ -67,7 +66,7 @@ local populate_buffer_entries = function(opts, bufnrs, tabh)
     local element = {
       bufnr = bufnr,
       flag = flag,
-      info = vim.fn["fzf_lua#getbufinfo"](bufnr),
+      info = utils.getbufinfo(bufnr),
       readonly = vim.bo[bufnr].readonly
     }
 

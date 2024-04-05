@@ -805,7 +805,7 @@ function M.is_term_buffer(bufnr)
   bufnr = bufnr == 0 and vim.api.nvim_get_current_buf() or bufnr
   local winid = vim.fn.bufwinid(bufnr)
   if tonumber(winid) > 0 and vim.api.nvim_win_is_valid(winid) then
-    return vim.fn["fzf_lua#getwininfo"](winid).terminal == 1
+    return M.getwininfo(winid).terminal == 1
   end
   local bufname = vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_get_name(bufnr)
   return M.is_term_bufname(bufname)
@@ -813,7 +813,7 @@ end
 
 function M.buffer_is_dirty(bufnr, warn, only_if_last_buffer)
   bufnr = tonumber(bufnr) or vim.api.nvim_get_current_buf()
-  local info = bufnr and vim.fn["fzf_lua#getbufinfo"](bufnr)
+  local info = bufnr and M.getbufinfo(bufnr)
   if info and info.changed ~= 0 then
     if only_if_last_buffer and 1 < #vim.fn.win_findbuf(bufnr) then
       return false
@@ -829,7 +829,7 @@ end
 
 function M.save_dialog(bufnr)
   bufnr = tonumber(bufnr) or vim.api.nvim_get_current_buf()
-  local info = bufnr and vim.fn["fzf_lua#getbufinfo"](bufnr)
+  local info = bufnr and M.getbufinfo(bufnr)
   if not info.name or #info.name == 0 then
     -- unnamed buffers can't be saved
     M.warn(string.format("buffer %d has unsaved changes", bufnr))
@@ -853,8 +853,7 @@ end
 --   1 for qf list
 --   2 for loc list
 function M.win_is_qf(winid, wininfo)
-  wininfo = wininfo or
-      (vim.api.nvim_win_is_valid(winid) and vim.fn["fzf_lua#getwininfo"](winid))
+  wininfo = wininfo or (vim.api.nvim_win_is_valid(winid) and M.getwininfo(winid))
   if wininfo and wininfo.quickfix == 1 then
     return wininfo.loclist == 1 and 2 or 1
   end
@@ -862,8 +861,7 @@ function M.win_is_qf(winid, wininfo)
 end
 
 function M.buf_is_qf(bufnr, bufinfo)
-  bufinfo = bufinfo or
-      (vim.api.nvim_buf_is_valid(bufnr) and vim.fn["fzf_lua#getbufinfo"](bufnr))
+  bufinfo = bufinfo or (vim.api.nvim_buf_is_valid(bufnr) and M.getbufinfo(bufnr))
   if bufinfo and bufinfo.variables and
       bufinfo.variables.current_syntax == "qf" and
       not vim.tbl_isempty(bufinfo.windows) then
@@ -973,6 +971,24 @@ function M.nvim_buf_delete(bufnr, opts)
   vim.o.eventignore = "all"
   vim.api.nvim_buf_delete(bufnr, opts)
   vim.o.eventignore = save_ei
+end
+
+function M.getbufinfo(bufnr)
+  if M.__HAS_AUTOLOAD_FNS then
+    return vim.fn["fzf_lua#getbufinfo"](bufnr)
+  else
+    local info = vim.fn.getbufinfo(bufnr)
+    return info[1] or info
+  end
+end
+
+function M.getwininfo(winid)
+  if M.__HAS_AUTOLOAD_FNS then
+    return vim.fn["fzf_lua#getwininfo"](winid)
+  else
+    local info = vim.fn.getwininfo(winid)
+    return info[1] or info
+  end
 end
 
 -- Backward compat 'vim.keymap.set', will probably be deprecated soon

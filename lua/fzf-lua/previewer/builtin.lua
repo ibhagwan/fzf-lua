@@ -108,7 +108,7 @@ end
 
 function Previewer.base:preview_is_terminal()
   if not self.win or not self.win:validate_preview() then return end
-  return vim.fn["fzf_lua#getwininfo"](self.win.preview_winid).terminal == 1
+  return utils.getwininfo(self.win.preview_winid).terminal == 1
 end
 
 function Previewer.base:get_tmp_buffer()
@@ -368,7 +368,7 @@ function Previewer.base:scroll(direction)
   -- user scrolls, the highlight is no longer relevant (#462).
   -- Conditionally toggle 'cursorline' based on cursor position
   if self.orig_pos and self.winopts.cursorline then
-    local wininfo = vim.fn["fzf_lua#getwininfo"](preview_winid)
+    local wininfo = utils.getwininfo(preview_winid)
     if wininfo and
         self.orig_pos[1] >= wininfo.topline and
         self.orig_pos[1] <= wininfo.botline then

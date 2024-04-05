@@ -466,7 +466,7 @@ end
 
 function FzfWin:preview_layout()
   if self.winopts.split and self.previewer_is_builtin then
-    local wininfo = fn["fzf_lua#getwininfo"](self.fzf_winid)
+    local wininfo = utils.getwininfo(self.fzf_winid)
     -- unlike floating win popups, split windows inherit the global
     -- 'signcolumn' setting which affects the available width for fzf
     -- 'generate_layout' will then use the sign column available width
@@ -1144,7 +1144,7 @@ function FzfWin:update_scrollbar(hide)
   local buf = api.nvim_win_get_buf(self.preview_winid)
 
   local o = {}
-  o.wininfo = fn["fzf_lua#getwininfo"](self.preview_winid)
+  o.wininfo = utils.getwininfo(self.preview_winid)
   o.line_count = api.nvim_buf_line_count(buf)
 
   local topline, height = o.wininfo.topline, o.wininfo.height

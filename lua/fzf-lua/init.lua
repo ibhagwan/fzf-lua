@@ -9,22 +9,27 @@ local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
 do
-  -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
-  -- plugin '.vim' initialization sometimes doesn't get called
-  local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
-  vim.g.fzf_lua_directory = path.normalize(path.parent(currFile))
-
-  -- Manually source the vimL script containing ':FzfLua' cmd
-  if not vim.g.loaded_fzf_lua then
-    local fzf_lua_vim = path.join({
-      path.parent(path.parent(vim.g.fzf_lua_directory)),
-      "plugin", "fzf-lua.vim"
-    })
-    if vim.loop.fs_stat(fzf_lua_vim) then
-      vim.cmd(("source %s"):format(fzf_lua_vim))
-      -- utils.info(("manually loaded '%s'"):format(fzf_lua_vim))
+  local function source_vimL(path_parts)
+    local vimL_file = path.join(path_parts)
+    if vim.loop.fs_stat(vimL_file) then
+      vim.cmd("source " .. vimL_file)
+      -- print(string.format("loaded '%s'", vimL_file))
     end
   end
+
+  local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
+  vim.g.fzf_lua_directory = path.normalize(path.parent(currFile))
+  local fzf_lua_root = path.parent(path.parent(vim.g.fzf_lua_directory))
+
+  -- Manually source the vimL script containing ':FzfLua' cmd
+  -- does nothing if already loaded due to `vim.g.loaded_fzf_lua`
+  source_vimL({ fzf_lua_root, "plugin", "fzf-lua.vim" })
+  -- Autoload scipts dynamically loaded on `vim.fn[fzf_lua#...]` call
+  -- `vim.fn.exists("*fzf_lua#...")` will return 0 unless we manuall source
+  source_vimL({ fzf_lua_root, "autoload", "fzf_lua.vim" })
+  -- Set var post source as the top of the file `require` will return 0
+  -- due to it potentially being loaded before "autoload/fzf_lua.vim"
+  utils.__HAS_AUTOLOAD_FNS = vim.fn.exists("*fzf_lua#getbufinfo") == 1
 
   -- Create a new RPC server (tmp socket) to listen to messages (actions/headless)
   -- this is safer than using $NVIM_LISTEN_ADDRESS. If the user is using a custom
