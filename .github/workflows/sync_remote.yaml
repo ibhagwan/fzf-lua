@@ -1,4 +1,4 @@
-on: [push, pull_request, delete]
+on: [push, delete]
 
 jobs:
   push:
