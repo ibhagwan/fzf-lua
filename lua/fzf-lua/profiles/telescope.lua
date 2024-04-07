@@ -6,6 +6,7 @@ local function hl_validate(hl)
 end
 
 return {
+  { "default-title" }, -- base profile
   desc       = "match telescope default highlights|keybinds",
   fzf_opts   = { ["--layout"] = "default", ["--marker"] = "+" },
   winopts    = {
@@ -17,21 +18,23 @@ return {
       horizontal   = "right:50%",
       layout       = "flex",
       flip_columns = 120,
+      delay        = 10,
+      winopts      = { number = false },
     },
   },
   hls        = {
     normal         = hl_validate "TelescopeNormal",
     border         = hl_validate "TelescopeBorder",
-    title          = hl_validate "TelescopeTitle",
+    title          = hl_validate "TelescopePromptTitle",
     help_normal    = hl_validate "TelescopeNormal",
     help_border    = hl_validate "TelescopeBorder",
     preview_normal = hl_validate "TelescopeNormal",
     preview_border = hl_validate "TelescopeBorder",
-    preview_title  = hl_validate "TelescopeTitle",
+    preview_title  = hl_validate "TelescopePreviewTitle",
     -- builtin preview only
     cursor         = hl_validate "Cursor",
-    cursorline     = hl_validate "TelescopePreviewLine",
-    cursorlinenr   = hl_validate "TelescopePreviewLine",
+    cursorline     = hl_validate "TelescopeSelection",
+    cursorlinenr   = hl_validate "TelescopeSelection",
     search         = hl_validate "IncSearch",
   },
   fzf_colors = {
@@ -44,6 +47,7 @@ return {
     ["info"] = { "fg", "TelescopeMultiSelection" },
     ["border"] = { "fg", "TelescopeBorder" },
     ["gutter"] = { "bg", "TelescopeNormal" },
+    ["query"] = { "fg", "TelescopePromptNormal" },
     ["prompt"] = { "fg", "TelescopePromptPrefix" },
     ["pointer"] = { "fg", "TelescopeSelectionCaret" },
     ["marker"] = { "fg", "TelescopeSelectionCaret" },

@@ -138,23 +138,35 @@ end
 -- case the user decides not to call `setup()`
 M.setup_highlights()
 
-function M.load_profile(profile)
-  local fname = path.join({ vim.g.fzf_lua_directory, "profiles", profile .. ".lua" })
-  return utils.load_profile(fname, nil, true)
-end
-
-function M.setup(opts, do_not_reset_defaults)
-  opts = type(opts) == "table" and opts or {}
-  if type(opts[1]) == "string" then
-    -- Did the user request a specific profile?
-    local profile_opts = M.load_profile(opts[1])
+local function load_profiles(profiles)
+  local ret = {}
+  profiles = type(profiles) == "table" and profiles
+      or type(profiles) == "string" and { profiles }
+      or {}
+  for _, profile in ipairs(profiles) do
+    local fname = path.join({ vim.g.fzf_lua_directory, "profiles", profile .. ".lua" })
+    local profile_opts = utils.load_profile_fname(fname, nil, true)
     if type(profile_opts) == "table" then
+      if profile_opts[1] then
+        -- profile requires loading base profile(s)
+        profile_opts = vim.tbl_deep_extend("keep",
+          profile_opts, load_profiles(profile_opts[1]))
+      end
       if type(profile_opts.fn_load) == "function" then
         profile_opts.fn_load()
         profile_opts.fn_load = nil
       end
-      opts = vim.tbl_deep_extend("keep", opts, profile_opts)
+      ret = vim.tbl_deep_extend("force", ret, profile_opts)
     end
+  end
+  return ret
+end
+
+function M.setup(opts, do_not_reset_defaults)
+  opts = type(opts) == "table" and opts or {}
+  if opts[1] then
+    -- Did the user supply profile(s) to load?
+    opts = vim.tbl_deep_extend("keep", opts, load_profiles(opts[1]))
   end
   if do_not_reset_defaults then
     -- no defaults reset requested, merge with previous setup options
@@ -342,7 +354,6 @@ M._exported_modules = {
 
 -- excluded from builtin / auto-complete
 M._excluded_meta = {
-  "load_profile",
   "setup",
   "fzf",
   "fzf_raw",

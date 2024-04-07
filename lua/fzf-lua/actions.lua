@@ -874,9 +874,9 @@ M.apply_profile = function(selected, opts)
   local entry = path.entry_to_file(selected[1])
   local fname = entry.path
   local profile = entry.stripped:sub(#fname + 2):match("[^%s]+")
-  local ok = utils.load_profile(fname, profile, opts.silent)
+  local ok = utils.load_profile_fname(fname, profile, opts.silent)
   if ok then
-    vim.cmd(string.format([[lua require("fzf-lua").setup({"%s"})]], profile))
+    loadstring(string.format([[require("fzf-lua").setup({"%s"})]], profile))()
   end
 end
 

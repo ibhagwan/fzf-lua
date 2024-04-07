@@ -71,7 +71,7 @@ M.profiles = function(opts)
           local ext = path.extension(fname)
           if type == "file" and ext == "lua" then
             local profile = name:sub(1, #name - 4)
-            local res = utils.load_profile(fname, profile, true)
+            local res = utils.load_profile_fname(fname, profile, true)
             if res then
               local entry = string.format("%s:%-30s%s", fname,
                 utils.ansi_codes.yellow(profile), res.desc or "")

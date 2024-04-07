@@ -19,6 +19,7 @@ telescope defaults with `bat` previewer:
 | Profile          | Details                                    |
 | ---------------- | ------------------------------------------ |
 | `default`          | fzf-lua defaults, uses neovim "builtin" previewer and devicons (if available) for git/files/buffers |
+| `default-title`    | fzf-lua defaults, using title instead of prompt |
 | `fzf-native`       | utilizes fzf's native previewing ability in the terminal where possible using `bat` for previews |
 | `fzf-tmux`         | similar to `fzf-native` and opens in a tmux popup (requires tmux > 3.2) |
 | `fzf-vim`          | closest to `fzf.vim`'s defaults (+icons), also sets up user commands (`:Files`, `:Rg`, etc) |

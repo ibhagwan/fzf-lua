@@ -765,7 +765,7 @@ end
 ---@param fname string
 ---@param name string|nil
 ---@param silent boolean
-function M.load_profile(fname, name, silent)
+function M.load_profile_fname(fname, name, silent)
   local profile = name or fname:match("([^%p]+)%.lua$") or "<unknown>"
   local ok, res = pcall(dofile, fname)
   if ok and type(res) == "table" then

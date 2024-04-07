@@ -559,7 +559,11 @@ local normalize_lsp_opts = function(opts, cfg, __resume_key)
   opts = config.normalize_opts(opts, cfg, __resume_key)
   if not opts then return end
 
-  if not opts.prompt and opts.prompt_postfix then
+  -- `title_prefix` is priortized over both `prompt` and `prompt_prefix`
+  if (not opts.winopts or opts.winopts.title == nil) and opts.title_prefix then
+    utils.map_set(opts,
+      "winopts.title", string.format(" %s %s ", opts.title_prefix, opts.lsp_handler.label))
+  elseif opts.prompt == nil and opts.prompt_postfix then
     opts.prompt = opts.lsp_handler.label .. (opts.prompt_postfix or "")
   end
 

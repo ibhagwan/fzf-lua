@@ -3,20 +3,10 @@ local hls = {
   sel   = "PmenuSel",
   title = "IncSearch"
 }
-local function title(str, opts)
-  return vim.tbl_deep_extend("keep", opts or {},
-    {
-      prompt = "❯ ",
-      winopts = {
-        -- title = { { " " .. str .. " ", hls.title } },
-        title = " " .. str .. " ",
-        title_pos = "center",
-      }
-    })
-end
 return {
-  desc            = "borderless and not so minimalistic",
-  winopts         = {
+  { "default-title" }, -- base profile
+  desc       = "borderless and not so minimalistic",
+  winopts    = {
     border  = { " ", " ", " ", " ", " ", " ", " ", " " },
     preview = {
       scrollbar = "float",
@@ -24,7 +14,7 @@ return {
       title_pos = "center",
     },
   },
-  hls             = {
+  hls        = {
     title          = hls.title,
     border         = hls.bg,
     preview_title  = hls.title,
@@ -32,66 +22,11 @@ return {
     scrollfloat_e  = "",
     scrollfloat_f  = hls.sel,
   },
-  fzf_colors      = {
+  fzf_colors = {
     ["gutter"] = { "bg", hls.bg },
     ["bg"]     = { "bg", hls.bg },
     ["bg+"]    = { "bg", hls.sel },
     ["fg+"]    = { "fg", hls.sel },
   },
-  files           = title("Files"),
-  buffers         = title("Buffers"),
-  tabs            = title("Tabs"),
-  lines           = title("Lines"),
-  blines          = title("Buffer Lines"),
-  grep            = title("Search", { rg_glob = true }),
-  git             = {
-    files    = title("Git Files"),
-    status   = title("Git Status"),
-    commits  = title("Git Commits"),
-    bcommits = title("Git BCommits"),
-    branches = title("Git Branches"),
-    stash    = title("Git Stash"),
-  },
-  args            = title("Args"),
-  oldfiles        = title("Oldfiles"),
-  quickfix        = title("Quickfix List"),
-  quickfix_stack  = title("Quickfix List Stack"),
-  loclist         = title("Location List"),
-  loclist_stack   = title("Location List Stack"),
-  tags            = title("Tags"),
-  btags           = title("Buffer Tags"),
-  colorschemes    = title("Colorschemes"),
-  highlights      = title("Highlights"),
-  helptags        = title("Neovim Help"),
-  manpages        = title("Man Pages"),
-  lsp             = title("LSP", {
-    prompt       = false,
-    symbols      = title("LSP", { prompt = false }),
-    finder       = title("LSP Finder"),
-    code_actions = title("Code Actions"),
-  }),
-  diagnostics     = title("Diagnostics"),
-  builtin         = title("FzfLua Builtin"),
-  profiles        = title("FzfLua Profiles"),
-  marks           = title("Marks"),
-  jumps           = title("Jumps"),
-  tagstack        = title("Tagstack"),
-  commands        = title("Commands"),
-  autocmds        = title("Autocmds"),
-  command_history = title("Command history"),
-  search_history  = title("Search history"),
-  registers       = title("Registers"),
-  keymaps         = title("Keymaps"),
-  spell_suggest   = title("Spell Suggestions"),
-  filetypes       = title("Filetypes"),
-  packadd         = title("Packer Packadd"),
-  menus           = title("Menus"),
-  tmux            = title("Tmux Buffers"),
-  dap             = {
-    commands       = title("DAP Commands"),
-    configurations = title("DAP Configurations"),
-    variables      = title("DAP Variables"),
-    frames         = title("DAP Frames"),
-    breakpoints    = title("DAP Breakpoints"),
-  },
+  grep       = { rg_glob = true },
 }
