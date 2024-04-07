@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 April 04
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 April 06
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -531,6 +531,12 @@ telescope defaults with `bat` previewer:
 
 >lua
     :lua require"fzf-lua".setup({"telescope",winopts={preview={default="bat"}}})
+<
+Combining of profiles is also available by sending table instead of string as
+the first argument:
+
+>lua
+    :lua require"fzf-lua".setup({{"telescope","fzf-native"},winopts={fullscreen=true}})
 <
 See profiles
 <https://github.com/ibhagwan/fzf-lua/tree/main/lua/fzf-lua/profiles> for more
