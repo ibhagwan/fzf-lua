@@ -134,8 +134,9 @@ M.fzf_exec = function(contents, opts)
   _, opts.__INFO = pcall(loadstring("return require'fzf-lua'.get_info()"))
 
   if vim.g.fzf_history_dir and opts.fzf_opts["--history"] == nil then
-    if vim.fn.isdirectory(vim.g.fzf_history_dir) == 0 then
-      vim.fn.mkdir(vim.g.fzf_history_dir, "p")
+    local dir = vim.fn.expand(vim.g.fzf_history_dir)
+    if vim.fn.isdirectory(dir) == 0 then
+      vim.fn.mkdir(dir)
     end
     local filename
     if opts.__INFO.fzf_vim_history_name ~= nil then
@@ -143,8 +144,9 @@ M.fzf_exec = function(contents, opts)
     else
       filename = opts.__INFO.cmd
     end
-    opts.fzf_opts["--history"] = vim.g.fzf_history_dir .. "/" .. filename
+    opts.fzf_opts["--history"] = dir .. "/" .. filename
   end
+  print(vim.inspect(opts))
 
   opts.fn_selected = opts.fn_selected or function(selected, o)
     if not selected then return end
