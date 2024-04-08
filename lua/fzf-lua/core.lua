@@ -132,6 +132,20 @@ M.fzf_exec = function(contents, opts)
   -- save a copy of cprovider info in the opts, we later use it for better named
   -- quickfix lists, use `pcall` because we will circular ref main object (#776)
   _, opts.__INFO = pcall(loadstring("return require'fzf-lua'.get_info()"))
+
+  if vim.g.fzf_history_dir and opts.fzf_opts["--history"] == nil then
+    if vim.fn.isdirectory(vim.g.fzf_history_dir) == 0 then
+      vim.fn.mkdir(vim.g.fzf_history_dir, "p")
+    end
+    local filename
+    if opts.__INFO.fzf_vim_history_name ~= nil then
+      filename = opts.__INFO.fzf_vim_history_name
+    else
+      filename = opts.__INFO.cmd
+    end
+    opts.fzf_opts["--history"] = vim.g.fzf_history_dir .. "/" .. filename
+  end
+
   opts.fn_selected = opts.fn_selected or function(selected, o)
     if not selected then return end
     actions.act(opts.actions, selected, o)
@@ -205,6 +219,8 @@ end
 ---@return function
 M.fzf_wrap = function(opts, contents, fn_selected)
   opts = opts or {}
+  -- print(vim.inspect(contents))
+  -- print(vim.inspect(opts))
   return coroutine.wrap(function()
     opts.fn_selected = opts.fn_selected or fn_selected
     local selected = M.fzf(contents, opts)
