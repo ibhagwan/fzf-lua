@@ -113,7 +113,7 @@ M.defaults                      = {
   fzf_bin       = nil,
   fzf_opts      = {
     ["--ansi"]   = true,
-    ["--info"]   = "inline",
+    ["--info"]   = "inline-right",
     ["--height"] = "100%",
     ["--layout"] = "reverse",
     ["--border"] = "none",
@@ -203,7 +203,7 @@ M.defaults.files                = {
   cwd_prompt             = true,
   cwd_prompt_shorten_len = 32,
   cwd_prompt_shorten_val = 1,
-  fzf_opts               = { ["--info"] = "default", ["--multi"] = true },
+  fzf_opts               = { ["--multi"] = true },
   _fzf_nth_devicons      = true,
   git_status_cmd         = {
     "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" },
@@ -342,7 +342,7 @@ M.defaults.grep                 = {
   file_icons     = true and M._has_devicons,
   color_icons    = true,
   git_icons      = true,
-  fzf_opts       = { ["--info"] = "default", ["--multi"] = true },
+  fzf_opts       = { ["--multi"] = true },
   grep_opts      = utils.is_darwin()
       and "--binary-files=without-match --line-number --recursive --color=always "
       .. "--extended-regexp -e"
@@ -523,7 +523,6 @@ M.defaults.tags                 = {
     ["--no-multi"]  = true,
     ["--delimiter"] = string.format("[:%s]", utils.nbsp),
     ["--tiebreak"]  = "begin",
-    ["--info"]      = "default",
   },
   _actions     = function() return M.globals.actions.files end,
   actions      = { ["ctrl-g"] = { actions.grep_lgrep } },
@@ -545,7 +544,6 @@ M.defaults.btags                = {
     ["--delimiter"] = string.format("[:%s]", utils.nbsp),
     ["--with-nth"]  = "1,-1",
     ["--tiebreak"]  = "begin",
-    ["--info"]      = "default",
   },
   _actions      = function() return M.globals.actions.files end,
   actions       = { ["ctrl-g"] = false },
@@ -571,7 +569,6 @@ M.defaults.awesome_colorschemes = {
   live_preview = true,
   max_threads  = 5,
   fzf_opts     = {
-    ["--info"]      = "default",
     ["--multi"]     = true,
     ["--delimiter"] = "[:]",
     ["--with-nth"]  = "3..",
@@ -678,7 +675,6 @@ M.defaults.lsp.symbols          = {
   fzf_opts         = {
     ["--delimiter"] = string.format("[:%s]", utils.nbsp),
     ["--tiebreak"]  = "begin",
-    ["--info"]      = "default",
     ["--no-multi"]  = true,
   },
   line_field_index = "{-2}", -- line field index
@@ -707,7 +703,6 @@ M.defaults.lsp.symbols          = {
 M.defaults.lsp.finder           = {
   previewer   = M._default_previewer_fn,
   prompt      = "LSP Finder> ",
-  fzf_opts    = { ["--info"] = "default" },
   file_icons  = true and M._has_devicons,
   color_icons = true,
   git_icons   = false,

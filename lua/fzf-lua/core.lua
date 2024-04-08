@@ -549,11 +549,16 @@ M.build_fzf_cli = function(opts)
     opts.fzf_opts["--preview-window"] =
         opts.fzf_opts["--preview-window"] .. ":" .. opts.preview_offset
   end
+  if opts.__FZF_VERSION and opts.__FZF_VERSION < 0.42 then
+    if opts.fzf_opts["--info"]:match("^inline%-right") then
+      opts.fzf_opts["--info"] = "inline"
+    end
+  end
   if opts._is_skim then
     -- skim (rust version of fzf) doesn't support the '--info=' flag
     local info = opts.fzf_opts["--info"]
     opts.fzf_opts["--info"] = nil
-    if info == "inline" then
+    if info:match("^inline") then
       -- inline for skim is defined as:
       opts.fzf_opts["--inline-info"] = true
     end

@@ -665,7 +665,7 @@ require'fzf-lua'.setup {
     -- set to `true` for a no-value flag
     -- for raw args use `fzf_args` instead
     ["--ansi"]        = true,
-    ["--info"]        = "inline",
+    ["--info"]        = "inline-right", -- fzf < v0.42 = "inline"
     ["--height"]      = "100%",
     ["--layout"]      = "reverse",
     ["--border"]      = "none",
@@ -1083,7 +1083,7 @@ require'fzf-lua'.setup {
     -- 'tags_live_grep' options, `rg` prioritizes over `grep`
     rg_opts               = "--no-heading --color=always --smart-case",
     grep_opts             = "--color=auto --perl-regexp",
-    fzf_opts              = { ["--info"] = "default", ["--tiebreak"] = "begin" },
+    fzf_opts              = { ["--tiebreak"] = "begin" },
     actions = {
       -- actions inherit from 'actions.files' and merge
       -- this action toggles between 'grep' and 'live_grep'
@@ -1101,7 +1101,7 @@ require'fzf-lua'.setup {
     git_icons             = false,
     rg_opts               = "--color=never --no-heading",
     grep_opts             = "--color=never --perl-regexp",
-    fzf_opts              = { ["--info"] = "default", ["--tiebreak"] = "begin" },
+    fzf_opts              = { ["--tiebreak"] = "begin" },
     -- actions inherit from 'actions.files'
   },
   colorschemes = {
@@ -1122,7 +1122,6 @@ require'fzf-lua'.setup {
     max_threads       = 5,          -- max download/update threads
     winopts           = { row = 0, col = 0.99, width = 0.50 },
     fzf_opts          = {
-      ["--info"]      = "default",
       ["--multi"]     = true,
       ["--delimiter"] = "[:]",
       ["--with-nth"]  = "3..",
@@ -1217,10 +1216,7 @@ require'fzf-lua'.setup {
         symbol_fmt        = function(s, opts) return "[" .. s .. "]" end,
         -- prefix child symbols. set to any string or `false` to disable
         child_prefix      = true,
-        fzf_opts          = {
-          ["--tiebreak"] = "begin",
-          ["--info"]     = "default",
-        },
+        fzf_opts          = { ["--tiebreak"] = "begin" },
     },
     code_actions = {
         prompt            = 'Code Actions> ',
@@ -1232,7 +1228,6 @@ require'fzf-lua'.setup {
     },
     finder = {
         prompt      = "LSP Finder> ",
-        fzf_opts    = { ["--info"] = "default" },
         file_icons  = true,
         color_icons = true,
         git_icons   = false,
