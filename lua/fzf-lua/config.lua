@@ -222,6 +222,17 @@ function M.normalize_opts(opts, globals, __resume_key)
     opts.fzf_opts["--delimiter"] = string.format("[%s]", utils.nbsp)
   end
 
+  -- fzf.vim's `g:fzf_history_dir` (#1127)
+  if vim.g.fzf_history_dir and opts.fzf_opts["--history"] == nil then
+    local histdir = vim.fn.expand(vim.g.fzf_history_dir)
+    if vim.fn.isdirectory(histdir) == 0 then
+      pcall(vim.fn.mkdir, histdir)
+    end
+    if vim.fn.isdirectory(histdir) == 1 and type(opts.__resume_key) == "string" then
+      opts.fzf_opts["--history"] = path.join({ histdir, opts.__resume_key })
+    end
+  end
+
   -- prioritize fzf-tmux split pane flags over the
   -- popup flag `-p` from fzf-lua defaults (#865)
   opts._is_fzf_tmux_popup = true
