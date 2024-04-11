@@ -137,7 +137,7 @@ M.bcommits = function(opts)
   end
   local git_root = path.git_root(opts)
   if not git_root then return end
-  local file = path.relative_to(vim.fn.expand("%:p"), git_root)
+  local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p"), git_root))
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
@@ -149,7 +149,7 @@ M.bcommits = function(opts)
     opts.cmd = opts.cmd .. " " .. (range or file)
   end
   if type(opts.preview) == "string" then
-    opts.preview = opts.preview:gsub("[<{]file[}>]", libuv.shellescape(file))
+    opts.preview = opts.preview:gsub("[<{]file[}>]", file)
     opts.preview = path.git_cwd(opts.preview, opts)
     if type(opts.preview_pager) == "function" then
       opts.preview_pager = opts.preview_pager()
