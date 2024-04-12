@@ -348,8 +348,11 @@ M.fzf = function(contents, opts)
         and tonumber(opts.winopts.preview.flip_columns) > 0
         -- Only enable flex layout native rotate if zero event wasn't
         -- set as it's most likely set by the default builtin previewer
-        -- or when using split mode for the background "empty previewer"
-        and (not previewer.zero or opts.winopts.split)
+        and (not previewer.zero
+          -- or when using split mode for the background "empty previewer"
+          -- do not use when starting with a hidden previewer as this will
+          -- display the empty previewer when resizing (#1130)
+          or opts.winopts.split and opts.winopts.preview.hidden ~= "hidden")
     then
       local transformer = string.format(utils.__IS_WINDOWS
         and "IF %%FZF_COLUMNS%% LEQ %d (echo change-preview-window:%s) "
