@@ -875,7 +875,8 @@ function Previewer.buffer_or_file:update_border(entry)
     local title = filepath or entry.uri
     -- was transform function defined?
     if self.title_fnamemodify then
-      title = self.title_fnamemodify(title)
+      local wincfg = vim.api.nvim_win_get_config(self.win.border_winid)
+      title = self.title_fnamemodify(title, wincfg and wincfg.width)
     end
     if entry.bufnr then
       title = string.format("buf %d: %s", entry.bufnr, title)
