@@ -192,19 +192,18 @@ M.marks = function(opts)
   opts = config.normalize_opts(opts, "marks")
   if not opts then return end
 
-  local marks = vim.fn.execute(
-    string.format("marks %s", opts.marks and opts.marks or ""))
+  local marks = vim.fn.execute("marks")
   marks = vim.split(marks, "\n")
 
   local entries = {}
-  local filter = opts.marks and vim.split(opts.marks, "")
+  local pattern = opts.marks and opts.marks or ""
   for i = #marks, 3, -1 do
     local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
     col = tostring(tonumber(col) + 1)
     if path.is_absolute(text) then
       text = path.HOME_to_tilde(text)
     end
-    if not filter or vim.tbl_contains(filter, mark) then
+    if not pattern or string.match(mark, pattern) then
       table.insert(entries, string.format(" %-15s %15s %15s %s",
         utils.ansi_codes.yellow(mark),
         utils.ansi_codes.blue(line),
