@@ -1280,6 +1280,12 @@ require'fzf-lua'.setup {
     -- severity_limit:  keep any equal or more severe (lower)
     -- severity_bound:  keep any equal or less severe (higher)
   },
+  marks = {
+    marks = "", -- filter vim marks with a lua pattern
+    -- for example if you want to only show user defined marks
+    -- you would set this option as %a this would match characters from [A-Za-z]
+    -- or if you want to show only numbers you would set the pattern to %d (0-9).
+  },
   complete_path = {
     cmd          = nil, -- default: auto detect fd|rg|find
     complete     = { ["default"] = actions.complete },
