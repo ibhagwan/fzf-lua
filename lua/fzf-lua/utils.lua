@@ -273,9 +273,22 @@ end
 
 local S_IFMT = 0xF000  -- filetype mask
 local S_IFIFO = 0x1000 -- fifo
+local S_IFDIR = 0x4000 -- directory
 
-M.file_is_fifo = function(filepath)
-  local stat = vim.loop.fs_stat(filepath)
+M.path_is_directory = function(filepath, stat)
+  if stat == nil then
+    stat = vim.loop.fs_stat(filepath)
+  end
+  if stat and bit.band(stat.mode, S_IFMT) == S_IFDIR then
+    return true
+  end
+  return false
+end
+
+M.file_is_fifo = function(filepath, stat)
+  if stat == nil then
+    stat = vim.loop.fs_stat(filepath)
+  end
   if stat and bit.band(stat.mode, S_IFMT) == S_IFIFO then
     return true
   end
