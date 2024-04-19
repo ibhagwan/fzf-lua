@@ -14,6 +14,7 @@ vim.api.nvim_create_user_command("FzfLua", function(opts)
   require("fzf-lua.cmd").load_command(unpack(opts.fargs))
 end, {
   nargs = "*",
+  range = true,
   complete = function(_, line)
     local metatable = require("fzf-lua")
     local builtin_list = vim.tbl_filter(function(k)
