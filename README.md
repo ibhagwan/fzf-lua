@@ -126,7 +126,8 @@ to configure in `previewer.builtin.extensions`):
 - [chafa](https://github.com/hpjansson/chafa) - terminal image previewer
   (recommended, supports most file formats)
 - [viu](https://github.com/atanunq/viu) - terminal image previewer
-- [ueberzug](https://github.com/seebye/ueberzug) - X11 image previewer
+- [ueberzugpp](https://github.com/jstkdng/ueberzugpp) - terminal image previewer using X11/Wayland
+  child windows, sixels, kitty and iterm2
 
 ### Windows Notes
 
