@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 April 14
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 April 18
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -168,7 +168,8 @@ to configure in `previewer.builtin.extensions`):
 - chafa <https://github.com/hpjansson/chafa> - terminal image previewer
   (recommended, supports most file formats)
 - viu <https://github.com/atanunq/viu> - terminal image previewer
-- ueberzug <https://github.com/seebye/ueberzug> - X11 image previewer
+- ueberzugpp <https://github.com/jstkdng/ueberzugpp> - terminal image
+  previewer using X11/Wayland child windows, sixels, kitty and iterm2
 
                                                                               
 WINDOWS NOTES                                          *fzf-lua-windows-notes*
