@@ -465,12 +465,35 @@ M.create_fzf_colors = function(opts)
     colors = colors(opts)
   end
 
+  -- Inerherit from fzf.vim's g:fzf_colors
+  -- fzf.vim:
+  --   vim.g.fzf_colors = {
+  --     ["fg"] = { "fg" , "Comment", "Normal" }
+  --   }
+  -- fzf-lua:
+  --   fzf_colors = {
+  --     ["fg"] = { "fg" , { "Comment", "Normal" } }
+  --   }
+  colors = vim.tbl_extend("keep", colors or {},
+    vim.tbl_map(function(v)
+      -- Value isn't guaranteed a table, e.g:
+      --   vim.g.fzf_colors = { ["gutter"] = "-1" }
+      if type(v) ~= "table" then return tostring(v) end
+      -- We accept both fzf.vim and fzf-lua style values
+      if type(v[2]) == "table" then return v end
+      local new_v = { v[1], { v[2] } }
+      for i = 3, #v do
+        table.insert(new_v[2], v[i])
+      end
+      return new_v
+    end, type(vim.g.fzf_colors) == "table" and vim.g.fzf_colors or {}))
+
   local tbl = {}
 
   -- In case the user alredy set fzf_opts["--color"] (#1052)
   table.insert(tbl, opts.fzf_opts and opts.fzf_opts["--color"])
 
-  for flag, list in pairs(colors or {}) do
+  for flag, list in pairs(colors) do
     if type(list) == "table" then
       local spec = {}
       local what = list[1]

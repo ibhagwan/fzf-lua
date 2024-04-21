@@ -41,6 +41,7 @@ yours too, if you allow it.
   + [Custom Completion](#custom-completion)
 - [Default Options](#default-options)
 - [Highlights](#highlights)
+  + [Fzf Colors](#fzf-colors)
 - [Credits](#credits)
 
 
@@ -1374,9 +1375,39 @@ Temporary highlight override:
 
 Permanent global override via `setup`:
 ```lua
-require('fzf-lua').setup{
+require('fzf-lua').setup {
   hls = { border = "FloatBorder" }
 }
+```
+
+#### Fzf Colors
+
+Fzf's terminal colors are controlled by fzf's `--color` flag which can be
+configured during setup via `fzf_colors` (see `man fzf` for all color options):
+```lua
+require('fzf-lua').setup {
+  fzf_colors = {
+    -- First existing highlight group will be used
+    -- values in 3rd+ index will be passed raw
+    -- i.e:  `--color fg+:#010101:bold:underline`
+    ["fg+"] = { "fg" , { "Comment", "Normal" }, "bold", "underline" },
+    -- It is also possible to pass raw values directly
+    ["gutter"] = "-1"
+  }
+}
+```
+
+Conveniently, fzf-lua can also be configured using fzf.vim's `g:fzf_colors`, i.e:
+```lua
+-- Similarly, first existing highlight group will be used
+:lua vim.g.fzf_colors = { ["gutter"] = { "bg", "DoesNotExist", "IncSearch" } }
+```
+
+However, the above doesn't allow combining both neovim highlights and raw args,
+if you're only using fzf-lua we can hijack `g:fzf_colors` to accept fzf-lua style
+values (i.e. table at 2nd index and 3rd+ raw args):
+```lua
+:lua vim.g.fzf_colors = { ["fg+"] = { "fg", { "ErrorMsg" }, "bold", "underline" } }
 ```
 
 ## Credits

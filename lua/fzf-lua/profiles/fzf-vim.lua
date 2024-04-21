@@ -98,15 +98,6 @@ return {
     ["--info"] = false,
     ["--layout"] = false,
   },
-  fzf_colors = (function()
-    return vim.tbl_map(function(v)
-      local new_v = { v[1], { v[2] } }
-      for i = 3, #v do
-        table.insert(new_v[2], v[i])
-      end
-      return new_v
-    end, type(vim.g.fzf_colors) == "table" and vim.g.fzf_colors or {})
-  end)(),
   keymap = {
     builtin = {
       ["<F1>"]     = "toggle-help",
