@@ -841,7 +841,7 @@ end
 M.tmux_buf_set_reg = function(selected, opts)
   local buf = selected[1]:match("^%[(.-)%]")
   local data, rc = utils.io_system({ "tmux", "show-buffer", "-b", buf })
-  if rc ~= 0 and data and #data > 0 then
+  if rc == 0 and data and #data > 0 then
     opts.register = opts.register or [["]]
     local ok, err = pcall(vim.fn.setreg, opts.register, data)
     if ok then
