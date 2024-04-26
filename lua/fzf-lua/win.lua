@@ -21,13 +21,19 @@ setmetatable(FzfWin, {
 })
 
 local _preview_keymaps = {
-  ["toggle-preview"]      = { module = "win", fnc = "toggle_preview()" },
-  ["toggle-preview-wrap"] = { module = "win", fnc = "toggle_preview_wrap()" },
-  ["toggle-preview-cw"]   = { module = "win", fnc = "toggle_preview_cw(1)" },
-  ["toggle-preview-ccw"]  = { module = "win", fnc = "toggle_preview_cw(-1)" },
-  ["preview-page-up"]     = { module = "win", fnc = "preview_scroll(-1)" },
-  ["preview-page-down"]   = { module = "win", fnc = "preview_scroll(1)" },
-  ["preview-page-reset"]  = { module = "win", fnc = "preview_scroll(0)" },
+  ["toggle-preview"]         = { module = "win", fnc = "toggle_preview()" },
+  ["toggle-preview-wrap"]    = { module = "win", fnc = "toggle_preview_wrap()" },
+  ["toggle-preview-cw"]      = { module = "win", fnc = "toggle_preview_cw(1)" },
+  ["toggle-preview-ccw"]     = { module = "win", fnc = "toggle_preview_cw(-1)" },
+  ["preview-up"]             = { module = "win", fnc = "preview_scroll('line-up')" },
+  ["preview-down"]           = { module = "win", fnc = "preview_scroll('line-down')" },
+  ["preview-page-up"]        = { module = "win", fnc = "preview_scroll('page-up')" },
+  ["preview-page-down"]      = { module = "win", fnc = "preview_scroll('page-down')" },
+  ["preview-half-page-up"]   = { module = "win", fnc = "preview_scroll('half-page-up')" },
+  ["preview-half-page-down"] = { module = "win", fnc = "preview_scroll('half-page-down')" },
+  ["preview-page-reset"]     = { module = "win", fnc = "preview_scroll('reset')" },
+  ["preview-top"]            = { module = "win", fnc = "preview_scroll('top')" },
+  ["preview-bottom"]         = { module = "win", fnc = "preview_scroll('bottom')" },
 }
 
 function FzfWin:setup_keybinds()

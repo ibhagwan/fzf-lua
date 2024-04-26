@@ -331,7 +331,7 @@ function Previewer.base:scroll(direction)
   if preview_winid < 0 or not direction then return end
   if not api.nvim_win_is_valid(preview_winid) then return end
 
-  if direction == 0 then
+  if direction == "reset" then
     pcall(vim.api.nvim_win_call, preview_winid, function()
       -- for some reason 'nvim_win_set_cursor'
       -- only moves forward, so set to (1,0) first
@@ -342,14 +342,24 @@ function Previewer.base:scroll(direction)
       utils.zz()
     end)
   elseif not self:preview_is_terminal() then
-    -- local input = direction > 0 and [[]] or [[]]
-    -- local input = direction > 0 and [[]] or [[]]
-    -- ^D = 0x04, ^U = 0x15 ('g8' on char to display)
-    local input = ("%c"):format(utils._if(direction > 0, 0x04, 0x15))
-    pcall(vim.api.nvim_win_call, preview_winid, function()
-      vim.cmd([[norm! ]] .. input)
-      utils.zz()
-    end)
+    -- map direction to scroll commands ('g8' on char to display)
+    local input = ({
+      ["top"]            = "gg",
+      ["bottom"]         = "G",
+      ["half-page-up"]   = ("%c"):format(0x15), -- [[]]
+      ["half-page-down"] = ("%c"):format(0x04), -- [[]]
+      ["page-up"]        = ("%c"):format(0x02), -- [[]]
+      ["page-down"]      = ("%c"):format(0x06), -- [[]]
+      ["line-up"]        = "Mgk",               -- ^Y doesn't seem to work
+      ["line-down"]      = "Mgj",               -- ^E doesn't seem to work
+    })[direction]
+
+    if input then
+      pcall(vim.api.nvim_win_call, preview_winid, function()
+        vim.cmd([[norm! ]] .. input)
+        utils.zz()
+      end)
+    end
   else
     -- we get here when using custom term commands using
     -- the extensions map (i.e. view term images with 'vui')
