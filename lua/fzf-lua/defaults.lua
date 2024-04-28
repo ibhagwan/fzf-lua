@@ -210,6 +210,9 @@ M.defaults                      = {
             local last = parts[parent_idx]
             local filename = parts[parent_idx - 1]
             local parent = last:match("^[^:]+")
+            if utils.__IS_WINDOWS and last:match("%a:") then
+              parent = last:sub(1, 2) .. (#last > 2 and last:sub(3):match("^[^:]+") or "")
+            end
             local fullpath = path.join({ parent, filename })
             -- remove the last part (parent + rest of line)
             table.remove(parts, parent_idx)
