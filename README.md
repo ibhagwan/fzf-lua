@@ -1345,9 +1345,10 @@ temporarily overridden by its corresponding `winopts` option:
 |FzfLuaHelpBorder       |FzfLuaBorder |`hls.help_border`   |Help win border|
 |FzfLuaHeaderBind  |*BlanchedAlmond   |`hls.header_bind`   |Header keybind|
 |FzfLuaHeaderText  |*Brown1           |`hls.header_text`   |Header text|
+|FzfLuaPathColNr   |*CadetBlue3       |`hls.path_colnr`    |Path col nr (`lines|qf|lsp|diag`)|
+|FzfLuaPathLineNr  |*MediumSpringGreen|`hls.path_linenr`   |Path line nr (`lines|qf|lsp|diag`)|
 |FzfLuaBufName     |*LightMagenta     |`hls.buf_name`      |Buffer name (`lines`)|
 |FzfLuaBufNr       |*BlanchedAlmond   |`hls.buf_nr`        |Buffer number (all buffers)|
-|FzfLuaBufLineNr   |*MediumSpringGreen|`hls.buf_linenr`    |Buffer line (`lines`)|
 |FzfLuaBufFlagCur  |*Brown1           |`hls.buf_flag_cur`  |Buffer line (`buffers`)|
 |FzfLuaBufFlagAlt  |*CadetBlue1       |`hls.buf_flag_alt`  |Buffer line (`buffers`)|
 |FzfLuaTabTitle    |*LightSkyBlue1    |`hls.tab_title`     |Tab title (`tabs`)|

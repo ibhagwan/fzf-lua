@@ -424,6 +424,7 @@ M.defaults.quickfix             = {
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
   only_valid  = false,
+  _cached_hls = { "path_colnr", "path_linenr" },
 }
 
 M.defaults.quickfix_stack       = {
@@ -444,6 +445,7 @@ M.defaults.loclist              = {
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
   only_valid  = false,
+  _cached_hls = { "path_colnr", "path_linenr" },
 }
 
 M.defaults.loclist_stack        = {
@@ -468,7 +470,7 @@ M.defaults.buffers              = {
   fzf_opts              = { ["--tiebreak"] = "index", ["--multi"] = true },
   _actions              = function() return M.globals.actions.buffers end,
   actions               = { ["ctrl-x"] = { fn = actions.buf_del, reload = true } },
-  _cached_hls           = { "buf_nr", "buf_flag_cur", "buf_flag_alt" },
+  _cached_hls           = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "path_linenr" },
 }
 
 M.defaults.tabs                 = {
@@ -513,7 +515,7 @@ M.defaults.lines                = {
     ["alt-q"]   = actions.buf_sel_to_qf,
     ["alt-l"]   = actions.buf_sel_to_ll
   },
-  _cached_hls      = { "buf_name", "buf_nr", "buf_linenr" },
+  _cached_hls      = { "buf_name", "buf_nr", "path_linenr" },
 }
 
 M.defaults.blines               = {
@@ -537,7 +539,7 @@ M.defaults.blines               = {
     ["alt-q"]   = actions.buf_sel_to_qf,
     ["alt-l"]   = actions.buf_sel_to_ll
   },
-  _cached_hls      = { "buf_name", "buf_nr", "buf_linenr" },
+  _cached_hls      = { "buf_name", "buf_nr", "path_linenr" },
 }
 
 M.defaults.tags                 = {
@@ -661,6 +663,7 @@ M.defaults.lsp                  = {
   async_or_timeout = 5000,
   fzf_opts         = { ["--multi"] = true },
   _actions         = function() return M.globals.actions.files end,
+  _cached_hls      = { "path_colnr", "path_linenr" },
 }
 
 M.defaults.lsp.symbols          = {
@@ -729,7 +732,7 @@ M.defaults.lsp.symbols          = {
   },
   _actions         = function() return M.globals.actions.files end,
   actions          = { ["ctrl-g"] = { actions.sym_lsym } },
-  _cached_hls      = { "live_sym" },
+  _cached_hls      = { "live_sym", "path_colnr", "path_linenr" },
 }
 
 M.defaults.lsp.finder           = {
@@ -762,6 +765,7 @@ M.defaults.lsp.finder           = {
     { "incoming_calls",  prefix = utils.ansi_codes.cyan("in  ") },
     { "outgoing_calls",  prefix = utils.ansi_codes.yellow("out ") },
   },
+  _cached_hls = { "path_colnr", "path_linenr" },
 }
 
 M.defaults.lsp.code_actions     = {
@@ -783,6 +787,7 @@ M.defaults.diagnostics          = {
   multiline   = true,
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
+  _cached_hls = { "path_colnr", "path_linenr" },
   -- signs = {
   --   ["Error"] = { text = "e", texthl = "DiagnosticError" },
   --   ["Warn"]  = { text = "w", texthl = "DiagnosticWarn" },
@@ -967,6 +972,7 @@ M.defaults.dap                  = {
       ["--delimiter"] = "[\\]:]",
       ["--with-nth"]  = "2..",
     },
+    _cached_hls = { "path_colnr", "path_linenr" },
   },
 }
 
@@ -1020,9 +1026,10 @@ M.defaults.__HLS                = {
   scrollfloat_f  = "FzfLuaScrollFloatFull",
   header_bind    = "FzfLuaHeaderBind",
   header_text    = "FzfLuaHeaderText",
+  path_colnr     = "FzfLuaPathColNr",
+  path_linenr    = "FzfLuaPathLineNr",
   buf_name       = "FzfLuaBufName",
   buf_nr         = "FzfLuaBufNr",
-  buf_linenr     = "FzfLuaBufLineNr",
   buf_flag_cur   = "FzfLuaBufFlagCur",
   buf_flag_alt   = "FzfLuaBufFlagAlt",
   tab_title      = "FzfLuaTabTitle",
