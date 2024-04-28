@@ -307,6 +307,7 @@ M.live_grep_native = function(opts)
   opts.git_icons = false
   opts.file_icons = false
   opts.path_shorten = false
+  opts.formatter = false
   opts.rg_glob = false
   opts.multiprocess = true
   return M.live_grep_mt(opts)
