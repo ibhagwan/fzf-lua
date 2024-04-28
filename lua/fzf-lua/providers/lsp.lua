@@ -665,6 +665,8 @@ M.finder = function(opts)
     return
   end
   opts = core.set_fzf_field_index(opts)
+  -- set parent_idx base for `formatter=path.filename_first`
+  opts._parent_idx = 3
   return core.fzf_exec(contents, opts)
 end
 

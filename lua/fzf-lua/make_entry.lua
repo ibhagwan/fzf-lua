@@ -331,7 +331,7 @@ M.file = function(x, opts)
   if opts.git_icons then
     local diff_info = opts.diff_files
         and opts.diff_files[utils._if_win(path.normalize(origpath), origpath)]
-    local indicators = diff_info and diff_info[1] or utils.nbsp
+    local indicators = diff_info and diff_info[1] or " "
     for i = 1, #indicators do
       icon = indicators:sub(i, i)
       local git_icon = config.globals.git.icons[icon]
@@ -355,10 +355,27 @@ M.file = function(x, opts)
     ret[#ret + 1] = icon
     ret[#ret + 1] = utils.nbsp
   end
-  ret[#ret + 1] = file_is_ansi > 0
-      -- filename is ansi escape colored, replace the inner string (#819)
-      and file_part:gsub(utils.lua_regex_escape(stripped_filepath), filepath)
-      or filepath
+  -- convert to number type for faster condition testing next entry
+  if opts.formatter == "path.filename_first" then
+    opts.formatter = 1
+  end
+  if tonumber(opts.formatter) == 1 then
+    -- skip ansi coloring restoration as we use our own hlgroup for the parent
+    local parent = path.parent(filepath)
+    if parent then
+      ret[#ret + 1] = path.tail(filepath)
+      ret[#ret + 1] = utils.nbsp
+      ret[#ret + 1] = utils.ansi_codes.grey(path.remove_trailing(parent))
+      -- ret[#ret + 1] = path.remove_trailing(parent)
+    else
+      ret[#ret + 1] = filepath
+    end
+  else
+    ret[#ret + 1] = file_is_ansi > 0
+        -- filename is ansi escape colored, replace the inner string (#819)
+        and file_part:gsub(utils.lua_regex_escape(stripped_filepath), filepath)
+        or filepath
+  end
   ret[#ret + 1] = rest_of_line
   return table.concat(ret)
 end

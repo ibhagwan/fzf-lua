@@ -19,7 +19,7 @@ M.ACTION_DEFINITIONS = {
   [actions.toggle_ignore]     = {
     function(o)
       local flag = o.toggle_ignore_flag or "--no-ignore"
-      if o.cmd:match(utils.lua_regex_escape(flag)) then
+      if o.cmd and o.cmd:match(utils.lua_regex_escape(flag)) then
         return "Respect .gitignore"
       else
         return "Disable .gitignore"
@@ -660,6 +660,7 @@ M.mt_cmd_wrapper = function(opts)
       "stdout",
       "stderr",
       "stderr_to_stdout",
+      "formatter",
       "git_dir",
       "git_worktree",
       "git_icons",
@@ -714,7 +715,9 @@ M.mt_cmd_wrapper = function(opts)
       and not opts.git_icons
       and not opts.file_icons
       and not opts.file_ignore_patterns
-      and not opts.path_shorten then
+      and not opts.path_shorten
+      and not opts.formatter
+  then
     -- command does not require any processing, we also reset `argv_expr`
     -- to keep `setup_fzf_interactive_flags::no_query_condi` in the command
     opts.argv_expr = nil

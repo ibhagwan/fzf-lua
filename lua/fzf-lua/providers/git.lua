@@ -44,6 +44,9 @@ M.status = function(opts)
   -- as part of our `git status -s`
   opts.git_icons = false
 
+  -- set parent_idx base for `formatter=path.filename_first`
+  opts._parent_idx = 5
+
   -- we always require processing (can't send the raw command to fzf)
   opts.requires_processing = true
 

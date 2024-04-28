@@ -193,6 +193,35 @@ M.defaults                      = {
       pager     = M._preview_pager_fn,
     },
   },
+  formatters    = {
+    path = {
+      filename_first = {
+        -- NOT NEEDED: for perf reasons we format at the source in `make_entry.file`
+        -- to = function(s, _)
+        -- end,
+        from = function(s, o)
+          -- Which part should contain the parent folder?
+          -- files that are directly under cwd it will have no parent folder part
+          local parent_idx = (o._parent_idx or 2)
+              + (o.file_icons and 1 or 0)
+              + (o.git_icons and 1 or 0)
+          local parts = utils.strsplit(s, utils.nbsp)
+          if #parts == parent_idx then
+            local last = parts[parent_idx]
+            local filename = parts[parent_idx - 1]
+            local parent = last:match("^[^:]+")
+            local fullpath = path.join({ parent, filename })
+            -- remove the last part (parent + rest of line)
+            table.remove(parts, parent_idx)
+            -- overwrite last part with restored fullpath + rest of line
+            parts[#parts] = fullpath .. last:sub(#parent + 1)
+            s = table.concat(parts, utils.nbsp)
+          end
+          return s
+        end
+      }
+    }
+  },
 }
 
 M.defaults.files                = {
