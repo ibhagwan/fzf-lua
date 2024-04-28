@@ -72,13 +72,15 @@ function M.setup_highlights(override)
       { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond" } },
     { "FzfLuaHeaderText", "header_text",
       { default = default, fg = is_light and "Brown4" or "Brown1" } },
+    { "FzfLuaPathColNr", "path_colnr",   -- lines|blines|qf|diag|lsp
+      { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" } },
+    { "FzfLuaPathLineNr", "path_linenr", -- lines|blines|qf|diag|lsp
+      { default = default, fg = is_light and "MediumSpringGreen" or "LightGreen" } },
     { "FzfLuaLiveSym", "live_sym",
       { default = default, fg = is_light and "Brown4" or "Brown1" } },
     -- Provider specific highlights
     { "FzfLuaBufName", "buf_name",        -- lines|blines (hidden)
       { default = default, fg = is_light and "DarkOrchid3" or "LightMagenta" } },
-    { "FzfLuaBufLineNr", "buf_linenr",    -- lines|blines
-      { default = default, fg = is_light and "MediumSpringGreen" or "MediumSpringGreen" } },
     { "FzfLuaBufNr", "buf_nr",            -- buffers|tabs|lines|blines
       { default = default, fg = is_light and "AquaMarine3" or "BlanchedAlmond" } },
     { "FzfLuaBufFlagCur", "buf_flag_cur", -- buffers|tabs

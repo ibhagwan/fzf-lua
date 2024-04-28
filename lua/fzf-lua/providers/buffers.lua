@@ -129,7 +129,9 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
     bufname = path.shorten(bufname, tonumber(opts.path_shorten))
   end
   -- add line number
-  bufname = ("%s:%s"):format(bufname, buf.info.lnum > 0 and buf.info.lnum or "")
+  if buf.info.lnum > 0 and not opts.no_lnum then
+    bufname = bufname .. ":" .. utils.ansi_codes[opts.hls.path_linenr](tostring(buf.info.lnum))
+  end
   if buf.flag == "%" then
     flags = utils.ansi_codes[opts.hls.buf_flag_cur](buf.flag) .. flags
   elseif buf.flag == "#" then
@@ -283,7 +285,7 @@ M.buffer_lines = function(opts)
             buficon or "",
             buficon and utils.nbsp or "",
             utils.ansi_codes[opts.hls.buf_name](bufname),
-            utils.ansi_codes[opts.hls.buf_linenr](tostring(lnum)),
+            utils.ansi_codes[opts.hls.path_linenr](tostring(lnum)),
             data[lnum]), co)
         end
       end
