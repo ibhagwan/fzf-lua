@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 April 21
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 April 28
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -895,6 +895,9 @@ open an issue and I'll be more than happy to help.**
         file_icons        = true,           -- show file icons?
         color_icons       = true,           -- colorize file|git icons
         -- path_shorten   = 1,              -- 'true' or number, shorten path?
+        -- Uncomment for custom vscode-like formatter where the filename is first:
+        -- e.g. "fzf-lua/previewer/fzf.lua" => "fzf.lua previewer/fzf-lua"
+        -- formatter      = "path.filename_first",
         -- executed command priority is 'cmd' (if exists)
         -- otherwise auto-detect prioritizes `fd`:`rg`:`find`
         -- default options are controlled by 'fd|rg|find|_opts'
