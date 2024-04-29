@@ -69,7 +69,9 @@ M.load_icons = function()
   -- (1) devicons.get_icons() returns the default icon in [1]
   -- (2) we cannot rely on having either .name or .color (#817)
   local ok, all_devicons = pcall(function()
-    M.__DEVICONS_LIB.refresh() -- reloads light|dark theme
+    if M.STATE and M.STATE.icons then
+      M.__DEVICONS_LIB.refresh() -- reloads light|dark theme
+    end
     return M.__DEVICONS_LIB.get_icons()
   end)
   if not ok or not all_devicons or vim.tbl_isempty(all_devicons) then
@@ -79,7 +81,14 @@ M.load_icons = function()
     return
   end
   local theme
-  if vim.o.background == "light" then
+  -- Does `devicons` contain https://github.com/nvim-tree/nvim-web-devicons/pull/450?
+  -- fixes overrides that aren't overriding but rather add new extensions/filenames (#1152)
+  if M.__DEVICONS_LIB.get_icons_by_extension then
+    theme = {
+      icons_by_filename = M.__DEVICONS_LIB.get_icons_by_filename(),
+      icons_by_file_extension = M.__DEVICONS_LIB.get_icons_by_extension(),
+    }
+  elseif vim.o.background == "light" then
     ok, theme = pcall(require, "nvim-web-devicons.icons-light")
   else
     ok, theme = pcall(require, "nvim-web-devicons.icons-default")
@@ -89,7 +98,7 @@ M.load_icons = function()
     return
   end
   local icons_by_filename = theme.icons_by_filename or {}
-  local icons_by_file_extension = theme.icons_by_file_extension or {}
+  local icons_by_extension = theme.icons_by_file_extension or {}
   if type(all_devicons[1]) == "table" then
     M.STATE.default_icon.icon = all_devicons[1].icon or M.STATE.default_icon.icon
     M.STATE.default_icon.color = all_devicons[1].color or M.STATE.default_icon.color
@@ -124,7 +133,7 @@ M.load_icons = function()
       if icons_by_filename[k] then
         M.STATE.icons.by_filename[k] = info
       end
-      if icons_by_file_extension[k] then
+      if icons_by_extension[k] then
         if k:match(".+%.") then
           M.STATE.icons.by_ext_2part[k] = info
           M.STATE.icons.ext_has_2part[path.extension(k)] = true
@@ -132,7 +141,7 @@ M.load_icons = function()
           M.STATE.icons.by_ext[k] = info
         end
       end
-      -- if not icons_by_file_extension[k] and not icons_by_filename[k] then
+      -- if not icons_by_extension[k] and not icons_by_filename[k] then
       --   print("icons_by_operating_system", k)
       -- end
     end
