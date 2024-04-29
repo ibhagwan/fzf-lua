@@ -767,7 +767,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
       if self.syntax_limit_b > 0 and bytes > self.syntax_limit_b then
         syntax_limit_reached = 2
       end
-      if syntax_limit_reached > 0 then
+      if syntax_limit_reached > 0 and self.opts.silent == false then
         utils.info(string.format(
           "syntax disabled for '%s' (%s), consider increasing '%s(%d)'", entry.path,
           utils._if(syntax_limit_reached == 1,
