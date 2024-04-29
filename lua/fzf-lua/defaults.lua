@@ -493,7 +493,7 @@ M.defaults.tabs                 = {
     ["--delimiter"] = "[\\):]",
     ["--with-nth"]  = "3..",
   },
-  _cached_hls = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "tab_title", "tab_marker" },
+  _cached_hls = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "tab_title", "tab_marker", "path_linenr" },
 }
 
 M.defaults.lines                = {
