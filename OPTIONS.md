@@ -14,7 +14,7 @@ add to this document.**
 - [Pickers](#pickers)
   + [Buffers and Files](#buffers-and-files)
   + [Search](#search)
-  + [Tags](#tags)
+  + [CTags](#ctags)
   + [Git](#git)
   + [LSP | Diagnostics](#lspdiagnostics)
   + [Misc](#misc)
@@ -682,11 +682,7 @@ Alias to `:FzfLua grep resume=true`
 
 #### grep_cword
 
-Grep word under cursor
-
-#### grep_cWORD
-
-Grep WORD under cursor
+Grep word/WORD under cursor
 
 #### grep_visual
 
@@ -702,7 +698,7 @@ Grep on current buffer only
 
 ---
 
-### Tags
+### CTags
 
 #### tags
 
@@ -722,11 +718,7 @@ Search current buffer ctags
 
 #### tags_grep_cword
 
-Tags-Grep word under cursor
-
-#### tags_grep_cWORD
-
-Tags-Grep WORD under cursor
+Tags-Grep word/WORD under cursor
 
 #### tags_grep_visual
 

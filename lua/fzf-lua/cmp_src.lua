@@ -35,7 +35,8 @@ end
 function Src:_get_documentation(completion_item)
   local options_md = require("fzf-lua.cmd").options_md()
   if not options_md or vim.tbl_isempty(options_md) then return end
-  local markdown = options_md[completion_item.label]
+  -- Test for `label:lower()` to match both `grep_c{word|WORD}`
+  local markdown = options_md[completion_item.label] or options_md[completion_item.label:lower()]
   if not markdown and completion_item.data then
     -- didn't find matching the label directly, search globals
     -- this will match "winopts.row" as "globals.winopts.row"

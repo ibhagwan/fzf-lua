@@ -9,7 +9,7 @@ Global Options ................................. |fzf-lua-opts-global-options|
 Pickers ............................................... |fzf-lua-opts-pickers|
 Buffers and Files ........................... |fzf-lua-opts-buffers-and-files|
 Search ................................................. |fzf-lua-opts-search|
-Tags ..................................................... |fzf-lua-opts-tags|
+CTags ................................................... |fzf-lua-opts-ctags|
 Git ....................................................... |fzf-lua-opts-git|
 LSP/Diagnostics ............................... |fzf-lua-opts-lsp/diagnostics|
 Misc ..................................................... |fzf-lua-opts-misc|
@@ -35,9 +35,9 @@ FZF-LUA COMMANDS AND OPTIONS       *fzf-lua-opts-fzf-lua-commands-and-options*
 - Setup Options <#setup-options>
 - Global Options <#global-options>
 - Pickers <#pickers> + Buffers and Files <#buffers-and-files> + Search
-  <#search> + Tags <#tags> + Git <#git> + LSP | Diagnostics <#lspdiagnostics>
-  + Misc <#misc> + Neovim API <#neovim-api> + `nvim-dap` <#nvim-dap> + `tmux`
-  <#tmux> + Completion Functions <#completion-functions>
+  <#search> + CTags <#ctags> + Git <#git> + LSP | Diagnostics
+  <#lspdiagnostics> + Misc <#misc> + Neovim API <#neovim-api> + `nvim-dap`
+  <#nvim-dap> + `tmux` <#tmux> + Completion Functions <#completion-functions>
 
 ------------------------------------------------------------------------------
 GENERAL USAGE                                     *fzf-lua-opts-general-usage*
@@ -934,13 +934,7 @@ Alias to `:FzfLua grep resume=true`
                                                                               
 grep_cword                                           *fzf-lua-opts-grep_cword*
 
-Grep word under cursor
-
-
-                                                                              
-grep_cWORD                                           *fzf-lua-opts-grep_cword*
-
-Grep WORD under cursor
+Grep word/WORD under cursor
 
 
                                                                               
@@ -962,7 +956,7 @@ lgrep_curbuf                                       *fzf-lua-opts-lgrep_curbuf*
 
 
                                                                               
-TAGS                                                       *fzf-lua-opts-tags*
+CTAGS                                                     *fzf-lua-opts-ctags*
 
 
                                                                               
@@ -992,13 +986,7 @@ tags_live_grep                                   *fzf-lua-opts-tags_live_grep*
                                                                               
 tags_grep_cword                                 *fzf-lua-opts-tags_grep_cword*
 
-Tags-Grep word under cursor
-
-
-                                                                              
-tags_grep_cWORD                                 *fzf-lua-opts-tags_grep_cword*
-
-Tags-Grep WORD under cursor
+Tags-Grep word/WORD under cursor
 
 
                                                                               
