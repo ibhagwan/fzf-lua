@@ -11,7 +11,7 @@ add to this document.**
 - [General Usage](#general-usage)
 - [Setup Options](#setup-options)
 - [Global Options](#global-options)
-- [Commands](#commands)
+- [Pickers](#pickers)
   + [Buffers and Files](#buffers-and-files)
   + [Search](#search)
   + [Tags](#tags)
@@ -566,7 +566,7 @@ Highlight group for the matched characters in `lsp_live_workspace_symbols`.
 
 ---
 
-## Commands
+## Pickers
 
 ### Buffers and Files
 

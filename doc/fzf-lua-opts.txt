@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*        For Neovim >= 0.8.0       Last change: 2024 April 29
+*fzf-lua-opts.txt*        For Neovim >= 0.8.0       Last change: 2024 April 30
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -6,7 +6,7 @@ Table of Contents                             *fzf-lua-opts-table-of-contents*
 General Usage ................................... |fzf-lua-opts-general-usage|
 Setup Options ................................... |fzf-lua-opts-setup-options|
 Global Options ................................. |fzf-lua-opts-global-options|
-Commands ............................................. |fzf-lua-opts-commands|
+Pickers ............................................... |fzf-lua-opts-pickers|
 Buffers and Files ........................... |fzf-lua-opts-buffers-and-files|
 Search ................................................. |fzf-lua-opts-search|
 Tags ..................................................... |fzf-lua-opts-tags|
@@ -34,7 +34,7 @@ FZF-LUA COMMANDS AND OPTIONS       *fzf-lua-opts-fzf-lua-commands-and-options*
 - General Usage <#general-usage>
 - Setup Options <#setup-options>
 - Global Options <#global-options>
-- Commands <#commands> + Buffers and Files <#buffers-and-files> + Search
+- Pickers <#pickers> + Buffers and Files <#buffers-and-files> + Search
   <#search> + Tags <#tags> + Git <#git> + LSP | Diagnostics <#lspdiagnostics>
   + Misc <#misc> + Neovim API <#neovim-api> + `nvim-dap` <#nvim-dap> + `tmux`
   <#tmux> + Completion Functions <#completion-functions>
@@ -757,7 +757,7 @@ Highlight group for the matched characters in `lsp_live_workspace_symbols`.
 
 
 ------------------------------------------------------------------------------
-COMMANDS                                               *fzf-lua-opts-commands*
+PICKERS                                                 *fzf-lua-opts-pickers*
 
 
 
