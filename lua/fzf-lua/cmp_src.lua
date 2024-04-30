@@ -65,6 +65,9 @@ function Src._register_cmdline()
   cmp.register_source("FzfLua", Src)
   Src._registered = true
   local cmdline_cfg = require("cmp.config").cmdline
+  if not cmdline_cfg[":"] then
+    return
+  end
   local has_fzf_lua = false
   for _, s in ipairs(cmdline_cfg[":"].sources or {}) do
     if s.name == "FzfLua" then
