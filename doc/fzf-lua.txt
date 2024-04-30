@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 April 28
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 April 30
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -13,6 +13,7 @@ Windows Notes ........................................ |fzf-lua-windows-notes|
 Installation .......................................... |fzf-lua-installation|
 Usage ........................................................ |fzf-lua-usage|
 Resume ...................................................... |fzf-lua-resume|
+Options .................................................... |fzf-lua-options|
 Commands .................................................. |fzf-lua-commands|
 Buffers and Files ................................ |fzf-lua-buffers-and-files|
 Search ...................................................... |fzf-lua-search|
@@ -60,7 +61,7 @@ CONTENTS                                                    *fzf-lua-contents*
 - Dependencies <#dependencies> + Optional Dependencies
   <#optional-dependencies> + Windows Notes <#windows-notes>
 - Installation <#installation>
-- Usage <#usage> + Resume <#resume>
+- Usage <#usage> + Resume <#resume> + Options <#options>
 - Commands <#commands> + Buffers and Files <#buffers-and-files> + Search
   <#search> + Tags <#tags> + Git <#git> + LSP | Diagnostics <#lspdiagnostics>
   + Misc <#misc> + Neovim API <#neovim-api> + `nvim-dap` <#nvim-dap> + `tmux`
@@ -286,6 +287,14 @@ Alternatively, resuming work on a specific provider:
     -- or
     :FzfLua files resume=true
 <
+
+                                                                              
+OPTIONS                                                      *fzf-lua-options*
+
+**Refer to OPTIONS <https://github.com/ibhagwan/fzf-lua/blob/main/OPTIONS.md>
+to see detailed usage notes and a comprehensive list of all available
+options.**
+
 
 ------------------------------------------------------------------------------
 COMMANDS                                                    *fzf-lua-commands*
