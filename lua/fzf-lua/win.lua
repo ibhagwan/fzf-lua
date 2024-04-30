@@ -211,19 +211,24 @@ local normalize_winopts = function(o)
   winopts.__winhls = {
     main = {
       { "Normal",       o.hls.normal },
+      { "NormalFloat",  o.hls.normal },
       { "FloatBorder",  o.hls.border },
       { "CursorLine",   o.hls.cursorline },
       { "CursorLineNr", o.hls.cursorlinenr },
     },
     prev = {
       { "Normal",       o.hls.preview_normal },
+      { "NormalFloat",  o.hls.preview_normal },
       { "FloatBorder",  o.hls.preview_border },
       { "CursorLine",   o.hls.cursorline },
       { "CursorLineNr", o.hls.cursorlinenr },
     },
     -- our border is manually drawn so we need
     -- to replace Normal with the border color
-    prev_border = { { "Normal", o.hls.preview_border } },
+    prev_border = {
+      { "Normal",      o.hls.preview_border },
+      { "NormalFloat", o.hls.preview_border }
+    },
   }
 
   -- add title hl if wasn't provided by the user
