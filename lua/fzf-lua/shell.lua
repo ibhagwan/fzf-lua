@@ -100,8 +100,11 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   local action_cmd = ("%s%s -n --headless --clean --cmd %s -- %s"):format(
     nvim_runtime,
     libuv.shellescape(path.normalize(nvim_bin)),
-    libuv.shellescape(("lua vim.g.did_load_filetypes=1; loadfile([[%s]])().rpc_nvim_exec_lua({%s})")
-      :format(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" }, call_args)),
+    libuv.shellescape(("lua %sloadfile([[%s]])().rpc_nvim_exec_lua({%s})"):format(
+      utils.__HAS_NVIM_010 and "vim.g.did_load_filetypes=1; " or "",
+      path.join { vim.g.fzf_lua_directory, "shell_helper.lua" },
+      call_args
+    )),
     fzf_field_expression)
 
   return action_cmd, id

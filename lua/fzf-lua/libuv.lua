@@ -1,5 +1,6 @@
 local uv = vim.loop
 
+local _has_nvim_010 = vim.fn.has("nvim-0.10") == 1
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 
 local M = {}
@@ -708,11 +709,11 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess)
         _is_win and [[set VIMRUNTIME=%s& ]] or "VIMRUNTIME=%s ",
         _is_win and vim.fs.normalize(vim.env.VIMRUNTIME) or M.shellescape(vim.env.VIMRUNTIME)
       )
-  local lua_cmd = ("lua vim.g.did_load_filetypes=1; loadfile([[%s]])().spawn_stdio(%s,%s,%s)")
-      :format(
-        _is_win and vim.fs.normalize(__FILE__) or __FILE__,
-        opts, fn_transform, fn_preprocess
-      )
+  local lua_cmd = ("lua %sloadfile([[%s]])().spawn_stdio(%s,%s,%s)"):format(
+    _has_nvim_010 and "vim.g.did_load_filetypes=1; " or "",
+    _is_win and vim.fs.normalize(__FILE__) or __FILE__,
+    opts, fn_transform, fn_preprocess
+  )
   local cmd_str = ("%s%s -n --headless --clean --cmd %s"):format(
     nvim_runtime,
     M.shellescape(_is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
