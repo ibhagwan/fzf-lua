@@ -251,15 +251,14 @@ M.lcol = function(entry, opts)
   local hl_linenr = vim.tbl_contains(opts._cached_hls or {}, "path_linenr")
       and opts.hls.path_linenr or "green"
   local filename = entry.filename or vim.api.nvim_buf_get_name(entry.bufnr)
-  return string.format("%s:%s:%s:%s%s",
+  return string.format("%s%s%s%s",
     -- uncomment to test URIs
     -- "file://" .. filename,
     filename, --utils.ansi_codes.magenta(filename),
-    utils.ansi_codes[hl_linenr](tostring(entry.lnum)),
-    utils.ansi_codes[hl_colnr](tostring(entry.col)),
-    entry.text and #entry.text > 0 and " " or "",
-    not entry.text and "" or
-    (opts and opts.trim_entry and vim.trim(entry.text)) or entry.text)
+    tonumber(entry.lnum) == nil and "" or (":" .. utils.ansi_codes[hl_linenr](tostring(entry.lnum))),
+    tonumber(entry.col) == nil and "" or (":" .. utils.ansi_codes[hl_colnr](tostring(entry.col))),
+    type(entry.text) ~= "string" and ""
+    or (": " .. (opts and opts.trim_entry and vim.trim(entry.text) or entry.text)))
 end
 
 local COLON_BYTE = string.byte(":")

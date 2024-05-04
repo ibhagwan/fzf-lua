@@ -5,6 +5,7 @@ local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local base64 = require "fzf-lua.lib.base64"
 local devicons = require "fzf-lua.devicons"
+local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -119,19 +120,19 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
   local flags = hidden .. readonly .. changed
   local leftbr = "["
   local rightbr = "]"
-  local bufname = #buf.info.name > 0 and path.relative_to(buf.info.name, cwd or vim.loop.cwd())
-  if opts.filename_only then
-    bufname = path.basename(bufname)
-  end
-  -- replace $HOME with '~' for paths outside of cwd
-  bufname = path.HOME_to_tilde(bufname)
-  if opts.path_shorten and not bufname:match("^%a+://") then
-    bufname = path.shorten(bufname, tonumber(opts.path_shorten))
-  end
-  -- add line number
-  if buf.info.lnum > 0 and not opts.no_lnum then
-    bufname = bufname .. ":" .. utils.ansi_codes[opts.hls.path_linenr](tostring(buf.info.lnum))
-  end
+  local bufname = (function()
+    local bname = buf.info.name
+    if bname:match("^%[.*%]$") or bname:match("^%a+://") then
+      return bname
+    elseif opts.filename_only then
+      return path.tail(bname)
+    else
+      bname = make_entry.lcol({ filename = bname, lnum = buf.info.lnum }, opts)
+      return make_entry.file(bname, vim.tbl_extend("force", opts,
+        -- No support for git_icons, file_icons are added later
+        { cwd = cwd or opts.cwd or vim.loop.cwd(), file_icons = false, git_icons = false }))
+    end
+  end)()
   if buf.flag == "%" then
     flags = utils.ansi_codes[opts.hls.buf_flag_cur](buf.flag) .. flags
   elseif buf.flag == "#" then
