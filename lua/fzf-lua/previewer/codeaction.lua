@@ -37,7 +37,9 @@ local function diff_text_edits(text_edits, bufnr, offset_encoding, diff_opts)
     table.concat(orig_lines, eol) .. eol,
     table.concat(new_lines, eol) .. eol,
     diff_opts)
-  return utils.strsplit(vim.trim(diff), eol)
+  -- Windows: some LSPs use "\n" for EOL (e.g clangd)
+  -- remove both "\n" and "\r\n" (#1172)
+  return utils.strsplit(vim.trim(diff), "\r?\n")
 end
 
 -- based on `vim.lsp.util.apply_text_document_edit`
