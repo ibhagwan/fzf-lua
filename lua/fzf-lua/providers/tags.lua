@@ -155,9 +155,10 @@ local function tags(opts)
     local cmd, filter = get_tags_cmd({ search = "dummy" })
     if not cmd then return end -- cmd only used for this test
     opts.filter = (opts.filter == nil) and filter or opts.filter
-    -- rg globs are meaningless here since we are searching
-    -- a single file
+    -- rg globs are meaningless here since we are searching a single file
     opts.rg_glob = false
+    -- tags has it's own formatter
+    opts.formatter, opts._fmt = false, { _to = false, to = false, from = false }
     opts.filename = opts._ctags_file
     if opts.multiprocess then
       return require "fzf-lua.providers.grep".live_grep_mt(opts)
@@ -181,6 +182,8 @@ local function tags(opts)
     if opts.filter and #opts.filter > 0 then
       opts.raw_cmd = ("%s | %s"):format(opts.raw_cmd, opts.filter)
     end
+    -- tags has it's own formatter
+    opts.formatter, opts._fmt = false, { _to = false, to = false, from = false }
     return require "fzf-lua.providers.grep".grep(opts)
   end
 end

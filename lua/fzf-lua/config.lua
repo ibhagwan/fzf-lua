@@ -366,8 +366,12 @@ function M.normalize_opts(opts, globals, __resume_key)
     local _fmt = M.globals["formatters." .. opts.formatter]
     if _fmt then
       opts._fmt = opts._fmt or {}
-      opts._fmt.to = opts._fmt.to or _fmt.to or _fmt._to and _fmt._to(opts) or nil
-      opts._fmt.from = opts._fmt.from or _fmt.from
+      if opts._fmt.to == nil then
+        opts._fmt.to = _fmt.to or _fmt._to and _fmt._to(opts) or nil
+      end
+      if opts._fmt.from == nil then
+        opts._fmt.from = _fmt.from
+      end
       if type(opts._fmt.to) == "string" then
         -- store the string function as backup for `make_entry.preprocess`
         opts._fmt._to = opts._fmt.to

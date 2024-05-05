@@ -748,6 +748,7 @@ M.defaults.lsp.symbols          = {
     --   local align = 56 + utils.ansi_escseq_len(text)
     --   return string.format("%-" .. align .. "s%s%s", text, utils.nbsp, file)
     -- end,
+    to   = false,
     from = function(s, _)
       -- restore the format to something that `path.entry_to_file` can
       -- handle more robustly, while this can stil work due to the `utils.nbsp`

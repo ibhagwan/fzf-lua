@@ -230,7 +230,7 @@ local function symbol_handler(opts, cb, _, result, _, _)
           symbol = symbol .. string.rep(" ", align - #symbol)
         end
         entry = symbol .. utils.nbsp .. entry
-        cb(opts._fmt and opts._fmt.to and opts._fmt.to(entry, opts) or entry)
+        cb(entry)
       end
     end
   end

@@ -223,6 +223,9 @@ end
 M.buffer_lines = function(opts)
   if not opts then return end
 
+  -- set parent_idx base for `formatter=path.filename_first`
+  opts._parent_idx = 3
+
   opts.fn_pre_fzf = function() core.CTX(true) end
   opts.fn_pre_fzf()
 
@@ -295,7 +298,6 @@ M.buffer_lines = function(opts)
   end
 
   opts = core.set_fzf_field_index(opts, "{3}", opts._is_skim and "{}" or "{..-2}")
-
   core.fzf_exec(contents, opts)
 end
 
