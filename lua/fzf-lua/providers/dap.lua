@@ -92,6 +92,9 @@ M.breakpoints = function(opts)
   -- display relative paths by default
   if opts.cwd == nil then opts.cwd = vim.loop.cwd() end
 
+  -- set parent_idx base for `formatter=path.filename_first`
+  opts._parent_idx = 3
+
   opts.func_async_callback = false
   opts.__fn_reload = opts.__fn_reload or function(_)
     return function(cb)
