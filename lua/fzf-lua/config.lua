@@ -106,8 +106,8 @@ M.globals = setmetatable({}, {
     end
     -- (1) use fzf-lua's true defaults (pre-setup) as our options base
     local ret = utils.tbl_deep_clone(fzflua_default) or {}
-    if (fzflua_default and fzflua_default.prompt) or (setup_value and setup_value.prompt) then
-      -- (2) the existence of the `prompt` key implies we're dealing with a provider
+    if (fzflua_default and fzflua_default.actions) or (setup_value and setup_value.actions) then
+      -- (2) the existence of the `actions` key implies we're dealing with a picker
       -- override global provider defaults supplied by the user's setup `defaults` table
       ret = vim.tbl_deep_extend("force", ret, M.setup_opts.defaults or {})
     end
