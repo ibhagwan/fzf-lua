@@ -14,7 +14,7 @@ do
 end
 
 local function load_config_section(s, datatype, optional)
-  if config then
+  if not vim.g.fzf_lua_is_headless then
     local val = utils.map_get(config, s)
     return type(val) == datatype and val or nil
     ---@diagnostic disable-next-line: undefined-field
@@ -241,6 +241,19 @@ M.preprocess = function(opts)
     opts.diff_files = M.get_diff_files(opts)
   end
 
+  -- formatter `to` function
+  if opts.formatter and not opts._fmt then
+    opts._fmt = opts._fmt or {}
+    opts._fmt.to = load_config_section("__resume_data.opts._fmt.to", "function", true)
+    -- Attempt to load from string value `_to`
+    if not opts._fmt.to then
+      local _to = load_config_section("__resume_data.opts._fmt._to", "string", true)
+      if type(_to) == "string" then
+        opts._fmt.to = loadstring(_to)()
+      end
+    end
+  end
+
   return opts
 end
 
@@ -251,14 +264,14 @@ M.lcol = function(entry, opts)
   local hl_linenr = vim.tbl_contains(opts._cached_hls or {}, "path_linenr")
       and opts.hls.path_linenr or "green"
   local filename = entry.filename or vim.api.nvim_buf_get_name(entry.bufnr)
-  return string.format("%s%s%s%s",
+  return string.format("%s:%s%s%s",
     -- uncomment to test URIs
     -- "file://" .. filename,
     filename, --utils.ansi_codes.magenta(filename),
-    tonumber(entry.lnum) == nil and "" or (":" .. utils.ansi_codes[hl_linenr](tostring(entry.lnum))),
-    tonumber(entry.col) == nil and "" or (":" .. utils.ansi_codes[hl_colnr](tostring(entry.col))),
+    tonumber(entry.lnum) == nil and "" or (utils.ansi_codes[hl_linenr](tostring(entry.lnum)) .. ":"),
+    tonumber(entry.col) == nil and "" or (utils.ansi_codes[hl_colnr](tostring(entry.col)) .. ":"),
     type(entry.text) ~= "string" and ""
-    or (": " .. (opts and opts.trim_entry and vim.trim(entry.text) or entry.text)))
+    or (" " .. (opts and opts.trim_entry and vim.trim(entry.text) or entry.text)))
 end
 
 local COLON_BYTE = string.byte(":")
@@ -358,21 +371,8 @@ M.file = function(x, opts)
     ret[#ret + 1] = icon
     ret[#ret + 1] = utils.nbsp
   end
-  -- convert to number type for faster condition testing next entry
-  if opts.formatter == "path.filename_first" then
-    opts.formatter = 1
-  end
-  if tonumber(opts.formatter) == 1 then
-    -- skip ansi coloring restoration as we use our own hlgroup for the parent
-    local parent = path.parent(filepath)
-    if parent then
-      ret[#ret + 1] = path.tail(filepath)
-      ret[#ret + 1] = utils.nbsp
-      ret[#ret + 1] = utils.ansi_codes.grey(path.remove_trailing(parent))
-      -- ret[#ret + 1] = path.remove_trailing(parent)
-    else
-      ret[#ret + 1] = filepath
-    end
+  if opts._fmt and type(opts._fmt.to) == "function" then
+    ret[#ret + 1] = opts._fmt.to(filepath, opts, { path = path, utils = utils })
   else
     ret[#ret + 1] = file_is_ansi > 0
         -- filename is ansi escape colored, replace the inner string (#819)

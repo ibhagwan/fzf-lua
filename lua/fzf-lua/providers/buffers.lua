@@ -127,7 +127,7 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
     elseif opts.filename_only then
       return path.tail(bname)
     else
-      bname = make_entry.lcol({ filename = bname, lnum = buf.info.lnum }, opts)
+      bname = make_entry.lcol({ filename = bname, lnum = buf.info.lnum }, opts):gsub(":$", "")
       return make_entry.file(bname, vim.tbl_extend("force", opts,
         -- No support for git_icons, file_icons are added later
         { cwd = cwd or opts.cwd or vim.loop.cwd(), file_icons = false, git_icons = false }))

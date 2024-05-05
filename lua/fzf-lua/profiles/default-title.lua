@@ -31,7 +31,7 @@ return {
   quickfix_stack       = title("Quickfix List Stack"),
   loclist              = title("Location List"),
   loclist_stack        = title("Location List Stack"),
-  tags                 = title("Tags"),
+  tags                 = title("Tags", { prompt = "> " }),
   btags                = title("Buffer Tags"),
   colorschemes         = title("Colorschemes"),
   awesome_colorschemes = title("Awesome Colorschemes"),

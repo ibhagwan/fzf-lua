@@ -223,6 +223,8 @@ M.grep = function(opts)
       local search = utils.input(opts.input_prompt or "Grep For> ")
       if search then
         opts.search = search
+        -- save the search query for `resume=true`
+        opts.__call_opts.search = search
       else
         return
       end

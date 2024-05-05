@@ -195,9 +195,31 @@ M.defaults                      = {
   formatters    = {
     path = {
       filename_first = {
-        -- NOT NEEDED: for perf reasons we format at the source in `make_entry.file`
-        -- to = function(s, _)
-        -- end,
+        -- underscore `_to` returns a custom to function when options could
+        -- affect the transformation, here we create a different function
+        -- base on the dir part highlight group.
+        -- We use a string function with hardcoded values as non-scope vars
+        -- (globals or file-locals) are stored by ref and will be nil in the
+        -- `string.dump` (from `config.bytecode`), we use the 3rd function
+        -- argument `m` to pass module imports (path, utils, etc).
+        _to = function(o)
+          local _, escseq = utils.ansi_from_hl(o.hls.dir_part, "foo")
+          return [[
+            return function(s, _, m)
+              local _path, _utils = m.path, m.utils
+              local _escseq = "]] .. (escseq or "") .. [["
+              local parent = _path.parent(s)
+              if parent then
+                parent = _path.remove_trailing(parent)
+                return string.format("%s%s%s", _path.tail(s), _utils.nbsp,
+                  #_escseq == 0 and parent
+                  or string.format("%s%s%s", _escseq, parent, _utils.ansi_escseq.clear))
+              else
+                return s
+              end
+            end
+          ]]
+        end,
         from = function(s, o)
           -- Which part should contain the parent folder?
           -- files that are directly under cwd it will have no parent folder part
@@ -562,6 +584,7 @@ M.defaults.tags                 = {
   },
   _actions     = function() return M.globals.actions.files end,
   actions      = { ["ctrl-g"] = { actions.grep_lgrep } },
+  formatter    = false,
 }
 
 M.defaults.btags                = {
@@ -583,6 +606,7 @@ M.defaults.btags                = {
   },
   _actions      = function() return M.globals.actions.files end,
   actions       = { ["ctrl-g"] = false },
+  formatter     = false,
 }
 
 M.defaults.colorschemes         = {
@@ -1037,11 +1061,12 @@ M.defaults.__HLS                = {
   tab_title      = "FzfLuaTabTitle",
   tab_marker     = "FzfLuaTabMarker",
   dir_icon       = "FzfLuaDirIcon",
+  dir_part       = "FzfLuaDirPart",
   live_sym       = "FzfLuaLiveSym",
 }
 
 M.defaults.__WINOPTS            = {
-  borderchars    = {
+  borderchars   = {
     ["none"]    = { "", "", "", "", "", "", "", "" },
     ["empty"]   = { " ", " ", " ", " ", " ", " ", " ", " " },
     ["single"]  = { "┌", "─", "┐", "│", "┘", "─", "└", "│" },

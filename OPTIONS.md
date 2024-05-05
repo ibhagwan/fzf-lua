@@ -177,6 +177,23 @@ Other overrides include:
 :FzfLua manpages previewer=man_native
 ```
 
+#### globals.formatter
+
+Type: `string`, Default: `nil`
+
+Custom path formatter, can be defined under `setup.formatters`, fzf-lua comes with a builtin vscode-like formatter, displaying the filename first followed by the folder.
+
+Try it out with:
+```lua
+:FzfLua files formatter=path.filename_first
+:FzfLua live_grep formatter=path.filename_first
+```
+
+Or via `setup` for permanency:
+```lua
+require("fzf-lua").setup({ files = { formatter = "path.filename_first" } })
+```
+
 #### globals.file_icons
 
 Type: `boolean`, Default: `true`
@@ -557,6 +574,12 @@ Type: `string`, Default: `FzfLuaDirIcon`
 
 Highlight group for the directory icon in paths that end with a separator, usually used in path
 completion, e.g. `complete_path`.
+
+#### globals.hls.dir_part
+
+Type: `string`, Default: `FzfLuaDirPart`
+
+Highlight group for the directory part when using `formatter=path.filename_first`.
 
 #### globals.hls.live_sym
 

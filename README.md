@@ -709,7 +709,7 @@ require'fzf-lua'.setup {
       ["marker"]      = { "fg", "Keyword" },
       ["spinner"]     = { "fg", "Label" },
       ["header"]      = { "fg", "Comment" },
-      ["gutter"]      = { "bg", "Normal" },
+      ["gutter"]      = "-1",
   }, ]]
   previewers = {
     cat = {
@@ -1360,6 +1360,7 @@ temporarily overridden by its corresponding `winopts` option:
 |FzfLuaTabTitle    |*LightSkyBlue1    |`hls.tab_title`     |Tab title (`tabs`)|
 |FzfLuaTabMarker   |*BlanchedAlmond   |`hls.tab_marker`    |Tab marker (`tabs`)|
 |FzfLuaDirIcon     |Directory         |`hls.dir_icon`      |Paths directory icon|
+|FzfLuaDirPart     |Comment           |`hls.dir_part`      |Directory hl when `formatter=path.filename_first`|
 |FzfLuaLiveSym     |*Brown1           |`hls.live_sym`      |LSP live symbols query match|
 
 <sup><sub>&ast;Not a highlight group, RGB color from `nvim_get_color_map`</sub></sup>

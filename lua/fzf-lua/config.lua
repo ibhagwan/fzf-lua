@@ -217,33 +217,11 @@ function M.normalize_opts(opts, globals, __resume_key)
       type(M.globals[k]) == "table" and utils.tbl_deep_clone(M.globals[k]) or {})
   end
 
-  -- Setup formatter options
-  if opts.formatter then
-    local _fmt = M.globals["formatters." .. opts.formatter]
-    if _fmt then
-      opts._fmt = opts._fmt or {}
-      opts._fmt.to = opts._fmt.to or _fmt.to
-      opts._fmt.from = opts._fmt.to or _fmt.from
-      -- no support for `bat_native` with a formatter
-      if opts.previewer == "bat_native" then opts.previewer = "bat" end
-      -- no support of searching file begin (we can't guarantee no. of nbsp's)
-      opts._fzf_nth_devicons = false
-    else
-      utils.warn(("Invalid formatter '%s', ignoring."):format(opts.formatter))
-    end
-  end
-
   -- backward compat: no-value flags should be set to `true`, in the past these
   -- would be set to an empty string which would now translate into a shell escaped
   -- string as we automatically shell escape all fzf_opts
   for k, v in pairs(opts.fzf_opts) do
     if v == "" then opts.fzf_opts[k] = true end
-  end
-
-  -- Execlude file icons from the fuzzy matching (#1080)
-  if opts.file_icons and opts._fzf_nth_devicons and not opts.fzf_opts["--delimiter"] then
-    opts.fzf_opts["--nth"] = opts.fzf_opts["--nth"] or "-1.."
-    opts.fzf_opts["--delimiter"] = string.format("[%s]", utils.nbsp)
   end
 
   -- fzf.vim's `g:fzf_history_dir` (#1127)
@@ -381,6 +359,33 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- Merge highlight overrides with defaults, we only do this after the
   -- backward compat copy due to the migration of `winopts.hl` -> `hls`
   opts.hls = vim.tbl_deep_extend("keep", opts.hls or {}, M.globals.__HLS)
+
+  -- Setup formatter options
+  if opts.formatter then
+    local _fmt = M.globals["formatters." .. opts.formatter]
+    if _fmt then
+      opts._fmt = opts._fmt or {}
+      opts._fmt.to = opts._fmt.to or _fmt.to or _fmt._to and _fmt._to(opts) or nil
+      opts._fmt.from = opts._fmt.from or _fmt.from
+      if type(opts._fmt.to) == "string" then
+        -- store the string function as backup for `make_entry.preprocess`
+        opts._fmt._to = opts._fmt.to
+        opts._fmt.to = loadstring(tostring(opts._fmt.to))()
+      end
+      -- no support for `bat_native` with a formatter
+      if opts.previewer == "bat_native" then opts.previewer = "bat" end
+      -- no support of searching file begin (we can't guarantee no. of nbsp's)
+      opts._fzf_nth_devicons = false
+    else
+      utils.warn(("Invalid formatter '%s', ignoring."):format(opts.formatter))
+    end
+  end
+
+  -- Exclude file icons from the fuzzy matching (#1080)
+  if opts.file_icons and opts._fzf_nth_devicons and not opts.fzf_opts["--delimiter"] then
+    opts.fzf_opts["--nth"] = opts.fzf_opts["--nth"] or "-1.."
+    opts.fzf_opts["--delimiter"] = string.format("[%s]", utils.nbsp)
+  end
 
   if type(opts.previewer) == "function" then
     -- we use a function so the user can override
