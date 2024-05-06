@@ -135,7 +135,7 @@ M.vimcmd_file = function(vimcmd, selected, opts, pcall_vimcmd)
           relpath = fullpath
         end
         -- we normalize the path or Windows will fail with directories starting
-        -- with special characters, for example "C:\app\(web)" will be traslated
+        -- with special characters, for example "C:\app\(web)" will be translated
         -- by neovim to "c:\app(web)" (#1082)
         local cmd = vimcmd .. " " .. vim.fn.fnameescape(path.normalize(relpath))
         if pcall_vimcmd then

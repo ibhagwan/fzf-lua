@@ -498,7 +498,7 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
   -- the scrollbar which we wish to hide
   entry.no_scrollbar = true
   -- both ueberzug and terminal cmds need a clear
-  -- on redraw to fit the new window dimentions
+  -- on redraw to fit the new window dimensions
   self.clear_on_redraw = true
   -- 2nd arg `true`: minimal style window
   self:set_preview_buf(tmpbuf, true)
@@ -1086,7 +1086,7 @@ end
 function Previewer.tags:parse_entry(entry_str)
   -- first parse as normal entry
   -- must use 'super.' and send self as 1st arg
-  -- or the ':' syntactic suger will send super's
+  -- or the ':' syntactic sugar will send super's
   -- self which doesn't have self.opts
   local entry = self.super.parse_entry(self, entry_str)
   entry.ctag = path.entry_to_ctag(entry_str)

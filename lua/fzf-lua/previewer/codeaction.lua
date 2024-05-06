@@ -176,7 +176,7 @@ local function preview_action_tuple(self, idx, callback)
       -- prior to nvim 0.10 we could check `client.server_capabilities`
       or vim.tbl_get(client.server_capabilities, "codeActionProvider", "resolveProvider")
   if not action.edit and client and supports_resolve then
-    -- Action is not a worksapce edit, attempt to resolve the code action
+    -- Action is not a workspace edit, attempt to resolve the code action
     -- in case it resolves to a workspace edit
     local function handle_resolved_response(err, resolved_action)
       if err then

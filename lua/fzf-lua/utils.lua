@@ -483,7 +483,7 @@ local function hex2rgb(hexcol)
   return r, g, b
 end
 
--- auto genreate ansi escape sequence from RGB or neovim highlights
+-- auto generate ansi escape sequence from RGB or neovim highlights
 --[[ M.ansi_auto = setmetatable({}, {
   -- __index metamethod only gets called when the item does not exist
   -- we use this to auto-cache the ansi escape sequence
@@ -746,7 +746,7 @@ function M.fzf_exit()
   -- Usually called from the LSP module to exit the interface on "async" mode
   -- when no results are found or when `jump_to_single_result` is used, when
   -- the latter is used in "sync" mode we also need to make sure core.__CTX
-  -- is cleared or we'll have the wrong cursor coordiantes (#928)
+  -- is cleared or we'll have the wrong cursor coordinates (#928)
   return loadstring([[
     require('fzf-lua').core.__CTX = nil
     require('fzf-lua').win.win_leave()
@@ -786,7 +786,7 @@ function M.load_profile_fname(fname, name, silent)
   if ok and type(res) == "table" then
     -- success
     if not silent then
-      M.info(string.format("Succefully loaded profile '%s'", profile))
+      M.info(string.format("Successfully loaded profile '%s'", profile))
     end
     return res
   elseif silent then
@@ -1059,7 +1059,7 @@ end
 -- without "E5108: Error executing lua Keyboard interrupt"
 function M.input(prompt)
   local ok, res
-  -- NOTE: do not use `vim.ui` yet, a conflcit with `dressing.nvim`
+  -- NOTE: do not use `vim.ui` yet, a conflict with `dressing.nvim`
   -- causes the return value to appear as cancellation
   -- if vim.ui then
   if false then

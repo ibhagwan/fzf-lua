@@ -113,7 +113,7 @@ M.ui_select = function(items, ui_opts, on_choice)
     if not selected then
       -- with `actions.dummy_abort` this doesn't get called anymore
       -- as the action is configured as a valid fzf "accept" (thus
-      -- `selected` isn't empty), see below comment for mor info
+      -- `selected` isn't empty), see below comment for more info
       on_choice(nil, nil)
     else
       o._on_choice_called = nil

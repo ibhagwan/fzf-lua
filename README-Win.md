@@ -49,7 +49,7 @@ And try to search for the literal `[` by typing `\[`, we get the error:
 [Command failed: rg --line-number --column --color=always ^"\\[^"]
 ```
 
-If we double the blackslashes by typing `\\[` we get the error:
+If we double the backslashes by typing `\\[` we get the error:
 ```
 [Command failed: rg --line-number --column --color=always ^"\\\\[^"]
 ```

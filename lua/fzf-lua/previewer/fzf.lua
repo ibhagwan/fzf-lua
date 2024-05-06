@@ -232,7 +232,7 @@ function Previewer.bat_async:_preview_offset()
   ]]
   if not self.args or not self.args:match("%-%-style=default") then
     -- we don't need affixed header unless we use bat default style
-    -- TODO: shuld also adjust for "--style=header-filename"
+    -- TODO: should also adjust for "--style=header-filename"
     if self.opts.line_field_index then
       return ("+%s-/2"):format(self.opts.line_field_index)
     end

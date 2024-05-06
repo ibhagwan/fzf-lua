@@ -192,13 +192,13 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end)
 
   -- I'm not sure why this happens (probably a neovim bug) but when pressing
-  -- <C-c> in quick successsion immediately after opening the window neovim
+  -- <C-c> in quick succession immediately after opening the window neovim
   -- hangs the CPU at 100% at the last `coroutine.yield` before returning from
   -- this function. At this point it seems that the fzf subprocess was started
   -- and killed but `on_exit` is never called. In order to avoid calling `yield`
   -- I tried checking the job/coroutine status in different ways:
   --   * coroutine.status(co): always returns 'running'
-  --   * vim.fn.job_pid: always returns the corrent pid (even if it doesn't
+  --   * vim.fn.job_pid: always returns the current pid (even if it doesn't
   --     exist anymore)
   --   * vim.fn.jobwait({job_pid}, 0): always returns '-1' (even when looping
   --     with 'vim.defer_fn(fn, 100)')

@@ -8,7 +8,7 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
-local function handler_capabilty(handler)
+local function handler_capability(handler)
   if utils.__HAS_NVIM_08 then
     return handler.server_capability
   else
@@ -489,7 +489,7 @@ local function gen_lsp_contents(opts)
         -- cancel all lingering LSP queries
         fn_cancel_all(opts)
 
-        local async_buf_reqeust = function()
+        local async_buf_request = function()
           -- save cancel all fnref so we can cancel all requests
           -- when using `live_ws_symbols`
           _, opts._cancel_all = vim.lsp.buf_request(core.CTX().bufnr,
@@ -501,10 +501,10 @@ local function gen_lsp_contents(opts)
         -- E5560: nvim_exec_autocmds must not be called in a lua loop callback nil
         if vim.in_fast_event() then
           vim.schedule(function()
-            async_buf_reqeust()
+            async_buf_request()
           end)
         else
-          async_buf_reqeust()
+          async_buf_request()
         end
 
         -- process results from all LSP client
@@ -634,7 +634,7 @@ M.finder = function(opts)
       opts.silent = opts.silent == nil and true or opts.silent
       opts.no_autoclose = true
       opts.lsp_handler = handlers[method]
-      opts.lsp_handler.capability = handler_capabilty(opts.lsp_handler)
+      opts.lsp_handler.capability = handler_capability(opts.lsp_handler)
       opts.lsp_params = lsp_params -- reset previous calls params if existed
 
       -- returns nil for no client attached, false for unsupported capability
@@ -782,7 +782,7 @@ M.live_workspace_symbols = function(opts)
     utils.map_set(config, "__resume_data.last_query", val)
     -- also store query for `fzf_resume` (#963)
     utils.map_set(config, "__resume_data.opts.query", val)
-    -- store in opts for convinience in action callbacks
+    -- store in opts for convenience in action callbacks
     o.last_query = val
   end
   opts.__resume_get = function(what, o)
@@ -918,9 +918,9 @@ local function wrap_fn(key, fn)
   return function(opts)
     opts = opts or {}
     opts.lsp_handler = handlers[key]
-    opts.lsp_handler.capability = handler_capabilty(opts.lsp_handler)
+    opts.lsp_handler.capability = handler_capability(opts.lsp_handler)
 
-    -- check_capabilities will print the approperiate warning
+    -- check_capabilities will print the appropriate warning
     if not check_capabilities(opts.lsp_handler) then
       return
     end

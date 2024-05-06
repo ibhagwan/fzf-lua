@@ -402,7 +402,7 @@ function FzfWin:set_winopts(win, opts)
       -- PROBABLY DOESN'T MATTER (WHO USES 0.5?) BUT WHY NOT LOL
       -- minor backward compatibility fix, with neovim version < 0.7
       -- nvim_win_get_option("scroloff") which should return -1
-      -- returns an invalid (really big number insead which panics
+      -- returns an invalid (really big number instead which panics
       -- when called with nvim_win_set_option, wrapping in a pcall
       -- ensures this plugin still works for neovim version as low as 0.5!
       pcall(function() vim.wo[win][opt] = value end)
@@ -711,7 +711,7 @@ function FzfWin:redraw_main()
   win_opts.col = winopts.col or math.floor((columns - win_opts.width) / 2)
 
   -- When border chars are empty strings 'nvim_open_win' adjusts
-  -- the layout to take all avialable space, we use these to adjust
+  -- the layout to take all available space, we use these to adjust
   -- our main window height to use all available lines (#364)
   if type(win_opts.border) == "table" then
     local function is_empty_str(tbl, arr)
@@ -834,7 +834,7 @@ function FzfWin:create()
       self.winopts.on_create()
     end
     -- not sure why but when using a split and reusing the window,
-    -- fzf will not use all the avialable width until 'redraw' is
+    -- fzf will not use all the available width until 'redraw' is
     -- called resulting in misaligned native and builtin previews
     vim.cmd("redraw")
     return self.fzf_bufnr

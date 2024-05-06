@@ -119,7 +119,7 @@ function M._candidates(line, cmp_items)
       },
       { patterns = { "^lsp_.*_symbols$" }, transform = function(_) return "lsp.symbols" end },
       { patterns = { "^lsp_" },            transform = function(_) return "lsp" end },
-      { patterns = { "^diagnostics_" },    transform = function(_) return "dianostics" end },
+      { patterns = { "^diagnostics_" },    transform = function(_) return "diagnostics" end },
       { patterns = { "^tags" },            transform = function(_) return "tags" end },
       { patterns = { "grep" },             transform = function(_) return "grep" end },
       { patterns = { "^complete_bline$" }, transform = function(_) return "complete_line" end },

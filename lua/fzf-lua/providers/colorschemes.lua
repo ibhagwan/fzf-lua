@@ -310,7 +310,7 @@ function AsyncDownloadManager:jobstart(plugin, job_args)
   elseif job_id == -1 then
     utils.warn(string.format([[jobstart: "%s" is not executable]], job_args[1]))
   else
-    -- job started succesfully
+    -- job started successfully
     utils.info(string.format("%s [path:%s] [job_id:%d]...",
       msg, path.HOME_to_tilde(info.path), job_id))
     self.job_ids[tostring(job_id)] = { plugin = plugin, args = job_args }

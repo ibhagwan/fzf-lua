@@ -54,7 +54,7 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   local receiving_function = function(pipe_path, ...)
     local pipe = uv.new_pipe(false)
     local args = { ... }
-    -- unesacpe double backslashes on windows
+    -- unescape double backslashes on windows
     if type(args[1]) == "table" then
       args[1] = vim.tbl_map(function(x) return libuv.unescape_fzf(x) end, args[1])
     end
@@ -94,8 +94,8 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
 
   -- we need to add '--' to mark the end of command options otherwise
   -- our preview command will fail when the selected items contain
-  -- special shell chars ('+', '-', etc), exmaples where this can
-  -- happen are the `git status` command and git brances from diff
+  -- special shell chars ('+', '-', etc), examples where this can
+  -- happen are the `git status` command and git branches from diff
   -- worktrees (#600)
   local action_cmd = ("%s%s -n --headless --clean --cmd %s -- %s"):format(
     nvim_runtime,

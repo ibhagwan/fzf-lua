@@ -2,14 +2,14 @@ local libuv = require("fzf-lua.libuv")
 
 
 describe("Testing libuv module", function()
-  it("is_escpaed (posix)", function()
+  it("is_escaped (posix)", function()
     assert.is.False(libuv.is_escaped([[]], false))
     assert.is.True(libuv.is_escaped([[""]], false))
     assert.is.True(libuv.is_escaped([['']], false))
     assert.is.True(libuv.is_escaped([['foo']], false))
   end)
 
-  it("is_escpaed (win)", function()
+  it("is_escaped (win)", function()
     assert.is.False(libuv.is_escaped([[]], true))
     assert.is.True(libuv.is_escaped([[""]], true))
     assert.is.True(libuv.is_escaped([[^"^"]], true))
