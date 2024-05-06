@@ -22,7 +22,7 @@ M.metatable = function(opts)
   table.sort(methods, function(a, b) return a < b end)
 
   opts.preview = shell.raw_action(function(args)
-    -- TODO: retreive method help
+    -- TODO: retrieve method help
     local help = ""
     return string.format("%s:%s", args[1], help)
   end, nil, opts.debug)

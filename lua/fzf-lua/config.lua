@@ -50,7 +50,7 @@ M.resume_set = function(what, val, opts)
   -- backward compatibility for users using `get_last_query`
   if what == "query" then
     utils.map_set(M, "__resume_data.last_query", val)
-    -- store in opts for convinience in action callbacks
+    -- store in opts for convenience in action callbacks
     opts.last_query = val
   end
   -- _G.dump("resume_set", key1, utils.map_get(M, key1))
@@ -425,7 +425,7 @@ function M.normalize_opts(opts, globals, __resume_key)
         -- directory so we must convert to full path (#375)
         opts.cwd = path.join({ uv.cwd(), opts.cwd })
       elseif utils.__IS_WINDOWS and opts.cwd:sub(2) == ":" then
-        -- TODO: upstream bug? on Windoows: starting jobs with `cwd = C:` (without separator)
+        -- TODO: upstream bug? on Windows: starting jobs with `cwd = C:` (without separator)
         -- ignores the cwd argument and starts the job in the current working directory
         opts.cwd = path.add_trailing(opts.cwd)
       end

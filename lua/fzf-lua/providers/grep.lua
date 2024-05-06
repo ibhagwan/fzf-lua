@@ -168,7 +168,7 @@ local function normalize_live_grep_opts(opts)
       utils.map_set(config, "__resume_data.last_query", val)
       -- also store query for `fzf_resume` (#963)
       utils.map_set(config, "__resume_data.opts.query", val)
-      -- store in opts for convinience in action callbacks
+      -- store in opts for convenience in action callbacks
       o.last_query = val
     else
       config.resume_set(what, val, { __resume_key = o.__resume_key })
@@ -257,7 +257,7 @@ M.live_grep_mt = function(opts)
   -- signal to preprocess we are looking to replace {argvz}
   opts.argv_expr = true
 
-  -- this will be replaced by the approperiate fzf
+  -- this will be replaced by the appropriate fzf
   -- FIELD INDEX EXPRESSION by 'fzf_exec'
   opts.cmd = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
   if not opts.cmd then return end
@@ -281,7 +281,7 @@ M.live_grep_glob_st = function(opts)
   end
 
   -- 'rg_glob = true' enables glob
-  -- processsing in 'get_grep_cmd'
+  -- processing in 'get_grep_cmd'
   opts = opts or {}
   opts.rg_glob = true
   return M.live_grep_st(opts)
@@ -293,7 +293,7 @@ M.live_grep_glob_mt = function(opts)
     return
   end
 
-  -- 'rg_glob = true' enables the glob processsing in
+  -- 'rg_glob = true' enables the glob processing in
   -- 'make_entry.preprocess', only supported with multiprocess
   opts = opts or {}
   opts.rg_glob = true
@@ -403,8 +403,8 @@ M.grep_curbuf = function(opts, lgrep)
   opts.grep_opts = make_entry.rg_insert_args(config.globals.grep.grep_opts, " --with-filename")
   opts.exec_empty_query = opts.exec_empty_query == nil and true
   opts.fzf_opts = vim.tbl_extend("keep", opts.fzf_opts or {}, config.globals.blines.fzf_opts)
-  -- call `normalize_opts` here as we want to strore all previous
-  -- optios in the resume data store under the key "bgrep"
+  -- call `normalize_opts` here as we want to store all previous
+  -- options in the resume data store under the key "bgrep"
   -- 3rd arg is an override for resume data store lookup key
   opts = config.normalize_opts(opts, "grep", "bgrep")
   if not opts then return end

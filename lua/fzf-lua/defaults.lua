@@ -290,7 +290,7 @@ M.defaults.git                  = {
   },
   status = {
     prompt            = "GitStatus> ",
-    -- override `color.status=always`, techincally not required
+    -- override `color.status=always`, technically not required
     -- since we now also call `utils.strip_ansi_coloring` (#706)
     cmd               = "git -c color.status=false --no-optional-locks status --porcelain=v1 -u",
     previewer         = "git_diff",
@@ -744,14 +744,14 @@ M.defaults.lsp.symbols          = {
     -- NOT NEEDED: we format at the source in `lsp.symbol_handler`
     -- to = function(s, _)
     --   local file, text = s:match("^(.+:.+:.+:)%s(.*)")
-    --   -- fzf has alignment issues with ansi colorings of differnt escape length
+    --   -- fzf has alignment issues with ansi colorings of different escape length
     --   local align = 56 + utils.ansi_escseq_len(text)
     --   return string.format("%-" .. align .. "s%s%s", text, utils.nbsp, file)
     -- end,
     to   = false,
     from = function(s, _)
       -- restore the format to something that `path.entry_to_file` can
-      -- handle more robustly, while this can stil work due to the `utils.nbsp`
+      -- handle more robustly, while this can still work due to the `utils.nbsp`
       -- it will fail when the symbol contains "[%d]" (which we use as bufnr)
       local text, file = s:match(string.format("^(.-)%s(.*)", utils.nbsp))
       return string.format("%s %s", file, text)

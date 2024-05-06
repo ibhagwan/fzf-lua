@@ -370,7 +370,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str)
   end
 
   -- stdin/stdout are already buffered, not stderr. This means
-  -- that every character is flushed immedietely which caused
+  -- that every character is flushed immediately which caused
   -- rendering issues on Mac (#316, #287) and Linux (#414)
   -- switch 'stderr' stream to 'line' buffering
   -- https://www.lua.org/manual/5.2/manual.html#pdf-file%3asetvbuf
@@ -447,7 +447,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str)
         -- if the user cancels the call prematurely with
         -- <C-c>, err will be either EPIPE or ECANCELED
         -- don't really need to do anything since the
-        -- processs will be killed anyways with os.exit()
+        -- processes will be killed anyways with os.exit()
         if err then
           stderr_write(("pipe:write error: %s\n"):format(err))
         end
@@ -525,7 +525,7 @@ M.is_escaped = function(s, is_win)
   return m ~= nil
 end
 
--- our own version of vim.fn.shellescape compatibile with fish shells
+-- our own version of vim.fn.shellescape compatible with fish shells
 --   * don't double-escape '\' (#340)
 --   * if possible, replace surrounding single quote with double
 -- from ':help shellescape':
@@ -535,8 +535,8 @@ end
 --
 -- for windows, we assume we want to keep all quotes as literals
 -- to avoid the quotes being stripped when run from fzf actions
--- we therefore have to escape the quotes with blackslashes and
--- for nested quotes we double the blackslashes due to windows
+-- we therefore have to escape the quotes with backslashes and
+-- for nested quotes we double the backslashes due to windows
 -- quirks, further reading:
 -- https://stackoverflow.com/questions/6714165/powershell-stripping-double-quotes-from-command-line-arguments
 -- https://learn.microsoft.com/en-us/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way

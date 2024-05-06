@@ -233,7 +233,7 @@ M.CTX = function(includeBuflist)
   -- is already open (actions.sym_lsym|grep_lgrep)
   if not M.__CTX or
       -- when called from the LSP module in "sync" mode when no results are found
-      -- the fzf window won't open (e.g. "No refernces found") and the context is
+      -- the fzf window won't open (e.g. "No references found") and the context is
       -- never cleared. The below condition validates the source window when the
       -- UI is not open (#907)
       (not utils.fzf_winobj() and M.__CTX.bufnr ~= vim.api.nvim_get_current_buf()) then
@@ -425,7 +425,7 @@ M.fzf = function(contents, opts)
       -- reminder: this doesn't get called with 'live_grep' when using skim
       -- due to a bug where '--print-query --interactive' combo is broken:
       -- skim always prints an empty line where the typed query should be.
-      -- see addtional note above 'opts.fn_post_fzf' inside 'live_grep_mt'
+      -- see additional note above 'opts.fn_post_fzf' inside 'live_grep_mt'
       config.resume_set("query", selected[1], opts)
     end
     table.remove(selected, 1)
@@ -491,7 +491,7 @@ M.create_fzf_colors = function(opts)
 
   local tbl = {}
 
-  -- In case the user alredy set fzf_opts["--color"] (#1052)
+  -- In case the user already set fzf_opts["--color"] (#1052)
   table.insert(tbl, opts.fzf_opts and opts.fzf_opts["--color"])
 
   for flag, list in pairs(colors) do
@@ -675,7 +675,7 @@ M.mt_cmd_wrapper = function(opts)
       "rg_glob",
       "_base64",
     }
-    -- caller reqested rg with glob support
+    -- caller requested rg with glob support
     if o.rg_glob then
       table.insert(names, "glob_flag")
       table.insert(names, "glob_separator")
@@ -1064,7 +1064,7 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
         -- also escaping the query with ^"<query>"^ any spaces in the query
         -- will fail the command, by adding caret escaping before fzf's
         -- we fool CMD.exe to not terminate the quote and thus an empty query
-        -- will generate the experssion ^^"^" which translates to ^""
+        -- will generate the expression ^^"^" which translates to ^""
         -- our specialized libuv.shellescape will also double the escape
         -- sequence if a "!" is found in our string as explained in:
         -- https://ss64.com/nt/syntax-esc.html

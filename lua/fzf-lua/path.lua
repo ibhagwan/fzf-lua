@@ -35,7 +35,7 @@ end
 M.byte_is_separator = function(byte)
   if utils.__IS_WINDOWS then
     -- path on windows can also be the result of `vim.fs.normalize`
-    -- so we need to test for the presense of both slash types
+    -- so we need to test for the presence of both slash types
     return byte == M.bslash_byte or byte == M.fslash_byte
   else
     return byte == M.fslash_byte
@@ -231,7 +231,7 @@ end
 
 -- I'm not sure why this happens given that neovim is single threaded
 -- but it seems that 'oldfiles' provider processing entries concurrently
--- crashes when trying to access `vim.env.HOME' from two differnt entries
+-- crashes when trying to access `vim.env.HOME' from two different entries
 -- at the same time due to being run in a coroutine (#447)
 M.HOME = function()
   if not M.__HOME then

@@ -35,7 +35,7 @@ M.manpages = function(opts)
   end
 
   opts.fn_transform = function(x)
-    -- split by first occurence of ' - ' (spaced hyphen)
+    -- split by first occurrence of ' - ' (spaced hyphen)
     local man, desc = x:match("^(.-) %- (.*)$")
     return string.format("%-45s %s", man, desc)
   end

@@ -58,7 +58,7 @@ Disable `file_icons` in `files`, applies to this call only:
 :FzfLua files file_icons=false
 ```
 
-Fzf-lua conviniently enables setting lua tables recursively using dotted keys, for exmaple, if we
+Fzf-lua conveniently enables setting lua tables recursively using dotted keys, for example, if we
 wanted to call `files` in "split" mode (instead of the default floating window), we would normally call:
 
 ```lua
@@ -222,25 +222,25 @@ Neovim split command to use for fzf-lua interface, e.g `belowright new`.
 
 Type: `number`, Default: `0.55`
 
-Screen column where to place the fzf-lua float window, between 0-1 will represent precentage of `vim.o.columns` (0: leftmost, 1: rightmost), if >= 1 will attempt to place the float in the exact screen column.
+Screen column where to place the fzf-lua float window, between 0-1 will represent percentage of `vim.o.columns` (0: leftmost, 1: rightmost), if >= 1 will attempt to place the float in the exact screen column.
 
 #### globals.winopts.row
 
 Type: `number`, Default: `0.35`
 
-Screen row where to place the fzf-lua float window, between 0-1 will represent precentage of `vim.o.lines` (0: top, 1: bottom), if >= 1 will attempt to place the float in the exact screen line.
+Screen row where to place the fzf-lua float window, between 0-1 will represent percentage of `vim.o.lines` (0: top, 1: bottom), if >= 1 will attempt to place the float in the exact screen line.
 
 #### globals.winopts.width
 
 Type: `number`, Default: `0.80`
 
-Width of the fzf-lua float, between 0-1 will represent precentage of `vim.o.columns` (1: max width), if >= 1 will use fixed number of columns.
+Width of the fzf-lua float, between 0-1 will represent percentage of `vim.o.columns` (1: max width), if >= 1 will use fixed number of columns.
 
 #### globals.winopts.height
 
 Type: `number`, Default: `0.85`
 
-Height of the fzf-lua float, between 0-1 will represent precentage of `vim.o.lines` (1: max height), if >= 1 will use fixed number of lines.
+Height of the fzf-lua float, between 0-1 will represent percentage of `vim.o.lines` (1: max height), if >= 1 will use fixed number of lines.
 
 #### globals.winopts.border
 
@@ -265,7 +265,7 @@ Callback after the creation of the fzf-lua main terminal window.
 
 Type: `number`, Default: `100`
 
-Debounce time (miliseconds) for displaying the preview buffer in the builtin previewer.
+Debounce time (milliseconds) for displaying the preview buffer in the builtin previewer.
 
 #### globals.winopts.preview.wrap
 
@@ -286,7 +286,7 @@ Preview startup visibility in both native fzf and the builtin previewer, mapped 
 
 Type: `string`, Default: `border`
 
-Preview border for native fzf previewers (i.e. `bat`, `git_status`), set to `noborder` to hide the preview border, consult `man fzf` for all vailable options.
+Preview border for native fzf previewers (i.e. `bat`, `git_status`), set to `noborder` to hide the preview border, consult `man fzf` for all available options.
 
 #### globals.winopts.preview.layout
 
@@ -299,7 +299,7 @@ tested against `winopts.preview.flip_columns`, when <= `vertical` is used, other
 
 Type: `number`, Default: `120`
 
-Auto-detect the preview layout based on available widht, see above note in `winopts.preview.layout`.
+Auto-detect the preview layout based on available width, see above note in `winopts.preview.layout`.
 
 #### globals.winopts.preview.horizontal
 
@@ -524,13 +524,13 @@ Interactive headers description highlight group, e.g. `<ctrl-g> to Disable .giti
 
 Type: `string`, Default: `FzfLuaPathLineNr`
 
-Highlight group for the line part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `bufers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
+Highlight group for the line part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
 
 #### globals.hls.path_colnr
 
 Type: `string`, Default: `FzfLuaPathColNr`
 
-Highlight group for the column part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `bufers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
+Highlight group for the column part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
 
 #### globals.hls.buf_name
 
@@ -641,7 +641,7 @@ Exclude non-file entries (directories).
 
 #### files
 
-Files finder, will enumrate the filesystem of the current working directory using `fd`, `rg` and `grep` or `dir.exe`.
+Files finder, will enumerate the filesystem of the current working directory using `fd`, `rg` and `grep` or `dir.exe`.
 
 ##### files.cwd_prompt
 
@@ -687,7 +687,7 @@ Performant "live" grep variant piping the underlying command directly to fzf (wi
 
 #### live_grep_glob
 
-"Live" grep variant with add support for `rg --iglob` flag, use the default separator `--` to specify globs, for exmaple, `pcall -- *.lua !*spec*` will search for `pcall` in any lua file that doesn't contain `spec`.
+"Live" grep variant with add support for `rg --iglob` flag, use the default separator `--` to specify globs, for example, `pcall -- *.lua !*spec*` will search for `pcall` in any lua file that doesn't contain `spec`.
 
 #### live_grep_resume
 

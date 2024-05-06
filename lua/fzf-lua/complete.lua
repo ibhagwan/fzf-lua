@@ -43,7 +43,7 @@ local function find_toplevel_cwd(maybe_cwd, postfix, orig_cwd)
 end
 
 -- forward and reverse match spaces and single/double quotes
--- and attepmpt to find the top level existing directory
+-- and attempt to find the top level existing directory
 -- set the cwd and prompt top the top level directory and
 -- the leftover match to the input query
 local set_cmp_opts_path = function(opts)

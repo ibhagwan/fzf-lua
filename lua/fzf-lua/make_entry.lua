@@ -341,7 +341,7 @@ M.file = function(x, opts)
   if opts.path_shorten then
     filepath = path.shorten(filepath, tonumber(opts.path_shorten),
       -- On Windows we want to shorten using the separator used by the `cwd` arg
-      -- otherwise we might haave issues "lenghening" as in the case of git which
+      -- otherwise we might have issues "lenghening" as in the case of git which
       -- uses normalized paths (using /) for `rev-parse --show-toplevel` and `ls-files`
       utils.__IS_WINDOWS and opts.cwd and path.separator(opts.cwd))
   end
@@ -434,7 +434,7 @@ M.git_status = function(x, opts)
     f1, f2 = f1:match("(.*)%s%->%s(.*)")
   end
   f1 = f1 and M.file(f1, opts)
-  -- accomodate 'file_ignore_patterns'
+  -- accommodate 'file_ignore_patterns'
   if not f1 then return end
   f2 = f2 and M.file(f2, opts)
   local staged = git_iconify(x:sub(1, 1):gsub("?", " "), true)
