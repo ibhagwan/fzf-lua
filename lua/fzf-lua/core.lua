@@ -1071,7 +1071,8 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
         -- TODO: open an upstream bug rgd ! as without the double escape
         -- if an ! is found in the command (i.e. -g "rg ... -g !.git")
         -- sending a caret will require doubling (i.e. sending ^^ for ^)
-          [[IF ^%s NEQ ^^"^" ]],
+          opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.51
+          and [[IF %s NEQ ^"^" ]] or [[IF ^%s NEQ ^^"^" ]],
           "[ -z %s ] || "),
         -- {q} for fzf is automatically shell escaped
         fzf_field_expression
