@@ -1,4 +1,4 @@
-local uv = vim.loop
+local uv = vim.uv or vim.loop
 
 local _has_nvim_010 = vim.fn.has("nvim-0.10") == 1
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
@@ -379,7 +379,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str)
   -- redirect 'stderr' to 'stdout' on Macs by default
   -- only takes effect if 'opts.stderr' was not set
   if opts.stderr_to_stdout == nil and
-      vim.loop.os_uname().sysname == "Darwin" then
+      uv.os_uname().sysname == "Darwin" then
     opts.stderr_to_stdout = true
   end
 

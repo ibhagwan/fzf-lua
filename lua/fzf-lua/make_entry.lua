@@ -1,5 +1,6 @@
 local M = {}
 
+local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
@@ -230,7 +231,7 @@ M.preprocess = function(opts)
   end
 
   if opts.cwd_only and not opts.cwd then
-    opts.cwd = vim.loop.cwd()
+    opts.cwd = uv.cwd()
   end
 
   if opts.file_icons then
@@ -317,7 +318,7 @@ M.file = function(x, opts)
   if path.is_absolute(filepath) then
     -- filter for cwd only
     if opts.cwd_only then
-      local cwd = opts.cwd or vim.loop.cwd()
+      local cwd = opts.cwd or uv.cwd()
       if not path.is_relative_to(filepath, cwd) then
         return nil
       end

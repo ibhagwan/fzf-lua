@@ -6,6 +6,8 @@ function _G.dump(...)
   print(unpack(objects))
 end
 
+local uv = vim.uv or vim.loop
+
 local M = {}
 
 M.__HAS_NVIM_06 = vim.fn.has("nvim-0.6") == 1
@@ -196,7 +198,7 @@ function M.err(msg)
 end
 
 function M.is_darwin()
-  return vim.loop.os_uname().sysname == "Darwin"
+  return uv.os_uname().sysname == "Darwin"
 end
 
 ---@param str string
@@ -264,7 +266,7 @@ end
 M.file_is_binary = function(filepath)
   filepath = M.pcall_expand(filepath)
   if vim.fn.executable("file") ~= 1 or
-      not vim.loop.fs_stat(filepath) then
+      not uv.fs_stat(filepath) then
     return false
   end
   local out = M.io_system({ "file", "--dereference", "--mime", filepath })
@@ -277,7 +279,7 @@ local S_IFDIR = 0x4000 -- directory
 
 M.path_is_directory = function(filepath, stat)
   if stat == nil then
-    stat = vim.loop.fs_stat(filepath)
+    stat = uv.fs_stat(filepath)
   end
   if stat and bit.band(stat.mode, S_IFMT) == S_IFDIR then
     return true
@@ -287,7 +289,7 @@ end
 
 M.file_is_fifo = function(filepath, stat)
   if stat == nil then
-    stat = vim.loop.fs_stat(filepath)
+    stat = uv.fs_stat(filepath)
   end
   if stat and bit.band(stat.mode, S_IFMT) == S_IFIFO then
     return true
@@ -296,9 +298,9 @@ M.file_is_fifo = function(filepath, stat)
 end
 
 M.file_is_readable = function(filepath)
-  local fd = vim.loop.fs_open(filepath, "r", 438)
+  local fd = uv.fs_open(filepath, "r", 438)
   if fd then
-    vim.loop.fs_close(fd)
+    uv.fs_close(fd)
     return true
   end
   return false
@@ -307,7 +309,7 @@ end
 M.perl_file_is_binary = function(filepath)
   filepath = M.pcall_expand(filepath)
   if vim.fn.executable("perl") ~= 1 or
-      not vim.loop.fs_stat(filepath) then
+      not uv.fs_stat(filepath) then
     return false
   end
   -- can also use '-T' to test for text files
@@ -317,17 +319,17 @@ M.perl_file_is_binary = function(filepath)
 end
 
 M.read_file = function(filepath)
-  local fd = vim.loop.fs_open(filepath, "r", 438)
+  local fd = uv.fs_open(filepath, "r", 438)
   if fd == nil then return "" end
-  local stat = assert(vim.loop.fs_fstat(fd))
+  local stat = assert(uv.fs_fstat(fd))
   if stat.type ~= "file" then return "" end
-  local data = assert(vim.loop.fs_read(fd, stat.size, 0))
-  assert(vim.loop.fs_close(fd))
+  local data = assert(uv.fs_read(fd, stat.size, 0))
+  assert(uv.fs_close(fd))
   return data
 end
 
 M.read_file_async = function(filepath, callback)
-  vim.loop.fs_open(filepath, "r", 438, function(err_open, fd)
+  uv.fs_open(filepath, "r", 438, function(err_open, fd)
     if err_open then
       -- we must schedule this or we get
       -- E5560: nvim_exec must not be called in a lua loop callback
@@ -336,12 +338,12 @@ M.read_file_async = function(filepath, callback)
       end)
       return
     end
-    vim.loop.fs_fstat(fd, function(err_fstat, stat)
+    uv.fs_fstat(fd, function(err_fstat, stat)
       assert(not err_fstat, err_fstat)
       if stat.type ~= "file" then return callback("") end
-      vim.loop.fs_read(fd, stat.size, 0, function(err_read, data)
+      uv.fs_read(fd, stat.size, 0, function(err_read, data)
         assert(not err_read, err_read)
-        vim.loop.fs_close(fd, function(err_close)
+        uv.fs_close(fd, function(err_close)
           assert(not err_close, err_close)
           return callback(data)
         end)

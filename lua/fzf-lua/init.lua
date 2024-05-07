@@ -4,6 +4,7 @@
 -- require("fzf-lua") from test specs (which also run headless)
 vim.g.fzf_lua_directory = ""
 
+local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
@@ -11,7 +12,7 @@ local config = require "fzf-lua.config"
 do
   local function source_vimL(path_parts)
     local vimL_file = path.join(path_parts)
-    if vim.loop.fs_stat(vimL_file) then
+    if uv.fs_stat(vimL_file) then
       vim.cmd("source " .. vimL_file)
       -- print(string.format("loaded '%s'", vimL_file))
     end

@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
@@ -25,7 +26,7 @@ local function get_tags_cmd(opts)
     -- tags use relative paths, by now we should
     -- have the correct cwd from `get_ctags_cwd`
     query = libuv.shellescape(
-      utils.rg_escape(path.relative_to(opts.filename, opts.cwd or vim.loop.cwd())))
+      utils.rg_escape(path.relative_to(opts.filename, opts.cwd or uv.cwd())))
   elseif opts.search and #opts.search > 0 then
     filter = ([[%s -v "^!"]]):format(bin)
     query = libuv.shellescape(opts.no_esc and opts.search or
@@ -47,7 +48,7 @@ local get_ctags_file = function(opts)
   for _, f in ipairs(tagfiles) do
     -- NOTE: no need to use `vim.fn.expand`, tagfiles() result is already expanded
     -- for some odd reason `vim.fn.expand('.tags')` returns nil for some users (#700)
-    if vim.loop.fs_stat(f) then
+    if uv.fs_stat(f) then
       return f
     end
   end
@@ -83,10 +84,10 @@ local function tags(opts)
   -- tags file should always resolve to an absolute path, already "expanded" by
   -- `get_ctags_file` we take care of the case where `opts.ctags_file = "tags"`
   if not path.is_absolute(opts._ctags_file) then
-    opts._ctags_file = path.join({ opts.cwd or vim.loop.cwd(), opts.ctags_file })
+    opts._ctags_file = path.join({ opts.cwd or uv.cwd(), opts.ctags_file })
   end
 
-  if not opts.ctags_autogen and not vim.loop.fs_stat(opts._ctags_file) then
+  if not opts.ctags_autogen and not uv.fs_stat(opts._ctags_file) then
     -- are we using btags and have the `ctags` binary?
     -- btags with no tag file, try to autogen using `ctags`
     if opts.filename then
@@ -115,7 +116,7 @@ local function tags(opts)
     if M._TAGS2CWD[opts._ctags_file] then
       opts.cwd = opts.cwd or M._TAGS2CWD[opts._ctags_file]
     else
-      opts.cwd = opts.cwd or get_ctags_cwd(opts._ctags_file) or vim.loop.cwd()
+      opts.cwd = opts.cwd or get_ctags_cwd(opts._ctags_file) or uv.cwd()
       M._TAGS2CWD[opts._ctags_file] = opts.cwd
     end
   end

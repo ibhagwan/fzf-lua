@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
@@ -390,11 +391,11 @@ M.grep_curbuf = function(opts, lgrep)
     opts = {}
   end
   opts.filename = vim.api.nvim_buf_get_name(0)
-  if #opts.filename == 0 or not vim.loop.fs_stat(opts.filename) then
+  if #opts.filename == 0 or not uv.fs_stat(opts.filename) then
     utils.info("Rg current buffer requires file on disk")
     return
   else
-    opts.filename = path.relative_to(opts.filename, vim.loop.cwd())
+    opts.filename = path.relative_to(opts.filename, uv.cwd())
   end
   -- rg globs are meaningless here since we searching a single file
   opts.rg_glob = false

@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -569,7 +570,7 @@ local normalize_lsp_opts = function(opts, cfg, __resume_key)
 
   -- required for relative paths presentation
   if not opts.cwd or #opts.cwd == 0 then
-    opts.cwd = vim.loop.cwd()
+    opts.cwd = uv.cwd()
   else
     opts.cwd_only = true
   end

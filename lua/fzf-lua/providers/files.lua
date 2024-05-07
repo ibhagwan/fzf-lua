@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -46,7 +47,7 @@ M.files = function(opts)
   if opts.ignore_current_file then
     local curbuf = vim.api.nvim_buf_get_name(0)
     if #curbuf > 0 then
-      curbuf = path.relative_to(curbuf, opts.cwd or vim.loop.cwd())
+      curbuf = path.relative_to(curbuf, opts.cwd or uv.cwd())
       opts.file_ignore_patterns = opts.file_ignore_patterns or {}
       table.insert(opts.file_ignore_patterns,
         "^" .. utils.lua_regex_escape(curbuf) .. "$")
@@ -57,7 +58,7 @@ M.files = function(opts)
     -- `dir` command returns absolute paths with ^M for EOL
     -- `make_entry.file` will strip the ^M
     -- set `opts.cwd` for relative path display
-    opts.cwd = vim.loop.cwd()
+    opts.cwd = uv.cwd()
   end
   local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
@@ -87,7 +88,7 @@ M.args = function(opts)
         for i = 0, argc - 1 do
           vim.schedule(function()
             local s = vim.fn.argv(i)
-            local st = vim.loop.fs_stat(s)
+            local st = uv.fs_stat(s)
             if opts.files_only == false or st and st.type == "file" then
               s = make_entry.file(s, opts)
               cb(s, function()

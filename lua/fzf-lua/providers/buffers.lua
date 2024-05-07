@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -36,7 +37,7 @@ local filter_buffers = function(opts, unfiltered)
       excluded[b] = true
     elseif opts.no_term_buffers and utils.is_term_buffer(b) then
       excluded[b] = true
-    elseif opts.cwd_only and not path.is_relative_to(vim.api.nvim_buf_get_name(b), vim.loop.cwd()) then
+    elseif opts.cwd_only and not path.is_relative_to(vim.api.nvim_buf_get_name(b), uv.cwd()) then
       excluded[b] = true
     elseif opts.cwd and not path.is_relative_to(vim.api.nvim_buf_get_name(b), opts.cwd) then
       excluded[b] = true
@@ -130,7 +131,7 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
       bname = make_entry.lcol({ filename = bname, lnum = buf.info.lnum }, opts):gsub(":$", "")
       return make_entry.file(bname, vim.tbl_extend("force", opts,
         -- No support for git_icons, file_icons are added later
-        { cwd = cwd or opts.cwd or vim.loop.cwd(), file_icons = false, git_icons = false }))
+        { cwd = cwd or opts.cwd or uv.cwd(), file_icons = false, git_icons = false }))
     end
   end)()
   if buf.flag == "%" then
@@ -368,7 +369,7 @@ M.tabs = function(opts)
         local title, fn_title_hl = opt_hl("tab_title",
           function(s)
             return string.format("%s%s#%d%s", s, utils.nbsp, t,
-              (vim.loop.cwd() == tab_cwd and ""
+              (uv.cwd() == tab_cwd and ""
                 or string.format(": %s", tab_cwd_tilde)))
           end,
           utils.ansi_codes[opts.hls.tab_title])

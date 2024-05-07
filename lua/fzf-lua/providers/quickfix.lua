@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
@@ -12,7 +13,7 @@ local quickfix_run = function(opts, cfg, locations)
   opts = config.normalize_opts(opts, cfg)
   if not opts then return end
 
-  if not opts.cwd then opts.cwd = vim.loop.cwd() end
+  if not opts.cwd then opts.cwd = uv.cwd() end
 
   for _, entry in ipairs(locations) do
     if entry.valid == 1 or not opts.only_valid then

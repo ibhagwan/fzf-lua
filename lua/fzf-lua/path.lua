@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local string_sub = string.sub
@@ -429,7 +430,7 @@ function M.entry_to_file(entry, opts, force_uri)
     local newfile = file
     for i = 2, #s do
       newfile = ("%s:%s"):format(newfile, s[i])
-      if vim.loop.fs_stat(newfile) then
+      if uv.fs_stat(newfile) then
         file = newfile
         line = s[i + 1]
         col = s[i + 2]

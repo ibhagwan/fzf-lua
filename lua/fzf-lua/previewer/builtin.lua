@@ -4,8 +4,8 @@ local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local Object = require "fzf-lua.class"
 
+local uv = vim.uv or vim.loop
 local api = vim.api
-local uv = vim.loop
 local fn = vim.fn
 
 local Previewer = {}
@@ -595,7 +595,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- buffer is not loaded, can happen when calling "lines" with `set nohidden`
     -- or when starting nvim with an arglist, fix entry.path since it contains
     -- filename only
-    entry.path = path.relative_to(vim.api.nvim_buf_get_name(entry.bufnr), vim.loop.cwd())
+    entry.path = path.relative_to(vim.api.nvim_buf_get_name(entry.bufnr), uv.cwd())
   end
   if not self:should_load_buffer(entry) then
     -- same file/buffer as previous entry
@@ -663,7 +663,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     do
       local lines = nil
       -- make sure the file is readable (or bad entry.path)
-      local fs_stat = vim.loop.fs_stat(entry.path)
+      local fs_stat = uv.fs_stat(entry.path)
       if not entry.path or not fs_stat then
         lines = { string.format("Unable to stat file %s", entry.path) }
       elseif fs_stat.size > 0 and utils.perl_file_is_binary(entry.path) then
@@ -1036,7 +1036,7 @@ function Previewer.marks:parse_entry(entry_str)
     else
       filepath = res
     end
-    filepath = path.relative_to(filepath, vim.loop.cwd())
+    filepath = path.relative_to(filepath, uv.cwd())
   end
   return {
     bufnr = bufnr,
@@ -1059,9 +1059,9 @@ function Previewer.jumps:parse_entry(entry_str)
   if filepath then
     local ok, res = pcall(vim.fn.expand, filepath)
     if ok then
-      filepath = path.relative_to(res, vim.loop.cwd())
+      filepath = path.relative_to(res, uv.cwd())
     end
-    if not vim.loop.fs_stat(filepath) then
+    if not uv.fs_stat(filepath) then
       -- file is not accessible,
       -- text is a string from current buffer
       bufnr = self.win.src_bufnr
@@ -1228,7 +1228,7 @@ function Previewer.quickfix:populate_preview_buf(entry_str)
   for _, e in ipairs(qf_list.items) do
     table.insert(lines, string.format("%s|%d col %d|%s",
       path.HOME_to_tilde(path.relative_to(
-        vim.api.nvim_buf_get_name(e.bufnr), vim.loop.cwd())),
+        vim.api.nvim_buf_get_name(e.bufnr), uv.cwd())),
       e.lnum, e.col, e.text))
   end
   self.tmpbuf = self:get_tmp_buffer()

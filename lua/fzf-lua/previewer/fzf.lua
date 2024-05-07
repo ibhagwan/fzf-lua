@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
@@ -178,7 +179,7 @@ end
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   local entry = path.entry_to_file(entrystr, self.opts)
   -- make relative for bat's header display
-  local filepath = path.relative_to(entry.bufname or entry.path or "", vim.loop.cwd())
+  local filepath = path.relative_to(entry.bufname or entry.path or "", uv.cwd())
   if self.opts._ctag then
     entry.ctag = path.entry_to_ctag(entry.stripped, true)
     if entry.line <= 1 then
@@ -193,7 +194,7 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   end
   local errcmd = nil
   -- verify the file exists on disk and is accessible
-  if #filepath == 0 or not vim.loop.fs_stat(filepath) then
+  if #filepath == 0 or not uv.fs_stat(filepath) then
     errcmd = "echo " .. libuv.shellescape(
       string.format("'%s: NO SUCH FILE OR ACCESS DENIED",
         filepath and #filepath > 0 and filepath or "<null>"))
@@ -329,7 +330,7 @@ function Previewer.git_diff:cmdline(o)
     elseif is_deleted then
       cmd = self.cmd_deleted
     elseif is_untracked then
-      local stat = vim.loop.fs_stat(file.path)
+      local stat = uv.fs_stat(file.path)
       if stat and stat.type == "directory" then
         cmd = utils._if_win({ "dir" }, { "ls", "-la" })
       else

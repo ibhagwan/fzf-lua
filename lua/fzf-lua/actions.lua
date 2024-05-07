@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local utils = require "fzf-lua.utils"
 local path = require "fzf-lua.path"
 
@@ -105,7 +106,7 @@ M.vimcmd_file = function(vimcmd, selected, opts, pcall_vimcmd)
     entry.ctag = opts._ctag and path.entry_to_ctag(selected[i])
     local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
     if not path.is_absolute(fullpath) then
-      fullpath = path.join({ opts.cwd or opts._cwd or vim.loop.cwd(), fullpath })
+      fullpath = path.join({ opts.cwd or opts._cwd or uv.cwd(), fullpath })
     end
     if vimcmd == "e"
         and curbuf ~= fullpath
@@ -128,7 +129,7 @@ M.vimcmd_file = function(vimcmd, selected, opts, pcall_vimcmd)
     if vimcmd ~= "e" or not path.equals(curbuf, fullpath) then
       if entry.path then
         -- do not run ':<cmd> <file>' for uri entries (#341)
-        local relpath = path.relative_to(entry.path, vim.loop.cwd())
+        local relpath = path.relative_to(entry.path, uv.cwd())
         if vim.o.autochdir then
           -- force full paths when `autochdir=true` (#882)
           relpath = fullpath
@@ -254,7 +255,7 @@ M.file_switch = function(selected, opts)
   local entry = path.entry_to_file(selected[1])
   local fullpath = entry.path
   if not path.is_absolute(fullpath) then
-    fullpath = path.join({ opts.cwd or vim.loop.cwd(), fullpath })
+    fullpath = path.join({ opts.cwd or uv.cwd(), fullpath })
   end
   for _, b in ipairs(vim.api.nvim_list_bufs()) do
     local bname = vim.api.nvim_buf_get_name(b)
@@ -488,7 +489,7 @@ M.goto_jump = function(selected, opts)
     else
       filepath = res
     end
-    if not filepath or not vim.loop.fs_stat(filepath) then
+    if not filepath or not uv.fs_stat(filepath) then
       -- no accessible file
       -- jump is in current
       filepath = vim.api.nvim_buf_get_name(0)

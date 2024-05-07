@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local shell = require "fzf-lua.shell"
@@ -90,7 +91,7 @@ M.breakpoints = function(opts)
   end
 
   -- display relative paths by default
-  if opts.cwd == nil then opts.cwd = vim.loop.cwd() end
+  if opts.cwd == nil then opts.cwd = uv.cwd() end
 
   -- set parent_idx base for `formatter=path.filename_first`
   opts._parent_idx = 3

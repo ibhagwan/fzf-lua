@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -16,7 +17,7 @@ local function find_toplevel_cwd(maybe_cwd, postfix, orig_cwd)
   -- E5108: Error executing lua Vim:E220: Missing }.
   local ok, _ = pcall(vim.fn.expand, maybe_cwd)
   if not maybe_cwd or #maybe_cwd == 0 or not ok then
-    return nil, vim.loop.cwd(), nil
+    return nil, uv.cwd(), nil
   end
   if not orig_cwd then
     orig_cwd = maybe_cwd
@@ -25,14 +26,14 @@ local function find_toplevel_cwd(maybe_cwd, postfix, orig_cwd)
     local disp_cwd, cwd = maybe_cwd, vim.fn.expand(maybe_cwd)
     -- returned cwd must be full path
     if path.has_cwd_prefix(cwd) then
-      cwd = vim.loop.cwd() .. (#cwd > 1 and cwd:sub(2) or "")
+      cwd = uv.cwd() .. (#cwd > 1 and cwd:sub(2) or "")
       -- inject "./" only if original path started with it
       -- otherwise ignore the "." retval from fnamemodify
       if #orig_cwd > 0 and orig_cwd:sub(1, 1) ~= "." then
         disp_cwd = nil
       end
     elseif not path.is_absolute(cwd) then
-      cwd = path.join({ vim.loop.cwd(), cwd })
+      cwd = path.join({ uv.cwd(), cwd })
     end
     return disp_cwd, cwd, postfix
   end

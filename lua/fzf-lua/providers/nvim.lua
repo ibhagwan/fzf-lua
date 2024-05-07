@@ -1,10 +1,9 @@
+local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
-local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
-local make_entry = require "fzf-lua.make_entry"
 local devicons = require "fzf-lua.devicons"
 
 local M = {}
@@ -161,7 +160,7 @@ M.tagstack = function(opts)
 
   local entries = {}
   for i, tag in ipairs(tags) do
-    local bufname = path.HOME_to_tilde(path.relative_to(tag.filename, vim.loop.cwd()))
+    local bufname = path.HOME_to_tilde(path.relative_to(tag.filename, uv.cwd()))
     local buficon, hl
     if opts.file_icons then
       buficon, hl = devicons.get_devicon(bufname)
@@ -288,7 +287,7 @@ M.keymaps = function(opts)
   opts = config.normalize_opts(opts, "keymaps")
   if not opts then return end
 
-  local formatter = opts.formatter or "%s │ %-14s │ %-33s │ %s"
+  local formatter = "%s │ %-14s │ %-33s │ %s"
   local key_modes = opts.modes or { "n", "i", "c", "v", "t" }
   local modes = {
     n = "blue",

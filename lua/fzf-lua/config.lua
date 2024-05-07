@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
@@ -407,14 +408,14 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- use `_cwd` to not interfere with supplied users' options
   -- as this can have unintended effects (e.g. in "buffers")
   if vim.o.autochdir and not opts.cwd then
-    opts._cwd = vim.loop.cwd()
+    opts._cwd = uv.cwd()
   end
 
   if opts.cwd and #opts.cwd > 0 then
     -- NOTE: on Windows, `expand` will replace all backslashes with forward slashes
     -- i.e. C:/Users -> c:\Users
     opts.cwd = vim.fn.expand(opts.cwd)
-    if not vim.loop.fs_stat(opts.cwd) then
+    if not uv.fs_stat(opts.cwd) then
       utils.warn(("Unable to access '%s', removing 'cwd' option."):format(opts.cwd))
       opts.cwd = nil
     else
@@ -422,7 +423,7 @@ function M.normalize_opts(opts, globals, __resume_key)
         -- relative paths in cwd are inaccessible when using multiprocess
         -- as the external process have no awareness of our current working
         -- directory so we must convert to full path (#375)
-        opts.cwd = path.join({ vim.loop.cwd(), opts.cwd })
+        opts.cwd = path.join({ uv.cwd(), opts.cwd })
       elseif utils.__IS_WINDOWS and opts.cwd:sub(2) == ":" then
         -- TODO: upstream bug? on Windoows: starting jobs with `cwd = C:` (without separator)
         -- ignores the cwd argument and starts the job in the current working directory

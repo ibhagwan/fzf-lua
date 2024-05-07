@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
@@ -24,7 +25,7 @@ M.oldfiles = function(opts)
       local bufnr = tonumber(buffer:match("%s*(%d+)"))
       if bufnr then
         local file = vim.api.nvim_buf_get_name(bufnr)
-        local fs_stat = not opts.stat_file and true or vim.loop.fs_stat(file)
+        local fs_stat = not opts.stat_file and true or uv.fs_stat(file)
         if #file > 0 and fs_stat and bufnr ~= current_buffer then
           sess_map[file] = true
           table.insert(sess_tbl, file)
@@ -60,7 +61,7 @@ M.oldfiles = function(opts)
       for _, file in ipairs(vim.v.oldfiles) do
         local fs_stat = not opts.stat_file and true
             or (function()
-              local stat = vim.loop.fs_stat(file)
+              local stat = uv.fs_stat(file)
               return (not utils.path_is_directory(file, stat)
                 -- FIFO blocks `fs_open` indefinitely (#908)
                 and not utils.file_is_fifo(file, stat)
@@ -78,7 +79,7 @@ M.oldfiles = function(opts)
   end
 
   -- for 'file_ignore_patterns' to work on relative paths
-  opts.cwd = opts.cwd or vim.loop.cwd()
+  opts.cwd = opts.cwd or uv.cwd()
   opts = core.set_header(opts, opts.headers or { "cwd" })
   return core.fzf_exec(contents, opts)
 end

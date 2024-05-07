@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -38,9 +39,9 @@ end
 ---@param dir string
 ---@param fn fun(fname: string, name: string, type: string)
 local function ls(dir, fn)
-  local handle = vim.loop.fs_scandir(dir)
+  local handle = uv.fs_scandir(dir)
   while handle do
-    local name, t = vim.loop.fs_scandir_next(handle)
+    local name, t = uv.fs_scandir_next(handle)
     if not name then
       break
     end
@@ -50,7 +51,7 @@ local function ls(dir, fn)
     -- HACK: type is not always returned due to a bug in luv,
     -- so fecth it with fs_stat instead when needed.
     -- see https://github.com/folke/lazy.nvim/issues/306
-    fn(fname, name, t or vim.loop.fs_stat(fname).type)
+    fn(fname, name, t or uv.fs_stat(fname).type)
   end
 end
 

@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 
@@ -240,7 +241,7 @@ M.load = function(opts)
   -- Load custom overrides before loading icons
   if vim.g.fzf_lua_is_headless
       ---@diagnostic disable-next-line: undefined-field
-      and _G._devicons_setup and vim.loop.fs_stat(_G._devicons_setup) then
+      and _G._devicons_setup and uv.fs_stat(_G._devicons_setup) then
     ---@diagnostic disable-next-line: undefined-field
     local file = loadfile(_G._devicons_setup)
     if file then pcall(file) end

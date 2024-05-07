@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local fzf = require "fzf-lua.fzf"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -786,10 +787,10 @@ end
 
 M.set_header = function(opts, hdr_tbl)
   local function normalize_cwd(cwd)
-    if path.is_absolute(cwd) and not path.equals(cwd, vim.loop.cwd()) then
+    if path.is_absolute(cwd) and not path.equals(cwd, uv.cwd()) then
       -- since we're always converting cwd to full path
       -- try to convert it back to relative for display
-      cwd = path.relative_to(cwd, vim.loop.cwd())
+      cwd = path.relative_to(cwd, uv.cwd())
     end
     -- make our home dir path look pretty
     return path.HOME_to_tilde(cwd)
@@ -797,7 +798,7 @@ M.set_header = function(opts, hdr_tbl)
 
   if not opts then opts = {} end
   if opts.cwd_prompt then
-    opts.prompt = normalize_cwd(opts.cwd or vim.loop.cwd())
+    opts.prompt = normalize_cwd(opts.cwd or uv.cwd())
     if tonumber(opts.cwd_prompt_shorten_len) and
         #opts.prompt >= tonumber(opts.cwd_prompt_shorten_len) then
       opts.prompt = path.shorten(opts.prompt, tonumber(opts.cwd_prompt_shorten_val) or 1)
@@ -821,10 +822,10 @@ M.set_header = function(opts, hdr_tbl)
         if opts.cwd_header == false or
             opts.cwd_prompt and opts.cwd_header == nil or
             opts.cwd_header == nil and
-            (not opts.cwd or path.equals(opts.cwd, vim.loop.cwd())) then
+            (not opts.cwd or path.equals(opts.cwd, uv.cwd())) then
           return
         end
-        return normalize_cwd(opts.cwd or vim.loop.cwd())
+        return normalize_cwd(opts.cwd or uv.cwd())
       end
     },
     search = {
