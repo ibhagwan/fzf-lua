@@ -2,7 +2,6 @@ local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
-local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local devicons = require "fzf-lua.devicons"
 
@@ -51,13 +50,13 @@ M.commands = function(opts)
     table.sort(entries, function(a, b) return a < b end)
   end
 
-  opts.preview = shell.raw_action(function(args)
+  opts.preview = function(args)
     local cmd = args[1]
     if commands[cmd] then
       cmd = vim.inspect(commands[cmd])
     end
     return cmd
-  end, nil, opts.debug)
+  end
 
   core.fzf_exec(entries, opts)
 end
@@ -216,7 +215,7 @@ M.marks = function(opts)
     string.format("%-5s %s  %s %s", "mark", "line", "col", "file/text"))
 
   opts.fzf_opts["--header-lines"] = 1
-  --[[ opts.preview = shell.raw_action(function (args, fzf_lines, _)
+  --[[ opts.preview = function (args, fzf_lines, _)
     local mark = args[1]:match("[^ ]+")
     local bufnr, lnum, _, _ = unpack(vim.fn.getpos("'"..mark))
     if vim.api.nvim_buf_is_loaded(bufnr) then
@@ -228,7 +227,7 @@ M.marks = function(opts)
       end
       return "UNLOADED: " .. name
     end
-  end) ]]
+  end ]]
 
   core.fzf_exec(entries, opts)
 end
@@ -274,11 +273,11 @@ M.registers = function(opts)
     end
   end
 
-  opts.preview = shell.raw_action(function(args)
+  opts.preview = function(args)
     local r = args[1]:match("%[(.*)%] ")
     local _, contents = pcall(vim.fn.getreg, r)
     return contents and register_escape_special(contents) or args[1]
-  end, nil, opts.debug)
+  end
 
   core.fzf_exec(entries, opts)
 end

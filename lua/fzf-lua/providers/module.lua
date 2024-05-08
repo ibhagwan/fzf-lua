@@ -2,7 +2,6 @@ local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
-local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 
 local M = {}
@@ -21,11 +20,10 @@ M.metatable = function(opts)
 
   table.sort(methods, function(a, b) return a < b end)
 
-  opts.preview = shell.raw_action(function(args)
-    -- TODO: retrieve method help
-    local help = ""
-    return string.format("%s:%s", args[1], help)
-  end, nil, opts.debug)
+  opts.preview = function(args)
+    local options_md = require("fzf-lua.cmd").options_md()
+    return type(options_md) == "table" and options_md[args[1]:lower()] or ""
+  end
 
   opts.fzf_opts["--preview-window"] = "hidden:down:10"
 

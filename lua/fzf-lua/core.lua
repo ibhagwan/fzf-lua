@@ -566,6 +566,30 @@ M.build_fzf_cli = function(opts)
       opts.fzf_opts["--" .. flag] = opts[flag]
     end
   end
+  -- convert preview action functions to strings using our shell wrapper
+  do
+    local preview_cmd
+    local preview_spec = opts.fzf_opts["--preview"]
+    if type(preview_spec) == "function" then
+      preview_cmd = shell.raw_action(preview_spec, "{}", opts.debug)
+    elseif type(preview_spec) == "table" then
+      preview_spec = vim.tbl_extend("keep", preview_spec, {
+        fn = preview_spec.fn or preview_spec[1],
+        -- by default we use current item only "{}"
+        -- using "{+}" will send multiple selected items
+        field_index = "{}",
+      })
+      if preview_spec.type == "cmd" then
+        preview_cmd = shell.raw_preview_action_cmd(
+          preview_spec.fn, preview_spec.field_index, opts.debug)
+      else
+        preview_cmd = shell.raw_action(preview_spec.fn, preview_spec.field_index, opts.debug)
+      end
+    end
+    if preview_cmd then
+      opts.fzf_opts["--preview"] = preview_cmd
+    end
+  end
   opts.fzf_opts["--bind"] = M.create_fzf_binds(opts.keymap.fzf)
   opts.fzf_opts["--color"] = M.create_fzf_colors(opts)
   opts.fzf_opts["--expect"] = actions.expect(opts.actions)

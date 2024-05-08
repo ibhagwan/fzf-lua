@@ -69,8 +69,7 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
     end)
     uv.pipe_connect(pipe, pipe_path, function(err)
       if err then
-        error(string.format("pipe_connect(%s) failed with error: %s",
-          pipe_path, err))
+        error(string.format("pipe_connect(%s) failed with error: %s", pipe_path, err))
       else
         vim.schedule(function()
           fn(pipe, unpack(args))
@@ -108,11 +107,6 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
     fzf_field_expression)
 
   return action_cmd, id
-end
-
-function M.async_action(fn, fzf_field_expression, debug)
-  local action_string, id = M.raw_async_action(fn, fzf_field_expression, debug)
-  return libuv.shellescape(action_string), id
 end
 
 function M.raw_action(fn, fzf_field_expression, debug)
