@@ -736,7 +736,6 @@ M.defaults.lsp.symbols          = {
   fzf_opts         = {
     ["--delimiter"] = string.format("[:%s]", utils.nbsp),
     ["--tiebreak"]  = "begin",
-    ["--no-multi"]  = true,
   },
   line_field_index = "{-2}", -- line field index
   field_index_expr = "{}",   -- entry field index
