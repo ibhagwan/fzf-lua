@@ -680,6 +680,7 @@ M.mt_cmd_wrapper = function(opts)
   local filter_opts = function(o)
     local names = {
       "debug",
+      "silent",
       "argv_expr",
       "cmd",
       "cwd",
