@@ -736,6 +736,7 @@ M.defaults.lsp.symbols          = {
   fzf_opts         = {
     ["--delimiter"] = string.format("[:%s]", utils.nbsp),
     ["--tiebreak"]  = "begin",
+    ["--multi"]     = true,
   },
   line_field_index = "{-2}", -- line field index
   field_index_expr = "{}",   -- entry field index
@@ -791,6 +792,7 @@ M.defaults.lsp.finder           = {
     { "incoming_calls",  prefix = utils.ansi_codes.cyan("in  ") },
     { "outgoing_calls",  prefix = utils.ansi_codes.yellow("out ") },
   },
+  fzf_opts    = { ["--multi"] = true },
   _cached_hls = { "path_colnr", "path_linenr" },
 }
 
