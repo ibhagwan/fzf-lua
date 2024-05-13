@@ -1,3 +1,10 @@
+# NOTE: DO NOT UPGRADE fzf > 0.50
+
+With `0.51.0` fzf changed the Windows escaping sequence which causes issue when
+using certain special characters in `live_grep`, until
+https://github.com/junegunn/fzf/issues/3789 is resolved it is recommended to stay
+with fzf `0.50.0`.
+
 ## Windows Known Issues and Limitations
 
 As fzf-lua is bound by the same constraints, please read
