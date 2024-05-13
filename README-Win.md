@@ -1,9 +1,13 @@
-# NOTE: DO NOT UPGRADE fzf > 0.50
+## NOTE: RECOMMENDED FZF VERSION >= 0.52.1
 
-With `0.51.0` fzf changed the Windows escaping sequence which causes issue when
-using certain special characters in `live_grep`, until
-https://github.com/junegunn/fzf/issues/3789 is resolved it is recommended to stay
-with fzf `0.50.0`.
+**To avoid issues with `live_grep|live_grep_native` and special characters upgrade your fzf
+binary at the minimum to version 0.52.1**
+
+- Any version <= 0.50 will work but have issues with `live_grep_native`
+([junegunn/fzf#3626](https://github.com/junegunn/fzf/issues/3626)).
+
+- Versions 0.51.0/0.52.0 should be avoided due to
+[junegunn/fzf#3789](https://github.com/junegunn/fzf/issues/3789).
 
 ## Windows Known Issues and Limitations
 
@@ -23,42 +27,3 @@ string the same way a double quoted argument is treated, i.e. `'foo bar' != "foo
 To avoid issues, make sure none of your `cmd`'s `rg_opts`, `fd_opts`, `preview`, etc
 contains single hyphens that should be treated as quotes, this is probably the case
 if you copied old fzf-lua defaults into your `setup` options.
-
-### live_grep_native
-
-When using `live_grep_native` we are sending the `rg` command directly
-to fzf (without the fzf-lua wrapper) and are therefore bound by fzf's escaping
-requirements.
-
-For example, `^` is a special escape character on windows and also a regex special
-character. Say we wanted to search for all lines that start with "local", we would
-run:
-```lua
--- we use `no_esc` to tell rg we're using a regex
-:FzfLua live_grep no_esc=true search=^local
-```
-
-However, when using the native version we need to escape the caret twice:
-```lua
-:FzfLua live_grep no_esc=true search=^^local
-```
-
-More so, I couldn't find a way to send special regex chars `[(|.*^$` as the backslash
-is always doubled by fzf's `{q}`<sub><sup>&ast; see bottom note</sup></sub>.
-
-For example, if we run:
-```cmd
-break | fzf --ansi --disabled --bind="change:reload:rg --line-number --column --color=always {q}"
-```
-
-And try to search for the literal `[` by typing `\[`, we get the error:
-```
-[Command failed: rg --line-number --column --color=always ^"\\[^"]
-```
-
-If we double the backslashes by typing `\\[` we get the error:
-```
-[Command failed: rg --line-number --column --color=always ^"\\\\[^"]
-```
-
-<sub><sup>&ast; upstream issue: https://github.com/junegunn/fzf/issues/3626</sup></sub>
