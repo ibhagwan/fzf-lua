@@ -614,9 +614,9 @@ M.shellescape = function(s, win_style)
           return x
         end)
         -- escape all windows metacharacters but quotes
-        -- ( ) % ! ^ < > & | "
+        -- ( ) % ! ^ < > & | ; "
         -- TODO: should % be escaped with ^ or %?
-        inner = inner:gsub('[%(%)%%!%^<>&|%s"]', function(x)
+        inner = inner:gsub('[%(%)%%!%^<>&|;%s"]', function(x)
           return "^" .. x
         end)
         -- escape backslashes at the end of the string

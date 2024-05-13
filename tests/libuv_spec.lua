@@ -64,11 +64,11 @@ describe("Testing libuv module", function()
       [[^"^^^!^^^^^^\\\^"^"]])
     assert.are.same(libuv.shellescape([[!\"]], 2), [[^"^^^!^^\\\\\\\^"^"]])
     assert.are.same(libuv.shellescape([[!\^"]], 2), [[^"^^^!^^^^^^\\\\\\\^"^"]])
-    assert.are.same(libuv.shellescape([[()%^"<>&|]], 2), [[^"^(^)^%^^\^"^<^>^&^|^"]])
-    assert.are.same(libuv.shellescape([[()%^"<>&|!]], 2),
+    assert.are.same(libuv.shellescape([[()%^"<>&|;]], 2), [[^"^(^)^%^^\^"^<^>^&^|^;^"]])
+    assert.are.same(libuv.shellescape([[()%^"<>&|;!]], 2),
       -- 1st inner: ^(^)^%^^\^"^<^>^&^|^!
       -- 2nd inner: ^^^(^^^)^^^%^^^^^^\^"^^^<^^^>^^^&^^^|^^^!
-      [[^"^^^(^^^)^^^%^^^^^^\\\^"^^^<^^^>^^^&^^^|^^^!^"]])
+      [[^"^^^(^^^)^^^%^^^^^^\\\^"^^^<^^^>^^^&^^^|^^^;^^^!^"]])
     assert.are.same(libuv.shellescape([[foo]], 2), [[^"foo^"]])
     assert.are.same(libuv.shellescape([[foo\]], 2), [[^"foo\\^"]])
     assert.are.same(libuv.shellescape([[foo^]], 2), [[^"foo^^^"]])
