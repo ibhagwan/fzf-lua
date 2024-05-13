@@ -76,8 +76,8 @@ M.get_diff_files = function(opts)
   local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts))
   local seconds = os.time() - start
   if seconds >= 3 and opts.silent ~= true then
-    local exec_str = string.format([[require"fzf-lua".utils.warn(]]
-      .. [["`git status` took %d seconds, consider using `:FzfLua files git_icons=false` in this repository.")]]
+    local exec_str = string.format([[require"fzf-lua".utils.warn(]] ..
+      [["`git status` took %d seconds, consider using `:FzfLua files git_icons=false` in this repository.")]]
       , seconds)
     if not vim.g.fzf_lua_is_headless then
       loadstring(exec_str)()
@@ -173,7 +173,7 @@ M.preprocess = function(opts)
       io.stdout:write(("[DEBUGV]: raw_argv(%d) = %s\n"):format(idx, arg))
     end
     if utils.__IS_WINDOWS then
-      arg = libuv.unescape_fzf(arg)
+      arg = libuv.unescape_fzf(arg, opts.__FZF_VERSION)
     end
     if debug == "v" or debug == "verbose" then
       io.stdout:write(("[DEBUGV]: esc_argv(%d) = %s\n"):format(idx, libuv.shellescape(arg)))

@@ -699,6 +699,7 @@ M.mt_cmd_wrapper = function(opts)
       "file_ignore_patterns",
       "rg_glob",
       "_base64",
+      utils.__IS_WINDOWS and "__FZF_VERSION" or nil,
     }
     -- caller requested rg with glob support
     if o.rg_glob then
@@ -1134,8 +1135,10 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
     -- use `true` as $FZF_DEFAULT_COMMAND instead (#510)
     opts.__fzf_init_cmd = utils.shell_nop()
     if opts.exec_empty_query or (opts.query and #opts.query > 0) then
+      local q = not utils.__IS_WINDOWS and opts.query
+          or libuv.escape_fzf(opts.query, opts.__FZF_VERSION)
       -- gsub doesn't like single % on rhs
-      local escaped_q = libuv.shellescape(libuv.escape_fzf(opts.query)):gsub("%%", "%%%%")
+      local escaped_q = libuv.shellescape(q):gsub("%%", "%%%%")
       opts.__fzf_init_cmd = initial_command:gsub(fzf_field_expression, escaped_q)
     end
     if opts.__FZF_VERSION >= 0.25 then

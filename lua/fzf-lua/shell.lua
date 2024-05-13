@@ -55,8 +55,10 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
     local pipe = uv.new_pipe(false)
     local args = { ... }
     -- unescape double backslashes on windows
-    if type(args[1]) == "table" then
-      args[1] = vim.tbl_map(function(x) return libuv.unescape_fzf(x) end, args[1])
+    if utils.__IS_WINDOWS and type(args[1]) == "table" then
+      args[1] = vim.tbl_map(function(x)
+        return libuv.unescape_fzf(x, vim.g.fzf_lua_fzf_version)
+      end, args[1])
     end
     -- save selected item in main module's __INFO
     -- use loadstring to avoid circular require

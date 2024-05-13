@@ -669,10 +669,12 @@ end
 
 -- Windows fzf oddities, fzf's {q} will send escaped blackslahes,
 -- but only when the backslash prefixes another character which
--- isn't a backslash
-M.unescape_fzf = function(s, is_win)
+-- isn't a backslash, test with:
+-- fzf --disabled --height 30% --preview-window up --preview "echo {q}"
+M.unescape_fzf = function(s, fzf_version, is_win)
   if is_win == nil then is_win = _is_win end
   if not is_win then return s end
+  if tonumber(fzf_version) and tonumber(fzf_version) >= 0.52 then return s end
   local ret = s:gsub("\\+[^\\]", function(x)
     local bslash_num = #x:match([[\+]])
     return string.rep([[\]],
@@ -686,9 +688,10 @@ end
 -- doing weird extra escaping with {q},  we use this to simulate
 -- {q} being sent via the reload action as the initial command
 -- TODO: better solution for these stupid hacks (upstream issues?)
-M.escape_fzf = function(s, is_win)
+M.escape_fzf = function(s, fzf_version, is_win)
   if is_win == nil then is_win = _is_win end
   if not is_win then return s end
+  if tonumber(fzf_version) and tonumber(fzf_version) >= 0.52 then return s end
   local ret = s:gsub("\\+[^\\]", function(x)
     local bslash_num = #x:match([[\+]])
     return string.rep([[\]], bslash_num * 2) .. x:sub(-1)

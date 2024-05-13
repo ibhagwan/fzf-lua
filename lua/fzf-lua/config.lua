@@ -466,9 +466,11 @@ function M.normalize_opts(opts, globals, __resume_key)
   opts._is_skim = opts.fzf_bin:find("sk") ~= nil
 
   -- enforce fzf minimum requirements
+  vim.g.fzf_lua_fzf_version = nil
   if not opts._is_skim then
     local FZF_VERSION, rc, err = utils.fzf_version(opts)
     opts.__FZF_VERSION = FZF_VERSION
+    vim.g.fzf_lua_fzf_version = FZF_VERSION
     if not opts.__FZF_VERSION then
       utils.err(string.format(
         "'fzf --version' failed with error %s: %s", rc, err))
