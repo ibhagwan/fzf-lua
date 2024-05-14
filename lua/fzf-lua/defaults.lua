@@ -195,6 +195,11 @@ M.defaults                      = {
   formatters    = {
     path = {
       filename_first = {
+        -- <Tab> is used as the invisible space between the parent and the file part
+        enrich = function(o)
+          o.fzf_opts = vim.tbl_extend("keep", o.fzf_opts or {}, { ["--tabstop"] = 1 })
+          return o
+        end,
         -- underscore `_to` returns a custom to function when options could
         -- affect the transformation, here we create a different function
         -- base on the dir part highlight group.
@@ -211,34 +216,32 @@ M.defaults                      = {
               local parent = _path.parent(s)
               if parent then
                 parent = _path.remove_trailing(parent)
-                return string.format("%s%s%s", _path.tail(s), _utils.nbsp,
-                  #_escseq == 0 and parent
-                  or string.format("%s%s%s", _escseq, parent, _utils.ansi_escseq.clear))
+                if #_escseq > 0 then
+                  parent = _escseq .. parent .. _utils.ansi_escseq.clear
+                end
+                return _path.tail(s) .. "\t" .. parent
               else
                 return s
               end
             end
           ]]
         end,
-        from = function(s, o)
-          -- Which part should contain the parent folder?
-          -- files that are directly under cwd it will have no parent folder part
-          local parent_idx = (o._parent_idx or 2)
-              + (o.file_icons and 1 or 0)
-              + (o.git_icons and 1 or 0)
+        from = function(s, _)
           local parts = utils.strsplit(s, utils.nbsp)
-          if #parts == parent_idx then
-            local last = parts[parent_idx]
-            local filename = parts[parent_idx - 1]
-            local parent = last:match("^[^:]+")
-            if utils.__IS_WINDOWS and last:match("%a:") then
-              parent = last:sub(1, 2) .. (#last > 2 and last:sub(3):match("^[^:]+") or "")
+          local last = parts[#parts]
+          -- Lines from grep, lsp, tags are formatted <file>:<line>:<col>:<text>
+          -- the pattern below makes sure tab doesn't come from the line text
+          local filename, rest = last:match("^([^:]-)\t(.+)$")
+          if filename and rest then
+            local parent
+            if utils.__IS_WINDOWS and path.is_absolute(rest) then
+              parent = rest:sub(1, 2) .. (#rest > 2 and rest:sub(3):match("^[^:]+") or "")
+            else
+              parent = rest:match("^[^:]+")
             end
             local fullpath = path.join({ parent, filename })
-            -- remove the last part (parent + rest of line)
-            table.remove(parts, parent_idx)
             -- overwrite last part with restored fullpath + rest of line
-            parts[#parts] = fullpath .. last:sub(#parent + 1)
+            parts[#parts] = fullpath .. rest:sub(#parent + 1)
             s = table.concat(parts, utils.nbsp)
           end
           return s

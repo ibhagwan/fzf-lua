@@ -74,22 +74,22 @@ local function rpc_nvim_exec_lua(opts)
   end)
 
   if not success or opts.debug then
-    io.stderr:write(("[DEBUG]\tdebug = %s\n"):format(opts.debug))
-    io.stderr:write(("[DEBUG]\tfunction ID = %d\n"):format(opts.fnc_id))
-    io.stderr:write(("[DEBUG]\tfzf_lua_server = %s\n"):format(opts.fzf_lua_server))
+    io.stderr:write(("[DEBUG] debug = %s\n"):format(opts.debug))
+    io.stderr:write(("[DEBUG] function ID = %d\n"):format(opts.fnc_id))
+    io.stderr:write(("[DEBUG] fzf_lua_server = %s\n"):format(opts.fzf_lua_server))
     for i = 1, #vim.v.argv do
-      io.stderr:write(("[DEBUG]\targv[%d] = %s\n"):format(i, vim.v.argv[i]))
+      io.stderr:write(("[DEBUG] argv[%d] = %s\n"):format(i, vim.v.argv[i]))
     end
     local nargs = vim.fn.argc()
     for i = 0, nargs - 1 do
-      io.stderr:write(("[DEBUG]\targv[%d] = %s\n"):format(i, vim.fn.argv(i)))
+      io.stderr:write(("[DEBUG] argv[%d] = %s\n"):format(i, vim.fn.argv(i)))
     end
     for i = 0, nargs - 1 do
       local argv_idx = #vim.v.argv - nargs + 1 + i
-      io.stderr:write(("[DEBUG]\tv:arg[%d:%d] = %s\n"):format(i, argv_idx, vim.v.argv[argv_idx]))
+      io.stderr:write(("[DEBUG] v:arg[%d:%d] = %s\n"):format(i, argv_idx, vim.v.argv[argv_idx]))
     end
     for _, var in ipairs({ "LINES", "COLUMNS" }) do
-      io.stderr:write(("[DEBUG]\t$%s = %s\n"):format(var, os.getenv(var) or "<null>"))
+      io.stderr:write(("[DEBUG] $%s = %s\n"):format(var, os.getenv(var) or "<null>"))
     end
   end
 

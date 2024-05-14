@@ -35,7 +35,7 @@ PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
 if [ $? -ne 0 ]; then
     # e.g. return value is 1
     #  then getopt has complained about wrong arguments to stdout
-	usage;
+    usage;
     exit 2
 fi
 # read getopt’s output this way to handle the quoting right:
@@ -50,10 +50,10 @@ color_icons="true"
 # now enjoy the options in order and nicely split until we see --
 while true; do
     case "$1" in
-		-h|--help)
-			usage;
-			exit 0
-			;;
+        -h|--help)
+            usage;
+            exit 0
+            ;;
         -d|--debug)
             case $2 in
                 "2"|"v"|"verbose")
@@ -76,7 +76,7 @@ while true; do
             cmd="$2"
             shift 2
             ;;
-		-f|--file-icons)
+        -f|--file-icons)
             case $2 in
                 "0"|"false")
                     file_icons="false"
@@ -85,9 +85,9 @@ while true; do
                     file_icons="true"
                     ;;
             esac
-			shift 2
-			;;
-		-g|--git-icons)
+            shift 2
+            ;;
+        -g|--git-icons)
             case $2 in
                 "0"|"false")
                     git_icons="false"
@@ -96,9 +96,9 @@ while true; do
                     git_icons="true"
                     ;;
             esac
-			shift 2
-			;;
-		--color)
+            shift 2
+            ;;
+        --color)
             case $2 in
                 "0"|"false")
                     color_icons="false"
@@ -107,16 +107,16 @@ while true; do
                     color_icons="true"
                     ;;
             esac
-			shift 2
-			;;
+            shift 2
+            ;;
         --)
             shift
             break
             ;;
         *)
-			# never get here!
+            # never get here!
             echo "error: error while parsing command line arguments"
-			usage;
+            usage;
             exit 3
             ;;
     esac
@@ -125,7 +125,7 @@ done
 # handle non-option arguments
 if [ $# -gt 0 ]; then
     echo "error: unrecgonized option"
-	usage;
+    usage;
     exit 4
 fi
 

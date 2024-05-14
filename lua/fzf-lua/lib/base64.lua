@@ -48,8 +48,8 @@ if not extract then
     end
   else -- Lua 5.3+
     extract = load [[return function( v, from, width )
-			return ( v >> from ) & ((1 << width) - 1)
-		end]] ()
+      return ( v >> from ) & ((1 << width) - 1)
+    end]] ()
   end
 end
 

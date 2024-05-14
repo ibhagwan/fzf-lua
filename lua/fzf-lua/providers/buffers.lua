@@ -224,9 +224,6 @@ end
 M.buffer_lines = function(opts)
   if not opts then return end
 
-  -- set parent_idx base for `formatter=path.filename_first`
-  opts._parent_idx = 3
-
   opts.fn_pre_fzf = function() core.CTX(true) end
   opts.fn_pre_fzf()
 
@@ -369,8 +366,7 @@ M.tabs = function(opts)
         local title, fn_title_hl = opt_hl("tab_title",
           function(s)
             return string.format("%s%s#%d%s", s, utils.nbsp, t,
-              (uv.cwd() == tab_cwd and ""
-                or string.format(": %s", tab_cwd_tilde)))
+              (uv.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde)))
           end,
           utils.ansi_codes[opts.hls.tab_title])
 
@@ -380,7 +376,7 @@ M.tabs = function(opts)
 
         local tab_cwd_tilde_base64 = base64.encode(tab_cwd_tilde)
         if not opts.current_tab_only then
-          cb(string.format("%s:%d)%s%s\t%s",
+          cb(string.format("%s:%d)%s%s  %s",
             tab_cwd_tilde_base64,
             t,
             utils.nbsp,

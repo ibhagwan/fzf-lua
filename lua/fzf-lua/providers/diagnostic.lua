@@ -42,9 +42,6 @@ M.diagnostics = function(opts)
     opts.cwd_only = true
   end
 
-  -- set parent_idx base for `formatter=path.filename_first`
-  opts._parent_idx = 3
-
   if not vim.diagnostic then
     local lsp_clients = vim.lsp.buf_get_clients(0)
     if utils.tbl_isempty(lsp_clients) then

@@ -378,10 +378,10 @@ function M.normalize_opts(opts, globals, __resume_key)
         opts._fmt._to = opts._fmt.to
         opts._fmt.to = loadstring(tostring(opts._fmt.to))()
       end
-      -- no support for `bat_native` with a formatter
-      if opts.previewer == "bat_native" then opts.previewer = "bat" end
-      -- no support of searching file begin (we can't guarantee no. of nbsp's)
-      opts._fzf_nth_devicons = false
+      if type(_fmt.enrich) == "function" then
+        -- formatter requires enriching the config (fzf_opts, etc)
+        opts = _fmt.enrich(opts) or opts
+      end
     else
       utils.warn(("Invalid formatter '%s', ignoring."):format(opts.formatter))
     end

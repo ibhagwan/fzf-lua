@@ -250,7 +250,7 @@ describe("Testing path module", function()
       { [[C:\a/\/b///\\\c]], [[c:\/\a\/b]],      { true, "c" } },
       { [[C:\a/b\c\d\e]],    [[c:\A\/b\]],       { true, [[c\d\e]] } },
       { [[C:\Users]],        [[c:\]],            { true, [[Users]] } },
-      { [[C:\Users\test]],   [[c:\]],            { true, [[Users\test]] } },
+      { [[C:\Users\foo]],    [[c:\]],            { true, [[Users\foo]] } },
       { [[C:\]],             [[C:\Users]],       { false, nil } },
       { [[C:]],              [[C:\Users]],       { false, nil } },
     }
