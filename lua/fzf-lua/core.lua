@@ -77,7 +77,7 @@ local contents_from_arr = function(cont_arr)
     contents = {}
     for _, t in ipairs(cont_arr) do
       assert(type(t.contents) == cont_type, "Unable to combine contents of different types")
-      contents = utils.tbl_extend(contents, t.prefix and
+      contents = utils.tbl_join(contents, t.prefix and
         vim.tbl_map(function(x)
           return t.prefix .. x
         end, t.contents)
@@ -253,7 +253,7 @@ M.CTX = function(includeBuflist)
   -- buffers/tabs use these we only include the current
   -- list of buffers when requested
   if includeBuflist and not M.__CTX.buflist then
-    -- also add a map for faster lookups than `vim.tbl_contains`
+    -- also add a map for faster lookups than `utils.tbl_contains`
     -- TODO: is it really faster since we must use string keys?
     M.__CTX.bufmap = {}
     M.__CTX.buflist = vim.api.nvim_list_bufs()
@@ -515,7 +515,7 @@ M.create_fzf_colors = function(opts)
           table.insert(spec, list[i])
         end
       end
-      if not vim.tbl_isempty(spec) then
+      if not utils.tbl_isempty(spec) then
         table.insert(spec, 1, flag)
         table.insert(tbl, table.concat(spec, ":"))
       end
@@ -524,11 +524,11 @@ M.create_fzf_colors = function(opts)
     end
   end
 
-  return not vim.tbl_isempty(tbl) and table.concat(tbl, ",")
+  return not utils.tbl_isempty(tbl) and table.concat(tbl, ",")
 end
 
 M.create_fzf_binds = function(binds)
-  if not binds or vim.tbl_isempty(binds) then return end
+  if not binds or utils.tbl_isempty(binds) then return end
   local tbl = {}
   local dedup = {}
   for k, v in pairs(binds) do
@@ -900,7 +900,7 @@ M.set_header = function(opts, hdr_tbl)
           end
         end
         -- table.concat fails if the table indexes aren't consecutive
-        return not vim.tbl_isempty(ret) and (function()
+        return not utils.tbl_isempty(ret) and (function()
           local t = {}
           for _, i in pairs(ret) do
             table.insert(t, i)

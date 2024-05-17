@@ -85,7 +85,7 @@ M.breakpoints = function(opts)
   if not dap() then return end
   local dap_bps = require "dap.breakpoints"
 
-  if vim.tbl_isempty(dap_bps.get()) then
+  if utils.tbl_isempty(dap_bps.get()) then
     utils.info("Breakpoint list is empty.")
     return
   end

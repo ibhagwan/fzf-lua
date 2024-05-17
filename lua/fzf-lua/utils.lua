@@ -15,6 +15,7 @@ M.__HAS_NVIM_07 = vim.fn.has("nvim-0.7") == 1
 M.__HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
 M.__HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
 M.__HAS_NVIM_010 = vim.fn.has("nvim-0.10") == 1
+M.__HAS_NVIM_011 = vim.fn.has("nvim-0.11") == 1
 M.__IS_WINDOWS = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 -- `:help shellslash` (for more info see #1055)
 M.__WIN_HAS_SHELLSLASH = M.__IS_WINDOWS and vim.fn.exists("+shellslash")
@@ -74,14 +75,6 @@ if _VERSION and type(_VERSION) == "string" then
   end
 end
 
-M._if = function(bool, a, b)
-  if bool then
-    return a
-  else
-    return b
-  end
-end
-
 M._if_win = function(a, b)
   if M.__IS_WINDOWS then
     return a
@@ -89,7 +82,6 @@ M._if_win = function(a, b)
     return b
   end
 end
-
 
 -- Substitute unix style $VAR with
 --   Style 1: %VAR%
@@ -379,30 +371,58 @@ function M.tbl_deep_clone(t)
   return clone
 end
 
-function M.tbl_length(T)
+M.tbl_islist = vim.islist or vim.tbl_islist
+
+function M.tbl_isempty(T)
+  assert(type(T) == "table", string.format("Expected table, got %s", type(T)))
+  return next(T) == nil
+end
+
+function M.tbl_count(T)
   local count = 0
   for _ in pairs(T) do count = count + 1 end
   return count
 end
 
-function M.tbl_isempty(T)
-  if not T or not next(T) then return true end
-  return false
-end
-
-function M.tbl_extend(t1, t2)
+function M.tbl_join(t1, t2)
   for _, v in ipairs(t2) do
     table.insert(t1, v)
   end
   return t1
 end
 
+function M.tbl_contains(T, value)
+  for _, v in ipairs(T) do
+    if v == value then
+      return true
+    end
+  end
+  return false
+end
+
+function M.tbl_flatten(T)
+  if vim.iter then
+    return vim.iter(T):flatten():totable()
+  else
+    return vim.tbl_flatten(T)
+  end
+end
+
+function M.tbl_get(T, ...)
+  local keys = { ... }
+  if #keys == 0 then
+    return nil
+  end
+  return M.map_get(T, keys)
+end
+
 -- Get map value from string key
 -- e.g. `map_get(m, "key.sub1.sub2")`
+--      `map_get(m, { "key", "sub1", "sub2" })`
 function M.map_get(m, k)
   if not m then return end
   if not k then return m end
-  local keys = M.strsplit(k, ".")
+  local keys = type(k) == "table" and k or M.strsplit(k, ".")
   local iter = m
   for i = 1, #keys do
     iter = iter[keys[i]]
@@ -416,6 +436,7 @@ end
 
 -- Set map value for string key
 -- e.g. `map_set(m, "key.sub1.sub2", value)`
+--      `map_set(m, { "key", "sub1", "sub2" }, value)`
 -- if need be, build map tree as we go along
 ---@param m table?
 ---@param k string
@@ -423,7 +444,7 @@ end
 ---@return table<string, unknown>
 function M.map_set(m, k, v)
   m = m or {}
-  local keys = M.strsplit(k, ".")
+  local keys = type(k) == "table" and k or M.strsplit(k, ".")
   local map = m
   for i = 1, #keys do
     local key = keys[i]
@@ -460,7 +481,7 @@ end
 ---@param m table<string, unknown>?
 ---@return table<string, unknown>?
 function M.map_flatten(m, prefix)
-  if vim.tbl_isempty(m) then return {} end
+  if M.tbl_isempty(m) then return {} end
   local ret = {}
   prefix = prefix and string.format("%s.", prefix) or ""
   for k, v in pairs(m) do
@@ -569,7 +590,7 @@ function M.is_hl_cleared(hl)
   -- `vim.api.nvim_get_hl_by_name` is deprecated since v0.9.0
   if vim.api.nvim_get_hl then
     local ok, hl_def = pcall(vim.api.nvim_get_hl, 0, { name = hl, link = false })
-    if not ok or vim.tbl_isempty(hl_def) then
+    if not ok or M.tbl_isempty(hl_def) then
       return true
     end
   else
@@ -732,7 +753,7 @@ function M.get_visual_selection()
   if cecol < cscol then cscol, cecol = cecol, cscol end
   local lines = vim.fn.getline(csrow, cerow)
   -- local n = cerow-csrow+1
-  local n = M.tbl_length(lines)
+  local n = #lines
   if n <= 0 then return "" end
   lines[n] = string.sub(lines[n], 1, cecol)
   lines[1] = string.sub(lines[1], cscol)
@@ -879,7 +900,7 @@ function M.buf_is_qf(bufnr, bufinfo)
   bufinfo = bufinfo or (vim.api.nvim_buf_is_valid(bufnr) and M.getbufinfo(bufnr))
   if bufinfo and bufinfo.variables and
       bufinfo.variables.current_syntax == "qf" and
-      not vim.tbl_isempty(bufinfo.windows) then
+      not M.tbl_isempty(bufinfo.windows) then
     return M.win_is_qf(bufinfo.windows[1])
   end
   return false

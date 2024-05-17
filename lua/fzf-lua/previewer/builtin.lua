@@ -589,7 +589,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   -- stop ueberzug shell job
   self:stop_ueberzug()
   local entry = self:parse_entry(entry_str)
-  if vim.tbl_isempty(entry) then return end
+  if utils.tbl_isempty(entry) then return end
   if entry.bufnr and not api.nvim_buf_is_loaded(entry.bufnr)
       and vim.api.nvim_buf_is_valid(entry.bufnr) then
     -- buffer is not loaded, can happen when calling "lines" with `set nohidden`
@@ -648,7 +648,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     assert(entry.path)
     -- not found in cache, attempt to load
     local tmpbuf = self:get_tmp_buffer()
-    if self.extensions and not vim.tbl_isempty(self.extensions) then
+    if self.extensions and not utils.tbl_isempty(self.extensions) then
       local ext = path.extension(entry.path)
       local cmd = ext and self.extensions[ext:lower()]
       if cmd and self:populate_terminal_cmd(tmpbuf, cmd, entry) then
@@ -727,7 +727,7 @@ local ts_attach_08 = function(bufnr, ft)
   local is_table = type(config.additional_vim_regex_highlighting) == "table"
   if
       config.additional_vim_regex_highlighting
-      and (not is_table or vim.tbl_contains(config.additional_vim_regex_highlighting, lang))
+      and (not is_table or utils.tbl_contains(config.additional_vim_regex_highlighting, lang))
   then
     vim.bo[bufnr].syntax = ft
   end
@@ -770,11 +770,9 @@ function Previewer.buffer_or_file:do_syntax(entry)
       if syntax_limit_reached > 0 and self.opts.silent == false then
         utils.info(string.format(
           "syntax disabled for '%s' (%s), consider increasing '%s(%d)'", entry.path,
-          utils._if(syntax_limit_reached == 1,
-            ("%d lines"):format(lcount),
-            ("%db"):format(bytes)),
-          utils._if(syntax_limit_reached == 1, "syntax_limit_l", "syntax_limit_b"),
-          utils._if(syntax_limit_reached == 1, self.syntax_limit_l, self.syntax_limit_b)
+          syntax_limit_reached == 1 and ("%d lines"):format(lcount) or ("%db"):format(bytes),
+          syntax_limit_reached == 1 and "syntax_limit_l" or "syntax_limit_b",
+          syntax_limit_reached == 1 and self.syntax_limit_l or self.syntax_limit_b
         ))
       end
       if syntax_limit_reached == 0 then
@@ -796,9 +794,9 @@ function Previewer.buffer_or_file:do_syntax(entry)
                   self.treesitter.enable == false or
                   self.treesitter.disable == true or
                   (type(self.treesitter.enable) == "table" and
-                    not vim.tbl_contains(self.treesitter.enable, ft)) or
+                    not utils.tbl_contains(self.treesitter.enable, ft)) or
                   (type(self.treesitter.disable) == "table" and
-                    vim.tbl_contains(self.treesitter.disable, ft)) then
+                    utils.tbl_contains(self.treesitter.disable, ft)) then
                 return false
               end
               return true
@@ -1220,7 +1218,7 @@ function Previewer.quickfix:populate_preview_buf(entry_str)
   local qf_list = self.opts._is_loclist
       and vim.fn.getloclist(self.win.src_winid, { all = "", nr = tonumber(nr) })
       or vim.fn.getqflist({ all = "", nr = tonumber(nr) })
-  if vim.tbl_isempty(qf_list) or vim.tbl_isempty(qf_list.items) then
+  if utils.tbl_isempty(qf_list) or utils.tbl_isempty(qf_list.items) then
     return
   end
 
@@ -1262,7 +1260,7 @@ end
 function Previewer.autocmds:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
   local entry = self:parse_entry(entry_str)
-  if vim.tbl_isempty(entry) then return end
+  if utils.tbl_isempty(entry) then return end
   self._is_vimL_command = false
   if entry.path == "<none>" then
     self._is_vimL_command = true

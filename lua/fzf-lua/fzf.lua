@@ -56,11 +56,11 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- instance never terminates which hangs fzf on exit
   local FZF_DEFAULT_COMMAND = nil
 
-  utils.tbl_extend(cmd, fzf_cli_args or {})
+  utils.tbl_join(cmd, fzf_cli_args or {})
   if type(opts.fzf_cli_args) == "table" then
-    utils.tbl_extend(cmd, opts.fzf_cli_args)
+    utils.tbl_join(cmd, opts.fzf_cli_args)
   elseif type(opts.fzf_cli_args) == "string" then
-    utils.tbl_extend(cmd, { opts.fzf_cli_args })
+    utils.tbl_join(cmd, { opts.fzf_cli_args })
   end
 
   if contents then
@@ -179,7 +179,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     -- error out, but that doesn't matter so we just break out of the loop.
     if contents then
       if type(contents) == "table" then
-        if not vim.tbl_isempty(contents) then
+        if not utils.tbl_isempty(contents) then
           write_cb(vim.tbl_map(function(x)
             return x .. "\n"
           end, contents))
@@ -251,7 +251,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       and { "cmd", "/d", "/e:off", "/f:off", "/v:off", "/c" }
       or { "sh", "-c" }
   if utils.__IS_WINDOWS then
-    utils.tbl_extend(shell_cmd, cmd)
+    utils.tbl_join(shell_cmd, cmd)
   else
     table.insert(shell_cmd, table.concat(cmd, " "))
   end

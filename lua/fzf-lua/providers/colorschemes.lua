@@ -190,7 +190,7 @@ function AsyncDownloadManager:load_db(db)
       utils.warn(string.format("package %s: missing 'url'", k))
       return false
     end
-    if type(p.colorschemes) ~= "table" or vim.tbl_isempty(p.colorschemes) then
+    if type(p.colorschemes) ~= "table" or utils.tbl_isempty(p.colorschemes) then
       utils.warn(string.format("package %s: missing or empty 'colorschemes'", k))
       return false
     end
@@ -268,7 +268,7 @@ function AsyncDownloadManager:delete(plugin)
 end
 
 function AsyncDownloadManager:queue(plugin, job_args)
-  if vim.tbl_count(self.job_ids) < self.max_threads then
+  if utils.tbl_count(self.job_ids) < self.max_threads then
     self:jobstart(plugin, job_args)
   else
     table.insert(self.job_stack, { plugin, job_args })

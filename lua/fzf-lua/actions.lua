@@ -36,7 +36,7 @@ M.normalize_selected = function(actions, selected)
   -- so it can always be enumerated safely
   if not actions or not selected then return end
   local action = _default_action
-  if utils.tbl_length(actions) > 1 or not actions[_default_action] then
+  if utils.tbl_count(actions) > 1 or not actions[_default_action] then
     -- keybind should be in item #1
     -- default keybind is an empty string
     -- so we leave that as "default"

@@ -31,7 +31,7 @@ end
 
 function M.set_protected(id)
   _protected[id] = true
-  assert(_MAX_LEN > vim.tbl_count(_protected))
+  assert(_MAX_LEN > utils.tbl_count(_protected))
 end
 
 function M.clear_protected()
@@ -127,7 +127,7 @@ function M.raw_action(fn, fzf_field_expression, debug)
     elseif type(ret) == nil then
       on_complete()
     elseif type(ret) == "table" then
-      if not vim.tbl_isempty(ret) then
+      if not utils.tbl_isempty(ret) then
         uv.write(pipe, vim.tbl_map(function(x) return x .. "\n" end, ret), on_complete)
       else
         on_complete()

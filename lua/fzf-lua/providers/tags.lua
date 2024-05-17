@@ -59,7 +59,7 @@ end
 local get_ctags_cwd = function(ctags_file)
   if vim.fn.filereadable(ctags_file) == 0 then return end
   local lines = vim.fn.readfile(ctags_file, "", 10)
-  if vim.tbl_isempty(lines) then return end
+  if utils.tbl_isempty(lines) then return end
   for _, l in ipairs(lines) do
     local cwd = l:match("^!_TAG_PROC_CWD%s+(.*)%s+//$")
     if cwd then
@@ -131,7 +131,7 @@ local function tags(opts)
       _ctags_file = opts._ctags_file
     })
     local ok, lines, err = pcall(utils.io_systemlist, cmd)
-    if ok and err == 0 and lines and not vim.tbl_isempty(lines) then
+    if ok and err == 0 and lines and not utils.tbl_isempty(lines) then
       local tag, line = make_entry.tag(lines[1], opts)
       if tag and not line then
         -- tags file does not contain lines

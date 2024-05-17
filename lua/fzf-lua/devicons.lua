@@ -75,7 +75,7 @@ M.load_icons = function()
     end
     return M.__DEVICONS_LIB.get_icons()
   end)
-  if not ok or not all_devicons or vim.tbl_isempty(all_devicons) then
+  if not ok or not all_devicons or utils.tbl_isempty(all_devicons) then
     -- something is wrong with devicons
     -- can't use `error` due to fast event
     print("[Fzf-lua] error: devicons.get_icons() is nil or empty!")
@@ -164,7 +164,7 @@ M.get_devicon = function(filepath, extensionOverride)
   end
 
   local icon, color
-  local filename = path.tail(filepath)
+  local filename = path.tail(filepath):lower()
   local ext = extensionOverride or path.extension(filename, true)
 
   -- lookup directly by filename
@@ -173,12 +173,14 @@ M.get_devicon = function(filepath, extensionOverride)
     icon, color = by_filename.icon, by_filename.color
   end
 
+  if ext then ext = ext:lower() end
+
   -- check for `ext` as extension can be nil, e.g. "dockerfile"
   -- lookup by 2 part extensions, e.g. "foo.test.tsx"
   if ext and not icon and M.STATE.icons.ext_has_2part[ext] then
     local ext2 = path.extension(filename:sub(1, #filename - #ext - 1))
     if ext2 then
-      local by_ext_2part = M.STATE.icons.by_ext_2part[ext2 .. "." .. ext]
+      local by_ext_2part = M.STATE.icons.by_ext_2part[ext2:lower() .. "." .. ext]
       if by_ext_2part then
         icon, color = by_ext_2part.icon, by_ext_2part.color
       end

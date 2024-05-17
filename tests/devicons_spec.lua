@@ -1,5 +1,6 @@
 local fzf = require("fzf-lua")
 local path = fzf.path
+local utils = fzf.utils
 
 describe("Testing devicons module", function()
   -- add devicons path from lazy to runtime so our module can load nvim-web-devicons
@@ -20,11 +21,11 @@ describe("Testing devicons module", function()
     local icons = devicons.STATE.icons
     assert.are.same(state.default_icon, { icon = "", color = "#6d8086" })
     assert.are.same(state.dir_icon, { icon = "", color = nil })
-    assert.is.True(vim.tbl_count(icons.ext_has_2part) > 4)
-    assert.is.True(vim.tbl_count(icons.by_ext_2part) > 8)
-    assert.are.equal(vim.tbl_count(icons.by_filename), vim.tbl_count(theme.icons_by_filename))
-    assert.are.equal(vim.tbl_count(icons.by_ext) + vim.tbl_count(icons.by_ext_2part),
-      vim.tbl_count(theme.icons_by_file_extension))
+    assert.is.True(utils.tbl_count(icons.ext_has_2part) > 4)
+    assert.is.True(utils.tbl_count(icons.by_ext_2part) > 8)
+    assert.are.equal(utils.tbl_count(icons.by_filename), utils.tbl_count(theme.icons_by_filename))
+    assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
+      utils.tbl_count(theme.icons_by_file_extension))
   end)
   it("get_icons (headless: devicons path)", function()
     _G._devicons_path = devicons_path
@@ -36,11 +37,11 @@ describe("Testing devicons module", function()
     local icons = devicons.STATE.icons
     assert.are.same(state.default_icon, { icon = "", color = "#6d8086" })
     assert.are.same(state.dir_icon, { icon = "", color = nil })
-    assert.is.True(vim.tbl_count(icons.ext_has_2part) > 4)
-    assert.is.True(vim.tbl_count(icons.by_ext_2part) > 8)
-    assert.are.equal(vim.tbl_count(icons.by_filename), vim.tbl_count(theme.icons_by_filename))
-    assert.are.equal(vim.tbl_count(icons.by_ext) + vim.tbl_count(icons.by_ext_2part),
-      vim.tbl_count(theme.icons_by_file_extension))
+    assert.is.True(utils.tbl_count(icons.ext_has_2part) > 4)
+    assert.is.True(utils.tbl_count(icons.by_ext_2part) > 8)
+    assert.are.equal(utils.tbl_count(icons.by_filename), utils.tbl_count(theme.icons_by_filename))
+    assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
+      utils.tbl_count(theme.icons_by_file_extension))
   end)
   it("get_icons (main thread)", function()
     _G._devicons_path = nil
@@ -52,11 +53,11 @@ describe("Testing devicons module", function()
     local icons = devicons.STATE.icons
     assert.are.same(state.default_icon, { icon = "", color = "#6d8086" })
     assert.are.same(state.dir_icon, { icon = "", color = nil })
-    assert.is.True(vim.tbl_count(icons.ext_has_2part) > 4)
-    assert.is.True(vim.tbl_count(icons.by_ext_2part) > 8)
-    assert.are.equal(vim.tbl_count(icons.by_filename), vim.tbl_count(theme.icons_by_filename))
-    assert.are.equal(vim.tbl_count(icons.by_ext) + vim.tbl_count(icons.by_ext_2part),
-      vim.tbl_count(theme.icons_by_file_extension))
+    assert.is.True(utils.tbl_count(icons.ext_has_2part) > 4)
+    assert.is.True(utils.tbl_count(icons.by_ext_2part) > 8)
+    assert.are.equal(utils.tbl_count(icons.by_filename), utils.tbl_count(theme.icons_by_filename))
+    assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
+      utils.tbl_count(theme.icons_by_file_extension))
   end)
   it("get_icon (dark)", function()
     vim.o.background = "dark"

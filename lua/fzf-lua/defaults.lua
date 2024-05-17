@@ -529,11 +529,9 @@ M.defaults.lines                = {
   show_unlisted    = false,
   no_term_buffers  = true,
   fzf_opts         = {
-    ["--no-multi"]  = true,
     ["--delimiter"] = "[\\]:]",
     ["--nth"]       = "2..",
     ["--tiebreak"]  = "index",
-    ["--tabstop"]   = "1",
   },
   line_field_index = "{3}",
   _actions         = function() return M.globals.actions.buffers end,
@@ -553,11 +551,9 @@ M.defaults.blines               = {
   show_unlisted    = true,
   no_term_buffers  = false,
   fzf_opts         = {
-    ["--no-multi"]  = true,
     ["--delimiter"] = "[:]",
     ["--with-nth"]  = "2..",
     ["--tiebreak"]  = "index",
-    ["--tabstop"]   = "1",
   },
   line_field_index = "{2}",
   _actions         = function() return M.globals.actions.buffers end,

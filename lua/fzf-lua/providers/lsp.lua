@@ -17,7 +17,9 @@ local function handler_capability(handler)
 end
 
 local function check_capabilities(handler, silent)
-  local clients = vim.lsp.buf_get_clients(core.CTX().bufnr)
+  local clients = require("utils").__HAS_NVIM_011
+      and vim.lsp.get_clients({ bufnr = core.CTX().bufnr })
+      or vim.lsp.buf_get_clients(core.CTX().bufnr)
 
   -- return the number of clients supporting the feature
   -- so the async version knows how many callbacks to wait for
@@ -86,7 +88,7 @@ end
 
 local function location_handler(opts, cb, _, result, ctx, _)
   local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
-  result = vim.tbl_islist(result) and result or { result }
+  result = utils.tbl_islist(result) and result or { result }
   if opts.ignore_current_line then
     local cursor_line = core.CTX().cursor[1] - 1
     result = vim.tbl_filter(function(l)
@@ -180,7 +182,7 @@ local function symbols_to_items(symbols, bufnr, child_prefix)
 end
 
 local function symbol_handler(opts, cb, _, result, _, _)
-  result = vim.tbl_islist(result) and result or { result }
+  result = utils.tbl_islist(result) and result or { result }
   local items
   if opts.child_prefix then
     items = symbols_to_items(result, core.CTX().bufnr,
@@ -239,7 +241,7 @@ end
 
 local function code_action_handler(opts, cb, _, code_actions, context, _)
   if not opts.code_actions then opts.code_actions = {} end
-  local i = vim.tbl_count(opts.code_actions) + 1
+  local i = utils.tbl_count(opts.code_actions) + 1
   for _, action in ipairs(code_actions) do
     local text = string.format("%s %s",
       utils.ansi_codes.magenta(string.format("%d:", i)), action.title)
@@ -359,7 +361,7 @@ local function async_lsp_handler(co, handler, opts)
   return mk_handler(function(err, result, context, lspcfg)
     -- increment callback & result counters
     opts.num_callbacks = opts.num_callbacks + 1
-    opts.num_results = (opts.num_results or 0) + (result and vim.tbl_count(result) or 0)
+    opts.num_results = (opts.num_results or 0) + (result and utils.tbl_count(result) or 0)
     if err then
       if not opts.silent then
         utils.err(string.format("Error executing '%s': %s", handler.method, err))
@@ -433,7 +435,7 @@ local function gen_lsp_contents(opts)
           lsp_handler.handler(opts, cb, lsp_handler.method, response.result, context)
         end
       end
-      if vim.tbl_isempty(results) then
+      if utils.tbl_isempty(results) then
         if not opts.fn_reload and not opts.silent then
           utils.info(string.format("No %s found", string.lower(lsp_handler.label)))
         else

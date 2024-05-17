@@ -303,7 +303,7 @@ end
 function Previewer.git_diff:cmdline(o)
   o = o or {}
   local act = shell.raw_preview_action_cmd(function(items, fzf_lines, fzf_columns)
-    if not items or vim.tbl_isempty(items) then
+    if not items or utils.tbl_isempty(items) then
       utils.warn("shell error while running preview action.")
       return
     end

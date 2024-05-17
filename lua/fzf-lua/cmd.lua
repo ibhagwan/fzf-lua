@@ -22,7 +22,7 @@ function M.run_command(cmd, ...)
     local val = arg:match("=") and arg:match("=(.*)$")
     if val and #val > 0 then
       local ok, loaded = serpent.load(val)
-      if ok and (type(loaded) ~= "table" or not vim.tbl_isempty(loaded)) then
+      if ok and (type(loaded) ~= "table" or not utils.tbl_isempty(loaded)) then
         opts[key] = loaded
       else
         opts[key] = val
@@ -95,7 +95,7 @@ function M._candidates(line, cmp_items)
   if n < 0 then return end
 
   if n == 0 then
-    local commands = vim.tbl_flatten({ builtin_list })
+    local commands = utils.tbl_flatten({ builtin_list })
     table.sort(commands)
 
     commands = vim.tbl_filter(function(val)
@@ -147,7 +147,7 @@ function M._candidates(line, cmp_items)
     fzf_opts      = false,
     __HLS         = "hls", -- rename prefix
   }) do
-    opts = vim.tbl_flatten({ opts, vim.tbl_filter(function(x)
+    opts = utils.tbl_flatten({ opts, vim.tbl_filter(function(x)
         -- Exclude global options that can be specified only during `setup`,
         -- e.g.'`winopts.preview.default` as this might confuse the user
         return not M.options_md()["setup." .. x]
@@ -162,7 +162,7 @@ function M._candidates(line, cmp_items)
   vim.tbl_map(function(o)
     -- Cut the first part, e.g. "files.cwd" -> "cwd"
     o = o:match("%..*$"):sub(2)
-    if not vim.tbl_contains(opts, o) then
+    if not utils.tbl_contains(opts, o) then
       table.insert(opts, o)
     end
   end, opts_from_docs)

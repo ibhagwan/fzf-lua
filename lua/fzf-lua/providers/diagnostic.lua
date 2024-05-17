@@ -72,7 +72,7 @@ M.diagnostics = function(opts)
     if utils.__HAS_NVIM_010 then
       local sign_confs = vim.diagnostic.config().signs
       local level = vim.diagnostic.severity[k:upper()]
-      if type(sign_confs) ~= "table" or vim.tbl_isempty(sign_confs) then sign_confs = nil end
+      if type(sign_confs) ~= "table" or utils.tbl_isempty(sign_confs) then sign_confs = nil end
       opts.__signs[v.severity].text =
           (not opts.diag_icons or not sign_confs or not sign_confs.text or not sign_confs.text[level])
           and v.default or vim.trim(sign_confs.text[level])
@@ -81,7 +81,7 @@ M.diagnostics = function(opts)
       local sign_def = vim.fn.sign_getdefined(v.name)
       -- can be empty when config set to (#480):
       -- vim.diagnostic.config({ signs = false })
-      if vim.tbl_isempty(sign_def) then sign_def = nil end
+      if utils.tbl_isempty(sign_def) then sign_def = nil end
       opts.__signs[v.severity].text =
           (not opts.diag_icons or not sign_def or not sign_def[1].text)
           and v.default or vim.trim(sign_def[1].text)
@@ -140,7 +140,7 @@ M.diagnostics = function(opts)
   local has_diags = false
   if vim.diagnostic then
     -- format: { <diag array> }
-    has_diags = not vim.tbl_isempty(diag_results)
+    has_diags = not utils.tbl_isempty(diag_results)
   else
     -- format: { [bufnr] = <diag array>, ... }
     for _, diags in pairs(diag_results) do
@@ -186,7 +186,7 @@ M.diagnostics = function(opts)
         for _, diag in ipairs(diags) do
           -- workspace diagnostics may include
           -- empty tables for unused buffers
-          if not vim.tbl_isempty(diag) and filter_diag_severity(opts, diag.severity) then
+          if not utils.tbl_isempty(diag) and filter_diag_severity(opts, diag.severity) then
             -- wrap with 'vim.schedule' or calls to vim.{fn|api} fail:
             -- E5560: vimL function must not be called in a lua loop callback
             vim.schedule(function()

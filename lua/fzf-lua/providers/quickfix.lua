@@ -43,7 +43,7 @@ end
 
 M.quickfix = function(opts)
   local locations = vim.fn.getqflist()
-  if vim.tbl_isempty(locations) then
+  if utils.tbl_isempty(locations) then
     utils.info("Quickfix list is empty.")
     return
   end
@@ -58,7 +58,7 @@ M.loclist = function(opts)
     value.filename = vim.api.nvim_buf_get_name(value.bufnr)
   end
 
-  if vim.tbl_isempty(locations) then
+  if utils.tbl_isempty(locations) then
     utils.info("Location list is empty.")
     return
   end
@@ -77,7 +77,7 @@ local qfstack_exec = function(opts, cfg, is_loclist)
   end
   opts.fn_pre_fzf()
 
-  if vim.tbl_isempty(opts.__history) or opts.__history[2] == "No entries" then
+  if utils.tbl_isempty(opts.__history) or opts.__history[2] == "No entries" then
     utils.info(string.format("No %s",
       is_loclist and "location lists" or "quickfix lists"))
     return

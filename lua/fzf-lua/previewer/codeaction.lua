@@ -102,7 +102,7 @@ local function diff_workspace_edit(workspace_edit, offset_encoding, diff_opts)
   end
 
   local all_changes = workspace_edit.changes
-  if all_changes and not vim.tbl_isempty(all_changes) then
+  if all_changes and not utils.tbl_isempty(all_changes) then
     for uri, changes in pairs(all_changes) do
       local path = vim.fn.fnamemodify(vim.uri_to_fname(uri), ":.")
       local bufnr = vim.uri_to_bufnr(uri)
@@ -170,11 +170,11 @@ local function preview_action_tuple(self, idx, callback)
         local choice = self.opts._items[idx]
         local bufnr = assert(choice.ctx.bufnr, "Must have buffer number")
         local reg = client.dynamic_capabilities:get(ms.textDocument_codeAction, { bufnr = bufnr })
-        return vim.tbl_get(reg or {}, "registerOptions", "resolveProvider")
+        return utils.tbl_get(reg or {}, "registerOptions", "resolveProvider")
             or client.supports_method(ms.codeAction_resolve)
       end)()
       -- prior to nvim 0.10 we could check `client.server_capabilities`
-      or vim.tbl_get(client.server_capabilities, "codeActionProvider", "resolveProvider")
+      or utils.tbl_get(client.server_capabilities, "codeActionProvider", "resolveProvider")
   if not action.edit and client and supports_resolve then
     -- Action is not a workspace edit, attempt to resolve the code action
     -- in case it resolves to a workspace edit

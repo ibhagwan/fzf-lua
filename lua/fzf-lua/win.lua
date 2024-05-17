@@ -61,7 +61,7 @@ function FzfWin:setup_keybinds()
 
   for key, action in pairs(self.keymap.builtin) do
     local keymap = keymap_tbl[action]
-    if keymap and not vim.tbl_isempty(keymap) and action ~= false then
+    if keymap and not utils.tbl_isempty(keymap) and action ~= false then
       utils.keymap_set("t", key, funcref_str(keymap),
         { nowait = true, buffer = self.fzf_bufnr })
     end
@@ -434,8 +434,8 @@ function FzfWin:fs_preview_layout(fs)
   local border_winopts = self.border_winopts
   if not fs or self.winopts.split
       or not prev_winopts or not border_winopts
-      or vim.tbl_isempty(prev_winopts)
-      or vim.tbl_isempty(border_winopts) then
+      or utils.tbl_isempty(prev_winopts)
+      or utils.tbl_isempty(border_winopts) then
     return prev_winopts, border_winopts
   end
 
@@ -569,7 +569,7 @@ function FzfWin:redraw_preview()
   if not self.previewer_is_builtin or self.preview_hidden then return end
 
   self.prev_winopts, self.border_winopts = self:preview_layout()
-  if vim.tbl_isempty(self.prev_winopts) or vim.tbl_isempty(self.border_winopts) then
+  if utils.tbl_isempty(self.prev_winopts) or utils.tbl_isempty(self.border_winopts) then
     return -1, -1
   end
 
@@ -961,7 +961,7 @@ function FzfWin:close(fzf_bufnr)
     local cmd = {}
     for cmd_part in string.gmatch(self.winrestcmd, "[^|]+") do
       local winnr = cmd_part:match("(.)resize")
-      if vim.tbl_contains(winnrs, winnr) then
+      if utils.tbl_contains(winnrs, winnr) then
         table.insert(cmd, cmd_part)
       end
     end
@@ -1014,8 +1014,8 @@ function FzfWin:update_scrollbar_border(o)
 
   -- matchaddpos() can't handle more than 8 items at once
   local add_to_tbl = function(tbl, item)
-    local len = utils.tbl_length(tbl)
-    if len == 0 or utils.tbl_length(tbl[len]) == 8 then
+    local len = utils.tbl_count(tbl)
+    if len == 0 or utils.tbl_count(tbl[len]) == 8 then
       table.insert(tbl, {})
       len = len + 1
     end

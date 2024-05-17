@@ -275,9 +275,9 @@ end
 
 M.lcol = function(entry, opts)
   if not entry then return nil end
-  local hl_colnr = vim.tbl_contains(opts._cached_hls or {}, "path_colnr")
+  local hl_colnr = utils.tbl_contains(opts._cached_hls or {}, "path_colnr")
       and opts.hls.path_colnr or "blue"
-  local hl_linenr = vim.tbl_contains(opts._cached_hls or {}, "path_linenr")
+  local hl_linenr = utils.tbl_contains(opts._cached_hls or {}, "path_linenr")
       and opts.hls.path_linenr or "green"
   local filename = entry.filename or vim.api.nvim_buf_get_name(entry.bufnr)
   return string.format("%s:%s%s%s",

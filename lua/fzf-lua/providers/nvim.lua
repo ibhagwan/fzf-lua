@@ -152,7 +152,7 @@ M.tagstack = function(opts)
     end
   end
 
-  if vim.tbl_isempty(tags) then
+  if utils.tbl_isempty(tags) then
     utils.info("No tagstack available")
     return
   end
@@ -361,7 +361,7 @@ M.spell_suggest = function(opts)
   local cursor_word = vim.fn.expand "<cword>"
   local entries = vim.fn.spellsuggest(cursor_word)
 
-  if vim.tbl_isempty(entries) then return end
+  if utils.tbl_isempty(entries) then return end
 
   core.fzf_exec(entries, opts)
 end
@@ -371,7 +371,7 @@ M.filetypes = function(opts)
   if not opts then return end
 
   local entries = vim.fn.getcompletion("", "filetype")
-  if vim.tbl_isempty(entries) then return end
+  if utils.tbl_isempty(entries) then return end
 
   core.fzf_exec(entries, opts)
 end
@@ -382,7 +382,7 @@ M.packadd = function(opts)
 
   local entries = vim.fn.getcompletion("", "packadd")
 
-  if vim.tbl_isempty(entries) then return end
+  if utils.tbl_isempty(entries) then return end
 
   core.fzf_exec(entries, opts)
 end
@@ -406,12 +406,12 @@ M.menus = function(opts)
     end
   end
 
-  local entries = vim.tbl_flatten(vim.tbl_map(
+  local entries = utils.tbl_flatten(vim.tbl_map(
     function(x)
       return gen_menu_entries(nil, x)
     end, vim.fn.menu_get("")))
 
-  if vim.tbl_isempty(entries) then
+  if utils.tbl_isempty(entries) then
     utils.info("No menus available")
     return
   end
@@ -424,7 +424,7 @@ M.autocmds = function(opts)
   if not opts then return end
 
   local autocmds = vim.api.nvim_get_autocmds({})
-  if not autocmds or vim.tbl_isempty(autocmds) then
+  if not autocmds or utils.tbl_isempty(autocmds) then
     return
   end
 

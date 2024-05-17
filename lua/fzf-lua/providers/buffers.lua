@@ -155,7 +155,7 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
   end
   local max_bufnr_w = 3 + #tostring(max_bufnr) + utils.ansi_escseq_len(bufnrstr)
   local item_str = string.format("%s%s%s%s%s%s%s%s",
-    utils._if(opts._prefix, opts._prefix, ""),
+    opts._prefix or "",
     string.format("%-" .. tostring(max_bufnr_w) .. "s", bufnrstr),
     utils.nbsp,
     flags,
