@@ -17,7 +17,7 @@ local function handler_capability(handler)
 end
 
 local function check_capabilities(handler, silent)
-  local clients = require("utils").__HAS_NVIM_011
+  local clients = utils.__HAS_NVIM_011
       and vim.lsp.get_clients({ bufnr = core.CTX().bufnr })
       or vim.lsp.buf_get_clients(core.CTX().bufnr)
 
