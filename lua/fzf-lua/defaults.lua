@@ -435,7 +435,7 @@ M.defaults.oldfiles             = {
   file_icons        = true and M._has_devicons,
   color_icons       = true,
   git_icons         = false,
-  check_file        = "stat",
+  stat_file         = true,
   fzf_opts          = { ["--tiebreak"] = "index", ["--multi"] = true },
   _fzf_nth_devicons = true,
   _actions          = function() return M.globals.actions.files end,

@@ -14,26 +14,20 @@ M.oldfiles = function(opts)
   if opts.cwd and opts.cwd_only == nil then
     opts.cwd_only = true
   end
-  if opts.stat_file then -- bw-compat
-    opts.check_file = "stat"
-  end
 
   local current_buffer = vim.api.nvim_get_current_buf()
   local current_file = vim.api.nvim_buf_get_name(current_buffer)
   local sess_tbl = {}
   local sess_map = {}
 
-  local is_valid = not opts.check_file or
-      (opts.check_file == "stat" and function(file)
+  local is_valid = not opts.stat_file or
+      (type(opts.stat_file) == "function" and opts.stat_file) or
+      function(file)
         local stat = uv.fs_stat(file)
         return not utils.path_is_directory(file, stat)
             and not utils.file_is_fifo(file, stat) -- FIFO blocks `fs_open` indefinitely (#908)
             and utils.file_is_readable(file)
-      end) or (opts.check_file and function(file)
-        local handle = io.open(file, "r")
-        if handle then handle:close() end
-        return handle ~= nil
-      end)
+      end
 
   if opts.include_current_session then
     for _, buffer in ipairs(vim.split(vim.fn.execute(":buffers t"), "\n")) do
