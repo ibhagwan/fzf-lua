@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0           Last change: 2024 May 05
+*fzf-lua.txt*           For Neovim >= 0.5.0           Last change: 2024 May 20
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1102,6 +1102,9 @@ open an issue and I'll be more than happy to help.**
         prompt            = 'History❯ ',
         cwd_only          = false,
         stat_file         = true,         -- verify files exist on disk
+        -- can also be a lua function, for example:
+        -- stat_file = require("fzf-lua").utils.file_is_readable,
+        -- stat_file = function() return true end,
         include_current_session = false,  -- include bufs from current session
       },
       buffers = {
