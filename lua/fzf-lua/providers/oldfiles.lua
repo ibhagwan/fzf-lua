@@ -20,12 +20,22 @@ M.oldfiles = function(opts)
   local sess_tbl = {}
   local sess_map = {}
 
+  local stat_fn = not opts.stat_file and function(_) return true end
+      or type(opts.stat_file) == "function" and opts.stat_file
+      or function(file)
+        local stat = uv.fs_stat(file)
+        return (not utils.path_is_directory(file, stat)
+          -- FIFO blocks `fs_open` indefinitely (#908)
+          and not utils.file_is_fifo(file, stat)
+          and utils.file_is_readable(file))
+      end
+
   if opts.include_current_session then
     for _, buffer in ipairs(vim.split(vim.fn.execute(":buffers t"), "\n")) do
       local bufnr = tonumber(buffer:match("%s*(%d+)"))
       if bufnr then
         local file = vim.api.nvim_buf_get_name(bufnr)
-        local fs_stat = not opts.stat_file and true or uv.fs_stat(file)
+        local fs_stat = stat_fn(file)
         if #file > 0 and fs_stat and bufnr ~= current_buffer then
           sess_map[file] = true
           table.insert(sess_tbl, file)
@@ -59,14 +69,7 @@ M.oldfiles = function(opts)
 
       -- local start = os.time(); for _ = 1,10000,1 do
       for _, file in ipairs(vim.v.oldfiles) do
-        local fs_stat = not opts.stat_file and true
-            or (function()
-              local stat = uv.fs_stat(file)
-              return (not utils.path_is_directory(file, stat)
-                -- FIFO blocks `fs_open` indefinitely (#908)
-                and not utils.file_is_fifo(file, stat)
-                and utils.file_is_readable(file))
-            end)()
+        local fs_stat = stat_fn(file)
         if fs_stat and file ~= current_file and not sess_map[file] then
           add_entry(file, co)
         end

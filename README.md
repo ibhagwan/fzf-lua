@@ -1007,6 +1007,9 @@ require'fzf-lua'.setup {
     prompt            = 'History❯ ',
     cwd_only          = false,
     stat_file         = true,         -- verify files exist on disk
+    -- can also be a lua function, for example:
+    -- stat_file = require("fzf-lua").utils.file_is_readable,
+    -- stat_file = function() return true end,
     include_current_session = false,  -- include bufs from current session
   },
   buffers = {
