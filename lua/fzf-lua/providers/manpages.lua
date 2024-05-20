@@ -16,7 +16,8 @@ end
 --- @param apropos_line string
 --- @return string arg without shellescape
 M.manpage_vim_arg = function(apropos_line)
-  return string.format("%s(%s)", parse_apropos(apropos_line))
+  local page, section = parse_apropos(apropos_line)
+  return string.format("%s(%s)", page, section)
 end
 --- @param apropos_line string
 --- @return string arg with shellescape

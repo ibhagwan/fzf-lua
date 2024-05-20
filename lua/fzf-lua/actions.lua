@@ -91,9 +91,8 @@ M.resume = function(_, _)
 end
 
 M.vimcmd = function(vimcmd, selected, noesc)
-  for i = 1, #selected do
-    vim.cmd(("%s %s"):format(vimcmd,
-      noesc and selected[i] or vim.fn.fnameescape(selected[i])))
+  for _, sel in ipairs(selected) do
+    vim.cmd(("%s %s"):format(vimcmd, noesc and sel or vim.fn.fnameescape(sel)))
   end
 end
 
