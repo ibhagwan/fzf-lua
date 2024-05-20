@@ -19,6 +19,7 @@ end
 local function check_capabilities(handler, silent)
   local clients = utils.__HAS_NVIM_011
       and vim.lsp.get_clients({ bufnr = core.CTX().bufnr })
+      ---@diagnostic disable-next-line: deprecated
       or vim.lsp.buf_get_clients(core.CTX().bufnr)
 
   -- return the number of clients supporting the feature
@@ -41,6 +42,7 @@ local function check_capabilities(handler, silent)
         num_clients = num_clients + 1
       end
     else
+      ---@diagnostic disable-next-line: undefined-field
       if client.resolved_capabilities[handler.resolved_capability] then
         num_clients = num_clients + 1
       end

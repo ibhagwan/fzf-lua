@@ -43,6 +43,7 @@ M.diagnostics = function(opts)
   end
 
   if not vim.diagnostic then
+    ---@diagnostic disable-next-line: deprecated
     local lsp_clients = vim.lsp.buf_get_clients(0)
     if utils.tbl_isempty(lsp_clients) then
       utils.info("LSP: no client attached")

@@ -374,6 +374,7 @@ function M.tbl_deep_clone(t)
   return clone
 end
 
+---@diagnostic disable-next-line: deprecated
 M.tbl_islist = vim.islist or vim.tbl_islist
 
 function M.tbl_isempty(T)
@@ -405,8 +406,9 @@ end
 
 function M.tbl_flatten(T)
   if vim.iter then
-    return vim.iter(T):flatten():totable()
+    return vim.iter(T):flatten(math.huge):totable()
   else
+    ---@diagnostic disable-next-line: deprecated
     return vim.tbl_flatten(T)
   end
 end
