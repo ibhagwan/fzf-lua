@@ -1006,7 +1006,9 @@ require'fzf-lua'.setup {
   oldfiles = {
     prompt            = 'History❯ ',
     cwd_only          = false,
-    stat_file         = true,         -- verify files exist on disk
+    -- "stat": verify files exist on disk and are usable files
+    -- true: just check file can be opened
+    check_file        = "stat",
     include_current_session = false,  -- include bufs from current session
   },
   buffers = {
