@@ -88,6 +88,27 @@ local jump_to_location = function(opts, result, enc)
   return vim.lsp.util.jump_to_location(result, enc)
 end
 
+local regex_filter_fn = function(regex_filter)
+  if type(regex_filter) == "string" then
+    regex_filter = { regex_filter }
+  end
+  if type(regex_filter) == "function" then
+    return regex_filter
+  end
+  if type(regex_filter) == "table" and type(regex_filter[1]) == "string" then
+    return function(item, _)
+      if not item.text then return true end
+      local is_match = item.text:match(regex_filter[1]) ~= nil
+      if regex_filter.exclude then
+        return not is_match
+      else
+        return is_match
+      end
+    end
+  end
+  return false
+end
+
 local function location_handler(opts, cb, _, result, ctx, _)
   local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
   result = utils.tbl_islist(result) and result or { result }
@@ -101,12 +122,15 @@ local function location_handler(opts, cb, _, result, ctx, _)
     end, result)
   end
   local items = {}
+  if opts.regex_filter and opts._regex_filter_fn == nil then
+    opts._regex_filter_fn = regex_filter_fn(opts.regex_filter)
+  end
   -- Although `make_entry.file` filters for `cwd_only` we filter
   -- here to accurately determine `jump_to_single_result` (#980)
   result = vim.tbl_filter(function(x)
     local item = vim.lsp.util.locations_to_items({ x }, encoding)[1]
     if (opts.cwd_only and not path.is_relative_to(item.filename, opts.cwd)) or
-        (opts.regex_filter and not item.text:match(opts.regex_filter)) then
+        (opts._regex_filter_fn and not opts._regex_filter_fn(item, core.CTX())) then
       return false
     end
     table.insert(items, item)
@@ -115,9 +139,6 @@ local function location_handler(opts, cb, _, result, ctx, _)
   -- Jump immediately if there is only one location
   if opts.jump_to_single_result and #result == 1 then
     jump_to_location(opts, result[1], encoding)
-  end
-  if opts.filter and type(opts.filter) == "function" then
-    items = opts.filter(items)
   end
   for _, entry in ipairs(items) do
     if not opts.current_buffer_only or core.CTX().bname == entry.filename then
@@ -193,9 +214,12 @@ local function symbol_handler(opts, cb, _, result, _, _)
   else
     items = vim.lsp.util.symbols_to_items(result, core.CTX().bufnr)
   end
+  if opts.regex_filter and opts._regex_filter_fn == nil then
+    opts._regex_filter_fn = regex_filter_fn(opts.regex_filter)
+  end
   for _, entry in ipairs(items) do
     if (not opts.current_buffer_only or core.CTX().bname == entry.filename) and
-        (not opts.regex_filter or entry.text:match(opts.regex_filter)) then
+        (not opts._regex_filter_fn or opts._regex_filter_fn(entry, core.CTX())) then
       local mbicon_align = 0
       if opts.fn_reload and type(opts.query) == "string" and #opts.query > 0 then
         -- highlight exact matches with `live_workspace_symbols` (#1028)

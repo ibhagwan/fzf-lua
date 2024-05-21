@@ -875,7 +875,13 @@ M.set_header = function(opts, hdr_tbl)
       hdr_txt_str = "Regex filter: ",
       hdr_txt_col = opts.hls.header_text,
       val = function()
-        return opts.regex_filter and #opts.regex_filter > 0 and opts.regex_filter
+        if type(opts.regex_filter) == "string" then
+          return opts.regex_filter
+        elseif type(opts.regex_filter) == "table" and type(opts.regex_filter[1]) == "string" then
+          return string.format("%s%s", opts.regex_filter.exclude and "not " or "", opts.regex_filter[1])
+        elseif type(opts.regex_filter) == "function" then
+          return "<function>"
+        end
       end,
     },
     actions = {
