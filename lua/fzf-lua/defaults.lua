@@ -686,7 +686,6 @@ M.defaults.lsp                  = {
   file_icons       = true and M._has_devicons,
   color_icons      = true,
   git_icons        = false,
-  cwd_only         = false,
   async_or_timeout = 5000,
   fzf_opts         = { ["--multi"] = true },
   _actions         = function() return M.globals.actions.files end,

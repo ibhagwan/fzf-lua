@@ -105,10 +105,11 @@ local function location_handler(opts, cb, _, result, ctx, _)
   -- here to accurately determine `jump_to_single_result` (#980)
   result = vim.tbl_filter(function(x)
     local item = vim.lsp.util.locations_to_items({ x }, encoding)[1]
-    table.insert(items, item)
-    if opts.cwd_only and not path.is_relative_to(item.filename, opts.cwd) then
+    if (opts.cwd_only and not path.is_relative_to(item.filename, opts.cwd)) or
+        (opts.regex_filter and not item.text:match(opts.regex_filter)) then
       return false
     end
+    table.insert(items, item)
     return true
   end, result)
   -- Jump immediately if there is only one location
@@ -575,7 +576,7 @@ local normalize_lsp_opts = function(opts, cfg, __resume_key)
   -- required for relative paths presentation
   if not opts.cwd or #opts.cwd == 0 then
     opts.cwd = uv.cwd()
-  else
+  elseif opts.cwd_only == nil then
     opts.cwd_only = true
   end
 
@@ -592,6 +593,7 @@ local function fzf_lsp_locations(opts, fn_contents)
     core.__CTX = nil
     return
   end
+  opts = core.set_header(opts, opts.headers or { "cwd", "regex_filter" })
   return core.fzf_exec(opts.__contents, opts)
 end
 
@@ -669,6 +671,7 @@ M.finder = function(opts)
     core.__CTX = nil
     return
   end
+  opts = core.set_header(opts, opts.headers or { "cwd", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   return core.fzf_exec(contents, opts)
 end
