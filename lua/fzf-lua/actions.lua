@@ -8,18 +8,29 @@ local M = {}
 local _default_action = "default"
 
 -- return fzf '--expect=' string from actions keyval tbl
-M.expect = function(actions)
+-- on fzf >= 0.53 add the `prefix` key to the bind flags
+M.expect = function(actions, _)
   if not actions then return nil end
   local keys = {}
+  local binds = {}
   for k, v in pairs(actions) do
-    if k ~= _default_action and v ~= false then
+    local is_default = k == _default_action
+    if not is_default and v ~= false then
       table.insert(keys, k)
     end
+    -- Although this only works in fzf 0.53 we don't need to limit the use of these
+    -- actions as `--expect` precets the bind and thus the extra bind has no effect
+    if type(v) == "table" and type(v.prefix) == "string" then
+      table.insert(binds, string.format("%s:%s%s",
+        is_default and "enter" or k,
+        -- When used with `--expect` "accept" is implied and "+" is erroneous
+        v.prefix:gsub("accept$", ""):gsub("%+$", ""),
+        -- Since default accept bind (enter) is excluded from `--expect`
+        -- we need to add "+accept" to complete the selection and exit fzf
+        is_default and "+accept" or ""))
+    end
   end
-  if #keys > 0 then
-    return table.concat(keys, ",")
-  end
-  return nil
+  return #keys > 0 and keys or nil, #binds > 0 and binds or nil
 end
 
 M.normalize_selected = function(actions, selected)

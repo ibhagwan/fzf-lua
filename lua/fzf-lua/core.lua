@@ -592,7 +592,22 @@ M.build_fzf_cli = function(opts)
   end
   opts.fzf_opts["--bind"] = M.create_fzf_binds(opts.keymap.fzf)
   opts.fzf_opts["--color"] = M.create_fzf_colors(opts)
-  opts.fzf_opts["--expect"] = actions.expect(opts.actions)
+  do
+    -- `actions.expect` parses the actions table and returns a list of
+    -- keys that trigger completion (accept) to be added to `--expect`
+    -- If the action contains the prefix key, e.g. `{ fn = ... , prefix = "select-all" }`
+    -- additional binds will be set for the specific action key
+    -- NOTE: requires fzf >= 0.53 (https://github.com/junegunn/fzf/issues/3810)
+    local expect_keys, expect_binds = actions.expect(opts.actions, opts)
+    if expect_keys and #expect_keys > 0 then
+      opts.fzf_opts["--expect"] = table.concat(expect_keys, ",")
+    end
+    if expect_binds and #expect_binds > 0 then
+      local bind = opts.fzf_opts["--bind"]
+      opts.fzf_opts["--bind"] = string.format("%s%s%s",
+        bind, bind and "," or "", table.concat(expect_binds, ","))
+    end
+  end
   if opts.fzf_opts["--preview-window"] == nil then
     opts.fzf_opts["--preview-window"] = M.preview_window(opts)
   end
@@ -878,7 +893,9 @@ M.set_header = function(opts, hdr_tbl)
         if type(opts.regex_filter) == "string" then
           return opts.regex_filter
         elseif type(opts.regex_filter) == "table" and type(opts.regex_filter[1]) == "string" then
-          return string.format("%s%s", opts.regex_filter.exclude and "not " or "", opts.regex_filter[1])
+          return string.format("%s%s",
+            opts.regex_filter.exclude and "not " or "",
+            opts.regex_filter[1])
         elseif type(opts.regex_filter) == "function" then
           return "<function>"
         end
