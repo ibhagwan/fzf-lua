@@ -880,7 +880,7 @@ function Previewer.buffer_or_file:update_border(entry)
       end
       filepath = path.HOME_to_tilde(filepath)
     end
-    local title = filepath or entry.uri
+    local title = filepath or entry.uri or entry.bufname
     -- was transform function defined?
     if self.title_fnamemodify then
       local wincfg = vim.api.nvim_win_get_config(self.win.border_winid)
