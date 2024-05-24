@@ -133,6 +133,14 @@ M.vimcmd_file = function(vimcmd, selected, opts, pcall_vimcmd)
         return
       end
     end
+    if utils.__HAS_NVIM_010
+        and vim.wo.winfixbuf
+        and vimcmd == "e"
+        and curbuf ~= fullpath
+    then
+      utils.warn("'winfixbuf' is set for current window, unable to change buffer.")
+      return
+    end
     -- add current location to jumplist
     if not is_term then vim.cmd("normal! m`") end
     -- only change buffer if we need to (issue #122)
@@ -314,6 +322,14 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
       else
         return
       end
+    end
+    if utils.__HAS_NVIM_010
+        and vim.wo.winfixbuf
+        and vimcmd == "b"
+        and curbuf ~= entry.bufnr
+    then
+      utils.warn("'winfixbuf' is set for current window, unable to change buffer.")
+      return
     end
     -- add current location to jumplist
     if not is_term then vim.cmd("normal! m`") end
