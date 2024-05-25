@@ -765,6 +765,7 @@ function FzfWin:_nvim_create_autocmd(e, callback, vimL)
   if utils.__HAS_NVIM_07 then
     vim.api.nvim_create_autocmd(e, {
       group = vim.api.nvim_create_augroup(augroup, { clear = true }),
+      buffer = self.fzf_bufnr,
       callback = callback,
     })
   else
