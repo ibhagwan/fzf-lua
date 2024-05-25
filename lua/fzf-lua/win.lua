@@ -760,19 +760,29 @@ function FzfWin:redraw_main()
   end
 end
 
+function FzfWin:_nvim_create_autocmd(e, callback, vimL)
+  local augroup = "FzfLua" .. e
+  if utils.__HAS_NVIM_07 then
+    vim.api.nvim_create_autocmd(e, {
+      group = vim.api.nvim_create_augroup(augroup, { clear = true }),
+      callback = callback,
+    })
+  else
+    vim.cmd("augroup " .. augroup)
+    vim.cmd("au!")
+    vim.cmd(string.format([[au %s <buffer=%d> lua %s]], e, self.fzf_bufnr, vimL))
+    vim.cmd("augroup END")
+  end
+end
+
 function FzfWin:set_redraw_autocmd()
-  vim.cmd("augroup FzfLua")
-  vim.cmd(string.format(
-    [[au VimResized <buffer=%d> lua require("fzf-lua").redraw()]], self.fzf_bufnr))
-  vim.cmd("augroup END")
+  self:_nvim_create_autocmd("VimResized",
+    function() self:redraw() end,
+    [[require("fzf-lua").redraw()]])
 end
 
 function FzfWin:set_winleave_autocmd()
-  vim.cmd("augroup FzfLua")
-  vim.cmd("au!")
-  vim.cmd(string.format("au WinLeave <buffer=%d> %s",
-    self.fzf_bufnr, [[lua require('fzf-lua.win').win_leave()]]))
-  vim.cmd("augroup END")
+  self:_nvim_create_autocmd("WinLeave", self.win_leave, [[require('fzf-lua.win').win_leave()]])
 end
 
 function FzfWin:set_tmp_buffer()
