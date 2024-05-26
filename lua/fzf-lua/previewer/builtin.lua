@@ -356,7 +356,20 @@ function Previewer.base:scroll(direction)
 
     if input then
       pcall(vim.api.nvim_win_call, preview_winid, function()
+        -- ctrl-b (page-up) behaves in a non consistent way, unlike ctrl-u, if it can't
+        -- scroll a full page upwards it won't move the cursor, if the cursor is within
+        -- the first page it will still move the cursor to the bottom of the page (!?)
+        -- we therefore need special handling for both scenarios with `ctrl-b`:
+        --   (1) If the cursor is at line 1, do nothing
+        --   (2) Else, test the cursor before and after, if the new position is further
+        --       down the buffer than the original, we're in the first page ,goto line 1 
+        local is_ctrl_b = string.byte(input, 1) == 2
+        local pos = is_ctrl_b and vim.api.nvim_win_get_cursor(0)
+        if is_ctrl_b and pos[1] == 1 then return end
         vim.cmd([[norm! ]] .. input)
+        if is_ctrl_b and pos[1] <= vim.api.nvim_win_get_cursor(0)[1] then
+          vim.api.nvim_win_set_cursor(0, { 1, pos[2] })
+        end
         utils.zz()
       end)
     end
