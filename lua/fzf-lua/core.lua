@@ -116,7 +116,7 @@ local contents_from_arr = function(cont_arr)
   return contents
 end
 
----@alias content string[]|fun(fzf_cb: fun(entry?: string))|string|nil
+---@alias content (string|number)[]|fun(fzf_cb: fun(entry?: string|number, cb?: function))|string|nil
 
 -- Main API, see:
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
