@@ -116,12 +116,12 @@ local contents_from_arr = function(cont_arr)
   return contents
 end
 
----@alias content table|function|string|nil
+---@alias content string[]|fun(fzf_cb: fun(entry?: string))|string|nil
 
 -- Main API, see:
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
 ---@param contents content
----@param opts {fn_reload: string|function, fn_transform: function, __fzf_init_cmd: string, _normalized: boolean}
+---@param opts? {fn_reload: string|function, fn_transform: function, __fzf_init_cmd: string, _normalized: boolean}
 M.fzf_exec = function(contents, opts)
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
@@ -183,6 +183,8 @@ M.fzf_exec = function(contents, opts)
   return M.fzf_wrap(opts, contents)()
 end
 
+---@param contents fun(query: string): string|string[]|function
+---@param opts? table
 M.fzf_live = function(contents, opts)
   assert(contents)
   opts = opts or {}
