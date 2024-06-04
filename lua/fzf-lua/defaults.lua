@@ -802,6 +802,10 @@ M.defaults.lsp.code_actions     = {
   previewer        = "codeaction",
   -- previewer        = "codeaction_native",
   fzf_opts         = { ["--no-multi"] = true },
+  -- NOTE: we don't need an action as code actions are executed by the ui.select
+  -- callback but we setup an empty table to indicate to `globals.__index` that
+  -- we need to inherit from the global defaults (#1232)
+  actions          = {},
 }
 
 M.defaults.diagnostics          = {
