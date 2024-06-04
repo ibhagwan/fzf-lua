@@ -14,20 +14,18 @@ end, {
   nargs = "*",
   range = true,
   complete = function(_, line)
+    local cmp_src = require("fzf-lua.cmp_src")
+    if package.loaded.cmp and not cmp_src._registered then
+      cmp_src._register_cmdline()
+    end
     -- Workaround to trigger cmp completion at `keyword_length=0`
     -- doesn't work properly, causes the 2nd+ completion to not
     -- get called until an additional space is pressed
     -- https://github.com/hrsh7th/nvim-cmp/discussions/1885
     -- print("called", #line, line, line:match("%s+$") ~= nil)
-    -- if require("fzf-lua.cmp_src")._registered then
-    --   require("fzf-lua.cmp_src")._complete()
+    -- if cmp_src._registered then
+    --   cmp_src._complete()
     -- end
     return require("fzf-lua.cmd")._candidates(line)
   end,
 })
-
--- If available register as nvim-cmp source
-local ok, _ = pcall(require, "cmp")
-if ok then
-  require("fzf-lua.cmp_src")._register_cmdline()
-end
