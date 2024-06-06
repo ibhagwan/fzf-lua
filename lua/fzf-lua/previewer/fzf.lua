@@ -338,6 +338,7 @@ function Previewer.git_diff:cmdline(o)
       end
     end
     if not cmd then return "" end
+    if type(cmd) == "table" then return table.concat(cmd, " ") end
     local pager = ""
     if self.pager and #self.pager > 0 and
         vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
