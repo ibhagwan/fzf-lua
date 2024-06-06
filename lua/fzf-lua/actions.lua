@@ -9,25 +9,25 @@ local _default_action = "default"
 
 -- return fzf '--expect=' string from actions keyval tbl
 -- on fzf >= 0.53 add the `prefix` key to the bind flags
-M.expect = function(actions, _)
+-- https://github.com/junegunn/fzf/issues/3829#issuecomment-2143235993
+M.expect = function(actions, opts)
   if not actions then return nil end
   local keys = {}
   local binds = {}
   for k, v in pairs(actions) do
     local is_default = k == _default_action
-    if not is_default and v ~= false then
+    local use_bind = type(v) == "table" and type(v.prefix) == "string"
+        -- `print(...)` action was only added with fzf 0.53
+        and opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53
+    if not use_bind and not is_default and v ~= false then
       table.insert(keys, k)
-    end
-    -- Although this only works in fzf 0.53 we don't need to limit the use of these
-    -- actions as `--expect` precets the bind and thus the extra bind has no effect
-    if type(v) == "table" and type(v.prefix) == "string" then
-      table.insert(binds, string.format("%s:%s%s",
+    elseif use_bind then
+      table.insert(binds, string.format("%s:print(%s)%s%s+accept",
         is_default and "enter" or k,
-        -- When used with `--expect` "accept" is implied and "+" is erroneous
-        v.prefix:gsub("accept$", ""):gsub("%+$", ""),
-        -- Since default accept bind (enter) is excluded from `--expect`
-        -- we need to add "+accept" to complete the selection and exit fzf
-        is_default and "+accept" or ""))
+        is_default and "enter" or k,
+        v.prefix and "+" or "",
+        v.prefix and v.prefix:gsub("accept$", ""):gsub("%+$", "") or ""
+      ))
     end
   end
   return #keys > 0 and keys or nil, #binds > 0 and binds or nil
@@ -48,10 +48,10 @@ M.normalize_selected = function(actions, selected)
   if not actions or not selected then return end
   local action = _default_action
   if utils.tbl_count(actions) > 1 or not actions[_default_action] then
-    -- keybind should be in item #1
-    -- default keybind is an empty string
-    -- so we leave that as "default"
-    if #selected[1] > 0 then
+    -- After removal of query (due to `--print-query`), keybind should be in item #1
+    -- when `--expect` is present, default keybind prints an empty string, leave  as "default"
+    -- on fzf 0.53 we set default to "enter", also leave as "default" for backward compat
+    if #selected[1] > 0 and selected[1] ~= "enter" then
       action = selected[1]
     end
     -- entries are items #2+
