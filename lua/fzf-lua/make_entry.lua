@@ -163,6 +163,7 @@ M.rg_insert_args = function(cmd, args, relocate_pattern)
 end
 
 M.preprocess = function(opts)
+  local EOL = opts.multiline and "\0" or "\n"
   local argv = function(i, debug)
     -- argv1 is actually the 7th argument if we count
     -- arguments already supplied by 'wrap_spawn_stdio'.
@@ -170,13 +171,13 @@ M.preprocess = function(opts)
     local idx = tonumber(i) and tonumber(i) + 6 or #vim.v.argv
     local arg = vim.v.argv[idx]
     if debug == "v" or debug == "verbose" then
-      io.stdout:write(("[DEBUGV]: raw_argv(%d) = %s\n"):format(idx, arg))
+      io.stdout:write(("[DEBUGV]: raw_argv(%d) = %s" .. EOL):format(idx, arg))
     end
     if utils.__IS_WINDOWS then
       arg = libuv.unescape_fzf(arg, opts.__FZF_VERSION)
     end
     if debug == "v" or debug == "verbose" then
-      io.stdout:write(("[DEBUGV]: esc_argv(%d) = %s\n"):format(idx, libuv.shellescape(arg)))
+      io.stdout:write(("[DEBUGV]: esc_argv(%d) = %s" .. EOL):format(idx, libuv.shellescape(arg)))
     end
     return arg
   end
@@ -394,6 +395,15 @@ M.file = function(x, opts)
         -- filename is ansi escape colored, replace the inner string (#819)
         and file_part:gsub(utils.lua_regex_escape(stripped_filepath), filepath)
         or filepath
+  end
+  -- multiline is only enabled with grep-like output PATH:LINE:COL:
+  if opts.multiline and rest_of_line then
+    opts.multiline = tonumber(opts.multiline) or 1
+    local match = rest_of_line:match("^:.+:.+:") or rest_of_line:match("^:.+:")
+    rest_of_line = match .. "\n" .. string.rep(" ", 4) .. rest_of_line:sub(#match + 1)
+    if opts.multiline > 1 then
+      rest_of_line = rest_of_line .. "\n"
+    end
   end
   ret[#ret + 1] = rest_of_line
   return table.concat(ret)

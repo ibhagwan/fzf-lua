@@ -623,6 +623,9 @@ M.build_fzf_cli = function(opts)
   then
     opts.fzf_opts["--info"] = "inline"
   end
+  if opts._is_skim or opts.__FZF_VERSION and opts.__FZF_VERSION < 0.53 then
+    opts.fzf_opts["--highlight-line"] = nil
+  end
   if opts._is_skim then
     -- skim (rust version of fzf) doesn't support the '--info=' flag
     local info = opts.fzf_opts["--info"]
@@ -705,6 +708,7 @@ M.mt_cmd_wrapper = function(opts)
       "stderr",
       "stderr_to_stdout",
       "formatter",
+      "multiline",
       "git_dir",
       "git_worktree",
       "git_icons",

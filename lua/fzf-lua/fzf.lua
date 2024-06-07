@@ -63,6 +63,18 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     utils.tbl_join(cmd, { opts.fzf_cli_args })
   end
 
+  local function get_EOL(flag)
+    for _, f in ipairs(cmd) do
+      if f:match("%-%-" .. flag) then
+        return "\0"
+      end
+    end
+    return "\n"
+  end
+
+  local readEOL = get_EOL("read0")
+  local printEOL = get_EOL("print0")
+
   if contents then
     if type(contents) == "string" and #contents > 0 then
       if opts.silent_fail ~= false then
@@ -162,7 +174,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     if nl then
       return function(usrdata, cb)
         if not end_of_data(usrdata, cb) then
-          write_cb(tostring(usrdata) .. "\n", cb)
+          write_cb(tostring(usrdata) .. readEOL, cb)
         end
       end
     else
@@ -181,7 +193,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       if type(contents) == "table" then
         if not utils.tbl_isempty(contents) then
           write_cb(vim.tbl_map(function(x)
-            return x .. "\n"
+            return x .. readEOL
           end, contents))
         end
         finish(4)
@@ -288,9 +300,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       local output = {}
       local f = io.open(outputtmpname)
       if f then
-        for v in f:lines() do
-          table.insert(output, v)
-        end
+        output = vim.split(f:read("*a"), printEOL)
+        -- `file:read("*a")` appends an empty string on EOL
+        output[#output] = nil
         f:close()
       end
       finish(1)

@@ -114,11 +114,12 @@ M.defaults                      = {
   },
   fzf_bin       = nil,
   fzf_opts      = {
-    ["--ansi"]   = true,
-    ["--info"]   = "inline-right",
-    ["--height"] = "100%",
-    ["--layout"] = "reverse",
-    ["--border"] = "none",
+    ["--ansi"]           = true,
+    ["--info"]           = "inline-right",
+    ["--height"]         = "100%",
+    ["--layout"]         = "reverse",
+    ["--border"]         = "none",
+    ["--highlight-line"] = true,
   },
   fzf_tmux_opts = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
   previewers    = {

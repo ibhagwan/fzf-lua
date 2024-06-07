@@ -1201,7 +1201,7 @@ function FzfWin:update_title(title)
 
   local suffix = fn.strcharpart(top, width_title + fn.strwidth(prefix), width)
   local line = ("%s%s%s"):format(prefix, title, suffix)
-  api.nvim_buf_set_lines(border_buf, 0, 1, true, { line })
+  pcall(api.nvim_buf_set_lines, border_buf, 0, 1, true, { line })
 
   if self.hls.preview_title and #title > 0 then
     pcall(vim.api.nvim_win_call, self.border_winid, function()

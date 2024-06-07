@@ -672,11 +672,12 @@ require'fzf-lua'.setup {
     -- set to `false` to remove a flag
     -- set to `true` for a no-value flag
     -- for raw args use `fzf_args` instead
-    ["--ansi"]        = true,
-    ["--info"]        = "inline-right", -- fzf < v0.42 = "inline"
-    ["--height"]      = "100%",
-    ["--layout"]      = "reverse",
-    ["--border"]      = "none",
+    ["--ansi"]           = true,
+    ["--info"]           = "inline-right", -- fzf < v0.42 = "inline"
+    ["--height"]         = "100%",
+    ["--layout"]         = "reverse",
+    ["--border"]         = "none",
+    ["--highlight-line"] = true,           -- fzf >= v0.53
   },
   -- Only used when fzf_bin = "fzf-tmux", by default opens as a
   -- popup 80% width, 80% height (note `-p` requires tmux > 3.2)
@@ -987,6 +988,11 @@ require'fzf-lua'.setup {
     --   ...
     --   return new_query, flags
     -- end,
+    --
+    -- Enable with narrow term width, split results to multiple lines
+    -- NOTE: multiline requires fzf >= v0.53 and is ignored otherwise
+    -- multiline      = 1,      -- Display as: PATH:LINE:COL\nTEXT
+    -- multiline      = 2,      -- Display as: PATH:LINE:COL\nTEXT\n
     actions = {
       -- actions inherit from 'actions.files' and merge
       -- this action toggles between 'grep' and 'live_grep'

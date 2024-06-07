@@ -362,7 +362,7 @@ function Previewer.base:scroll(direction)
         -- we therefore need special handling for both scenarios with `ctrl-b`:
         --   (1) If the cursor is at line 1, do nothing
         --   (2) Else, test the cursor before and after, if the new position is further
-        --       down the buffer than the original, we're in the first page ,goto line 1 
+        --       down the buffer than the original, we're in the first page ,goto line 1
         local is_ctrl_b = string.byte(input, 1) == 2
         local pos = is_ctrl_b and vim.api.nvim_win_get_cursor(0)
         if is_ctrl_b and pos[1] == 1 then return end
@@ -689,7 +689,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
         }
       end
       if lines then
-        vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+        pcall(vim.api.nvim_buf_set_lines, tmpbuf, 0, -1, false, lines)
         -- swap preview buffer with new one
         self:set_preview_buf(tmpbuf)
         self:preview_buf_post(entry)

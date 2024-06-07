@@ -122,6 +122,7 @@ end
 ---@param fn_transform function?
 ---@param fn_done function?
 M.spawn = function(opts, fn_transform, fn_done)
+  local EOL = opts.EOL or "\n"
   local output_pipe = uv.new_pipe(false)
   local error_pipe = uv.new_pipe(false)
   local write_cb_count = 0
@@ -225,7 +226,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     -- table at once as opposed to calling 'write_cb' for
     -- every line after 'fn_transform'
     if #lines > 0 then
-      write_cb(table.concat(lines, "\n") .. "\n")
+      write_cb(table.concat(lines, EOL) .. EOL)
     end
   end
 
@@ -284,7 +285,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     -- uv.spawn failed, error will be in 'pid'
     -- call once to output the error message
     -- and second time to signal EOF (data=nil)
-    err_cb(nil, pid .. "\n")
+    err_cb(nil, pid .. EOL)
     err_cb(pid, nil)
   else
     output_pipe:read_start(read_cb)
@@ -328,6 +329,7 @@ M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess)
       cb_finish = on_finish,
       cb_write = on_write,
       cb_pid = opts.cb_pid,
+      EOL = opts.multiline and "\0" or "\n"
     }, fn_transform)
   end
 end
@@ -369,6 +371,8 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str)
     assert(type(opts) == "table")
   end
 
+  local EOL = opts.multiline and "\0" or "\n"
+
   -- stdin/stdout are already buffered, not stderr. This means
   -- that every character is flushed immediately which caused
   -- rendering issues on Mac (#316, #287) and Linux (#414)
@@ -387,24 +391,25 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str)
   for k, v in pairs(opts.g or {}) do
     _G[k] = v
     if opts.debug == "v" or opts.debug == "verbose" then
-      io.stdout:write(string.format("[DEBUGV]: %s=%s\n", k, v))
+      io.stdout:write(string.format("[DEBUGV]: %s=%s" .. EOL, k, v))
     end
   end
 
   local fn_transform = load_fn(fn_transform_str)
   local fn_preprocess = load_fn(fn_preprocess_str)
 
+
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
 
   if opts.debug == "v" or opts.debug == "verbose" then
     for k, v in pairs(opts) do
-      io.stdout:write(string.format("[DEBUGV]: %s=%s\n", k, v))
+      io.stdout:write(string.format("[DEBUGV]: %s=%s" .. EOL, k, v))
     end
-    io.stdout:write(string.format("[DEBUGV]: fn_transform=%s\n", fn_transform_str))
-    io.stdout:write(string.format("[DEBUGV]: fn_preprocess=%s\n", fn_preprocess_str))
+    io.stdout:write(string.format("[DEBUGV]: fn_transform=%s" .. EOL, fn_transform_str))
+    io.stdout:write(string.format("[DEBUGV]: fn_preprocess=%s" .. EOL, fn_preprocess_str))
   elseif opts.debug then
-    io.stdout:write("[DEBUG]: " .. opts.cmd .. "\n")
+    io.stdout:write("[DEBUG]: " .. opts.cmd .. EOL)
   end
 
   local stderr, stdout = nil, nil
@@ -427,7 +432,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str)
     if not pipename then return end
     local fd = uv.fs_open(pipename, "w", -1)
     if type(fd) ~= "number" then
-      exit(1, ("error opening '%s': %s\n"):format(pipename, fd))
+      exit(1, ("error opening '%s': %s" .. EOL):format(pipename, fd))
     end
     local pipe = uv.new_pipe(false)
     pipe:open(fd)
@@ -449,7 +454,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str)
         -- don't really need to do anything since the
         -- processes will be killed anyways with os.exit()
         if err then
-          stderr_write(("pipe:write error: %s\n"):format(err))
+          stderr_write(("pipe:write error: %s" .. EOL):format(err))
         end
         if cb then cb(err) end
       end)
@@ -479,7 +484,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str)
           -- cb with an err ends the process
           local rc, err = io.stdout:write(data)
           if not rc then
-            stderr_write(("io.stdout:write error: %s\n"):format(err))
+            stderr_write(("io.stdout:write error: %s" .. EOL):format(err))
             cb(err or true)
           else
             cb(nil)
@@ -506,6 +511,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str)
       cb_finish = on_finish,
       cb_write = on_write,
       cb_err = on_err,
+      EOL = EOL,
     },
     fn_transform and function(x)
       return fn_transform(x, opts)

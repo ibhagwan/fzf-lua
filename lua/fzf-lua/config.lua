@@ -487,6 +487,15 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
+  if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 and opts.multiline then
+    -- If `multiline` was specified we add both "read0" & "print0" flags
+    opts.fzf_opts["--read0"] = true
+    opts.fzf_opts["--print0"] = true
+  else
+    -- If not possible (fzf v<0.53|skim), nullify the option
+    opts.multiline = nil
+  end
+
   -- are we using fzf-tmux, if so get available columns
   opts._is_fzf_tmux = vim.env.TMUX and opts.fzf_bin:match("fzf%-tmux$")
   if opts._is_fzf_tmux then
