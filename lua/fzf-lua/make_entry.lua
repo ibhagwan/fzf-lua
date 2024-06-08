@@ -399,10 +399,17 @@ M.file = function(x, opts)
   -- multiline is only enabled with grep-like output PATH:LINE:COL:
   if opts.multiline and rest_of_line then
     opts.multiline = tonumber(opts.multiline) or 1
-    local match = rest_of_line:match("^:.+:.+:") or rest_of_line:match("^:.+:")
-    rest_of_line = match .. "\n" .. string.rep(" ", 4) .. rest_of_line:sub(#match + 1)
-    if opts.multiline > 1 then
-      rest_of_line = rest_of_line .. "\n"
+    -- Sould match both colored and non colored versions of
+    -- PATH:LINE:TEXT and PATH:LINE:COL:TEXT
+    local ansi_num = "[%[%d;m]"
+    local filespec = rest_of_line:match(string.format("^:%s-:%s-:", ansi_num, ansi_num))
+        or rest_of_line:match(string.format("^:%s-:", ansi_num))
+    if filespec then
+      rest_of_line = filespec
+          .. "\n"
+          .. string.rep(" ", 4)
+          .. rest_of_line:sub(#filespec + 1)
+          .. (opts.multiline > 1 and "\n" or "")
     end
   end
   ret[#ret + 1] = rest_of_line
