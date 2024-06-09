@@ -529,7 +529,8 @@ M.create_fzf_colors = function(opts)
   return not utils.tbl_isempty(tbl) and table.concat(tbl, ",")
 end
 
-M.create_fzf_binds = function(binds)
+M.create_fzf_binds = function(opts)
+  local binds = opts.keymap.fzf
   if not binds or utils.tbl_isempty(binds) then return end
   local tbl = {}
   local dedup = {}
@@ -543,6 +544,16 @@ M.create_fzf_binds = function(binds)
     end
   end
   for key, action in pairs(dedup) do
+    -- Since we no longer use `--expect` any bind that contains `accept`
+    -- should be assumed to "accept" the default action, using `--expect`
+    -- that meant printing an empty string for the default enter key
+    if opts.__FZF_VERSION
+        and opts.__FZF_VERSION >= 0.53
+        and action:match("accept")
+        and not action:match("print(.-)%+accept")
+    then
+      action = action:gsub("accept", "print()+accept")
+    end
     table.insert(tbl, string.format("%s:%s", key, action))
   end
   return table.concat(tbl, ",")
@@ -592,7 +603,7 @@ M.build_fzf_cli = function(opts)
       opts.fzf_opts["--preview"] = preview_cmd
     end
   end
-  opts.fzf_opts["--bind"] = M.create_fzf_binds(opts.keymap.fzf)
+  opts.fzf_opts["--bind"] = M.create_fzf_binds(opts)
   opts.fzf_opts["--color"] = M.create_fzf_colors(opts)
   do
     -- `actions.expect` parses the actions table and returns a list of
