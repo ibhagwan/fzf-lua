@@ -12,25 +12,29 @@ local _default_action = "default"
 -- https://github.com/junegunn/fzf/issues/3829#issuecomment-2143235993
 M.expect = function(actions, opts)
   if not actions then return nil end
-  local keys = {}
+  local expect = {}
   local binds = {}
   for k, v in pairs(actions) do
+    if not v then goto continue end
     local is_default = k == _default_action
-    local use_bind = type(v) == "table" and type(v.prefix) == "string"
-        -- `print(...)` action was only added with fzf 0.53
-        and opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53
-    if not use_bind and not is_default and v ~= false then
-      table.insert(keys, k)
-    elseif use_bind then
+    k = is_default and "enter" or k
+    v = type(v) == "table" and v or { fn = v }
+    if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 then
+      -- `print(...)` action was only added with fzf 0.53
+      -- NOTE: we can no longer combine `--expect` and `--bind` as this will
+      -- print an extra empty line regardless of the pressaed keybind (#1241)
       table.insert(binds, string.format("%s:print(%s)%s%s+accept",
-        is_default and "enter" or k,
-        is_default and "enter" or k,
+        k,
+        k,
         v.prefix and "+" or "",
         v.prefix and v.prefix:gsub("accept$", ""):gsub("%+$", "") or ""
       ))
+    elseif not is_default then
+      table.insert(expect, k)
     end
+    ::continue::
   end
-  return #keys > 0 and keys or nil, #binds > 0 and binds or nil
+  return #expect > 0 and expect or nil, #binds > 0 and binds or nil
 end
 
 M.normalize_selected = function(actions, selected)
