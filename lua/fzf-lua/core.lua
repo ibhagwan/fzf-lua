@@ -474,6 +474,10 @@ end
 -- Create fzf --color arguments from a table of vim highlight groups.
 M.create_fzf_colors = function(opts)
   local colors = opts and opts.fzf_colors
+  -- use the fzf_colors based on the Neovim colorscheme
+  if colors == true then
+    colors = config.defaults.fzf_colorscheme
+  end
   if type(colors) == "function" then
     colors = colors(opts)
   end

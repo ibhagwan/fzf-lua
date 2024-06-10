@@ -1096,4 +1096,24 @@ M.defaults.__WINOPTS            = {
   },
 }
 
+M.defaults.fzf_colorscheme = {
+  ["fg"] = { "fg", "FzfColorsNormal" },
+  ["bg"] = { "bg", "FzfColorsNormal" },
+  ["hl"] = { "fg", "FzfColorsMatch" },
+  ["fg+"] = { "fg", "FzfColorsCursorLine" },
+  ["bg+"] = { "bg", "FzfColorsCursorLine" },
+  ["hl+"] = { "fg", "FzfColorsMatch" },
+  ["info"] = { "fg", "FzfColorsInfo" },
+  ["border"] = { "fg", "FzfColorsBorder" },
+  ["separator"] = { "fg", "FzfColorsSeparator" },
+  ["scrollbar"] = { "fg", "FzfColorsScrollbar" },
+  ["gutter"] = { "bg", "FzfColorsGutter" },
+  ["query"] = { "fg", "FzfColorsQuery", "regular" },
+  ["prompt"] = { "fg", "FzfColorsPrompt" },
+  ["pointer"] = { "fg", "FzfColorsPointer" },
+  ["marker"] = { "fg", "FzfColorsMarker" },
+  ["spinner"] = { "fg", "FzfColorsSpinner" },
+  ["header"] = { "fg", "FzfColorsHeader" },
+}
+
 return M
