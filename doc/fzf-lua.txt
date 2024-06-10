@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2024 June 07
+*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2024 June 10
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -148,7 +148,7 @@ DEPENDENCIES                                            *fzf-lua-dependencies*
 
 
 - `neovim` <https://github.com/neovim/neovim/releases> version > `0.5.0`
-- `fzf` <https://github.com/junegunn/fzf> version > `0.24` **or** `skim`
+- `fzf` <https://github.com/junegunn/fzf> version > `0.25` **or** `skim`
   <https://github.com/lotabout/skim> binary installed
 - nvim-web-devicons <https://github.com/nvim-tree/nvim-web-devicons>
   (optional)
@@ -779,7 +779,14 @@ open an issue and I'll be more than happy to help.**
       -- and removes the sides margin added by `fzf-tmux` (fzf#3162)
       -- for more options run `fzf-tmux --help`
       fzf_tmux_opts       = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
-      -- fzf's `--color=` arguments (optional)
+      -- 
+      -- Set fzf's terminal colorscheme (optional)
+      --
+      -- Set to `true` to automatically generate an fzf's colorscheme from
+      -- Neovim's current colorscheme:
+      -- fzf_colors       = true,
+      -- 
+      -- Building a custom colorscheme, has the below specifications:
       -- If rhs is of type "string" rhs will be passed raw, e.g.:
       --   `["fg"] = "underline"` will be translated to `--color fg:underline`
       -- If rhs is of type "table", the following convention is used:
@@ -1452,19 +1459,33 @@ temporarily overridden by its corresponding `winopts` option:
 |FzfLuaScrollFloatFull  |PmenuThumb   |`hls.scrollfloat_f` |Builtin preview `float` scroll full|
 |FzfLuaHelpNormal       |FzfLuaNormal |`hls.help_normal`   |Help win `fg/bg`|
 |FzfLuaHelpBorder       |FzfLuaBorder |`hls.help_border`   |Help win border|
-|FzfLuaHeaderBind  |*BlanchedAlmond   |`hls.header_bind`   |Header keybind|
-|FzfLuaHeaderText  |*Brown1           |`hls.header_text`   |Header text|
-|FzfLuaPathColNr   |*CadetBlue1       |`hls.path_colnr`    |Path col nr (`lines,qf,lsp,diag`)|
-|FzfLuaPathLineNr  |*LightGreen       |`hls.path_linenr`   |Path line nr (`lines,qf,lsp,diag`)|
-|FzfLuaBufName     |*LightMagenta     |`hls.buf_name`      |Buffer name (`lines`)|
-|FzfLuaBufNr       |*BlanchedAlmond   |`hls.buf_nr`        |Buffer number (all buffers)|
-|FzfLuaBufFlagCur  |*Brown1           |`hls.buf_flag_cur`  |Buffer line (`buffers`)|
-|FzfLuaBufFlagAlt  |*CadetBlue1       |`hls.buf_flag_alt`  |Buffer line (`buffers`)|
-|FzfLuaTabTitle    |*LightSkyBlue1    |`hls.tab_title`     |Tab title (`tabs`)|
-|FzfLuaTabMarker   |*BlanchedAlmond   |`hls.tab_marker`    |Tab marker (`tabs`)|
-|FzfLuaDirIcon     |Directory         |`hls.dir_icon`      |Paths directory icon|
-|FzfLuaDirPart     |Comment           |`hls.dir_part`      |Directory hl when `formatter=path.filename_first`|
-|FzfLuaLiveSym     |*Brown1           |`hls.live_sym`      |LSP live symbols query match|
+|FzfLuaHeaderBind   |*BlanchedAlmond  |`hls.header_bind`   |Header keybind|
+|FzfLuaHeaderText   |*Brown1          |`hls.header_text`   |Header text|
+|FzfLuaPathColNr    |*CadetBlue1      |`hls.path_colnr`    |Path col nr (`lines,qf,lsp,diag`)|
+|FzfLuaPathLineNr   |*LightGreen      |`hls.path_linenr`   |Path line nr (`lines,qf,lsp,diag`)|
+|FzfLuaBufName      |*LightMagenta    |`hls.buf_name`      |Buffer name (`lines`)|
+|FzfLuaBufNr        |*BlanchedAlmond  |`hls.buf_nr`        |Buffer number (all buffers)|
+|FzfLuaBufFlagCur   |*Brown1          |`hls.buf_flag_cur`  |Buffer line (`buffers`)|
+|FzfLuaBufFlagAlt   |*CadetBlue1      |`hls.buf_flag_alt`  |Buffer line (`buffers`)|
+|FzfLuaTabTitle     |*LightSkyBlue1   |`hls.tab_title`     |Tab title (`tabs`)|
+|FzfLuaTabMarker    |*BlanchedAlmond  |`hls.tab_marker`    |Tab marker (`tabs`)|
+|FzfLuaDirIcon      |Directory        |`hls.dir_icon`      |Paths directory icon|
+|FzfLuaDirPart      |Comment          |`hls.dir_part`      |Directory hl when `formatter=path.filename_first`|
+|FzfLuaLiveSym      |*Brown1          |`hls.live_sym`      |LSP live symbols query match|
+|FzfLuaFzfNormal    |FzfLuaNormal     |`fzf.normal`        |fzf's `fg\|bg`|
+|FzfLuaFzfCursorLine|FzfLuaCursorLine |`fzf.cursorline`    |fzf's `fg+\|bg+`|
+|FzfLuaFzfMatch     |Special          |`fzf.match`         |fzf's `hl+`|
+|FzfLuaFzfBorder    |FzfLuaBorder     |`fzf.border`        |fzf's `border`|
+|FzfLuaFzfScrollbar |FzfLuaFzfBorder  |`fzf.scrollbar`     |fzf's `scrollbar`|
+|FzfLuaFzfSeparator |FzfLuaFzfBorder  |`fzf.separator`     |fzf's `separator`|
+|FzfLuaFzfGutter    |FzfLuaNormal     |`fzf.gutter`        |fzf's `gutter` (hl `bg` is used)|
+|FzfLuaFzfHeader    |FzfLuaTitle      |`fzf.header`        |fzf's `header`|
+|FzfLuaFzfInfo      |NonText          |`fzf.info`          |fzf's `info`|
+|FzfLuaFzfPointer   |Special          |`fzf.pointer`       |fzf's `pointer`|
+|FzfLuaFzfMarker    |FzfLuaFzfPointer |`fzf.marker`        |fzf's `marker`|
+|FzfLuaFzfSpinner   |FzfLuaFzfPointer |`fzf.spinner`       |fzf's `spinner`|
+|FzfLuaFzfPrompt    |Special          |`fzf.prompt`        |fzf's `prompt`|
+|FzfLuaFzfQuery     |FzfLuaNormal     |`fzf.query`         |fzf's `header`|
 
 <sup><sub>&ast;Not a highlight group, RGB color from
 `nvim_get_color_map`</sub></sup>
@@ -1500,8 +1521,18 @@ Permanent global override via `setup`:
 FZF COLORS                                                *fzf-lua-fzf-colors*
 
 Fzf's terminal colors are controlled by fzf's `--color` flag which can be
-configured during setup via `fzf_colors` (see `man fzf` for all color
-options):
+configured during setup via `fzf_colors`.
+
+Set to `true` to have fzf-lua automatically generate an fzf colorscheme from
+your current Neovim colorscheme:
+
+>lua
+    require("fzf-lua").setup({ fzf_colors = true })
+    -- Or in the direct call options
+    :lua require("fzf-lua").files({ fzf_colors = true })
+    :FzfLua files fzf_colors=true
+<
+Customizing the fzf colorscheme (see `man fzf` for all color options):
 
 >lua
     require('fzf-lua').setup {
