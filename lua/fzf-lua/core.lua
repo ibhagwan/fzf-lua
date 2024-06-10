@@ -27,6 +27,16 @@ M.ACTION_DEFINITIONS = {
       end
     end,
   },
+  [actions.toggle_hidden]     = {
+    function(o)
+      local flag = o.toggle_hidden_flag or "--hidden"
+      if o.cmd and o.cmd:match(utils.lua_regex_escape(flag)) then
+        return "Exclude hidden files"
+      else
+        return "Include hidden files"
+      end
+    end,
+  },
   [actions.grep_lgrep]        = {
     function(o)
       if o.fn_reload then
