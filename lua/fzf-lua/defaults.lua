@@ -1097,23 +1097,23 @@ M.defaults.__WINOPTS            = {
 }
 
 M.defaults.fzf_colorscheme = {
-  ["fg"] = { "fg", "FzfLuaColorsNormal" },
-  ["bg"] = { "bg", "FzfLuaColorsNormal" },
-  ["hl"] = { "fg", "FzfLuaColorsMatch" },
-  ["fg+"] = { "fg", "FzfLuaColorsCursorLine" },
-  ["bg+"] = { "bg", "FzfLuaColorsCursorLine" },
-  ["hl+"] = { "fg", "FzfLuaColorsMatch" },
-  ["info"] = { "fg", "FzfLuaColorsInfo" },
-  ["border"] = { "fg", "FzfLuaColorsBorder" },
+  ["fg"]        = { "fg", "FzfLuaColorsNormal" },
+  ["bg"]        = { "bg", "FzfLuaColorsNormal" },
+  ["hl"]        = { "fg", "FzfLuaColorsMatch" },
+  ["fg+"]       = { "fg", "FzfLuaColorsCursorLine" },
+  ["bg+"]       = { "bg", "FzfLuaColorsCursorLine" },
+  ["hl+"]       = { "fg", "FzfLuaColorsMatch" },
+  ["info"]      = { "fg", "FzfLuaColorsInfo" },
+  ["border"]    = { "fg", "FzfLuaColorsBorder" },
   ["separator"] = { "fg", "FzfLuaColorsSeparator" },
   ["scrollbar"] = { "fg", "FzfLuaColorsScrollbar" },
-  ["gutter"] = { "bg", "FzfLuaColorsGutter" },
-  ["query"] = { "fg", "FzfLuaColorsQuery", "regular" },
-  ["prompt"] = { "fg", "FzfLuaColorsPrompt" },
-  ["pointer"] = { "fg", "FzfLuaColorsPointer" },
-  ["marker"] = { "fg", "FzfLuaColorsMarker" },
-  ["spinner"] = { "fg", "FzfLuaColorsSpinner" },
-  ["header"] = { "fg", "FzfLuaColorsHeader" },
+  ["gutter"]    = { "bg", "FzfLuaColorsGutter" },
+  ["query"]     = { "fg", "FzfLuaColorsQuery", "regular" },
+  ["prompt"]    = { "fg", "FzfLuaColorsPrompt" },
+  ["pointer"]   = { "fg", "FzfLuaColorsPointer" },
+  ["marker"]    = { "fg", "FzfLuaColorsMarker" },
+  ["spinner"]   = { "fg", "FzfLuaColorsSpinner" },
+  ["header"]    = { "fg", "FzfLuaColorsHeader" },
 }
 
 return M
