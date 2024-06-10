@@ -587,6 +587,93 @@ Type: `string`, Default: `FzfLuaLiveSym`
 
 Highlight group for the matched characters in `lsp_live_workspace_symbols`.
 
+#### globals.hls.fzf.normal
+
+Type: `string`, Default: `FzfLuaFzfNormal`
+
+Highlight group for fzf's `fg` and `bg`, by default links to `FzfLuaNormal`.
+
+#### globals.hls.fzf.cursorline
+
+Type: `string`, Default: `FzfLuaFzfCursorLine`
+
+Highlight group for fzf's `fg+` and `bg+`, by default links to `FzfLuaCursorLine`.
+
+#### globals.hls.fzf.match
+
+Type: `string`, Default: `FzfLuaFzfMatch`
+
+Highlight group for fzf's `hl+`, by default links to `Special`.
+
+#### globals.hls.fzf.border
+
+Type: `string`, Default: `FzfLuaFzfBorder`
+
+Highlight group for fzf's `border`, by default links to `FzfLuaBorder`.
+
+#### globals.hls.fzf.scrollbar
+
+Type: `string`, Default: `FzfLuaFzfScrollbar`
+
+Highlight group for fzf's `border`, by default links to `FzfLuaFzfBorder`.
+
+#### globals.hls.fzf.separator
+
+Type: `string`, Default: `FzfLuaFzfSeparator`
+
+Highlight group for fzf's `separator`, by default links to `FzfLuaFzfBorder`.
+
+#### globals.hls.fzf.gutter
+
+Type: `string`, Default: `FzfLuaFzfGutter`
+
+Highlight group for fzf's `gutter`, by default links to `FzfLuaFzfBorder`.
+
+> **NOTE**: `bg` property of the highlight group will be used.
+
+#### globals.hls.fzf.header
+
+Type: `string`, Default: `FzfLuaFzfHeader`
+
+Highlight group for fzf's `header`, by default links to `FzfLuaTitle`.
+
+#### globals.hls.fzf.info
+
+Type: `string`, Default: `FzfLuaFzfInfo`
+
+Highlight group for fzf's `info`, by default links to `NonText`.
+
+#### globals.hls.fzf.pointer
+
+Type: `string`, Default: `FzfLuaFzfPointer`
+
+Highlight group for fzf's `pointer`, by default links to `Special`.
+
+#### globals.hls.fzf.marker
+
+Type: `string`, Default: `FzfLuaFzfMarker`
+
+Highlight group for fzf's `marker`, by default links to `FzfLuaFzfPointer`.
+
+#### globals.hls.fzf.spinner
+
+Type: `string`, Default: `FzfLuaFzfSpinner`
+
+Highlight group for fzf's `spinner`, by default links to `FzfLuaFzfPointer`.
+
+#### globals.hls.fzf.prompt
+
+Type: `string`, Default: `FzfLuaFzfPrompt`
+
+Highlight group for fzf's `prompt`, by default links to `Special`.
+
+#### globals.hls.fzf.query
+
+Type: `string`, Default: `FzfLuaFzfQuery`
+
+Highlight group for fzf's `query`, by default links to `FzfLuaNormal` and
+sets text to `regular` (non-bold).
+
 ---
 
 ## Pickers

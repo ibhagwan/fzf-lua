@@ -1071,6 +1071,22 @@ M.defaults.__HLS                = {
   dir_icon       = "FzfLuaDirIcon",
   dir_part       = "FzfLuaDirPart",
   live_sym       = "FzfLuaLiveSym",
+  fzf            = {
+    normal     = "FzfLuaFzfNormal",
+    cursorline = "FzfLuaFzfCursorLine",
+    match      = "FzfLuaFzfMatch",
+    border     = "FzfLuaFzfBorder",
+    scrollbar  = "FzfLuaFzfScrollbar",
+    separator  = "FzfLuaFzfSeparator",
+    gutter     = "FzfLuaFzfGutter",
+    header     = "FzfLuaFzfHeader",
+    info       = "FzfLuaFzfInfo",
+    pointer    = "FzfLuaFzfPointer",
+    marker     = "FzfLuaFzfMarker",
+    spinner    = "FzfLuaFzfSpinner",
+    prompt     = "FzfLuaFzfPrompt",
+    query      = "FzfLuaFzfQuery",
+  }
 }
 
 M.defaults.__WINOPTS            = {
@@ -1094,26 +1110,6 @@ M.defaults.__WINOPTS            = {
     ["▛"] = "double",
     ["█"] = "double",
   },
-}
-
-M.defaults.fzf_colorscheme = {
-  ["fg"]        = { "fg", "FzfLuaColorsNormal" },
-  ["bg"]        = { "bg", "FzfLuaColorsNormal" },
-  ["hl"]        = { "fg", "FzfLuaColorsMatch" },
-  ["fg+"]       = { "fg", "FzfLuaColorsCursorLine" },
-  ["bg+"]       = { "bg", "FzfLuaColorsCursorLine" },
-  ["hl+"]       = { "fg", "FzfLuaColorsMatch" },
-  ["info"]      = { "fg", "FzfLuaColorsInfo" },
-  ["border"]    = { "fg", "FzfLuaColorsBorder" },
-  ["separator"] = { "fg", "FzfLuaColorsSeparator" },
-  ["scrollbar"] = { "fg", "FzfLuaColorsScrollbar" },
-  ["gutter"]    = { "bg", "FzfLuaColorsGutter" },
-  ["query"]     = { "fg", "FzfLuaColorsQuery", "regular" },
-  ["prompt"]    = { "fg", "FzfLuaColorsPrompt" },
-  ["pointer"]   = { "fg", "FzfLuaColorsPointer" },
-  ["marker"]    = { "fg", "FzfLuaColorsMarker" },
-  ["spinner"]   = { "fg", "FzfLuaColorsSpinner" },
-  ["header"]    = { "fg", "FzfLuaColorsHeader" },
 }
 
 return M

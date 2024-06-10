@@ -474,12 +474,34 @@ end
 -- Create fzf --color arguments from a table of vim highlight groups.
 M.create_fzf_colors = function(opts)
   local colors = opts and opts.fzf_colors
-  -- use the fzf_colors based on the Neovim colorscheme
-  if colors == true then
-    colors = config.defaults.fzf_colorscheme
-  end
   if type(colors) == "function" then
     colors = colors(opts)
+  end
+  -- auto create `fzf_colors` based on Neovim's current colorscheme
+  if colors == true then
+    colors = {
+      ["fg"]      = { "fg", opts.hls.fzf.normal },
+      ["bg"]      = { "bg", opts.hls.fzf.normal },
+      ["hl"]      = { "fg", opts.hls.fzf.match },
+      ["fg+"]     = { "fg", opts.hls.fzf.cursorline },
+      ["bg+"]     = { "bg", opts.hls.fzf.cursorline },
+      ["hl+"]     = { "fg", opts.hls.fzf.match },
+      ["info"]    = { "fg", opts.hls.fzf.info },
+      ["border"]  = { "fg", opts.hls.fzf.border },
+      ["gutter"]  = { "bg", opts.hls.fzf.gutter },
+      ["query"]   = { "fg", opts.hls.fzf.query, "regular" },
+      ["prompt"]  = { "fg", opts.hls.fzf.prompt },
+      ["pointer"] = { "fg", opts.hls.fzf.pointer },
+      ["marker"]  = { "fg", opts.hls.fzf.marker },
+      ["spinner"] = { "fg", opts.hls.fzf.spinner },
+      ["header"]  = { "fg", opts.hls.fzf.header },
+    }
+    if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.35 then
+      colors.separator = { "fg", opts.hls.fzf.separator }
+    end
+    if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.41 then
+      colors.scrollbar = { "fg", opts.hls.fzf.scrollbar }
+    end
   end
 
   -- Inerherit from fzf.vim's g:fzf_colors
@@ -577,14 +599,13 @@ end
 ---@return string[]
 M.build_fzf_cli = function(opts)
   opts.fzf_opts = vim.tbl_extend("force", config.globals.fzf_opts, opts.fzf_opts or {})
-  -- copy from globals
-  for _, o in ipairs({
-    "fzf_ansi",
-    "fzf_colors",
-    "fzf_layout",
-    "keymap",
-  }) do
-    opts[o] = opts[o] or config.globals[o]
+  -- copy/merge from globals
+  for _, o in ipairs({ "fzf_colors", "keymap" }) do
+    if opts[o] == nil then
+      opts[o] = config.globals[o]
+    elseif type(opts[o]) == "table" and type(config.globals[o]) == "table" then
+      opts[o] = vim.tbl_deep_extend("keep", opts[o], config.globals[o])
+    end
   end
   -- below options can be specified directly in opts and will be
   -- prioritized: opts.<name> is prioritized over fzf_opts["--name"]
