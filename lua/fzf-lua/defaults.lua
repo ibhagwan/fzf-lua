@@ -271,6 +271,7 @@ M.defaults.files                = {
   rg_opts                = [[--color=never --files --hidden --follow -g "!.git"]],
   fd_opts                = "--color=never --type f --hidden --follow --exclude .git",
   toggle_ignore_flag     = "--no-ignore",
+  toggle_hidden_flag     = "--hidden",
   _actions               = function() return M.globals.actions.files end,
   actions                = { ["ctrl-g"] = { actions.toggle_ignore } },
   winopts                = { preview = { winopts = { cursorline = false } } },

@@ -850,9 +850,13 @@ M.sym_lsym = function(_, opts)
   opts.__ACT_TO({ resume = true })
 end
 
-M.toggle_ignore = function(_, opts)
+M.toggle_flag = function(_, opts)
   local o = { resume = true, cwd = opts.cwd }
-  local flag = opts.toggle_ignore_flag or "--no-ignore"
+  local flag = opts.toggle_flag
+  if not flag then
+    utils.err("'toggle_flag' not set")
+    return
+  end
   if not flag:match("^%s") then
     -- flag must be preceded by whitespace
     flag = " " .. flag
@@ -867,6 +871,16 @@ M.toggle_ignore = function(_, opts)
     o.cmd = string.format("%s%s%s", bin, flag, args)
   end
   opts.__call_fn(o)
+end
+
+M.toggle_ignore = function(_, opts)
+  local flag = opts.toggle_ignore_flag or "--no-ignore"
+  M.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = flag }))
+end
+
+M.toggle_hidden = function(_, opts)
+  local flag = opts.toggle_hidden_flag or "--hidden"
+  M.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = flag }))
 end
 
 M.tmux_buf_set_reg = function(selected, opts)
