@@ -247,7 +247,18 @@ M.defaults                      = {
           end
           return s
         end
-      }
+      },
+      hl = {
+        _to = function(o)
+          local _, escseq = utils.ansi_from_hl(o.hls.path, "foo")
+          return [[
+              return function(s, _, m)
+                return "]] .. (escseq or "") .. [["
+                  .. s .. m.utils.ansi_escseq.clear
+              end
+            ]]
+        end,
+      },
     }
   },
 }
@@ -1070,6 +1081,7 @@ M.defaults.__HLS                = {
   tab_marker     = "FzfLuaTabMarker",
   dir_icon       = "FzfLuaDirIcon",
   dir_part       = "FzfLuaDirPart",
+  path           = "FzfLuaPath",
   live_sym       = "FzfLuaLiveSym",
   fzf            = {
     normal     = "FzfLuaFzfNormal",

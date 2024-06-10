@@ -69,6 +69,7 @@ function M.setup_highlights(override)
     { "FzfLuaScrollFloatFull",   "scrollfloat_f",  { default = default, link = "PmenuThumb" } },
     { "FzfLuaDirIcon",           "dir_icon",       { default = default, link = "Directory" } },
     { "FzfLuaDirPart",           "dir_part",       { default = default, link = "Comment" } },
+    { "FzfLuaPath",              "path",           { default = default, link = "Normal" } },
     -- Fzf terminal hls, colors from `vim.api.nvim_get_color_map()`
     { "FzfLuaHeaderBind", "header_bind",
       { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond" } },
