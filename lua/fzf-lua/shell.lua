@@ -195,6 +195,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
     local reload_contents = opts.__fn_reload(args[1])
     local write_cb_count = 0
     local pipe_want_close = false
+    local EOL = opts.multiline and "\0" or "\n"
 
     -- local on_finish = function(code, sig, from, pid)
     -- print("finish", pipe, pipe_want_close, code, sig, from, pid)
@@ -257,6 +258,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         cb_finish = on_finish,
         cb_write = on_write,
         cb_pid = function(pid) M.__pid_reload = pid end,
+        EOL = EOL,
         -- must send false, 'coroutinify' adds callback as last argument
         -- which will conflict with the 'fn_transform' argument
       }, opts.__fn_transform or false)
@@ -278,13 +280,13 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
 
         -- callback with newline
         local on_write_nl = function(data, cb)
-          data = data and tostring(data) .. "\n" or nil
+          data = data and tostring(data) .. EOL or nil
           return on_write(data, cb)
         end
 
         -- callback with newline and coroutine
         local on_write_nl_co = function(data, cb)
-          data = data and tostring(data) .. "\n" or nil
+          data = data and tostring(data) .. EOL or nil
           return on_write(data, cb, opts.__co)
         end
 
