@@ -256,10 +256,10 @@ local normalize_winopts = function(o)
     winopts.relative = nil
   else
     if not winopts.row or winopts.row <= 1 then
-      winopts.row = math.floor((vim.o.lines - winopts.height) * winopts.row)
+      winopts.row = math.floor((vim.o.lines - winopts.height - 2) * winopts.row)
     end
     if not winopts.col or winopts.col <= 1 then
-      winopts.col = math.floor((vim.o.columns - winopts.width) * winopts.col)
+      winopts.col = math.floor((vim.o.columns - winopts.width - 2) * winopts.col)
     end
     winopts.col = math.min(winopts.col, max_width - winopts.width)
     winopts.row = math.min(winopts.row, max_height - winopts.height)
