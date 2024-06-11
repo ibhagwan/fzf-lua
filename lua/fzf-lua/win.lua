@@ -1371,7 +1371,7 @@ function FzfWin.toggle_help()
     for k, v in pairs(self.actions) do
       if k == "default" then k = "enter" end
       if type(v) == "table" then
-        v = config.get_action_helpstr(v[1]) or v
+        v = v.desc or config.get_action_helpstr(v[1]) or config.get_action_helpstr(v.fn) or v
       elseif v then
         v = config.get_action_helpstr(v) or v
       end
