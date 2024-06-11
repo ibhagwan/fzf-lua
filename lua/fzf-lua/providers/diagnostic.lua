@@ -171,9 +171,7 @@ M.diagnostics = function(opts)
       filename = filename,
       lnum = row + 1,
       col = col + 1,
-      text = vim.trim(opts.multiline
-        and diag.message:gsub("[\n]", " ")
-        or diag.message:match("^[^\n]+")),
+      text = vim.trim(opts.multiline and diag.message or diag.message:match("^[^\n]+")),
       type = diag.severity or 1
     }
     return buffer_diag
