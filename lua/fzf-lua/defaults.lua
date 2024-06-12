@@ -198,7 +198,11 @@ M.defaults                      = {
       filename_first = {
         -- <Tab> is used as the invisible space between the parent and the file part
         enrich = function(o)
-          o.fzf_opts = vim.tbl_extend("keep", o.fzf_opts or {}, { ["--tabstop"] = 1 })
+          o.fzf_opts = vim.tbl_extend("keep", o.fzf_opts or {}, {
+            ["--tabstop"] = 1,
+            ["--no-hscroll"] = true,
+            ["--ellipsis"] = "",
+          })
           return o
         end,
         -- underscore `_to` returns a custom to function when options could
@@ -220,7 +224,7 @@ M.defaults                      = {
                 if #_escseq > 0 then
                   parent = _escseq .. parent .. _utils.ansi_escseq.clear
                 end
-                return _path.tail(s) .. "\t" .. parent
+                return _path.tail(s) .. "\t" .. parent .. string.rep(" ", 200) .. s
               else
                 return s
               end
@@ -234,6 +238,7 @@ M.defaults                      = {
           -- the pattern below makes sure tab doesn't come from the line text
           local filename, rest = last:match("^([^:]-)\t(.+)$")
           if filename and rest then
+            rest = rest:gsub("      .*$", "")
             local parent
             if utils.__IS_WINDOWS and path.is_absolute(rest) then
               parent = rest:sub(1, 2) .. (#rest > 2 and rest:sub(3):match("^[^:]+") or "")
