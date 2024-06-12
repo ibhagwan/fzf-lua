@@ -1376,7 +1376,8 @@ temporarily overridden by its corresponding `winopts` option:
 |FzfLuaTabTitle     |*LightSkyBlue1   |`hls.tab_title`     |Tab title (`tabs`)|
 |FzfLuaTabMarker    |*BlanchedAlmond  |`hls.tab_marker`    |Tab marker (`tabs`)|
 |FzfLuaDirIcon      |Directory        |`hls.dir_icon`      |Paths directory icon|
-|FzfLuaDirPart      |Comment          |`hls.dir_part`      |Directory hl when `formatter=path.filename_first`|
+|FzfLuaDirPart      |Comment          |`hls.dir_part`      |Path formatters directory hl group|
+|FzfLuaFilePart     |FzfLuaNormal     |`hls.file_part`     |Path formatters file hl group|
 |FzfLuaLiveSym      |*Brown1          |`hls.live_sym`      |LSP live symbols query match|
 |FzfLuaFzfNormal    |FzfLuaNormal     |`fzf.normal`        |fzf's `fg\|bg`|
 |FzfLuaFzfCursorLine|FzfLuaCursorLine |`fzf.cursorline`    |fzf's `fg+\|bg+`|

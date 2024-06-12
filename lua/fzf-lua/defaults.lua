@@ -209,23 +209,29 @@ M.defaults                      = {
         -- `string.dump` (from `config.bytecode`), we use the 3rd function
         -- argument `m` to pass module imports (path, utils, etc).
         _to = function(o)
-          local _, escseq = utils.ansi_from_hl(o.hls.dir_part, "foo")
-          return [[
+          local _, hl_dir = utils.ansi_from_hl(o.hls.dir_part, "foo")
+          local _, hl_file = utils.ansi_from_hl(o.hls.file_part, "foo")
+          return ([[
             return function(s, _, m)
               local _path, _utils = m.path, m.utils
-              local _escseq = "]] .. (escseq or "") .. [["
+              local _hl_dir = "%s"
+              local _hl_file = "%s"
+              local tail = _path.tail(s)
               local parent = _path.parent(s)
+              if #_hl_file > 0 then
+                tail = _hl_file .. tail .. _utils.ansi_escseq.clear
+              end
               if parent then
                 parent = _path.remove_trailing(parent)
-                if #_escseq > 0 then
-                  parent = _escseq .. parent .. _utils.ansi_escseq.clear
+                if #_hl_dir > 0 then
+                  parent = _hl_dir .. parent .. _utils.ansi_escseq.clear
                 end
-                return _path.tail(s) .. "\t" .. parent
+                return tail .. "\t" .. parent
               else
-                return s
+                return tail
               end
             end
-          ]]
+          ]]):format(hl_dir, hl_file)
         end,
         from = function(s, _)
           local parts = utils.strsplit(s, utils.nbsp)
@@ -247,7 +253,34 @@ M.defaults                      = {
           end
           return s
         end
-      }
+      },
+      hl = {
+        -- Credit fo @folke :-)
+        -- https://github.com/ibhagwan/fzf-lua/pull/1255
+        _to = function(o)
+          local _, hl_dir = utils.ansi_from_hl(o.hls.dir_part, "foo")
+          local _, hl_file = utils.ansi_from_hl(o.hls.file_part, "foo")
+          return ([[
+            return function(s, _, m)
+              local _path, _utils = m.path, m.utils
+              local _hl_dir = "%s"
+              local _hl_file = "%s"
+              local tail = _path.tail(s)
+              local parent = _path.parent(s)
+              if #_hl_file > 0 then
+                tail = _hl_file .. tail .. _utils.ansi_escseq.clear
+              end
+              if parent then
+                parent = _path.add_trailing(parent)
+                if #_hl_dir > 0 then
+                  parent = _hl_dir .. parent .. _utils.ansi_escseq.clear
+                end
+              end
+              return (parent or "") .. tail
+            end
+          ]]):format(hl_dir, hl_file)
+        end,
+      },
     }
   },
 }
@@ -1070,6 +1103,7 @@ M.defaults.__HLS                = {
   tab_marker     = "FzfLuaTabMarker",
   dir_icon       = "FzfLuaDirIcon",
   dir_part       = "FzfLuaDirPart",
+  file_part      = "FzfLuaFilePart",
   live_sym       = "FzfLuaLiveSym",
   fzf            = {
     normal     = "FzfLuaFzfNormal",

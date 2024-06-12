@@ -579,7 +579,13 @@ completion, e.g. `complete_path`.
 
 Type: `string`, Default: `FzfLuaDirPart`
 
-Highlight group for the directory part when using `formatter=path.filename_first`.
+Highlight group for the directory part when using `path.hl` or `path.filename_first` formatters.
+
+#### globals.hls.file_part
+
+Type: `string`, Default: `FzfLuaFilePart`
+
+Highlight group for the directory part when using `path.hl` or `path.filename_first` formatters.
 
 #### globals.hls.live_sym
 

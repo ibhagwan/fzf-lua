@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*        For Neovim >= 0.8.0       Last change: 2024 April 30
+*fzf-lua-opts.txt*        For Neovim >= 0.8.0        Last change: 2024 June 10
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -76,8 +76,8 @@ Disable `file_icons` in `files`, applies to this call only:
     -- Or
     :FzfLua files file_icons=false
 <
-Fzf-lua conviniently enables setting lua tables recursively using dotted keys,
-for exmaple, if we wanted to call `files` in "split" mode (instead of the
+Fzf-lua conveniently enables setting lua tables recursively using dotted keys,
+for example, if we wanted to call `files` in "split" mode (instead of the
 default floating window), we would normally call:
 
 >lua
@@ -284,7 +284,7 @@ globals.winopts.col                         *fzf-lua-opts-globals.winopts.col*
 Type: `number`, Default: `0.55`
 
 Screen column where to place the fzf-lua float window, between 0-1 will
-represent precentage of `vim.o.columns` (0: leftmost, 1: rightmost), if >= 1
+represent percentage of `vim.o.columns` (0: leftmost, 1: rightmost), if >= 1
 will attempt to place the float in the exact screen column.
 
 
@@ -294,7 +294,7 @@ globals.winopts.row                         *fzf-lua-opts-globals.winopts.row*
 Type: `number`, Default: `0.35`
 
 Screen row where to place the fzf-lua float window, between 0-1 will represent
-precentage of `vim.o.lines` (0: top, 1: bottom), if >= 1 will attempt to place
+percentage of `vim.o.lines` (0: top, 1: bottom), if >= 1 will attempt to place
 the float in the exact screen line.
 
 
@@ -303,7 +303,7 @@ globals.winopts.width                     *fzf-lua-opts-globals.winopts.width*
 
 Type: `number`, Default: `0.80`
 
-Width of the fzf-lua float, between 0-1 will represent precentage of
+Width of the fzf-lua float, between 0-1 will represent percentage of
 `vim.o.columns` (1: max width), if >= 1 will use fixed number of columns.
 
 
@@ -312,7 +312,7 @@ globals.winopts.height                   *fzf-lua-opts-globals.winopts.height*
 
 Type: `number`, Default: `0.85`
 
-Height of the fzf-lua float, between 0-1 will represent precentage of
+Height of the fzf-lua float, between 0-1 will represent percentage of
 `vim.o.lines` (1: max height), if >= 1 will use fixed number of lines.
 
 
@@ -347,7 +347,7 @@ globals.winopts.preview.delay     *fzf-lua-opts-globals.winopts.preview.delay*
 
 Type: `number`, Default: `100`
 
-Debounce time (miliseconds) for displaying the preview buffer in the builtin
+Debounce time (milliseconds) for displaying the preview buffer in the builtin
 previewer.
 
 
@@ -378,7 +378,7 @@ globals.winopts.preview.border   *fzf-lua-opts-globals.winopts.preview.border*
 Type: `string`, Default: `border`
 
 Preview border for native fzf previewers (i.e. `bat`, `git_status`), set to
-`noborder` to hide the preview border, consult `man fzf` for all vailable
+`noborder` to hide the preview border, consult `man fzf` for all available
 options.
 
 
@@ -397,7 +397,7 @@ globals.winopts.preview.flip_columns*fzf-lua-opts-globals.winopts.preview.flip_c
 
 Type: `number`, Default: `120`
 
-Auto-detect the preview layout based on available widht, see above note in
+Auto-detect the preview layout based on available width, see above note in
 `winopts.preview.layout`.
 
 
@@ -699,7 +699,7 @@ globals.hls.path_linenr                 *fzf-lua-opts-globals.hls.path_linenr*
 Type: `string`, Default: `FzfLuaPathLineNr`
 
 Highlight group for the line part of paths, e.g. `file:<line>:<col>:`, used in
-pickers such as `bufers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
+pickers such as `buffers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
 
 
                                                                               
@@ -708,7 +708,7 @@ globals.hls.path_colnr                   *fzf-lua-opts-globals.hls.path_colnr*
 Type: `string`, Default: `FzfLuaPathColNr`
 
 Highlight group for the column part of paths, e.g. `file:<line>:<col>:`, used
-in pickers such as `bufers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
+in pickers such as `buffers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
 
 
                                                                               
@@ -774,8 +774,17 @@ globals.hls.dir_part                       *fzf-lua-opts-globals.hls.dir_part*
 
 Type: `string`, Default: `FzfLuaDirPart`
 
-Highlight group for the directory part when using
-`formatter=path.filename_first`.
+Highlight group for the directory part when using `path.hl` or
+`path.filename_first` formatters.
+
+
+                                                                              
+globals.hls.file_part                     *fzf-lua-opts-globals.hls.file_part*
+
+Type: `string`, Default: `FzfLuaFilePart`
+
+Highlight group for the directory part when using `path.hl` or
+`path.filename_first` formatters.
 
 
                                                                               
@@ -784,6 +793,122 @@ globals.hls.live_sym                       *fzf-lua-opts-globals.hls.live_sym*
 Type: `string`, Default: `FzfLuaLiveSym`
 
 Highlight group for the matched characters in `lsp_live_workspace_symbols`.
+
+
+                                                                              
+globals.hls.fzf.normal                   *fzf-lua-opts-globals.hls.fzf.normal*
+
+Type: `string`, Default: `FzfLuaFzfNormal`
+
+Highlight group for fzf's `fg` and `bg`, by default links to `FzfLuaNormal`.
+
+
+                                                                              
+globals.hls.fzf.cursorline           *fzf-lua-opts-globals.hls.fzf.cursorline*
+
+Type: `string`, Default: `FzfLuaFzfCursorLine`
+
+Highlight group for fzf's `fg+` and `bg+`, by default links to
+`FzfLuaCursorLine`.
+
+
+                                                                              
+globals.hls.fzf.match                     *fzf-lua-opts-globals.hls.fzf.match*
+
+Type: `string`, Default: `FzfLuaFzfMatch`
+
+Highlight group for fzf's `hl+`, by default links to `Special`.
+
+
+                                                                              
+globals.hls.fzf.border                   *fzf-lua-opts-globals.hls.fzf.border*
+
+Type: `string`, Default: `FzfLuaFzfBorder`
+
+Highlight group for fzf's `border`, by default links to `FzfLuaBorder`.
+
+
+                                                                              
+globals.hls.fzf.scrollbar             *fzf-lua-opts-globals.hls.fzf.scrollbar*
+
+Type: `string`, Default: `FzfLuaFzfScrollbar`
+
+Highlight group for fzf's `border`, by default links to `FzfLuaFzfBorder`.
+
+
+                                                                              
+globals.hls.fzf.separator             *fzf-lua-opts-globals.hls.fzf.separator*
+
+Type: `string`, Default: `FzfLuaFzfSeparator`
+
+Highlight group for fzf's `separator`, by default links to `FzfLuaFzfBorder`.
+
+
+                                                                              
+globals.hls.fzf.gutter                   *fzf-lua-opts-globals.hls.fzf.gutter*
+
+Type: `string`, Default: `FzfLuaFzfGutter`
+
+Highlight group for fzf's `gutter`, by default links to `FzfLuaFzfBorder`.
+
+  **NOTE**: `bg` property of the highlight group will be used.
+
+
+                                                                              
+globals.hls.fzf.header                   *fzf-lua-opts-globals.hls.fzf.header*
+
+Type: `string`, Default: `FzfLuaFzfHeader`
+
+Highlight group for fzf's `header`, by default links to `FzfLuaTitle`.
+
+
+                                                                              
+globals.hls.fzf.info                       *fzf-lua-opts-globals.hls.fzf.info*
+
+Type: `string`, Default: `FzfLuaFzfInfo`
+
+Highlight group for fzf's `info`, by default links to `NonText`.
+
+
+                                                                              
+globals.hls.fzf.pointer                 *fzf-lua-opts-globals.hls.fzf.pointer*
+
+Type: `string`, Default: `FzfLuaFzfPointer`
+
+Highlight group for fzf's `pointer`, by default links to `Special`.
+
+
+                                                                              
+globals.hls.fzf.marker                   *fzf-lua-opts-globals.hls.fzf.marker*
+
+Type: `string`, Default: `FzfLuaFzfMarker`
+
+Highlight group for fzf's `marker`, by default links to `FzfLuaFzfPointer`.
+
+
+                                                                              
+globals.hls.fzf.spinner                 *fzf-lua-opts-globals.hls.fzf.spinner*
+
+Type: `string`, Default: `FzfLuaFzfSpinner`
+
+Highlight group for fzf's `spinner`, by default links to `FzfLuaFzfPointer`.
+
+
+                                                                              
+globals.hls.fzf.prompt                   *fzf-lua-opts-globals.hls.fzf.prompt*
+
+Type: `string`, Default: `FzfLuaFzfPrompt`
+
+Highlight group for fzf's `prompt`, by default links to `Special`.
+
+
+                                                                              
+globals.hls.fzf.query                     *fzf-lua-opts-globals.hls.fzf.query*
+
+Type: `string`, Default: `FzfLuaFzfQuery`
+
+Highlight group for fzf's `query`, by default links to `FzfLuaNormal` and sets
+text to `regular` (non-bold).
 
 
 ------------------------------------------------------------------------------
@@ -865,7 +990,7 @@ Exclude non-file entries (directories).
                                                                               
 files                                                     *fzf-lua-opts-files*
 
-Files finder, will enumrate the filesystem of the current working directory
+Files finder, will enumerate the filesystem of the current working directory
 using `fd`, `rg` and `grep` or `dir.exe`.
 
 
@@ -933,7 +1058,7 @@ Performant "live" grep variant piping the underlying command directly to fzf
 live_grep_glob                                   *fzf-lua-opts-live_grep_glob*
 
 "Live" grep variant with add support for `rg --iglob` flag, use the default
-separator `--` to specify globs, for exmaple, `pcall -- *.lua !*spec*` will
+separator `--` to specify globs, for example, `pcall -- *.lua !*spec*` will
 search for `pcall` in any lua file that doesn't contain `spec`.
 
 
