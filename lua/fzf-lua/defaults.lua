@@ -218,7 +218,7 @@ M.defaults                      = {
         _to = function(o, v)
           local _, hl_dir = utils.ansi_from_hl(o.hls.dir_part, "foo")
           local _, hl_file = utils.ansi_from_hl(o.hls.file_part, "foo")
-          local v2 = tonumber(v) ~= 2 and "" or [[, string.rep(" ", 200) .. s]]
+          local v2 = tonumber(v) ~= 2 and "" or [[, "\xc2\xa0" .. string.rep(" ", 200) .. s]]
           return ([[
             return function(s, _, m)
               local _path, _utils = m.path, m.utils
@@ -243,7 +243,7 @@ M.defaults                      = {
         end,
         from = function(s, _)
           local parts = utils.strsplit(s, utils.nbsp)
-          local last = parts[#parts]
+          local last = parts[#parts]:gsub("\xc2\xa0     .*$", "") -- gsub v2 postfix
           -- Lines from grep, lsp, tags are formatted <file>:<line>:<col>:<text>
           -- the pattern below makes sure tab doesn't come from the line text
           local filename, rest = last:match("^([^:]-)\t(.+)$")
