@@ -364,11 +364,16 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- Setup formatter options
   if opts.formatter then
+    local _fmt_ver = 1
+    if type(opts.formatter) == "table" then
+      _fmt_ver = opts.formatter.v or opts.formatter[2] or _fmt_ver
+      opts.formatter = opts.formatter.name or opts.formatter[1]
+    end
     local _fmt = M.globals["formatters." .. opts.formatter]
     if _fmt then
       opts._fmt = opts._fmt or {}
       if opts._fmt.to == nil then
-        opts._fmt.to = _fmt.to or _fmt._to and _fmt._to(opts) or nil
+        opts._fmt.to = _fmt.to or _fmt._to and _fmt._to(opts, _fmt_ver) or nil
       end
       if opts._fmt.from == nil then
         opts._fmt.from = _fmt.from
@@ -380,7 +385,7 @@ function M.normalize_opts(opts, globals, __resume_key)
       end
       if type(_fmt.enrich) == "function" then
         -- formatter requires enriching the config (fzf_opts, etc)
-        opts = _fmt.enrich(opts) or opts
+        opts = _fmt.enrich(opts, _fmt_ver) or opts
       end
     else
       utils.warn(("Invalid formatter '%s', ignoring."):format(opts.formatter))

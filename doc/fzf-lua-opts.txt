@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*        For Neovim >= 0.8.0        Last change: 2024 June 10
+*fzf-lua-opts.txt*        For Neovim >= 0.8.0        Last change: 2024 June 12
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -774,7 +774,7 @@ globals.hls.dir_part                       *fzf-lua-opts-globals.hls.dir_part*
 
 Type: `string`, Default: `FzfLuaDirPart`
 
-Highlight group for the directory part when using `path.hl` or
+Highlight group for the directory part when using `path.dirname_first` or
 `path.filename_first` formatters.
 
 
@@ -783,7 +783,7 @@ globals.hls.file_part                     *fzf-lua-opts-globals.hls.file_part*
 
 Type: `string`, Default: `FzfLuaFilePart`
 
-Highlight group for the directory part when using `path.hl` or
+Highlight group for the directory part when using `path.dirname_first` or
 `path.filename_first` formatters.
 
 

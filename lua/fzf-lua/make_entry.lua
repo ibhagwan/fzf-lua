@@ -388,8 +388,9 @@ M.file = function(x, opts)
     ret[#ret + 1] = icon
     ret[#ret + 1] = utils.nbsp
   end
+  local _fmt_postfix -- when using `path.filename_first` v2
   if opts._fmt and type(opts._fmt.to) == "function" then
-    ret[#ret + 1] = opts._fmt.to(filepath, opts, { path = path, utils = utils })
+    ret[#ret + 1], _fmt_postfix = opts._fmt.to(filepath, opts, { path = path, utils = utils })
   else
     ret[#ret + 1] = file_is_ansi > 0
         -- filename is ansi escape colored, replace the inner string (#819)
@@ -413,6 +414,7 @@ M.file = function(x, opts)
     end
   end
   ret[#ret + 1] = rest_of_line
+  ret[#ret + 1] = _fmt_postfix
   return table.concat(ret)
 end
 

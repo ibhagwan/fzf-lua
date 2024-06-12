@@ -197,8 +197,15 @@ M.defaults                      = {
     path = {
       filename_first = {
         -- <Tab> is used as the invisible space between the parent and the file part
-        enrich = function(o)
+        enrich = function(o, v)
           o.fzf_opts = vim.tbl_extend("keep", o.fzf_opts or {}, { ["--tabstop"] = 1 })
+          if tonumber(v) == 2 then
+            -- https://github.com/ibhagwan/fzf-lua/pull/1255
+            o.fzf_opts = vim.tbl_extend("keep", o.fzf_opts or {}, {
+              ["--ellipsis"] = " ",
+              ["--no-hscroll"] = true,
+            })
+          end
           return o
         end,
         -- underscore `_to` returns a custom to function when options could
@@ -208,9 +215,10 @@ M.defaults                      = {
         -- (globals or file-locals) are stored by ref and will be nil in the
         -- `string.dump` (from `config.bytecode`), we use the 3rd function
         -- argument `m` to pass module imports (path, utils, etc).
-        _to = function(o)
+        _to = function(o, v)
           local _, hl_dir = utils.ansi_from_hl(o.hls.dir_part, "foo")
           local _, hl_file = utils.ansi_from_hl(o.hls.file_part, "foo")
+          local v2 = tonumber(v) ~= 2 and "" or [[, string.rep(" ", 200) .. s]]
           return ([[
             return function(s, _, m)
               local _path, _utils = m.path, m.utils
@@ -226,12 +234,12 @@ M.defaults                      = {
                 if #_hl_dir > 0 then
                   parent = _hl_dir .. parent .. _utils.ansi_escseq.clear
                 end
-                return tail .. "\t" .. parent
+                return tail .. "\t" .. parent %s
               else
-                return tail
+                return tail %s
               end
             end
-          ]]):format(hl_dir, hl_file)
+          ]]):format(hl_dir or "", hl_file or "", v2, v2)
         end,
         from = function(s, _)
           local parts = utils.strsplit(s, utils.nbsp)
@@ -254,7 +262,7 @@ M.defaults                      = {
           return s
         end
       },
-      hl = {
+      dirname_first = {
         -- Credit fo @folke :-)
         -- https://github.com/ibhagwan/fzf-lua/pull/1255
         _to = function(o)
@@ -278,7 +286,7 @@ M.defaults                      = {
               end
               return (parent or "") .. tail
             end
-          ]]):format(hl_dir, hl_file)
+          ]]):format(hl_dir or "", hl_file or "")
         end,
       },
     }
