@@ -22,6 +22,8 @@ function M.run_command(cmd, ...)
     local val = arg:match("=") and arg:match("=(.*)$")
     if val and #val > 0 then
       local ok, loaded = serpent.load(val)
+      -- Parsed string wasn't "nil"  but loaded as `nil`, use as is
+      if val ~= "nil" and loaded == nil then ok = false end
       if ok and (type(loaded) ~= "table" or not utils.tbl_isempty(loaded)) then
         opts[key] = loaded
       else
@@ -142,10 +144,10 @@ function M._candidates(line, cmp_items)
   -- Add globals recursively, e.g. `winopts.fullscreen`
   -- will be later retrieved using `utils.map_get(...)`
   for k, v in pairs({
-    winopts       = false,
-    keymap        = false,
-    fzf_opts      = false,
-    __HLS         = "hls", -- rename prefix
+    winopts  = false,
+    keymap   = false,
+    fzf_opts = false,
+    __HLS    = "hls", -- rename prefix
   }) do
     opts = utils.tbl_flatten({ opts, vim.tbl_filter(function(x)
         -- Exclude global options that can be specified only during `setup`,

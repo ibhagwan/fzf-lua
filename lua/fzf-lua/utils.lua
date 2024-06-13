@@ -226,9 +226,11 @@ function M.lua_regex_escape(str)
   -- escape all lua special chars
   -- ( ) % . + - * [ ? ^ $
   if not str then return nil end
-  return str:gsub("[%(%)%.%+%-%*%[%?%^%$%%]", function(x)
+  -- gsub returns a tuple, return the string only or unexpected happens (#1257)
+  local ret = str:gsub("[%(%)%.%+%-%*%[%?%^%$%%]", function(x)
     return "%" .. x
   end)
+  return ret
 end
 
 function M.glob_escape(str)
