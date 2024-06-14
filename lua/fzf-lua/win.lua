@@ -70,7 +70,7 @@ function FzfWin:setup_keybinds()
   -- If the user did not override the Esc action ensure it's
   -- not bound to anything else such as `<C-\><C-n>` (#663)
   if self.actions["esc"] == actions.dummy_abort then
-    utils.keymap_set("t", "<Esc>", "<Esc>", { buffer = 0 })
+    utils.keymap_set("t", "<Esc>", "<Esc>", { buffer = 0, nowait = true })
   end
 end
 
