@@ -56,6 +56,17 @@ function M.check()
     )
   end
 
+  local srv_ok, srv_pipe = pcall(vim.fn.serverstart)
+  if srv_ok then
+    vim.fn.delete(srv_pipe)
+  else
+    error(string.format(
+      "`vim.fn.serverstart()` failed with '%s'\n%s",
+      srv_ok,
+      "Please make sure `XDG_RUNTIME_DIR` is writeable."
+    ))
+  end
+
   if vim.fn.executable("fzf") == 1 then
     local version = utils.fzf_version()
     if version < 0.53 then
