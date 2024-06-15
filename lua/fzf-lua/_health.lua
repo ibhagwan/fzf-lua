@@ -48,7 +48,7 @@ function M.check()
   end
 
   local run = vim.fn.stdpath("run")
-  if vim.fn.isdirectory(run) == 0 then
+  if not uv.fs_access(run, "rwx") then
     error(
       "Your 'run' directory is invalid `"
       .. run
@@ -84,9 +84,11 @@ function M.check()
     have(tool)
   end
 
-  start("fzf-lua [optional:media]")
-  for _, tool in ipairs({ "chafa", "viu", "ueberzugpp" }) do
-    have(tool)
+  if not is_win then
+    start("fzf-lua [optional:media]")
+    for _, tool in ipairs({ "chafa", "viu", "ueberzugpp" }) do
+      have(tool)
+    end
   end
 
   start("fzf-lua [env]")
