@@ -4,6 +4,7 @@ local start = vim.health.start or vim.health.report_start
 local ok = vim.health.ok or vim.health.report_ok
 local warn = vim.health.warn or vim.health.report_warn
 local error = vim.health.error or vim.health.report_error
+local uv = vim.uv or vim.loop
 
 function M.check()
   local is_win = jit.os:find("Windows")
@@ -44,6 +45,15 @@ function M.check()
       )
       error("One of " .. str .. " is required")
     end
+  end
+
+  local run = vim.fn.stdpath("run")
+  if vim.fn.isdirectory(run) == 0 then
+    error(
+      "Your 'run' directory is invalid `"
+        .. run
+        .. "`.\nPlease make sure `XDG_RUNTIME_DIR` is set correctly."
+    )
   end
 
   if vim.fn.executable("fzf") == 1 then
