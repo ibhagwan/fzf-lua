@@ -294,7 +294,10 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
           default_opts = default_opts:gsub(utils.lua_regex_escape(p) .. "[=%s]+.-%s+%-%-", " --")
         end
         return default_opts
-      end)()
+      end)(),
+      -- Nullify user's RG config as this can cause conflicts
+      -- with fzf-lua's rg opts (#1266)
+      ["RIPGREP_CONFIG_PATH"] = "",
     },
     on_exit = function(_, rc, _)
       local output = {}
