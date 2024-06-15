@@ -224,6 +224,9 @@ end
 M.buffer_lines = function(opts)
   if not opts then return end
 
+  -- formatter doesn't work with lines|blines as only filename is displayed
+  opts._fmt = false
+
   opts.fn_pre_fzf = function() core.CTX(true) end
   opts.fn_pre_fzf()
 
