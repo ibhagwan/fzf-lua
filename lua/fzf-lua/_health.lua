@@ -25,7 +25,7 @@ function M.check()
   local required = {
     { "fzf", "sk" },
     is_win and { "rg" } or { "rg", "grep" },
-    is_win and { "fd", "find", "dir" } or { "fd", "find" },
+    is_win and { "fd", "find", "dir" } or { "fd", "fdfind", "find" },
   }
 
   for _, reqs in ipairs(required) do
@@ -51,8 +51,8 @@ function M.check()
   if vim.fn.isdirectory(run) == 0 then
     error(
       "Your 'run' directory is invalid `"
-        .. run
-        .. "`.\nPlease make sure `XDG_RUNTIME_DIR` is set correctly."
+      .. run
+      .. "`.\nPlease make sure `XDG_RUNTIME_DIR` is set correctly."
     )
   end
 
