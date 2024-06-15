@@ -257,9 +257,10 @@ M.defaults                      = {
             local fullpath = path.join({ parent, filename })
             -- overwrite last part with restored fullpath + rest of line
             parts[#parts] = fullpath .. rest:sub(#parent + 1)
-            s = table.concat(parts, utils.nbsp)
+            return table.concat(parts, utils.nbsp)
+          else
+            return last
           end
-          return s
         end
       },
       dirname_first = {
