@@ -6,8 +6,8 @@ local warn = vim.health.warn or vim.health.report_warn
 local error = vim.health.error or vim.health.report_error
 
 function M.check()
+  local is_win = jit.os:find("Windows")
   local utils = require("fzf-lua.utils")
-  local config = require("fzf-lua.config")
 
   local function have(tool)
     if vim.fn.executable(tool) == 0 then
@@ -21,9 +21,31 @@ function M.check()
   end
 
   start("fzf-lua [required]")
-  if not have("fzf") and not have("sk") then
-    error("`fzf` or `skim` is required")
+  local required = {
+    { "fzf", "sk" },
+    is_win and { "rg" } or { "rg", "grep" },
+    is_win and { "fd", "find", "dir" } or { "fd", "find" },
+  }
+
+  for _, reqs in ipairs(required) do
+    local found = false
+    for _, tool in ipairs(reqs) do
+      if have(tool) then
+        found = true
+        break
+      end
+    end
+    if not found then
+      local str = table.concat(
+        vim.tbl_map(function(tool)
+          return "`" .. tool .. "`"
+        end, reqs),
+        ", "
+      )
+      error("One of " .. str .. " is required")
+    end
   end
+
   if vim.fn.executable("fzf") == 1 then
     local version = utils.fzf_version()
     if version < 0.53 then
