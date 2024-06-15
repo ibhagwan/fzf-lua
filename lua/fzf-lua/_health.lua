@@ -81,6 +81,7 @@ function M.check()
     warn("`nvim-web-devicons` not found")
   end
   for _, tool in ipairs({ "rg", "fd", "bat", "delta", "git" }) do
+  for _, tool in ipairs({ "rg", "fd", "bat", "batcat", "delta", "git" }) do
     have(tool)
   end
 
