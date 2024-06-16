@@ -1,3 +1,4 @@
+---@diagnostic disable: deprecated
 local M = {}
 
 local start = vim.health.start or vim.health.report_start
@@ -10,9 +11,11 @@ function M.check()
   local is_win = jit.os:find("Windows")
   local utils = require("fzf-lua.utils")
 
-  local function have(tool)
+  local function have(tool, nowarn)
     if vim.fn.executable(tool) == 0 then
-      warn("'" .. tool .. "' not found")
+      if not nowarn then
+        warn("'" .. tool .. "' not found")
+      end
     else
       local version = vim.fn.system(tool .. " --version") or ""
       version = vim.trim(vim.split(version, "\n")[1])
@@ -24,6 +27,7 @@ function M.check()
   start("fzf-lua [required]")
   local required = {
     { "fzf", "sk" },
+    { "git" },
     is_win and { "rg" } or { "rg", "grep" },
     is_win and { "fd", "find", "dir" } or { "fd", "fdfind", "find" },
   }
@@ -31,7 +35,7 @@ function M.check()
   for _, reqs in ipairs(required) do
     local found = false
     for _, tool in ipairs(reqs) do
-      if have(tool) then
+      if have(tool, true) then
         found = true
         break
       end
@@ -80,13 +84,13 @@ function M.check()
   else
     warn("`nvim-web-devicons` not found")
   end
-  for _, tool in ipairs({ "rg", "fd", "bat", "batcat", "delta", "git" }) do
-    have(tool)
+  for _, tool in ipairs({ "rg", "fd", "fdfind", "bat", "batcat", "delta" }) do
+    have(tool, true)
   end
 
   if not is_win then
     start("fzf-lua [optional:media]")
-    for _, tool in ipairs({ "chafa", "viu", "ueberzugpp" }) do
+    for _, tool in ipairs({ "viu", "chafa", "ueberzugpp" }) do
       have(tool)
     end
   end
