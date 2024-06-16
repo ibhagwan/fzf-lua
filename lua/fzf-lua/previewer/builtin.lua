@@ -60,6 +60,7 @@ function Previewer.base:new(o, opts, fzf_win)
     utils.warn(("Invalid ueberzug image scaler '%s', option will be omitted.")
       :format(o.ueberzug_scaler))
   end
+  self.ueberzug_scale = o.ueberzug_scale or 1
   -- cached buffers
   self.cached_bufnrs = {}
   self.cached_buffers = {}
@@ -520,13 +521,15 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
     if not fifo then return end
     local wincfg = vim.api.nvim_win_get_config(self.win.preview_winid)
     local winpos = vim.api.nvim_win_get_position(self.win.preview_winid)
+    local border = wincfg.border ~= "none" and 1 or 0
+    local scale = self.ueberzug_scale or 1
     local params = {
       action     = "add",
       identifier = "preview",
-      x          = winpos[2],
-      y          = winpos[1],
-      width      = wincfg.width,
-      height     = wincfg.height,
+      x          = math.floor(winpos[2] / scale) + border,
+      y          = math.floor(winpos[1] / scale) + border,
+      width      = wincfg.width - border * 2,
+      height     = wincfg.height - border * 2,
       scaler     = self.ueberzug_scaler,
       path       = path.is_absolute(entry.path) and entry.path or
           path.join({ self.opts.cwd or uv.cwd(), entry.path }),
