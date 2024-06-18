@@ -4,9 +4,6 @@ local path = require "fzf-lua.path"
 
 local M = {}
 
--- default action map key
-local _default_action = "default"
-
 -- return fzf '--expect=' string from actions keyval tbl
 -- on fzf >= 0.53 add the `prefix` key to the bind flags
 -- https://github.com/junegunn/fzf/issues/3829#issuecomment-2143235993
@@ -16,8 +13,7 @@ M.expect = function(actions, opts)
   local binds = {}
   for k, v in pairs(actions) do
     if not v then goto continue end
-    local is_default = k == _default_action
-    k = is_default and "enter" or k
+    k = k == "default" and "enter" or k
     v = type(v) == "table" and v or { fn = v }
     if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 then
       -- `print(...)` action was only added with fzf 0.53
@@ -29,7 +25,7 @@ M.expect = function(actions, opts)
         v.prefix and "+" or "",
         v.prefix and v.prefix:gsub("accept$", ""):gsub("%+$", "") or ""
       ))
-    elseif not is_default then
+    elseif k ~= "enter" then
       table.insert(expect, k)
     end
     ::continue::
@@ -37,41 +33,41 @@ M.expect = function(actions, opts)
   return #expect > 0 and expect or nil, #binds > 0 and binds or nil
 end
 
-M.normalize_selected = function(actions, selected)
-  -- 1. If there are no additional actions but the default,
-  --    the selected table will contain the selected item(s)
-  -- 2. If at least one non-default action was defined, our 'expect'
-  --    function above sent fzf the '--expect` flag, from `man fzf`:
-  --      When this option is set, fzf will print the name of
-  --      the key pressed as the first line of its output (or
-  --      as the second line if --print-query is also used).
-  --
+M.normalize_selected = function(actions, selected, opts)
   -- The below separates the keybind from the item(s)
   -- and makes sure 'selected' contains only item(s) or {}
   -- so it can always be enumerated safely
   if not actions or not selected then return end
-  local action = _default_action
-  if utils.tbl_count(actions) > 1 or not actions[_default_action] then
-    -- After removal of query (due to `--print-query`), keybind should be in item #1
-    -- when `--expect` is present, default keybind prints an empty string, leave  as "default"
-    -- on fzf 0.53 we set default to "enter", also leave as "default" for backward compat
-    if #selected[1] > 0 and selected[1] ~= "enter" then
-      action = selected[1]
-    end
-    -- entries are items #2+
-    local entries = {}
-    for i = 2, #selected do
-      table.insert(entries, selected[i])
-    end
-    return action, entries
+  if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 then
+    -- Using the new `print` action keybind is expected at `selected[1]`
+    local entries = vim.deepcopy(selected)
+    local keybind = table.remove(entries, 1)
+    return keybind, entries
   else
-    return action, selected
+    -- 1. If there are no additional actions but the default,
+    --    the selected table will contain the selected item(s)
+    -- 2. If at least one non-default action was defined, our 'expect'
+    --    function above sent fzf the '--expect` flag, from `man fzf`:
+    --      When this option is set, fzf will print the name of the key pressed as the
+    --      first line of its output (or as the second line if --print-query is also used).
+    if utils.tbl_count(actions) > 1 or not actions.enter then
+      -- After removal of query (due to `--print-query`), keybind should be in item #1
+      -- when `--expect` is present, default (enter) keybind prints an empty string
+      local entries = vim.deepcopy(selected)
+      local keybind = table.remove(entries, 1)
+      if #keybind == 0 then keybind = "enter" end
+      return keybind, entries
+    else
+      -- Only default (enter) action exists, no `--expect` was specified
+      -- therefore enter was pressed and no empty line in `selected[1]`
+      return "enter", selected
+    end
   end
 end
 
 M.act = function(actions, selected, opts)
   if not actions or not selected then return end
-  local keybind, entries = M.normalize_selected(actions, selected)
+  local keybind, entries = M.normalize_selected(actions, selected, opts)
   local action = actions[keybind]
   if type(action) == "table" then
     -- Two types of action as table:
@@ -88,9 +84,8 @@ M.act = function(actions, selected, opts)
     action(entries, opts)
   elseif type(action) == "string" then
     vim.cmd(action)
-  elseif keybind ~= _default_action then
-    utils.warn(("unsupported action: '%s', type:%s")
-      :format(keybind, type(action)))
+  else
+    utils.warn(("unsupported action: '%s', type:%s"):format(keybind, type(action)))
   end
 end
 
@@ -99,10 +94,8 @@ M.dummy_abort = function()
 end
 
 M.resume = function(_, _)
-  -- must call via vim.cmd or we create
-  -- circular 'require'
-  -- TODO: is this really a big deal?
-  vim.cmd("lua require'fzf-lua'.resume()")
+  -- call via loadstring to prevent a circular ref
+  loadstring([[require("fzf-lua").resume()]])()
 end
 
 M.vimcmd = function(vimcmd, selected, noesc)

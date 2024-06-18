@@ -449,7 +449,7 @@ M.fzf = function(contents, opts)
   -- retrieve the future action and check:
   --   * if it's a single function we can close the window
   --   * if it's a table of functions we do not close the window
-  local keybind = actions.normalize_selected(opts.actions, selected)
+  local keybind = actions.normalize_selected(opts.actions, selected, opts)
   local action = keybind and opts.actions and opts.actions[keybind]
   -- only close the window if autoclose wasn't specified or is 'true'
   -- or if the action wasn't a table or defined with `reload|noclose`

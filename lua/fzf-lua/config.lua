@@ -355,7 +355,13 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- Setup completion options
   if opts.complete then
     opts.actions = opts.actions or {}
-    opts.actions["default"] = actions.complete
+    opts.actions.enter = actions.complete
+  end
+
+  -- Backward compat, "default" action is "enter"
+  if opts.actions then
+    opts.actions.enter = opts.actions.enter or opts.actions.default
+    opts.actions.default = nil
   end
 
   -- Merge highlight overrides with defaults, we only do this after the
