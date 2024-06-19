@@ -653,7 +653,7 @@ M.build_fzf_cli = function(opts)
     if expect_binds and #expect_binds > 0 then
       local bind = opts.fzf_opts["--bind"]
       opts.fzf_opts["--bind"] = string.format("%s%s%s",
-        bind, bind and "," or "", table.concat(expect_binds, ","))
+        bind or "", bind and "," or "", table.concat(expect_binds, ","))
     end
   end
   if opts.fzf_opts["--preview-window"] == nil then
