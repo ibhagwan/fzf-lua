@@ -103,13 +103,12 @@ M.ui_select = function(items, ui_opts, on_choice)
   opts._on_choice = on_choice
   opts._ui_select = ui_opts
 
-  opts.actions = vim.tbl_deep_extend("keep",
-    opts.actions or {}, { ["default"] = M.accept_item })
+  opts.actions = vim.tbl_deep_extend("keep", opts.actions or {}, { ["enter"] = M.accept_item })
 
   config.set_action_helpstr(M.accept_item, "accept-item")
 
   opts.fn_selected = function(selected, o)
-    config.set_action_helpstr(opts.actions["default"], nil)
+    config.set_action_helpstr(o.actions.enter, nil)
 
     if not selected then
       -- with `actions.dummy_abort` this doesn't get called anymore
@@ -152,7 +151,7 @@ M.ui_select = function(items, ui_opts, on_choice)
     local previewer = _OPTS_ONCE.previewer
     _OPTS_ONCE.previewer = nil -- can't copy the previewer object
     opts = vim.tbl_deep_extend(opts_merge_strategy, _OPTS_ONCE, opts)
-    opts.actions = { ["default"] = opts.actions["default"] }
+    opts.actions = { ["enter"] = opts.actions.enter }
     opts.previewer = previewer
     _OPTS_ONCE = nil
   end

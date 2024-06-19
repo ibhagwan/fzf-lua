@@ -69,6 +69,10 @@ M.act = function(actions, selected, opts)
   if not actions or not selected then return end
   local keybind, entries = M.normalize_selected(actions, selected, opts)
   local action = actions[keybind]
+  -- Backward compat, was action defined as "default"
+  if not action and keybind == "enter" then
+    action = actions.default
+  end
   if type(action) == "table" then
     -- Two types of action as table:
     --   (1) map containing action properties (reload, noclose, etc)

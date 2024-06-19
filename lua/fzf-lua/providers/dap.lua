@@ -35,10 +35,9 @@ M.commands = function(opts)
   end
 
   opts.actions = {
-    ["default"] = opts.actions and opts.actions.default or
-        function(selected, _)
-          _dap[selected[1]]()
-        end,
+    ["enter"] = function(selected, _)
+      _dap[selected[1]]()
+    end,
   }
 
   core.fzf_exec(entries, opts)
@@ -64,15 +63,14 @@ M.configurations = function(opts)
   end
 
   opts.actions = {
-    ["default"] = opts.actions and opts.actions.default or
-        function(selected, _)
-          -- cannot run while in session
-          if _dap.session() then return end
-          local idx = selected and tonumber(selected[1]:match("(%d+).")) or nil
-          if idx and opts._cfgs[idx] then
-            _dap.run(opts._cfgs[idx])
-          end
-        end,
+    ["enter"] = function(selected, _)
+      -- cannot run while in session
+      if _dap.session() then return end
+      local idx = selected and tonumber(selected[1]:match("(%d+).")) or nil
+      if idx and opts._cfgs[idx] then
+        _dap.run(opts._cfgs[idx])
+      end
+    end,
   }
 
   core.fzf_exec(entries, opts)
@@ -184,15 +182,14 @@ M.frames = function(opts)
   opts._frames = session.threads[session.stopped_thread_id].frames
 
   opts.actions = {
-    ["default"] = opts.actions and opts.actions.default or
-        function(selected, o)
-          local sess = _dap.session()
-          if not sess or not sess.stopped_thread_id then return end
-          local idx = selected and tonumber(selected[1]:match("(%d+).")) or nil
-          if idx and o._frames[idx] then
-            session:_frame_set(o._frames[idx])
-          end
-        end,
+    ["enter"] = function(selected, o)
+      local sess = _dap.session()
+      if not sess or not sess.stopped_thread_id then return end
+      local idx = selected and tonumber(selected[1]:match("(%d+).")) or nil
+      if idx and o._frames[idx] then
+        session:_frame_set(o._frames[idx])
+      end
+    end,
   }
 
   local entries = {}
