@@ -588,7 +588,7 @@ M.create_fzf_binds = function(opts)
         and action:match("accept")
         and not action:match("print(.-)%+accept")
     then
-      action = action:gsub("accept", "print()+accept")
+      action = action:gsub("accept", "print(enter)+accept")
     end
     table.insert(tbl, string.format("%s:%s", key, action))
   end
