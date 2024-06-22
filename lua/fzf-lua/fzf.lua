@@ -299,11 +299,6 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- with fzf-lua's rg opts (#1266)
       ["RIPGREP_CONFIG_PATH"] = type(opts.RIPGREP_CONFIG_PATH) == "string"
           and vim.fn.expand(opts.RIPGREP_CONFIG_PATH) or "",
-      -- We don't nullify `FD_CONFIG_PATH` but the
-      -- user can still override it, pending issue:
-      -- https://github.com/sharkdp/fd/issues/362
-      ["FD_CONFIG_PATH"] = type(opts.FD_CONFIG_PATH) == "string"
-          and vim.fn.expand(opts.FD_CONFIG_PATH) or nil
     },
     on_exit = function(_, rc, _)
       local output = {}
