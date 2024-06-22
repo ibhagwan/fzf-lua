@@ -981,7 +981,10 @@ require'fzf-lua'.setup {
     -- cmd            = "rg --vimgrep",
     grep_opts         = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp -e",
     rg_opts           = "--column --line-number --no-heading --color=always --smart-case --max-columns=4096 -e",
-    -- set to 'true' to always parse globs in both 'grep' and 'live_grep'
+    -- Uncomment to use the rg config file `$RIPGREPC_CONFIG_FILE`
+    -- RIPGREP_CONFIG_PATH = vim.env.RIPGREP_CONFIG_PATH
+    --
+    -- Set to 'true' to always parse globs in both 'grep' and 'live_grep'
     -- search strings will be split using the 'glob_separator' and translated
     -- to '--iglob=' arguments, requires 'rg'
     -- can still be used when 'false' by calling 'live_grep_glob' directly
