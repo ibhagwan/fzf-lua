@@ -421,7 +421,9 @@ M.fzf = function(contents, opts)
       cwd = opts.cwd,
       silent_fail = opts.silent_fail,
       is_fzf_tmux = opts._is_fzf_tmux,
-      debug = opts.debug_cmd or opts.debug and not (opts.debug_cmd == false)
+      debug = opts.debug_cmd or opts.debug and not (opts.debug_cmd == false),
+      RIPGREP_CONFIG_PATH = opts.RIPGREP_CONFIG_PATH,
+      FD_CONFIG_PATH = opts.FD_CONFIG_PATH
     })
   -- kill fzf piped process PID
   -- NOTE: might be an overkill since we're using $FZF_DEFAULT_COMMAND
