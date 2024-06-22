@@ -107,7 +107,7 @@ function FzfWin:generate_layout(winopts)
       if preview_pos == "down" then
         -- next row +2xborder
         pwopts.row = row + 1 + height + 2
-      else -- up
+      else                   -- up
         pwopts.row = row + 1 -- +border
         row = pwopts.row + 1 + pwopts.height
       end
@@ -120,7 +120,7 @@ function FzfWin:generate_layout(winopts)
       if preview_pos == "right" then
         -- next col +2xborder
         pwopts.col = col + 1 + width + 2
-      else -- left
+      else                   -- left
         pwopts.col = col + 1 -- +border
         col = pwopts.col + 1 + pwopts.width
       end
@@ -414,25 +414,23 @@ function FzfWin:fs_preview_layout(fs)
   local height_diff = 0
   local width_diff = 0
   if preview_pos == "down" or preview_pos == "up" then
+    border_winopts.col, prev_winopts.col = 0, 1
     width_diff = vim.o.columns - border_winopts.width
     if preview_pos == "down" then
       height_diff = vim.o.lines - border_winopts.row - border_winopts.height - vim.o.cmdheight
-    elseif preview_pos == "up" then
-      height_diff = border_winopts.row - border_winopts.height
+    else -- up
+      height_diff = border_winopts.row
+      border_winopts.row, prev_winopts.row = 0, 1
     end
-    border_winopts.col = 0
-    prev_winopts.col = border_winopts.col + 1
-  elseif preview_pos == "left" or preview_pos == "right" then
+  else -- left|right
+    border_winopts.row, prev_winopts.row = 0, 1
     height_diff = vim.o.lines - border_winopts.height - vim.o.cmdheight
-    if preview_pos == "left" then
-      border_winopts.col = border_winopts.col - 1
-      prev_winopts.col = prev_winopts.col - 1
-      width_diff = border_winopts.col - border_winopts.width
-    elseif preview_pos == "right" then
+    if preview_pos == "right" then
       width_diff = vim.o.columns - border_winopts.col - border_winopts.width
+    else -- left
+      width_diff = border_winopts.col - 1
+      border_winopts.col, prev_winopts.col = 0, 1
     end
-    border_winopts.row = 0
-    prev_winopts.row = border_winopts.row + 1
   end
 
   prev_winopts.height = prev_winopts.height + height_diff
