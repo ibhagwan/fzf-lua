@@ -33,7 +33,14 @@ local fzf_fn = function(cb)
   end
 
   local help_files = {}
-  local all_files = vim.fn.globpath(vim.o.runtimepath, "doc/*", 1, 1)
+  local rtp = vim.o.runtimepath
+  -- If using lazy.nvim, get all the lazy loaded plugin paths (#1296)
+  local lazy = package.loaded["lazy.core.util"]
+  if lazy and lazy.get_unloaded_rtp then
+    local paths = lazy.get_unloaded_rtp("")
+    rtp = rtp .. "," .. table.concat(paths, ",")
+  end
+  local all_files = vim.fn.globpath(rtp, "doc/*", 1, 1)
   for _, fullpath in ipairs(all_files) do
     local file = path.tail(fullpath)
     if file == "tags" then
