@@ -27,6 +27,15 @@ M.colorschemes = function(opts)
   local current_background = vim.o.background
   local colors = opts.colors or vim.fn.getcompletion("", "color")
 
+  local lazy = package.loaded["lazy.core.util"]
+  if lazy and lazy.get_unloaded_rtp then
+    local paths = lazy.get_unloaded_rtp("")
+    local all_files = vim.fn.globpath(table.concat(paths, ","), "colors/*", 1, 1)
+    for _, f in ipairs(all_files) do
+      table.insert(colors, vim.fn.fnamemodify(f, ":t:r"))
+    end
+  end
+
   if type(opts.ignore_patterns) == "table" then
     colors = vim.tbl_filter(function(x)
       for _, p in ipairs(opts.ignore_patterns) do
