@@ -259,7 +259,7 @@ M.defaults                      = {
             parts[#parts] = fullpath .. rest:sub(#parent + 1)
             return table.concat(parts, utils.nbsp)
           else
-            return last
+            return s
           end
         end
       },
