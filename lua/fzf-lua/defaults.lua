@@ -242,8 +242,9 @@ M.defaults                      = {
           ]]):format(hl_dir or "", hl_file or "", v2, v2)
         end,
         from = function(s, _)
+          s = s:gsub("\xc2\xa0     .*$", "") -- gsub v2 postfix
           local parts = utils.strsplit(s, utils.nbsp)
-          local last = parts[#parts]:gsub("\xc2\xa0     .*$", "") -- gsub v2 postfix
+          local last = parts[#parts]
           -- Lines from grep, lsp, tags are formatted <file>:<line>:<col>:<text>
           -- the pattern below makes sure tab doesn't come from the line text
           local filename, rest = last:match("^([^:]-)\t(.+)$")
