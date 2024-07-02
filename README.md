@@ -600,7 +600,7 @@ require'fzf-lua'.setup {
       -- can be used to add custom fzf-lua mappings, e.g:
       --   vim.keymap.set("t", "<C-j>", "<Down>", { silent = true, buffer = true })
     end,
-    -- called once *after* the fzf interface is closed
+    -- called once _after_ the fzf interface is closed
     -- on_close = function() ... end
   },
   keymap = {
