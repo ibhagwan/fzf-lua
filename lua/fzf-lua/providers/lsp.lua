@@ -907,7 +907,7 @@ M.code_actions = function(opts)
     -- single results to be skipped with 'async = false'
     opts.jump_to_single_result = false
     opts.lsp_params = vim.lsp.util.make_range_params(0)
-    opts.lsp_params.context = {
+    opts.lsp_params.context = opts.context or {
       -- Neovim still uses `vim.lsp.diagnostic` API in "nvim/runtime/lua/vim/lsp/buf.lua"
       -- continue to use it until proven otherwise, this also fixes #707 as diagnostics
       -- must not be nil or some LSP servers will fail (e.g. ruff_lsp, rust_analyzer)
@@ -937,7 +937,7 @@ M.code_actions = function(opts)
   -- 3rd arg are "once" options to override
   -- existing "registered" ui_select options
   ui_select.register(opts, true, opts)
-  vim.lsp.buf.code_action()
+  vim.lsp.buf.code_action({ context = opts.context, filter = opts.filter })
   -- vim.defer_fn(function()
   --   ui_select.deregister({}, true, true)
   -- end, 100)
