@@ -498,7 +498,9 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
-  if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 and opts.multiline then
+  if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53
+      -- `_multiline` is used to override `multiline` inherited from `defaults = {}`
+      and opts.multiline and opts._multiline ~= false then
     -- If `multiline` was specified we add both "read0" & "print0" flags
     opts.fzf_opts["--read0"] = true
     opts.fzf_opts["--print0"] = true

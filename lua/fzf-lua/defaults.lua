@@ -369,6 +369,7 @@ M.defaults.git                  = {
       ["ctrl-y"]  = { fn = actions.git_yank_commit, exec_silent = true },
     },
     fzf_opts      = { ["--no-multi"] = true },
+    _multiline    = false,
   },
   bcommits = {
     prompt        = "BCommits> ",
@@ -384,30 +385,33 @@ M.defaults.git                  = {
       ["ctrl-y"]  = { fn = actions.git_yank_commit, exec_silent = true },
     },
     fzf_opts      = { ["--no-multi"] = true },
+    _multiline    = false,
   },
   branches = {
-    prompt   = "Branches> ",
-    cmd      = "git branch --all --color",
-    preview  = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
-    fzf_opts = { ["--no-multi"] = true },
-    actions  = {
+    prompt     = "Branches> ",
+    cmd        = "git branch --all --color",
+    preview    = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
+    actions    = {
       ["default"] = actions.git_switch,
       ["ctrl-x"]  = { fn = actions.git_branch_del, reload = true },
       ["ctrl-a"]  = { fn = actions.git_branch_add, field_index = "{q}", reload = true },
     },
-    cmd_add  = { "git", "branch" },
-    cmd_del  = { "git", "branch", "--delete" },
+    cmd_add    = { "git", "branch" },
+    cmd_del    = { "git", "branch", "--delete" },
+    fzf_opts   = { ["--no-multi"] = true },
+    _multiline = false,
   },
   tags = {
-    prompt   = "Tags> ",
-    cmd      = [[git for-each-ref --color --sort="-taggerdate" --format ]]
+    prompt     = "Tags> ",
+    cmd        = [[git for-each-ref --color --sort="-taggerdate" --format ]]
         .. [["%(color:yellow)%(refname:short)%(color:reset) ]]
         .. [[%(color:green)(%(taggerdate:relative))%(color:reset)]]
         .. [[ %(subject) %(color:blue)%(taggername)%(color:reset)" refs/tags]],
-    preview  = [[git log --graph --color --pretty=format:"%C(yellow)%h%Creset ]]
+    preview    = [[git log --graph --color --pretty=format:"%C(yellow)%h%Creset ]]
         .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {1}]],
-    fzf_opts = { ["--no-multi"] = true },
-    actions  = { ["default"] = actions.git_checkout },
+    actions    = { ["default"] = actions.git_checkout },
+    fzf_opts   = { ["--no-multi"] = true },
+    _multiline = false,
   },
   stash = {
     prompt        = "Stash> ",

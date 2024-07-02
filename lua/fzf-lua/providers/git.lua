@@ -53,9 +53,9 @@ M.status = function(opts)
     -- opts.__mt_preprocess = opts.file_icons
     --     and [[return require("fzf-lua.devicons").load()]]
     --     or [[return true]]
-    -- 
+    --
     -- preprocess is required since the addition of `path.filename_first`
-    -- will be set by `core.mt_cmd_wrapper` by commenting out the above 
+    -- will be set by `core.mt_cmd_wrapper` by commenting out the above
     opts.__mt_transform = [[return require("make_entry").git_status]]
     contents = core.mt_cmd_wrapper(opts)
   else
