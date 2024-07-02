@@ -221,8 +221,9 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 
 or if using `init.lua`:
 ```lua
-vim.keymap.set("n", "<c-P>",
-  "<cmd>lua require('fzf-lua').files()<CR>", { silent = true })
+vim.keymap.set("n", "<c-P>", require('fzf-lua').files, { desc = "Fzf Files" })
+-- Or, with args
+vim.keymap.set("n", "<c-P>", function() require('fzf-lua').files({ ... }) end, { desc = "Fzf Files" })
 ```
 
 ### Resume
