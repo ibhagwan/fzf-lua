@@ -112,6 +112,14 @@ end
 local function location_handler(opts, cb, _, result, ctx, _)
   local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
   result = utils.tbl_islist(result) and result or { result }
+  -- HACK: make sure target URI is valid for buggy LSPs (#1317)
+  for i, x in ipairs(result) do
+    for _, k in ipairs({ "uri", "targetUri" }) do
+      if type(x[k]) == "string" and not x[k]:match("file://") then
+        result[i][k] = "file://" .. result[i][k]
+      end
+    end
+  end
   if opts.ignore_current_line then
     local uri = vim.uri_from_bufnr(core.CTX().bufnr)
     local cursor_line = core.CTX().cursor[1] - 1
