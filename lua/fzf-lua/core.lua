@@ -813,6 +813,7 @@ M.mt_cmd_wrapper = function(opts)
       and not opts.file_ignore_patterns
       and not opts.path_shorten
       and not opts.formatter
+      and not opts.multiline
   then
     -- command does not require any processing, we also reset `argv_expr`
     -- to keep `setup_fzf_interactive_flags::no_query_condi` in the command
