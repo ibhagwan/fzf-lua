@@ -115,7 +115,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
   -- HACK: make sure target URI is valid for buggy LSPs (#1317)
   for i, x in ipairs(result) do
     for _, k in ipairs({ "uri", "targetUri" }) do
-      if type(x[k]) == "string" and not x[k]:match("file://") then
+      if type(x[k]) == "string" and not x[k]:match("://") then
         result[i][k] = "file://" .. result[i][k]
       end
     end
