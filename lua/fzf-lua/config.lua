@@ -71,23 +71,6 @@ end
 M.setup_opts = {}
 M.globals = setmetatable({}, {
   __index = function(_, index)
-    -- bind tables are logical exception, if specified, do not merge with defaults
-    -- normalize all binds as lowercase or we can have duplicate keys (#654)
-    if index == "actions" then
-      return {
-        files = utils.map_tolower(
-          utils.map_get(M.setup_opts, "actions.files") or M.defaults.actions.files),
-        buffers = utils.map_tolower(
-          utils.map_get(M.setup_opts, "actions.buffers") or M.defaults.actions.buffers),
-      }
-    elseif index == "keymap" then
-      return {
-        fzf = utils.map_tolower(
-          utils.map_get(M.setup_opts, "keymap.fzf") or M.defaults.keymap.fzf),
-        builtin = utils.map_tolower(
-          utils.map_get(M.setup_opts, "keymap.builtin") or M.defaults.keymap.builtin),
-      }
-    end
     -- build normalized globals, option priority below:
     --   (1) provider specific globals (post-setup)
     --   (2) generic global-defaults (post-setup), i.e. `setup({ defaults = { ... } })`
@@ -95,6 +78,25 @@ M.globals = setmetatable({}, {
     local fzflua_default = utils.map_get(M.defaults, index)
     local setup_default = utils.map_get(M.setup_opts.defaults, index)
     local setup_value = utils.map_get(M.setup_opts, index)
+    local function build_bind_tables(keys)
+      -- bind tables are logical exception, do not merge with defaults unless `[1] == true`
+      -- normalize all binds as lowercase to prevent duplicate keys (#654)
+      local ret = {}
+      for _, k in ipairs(keys) do
+        ret[k] = setup_value and type(setup_value[k]) == "table"
+            and vim.tbl_deep_extend("keep", utils.tbl_deep_clone(setup_value[k]),
+              setup_value[k][1] == true and fzflua_default[k] or {})
+            or utils.tbl_deep_clone(fzflua_default[k])
+        ret[k][1] = nil
+        ret[k] = utils.map_tolower(ret[k])
+      end
+      return ret
+    end
+    if index == "actions" then
+      return build_bind_tables({ "files", "buffers" })
+    elseif index == "keymap" then
+      return build_bind_tables({ "fzf", "builtin" })
+    end
     -- values that aren't tables can't get merged, return highest priority
     if setup_value ~= nil and type(setup_value) ~= "table" then
       return setup_value

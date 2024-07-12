@@ -605,10 +605,10 @@ require'fzf-lua'.setup {
     -- on_close = function() ... end
   },
   keymap = {
-    -- These override the default tables completely
-    -- no need to set to `false` to disable a bind
-    -- delete or modify is sufficient
+    -- Below are the default binds, setting any value in these tables will override
+    -- the defaults, to inherit from the defaults change [1] from `false` to `true`
     builtin = {
+      false,          -- do not inherit from defaults
       -- neovim `:tmap` mappings for the fzf win
       ["<F1>"]        = "toggle-help",
       ["<F2>"]        = "toggle-fullscreen",
@@ -623,6 +623,7 @@ require'fzf-lua'.setup {
       ["<S-left>"]    = "preview-page-reset",
     },
     fzf = {
+      false,          -- do not inherit from defaults
       -- fzf '--bind=' options
       ["ctrl-z"]      = "abort",
       ["ctrl-u"]      = "unix-line-discard",
@@ -639,10 +640,10 @@ require'fzf-lua'.setup {
     },
   },
   actions = {
-    -- These override the default tables completely
-    -- no need to set to `false` to disable an action
-    -- delete or modify is sufficient
+    -- Below are the default actions, setting any value in these tables will override
+    -- the defaults, to inherit from the defaults change [1] from `false` to `true`
     files = {
+      false,          -- do not inherit from defaults
       -- providers that inherit these actions:
       --   files, git_files, git_status, grep, lsp
       --   oldfiles, quickfix, loclist, tags, btags
@@ -660,6 +661,7 @@ require'fzf-lua'.setup {
       ["alt-l"]       = actions.file_sel_to_ll,
     },
     buffers = {
+      false,          -- do not inherit from defaults
       -- providers that inherit these actions:
       --   buffers, tabs, lines, blines
       ["default"]     = actions.buf_edit,
