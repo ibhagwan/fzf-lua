@@ -12,7 +12,11 @@ M.expect = function(actions, opts)
   local expect = {}
   local binds = {}
   for k, v in pairs(actions) do
-    if not v then goto continue end
+    -- actions that starts with _underscore are internal ashouldn't be set as fzf binds
+    -- the user can then use a custom bind and map it to the _underscore action using:
+    --   keymap = { fzf = { ["backward-eof"] = "print(_myaction)+accept" } },
+    --   actions = { ["_myaction"] = function(sel, opts) ... end,
+    if not v or k:match("^_") then goto continue end
     k = k == "default" and "enter" or k
     v = type(v) == "table" and v or { fn = v }
     if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 then
