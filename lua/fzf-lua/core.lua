@@ -586,10 +586,10 @@ M.create_fzf_binds = function(opts)
     -- that meant printing an empty string for the default enter key
     if opts.__FZF_VERSION
         and opts.__FZF_VERSION >= 0.53
-        and action:match("accept")
+        and action:match("accept%s-$")
         and not action:match("print(.-)%+accept")
     then
-      action = action:gsub("accept", "print(enter)+accept")
+      action = action:gsub("accept%s-$", "print(enter)+accept")
     end
     table.insert(tbl, string.format("%s:%s", key, action))
   end
