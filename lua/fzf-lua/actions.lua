@@ -328,7 +328,7 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
         return
       end
     end
-    if utils.__HAS_NVIM_010
+    if vim.fn.exists("&winfixbuf") == 1
         and vim.wo.winfixbuf
         and vimcmd == "b"
         and curbuf ~= entry.bufnr
