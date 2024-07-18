@@ -138,7 +138,7 @@ M.vimcmd_file = function(vimcmd, selected, opts, pcall_vimcmd)
         return
       end
     end
-    if utils.__HAS_NVIM_010
+    if vim.fn.exists("&winfixbuf") == 1
         and vim.wo.winfixbuf
         and vimcmd == "e"
         and curbuf ~= fullpath
