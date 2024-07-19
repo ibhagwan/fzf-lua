@@ -54,6 +54,7 @@ function M.setup_highlights(override)
     { "FzfLuaNormal",            "normal",         { default = default, link = "Normal" } },
     { "FzfLuaBorder",            "border",         { default = default, link = "Normal" } },
     { "FzfLuaTitle",             "title",          { default = default, link = "FzfLuaNormal" } },
+    { "FzfLuaBackdrop",          "backdrop",       { default = default, bg = "Black" } },
     { "FzfLuaHelpNormal",        "help_normal",    { default = default, link = "FzfLuaNormal" } },
     { "FzfLuaHelpBorder",        "help_border",    { default = default, link = "FzfLuaBorder" } },
     { "FzfLuaPreviewNormal",     "preview_normal", { default = default, link = "FzfLuaNormal" } },

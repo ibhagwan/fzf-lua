@@ -323,6 +323,60 @@ function FzfWin.autoclose()
   return _self._autoclose
 end
 
+function FzfWin:set_backdrop()
+  -- Called from redraw?
+  if self.backdrop_win then
+    if vim.api.nvim_win_is_valid(self.backdrop_win) then
+      vim.api.nvim_win_set_config(self.backdrop_win, {
+        width = vim.o.columns,
+        height = vim.o.lines,
+      })
+    end
+    return
+  end
+
+  -- Validate backdrop hlgroup and opacity
+  self.hls.backdrop = type(self.hls.backdrop) == "string"
+      and self.hls.backdrop or "FzfLuaBackdrop"
+  self.winopts.backdrop = tonumber(self.winopts.backdrop)
+      or self.winopts.backdrop == true and 60
+      or 100
+  if self.winopts.backdrop < 0 or self.winopts.backdrop > 99 then return end
+
+  -- Neovim bg has no color, will look weird
+  if #utils.hexcol_from_hl("Normal", "bg") == 0 then return end
+
+  -- Code from lazy.nvim (#1344)
+  self.backdrop_buf = vim.api.nvim_create_buf(false, true)
+  self.backdrop_win = vim.api.nvim_open_win(self.backdrop_buf, false, {
+    relative = "editor",
+    width = vim.o.columns,
+    height = vim.o.lines,
+    row = 0,
+    col = 0,
+    style = "minimal",
+    focusable = false,
+    zindex = self.winopts.zindex - 1,
+  })
+  utils.wo(self.backdrop_win, "winhighlight", "Normal:" .. self.hls.backdrop)
+  utils.wo(self.backdrop_win, "winblend", self.winopts.backdrop)
+  vim.bo[self.backdrop_buf].buftype = "nofile"
+  vim.bo[self.backdrop_buf].filetype = "fzflua_backdrop"
+end
+
+function FzfWin:close_backdrop()
+  if not self.backdrop_win or not self.backdrop_buf then return end
+  if self.backdrop_win and vim.api.nvim_win_is_valid(self.backdrop_win) then
+    vim.api.nvim_win_close(self.backdrop_win, true)
+  end
+  if self.backdrop_buf and vim.api.nvim_buf_is_valid(self.backdrop_buf) then
+    vim.api.nvim_buf_delete(self.backdrop_buf, { force = true })
+  end
+  self.backdrop_buf = nil
+  self.backdrop_win = nil
+  -- vim.cmd("redraw")
+end
+
 local function opt_matches(opts, key, str)
   local opt = opts.winopts.preview[key] or config.globals.winopts.preview[key]
   return opt and opt:match(str)
@@ -628,6 +682,7 @@ function FzfWin:redraw()
   if not self.winopts.split and self.previewer_is_builtin then
     self.layout = self:generate_layout(self.winopts)
   end
+  self:set_backdrop()
   if self:validate() then
     self:redraw_main()
   end
@@ -660,6 +715,7 @@ function FzfWin:redraw_main()
     style = "minimal",
     relative = relative,
     border = self.winopts.border,
+    zindex = self.winopts.zindex,
     title = utils.__HAS_NVIM_09 and self.winopts.title or nil,
     title_pos = utils.__HAS_NVIM_09 and self.winopts.title_pos or nil,
   }
@@ -787,6 +843,7 @@ function FzfWin:create()
   -- When using fzf-tmux we don't need to create windows
   -- as tmux popups will be used instead
   if self._o._is_fzf_tmux then
+    self:set_backdrop()
     return
   end
 
@@ -806,6 +863,9 @@ function FzfWin:create()
     vim.cmd("redraw")
     return self.fzf_bufnr
   end
+
+  -- Set backdrop
+  self:set_backdrop()
 
   if not self.winopts.split and self.previewer_is_builtin then
     self.layout = self:generate_layout(self.winopts)
@@ -899,6 +959,7 @@ function FzfWin:close(fzf_bufnr)
   -- prevents race condition with 'win_leave'
   self.closing = true
   self.close_help()
+  self:close_backdrop()
   self:close_preview()
   if self.fzf_winid and vim.api.nvim_win_is_valid(self.fzf_winid) then
     -- run in a pcall due to potential errors while closing the window

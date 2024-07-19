@@ -556,6 +556,8 @@ require'fzf-lua'.setup {
     -- window, can be set to 'false' to remove all borders or to
     -- 'none', 'single', 'double', 'thicc' (+cc) or 'rounded' (default)
     border           = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
+    -- Backdrop opacity, 0 is fully opaque, 100 is fully transparent (i.e. disabled)
+    backdrop         = 60,
     -- requires neovim > v0.9.0, passed as is to `nvim_open_win`
     -- can be sent individually to any provider to set the win title
     -- title         = "Title",
@@ -1359,6 +1361,7 @@ temporarily overridden by its corresponding `winopts` option:
 |FzfLuaNormal           |Normal       |`hls.normal`        |Main win `fg/bg`|
 |FzfLuaBorder           |Normal       |`hls.border`        |Main win border|
 |FzfLuaTitle            |FzfLuaNormal |`hls.title`         |Main win title|
+|FzfLuaBackdrop         |*bg=Black    |`hls.backdrop`      |Backdrop color|
 |FzfLuaPreviewNormal    |FzfLuaNormal |`hls.preview_normal`|Builtin preview `fg/bg`|
 |FzfLuaPreviewBorder    |FzfLuaBorder |`hls.preview_border`|Builtin preview border|
 |FzfLuaPreviewTitle     |FzfLuaTitle  |`hls.preview_title` |Builtin preview title|

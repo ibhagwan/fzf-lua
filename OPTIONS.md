@@ -249,6 +249,12 @@ Type: `string|table`, Default: `rounded`
 Border of the fzf-lua float, possible values are `none|single|double|rounded|thicc|thiccc|thicccc`
 or a custom border character array passed as is to `nvim_open_win`.
 
+#### globals.winopts.backdrop
+
+Type: `boolean|number`, Default: `60`
+
+Backdrop opacity value, 0 for fully opaque, 100 for fully transparent (i.e. disabled).
+
 #### globals.winopts.fullscreen
 
 Type: `fullscreen`, Default: `false`
@@ -429,6 +435,12 @@ Main fzf (terminal) window border highlight group.
 Type: `string`, Default: `FzfLuaTitle`
 
 Main fzf (terminal) window title highlight group.
+
+#### globals.hls.backdrop
+
+Type: `string`, Default: `FzfLuaBackdrop`
+
+Backdrop color, black by default, used to darken the background color when opening the UI.
 
 #### globals.hls.preview_normal
 

@@ -960,6 +960,14 @@ function M.nvim_buf_get_name(bufnr, bufinfo)
   return bufname
 end
 
+function M.wo(win, k, v)
+  if M.__HAS_NVIM_08 then
+    vim.api.nvim_set_option_value(k, v, { scope = "local", win = win })
+  else
+    vim.wo[win][k] = v
+  end
+end
+
 function M.zz()
   -- skip for terminal buffers
   if M.is_term_buffer() then return end

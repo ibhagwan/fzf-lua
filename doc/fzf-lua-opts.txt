@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*        For Neovim >= 0.8.0        Last change: 2024 June 12
+*fzf-lua-opts.txt*        For Neovim >= 0.8.0        Last change: 2024 July 19
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -327,6 +327,15 @@ array passed as is to `nvim_open_win`.
 
 
                                                                               
+globals.winopts.backdrop               *fzf-lua-opts-globals.winopts.backdrop*
+
+Type: `boolean|number`, Default: `60`
+
+Backdrop opacity value, 0 for fully opaque, 100 for fully transparent (i.e.
+disabled).
+
+
+                                                                              
 globals.winopts.fullscreen           *fzf-lua-opts-globals.winopts.fullscreen*
 
 Type: `fullscreen`, Default: `false`
@@ -569,6 +578,15 @@ globals.hls.title                             *fzf-lua-opts-globals.hls.title*
 Type: `string`, Default: `FzfLuaTitle`
 
 Main fzf (terminal) window title highlight group.
+
+
+                                                                              
+globals.hls.backdrop                       *fzf-lua-opts-globals.hls.backdrop*
+
+Type: `string`, Default: `FzfLuaBackdrop`
+
+Backdrop color, black by default, used to darken the background color when
+opening the UI.
 
 
                                                                               
