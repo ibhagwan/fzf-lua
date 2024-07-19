@@ -561,25 +561,34 @@ M.packadd = function(selected)
   end
 end
 
-local function helptags(s)
+local function helptags(s, opts)
   return vim.tbl_map(function(x)
+    local entry = path.entry_to_file(x, opts)
+    if entry and entry.path and package.loaded.lazy then
+      -- make sure the plugin is loaded. This won't do anything if already loaded
+      local LazyUtil = require("lazy.core.util")
+      local _, plugin = LazyUtil.norm(entry.path):match("(/([^/]+)/doc/)")
+      if plugin then
+        require("lazy").load({ plugins = { plugin } })
+      end
+    end
     return x:match("[^%s]+")
   end, s)
 end
 
-M.help = function(selected)
+M.help = function(selected, opts)
   local vimcmd = "help"
-  M.vimcmd(vimcmd, helptags(selected), true)
+  M.vimcmd(vimcmd, helptags(selected, opts), true)
 end
 
-M.help_vert = function(selected)
+M.help_vert = function(selected, opts)
   local vimcmd = "vert help"
-  M.vimcmd(vimcmd, helptags(selected), true)
+  M.vimcmd(vimcmd, helptags(selected, opts), true)
 end
 
-M.help_tab = function(selected)
+M.help_tab = function(selected, opts)
   local vimcmd = "tab help"
-  M.vimcmd(vimcmd, helptags(selected), true)
+  M.vimcmd(vimcmd, helptags(selected, opts), true)
 end
 
 local function mantags(s)
