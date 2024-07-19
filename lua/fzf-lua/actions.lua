@@ -566,8 +566,7 @@ local function helptags(s, opts)
     local entry = path.entry_to_file(x, opts)
     if entry and entry.path and package.loaded.lazy then
       -- make sure the plugin is loaded. This won't do anything if already loaded
-      local LazyUtil = require("lazy.core.util")
-      local _, plugin = LazyUtil.norm(entry.path):match("(/([^/]+)/doc/)")
+      local _, plugin = path.normalize(entry.path):match("(/([^/]+)/doc/)")
       if plugin then
         require("lazy").load({ plugins = { plugin } })
       end
