@@ -664,7 +664,7 @@ M.defaults.btags                = {
 M.defaults.colorschemes         = {
   prompt       = "Colorschemes> ",
   live_preview = true,
-  winopts      = { height = 0.55, width = 0.50 },
+  winopts      = { height = 0.55, width = 0.50, backdrop = false },
   fzf_opts     = { ["--no-multi"] = true },
   actions      = { ["default"] = actions.colorscheme },
 }
@@ -677,7 +677,7 @@ M.defaults.highlights           = {
 
 M.defaults.awesome_colorschemes = {
   prompt       = "Awesome Colorschemes> ",
-  winopts      = { row = 0, col = 0.99, width = 0.50 },
+  winopts      = { row = 0, col = 0.99, width = 0.50, backdrop = false },
   live_preview = true,
   max_threads  = 5,
   fzf_opts     = {
