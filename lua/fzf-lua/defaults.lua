@@ -969,6 +969,7 @@ M.defaults.search_history       = {
 
 M.defaults.registers            = {
   prompt       = "Registers> ",
+  multiline    = true,
   ignore_empty = true,
   actions      = { ["default"] = actions.paste_register },
   fzf_opts     = { ["--no-multi"] = true },

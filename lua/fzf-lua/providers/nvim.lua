@@ -256,8 +256,9 @@ M.registers = function(opts)
     for k, v in pairs(gsub_map) do
       reg = reg:gsub(k, utils.ansi_codes.magenta(v))
     end
-    return not nl and reg or
-        reg:gsub("\n", utils.ansi_codes.magenta("\\n"))
+    return not nl and reg
+        or nl == 2 and reg:gsub("\n$", "")
+        or reg:gsub("\n", utils.ansi_codes.magenta("\\n"))
   end
 
   local entries = {}
@@ -266,7 +267,7 @@ M.registers = function(opts)
     -- E5108: Error executing lua Vim:clipboard:
     --        provider returned invalid data
     local _, contents = pcall(vim.fn.getreg, r)
-    contents = register_escape_special(contents, true)
+    contents = register_escape_special(contents, opts.multiline and 2 or 1)
     if (contents and #contents > 0) or not opts.ignore_empty then
       table.insert(entries, string.format("[%s] %s",
         utils.ansi_codes.yellow(r), contents))
