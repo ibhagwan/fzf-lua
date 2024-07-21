@@ -1396,7 +1396,7 @@ function FzfWin.toggle_help()
         -- skips 'v == false'
         table.insert(keymaps,
           format_bind("action", k,
-            ("%s"):format(v):gsub(" ", ""),
+            ("%s"):format(tostring(v)):gsub(" ", ""),
             opts.mode_width, opts.keybind_width, opts.name_width))
       end
     end
