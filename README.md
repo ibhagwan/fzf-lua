@@ -819,7 +819,7 @@ require'fzf-lua'.setup {
     prompt            = 'Files❯ ',
     multiprocess      = true,           -- run command in a separate process
     git_icons         = true,           -- show git icons?
-    file_icons        = true,           -- show file icons?
+    file_icons        = true,           -- show file icons (true|"devicons"|"mini")?
     color_icons       = true,           -- colorize file|git icons
     -- path_shorten   = 1,              -- 'true' or number, shorten path?
     -- Uncomment for custom vscode-like formatter where the filename is first:
@@ -860,7 +860,7 @@ require'fzf-lua'.setup {
       cmd           = 'git ls-files --exclude-standard',
       multiprocess  = true,           -- run command in a separate process
       git_icons     = true,           -- show git icons?
-      file_icons    = true,           -- show file icons?
+      file_icons    = true,           -- show file icons (true|"devicons"|"mini")?
       color_icons   = true,           -- colorize file|git icons
       -- force display the cwd header line regardless of your current working
       -- directory can also be used to hide the header when not wanted
@@ -978,7 +978,7 @@ require'fzf-lua'.setup {
     input_prompt      = 'Grep For❯ ',
     multiprocess      = true,           -- run command in a separate process
     git_icons         = true,           -- show git icons?
-    file_icons        = true,           -- show file icons?
+    file_icons        = true,           -- show file icons (true|"devicons"|"mini")?
     color_icons       = true,           -- colorize file|git icons
     -- executed command priority is 'cmd' (if exists)
     -- otherwise auto-detect prioritizes `rg` over `grep`
@@ -1036,7 +1036,7 @@ require'fzf-lua'.setup {
   },
   buffers = {
     prompt            = 'Buffers❯ ',
-    file_icons        = true,         -- show file icons?
+    file_icons        = true,         -- show file icons (true|"devicons"|"mini")?
     color_icons       = true,         -- colorize file|git icons
     sort_lastused     = true,         -- sort buffers() by last used
     show_unloaded     = true,         -- show unloaded buffers
@@ -1055,7 +1055,7 @@ require'fzf-lua'.setup {
     prompt            = 'Tabs❯ ',
     tab_title         = "Tab",
     tab_marker        = "<<",
-    file_icons        = true,         -- show file icons?
+    file_icons        = true,         -- show file icons (true|"devicons"|"mini")?
     color_icons       = true,         -- colorize file|git icons
     actions = {
       -- actions inherit from 'actions.buffers' and merge

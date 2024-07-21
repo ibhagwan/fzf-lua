@@ -747,6 +747,8 @@ M.mt_cmd_wrapper = function(opts)
   local filter_opts = function(o)
     local names = {
       "debug",
+      "profile",
+      "process1",
       "silent",
       "argv_expr",
       "cmd",
@@ -822,6 +824,7 @@ M.mt_cmd_wrapper = function(opts)
   elseif opts.multiprocess then
     assert(not opts.__mt_transform or type(opts.__mt_transform) == "string")
     assert(not opts.__mt_preprocess or type(opts.__mt_preprocess) == "string")
+    assert(not opts.__mt_postprocess or type(opts.__mt_postprocess) == "string")
     if opts.argv_expr then
       -- Since the `rg` command will be wrapped inside the shell escaped
       -- '--headless .. --cmd', we won't be able to search single quotes
@@ -836,7 +839,8 @@ M.mt_cmd_wrapper = function(opts)
     local cmd = libuv.wrap_spawn_stdio(
       serialize(filter_opts(opts)),
       serialize(opts.__mt_transform or [[return require("make_entry").file]]),
-      serialize(opts.__mt_preprocess or [[return require("make_entry").preprocess]])
+      serialize(opts.__mt_preprocess or [[return require("make_entry").preprocess]]),
+      serialize(opts.__mt_postprocess or "nil")
     )
     if opts.argv_expr then
       -- prefix the query with `--` so we can support `--fixed-strings` (#781)
@@ -846,6 +850,7 @@ M.mt_cmd_wrapper = function(opts)
   else
     assert(not opts.__mt_transform or type(opts.__mt_transform) == "function")
     assert(not opts.__mt_preprocess or type(opts.__mt_preprocess) == "function")
+    assert(not opts.__mt_postprocess or type(opts.__mt_postprocess) == "function")
     return libuv.spawn_nvim_fzf_cmd(opts,
       function(x)
         return opts.__mt_transform
@@ -857,7 +862,8 @@ M.mt_cmd_wrapper = function(opts)
         return opts.__mt_preprocess
             and opts.__mt_preprocess(o)
             or make_entry.preprocess(o)
-      end)
+      end,
+      opts.__mt_postprocess and function(o) return opts.__mt_postprocess(o) end or nil)
   end
 end
 

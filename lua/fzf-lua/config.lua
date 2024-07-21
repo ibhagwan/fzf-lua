@@ -539,16 +539,35 @@ function M.normalize_opts(opts, globals, __resume_key)
   end
 
 
-  if devicons.plugin_loaded() then
+  if opts.file_icons then
     -- refresh icons, does nothing if "vim.o.bg" didn't change
-    devicons.load({
-      icon_padding = opts.file_icon_padding,
-      dir_icon = { icon = opts.dir_icon, color = utils.hexcol_from_hl(opts.hls.dir_icon, "fg") }
-    })
-  elseif opts.file_icons then
-    -- Disable devicons if not available
-    utils.warn("nvim-web-devicons isn't available, disabling 'file_icons'.")
-    opts.file_icons = nil
+    if not devicons.load({
+          plugin = opts.file_icons,
+          icon_padding = opts.file_icon_padding,
+          dir_icon = {
+            icon = opts.dir_icon,
+            color = utils.hexcol_from_hl(opts.hls.dir_icon, "fg")
+          }
+        })
+    then
+      -- Disable file_icons if requested package isn't available
+      utils.warn(string.format("error loading '%s', disabling 'file_icons'.",
+        opts.file_icons == "mini" and "mini.icons" or "nvim-web-devicons"))
+      opts.file_icons = nil
+    end
+    if opts.file_icons == "mini" then
+      -- When using "mini.icons" process lines 1-by-1 in the luv callback as having
+      -- to wait for all lines takes much longer due to the `vim.filetype.match` call
+      -- which makes the UX appear laggy
+      opts.process1 = true
+      -- We also want to store the cached extensions/filenames in the main thread
+      -- which we do in "make_entry.postprocess"
+      opts.__mt_postprocess = opts.multiprocess
+          and [[return require("make_entry").postprocess]]
+          -- NOTE: we don't need to update mini when running on main thread
+          -- or require("fzf-lua.make_entry").postprocess
+          or nil
+    end
   end
 
   -- libuv.spawn_nvim_fzf_cmd() pid callback

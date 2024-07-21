@@ -619,13 +619,17 @@ function M.COLORMAP()
   return M.__COLORMAP
 end
 
-local function synIDattr(hl, w)
-  return vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl)), w)
+local function synIDattr(hl, w, mode)
+  -- Although help specifies invalid mode returns the active hlgroups
+  -- when sending `nil` for mode the return value for "fg" is also nil
+  return mode == "cterm" or mode == "gui"
+      and vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl)), w, mode)
+      or vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl)), w)
 end
 
-function M.hexcol_from_hl(hlgroup, what)
+function M.hexcol_from_hl(hlgroup, what, mode)
   if not hlgroup or not what then return end
-  local hexcol = synIDattr(hlgroup, what)
+  local hexcol = synIDattr(hlgroup, what, mode)
   if hexcol and not hexcol:match("^#") then
     -- try to acquire the color from the map
     -- some schemes don't capitalize first letter?

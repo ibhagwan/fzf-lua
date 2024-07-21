@@ -274,6 +274,12 @@ M.preprocess = function(opts)
   return opts
 end
 
+M.postprocess = function(opts)
+  if opts.file_icons == "mini" and devicons.PLUGIN and devicons.PLUGIN.update_state_mini then
+    devicons.PLUGIN:update_state_mini()
+  end
+end
+
 M.lcol = function(entry, opts)
   if not entry then return nil end
   local hl_colnr = utils.tbl_contains(opts._cached_hls or {}, "path_colnr")

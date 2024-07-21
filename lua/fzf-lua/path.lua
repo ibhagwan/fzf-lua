@@ -532,4 +532,40 @@ function M.keymap_to_entry(str, opts)
   return entry and M.entry_to_file(entry, opts) or { mode = mode, key = keymap, vmap = vmap }
 end
 
+-- Minimal functionality so we can hijack during `vim.filetype.match`
+-- As of neovim 0.10 we only need to implement mode ":t"
+M._fnamemodify = function(fname, mods)
+  if mods == ":t" then
+    return M.tail(fname)
+  end
+  return fname
+end
+
+M._env = setmetatable({}, {
+  __index = function(_, index)
+    return os.getenv(index)
+  end
+})
+
+function M.ft_match(args)
+  if not args or not args.filename then
+    error('At least "filename" needs to be specified')
+  end
+
+  -- NOTE: code for `vim.filetype.match` is in "runtime/lua/vim/filetype.lua"
+  -- Hijack `vim.env` and `vim.fn.fnamemodify` in order to circumvent
+  -- E5560: Vimscript function must not be called in a lua loop callback
+  local _env = vim.env
+  local _fnamemodify = vim.fn.fnamemodify
+  vim.env = M._env
+  vim.fn.fnamemodify = M._fnamemodify
+  -- Normalize the path and replace "~" to prevent the internal
+  -- `normalize_path` from having to call `vim.env` or `vim.pesc`
+  local fname = M.normalize(M.tilde_to_HOME(args.filename))
+  local ok, ft, on_detect = pcall(vim.filetype.match, { filename = fname })
+  vim.fn.fnamemodify = _fnamemodify
+  vim.env = _env
+  if ok then return ft, on_detect end
+end
+
 return M
