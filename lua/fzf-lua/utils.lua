@@ -55,16 +55,16 @@ end
 -- For more unicode SPACE options see:
 -- http://unicode-search.net/unicode-namesearch.pl?term=SPACE&.submit=Search
 
--- DO NOT USE '\u{}' escape, it will fail with
--- "invalid escape sequence" if Lua < 5.3
--- '\x' escape sequence requires Lua 5.2
--- M.nbsp = "\xc2\xa0"    -- "\u{00a0}"
-M.nbsp = "\xe2\x80\x82" -- "\u{2002}"
-
--- Lua 5.1 compatibility, not sure if required since we're running LuaJIT
--- but it's harmless anyways since if the '\x' escape worked it will do nothing
+-- DO NOT USE "\u{}" escape, fails with "invalid escape sequence" if Lua < 5.3
+-- "\x" escape sequence requires Lua 5.2/LuaJIT, for Lua 5.1 compatibility we
+-- use a literal backslash with the long string format `[[\x]]` to be replaced
+-- later with `string.char(tonumber(x, 16))`
 -- https://stackoverflow.com/questions/29966782/\
 --    how-to-embed-hex-values-in-a-lua-string-literal-i-e-x-equivalent
+-- M.nbsp = [[\xc2\xa0]]  -- "\u{00a0}"
+M.nbsp = [[\xe2\x80\x82]] -- "\u{2002}"
+
+-- Lua 5.1 compatibility
 if _VERSION and type(_VERSION) == "string" then
   local ver = tonumber(_VERSION:match("%d+.%d+"))
   if ver < 5.2 then

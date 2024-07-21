@@ -1041,26 +1041,24 @@ M.convert_reload_actions = function(reload_cmd, opts)
   --   (2) array of actions to be executed serially
   -- CANNOT HAVE MIXED DEFINITIONS
   for k, v in pairs(opts.actions) do
-    if type(v) ~= "function" and type(v) ~= "table" then
-      goto continue
-    end
-    assert(type(v) == "function" or (v.fn and v[1] == nil) or (v[1] and v.fn == nil))
-    if type(v) == "table" and v.reload then
-      has_reload = true
-      assert(type(v.fn) == "function")
-      -- fallback: we cannot use the `reload` event (old fzf or skim)
-      -- convert to "old-style" interface reload using `resume`
-      if fallback then
-        opts.actions[k] = { v.fn, actions.resume }
+    if type(v) == "function" or type(v) == "table" then
+      assert(type(v) == "function" or (v.fn and v[1] == nil) or (v[1] and v.fn == nil))
+      if type(v) == "table" and v.reload then
+        has_reload = true
+        assert(type(v.fn) == "function")
+        -- fallback: we cannot use the `reload` event (old fzf or skim)
+        -- convert to "old-style" interface reload using `resume`
+        if fallback then
+          opts.actions[k] = { v.fn, actions.resume }
+        end
+      elseif not fallback and type(v) == "table"
+          and type(v[1]) == "function" and v[2] == actions.resume then
+        -- backward compat: we can use the `reload` event but action
+        -- definition is still using the old style using `actions.resume`
+        -- convert to the new style using { fn = <function>, reload = true }
+        opts.actions[k] = { fn = v[1], reload = true }
       end
-    elseif not fallback and type(v) == "table"
-        and type(v[1]) == "function" and v[2] == actions.resume then
-      -- backward compat: we can use the `reload` event but action
-      -- definition is still using the old style using `actions.resume`
-      -- convert to the new style using { fn = <function>, reload = true }
-      opts.actions[k] = { fn = v[1], reload = true }
     end
-    ::continue::
   end
   if has_reload and reload_cmd and type(reload_cmd) ~= "string" then
     utils.warn(

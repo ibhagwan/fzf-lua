@@ -44,9 +44,11 @@ M.resume_set = function(what, val, opts)
   local fn_key = tostring(opts.__resume_key):match("[^%s]+$")
   local key1 = string.format("__resume_map.%s%s", fn_key,
     type(what) == "string" and ("." .. what) or "")
-  local key2 = string.format("__resume_data.opts.%s", what)
   utils.map_set(M, key1, val)
-  utils.map_set(M, key2, val)
+  if type(what) == "string" then
+    local key2 = string.format("__resume_data.opts.%s", what)
+    utils.map_set(M, key2, val)
+  end
   -- backward compatibility for users using `get_last_query`
   if what == "query" then
     utils.map_set(M, "__resume_data.last_query", val)

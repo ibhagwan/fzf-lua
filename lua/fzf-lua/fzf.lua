@@ -111,20 +111,22 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   ---@type function|nil
   local handle_contents
 
-  if utils.__IS_WINDOWS then
-    windows_pipe_server = uv.new_pipe(false)
-    windows_pipe_server:bind(fifotmpname)
-    windows_pipe_server:listen(16, function()
-      output_pipe = uv.new_pipe(false)
-      windows_pipe_server:accept(output_pipe)
-      handle_contents()
-    end)
-  else
-    -- Create the output pipe
-    -- We use tbl for perf reasons, from ':help system':
-    --  If {cmd} is a List it runs directly (no 'shell')
-    --  If {cmd} is a String it runs in the 'shell'
-    vim.fn.system({ "mkfifo", fifotmpname })
+  if type(contents) == "function" or type(contents) == "table" then
+    if utils.__IS_WINDOWS then
+      windows_pipe_server = uv.new_pipe(false)
+      windows_pipe_server:bind(fifotmpname)
+      windows_pipe_server:listen(16, function()
+        output_pipe = uv.new_pipe(false)
+        windows_pipe_server:accept(output_pipe)
+        handle_contents()
+      end)
+    else
+      -- Create the output pipe
+      -- We use tbl for perf reasons, from ':help system':
+      --  If {cmd} is a List it runs directly (no 'shell')
+      --  If {cmd} is a String it runs in the 'shell'
+      vim.fn.system({ "mkfifo", fifotmpname })
+    end
   end
 
   local function finish(_)
@@ -189,17 +191,15 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   handle_contents = vim.schedule_wrap(function()
     -- this part runs in the background. When the user has selected, it will
     -- error out, but that doesn't matter so we just break out of the loop.
-    if contents then
-      if type(contents) == "table" then
-        if not utils.tbl_isempty(contents) then
-          write_cb(vim.tbl_map(function(x)
-            return x .. readEOL
-          end, contents))
-        end
-        finish(4)
-      else
-        contents(usr_write_cb(true), usr_write_cb(false), output_pipe)
+    if type(contents) == "table" then
+      if not utils.tbl_isempty(contents) then
+        write_cb(vim.tbl_map(function(x)
+          return x .. readEOL
+        end, contents))
       end
+      finish(4)
+    elseif type(contents) == "function" then
+      contents(usr_write_cb(true), usr_write_cb(false), output_pipe)
     end
   end)
 
@@ -342,11 +342,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     end
   end
 
-  if not contents or type(contents) == "string" then
-    goto wait_for_fzf
-  end
-
-  if not utils.__IS_WINDOWS then
+  if not utils.__IS_WINDOWS
+      and (type(contents) == "function" or type(contents) == "table")
+  then
     -- have to open this after there is a reader (termopen)
     -- otherwise this will block
     fd = uv.fs_open(fifotmpname, "w", -1)
@@ -356,8 +354,6 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     handle_contents()
   end
 
-
-  ::wait_for_fzf::
   return coroutine.yield()
 end
 

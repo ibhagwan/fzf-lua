@@ -16,23 +16,25 @@ M.expect = function(actions, opts)
     -- the user can then use a custom bind and map it to the _underscore action using:
     --   keymap = { fzf = { ["backward-eof"] = "print(_myaction)+accept" } },
     --   actions = { ["_myaction"] = function(sel, opts) ... end,
-    if not v or k:match("^_") then goto continue end
-    k = k == "default" and "enter" or k
-    v = type(v) == "table" and v or { fn = v }
-    if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 then
-      -- `print(...)` action was only added with fzf 0.53
-      -- NOTE: we can no longer combine `--expect` and `--bind` as this will
-      -- print an extra empty line regardless of the pressaed keybind (#1241)
-      table.insert(binds, string.format("%s:print(%s)%s%s+accept",
-        k,
-        k,
-        v.prefix and "+" or "",
-        v.prefix and v.prefix:gsub("accept$", ""):gsub("%+$", "") or ""
-      ))
-    elseif k ~= "enter" then
-      table.insert(expect, k)
-    end
-    ::continue::
+    (function()
+      -- Lua 5.1 goto compatiblity hack (function wrap)
+      if not v or k:match("^_") then return end
+      k = k == "default" and "enter" or k
+      v = type(v) == "table" and v or { fn = v }
+      if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 then
+        -- `print(...)` action was only added with fzf 0.53
+        -- NOTE: we can no longer combine `--expect` and `--bind` as this will
+        -- print an extra empty line regardless of the pressaed keybind (#1241)
+        table.insert(binds, string.format("%s:print(%s)%s%s+accept",
+          k,
+          k,
+          v.prefix and "+" or "",
+          v.prefix and v.prefix:gsub("accept$", ""):gsub("%+$", "") or ""
+        ))
+      elseif k ~= "enter" then
+        table.insert(expect, k)
+      end
+    end)()
   end
   return #expect > 0 and expect or nil, #binds > 0 and binds or nil
 end
@@ -116,75 +118,77 @@ M.vimcmd_file = function(vimcmd, selected, opts, pcall_vimcmd)
   local curbuf = vim.api.nvim_buf_get_name(0)
   local is_term = utils.is_term_buffer(0)
   for i = 1, #selected do
-    local entry = path.entry_to_file(selected[i], opts, opts.force_uri)
-    if entry.path == "<none>" then goto continue end
-    entry.ctag = opts._ctag and path.entry_to_ctag(selected[i])
-    local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
-    if not path.is_absolute(fullpath) then
-      fullpath = path.join({ opts.cwd or opts._cwd or uv.cwd(), fullpath })
-    end
-    if vimcmd == "e"
-        and curbuf ~= fullpath
-        and not vim.o.hidden
-        and not vim.o.autowriteall
-        and utils.buffer_is_dirty(nil, false, true) then
-      -- confirm with user when trying to switch
-      -- from a dirty buffer when `:set nohidden`
-      -- abort if the user declines
-      -- save the buffer if requested
-      if utils.save_dialog(nil) then
-        vimcmd = vimcmd .. "!"
-      else
+    (function()
+      -- Lua 5.1 goto compatiblity hack (function wrap)
+      local entry = path.entry_to_file(selected[i], opts, opts.force_uri)
+      if entry.path == "<none>" then return end
+      entry.ctag = opts._ctag and path.entry_to_ctag(selected[i])
+      local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
+      if not path.is_absolute(fullpath) then
+        fullpath = path.join({ opts.cwd or opts._cwd or uv.cwd(), fullpath })
+      end
+      if vimcmd == "e"
+          and curbuf ~= fullpath
+          and not vim.o.hidden
+          and not vim.o.autowriteall
+          and utils.buffer_is_dirty(nil, false, true) then
+        -- confirm with user when trying to switch
+        -- from a dirty buffer when `:set nohidden`
+        -- abort if the user declines
+        -- save the buffer if requested
+        if utils.save_dialog(nil) then
+          vimcmd = vimcmd .. "!"
+        else
+          return
+        end
+      end
+      if vim.fn.exists("&winfixbuf") == 1
+          and vim.wo.winfixbuf
+          and vimcmd == "e"
+          and curbuf ~= fullpath
+      then
+        utils.warn("'winfixbuf' is set for current window, unable to change buffer.")
         return
       end
-    end
-    if vim.fn.exists("&winfixbuf") == 1
-        and vim.wo.winfixbuf
-        and vimcmd == "e"
-        and curbuf ~= fullpath
-    then
-      utils.warn("'winfixbuf' is set for current window, unable to change buffer.")
-      return
-    end
-    -- add current location to jumplist
-    if not is_term then vim.cmd("normal! m`") end
-    -- only change buffer if we need to (issue #122)
-    if vimcmd ~= "e" or not path.equals(curbuf, fullpath) then
-      if entry.path then
-        -- do not run ':<cmd> <file>' for uri entries (#341)
-        local relpath = path.relative_to(entry.path, uv.cwd())
-        if vim.o.autochdir then
-          -- force full paths when `autochdir=true` (#882)
-          relpath = fullpath
+      -- add current location to jumplist
+      if not is_term then vim.cmd("normal! m`") end
+      -- only change buffer if we need to (issue #122)
+      if vimcmd ~= "e" or not path.equals(curbuf, fullpath) then
+        if entry.path then
+          -- do not run ':<cmd> <file>' for uri entries (#341)
+          local relpath = path.relative_to(entry.path, uv.cwd())
+          if vim.o.autochdir then
+            -- force full paths when `autochdir=true` (#882)
+            relpath = fullpath
+          end
+          -- we normalize the path or Windows will fail with directories starting
+          -- with special characters, for example "C:\app\(web)" will be translated
+          -- by neovim to "c:\app(web)" (#1082)
+          local cmd = vimcmd .. " " .. vim.fn.fnameescape(path.normalize(relpath))
+          if pcall_vimcmd then
+            pcall(vim.cmd, cmd)
+          else
+            vim.cmd(cmd)
+          end
+        elseif vimcmd ~= "e" then
+          -- uri entries only execute new buffers (new|vnew|tabnew)
+          vim.cmd(vimcmd)
         end
-        -- we normalize the path or Windows will fail with directories starting
-        -- with special characters, for example "C:\app\(web)" will be translated
-        -- by neovim to "c:\app(web)" (#1082)
-        local cmd = vimcmd .. " " .. vim.fn.fnameescape(path.normalize(relpath))
-        if pcall_vimcmd then
-          pcall(vim.cmd, cmd)
-        else
-          vim.cmd(cmd)
-        end
-      elseif vimcmd ~= "e" then
-        -- uri entries only execute new buffers (new|vnew|tabnew)
-        vim.cmd(vimcmd)
       end
-    end
-    -- Java LSP entries, 'jdt://...' or LSP locations
-    if entry.uri then
-      vim.lsp.util.jump_to_location(entry, "utf-16")
-    elseif entry.ctag then
-      vim.api.nvim_win_set_cursor(0, { 1, 0 })
-      vim.fn.search(entry.ctag, "W")
-    elseif entry.line > 1 or entry.col > 1 then
-      -- make sure we have valid column
-      -- 'nvim-dap' for example sets columns to 0
-      entry.col = entry.col and entry.col > 0 and entry.col or 1
-      pcall(vim.api.nvim_win_set_cursor, 0, { tonumber(entry.line), tonumber(entry.col) - 1 })
-    end
-    if not is_term and not opts.no_action_zz then vim.cmd("norm! zvzz") end
-    ::continue::
+      -- Java LSP entries, 'jdt://...' or LSP locations
+      if entry.uri then
+        vim.lsp.util.jump_to_location(entry, "utf-16")
+      elseif entry.ctag then
+        vim.api.nvim_win_set_cursor(0, { 1, 0 })
+        vim.fn.search(entry.ctag, "W")
+      elseif entry.line > 1 or entry.col > 1 then
+        -- make sure we have valid column
+        -- 'nvim-dap' for example sets columns to 0
+        entry.col = entry.col and entry.col > 0 and entry.col or 1
+        pcall(vim.api.nvim_win_set_cursor, 0, { tonumber(entry.line), tonumber(entry.col) - 1 })
+      end
+      if not is_term and not opts.no_action_zz then vim.cmd("norm! zvzz") end
+    end)()
   end
 end
 
