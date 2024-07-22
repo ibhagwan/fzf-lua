@@ -622,8 +622,6 @@ function FzfWin:redraw_preview()
     self.border_buf = self:redraw_preview_border()
     self.preview_winid = api.nvim_open_win(tmp_buf, false, self.prev_winopts)
     self.border_winid = api.nvim_open_win(self.border_buf, false, self.border_winopts)
-    -- nowrap border or long filenames will mess things up
-    vim.wo[self.border_winid].wrap = false
     -- Add win local var for the preview|border windows
     api.nvim_win_set_var(self.preview_winid, "fzf_lua_preview", true)
     api.nvim_win_set_var(self.border_winid, "fzf_lua_preview", true)
