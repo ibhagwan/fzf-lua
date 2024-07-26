@@ -110,6 +110,7 @@ at it. That, **and colorful file icons and git indicators!**.
 - [`fzf`](https://github.com/junegunn/fzf) version > `0.25`
   **or** [`skim`](https://github.com/lotabout/skim) binary installed
 - [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons)
+  **or** [mini.icons](https://github.com/echasnovski/mini.icons)
   (optional)
 
 ### Optional dependencies
@@ -157,6 +158,8 @@ Using [vim-plug](https://github.com/junegunn/vim-plug)
 Plug 'ibhagwan/fzf-lua', {'branch': 'main'}
 " optional for icon support
 Plug 'nvim-tree/nvim-web-devicons'
+" or if using mini.icons/mini.nvim
+" Plug 'echasnovski/mini.icons'
 ```
 
 Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
@@ -165,6 +168,8 @@ Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
 use { "ibhagwan/fzf-lua",
   -- optional for icon support
   requires = { "nvim-tree/nvim-web-devicons" }
+  -- or if using mini.icons/mini.nvim
+  -- requires = { "echasnovski/mini.icons" }
 }
 ```
 
@@ -807,9 +812,9 @@ require'fzf-lua'.setup {
   },
   -- PROVIDERS SETUP
   -- use `defaults` (table or function) if you wish to set "global-provider" defaults
-  -- for example, disabling file icons globally and open the quickfix list at the top
+  -- for example, using "mini.icons" globally and open the quickfix list at the top
   --   defaults = {
-  --     file_icons   = false,
+  --     file_icons   = "mini",
   --     copen        = "topleft copen",
   --   },
   files = {

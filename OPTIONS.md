@@ -196,9 +196,17 @@ require("fzf-lua").setup({ files = { formatter = "path.filename_first" } })
 
 #### globals.file_icons
 
-Type: `boolean`, Default: `true`
+Type: `boolean|string`, Default: `true`
 
-If available, add devicons to files.
+If available, display file icons.
+
+Set to `true` will attempt to use "nvim-web-devicons" and fallback to "mini.icons", other possible
+values are `devicons` or `mini` which force loading a specific icons plugin, for example:
+
+```lua
+:FzfLua files file_icons=mini
+:lua require("fzf-lua").files({ file_icons = "devicons"  })
+```
 
 #### globals.git_icons
 
