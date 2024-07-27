@@ -36,18 +36,6 @@ function DevIconsBase:unload()
   self._package_loaded = nil
 end
 
-function DevIconsBase:has_icons_for_bg()
-  -- Test if we have the correct icon set for the current background
-  -- if the background changed from light<->dark, refresh the icons
-  if self._state and self._state.icons and self._state.bg == vim.o.bg then
-    return true
-  end
-
-  -- save the current background
-  self._state = self._state or {}
-  self._state.bg = vim.o.bg
-end
-
 local NvimWebDevicons = DevIconsBase:extend()
 
 function NvimWebDevicons:new()
@@ -69,6 +57,11 @@ function NvimWebDevicons:load()
   return self._package_loaded
 end
 
+function NvimWebDevicons:is_mock()
+  return type(self._package_path) == "string"
+      and self._package_path:match("mini") ~= nil
+end
+
 ---@return boolean|nil success
 function NvimWebDevicons:load_icons(opts)
   if not self:loaded() then return end
@@ -80,8 +73,14 @@ function NvimWebDevicons:load_icons(opts)
         vim.tbl_extend("force", { icon = "", color = "#6d8086" }, opts.default_icon or {}),
   })
 
-  -- Only refresh if `bg` changed from dark<->light (#855)
-  if self:has_icons_for_bg() then return true end
+  -- test if we have the correct icon set for the current background
+  -- if the background changed from light<->dark, refresh the icons (#855)
+  if self._state and self._state.icons and self._state.bg == vim.o.bg then
+    return true
+  end
+
+  -- save the current background
+  self._state.bg = vim.o.bg
 
   -- The state object needs to be RPC request compatible
   -- rpc request cannot return a table that has mixed elements
@@ -176,14 +175,34 @@ function MiniIcons:load()
   return self._package_loaded
 end
 
+local __MINI_HLGROUPS = {
+  "MiniIconsRed",
+  "MiniIconsBlue",
+  "MiniIconsCyan",
+  "MiniIconsGrey",
+  "MiniIconsAzure",
+  "MiniIconsGreen",
+  "MiniIconsOrange",
+  "MiniIconsPurple",
+  "MiniIconsYellow",
+}
+
 function MiniIcons:load_icons(opts)
   if not self:loaded() then return end
-  if self:has_icons_for_bg() then return true end
+
+  -- Refresh MiniIcon hl groups
+  self._state = self._state or {}
+  self._state.hl2hex = {}
+  for _, hl in ipairs(__MINI_HLGROUPS) do
+    self._state.hl2hex["_" .. hl] = utils.hexcol_from_hl(hl, "fg", opts.mode)
+  end
+
+  -- Icon set already loaded, return
+  if self._state and self._state.icons then return true end
 
   -- Mini.icons requires calling `setup()`
-  -- TODO: do we need to setup again once bg has changed?
   ---@diagnostic disable-next-line: undefined-field
-  if not _G.MiniIcons or self._state and self._state.icons then
+  if not _G.MiniIcons then
     require(self._package_name).setup()
   end
 
@@ -192,7 +211,8 @@ function MiniIcons:load_icons(opts)
 
   local function mini_get(category, name)
     local icon, hl = _G.MiniIcons.get(category, name)
-    local color = utils.hexcol_from_hl(hl, "fg", opts.mode)
+    -- Adding _underscore tells `get_devicon` to resolve using `_state.hl2hex`
+    local color = "_" .. hl
     return { icon = icon, color = color }
   end
 
@@ -330,10 +350,13 @@ M.plugin_load = function(provider)
             print(errmsg)
           end
         end
-        -- Prioritize nvim-web-devicons, load mini only if `_G.MiniIcons` is present (#1358)
+        -- Prioritize nvim-web-devicons
         local ret = M.__DEVICONS
+        -- Load mini only if `_G.MiniIcons` is present or if using `mock_nvim_web_devicons()`
+        -- at which point we would like to replace the mock with first-class MiniIcons (#1358)
         ---@diagnostic disable-next-line: undefined-field
-        if not M.__DEVICONS:load() and _G.MiniIcons and M.__MINI:load() then
+        if not M.__DEVICONS:load() and _G.MiniIcons or M.__DEVICONS:is_mock() and M.__MINI:load()
+        then
           ret = M.__MINI
         end
         -- Load custom setup file
@@ -405,9 +428,17 @@ M.get_devicon = function(filepath, extensionOverride)
     return unpack({ "", nil })
   end
 
+  local function validate_hl(col)
+    if col and col:match("^_") then
+      return STATE.hl2hex[col]
+    else
+      return col
+    end
+  end
+
   if path.ends_with_separator(filepath) then
     -- path is directory
-    return STATE.dir_icon.icon, STATE.dir_icon.color
+    return STATE.dir_icon.icon, validate_hl(STATE.dir_icon.color)
   end
 
   local icon, color
@@ -474,7 +505,7 @@ M.get_devicon = function(filepath, extensionOverride)
     icon = icon .. STATE.icon_padding
   end
 
-  return icon, color
+  return icon, validate_hl(color)
 end
 
 ---@return boolean|nil success

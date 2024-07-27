@@ -576,6 +576,10 @@ M._fnamemodify = function(fname, mods)
   if mods == ":t" then
     return M.tail(fname)
   end
+  if mods == ":r" then
+    local tail = M.tail(fname)
+    return tail and tail[1] ~= "." and (fname:gsub("%.[^.]*$", "")) or tail
+  end
   return fname
 end
 

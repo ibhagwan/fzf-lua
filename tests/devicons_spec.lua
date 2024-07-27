@@ -106,8 +106,8 @@ describe("Testing NvimWebDevicons", function()
   end)
   it("background=light", function()
     vim.o.background = "light"
-    unload_package()
-    load_package()
+    -- NOTE: do not unload+load as we want to test bg change with a loaded pkg
+    devicons.load()
     assert.are.same({ devicons.get_devicon("foo/") }, { "", nil })
     devicons_are_same("", { "", "#6d8086" })
     devicons_are_same(".", { "", "#6d8086" })
