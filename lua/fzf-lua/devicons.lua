@@ -175,30 +175,22 @@ function MiniIcons:load()
   return self._package_loaded
 end
 
-local __MINI_HLGROUPS = {
-  "MiniIconsRed",
-  "MiniIconsBlue",
-  "MiniIconsCyan",
-  "MiniIconsGrey",
-  "MiniIconsAzure",
-  "MiniIconsGreen",
-  "MiniIconsOrange",
-  "MiniIconsPurple",
-  "MiniIconsYellow",
-}
+function MiniIcons:refresh_hlgroups(mode)
+  if not self._state or not self._hlgroups then return end
+  self._state.hl2hex = {}
+  for hl, _ in pairs(self._hlgroups) do
+    self._state.hl2hex["_" .. hl] = utils.hexcol_from_hl(hl, "fg", mode)
+  end
+end
 
 function MiniIcons:load_icons(opts)
   if not self:loaded() then return end
 
-  -- Refresh MiniIcon hl groups
-  self._state = self._state or {}
-  self._state.hl2hex = {}
-  for _, hl in ipairs(__MINI_HLGROUPS) do
-    self._state.hl2hex["_" .. hl] = utils.hexcol_from_hl(hl, "fg", opts.mode)
+  -- Icon set already loaded, refresh hlgroups and return
+  if self._state and self._state.icons then
+    self:refresh_hlgroups(opts.mode)
+    return true
   end
-
-  -- Icon set already loaded, return
-  if self._state and self._state.icons then return true end
 
   -- Mini.icons requires calling `setup()`
   ---@diagnostic disable-next-line: undefined-field
@@ -209,11 +201,15 @@ function MiniIcons:load_icons(opts)
   -- Something isn't right
   if not _G.MiniIcons then return end
 
+  -- Automatically discover highlight groups used by mini
+  self._hlgroups = {}
+
   local function mini_get(category, name)
     local icon, hl = _G.MiniIcons.get(category, name)
+    -- Store for `:refresh_hlgroups()`
+    self._hlgroups[hl] = true
     -- Adding _underscore tells `get_devicon` to resolve using `_state.hl2hex`
-    local color = "_" .. hl
-    return { icon = icon, color = color }
+    return { icon = icon, color = "_" .. hl }
   end
 
   self._state = vim.tbl_deep_extend("force", self._state or {}, {
@@ -260,6 +256,9 @@ function MiniIcons:load_icons(opts)
   }) do
     self._state.icons.by_ext[k] = self._state.icons.by_filetype[v]
   end
+
+  -- Resolve discovered hlgroups to colors
+  self:refresh_hlgroups(opts.mode)
 
   return true
 end
