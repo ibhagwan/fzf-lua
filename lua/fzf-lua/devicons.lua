@@ -250,6 +250,17 @@ function MiniIcons:load_icons(opts)
     self._state.icons.by_filetype[ft] = mini_get("filetype", ft)
   end
 
+  -- Extensions that have weird behaviors within `vim.filetype.match`
+  -- https://github.com/ibhagwan/fzf-lua/issues/1358#issuecomment-2254215160
+  for k, v in pairs({
+    sh   = "sh",
+    bash = "sh",
+    ksh  = "sh",
+    tcsh = "sh",
+  }) do
+    self._state.icons.by_ext[k] = self._state.icons.by_filetype[v]
+  end
+
   return true
 end
 

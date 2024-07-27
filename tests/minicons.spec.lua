@@ -45,7 +45,9 @@ describe("Testing MiniIcons", function()
     assert.are.equal(utils.tbl_count(icons.by_filename),
       utils.tbl_count(MiniIcons.list("file")))
     assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
-      utils.tbl_count(MiniIcons.list("extension")))
+      -- +4 extensions that are causing issues in `vim.filetype.match`
+      -- https://github.com/ibhagwan/fzf-lua/issues/1358#issuecomment-2254215160
+      utils.tbl_count(MiniIcons.list("extension")) + 4)
     assert.is.True(utils.tbl_count(icons.ext_has_2part) == 0)
     assert.is.True(utils.tbl_count(icons.by_ext_2part) == 0)
     mini_are_same("file", "foo", { "󰈔", "" })
