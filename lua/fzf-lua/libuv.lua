@@ -209,7 +209,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     local nlines = 0
     local start_idx = 1
     local t_st = opts.profile and uv.hrtime()
-    if t_st then io.stdout:write(string.format("[DEBUG start:%.0f (ns)]\n", t_st)) end
+    if t_st then write_cb(string.format("[DEBUG start:%.0f (ns)]" .. EOL, t_st)) end
     repeat
       local nl_idx = find_next_newline(data, start_idx)
       local line = data:sub(start_idx, nl_idx - 1)
@@ -239,7 +239,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     if #lines > 0 then write_cb(table.concat(lines, EOL) .. EOL) end
     if t_st then
       local t_e = vim.uv.hrtime()
-      io.stdout:write(string.format("[DEBUG end:%.0f (ns)], %d lines took %.0f (ms)\n",
+      write_cb(string.format("[DEBUG end:%.0f (ns)], %d lines took %.0f (ms)" .. EOL,
         t_e, nlines, (t_e - t_st) / 1000000))
     end
   end

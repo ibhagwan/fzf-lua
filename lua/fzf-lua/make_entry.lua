@@ -72,12 +72,12 @@ M.get_diff_files = function(opts)
   local diff_files = {}
   local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd
   if not cmd then return {} end
-  local start = os.time()
+  local start = uv.hrtime()
   local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts))
-  local seconds = os.time() - start
-  if seconds >= 3 and opts.silent ~= true then
+  local seconds = (uv.hrtime() - start) / 1e9
+  if seconds >= 0.5 and opts.silent ~= true then
     local exec_str = string.format([[require"fzf-lua".utils.warn(]] ..
-      [["`git status` took %d seconds, consider using `:FzfLua files git_icons=false` in this repository.")]]
+      [["'git status' took %.2f seconds, consider using `git_icons=false` in this repository or use `silent=true` to supress this message.")]]
       , seconds)
     if not vim.g.fzf_lua_is_headless then
       loadstring(exec_str)()
