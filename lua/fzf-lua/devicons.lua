@@ -250,11 +250,6 @@ function MiniIcons:load_icons(opts)
     self._state.icons.by_filetype[ft] = mini_get("filetype", ft)
   end
 
-  -- Missing extensions that aren't properlt detected by `vim.filetype.match`
-  for k, v in pairs({ txt = "text" }) do
-    self._state.icons.by_ext[k] = self._state.icons.by_filetype[v]
-  end
-
   return true
 end
 

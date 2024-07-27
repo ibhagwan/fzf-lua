@@ -45,8 +45,7 @@ describe("Testing MiniIcons", function()
     assert.are.equal(utils.tbl_count(icons.by_filename),
       utils.tbl_count(MiniIcons.list("file")))
     assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
-      -- add one for manually added "txt" extension
-      utils.tbl_count(MiniIcons.list("extension")) + 1)
+      utils.tbl_count(MiniIcons.list("extension")))
     assert.is.True(utils.tbl_count(icons.ext_has_2part) == 0)
     assert.is.True(utils.tbl_count(icons.by_ext_2part) == 0)
     mini_are_same("file", "foo", { "󰈔", "" })

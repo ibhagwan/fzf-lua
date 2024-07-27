@@ -589,6 +589,9 @@ M._env = setmetatable({}, {
   end
 })
 
+M._nvim_buf_get_lines = function() return { "" } end
+M._nvim_buf_line_count = function() return 1 end
+
 function M.ft_match(args)
   if not args or not args.filename then
     error('At least "filename" needs to be specified')
@@ -599,12 +602,18 @@ function M.ft_match(args)
   -- E5560: Vimscript function must not be called in a lua loop callback
   local _env = vim.env
   local _fnamemodify = vim.fn.fnamemodify
+  local _nvim_buf_get_lines = vim.api.nvim_buf_get_lines
+  local _nvim_buf_line_count = vim.api.nvim_buf_line_count
   vim.env = M._env
   vim.fn.fnamemodify = M._fnamemodify
+  vim.api.nvim_buf_get_lines = M._nvim_buf_get_lines
+  vim.api.nvim_buf_line_count = M._nvim_buf_line_count
   -- Normalize the path and replace "~" to prevent the internal
   -- `normalize_path` from having to call `vim.env` or `vim.pesc`
   local fname = M.normalize(M.tilde_to_HOME(args.filename))
-  local ok, ft, on_detect = pcall(vim.filetype.match, { filename = fname })
+  local ok, ft, on_detect = pcall(vim.filetype.match, { filename = fname, buf = 0 })
+  vim.api.nvim_buf_get_lines = _nvim_buf_get_lines
+  vim.api.nvim_buf_line_count = _nvim_buf_line_count
   vim.fn.fnamemodify = _fnamemodify
   vim.env = _env
   if ok then return ft, on_detect end
