@@ -6,9 +6,7 @@ local previewers = require "fzf-lua.previewer"
 
 local M = {}
 
--- Do not autoload "mini.icons" since it has noticeable first run
--- lag delays due to the reliance on `vim.filetype.match` (#1358)
-M._has_devicons = devicons.__DEVICONS:loaded()
+M._has_devicons = devicons.plugin_loaded()
 
 function M._default_previewer_fn()
   local previewer = M.globals.default_previewer or M.globals.winopts.preview.default

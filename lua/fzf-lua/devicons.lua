@@ -330,9 +330,10 @@ M.plugin_load = function(provider)
             print(errmsg)
           end
         end
-        -- Prioritize nvim-web-devicons
+        -- Prioritize nvim-web-devicons, load mini only if `_G.MiniIcons` is present (#1358)
         local ret = M.__DEVICONS
-        if not M.__DEVICONS:load() and M.__MINI:load() then
+        ---@diagnostic disable-next-line: undefined-field
+        if not M.__DEVICONS:load() and _G.MiniIcons and M.__MINI:load() then
           ret = M.__MINI
         end
         -- Load custom setup file
@@ -445,24 +446,23 @@ M.get_devicon = function(filepath, extensionOverride)
   -- mini.icons supports lookup by filetype
   if not icon and STATE.icons.by_filetype then
     local ft = path.ft_match({ filename = filename })
-    if ft and #ft > 0 then
-      local by_ft = STATE.icons.by_filetype[ft]
-      if by_ft then
-        icon, color = by_ft.icon, by_ft.color
-        -- Store in the corresponding lookup table so we don't
-        -- have to call `vim.filetype.match` a second time
-        if ext then
-          STATE.icons.by_ext[ext] = by_ft
-        else
-          STATE.icons.by_filename[filename] = by_ft
-        end
-      end
-    elseif ext then
-      -- Save current ext with default icon to avoid lookup by ft a second time
-      STATE.icons.by_ext[ext] = {
-        icon = STATE.default_icon.icon,
-        color = STATE.default_icon.color
-      }
+    local by_ft = ft and #ft > 0 and STATE.icons.by_filetype[ft]
+
+    if not by_ft then
+      -- store default icon in cache to avoid lookup by ft a second time
+      by_ft = { icon = STATE.default_icon.icon, color = STATE.default_icon.color }
+    end
+
+    icon, color = by_ft.icon, by_ft.color
+
+    -- Store in the corresponding lookup table to prevent another `vim.filetype.match`
+    -- NOTE: this logic has a flaw by design where certain filenames/extensions will
+    -- differ from mini.icons as mini performs fullpath lookup and caching which results
+    -- in a very large cache which is better avoided in fzf-lua for performance reasons
+    if ext then
+      STATE.icons.by_ext[ext] = by_ft
+    else
+      STATE.icons.by_filename[filename] = by_ft
     end
   end
 
