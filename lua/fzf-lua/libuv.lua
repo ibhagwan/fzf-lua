@@ -35,7 +35,7 @@ if not vim.g.fzf_lua_directory and #vim.api.nvim_list_uis() == 0 then
   local tmpdir = vim.fn.fnamemodify(vim.fn.tempname(), ":h")
   if tmpdir and #tmpdir > 0 then
     vim.fn.delete(tmpdir, "rf")
-    -- io.stdout:write("[DEBUG]: "..tmpdir.."\n")
+    -- io.stdout:write("[DEBUG] "..tmpdir.."\n")
   end
   -- neovim might also automatically start the RPC server which will
   -- generate a named pipe temp file, e.g. `/run/user/1000/nvim.14249.0`
@@ -433,7 +433,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
     io.stdout:write(string.format("[DEBUG] fn_preprocess=%s" .. EOL, fn_preprocess_str))
     io.stdout:write(string.format("[DEBUG] fn_postprocess=%s" .. EOL, fn_postprocess_str))
   elseif opts.debug then
-    io.stdout:write("[DEBUG]: " .. opts.cmd .. EOL)
+    io.stdout:write("[DEBUG] " .. opts.cmd .. EOL)
   end
 
   local stderr, stdout = nil, nil

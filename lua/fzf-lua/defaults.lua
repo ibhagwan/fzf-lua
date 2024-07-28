@@ -451,7 +451,7 @@ M.defaults.grep                 = {
   multiprocess   = true,
   file_icons     = true and M._has_devicons,
   color_icons    = true,
-  git_icons      = true,
+  git_icons      = false,
   fzf_opts       = { ["--multi"] = true },
   grep_opts      = utils.is_darwin()
       and "--binary-files=without-match --line-number --recursive --color=always "
