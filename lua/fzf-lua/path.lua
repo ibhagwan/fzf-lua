@@ -589,8 +589,8 @@ M._env = setmetatable({}, {
   end
 })
 
-M._nvim_buf_get_lines = function() return { "" } end
-M._nvim_buf_line_count = function() return 1 end
+M._nvim_buf_get_lines = function() return {} end
+M._nvim_buf_line_count = function() return 0 end
 
 function M.ft_match(args)
   if not args or not args.filename then
