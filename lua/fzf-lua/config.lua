@@ -559,7 +559,7 @@ function M.normalize_opts(opts, globals, __resume_key)
       -- When using "mini.icons" process lines 1-by-1 in the luv callback as having
       -- to wait for all lines takes much longer due to the `vim.filetype.match` call
       -- which makes the UX appear laggy
-      opts.process1 = true
+      opts.process1 = opts.process1 == nil and true or opts.process1
       -- We also want to store the cached extensions/filenames in the main thread
       -- which we do in "make_entry.postprocess"
       opts.__mt_postprocess = opts.multiprocess
