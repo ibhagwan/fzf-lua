@@ -171,13 +171,13 @@ M.preprocess = function(opts)
     local idx = tonumber(i) and tonumber(i) + 6 or #vim.v.argv
     local arg = vim.v.argv[idx]
     if debug == "v" or debug == "verbose" then
-      io.stdout:write(("[DEBUGV]: raw_argv(%d) = %s" .. EOL):format(idx, arg))
+      io.stdout:write(("[DEBUG] raw_argv(%d) = %s" .. EOL):format(idx, arg))
     end
     if utils.__IS_WINDOWS then
       arg = libuv.unescape_fzf(arg, opts.__FZF_VERSION)
     end
     if debug == "v" or debug == "verbose" then
-      io.stdout:write(("[DEBUGV]: esc_argv(%d) = %s" .. EOL):format(idx, libuv.shellescape(arg)))
+      io.stdout:write(("[DEBUG] esc_argv(%d) = %s" .. EOL):format(idx, libuv.shellescape(arg)))
     end
     return arg
   end

@@ -209,7 +209,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     local nlines = 0
     local start_idx = 1
     local t_st = opts.profile and uv.hrtime()
-    if t_st then write_cb(string.format("[DEBUG start:%.0f (ns)]" .. EOL, t_st)) end
+    if t_st then write_cb(string.format("[DEBUG] start: %.0f (ns)" .. EOL, t_st)) end
     repeat
       local nl_idx = find_next_newline(data, start_idx)
       local line = data:sub(start_idx, nl_idx - 1)
@@ -239,8 +239,8 @@ M.spawn = function(opts, fn_transform, fn_done)
     if #lines > 0 then write_cb(table.concat(lines, EOL) .. EOL) end
     if t_st then
       local t_e = vim.uv.hrtime()
-      write_cb(string.format("[DEBUG end:%.0f (ns)], %d lines took %.0f (ms)" .. EOL,
-        t_e, nlines, (t_e - t_st) / 1000000))
+      write_cb(string.format("[DEBUG] finish:%.0f (ns) %d lines took %.0f (ms)" .. EOL,
+        t_e, nlines, (t_e - t_st) / 1e6))
     end
   end
 
@@ -413,7 +413,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
   for k, v in pairs(opts.g or {}) do
     _G[k] = v
     if opts.debug == "v" or opts.debug == "verbose" then
-      io.stdout:write(string.format("[DEBUGV]: %s=%s" .. EOL, k, v))
+      io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, v))
     end
   end
 
@@ -427,11 +427,11 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
 
   if opts.debug == "v" or opts.debug == "verbose" then
     for k, v in pairs(opts) do
-      io.stdout:write(string.format("[DEBUGV]: %s=%s" .. EOL, k, v))
+      io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, v))
     end
-    io.stdout:write(string.format("[DEBUGV]: fn_transform=%s" .. EOL, fn_transform_str))
-    io.stdout:write(string.format("[DEBUGV]: fn_preprocess=%s" .. EOL, fn_preprocess_str))
-    io.stdout:write(string.format("[DEBUGV]: fn_postprocess=%s" .. EOL, fn_postprocess_str))
+    io.stdout:write(string.format("[DEBUG] fn_transform=%s" .. EOL, fn_transform_str))
+    io.stdout:write(string.format("[DEBUG] fn_preprocess=%s" .. EOL, fn_preprocess_str))
+    io.stdout:write(string.format("[DEBUG] fn_postprocess=%s" .. EOL, fn_postprocess_str))
   elseif opts.debug then
     io.stdout:write("[DEBUG]: " .. opts.cmd .. EOL)
   end
