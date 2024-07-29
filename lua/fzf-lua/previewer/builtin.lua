@@ -287,9 +287,10 @@ end
 
 function Previewer.base:cmdline(_)
   local act = shell.raw_action(function(items, _, _)
+    self.opts._last_query = type(items[2]) == "string" and items[2] or nil
     self:display_entry(items[1])
     return ""
-  end, "{}", self.opts.debug)
+  end, "{} {q}", self.opts.debug)
   return act
 end
 
@@ -857,30 +858,27 @@ function Previewer.buffer_or_file:do_syntax(entry)
 end
 
 function Previewer.buffer_or_file:set_cursor_hl(entry)
+  local mgrep = require("fzf-lua.providers.grep")
+  local regex = self.opts.__ACT_TO == mgrep.grep and self.opts._last_query
+      or self.opts.__ACT_TO == mgrep.live_grep and self.opts.search or nil
+
   pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
     local lnum, col = tonumber(entry.line), tonumber(entry.col)
-    local pattern = entry.pattern or entry.text
-
     if not lnum or lnum < 1 then
       api.nvim_win_set_cursor(0, { 1, 0 })
-      if pattern ~= "" then
-        fn.search(pattern, "c")
-      end
-    else
-      if not pcall(api.nvim_win_set_cursor, 0, { lnum, math.max(0, col - 1) }) then
-        return
-      end
+    elseif not pcall(api.nvim_win_set_cursor, 0, { lnum, math.max(0, col - 1) }) then
+      return
     end
-
-    utils.zz()
-
-    self.orig_pos = api.nvim_win_get_cursor(0)
 
     fn.clearmatches()
-
-    if self.win.hls.cursor and not (lnum <= 1 and col <= 1) then
+    if regex and self.win.hls.search then
+      fn.matchadd(self.win.hls.search, regex)
+    elseif self.win.hls.cursor and not (lnum <= 1 and col <= 1) then
       fn.matchaddpos(self.win.hls.cursor, { { lnum, math.max(1, col) } }, 11)
     end
+
+    self.orig_pos = api.nvim_win_get_cursor(0)
+    utils.zz()
   end)
 end
 
