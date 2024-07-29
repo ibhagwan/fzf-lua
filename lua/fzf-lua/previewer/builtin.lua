@@ -871,9 +871,25 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
     end
 
     fn.clearmatches()
+
+    -- If regex is available (grep/lgrep), match on current line
+    local regex_match_len = 0
     if regex and self.win.hls.search then
-      fn.matchadd(self.win.hls.search, regex)
-    elseif self.win.hls.cursor and not (lnum <= 1 and col <= 1) then
+      -- vim.regex is always magic, see `:help vim.regex`
+      local ok, reg = pcall(vim.regex, utils.regex_to_magic(regex))
+      if ok then
+        _, regex_match_len = reg:match_line(self.preview_bufnr, lnum - 1, col - 1)
+        regex_match_len = tonumber(regex_match_len) or 0
+      elseif self.opts.silent ~= true then
+        utils.warn(string.format([[Unable to init vim.regex with "%s", %s]], regex, reg))
+      end
+      if regex_match_len > 0 then
+        fn.matchaddpos(self.win.hls.search, { { lnum, math.max(1, col), regex_match_len } }, 11)
+      end
+    end
+
+    -- Fallback to cursor hl
+    if regex_match_len <= 0 and self.win.hls.cursor and not (lnum <= 1 and col <= 1) then
       fn.matchaddpos(self.win.hls.cursor, { { lnum, math.max(1, col) } }, 11)
     end
 

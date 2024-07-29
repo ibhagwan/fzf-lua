@@ -208,6 +208,10 @@ function M.rg_escape(str)
   return ret
 end
 
+function M.regex_to_magic(str)
+  return [[\v]] .. str
+end
+
 function M.sk_escape(str)
   if not str then return str end
   return str:gsub('["`]', function(x)
