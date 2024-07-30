@@ -204,7 +204,7 @@ M.buffers = function(opts)
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
-  opts = core.set_fzf_field_index(opts)
+  opts = opts.filename_only and opts or core.set_fzf_field_index(opts)
 
   core.fzf_exec(contents, opts)
 end
@@ -424,7 +424,7 @@ M.tabs = function(opts)
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
-  opts = core.set_fzf_field_index(opts, "{3}", "{}")
+  opts = opts.filename_only and opts or core.set_fzf_field_index(opts, "{4}", "{}")
 
   core.fzf_exec(contents, opts)
 end

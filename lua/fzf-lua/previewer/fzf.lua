@@ -268,7 +268,8 @@ function Previewer.bat_async:cmdline(o)
     local cmd = errcmd or ("%s %s %s %s %s %s"):format(
       self.cmd, self.args,
       self.theme and string.format([[--theme="%s"]], self.theme) or "",
-      self.opts.line_field_index and string.format("--highlight-line=%d", entry.line) or "",
+      self.opts.line_field_index and tonumber(entry.line) and
+      string.format("--highlight-line=%d", entry.line) or "",
       line_range,
       libuv.shellescape(filepath))
     return cmd
