@@ -970,16 +970,19 @@ M.set_header = function(opts, hdr_tbl)
         local ret = {}
         for k, v in pairs(opts.actions) do
           local action = type(v) == "function" and v or type(v) == "table" and (v.fn or v[1])
-          if type(action) == "function" and defs[action] then
-            local def = defs[action]
-            local to = def[1]
+          local def, to = nil, type(v) == "table" and v.header
+          if not to and type(action) == "function" and defs[action] then
+            def = defs[action]
+            to = def[1]
+          end
+          if to then
             if type(to) == "function" then
               to = to(o)
             end
-            table.insert(ret, def.pos or #ret + 1,
+            table.insert(ret, def and def.pos or #ret + 1,
               string.format("<%s> to %s",
                 utils.ansi_from_hl(opts.hls.header_bind, k),
-                utils.ansi_from_hl(opts.hls.header_text, to)))
+                utils.ansi_from_hl(opts.hls.header_text, tostring(to))))
           end
         end
         -- table.concat fails if the table indexes aren't consecutive
