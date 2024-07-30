@@ -90,7 +90,7 @@ M.globals = setmetatable({}, {
               setup_value[k][1] == true and fzflua_default[k] or {})
             or utils.tbl_deep_clone(fzflua_default[k])
         ret[k][1] = nil
-        ret[k] = utils.map_tolower(ret[k])
+        ret[k] = utils.map_tolower(ret[k], "^alt%-%a$")
       end
       return ret
     end
@@ -192,16 +192,16 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- normalize all binds as lowercase or we can have duplicate keys (#654)
   ---@param m {fzf: table<string, unknown>, builtin: table<string, unknown>}
   ---@return {fzf: table<string, unknown>, builtin: table<string, unknown>}?
-  local keymap_tolower = function(m)
+  local keymap_tolower = function(m, exclude_patterns)
     return m and {
-      fzf = utils.map_tolower(m.fzf),
-      builtin = utils.map_tolower(m.builtin)
+      fzf = utils.map_tolower(m.fzf, exclude_patterns),
+      builtin = utils.map_tolower(m.builtin, exclude_patterns),
     } or nil
   end
-  opts.keymap = keymap_tolower(opts.keymap)
-  opts.actions = utils.map_tolower(opts.actions)
-  globals.keymap = keymap_tolower(globals.keymap)
-  globals.actions = utils.map_tolower(globals.actions)
+  opts.keymap = keymap_tolower(opts.keymap, "^alt%-%a$")
+  opts.actions = utils.map_tolower(opts.actions, "^alt%-%a$")
+  globals.keymap = keymap_tolower(globals.keymap, "^alt%-%a$")
+  globals.actions = utils.map_tolower(globals.actions, "^alt%-%a$")
 
   -- inherit from globals.actions?
   if type(globals._actions) == "function" then

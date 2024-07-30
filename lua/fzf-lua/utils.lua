@@ -471,13 +471,24 @@ end
 
 ---@param m table<string, unknown>?
 ---@return table<string, unknown>?
-function M.map_tolower(m)
+function M.map_tolower(m, exclude_patterns)
+  -- We use "exclude_patterns" to filter "alt-{a|A}"
+  -- as it's a valid and different fzf bind
+  exclude_patterns = type(exclude_patterns) == "table" and exclude_patterns
+      or type(exclude_patterns) == "string" and { exclude_patterns }
+      or {}
   if not m then
     return
   end
   local ret = {}
   for k, v in pairs(m) do
-    ret[k:lower()] = v
+    local lower_k = (function()
+      for _, p in ipairs(exclude_patterns) do
+        if k:match(p) then return k end
+      end
+      return k:lower()
+    end)()
+    ret[lower_k] = v
   end
   return ret
 end
