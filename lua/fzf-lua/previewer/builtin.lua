@@ -863,13 +863,15 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       or self.opts.__ACT_TO == mgrep.live_grep and self.opts.search or nil
 
   pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
-    local lnum, col = tonumber(entry.line), tonumber(entry.col)
+    local lnum, col = tonumber(entry.line), tonumber(entry.col) or 1
     if not lnum or lnum < 1 then
-      api.nvim_win_set_cursor(0, { 1, 0 })
-    elseif not pcall(api.nvim_win_set_cursor, 0, { lnum, math.max(0, col - 1) }) then
+      self.orig_pos = { 1, 0 }
+      api.nvim_win_set_cursor(0, self.orig_pos)
       return
     end
 
+    self.orig_pos = { lnum, math.max(0, col - 1) }
+    api.nvim_win_set_cursor(0, self.orig_pos)
     fn.clearmatches()
 
     -- If regex is available (grep/lgrep), match on current line
@@ -893,7 +895,6 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       fn.matchaddpos(self.win.hls.cursor, { { lnum, math.max(1, col) } }, 11)
     end
 
-    self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
   end)
 end

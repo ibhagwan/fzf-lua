@@ -181,7 +181,7 @@ M.vimcmd_file = function(vimcmd, selected, opts, pcall_vimcmd)
       elseif entry.ctag then
         vim.api.nvim_win_set_cursor(0, { 1, 0 })
         vim.fn.search(entry.ctag, "W")
-      elseif entry.line > 1 or entry.col > 1 then
+      elseif tonumber(entry.line) or tonumber(entry.col) then
         -- make sure we have valid column
         -- 'nvim-dap' for example sets columns to 0
         entry.col = entry.col and entry.col > 0 and entry.col or 1
@@ -296,7 +296,7 @@ M.file_switch = function(selected, opts)
   if not is_term then vim.cmd("normal! m`") end
   local winid = utils.winid_from_tabh(0, bufnr)
   if winid then vim.api.nvim_set_current_win(winid) end
-  if entry.line > 1 or entry.col > 1 then
+  if tonumber(entry.line) or tonumber(entry.col) then
     vim.api.nvim_win_set_cursor(0, { tonumber(entry.line), tonumber(entry.col) - 1 })
   end
   if not is_term and not opts.no_action_zz then vim.cmd("norm! zvzz") end
@@ -354,7 +354,7 @@ M.vimcmd_buf = function(vimcmd, selected, opts)
       end
     end
     if vimcmd ~= "bd" and not opts.no_action_set_cursor then
-      if curbuf ~= entry.bufnr or lnum ~= entry.line then
+      if curbuf ~= entry.bufnr or lnum ~= tonumber(entry.line) then
         -- make sure we have valid column
         entry.col = entry.col and entry.col > 0 and entry.col or 1
         vim.api.nvim_win_set_cursor(0, { tonumber(entry.line), tonumber(entry.col) - 1 })
@@ -963,8 +963,8 @@ M.dap_bp_del = function(selected, opts)
   local dap_bps = require("dap.breakpoints")
   for _, e in ipairs(selected) do
     local entry = path.entry_to_file(e, opts)
-    if entry.bufnr > 0 and entry.line then
-      dap_bps.remove(entry.bufnr, entry.line)
+    if entry.bufnr > 0 and tonumber(entry.line) then
+      dap_bps.remove(entry.bufnr, tonumber(entry.line))
       table.insert(bufnrs, tonumber(entry.bufnr))
     end
   end

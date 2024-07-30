@@ -173,7 +173,7 @@ local grep_tag = function(file, tag)
   else
     utils.warn(("previewer: unable to find pattern '%s' in file '%s'"):format(pattern, file))
   end
-  return line
+  return tonumber(line)
 end
 
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
@@ -182,7 +182,7 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   local filepath = path.relative_to(entry.bufname or entry.path or "", uv.cwd())
   if self.opts._ctag then
     entry.ctag = path.entry_to_ctag(entry.stripped, true)
-    if entry.line <= 1 then
+    if not tonumber(entry.line) then
       -- default tags are without line numbers
       -- make sure we don't already have line #
       -- (in the case the line no. is actually 1)
