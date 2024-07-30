@@ -1,4 +1,4 @@
-*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2024 July 25
+*fzf-lua.txt*           For Neovim >= 0.5.0          Last change: 2024 July 29
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -733,6 +733,8 @@ open an issue and I'll be more than happy to help.**
           ["ctrl-a"]      = "beginning-of-line",
           ["ctrl-e"]      = "end-of-line",
           ["alt-a"]       = "toggle-all",
+          ["alt-g"]       = "last",
+          ["alt-G"]       = "first",
           -- Only valid with fzf previewers (bat/cat/git/etc)
           ["f3"]          = "toggle-preview-wrap",
           ["f4"]          = "toggle-preview",
