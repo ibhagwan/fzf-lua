@@ -863,8 +863,9 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       or self.opts.__ACT_TO == mgrep.live_grep and self.opts.search or nil
 
   pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
-    local lnum, col = tonumber(entry.line), tonumber(entry.col) or 1
+    local lnum, col = tonumber(entry.line), tonumber(entry.col) or 0
     if not lnum or lnum < 1 then
+      vim.wo.cursorline = false
       self.orig_pos = { 1, 0 }
       api.nvim_win_set_cursor(0, self.orig_pos)
       return
@@ -880,7 +881,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       -- vim.regex is always magic, see `:help vim.regex`
       local ok, reg = pcall(vim.regex, utils.regex_to_magic(regex))
       if ok then
-        _, regex_match_len = reg:match_line(self.preview_bufnr, lnum - 1, col - 1)
+        _, regex_match_len = reg:match_line(self.preview_bufnr, lnum - 1, math.max(1, col) - 1)
         regex_match_len = tonumber(regex_match_len) or 0
       elseif self.opts.silent ~= true then
         utils.warn(string.format([[Unable to init vim.regex with "%s", %s]], regex, reg))
@@ -890,8 +891,8 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       end
     end
 
-    -- Fallback to cursor hl
-    if regex_match_len <= 0 and self.win.hls.cursor and not (lnum <= 1 and col <= 1) then
+    -- Fallback to cursor hl, only if column exists
+    if regex_match_len <= 0 and self.win.hls.cursor and col > 0 then
       fn.matchaddpos(self.win.hls.cursor, { { lnum, math.max(1, col) } }, 11)
     end
 
