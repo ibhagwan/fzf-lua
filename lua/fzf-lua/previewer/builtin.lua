@@ -861,6 +861,9 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   local mgrep = require("fzf-lua.providers.grep")
   local regex = self.opts.__ACT_TO == mgrep.grep and self.opts._last_query
       or self.opts.__ACT_TO == mgrep.live_grep and self.opts.search or nil
+  if regex and self.opts.rg_glob and self.opts.glob_separator then
+    regex = require("fzf-lua.make_entry").glob_parse(regex, self.opts)
+  end
 
   pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
     local lnum, col = tonumber(entry.line), tonumber(entry.col) or 0
