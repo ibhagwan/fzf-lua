@@ -245,14 +245,14 @@ local normalize_winopts = function(o)
 
   -- when ambiwdith="double" `nvim_open_win` with border chars fails:
   -- with "border chars must be one cell", force string border (#874)
-  if vim.o.ambiwidth == "double" and type(winopts.border) == "table" then
-    local topleft = winopts.border[1]
-    winopts.border = topleft and config.globals.__WINOPTS.border2string[topleft] or "rounded"
+  if vim.o.ambiwidth == "double" then
+    if type(winopts.border) == "table" then
+      local topleft = winopts.border[1]
+      winopts.border = topleft and config.globals.__WINOPTS.border2string[topleft] or "rounded"
+    end
     winopts._border = winopts.border
-  end
-
-  -- We only allow 'none|empty|single|double|rounded|thicc|thiccc|thiccc'
-  if type(winopts.border) == "string" then
+  elseif type(winopts.border) == "string" then
+    -- We only allow 'none|empty|single|double|rounded|thicc|thiccc|thiccc'
     winopts.border = config.globals.__WINOPTS.borderchars[winopts.border] or
         config.globals.__WINOPTS.borderchars["rounded"]
   end
@@ -356,7 +356,8 @@ function FzfWin:set_backdrop()
     col = 0,
     style = "minimal",
     focusable = false,
-    zindex = self.winopts.zindex - 1,
+    -- -2 as preview border is -1
+    zindex = self.winopts.zindex - 2,
   })
   utils.wo(self.backdrop_win, "winhighlight", "Normal:" .. self.hls.backdrop)
   utils.wo(self.backdrop_win, "winblend", self.winopts.backdrop)
@@ -518,12 +519,12 @@ function FzfWin:preview_layout()
   if not self.layout then return {}, {} end
 
   local preview_opts = vim.tbl_extend("force", self.layout.preview, {
-    zindex = self.winopts.zindex or 991,
+    zindex = self.winopts.zindex,
     style = "minimal",
     focusable = true,
   })
   local border_winopts = {
-    zindex = self.winopts.zindex or 990,
+    zindex = self.winopts.zindex - 1,
     style = "minimal",
     focusable = false,
     relative = self.layout.preview.relative,
@@ -594,9 +595,7 @@ function FzfWin:redraw_preview()
   --    (2) preview title only when nvim >= 0.9
   if vim.o.ambiwidth == "double" then
     assert(type(self.winopts._border) == "string")
-    self.border_winopts = vim.tbl_extend("force", self.border_winopts, { zindex = self.winopts.zindex or 990 })
     self.prev_winopts = vim.tbl_extend("force", self.prev_winopts, {
-      zindex = self.winopts.zindex or 991,
       col = self.border_winopts.col,
       row = self.border_winopts.row,
       border = self.winopts._border,
@@ -1118,7 +1117,7 @@ function FzfWin:update_scrollbar_float(o)
     style1.row = info.winrow - 1 + offset
     style1.col = info.wincol + info.width + offset +
         (tonumber(self.winopts.preview.scrolloff) or -2)
-    style1.zindex = info.zindex or 997
+    style1.zindex = self.winopts.zindex + 1
     if self._swin1 and vim.api.nvim_win_is_valid(self._swin1) then
       vim.api.nvim_win_set_config(self._swin1, style1)
     else
@@ -1448,8 +1447,8 @@ function FzfWin.toggle_help()
     col = 1,
     -- top border only
     border = { " ", "─", " ", " ", " ", " ", " ", " " },
-    -- topmost popup
-    zindex = self.winopts.zindex or 999,
+    -- topmost popup (+2 for float border empty/full)
+    zindex = self.winopts.zindex + 2,
   }
 
   -- "border chars mustbe one cell" (#874)
