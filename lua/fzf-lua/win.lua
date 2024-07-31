@@ -518,12 +518,12 @@ function FzfWin:preview_layout()
   if not self.layout then return {}, {} end
 
   local preview_opts = vim.tbl_extend("force", self.layout.preview, {
-    zindex = 991,
+    zindex = self.winopts.zindex or 991,
     style = "minimal",
     focusable = true,
   })
   local border_winopts = {
-    zindex = 990,
+    zindex = self.winopts.zindex or 990,
     style = "minimal",
     focusable = false,
     relative = self.layout.preview.relative,
@@ -594,9 +594,9 @@ function FzfWin:redraw_preview()
   --    (2) preview title only when nvim >= 0.9
   if vim.o.ambiwidth == "double" then
     assert(type(self.winopts._border) == "string")
-    self.border_winopts = vim.tbl_extend("force", self.border_winopts, { zindex = 990 })
+    self.border_winopts = vim.tbl_extend("force", self.border_winopts, { zindex = self.winopts.zindex or 990 })
     self.prev_winopts = vim.tbl_extend("force", self.prev_winopts, {
-      zindex = 991,
+      zindex = self.winopts.zindex or 991,
       col = self.border_winopts.col,
       row = self.border_winopts.row,
       border = self.winopts._border,
@@ -1449,7 +1449,7 @@ function FzfWin.toggle_help()
     -- top border only
     border = { " ", "─", " ", " ", " ", " ", " ", " " },
     -- topmost popup
-    zindex = 999,
+    zindex = self.winopts.zindex or 999,
   }
 
   -- "border chars mustbe one cell" (#874)
