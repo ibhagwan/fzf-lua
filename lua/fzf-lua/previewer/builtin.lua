@@ -1049,6 +1049,7 @@ end
 function Previewer.marks:parse_entry(entry_str)
   local bufnr = nil
   local mark, lnum, col, filepath = entry_str:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
+  if not mark then return {} end
   -- try to acquire position from sending buffer
   -- if this succeeds (line>0) the mark is inside
   local pos = vim.api.nvim_buf_get_mark(self.win.src_bufnr, mark)
