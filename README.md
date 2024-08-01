@@ -617,6 +617,7 @@ require'fzf-lua'.setup {
     builtin = {
       false,          -- do not inherit from defaults
       -- neovim `:tmap` mappings for the fzf win
+      ["<M-Esc>"]     = "hide",     -- hide fzf-lua, `:FzfLua resume` to continue
       ["<F1>"]        = "toggle-help",
       ["<F2>"]        = "toggle-fullscreen",
       -- Only valid with the 'builtin' previewer
@@ -627,7 +628,8 @@ require'fzf-lua'.setup {
       ["<F6>"]        = "toggle-preview-cw",
       ["<S-down>"]    = "preview-page-down",
       ["<S-up>"]      = "preview-page-up",
-      ["<S-left>"]    = "preview-page-reset",
+      ["<M-S-down>"]  = "preview-down",
+      ["<M-S-up>"]    = "preview-up",
     },
     fzf = {
       false,          -- do not inherit from defaults

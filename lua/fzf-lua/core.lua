@@ -203,6 +203,8 @@ M.fzf_live = function(contents, opts)
 end
 
 M.fzf_resume = function(opts)
+  -- First try to unhide the window
+  if win.unhide() then return end
   if not config.__resume_data or not config.__resume_data.opts then
     utils.info("No resume data available.")
     return
