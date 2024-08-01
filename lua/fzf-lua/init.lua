@@ -356,6 +356,14 @@ M.setup_fzfvim_cmds = function(...)
   return fn(...)
 end
 
+function M.hide()
+  return loadstring("return require'fzf-lua'.win.hide()")()
+end
+
+function M.unhide()
+  return loadstring("return require'fzf-lua'.win.unhide()")()
+end
+
 -- export the defaults module and deref
 M.defaults = require("fzf-lua.defaults").defaults
 

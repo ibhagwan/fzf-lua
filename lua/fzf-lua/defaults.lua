@@ -63,12 +63,14 @@ M.defaults                      = {
         scrolloff      = 1,
       },
     },
-    on_create  = function()
+    on_create  = function(_)
       -- vim.cmd("set winhl=Normal:Normal,FloatBorder:Normal")
+      -- utils.keymap_set("t", "<A-Esc>", actions.hide, { nowait = true, buffer = e.bufnr })
     end,
   },
   keymap        = {
     builtin = {
+      ["<M-Esc>"]    = "hide",
       ["<F1>"]       = "toggle-help",
       ["<F2>"]       = "toggle-fullscreen",
       -- Only valid with the 'builtin' previewer

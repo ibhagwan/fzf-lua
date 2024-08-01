@@ -48,6 +48,7 @@ function FzfWin:setup_keybinds()
     end
   end
   local keymap_tbl = {
+    ["hide"]              = { module = "win", fnc = "hide()" },
     ["toggle-help"]       = { module = "win", fnc = "toggle_help()" },
     ["toggle-fullscreen"] = { module = "win", fnc = "toggle_fullscreen()" },
   }
@@ -62,15 +63,14 @@ function FzfWin:setup_keybinds()
   for key, action in pairs(self.keymap.builtin) do
     local keymap = keymap_tbl[action]
     if keymap and not utils.tbl_isempty(keymap) and action ~= false then
-      utils.keymap_set("t", key, funcref_str(keymap),
-        { nowait = true, buffer = self.fzf_bufnr })
+      utils.keymap_set("t", key, funcref_str(keymap), { nowait = true, buffer = self.fzf_bufnr })
     end
   end
 
   -- If the user did not override the Esc action ensure it's
   -- not bound to anything else such as `<C-\><C-n>` (#663)
-  if self.actions["esc"] == actions.dummy_abort then
-    utils.keymap_set("t", "<Esc>", "<Esc>", { buffer = 0, nowait = true })
+  if self.actions["esc"] == actions.dummy_abort and not self.keymap.builtin["<esc>"] then
+    utils.keymap_set("t", "<Esc>", "<Esc>", { buffer = self.fzf_bufnr, nowait = true })
   end
 end
 
@@ -324,6 +324,8 @@ function FzfWin.autoclose()
 end
 
 function FzfWin:set_backdrop()
+  -- No backdrop for split, only floats / tmux
+  if self.winopts.split then return end
   -- Called from redraw?
   if self.backdrop_win then
     if vim.api.nvim_win_is_valid(self.backdrop_win) then
@@ -387,10 +389,14 @@ end
 ---@param o table
 ---@return FzfWin
 function FzfWin:new(o)
-  if _self then
+  if _self and not _self:hidden() then
     -- utils.warn("Please close fzf-lua before starting a new instance")
     _self._reuse = true
     return _self
+  elseif _self and _self:hidden() then
+    -- Clear the hidden buffers
+    vim.api.nvim_buf_delete(_self._hidden_fzf_bufnr, { force = true })
+    _self = nil
   end
   o = o or {}
   self._o = o
@@ -751,7 +757,7 @@ function FzfWin:redraw_main()
   else
     -- save 'cursorline' setting prior to opening the popup
     local cursorline = vim.o.cursorline
-    self.fzf_bufnr = vim.api.nvim_create_buf(false, true)
+    self.fzf_bufnr = self.fzf_bufnr or vim.api.nvim_create_buf(false, true)
     self.fzf_winid = utils.nvim_open_win(self.fzf_bufnr, true, win_opts)
     -- disable search highlights as they interfere with fzf's highlights
     if vim.o.hlsearch and vim.v.hlsearch == 1 then
@@ -795,7 +801,7 @@ function FzfWin:set_winleave_autocmd()
   self:_nvim_create_autocmd("WinLeave", self.win_leave, [[require('fzf-lua.win').win_leave()]])
 end
 
-function FzfWin:set_tmp_buffer()
+function FzfWin:set_tmp_buffer(no_wipe)
   if not self:validate() then return end
   -- Store the [would be] detached buffer number
   local detached = self.fzf_bufnr
@@ -806,7 +812,7 @@ function FzfWin:set_tmp_buffer()
   vim.api.nvim_win_set_buf(self.fzf_winid, self.fzf_bufnr)
   -- close the previous fzf term buffer without triggering autocmds
   -- this also kills the previous fzf process if its still running
-  utils.nvim_buf_delete(detached, { force = true })
+  if not no_wipe then utils.nvim_buf_delete(detached, { force = true }) end
   -- in case buffer exists prematurely
   self:set_winleave_autocmd()
   -- automatically resize fzf window
@@ -875,8 +881,15 @@ function FzfWin:create()
 
   if self.winopts.split then
     vim.cmd(self.winopts.split)
-    self.fzf_bufnr = vim.api.nvim_get_current_buf()
+    local split_bufnr = vim.api.nvim_get_current_buf()
     self.fzf_winid = vim.api.nvim_get_current_win()
+    if tonumber(self.fzf_bufnr) and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
+      -- Set to fzf bufnr set by `:unhide()`, wipe the new split buf
+      utils.win_set_buf_noautocmd(self.fzf_winid, self.fzf_bufnr)
+      utils.nvim_buf_delete(split_bufnr, { force = true })
+    else
+      self.fzf_bufnr = split_bufnr
+    end
     -- match window options with 'nvim_open_win' style:minimal
     self:set_style_minimal(self.fzf_winid)
     update_preview_split(self.winopts, self.fzf_winid)
@@ -899,9 +912,8 @@ function FzfWin:create()
   -- https://github.com/neovim/neovim/issues/20726
   vim.wo[self.fzf_winid].foldmethod = "manual"
 
-  if self.winopts.on_create and
-      type(self.winopts.on_create) == "function" then
-    self.winopts.on_create()
+  if type(self.winopts.on_create) == "function" then
+    self.winopts.on_create({ winid = self.fzf_winid, bufnr = self.fzf_bufnr })
   end
 
   -- create or redraw the preview win
@@ -1017,6 +1029,48 @@ function FzfWin.win_leave()
   end
   if not self or self.closing then return end
   self:close()
+end
+
+function FzfWin:detach_fzf_buf()
+  self._hidden_fzf_bufnr = self.fzf_bufnr
+  vim.bo[self._hidden_fzf_bufnr].bufhidden = ""
+  self:set_tmp_buffer(true)
+end
+
+function FzfWin.hide()
+  local self = _self
+  -- Note: we should never get here with a tmux profile as neovim binds (default: <A-Esc>)
+  -- do not apply to tmux, validate anyways in case called directly using the API
+  if not self or self._o._is_fzf_tmux then return end
+  if self:validate_preview() and not self.preview_hidden then
+    self:close_preview()
+    self._hidden_had_preview = true
+  end
+  self:detach_fzf_buf()
+  self:close()
+  -- Save self as `:close()` nullifies it
+  _self = self
+end
+
+function FzfWin:hidden()
+  return tonumber(self._hidden_fzf_bufnr)
+      and tonumber(self._hidden_fzf_bufnr) > 0
+      and vim.api.nvim_buf_is_valid(self._hidden_fzf_bufnr)
+end
+
+function FzfWin.unhide()
+  local self = _self
+  if not self or not self:hidden() then return end
+  vim.bo[self._hidden_fzf_bufnr].bufhidden = "wipe"
+  self.fzf_bufnr = self._hidden_fzf_bufnr
+  self._hidden_fzf_bufnr = nil
+  self:create()
+  if self._hidden_had_preview then
+    self._hidden_had_preview = nil
+    self:redraw_preview()
+  end
+  vim.cmd("startinsert")
+  return true
 end
 
 function FzfWin:update_scrollbar_border(o)
