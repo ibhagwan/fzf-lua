@@ -381,19 +381,8 @@ Previewer.man_pages = Previewer.base:extend()
 
 function Previewer.man_pages:new(o, opts)
   Previewer.man_pages.super.new(self, o, opts)
-  if not self.cmd then
-    if utils.is_darwin() then
-      self.cmd = vim.fn.executable("bat") == 1
-          and [[man -P "bat -l man -p --color=always" %s]]
-          or "man -P cat %s"
-    else
-      self.cmd = vim.fn.executable("bat") == 1
-          and "man -c %s | bat -l man -p --color=always"
-          or "man %s"
-    end
-    self.cmd = self.cmd or vim.fn.executable("bat") == 1
-        and "bat -p -l help --color=always %s" or "cat %s"
-  end
+  self.cmd = o.cmd or "man -c %s | col -bx"
+  self.cmd = type(self.cmd) == "function" and self.cmd() or self.cmd
   return self
 end
 

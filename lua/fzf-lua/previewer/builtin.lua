@@ -1022,6 +1022,7 @@ function Previewer.man_pages:new(o, opts, fzf_win)
   Previewer.man_pages.super.new(self, o, opts, fzf_win)
   self.filetype = "man"
   self.cmd = o.cmd or "man -c %s | col -bx"
+  self.cmd = type(self.cmd) == "function" and self.cmd() or self.cmd
   return self
 end
 

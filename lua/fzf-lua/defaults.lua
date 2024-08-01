@@ -21,6 +21,23 @@ function M._preview_pager_fn()
   return vim.fn.executable("delta") == 1 and "delta --width=$COLUMNS" or nil
 end
 
+function M._man_cmd_fn(bat_pager)
+  local cmd = utils.is_darwin() and "man -P cat {page} | col -bx"
+      or vim.fn.executable("mandb") == 1 and "man {page} | col -bx"
+      or "man -c {page} | col -bx"
+  if bat_pager then
+    local bat_cmd = (function()
+      for _, bin in ipairs({ "batcat", "bat" }) do
+        if vim.fn.executable(bin) == 1 then return bin end
+      end
+    end)()
+    if bat_cmd then
+      cmd = string.format("%s | %s --color=always -p -l man", cmd, bat_cmd)
+    end
+  end
+  return cmd:gsub("{page}", "%%s")
+end
+
 M.defaults                      = {
   nbsp          = utils.nbsp,
   winopts       = {
@@ -166,11 +183,12 @@ M.defaults                      = {
       _ctor         = previewers.fzf.git_diff,
     },
     man = {
-      cmd   = utils.is_darwin() and "man -P cat %s | col -bx" or "man -c %s | col -bx",
       _ctor = previewers.builtin.man_pages,
+      cmd = M._man_cmd_fn(),
     },
     man_native = {
       _ctor = previewers.fzf.man_pages,
+      cmd = M._man_cmd_fn(true),
     },
     help_tags = {
       _ctor = previewers.builtin.help_tags,
