@@ -245,12 +245,18 @@ end
 M.CTX = function(includeBuflist)
   -- save caller win/buf context, ignore when fzf
   -- is already open (actions.sym_lsym|grep_lgrep)
-  if not M.__CTX or
+  local winobj = utils.fzf_winobj()
+  -- print("ctx", M.__CTX, "w", winobj, "hidden", winobj and winobj:hidden())
+  if not M.__CTX
       -- when called from the LSP module in "sync" mode when no results are found
       -- the fzf window won't open (e.g. "No references found") and the context is
       -- never cleared. The below condition validates the source window when the
       -- UI is not open (#907)
-      (not utils.fzf_winobj() and M.__CTX.bufnr ~= vim.api.nvim_get_current_buf()) then
+      or (not winobj and M.__CTX.bufnr ~= vim.api.nvim_get_current_buf())
+      -- we should never get here when fzf process is hidden unless the user requested
+      -- not to resume or a different picker, i.e. hide files and open buffers
+      or winobj and winobj:hidden()
+  then
     M.__CTX = {
       mode = vim.api.nvim_get_mode().mode,
       bufnr = vim.api.nvim_get_current_buf(),
@@ -433,6 +439,8 @@ M.fzf = function(contents, opts)
   if type(opts._get_pid == "function") then
     libuv.process_kill(opts._get_pid())
   end
+  -- If a hidden process was killed by [re-]starting a new picker do nothing
+  if fzf_win:was_hidden() then return end
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
   if selected and #selected > 0 then

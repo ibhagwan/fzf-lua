@@ -1058,6 +1058,14 @@ function FzfWin:hidden()
       and vim.api.nvim_buf_is_valid(self._hidden_fzf_bufnr)
 end
 
+-- True after a `:new()` call for a different picker, used in `core.fzf`
+-- to avoid post processing an fzf process that was discarded
+function FzfWin:was_hidden()
+  return tonumber(self._hidden_fzf_bufnr)
+      and tonumber(self._hidden_fzf_bufnr) > 0
+      and not vim.api.nvim_buf_is_valid(self._hidden_fzf_bufnr)
+end
+
 function FzfWin.unhide()
   local self = _self
   if not self or not self:hidden() then return end
