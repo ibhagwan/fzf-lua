@@ -246,7 +246,6 @@ M.CTX = function(includeBuflist)
   -- save caller win/buf context, ignore when fzf
   -- is already open (actions.sym_lsym|grep_lgrep)
   local winobj = utils.fzf_winobj()
-  -- print("ctx", M.__CTX, "w", winobj, "hidden", winobj and winobj:hidden())
   if not M.__CTX
       -- when called from the LSP module in "sync" mode when no results are found
       -- the fzf window won't open (e.g. "No references found") and the context is
