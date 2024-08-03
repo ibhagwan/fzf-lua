@@ -492,8 +492,8 @@ function M.entry_to_file(entry, opts, force_uri)
         and vim.api.nvim_buf_get_name(tonumber(bufnr)),
     terminal = terminal,
     path     = file,
-    line     = tonumber(line),
-    col      = tonumber(col),
+    line     = tonumber(line) or 0,
+    col      = tonumber(col) or 0,
   }
 end
 

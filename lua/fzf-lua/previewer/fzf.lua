@@ -182,7 +182,7 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   local filepath = path.relative_to(entry.bufname or entry.path or "", uv.cwd())
   if self.opts._ctag then
     entry.ctag = path.entry_to_ctag(entry.stripped, true)
-    if not tonumber(entry.line) then
+    if not tonumber(entry.line) or tonumber(entry.line) < 1 then
       -- default tags are without line numbers
       -- make sure we don't already have line #
       -- (in the case the line no. is actually 1)
@@ -268,8 +268,8 @@ function Previewer.bat_async:cmdline(o)
     local cmd = errcmd or ("%s %s %s %s %s %s"):format(
       self.cmd, self.args,
       self.theme and string.format([[--theme="%s"]], self.theme) or "",
-      self.opts.line_field_index and tonumber(entry.line) and
-      string.format("--highlight-line=%d", entry.line) or "",
+      self.opts.line_field_index and tonumber(entry.line) and tonumber(entry.line) > 0
+      and string.format("--highlight-line=%d", entry.line) or "",
       line_range,
       libuv.shellescape(filepath))
     return cmd
