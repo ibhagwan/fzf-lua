@@ -84,9 +84,9 @@ M.path = function(opts)
   if not opts then return end
   opts.cmd = opts.cmd or (function()
     if vim.fn.executable("fdfind") == 1 then
-      return "fdfind"
+      return "fdfind --strip-cwd-prefix"
     elseif vim.fn.executable("fd") == 1 then
-      return "fd"
+      return "fd --strip-cwd-prefix"
     elseif utils.__IS_WINDOWS then
       return "dir /s/b"
     else
@@ -104,9 +104,9 @@ M.file = function(opts)
   opts.cmp_is_file = true
   opts.cmd = opts.cmd or (function()
     if vim.fn.executable("fdfind") == 1 then
-      return "fdfind --type f --exclude .git"
+      return "fdfind --strip-cwd-prefix --type f --exclude .git"
     elseif vim.fn.executable("fd") == 1 then
-      return "fd --type f --exclude .git"
+      return "fd --strip-cwd-prefix --type f --exclude .git"
     elseif vim.fn.executable("rg") == 1 then
       return "rg --files"
     elseif utils.__IS_WINDOWS then
