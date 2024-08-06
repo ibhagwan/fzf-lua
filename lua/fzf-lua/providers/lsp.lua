@@ -120,6 +120,19 @@ local function location_handler(opts, cb, _, result, ctx, _)
       end
     end
   end
+  if opts.unique_line_items then
+    local lines = {}
+    local _result = {}
+    for _, loc in ipairs(result) do
+      local uri = loc.uri or loc.targetUri
+      local range = loc.range or loc.targetSelectionRange
+      if not lines[uri .. range.start.line] then
+        _result[#_result + 1] = loc
+        lines[uri .. range.start.line] = true
+      end
+    end
+    result = _result
+  end
   if opts.ignore_current_line then
     local uri = vim.uri_from_bufnr(core.CTX().bufnr)
     local cursor_line = core.CTX().cursor[1] - 1
