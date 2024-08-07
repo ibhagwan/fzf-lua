@@ -279,7 +279,11 @@ to see detailed usage notes and a comprehensive list of all available options.**
 | `grep_visual`      | search visual selection                    |
 | `grep_project`     | search all project lines (fzf.vim's `:Rg`)   |
 | `grep_curbuf`      | search current buffer lines                |
+| `grep_quickfix`    | search the quickfix list                   |
+| `grep_quickfix`    | search the location list                   |
 | `lgrep_curbuf`     | live grep current buffer                   |
+| `lgrep_quickfix`   | live grep the quickfix list                |
+| `lgrep_loclist`    | live grep the location list                |
 | `live_grep`        | live grep current project                  |
 | `live_grep_resume` | live grep continue last search             |
 | `live_grep_glob`   | live_grep with `rg --glob` support           |

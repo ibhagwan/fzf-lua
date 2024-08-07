@@ -832,6 +832,22 @@ Grep on current buffer only
 
 "Live" grep on current buffer only
 
+#### grep_quickfix
+
+Grep the quickfix list
+
+#### lgrep_quickfix
+
+"Live" grep the quickfix list
+
+#### grep_loclist
+
+Grep the location list
+
+#### lgrep_loclist
+
+"Live" grep the location list
+
 ---
 
 ### CTags

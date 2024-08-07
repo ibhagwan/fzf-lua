@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*        For Neovim >= 0.8.0        Last change: 2024 July 19
+*fzf-lua-opts.txt*        For Neovim >= 0.8.0        Last change: 2024 July 25
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -1134,6 +1134,30 @@ Grep on current buffer only
 lgrep_curbuf                                       *fzf-lua-opts-lgrep_curbuf*
 
 "Live" grep on current buffer only
+
+
+                                                                              
+grep_quickfix                                     *fzf-lua-opts-grep_quickfix*
+
+Grep the quickfix list
+
+
+                                                                              
+lgrep_quickfix                                   *fzf-lua-opts-lgrep_quickfix*
+
+"Live" grep the quickfix list
+
+
+                                                                              
+grep_loclist                                       *fzf-lua-opts-grep_loclist*
+
+Grep the location list
+
+
+                                                                              
+lgrep_loclist                                     *fzf-lua-opts-lgrep_loclist*
+
+"Live" grep the location list
 
 
                                                                               

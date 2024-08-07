@@ -16,15 +16,17 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   if opts.raw_cmd and #opts.raw_cmd > 0 then
     return opts.raw_cmd
   end
-  local command = nil
+  local command, is_rg, is_grep = nil, nil, nil
   if opts.cmd and #opts.cmd > 0 then
     command = opts.cmd
   elseif vim.fn.executable("rg") == 1 then
+    is_rg = true
     command = string.format("rg %s", opts.rg_opts)
   elseif utils.__IS_WINDOWS then
     utils.warn("Grep requires installing 'rg' on Windows.")
     return nil
   else
+    is_grep = true
     command = string.format("grep %s", opts.grep_opts)
   end
 
@@ -58,10 +60,27 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   -- filespec takes precedence over all and doesn't shellescape
   -- this is so user can send a file populating command instead
   local search_path = ""
+  local print_filename_flags = " --with-filename" .. (is_rg and " --no-heading" or "")
   if opts.filespec and #opts.filespec > 0 then
     search_path = opts.filespec
   elseif opts.filename and #opts.filename > 0 then
     search_path = libuv.shellescape(opts.filename)
+    command = make_entry.rg_insert_args(command, print_filename_flags)
+  elseif opts.search_paths then
+    local search_paths = type(opts.search_paths) == "table"
+        -- NOTE: deepcopy to avoid recursive shellescapes with `actions.grep_lgrep`
+        and vim.deepcopy(opts.search_paths) or { tostring(opts.search_paths) }
+    -- Make paths relative, note this will not work well with resuming if changing
+    -- the cwd, this is by design for perf reasons as having to deal with full paths
+    -- will result in more code rouets taken in `make_entry.file`
+    for i, p in ipairs(search_paths) do
+      search_paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), uv.cwd()))
+    end
+    search_path = table.concat(search_paths, " ")
+    if is_grep then
+      -- grep requires adding `-r` to command as paths can be either file or directory
+      command = make_entry.rg_insert_args(command, print_filename_flags .. " -r")
+    end
   end
 
   search_query = search_query or ""
@@ -399,8 +418,6 @@ M.grep_curbuf = function(opts, lgrep)
   end
   -- rg globs are meaningless here since we searching a single file
   opts.rg_glob = false
-  opts.rg_opts = make_entry.rg_insert_args(config.globals.grep.rg_opts, " --with-filename")
-  opts.grep_opts = make_entry.rg_insert_args(config.globals.grep.grep_opts, " --with-filename")
   opts.exec_empty_query = opts.exec_empty_query == nil and true
   opts.fzf_opts = vim.tbl_extend("keep", opts.fzf_opts or {}, config.globals.blines.fzf_opts)
   -- call `normalize_opts` here as we want to store all previous
@@ -419,6 +436,56 @@ end
 M.lgrep_curbuf = function(opts)
   -- 2nd arg implies `opts.lgrep=true`
   return M.grep_curbuf(opts, true)
+end
+
+local files_from_qf = function(loclist)
+  local dedup = {}
+  for _, l in ipairs(loclist and vim.fn.getloclist(0) or vim.fn.getqflist()) do
+    local fname = l.filename or vim.api.nvim_buf_get_name(l.bufnr)
+    if fname and #fname > 0 then
+      dedup[fname] = true
+    end
+  end
+  return vim.tbl_keys(dedup)
+end
+
+local grep_list = function(opts, lgrep, loclist)
+  if type(opts) == "function" then
+    opts = opts()
+  elseif not opts then
+    opts = {}
+  end
+  opts.search_paths = files_from_qf(loclist)
+  if utils.tbl_isempty(opts.search_paths) then
+    utils.info((loclist and "Location" or "Quickfix")
+      .. " list is empty or does not contain valid file buffers.")
+    return
+  end
+  opts.exec_empty_query = opts.exec_empty_query == nil and true
+  opts = config.normalize_opts(opts, "grep")
+  if not opts then return end
+  if lgrep then
+    return M.live_grep(opts)
+  else
+    opts.search = opts.search or ""
+    return M.grep(opts)
+  end
+end
+
+M.grep_quickfix = function(opts)
+  return grep_list(opts, false, false)
+end
+
+M.lgrep_quickfix = function(opts)
+  return grep_list(opts, true, false)
+end
+
+M.grep_loclist = function(opts)
+  return grep_list(opts, false, true)
+end
+
+M.lgrep_loclist = function(opts)
+  return grep_list(opts, true, true)
 end
 
 return M
