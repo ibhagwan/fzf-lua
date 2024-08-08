@@ -1118,16 +1118,6 @@ function Previewer.tags:new(o, opts, fzf_win)
   return self
 end
 
-function Previewer.tags:parse_entry(entry_str)
-  -- first parse as normal entry
-  -- must use 'super.' and send self as 1st arg
-  -- or the ':' syntactic sugar will send super's
-  -- self which doesn't have self.opts
-  local entry = self.super.parse_entry(self, entry_str)
-  entry.ctag = path.entry_to_ctag(entry_str)
-  return entry
-end
-
 function Previewer.tags:set_cursor_hl(entry)
   -- pcall(vim.fn.clearmatches, self.win.preview_winid)
   pcall(api.nvim_win_call, self.win.preview_winid, function()

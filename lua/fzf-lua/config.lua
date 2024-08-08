@@ -89,8 +89,12 @@ M.globals = setmetatable({}, {
             and vim.tbl_deep_extend("keep", utils.tbl_deep_clone(setup_value[k]),
               setup_value[k][1] == true and fzflua_default[k] or {})
             or utils.tbl_deep_clone(fzflua_default[k])
-        ret[k][1] = nil
-        ret[k] = utils.map_tolower(ret[k], "^alt%-%a$")
+        if ret[k] then
+          -- Remove the [1] indicating inheritance from defaults and
+          -- exclude case-sensitive alt-binds from being lowercased
+          ret[k][1] = nil
+          ret[k] = utils.map_tolower(ret[k], "^alt%-%a$")
+        end
       end
       return ret
     end
@@ -198,10 +202,11 @@ function M.normalize_opts(opts, globals, __resume_key)
       builtin = utils.map_tolower(m.builtin, exclude_patterns),
     } or nil
   end
-  opts.keymap = keymap_tolower(opts.keymap, "^alt%-%a$")
-  opts.actions = utils.map_tolower(opts.actions, "^alt%-%a$")
-  globals.keymap = keymap_tolower(globals.keymap, "^alt%-%a$")
-  globals.actions = utils.map_tolower(globals.actions, "^alt%-%a$")
+  local exclude_case_sensitive_alt = "^alt%-%a$"
+  opts.keymap = keymap_tolower(opts.keymap, exclude_case_sensitive_alt)
+  opts.actions = utils.map_tolower(opts.actions, exclude_case_sensitive_alt)
+  globals.keymap = keymap_tolower(globals.keymap, exclude_case_sensitive_alt)
+  globals.actions = utils.map_tolower(globals.actions, exclude_case_sensitive_alt)
 
   -- inherit from globals.actions?
   if type(globals._actions) == "function" then
@@ -615,16 +620,18 @@ M._action_to_helpstr = {
   [actions.file_sel_to_ll]      = "file-selection-to-loclist",
   [actions.file_switch]         = "file-switch",
   [actions.file_switch_or_edit] = "file-switch-or-edit",
-  [actions.buf_edit]            = "buffer-edit",
-  [actions.buf_edit_or_qf]      = "buffer-edit-or-qf",
-  [actions.buf_sel_to_qf]       = "buffer-selection-to-qf",
-  [actions.buf_sel_to_ll]       = "buffer-selection-to-loclist",
-  [actions.buf_split]           = "buffer-split",
-  [actions.buf_vsplit]          = "buffer-vsplit",
-  [actions.buf_tabedit]         = "buffer-tabedit",
+  -- Since default actions refactor these are just refs to
+  -- their correspondent `file_xxx` equivalents
+  -- [actions.buf_edit]            = "buffer-edit",
+  -- [actions.buf_edit_or_qf]      = "buffer-edit-or-qf",
+  -- [actions.buf_sel_to_qf]       = "buffer-selection-to-qf",
+  -- [actions.buf_sel_to_ll]       = "buffer-selection-to-loclist",
+  -- [actions.buf_split]           = "buffer-split",
+  -- [actions.buf_vsplit]          = "buffer-vsplit",
+  -- [actions.buf_tabedit]         = "buffer-tabedit",
+  -- [actions.buf_switch]          = "buffer-switch",
+  -- [actions.buf_switch_or_edit]  = "buffer-switch-or-edit",
   [actions.buf_del]             = "buffer-delete",
-  [actions.buf_switch]          = "buffer-switch",
-  [actions.buf_switch_or_edit]  = "buffer-switch-or-edit",
   [actions.run_builtin]         = "run-builtin",
   [actions.ex_run]              = "edit-cmd",
   [actions.ex_run_cr]           = "exec-cmd",

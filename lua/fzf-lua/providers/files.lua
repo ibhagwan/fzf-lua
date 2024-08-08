@@ -94,6 +94,8 @@ M.args = function(opts)
               cb(s, function()
                 coroutine.resume(co)
               end)
+            else
+              coroutine.resume(co)
             end
           end)
           coroutine.yield()

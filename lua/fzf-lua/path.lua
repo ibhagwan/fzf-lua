@@ -494,6 +494,7 @@ function M.entry_to_file(entry, opts, force_uri)
     path     = file,
     line     = tonumber(line) or 0,
     col      = tonumber(col) or 0,
+    ctag     = opts._ctag and M.entry_to_ctag(stripped) or nil,
   }
 end
 

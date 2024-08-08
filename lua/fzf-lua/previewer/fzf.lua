@@ -181,6 +181,7 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   -- make relative for bat's header display
   local filepath = path.relative_to(entry.bufname or entry.path or "", uv.cwd())
   if self.opts._ctag then
+    -- NOTE: override `entry.ctag` with the unescaped version
     entry.ctag = path.entry_to_ctag(entry.stripped, true)
     if not tonumber(entry.line) or tonumber(entry.line) < 1 then
       -- default tags are without line numbers
