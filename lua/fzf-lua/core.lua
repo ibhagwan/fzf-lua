@@ -312,9 +312,9 @@ M.fzf = function(contents, opts)
   opts.actions = opts.actions or {}
   opts.keymap = opts.keymap or {}
   opts.keymap.fzf = opts.keymap.fzf or {}
-  for _, k in ipairs({ "ctrl-c", "ctrl-q", "esc" }) do
-    if opts.actions[k] == nil and
-        (opts.keymap.fzf[k] == nil or opts.keymap.fzf[k] == "abort") then
+  for _, k in ipairs({ "ctrl-c", "ctrl-q", "esc", "enter" }) do
+    if opts.actions[k] == nil and (opts.keymap.fzf[k] == nil or opts.keymap.fzf[k] == "abort")
+    then
       opts.actions[k] = actions.dummy_abort
     end
   end

@@ -660,31 +660,19 @@ require'fzf-lua'.setup {
     -- the defaults, to inherit from the defaults change [1] from `false` to `true`
     files = {
       false,          -- do not inherit from defaults
-      -- providers that inherit these actions:
-      --   files, git_files, git_status, grep, lsp
-      --   oldfiles, quickfix, loclist, tags, btags
-      --   args
-      -- default action opens a single selection
-      -- or sends multiple selection to quickfix
-      -- replace the default action with the below
-      -- to open all files whether single or multiple
-      -- ["default"]     = actions.file_edit,
-      ["default"]     = actions.file_edit_or_qf,
+      -- Pickers inheriting these actions:
+      --   files, git_files, git_status, grep, lsp, oldfiles, quickfix, loclist,
+      --   tags, btags, args, buffers, tabs, lines, blines
+      -- `file_edit_or_qf` opens a single selection or sends multiple selection to quickfix
+      -- replace `enter` with `file_edit` to open all files/bufs whether single or multiple
+      -- replace `enter` with `file_switch_or_edit` to attempt a switch in current tab first
+      ["enter"]       = actions.file_edit_or_qf,
       ["ctrl-s"]      = actions.file_split,
       ["ctrl-v"]      = actions.file_vsplit,
       ["ctrl-t"]      = actions.file_tabedit,
       ["alt-q"]       = actions.file_sel_to_qf,
-      ["alt-l"]       = actions.file_sel_to_ll,
+      ["alt-Q"]       = actions.file_sel_to_ll,
     },
-    buffers = {
-      false,          -- do not inherit from defaults
-      -- providers that inherit these actions:
-      --   buffers, tabs, lines, blines
-      ["default"]     = actions.buf_edit,
-      ["ctrl-s"]      = actions.buf_split,
-      ["ctrl-v"]      = actions.buf_vsplit,
-      ["ctrl-t"]      = actions.buf_tabedit,
-    }
   },
   fzf_opts = {
     -- options are sent as `<left>=<right>`
@@ -863,7 +851,7 @@ require'fzf-lua'.setup {
       -- action to toggle `--no-ignore`, requires fd or rg installed
       ["ctrl-g"]         = { actions.toggle_ignore },
       -- uncomment to override `actions.file_edit_or_qf`
-      --   ["default"]   = actions.file_edit,
+      --   ["enter"]     = actions.file_edit,
       -- custom actions are available too
       --   ["ctrl-y"]    = function(selected) print(selected[1]) end,
     }
@@ -913,7 +901,7 @@ require'fzf-lua'.setup {
       -- git-delta is automatically detected as pager, uncomment to disable
       -- preview_pager = false,
       actions = {
-        ["default"] = actions.git_checkout,
+        ["enter"]   = actions.git_checkout,
         -- remove `exec_silent` or set to `false` to exit after yank
         ["ctrl-y"]  = { fn = actions.git_yank_commit, exec_silent = true },
       },
@@ -931,7 +919,7 @@ require'fzf-lua'.setup {
       -- git-delta is automatically detected as pager, uncomment to disable
       -- preview_pager = false,
       actions = {
-        ["default"] = actions.git_buf_edit,
+        ["enter"]   = actions.git_buf_edit,
         ["ctrl-s"]  = actions.git_buf_split,
         ["ctrl-v"]  = actions.git_buf_vsplit,
         ["ctrl-t"]  = actions.git_buf_tabedit,
@@ -943,7 +931,7 @@ require'fzf-lua'.setup {
       cmd      = "git branch --all --color",
       preview  = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
       actions  = {
-        ["default"] = actions.git_switch,
+        ["enter"]   = actions.git_switch,
         ["ctrl-x"]  = { fn = actions.git_branch_del, reload = true },
         ["ctrl-a"]  = { fn = actions.git_branch_add, field_index = "{q}", reload = true },
       },
@@ -962,14 +950,14 @@ require'fzf-lua'.setup {
           .. [[ %(subject) %(color:blue)%(taggername)%(color:reset)" refs/tags]],
       preview  = [[git log --graph --color --pretty=format:"%C(yellow)%h%Creset ]]
           .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {1}]],
-      actions  = { ["default"] = actions.git_checkout },
+      actions  = { ["enter"] = actions.git_checkout },
     },
     stash = {
       prompt          = 'Stash> ',
       cmd             = "git --no-pager stash list",
       preview         = "git --no-pager stash show --patch --color {1}",
       actions = {
-        ["default"]   = actions.git_stash_apply,
+        ["enter"]     = actions.git_stash_apply,
         ["ctrl-x"]    = { fn = actions.git_stash_drop, reload = true },
       },
     },
@@ -1057,7 +1045,7 @@ require'fzf-lua'.setup {
     cwd_only          = false,        -- buffers for the cwd only
     cwd               = nil,          -- buffers list for a given dir
     actions = {
-      -- actions inherit from 'actions.buffers' and merge
+      -- actions inherit from 'actions.files' and merge
       -- by supplying a table of functions we're telling
       -- fzf-lua to not close the fzf window, this way we
       -- can resume the buffers picker on the same window
@@ -1072,8 +1060,8 @@ require'fzf-lua'.setup {
     file_icons        = true,         -- show file icons (true|"devicons"|"mini")?
     color_icons       = true,         -- colorize file|git icons
     actions = {
-      -- actions inherit from 'actions.buffers' and merge
-      ["default"]     = actions.buf_switch,
+      -- actions inherit from 'actions.files' and merge
+      ["enter"]       = actions.buf_switch,
       ["ctrl-x"]      = { fn = actions.buf_del, reload = true },
     },
     fzf_opts = {
@@ -1096,9 +1084,9 @@ require'fzf-lua'.setup {
       ["--tiebreak"]  = 'index',
       ["--tabstop"]   = "1",
     },
-    -- actions inherit from 'actions.buffers' and merge
+    -- actions inherit from 'actions.files' and merge
     actions = {
-      ["default"]     = actions.buf_edit_or_qf,
+      ["enter"]       = actions.buf_edit_or_qf,
       ["alt-q"]       = actions.buf_sel_to_qf,
       ["alt-l"]       = actions.buf_sel_to_ll
     },
@@ -1116,9 +1104,9 @@ require'fzf-lua'.setup {
       ["--tiebreak"]  = 'index',
       ["--tabstop"]   = "1",
     },
-    -- actions inherit from 'actions.buffers' and merge
+    -- actions inherit from 'actions.files' and merge
     actions = {
-      ["default"]     = actions.buf_edit_or_qf,
+      ["enter"]       = actions.buf_edit_or_qf,
       ["alt-q"]       = actions.buf_sel_to_qf,
       ["alt-l"]       = actions.buf_sel_to_ll
     },
@@ -1157,7 +1145,7 @@ require'fzf-lua'.setup {
   colorschemes = {
     prompt            = 'Colorschemes❯ ',
     live_preview      = true,       -- apply the colorscheme on preview?
-    actions           = { ["default"] = actions.colorscheme },
+    actions           = { ["enter"] = actions.colorscheme },
     winopts           = { height = 0.55, width = 0.30, },
     -- uncomment to ignore colorschemes names (lua patterns)
     -- ignore_patterns   = { "^delek$", "^blue$" },
@@ -1178,7 +1166,7 @@ require'fzf-lua'.setup {
       ["--tiebreak"]  = "index",
     },
     actions           = {
-      ["default"] = actions.colorscheme,
+      ["enter"]   = actions.colorscheme,
       ["ctrl-g"]  = { fn = actions.toggle_bg, exec_silent = true },
       ["ctrl-r"]  = { fn = actions.cs_update, reload = true },
       ["ctrl-x"]  = { fn = actions.cs_delete, reload = true },
@@ -1195,7 +1183,7 @@ require'fzf-lua'.setup {
     -- set `ignore_patterns = false` to disable filtering
     ignore_patterns   = { "^<SNR>", "^<Plug>" },
     actions           = {
-      ["default"]     = actions.keymap_apply,
+      ["enter"]       = actions.keymap_apply,
       ["ctrl-s"]      = actions.keymap_split,
       ["ctrl-v"]      = actions.keymap_vsplit,
       ["ctrl-t"]      = actions.keymap_tabedit,
@@ -1338,7 +1326,7 @@ require'fzf-lua'.setup {
   },
   complete_path = {
     cmd          = nil, -- default: auto detect fd|rg|find
-    complete     = { ["default"] = actions.complete },
+    complete     = { ["enter"] = actions.complete },
   },
   complete_file = {
     cmd          = nil, -- default: auto detect rg|fd|find
@@ -1346,7 +1334,7 @@ require'fzf-lua'.setup {
     color_icons  = true,
     git_icons    = false,
     -- actions inherit from 'actions.files' and merge
-    actions      = { ["default"] = actions.complete },
+    actions      = { ["enter"] = actions.complete },
     -- previewer hidden by default
     winopts      = { preview = { hidden = "hidden" } },
   },
