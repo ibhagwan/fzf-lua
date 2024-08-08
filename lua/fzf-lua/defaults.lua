@@ -763,6 +763,8 @@ M.defaults.lsp                  = {
   fzf_opts         = { ["--multi"] = true },
   _actions         = function() return M.globals.actions.files end,
   _cached_hls      = { "path_colnr", "path_linenr" },
+  -- Signals actions to use uri triggering the use of `lsp.util.jump_to_location`
+  _uri             = true,
 }
 
 M.defaults.lsp.symbols          = {
@@ -833,6 +835,7 @@ M.defaults.lsp.symbols          = {
   _actions         = function() return M.globals.actions.files end,
   actions          = { ["ctrl-g"] = { actions.sym_lsym } },
   _cached_hls      = { "live_sym", "path_colnr", "path_linenr" },
+  _uri             = true,
 }
 
 M.defaults.lsp.finder           = {
@@ -867,6 +870,7 @@ M.defaults.lsp.finder           = {
   },
   fzf_opts    = { ["--multi"] = true },
   _cached_hls = { "path_colnr", "path_linenr" },
+  _uri        = true,
 }
 
 M.defaults.lsp.code_actions     = {

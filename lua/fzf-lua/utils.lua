@@ -808,6 +808,10 @@ function M.fzf_winobj()
   return loadstring("return require'fzf-lua'.win.__SELF()")()
 end
 
+function M.CTX()
+  return loadstring("return require'fzf-lua'.core.CTX()")()
+end
+
 function M.resume_get(what, opts)
   local f = loadstring("return require'fzf-lua'.config.resume_get")()
   return f(what, opts)

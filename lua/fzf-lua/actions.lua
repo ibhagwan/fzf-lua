@@ -114,15 +114,78 @@ M.vimcmd = function(vimcmd, selected, noesc)
   end
 end
 
+M.vimcmd_entry = function(vimcmd, selected, opts, pcall_vimcmd)
+  for _, sel in ipairs(selected) do
+    (function()
+      -- Lua 5.1 goto compatiblity hack (function wrap)
+      local entry = path.entry_to_file(sel, opts, opts._uri)
+      -- "<none>" could be set by `autocmds`
+      if entry.path == "<none>" then return end
+      local fullpath = entry.bufname or entry.uri and entry.uri:match("^%a+://(.*)") or entry.path
+      -- Something is not right, goto next entry
+      if not fullpath then return end
+      if not path.is_absolute(fullpath) then
+        fullpath = path.join({ opts.cwd or opts._cwd or uv.cwd(), fullpath })
+      end
+      -- Force full paths when `autochdir=true` (#882)
+      local relpath = vim.o.autochdir and fullpath or path.relative_to(entry.path, uv.cwd())
+      -- Are we replacing the origin buffer?
+      local will_replace_curbuf = vimcmd == "e" and path.equals(fullpath, utils.CTX().bname)
+          or vimcmd == "b" and entry.bufnr and entry.bufnr == utils.CTX().bufnr
+      if will_replace_curbuf
+          and not vim.o.hidden
+          and not vim.o.autowriteall
+          and utils.buffer_is_dirty(nil, false, true) then
+        -- when `:set nohidden`, confirm with the user when trying to switch
+        -- from a dirty buffer, abort if declined, save buffer if requested
+        if utils.save_dialog(nil) then
+          vimcmd = vimcmd .. "!"
+        else
+          return
+        end
+      end
+      if will_replace_curbuf
+          and vim.fn.exists("&winfixbuf") == 1
+          and vim.wo.winfixbuf
+      then
+        utils.warn("'winfixbuf' is set for current window, will open in a split.")
+        vimcmd = "split | " .. vimcmd
+      end
+      -- Add current location to jumplist
+      if not entry.term then vim.cmd("normal! m`") end
+      -- Killing term buffers requires "!" (#1078)
+      if entry.term and vimcmd == "bd" then
+        vimcmd = vimcmd .. "!"
+      end
+      -- Only change from current buffer if target is different
+      -- NOTE: uri entries only execute new buffers (new|vnew|tabnew)
+      if not entry.uri and (will_replace_curbuf or vimcmd ~= "b" and vimcmd ~= "e") then
+        vimcmd = string.format("%s %s", vimcmd, entry.bufnr
+          -- we normalize the path or Windows will fail with directories starting
+          -- with special characters, for example "C:\app\(web)" will be translated
+          -- by neovim to "c:\app(web)" (#1082)
+          or vim.fn.fnameescape(path.normalize(relpath)))
+      end
+      if pcall_vimcmd ~= false then
+        local ok, err = pcall(function() vim.cmd(vimcmd) end)
+        if not ok then
+          utils.warn(string.format("':%s' failed: %s", vimcmd, err))
+        end
+      else
+        vim.cmd(vimcmd)
+      end
+    end)()
+  end
+end
+
 M.vimcmd_file = function(vimcmd, selected, opts, pcall_vimcmd)
   local curbuf = vim.api.nvim_buf_get_name(0)
   local is_term = utils.is_term_buffer(0)
   for i = 1, #selected do
     (function()
       -- Lua 5.1 goto compatiblity hack (function wrap)
-      local entry = path.entry_to_file(selected[i], opts, opts.force_uri)
+      local entry = path.entry_to_file(selected[i], opts, opts._uri)
       if entry.path == "<none>" then return end
-      entry.ctag = opts._ctag and path.entry_to_ctag(selected[i])
       local fullpath = entry.path or entry.uri and entry.uri:match("^%a+://(.*)")
       if not path.is_absolute(fullpath) then
         fullpath = path.join({ opts.cwd or opts._cwd or uv.cwd(), fullpath })

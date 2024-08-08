@@ -639,7 +639,6 @@ end
 local function fzf_lsp_locations(opts, fn_contents)
   opts = normalize_lsp_opts(opts, "lsp")
   if not opts then return end
-  if opts.force_uri == nil then opts.force_uri = true end
   opts = core.set_fzf_field_index(opts)
   opts = fn_contents(opts)
   if not opts.__contents then
@@ -682,7 +681,6 @@ end
 M.finder = function(opts)
   opts = normalize_lsp_opts(opts, "lsp.finder")
   if not opts then return end
-  if opts.force_uri == nil then opts.force_uri = true end
   local contents = {}
   local lsp_params = opts.lsp_params
   for _, p in ipairs(opts.providers) do
@@ -773,7 +771,6 @@ M.document_symbols = function(opts)
   end
   opts = core.set_header(opts, opts.headers or { "regex_filter" })
   opts = core.set_fzf_field_index(opts)
-  if opts.force_uri == nil then opts.force_uri = true end
   if not opts.fzf_opts or opts.fzf_opts["--with-nth"] == nil then
     -- our delims are {nbsp,:} make sure entry has no icons
     -- "{nbsp}file:line:col:" and hide the last 4 fields
@@ -804,7 +801,6 @@ M.workspace_symbols = function(opts)
   opts = core.set_header(opts, opts.headers or
     { "actions", "cwd", "lsp_query", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
-  if opts.force_uri == nil then opts.force_uri = true end
   opts = gen_lsp_contents(opts)
   if not opts.__contents then
     core.__CTX = nil
@@ -873,7 +869,6 @@ M.live_workspace_symbols = function(opts)
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
-  if opts.force_uri == nil then opts.force_uri = true end
   if opts.symbol_style or opts.symbol_fmt then
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
