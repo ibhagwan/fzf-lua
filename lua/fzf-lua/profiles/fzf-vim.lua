@@ -24,6 +24,7 @@ local function setup_commands(no_override, prefix)
     ["Changes"] = utils.create_user_command_callback("changes"),
     ["Marks"] = utils.create_user_command_callback("marks"),
     ["Jumps"] = utils.create_user_command_callback("jumps"),
+    ["Commands"] = utils.create_user_command_callback("commands"),
     ["History"] = utils.create_user_command_callback("oldfiles", "query", {
       [":"] = "command_history",
       ["/"] = "search_history",

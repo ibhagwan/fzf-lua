@@ -954,10 +954,9 @@ M.defaults.tagstack             = {
 }
 
 M.defaults.commands             = {
-  prompt  = "Commands> ",
-  actions = {
-    ["default"] = actions.ex_run,
-  },
+  prompt          = "Commands> ",
+  actions         = { ["default"] = actions.ex_run },
+  include_builtin = true,
 }
 
 M.defaults.autocmds             = {
