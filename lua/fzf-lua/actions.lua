@@ -230,6 +230,17 @@ local sel_to_qf = function(selected, opts, is_loclist)
       text = text,
     })
   end
+  table.sort(qf_list, function(a, b)
+    if a.filename == b.filename then
+      if a.lnum == b.lnum then
+        return math.max(0, a.col) < math.max(0, b.col)
+      else
+        return math.max(0, a.lnum) < math.max(0, b.lnum)
+      end
+    else
+      return a.filename < b.filename
+    end
+  end)
   local title = string.format("[FzfLua] %s%s",
     opts.__INFO and opts.__INFO.cmd .. ": " or "",
     utils.resume_get("query", opts) or "")
