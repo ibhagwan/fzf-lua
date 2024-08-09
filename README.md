@@ -224,12 +224,13 @@ which can be easily mapped to:
 nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 ```
 
-or if using `init.lua`:
+or if using `init.lua` on nvim version 0.7.0 or above (older nvim versions can use `vim.api.nvim_set_keymap` instead):
 ```lua
 vim.keymap.set("n", "<c-P>", require('fzf-lua').files, { desc = "Fzf Files" })
 -- Or, with args
 vim.keymap.set("n", "<c-P>", function() require('fzf-lua').files({ ... }) end, { desc = "Fzf Files" })
 ```
+
 
 ### Resume
 
