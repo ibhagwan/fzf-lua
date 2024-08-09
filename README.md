@@ -225,6 +225,7 @@ nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
 ```
 
 or if using `init.lua`:
+> Neovim versions below 0.7 can use `vim.api.nvim_set_keymap` instead
 ```lua
 vim.keymap.set("n", "<c-P>", require('fzf-lua').files, { desc = "Fzf Files" })
 -- Or, with args
