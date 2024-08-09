@@ -190,7 +190,7 @@ M.fzf_exec = function(contents, opts)
     opts = M.setup_fzf_interactive_wrap(opts)
     contents = opts.__fzf_init_cmd
   end
-  return M.fzf_wrap(opts, contents)()
+  return M.fzf_wrap(opts, contents)
 end
 
 ---@param contents fun(query: string): string|string[]|function
@@ -217,10 +217,11 @@ end
 ---@param opts table
 ---@param contents content
 ---@param fn_selected function?
----@return function
+---@return thread
 M.fzf_wrap = function(opts, contents, fn_selected)
   opts = opts or {}
-  return coroutine.wrap(function()
+  coroutine.wrap(function()
+    opts._co = coroutine.running()
     opts.fn_selected = opts.fn_selected or fn_selected
     local selected = M.fzf(contents, opts)
     if opts.fn_selected then
@@ -237,7 +238,8 @@ M.fzf_wrap = function(opts, contents, fn_selected)
         utils.err("fn_selected threw an error: " .. debug.traceback(err, 1))
       end)
     end
-  end)
+  end)()
+  return opts._co
 end
 
 -- conditionally update the context if fzf-lua

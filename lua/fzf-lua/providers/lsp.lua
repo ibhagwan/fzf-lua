@@ -878,7 +878,7 @@ M.live_workspace_symbols = function(opts)
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
   end
-  core.fzf_exec(nil, opts)
+  return core.fzf_exec(nil, opts)
 end
 
 -- Converts 'vim.diagnostic.get' to legacy style 'get_line_diagnostics()'
@@ -984,7 +984,7 @@ local function wrap_fn(key, fn)
     end
 
     -- Call the original method
-    fn(opts)
+    return fn(opts)
   end
 end
 
