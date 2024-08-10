@@ -153,6 +153,13 @@ M.ui_select = function(items, ui_opts, on_choice)
     opts = vim.tbl_deep_extend(opts_merge_strategy, _OPTS_ONCE, opts)
     opts.actions = { ["enter"] = opts.actions.enter }
     opts.previewer = previewer
+    -- Callback to set the coroutine so we know if the interface
+    -- was opened or not (e.g. when no code actions are present)
+    opts.cb_co = (function()
+      -- NOTE: use clojure  as `_OPTS_ONCE` is otherwise nullified
+      local opts_once_ref = _OPTS_ONCE
+      return function(co) opts_once_ref._co = co end
+    end)()
     _OPTS_ONCE = nil
   end
 
