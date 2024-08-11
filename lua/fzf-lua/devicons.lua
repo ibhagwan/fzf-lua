@@ -301,7 +301,9 @@ end
 
 -- When using mini from the external process we store the new icon cache on process exit
 function FzfLuaServer:update_state_mini()
-  if not self:path() then return end
+  -- Abort when `self._state` is `nil`, can happen with live_grep
+  -- `exec_empty_query=false` (default) as icons aren't loaded (#1391)
+  if not self:path() or type(self._state) ~= "table" then return end
   local ok, errmsg = pcall(function()
     local chan_id = vim.fn.sockconnect("pipe", self:path(), { rpc = true })
     self._state = vim.rpcrequest(chan_id, "nvim_exec_lua", [[
