@@ -260,7 +260,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   local co = coroutine.running()
   local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or vim.fn.termopen
   local shell_cmd = utils.__IS_WINDOWS
-      and { "cmd", "/d", "/e:off", "/f:off", "/v:off", "/c" }
+      -- MSYS2 comes with "/usr/bin/cmd" that precedes "cmd.exe" (#1396)
+      and { "cmd.exe", "/d", "/e:off", "/f:off", "/v:off", "/c" }
       or { "sh", "-c" }
   if utils.__IS_WINDOWS then
     utils.tbl_join(shell_cmd, cmd)
