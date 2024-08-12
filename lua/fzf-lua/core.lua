@@ -220,9 +220,10 @@ end
 ---@return thread
 M.fzf_wrap = function(opts, contents, fn_selected)
   opts = opts or {}
+  local _co
   coroutine.wrap(function()
-    opts._co = coroutine.running()
-    if type(opts.cb_co) == "function" then opts.cb_co(opts._co) end
+    _co = coroutine.running()
+    if type(opts.cb_co) == "function" then opts.cb_co(_co) end
     opts.fn_selected = opts.fn_selected or fn_selected
     local selected = M.fzf(contents, opts)
     if opts.fn_selected then
@@ -240,7 +241,7 @@ M.fzf_wrap = function(opts, contents, fn_selected)
       end)
     end
   end)()
-  return opts._co
+  return _co
 end
 
 -- conditionally update the context if fzf-lua
