@@ -59,7 +59,7 @@ local filter_buffers = function(opts, unfiltered)
   return bufnrs, excluded, max_bufnr
 end
 
-local populate_buffer_entries = function(opts, bufnrs, tabh)
+local populate_buffer_entries = function(opts, bufnrs, winid)
   local buffers = {}
   for _, bufnr in ipairs(bufnrs) do
     local flag = (bufnr == core.CTX().bufnr and "%")
@@ -79,11 +79,8 @@ local populate_buffer_entries = function(opts, bufnrs, tabh)
     end
 
     -- get the correct lnum for tabbed buffers
-    if tabh then
-      local winid = utils.winid_from_tabh(tabh, bufnr)
-      if winid then
-        element.info.lnum = vim.api.nvim_win_get_cursor(winid)[1]
-      end
+    if winid then
+      element.info.lnum = vim.api.nvim_win_get_cursor(winid)[1]
     end
 
     table.insert(buffers, element)
@@ -113,7 +110,7 @@ local populate_buffer_entries = function(opts, bufnrs, tabh)
 end
 
 
-local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
+local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
   -- local hidden = buf.info.hidden == 1 and 'h' or 'a'
   local hidden = ""
   local readonly = buf.readonly and "=" or " "
@@ -155,7 +152,7 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd)
   end
   local max_bufnr_w = 3 + #tostring(max_bufnr) + utils.ansi_escseq_len(bufnrstr)
   local item_str = string.format("%s%s%s%s%s%s%s%s",
-    opts._prefix or "",
+    prefix or "",
     string.format("%-" .. tostring(max_bufnr_w) .. "s", bufnrstr),
     utils.nbsp,
     flags,
@@ -306,21 +303,26 @@ M.tabs = function(opts)
   opts = config.normalize_opts(opts, "tabs")
   if not opts then return end
 
-  opts._list_bufs = function()
-    local res = {}
-    for i, t in ipairs(vim.api.nvim_list_tabpages()) do
-      for _, w in ipairs(vim.api.nvim_tabpage_list_wins(t)) do
-        local b = vim.api.nvim_win_get_buf(w)
-        -- since this function is called after fzf window
-        -- is created, exclude the scratch fzf buffers
-        if core.CTX().bufmap[tostring(b)] then
-          opts._tab_to_buf[i] = opts._tab_to_buf[i] or {}
-          opts._tab_to_buf[i][b] = t
-          table.insert(res, b)
+  local opt_hl = function(t, k, default_msg, default_hl)
+    local hl = default_hl
+    local msg = default_msg and default_msg(opts[k]) or opts[k]
+    if type(opts[k]) == "table" then
+      if type(opts[k][1]) == "function" then
+        msg = opts[k][1](t, t == core.CTX().tabnr)
+      elseif type(opts[k][1]) == "string" then
+        msg = default_msg(opts[k][1])
+      else
+        msg = default_msg("Tab")
+      end
+      if type(opts[k][2]) == "string" then
+        hl = function(s)
+          return utils.ansi_from_hl(opts[k][2], s);
         end
       end
+    elseif type(opts[k]) == "function" then
+      msg = opts[k](t, t == core.CTX().tabnr)
     end
-    return res
+    return msg, hl
   end
 
   opts.__fn_reload = opts.__fn_reload or function(_)
@@ -328,85 +330,61 @@ M.tabs = function(opts)
     -- E5560: nvim_exec must not be called in a lua loop callback
     local entries = {}
     local populate = function(cb)
-      opts._tab_to_buf = {}
-
-      local filtered, excluded, max_bufnr = filter_buffers(opts, opts._list_bufs)
-      if not next(filtered) then return end
-
-      -- remove the filtered-out buffers
-      for b, _ in pairs(excluded) do
-        for _, bufnrs in pairs(opts._tab_to_buf) do
-          bufnrs[b] = nil
+      local max_bufnr = (function()
+        local ret = 0
+        for _, t in ipairs(vim.api.nvim_list_tabpages()) do
+          for _, w in ipairs(vim.api.nvim_tabpage_list_wins(t)) do
+            local b = vim.api.nvim_win_get_buf(w)
+            if b > ret then ret = b end
+          end
         end
-      end
+        return ret
+      end)()
 
-      for t, bufnrs in pairs(opts._tab_to_buf) do
-        local tab_cwd = vim.fn.getcwd(-1, t)
+      for _, t in ipairs(vim.api.nvim_list_tabpages()) do
+        (function()
+          if opts.current_tab_only and t ~= core.CTX().tabnr then return end
 
-        local opt_hl = function(k, default_msg, default_hl)
-          local hl = default_hl
-          local msg = default_msg and default_msg(opts[k]) or opts[k]
-          if type(opts[k]) == "table" then
-            if type(opts[k][1]) == "function" then
-              msg = opts[k][1](t, t == core.CTX().tabnr)
-            elseif type(opts[k][1]) == "string" then
-              msg = default_msg(opts[k][1])
-            else
-              msg = default_msg("Tab")
-            end
-            if type(opts[k][2]) == "string" then
-              hl = function(s)
-                return utils.ansi_from_hl(opts[k][2], s);
+          local tab_cwd = vim.fn.getcwd(-1, t)
+          local tab_cwd_tilde = path.HOME_to_tilde(tab_cwd)
+          local title, fn_title_hl = opt_hl(t, "tab_title",
+            function(s)
+              return string.format("%s%s#%d%s", s, utils.nbsp, t,
+                (uv.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde)))
+            end,
+            utils.ansi_codes[opts.hls.tab_title])
+
+          local marker, fn_marker_hl = opt_hl(t, "tab_marker",
+            function(s) return s end,
+            utils.ansi_codes[opts.hls.tab_marker])
+
+          local tab_cwd_tilde_base64 = base64.encode(tab_cwd_tilde)
+          if not opts.current_tab_only then
+            cb(string.format("%s:%d:0)%s%s  %s",
+              tab_cwd_tilde_base64,
+              t,
+              utils.nbsp,
+              fn_title_hl(title),
+              (t == core.CTX().tabnr) and fn_marker_hl(marker) or ""))
+          end
+
+          for _, w in ipairs(vim.api.nvim_tabpage_list_wins(t)) do
+            if t ~= core.CTX().tabnr or core.CTX().curtab_wins[tostring(w)] then
+              local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
+              if b then
+                local prefix = string.format("%s:%d:%d)%s%s%s",
+                  tab_cwd_tilde_base64, t, w, utils.nbsp, utils.nbsp, utils.nbsp)
+                local bufinfo = populate_buffer_entries({}, { b }, w)[1]
+                cb(gen_buffer_entry(opts, bufinfo, max_bufnr, tab_cwd, prefix))
               end
             end
-          elseif type(opts[k]) == "function" then
-            msg = opts[k](t, t == core.CTX().tabnr)
           end
-          return msg, hl
-        end
-
-        local tab_cwd_tilde = path.HOME_to_tilde(tab_cwd)
-        local title, fn_title_hl = opt_hl("tab_title",
-          function(s)
-            return string.format("%s%s#%d%s", s, utils.nbsp, t,
-              (uv.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde)))
-          end,
-          utils.ansi_codes[opts.hls.tab_title])
-
-        local marker, fn_marker_hl = opt_hl("tab_marker",
-          function(s) return s end,
-          utils.ansi_codes[opts.hls.tab_marker])
-
-        local tab_cwd_tilde_base64 = base64.encode(tab_cwd_tilde)
-        if not opts.current_tab_only then
-          cb(string.format("%s:%d)%s%s  %s",
-            tab_cwd_tilde_base64,
-            t,
-            utils.nbsp,
-            fn_title_hl(title),
-            (t == core.CTX().tabnr) and fn_marker_hl(marker) or ""))
-        end
-
-        local bufnrs_flat = {}
-        for b, _ in pairs(bufnrs) do
-          table.insert(bufnrs_flat, b)
-        end
-
-        opts.sort_lastused = false
-        opts._prefix = string.format("%s:%d)%s%s%s",
-          tab_cwd_tilde_base64, t, utils.nbsp, utils.nbsp, utils.nbsp)
-        local tabh = vim.api.nvim_list_tabpages()[t]
-        local buffers = populate_buffer_entries(opts, bufnrs_flat, tabh)
-        for _, bufinfo in pairs(buffers) do
-          cb(gen_buffer_entry(opts, bufinfo, max_bufnr, tab_cwd))
-        end
+        end)()
       end
       cb(nil)
     end
     populate(function(e)
-      if e then
-        table.insert(entries, e)
-      end
+      if e then table.insert(entries, e) end
     end)
     return entries
   end

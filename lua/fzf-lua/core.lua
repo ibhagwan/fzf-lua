@@ -270,6 +270,14 @@ M.CTX = function(includeBuflist)
       tabh = vim.api.nvim_win_get_tabpage(0),
       cursor = vim.api.nvim_win_get_cursor(0),
       line = vim.api.nvim_get_current_line(),
+      curtab_wins = (function()
+        local ret = {}
+        local wins = vim.api.nvim_tabpage_list_wins(0)
+        for _, w in ipairs(wins) do
+          ret[tostring(w)] = true
+        end
+        return ret
+      end)()
     }
   end
   -- perhaps a min impact optimization but since only

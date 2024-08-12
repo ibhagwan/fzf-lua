@@ -316,17 +316,16 @@ M.file_edit_or_qf = function(selected, opts)
 end
 
 M.file_switch = function(selected, opts)
-  -- If called from `:FzfLua tabs` switch to requested tab
-  -- We do this before testing for `bufnr` as users cab
-  -- select the tab page without a buffer
-  local tabidx = tonumber(selected[1]:match("(%d+)%)"))
-  local tabh = tabidx and vim.api.nvim_list_tabpages()[tabidx]
-  if tabh then
-    -- `:tabn` will result in the wrong tab
-    -- if `:tabmove` was previously used (#515)
+  -- If called from `:FzfLua tabs` switch to requested tab/win
+  local tabidx, winid = selected[1]:match("(%d+):(%d+)%)")
+  if tabidx and winid then
+    -- `:tabn` will result in the wrong tab if `:tabmove` was previously used (#515)
+    local tabh = vim.api.nvim_list_tabpages()[tonumber(tabidx)]
     vim.api.nvim_set_current_tabpage(tabh)
-  else
-    tabh = vim.api.nvim_win_get_tabpage(0)
+    if tonumber(winid) > 0 then
+      vim.api.nvim_set_current_win(tonumber(winid))
+    end
+    return true
   end
   local entry = path.entry_to_file(selected[1])
   if not entry.bufnr then
@@ -346,7 +345,7 @@ M.file_switch = function(selected, opts)
   -- Entry isn't an existing buffer, abort
   if not entry.bufnr then return false end
   if not utils.is_term_buffer(0) then vim.cmd("normal! m`") end
-  local winid = utils.winid_from_tabh(tabh, entry.bufnr)
+  winid = utils.winid_from_tabh(0, entry.bufnr)
   if not winid then return false end
   vim.api.nvim_set_current_win(winid)
   if entry.line > 0 or entry.col > 0 then
