@@ -373,12 +373,12 @@ M.buf_switch = M.file_switch
 M.buf_switch_or_edit = M.file_switch_or_edit
 
 M.buf_del = function(selected, opts)
-  local vimcmd = "bd"
-  local bufnrs = vim.tbl_filter(function(line)
-    local b = tonumber(line:match("%[(%d+)"))
-    return b and not utils.buffer_is_dirty(b, true, false)
-  end, selected)
-  M.vimcmd_entry(vimcmd, bufnrs, opts)
+  for _, sel in ipairs(selected) do
+    local entry = path.entry_to_file(sel, opts)
+    if entry.bufnr and not utils.buffer_is_dirty(entry.bufnr, true, false) then
+      vim.api.nvim_buf_delete(entry.bufnr, { force = true })
+    end
+  end
 end
 
 M.arg_add = function(selected, opts)
