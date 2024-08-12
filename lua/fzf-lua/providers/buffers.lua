@@ -341,20 +341,20 @@ M.tabs = function(opts)
         return ret
       end)()
 
-      for _, t in ipairs(vim.api.nvim_list_tabpages()) do
+      for tabnr, tabh in ipairs(vim.api.nvim_list_tabpages()) do
         (function()
-          if opts.current_tab_only and t ~= core.CTX().tabnr then return end
+          if opts.current_tab_only and tabh ~= core.CTX().tabh then return end
 
-          local tab_cwd = vim.fn.getcwd(-1, t)
+          local tab_cwd = vim.fn.getcwd(-1, tabnr)
           local tab_cwd_tilde = path.HOME_to_tilde(tab_cwd)
-          local title, fn_title_hl = opt_hl(t, "tab_title",
+          local title, fn_title_hl = opt_hl(tabnr, "tab_title",
             function(s)
-              return string.format("%s%s#%d%s", s, utils.nbsp, t,
+              return string.format("%s%s#%d%s", s, utils.nbsp, tabnr,
                 (uv.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde)))
             end,
             utils.ansi_codes[opts.hls.tab_title])
 
-          local marker, fn_marker_hl = opt_hl(t, "tab_marker",
+          local marker, fn_marker_hl = opt_hl(tabnr, "tab_marker",
             function(s) return s end,
             utils.ansi_codes[opts.hls.tab_marker])
 
@@ -362,18 +362,18 @@ M.tabs = function(opts)
           if not opts.current_tab_only then
             cb(string.format("%s:%d:0)%s%s  %s",
               tab_cwd_tilde_base64,
-              t,
+              tabh,
               utils.nbsp,
               fn_title_hl(title),
-              (t == core.CTX().tabnr) and fn_marker_hl(marker) or ""))
+              (tabh == core.CTX().tabh) and fn_marker_hl(marker) or ""))
           end
 
-          for _, w in ipairs(vim.api.nvim_tabpage_list_wins(t)) do
-            if t ~= core.CTX().tabnr or core.CTX().curtab_wins[tostring(w)] then
+          for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabh)) do
+            if tabh ~= core.CTX().tabh or core.CTX().curtab_wins[tostring(w)] then
               local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
               if b then
                 local prefix = string.format("%s:%d:%d)%s%s%s",
-                  tab_cwd_tilde_base64, t, w, utils.nbsp, utils.nbsp, utils.nbsp)
+                  tab_cwd_tilde_base64, tabh, w, utils.nbsp, utils.nbsp, utils.nbsp)
                 local bufinfo = populate_buffer_entries({}, { b }, w)[1]
                 cb(gen_buffer_entry(opts, bufinfo, max_bufnr, tab_cwd, prefix))
               end
