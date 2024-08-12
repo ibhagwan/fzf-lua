@@ -144,7 +144,7 @@ M.spawn = function(opts, fn_transform, fn_done)
 
   -- https://github.com/luvit/luv/blob/master/docs.md
   -- uv.spawn returns tuple: handle, pid
-  local shell = _is_win and "cmd" or "sh"
+  local shell = _is_win and "cmd.exe" or "sh"
   local args = _is_win and { "/d", "/e:off", "/f:off", "/v:on", "/c" } or { "-c" }
   if type(opts.cmd) == "table" then
     if _is_win then
