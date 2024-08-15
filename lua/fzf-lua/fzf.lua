@@ -203,53 +203,14 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     end
   end)
 
-  -- I'm not sure why this happens (probably a neovim bug) but when pressing
-  -- <C-c> in quick succession immediately after opening the window neovim
-  -- hangs the CPU at 100% at the last `coroutine.yield` before returning from
-  -- this function. At this point it seems that the fzf subprocess was started
-  -- and killed but `on_exit` is never called. In order to avoid calling `yield`
-  -- I tried checking the job/coroutine status in different ways:
-  --   * coroutine.status(co): always returns 'running'
-  --   * vim.fn.job_pid: always returns the current pid (even if it doesn't
-  --     exist anymore)
-  --   * vim.fn.jobwait({job_pid}, 0): always returns '-1' (even when looping
-  --     with 'vim.defer_fn(fn, 100)')
-  --   * uv.os_priority(job_pid): always returns '0'
-  -- `sudo strace -s 99 -ffp <pid> when neovim is stuck:
-  --   [pid 27433] <... epoll_wait resumed>[{events=EPOLLIN, data={u32=18, u64=18}}], 1024, -1) = 1
-  --   [pid 27432] <... write resumed>)        = 8
-  --   [pid 27433] read(18, "\1\0\0\0\0\0\0\0", 1024) = 8
-  --   [pid 27432] epoll_wait(9,  <unfinished ...>
-  --   [pid 27433] epoll_wait(15,  <unfinished ...>
-  --   [pid 27432] <... epoll_wait resumed>[], 1024, 0) = 0
-  --   [pid 27432] epoll_wait(9, [], 1024, 0)  = 0
-  --   [pid 27432] epoll_wait(9, [], 1024, 0)  = 0
-  --   [pid 27432] epoll_wait(9, [], 1024, 0)  = 0
-  --   [pid 27432] write(32, "\3", 1)          = 1
-  --   [pid 27432] write(18, "\1\0\0\0\0\0\0\0", 8 <unfinished ...>
-  --   [pid 27433] <... epoll_wait resumed>[{events=EPOLLIN, data={u32=18, u64=18}}], 1024, -1) = 1
-  --   [pid 27432] <... write resumed>)        = 8
-  --   [pid 27433] read(18, "\1\0\0\0\0\0\0\0", 1024) = 8
-  --   [pid 27432] epoll_wait(9,  <unfinished ...>
-  --   [pid 27433] epoll_wait(15,  <unfinished ...>
-  --   [pid 27432] <... epoll_wait resumed>[], 1024, 0) = 0
-  --   [pid 27432] epoll_wait(9, [], 1024, 0)  = 0
-  --   [pid 27432] epoll_wait(9, [], 1024, 0)  = 0
-  --   [pid 27432] epoll_wait(9, [], 1024, 0)  = 0
-  --   [pid 27432] write(32, "\3", 1)          = 1
-  --   [pid 27432] write(18, "\1\0\0\0\0\0\0\0", 8 <unfinished ...>
-  --
-  -- As a workaround we map buffer <C-c> to <Esc> for the fzf buffer
-  -- `vim.keymap.set` to avoid breaking compatibility with older neovim versions
-  --
-  -- Removed as an experiment since the removal of the `save_query` code
-  -- that was running on WinLeave which seems to make the `<C-c>` issue
-  -- better or even non-existent? RESTORED AGAIN
-  --
-  if vim.keymap then
-    vim.keymap.set("t", "<C-c>", "<Esc>", { buffer = 0 })
-  else
-    vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = true })
+  -- https://github.com/neovim/neovim/issues/20726
+  -- https://github.com/neovim/neovim/pull/30056
+  if not utils.__HAS_NVIM_011 then
+    if vim.keymap then
+      vim.keymap.set("t", "<C-c>", "<Esc>", { buffer = 0 })
+    else
+      vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = true })
+    end
   end
 
   if opts.debug then
