@@ -31,7 +31,7 @@ M.oldfiles = function(opts)
       end
 
   if opts.include_current_session then
-    for _, buffer in ipairs(vim.split(vim.fn.execute(":buffers t"), "\n")) do
+    for _, buffer in ipairs(vim.split(vim.fn.execute(":buffers! t"), "\n")) do
       local bufnr = tonumber(buffer:match("%s*(%d+)"))
       if bufnr then
         local file = vim.api.nvim_buf_get_name(bufnr)
