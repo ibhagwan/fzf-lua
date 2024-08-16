@@ -209,7 +209,7 @@ function M.rg_escape(str)
 end
 
 function M.regex_to_magic(str)
-  return [[\v]] .. str
+  return [[\v]] .. str:gsub([[\\]], [[\]]):gsub("=", [[\=]])
 end
 
 function M.sk_escape(str)
