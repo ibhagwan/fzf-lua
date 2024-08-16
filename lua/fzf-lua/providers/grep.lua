@@ -84,8 +84,11 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   end
 
   search_query = search_query or ""
-  if not (no_esc or opts.no_esc) then
-    search_query = utils.rg_escape(search_query)
+  if #search_query > 0 and not (no_esc or opts.no_esc) then
+    -- For UI consistency, replace the saved search query with the regex
+    opts.no_esc = true
+    opts.search = utils.rg_escape(search_query)
+    search_query = opts.search
   end
 
   -- remove column numbers when search term is empty

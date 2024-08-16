@@ -209,7 +209,9 @@ function M.rg_escape(str)
 end
 
 function M.regex_to_magic(str)
-  return [[\v]] .. str:gsub([[\\]], [[\]]):gsub("=", [[\=]])
+  -- Convert regex to "very magic" pattern, basically a regex
+  -- with special meaning for "=&<>", `:help /magic`
+  return [[\v]] .. str:gsub("[=&<>]", function(x) return [[\]] .. x end)
 end
 
 function M.sk_escape(str)
