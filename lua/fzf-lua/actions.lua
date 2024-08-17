@@ -719,21 +719,25 @@ M.git_stage_unstage = function(selected, opts)
 end
 
 M.git_reset = function(selected, opts)
-  for _, s in ipairs(selected) do
-    s = utils.strip_ansi_coloring(s)
-    local is_untracked = s:sub(5, 5) == "?"
-    local cmd = is_untracked
-        and path.git_cwd({ "git", "clean", "-f" }, opts)
-        or path.git_cwd({ "git", "checkout", "HEAD", "--" }, opts)
-    git_exec({ s }, opts, cmd)
-    -- trigger autoread or warn the users buffer(s) was changed
-    vim.cmd("checktime")
+  if vim.fn.confim("Reset " .. #selected .. " file(s)?", "&Yes\n&No") == 1 then
+    for _, s in ipairs(selected) do
+      s = utils.strip_ansi_coloring(s)
+      local is_untracked = s:sub(5, 5) == "?"
+      local cmd = is_untracked
+          and path.git_cwd({ "git", "clean", "-f" }, opts)
+          or path.git_cwd({ "git", "checkout", "HEAD", "--" }, opts)
+      git_exec({ s }, opts, cmd)
+      -- trigger autoread or warn the users buffer(s) was changed
+      vim.cmd("checktime")
+    end
   end
 end
 
 M.git_stash_drop = function(selected, opts)
-  local cmd = path.git_cwd({ "git", "stash", "drop" }, opts)
-  git_exec(selected, opts, cmd)
+  if vim.fn.confirm("Drop " .. #selected .. " stash(es)?", "&Yes\n&No") == 1 then
+    local cmd = path.git_cwd({ "git", "stash", "drop" }, opts)
+    git_exec(selected, opts, cmd)
+  end
 end
 
 M.git_stash_pop = function(selected, opts)
