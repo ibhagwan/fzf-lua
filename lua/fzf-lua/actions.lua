@@ -624,7 +624,7 @@ M.git_branch_del = function(selected, opts)
     utils.warn(string.format("Cannot delete active branch '%s'", branch))
     return
   end
-  if utils.input("Delete branch " .. branch .. "? [y/n] ") == "y" then
+  if vim.fn.confirm("Delete branch " .. branch .. "?", "&Yes\n&No") == 1 then
     table.insert(cmd_del_branch, branch)
     local output, rc = utils.io_systemlist(cmd_del_branch)
     if rc ~= 0 then
@@ -661,7 +661,7 @@ M.git_checkout = function(selected, opts)
   local commit_hash = match_commit_hash(selected[1], opts)
   local current_commit = utils.io_systemlist(cmd_cur_commit)[1]
   if commit_hash == current_commit then return end
-  if utils.input("Checkout commit " .. commit_hash .. "? [y/n] ") == "y" then
+  if vim.fn.confirm("Checkout commit " .. commit_hash .. "?", "&Yes\n&No") == 1 then
     local cmd_checkout = path.git_cwd({ "git", "checkout" }, opts)
     table.insert(cmd_checkout, commit_hash)
     local output, rc = utils.io_systemlist(cmd_checkout)
@@ -737,7 +737,7 @@ M.git_stash_drop = function(selected, opts)
 end
 
 M.git_stash_pop = function(selected, opts)
-  if utils.input("Pop " .. #selected .. " stash(es)? [y/n] ") == "y" then
+  if vim.fn.confirm("Pop " .. #selected .. " stash(es)?", "&Yes\n&No") == 1 then
     local cmd = path.git_cwd({ "git", "stash", "pop" }, opts)
     git_exec(selected, opts, cmd)
     -- trigger autoread or warn the users buffer(s) was changed
@@ -746,7 +746,7 @@ M.git_stash_pop = function(selected, opts)
 end
 
 M.git_stash_apply = function(selected, opts)
-  if utils.input("Apply " .. #selected .. " stash(es)? [y/n] ") == "y" then
+  if vim.fn.confirm("Apply " .. #selected .. " stash(es)?", "&Yes\n&No") == 1 then
     local cmd = path.git_cwd({ "git", "stash", "apply" }, opts)
     git_exec(selected, opts, cmd)
     -- trigger autoread or warn the users buffer(s) was changed
