@@ -719,7 +719,7 @@ M.git_stage_unstage = function(selected, opts)
 end
 
 M.git_reset = function(selected, opts)
-  if vim.fn.confim("Reset " .. #selected .. " file(s)?", "&Yes\n&No") == 1 then
+  if vim.fn.confirm("Reset " .. #selected .. " file(s)?", "&Yes\n&No") == 1 then
     for _, s in ipairs(selected) do
       s = utils.strip_ansi_coloring(s)
       local is_untracked = s:sub(5, 5) == "?"
