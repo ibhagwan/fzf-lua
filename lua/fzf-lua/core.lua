@@ -210,6 +210,8 @@ M.fzf_resume = function(opts)
     return
   end
   opts = vim.tbl_deep_extend("force", config.__resume_data.opts, opts or {})
+  opts = M.set_header(opts, opts.headers or {})
+  opts.cwd = opts.cwd and vim.fn.expand(opts.cwd) or nil
   opts.__resuming = true
   M.fzf_exec(config.__resume_data.contents, opts)
 end
@@ -989,7 +991,10 @@ M.set_header = function(opts, hdr_tbl)
         if opts.no_header_i then return end
         local defs = M.ACTION_DEFINITIONS
         local ret = {}
-        for k, v in pairs(opts.actions) do
+        local sorted = vim.tbl_keys(opts.actions or {})
+        table.sort(sorted)
+        for _, k in ipairs(sorted) do
+          local v = opts.actions[k]
           local action = type(v) == "function" and v or type(v) == "table" and (v.fn or v[1])
           local def, to = nil, type(v) == "table" and v.header
           if not to and type(action) == "function" and defs[action] then
