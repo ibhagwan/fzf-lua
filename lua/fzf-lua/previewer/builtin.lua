@@ -676,18 +676,22 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     end
     do
       local lines = nil
-      -- make sure the file is readable (or bad entry.path)
-      local fs_stat = uv.fs_stat(entry.path)
-      if not entry.path or not fs_stat then
-        lines = { string.format("Unable to stat file %s", entry.path) }
-      elseif fs_stat.size > 0 and utils.perl_file_is_binary(entry.path) then
-        lines = { "Preview is not supported for binary files." }
-      elseif tonumber(self.limit_b) > 0 and fs_stat.size > self.limit_b then
-        lines = {
-          ("Preview file size limit (>%dMB) reached, file size %dMB.")
-              :format(self.limit_b / (1024 * 1024), fs_stat.size / (1024 * 1024)),
-          -- "(configured via 'previewers.builtin.limit_b')"
-        }
+      if entry.path:match("^%[DEBUG]") then
+        lines = { tostring(entry.path:gsub("^%[DEBUG]", "")) }
+      else
+        -- make sure the file is readable (or bad entry.path)
+        local fs_stat = uv.fs_stat(entry.path)
+        if not entry.path or not fs_stat then
+          lines = { string.format("Unable to stat file %s", entry.path) }
+        elseif fs_stat.size > 0 and utils.perl_file_is_binary(entry.path) then
+          lines = { "Preview is not supported for binary files." }
+        elseif tonumber(self.limit_b) > 0 and fs_stat.size > self.limit_b then
+          lines = {
+            ("Preview file size limit (>%dMB) reached, file size %dMB.")
+                :format(self.limit_b / (1024 * 1024), fs_stat.size / (1024 * 1024)),
+            -- "(configured via 'previewers.builtin.limit_b')"
+          }
+        end
       end
       if lines then
         pcall(vim.api.nvim_buf_set_lines, tmpbuf, 0, -1, false, lines)
@@ -907,10 +911,14 @@ function Previewer.buffer_or_file:update_border(entry)
   if self.title then
     local filepath = entry.path
     if filepath then
-      if self.opts.cwd then
-        filepath = path.relative_to(entry.path, self.opts.cwd)
+      if filepath:match("^%[DEBUG]") then
+        filepath = "[DEBUG]"
+      else
+        if self.opts.cwd then
+          filepath = path.relative_to(entry.path, self.opts.cwd)
+        end
+        filepath = path.HOME_to_tilde(filepath)
       end
-      filepath = path.HOME_to_tilde(filepath)
     end
     local title = filepath or entry.uri or entry.bufname
     -- was transform function defined?

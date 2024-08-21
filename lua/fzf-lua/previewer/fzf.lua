@@ -194,11 +194,15 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
     end
   end
   local errcmd = nil
-  -- verify the file exists on disk and is accessible
-  if #filepath == 0 or not uv.fs_stat(filepath) then
-    errcmd = "echo " .. libuv.shellescape(
-      string.format("'%s: NO SUCH FILE OR ACCESS DENIED",
-        filepath and #filepath > 0 and filepath or "<null>"))
+  if filepath:match("^%[DEBUG]") then
+    errcmd = "echo " .. libuv.shellescape(tostring(filepath:gsub("^%[DEBUG]", "")))
+  else
+    -- verify the file exists on disk and is accessible
+    if #filepath == 0 or not uv.fs_stat(filepath) then
+      errcmd = "echo " .. libuv.shellescape(
+        string.format("'%s: NO SUCH FILE OR ACCESS DENIED",
+          filepath and #filepath > 0 and filepath or "<null>"))
+    end
   end
   return filepath, entry, errcmd
 end
