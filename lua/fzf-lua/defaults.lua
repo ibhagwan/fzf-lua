@@ -586,7 +586,7 @@ M.defaults.tabs                 = {
   fzf_opts    = {
     ["--multi"]     = true,
     ["--delimiter"] = "[\\):]",
-    ["--with-nth"]  = "4..",
+    ["--with-nth"]  = "5..",
   },
   _cached_hls = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "tab_title", "tab_marker", "path_linenr" },
 }
