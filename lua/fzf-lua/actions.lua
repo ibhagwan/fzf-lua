@@ -129,8 +129,10 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
       local vimcmd = _vimcmd:gsub("<auto>", entry.bufnr and entry.bufname and "b" or "e")
       -- Do not execute "edit" commands if we already have the same buffer/file open
       -- or if we are dealing with a URI as it's open with `vim.lsp.util.jump_to_location`
-      if vimcmd == "e" and (entry.uri or path.equals(fullpath, opts.__CTX.bname))
-          or vimcmd == "b" and entry.bufnr and entry.bufnr == opts.__CTX.bufnr
+      -- opts.__CTX isn't guaranteed by API users (#1414)
+      local CTX = opts.__CTX or utils.CTX()
+      if vimcmd == "e" and (entry.uri or path.equals(fullpath, CTX.bname))
+          or vimcmd == "b" and entry.bufnr and entry.bufnr == CTX.bufnr
       then
         vimcmd = nil
       end
