@@ -1018,6 +1018,13 @@ M.defaults.keymaps              = {
 
 M.defaults.spell_suggest        = {
   prompt  = "Spelling Suggestions> ",
+  winopts = {
+    relative = "cursor",
+    row      = 1,
+    col      = 0,
+    height   = 0.40,
+    width    = 0.30,
+  },
   actions = {
     ["enter"] = actions.spell_apply,
   },
