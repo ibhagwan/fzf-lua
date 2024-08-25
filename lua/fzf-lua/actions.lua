@@ -318,6 +318,7 @@ M.file_edit_or_qf = function(selected, opts)
 end
 
 M.file_switch = function(selected, opts)
+  if not selected[1] then return false end
   -- If called from `:FzfLua tabs` switch to requested tab/win
   local tabh, winid = selected[1]:match("(%d+):(%d+)%)")
   if tabh and winid then
