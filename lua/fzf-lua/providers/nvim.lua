@@ -152,6 +152,11 @@ M.jumps = function(opts)
       text))
   end
 
+  if utils.tbl_isempty(entries) then
+    utils.info(("%s list is empty."):format(opts.h1 or "jump"))
+    return
+  end
+
   table.insert(entries, 1,
     string.format("%6s %s  %s %s", opts.h1 or "jump", "line", "col", "file/text"))
 
