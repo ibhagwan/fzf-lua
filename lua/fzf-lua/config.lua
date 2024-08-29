@@ -518,12 +518,20 @@ function M.normalize_opts(opts, globals, __resume_key)
     opts.multiline = nil
   end
 
-  -- are we using fzf-tmux, if so get available columns
-  opts._is_fzf_tmux = vim.env.TMUX and opts.fzf_bin:match("fzf%-tmux$")
+  -- Are we using fzf-tmux? if so get available columns
+  opts._is_fzf_tmux = vim.env.TMUX
+      -- pre fzf v0.53 uses the fzf-tmux script
+      and opts.fzf_bin:match("fzf%-tmux$") and 1
+      -- fzf v0.53 added native tmux integration
+      or opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 and opts.fzf_opts["--tmux"] and 2
   if opts._is_fzf_tmux then
     local out = utils.io_system({ "tmux", "display-message", "-p", "#{window_width}" })
     opts._tmux_columns = tonumber(out:match("%d+"))
     opts.winopts.split = nil
+    if opts._is_fzf_tmux == 2 then
+      -- native tmux integration is implemented using tmux popups
+      opts._is_fzf_tmux_popup = true
+    end
   end
 
   -- refresh highlights if background/colorscheme changed (#1092)

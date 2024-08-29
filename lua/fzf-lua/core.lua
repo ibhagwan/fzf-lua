@@ -714,13 +714,17 @@ M.build_fzf_cli = function(opts)
   -- build the cli args
   local cli_args = {}
   -- fzf-tmux args must be included first
-  if opts._is_fzf_tmux then
+  if opts._is_fzf_tmux == 1 then
     for k, v in pairs(opts.fzf_tmux_opts or {}) do
       table.insert(cli_args, k)
       if type(v) == "string" and #v > 0 then
         table.insert(cli_args, v)
       end
     end
+  elseif opts._is_fzf_tmux == 2 then
+    -- "--height" specified after "--tmux" will take priority and cause
+    -- the job to spawn in the background without a visible interface
+    opts.fzf_opts["--height"] = nil
   end
   for k, v in pairs(opts.fzf_opts) do
     -- flag can be set to `false` to negate a default
