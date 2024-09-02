@@ -647,7 +647,12 @@ end
 function M.hexcol_from_hl(hlgroup, what, mode)
   if not hlgroup or not what then return end
   local hexcol = synIDattr(hlgroup, what, mode)
-  if hexcol and not hexcol:match("^#") then
+  -- Without termguicolors hexcol returns `{ctermfg|ctermbg}` which is
+  -- a simple number representing the term ANSI color (e.g. 1-15, etc)
+  -- in which case we return the number as is so it can be passed onto
+  -- fzf's "--color" flag, this shouldn't be an issue for `ansi_from_hl`
+  -- as the function validates the a 6-digit hex number (#1422)
+  if hexcol and not hexcol:match("^#") and not tonumber(hexcol) then
     -- try to acquire the color from the map
     -- some schemes don't capitalize first letter?
     local col = M.COLORMAP()[hexcol:sub(1, 1):upper() .. hexcol:sub(2)]
@@ -700,6 +705,9 @@ function M.ansi_from_hl(hl, s)
         table.insert(escseqs, string.format("[%d;2;%d;%d;%dm", p.code, r, g, b))
         -- elseif #hexcol>0 then
         --   print("unresolved", hl, w, hexcol, M.COLORMAP()[synIDattr(hl, w)])
+      elseif tonumber(hexcol) then
+        -- No termguicolors, use the number as is
+        table.insert(escseqs, string.format("[%d;5;%dm", p.code, tonumber(hexcol)))
       end
     else
       local value = synIDattr(hl, w)
