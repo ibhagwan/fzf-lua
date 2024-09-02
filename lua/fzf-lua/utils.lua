@@ -674,6 +674,9 @@ function M.ansi_from_rgb(rgb, s)
   local r, g, b = hex2rgb(rgb)
   if r and g and b then
     return string.format("[38;2;%d;%d;%dm%s%s", r, g, b, s, "[0m")
+  elseif tonumber(rgb) then
+    -- No termguicolors, use the number as is
+    return string.format("[38;5;%dm%s%s", rgb, s, "[0m")
   end
   return s
 end

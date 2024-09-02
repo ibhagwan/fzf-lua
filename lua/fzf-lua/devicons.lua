@@ -75,12 +75,16 @@ function NvimWebDevicons:load_icons(opts)
 
   -- test if we have the correct icon set for the current background
   -- if the background changed from light<->dark, refresh the icons (#855)
-  if self._state and self._state.icons and self._state.bg == vim.o.bg then
+  if self._state and self._state.icons
+      and self._state.bg == vim.o.bg
+      and self._state.termguicolors == vim.o.termguicolors
+  then
     return true
   end
 
-  -- save the current background
+  -- save the current background & termguicolors
   self._state.bg = vim.o.bg
+  self._state.termguicolors = vim.o.termguicolors
 
   -- The state object needs to be RPC request compatible
   -- rpc request cannot return a table that has mixed elements
@@ -108,7 +112,9 @@ function NvimWebDevicons:load_icons(opts)
   }
   if type(all_devicons[1]) == "table" then
     self._state.default_icon.icon = all_devicons[1].icon or self._state.default_icon.icon
-    self._state.default_icon.color = all_devicons[1].color or self._state.default_icon.color
+    self._state.default_icon.color =
+        (self._state.termguicolors and all_devicons[1].color or all_devicons[1].cterm_color) or
+        self._state.default_icon.color
   end
   self._state.icons = {
     by_filename = {},  -- full filename (path.tail) lookup
@@ -126,15 +132,16 @@ function NvimWebDevicons:load_icons(opts)
         -- NOTE: we no longer need name since we use the RGB color directly
         -- name = v.name or k,
         icon = v.icon or "",
-        color = v.color or (function()
-          -- some devicons customizations remove `info.color`
-          -- retrieve the color from the highlight group (#801)
-          local hlgroup = "DevIcon" .. (v.name or k)
-          local hexcol = utils.hexcol_from_hl(hlgroup, "fg", opts.mode)
-          if hexcol and #hexcol > 0 then
-            return hexcol
-          end
-        end)(),
+        color = (self._state.termguicolors and v.color or v.cterm_color)
+            or (function()
+              -- some devicons customizations remove `info.color`
+              -- retrieve the color from the highlight group (#801)
+              local hlgroup = "DevIcon" .. (v.name or k)
+              local hexcol = utils.hexcol_from_hl(hlgroup, "fg", opts.mode)
+              if hexcol and #hexcol > 0 then
+                return hexcol
+              end
+            end)(),
       }
       -- NOTE: entries like "R" can appear in both icons by filename/extension
       if icons.by_filename[k] then
