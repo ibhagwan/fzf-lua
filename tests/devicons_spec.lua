@@ -27,7 +27,7 @@ describe("Testing NvimWebDevicons", function()
   local function devicons_get(name)
     name = path.tail(name) or name
     local icon, hl = require("nvim-web-devicons").get_icon(name, nil, { default = true })
-    local color = utils.hexcol_from_hl(hl, "fg", "gui")
+    local color = utils.hexcol_from_hl(hl, "fg")
     return icon, color
   end
 
@@ -127,5 +127,53 @@ describe("Testing NvimWebDevicons", function()
     devicons_are_same("foo.py", { "", "#805e02" })
     devicons_are_same("foo.r", { "󰟔", "#1a4c8c" })
     devicons_are_same("foo.R", { "󰟔", "#1a4c8c" })
+  end)
+  it("notermguicolors (dark)", function()
+    vim.o.background = "dark"
+    vim.o.termguicolors = false
+    devicons.load()
+    assert.are.same({ devicons.get_devicon("foo/") }, { "", nil })
+    devicons_are_same("", { "", "66" })
+    devicons_are_same(".", { "", "66" })
+    devicons_are_same("f.abc", { "", "66" })
+    devicons_are_same("f.", { "", "66" })
+    devicons_are_same(".f", { "", "66" })
+    devicons_are_same("foo", { "", "66" })
+    -- by filename
+    devicons_are_same(".editorconfig", { "", "255" })
+    devicons_are_same("/path/.bashrc", { "", "113" })
+    -- by 2-part extension
+    devicons_are_same("foo.bar.jsx", { "", "45" })
+    devicons_are_same("foo.spec.jsx", { "", "45" })
+    devicons_are_same("foo.config.ru", { "", "52" })
+    -- by 1-part extensions
+    devicons_are_same("foo.lua", { "", "74" })
+    devicons_are_same("foo.py", { "", "214" })
+    devicons_are_same("foo.r", { "󰟔", "25" })
+    devicons_are_same("foo.R", { "󰟔", "25" })
+  end)
+  it("notermguicolors (light)", function()
+    vim.o.background = "light"
+    vim.o.termguicolors = false
+    devicons.load()
+    assert.are.same({ devicons.get_devicon("foo/") }, { "", nil })
+    devicons_are_same("", { "", "66" })
+    devicons_are_same(".", { "", "66" })
+    devicons_are_same("f.abc", { "", "66" })
+    devicons_are_same("f.", { "", "66" })
+    devicons_are_same(".f", { "", "66" })
+    devicons_are_same("foo", { "", "66" })
+    -- by filename
+    devicons_are_same(".editorconfig", { "", "236" })
+    devicons_are_same("/path/.bashrc", { "", "22" })
+    -- by 2-part extension
+    devicons_are_same("foo.bar.jsx", { "", "31" })
+    devicons_are_same("foo.spec.jsx", { "", "31" })
+    devicons_are_same("foo.config.ru", { "", "52" })
+    -- by 1-part extensions
+    devicons_are_same("foo.lua", { "", "24" })
+    devicons_are_same("foo.py", { "", "94" })
+    devicons_are_same("foo.r", { "󰟔", "25" })
+    devicons_are_same("foo.R", { "󰟔", "25" })
   end)
 end)
