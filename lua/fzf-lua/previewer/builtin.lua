@@ -1097,6 +1097,7 @@ function Previewer.jumps:new(o, opts, fzf_win)
 end
 
 function Previewer.jumps:parse_entry(entry_str)
+  if entry_str == "" then return {} end
   local bufnr = nil
   local _, lnum, col, filepath = entry_str:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
   if filepath then
