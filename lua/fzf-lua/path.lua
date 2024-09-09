@@ -500,7 +500,10 @@ end
 
 function M.git_cwd(cmd, opts)
   -- backward compat, used to be single cwd param
-  local o = opts or {}
+  -- NOTE: we use deepcopy due to a bug with Windows network drives starting with "\\"
+  -- as `vim.fn.expand` would reduce the double slash to a single slash modifying the
+  -- original `opts.cwd` ref (#1429)
+  local o = opts and utils.tbl_deep_clone(opts) or {}
   if type(o) == "string" then
     o = { cwd = o }
   end
@@ -514,7 +517,7 @@ function M.git_cwd(cmd, opts)
     local args = ""
     for _, a in ipairs(git_args) do
       if o[a[1]] then
-        o[a[1]] = a.noexpand and o[a[1]] or vim.fn.expand(o[a[1]])
+        o[a[1]] = a.noexpand and o[a[1]] or libuv.expand(o[a[1]])
         args = args .. ("%s %s "):format(a[2], libuv.shellescape(o[a[1]]))
       end
     end
@@ -524,7 +527,7 @@ function M.git_cwd(cmd, opts)
     cmd = utils.tbl_deep_clone(cmd)
     for _, a in ipairs(git_args) do
       if o[a[1]] then
-        o[a[1]] = a.noexpand and o[a[1]] or vim.fn.expand(o[a[1]])
+        o[a[1]] = a.noexpand and o[a[1]] or libuv.expand(o[a[1]])
         table.insert(cmd, idx, a[2])
         table.insert(cmd, idx + 1, o[a[1]])
         idx = idx + 2

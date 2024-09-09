@@ -3,6 +3,7 @@ local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
+local libuv = require "fzf-lua.libuv"
 
 local M = {}
 
@@ -15,15 +16,15 @@ local M = {}
 local function find_toplevel_cwd(maybe_cwd, postfix, orig_cwd)
   -- expand can fail on open curly braces with:
   -- E5108: Error executing lua Vim:E220: Missing }.
-  local ok, _ = pcall(vim.fn.expand, maybe_cwd)
+  local ok, _ = pcall(libuv.expand, maybe_cwd)
   if not maybe_cwd or #maybe_cwd == 0 or not ok then
     return nil, uv.cwd(), nil
   end
   if not orig_cwd then
     orig_cwd = maybe_cwd
   end
-  if vim.fn.isdirectory(vim.fn.expand(maybe_cwd)) == 1 then
-    local disp_cwd, cwd = maybe_cwd, vim.fn.expand(maybe_cwd)
+  if vim.fn.isdirectory(libuv.expand(maybe_cwd)) == 1 then
+    local disp_cwd, cwd = maybe_cwd, libuv.expand(maybe_cwd)
     -- returned cwd must be full path
     if path.has_cwd_prefix(cwd) then
       cwd = uv.cwd() .. (#cwd > 1 and cwd:sub(2) or "")

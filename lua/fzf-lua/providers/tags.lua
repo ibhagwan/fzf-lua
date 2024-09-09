@@ -42,7 +42,7 @@ end
 
 local get_ctags_file = function(opts)
   if opts.ctags_file then
-    return vim.fn.expand(opts.ctags_file)
+    return libuv.expand(opts.ctags_file)
   end
   local tagfiles = vim.fn.tagfiles()
   for _, f in ipairs(tagfiles) do

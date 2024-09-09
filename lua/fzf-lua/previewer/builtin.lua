@@ -1073,7 +1073,7 @@ function Previewer.marks:parse_entry(entry_str)
     filepath = api.nvim_buf_get_name(bufnr)
   end
   if #filepath > 0 then
-    local ok, res = pcall(vim.fn.expand, filepath)
+    local ok, res = pcall(libuv.expand, filepath)
     if not ok then
       filepath = ""
     else
@@ -1101,7 +1101,7 @@ function Previewer.jumps:parse_entry(entry_str)
   local bufnr = nil
   local _, lnum, col, filepath = entry_str:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
   if filepath then
-    local ok, res = pcall(vim.fn.expand, filepath)
+    local ok, res = pcall(libuv.expand, filepath)
     if ok then
       filepath = path.relative_to(res, uv.cwd())
     end

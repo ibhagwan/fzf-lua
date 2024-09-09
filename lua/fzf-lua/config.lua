@@ -1,6 +1,7 @@
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local actions = require "fzf-lua.actions"
 local devicons = require "fzf-lua.devicons"
 
@@ -237,7 +238,7 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- fzf.vim's `g:fzf_history_dir` (#1127)
   if vim.g.fzf_history_dir and opts.fzf_opts["--history"] == nil then
-    local histdir = vim.fn.expand(vim.g.fzf_history_dir)
+    local histdir = libuv.expand(vim.g.fzf_history_dir)
     if vim.fn.isdirectory(histdir) == 0 then
       pcall(vim.fn.mkdir, histdir)
     end
@@ -434,7 +435,9 @@ function M.normalize_opts(opts, globals, __resume_key)
   if opts.cwd and #opts.cwd > 0 then
     -- NOTE: on Windows, `expand` will replace all backslashes with forward slashes
     -- i.e. C:/Users -> c:\Users
-    opts.cwd = vim.fn.expand(opts.cwd)
+    -- Also reduces double backslashes to a single backslash, we therefore double
+    -- the backslashes prior to expanding (#1429)
+    opts.cwd = libuv.expand(opts.cwd)
     if not uv.fs_stat(opts.cwd) then
       utils.warn(("Unable to access '%s', removing 'cwd' option."):format(opts.cwd))
       opts.cwd = nil
@@ -464,7 +467,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   end
 
   opts.fzf_bin = opts.fzf_bin or M.globals.fzf_bin
-  opts.fzf_bin = opts.fzf_bin and vim.fn.expand(opts.fzf_bin) or nil
+  opts.fzf_bin = opts.fzf_bin and libuv.expand(opts.fzf_bin) or nil
   if not opts.fzf_bin or
       not executable(opts.fzf_bin, utils.warn, "fallback to 'fzf'.") then
     -- default|fallback to fzf

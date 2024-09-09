@@ -260,7 +260,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- Nullify user's RG config as this can cause conflicts
       -- with fzf-lua's rg opts (#1266)
       ["RIPGREP_CONFIG_PATH"] = type(opts.RIPGREP_CONFIG_PATH) == "string"
-          and vim.fn.expand(opts.RIPGREP_CONFIG_PATH) or "",
+          and libuv.expand(opts.RIPGREP_CONFIG_PATH) or "",
     },
     on_exit = function(_, rc, _)
       local output = {}

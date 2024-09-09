@@ -738,6 +738,16 @@ M.escape_fzf = function(s, fzf_version, is_win)
   return ret
 end
 
+-- `vim.fn.escape` 
+-- (1) On *NIX: double the backslashes as they will be reduced by expand
+-- (2) ... other issues we will surely find with special chars
+M.expand = function(s)
+  if not _is_win then
+    s = s:gsub([[\]], [[\\]])
+  end
+  return vim.fn.expand(s)
+end
+
 ---@param opts string
 ---@param fn_transform string?
 ---@param fn_preprocess string?

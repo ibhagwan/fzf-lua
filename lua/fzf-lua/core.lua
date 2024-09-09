@@ -211,7 +211,7 @@ M.fzf_resume = function(opts)
   end
   opts = vim.tbl_deep_extend("force", config.__resume_data.opts, opts or {})
   opts = M.set_header(opts, opts.headers or {})
-  opts.cwd = opts.cwd and vim.fn.expand(opts.cwd) or nil
+  opts.cwd = opts.cwd and libuv.expand(opts.cwd) or nil
   opts.__resuming = true
   M.fzf_exec(config.__resume_data.contents, opts)
 end

@@ -1,6 +1,7 @@
 local uv = vim.uv or vim.loop
 local utils = require "fzf-lua.utils"
 local path = require "fzf-lua.path"
+local libuv = require "fzf-lua.libuv"
 
 local M = {}
 
@@ -483,7 +484,7 @@ M.goto_jump = function(selected, opts)
     end
   else
     local _, lnum, col, filepath = selected[1]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
-    local ok, res = pcall(vim.fn.expand, filepath)
+    local ok, res = pcall(libuv.expand, filepath)
     if not ok then
       filepath = ""
     else
