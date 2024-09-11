@@ -262,7 +262,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- Merge `winopts` with outputs from `winopts_fn`
   local winopts_fn = opts.winopts_fn or M.globals.winopts_fn
   if type(winopts_fn) == "function" then
-    opts.winopts = vim.tbl_deep_extend("force", opts.winopts, winopts_fn() or {})
+    opts.winopts = vim.tbl_deep_extend("force", opts.winopts, winopts_fn(opts) or {})
   end
 
   -- Merge arrays from globals|defaults, can't use 'vim.tbl_xxx'
