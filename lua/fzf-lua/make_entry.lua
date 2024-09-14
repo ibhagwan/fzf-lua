@@ -400,7 +400,8 @@ M.file = function(x, opts)
   else
     ret[#ret + 1] = file_is_ansi > 0
         -- filename is ansi escape colored, replace the inner string (#819)
-        and file_part:gsub(utils.lua_regex_escape(stripped_filepath), filepath)
+        -- escape `%` in path, since `string.gsub` also use it in target (#1443)
+        and file_part:gsub(utils.lua_regex_escape(stripped_filepath), (filepath:gsub("%%", "%%%%")))
         or filepath
   end
   -- multiline is only enabled with grep-like output PATH:LINE:COL:
