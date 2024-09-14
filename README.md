@@ -107,7 +107,7 @@ at it. That, **and colorful file icons and git indicators!**.
 ## Dependencies
 
 - [`neovim`](https://github.com/neovim/neovim/releases) version > `0.5.0`
-- [`fzf`](https://github.com/junegunn/fzf) version > `0.25`
+- [`fzf`](https://github.com/junegunn/fzf) version >= `0.55`
   **or** [`skim`](https://github.com/lotabout/skim) binary installed
 - [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons)
   **or** [mini.icons](https://github.com/echasnovski/mini.icons)
