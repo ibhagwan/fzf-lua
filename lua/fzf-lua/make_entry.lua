@@ -224,6 +224,13 @@ M.preprocess = function(opts)
       end)
   end
 
+  -- support file_ignore_globs for fd
+  if opts.cmd and opts.cmd:match("^fd") and opts.file_ignore_globs then
+    local globs = vim.tbl_map(libuv.shellescape, opts.file_ignore_globs)
+    local cmd_tbl = utils.tbl_join({ opts.cmd }, globs)
+    opts.cmd = table.concat(cmd_tbl, " -E ")
+  end
+
   if utils.__IS_WINDOWS and opts.cmd:match("!") then
     -- https://ss64.com/nt/syntax-esc.html
     -- This changes slightly if you are running with DelayedExpansion of variables:

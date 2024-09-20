@@ -35,9 +35,16 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   -- be reworked into a table of arguments
   opts._cmd = command
 
-  if opts.rg_glob and not command:match("^rg") then
-    opts.rg_glob = false
-    utils.warn("'--glob|iglob' flags require 'rg', ignoring 'rg_glob' option.")
+  -- "rg_only" flags
+  if not command:match("^rg") then
+    if opts.rg_glob then
+      opts.rg_glob = false
+      utils.warn("'--glob|iglob' flags require 'rg', ignoring 'rg_glob' option.")
+    end
+    if opts.file_ignore_globs then
+      opts.file_ignore_globs = nil
+      utils.warn("'--glob|iglob' flags require 'rg', ignoring 'file_ignore_globs' option.")
+    end
   end
 
   if opts.rg_glob then
@@ -54,6 +61,14 @@ local get_grep_cmd = function(opts, search_query, no_esc)
       search_query = new_query
       command = make_entry.rg_insert_args(command, glob_args)
     end
+  end
+
+  if opts.file_ignore_globs then
+    local glob_args = vim.tbl_map(function(glob)
+      local exclude_glob = libuv.shellescape("!" .. glob)
+      return ("%s %s "):format(opts.glob_flag, exclude_glob)
+    end, opts.file_ignore_globs)
+    command = make_entry.rg_insert_args(command, table.concat(glob_args))
   end
 
   -- filename takes precedence over directory
@@ -296,32 +311,6 @@ M.live_grep_mt = function(opts)
   core.fzf_exec(nil, opts)
 end
 
-M.live_grep_glob_st = function(opts)
-  if vim.fn.executable("rg") ~= 1 then
-    utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
-    return
-  end
-
-  -- 'rg_glob = true' enables glob
-  -- processing in 'get_grep_cmd'
-  opts = opts or {}
-  opts.rg_glob = true
-  return M.live_grep_st(opts)
-end
-
-M.live_grep_glob_mt = function(opts)
-  if vim.fn.executable("rg") ~= 1 then
-    utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
-    return
-  end
-
-  -- 'rg_glob = true' enables the glob processing in
-  -- 'make_entry.preprocess', only supported with multiprocess
-  opts = opts or {}
-  opts.rg_glob = true
-  return M.live_grep_mt(opts)
-end
-
 M.live_grep_native = function(opts)
   -- backward compatibility, by setting git|files icons to false
   -- we force 'mt_cmd_wrapper' to pipe the command as is, so fzf
@@ -348,13 +337,22 @@ M.live_grep = function(opts)
 end
 
 M.live_grep_glob = function(opts)
+  if vim.fn.executable("rg") ~= 1 then
+    utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
+    return
+  end
+
   opts = config.normalize_opts(opts, "grep")
   if not opts then return end
 
+  opts.rg_glob = true
+
   if opts.multiprocess then
-    return M.live_grep_glob_mt(opts)
+    -- `rg_glob` enable glob processing in 'get_grep_cmd + make_entry.preprocess'
+    return M.live_grep_mt(opts)
   else
-    return M.live_grep_glob_st(opts)
+    -- `rg_glob` enable glob processing in 'get_grep_cmd' only
+    return M.live_grep_st(opts)
   end
 end
 

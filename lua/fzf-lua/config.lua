@@ -267,14 +267,12 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- Merge arrays from globals|defaults, can't use 'vim.tbl_xxx'
   -- for these as they only work for maps, ie. '{ key = value }'
-  for _, k in ipairs({ "file_ignore_patterns" }) do
+  for _, k in ipairs({ "file_ignore_patterns", "file_ignore_globs" }) do
     for _, m in ipairs({ globals, M.globals }) do
-      if m[k] then
-        for _, item in ipairs(m[k]) do
-          if not opts[k] then opts[k] = {} end
-          table.insert(opts[k], item)
-        end
-      end
+      if not m[k] then goto continue end
+      local _opts = type(m[k]) ~= "function" and m[k] or m[k](opts)
+      opts[k] = (_opts and #_opts ~= 0) and vim.deepcopy(_opts)
+      ::continue::
     end
   end
 

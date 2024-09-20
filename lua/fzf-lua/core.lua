@@ -794,6 +794,7 @@ M.mt_cmd_wrapper = function(opts)
       "strip_cwd_prefix",
       "exec_empty_query",
       "file_ignore_patterns",
+      "file_ignore_globs",
       "rg_glob",
       "_base64",
       utils.__IS_WINDOWS and "__FZF_VERSION" or nil,
@@ -839,7 +840,8 @@ M.mt_cmd_wrapper = function(opts)
   if not opts.requires_processing
       and not opts.git_icons
       and not opts.file_icons
-      and not opts.file_ignore_patterns
+      and not opts.file_ignore_patterns -- need transform
+      and not opts.file_ignore_globs -- need preprocess
       and not opts.path_shorten
       and not opts.formatter
       and not opts.multiline
