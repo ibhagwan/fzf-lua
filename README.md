@@ -1182,6 +1182,9 @@ require'fzf-lua'.setup {
     -- by default, we ignore <Plug> and <SNR> mappings
     -- set `ignore_patterns = false` to disable filtering
     ignore_patterns   = { "^<SNR>", "^<Plug>" },
+    -- by default, both description and details are shown
+    -- `false` shows details only if the description is missing
+    show_details      = true,
     actions           = {
       ["enter"]       = actions.keymap_apply,
       ["ctrl-s"]      = actions.keymap_split,
