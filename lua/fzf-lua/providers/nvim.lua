@@ -320,7 +320,6 @@ M.keymaps = function(opts)
   opts = config.normalize_opts(opts, "keymaps")
   if not opts then return end
 
-  local formatter = "%s │ %-14s │ %-33s │ %s"
   local key_modes = opts.modes or { "n", "i", "c", "v", "t" }
   local modes = {
     n = "blue",
@@ -330,9 +329,25 @@ M.keymaps = function(opts)
     t = "green"
   }
   local keymaps = {}
+  local format = nil
 
+  if opts.show_details then
+    local formatter = "%s │ %-14s │ %-33s │ %s"
 
-  local add_keymap = function(keymap)
+    format = function(mode, lhs, desc, rhs)
+      -- we don't trim `lhs` here because it's better to violate the structure
+      -- than to cut off the most useful information
+      return string.format(formatter, mode, lhs, string.sub(desc or "", 1, 33), rhs)
+    end
+  else
+    local formatter = "%s │ %-14s │ %s"
+
+    format = function(mode, lhs, desc, rhs)
+      return string.format(formatter, mode, lhs, desc or rhs)
+    end
+  end
+
+  local function add_keymap(keymap)
     -- ignore dummy mappings
     if type(keymap.rhs) == "string" and #keymap.rhs == 0 then
       return
@@ -349,12 +364,13 @@ M.keymaps = function(opts)
       end
     end
 
-    keymap.str = string.format(formatter,
+    keymap.str = format(
       utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
       keymap.lhs:gsub("%s", "<Space>"),
       -- desc can be a multi-line string, normalize it
-      string.sub(string.gsub(keymap.desc or "", "\n%s+", "\r") or "", 1, 30),
-      (keymap.rhs or string.format("%s", keymap.callback)))
+      keymap.desc and string.gsub(keymap.desc, "\n%s+", "\r"),
+      keymap.rhs or string.format("%s", keymap.callback)
+    )
 
     local k = string.format("[%s:%s:%s]", keymap.buffer, keymap.mode, keymap.lhs)
     keymaps[k] = keymap
@@ -381,7 +397,7 @@ M.keymaps = function(opts)
   -- sort alphabetically
   table.sort(entries)
 
-  local header_str = string.format(formatter, "m", "keymap", "description", "detail")
+  local header_str = format("m", "keymap", "description", "detail")
   table.insert(entries, 1, header_str)
 
   core.fzf_exec(entries, opts)

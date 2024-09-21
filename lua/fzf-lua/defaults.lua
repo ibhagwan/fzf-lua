@@ -1008,6 +1008,7 @@ M.defaults.keymaps              = {
   winopts         = { preview = { layout = "vertical" } },
   fzf_opts        = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   ignore_patterns = { "^<SNR>", "^<Plug>" },
+  show_details    = true,
   actions         = {
     ["enter"]  = actions.keymap_apply,
     ["ctrl-s"] = actions.keymap_split,
