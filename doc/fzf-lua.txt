@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.5.0         Last change: 2024 August 11
+*fzf-lua.txt*        For Neovim >= 0.5.0        Last change: 2024 September 23
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1277,6 +1277,9 @@ open an issue and I'll be more than happy to help.**
         -- by default, we ignore <Plug> and <SNR> mappings
         -- set `ignore_patterns = false` to disable filtering
         ignore_patterns   = { "^<SNR>", "^<Plug>" },
+        -- by default, both description and details are shown
+        -- `false` shows details only if the description is missing
+        show_details      = true,
         actions           = {
           ["enter"]       = actions.keymap_apply,
           ["ctrl-s"]      = actions.keymap_split,
