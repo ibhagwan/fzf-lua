@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*        For Neovim >= 0.8.0        Last change: 2024 July 25
+*fzf-lua-opts.txt*       For Neovim >= 0.8.0       Last change: 2024 August 07
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -1226,6 +1226,12 @@ Git commits (project)
 git_bcommits                                       *fzf-lua-opts-git_bcommits*
 
 Git commits (buffer)
+
+
+                                                                              
+git_blame                                             *fzf-lua-opts-git_blame*
+
+Git blame (buffer)
 
 
                                                                               

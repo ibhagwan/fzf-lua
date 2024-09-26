@@ -405,6 +405,21 @@ M.defaults.git                  = {
     fzf_opts      = { ["--no-multi"] = true },
     _multiline    = false,
   },
+  blame = {
+    prompt        = "Blame> ",
+    cmd           = [[git blame --color-lines {file}]],
+    preview       = "git show --color {1} -- {file}",
+    preview_pager = M._preview_pager_fn,
+    actions       = {
+      ["enter"]  = actions.git_goto_line,
+      ["ctrl-s"] = actions.git_buf_split,
+      ["ctrl-v"] = actions.git_buf_vsplit,
+      ["ctrl-t"] = actions.git_buf_tabedit,
+      ["ctrl-y"] = { fn = actions.git_yank_commit, exec_silent = true },
+    },
+    fzf_opts      = { ["--no-multi"] = true },
+    _multiline    = false,
+  },
   branches = {
     prompt     = "Branches> ",
     cmd        = "git branch --all --color",

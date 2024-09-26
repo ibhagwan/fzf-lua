@@ -22,6 +22,7 @@ return {
     status   = title("Git Status"),
     commits  = title("Git Commits"),
     bcommits = title("Git BCommits"),
+    blame    = title("Git Blame"),
     branches = title("Git Branches"),
     stash    = title("Git Stash"),
   },

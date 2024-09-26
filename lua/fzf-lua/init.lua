@@ -258,6 +258,7 @@ do
     git_stash = { "fzf-lua.providers.git", "stash" },
     git_commits = { "fzf-lua.providers.git", "commits" },
     git_bcommits = { "fzf-lua.providers.git", "bcommits" },
+    git_blame = { "fzf-lua.providers.git", "blame" },
     git_branches = { "fzf-lua.providers.git", "branches" },
     git_tags = { "fzf-lua.providers.git", "tags" },
     oldfiles = { "fzf-lua.providers.oldfiles", "oldfiles" },

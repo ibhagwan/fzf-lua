@@ -797,6 +797,13 @@ M.git_buf_vsplit = function(selected, opts)
   M.git_buf_edit(selected, opts)
 end
 
+M.git_goto_line = function(selected, _)
+  local line = selected[1] and selected[1]:match("^.-(%d+)%)")
+  if tonumber(line) then
+    vim.api.nvim_win_set_cursor(0, { tonumber(line), 0 })
+  end
+end
+
 M.grep_lgrep = function(_, opts)
   opts.__ACT_TO({
     resume = true,

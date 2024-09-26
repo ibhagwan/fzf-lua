@@ -680,6 +680,7 @@ M._action_to_helpstr = {
   [actions.git_buf_tabedit]     = "git-buffer-tabedit",
   [actions.git_buf_split]       = "git-buffer-split",
   [actions.git_buf_vsplit]      = "git-buffer-vsplit",
+  [actions.git_goto_line]       = "git-goto-line",
   [actions.git_yank_commit]     = "git-yank-commit",
   [actions.arg_add]             = "arg-list-add",
   [actions.arg_del]             = "arg-list-delete",

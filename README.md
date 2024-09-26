@@ -308,6 +308,7 @@ to see detailed usage notes and a comprehensive list of all available options.**
 | `git_status`       | `git status`                                 |
 | `git_commits`      | git commit log (project)                   |
 | `git_bcommits`     | git commit log (buffer)                    |
+| `git_blame`        | git blame (buffer)                         |
 | `git_branches`     | git branches                               |
 | `git_tags`         | git tags                                   |
 | `git_stash`        | git stash                                  |
@@ -924,6 +925,20 @@ require'fzf-lua'.setup {
         ["ctrl-v"]  = actions.git_buf_vsplit,
         ["ctrl-t"]  = actions.git_buf_tabedit,
         ["ctrl-y"]  = { fn = actions.git_yank_commit, exec_silent = true },
+      },
+    },
+    blame = {
+      prompt        = "Blame> ",
+      cmd           = [[git blame --color-lines {file}]],
+      preview       = "git show --color {1} -- {file}",
+      -- git-delta is automatically detected as pager, uncomment to disable
+      -- preview_pager = false,
+      actions = {
+        ["enter"]  = actions.git_goto_line,
+        ["ctrl-s"] = actions.git_buf_split,
+        ["ctrl-v"] = actions.git_buf_vsplit,
+        ["ctrl-t"] = actions.git_buf_tabedit,
+        ["ctrl-y"] = { fn = actions.git_yank_commit, exec_silent = true },
       },
     },
     branches = {

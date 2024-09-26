@@ -896,6 +896,10 @@ Git commits (project)
 
 Git commits (buffer)
 
+#### git_blame
+
+Git blame (buffer)
+
 #### git_branches
 
 Git branches

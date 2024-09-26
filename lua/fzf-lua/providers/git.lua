@@ -166,6 +166,46 @@ M.bcommits = function(opts)
   return git_cmd(opts)
 end
 
+M.blame = function(opts)
+  opts = config.normalize_opts(opts, "git.blame")
+  if not opts then return end
+  local bufname = vim.api.nvim_buf_get_name(0)
+  if #bufname == 0 then
+    utils.info("'blame' is not available for unnamed buffers.")
+    return
+  end
+  -- See "bcommits" for comment
+  if not opts.cwd and not opts.git_dir then
+    opts.cwd = path.git_root({ cwd = vim.fn.expand("%:p:h") }, true)
+  end
+  local git_root = path.git_root(opts)
+  if not git_root then return end
+  local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p"), git_root))
+  local range
+  if utils.mode_is_visual() then
+    local _, sel = utils.get_visual_selection()
+    range = string.format("-L %d,%d %s", sel.start.line, sel["end"].line, file)
+  end
+  if opts.cmd:match("[<{]file") then
+    opts.cmd = opts.cmd:gsub("[<{]file[}>]", range or file)
+  else
+    opts.cmd = opts.cmd .. " " .. (range or file)
+  end
+  if type(opts.preview) == "string" then
+    opts.preview = opts.preview:gsub("[<{]file[}>]", file)
+    opts.preview = path.git_cwd(opts.preview, opts)
+    if type(opts.preview_pager) == "function" then
+      opts.preview_pager = opts.preview_pager()
+    end
+    if opts.preview_pager then
+      opts.preview = string.format("%s | %s", opts.preview,
+        utils._if_win_normalize_vars(opts.preview_pager))
+    end
+  end
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
+  return git_cmd(opts)
+end
+
 M.branches = function(opts)
   opts = config.normalize_opts(opts, "git.branches")
   if not opts then return end
