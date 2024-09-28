@@ -270,6 +270,7 @@ do
     tabs = { "fzf-lua.providers.buffers", "tabs" },
     lines = { "fzf-lua.providers.buffers", "lines" },
     blines = { "fzf-lua.providers.buffers", "blines" },
+    treesitter = { "fzf-lua.providers.buffers", "treesitter" },
     helptags = { "fzf-lua.providers.helptags", "helptags" },
     manpages = { "fzf-lua.providers.manpages", "manpages" },
     -- backward compat

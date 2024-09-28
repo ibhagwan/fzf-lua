@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*       For Neovim >= 0.8.0       Last change: 2024 August 07
+*fzf-lua-opts.txt*      For Neovim >= 0.8.0     Last change: 2024 September 26
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -986,6 +986,12 @@ Location list (output of `:lopen`)
 loclist_stack                                     *fzf-lua-opts-loclist_stack*
 
 Location list history (output of `:lhistory`)
+
+
+                                                                              
+treesitter                                           *fzf-lua-opts-treesitter*
+
+Current buffer treesitter symbols
 
 
                                                                               

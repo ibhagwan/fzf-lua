@@ -267,6 +267,7 @@ to see detailed usage notes and a comprehensive list of all available options.**
 | `loclist_stack`    | location stack                             |
 | `lines`            | open buffers lines                         |
 | `blines`           | current buffer lines                       |
+| `treesitter`       | current buffer treesitter symbols          |
 | `tabs`             | open tabs                                  |
 | `args`             | argument list                              |
 

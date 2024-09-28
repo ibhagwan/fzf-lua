@@ -657,6 +657,24 @@ M.defaults.blines               = {
   _cached_hls      = { "buf_name", "buf_nr", "path_linenr" },
 }
 
+M.defaults.treesitter           = {
+  previewer        = M._default_previewer_fn,
+  prompt           = "Treesitter> ",
+  file_icons       = false,
+  color_icons      = false,
+  fzf_opts         = {
+    ["--multi"]     = true,
+    ["--delimiter"] = "[:]",
+    ["--with-nth"]  = "2..",
+    ["--tiebreak"]  = "index",
+  },
+  line_field_index = "{2}",
+  _actions         = function()
+    return M.globals.actions.buffers or M.globals.actions.files
+  end,
+  _cached_hls      = { "buf_name", "buf_nr", "path_linenr", "path_colnr" },
+}
+
 M.defaults.tags                 = {
   previewer    = { _ctor = previewers.builtin.tags },
   prompt       = "Tags> ",

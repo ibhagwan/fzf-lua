@@ -734,6 +734,10 @@ Location list (output of `:lopen`)
 
 Location list history (output of `:lhistory`)
 
+#### treesitter
+
+Current buffer treesitter symbols
+
 #### blines
 
 Current buffer lines

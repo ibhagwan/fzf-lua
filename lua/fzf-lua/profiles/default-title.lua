@@ -16,6 +16,7 @@ return {
   tabs                 = title("Tabs"),
   lines                = title("Lines"),
   blines               = title("Buffer Lines"),
+  treesitter           = title("Treesitter"),
   grep                 = title("Grep", { prompt = "> " }),
   git                  = {
     files    = title("Git Files"),

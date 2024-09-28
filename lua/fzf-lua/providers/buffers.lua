@@ -408,4 +408,72 @@ M.tabs = function(opts)
   core.fzf_exec(contents, opts)
 end
 
+
+M.treesitter = function(opts)
+  opts = config.normalize_opts(opts, "treesitter")
+  if not opts then return end
+
+  local __has_ts, _ = pcall(require, "nvim-treesitter")
+  if not __has_ts then
+    utils.info("Treesitter requires 'nvim-treesitter'.")
+    return
+  end
+
+  -- Default to current buffer
+  opts.bufnr = tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
+  opts._bufname = path.basename(vim.api.nvim_buf_get_name(opts.bufnr))
+  if not opts._bufname or #opts._bufname == 0 then
+    opts._bufname = utils.nvim_buf_get_name(opts.bufnr)
+  end
+
+  local ts_parsers = require("nvim-treesitter.parsers")
+  if not ts_parsers.has_parser(ts_parsers.get_buf_lang(opts.bufnr)) then
+    utils.info(string.format("No treesitter parser found for '%s' (bufnr=%d).",
+      opts._bufname, opts.bufnr))
+    return
+  end
+
+  local kind2hl = function(kind)
+    local map = { var = "variable.builtin" }
+    return "@" .. (map[kind] or kind)
+  end
+
+  local contents = function(cb)
+    coroutine.wrap(function()
+      local co = coroutine.running()
+      local ts_locals = require("nvim-treesitter.locals")
+      for _, definition in ipairs(ts_locals.get_definitions(opts.bufnr)) do
+        local nodes = ts_locals.get_local_nodes(definition)
+        for _, node in ipairs(nodes) do
+          if node.node then
+            vim.schedule(function()
+              local lnum, col, _, _ = vim.treesitter.get_node_range(node.node)
+              local node_text = vim.treesitter.get_node_text(node.node, opts.bufnr)
+              local node_kind = node.kind and utils.ansi_from_hl(kind2hl(node.kind), node.kind)
+              local entry = string.format("[%s]%s%s:%s:%s:\t[%s] %s",
+                utils.ansi_codes[opts.hls.buf_nr](tostring(opts.bufnr)),
+                utils.nbsp,
+                utils.ansi_codes[opts.hls.buf_name](opts._bufname),
+                utils.ansi_codes[opts.hls.path_linenr](tostring(lnum + 1)),
+                utils.ansi_codes[opts.hls.path_colnr](tostring(col + 1)),
+                node_kind or "",
+                node_text)
+              cb(entry, function(err)
+                coroutine.resume(co)
+                if err then cb(nil) end
+              end)
+            end)
+            coroutine.yield()
+          end
+        end
+      end
+      cb(nil)
+    end)()
+  end
+
+  opts = core.set_header(opts, opts.headers or { "cwd" })
+
+  core.fzf_exec(contents, opts)
+end
+
 return M
