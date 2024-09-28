@@ -423,6 +423,15 @@ M.filetypes = function(opts)
   local entries = vim.fn.getcompletion("", "filetype")
   if utils.tbl_isempty(entries) then return end
 
+  if opts.file_icons then
+    entries = vim.tbl_map(function(ft)
+      local buficon, hl = devicons.icon_by_ft(ft)
+      if not buficon then buficon = " " end
+      if hl then buficon = utils.ansi_from_hl(hl, buficon) end
+      return string.format("%s%s%s", buficon, utils.nbsp, ft)
+    end, entries)
+  end
+
   core.fzf_exec(entries, opts)
 end
 
@@ -431,7 +440,6 @@ M.packadd = function(opts)
   if not opts then return end
 
   local entries = vim.fn.getcompletion("", "packadd")
-
   if utils.tbl_isempty(entries) then return end
 
   core.fzf_exec(entries, opts)

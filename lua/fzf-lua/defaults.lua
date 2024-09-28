@@ -1064,10 +1064,9 @@ M.defaults.spell_suggest        = {
 }
 
 M.defaults.filetypes            = {
-  prompt  = "Filetypes> ",
-  actions = {
-    ["enter"] = actions.set_filetype,
-  },
+  prompt     = "Filetypes> ",
+  file_icons = false,
+  actions    = { ["enter"] = actions.set_filetype },
 }
 
 M.defaults.packadd              = {

@@ -163,6 +163,11 @@ function NvimWebDevicons:load_icons(opts)
   return true
 end
 
+function NvimWebDevicons:icon_by_ft(ft)
+  if not self:loaded() then return end
+  return self._package.get_icon_by_filetype(ft)
+end
+
 local MiniIcons = DevIconsBase:extend()
 
 function MiniIcons:new()
@@ -268,6 +273,11 @@ function MiniIcons:load_icons(opts)
   self:refresh_hlgroups(opts.mode)
 
   return true
+end
+
+function MiniIcons:icon_by_ft(ft)
+  if not self:loaded() then return end
+  return self._package.get("filetype", ft)
 end
 
 local FzfLuaServer = DevIconsBase:extend()
@@ -399,6 +409,10 @@ end
 
 M.plugin_name = function()
   return M.PLUGIN:name()
+end
+
+M.icon_by_ft = function(ft)
+  return M.PLUGIN:icon_by_ft(ft)
 end
 
 -- NOTE: plugin_name is only sent when called from `FzfLuaServer:load_icons`

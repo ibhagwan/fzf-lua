@@ -522,7 +522,7 @@ M.spell_apply = function(selected)
 end
 
 M.set_filetype = function(selected)
-  vim.bo.filetype = selected[1]
+  vim.bo.filetype = selected[1]:match("[^" .. utils.nbsp .. "]+$")
 end
 
 M.packadd = function(selected)
