@@ -423,6 +423,22 @@ M.filetypes = function(opts)
   local entries = vim.fn.getcompletion("", "filetype")
   if utils.tbl_isempty(entries) then return end
 
+  local get_icon
+  if pcall(require, "mini.icons") then
+    get_icon = function(ft) return require("mini.icons").get("filetype", ft) end
+  elseif pcall(require, "nvim-web-devicons") then
+    get_icon = require("nvim-web-devicons").get_icon_by_filetype
+  end
+
+  if get_icon then
+    entries = vim.tbl_map(function(ft)
+      local buficon, hl = get_icon(ft)
+      if not buficon then buficon = " " end
+      if hl then buficon = utils.ansi_from_hl(hl, buficon) end
+      return ("%s%s%s"):format(buficon, utils.nbsp, ft)
+    end, entries)
+  end
+
   core.fzf_exec(entries, opts)
 end
 

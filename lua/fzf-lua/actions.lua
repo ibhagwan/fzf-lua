@@ -522,7 +522,7 @@ M.spell_apply = function(selected)
 end
 
 M.set_filetype = function(selected)
-  vim.bo.filetype = selected[1]
+  vim.bo.filetype = path.entry_to_file(selected[1]).path
 end
 
 M.packadd = function(selected)
