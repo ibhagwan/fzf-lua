@@ -666,7 +666,6 @@ M.defaults.treesitter           = {
     ["--multi"]     = true,
     ["--delimiter"] = "[:]",
     ["--with-nth"]  = "2..",
-    ["--tiebreak"]  = "index",
   },
   line_field_index = "{2}",
   _actions         = function()

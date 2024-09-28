@@ -471,7 +471,7 @@ M.treesitter = function(opts)
     end)()
   end
 
-  opts = core.set_header(opts, opts.headers or { "cwd" })
+  opts = core.set_header(opts, opts.headers or { "actions" })
 
   core.fzf_exec(contents, opts)
 end
