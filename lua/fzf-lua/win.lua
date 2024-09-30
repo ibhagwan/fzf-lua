@@ -878,6 +878,7 @@ function FzfWin:create()
   self.src_winid = vim.api.nvim_get_current_win()
   -- save current window layout cmd
   self.winrestcmd = vim.fn.winrestcmd()
+  self.cmdheight = vim.o.cmdheight
 
   if self.winopts.split then
     vim.cmd(self.winopts.split)
@@ -1004,6 +1005,9 @@ function FzfWin:close(fzf_bufnr)
     end
 
     vim.cmd(table.concat(cmd, "|"))
+
+    -- Also restore cmdheight, will be wrong if vim resized (#1462)
+    vim.o.cmdheight = self.cmdheight
   end
   if self.hls_on_close then
     -- restore search highlighting if we disabled it
