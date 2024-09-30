@@ -1238,4 +1238,14 @@ function M.create_user_command_callback(provider, arg, altmap)
   end
 end
 
+--- Checks if treesitter parser for language is installed
+---@param lang string
+function M.has_ts_parser(lang)
+  if M.__HAS_NVIM_011 then
+    return vim.treesitter.language.add(lang)
+  else
+    return pcall(vim.treesitter.language.add, lang)
+  end
+end
+
 return M
