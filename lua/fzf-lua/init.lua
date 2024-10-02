@@ -409,6 +409,8 @@ M._excluded_meta = {
   "get_info",
   "set_info",
   "get_last_query",
+  "hide",
+  "unhide",
   -- Exclude due to rename:
   --   help_tags -> helptags
   --   man_pages -> manpages
