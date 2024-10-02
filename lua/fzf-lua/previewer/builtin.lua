@@ -755,7 +755,7 @@ end
 -- Attach ts highlighter, neovim >= v0.9
 local ts_attach = function(bufnr, ft)
   local lang = vim.treesitter.language.get_lang(ft)
-  local loaded = utils.has_ts_parser(lang)
+  local loaded = lang and utils.has_ts_parser(lang)
   if lang and loaded then
     local ok, err = pcall(vim.treesitter.start, bufnr, lang)
     if not ok then
