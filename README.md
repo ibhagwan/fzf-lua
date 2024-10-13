@@ -282,7 +282,7 @@ to see detailed usage notes and a comprehensive list of all available options.**
 | `grep_project`     | search all project lines (fzf.vim's `:Rg`)   |
 | `grep_curbuf`      | search current buffer lines                |
 | `grep_quickfix`    | search the quickfix list                   |
-| `grep_quickfix`    | search the location list                   |
+| `grep_loclist`     | search the location list                   |
 | `lgrep_curbuf`     | live grep current buffer                   |
 | `lgrep_quickfix`   | live grep the quickfix list                |
 | `lgrep_loclist`    | live grep the location list                |
