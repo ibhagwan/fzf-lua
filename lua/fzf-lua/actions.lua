@@ -823,7 +823,7 @@ M.sym_lsym = function(_, opts)
 end
 
 M.toggle_flag = function(_, opts)
-  local o = { resume = true, cwd = opts.cwd }
+  local o = vim.tbl_deep_extend("keep", { resume = true }, opts.__call_opts)
   local flag = opts.toggle_flag
   if not flag then
     utils.err("'toggle_flag' not set")
