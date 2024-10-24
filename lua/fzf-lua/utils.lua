@@ -119,7 +119,8 @@ end
 ---@return string[]
 M.strsplit = function(inputstr, sep)
   local t = {}
-  if #sep == 1 then
+  -- Also match any single character class (e.g. %s, %a, etc)
+  if #sep == 1 or sep:match("^%%.$") then
     for str in string.gmatch(inputstr, "([^" .. sep .. "]+)") do
       table.insert(t, str)
     end
