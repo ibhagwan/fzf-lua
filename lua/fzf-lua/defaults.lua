@@ -491,6 +491,7 @@ M.defaults.grep                 = {
       .. "--perl-regexp -e",
   rg_opts        = "--column --line-number --no-heading --color=always --smart-case "
       .. "--max-columns=4096 -e",
+  toggle_fixed_strings = "--fixed-strings",
   _actions       = function() return M.globals.actions.files end,
   actions        = { ["ctrl-g"] = { actions.grep_lgrep } },
   -- live_grep_glob options

@@ -850,6 +850,11 @@ M.toggle_ignore = function(_, opts)
   M.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = flag }))
 end
 
+M.toggle_fixed_strings = function(_, opts)
+  local flag = opts.toggle_ignore_flag or "--fixed-strings"
+  M.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = flag }))
+end
+
 M.toggle_hidden = function(_, opts)
   local flag = opts.toggle_hidden_flag or "--hidden"
   M.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = flag }))

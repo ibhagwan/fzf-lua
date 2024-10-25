@@ -27,6 +27,16 @@ M.ACTION_DEFINITIONS = {
       end
     end,
   },
+  [actions.toggle_fixed_strings] = {
+    function(o)
+      local flag = o.toggle_ignore_flag or "--fixed-strings"
+      if o.cmd and o.cmd:match(utils.lua_regex_escape(flag)) then
+        return "Respect special regex chars"
+      else
+        return "Disable special regex chars"
+      end
+    end,
+  },
   [actions.toggle_hidden]     = {
     function(o)
       local flag = o.toggle_hidden_flag or "--hidden"

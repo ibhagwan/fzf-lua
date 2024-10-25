@@ -1128,6 +1128,8 @@ open an issue and I'll be more than happy to help.**
           ["ctrl-g"]      = { actions.grep_lgrep }
           -- uncomment to enable '.gitignore' toggle for grep
           -- ["ctrl-r"]   = { actions.toggle_ignore }
+          -- uncomment to enable '--fixed-strings' (exact match) toggle for grep
+          -- ["ctrl-x"]   = { actions.toggle_fixed_strings }
         },
         no_header             = false,    -- hide grep|cwd header?
         no_header_i           = false,    -- hide interactive header?

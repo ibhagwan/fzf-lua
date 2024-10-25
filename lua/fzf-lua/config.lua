@@ -685,6 +685,7 @@ M._action_to_helpstr = {
   [actions.arg_add]             = "arg-list-add",
   [actions.arg_del]             = "arg-list-delete",
   [actions.toggle_ignore]       = "toggle-ignore",
+  [actions.toggle_fixed_strings] = "toggle-fixed-strings",
   [actions.toggle_hidden]       = "toggle-hidden",
   [actions.grep_lgrep]          = "grep<->lgrep",
   [actions.sym_lsym]            = "sym<->lsym",
