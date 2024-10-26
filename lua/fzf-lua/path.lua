@@ -423,7 +423,7 @@ function M.entry_to_file(entry, opts, force_uri)
   if cwd and #cwd > 0 and not isURI and not M.is_absolute(stripped) then
     stripped = M.join({ cwd, stripped })
   end
-  -- #336: force LSP jumps using 'vim.lsp.util.jump_to_location'
+  -- #336: force LSP jumps using 'vim.lsp.util.show_document'
   -- so that LSP entries are added to the tag stack
   if not isURI and force_uri then
     isURI = true
@@ -437,7 +437,7 @@ function M.entry_to_file(entry, opts, force_uri)
     -- https://github.com/mfussenegger/nvim-jdtls
     -- LSP entries inside .jar files appear as URIs
     -- 'jdt://' which can then be opened with
-    -- 'vim.lsp.util.jump_to_location' or
+    -- 'vim.lsp.util.show_document' or
     -- 'lua require('jdtls').open_jdt_link(vim.fn.expand('jdt://...'))'
     -- Convert to location item so we can use 'jump_to_location'
     -- This can also work with any 'file://' prefixes

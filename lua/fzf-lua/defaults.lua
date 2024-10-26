@@ -797,7 +797,7 @@ M.defaults.lsp                  = {
   fzf_opts         = { ["--multi"] = true },
   _actions         = function() return M.globals.actions.files end,
   _cached_hls      = { "path_colnr", "path_linenr" },
-  -- Signals actions to use uri triggering the use of `lsp.util.jump_to_location`
+  -- Signals actions to use uri triggering the use of `lsp.util.show_document`
   _uri             = true,
 }
 

@@ -129,7 +129,7 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
       -- Adjust "<auto>" edits based on entry being buffer or filename
       local vimcmd = _vimcmd:gsub("<auto>", entry.bufnr and entry.bufname and "b" or "e")
       -- Do not execute "edit" commands if we already have the same buffer/file open
-      -- or if we are dealing with a URI as it's open with `vim.lsp.util.jump_to_location`
+      -- or if we are dealing with a URI as it's open with `vim.lsp.util.show_document`
       -- opts.__CTX isn't guaranteed by API users (#1414)
       local CTX = opts.__CTX or utils.CTX()
       if vimcmd == "e" and (entry.uri or path.equals(fullpath, CTX.bname))
@@ -198,9 +198,9 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
       if entry.uri then
         if utils.is_term_bufname(entry.uri) then
           -- nvim_exec2(): Vim(normal):Can't re-enter normal mode from terminal mode
-          pcall(vim.lsp.util.jump_to_location, entry, "utf-16")
+          pcall(vim.lsp.util.show_document, entry, "utf-16", { focus = true })
         else
-          vim.lsp.util.jump_to_location(entry, "utf-16")
+          vim.lsp.util.show_document(entry, "utf-16", { focus = true })
         end
       elseif entry.ctag then
         vim.api.nvim_win_set_cursor(0, { 1, 0 })
