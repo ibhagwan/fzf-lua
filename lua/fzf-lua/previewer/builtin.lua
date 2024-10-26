@@ -64,8 +64,8 @@ function Previewer.base:new(o, opts, fzf_win)
   self.cached_bufnrs = {}
   self.cached_buffers = {}
   -- store currently listed buffers, this helps us determine which buffers
-  -- navigated with 'vim.lsp.util.jump_to_location' we can safely unload
-  -- since jump_to_location reuses buffers and I couldn't find a better way
+  -- navigated with 'vim.lsp.util.show_document' we can safely unload
+  -- since show_document reuses buffers and I couldn't find a better way
   -- to determine if the destination buffer was listed prior to the jump
   self.listed_buffers = (function()
     local map = {}
@@ -221,7 +221,7 @@ function Previewer.base:clear_preview_buf(newbuf)
   -- will return false
   -- one case where the buffer may remain valid after detaching
   -- from the preview window is with URI type entries after calling
-  -- 'vim.lsp.util.jump_to_location' which can reuse existing buffers,
+  -- 'vim.lsp.util.show_document' which can reuse existing buffers,
   -- so technically this should never be executed unless the
   -- user wrote an fzf-lua extension and set the preview buffer to
   -- a random buffer without the 'bufhidden' property
@@ -643,14 +643,14 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- LSP 'jdt://' entries, see issue #195
     -- https://github.com/ibhagwan/fzf-lua/issues/195
     vim.api.nvim_win_call(self.win.preview_winid, function()
-      local ok, res = pcall(vim.lsp.util.jump_to_location, entry, "utf-16", false)
+      local ok, res = pcall(vim.lsp.util.show_document, entry, "utf-16", { reuse_win = false, focus = true })
       if ok then
         self.preview_bufnr = vim.api.nvim_get_current_buf()
       else
         -- in case of an error display the stacktrace in the preview buffer
         local lines = vim.split(res, "\n") or { "null" }
         table.insert(lines, 1,
-          string.format("lsp.util.jump_to_location failed for '%s':", entry.uri))
+          string.format("lsp.util.show_document failed for '%s':", entry.uri))
         table.insert(lines, 2, "")
         local tmpbuf = self:get_tmp_buffer()
         vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
