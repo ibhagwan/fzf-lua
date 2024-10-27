@@ -198,9 +198,9 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
       if entry.uri then
         if utils.is_term_bufname(entry.uri) then
           -- nvim_exec2(): Vim(normal):Can't re-enter normal mode from terminal mode
-          pcall(vim.lsp.util.show_document, entry, "utf-16", { focus = true })
+          pcall(utils.jump_to_location, entry, "utf-16")
         else
-          vim.lsp.util.show_document(entry, "utf-16", { focus = true })
+          utils.jump_to_location(entry, "utf-16")
         end
       elseif entry.ctag then
         vim.api.nvim_win_set_cursor(0, { 1, 0 })
