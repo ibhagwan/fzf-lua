@@ -85,7 +85,7 @@ local jump_to_location = function(opts, result, enc)
     return opts.jump_to_single_result_action({ entry }, opts)
   end
 
-  return vim.lsp.util.show_document(result, enc, { focus = true })
+  return utils.jump_to_location(result, enc)
 end
 
 local regex_filter_fn = function(regex_filter)

@@ -1249,4 +1249,17 @@ function M.has_ts_parser(lang)
   end
 end
 
+--- Wrapper around vim.lsp.jump_to_location which was deprecated in v0.11
+---@param location lsp.Location|lsp.LocationLink
+---@param offset_encoding 'utf-8'|'utf-16'|'utf-32'
+---@param reuse_win boolean?
+---@return boolean
+function M.jump_to_location(location, offset_encoding, reuse_win)
+  if M.__HAS_NVIM_011 then
+    return vim.lsp.util.show_document(location, offset_encoding, { reuse_win = reuse_win, focus = true })
+  else
+    return vim.lsp.util.jump_to_location(location, offset_encoding, reuse_win)
+  end
+end
+
 return M

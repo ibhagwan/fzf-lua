@@ -643,14 +643,14 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- LSP 'jdt://' entries, see issue #195
     -- https://github.com/ibhagwan/fzf-lua/issues/195
     vim.api.nvim_win_call(self.win.preview_winid, function()
-      local ok, res = pcall(vim.lsp.util.show_document, entry, "utf-16", { reuse_win = false, focus = true })
+      local ok, res = pcall(utils.jump_to_location, entry, "utf-16", false)
       if ok then
         self.preview_bufnr = vim.api.nvim_get_current_buf()
       else
         -- in case of an error display the stacktrace in the preview buffer
         local lines = vim.split(res, "\n") or { "null" }
         table.insert(lines, 1,
-          string.format("lsp.util.show_document failed for '%s':", entry.uri))
+          string.format("lsp.util.%s failed for '%s':", utils.__HAS_NVIM_011 and "show_document" or "jump_to_location", entry.uri))
         table.insert(lines, 2, "")
         local tmpbuf = self:get_tmp_buffer()
         vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
