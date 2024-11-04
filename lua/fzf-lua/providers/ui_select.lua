@@ -95,7 +95,14 @@ M.ui_select = function(items, ui_opts, on_choice)
   })
 
   -- Force override prompt or it stays cached (#786)
-  local prompt = ui_opts.prompt or "Select one of:"
+  local prompt = ui_opts.prompt
+  if prompt then
+    -- Add a space at the end of the prompt (if not already present) since the prompt and the input are inline
+    prompt = prompt:gsub("%s*$", " ", 1)
+  else
+    prompt = "Select one of :"
+  end
+
   opts.fzf_opts["--prompt"] = prompt:gsub(":%s?$", "> ")
 
   -- save items so we can access them from the action
