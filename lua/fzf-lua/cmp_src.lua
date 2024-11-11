@@ -61,11 +61,15 @@ function Src:resolve(completion_item, callback)
 end
 
 function Src._register_cmdline()
-  local ok, cmp = pcall(require, "cmp")
+  local ok, cmp, config
+  ok, cmp = pcall(require, "cmp")
+  if not ok then return end
+  -- Using blink.cmp in nvim-cmp compat mode doesn't have config (#1522)
+  ok, config = pcall(require, "cmp.config")
   if not ok then return end
   cmp.register_source("FzfLua", Src)
   Src._registered = true
-  local cmdline_cfg = require("cmp.config").cmdline
+  local cmdline_cfg = config.cmdline
   if not cmdline_cfg or not cmdline_cfg[":"] then return end
   local has_fzf_lua = false
   for _, s in ipairs(cmdline_cfg[":"].sources or {}) do
