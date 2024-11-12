@@ -131,8 +131,11 @@ M.spawn = function(opts, fn_transform, fn_done)
   if opts.fn_transform then fn_transform = opts.fn_transform end
 
   local finish = function(code, sig, from, pid)
-    output_pipe:shutdown()
-    error_pipe:shutdown()
+    -- Uncomment to debug pipe closure timing issues (#1521)
+    -- output_pipe:close(function() print("closed o") end)
+    -- error_pipe:close(function() print("closed e") end)
+    output_pipe:close()
+    error_pipe:close()
     if opts.cb_finish then
       opts.cb_finish(code, sig, from, pid)
     end
@@ -163,13 +166,11 @@ M.spawn = function(opts, fn_transform, fn_done)
     env = opts.env,
     verbatim = _is_win,
   }, function(code, signal)
-    output_pipe:read_stop()
-    error_pipe:read_stop()
-    output_pipe:close()
-    error_pipe:close()
-    if write_cb_count == 0 then
-      -- only close if all our uv.write
-      -- calls are completed
+    if write_cb_count == 0 and not output_pipe:is_active() then
+      -- Do not call `:read_stop` or `:close` here as we may have data
+      -- reads outstanding on slower Windows machines (#1521), only call
+      -- `finish` if all our `uv.write` calls are completed and the pipe
+      -- is no longer active (i.e. no more read cb's expected)
       finish(code, signal, 1)
     end
   end)
@@ -185,7 +186,7 @@ M.spawn = function(opts, fn_transform, fn_done)
         -- can fail with premature process kill
         -- assert(not err)
         finish(130, 0, 2, pid)
-      elseif write_cb_count == 0 and uv.is_closing(output_pipe) then
+      elseif write_cb_count == 0 and not output_pipe:is_active() then
         -- spawn callback already called and did not close the pipe
         -- due to write_cb_count>0, since this is the last call
         -- we can close the fzf pipe
