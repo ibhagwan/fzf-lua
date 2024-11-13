@@ -134,8 +134,8 @@ M.spawn = function(opts, fn_transform, fn_done)
     -- Uncomment to debug pipe closure timing issues (#1521)
     -- output_pipe:close(function() print("closed o") end)
     -- error_pipe:close(function() print("closed e") end)
-    output_pipe:close()
-    error_pipe:close()
+    if not output_pipe:is_closing() then output_pipe:close() end
+    if not error_pipe:is_closing() then error_pipe:close() end
     if opts.cb_finish then
       opts.cb_finish(code, sig, from, pid)
     end
@@ -739,7 +739,7 @@ M.escape_fzf = function(s, fzf_version, is_win)
   return ret
 end
 
--- `vim.fn.escape` 
+-- `vim.fn.escape`
 -- (1) On *NIX: double the backslashes as they will be reduced by expand
 -- (2) ... other issues we will surely find with special chars
 M.expand = function(s)
