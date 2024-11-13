@@ -317,6 +317,7 @@ do
     register_ui_select = { "fzf-lua.providers.ui_select", "register" },
     deregister_ui_select = { "fzf-lua.providers.ui_select", "deregister" },
     tmux_buffers = { "fzf-lua.providers.tmux", "buffers" },
+    tmux_files = { "fzf-lua.providers.tmux", "files" },
     profiles = { "fzf-lua.providers.module", "profiles" },
     complete_path = { "fzf-lua.complete", "path" },
     complete_file = { "fzf-lua.complete", "file" },

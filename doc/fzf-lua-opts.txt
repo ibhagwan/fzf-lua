@@ -1574,6 +1574,11 @@ tmux_buffers                                       *fzf-lua-opts-tmux_buffers*
 
 Tmux paste buffers
 
+                                                                              
+tmux_files                                       *fzf-lua-opts-tmux_files*
+
+Filenames (and line location) found on other Tmux panes
+
 
                                                                               
 COMPLETION FUNCTIONS                       *fzf-lua-opts-completion-functions*

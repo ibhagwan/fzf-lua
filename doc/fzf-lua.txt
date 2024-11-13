@@ -462,6 +462,7 @@ TMUX                                                            *fzf-lua-tmux*
 | Command              | List                                       |
 | -------------------- | ------------------------------------------ |
 | `tmux_buffers`         | list tmux paste buffers                    |
+| `tmux_files`           | list files that appear on other tmux panes |
 
 
                                                                               

@@ -1135,6 +1135,10 @@ DAP active session jump to frame
 
 Tmux paste buffers
 
+#### tmux_files
+
+Filenames (and line location) found on other Tmux panes
+
 ---
 
 ### Completion Functions

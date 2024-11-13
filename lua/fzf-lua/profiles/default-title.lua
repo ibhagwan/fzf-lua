@@ -63,7 +63,10 @@ return {
   filetypes            = title("Filetypes"),
   packadd              = title("Packer Packadd"),
   menus                = title("Menus"),
-  tmux                 = title("Tmux Buffers"),
+  tmux                 = {
+    buffers = title("Tmux Buffers"),
+    files   = title("Tmux Files"),
+  },
   dap                  = {
     commands       = title("DAP Commands"),
     configurations = title("DAP Configurations"),

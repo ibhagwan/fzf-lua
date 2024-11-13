@@ -385,6 +385,7 @@ to see detailed usage notes and a comprehensive list of all available options.**
 | Command              | List                                       |
 | -------------------- | ------------------------------------------ |
 | `tmux_buffers`         | list tmux paste buffers                    |
+| `tmux_files`           | list files that appear on other tmux panes |
 
 ### Completion Functions
 | Command              | List                                       |

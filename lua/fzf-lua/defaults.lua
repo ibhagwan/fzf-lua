@@ -1090,6 +1090,16 @@ M.defaults.tmux                 = {
     register = [["]],
     actions  = { ["enter"] = actions.tmux_buf_set_reg },
     fzf_opts = { ["--no-multi"] = true, ["--delimiter"] = "[:]" }
+  }, 
+  files = {
+    prompt   = "Tmux Files> ",
+    file_icons  = true and M._has_devicons,
+    color_icons = true,
+    git_icons   = false,
+    previewer   = M._default_previewer_fn,
+    _actions    = function() return M.globals.actions.files end,
+    -- cmd      = "tmux list-buffers",
+    -- fzf_opts = { ["--no-multi"] = true, ["--delimiter"] = "[:]" }
   },
 }
 
