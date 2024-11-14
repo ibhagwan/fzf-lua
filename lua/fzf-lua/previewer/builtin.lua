@@ -368,7 +368,7 @@ function Previewer.base:scroll(direction)
         local pos = is_ctrl_b and vim.api.nvim_win_get_cursor(0)
         if is_ctrl_b and pos[1] == 1 then return end
         vim.cmd([[norm! ]] .. input)
-        if is_ctrl_b and pos[1] <= vim.api.nvim_win_get_cursor(0)[1] then
+        if is_ctrl_b and pos[1] <= vim.api.nvim_win_get_cursor(0)[1] + 1 then
           vim.api.nvim_win_set_cursor(0, { 1, pos[2] })
         end
         utils.zz()
