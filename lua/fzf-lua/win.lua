@@ -78,7 +78,22 @@ function FzfWin:generate_layout(winopts)
   local pwopts
   local row, col = winopts.row, winopts.col
   local height, width = winopts.height, winopts.width
-  local preview_pos, preview_size = winopts.preview_pos, winopts.preview_size
+  local preview_pos, preview_size = (function()
+    -- @return preview_pos:  preview position {left|right|up|down}
+    -- @return preview_size: preview size in %
+    local preview_str
+    if self._preview_pos_force then
+      -- Get the correct layout string and size when set from `:toggle_preview_cw`
+      preview_str = (self._preview_pos_force == "up" or self._preview_pos_force == "down")
+          and winopts.preview.vertical or winopts.preview.horizontal
+      self._preview_pos = self._preview_pos_force
+    else
+      preview_str = self:fzf_preview_layout_str()
+      self._preview_pos = preview_str:match("[^:]+") or "right"
+    end
+    self._preview_size = tonumber(preview_str:match(":(%d+)%%")) or 50
+    return self._preview_pos, self._preview_size
+  end)()
   if winopts.split then
     -- Custom "split"
     pwopts = { relative = "win", anchor = "NW", row = 1, col = 1 }
@@ -159,25 +174,35 @@ local strip_borderchars_hl = function(border)
   return borderchars
 end
 
-function FzfWin:preview_splits_horizontally(winopts, winid)
-  local columns = self._o._is_fzf_tmux and self._o._is_fzf_tmux_popup and self._o._tmux_columns
-      or winopts.split and vim.api.nvim_win_get_width(winid)
-      or vim.o.columns
-  return winopts.preview.layout == "horizontal"
-      or winopts.preview.layout == "flex" and columns > winopts.preview.flip_columns
+function FzfWin:columns(no_fullscreen)
+  assert(self.winopts)
+  -- When called from `core.preview_window` we need to get the no-fullscreen columns
+  -- in order to get an accurate alternate layout trigger that will also be consistent
+  -- when starting with `winopts.fullscreen == true`
+  local winopts = no_fullscreen and self:normalize_winopts(false) or self.winopts
+  return self._o._is_fzf_tmux and self._o._is_fzf_tmux_popup and self._o._tmux_columns
+      or winopts.split and vim.api.nvim_win_get_width(self.fzf_winid or 0)
+      or winopts.width
 end
 
-local function update_preview_split(winopts, winid)
-  local hsplit = FzfWin:preview_splits_horizontally(winopts, winid)
-  local preview = hsplit and winopts.preview.horizontal or winopts.preview.vertical
-  -- builtin previewer params
-  winopts.preview_pos = preview:match("[^:]+") or "right"
-  winopts.preview_size = tonumber(preview:match(":(%d+)%%")) or 50
+function FzfWin:fzf_preview_layout_str()
+  assert(self.winopts)
+  local columns = self:columns()
+  local is_hsplit = self.winopts.preview.layout == "horizontal"
+      or self.winopts.preview.layout == "flex" and columns > self.winopts.preview.flip_columns
+  return is_hsplit and self._o.winopts.preview.horizontal or self._o.winopts.preview.vertical
 end
 
-local normalize_winopts = function(o)
-  -- make a local copy of opts so we don't pollute the user's options
-  local winopts = utils.tbl_deep_clone(o.winopts)
+function FzfWin:normalize_winopts(fullscreen)
+  -- make a local copy of winopts so we don't pollute the user's options
+  local o, winopts = self._o, utils.tbl_deep_clone(self._o.winopts)
+
+  if fullscreen then
+    winopts.row = 1
+    winopts.col = 1
+    winopts.width = 1
+    winopts.height = 1
+  end
 
   winopts.__winhls = {
     main = {
@@ -260,9 +285,6 @@ local normalize_winopts = function(o)
   -- Store a version of borderchars with no highlights
   -- to be used in the border drawing functions
   winopts.nohl_borderchars = strip_borderchars_hl(winopts.border)
-
-  -- parse preview options
-  update_preview_split(winopts, 0)
 
   return winopts
 end
@@ -403,8 +425,8 @@ function FzfWin:new(o)
   self = setmetatable({}, { __index = self })
   self.hls = o.hls
   self.actions = o.actions
-  self.winopts = normalize_winopts(o)
-  self.fullscreen = self.winopts.fullscreen
+  self.fullscreen = o.winopts.fullscreen
+  self.winopts = self:normalize_winopts(self.fullscreen)
   self.preview_wrap = not opt_matches(o, "wrap", "nowrap")
   self.preview_hidden = not opt_matches(o, "hidden", "nohidden")
   self.preview_border = not opt_matches(o, "border", "noborder")
@@ -461,47 +483,6 @@ function FzfWin:attach_previewer(previewer)
   self.previewer_is_builtin = previewer and type(previewer.display_entry) == "function"
 end
 
-function FzfWin:fs_preview_layout(fs)
-  local prev_winopts = self.prev_winopts
-  local border_winopts = self.border_winopts
-  if not fs or self.winopts.split
-      or not prev_winopts or not border_winopts
-      or utils.tbl_isempty(prev_winopts)
-      or utils.tbl_isempty(border_winopts) then
-    return prev_winopts, border_winopts
-  end
-
-  local preview_pos = self.winopts.preview_pos
-  local height_diff = 0
-  local width_diff = 0
-  if preview_pos == "down" or preview_pos == "up" then
-    border_winopts.col, prev_winopts.col = 0, 1
-    width_diff = vim.o.columns - border_winopts.width
-    if preview_pos == "down" then
-      height_diff = vim.o.lines - border_winopts.row - border_winopts.height - vim.o.cmdheight
-    else -- up
-      height_diff = border_winopts.row
-      border_winopts.row, prev_winopts.row = 0, 1
-    end
-  else -- left|right
-    border_winopts.row, prev_winopts.row = 0, 1
-    height_diff = vim.o.lines - border_winopts.height - vim.o.cmdheight
-    if preview_pos == "right" then
-      width_diff = vim.o.columns - border_winopts.col - border_winopts.width
-    else -- left
-      width_diff = border_winopts.col - 1
-      border_winopts.col, prev_winopts.col = 0, 1
-    end
-  end
-
-  prev_winopts.height = prev_winopts.height + height_diff
-  border_winopts.height = border_winopts.height + height_diff
-  prev_winopts.width = prev_winopts.width + width_diff
-  border_winopts.width = border_winopts.width + width_diff
-
-  return prev_winopts, border_winopts
-end
-
 function FzfWin:preview_layout()
   if self.winopts.split and self.previewer_is_builtin then
     local wininfo = utils.getwininfo(self.fzf_winid)
@@ -517,8 +498,6 @@ function FzfWin:preview_layout()
       height = wininfo.height,
       width = api.nvim_win_get_width(self.fzf_winid) - signcol_width,
       signcol_width = signcol_width,
-      preview_pos = self.winopts.preview_pos,
-      preview_size = self.winopts.preview_size,
       split = self.winopts.split,
     })
   end
@@ -590,10 +569,6 @@ function FzfWin:redraw_preview()
     return -1, -1
   end
 
-  if self.fullscreen then
-    self.prev_winopts, self.border_winopts = self:fs_preview_layout(self.fullscreen)
-  end
-
   -- manual border chars looks horrible with ambiwdith="double", override border
   -- window with preview window dimensions and use builtin `nvim_open_win` border
   -- NOTES:
@@ -642,50 +617,13 @@ function FzfWin:validate()
       and api.nvim_win_is_valid(self.fzf_winid)
 end
 
-function FzfWin:fs_fzf_layout(fs, winopts)
-  if not fs or self.winopts.split then
-    return winopts
-  end
-
-  if not self.previewer_is_builtin or self.preview_hidden then
-    -- fzf previewer, expand to fullscreen
-    winopts.col = 0
-    winopts.row = 0
-    winopts.width = vim.o.columns
-    winopts.height = vim.o.lines - vim.o.cmdheight - 2
-  else
-    local preview_pos = self.winopts.preview_pos
-    if preview_pos == "down" or preview_pos == "up" then
-      winopts.col = 0
-      winopts.width = vim.o.columns
-      if preview_pos == "down" then
-        winopts.height = winopts.height + winopts.row
-        winopts.row = 0
-      elseif preview_pos == "up" then
-        winopts.height = winopts.height +
-            (vim.o.lines - winopts.row - winopts.height - vim.o.cmdheight - 2)
-      end
-    elseif preview_pos == "left" or preview_pos == "right" then
-      winopts.row = 0
-      winopts.height = vim.o.lines - vim.o.cmdheight - 2
-      if preview_pos == "right" then
-        winopts.width = winopts.width + winopts.col
-        winopts.col = 0
-      elseif preview_pos == "left" then
-        winopts.width = winopts.width + (vim.o.columns - winopts.col - winopts.width - 1)
-      end
-    end
-  end
-
-  return winopts
-end
-
 function FzfWin:redraw()
-  self.winopts = normalize_winopts(self._o)
+  self.winopts = self:normalize_winopts(self.fullscreen)
   if not self.winopts.split and self.previewer_is_builtin then
     self.layout = self:generate_layout(self.winopts)
   end
   self:set_backdrop()
+  self:hide_scrollbar()
   if self:validate() then
     self:redraw_main()
   end
@@ -710,7 +648,6 @@ function FzfWin:redraw_main()
   if self.layout and not hidden then
     winopts = utils.tbl_deep_clone(self.layout.fzf)
   end
-  if self.fullscreen then winopts = self:fs_fzf_layout(self.fullscreen, winopts) end
 
   local win_opts = {
     width = winopts.width or math.min(columns - 4, math.max(80, columns - 20)),
@@ -893,7 +830,6 @@ function FzfWin:create()
     end
     -- match window options with 'nvim_open_win' style:minimal
     self:set_style_minimal(self.fzf_winid)
-    update_preview_split(self.winopts, self.fzf_winid)
   else
     -- draw the main window
     self:redraw_main()
@@ -1295,13 +1231,7 @@ function FzfWin.toggle_fullscreen()
   if not _self or _self.winopts.split then return end
   local self = _self
   self.fullscreen = not self.fullscreen
-  self:hide_scrollbar()
-  if self:validate() then
-    self:redraw_main()
-  end
-  if self:validate_preview() then
-    self:redraw_preview()
-  end
+  self:redraw()
 end
 
 function FzfWin.toggle_preview()
@@ -1309,6 +1239,7 @@ function FzfWin.toggle_preview()
   local self = _self
   self.preview_hidden = not self.preview_hidden
   if self.winopts.split and self._fzf_toggle_prev_bind then
+    -- Toggle the empty preview window (under the neovim preview buffer)
     utils.feed_keys_termcodes(self._fzf_toggle_prev_bind)
   end
   if self.preview_hidden and self:validate_preview() then
@@ -1343,7 +1274,7 @@ function FzfWin.toggle_preview_cw(direction)
   local pos = { "up", "right", "down", "left" }
   local idx
   for i = 1, #pos do
-    if pos[i] == self.winopts.preview_pos then
+    if pos[i] == self._preview_pos then
       idx = i
       break
     end
@@ -1352,15 +1283,8 @@ function FzfWin.toggle_preview_cw(direction)
   local newidx = direction > 0 and idx + 1 or idx - 1
   if newidx < 1 then newidx = #pos end
   if newidx > #pos then newidx = 1 end
-  self.winopts.preview_pos = pos[newidx]
-  self.layout = self:generate_layout(self.winopts)
-  self:hide_scrollbar()
-  if self:validate() then
-    self:redraw_main()
-  end
-  if self:validate_preview() then
-    self:redraw_preview()
-  end
+  self._preview_pos_force = pos[newidx]
+  self:redraw()
 end
 
 function FzfWin.preview_scroll(direction)
