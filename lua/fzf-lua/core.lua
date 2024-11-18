@@ -376,28 +376,6 @@ M.fzf = function(contents, opts)
     if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.40 and previewer.zero then
       utils.map_set(opts, "keymap.fzf.zero", previewer:zero())
     end
-    if opts.__FZF_VERSION
-        and opts.__FZF_VERSION >= 0.46
-        and opts.winopts.preview.layout == "flex"
-        and tonumber(opts.winopts.preview.flip_columns) > 0
-        -- Only enable flex layout native rotate if zero event wasn't
-        -- set as it's most likely set by the default builtin previewer
-        and (not previewer.zero
-          -- or when using split mode for the background "empty previewer"
-          -- do not use when starting with a hidden previewer as this will
-          -- display the empty previewer when resizing (#1130)
-          or opts.winopts.split and opts.winopts.preview.hidden ~= "hidden")
-    then
-      local transformer = string.format(utils.__IS_WINDOWS
-        and "IF %%FZF_COLUMNS%% LEQ %d (echo change-preview-window:%s) "
-        .. "ELSE (echo change-preview-window:%s)"
-        or "[ $FZF_COLUMNS -le %d ] && echo change-preview-window:%s "
-        .. "|| echo change-preview-window:%s",
-        tonumber(opts.winopts.preview.flip_columns),
-        opts.winopts.preview.vertical,
-        opts.winopts.preview.horizontal)
-      utils.map_set(opts, "keymap.fzf.resize", string.format("transform(%s)", transformer))
-    end
     if type(previewer.preview_window) == "function" then
       -- do we need to override the preview_window args?
       -- this can happen with the builtin previewer
@@ -436,7 +414,7 @@ M.fzf = function(contents, opts)
   -- convert "exec_silent" actions to fzf's `execute-silent` binds
   opts = M.convert_reload_actions(opts.__reload_cmd or contents, opts)
   opts = M.convert_exec_silent_actions(opts)
-  local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
+  local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts, fzf_win),
     {
       fzf_bin = opts.fzf_bin,
       cwd = opts.cwd,
@@ -488,11 +466,33 @@ end
 
 ---@param o table
 ---@return string
-M.preview_window = function(o)
-  local hsplit = win:preview_splits_horizontally(o.winopts, 0)
-  local split = hsplit and o.winopts.preview.horizontal or o.winopts.preview.vertical
-  return ("%s:%s:%s:%s"):format(
-    o.winopts.preview.hidden, o.winopts.preview.border, o.winopts.preview.wrap, split)
+M.preview_window = function(o, fzf_win)
+  local layout
+  if o.__FZF_VERSION
+      and o.__FZF_VERSION >= 0.31
+      and o.winopts.preview.layout == "flex"
+      and tonumber(o.winopts.preview.flip_columns) > 0
+  then
+    -- Fzf's alternate layout calculates the available preview width in a horizontal split
+    -- (left/right), for the "<%d" condition to trigger the width should be test against a
+    -- calculated preview width after a horizontal split (and not vs total fzf window width)
+    -- to do that we must substract the calculated fzf "main" window width from `flip_columns`.
+    -- NOTE: sending `true` as first arg gets the no fullscreen width, otherwise we'll get
+    -- incosstent behavior when starting fullscreen
+    local columns = fzf_win:columns(true)
+    local fzf_prev_percent = tonumber(o.winopts.preview.horizontal:match(":(%d+)%%")) or 50
+    local fzf_main_width = math.ceil(columns * (100 - fzf_prev_percent) / 100)
+    local horizontal_min_width = o.winopts.preview.flip_columns - fzf_main_width + 1
+    if horizontal_min_width > 0 then
+      layout = string.format("%s,<%d(%s)",
+        o.winopts.preview.horizontal, horizontal_min_width, o.winopts.preview.vertical)
+    end
+  end
+  if not layout then
+    layout = fzf_win:fzf_preview_layout_str()
+  end
+  return string.format("%s:%s:%s:%s",
+    o.winopts.preview.hidden, o.winopts.preview.border, o.winopts.preview.wrap, layout)
 end
 
 -- Create fzf --color arguments from a table of vim highlight groups.
@@ -621,7 +621,7 @@ end
 
 ---@param opts table
 ---@return string[]
-M.build_fzf_cli = function(opts)
+M.build_fzf_cli = function(opts, fzf_win)
   opts.fzf_opts = vim.tbl_extend("force", config.globals.fzf_opts, opts.fzf_opts or {})
   -- copy/merge from globals
   for _, o in ipairs({ "fzf_colors", "keymap" }) do
@@ -681,7 +681,7 @@ M.build_fzf_cli = function(opts)
     end
   end
   if opts.fzf_opts["--preview-window"] == nil then
-    opts.fzf_opts["--preview-window"] = M.preview_window(opts)
+    opts.fzf_opts["--preview-window"] = M.preview_window(opts, fzf_win)
   end
   if opts.fzf_opts["--preview-window"] and opts.preview_offset and #opts.preview_offset > 0 then
     opts.fzf_opts["--preview-window"] =

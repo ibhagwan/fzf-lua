@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*      For Neovim >= 0.8.0     Last change: 2024 September 26
+*fzf-lua-opts.txt*      For Neovim >= 0.8.0      Last change: 2024 November 18
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -405,14 +405,14 @@ globals.winopts.preview.layout   *fzf-lua-opts-globals.winopts.preview.layout*
 Type: `string`, Default: `flex`
 
 Preview layout, possible values are `horizontal|vertical|flex`, when set to
-`flex` neovim width is tested against `winopts.preview.flip_columns`, when <=
-`vertical` is used, otherwise `horizontal`.
+`flex` fzf window width is tested against `winopts.preview.flip_columns`, when
+<= `vertical` is used, otherwise `horizontal`.
 
 
                                                                               
 globals.winopts.preview.flip_columns*fzf-lua-opts-globals.winopts.preview.flip_columns*
 
-Type: `number`, Default: `120`
+Type: `number`, Default: `100`
 
 Auto-detect the preview layout based on available width, see above note in
 `winopts.preview.layout`.
