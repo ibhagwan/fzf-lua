@@ -26,11 +26,6 @@ M.files = function(opts)
   opts = config.normalize_opts(opts, "tmux.files")
   if not opts then return end
 
-  opts.fn_transform = function(x)
-    local buf, data = x:match([[^(.-):%s+%d+%s+bytes: "(.*)"$]])
-    return string.format("[%s] %s", utils.ansi_codes.yellow(buf), data)
-  end
-
   opts = core.set_fzf_field_index(opts)
   core.fzf_exec(opts.cmd, opts)
 end

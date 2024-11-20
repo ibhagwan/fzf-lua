@@ -1090,16 +1090,15 @@ M.defaults.tmux                 = {
     register = [["]],
     actions  = { ["enter"] = actions.tmux_buf_set_reg },
     fzf_opts = { ["--no-multi"] = true, ["--delimiter"] = "[:]" }
-  }, 
+  },
   files = {
-    prompt   = "Tmux Files> ",
+    prompt      = "Tmux Files> ",
     file_icons  = true and M._has_devicons,
     color_icons = true,
     git_icons   = false,
     previewer   = M._default_previewer_fn,
     _actions    = function() return M.globals.actions.files end,
-    -- cmd      = "tmux list-buffers",
-    -- fzf_opts = { ["--no-multi"] = true, ["--delimiter"] = "[:]" }
+    cmd         = string.gsub([=[tmux list-panes -F "#{pane_id}" | grep -Fvx $TMUX_PANE | xargs -I {} tmux capture-pane -p -t {} -S -10000 | grep -oiE "(^|^\.|[[:space:]]|[[:space:]]\.|[[:space:]]\.\.|^\.\.)[[:alnum:]~_-]*/[][[:alnum:]_.#$%&+=/@-]*(:\d*(:\d*)?)?"]=], [[\$TMUX_PANE]], vim.env.TMUX_PANE),
   },
 }
 
