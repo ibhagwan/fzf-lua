@@ -178,17 +178,23 @@ local function location_handler(opts, cb, _, result, ctx, _)
   end
 end
 
-local function call_hierarchy_handler(opts, cb, _, result, _, _)
+local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
+  local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
   for _, call_hierarchy_call in pairs(result) do
     --- "from" for incoming calls and "to" for outgoing calls
     local call_hierarchy_item = call_hierarchy_call.from or call_hierarchy_call.to
     for _, range in pairs(call_hierarchy_call.fromRanges) do
       local location = {
+        uri = call_hierarchy_item.uri,
+        range = range,
         filename = assert(vim.uri_to_fname(call_hierarchy_item.uri)),
         text = call_hierarchy_item.name,
         lnum = range.start.line + 1,
         col = range.start.character + 1,
       }
+      if opts.jump_to_single_result and #call_hierarchy_call.fromRanges == 1 then
+        jump_to_location(opts, location, encoding)
+      end
       local entry = make_entry.lcol(location, opts)
       entry = make_entry.file(entry, opts)
       if entry then cb(entry) end
