@@ -108,7 +108,7 @@ at it. That, **and colorful file icons and git indicators!**.
 
 - [`neovim`](https://github.com/neovim/neovim/releases) version > `0.5.0`
 - [`fzf`](https://github.com/junegunn/fzf) version > `0.25`
-  **or** [`skim`](https://github.com/lotabout/skim) binary installed
+  **or** [`skim`](https://github.com/skim-rs/skim) binary installed
 - [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons)
   **or** [mini.icons](https://github.com/echasnovski/mini.icons)
   (optional)
@@ -454,7 +454,7 @@ Conveniently, fzf-lua comes with a set of preconfigured profiles, notably:
 | `fzf-vim`          | closest to `fzf.vim`'s defaults (+icons), also sets up user commands (`:Files`, `:Rg`, etc) |
 | `max-perf`         | similar to `fzf-native` and disables icons globally for max performance |
 | `telescope`        | closest match to telescope defaults in look and feel and keybinds |
-| `skim`             | uses [`skim`](https://github.com/lotabout/skim) as an fzf alternative, (requires the `sk` binary) |
+| `skim`             | uses [`skim`](https://github.com/skim-rs/skim) as an fzf alternative, (requires the `sk` binary) |
 
 Use `:FzfLua profiles` to experiment with the different profiles, once you've found what
 you like and wish to make the profile persist, send a `string` argument at the first index
@@ -550,7 +550,7 @@ issue and I'll be more than happy to help.**
 local actions = require "fzf-lua.actions"
 require'fzf-lua'.setup {
   -- fzf_bin         = 'sk',            -- use skim instead of fzf?
-                                        -- https://github.com/lotabout/skim
+                                        -- https://github.com/skim-rs/skim
                                         -- can also be set to 'fzf-tmux'
   winopts = {
     -- split         = "belowright new",-- open in a split instead?
