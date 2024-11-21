@@ -1,3 +1,4 @@
+local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
@@ -37,7 +38,7 @@ M.files = function(opts)
     end
     if utils.path_is_directory(filepath) then return nil end
     -- FIFO blocks `fs_open` indefinitely (#908)
-    if utils.file_is_fifo(filepath, uv.fs_stat(file)) or not utils.file_is_readable(filepath) then
+    if utils.file_is_fifo(filepath, uv.fs_stat(filepath)) or not utils.file_is_readable(filepath) then
       return nil
     end
 
