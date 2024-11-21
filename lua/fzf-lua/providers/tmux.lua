@@ -36,7 +36,10 @@ M.files = function(opts)
       filepath = s[1]
     end
     if utils.path_is_directory(filepath) then return nil end
-    if not utils.file_is_readable(filepath) then return nil end
+    -- FIFO blocks `fs_open` indefinitely (#908)
+    if utils.file_is_fifo(filepath, uv.fs_stat(file)) or not utils.file_is_readable(filepath) then
+      return nil
+    end
 
     return make_entry.file(item, opts)
   end
