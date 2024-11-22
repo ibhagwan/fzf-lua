@@ -36,6 +36,9 @@ M.files = function(opts)
     if #s > 1 then
       filepath = s[1]
     end
+    if opts.cwd_only and string.match(filepath, "%.%./") then
+      return nil
+    end
     if utils.path_is_directory(filepath) then return nil end
     -- FIFO blocks `fs_open` indefinitely (#908)
     if utils.file_is_fifo(filepath, uv.fs_stat(filepath)) or not utils.file_is_readable(filepath) then
