@@ -1,9 +1,89 @@
+local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 
 local api = vim.api
 local fn = vim.fn
+
+local TSInjector = {}
+
+---@type table<number, table<string,{parser: vim.treesitter.LanguageTree, highlighter:vim.treesitter.highlighter, enabled:boolean}>>
+TSInjector.cache = {}
+
+function TSInjector.setup()
+  if TSInjector._setup then return true end
+
+  TSInjector._setup = true
+  TSInjector._ns = TSInjector._ns or vim.api.nvim_create_namespace("fzf-lua.win.highlighter")
+
+  local function wrap_ts_hl_callback(name)
+    return function(_, win, buf, ...)
+      -- print(name, buf, win, TSInjector.cache[buf])
+      if not TSInjector.cache[buf] then
+        return false
+      end
+      for _, hl in pairs(TSInjector.cache[buf] or {}) do
+        if hl.enabled then
+          vim.treesitter.highlighter.active[buf] = hl.highlighter
+          vim.treesitter.highlighter[name](_, win, buf, ...)
+        end
+      end
+      vim.treesitter.highlighter.active[buf] = nil
+    end
+  end
+
+  vim.api.nvim_set_decoration_provider(TSInjector._ns, {
+    on_win = wrap_ts_hl_callback("_on_win"),
+    on_line = wrap_ts_hl_callback("_on_line"),
+  })
+
+  return true
+end
+
+function TSInjector.deregister()
+  if not TSInjector._ns then return end
+  vim.api.nvim_set_decoration_provider(TSInjector._ns, { on_win = nil, on_line = nil })
+  TSInjector._setup = nil
+end
+
+function TSInjector.clear_cache(buf, noassert)
+  TSInjector.cache[buf] = nil
+  assert(noassert or utils.tbl_isempty(TSInjector.cache))
+end
+
+---@param buf number
+function TSInjector.attach(buf, regions)
+  if not TSInjector.setup() then return end
+
+  TSInjector.cache[buf] = TSInjector.cache[buf] or {}
+  for lang, _ in pairs(TSInjector.cache[buf]) do
+    TSInjector.cache[buf][lang].enabled = regions[lang] ~= nil
+  end
+
+  for lang, _ in pairs(regions) do
+    TSInjector._attach_lang(buf, lang, regions[lang])
+  end
+end
+
+---@param buf number
+---@param lang? string
+function TSInjector._attach_lang(buf, lang, regions)
+  if not TSInjector.cache[buf][lang] then
+    local ok, parser = pcall(vim.treesitter.languagetree.new, buf, lang)
+    if not ok then return end
+    TSInjector.cache[buf][lang] = {
+      parser = parser,
+      highlighter = vim.treesitter.highlighter.new(parser),
+    }
+  end
+
+  local parser = TSInjector.cache[buf][lang].parser
+  if not parser then return end
+
+  TSInjector.cache[buf][lang].enabled = true
+  parser:set_included_regions(regions)
+end
 
 local FzfWin = {}
 
@@ -738,6 +818,50 @@ function FzfWin:set_winleave_autocmd()
   self:_nvim_create_autocmd("WinLeave", self.win_leave, [[require('fzf-lua.win').win_leave()]])
 end
 
+function FzfWin:treesitter_attach()
+  if not utils.__HAS_NVIM_09 then return end
+  if not self._o.winopts.treesitter then return end
+  local function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
+  vim.api.nvim_buf_attach(self.fzf_bufnr, false, {
+    on_lines = function(_, bufnr, _, first_changed, last_changed, last_updated, bc)
+      local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
+      local regions = {}
+      local empty_regions = {}
+      for i, line in ipairs(lines) do
+        (function()
+          -- Lines with code can be of the following formats:
+          -- file:line:col:text   (grep_xxx)
+          -- file:line:text       (grep_project or missing "--column" flag)
+          -- line:col:text        (grep_curbuf)
+          -- line:text            (blines)
+          local filepath, _lnum, text = line:match("(.-):?(%d+):(.+)$")
+          if not text or text == 0 then return end
+
+          filepath = trim(filepath)
+          local ft = #filepath == 0 and vim.bo[utils.CTX().bufnr].ft
+              or vim.filetype.match({ filename = path.tail(filepath) })
+          if not ft then return end
+
+          local lang = vim.treesitter.language.get_lang(ft)
+          local loaded = lang and utils.has_ts_parser(lang)
+          if not loaded then return end
+
+          -- With the above line match text can start with "%d+:", remove it
+          text = text:gsub("^%d+:", "")
+
+          local line_idx, text_pos = i - 1, #line - #text
+          regions[lang] = regions[lang] or {}
+          empty_regions[lang] = empty_regions[lang] or {}
+          table.insert(regions[lang], { { line_idx, text_pos, line_idx, line:len() } })
+          -- print(lang, string.format("[%d]%d:%s", line_idx, _lnum, line:sub(text_pos + 1)))
+        end)()
+      end
+      TSInjector.attach(bufnr, empty_regions)
+      TSInjector.attach(bufnr, regions)
+    end
+  })
+end
+
 function FzfWin:set_tmp_buffer(no_wipe)
   if not self:validate() then return end
   -- Store the [would be] detached buffer number
@@ -749,11 +873,16 @@ function FzfWin:set_tmp_buffer(no_wipe)
   vim.api.nvim_win_set_buf(self.fzf_winid, self.fzf_bufnr)
   -- close the previous fzf term buffer without triggering autocmds
   -- this also kills the previous fzf process if its still running
-  if not no_wipe then utils.nvim_buf_delete(detached, { force = true }) end
+  if not no_wipe then
+    utils.nvim_buf_delete(detached, { force = true })
+    TSInjector.clear_cache(detached)
+  end
   -- in case buffer exists prematurely
   self:set_winleave_autocmd()
   -- automatically resize fzf window
   self:set_redraw_autocmd()
+  -- Use treesitter to highlight results on the main fzf window
+  self:treesitter_attach()
   -- since we have the cursorline workaround from
   -- issue #254, resume shows an ugly cursorline.
   -- remove it, nvim_win API is better than vim.wo?
@@ -795,7 +924,7 @@ function FzfWin:create()
     -- also recall the user's 'on_create' (#394)
     if self.winopts.on_create and
         type(self.winopts.on_create) == "function" then
-      self.winopts.on_create()
+      self.winopts.on_create({ winid = self.fzf_winid, bufnr = self.fzf_bufnr })
     end
     -- not sure why but when using a split and reusing the window,
     -- fzf will not use all the available width until 'redraw' is
@@ -842,6 +971,8 @@ function FzfWin:create()
   self:set_winleave_autocmd()
   -- automatically resize fzf window
   self:set_redraw_autocmd()
+  -- Use treesitter to highlight results on the main fzf window
+  self:treesitter_attach()
 
   self:reset_win_highlights(self.fzf_winid)
 
@@ -916,6 +1047,9 @@ function FzfWin:close(fzf_bufnr)
   if self.fzf_bufnr and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
     vim.api.nvim_buf_delete(self.fzf_bufnr, { force = true })
   end
+  -- Clear treesitter buffer cache and deregister decoration callbacks
+  TSInjector.clear_cache(self.fzf_bufnr, self._hidden_fzf_bufnr)
+  TSInjector.deregister()
   -- when using `split = "belowright new"` closing the fzf
   -- window may not always return to the correct source win
   -- depending on the user's split configuration (#397)

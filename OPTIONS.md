@@ -265,9 +265,18 @@ Backdrop opacity value, 0 for fully opaque, 100 for fully transparent (i.e. disa
 
 #### globals.winopts.fullscreen
 
-Type: `fullscreen`, Default: `false`
+Type: `boolean`, Default: `false`
 
 Use fullscreen for the fzf-load floating window.
+
+#### globals.winopts.treesitter
+
+Type: `boolean`, Default: `false`
+
+Use treesitter highlighting in fzf's main window.
+
+> **NOTE**: Only works for file-like entires where treesitter parser exists and is loaded
+> for the filetype.
 
 #### globals.winopts.on_create
 
