@@ -261,8 +261,6 @@ M.CTX = function(includeBuflist)
       -- we should never get here when fzf process is hidden unless the user requested
       -- not to resume or a different picker, i.e. hide files and open buffers
       or winobj and winobj:hidden()
-      -- unknown conditions relating to `lsp_code_actions` (#1508)
-      or not vim.api.nvim_win_is_valid(M.__CTX.winid)
   then
     M.__CTX = {
       mode = vim.api.nvim_get_mode().mode,
