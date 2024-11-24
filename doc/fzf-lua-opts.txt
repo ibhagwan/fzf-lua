@@ -346,9 +346,20 @@ disabled).
                                                                               
 globals.winopts.fullscreen           *fzf-lua-opts-globals.winopts.fullscreen*
 
-Type: `fullscreen`, Default: `false`
+Type: `boolean`, Default: `false`
 
 Use fullscreen for the fzf-load floating window.
+
+
+                                                                              
+globals.winopts.treesitter           *fzf-lua-opts-globals.winopts.treesitter*
+
+Type: `boolean`, Default: `false`
+
+Use treesitter highlighting in fzf's main window.
+
+  **NOTE**: Only works for file-like entires where treesitter parser exists and
+  is loaded for the filetype.
 
 
                                                                               
