@@ -144,6 +144,11 @@ M.highlights = function(opts)
     end
   end
 
+  opts.fn_selected = function(selected)
+    vim.cmd('hi ' .. selected[2])
+    vim.api.nvim_exec2('hi ' .. selected[2], {})
+  end
+
   core.fzf_exec(contents, opts)
 end
 
