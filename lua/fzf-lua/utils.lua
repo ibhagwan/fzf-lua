@@ -1179,9 +1179,9 @@ end
 
 local function version_str_to_num(str)
   if type(str) ~= "string" then return end
-  local major, minor, patch = str:match("(%d+).(%d+).(%d+)")
+  local major, minor, patch = str:match("(%d+).(%d+)%.?(.*)")
   if not major and str:match("HEAD") then return 5 end
-  return tonumber(string.format("%d.%d%d", major, minor, patch))
+  return tonumber(string.format("%d.%d%d", major, minor, tonumber(patch) or 0))
 end
 
 function M.fzf_version(opts)
