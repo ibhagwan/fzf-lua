@@ -1177,16 +1177,31 @@ function M.neovim_bind_to_fzf(key)
   return key
 end
 
+local function version_str_to_num(str)
+  if type(str) ~= "string" then return end
+  local major, minor, patch = str:match("(%d+).(%d+).(%d+)")
+  if not major and str:match("HEAD") then return 5 end
+  return tonumber(string.format("%d.%d%d", major, minor, patch))
+end
+
 function M.fzf_version(opts)
-  opts = opts or {}
   -- temp unset "FZF_DEFAULT_OPTS" as it might fail `--version`
   -- if it contains options aren't compatible with fzf's version
   local FZF_DEFAULT_OPTS = vim.env.FZF_DEFAULT_OPTS
   vim.env.FZF_DEFAULT_OPTS = nil
   local out, rc = M.io_system({ opts.fzf_bin or "fzf", "--version" })
   vim.env.FZF_DEFAULT_OPTS = FZF_DEFAULT_OPTS
-  if out:match("HEAD") then return 4 end
-  return tonumber(out:match("(%d+.%d+).")), rc, out
+  return version_str_to_num(out), rc, out
+end
+
+function M.sk_version(opts)
+  -- temp unset "SKIM_DEFAULT_OPTIONS" as it might fail `--version`
+  -- if it contains options aren't compatible with sk's version
+  local SKIM_DEFAULT_OPTIONS = vim.env.SKIM_DEFAULT_OPTIONS
+  vim.env.SKIM_DEFAULT_OPTIONS = nil
+  local out, rc = M.io_system({ opts.fzf_bin or "sk", "--version" })
+  vim.env.SKIM_DEFAULT_OPTIONS = SKIM_DEFAULT_OPTIONS
+  return version_str_to_num(out), rc, out
 end
 
 function M.git_version()
@@ -1256,7 +1271,8 @@ end
 ---@return boolean
 function M.jump_to_location(location, offset_encoding, reuse_win)
   if M.__HAS_NVIM_011 then
-    return vim.lsp.util.show_document(location, offset_encoding, { reuse_win = reuse_win, focus = true })
+    return vim.lsp.util.show_document(location, offset_encoding,
+      { reuse_win = reuse_win, focus = true })
   else
     return vim.lsp.util.jump_to_location(location, offset_encoding, reuse_win)
   end

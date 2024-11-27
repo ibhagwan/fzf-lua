@@ -508,6 +508,14 @@ function M.normalize_opts(opts, globals, __resume_key)
       opts.fzf_opts = opts.fzf_opts or {}
       opts.fzf_opts["--border"] = false
     end
+  else
+    local SK_VERSION, rc, err = utils.sk_version(opts)
+    opts.__SK_VERSION = SK_VERSION
+    if not opts.__SK_VERSION then
+      utils.err(string.format(
+        "'sk --version' failed with error %s: %s", rc, err))
+      return nil
+    end
   end
 
   if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53
