@@ -1189,7 +1189,7 @@ function M.fzf_version(opts)
   -- if it contains options aren't compatible with fzf's version
   local FZF_DEFAULT_OPTS = vim.env.FZF_DEFAULT_OPTS
   vim.env.FZF_DEFAULT_OPTS = nil
-  local out, rc = M.io_system({ opts.fzf_bin or "fzf", "--version" })
+  local out, rc = M.io_system({ opts and opts.fzf_bin or "fzf", "--version" })
   vim.env.FZF_DEFAULT_OPTS = FZF_DEFAULT_OPTS
   return version_str_to_num(out), rc, out
 end
@@ -1199,7 +1199,7 @@ function M.sk_version(opts)
   -- if it contains options aren't compatible with sk's version
   local SKIM_DEFAULT_OPTIONS = vim.env.SKIM_DEFAULT_OPTIONS
   vim.env.SKIM_DEFAULT_OPTIONS = nil
-  local out, rc = M.io_system({ opts.fzf_bin or "sk", "--version" })
+  local out, rc = M.io_system({ opts and opts.fzf_bin or "sk", "--version" })
   vim.env.SKIM_DEFAULT_OPTIONS = SKIM_DEFAULT_OPTIONS
   return version_str_to_num(out), rc, out
 end
