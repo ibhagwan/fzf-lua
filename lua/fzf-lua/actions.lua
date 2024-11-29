@@ -33,7 +33,7 @@ M.expect = function(actions, opts)
           v.prefix and v.prefix:gsub("accept$", ""):gsub("%+$", "") or ""
         ))
       elseif opts.__SK_VERSION and opts.__SK_VERSION >= 0.14 then
-        -- sk 0.14 deprecated `--bind`, instead `accept(<key>)` should be used
+        -- sk 0.14 deprecated `--expect`, instead `accept(<key>)` should be used
         -- skim does not yet support case sensitive alt-shift binds, they are ignored
         -- if k:match("^alt%-%u") then return end
         if type(v.prefix) == "string" and not v.prefix:match("%+$") then
