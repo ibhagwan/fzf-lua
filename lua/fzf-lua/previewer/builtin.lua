@@ -27,8 +27,11 @@ function Previewer.base:new(o, opts, fzf_win)
   self.win = fzf_win
   self.delay = self.win.winopts.preview.delay or 100
   self.title = self.win.winopts.preview.title
-  self.title_fnamemodify = o.title_fnamemodify
   self.title_pos = self.win.winopts.preview.title_pos
+  self.title_fnamemodify = o.title_fnamemodify
+  self.render_markdown = o.render_markdown
+  self.render_markdown.filetypes = type(o.render_markdown.filetypes) == "table" and
+      o.render_markdown.filetypes or {}
   self.winopts = self.win.winopts.preview.winopts
   self.syntax = default(o.syntax, true)
   self.syntax_delay = tonumber(default(o.syntax_delay, 0))
@@ -404,6 +407,7 @@ function Previewer.base:scroll(direction)
       vim.wo[preview_winid].cursorline = false
     end
   end
+  self:update_render_markdown()
   self.win:update_scrollbar()
 end
 
@@ -650,7 +654,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
         -- in case of an error display the stacktrace in the preview buffer
         local lines = vim.split(res, "\n") or { "null" }
         table.insert(lines, 1,
-          string.format("lsp.util.%s failed for '%s':", utils.__HAS_NVIM_011 and "show_document" or "jump_to_location", entry.uri))
+          string.format("lsp.util.%s failed for '%s':",
+            utils.__HAS_NVIM_011 and "show_document" or "jump_to_location", entry.uri))
         table.insert(lines, 2, "")
         local tmpbuf = self:get_tmp_buffer()
         vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
@@ -766,6 +771,20 @@ local ts_attach = function(bufnr, ft)
   end
 end
 
+function Previewer.base:update_render_markdown(ft)
+  local bufnr, winid = self.preview_bufnr, self.win.preview_winid
+  ft = ft or vim.bo[bufnr].ft
+  if not ft then return end
+  if not package.loaded["render-markdown"]
+      or not self.render_markdown.enable
+      or not self.render_markdown.filetypes[ft]
+  then
+    return
+  end
+  vim.bo[bufnr].ft = ft
+  require("render-markdown.core.ui").update(bufnr, winid, "FzfLua", true)
+end
+
 function Previewer.buffer_or_file:do_syntax(entry)
   if not self.preview_bufnr then return end
   if not entry or not entry.path then return end
@@ -829,6 +848,8 @@ function Previewer.buffer_or_file:do_syntax(entry)
             end
             if not ts_enabled or not ts_success then
               pcall(function() vim.bo[bufnr].syntax = ft end)
+            elseif ts_enabled and ts_success then
+              self:update_render_markdown(ft)
             end
           end)()
         end

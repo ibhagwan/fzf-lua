@@ -795,6 +795,8 @@ require'fzf-lua'.setup {
       -- Custom filetype autocmds aren't triggered on
       -- the preview buffer, define them here instead
       -- ext_ft_override = { ["ksql"] = "sql", ... },
+      -- render_markdown.nvim integration, enabled by default for markdown
+      render_markdown = { enable = true, filetypes = { ["markdown"] = true } },
     },
     -- Code Action previewers, default is "codeaction" (set via `lsp.code_actions.previewer`)
     -- "codeaction_native" uses fzf's native previewer, recommended when combined with git-delta

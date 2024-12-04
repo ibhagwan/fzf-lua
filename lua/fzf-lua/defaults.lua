@@ -199,6 +199,7 @@ M.defaults                      = {
       treesitter        = { enable = true, disable = {} },
       ueberzug_scaler   = "cover",
       title_fnamemodify = function(s) return path.tail(s) end,
+      render_markdown   = { enable = true, filetypes = { ["markdown"] = true } },
       _ctor             = previewers.builtin.buffer_or_file,
     },
     codeaction = {
