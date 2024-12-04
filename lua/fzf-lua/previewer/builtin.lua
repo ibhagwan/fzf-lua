@@ -29,9 +29,9 @@ function Previewer.base:new(o, opts, fzf_win)
   self.title = self.win.winopts.preview.title
   self.title_pos = self.win.winopts.preview.title_pos
   self.title_fnamemodify = o.title_fnamemodify
-  self.render_markdown = o.render_markdown
-  self.render_markdown.filetypes = type(o.render_markdown.filetypes) == "table" and
-      o.render_markdown.filetypes or {}
+  self.render_markdown = o.render_markdown or {}
+  self.render_markdown.filetypes = type(self.render_markdown.filetypes) == "table" and
+      self.render_markdown.filetypes or {}
   self.winopts = self.win.winopts.preview.winopts
   self.syntax = default(o.syntax, true)
   self.syntax_delay = tonumber(default(o.syntax_delay, 0))
