@@ -623,9 +623,11 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     entry.path = path.relative_to(vim.api.nvim_buf_get_name(entry.bufnr), uv.cwd())
   end
   if not self:should_load_buffer(entry) then
-    -- same file/buffer as previous entry
-    -- no need to reload content
-    -- call post to set cursor location
+    -- same file/buffer as previous entry no need to reload content
+    -- call post to set cursor location, clear cached buffer position
+    if type(self.cached_bufnrs[tostring(self.preview_bufnr)]) == "table" then
+      self.cached_bufnrs[tostring(self.preview_bufnr)] = true
+    end
     self:preview_buf_post(entry)
     return
   elseif self:populate_from_cache(entry) then
