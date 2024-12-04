@@ -396,19 +396,7 @@ function Previewer.base:scroll(direction)
   -- 'cursorline' is effectively our match highlight. Once the
   -- user scrolls, the highlight is no longer relevant (#462).
   -- Conditionally toggle 'cursorline' based on cursor position
-  if self.orig_pos and self.winopts.cursorline then
-    local wininfo = utils.getwininfo(preview_winid)
-    if wininfo and
-        self.orig_pos[1] >= wininfo.topline and
-        self.orig_pos[1] <= wininfo.botline then
-      -- reset cursor pos even when it's already there, no bigggie
-      -- local curpos = vim.api.nvim_win_get_cursor(preview_winid)
-      vim.api.nvim_win_set_cursor(preview_winid, self.orig_pos)
-      vim.wo[preview_winid].cursorline = true
-    else
-      vim.wo[preview_winid].cursorline = false
-    end
-  end
+  self:maybe_set_cursorline(preview_winid, self.orig_pos)
   -- HACK: Hijack cached bufnr value as last scroll position
   if self.cached_bufnrs[tostring(self.preview_bufnr)] then
     if direction == "reset" then
@@ -624,8 +612,10 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   end
   if not self:should_load_buffer(entry) then
     -- same file/buffer as previous entry no need to reload content
-    -- call post to set cursor location, clear cached buffer position
-    if type(self.cached_bufnrs[tostring(self.preview_bufnr)]) == "table" then
+    -- call post to set cursor location, if line|col changed clear cached buffer position
+    if type(self.cached_bufnrs[tostring(self.preview_bufnr)]) == "table"
+        and (self.orig_pos[1] ~= entry.line or self.orig_pos[2] ~= entry.col - 1)
+    then
       self.cached_bufnrs[tostring(self.preview_bufnr)] = true
     end
     self:preview_buf_post(entry)
@@ -846,6 +836,22 @@ function Previewer.buffer_or_file:do_syntax(entry)
   end
 end
 
+function Previewer.buffer_or_file:maybe_set_cursorline(win, pos)
+  if not self.winopts.cursorline then return end
+  local wininfo = utils.getwininfo(win)
+  if wininfo
+      and pos[1] >= wininfo.topline
+      and pos[1] <= wininfo.botline
+  then
+    -- reset cursor pos even when it's already there, no bigggie
+    -- local curpos = vim.api.nvim_win_get_cursor(win)
+    vim.api.nvim_win_set_cursor(win, pos)
+    vim.wo[win].cursorline = true
+  else
+    vim.wo[win].cursorline = false
+  end
+end
+
 function Previewer.buffer_or_file:set_cursor_hl(entry)
   local mgrep = require("fzf-lua.providers.grep")
   local regex = self.opts.__ACT_TO == mgrep.grep and self.opts._last_query
@@ -861,12 +867,13 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
     if not lnum or lnum < 1 then
       vim.wo.cursorline = false
       self.orig_pos = { 1, 0 }
-      api.nvim_win_set_cursor(0, cached_pos or self.orig_pos)
+      api.nvim_win_set_cursor(self.win.preview_winid, cached_pos or self.orig_pos)
       return
     end
 
     self.orig_pos = { lnum, math.max(0, col - 1) }
-    api.nvim_win_set_cursor(0, cached_pos or self.orig_pos)
+    api.nvim_win_set_cursor(self.win.preview_winid, cached_pos or self.orig_pos)
+    self:maybe_set_cursorline(self.win.preview_winid, self.orig_pos)
     fn.clearmatches()
 
     -- If regex is available (grep/lgrep), match on current line
