@@ -721,9 +721,11 @@ M.build_fzf_cli = function(opts, fzf_win)
         table.insert(cli_args, v)
       end
     end
-  elseif opts._is_fzf_tmux == 2 then
+  elseif opts._is_fzf_tmux == 2  and opts.__FZF_VERSION then
     -- "--height" specified after "--tmux" will take priority and cause
     -- the job to spawn in the background without a visible interface
+    -- NOTE: this doesn't happen with skim and will cause issues if
+    -- "$SKIM_DEFAULT_OPTIONS" will contain `--height`
     opts.fzf_opts["--height"] = nil
   end
   for k, v in pairs(opts.fzf_opts) do
