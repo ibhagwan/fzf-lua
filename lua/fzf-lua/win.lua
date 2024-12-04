@@ -31,7 +31,7 @@ local _preview_keymaps = {
   ["preview-page-down"]      = { module = "win", fnc = "preview_scroll('page-down')" },
   ["preview-half-page-up"]   = { module = "win", fnc = "preview_scroll('half-page-up')" },
   ["preview-half-page-down"] = { module = "win", fnc = "preview_scroll('half-page-down')" },
-  ["preview-page-reset"]     = { module = "win", fnc = "preview_scroll('reset')" },
+  ["preview-reset"]          = { module = "win", fnc = "preview_scroll('reset')" },
   ["preview-top"]            = { module = "win", fnc = "preview_scroll('top')" },
   ["preview-bottom"]         = { module = "win", fnc = "preview_scroll('bottom')" },
 }
@@ -862,9 +862,9 @@ function FzfWin:create()
   return self.fzf_bufnr
 end
 
-function FzfWin:close_preview()
+function FzfWin:close_preview(do_not_clear_cache)
   if self._previewer and self._previewer.close then
-    self._previewer:close()
+    self._previewer:close(do_not_clear_cache)
   end
   if self.border_winid and vim.api.nvim_win_is_valid(self.border_winid) then
     utils.nvim_win_close(self.border_winid, true)
@@ -1243,7 +1243,7 @@ function FzfWin.toggle_preview()
     utils.feed_keys_termcodes(self._fzf_toggle_prev_bind)
   end
   if self.preview_hidden and self:validate_preview() then
-    self:close_preview()
+    self:close_preview(true)
     self:redraw_main()
   elseif not self.preview_hidden then
     self:redraw_main()

@@ -83,10 +83,12 @@ function Previewer.base:new(o, opts, fzf_win)
   return self
 end
 
-function Previewer.base:close()
+function Previewer.base:close(do_not_clear_cache)
   self:restore_winopts()
   self:clear_preview_buf()
-  self:clear_cached_buffers()
+  if not do_not_clear_cache then
+    self:clear_cached_buffers()
+  end
   self.winopts_orig = {}
 end
 
@@ -407,6 +409,14 @@ function Previewer.base:scroll(direction)
       vim.wo[preview_winid].cursorline = false
     end
   end
+  -- HACK: Hijack cached bufnr value as last scroll position
+  if self.cached_bufnrs[tostring(self.preview_bufnr)] then
+    if direction == "reset" then
+      self.cached_bufnrs[tostring(self.preview_bufnr)] = true
+    else
+      self.cached_bufnrs[tostring(self.preview_bufnr)] = vim.api.nvim_win_get_cursor(preview_winid)
+    end
+  end
   self:update_render_markdown()
   self.win:update_scrollbar()
 end
@@ -418,12 +428,9 @@ function Previewer.buffer_or_file:new(o, opts, fzf_win)
   return self
 end
 
-function Previewer.buffer_or_file:close()
-  self:restore_winopts()
-  self:clear_preview_buf()
-  self:clear_cached_buffers()
+function Previewer.buffer_or_file:close(do_not_clear_cache)
+  Previewer.base.close(self, do_not_clear_cache)
   self:stop_ueberzug()
-  self.winopts_orig = {}
 end
 
 function Previewer.buffer_or_file:parse_entry(entry_str)
@@ -723,40 +730,6 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   end
 end
 
--- is treesitter available?
-local __has_ts, __ts_configs, __ts_parsers
-
--- Attach ts highlighter, neovim v0.7/0.8
-local ts_attach_08 = function(bufnr, ft)
-  if not __has_ts then
-    __has_ts, _ = pcall(require, "nvim-treesitter")
-    if __has_ts then
-      _, __ts_configs = pcall(require, "nvim-treesitter.configs")
-      _, __ts_parsers = pcall(require, "nvim-treesitter.parsers")
-    end
-  end
-
-  if not __has_ts or not ft or ft == "" then
-    return false
-  end
-
-  local lang = __ts_parsers.ft_to_lang(ft)
-  if not __ts_configs.is_enabled("highlight", lang, bufnr) then
-    return false
-  end
-
-  local config = __ts_configs.get_module "highlight"
-  vim.treesitter.highlighter.new(__ts_parsers.get_parser(bufnr, lang))
-  local is_table = type(config.additional_vim_regex_highlighting) == "table"
-  if
-      config.additional_vim_regex_highlighting
-      and (not is_table or utils.tbl_contains(config.additional_vim_regex_highlighting, lang))
-  then
-    vim.bo[bufnr].syntax = ft
-  end
-  return true
-end
-
 -- Attach ts highlighter, neovim >= v0.9
 local ts_attach = function(bufnr, ft)
   local lang = vim.treesitter.language.get_lang(ft)
@@ -813,12 +786,8 @@ function Previewer.buffer_or_file:do_syntax(entry)
         ))
       end
       if syntax_limit_reached == 0 then
-        -- 'vim.filetype' was added with v0.7 but panics with the below
-        -- limit treesitter manual attachment to 0.8 instead (0.7.2 also errs)
-        -- Error executing vim.schedule lua callback:
-        --   vim/filetype.lua:0: attempt to call method 'gsub' (a nil value)
-        local fallback = not utils.__HAS_NVIM_08
-        if utils.__HAS_NVIM_08 then
+        local fallback = not utils.__HAS_NVIM_09
+        if utils.__HAS_NVIM_09 then
           fallback = (function()
             local ft = entry.filetype
                 or self.ext_ft_override and self.ext_ft_override[path.extension(entry.path)]
@@ -838,17 +807,10 @@ function Previewer.buffer_or_file:do_syntax(entry)
               end
               return true
             end)()
-            local ts_success
-            if ts_enabled then
-              if utils.__HAS_NVIM_09 then
-                ts_success = ts_attach(bufnr, ft)
-              else
-                ts_success = ts_attach_08(bufnr, ft)
-              end
-            end
-            if not ts_enabled or not ts_success then
+            local ts_success = ts_enabled and ts_attach(bufnr, ft)
+            if not ts_success then
               pcall(function() vim.bo[bufnr].syntax = ft end)
-            elseif ts_enabled and ts_success then
+            else
               self:update_render_markdown(ft)
             end
           end)()
@@ -891,16 +853,18 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   end
 
   pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
+    local cached_pos = self.cached_bufnrs[tostring(self.preview_bufnr)]
+    if type(cached_pos) ~= "table" then cached_pos = nil end
     local lnum, col = tonumber(entry.line), tonumber(entry.col) or 0
     if not lnum or lnum < 1 then
       vim.wo.cursorline = false
       self.orig_pos = { 1, 0 }
-      api.nvim_win_set_cursor(0, self.orig_pos)
+      api.nvim_win_set_cursor(0, cached_pos or self.orig_pos)
       return
     end
 
     self.orig_pos = { lnum, math.max(0, col - 1) }
-    api.nvim_win_set_cursor(0, self.orig_pos)
+    api.nvim_win_set_cursor(0, cached_pos or self.orig_pos)
     fn.clearmatches()
 
     -- If regex is available (grep/lgrep), match on current line
