@@ -215,6 +215,10 @@ function M.regex_to_magic(str)
   return [[\v]] .. str:gsub("[=&<>]", function(x) return [[\]] .. x end)
 end
 
+function M.ctag_to_magic(str)
+  return [[\v]] .. str:gsub("[=&@<>{%(%)%.%[]", function(x) return [[\]] .. x end)
+end
+
 function M.sk_escape(str)
   if not str then return str end
   return str:gsub('["`]', function(x)

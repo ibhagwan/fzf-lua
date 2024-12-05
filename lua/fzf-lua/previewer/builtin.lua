@@ -865,6 +865,11 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
     regex = require("fzf-lua.make_entry").glob_parse(regex, self.opts)
   end
 
+  -- If called from tags previewer, can happen when using ctags cmd
+  -- "ctags -R --c++-kinds=+p --fields=+iaS --extras=+q --excmd=combine"
+  regex = regex and utils.regex_to_magic(regex)
+      or entry.ctag and utils.ctag_to_magic(entry.ctag)
+
   pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
     local cached_pos = self.cached_bufnrs[tostring(self.preview_bufnr)]
     if type(cached_pos) ~= "table" then cached_pos = nil end
@@ -885,7 +890,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
     local regex_match_len = 0
     if regex and self.win.hls.search then
       -- vim.regex is always magic, see `:help vim.regex`
-      local ok, reg = pcall(vim.regex, utils.regex_to_magic(regex))
+      local ok, reg = pcall(vim.regex, regex)
       if ok then
         _, regex_match_len = reg:match_line(self.preview_bufnr, lnum - 1, math.max(1, col) - 1)
         regex_match_len = tonumber(regex_match_len) or 0
