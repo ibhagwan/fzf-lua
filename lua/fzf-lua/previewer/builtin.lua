@@ -739,15 +739,20 @@ end
 function Previewer.base:update_render_markdown(ft)
   local bufnr, winid = self.preview_bufnr, self.win.preview_winid
   ft = ft or vim.bo[bufnr].ft
-  if not ft then return end
-  if not package.loaded["render-markdown"]
+  if not ft
       or not self.render_markdown.enable
       or not self.render_markdown.filetypes[ft]
   then
     return
   end
   vim.bo[bufnr].ft = ft
-  require("render-markdown.core.ui").update(bufnr, winid, "FzfLua", true)
+  if package.loaded["render-markdown"] then
+    require("render-markdown.core.ui").update(bufnr, winid, "FzfLua", true)
+  elseif package.loaded["markview"] then
+    local mv = require("markview").commands;
+    mv.attach(bufnr)
+    mv.redraw(bufnr)
+  end
 end
 
 function Previewer.buffer_or_file:do_syntax(entry)
