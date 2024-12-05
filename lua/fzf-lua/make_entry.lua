@@ -441,7 +441,7 @@ M.tag = function(x, opts)
   local line, tag = text:match("(%d-);?(/.*/)")
   if not tag then
     -- lines with a tag located solely by line number contain nothing but the
-    -- number at this point
+    -- number at this point (e.g. using "ctags -R --excmd=number")
     line = text:match("%d+")
   end
   line = line and #line > 0 and tonumber(line)
