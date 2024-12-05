@@ -1131,11 +1131,17 @@ function Previewer.tags:set_cursor_hl(entry)
   pcall(api.nvim_win_call, self.win.preview_winid, function()
     -- start searching at line 1 in case we
     -- didn't reload the buffer (same file)
-    api.nvim_win_set_cursor(0, { 1, 0 })
-    fn.clearmatches()
-    fn.search(entry.ctag, "W")
-    if self.win.hls.search then
-      fn.matchadd(self.win.hls.search, entry.ctag)
+    if not entry.line or entry.line == 0 then
+      api.nvim_win_set_cursor(0, { 1, 0 })
+      fn.clearmatches()
+      fn.search(entry.ctag, "W")
+      if self.win.hls.search then
+        fn.matchadd(self.win.hls.search, entry.ctag)
+      end
+    else
+      -- the entry's line is assumed to be correct,
+      -- allowing the search to be skipped
+      api.nvim_win_set_cursor(0, { entry.line, 0 })
     end
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()

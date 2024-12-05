@@ -439,6 +439,11 @@ M.tag = function(x, opts)
   -- from rg/grep output when using `tags_grep_xxx`
   local align = utils.has_ansi_coloring(name) and 47 or 30
   local line, tag = text:match("(%d-);?(/.*/)")
+  if not tag then
+    -- lines with a tag located solely by line number contain nothing but the
+    -- number at this point
+    line = text:match("%d+")
+  end
   line = line and #line > 0 and tonumber(line)
   return string.format("%-" .. tostring(align) .. "s%s%s%s: %s",
     name,
