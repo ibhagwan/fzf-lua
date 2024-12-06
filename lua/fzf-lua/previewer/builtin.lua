@@ -748,12 +748,9 @@ function Previewer.base:update_render_markdown()
   end
   if package.loaded["render-markdown"] then
     require("render-markdown.core.ui").update(bufnr, winid, "FzfLua", true)
-    -- Holding off markview support until issues are ironed out
-    -- https://github.com/OXY2DEV/markview.nvim/issues/216
-    -- elseif package.loaded["markview"] then
-    --   local mv = require("markview").commands;
-    --   mv.clear(bufnr)
-    --   mv.redraw(bufnr)
+  elseif package.loaded["markview"] then
+    local cmds = package.loaded["markview"].commands
+    if cmds and cmds.redraw then cmds.attach(bufnr, true) end
   end
 end
 
