@@ -8,6 +8,61 @@ local uv = vim.uv or vim.loop
 local api = vim.api
 local fn = vim.fn
 
+
+local TSContext = {}
+
+function TSContext.setup(opts)
+  if TSContext._setup then return true end
+  if not package.loaded["treesitter-context"] then
+    return false
+  end
+  -- Temporarily set "zindex" higher than fzf-lua
+  local config = require("treesitter-context.config")
+  TSContext._config = utils.tbl_deep_clone(config)
+  config.multiwindow = true
+  config.zindex = opts.zindex + 20
+  TSContext._winids = {}
+  TSContext._setup = true
+  return true
+end
+
+function TSContext.deregister()
+  if not TSContext._setup then return end
+  for winid, _ in pairs(TSContext._winids) do
+    TSContext.close(winid)
+  end
+  local config = require("treesitter-context.config")
+  config.multiwindow = TSContext._config.multiwindow
+  config.zindex = TSContext._config.zindex
+  TSContext._config = nil
+  TSContext._winids = nil
+  TSContext._setup = nil
+end
+
+---@param winid number
+function TSContext.close(winid)
+  if not TSContext._setup then return end
+  require("treesitter-context.render").close(tonumber(winid))
+end
+
+---@param bufnr number
+---@param winid number
+---@param opts table
+function TSContext.update(bufnr, winid, opts)
+  if not TSContext.setup(opts) then return end
+  -- excerpt from nvim-treesitter-context `update_single_context`
+  require("treesitter-context.render").close_leaked_contexts()
+  local context_ranges, context_lines = require("treesitter-context.context").get(bufnr, winid)
+  if not context_ranges or #context_ranges == 0 then
+    require("treesitter-context.render").close(winid)
+    TSContext._winids[tostring(winid)] = nil
+  else
+    assert(context_lines)
+    require("treesitter-context.render").open(bufnr, winid, context_ranges, context_lines)
+    TSContext._winids[tostring(winid)] = bufnr
+  end
+end
+
 local Previewer = {}
 
 Previewer.base = Object:extend()
@@ -84,6 +139,7 @@ function Previewer.base:new(o, opts, fzf_win)
 end
 
 function Previewer.base:close(do_not_clear_cache)
+  TSContext.deregister()
   self:restore_winopts()
   self:clear_preview_buf()
   if not do_not_clear_cache then
@@ -405,6 +461,7 @@ function Previewer.base:scroll(direction)
       self.cached_bufnrs[tostring(self.preview_bufnr)] = vim.api.nvim_win_get_cursor(preview_winid)
     end
   end
+  self:update_ts_context()
   self:update_render_markdown()
   self.win:update_scrollbar()
 end
@@ -737,6 +794,14 @@ local ts_attach = function(bufnr, ft)
   end
 end
 
+function Previewer.base:update_ts_context()
+  if self.treesitter.enable and self.treesitter.context then
+    TSContext.update(self.preview_bufnr, self.win.preview_winid, {
+      zindex = self.win.winopts.zindex
+    })
+  end
+end
+
 function Previewer.base:update_render_markdown()
   local bufnr, winid = self.preview_bufnr, self.win.preview_winid
   local ft = vim.b[bufnr]._ft
@@ -812,6 +877,11 @@ function Previewer.buffer_or_file:do_syntax(entry)
               -- of use in the future?
               vim.b[bufnr]._ft = ft
               self:update_render_markdown()
+              -- TODO: figure out why this doesn't work on the first call without without
+              -- `vim.schedule` on a new buffer even though we're not inside `vim.fastevent`
+              vim.schedule(function()
+                self:update_ts_context()
+              end)
             end
           end)()
         end
@@ -845,7 +915,6 @@ function Previewer.buffer_or_file:do_syntax(entry)
 end
 
 function Previewer.buffer_or_file:maybe_set_cursorline(win, pos)
-  if not self.winopts.cursorline then return end
   local wininfo = utils.getwininfo(win)
   if wininfo
       and pos[1] >= wininfo.topline
@@ -854,7 +923,7 @@ function Previewer.buffer_or_file:maybe_set_cursorline(win, pos)
     -- reset cursor pos even when it's already there, no bigggie
     -- local curpos = vim.api.nvim_win_get_cursor(win)
     vim.api.nvim_win_set_cursor(win, pos)
-    vim.wo[win].cursorline = true
+    vim.wo[win].cursorline = self.winopts.cursorline
   else
     vim.wo[win].cursorline = false
   end
