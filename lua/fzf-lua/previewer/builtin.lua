@@ -736,22 +736,23 @@ local ts_attach = function(bufnr, ft)
   end
 end
 
-function Previewer.base:update_render_markdown(ft)
+function Previewer.base:update_render_markdown()
   local bufnr, winid = self.preview_bufnr, self.win.preview_winid
-  ft = ft or vim.bo[bufnr].ft
+  local ft = vim.b[bufnr]._ft
   if not ft
       or not self.render_markdown.enable
       or not self.render_markdown.filetypes[ft]
   then
     return
   end
-  vim.bo[bufnr].ft = ft
   if package.loaded["render-markdown"] then
     require("render-markdown.core.ui").update(bufnr, winid, "FzfLua", true)
-  elseif package.loaded["markview"] then
-    local mv = require("markview").commands;
-    mv.attach(bufnr)
-    mv.redraw(bufnr)
+    -- Holding off markview support until issues are ironed out
+    -- https://github.com/OXY2DEV/markview.nvim/issues/216
+    -- elseif package.loaded["markview"] then
+    --   local mv = require("markview").commands;
+    --   mv.clear(bufnr)
+    --   mv.redraw(bufnr)
   end
 end
 
@@ -808,7 +809,11 @@ function Previewer.buffer_or_file:do_syntax(entry)
             if not ts_success then
               pcall(function() vim.bo[bufnr].syntax = ft end)
             else
-              self:update_render_markdown(ft)
+              -- Use buf local var as setting ft might have unintended consequences
+              -- currently only being used in `update_render_markdown` but might be
+              -- of use in the future?
+              vim.b[bufnr]._ft = ft
+              self:update_render_markdown()
             end
           end)()
         end
