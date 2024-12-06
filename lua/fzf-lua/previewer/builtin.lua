@@ -614,7 +614,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- same file/buffer as previous entry no need to reload content
     -- call post to set cursor location, if line|col changed clear cached buffer position
     if type(self.cached_bufnrs[tostring(self.preview_bufnr)]) == "table"
-        and (self.orig_pos[1] ~= entry.line or self.orig_pos[2] ~= entry.col - 1)
+        and ((entry.line > 0 and entry.line ~= self.orig_pos[1])
+          or (entry.col > 0 and entry.col - 1 ~= self.orig_pos[2]))
     then
       self.cached_bufnrs[tostring(self.preview_bufnr)] = true
     end
