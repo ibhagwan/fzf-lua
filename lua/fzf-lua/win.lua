@@ -48,6 +48,8 @@ function TSInjector.deregister()
 end
 
 function TSInjector.clear_cache(buf, noassert)
+  -- If called from fzf-tmux buf will be `nil` (#1556)
+  if not buf then return end
   TSInjector.cache[buf] = nil
   assert(noassert or utils.tbl_isempty(TSInjector.cache))
 end
