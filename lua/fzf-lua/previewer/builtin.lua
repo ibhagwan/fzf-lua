@@ -16,11 +16,19 @@ function TSContext.setup(opts)
   if not package.loaded["treesitter-context"] then
     return false
   end
-  -- Temporarily set "zindex" higher than fzf-lua
+  -- Our temp nvim-treesitter-context config
+  TSContext._setup_opts = {
+    multiwindow = { true },
+    max_lines = { 1 },
+    trim_scope = { "inner" },
+    zindex = { opts.zindex + 20 }
+  }
   local config = require("treesitter-context.config")
   TSContext._config = utils.tbl_deep_clone(config)
-  config.multiwindow = true
-  config.zindex = opts.zindex + 20
+  for k, v in pairs(TSContext._setup_opts) do
+    v[2] = config[k]
+    config[k] = v[1]
+  end
   TSContext._winids = {}
   TSContext._setup = true
   return true
@@ -32,8 +40,9 @@ function TSContext.deregister()
     TSContext.close(winid)
   end
   local config = require("treesitter-context.config")
-  config.multiwindow = TSContext._config.multiwindow
-  config.zindex = TSContext._config.zindex
+  for k, v in pairs(TSContext._setup_opts) do
+    config[k] = v[2]
+  end
   TSContext._config = nil
   TSContext._winids = nil
   TSContext._setup = nil
@@ -795,11 +804,16 @@ local ts_attach = function(bufnr, ft)
 end
 
 function Previewer.base:update_ts_context()
-  if self.treesitter.enable and self.treesitter.context then
-    TSContext.update(self.preview_bufnr, self.win.preview_winid, {
-      zindex = self.win.winopts.zindex
-    })
+  if not self.win
+      or not self.win:validate_preview()
+      or not self.treesitter.enable
+      or not self.treesitter.context
+  then
+    return
   end
+  TSContext.update(self.preview_bufnr, self.win.preview_winid, {
+    zindex = self.win.winopts.zindex
+  })
 end
 
 function Previewer.base:update_render_markdown()
@@ -877,11 +891,13 @@ function Previewer.buffer_or_file:do_syntax(entry)
               -- of use in the future?
               vim.b[bufnr]._ft = ft
               self:update_render_markdown()
-              -- TODO: figure out why this doesn't work on the first call without without
-              -- `vim.schedule` on a new buffer even though we're not inside `vim.fastevent`
-              vim.schedule(function()
-                self:update_ts_context()
-              end)
+              -- HACK: but the entire nvim-treesitter-context is essentially a hack
+              -- https://github.com/ibhagwan/fzf-lua/issues/1552#issuecomment-2525456813
+              for _, t in ipairs({ 0, 10, 100, 200 }) do
+                vim.defer_fn(function()
+                  self:update_ts_context()
+                end, t)
+              end
             end
           end)()
         end
