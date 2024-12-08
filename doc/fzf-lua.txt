@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2024 December 07
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2024 December 08
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -862,9 +862,9 @@ open an issue and I'll be more than happy to help.**
           -- previewer treesitter options:
           -- enable specific filetypes with: `{ enable = { "lua" } }
           -- exclude specific filetypes with: `{ disable = { "lua" } }
-          -- enable `nvim-treesitter-context` with `context = true`
+          -- disable `nvim-treesitter-context` with `context = false`
           -- disable fully with: `{ enable = false }`
-          treesitter      = { enable = true, context = false, disable = {} },
+          treesitter      = { enable = true, context = true, disable = {} },
           -- By default, the main window dimensions are calculated as if the
           -- preview is visible, when hidden the main window will extend to
           -- full size. Set the below to "extend" to prevent the main window
