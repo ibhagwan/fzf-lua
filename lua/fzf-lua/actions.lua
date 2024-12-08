@@ -337,7 +337,7 @@ M.file_switch = function(selected, opts)
     end
     return true
   end
-  local entry = path.entry_to_file(selected[1])
+  local entry = path.entry_to_file(selected[1], opts)
   if not entry.bufnr then
     -- Search for the current entry's filepath in buffer list
     local fullpath = entry.path
