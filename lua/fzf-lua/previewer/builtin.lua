@@ -893,7 +893,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
               self:update_render_markdown()
               -- HACK: but the entire nvim-treesitter-context is essentially a hack
               -- https://github.com/ibhagwan/fzf-lua/issues/1552#issuecomment-2525456813
-              for _, t in ipairs({ 0, 10, 100, 200 }) do
+              for _, t in ipairs({ 0, 20 }) do
                 vim.defer_fn(function()
                   self:update_ts_context()
                 end, t)

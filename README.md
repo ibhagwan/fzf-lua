@@ -767,9 +767,9 @@ require'fzf-lua'.setup {
       -- previewer treesitter options:
       -- enable specific filetypes with: `{ enable = { "lua" } }
       -- exclude specific filetypes with: `{ disable = { "lua" } }
-      -- enable `nvim-treesitter-context` with `context = true`
+      -- disable `nvim-treesitter-context` with `context = false`
       -- disable fully with: `{ enable = false }`
-      treesitter      = { enable = true, context = false, disable = {} },
+      treesitter      = { enable = true, context = true, disable = {} },
       -- By default, the main window dimensions are calculated as if the
       -- preview is visible, when hidden the main window will extend to
       -- full size. Set the below to "extend" to prevent the main window
