@@ -95,6 +95,7 @@ M.defaults                      = {
       ["<F4>"]       = "toggle-preview",
       ["<F5>"]       = "toggle-preview-ccw",
       ["<F6>"]       = "toggle-preview-cw",
+      ["<F7>"]       = "toggle-preview-ts-ctx",
       ["<S-Left>"]   = "preview-reset",
       ["<S-down>"]   = "preview-page-down",
       ["<S-up>"]     = "preview-page-up",

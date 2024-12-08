@@ -639,6 +639,7 @@ require'fzf-lua'.setup {
       -- Rotate preview clockwise/counter-clockwise
       ["<F5>"]        = "toggle-preview-ccw",
       ["<F6>"]        = "toggle-preview-cw",
+      ["<F7>"]        = "toggle-preview-ts-ctx",
       ["<S-Left>"]    = "preview-reset",
       ["<S-down>"]    = "preview-page-down",
       ["<S-up>"]      = "preview-page-up",

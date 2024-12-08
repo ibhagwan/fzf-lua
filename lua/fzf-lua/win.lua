@@ -107,6 +107,7 @@ local _preview_keymaps = {
   ["toggle-preview-wrap"]    = { module = "win", fnc = "toggle_preview_wrap()" },
   ["toggle-preview-cw"]      = { module = "win", fnc = "toggle_preview_cw(1)" },
   ["toggle-preview-ccw"]     = { module = "win", fnc = "toggle_preview_cw(-1)" },
+  ["toggle-preview-ts-ctx"]  = { module = "win", fnc = "toggle_preview_ts_ctx()" },
   ["preview-up"]             = { module = "win", fnc = "preview_scroll('line-up')" },
   ["preview-down"]           = { module = "win", fnc = "preview_scroll('line-down')" },
   ["preview-page-up"]        = { module = "win", fnc = "preview_scroll('page-up')" },
@@ -1421,6 +1422,16 @@ function FzfWin.toggle_preview_cw(direction)
   if newidx > #pos then newidx = 1 end
   self._preview_pos_force = pos[newidx]
   self:redraw()
+end
+
+function FzfWin.toggle_preview_ts_ctx()
+  if not _self then return end
+  local self = _self
+  if self:validate_preview()
+      and self._previewer
+      and self._previewer.toggle_ts_ctx then
+    self._previewer:toggle_ts_ctx()
+  end
 end
 
 function FzfWin.preview_scroll(direction)

@@ -46,27 +46,54 @@ function TSContext.deregister()
   TSContext._setup = nil
 end
 
+function TSContext.is_attached(winid)
+  if not TSContext._setup then return false end
+  return TSContext._winids[tostring(winid)] ~= nil
+end
+
 ---@param winid number
 function TSContext.close(winid)
   if not TSContext._setup then return end
   require("treesitter-context.render").close(tonumber(winid))
+  TSContext._winids[tostring(winid)] = nil
 end
 
----@param bufnr number
 ---@param winid number
+---@param bufnr number
+function TSContext.toggle(winid, bufnr)
+  if not TSContext._setup then return end
+  if TSContext.is_attached(winid) then
+    TSContext.close(winid)
+  else
+    TSContext.update(winid, bufnr)
+  end
+end
+
+---@param winid number
+---@param bufnr number
 ---@param opts table
-function TSContext.update(bufnr, winid, opts)
+function TSContext.update(winid, bufnr, opts)
   if not TSContext.setup(opts) then return end
   -- excerpt from nvim-treesitter-context `update_single_context`
   require("treesitter-context.render").close_leaked_contexts()
   local context_ranges, context_lines = require("treesitter-context.context").get(bufnr, winid)
   if not context_ranges or #context_ranges == 0 then
-    require("treesitter-context.render").close(winid)
-    TSContext._winids[tostring(winid)] = nil
+    TSContext.close(winid)
   else
     assert(context_lines)
-    require("treesitter-context.render").open(bufnr, winid, context_ranges, context_lines)
-    TSContext._winids[tostring(winid)] = bufnr
+    local function open()
+      require("treesitter-context.render").open(bufnr, winid, context_ranges, context_lines)
+      TSContext._winids[tostring(winid)] = bufnr
+    end
+    if TSContext.is_attached(winid) then
+      open()
+    else
+      -- HACK: but the entire nvim-treesitter-context is essentially a hack
+      -- https://github.com/ibhagwan/fzf-lua/issues/1552#issuecomment-2525456813
+      for _, t in ipairs({ 0, 20 }) do
+        vim.defer_fn(function() open() end, t)
+      end
+    end
   end
 end
 
@@ -473,6 +500,19 @@ function Previewer.base:scroll(direction)
   self.win:update_scrollbar()
 end
 
+function Previewer.base:toggle_ts_ctx()
+  local preview_bufnr, preview_winid = self.preview_bufnr, self.win.preview_winid
+  if preview_winid < 0 or not api.nvim_win_is_valid(preview_winid) then return end
+  if self.treesitter.context then
+    self.treesitter._context = self.treesitter.context
+    self.treesitter.context = nil
+  else
+    self.treesitter.context = self.treesitter._context or true
+    self.treesitter._context = nil
+  end
+  TSContext.toggle(preview_winid, preview_bufnr)
+end
+
 Previewer.buffer_or_file = Previewer.base:extend()
 
 function Previewer.buffer_or_file:new(o, opts, fzf_win)
@@ -809,7 +849,7 @@ function Previewer.base:update_ts_context()
   then
     return
   end
-  TSContext.update(self.preview_bufnr, self.win.preview_winid, vim.tbl_extend("force",
+  TSContext.update(self.win.preview_winid, self.preview_bufnr, vim.tbl_extend("force",
     type(self.treesitter.context) == "table" and self.treesitter.context or {}, {
       -- `zindex` and `multiwindow` must be set regardless of user options
       multiwindow = true,
@@ -892,13 +932,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
               -- of use in the future?
               vim.b[bufnr]._ft = ft
               self:update_render_markdown()
-              -- HACK: but the entire nvim-treesitter-context is essentially a hack
-              -- https://github.com/ibhagwan/fzf-lua/issues/1552#issuecomment-2525456813
-              for _, t in ipairs({ 0, 20 }) do
-                vim.defer_fn(function()
-                  self:update_ts_context()
-                end, t)
-              end
+              self:update_ts_context()
             end
           end)()
         end
