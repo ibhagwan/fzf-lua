@@ -17,12 +17,10 @@ function TSContext.setup(opts)
     return false
   end
   -- Our temp nvim-treesitter-context config
-  TSContext._setup_opts = {
-    multiwindow = { true },
-    max_lines = { 1 },
-    trim_scope = { "inner" },
-    zindex = { opts.zindex + 20 }
-  }
+  TSContext._setup_opts = {}
+  for k, v in pairs(opts) do
+    TSContext._setup_opts[k] = { v }
+  end
   local config = require("treesitter-context.config")
   TSContext._config = utils.tbl_deep_clone(config)
   for k, v in pairs(TSContext._setup_opts) do
@@ -811,9 +809,12 @@ function Previewer.base:update_ts_context()
   then
     return
   end
-  TSContext.update(self.preview_bufnr, self.win.preview_winid, {
-    zindex = self.win.winopts.zindex
-  })
+  TSContext.update(self.preview_bufnr, self.win.preview_winid, vim.tbl_extend("force",
+    type(self.treesitter.context) == "table" and self.treesitter.context or {}, {
+      -- `zindex` and `multiwindow` must be set regardless of user options
+      multiwindow = true,
+      zindex = self.win.winopts.zindex + 20
+    }))
 end
 
 function Previewer.base:update_render_markdown()

@@ -197,7 +197,13 @@ M.defaults                      = {
       syntax_limit_l    = 0,
       syntax_limit_b    = 1024 * 1024,      -- 1MB
       limit_b           = 1024 * 1024 * 10, -- 10MB
-      treesitter        = { enable = true, context = true, disable = {} },
+      treesitter        = {
+        enable = true,
+        disable = {},
+        -- nvim-treesitter-context config options
+        -- https://github.com/nvim-treesitter/nvim-treesitter-context
+        context = { max_lines = 1, trim_scope = "inner" }
+      },
       ueberzug_scaler   = "cover",
       title_fnamemodify = function(s) return path.tail(s) end,
       render_markdown   = { enable = true, filetypes = { ["markdown"] = true } },

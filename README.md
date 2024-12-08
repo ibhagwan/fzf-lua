@@ -123,6 +123,11 @@ at it. That, **and colorful file icons and git indicators!**.
   for git status previews
 - [nvim-dap](https://github.com/mfussenegger/nvim-dap) - for Debug Adapter
   Protocol (DAP) support
+- [nvim-treesitter-context](https://github.com/nvim-treesitter/nvim-treesitter-context) - for
+  viewing treesitter context within the previewer
+- [render-markdown.nvim](https://github.com/MeanderingProgrammer/render-markdown.nvim) or
+  [markview.nvim](https://github.com/OXY2DEV/markview.nvim) - for rendering markdown
+  files in the previewer
 
 Below are a few optional dependencies for viewing media files (which you need
 to configure in `previewer.builtin.extensions`):
@@ -769,7 +774,12 @@ require'fzf-lua'.setup {
       -- exclude specific filetypes with: `{ disable = { "lua" } }
       -- disable `nvim-treesitter-context` with `context = false`
       -- disable fully with: `{ enable = false }`
-      treesitter      = { enable = true, context = true, disable = {} },
+      treesitter      = {
+        enable = true,
+        disable = {},
+        -- nvim-treesitter-context config options
+        context = { max_lines = 1, trim_scope = "inner" }
+      },
       -- By default, the main window dimensions are calculated as if the
       -- preview is visible, when hidden the main window will extend to
       -- full size. Set the below to "extend" to prevent the main window
