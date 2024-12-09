@@ -48,7 +48,7 @@ end
 
 function TSContext.is_attached(winid)
   if not TSContext._setup then return false end
-  return TSContext._winids[tostring(winid)] ~= nil
+  return TSContext._winids[tostring(winid)]
 end
 
 ---@param winid number
@@ -85,7 +85,7 @@ function TSContext.update(winid, bufnr, opts)
       require("treesitter-context.render").open(bufnr, winid, context_ranges, context_lines)
       TSContext._winids[tostring(winid)] = bufnr
     end
-    if TSContext.is_attached(winid) then
+    if TSContext.is_attached(winid) == bufnr then
       open()
     else
       -- HACK: but the entire nvim-treesitter-context is essentially a hack
