@@ -67,6 +67,7 @@ return {
       true,
       ["ctrl-d"] = "preview-page-down",
       ["ctrl-u"] = "preview-page-up",
+      ["ctrl-q"] = "select-all+accept",
     },
   },
   actions    = {
