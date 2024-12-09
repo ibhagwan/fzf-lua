@@ -50,12 +50,13 @@ yours too, if you allow it.
 
 To quickly test this plugin without changing your configuration run (will run in it's own sandbox
 with the default keybinds below):
+> [!NOTE]
+> it's good practice to first
+> [read the script](https://github.com/ibhagwan/fzf-lua/blob/main/scripts/mini.sh)
+> before running `sh -c` directly from the web
 ```sh
 sh -c "$(curl -s https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/scripts/mini.sh)"
 ```
-> **Note:** it's good practice to first
-> [read the script](https://github.com/ibhagwan/fzf-lua/blob/main/scripts/mini.sh)
-> before running `sh -c` directly from the web
 
 | Key       | Command           | Key       | Command           |
 | ----------| ------------------| ----------| ------------------|
@@ -191,8 +192,9 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim)
   end
 }
 ```
-> **Note:** if you already have fzf installed you do not need to install `fzf`
-> or `fzf.vim`, however if you do not have it installed, **you only need** fzf
+> [!NOTE]
+> if you already have fzf installed you do not need to install `fzf` or
+> `fzf.vim`, however if you do not have it installed, **you only need** fzf
 > which can be installed with (fzf.vim is not a requirement nor conflict):
 > ```vim
 > Plug "junegunn/fzf", { "do": { -> fzf#install() } }
@@ -464,10 +466,11 @@ Conveniently, fzf-lua comes with a set of preconfigured profiles, notably:
 Use `:FzfLua profiles` to experiment with the different profiles, once you've found what
 you like and wish to make the profile persist, send a `string` argument at the first index
 of the table sent to the `setup` function:
+> [!NOTE]
+> `setup` can be called multiple times for profile "live" switching
 ```lua
 require('fzf-lua').setup({'fzf-native'})
 ```
-> **Note:** `setup` can be called multiple times for profile "live" switching
 
 You can also start with a profile as "baseline" and customize it, for example,
 telescope defaults with `bat` previewer:
@@ -500,6 +503,8 @@ vim.keymap.set({ "n", "v", "i" }, "<C-x><C-f>",
 ```
 
 Or with a custom command and preview:
+> [!NOTE]
+> only `complete_file` supports a previewer
 ```lua
 vim.keymap.set({ "i" }, "<C-x><C-f>",
   function()
@@ -509,7 +514,6 @@ vim.keymap.set({ "i" }, "<C-x><C-f>",
     })
   end, { silent = true, desc = "Fuzzy complete file" })
 ```
-> **Note:** only `complete_file` supports a previewer
 
 #### Custom Completion
 
