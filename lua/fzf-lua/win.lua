@@ -51,6 +51,7 @@ function TSInjector.clear_cache(buf, noassert)
   -- If called from fzf-tmux buf will be `nil` (#1556)
   if not buf then return end
   TSInjector.cache[buf] = nil
+  -- If called from `FzfWin.hide` cache will not be empty
   assert(noassert or utils.tbl_isempty(TSInjector.cache))
 end
 
@@ -123,20 +124,26 @@ local _preview_keymaps = {
 
 function FzfWin:setup_keybinds()
   if not self:validate() then return end
-  if not self.keymap or not self.keymap.builtin then return end
-  -- find the toggle_preview
-  if self.keymap.fzf then
-    for k, v in pairs(self.keymap.fzf) do
-      if v == "toggle-preview" then
-        self._fzf_toggle_prev_bind = utils.fzf_bind_to_neovim(k)
-      end
-    end
-  end
+  self.keymap = type(self.keymap) == "table" and self.keymap or {}
+  self.keymap.fzf = type(self.keymap.fzf) == "table" and self.keymap.fzf or {}
+  self.keymap.builtin = type(self.keymap.builtin) == "table" and self.keymap.builtin or {}
   local keymap_tbl = {
     ["hide"]              = { module = "win", fnc = "hide()" },
     ["toggle-help"]       = { module = "win", fnc = "toggle_help()" },
     ["toggle-fullscreen"] = { module = "win", fnc = "toggle_fullscreen()" },
   }
+  -- find the toggle_preview keybind, to be sent when using a split for the native
+  -- pseudo fzf preview window or when using native and treesitter is enabled
+  if self.winopts.split or not self.previewer_is_builtin and self.winopts.treesitter then
+    for k, v in pairs(self.keymap.fzf) do
+      if v == "toggle-preview" then
+        self._fzf_toggle_prev_bind = utils.fzf_bind_to_neovim(k)
+        keymap_tbl = vim.tbl_deep_extend("keep", keymap_tbl, {
+          ["toggle-preview"] = { module = "win", fnc = "toggle_preview()" },
+        })
+      end
+    end
+  end
   if self.previewer_is_builtin then
     -- These maps are only valid for the builtin previewer
     keymap_tbl = vim.tbl_deep_extend("keep", keymap_tbl, _preview_keymaps)
@@ -499,6 +506,8 @@ function FzfWin:new(o)
   if _self and not _self:hidden() then
     -- utils.warn("Please close fzf-lua before starting a new instance")
     _self._reuse = true
+    -- refersh treesitter settings as new picker might have it disabled
+    _self._o.winopts.treesitter = o.winopts.treesitter
     return _self
   elseif _self and _self:hidden() then
     -- Clear the hidden buffers
@@ -852,27 +861,67 @@ function FzfWin:set_winleave_autocmd()
   self:_nvim_create_autocmd("WinLeave", self.win_leave, [[require('fzf-lua.win').win_leave()]])
 end
 
+function FzfWin:treesitter_detach(buf, noassert)
+  TSInjector.clear_cache(buf, noassert)
+  TSInjector.deregister()
+end
+
 function FzfWin:treesitter_attach()
   if not utils.__HAS_NVIM_09 then return end
   if not self._o.winopts.treesitter then return end
+  -- local utf8 = require("fzf-lua.lib.utf8")
   local function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
+  local _format = type(self._o._treesitter) == "string" and self._o._treesitter or nil
   vim.api.nvim_buf_attach(self.fzf_bufnr, false, {
-    on_lines = function(_, bufnr, _, first_changed, last_changed, last_updated, bc)
+    on_lines = function(_, bufnr)
       local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
       local regions = {}
       local empty_regions = {}
+      -- Adjust treesitter region based on the available main window width
+      -- otherwise the highlights may interfere with the fzf scrollbar or
+      -- the native fzf preview window
+      local min_col, max_col, trim_right = (function()
+        local min, max, tr = 0, nil, 4
+        if not self.preview_hidden
+            and (not self.previewer_is_builtin or self.winopts.split)
+        then
+          local win_width = vim.api.nvim_win_get_width(self.fzf_winid)
+          local layout = self:fzf_preview_layout_str()
+          local percent = layout:match("(%d+)%%") or 50
+          local prev_width = math.floor(win_width * percent / 100)
+          if layout:match("left") then
+            min = prev_width
+          elseif layout:match("right") then
+            max = win_width - prev_width
+          end
+        end
+        return min, max, tr
+      end)()
       for i, line in ipairs(lines) do
         (function()
           -- Lines with code can be of the following formats:
           -- file:line:col:text   (grep_xxx)
           -- file:line:text       (grep_project or missing "--column" flag)
           -- line:col:text        (grep_curbuf)
-          -- line:text            (blines)
-          local filepath, _lnum, text = line:match("(.-):?(%d+):(.+)$")
+          -- line<U+00A0>text     (lines|blines)
+          local filepath, _lnum, text = line:sub(min_col):match(_format or "(.-):?(%d+)[: ](.+)$")
           if not text or text == 0 then return end
 
-          filepath = trim(filepath)
-          local ft = #filepath == 0 and vim.bo[utils.CTX().bufnr].ft
+          text = text:gsub("^%d+:", "") -- remove col nr if exists
+          filepath = trim(filepath)     -- trim spaces
+
+          local ft_bufnr = (function()
+            -- blines|lines: U+00A0 (decimal: 160) follows the lnum
+            -- grep_curbuf: formats as line:col:text` thus `#filepath == 0`
+            if #filepath == 0 or string.byte(text, 1) == 160 then
+              if string.byte(text, 1) == 160 then text = text:sub(2) end -- remove A0+SPACE
+              if string.byte(text, 1) == 32 then text = text:sub(2) end  -- remove leading SPACE
+              local b = filepath:match("^%d+") or utils.CTX().bufnr
+              return vim.api.nvim_buf_is_valid(tonumber(b)) and b or nil
+            end
+          end)()
+
+          local ft = ft_bufnr and vim.bo[tonumber(ft_bufnr)].ft
               or vim.filetype.match({ filename = path.tail(filepath) })
           if not ft then return end
 
@@ -880,14 +929,20 @@ function FzfWin:treesitter_attach()
           local loaded = lang and utils.has_ts_parser(lang)
           if not loaded then return end
 
-          -- With the above line match text can start with "%d+:", remove it
-          text = text:gsub("^%d+:", "")
-
-          local line_idx, text_pos = i - 1, #line - #text
+          -- NOTE: if the line contains unicode characters `#line > win_width`
+          -- as both `#str` and `string.len` count bytes and not characters
+          -- hence we trim 4 bytes from the right (for the scrollbar) except
+          -- when using native fzf previewer / split with left preview where
+          -- we use `max_col` instead (assuming our code isn't unicode)
+          local line_idx = i - 1
+          local line_len = #line
+          local start_col = math.max(min_col, line_len - #text)
+          local end_col = max_col and math.min(max_col, line_len) or (line_len - trim_right)
           regions[lang] = regions[lang] or {}
           empty_regions[lang] = empty_regions[lang] or {}
-          table.insert(regions[lang], { { line_idx, text_pos, line_idx, line:len() } })
-          -- print(lang, string.format("[%d]%d:%s", line_idx, _lnum, line:sub(text_pos + 1)))
+          table.insert(regions[lang], { { line_idx, start_col, line_idx, end_col } })
+          -- print(lang, string.format("%d:%d  [%d] %d:%s",
+          --   start_col, end_col, line_idx, _lnum, line:sub(start_col + 1, end_col)))
         end)()
       end
       TSInjector.attach(bufnr, empty_regions)
@@ -955,6 +1010,12 @@ function FzfWin:create()
     -- create a new tmp buffer for the fzf win
     self:set_tmp_buffer()
     self:setup_keybinds()
+    -- attach/detach treesitter (e.g. `grep_lgrep`)
+    if self._o.winopts.treesitter then
+      self:treesitter_attach()
+    else
+      self:treesitter_detach(self.fzf_bufnr)
+    end
     -- also recall the user's 'on_create' (#394)
     if self.winopts.on_create and
         type(self.winopts.on_create) == "function" then
@@ -1082,8 +1143,7 @@ function FzfWin:close(fzf_bufnr)
     vim.api.nvim_buf_delete(self.fzf_bufnr, { force = true })
   end
   -- Clear treesitter buffer cache and deregister decoration callbacks
-  TSInjector.clear_cache(self.fzf_bufnr, self._hidden_fzf_bufnr)
-  TSInjector.deregister()
+  self:treesitter_detach(self.fzf_bufnr, self._hidden_fzf_bufnr)
   -- when using `split = "belowright new"` closing the fzf
   -- window may not always return to the correct source win
   -- depending on the user's split configuration (#397)
@@ -1339,9 +1399,14 @@ function FzfWin.toggle_preview()
   if not _self then return end
   local self = _self
   self.preview_hidden = not self.preview_hidden
-  if self.winopts.split and self._fzf_toggle_prev_bind then
+  if self._fzf_toggle_prev_bind then
     -- Toggle the empty preview window (under the neovim preview buffer)
     utils.feed_keys_termcodes(self._fzf_toggle_prev_bind)
+    -- This is just a proxy to toggle the native fzf preview when treesitter
+    -- is enabled, no need to redraw, stop here
+    if not self.previewer_is_builtin then
+      return
+    end
   end
   if self.preview_hidden and self:validate_preview() then
     self:close_preview(true)

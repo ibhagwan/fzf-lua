@@ -9,4 +9,6 @@ return {
   lsp = { code_actions = { previewer = "codeaction_native" } },
   tags = { previewer = "bat" },
   btags = { previewer = "bat" },
+  lines = { _treesitter = false },
+  blines = { _treesitter = false },
 }

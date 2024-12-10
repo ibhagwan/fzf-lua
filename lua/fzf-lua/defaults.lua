@@ -49,6 +49,10 @@ M.defaults                      = {
     zindex     = 50,
     backdrop   = 60,
     fullscreen = false,
+    treesitter = {
+      enabled    = false,
+      fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" }
+    },
     preview    = {
       default      = "builtin",
       border       = "border",
@@ -200,15 +204,15 @@ M.defaults                      = {
       syntax_limit_b    = 1024 * 1024,      -- 1MB
       limit_b           = 1024 * 1024 * 10, -- 10MB
       treesitter        = {
-        enable = true,
-        disable = {},
+        enabled = true,
+        disabled = {},
         -- nvim-treesitter-context config options
         -- https://github.com/nvim-treesitter/nvim-treesitter-context
         context = { max_lines = 1, trim_scope = "inner" }
       },
       ueberzug_scaler   = "cover",
       title_fnamemodify = function(s) return path.tail(s) end,
-      render_markdown   = { enable = true, filetypes = { ["markdown"] = true } },
+      render_markdown   = { enabled = true, filetypes = { ["markdown"] = true } },
       _ctor             = previewers.builtin.buffer_or_file,
     },
     codeaction = {
@@ -427,8 +431,11 @@ M.defaults.git                  = {
       ["ctrl-t"] = actions.git_buf_tabedit,
       ["ctrl-y"] = { fn = actions.git_yank_commit, exec_silent = true },
     },
+    winopts       = { treesitter = true },
     fzf_opts      = { ["--no-multi"] = true },
     _multiline    = false,
+    -- `winopts.treesitter==true` line match format
+    _treesitter   = "(%s+)(%d+)%)(.+)$",
   },
   branches = {
     prompt     = "Branches> ",
@@ -506,7 +513,19 @@ M.defaults.grep                 = {
   -- live_grep_glob options
   glob_flag      = "--iglob", -- for case sensitive globs use '--glob'
   glob_separator = "%s%-%-",  -- query separator pattern (lua): ' --'
+  _treesitter    = true,
 }
+
+M.defaults.grep_curbuf          = vim.tbl_deep_extend("force", M.defaults.grep, {
+  prompt           = "BufRg> ",
+  rg_glob          = false, -- meaningless for single file rg
+  exec_empty_query = true,  -- makes sense to display lines immediately
+  fzf_opts         = {
+    ["--delimiter"] = "[:]",
+    ["--with-nth"]  = "2..",
+    ["--nth"]       = "2..",
+  },
+})
 
 M.defaults.args                 = {
   previewer         = M._default_previewer_fn,
@@ -543,6 +562,7 @@ M.defaults.quickfix             = {
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
   only_valid  = false,
+  _treesitter = true,
   _cached_hls = { "path_colnr", "path_linenr" },
 }
 
@@ -564,6 +584,7 @@ M.defaults.loclist              = {
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
   only_valid  = false,
+  _treesitter = true,
   _cached_hls = { "path_colnr", "path_linenr" },
 }
 
@@ -621,51 +642,50 @@ M.defaults.lines                = {
   prompt           = "Lines> ",
   file_icons       = true and M._has_devicons,
   color_icons      = true,
+  show_bufname     = 120,
   show_unloaded    = true,
   show_unlisted    = false,
   no_term_buffers  = true,
+  sort_lastused    = true,
+  winopts          = { treesitter = true },
   fzf_opts         = {
     ["--multi"]     = true,
-    ["--delimiter"] = "[\\]:]",
-    ["--nth"]       = "2..",
+    ["--delimiter"] = "[\t]",
+    ["--tabstop"]   = "1",
     ["--tiebreak"]  = "index",
+    ["--with-nth"]  = "2..",
+    ["--nth"]       = "4..",
   },
-  line_field_index = "{3}",
+  line_field_index = "{4}",
+  field_index_expr = "{}", -- For `_fmt.from` to work with `bat_native`
+  _treesitter      = true,
+  _cached_hls      = { "buf_id", "buf_name", "buf_linenr" },
+  _fmt             = {
+    -- NOTE: `to` is not needed, we format at the source in `buffer_lines`
+    to   = false,
+    from = function(s, _)
+      -- restore the format to something that `path.entry_to_file` can handle
+      local bufnr, lnum, text = s:match("%[(%d+)%].-(%d+) (.+)$")
+      if not bufnr then return "" end
+      return string.format("[%s]%s%s:%s:%s",
+        bufnr, utils.nbsp,
+        path.tail(vim.api.nvim_buf_get_name(tonumber(bufnr))),
+        lnum, text)
+    end
+  },
   _actions         = function()
     return M.globals.actions.buffers or M.globals.actions.files
   end,
-  actions          = {
-    ["enter"] = actions.buf_edit_or_qf,
-    ["alt-q"] = actions.buf_sel_to_qf,
-    ["alt-l"] = actions.buf_sel_to_ll
-  },
-  _cached_hls      = { "buf_name", "buf_nr", "path_linenr" },
 }
 
-M.defaults.blines               = {
-  previewer        = M._default_previewer_fn,
-  prompt           = "BLines> ",
-  file_icons       = false,
-  color_icons      = false,
-  show_unlisted    = true,
-  no_term_buffers  = false,
-  fzf_opts         = {
-    ["--multi"]     = true,
-    ["--delimiter"] = "[:]",
-    ["--with-nth"]  = "2..",
-    ["--tiebreak"]  = "index",
+M.defaults.blines               = vim.tbl_deep_extend("force", M.defaults.lines, {
+  prompt       = "BLines> ",
+  show_bufname = false,
+  fzf_opts     = {
+    ["--with-nth"] = "4..",
+    ["--nth"]      = "2..",
   },
-  line_field_index = "{2}",
-  _actions         = function()
-    return M.globals.actions.buffers or M.globals.actions.files
-  end,
-  actions          = {
-    ["enter"] = actions.buf_edit_or_qf,
-    ["alt-q"] = actions.buf_sel_to_qf,
-    ["alt-l"] = actions.buf_sel_to_ll
-  },
-  _cached_hls      = { "buf_name", "buf_nr", "path_linenr" },
-}
+})
 
 M.defaults.treesitter           = {
   previewer        = M._default_previewer_fn,
@@ -674,6 +694,7 @@ M.defaults.treesitter           = {
   color_icons      = false,
   fzf_opts         = {
     ["--multi"]     = true,
+    ["--tabstop"]   = "4",
     ["--delimiter"] = "[:]",
     ["--with-nth"]  = "2..",
   },
@@ -681,7 +702,13 @@ M.defaults.treesitter           = {
   _actions         = function()
     return M.globals.actions.buffers or M.globals.actions.files
   end,
-  _cached_hls      = { "buf_name", "buf_nr", "path_linenr", "path_colnr" },
+  _cached_hls      = { "buf_name", "buf_nr", "buf_linenr", "path_colnr" },
+  _fmt             = {
+    to   = false,
+    from = function(s, _)
+      return s:gsub("\t\t", ": ")
+    end
+  },
 }
 
 M.defaults.tags                 = {
@@ -736,9 +763,10 @@ M.defaults.colorschemes         = {
 }
 
 M.defaults.highlights           = {
-  prompt    = "Highlights> ",
-  fzf_opts  = { ["--no-multi"] = true },
-  previewer = { _ctor = previewers.builtin.highlights, },
+  prompt     = "Highlights> ",
+  fzf_opts   = { ["--no-multi"] = true },
+  fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
+  previewer  = { _ctor = previewers.builtin.highlights, },
 }
 
 M.defaults.awesome_colorschemes = {
@@ -807,6 +835,7 @@ M.defaults.lsp                  = {
   fzf_opts         = { ["--multi"] = true },
   _actions         = function() return M.globals.actions.files end,
   _cached_hls      = { "path_colnr", "path_linenr" },
+  _treesitter      = true,
   -- Signals actions to use uri triggering the use of `lsp.util.show_document`
   _uri             = true,
 }
@@ -914,6 +943,7 @@ M.defaults.lsp.finder           = {
     { "outgoing_calls",  prefix = utils.ansi_codes.yellow("out ") },
   },
   fzf_opts    = { ["--multi"] = true },
+  _treesitter = true,
   _cached_hls = { "path_colnr", "path_linenr" },
   _uri        = true,
 }
@@ -966,6 +996,7 @@ M.defaults.profiles             = {
   fzf_opts  = {
     ["--delimiter"] = "[:]",
     ["--with-nth"]  = "-1..",
+    ["--tiebreak"]  = "begin",
     ["--no-multi"]  = true,
   },
   actions   = { ["enter"] = actions.apply_profile },
@@ -1192,7 +1223,9 @@ M.defaults.__HLS                = {
   path_colnr     = "FzfLuaPathColNr",
   path_linenr    = "FzfLuaPathLineNr",
   buf_name       = "FzfLuaBufName",
+  buf_id         = "FzfLuaBufId",
   buf_nr         = "FzfLuaBufNr",
+  buf_linenr     = "FzfLuaBufLineNr",
   buf_flag_cur   = "FzfLuaBufFlagCur",
   buf_flag_alt   = "FzfLuaBufFlagAlt",
   tab_title      = "FzfLuaTabTitle",

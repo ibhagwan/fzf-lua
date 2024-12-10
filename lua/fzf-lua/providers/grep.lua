@@ -163,6 +163,10 @@ M.grep = function(opts)
 end
 
 local function normalize_live_grep_opts(opts)
+  -- disable treesitter as it collides with cmd regex highlighting
+  opts = opts or {}
+  opts._treesitter = false
+
   opts = config.normalize_opts(opts, "grep")
   if not opts then return end
 
@@ -407,27 +411,25 @@ M.grep_project = function(opts)
 end
 
 M.grep_curbuf = function(opts, lgrep)
-  if type(opts) == "function" then
-    opts = opts()
-  elseif not opts then
-    opts = {}
-  end
-  opts.filename = vim.api.nvim_buf_get_name(0)
+  -- call `normalize_opts` here as we want to store all previous
+  -- options in the resume data store under the key "bgrep"
+  -- 3rd arg is an override for resume data store lookup key
+  opts = config.normalize_opts(opts, "grep_curbuf", "bgrep")
+  if not opts then return end
+
+  opts.filename = vim.api.nvim_buf_get_name(core.CTX().bufnr)
   if #opts.filename == 0 or not uv.fs_stat(opts.filename) then
     utils.info("Rg current buffer requires file on disk")
     return
   else
     opts.filename = path.relative_to(opts.filename, uv.cwd())
   end
-  -- rg globs are meaningless here since we searching a single file
-  opts.rg_glob = false
-  opts.exec_empty_query = opts.exec_empty_query == nil and true
-  opts.fzf_opts = vim.tbl_extend("keep", opts.fzf_opts or {}, config.globals.blines.fzf_opts)
-  -- call `normalize_opts` here as we want to store all previous
-  -- options in the resume data store under the key "bgrep"
-  -- 3rd arg is an override for resume data store lookup key
-  opts = config.normalize_opts(opts, "grep", "bgrep")
-  if not opts then return end
+
+  -- Persist call options so we don't revert to global grep on `grep_lgrep`
+  opts.__call_opts = vim.tbl_deep_extend("keep",
+    opts.__call_opts or {}, config.globals.grep_curbuf)
+  opts.__call_opts.filename = opts.filename
+
   if lgrep then
     return M.live_grep(opts)
   else

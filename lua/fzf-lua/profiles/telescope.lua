@@ -50,7 +50,7 @@ return {
     ["hl+"] = { "fg", "TelescopeMatching" },
     ["info"] = { "fg", "TelescopeMultiSelection" },
     ["border"] = { "fg", "TelescopeBorder" },
-    ["gutter"] = { "bg", "TelescopeNormal" },
+    ["gutter"] = "-1",
     ["query"] = { "fg", "TelescopePromptNormal" },
     ["prompt"] = { "fg", "TelescopePromptPrefix" },
     ["pointer"] = { "fg", "TelescopeSelectionCaret" },

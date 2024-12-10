@@ -81,24 +81,26 @@ function M.setup_highlights(override)
       { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond" } },
     { "FzfLuaHeaderText", "header_text",
       { default = default, fg = is_light and "Brown4" or "Brown1" } },
-    { "FzfLuaPathColNr", "path_colnr",   -- lines|blines|qf|diag|lsp
+    { "FzfLuaPathColNr", "path_colnr",   -- qf|diag|lsp
       { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" } },
-    { "FzfLuaPathLineNr", "path_linenr", -- lines|blines|qf|diag|lsp
+    { "FzfLuaPathLineNr", "path_linenr", -- qf|diag|lsp
       { default = default, fg = is_light and "MediumSpringGreen" or "LightGreen" } },
-    { "FzfLuaLiveSym", "live_sym",
+    { "FzfLuaLiveSym", "live_sym",       -- lsp_live_workspace_symbols query
       { default = default, fg = is_light and "Brown4" or "Brown1" } },
-    -- Provider specific highlights
-    { "FzfLuaBufName", "buf_name",        -- lines|blines (hidden)
-      { default = default, fg = is_light and "DarkOrchid3" or "LightMagenta" } },
-    { "FzfLuaBufNr", "buf_nr",            -- buffers|tabs|lines|blines
+    -- lines|blines|treesitter
+    { "FzfLuaBufId",     "buf_id",     { default = default, link = "TabLine" } },
+    { "FzfLuaBufName",   "buf_name",   { default = default, link = "Directory" } },
+    { "FzfLuaBufLineNr", "buf_linenr", { default = default, link = "LineNr" } },
+    -- buffers|tabs
+    { "FzfLuaBufNr", "buf_nr",
       { default = default, fg = is_light and "AquaMarine3" or "BlanchedAlmond" } },
-    { "FzfLuaBufFlagCur", "buf_flag_cur", -- buffers|tabs
+    { "FzfLuaBufFlagCur", "buf_flag_cur",
       { default = default, fg = is_light and "Brown4" or "Brown1" } },
-    { "FzfLuaBufFlagAlt", "buf_flag_alt", -- buffers|tabs
+    { "FzfLuaBufFlagAlt", "buf_flag_alt",
       { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" } },
-    { "FzfLuaTabTitle", "tab_title",      -- tabs
+    { "FzfLuaTabTitle", "tab_title",   -- tabs only
       { default = default, fg = is_light and "CadetBlue4" or "LightSkyBlue1", bold = true } },
-    { "FzfLuaTabMarker", "tab_marker",    -- tabs
+    { "FzfLuaTabMarker", "tab_marker", -- tabs only
       { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond", bold = true } },
     -- highlight groups for `fzf_colors=true`
     { "FzfLuaFzfNormal",     "fzf.normal",     { default = default, link = "FzfLuaNormal" } },

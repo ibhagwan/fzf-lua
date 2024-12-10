@@ -130,16 +130,16 @@ function Previewer.base:new(o, opts, fzf_win)
   self.title = self.win.winopts.preview.title
   self.title_pos = self.win.winopts.preview.title_pos
   self.title_fnamemodify = o.title_fnamemodify
-  self.render_markdown = o.render_markdown or {}
-  self.render_markdown.filetypes = type(self.render_markdown.filetypes) == "table" and
-      self.render_markdown.filetypes or {}
+  self.render_markdown = type(o.render_markdown) == "table" and o.render_markdown or {}
+  self.render_markdown.filetypes =
+      type(self.render_markdown.filetypes) == "table" and self.render_markdown.filetypes or {}
   self.winopts = self.win.winopts.preview.winopts
   self.syntax = default(o.syntax, true)
   self.syntax_delay = tonumber(default(o.syntax_delay, 0))
   self.syntax_limit_b = tonumber(default(o.syntax_limit_b, 1024 * 1024))
   self.syntax_limit_l = tonumber(default(o.syntax_limit_l, 0))
   self.limit_b = tonumber(default(o.limit_b, 1024 * 1024 * 10))
-  self.treesitter = o.treesitter or {}
+  self.treesitter = type(o.treesitter) == "table" and o.treesitter or {}
   self.toggle_behavior = o.toggle_behavior
   self.ext_ft_override = o.ext_ft_override
   self.winopts_orig = {}
@@ -870,7 +870,7 @@ end
 function Previewer.base:update_ts_context()
   if not self.win
       or not self.win:validate_preview()
-      or not self.treesitter.enable
+      or not self.treesitter.enabled
       or not self.treesitter.context
   then
     return
@@ -887,7 +887,7 @@ function Previewer.base:update_render_markdown()
   local bufnr, winid = self.preview_bufnr, self.win.preview_winid
   local ft = vim.b[bufnr] and vim.b[bufnr]._ft
   if not ft
-      or not self.render_markdown.enable
+      or not self.render_markdown.enabled
       or not self.render_markdown.filetypes[ft]
   then
     return
@@ -939,12 +939,12 @@ function Previewer.buffer_or_file:do_syntax(entry)
             end
             local ts_enabled = (function()
               if not self.treesitter or
-                  self.treesitter.enable == false or
-                  self.treesitter.disable == true or
-                  (type(self.treesitter.enable) == "table" and
-                    not utils.tbl_contains(self.treesitter.enable, ft)) or
-                  (type(self.treesitter.disable) == "table" and
-                    utils.tbl_contains(self.treesitter.disable, ft)) then
+                  self.treesitter.enabled == false or
+                  self.treesitter.disabled == true or
+                  (type(self.treesitter.enabled) == "table" and
+                    not utils.tbl_contains(self.treesitter.enabled, ft)) or
+                  (type(self.treesitter.disabled) == "table" and
+                    utils.tbl_contains(self.treesitter.disabled, ft)) then
                 return false
               end
               return true
