@@ -826,7 +826,8 @@ function FzfWin:treesitter_attach()
   if not self._o.winopts.treesitter then return end
   local function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
   vim.api.nvim_buf_attach(self.fzf_bufnr, false, {
-    on_lines = function(_, bufnr, _, first_changed, last_changed, last_updated, bc)
+    -- on_lines = function(_, bufnr, _, first_changed, last_changed, last_updated, bc)
+    on_lines = function(_, bufnr)
       local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
       local regions = {}
       local empty_regions = {}
@@ -836,12 +837,25 @@ function FzfWin:treesitter_attach()
           -- file:line:col:text   (grep_xxx)
           -- file:line:text       (grep_project or missing "--column" flag)
           -- line:col:text        (grep_curbuf)
-          -- line:text            (blines)
-          local filepath, _lnum, text = line:match("(.-):?(%d+):(.+)$")
+          -- line<U+00A0>text     (lines|blines)
+          local filepath, _lnum, text = line:match("(.-):?(%d+)[: ](.+)$")
           if not text or text == 0 then return end
 
-          filepath = trim(filepath)
-          local ft = #filepath == 0 and vim.bo[utils.CTX().bufnr].ft
+          text = text:gsub("^%d+:", "") -- remove col nr if exists
+          filepath = trim(filepath)     -- trim spaces
+
+          local ft_bufnr = (function()
+            -- blines|lines: U+00A0 (decimal: 160) follows the lnum
+            -- grep_curbuf: formats as line:col:text` thus `#filepath == 0`
+            if #filepath == 0 or string.byte(text, 1) == 160 then
+              if string.byte(text, 1) == 160 then text = text:sub(2) end -- remove A0+SPACE
+              if string.byte(text, 1) == 32 then text = text:sub(2) end  -- remove leading SPACE
+              local b = filepath:match("^%d+") or utils.CTX().bufnr
+              return vim.api.nvim_buf_is_valid(tonumber(b)) and b or nil
+            end
+          end)()
+
+          local ft = ft_bufnr and vim.bo[tonumber(ft_bufnr)].ft
               or vim.filetype.match({ filename = path.tail(filepath) })
           if not ft then return end
 

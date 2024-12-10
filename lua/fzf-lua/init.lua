@@ -88,8 +88,9 @@ function M.setup_highlights(override)
     { "FzfLuaLiveSym", "live_sym",
       { default = default, fg = is_light and "Brown4" or "Brown1" } },
     -- Provider specific highlights
-    { "FzfLuaBufName", "buf_name",        -- lines|blines (hidden)
-      { default = default, fg = is_light and "DarkOrchid3" or "LightMagenta" } },
+    -- lines|blines|treesitter
+    { "FzfLuaBufName",   "buf_name",   { default = default, link = "Directory" } },
+    { "FzfLuaBufLineNr", "buf_linenr", { default = default, link = "LineNr" } },
     { "FzfLuaBufNr", "buf_nr",            -- buffers|tabs|lines|blines
       { default = default, fg = is_light and "AquaMarine3" or "BlanchedAlmond" } },
     { "FzfLuaBufFlagCur", "buf_flag_cur", -- buffers|tabs

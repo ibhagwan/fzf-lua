@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*      For Neovim >= 0.8.0      Last change: 2024 November 18
+*fzf-lua-opts.txt*      For Neovim >= 0.8.0      Last change: 2024 December 06
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -763,6 +763,14 @@ Type: `string`, Default: `FzfLuaBufNr`
 
 Highlight group for buffer number in buffer type pickers, i.e. `buffers`,
 `tabs`, `lines`.
+
+
+                                                                              
+globals.hls.buf_linenr                   *fzf-lua-opts-globals.hls.buf_linenr*
+
+Type: `string`, Default: `LineNr`
+
+Highlight group for buffer line number in `lines`, `blines` and `treesitter`.
 
 
                                                                               

@@ -507,6 +507,17 @@ M.defaults.grep                 = {
   glob_separator = "%s%-%-",  -- query separator pattern (lua): ' --'
 }
 
+M.defaults.grep_curbuf          = vim.tbl_deep_extend("force", M.defaults.grep, {
+  prompt           = "RgBuffer> ",
+  rg_glob          = false, -- meaningless for single file rg
+  exec_empty_query = true,  -- makes sense to display lines immediately
+  fzf_opts         = {
+    ["--delimiter"] = "[:]",
+    ["--with-nth"]  = "2..",
+    ["--nth"]       = "2..",
+  },
+})
+
 M.defaults.args                 = {
   previewer         = M._default_previewer_fn,
   prompt            = "Args> ",
@@ -620,55 +631,57 @@ M.defaults.lines                = {
   prompt           = "Lines> ",
   file_icons       = true and M._has_devicons,
   color_icons      = true,
+  -- show_bufname     = 120,
+  show_bufname     = 0,
   show_unloaded    = true,
   show_unlisted    = false,
   no_term_buffers  = true,
+  sort_lastused    = true,
+  winopts          = { treesitter = true },
+  hls              = { buf_nr = "TabLine" },
+  fzf_colors       = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
   fzf_opts         = {
     ["--multi"]     = true,
-    ["--delimiter"] = "[\\]:]",
-    ["--nth"]       = "2..",
+    ["--delimiter"] = "[\t]",
+    ["--tabstop"]   = "1",
     ["--tiebreak"]  = "index",
+    ["--with-nth"]  = "2..",
+    ["--nth"]       = "3..",
   },
-  line_field_index = "{3}",
+  line_field_index = "{4}",
+  field_index_expr = "{}", -- For `_fmt.from` to work with `bat_native`
+  _fmt             = {
+    -- NOTE: `to` is not needed, we format at the source in `buffer_lines`
+    to   = false,
+    from = function(s, _)
+      -- restore the format to something that `path.entry_to_file` can handle
+      local bufnr, lnum, text = s:match("%[(%d+)%].-(%d+) (.+)$")
+      if not bufnr then return "" end
+      return string.format("[%s]%s%s:%s:%s",
+        bufnr, utils.nbsp,
+        path.tail(vim.api.nvim_buf_get_name(tonumber(bufnr))),
+        lnum, text)
+    end
+  },
   _actions         = function()
     return M.globals.actions.buffers or M.globals.actions.files
   end,
-  actions          = {
-    ["enter"] = actions.buf_edit_or_qf,
-    ["alt-q"] = actions.buf_sel_to_qf,
-    ["alt-l"] = actions.buf_sel_to_ll
-  },
-  _cached_hls      = { "buf_name", "buf_nr", "path_linenr" },
+  _cached_hls      = { "buf_name", "buf_nr", "buf_linenr" },
 }
 
-M.defaults.blines               = {
-  previewer        = M._default_previewer_fn,
-  prompt           = "BLines> ",
-  file_icons       = false,
-  color_icons      = false,
-  show_unlisted    = true,
-  no_term_buffers  = false,
-  fzf_opts         = {
-    ["--multi"]     = true,
-    ["--delimiter"] = "[:]",
-    ["--with-nth"]  = "2..",
-    ["--tiebreak"]  = "index",
+M.defaults.blines               = vim.tbl_deep_extend("force", M.defaults.lines, {
+  prompt       = "BLines> ",
+  show_bufname = false,
+  fzf_opts     = {
+    ["--with-nth"] = "4..",
+    ["--nth"]      = "2..",
   },
-  line_field_index = "{2}",
-  _actions         = function()
-    return M.globals.actions.buffers or M.globals.actions.files
-  end,
-  actions          = {
-    ["enter"] = actions.buf_edit_or_qf,
-    ["alt-q"] = actions.buf_sel_to_qf,
-    ["alt-l"] = actions.buf_sel_to_ll
-  },
-  _cached_hls      = { "buf_name", "buf_nr", "path_linenr" },
-}
+})
 
 M.defaults.treesitter           = {
   previewer        = M._default_previewer_fn,
   prompt           = "Treesitter> ",
+  show_bufname     = false,
   file_icons       = false,
   color_icons      = false,
   fzf_opts         = {
@@ -735,9 +748,10 @@ M.defaults.colorschemes         = {
 }
 
 M.defaults.highlights           = {
-  prompt    = "Highlights> ",
-  fzf_opts  = { ["--no-multi"] = true },
-  previewer = { _ctor = previewers.builtin.highlights, },
+  prompt     = "Highlights> ",
+  fzf_opts   = { ["--no-multi"] = true },
+  fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
+  previewer  = { _ctor = previewers.builtin.highlights, },
 }
 
 M.defaults.awesome_colorschemes = {
@@ -1190,6 +1204,7 @@ M.defaults.__HLS                = {
   path_linenr    = "FzfLuaPathLineNr",
   buf_name       = "FzfLuaBufName",
   buf_nr         = "FzfLuaBufNr",
+  buf_linenr     = "FzfLuaBufLineNr",
   buf_flag_cur   = "FzfLuaBufFlagCur",
   buf_flag_alt   = "FzfLuaBufFlagAlt",
   tab_title      = "FzfLuaTabTitle",

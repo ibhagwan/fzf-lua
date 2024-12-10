@@ -574,6 +574,12 @@ Type: `string`, Default: `FzfLuaBufNr`
 
 Highlight group for buffer number in buffer type pickers, i.e. `buffers`, `tabs`, `lines`.
 
+#### globals.hls.buf_linenr
+
+Type: `string`, Default: `LineNr`
+
+Highlight group for buffer line number in `lines`, `blines` and `treesitter`.
+
 #### globals.hls.buf_flag_cur
 
 Type: `string`, Default: `FzfLuaBufFlagCur`

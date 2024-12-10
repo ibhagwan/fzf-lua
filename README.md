@@ -1106,45 +1106,16 @@ require'fzf-lua'.setup {
       ["--with-nth"]  = '2..',
     },
   },
+  -- `blines` has the same defaults as `lines` aside from prompt and `show_bufname`
   lines = {
-    previewer         = "builtin",    -- set to 'false' to disable
     prompt            = 'Lines❯ ',
+    show_bufname      = true,         -- display buffer name
     show_unloaded     = true,         -- show unloaded buffers
     show_unlisted     = false,        -- exclude 'help' buffers
     no_term_buffers   = true,         -- exclude 'term' buffers
     fzf_opts = {
       -- do not include bufnr in fuzzy matching
       -- tiebreak by line no.
-      ["--delimiter"] = "[\\]:]",
-      ["--nth"]       = '2..',
-      ["--tiebreak"]  = 'index',
-      ["--tabstop"]   = "1",
-    },
-    -- actions inherit from 'actions.files' and merge
-    actions = {
-      ["enter"]       = actions.buf_edit_or_qf,
-      ["alt-q"]       = actions.buf_sel_to_qf,
-      ["alt-l"]       = actions.buf_sel_to_ll
-    },
-  },
-  blines = {
-    previewer         = "builtin",    -- set to 'false' to disable
-    prompt            = 'BLines❯ ',
-    show_unlisted     = true,         -- include 'help' buffers
-    no_term_buffers   = false,        -- include 'term' buffers
-    -- start          = "cursor"      -- start display from cursor?
-    fzf_opts = {
-      -- hide filename, tiebreak by line no.
-      ["--delimiter"] = "[:]",
-      ["--with-nth"]  = '2..',
-      ["--tiebreak"]  = 'index',
-      ["--tabstop"]   = "1",
-    },
-    -- actions inherit from 'actions.files' and merge
-    actions = {
-      ["enter"]       = actions.buf_edit_or_qf,
-      ["alt-q"]       = actions.buf_sel_to_qf,
-      ["alt-l"]       = actions.buf_sel_to_ll
     },
   },
   tags = {
@@ -1418,10 +1389,11 @@ temporarily overridden by its corresponding `winopts` option:
 |FzfLuaHelpBorder       |FzfLuaBorder |`hls.help_border`   |Help win border|
 |FzfLuaHeaderBind   |*BlanchedAlmond  |`hls.header_bind`   |Header keybind|
 |FzfLuaHeaderText   |*Brown1          |`hls.header_text`   |Header text|
-|FzfLuaPathColNr    |*CadetBlue1      |`hls.path_colnr`    |Path col nr (`lines,qf,lsp,diag`)|
-|FzfLuaPathLineNr   |*LightGreen      |`hls.path_linenr`   |Path line nr (`lines,qf,lsp,diag`)|
-|FzfLuaBufName      |*LightMagenta    |`hls.buf_name`      |Buffer name (`lines`)|
+|FzfLuaPathColNr    |*CadetBlue1      |`hls.path_colnr`    |Path col nr (`qf,lsp,diag`)|
+|FzfLuaPathLineNr   |*LightGreen      |`hls.path_linenr`   |Path line nr (`qf,lsp,diag`)|
+|FzfLuaBufName      |Directory        |`hls.buf_name`      |Buffer name (`lines`)|
 |FzfLuaBufNr        |*BlanchedAlmond  |`hls.buf_nr`        |Buffer number (all buffers)|
+|FzfLuaBufLineNr    |LineNr           |`hls.buf_linenr`    |Buffer line nr (`lines,blines`)|
 |FzfLuaBufFlagCur   |*Brown1          |`hls.buf_flag_cur`  |Buffer line (`buffers`)|
 |FzfLuaBufFlagAlt   |*CadetBlue1      |`hls.buf_flag_alt`  |Buffer line (`buffers`)|
 |FzfLuaTabTitle     |*LightSkyBlue1   |`hls.tab_title`     |Tab title (`tabs`)|
