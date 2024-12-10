@@ -194,6 +194,37 @@ function M.normalize_opts(opts, globals, __resume_key)
     opts = M.resume_opts(opts)
   end
 
+  local function convert_bool_opts()
+    -- Enforce conversion of boolean options that are tables with `enabled`
+    -- property, i.e. `winopts.treesitter = true` will be converted to
+    -- `winopts = { treesitter = { enabled = true, <defaults> } }`
+    -- Running a command and setting sub-values implies `enabled=true`, e.g:
+    --   `:FzfLua blines winopts.treesitter.fzf_colors=false`
+    --   `:FzfLua blines winopts.treesitter.fzf_colors={hl="-1:underline"}`
+    -- So the above will be converted to:
+    -- `winopts = { treesitter = { enabled = true, fzf_colors = false, <defaults> } }`
+    -- NOTE:  this function runs once before merging with globals and once
+    -- later down the line (after merges with globals/defaults), this is done
+    -- so that commands as the example above won't inherit `{ enabled = false }`
+    -- from the defaults (e.g. the default is `winopts.treesitter.enabled = false`)
+    for k, vfrom in pairs({
+      ["winopts.treesitter"] = "winopts.treesitter",
+      ["previewer.treesitter"] = "previewers.builtin.treesitter",
+      ["previewer.render_markdown"] = "previewers.builtin.render_markdown",
+    })
+    do
+      local v = utils.map_get(opts, k)
+      if v == false then
+        utils.map_set(opts, k, { enabled = false })
+      elseif v == true or type(v) == "table" then
+        local newv = vim.tbl_deep_extend("keep", type(v) == "table" and v or {},
+          { enabled = true }, utils.map_get(M.defaults, vfrom) or {})
+        utils.map_set(opts, k, newv)
+      end
+    end
+  end
+  convert_bool_opts()
+
   -- normalize all binds as lowercase or we can have duplicate keys (#654)
   ---@param m {fzf: table<string, unknown>, builtin: table<string, unknown>}
   ---@return {fzf: table<string, unknown>, builtin: table<string, unknown>}?
@@ -219,13 +250,13 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- Merge required tables from globals
   for _, k in ipairs({
-    "winopts", "keymap", "fzf_opts", "fzf_tmux_opts", "hls"
+    "winopts", "keymap", "fzf_opts", "fzf_colors", "fzf_tmux_opts", "hls"
   }) do
     opts[k] = vim.tbl_deep_extend("keep",
       -- must clone or map will be saved as reference
       -- and then overwritten if found in 'backward_compat'
       type(opts[k]) == "function" and opts[k]() or opts[k] or {},
-      type(M.globals[k]) == "function" and M.globals[k]() or
+      type(M.globals[k]) == "function" and M.globals[k](opts) or
       type(M.globals[k]) == "table" and utils.tbl_deep_clone(M.globals[k]) or {})
   end
 
@@ -316,40 +347,45 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- backward compatibility, rhs overrides lhs
   -- (rhs being the "old" option)
   local backward_compat = {
-    { "winopts.row",                  "winopts.win_row" },
-    { "winopts.col",                  "winopts.win_col" },
-    { "winopts.width",                "winopts.win_width" },
-    { "winopts.height",               "winopts.win_height" },
-    { "winopts.border",               "winopts.win_border" },
-    { "winopts.on_create",            "winopts.window_on_create" },
-    { "winopts.preview.wrap",         "preview_wrap" },
-    { "winopts.preview.border",       "preview_border" },
-    { "winopts.preview.hidden",       "preview_opts" },
-    { "winopts.preview.vertical",     "preview_vertical" },
-    { "winopts.preview.horizontal",   "preview_horizontal" },
-    { "winopts.preview.layout",       "preview_layout" },
-    { "winopts.preview.flip_columns", "flip_columns" },
-    { "winopts.preview.default",      "default_previewer" },
-    { "winopts.preview.delay",        "previewers.builtin.delay" },
-    { "winopts.preview.title",        "previewers.builtin.title" },
-    { "winopts.preview.title_pos",    "winopts.preview.title_align" },
-    { "winopts.preview.scrollbar",    "previewers.builtin.scrollbar" },
-    { "winopts.preview.scrollchar",   "previewers.builtin.scrollchar" },
-    { "cwd_header",                   "show_cwd_header" },
-    { "cwd_prompt",                   "show_cwd_prompt" },
-    { "resume",                       "continue_last_search" },
-    { "resume",                       "repeat_last_search" },
-    { "hls.normal",                   "winopts.hl_normal" },
-    { "hls.border",                   "winopts.hl_border" },
-    { "hls.cursor",                   "previewers.builtin.hl_cursor" },
-    { "hls.cursorline",               "previewers.builtin.hl_cursorline" },
-    { "hls",                          "winopts.hl" },
+    { "winopts.row",                            "winopts.win_row" },
+    { "winopts.col",                            "winopts.win_col" },
+    { "winopts.width",                          "winopts.win_width" },
+    { "winopts.height",                         "winopts.win_height" },
+    { "winopts.border",                         "winopts.win_border" },
+    { "winopts.on_create",                      "winopts.window_on_create" },
+    { "winopts.preview.wrap",                   "preview_wrap" },
+    { "winopts.preview.border",                 "preview_border" },
+    { "winopts.preview.hidden",                 "preview_opts" },
+    { "winopts.preview.vertical",               "preview_vertical" },
+    { "winopts.preview.horizontal",             "preview_horizontal" },
+    { "winopts.preview.layout",                 "preview_layout" },
+    { "winopts.preview.flip_columns",           "flip_columns" },
+    { "winopts.preview.default",                "default_previewer" },
+    { "winopts.preview.delay",                  "previewers.builtin.delay" },
+    { "winopts.preview.title",                  "previewers.builtin.title" },
+    { "winopts.preview.title_pos",              "winopts.preview.title_align" },
+    { "winopts.preview.scrollbar",              "previewers.builtin.scrollbar" },
+    { "winopts.preview.scrollchar",             "previewers.builtin.scrollchar" },
+    { "cwd_header",                             "show_cwd_header" },
+    { "cwd_prompt",                             "show_cwd_prompt" },
+    { "resume",                                 "continue_last_search" },
+    { "resume",                                 "repeat_last_search" },
+    { "hls.normal",                             "winopts.hl_normal" },
+    { "hls.border",                             "winopts.hl_border" },
+    { "hls.cursor",                             "previewers.builtin.hl_cursor" },
+    { "hls.cursorline",                         "previewers.builtin.hl_cursorline" },
+    { "hls",                                    "winopts.hl" },
+    { "previewer.treesitter.enabled",           "previewer.treesitter.enable" },
+    { "previewer.treesitter.disabled",          "previewer.treesitter.disable" },
+    { "previewers.builtin.treesitter.enabled",  "previewers.builtin.treesitter.enable" },
+    { "previewers.builtin.treesitter.disabled", "previewers.builtin.treesitter.disable" },
   }
 
   -- iterate backward compat map, retrieve values from opts or globals
   for _, t in ipairs(backward_compat) do
     local new_key, old_key = t[1], t[2]
-    local old_val = utils.map_get(opts, old_key) or utils.map_get(M.globals, old_key)
+    local v_opts = utils.map_get(opts, old_key)
+    local old_val = v_opts == nil and utils.map_get(M.globals, old_key) or v_opts
     local new_val = utils.map_get(opts, new_key)
     if old_val ~= nil then
       if type(old_val) == "table" and type(new_val) == "table" then
@@ -358,7 +394,11 @@ function M.normalize_opts(opts, globals, __resume_key)
         utils.map_set(opts, new_key, old_val)
       end
       utils.map_set(opts, old_key, nil)
-      -- utils.warn(string.format("option moved/renamed: '%s' -> '%s'", old_key, new_key))
+      if not opts.silent then
+        utils.warn(string.format(
+          "Deprecated option: '%s' -> '%s'. Add 'silent=true' to hide this message.",
+          old_key, new_key))
+      end
     end
   end
 
@@ -419,10 +459,34 @@ function M.normalize_opts(opts, globals, __resume_key)
     -- globals.winopts.preview.default
     opts.previewer = opts.previewer()
   end
-  if type(opts.previewer) == "table" then
+  if type(opts.previewer) == "table" or opts.previewer == true then
     -- merge with the default builtin previewer
     opts.previewer = vim.tbl_deep_extend("keep",
-      opts.previewer, M.globals.previewers.builtin)
+      type(opts.previewer) == "table" and opts.previewer or {}, M.globals.previewers.builtin)
+  end
+
+  -- Convert again in case the bool option came from global opts
+  convert_bool_opts()
+
+  -- Adjust main fzf window treesitter settings
+  -- Disabled unless the picker is TS enabled with `_treesitter=true`
+  -- Unless `enabled=false` is specifically set `true` is asssumed
+  if not opts._treesitter then opts.winopts.treesitter = nil end
+  if not opts.winopts.treesitter or opts.winopts.treesitter.enabled == false then
+    opts.winopts.treesitter = nil
+  else
+    assert(type(opts.winopts.treesitter) == "table")
+    -- Unless the caller specifically disables `fzf_colors` fuzzy matching
+    -- colors "hl,hl+" will be set to "-1:reverse" which sets the background
+    -- color for matches to the corresponding original foreground color
+    -- NOTE: `fzf_colors` inherited from `defaults.winopts.treesitter`
+    if opts.winopts.treesitter.fzf_colors ~= false then
+      opts.fzf_colors = vim.tbl_deep_extend("force",
+        opts.fzf_colors or {},
+        M.defaults.winopts.treesitter.fzf_colors,
+        type(opts.winopts.treesitter.fzf_colors) == "table"
+        and opts.winopts.treesitter.fzf_colors or {})
+    end
   end
 
   -- we need the original `cwd` with `autochdir=true` (#882)

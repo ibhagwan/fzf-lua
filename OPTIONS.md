@@ -546,25 +546,37 @@ Interactive headers description highlight group, e.g. `<ctrl-g> to Disable .giti
 
 Type: `string`, Default: `FzfLuaPathLineNr`
 
-Highlight group for the line part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
+Highlight group for the line part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `quickfix`, `lsp`, `diagnostics`, etc.
 
 #### globals.hls.path_colnr
 
 Type: `string`, Default: `FzfLuaPathColNr`
 
-Highlight group for the column part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `lines`, `quickfix`, `lsp`, `diagnostics`, etc.
+Highlight group for the column part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `quickfix`, `lsp`, `diagnostics`, etc.
 
 #### globals.hls.buf_name
 
 Type: `string`, Default: `FzfLuaBufName`
 
-Highlight group for buffer name in `lines`.
+Highlight group for buffer name (filepath) in `lines`.
+
+#### globals.hls.buf_id
+
+Type: `string`, Default: `FzfLuaBufId`
+
+Highlight group for buffer id (number) in `lines`.
 
 #### globals.hls.buf_nr
 
 Type: `string`, Default: `FzfLuaBufNr`
 
-Highlight group for buffer number in buffer type pickers, i.e. `buffers`, `tabs`, `lines`.
+Highlight group for buffer number in `buffers`, `tabs`.
+
+#### globals.hls.buf_linenr
+
+Type: `string`, Default: `FzfLuaBufLineNr`
+
+Highlight group for buffer line number in `lines`, `blines` and `treesitter`.
 
 #### globals.hls.buf_flag_cur
 

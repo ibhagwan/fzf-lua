@@ -18,6 +18,7 @@ return {
   blines               = title("Buffer Lines"),
   treesitter           = title("Treesitter"),
   grep                 = title("Grep", { prompt = "> " }),
+  grep_curbuf          = title("Buffer Grep", { prompt = "> " }),
   git                  = {
     files    = title("Git Files"),
     status   = title("Git Status"),
@@ -43,7 +44,7 @@ return {
   lsp                  = {
     title_prefix = "LSP",
     winopts      = { title_pos = "center" },
-    symbols      = { title_prefix = "LSP", winopts = { title_pos = "center" } },
+    symbols      = { prompt = "> ", title_prefix = "LSP", winopts = { title_pos = "center" } },
     finder       = title("LSP Finder"),
     code_actions = title("Code Actions"),
   },

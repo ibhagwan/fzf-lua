@@ -498,9 +498,6 @@ end
 -- Create fzf --color arguments from a table of vim highlight groups.
 M.create_fzf_colors = function(opts)
   local colors = opts and opts.fzf_colors
-  if type(colors) == "function" then
-    colors = colors(opts)
-  end
   -- auto create `fzf_colors` based on Neovim's current colorscheme
   if colors == true then
     colors = {
@@ -622,15 +619,6 @@ end
 ---@param opts table
 ---@return string[]
 M.build_fzf_cli = function(opts, fzf_win)
-  opts.fzf_opts = vim.tbl_extend("force", config.globals.fzf_opts, opts.fzf_opts or {})
-  -- copy/merge from globals
-  for _, o in ipairs({ "fzf_colors", "keymap" }) do
-    if opts[o] == nil then
-      opts[o] = config.globals[o]
-    elseif type(opts[o]) == "table" and type(config.globals[o]) == "table" then
-      opts[o] = vim.tbl_deep_extend("keep", opts[o], config.globals[o])
-    end
-  end
   -- below options can be specified directly in opts and will be
   -- prioritized: opts.<name> is prioritized over fzf_opts["--name"]
   for _, flag in ipairs({ "query", "prompt", "header", "preview" }) do
