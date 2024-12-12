@@ -263,7 +263,7 @@ local sel_to_qf = function(selected, opts, is_loclist)
     table.insert(qf_list, {
       bufnr = file.bufnr,
       filename = file.bufname or file.path or file.uri,
-      lnum = file.line,
+      lnum = file.line > 0 and file.line or 1,
       col = file.col,
       text = text,
     })
