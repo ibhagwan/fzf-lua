@@ -210,7 +210,7 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
         else
           utils.jump_to_location(entry, "utf-16")
         end
-      elseif entry.ctag and not entry.line then
+      elseif entry.ctag and entry.line == 0 then
         vim.api.nvim_win_set_cursor(0, { 1, 0 })
         vim.fn.search(entry.ctag, "W")
       elseif not opts.no_action_set_cursor and entry.line > 0 or entry.col > 0 then
