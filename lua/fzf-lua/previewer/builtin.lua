@@ -69,11 +69,23 @@ function TSContext.toggle(winid, bufnr)
   end
 end
 
+function TSContext.inc_dec_maxlines(num, winid, bufnr)
+  if not TSContext._setup or not tonumber(num) then return end
+  local config = require("treesitter-context.config")
+  local max_lines = config.max_lines or 0
+  config.max_lines = math.max(0, max_lines + tonumber(num))
+  utils.info(string.format("treesitter-context `max_lines` set to %d.", config.max_lines))
+  if TSContext.is_attached(winid) then
+    TSContext.update(winid, bufnr)
+  end
+end
+
 ---@param winid number
 ---@param bufnr number
 ---@param opts table
 function TSContext.update(winid, bufnr, opts)
   if not TSContext.setup(opts) then return end
+  assert(bufnr == vim.api.nvim_win_get_buf(winid))
   -- excerpt from nvim-treesitter-context `update_single_context`
   require("treesitter-context.render").close_leaked_contexts()
   local context_ranges, context_lines = require("treesitter-context.context").get(bufnr, winid)
@@ -502,9 +514,9 @@ function Previewer.base:scroll(direction)
   self.win:update_scrollbar()
 end
 
-function Previewer.base:toggle_ts_ctx()
-  local preview_bufnr, preview_winid = self.preview_bufnr, self.win.preview_winid
-  if preview_winid < 0 or not api.nvim_win_is_valid(preview_winid) then return end
+function Previewer.base:ts_ctx_toggle()
+  local bufnr, winid = self.preview_bufnr, self.win.preview_winid
+  if winid < 0 or not api.nvim_win_is_valid(winid) then return end
   if self.treesitter.context then
     self.treesitter._context = self.treesitter.context
     self.treesitter.context = nil
@@ -512,7 +524,13 @@ function Previewer.base:toggle_ts_ctx()
     self.treesitter.context = self.treesitter._context or true
     self.treesitter._context = nil
   end
-  TSContext.toggle(preview_winid, preview_bufnr)
+  TSContext.toggle(winid, bufnr)
+end
+
+function Previewer.base:ts_ctx_inc_dec_maxlines(num)
+  local bufnr, winid = self.preview_bufnr, self.win.preview_winid
+  if winid < 0 or not api.nvim_win_is_valid(winid) then return end
+  TSContext.inc_dec_maxlines(num, winid, bufnr)
 end
 
 Previewer.buffer_or_file = Previewer.base:extend()

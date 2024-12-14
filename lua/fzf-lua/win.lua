@@ -108,6 +108,8 @@ local _preview_keymaps = {
   ["toggle-preview-cw"]      = { module = "win", fnc = "toggle_preview_cw(1)" },
   ["toggle-preview-ccw"]     = { module = "win", fnc = "toggle_preview_cw(-1)" },
   ["toggle-preview-ts-ctx"]  = { module = "win", fnc = "toggle_preview_ts_ctx()" },
+  ["preview-ts-ctx-inc"]     = { module = "win", fnc = "preview_ts_ctx_inc_dec(1)" },
+  ["preview-ts-ctx-dec"]     = { module = "win", fnc = "preview_ts_ctx_inc_dec(-1)" },
   ["preview-up"]             = { module = "win", fnc = "preview_scroll('line-up')" },
   ["preview-down"]           = { module = "win", fnc = "preview_scroll('line-down')" },
   ["preview-page-up"]        = { module = "win", fnc = "preview_scroll('page-up')" },
@@ -1429,8 +1431,18 @@ function FzfWin.toggle_preview_ts_ctx()
   local self = _self
   if self:validate_preview()
       and self._previewer
-      and self._previewer.toggle_ts_ctx then
-    self._previewer:toggle_ts_ctx()
+      and self._previewer.ts_ctx_toggle then
+    self._previewer:ts_ctx_toggle()
+  end
+end
+
+function FzfWin.preview_ts_ctx_inc_dec(num)
+  if not _self then return end
+  local self = _self
+  if self:validate_preview()
+      and self._previewer
+      and self._previewer.ts_ctx_inc_dec_maxlines then
+    self._previewer:ts_ctx_inc_dec_maxlines(num)
   end
 end
 

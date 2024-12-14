@@ -643,7 +643,10 @@ require'fzf-lua'.setup {
       -- Rotate preview clockwise/counter-clockwise
       ["<F5>"]        = "toggle-preview-ccw",
       ["<F6>"]        = "toggle-preview-cw",
+      -- `ts-ctx` binds require `nvim-treesitter-context`
       ["<F7>"]        = "toggle-preview-ts-ctx",
+      ["<F8>"]        = "preview-ts-ctx-dec",
+      ["<F9>"]        = "preview-ts-ctx-inc",
       ["<S-Left>"]    = "preview-reset",
       ["<S-down>"]    = "preview-page-down",
       ["<S-up>"]      = "preview-page-up",
