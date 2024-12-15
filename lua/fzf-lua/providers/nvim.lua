@@ -329,22 +329,23 @@ M.keymaps = function(opts)
     t = "green"
   }
   local keymaps = {}
-  local format = nil
+  local separator = "│"
+  local fields = { "mode", "lhs", "desc", "rhs" }
+  local field_fmt = { mode = "%s", lhs = "%-14s", desc = "%-33s", rhs = "%s" }
 
-  if opts.show_details then
-    local formatter = "%s │ %-14s │ %-33s │ %s"
+  if opts.show_desc == false then field_fmt.desc = nil end
+  if opts.show_details == false then field_fmt.rhs = nil end
 
-    format = function(mode, lhs, desc, rhs)
-      -- we don't trim `lhs` here because it's better to violate the structure
-      -- than to cut off the most useful information
-      return string.format(formatter, mode, lhs, string.sub(desc or "", 1, 33), rhs)
+  local format = function(info)
+    info.desc = string.sub(info.desc or "", 1, 33)
+    local ret
+    for _, f in ipairs(fields) do
+      if field_fmt[f] then
+        ret = string.format("%s%s" .. field_fmt[f], ret or "",
+          ret and string.format(" %s ", separator) or "", info[f] or "")
+      end
     end
-  else
-    local formatter = "%s │ %-14s │ %s"
-
-    format = function(mode, lhs, desc, rhs)
-      return string.format(formatter, mode, lhs, desc or rhs)
-    end
+    return ret
   end
 
   local function add_keymap(keymap)
@@ -364,13 +365,13 @@ M.keymaps = function(opts)
       end
     end
 
-    keymap.str = format(
-      utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
-      keymap.lhs:gsub("%s", "<Space>"),
+    keymap.str = format({
+      mode = utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
+      lhs  = keymap.lhs:gsub("%s", "<Space>"),
       -- desc can be a multi-line string, normalize it
-      keymap.desc and string.gsub(keymap.desc, "\n%s+", "\r"),
-      keymap.rhs or string.format("%s", keymap.callback)
-    )
+      desc = keymap.desc and string.gsub(keymap.desc, "\n%s+", "\r"),
+      rhs  = keymap.rhs or string.format("%s", keymap.callback)
+    })
 
     local k = string.format("[%s:%s:%s]", keymap.buffer, keymap.mode, keymap.lhs)
     keymaps[k] = keymap
@@ -397,7 +398,7 @@ M.keymaps = function(opts)
   -- sort alphabetically
   table.sort(entries)
 
-  local header_str = format("m", "keymap", "description", "detail")
+  local header_str = format({ mode = "m", lhs = "keymap", desc = "description", rhs = "detail" })
   table.insert(entries, 1, header_str)
 
   core.fzf_exec(entries, opts)

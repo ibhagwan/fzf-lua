@@ -1050,6 +1050,7 @@ M.defaults.keymaps              = {
   winopts         = { preview = { layout = "vertical" } },
   fzf_opts        = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   ignore_patterns = { "^<SNR>", "^<Plug>" },
+  show_desc       = true,
   show_details    = true,
   actions         = {
     ["enter"]  = actions.keymap_apply,
