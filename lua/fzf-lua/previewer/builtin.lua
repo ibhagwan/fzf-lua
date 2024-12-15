@@ -879,7 +879,7 @@ end
 
 function Previewer.base:update_render_markdown()
   local bufnr, winid = self.preview_bufnr, self.win.preview_winid
-  local ft = vim.b[bufnr]._ft
+  local ft = vim.b[bufnr] and vim.b[bufnr]._ft
   if not ft
       or not self.render_markdown.enable
       or not self.render_markdown.filetypes[ft]

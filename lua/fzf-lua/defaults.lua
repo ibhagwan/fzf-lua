@@ -62,7 +62,6 @@ M.defaults                      = {
       title_pos    = "center",
       scrollbar    = "border",
       scrolloff    = "-2",
-      scrollchars  = { "█", "" },
       -- default preview delay 100ms, same as native fzf preview
       -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
       delay        = 100,

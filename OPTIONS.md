@@ -368,14 +368,6 @@ Float style scrollbar offset from the right edge of the preview window.
 
 <sub><sup>*Requires `winopts.preview.scrollbar=float`</sup></sub>
 
-#### globals.winopts.preview.scrollchars
-
-Type: `table`, Default: `{'█', '' }`
-
-Border style scrollbar characters `{ <full>, <empty> }`.
-
-<sub><sup>*Requires `winopts.preview.scrollbar=border`</sup></sub>
-
 #### globals.winopts.preview.winopts.number
 
 Type: `boolean`, Default: `true`

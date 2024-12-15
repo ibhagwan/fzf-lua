@@ -519,6 +519,30 @@ function FzfWin:new(o)
   self.previewer = o.previewer
   self.prompt = o.prompt or o.fzf_opts["--prompt"]
   self:_set_autoclose(o.autoclose)
+  -- Backward compat since removal of "border" scrollbar
+  if self.winopts.preview.scrollbar == "border" then
+    self.winopts.preview.scrollbar = "float"
+    self.winopts.preview.scrolloff = -1
+    self.winopts.preview._scroll_hide_empty = true
+    self.hls.scrollfloat_f = false
+    -- Reverse "FzfLuaScrollBorderFull" color
+    if type(self.hls.scrollborder_f) == "string" then
+      local function synIDattr(hl, what)
+        return vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl)), what)
+      end
+      local fg = synIDattr(self.hls.scrollborder_f, "fg")
+      local bg = synIDattr(self.hls.scrollborder_f, "bg")
+      if fg and #fg > 0 then
+        local hlgroup = "FzfLuaScrollBorderBackCompat"
+        self.hls.scrollfloat_f = hlgroup
+        if utils.__HAS_NVIM_07 then
+          vim.api.nvim_set_hl(0, hlgroup, { default = false, fg = bg, bg = fg })
+        else
+          vim.cmd(string.format("hi! %s guifg=%s guibg=%s", hlgroup, bg, fg))
+        end
+      end
+    end
+  end
   _self = self
   return self
 end
@@ -1160,67 +1184,6 @@ function FzfWin.unhide()
   return true
 end
 
-function FzfWin:update_scrollbar_border(o)
-  -- do not display on files that are fully contained
-  if o.bar_height >= o.line_count then return end
-
-  local borderchars = self.winopts.nohl_borderchars
-  local scrollchars = self.winopts.preview.scrollchars
-  local hl_f = self.hls.scrollborder_f
-  local hl_e = self.hls.scrollborder_e
-
-  for i = 1, 2 do
-    if not scrollchars[i] or #scrollchars[i] == 0 then
-      scrollchars[i] = borderchars[4]
-    end
-  end
-
-  -- bar_offset starts at 0, first line is 1
-  o.bar_offset = o.bar_offset + 1
-
-  -- matchaddpos() can't handle more than 8 items at once
-  local add_to_tbl = function(tbl, item)
-    local len = utils.tbl_count(tbl)
-    if len == 0 or utils.tbl_count(tbl[len]) == 8 then
-      table.insert(tbl, {})
-      len = len + 1
-    end
-    table.insert(tbl[len], item)
-  end
-
-  local full, empty = {}, {}
-  local lines = api.nvim_buf_get_lines(self.border_buf, 1, -2, true)
-  for i = 1, #lines do
-    local line, linew = lines[i], fn.strwidth(lines[i])
-    local bar_char
-    if i >= o.bar_offset and i < o.bar_offset + o.bar_height then
-      bar_char = scrollchars[1]
-      add_to_tbl(full, { i + 1, linew + 2, 1 })
-    else
-      bar_char = scrollchars[2]
-      add_to_tbl(empty, { i + 1, linew + 2, 1 })
-    end
-    lines[i] = fn.strcharpart(line, 0, linew - 1) .. bar_char
-  end
-  api.nvim_buf_set_lines(self.border_buf, 1, -2, false, lines)
-
-  -- border highlights
-  if hl_f or hl_e then
-    pcall(vim.api.nvim_win_call, self.border_winid, function()
-      if hl_f then
-        for i = 1, #full do
-          fn.matchaddpos(hl_f, full[i], 11)
-        end
-      end
-      if hl_e then
-        for i = 1, #empty do
-          fn.matchaddpos(hl_e, empty[i], 11)
-        end
-      end
-    end)
-  end
-end
-
 local function ensure_tmp_buf(bufnr)
   if bufnr and vim.api.nvim_buf_is_valid(bufnr) then
     return bufnr
@@ -1243,49 +1206,6 @@ function FzfWin:hide_scrollbar()
   end
 end
 
-function FzfWin:update_scrollbar_float(o)
-  -- do not display on files that are fully contained
-  if o.bar_height >= o.line_count then
-    self:hide_scrollbar()
-  else
-    local offset = self.prev_single_win and 1 or 0
-    local info = o.wininfo
-    local style1 = {}
-    style1.relative = "editor"
-    style1.style = "minimal"
-    style1.width = 1
-    style1.height = info.height
-    style1.row = info.winrow - 1 + offset
-    style1.col = info.wincol + info.width + offset +
-        (tonumber(self.winopts.preview.scrolloff) or -2)
-    style1.zindex = self.winopts.zindex + 1
-    if self._swin1 and vim.api.nvim_win_is_valid(self._swin1) then
-      vim.api.nvim_win_set_config(self._swin1, style1)
-    else
-      style1.noautocmd = true
-      self._sbuf1 = ensure_tmp_buf(self._sbuf1)
-      self._swin1 = vim.api.nvim_open_win(self._sbuf1, false, style1)
-      local hl = self.hls.scrollfloat_e or "PmenuSbar"
-      vim.wo[self._swin1].winhighlight =
-          ("Normal:%s,NormalNC:%s,NormalFloat:%s"):format(hl, hl, hl)
-    end
-    local style2 = utils.tbl_deep_clone(style1)
-    style2.height = o.bar_height
-    style2.row = style1.row + o.bar_offset
-    style2.zindex = style1.zindex + 1
-    if self._swin2 and vim.api.nvim_win_is_valid(self._swin2) then
-      vim.api.nvim_win_set_config(self._swin2, style2)
-    else
-      style2.noautocmd = true
-      self._sbuf2 = ensure_tmp_buf(self._sbuf2)
-      self._swin2 = vim.api.nvim_open_win(self._sbuf2, false, style2)
-      local hl = self.hls.scrollfloat_f or "PmenuThumb"
-      vim.wo[self._swin2].winhighlight =
-          ("Normal:%s,NormalNC:%s,NormalFloat:%s"):format(hl, hl, hl)
-    end
-  end
-end
-
 function FzfWin:update_scrollbar(hide)
   if not self.winopts.preview.scrollbar
       or self.winopts.preview.scrollbar == "none"
@@ -1294,9 +1214,7 @@ function FzfWin:update_scrollbar(hide)
   end
 
   if hide then
-    if self.winopts.preview.scrollbar == "float" then
-      self:hide_scrollbar()
-    end
+    self:hide_scrollbar()
     return
   end
 
@@ -1310,10 +1228,49 @@ function FzfWin:update_scrollbar(hide)
   o.bar_height = math.min(height, math.ceil(height * height / o.line_count))
   o.bar_offset = math.min(height - o.bar_height, math.floor(height * topline / o.line_count))
 
-  if self.winopts.preview.scrollbar == "float" then
-    self:update_scrollbar_float(o)
+  -- do not display on files that are fully contained
+  if o.bar_height >= o.line_count then
+    self:hide_scrollbar()
+    return
+  end
+
+  local offset = self.prev_single_win and 1 or 0
+  local info = o.wininfo
+  local style1 = {}
+  style1.relative = "editor"
+  style1.style = "minimal"
+  style1.width = 1
+  style1.height = info.height
+  style1.row = info.winrow - 1 + offset
+  style1.col = info.wincol + info.width + offset +
+      (tonumber(self.winopts.preview.scrolloff) or -2)
+  style1.zindex = self.winopts.zindex + 1
+  -- We hide the "empty" win in `scrollbar="botder"` back compat
+  if not self.winopts.preview._scroll_hide_empty then
+    if self._swin1 and vim.api.nvim_win_is_valid(self._swin1) then
+      vim.api.nvim_win_set_config(self._swin1, style1)
+    else
+      style1.noautocmd = true
+      self._sbuf1 = ensure_tmp_buf(self._sbuf1)
+      self._swin1 = vim.api.nvim_open_win(self._sbuf1, false, style1)
+      local hl = self.hls.scrollfloat_e or "PmenuSbar"
+      vim.wo[self._swin1].winhighlight =
+          ("Normal:%s,NormalNC:%s,NormalFloat:%s,EndOfBuffer:%s"):format(hl, hl, hl, hl)
+    end
+  end
+  local style2 = utils.tbl_deep_clone(style1)
+  style2.height = o.bar_height
+  style2.row = style1.row + o.bar_offset
+  style2.zindex = style1.zindex + 1
+  if self._swin2 and vim.api.nvim_win_is_valid(self._swin2) then
+    vim.api.nvim_win_set_config(self._swin2, style2)
   else
-    self:update_scrollbar_border(o)
+    style2.noautocmd = true
+    self._sbuf2 = ensure_tmp_buf(self._sbuf2)
+    self._swin2 = vim.api.nvim_open_win(self._sbuf2, false, style2)
+    local hl = self.hls.scrollfloat_f or "PmenuThumb"
+    vim.wo[self._swin2].winhighlight =
+        ("Normal:%s,NormalNC:%s,NormalFloat:%s,EndOfBuffer:%s"):format(hl, hl, hl, hl)
   end
 end
 
