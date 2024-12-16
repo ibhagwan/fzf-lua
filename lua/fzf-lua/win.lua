@@ -533,9 +533,17 @@ function FzfWin:new(o)
         local hlgroup = "FzfLuaScrollBorderBackCompat"
         self.hls.scrollfloat_f = hlgroup
         if utils.__HAS_NVIM_07 then
-          vim.api.nvim_set_hl(0, hlgroup, { default = false, fg = bg, bg = fg })
+          vim.api.nvim_set_hl(0, hlgroup,
+            vim.o.termguicolors and { default = false, fg = bg, bg = fg }
+            or { default = false, ctermfg = tonumber(bg), ctermbg = tonumber(fg) })
         else
-          vim.cmd(string.format("hi! %s guifg=%s guibg=%s", hlgroup, bg, fg))
+          if vim.o.termguicolors then
+            vim.cmd(string.format("hi! %s guifg=%s guibg=%s", hlgroup, bg, fg))
+          else
+            vim.cmd(string.format("hi! %s %s %s", hlgroup,
+              tonumber(bg) and "ctermfg=" .. tostring(bg),
+              tonumber(fg) and "ctermbg=" .. tostring(fg)))
+          end
         end
       end
     end
