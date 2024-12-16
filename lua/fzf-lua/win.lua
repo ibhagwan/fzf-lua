@@ -527,11 +527,8 @@ function FzfWin:new(o)
     self.hls.scrollfloat_f = false
     -- Reverse "FzfLuaScrollBorderFull" color
     if type(self.hls.scrollborder_f) == "string" then
-      local function synIDattr(hl, what)
-        return vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl)), what)
-      end
-      local fg = synIDattr(self.hls.scrollborder_f, "fg")
-      local bg = synIDattr(self.hls.scrollborder_f, "bg")
+      local fg = utils.hexcol_from_hl(self.hls.scrollborder_f, "fg")
+      local bg = utils.hexcol_from_hl(self.hls.scrollborder_f, "bg")
       if fg and #fg > 0 then
         local hlgroup = "FzfLuaScrollBorderBackCompat"
         self.hls.scrollfloat_f = hlgroup
