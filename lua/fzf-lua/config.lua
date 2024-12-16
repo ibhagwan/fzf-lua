@@ -486,7 +486,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   end
 
   -- are we using skim?
-  opts._is_skim = opts.fzf_bin:find("sk") ~= nil
+  opts._is_skim = opts.fzf_bin:match("sk$") ~= nil
 
   -- enforce fzf minimum requirements
   vim.g.fzf_lua_fzf_version = nil
