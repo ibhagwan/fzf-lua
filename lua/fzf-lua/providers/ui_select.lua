@@ -110,30 +110,39 @@ M.ui_select = function(items, ui_opts, on_choice)
   opts.fn_selected = function(selected, o)
     config.set_action_helpstr(o.actions.enter, nil)
 
-    if o.__CTX.mode == "i" then
-      vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
-    end
-
-    if not selected then
-      -- with `actions.dummy_abort` this doesn't get called anymore
-      -- as the action is configured as a valid fzf "accept" (thus
-      -- `selected` isn't empty), see below comment for more info
-      on_choice(nil, nil)
-    else
-      o._on_choice_called = nil
-      actions.act(o.actions, selected, o)
-      if not o._on_choice_called then
-        -- see  comment above, `on_choice` wasn't called, either
-        -- "dummy_abort" (ctrl-c/esc) or (unlikely) the user setup
-        -- additional binds that aren't for "accept". Not calling
-        -- with nil (no action) can cause issues, for example with
-        -- dressing.nvim (#1014)
+    local function exec_choice()
+      if not selected then
+        -- with `actions.dummy_abort` this doesn't get called anymore
+        -- as the action is configured as a valid fzf "accept" (thus
+        -- `selected` isn't empty), see below comment for more info
         on_choice(nil, nil)
+      else
+        o._on_choice_called = nil
+        actions.act(o.actions, selected, o)
+        if not o._on_choice_called then
+          -- see  comment above, `on_choice` wasn't called, either
+          -- "dummy_abort" (ctrl-c/esc) or (unlikely) the user setup
+          -- additional binds that aren't for "accept". Not calling
+          -- with nil (no action) can cause issues, for example with
+          -- dressing.nvim (#1014)
+          on_choice(nil, nil)
+        end
+      end
+
+      if opts.post_action_cb then
+        opts.post_action_cb()
       end
     end
 
-    if opts.post_action_cb then
-      opts.post_action_cb()
+    if o.__CTX.mode == "i" then
+      -- If called from INSERT mode we have to schedule the callback
+      -- till **after** the mode is changed (#1572)
+      vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
+      vim.api.nvim_create_autocmd("ModeChanged", {
+        pattern = "*:i*", once = true, callback = exec_choice
+      })
+    else
+      exec_choice()
     end
   end
 
