@@ -110,6 +110,10 @@ M.ui_select = function(items, ui_opts, on_choice)
   opts.fn_selected = function(selected, o)
     config.set_action_helpstr(o.actions.enter, nil)
 
+    if o.__CTX.mode == "i" then
+      vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
+    end
+
     if not selected then
       -- with `actions.dummy_abort` this doesn't get called anymore
       -- as the action is configured as a valid fzf "accept" (thus
