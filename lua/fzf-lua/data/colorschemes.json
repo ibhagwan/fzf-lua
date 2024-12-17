@@ -227,6 +227,20 @@
       }
     ]
   },
+  "gruvbox-nvim": {
+    "disp_name": "Gruvbox.nvim",
+    "url": "ellisonleao/gruvbox.nvim",
+    "colorschemes": [
+      {
+        "disp_name": "Gruvbox Nvim Dark",
+        "lua": "vim.o.background = 'dark'; vim.cmd.colorscheme('gruvbox')"
+      },
+      {
+        "disp_name": "Gruvbox Nvim Light",
+        "lua": "vim.o.background = 'light'; vim.cmd.colorscheme('gruvbox')"
+      }
+    ]
+  },
   "gruvbox-material": {
     "disp_name": "Gruvbox Material",
     "url": "sainnhe/gruvbox-material",
