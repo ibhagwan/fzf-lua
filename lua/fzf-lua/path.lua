@@ -411,8 +411,13 @@ end
 function M.entry_to_file(entry, opts, force_uri)
   opts = opts or {}
   local cwd = opts.cwd
-  if opts._fmt and type(opts._fmt.from) == "function" then
-    entry = opts._fmt.from(entry, opts)
+  if opts._fmt then
+    if type(opts._fmt._from) == "function" then
+      entry = opts._fmt._from(entry, opts)
+    end
+    if type(opts._fmt.from) == "function" then
+      entry = opts._fmt.from(entry, opts)
+    end
   end
   -- Remove ansi coloring and prefixed icons
   entry = utils.strip_ansi_coloring(entry)

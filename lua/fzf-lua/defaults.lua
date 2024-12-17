@@ -867,8 +867,9 @@ M.defaults.lsp.symbols          = {
     --   local align = 56 + utils.ansi_escseq_len(text)
     --   return string.format("%-" .. align .. "s%s%s", text, utils.nbsp, file)
     -- end,
-    to   = false,
-    from = function(s, _)
+    -- `_from` will be called by `path.entry_to_file` *before* `from` so we
+    -- can combine `path.filename_first` with the symbol hardcoded formatter
+    _from = function(s, _)
       -- restore the format to something that `path.entry_to_file` can
       -- handle more robustly, while this can still work due to the `utils.nbsp`
       -- it will fail when the symbol contains "[%d]" (which we use as bufnr)
