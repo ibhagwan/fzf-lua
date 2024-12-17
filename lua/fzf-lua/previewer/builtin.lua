@@ -345,7 +345,13 @@ end
 function Previewer.base:display_entry(entry_str)
   -- NOTE: prior to the zero event we may be sent an
   -- empty string in the preview callback (#1567)
-  if not entry_str or #entry_str == 0 then return end
+  if not entry_str or #entry_str == 0 then
+    local winid = self.win.preview_winid
+    if TSContext.is_attached(winid) then
+      TSContext.close(winid)
+    end
+    return
+  end
   -- save last entry even if we don't display
   self.last_entry = entry_str
   if not self.win or not self.win:validate_preview() then return end
