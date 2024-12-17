@@ -534,7 +534,7 @@ M.create_fzf_colors = function(opts)
   --   fzf_colors = {
   --     ["fg"] = { "fg" , { "Comment", "Normal" } }
   --   }
-  colors = vim.tbl_extend("keep", colors or {},
+  colors = vim.tbl_extend("keep", type(colors) == "table" and colors or {},
     vim.tbl_map(function(v)
       -- Value isn't guaranteed a table, e.g:
       --   vim.g.fzf_colors = { ["gutter"] = "-1" }
@@ -709,7 +709,7 @@ M.build_fzf_cli = function(opts, fzf_win)
         table.insert(cli_args, v)
       end
     end
-  elseif opts._is_fzf_tmux == 2  and opts.__FZF_VERSION then
+  elseif opts._is_fzf_tmux == 2 and opts.__FZF_VERSION then
     -- "--height" specified after "--tmux" will take priority and cause
     -- the job to spawn in the background without a visible interface
     -- NOTE: this doesn't happen with skim and will cause issues if

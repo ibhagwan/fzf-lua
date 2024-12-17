@@ -248,16 +248,29 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- merge with provider defaults from globals (defaults + setup options)
   opts = vim.tbl_deep_extend("keep", opts, utils.tbl_deep_clone(globals))
 
-  -- Merge required tables from globals
+  -- Merge values from globals
   for _, k in ipairs({
     "winopts", "keymap", "fzf_opts", "fzf_colors", "fzf_tmux_opts", "hls"
   }) do
-    opts[k] = vim.tbl_deep_extend("keep",
+    local setup_val = M.globals[k]
+    if type(setup_val) == "table" then
       -- must clone or map will be saved as reference
       -- and then overwritten if found in 'backward_compat'
-      type(opts[k]) == "function" and opts[k]() or opts[k] or {},
-      type(M.globals[k]) == "function" and M.globals[k](opts) or
-      type(M.globals[k]) == "table" and utils.tbl_deep_clone(M.globals[k]) or {})
+      setup_val = utils.tbl_deep_clone(setup_val)
+    elseif type(setup_val) == "function" then
+      setup_val = setup_val(opts)
+    end
+    if opts[k] == nil then
+      opts[k] = setup_val
+    else
+      if type(opts[k]) == "function" then
+        opts[k] = opts[k](opts)
+      end
+      if type(opts[k]) == "table" then
+        opts[k] = vim.tbl_deep_extend("keep",
+          opts[k], type(setup_val) == "table" and setup_val or {})
+      end
+    end
   end
 
   -- backward compat: no-value flags should be set to `true`, in the past these
