@@ -497,33 +497,8 @@ end
 
 -- Create fzf --color arguments from a table of vim highlight groups.
 M.create_fzf_colors = function(opts)
-  local colors = opts and opts.fzf_colors
-  -- auto create `fzf_colors` based on Neovim's current colorscheme
-  if colors == true then
-    colors = {
-      ["fg"]      = { "fg", opts.hls.fzf.normal },
-      ["bg"]      = { "bg", opts.hls.fzf.normal },
-      ["hl"]      = { "fg", opts.hls.fzf.match },
-      ["fg+"]     = { "fg", { opts.hls.fzf.cursorline, opts.hls.fzf.normal } },
-      ["bg+"]     = { "bg", opts.hls.fzf.cursorline },
-      ["hl+"]     = { "fg", opts.hls.fzf.match },
-      ["info"]    = { "fg", opts.hls.fzf.info },
-      ["border"]  = { "fg", opts.hls.fzf.border },
-      ["gutter"]  = { "bg", opts.hls.fzf.gutter },
-      ["query"]   = { "fg", opts.hls.fzf.query, "regular" },
-      ["prompt"]  = { "fg", opts.hls.fzf.prompt },
-      ["pointer"] = { "fg", opts.hls.fzf.pointer },
-      ["marker"]  = { "fg", opts.hls.fzf.marker },
-      ["spinner"] = { "fg", opts.hls.fzf.spinner },
-      ["header"]  = { "fg", opts.hls.fzf.header },
-    }
-    if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.35 then
-      colors.separator = { "fg", opts.hls.fzf.separator }
-    end
-    if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.41 then
-      colors.scrollbar = { "fg", opts.hls.fzf.scrollbar }
-    end
-  end
+  if type(opts.fzf_colors) ~= "table" then return end
+  local colors = opts.fzf_colors
 
   -- Inerherit from fzf.vim's g:fzf_colors
   -- fzf.vim:
@@ -547,6 +522,14 @@ M.create_fzf_colors = function(opts)
       end
       return new_v
     end, type(vim.g.fzf_colors) == "table" and vim.g.fzf_colors or {}))
+
+  -- Remove non supported colors from skim and older fzf versions
+  if not opts.__FZF_VERSION or opts.__FZF_VERSION < 0.35 then
+    colors.separator = nil
+  end
+  if not opts.__FZF_VERSION or opts.__FZF_VERSION < 0.41 then
+    colors.scrollbar = nil
+  end
 
   local tbl = {}
 

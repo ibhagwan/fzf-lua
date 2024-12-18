@@ -481,6 +481,28 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- Convert again in case the bool option came from global opts
   convert_bool_opts()
 
+  -- Auto-generate fzf's colorscheme
+  opts.fzf_colors = type(opts.fzf_colors) == "table" and opts.fzf_colors
+      or opts.fzf_colors == true and {
+        ["fg"]        = { "fg", opts.hls.fzf.normal },
+        ["bg"]        = { "bg", opts.hls.fzf.normal },
+        ["hl"]        = { "fg", opts.hls.fzf.match },
+        ["fg+"]       = { "fg", { opts.hls.fzf.cursorline, opts.hls.fzf.normal } },
+        ["bg+"]       = { "bg", opts.hls.fzf.cursorline },
+        ["hl+"]       = { "fg", opts.hls.fzf.match },
+        ["info"]      = { "fg", opts.hls.fzf.info },
+        ["border"]    = { "fg", opts.hls.fzf.border },
+        ["gutter"]    = { "bg", opts.hls.fzf.gutter },
+        ["query"]     = { "fg", opts.hls.fzf.query, "regular" },
+        ["prompt"]    = { "fg", opts.hls.fzf.prompt },
+        ["pointer"]   = { "fg", opts.hls.fzf.pointer },
+        ["marker"]    = { "fg", opts.hls.fzf.marker },
+        ["spinner"]   = { "fg", opts.hls.fzf.spinner },
+        ["header"]    = { "fg", opts.hls.fzf.header },
+        ["separator"] = { "fg", opts.hls.fzf.separator },
+        ["scrollbar"] = { "fg", opts.hls.fzf.scrollbar }
+      } or {}
+
   -- Adjust main fzf window treesitter settings
   -- Disabled unless the picker is TS enabled with `_treesitter=true`
   -- Unless `enabled=false` is specifically set `true` is asssumed
@@ -489,13 +511,14 @@ function M.normalize_opts(opts, globals, __resume_key)
     opts.winopts.treesitter = nil
   else
     assert(type(opts.winopts.treesitter) == "table")
+    assert(not opts.fzf_colors or type(opts.fzf_colors) == "table")
     -- Unless the caller specifically disables `fzf_colors` fuzzy matching
     -- colors "hl,hl+" will be set to "-1:reverse" which sets the background
     -- color for matches to the corresponding original foreground color
     -- NOTE: `fzf_colors` inherited from `defaults.winopts.treesitter`
     if opts.winopts.treesitter.fzf_colors ~= false then
       opts.fzf_colors = vim.tbl_deep_extend("force",
-        opts.fzf_colors or {},
+        type(opts.fzf_colors) == "table" and opts.fzf_colors or {},
         M.defaults.winopts.treesitter.fzf_colors,
         type(opts.winopts.treesitter.fzf_colors) == "table"
         and opts.winopts.treesitter.fzf_colors or {})
