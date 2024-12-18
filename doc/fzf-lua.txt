@@ -828,6 +828,8 @@ open an issue and I'll be more than happy to help.**
       --   `--color fg:#010101:underline:bold`
       -- NOTE: to pass raw arguments `fzf_opts["--color"]` or `fzf_args`
       --[[ fzf_colors = {
+          true,   -- inherit fzf colors that aren't specified below from
+                  -- the auto-generated theme similar to `fzf_colors=true`
           ["fg"]          = { "fg", "CursorLine" },
           ["bg"]          = { "bg", "Normal" },
           ["hl"]          = { "fg", "Comment" },
