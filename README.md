@@ -612,7 +612,7 @@ require'fzf-lua'.setup {
                                         -- border: in-border "block" marker
       scrolloff      = '-2',            -- float scrollbar offset from right
                                         -- applies only when scrollbar = 'float'
-      delay          = 100,             -- delay(ms) displaying the preview
+      delay          = 20,              -- delay(ms) displaying the preview
                                         -- prevents lag on fast scrolling
       winopts = {                       -- builtin previewer window options
         number            = true,

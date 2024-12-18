@@ -66,9 +66,9 @@ M.defaults                      = {
       title_pos    = "center",
       scrollbar    = "border",
       scrolloff    = "-2",
-      -- default preview delay 100ms, same as native fzf preview
+      -- default preview delay, fzf native previewers has a 100ms delay:
       -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
-      delay        = 100,
+      delay        = 20,
       winopts      = {
         number         = true,
         relativenumber = false,

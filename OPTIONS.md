@@ -286,7 +286,7 @@ Callback after the creation of the fzf-lua main terminal window.
 
 #### globals.winopts.preview.delay
 
-Type: `number`, Default: `100`
+Type: `number`, Default: `20`
 
 Debounce time (milliseconds) for displaying the preview buffer in the builtin previewer.
 
