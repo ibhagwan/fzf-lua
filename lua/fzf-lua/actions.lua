@@ -57,8 +57,14 @@ M.normalize_selected = function(actions, selected, opts)
   -- and makes sure 'selected' contains only item(s) or {}
   -- so it can always be enumerated safely
   if not actions or not selected then return end
-  if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 then
+  if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53
+      or opts.__SK_VERSION and opts.__SK_VERSION >= 0.14 then
     -- Using the new `print` action keybind is expected at `selected[1]`
+    -- NOTE: if `--select-1|-q` was used we'll be missing the keybind
+    -- since `-1` triggers "accept" assume "enter" (#1589)
+    if selected and #selected == 1 then
+      table.insert(selected, 1, "enter")
+    end
     local entries = vim.deepcopy(selected)
     local keybind = table.remove(entries, 1)
     return keybind, entries
