@@ -468,6 +468,8 @@ end
 ---@return string
 M.preview_window = function(o, fzf_win)
   local layout
+  local prefix = string.format("%s:%s:%s",
+    o.winopts.preview.hidden, o.winopts.preview.border, o.winopts.preview.wrap)
   if o.__FZF_VERSION
       and o.__FZF_VERSION >= 0.31
       and o.winopts.preview.layout == "flex"
@@ -484,15 +486,15 @@ M.preview_window = function(o, fzf_win)
     local fzf_main_width = math.ceil(columns * (100 - fzf_prev_percent) / 100)
     local horizontal_min_width = o.winopts.preview.flip_columns - fzf_main_width + 1
     if horizontal_min_width > 0 then
-      layout = string.format("%s,<%d(%s)",
-        o.winopts.preview.horizontal, horizontal_min_width, o.winopts.preview.vertical)
+      layout = string.format("%s:%s,<%d(%s:%s)",
+        prefix, o.winopts.preview.horizontal, horizontal_min_width,
+        prefix, o.winopts.preview.vertical)
     end
   end
   if not layout then
-    layout = fzf_win:fzf_preview_layout_str()
+    layout = string.format("%s:%s", prefix, fzf_win:fzf_preview_layout_str())
   end
-  return string.format("%s:%s:%s:%s",
-    o.winopts.preview.hidden, o.winopts.preview.border, o.winopts.preview.wrap, layout)
+  return layout
 end
 
 -- Create fzf --color arguments from a table of vim highlight groups.
