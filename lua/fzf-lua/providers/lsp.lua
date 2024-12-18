@@ -975,7 +975,10 @@ M.code_actions = function(opts)
     local _, has_code_actions = gen_lsp_contents(opts)
 
     -- error or no sync request no results
-    if not has_code_actions then return end
+    if not has_code_actions then
+      core.__CTX = nil
+      return
+    end
   end
 
   opts.actions = opts.actions or {}
