@@ -248,12 +248,25 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
         -- from FZF_DEFAULT_OPTS (#1107)
         local default_opts = os.getenv("FZF_DEFAULT_OPTS")
         if not default_opts then return end
+        local flags = { "--select-1", "-1" }
         local patterns = { "--preview-window" }
         for _, p in ipairs(patterns) do
           -- remove flag end of string
           default_opts = default_opts:gsub(utils.lua_regex_escape(p) .. "[=%s]+[^%-]+%s-$", "")
           -- remove flag start/mid of string
           default_opts = default_opts:gsub(utils.lua_regex_escape(p) .. "[=%s]+.-%s+%-%-", " --")
+        end
+        for _, p in ipairs(flags) do
+          local escaped = utils.lua_regex_escape(p)
+          repeat
+            local before, has_opt, after = default_opts:match("(.?)(" .. escaped .. ")(.?)")
+            if has_opt and #has_opt > 0
+                and before and (#before == 0 or string.sub(before, 1, 1) == " ")
+                and after and (#after == 0 or string.sub(after, 1, 1) == " ")
+            then
+              default_opts = default_opts:gsub(string.format("%s%s%s", before, escaped, after), "")
+            end
+          until not has_opt
         end
         return default_opts
       end)(),
