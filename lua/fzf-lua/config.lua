@@ -483,25 +483,30 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- Auto-generate fzf's colorscheme
   opts.fzf_colors = type(opts.fzf_colors) == "table" and opts.fzf_colors
-      or opts.fzf_colors == true and {
-        ["fg"]        = { "fg", opts.hls.fzf.normal },
-        ["bg"]        = { "bg", opts.hls.fzf.normal },
-        ["hl"]        = { "fg", opts.hls.fzf.match },
-        ["fg+"]       = { "fg", { opts.hls.fzf.cursorline, opts.hls.fzf.normal } },
-        ["bg+"]       = { "bg", opts.hls.fzf.cursorline },
-        ["hl+"]       = { "fg", opts.hls.fzf.match },
-        ["info"]      = { "fg", opts.hls.fzf.info },
-        ["border"]    = { "fg", opts.hls.fzf.border },
-        ["gutter"]    = { "bg", opts.hls.fzf.gutter },
-        ["query"]     = { "fg", opts.hls.fzf.query, "regular" },
-        ["prompt"]    = { "fg", opts.hls.fzf.prompt },
-        ["pointer"]   = { "fg", opts.hls.fzf.pointer },
-        ["marker"]    = { "fg", opts.hls.fzf.marker },
-        ["spinner"]   = { "fg", opts.hls.fzf.spinner },
-        ["header"]    = { "fg", opts.hls.fzf.header },
-        ["separator"] = { "fg", opts.hls.fzf.separator },
-        ["scrollbar"] = { "fg", opts.hls.fzf.scrollbar }
-      } or {}
+      or opts.fzf_colors == true and { true } or {}
+
+  if opts.fzf_colors[1] == true then
+    opts.fzf_colors[1] = nil
+    opts.fzf_colors = vim.tbl_deep_extend("keep", opts.fzf_colors, {
+      ["fg"]        = { "fg", opts.hls.fzf.normal },
+      ["bg"]        = { "bg", opts.hls.fzf.normal },
+      ["hl"]        = { "fg", opts.hls.fzf.match },
+      ["fg+"]       = { "fg", { opts.hls.fzf.cursorline, opts.hls.fzf.normal } },
+      ["bg+"]       = { "bg", opts.hls.fzf.cursorline },
+      ["hl+"]       = { "fg", opts.hls.fzf.match },
+      ["info"]      = { "fg", opts.hls.fzf.info },
+      ["border"]    = { "fg", opts.hls.fzf.border },
+      ["gutter"]    = { "bg", opts.hls.fzf.gutter },
+      ["query"]     = { "fg", opts.hls.fzf.query, "regular" },
+      ["prompt"]    = { "fg", opts.hls.fzf.prompt },
+      ["pointer"]   = { "fg", opts.hls.fzf.pointer },
+      ["marker"]    = { "fg", opts.hls.fzf.marker },
+      ["spinner"]   = { "fg", opts.hls.fzf.spinner },
+      ["header"]    = { "fg", opts.hls.fzf.header },
+      ["separator"] = { "fg", opts.hls.fzf.separator },
+      ["scrollbar"] = { "fg", opts.hls.fzf.scrollbar }
+    })
+  end
 
   -- Adjust main fzf window treesitter settings
   -- Disabled unless the picker is TS enabled with `_treesitter=true`
