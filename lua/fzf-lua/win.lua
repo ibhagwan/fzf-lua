@@ -512,6 +512,7 @@ function FzfWin:new(o)
   elseif _self and _self:hidden() then
     -- Clear the hidden buffers
     vim.api.nvim_buf_delete(_self._hidden_fzf_bufnr, { force = true })
+    TSInjector.clear_cache(_self._hidden_fzf_bufnr)
     _self = nil
   end
   o = o or {}
