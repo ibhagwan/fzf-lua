@@ -62,10 +62,12 @@ M.normalize_selected = function(actions, selected, opts)
     -- Using the new `print` action keybind is expected at `selected[1]`
     -- NOTE: if `--select-1|-q` was used we'll be missing the keybind
     -- since `-1` triggers "accept" assume "enter" (#1589)
-    -- Temp revert due to #1594
-    -- if selected and #selected == 1 then
-    --   table.insert(selected, 1, "enter")
-    -- end
+    -- NOTE2: pressing a bind when no results are present also meets
+    -- the condtion `#selected ==1` so make sure `selected[1]` is not
+    -- an action (e.g. pressing `esc` when no results, #1594)
+    if selected and #selected == 1 and not actions[selected[1]] then
+      table.insert(selected, 1, "enter")
+    end
     local entries = vim.deepcopy(selected)
     local keybind = table.remove(entries, 1)
     return keybind, entries
