@@ -652,6 +652,66 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
+
+  do
+    -- Remove incompatible flags / values
+    local version, changelog = (function()
+      if opts._is_skim then
+        return opts.__SK_VERSION, {
+          ["0.53"] = { fzf_opts = { ["--inline-info"] = true } },
+          -- All fzf flags not existing in skim
+          ["all"] = {
+            fzf_opts = {
+              ["--gap"] = false,
+              ["--info"] = false,
+              ["--border"] = false,
+              ["--no-scrollbar"] = false,
+              ["--highlight-line"] = false,
+            }
+          },
+        }
+      else
+        return opts.__FZF_VERSION, {
+          ["0.57"] = { fzf_opts = { ["--gap"] = true } },
+          -- ["0.56"] = { fzf_opts = { ["--gap"] = true } },
+          ["0.53"] = { fzf_opts = { ["--highlight-line"] = true } },
+          ["0.42"] = { fzf_opts = { ["--info"] = "inline-right" } },
+          -- All skim flags not existing in fzf
+          ["all"] = {
+            fzf_opts = {
+              ["--inline-info"] = false,
+            }
+          },
+        }
+      end
+    end)()
+    local function warn(flag, val, min_ver)
+      local bin = opts._is_skim and "skim" or "fzf"
+      return utils.warn(string.format("Removed flag '%s%s', %s.",
+        flag, type(val) == "string" and "=" .. val or "",
+        not min_ver and string.format("not supported with %s", bin)
+        or string.format("only supported with %s v%s (has=%s)",
+          bin, tostring(min_ver), tostring(version))))
+    end
+    for min_ver, ver_data in pairs(changelog) do
+      for flag, non_compat_value in pairs(ver_data.fzf_opts) do
+        (function()
+          local opt_value = opts.fzf_opts[flag]
+          if not opt_value then return end
+          -- print(flag, min_ver, version, opt_value, non_compat_value)
+          if not tonumber(min_ver) or tonumber(min_ver) > version
+              and (non_compat_value == true or opt_value == non_compat_value)
+          then
+            if opts.compat_warn ~= false then
+              warn(flag, opt_value, tonumber(min_ver))
+            end
+            opts.fzf_opts[flag] = nil
+          end
+        end)()
+      end
+    end
+  end
+
   -- refresh highlights if background/colorscheme changed (#1092)
   if not M.__HLS_STATE
       or M.__HLS_STATE.bg ~= vim.o.bg
