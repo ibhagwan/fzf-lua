@@ -660,30 +660,6 @@ M.build_fzf_cli = function(opts, fzf_win)
     opts.fzf_opts["--preview-window"] =
         opts.fzf_opts["--preview-window"] .. ":" .. opts.preview_offset
   end
-  if opts.__FZF_VERSION
-      and opts.__FZF_VERSION < 0.42
-      and opts.fzf_opts["--info"] == "inline-right"
-  then
-    opts.fzf_opts["--info"] = "inline"
-  end
-  if opts._is_skim or opts.__FZF_VERSION and opts.__FZF_VERSION < 0.53 then
-    opts.fzf_opts["--highlight-line"] = nil
-  end
-  if opts._is_skim then
-    -- skim (rust version of fzf) doesn't support the '--info=' flag
-    local info = opts.fzf_opts["--info"]
-    opts.fzf_opts["--info"] = nil
-    if type(info) == "string" and info:match("^inline") then
-      -- inline for skim is defined as:
-      opts.fzf_opts["--inline-info"] = true
-    end
-    -- skim doesn't accept border args
-    if opts.fzf_opts["--border"] == "none" then
-      opts.fzf_opts["--border"] = nil
-    else
-      opts.fzf_opts["--border"] = true
-    end
-  end
   -- build the cli args
   local cli_args = {}
   -- fzf-tmux args must be included first
@@ -1125,7 +1101,8 @@ end
 ---@param opts table
 ---@return table
 M.convert_exec_silent_actions = function(opts)
-  if opts._is_skim then
+  -- Does not work with fzf version < 0.36, fzf fails with
+  if not opts.__FZF_VERSION or opts.__FZF_VERSION < 0.36 then
     return opts
   end
   for k, v in pairs(opts.actions) do
