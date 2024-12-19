@@ -444,7 +444,7 @@ end
 
 function Previewer.base:scroll(direction)
   local preview_winid = self.win.preview_winid
-  if preview_winid < 0 or not direction then return end
+  if not self.preview_bufnr or preview_winid < 0 or not direction then return end
   if not api.nvim_win_is_valid(preview_winid) then return end
 
   if direction == "reset" then
