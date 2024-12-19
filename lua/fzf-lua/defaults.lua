@@ -1035,7 +1035,7 @@ M.defaults.tagstack             = {
 
 M.defaults.commands             = {
   prompt          = "Commands> ",
-  actions         = { ["enter"] = actions.ex_run },
+  actions         = { ["enter"] = actions.ex_run_maybe_cr },
   include_builtin = true,
 }
 
