@@ -457,6 +457,18 @@ M.ex_run_cr = function(selected)
   vim.fn.histadd("cmd", cmd)
 end
 
+M.ex_run_maybe_cr = function(selected)
+  local cmd = selected[1]
+  local cmd_opts = vim.api.nvim_get_commands({})[cmd]
+  if cmd_opts ~= nil and cmd_opts.nargs == "0" then
+    vim.cmd(cmd)
+    vim.fn.histadd("cmd", cmd)
+  else
+    vim.cmd("stopinsert")
+    vim.fn.feedkeys(string.format(":%s", cmd), "n")
+  end
+end
+
 M.exec_menu = function(selected)
   local cmd = selected[1]
   vim.cmd("emenu " .. cmd)

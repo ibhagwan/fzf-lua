@@ -656,6 +656,7 @@ M._action_to_helpstr = {
   [actions.run_builtin]         = "run-builtin",
   [actions.ex_run]              = "edit-cmd",
   [actions.ex_run_cr]           = "exec-cmd",
+  [actions.ex_run_maybe_cr]     = "exec-cmd-maybe",
   [actions.exec_menu]           = "exec-menu",
   [actions.search]              = "edit-search",
   [actions.search_cr]           = "exec-search",
