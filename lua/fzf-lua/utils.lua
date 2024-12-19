@@ -1107,7 +1107,7 @@ end
 
 -- Taken from `runtime/lua/vim/_system.lua`
 -- will raise exception without timeout on 32-bit systems (#1599)
-local MAX_TIMEOUT = 2 ^ 31
+local MAX_TIMEOUT = 2 ^ 31 - 1
 
 ---@param cmd string[]
 ---@return string[] lines in the stdout or stderr, separated by '\n'
