@@ -73,7 +73,7 @@ function M.check()
 
   if vim.fn.executable("fzf") == 1 then
     local version = utils.fzf_version()
-    if version < 0.53 then
+    if version[1] < 1 and version[2] < 53 then
       warn("'fzf' `>= 0.53` is recommended.")
     end
   end
