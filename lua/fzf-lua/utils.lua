@@ -1105,16 +1105,12 @@ function M.keymap_set(mode, lhs, rhs, opts)
   end
 end
 
--- Taken from `runtime/lua/vim/_system.lua`
--- will raise exception without timeout on 32-bit systems (#1599)
-local MAX_TIMEOUT = 2 ^ 31 - 1
-
 ---@param cmd string[]
 ---@return string[] lines in the stdout or stderr, separated by '\n'
 ---@return integer exit_code (0: success)
 function M.io_systemlist(cmd)
   if vim.system ~= nil then -- nvim 0.10+
-    local proc = vim.system(cmd):wait(MAX_TIMEOUT)
+    local proc = vim.system(cmd):wait()
     local output = (type(proc.stderr) == "string" and proc.stderr or "")
         .. (type(proc.stdout) == "string" and proc.stdout or "")
     return vim.split(output, "\n", { trimempty = true }), proc.code
@@ -1128,7 +1124,7 @@ end
 ---@return integer exit_code (0: success)
 function M.io_system(cmd)
   if vim.system ~= nil then -- nvim 0.10+
-    local proc = vim.system(cmd):wait(MAX_TIMEOUT)
+    local proc = vim.system(cmd):wait()
     local output = (type(proc.stderr) == "string" and proc.stderr or "")
         .. (type(proc.stdout) == "string" and proc.stdout or "")
     return output, proc.code
