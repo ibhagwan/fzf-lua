@@ -145,9 +145,9 @@ M.highlights = function(opts)
   end
 
   opts.fn_selected = function(selected)
-    if selected[1] == 'enter' then
-      vim.cmd('hi ' .. selected[2])
-      vim.api.nvim_exec2('hi ' .. selected[2], {})
+    if selected and selected[1] == "enter" then
+      vim.cmd("hi " .. selected[2])
+      vim.api.nvim_exec2("hi " .. selected[2], {})
     end
   end
 
