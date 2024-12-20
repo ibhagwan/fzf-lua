@@ -1353,6 +1353,12 @@ require'fzf-lua'.setup {
     -- you would set this option as %a this would match characters from [A-Za-z]
     -- or if you want to show only numbers you would set the pattern to %d (0-9).
   },
+  registers = {
+    filter = "", -- only show certain registers
+    -- "alpha" -> [a-z] registers
+    -- "named" -> [0-9] registers
+    -- leave empty for all
+  },
   complete_path = {
     cmd          = nil, -- default: auto detect fd|rg|find
     complete     = { ["enter"] = actions.complete },

@@ -269,14 +269,26 @@ M.registers = function(opts)
   opts = config.normalize_opts(opts, "registers")
   if not opts then return end
 
-  local registers = { [["]], "_", "#", "=", "_", "/", "*", "+", ":", ".", "%" }
+  local filter = opts.filter and opts.filter or ""
+  local registers = {}
+
+  if filter == "" then
+    local special_registers = { [["]], "_", "#", "=", "_", "/", "*", "+", ":", ".", "%" }
+    for i = 1, #special_registers do
+      table.insert(registers, special_registers[i])
+    end
+  end
   -- named
-  for i = 0, 9 do
-    table.insert(registers, tostring(i))
+  if filter ~= "alpha" then
+    for i = 0, 9 do
+      table.insert(registers, tostring(i))
+    end
   end
   -- alphabetical
-  for i = 65, 90 do
-    table.insert(registers, string.char(i))
+  if filter ~= "named" then
+    for i = 65, 90 do
+      table.insert(registers, string.char(i))
+    end
   end
 
   local function register_escape_special(reg, nl)
