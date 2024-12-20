@@ -287,7 +287,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
 
   -- fzf-tmux spawns outside neovim, don't set filetype/insert mode
   if not opts.is_fzf_tmux then
-    vim.cmd [[set ft=fzf]]
+    vim.bo.filetype = "fzf"
 
     -- https://github.com/neovim/neovim/pull/15878
     -- Since patch-8.2.3461 which was released with 0.6 neovim distinguishes between
