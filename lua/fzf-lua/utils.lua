@@ -1185,11 +1185,47 @@ function M.neovim_bind_to_fzf(key)
   return key
 end
 
-local function version_str_to_num(str)
+function M.parse_verstr(str)
   if type(str) ~= "string" then return end
   local major, minor, patch = str:match("(%d+).(%d+)%.?(.*)")
-  if not major and str:match("HEAD") then return 5 end
-  return tonumber(string.format("%d.%d%d", major, minor, tonumber(patch) or 0))
+  -- Fzf on HEAD edge case
+  major = tonumber(major) or str:match("HEAD") and 100 or nil
+  return major and { major, tonumber(minor) or 0, tonumber(patch) or 0 } or nil
+end
+
+function M.ver2str(v)
+  if type(v) ~= "table" or not v[1] then return end
+  return string.format("%d.%d.%d", tonumber(v[1]) or 0, tonumber(v[2]) or 0, tonumber(v[3]) or 0)
+end
+
+function M.has(opts, ...)
+  assert(type(opts) == "table")
+  local what = select(1, ...)
+  if what == "fzf" or what == "sk" then
+    local has_ver = select(2, ...)
+    if not has_ver then
+      if what == "sk" and opts.__SK_VERSION then return true end
+      if what == "fzf" and opts.__FZF_VERSION then return true end
+    else
+      local curr_ver
+      if what == "sk" then curr_ver = opts.__SK_VERSION end
+      if what == "fzf" then curr_ver = opts.__FZF_VERSION end
+      if type(has_ver) == "string" then has_ver = M.parse_verstr(has_ver) end
+      if type(has_ver) == "table" and type(curr_ver) == "table" then
+        has_ver[2] = tonumber(has_ver[2]) or 0
+        has_ver[3] = tonumber(has_ver[3]) or 0
+        curr_ver[2] = tonumber(curr_ver[2]) or 0
+        curr_ver[3] = tonumber(curr_ver[3]) or 0
+        if curr_ver[1] > has_ver[1]
+            or curr_ver[1] == has_ver[1] and curr_ver[2] > has_ver[2]
+            or curr_ver[1] == has_ver[1] and curr_ver[2] == has_ver[2] and curr_ver[3] >= has_ver[3]
+        then
+          return true
+        end
+      end
+    end
+  end
+  return false
 end
 
 function M.fzf_version(opts)
@@ -1199,7 +1235,7 @@ function M.fzf_version(opts)
   vim.env.FZF_DEFAULT_OPTS = nil
   local out, rc = M.io_system({ opts and opts.fzf_bin or "fzf", "--version" })
   vim.env.FZF_DEFAULT_OPTS = FZF_DEFAULT_OPTS
-  return version_str_to_num(out), rc, out
+  return M.parse_verstr(out), rc, out
 end
 
 function M.sk_version(opts)
@@ -1209,7 +1245,7 @@ function M.sk_version(opts)
   vim.env.SKIM_DEFAULT_OPTIONS = nil
   local out, rc = M.io_system({ opts and opts.fzf_bin or "sk", "--version" })
   vim.env.SKIM_DEFAULT_OPTIONS = SKIM_DEFAULT_OPTIONS
-  return version_str_to_num(out), rc, out
+  return M.parse_verstr(out), rc, out
 end
 
 function M.git_version()

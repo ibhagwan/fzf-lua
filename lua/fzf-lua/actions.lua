@@ -22,7 +22,7 @@ M.expect = function(actions, opts)
       if not v or k:match("^_") then return end
       k = k == "default" and "enter" or k
       v = type(v) == "table" and v or { fn = v }
-      if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 then
+      if utils.has(opts, "fzf", { 0, 53 }) then
         -- `print(...)` action was only added with fzf 0.53
         -- NOTE: we can no longer combine `--expect` and `--bind` as this will
         -- print an extra empty line regardless of the pressaed keybind (#1241)
@@ -32,7 +32,7 @@ M.expect = function(actions, opts)
           v.prefix and "+" or "",
           v.prefix and v.prefix:gsub("accept$", ""):gsub("%+$", "") or ""
         ))
-      elseif opts.__SK_VERSION and opts.__SK_VERSION >= 0.14 then
+      elseif utils.has(opts, "sk", { 0, 14 }) then
         -- sk 0.14 deprecated `--expect`, instead `accept(<key>)` should be used
         -- skim does not yet support case sensitive alt-shift binds, they are ignored
         -- if k:match("^alt%-%u") then return end
@@ -57,8 +57,7 @@ M.normalize_selected = function(actions, selected, opts)
   -- and makes sure 'selected' contains only item(s) or {}
   -- so it can always be enumerated safely
   if not actions or not selected then return end
-  if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53
-      or opts.__SK_VERSION and opts.__SK_VERSION >= 0.14 then
+  if utils.has(opts, "fzf", { 0, 53 }) or utils.has(opts, "sk", { 0, 14 }) then
     -- Using the new `print` action keybind is expected at `selected[1]`
     -- NOTE: if `--select-1|-q` was used we'll be missing the keybind
     -- since `-1` triggers "accept" assume "enter" (#1589)

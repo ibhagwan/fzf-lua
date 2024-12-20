@@ -602,9 +602,9 @@ function M.normalize_opts(opts, globals, __resume_key)
     if not opts.__FZF_VERSION then
       utils.err(string.format("'fzf --version' failed with error %s: %s", rc, err))
       return nil
-    elseif opts.__FZF_VERSION < 0.25 then
-      utils.err(string.format("fzf version %.2f is lower than minimum (0.25), aborting.",
-        opts.__FZF_VERSION))
+    elseif not utils.has(opts, "fzf", { 0, 25 }) then
+      utils.err(string.format("fzf version %s is lower than minimum (0.25), aborting.",
+        utils.ver2str(opts.__FZF_VERSION)))
       return nil
     end
   else
@@ -616,7 +616,7 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
-  if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53
+  if utils.has(opts, "fzf", { 0, 53 })
       -- `_multiline` is used to override `multiline` inherited from `defaults = {}`
       and opts.multiline and opts._multiline ~= false then
     -- If `multiline` was specified we add both "read0" & "print0" flags
@@ -632,13 +632,11 @@ function M.normalize_opts(opts, globals, __resume_key)
     --   (1) `true` flags are removed entirely (regardless of value)
     --   (2) `string` flags are removed only if the values match
     --   (3) `table` flags are removed if the value is contained
-    local version, changelog = (function()
-      if opts._is_skim then
-        return opts.__SK_VERSION, {
-          ["0.144"] = { fzf_opts = { ["--tmux"] = true } },
-          -- TODO: better version management that takes into account
-          -- major.minor.patch, the below will fail as 0.5.3 > 0.14.4
-          -- ["0.53"] = { fzf_opts = { ["--inline-info"] = true } },
+    local bin, version, changelog = (function()
+      if opts.__SK_VERSION then
+        return "sk", opts.__SK_VERSION, {
+          ["0.15.5"] = { fzf_opts = { ["--tmux"] = true } },
+          ["0.53"] = { fzf_opts = { ["--inline-info"] = true } },
           -- All fzf flags not existing in skim
           ["all"] = {
             fzf_opts = {
@@ -652,7 +650,7 @@ function M.normalize_opts(opts, globals, __resume_key)
           },
         }
       else
-        return opts.__FZF_VERSION, {
+        return "fzf", opts.__FZF_VERSION, {
           ["0.56"] = { fzf_opts = { ["--gap"] = true } },
           ["0.54"] = {
             fzf_opts = {
@@ -703,26 +701,27 @@ function M.normalize_opts(opts, globals, __resume_key)
       end
     end)()
     local function warn(flag, val, min_ver)
-      local bin = opts._is_skim and "skim" or "fzf"
       return utils.warn(string.format("Removed flag '%s%s', %s.",
         flag, type(val) == "string" and "=" .. val or "",
         not min_ver and string.format("not supported with %s", bin)
         or string.format("only supported with %s v%s (has=%s)",
-          bin, tostring(min_ver), tostring(version))))
+          bin, utils.ver2str(min_ver), utils.ver2str(version))
+      ))
     end
-    for min_ver, ver_data in pairs(changelog) do
+    for min_verstr, ver_data in pairs(changelog) do
       for flag, non_compat_value in pairs(ver_data.fzf_opts) do
         (function()
+          local min_ver = utils.parse_verstr(min_verstr)
           local opt_value = opts.fzf_opts[flag]
           if not opt_value then return end
           non_compat_value = type(non_compat_value) == "string"
               and { non_compat_value } or non_compat_value
-          if not tonumber(min_ver) or tonumber(min_ver) > version
+          if not min_ver or not utils.has(opts, bin, min_ver)
               and (non_compat_value == true or type(non_compat_value) == "table"
                 and utils.tbl_contains(non_compat_value, opt_value))
           then
             if opts.compat_warn == true then
-              warn(flag, opt_value, tonumber(min_ver))
+              warn(flag, opt_value, min_ver)
             end
             opts.fzf_opts[flag] = nil
           end
@@ -736,9 +735,9 @@ function M.normalize_opts(opts, globals, __resume_key)
       -- pre fzf v0.53 uses the fzf-tmux script
       and opts.fzf_bin:match("fzf%-tmux$") and 1
       -- fzf v0.53 added native tmux integration
-      or opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.53 and opts.fzf_opts["--tmux"] and 2
+      or utils.has(opts, "fzf", { 0, 53 }) and opts.fzf_opts["--tmux"] and 2
       -- skim v0.15.5 added native tmux integration
-      or opts.__SK_VERSION and opts.__SK_VERSION >= 0.155 and opts.fzf_opts["--tmux"] and 2
+      or utils.has(opts, "sk", { 0, 15, 5 }) and opts.fzf_opts["--tmux"] and 2
   if opts._is_fzf_tmux then
     local out = utils.io_system({ "tmux", "display-message", "-p", "#{window_width}" })
     opts._tmux_columns = tonumber(out:match("%d+"))

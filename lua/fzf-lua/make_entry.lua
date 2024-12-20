@@ -174,7 +174,7 @@ M.preprocess = function(opts)
       io.stdout:write(("[DEBUG] raw_argv(%d) = %s" .. EOL):format(idx, arg))
     end
     if utils.__IS_WINDOWS then
-      arg = libuv.unescape_fzf(arg, opts.__FZF_VERSION)
+      arg = libuv.unescape_fzf(arg, utils.has(opts, "fzf", { 0, 52 }) and 0.52 or 0)
     end
     if debug == "v" or debug == "verbose" then
       io.stdout:write(("[DEBUG] esc_argv(%d) = %s" .. EOL):format(idx, libuv.shellescape(arg)))
