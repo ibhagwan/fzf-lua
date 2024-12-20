@@ -373,7 +373,7 @@ M.fzf = function(contents, opts)
     opts.preview = previewer:cmdline()
     -- fzf 0.40 added 'zero' event for when there's no match
     -- clears the preview when there are no matching entries
-    if opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.40 and previewer.zero then
+    if utils.has(opts, "fzf", { 0, 40 }) and previewer.zero then
       utils.map_set(opts, "keymap.fzf.zero", previewer:zero())
     end
     if type(previewer.preview_window) == "function" then
@@ -470,8 +470,7 @@ M.preview_window = function(o, fzf_win)
   local layout
   local prefix = string.format("%s:%s:%s",
     o.winopts.preview.hidden, o.winopts.preview.border, o.winopts.preview.wrap)
-  if o.__FZF_VERSION
-      and o.__FZF_VERSION >= 0.31
+  if utils.has(o, "fzf", { 0, 31 })
       and o.winopts.preview.layout == "flex"
       and tonumber(o.winopts.preview.flip_columns) > 0
   then
@@ -526,10 +525,10 @@ M.create_fzf_colors = function(opts)
     end, type(vim.g.fzf_colors) == "table" and vim.g.fzf_colors or {}))
 
   -- Remove non supported colors from skim and older fzf versions
-  if not opts.__FZF_VERSION or opts.__FZF_VERSION < 0.35 then
+  if not utils.has(opts, "fzf", { 0, 35 }) or utils.has(opts, "sk") then
     colors.separator = nil
   end
-  if not opts.__FZF_VERSION or opts.__FZF_VERSION < 0.41 then
+  if not utils.has(opts, "fzf", { 0, 41 }) or utils.has(opts, "sk") then
     colors.scrollbar = nil
   end
 
@@ -589,8 +588,7 @@ M.create_fzf_binds = function(opts)
     -- Since we no longer use `--expect` any bind that contains `accept`
     -- should be assumed to "accept" the default action, using `--expect`
     -- that meant printing an empty string for the default enter key
-    if opts.__FZF_VERSION
-        and opts.__FZF_VERSION >= 0.53
+    if utils.has(opts, "fzf", { 0, 53 })
         and action:match("accept%s-$")
         and not action:match("print(.-)%+accept")
     then
@@ -670,7 +668,7 @@ M.build_fzf_cli = function(opts, fzf_win)
         table.insert(cli_args, v)
       end
     end
-  elseif opts._is_fzf_tmux == 2 and opts.__FZF_VERSION then
+  elseif opts._is_fzf_tmux == 2 and utils.has(opts, "fzf") then
     -- "--height" specified after "--tmux" will take priority and cause
     -- the job to spawn in the background without a visible interface
     -- NOTE: this doesn't happen with skim and will cause issues if
@@ -1018,12 +1016,12 @@ end
 M.convert_reload_actions = function(reload_cmd, opts)
   local fallback ---@type boolean?
   local has_reload ---@type boolean?
-  if opts._is_skim or type(reload_cmd) ~= "string" then
-    fallback = true
-  end
   -- Does not work with fzf version < 0.36, fzf fails with
   -- "error 2: bind action not specified:" (#735)
-  if not opts.__FZF_VERSION or opts.__FZF_VERSION < 0.36 then
+  -- Not yet supported with skim
+  if not utils.has(opts, "fzf", { 0, 36 })
+      or utils.has(opts, "sk")
+      or type(reload_cmd) ~= "string" then
     fallback = true
   end
   -- Two types of action as table:
@@ -1102,7 +1100,9 @@ end
 ---@return table
 M.convert_exec_silent_actions = function(opts)
   -- Does not work with fzf version < 0.36, fzf fails with
-  if not opts.__FZF_VERSION or opts.__FZF_VERSION < 0.36 then
+  -- "error 2: bind action not specified:"
+  if not utils.has(opts, "fzf", { 0, 36 })
+      or utils.has(opts, "sk") then
     return opts
   end
   for k, v in pairs(opts.actions) do
@@ -1163,8 +1163,7 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
         -- TODO: open an upstream bug rgd ! as without the double escape
         -- if an ! is found in the command (i.e. -g "rg ... -g !.git")
         -- sending a caret will require doubling (i.e. sending ^^ for ^)
-          opts.__FZF_VERSION and opts.__FZF_VERSION >= 0.51
-          and [[IF %s NEQ ^"^" ]] or [[IF ^%s NEQ ^^"^" ]],
+          utils.has(opts, "fzf", { 0, 51 }) and [[IF %s NEQ ^"^" ]] or [[IF ^%s NEQ ^^"^" ]],
           "[ -z %s ] || "),
         -- {q} for fzf is automatically shell escaped
         fzf_field_expression
@@ -1202,16 +1201,12 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
     opts.__fzf_init_cmd = utils.shell_nop()
     if opts.exec_empty_query or (opts.query and #opts.query > 0) then
       local q = not utils.__IS_WINDOWS and opts.query
-          or libuv.escape_fzf(opts.query, opts.__FZF_VERSION)
+          or libuv.escape_fzf(opts.query, utils.has(opts, "fzf", { 0, 52 }) and 0.52 or 0)
       -- gsub doesn't like single % on rhs
       local escaped_q = libuv.shellescape(q):gsub("%%", "%%%%")
       opts.__fzf_init_cmd = initial_command:gsub(fzf_field_expression, escaped_q)
     end
-    if opts.__FZF_VERSION >= 0.25 then
-      opts.fzf_opts["--disabled"] = true
-    else
-      opts.fzf_opts["--phony"] = true
-    end
+    opts.fzf_opts["--disabled"] = true
     opts.fzf_opts["--query"] = opts.query
     -- OR with true to avoid fzf's "Command failed:" message
     if opts.silent_fail ~= false then
