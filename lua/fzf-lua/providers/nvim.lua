@@ -279,6 +279,15 @@ M.registers = function(opts)
     table.insert(registers, string.char(i))
   end
 
+  if type(opts.filter) == "string" or type(opts.filter) == "function" then
+    local filter = type(opts.filter) == "function" and opts.filter
+        or function(r)
+          print("r", r)
+          return r:match(opts.filter) ~= nil
+        end
+    registers = vim.tbl_filter(filter, registers)
+  end
+
   local function register_escape_special(reg, nl)
     if not reg then return end
     local gsub_map = {
