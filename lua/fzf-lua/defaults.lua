@@ -439,8 +439,9 @@ M.defaults.git                  = {
   },
   branches = {
     prompt     = "Branches> ",
-    cmd        = "git branch --all --color",
-    preview    = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
+    cmd        = "git branch --all --color --format='%(refname:short)'",
+    log_cmd    = "git log --date=relative --date-order --pretty=format:%h%x09%an%x09%ad%x09%s",
+    previewer  = { _ctor = previewers.builtin.branches },
     actions    = {
       ["enter"]  = actions.git_switch,
       ["ctrl-x"] = { fn = actions.git_branch_del, reload = true },

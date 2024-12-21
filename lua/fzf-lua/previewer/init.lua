@@ -25,5 +25,6 @@ Previewer.builtin.highlights = function() return require "fzf-lua.previewer.buil
 Previewer.builtin.autocmds = function() return require "fzf-lua.previewer.builtin".autocmds end
 Previewer.builtin.keymaps = function() return require "fzf-lua.previewer.builtin".keymaps end
 Previewer.builtin.codeaction = function() return require "fzf-lua.previewer.codeaction".builtin end
+Previewer.builtin.branches = function() return require "fzf-lua.previewer.builtin".branches end
 
 return Previewer

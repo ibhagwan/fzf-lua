@@ -1503,4 +1503,36 @@ function Previewer.keymaps:populate_preview_buf(entry_str)
   Previewer.autocmds.super.populate_preview_buf(self, entry_str)
 end
 
+Previewer.branches = Previewer.buffer_or_file:extend()
+
+function Previewer.branches:keymaps(o, opts, fzf_win)
+  Previewer.autocmds.super.new(self, o, opts, fzf_win)
+  return self
+end
+
+function Previewer.branches:parse_log_cmd(entry_str, opts)
+  local log_cmd_table = {}
+  for w in opts.log_cmd:gmatch("%S+") do
+    table.insert(log_cmd_table, w)
+  end
+  table.insert(log_cmd_table, entry_str)
+  return log_cmd_table
+end
+
+function Previewer.branches:populate_preview_buf(entry_str)
+  if not self.win or not self.win:validate_preview() then return end
+  local tmpbuf = self:get_tmp_buffer()
+  local logs = {}
+  local log_cmd = vim.system(self:parse_log_cmd(entry_str, self.opts), { text = true }):wait()
+      .stdout
+  for log in log_cmd:gmatch("[^\r\n]+") do
+    table.insert(logs, log)
+  end
+
+  vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, logs)
+  self:set_preview_buf(tmpbuf)
+  local title = "git log " .. entry_str
+  self.win:update_title(" " .. title .. " ")
+end
+
 return Previewer
