@@ -282,7 +282,6 @@ M.registers = function(opts)
   if type(opts.filter) == "string" or type(opts.filter) == "function" then
     local filter = type(opts.filter) == "function" and opts.filter
         or function(r)
-          print("r", r)
           return r:match(opts.filter) ~= nil
         end
     registers = vim.tbl_filter(filter, registers)
