@@ -193,7 +193,7 @@ M.fzf_exec = function(contents, opts)
   return M.fzf_wrap(opts, contents)
 end
 
----@param contents fun(query: string): string|string[]|function
+---@param contents string|fun(query: string): string|string[]|function
 ---@param opts? table
 M.fzf_live = function(contents, opts)
   assert(contents)
