@@ -129,7 +129,7 @@ M.line = function(opts)
     return vim.trim(line:sub(1, col))
   end)()
   opts.complete = function(selected, _, _, _)
-    local newline = selected[1]:match("^.*:%d+:%s(.*)")
+    local newline = selected[1]:match(" (.-)$")
     return newline, #newline
   end
   return require "fzf-lua.providers.buffers".lines(opts)
