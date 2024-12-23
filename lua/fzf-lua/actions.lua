@@ -95,6 +95,8 @@ end
 M.act = function(actions, selected, opts)
   if not actions or not selected then return end
   local keybind, entries = M.normalize_selected(actions, selected, opts)
+  -- fzf >= 0.53 and `--exit-0`
+  if not keybind then return end
   local action = actions[keybind]
   -- Backward compat, was action defined as "default"
   if not action and keybind == "enter" then
