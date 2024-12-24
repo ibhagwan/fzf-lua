@@ -76,7 +76,8 @@ end
 -- always on top (#646)
 -- Hopefully this gets solved before the year 2100
 -- DON'T FORCE ME TO UPDATE THIS HACK NEOVIM LOL
-local _FUTURE = os.time({ year = 2100, month = 1, day = 1, hour = 0, minute = 00 })
+-- NOTE: reduced to 2038 due to 32bit sys limit (#1636)
+local _FUTURE = os.time({ year = 2038, month = 1, day = 1, hour = 0, minute = 00 })
 local get_unixtime = function(buf)
   if tonumber(buf) then
     -- When called from `buffer_lines`
