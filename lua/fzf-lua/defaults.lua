@@ -451,6 +451,20 @@ M.defaults.git                  = {
     fzf_opts   = { ["--no-multi"] = true },
     _multiline = false,
   },
+  worktrees = {
+    prompt     = "Worktrees> ",
+    cmd        = "git worktree list",
+    preview    = "git log --graph --pretty=oneline --abbrev-commit --color",
+    actions    = {
+      ["enter"]  = actions.git_worktree_switch,
+      ["ctrl-x"] = { fn = actions.git_worktree_del, reload = true },
+      ["ctrl-a"] = { fn = actions.git_worktree_add, field_index = "{q}", reload = true },
+    },
+    cmd_add    = { "git", "worktree", "add" },
+    cmd_del    = { "git", "worktree", "remove" },
+    fzf_opts   = { ["--no-multi"] = true },
+    _multiline = false,
+  },
   tags = {
     prompt     = "Tags> ",
     cmd        = [[git for-each-ref --color --sort="-taggerdate" --format ]]

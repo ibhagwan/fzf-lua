@@ -657,6 +657,24 @@ M.git_branch_del = function(selected, opts)
   end
 end
 
+M.git_worktree_switch = function(selected, _)
+  ---@type string
+  local worktree = {}
+  for str in string.gmatch(selected[1], "([^%s]+)") do
+    table.insert(worktree, str)
+  end
+  local worktree_path = worktree[1]
+  require("git-worktree").switch_worktree(worktree_path)
+end
+
+M.git_worktree_add = function(selected, opts)
+  return true
+end
+
+M.git_worktree_del = function(selected, opts)
+  return true
+end
+
 local match_commit_hash = function(line, opts)
   if type(opts.fn_match_commit_hash) == "function" then
     return opts.fn_match_commit_hash(line, opts)
