@@ -423,6 +423,8 @@ M.fzf = function(contents, opts)
       debug = opts.debug_cmd or opts.debug and not (opts.debug_cmd == false),
       RIPGREP_CONFIG_PATH = opts.RIPGREP_CONFIG_PATH,
     })
+  -- If a hidden process was killed by [re-]starting a new picker do nothing
+  if fzf_win:was_hidden() then return end
   -- kill fzf piped process PID
   -- NOTE: might be an overkill since we're using $FZF_DEFAULT_COMMAND
   -- to spawn the piped process and fzf is responsible for termination
@@ -430,8 +432,6 @@ M.fzf = function(contents, opts)
   if tonumber(opts.__pid) then
     libuv.process_kill(opts.__pid)
   end
-  -- If a hidden process was killed by [re-]starting a new picker do nothing
-  if fzf_win:was_hidden() then return end
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
   if selected and #selected > 0 then
