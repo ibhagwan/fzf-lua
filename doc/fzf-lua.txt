@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2024 December 18
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2024 December 25
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
