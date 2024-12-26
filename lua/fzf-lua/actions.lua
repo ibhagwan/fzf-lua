@@ -668,11 +668,34 @@ M.git_worktree_switch = function(selected, _)
 end
 
 M.git_worktree_add = function(selected, opts)
-  return true
+  local worktree_path = opts.last_query or selected[1]
+  if type(worktree_path) ~= "string" or #worktree_path == 0 then
+    utils.warn("Worktree Path name cannot be empty, use prompt for input.")
+  else
+    require("fzf-lua").git_branches({
+      actions = {
+        ["enter"] = function(entry, _)
+          local branch = entry[1]:match("[^%s%*]+")
+          require("git-worktree").create_worktree(worktree_path, branch)
+        end
+      }
+    })
+  end
 end
 
-M.git_worktree_del = function(selected, opts)
-  return true
+M.git_worktree_del = function(selected, _)
+  ---@type string
+  local worktree = {}
+  for str in string.gmatch(selected[1], "([^%s]+)") do
+    table.insert(worktree, str)
+  end
+  local worktree_path = worktree[1]
+
+  if vim.fn.confirm("Delete worktree " .. worktree_path .. "?", "&Yes\n&No") == 1 then
+    require("git-worktree").delete_worktree(worktree_path)
+  else
+    return
+  end
 end
 
 local match_commit_hash = function(line, opts)
