@@ -701,12 +701,15 @@ M.git_worktree_del = function(selected, _)
   for str in string.gmatch(selected[1], "([^%s]+)") do
     table.insert(worktree, str)
   end
-  local worktree_path = worktree[1]
+  local worktree_path, branch = worktree[1], worktree[3]
   if worktree_path == "" then
     utils.warn("Worktree Path name cannot be empty.")
     return
   elseif worktree_path == require("git-worktree").get_current_worktree_path() then
     utils.warn("Cannot delete current worktree.")
+    return
+  elseif branch == "bare" then
+    utils.warn("Cannot delete a bare worktree.")
     return
   end
 
