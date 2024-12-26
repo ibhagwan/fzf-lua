@@ -1385,7 +1385,29 @@ defines the timeout (ms) for the LPS request via `vim.lsp.buf_request_sync`.
                                                                               
 MISC                                                       *fzf-lua-opts-misc*
 
+help_open_win                                *fzf-lua-opts-misc.help_open_win*
 
+Type: `fun(integer, boolean, table)`, same signature as `nvim_open_win`
+Default: `vim.api.nvim_open_win`
+
+Function to open the help window (default bound to `<F1>`).
+
+Default to open a floating window at the bottom on current screen.
+
+Override this function if you want to customize window configs of the
+help window (location, width, border, etc.).
+
+Example (open floating help window at the top of screen with single border):
+>lua
+    require("fzf-lua").setup({
+      help_open_win = function(buf, enter, opts)
+        opts.border = 'single'
+        opts.row = 0
+        opts.col = 0
+        return vim.api.nvim_open_win(buf, enter, opts)
+      end,
+    })
+<
                                                                               
 resume                                                   *fzf-lua-opts-resume*
 
