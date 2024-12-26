@@ -154,7 +154,7 @@ M.fzf_exec = function(contents, opts)
     contents = libuv.spawn_nvim_fzf_cmd({
         cmd = contents,
         cwd = opts.cwd,
-        cb_pid = opts._set_pid,
+        cb_pid = function(pid) opts.__pid = pid end,
       },
       opts.fn_transform or function(x) return x end,
       opts.fn_preprocess)
@@ -429,8 +429,8 @@ M.fzf = function(contents, opts)
   -- NOTE: might be an overkill since we're using $FZF_DEFAULT_COMMAND
   -- to spawn the piped process and fzf is responsible for termination
   -- when the fzf process exists
-  if type(opts._get_pid == "function") then
-    libuv.process_kill(opts._get_pid())
+  if tonumber(opts.__pid) then
+    libuv.process_kill(opts.__pid)
   end
   -- If a hidden process was killed by [re-]starting a new picker do nothing
   if fzf_win:was_hidden() then return end

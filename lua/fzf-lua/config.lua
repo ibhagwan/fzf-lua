@@ -10,18 +10,6 @@ local M = {}
 -- set this so that make_entry won't get nil err when setting remotely
 M.__resume_data = {}
 
--- set|get the latest wrapped process PID
--- NOTE: we don't store this closure in `opts` (or store a ref to `opts`)
--- as together with `__resume_data` it can create a memory leak having to
--- store recursive copies of the `opts` table (#723)
-M.set_pid = function(pid)
-  M.__pid = pid
-end
-
-M.get_pid = function()
-  return M.__pid
-end
-
 M.resume_get = function(what, opts)
   assert(opts.__resume_key)
   if type(opts.__resume_get) == "function" then
@@ -796,10 +784,6 @@ function M.normalize_opts(opts, globals, __resume_key)
           or nil
     end
   end
-
-  -- libuv.spawn_nvim_fzf_cmd() pid callback
-  opts._set_pid = M.set_pid
-  opts._get_pid = M.get_pid
 
   -- mark as normalized
   opts._normalized = true

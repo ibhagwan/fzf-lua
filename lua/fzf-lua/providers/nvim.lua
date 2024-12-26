@@ -25,7 +25,10 @@ M.commands = function(opts)
           if cmd then builtin_commands[cmd] = desc end
           cmd, desc = line:match("^|:(%S+)|%s*%S+%s*(.*%S)")
         elseif cmd then -- found
-          if line:match("^%s%+%S") then desc = desc .. (line:match("^%s*(.*%S)") or "") end
+          if line:match("^%s+%S") then
+            local desc_continue = line:match("^%s*(.*%S)")
+            desc = desc .. (desc_continue and " " .. desc_continue or "")
+          end
           if line:match("^%s*$") then break end
         end
       end
