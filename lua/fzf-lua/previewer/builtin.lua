@@ -1013,9 +1013,10 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       or self.opts.__ACT_TO == mgrep.live_grep and self.opts.search or nil
   if regex and self.opts.rg_glob and self.opts.glob_separator then
     regex = require("fzf-lua.make_entry").glob_parse(regex, self.opts)
-    if self.opts.cmd:match("%-%-fixed-strings") or self.opts.cmd:match("%-F") then
-      regex = utils.rg_escape(regex)
-    end
+  end
+  if regex and self.opts.cmd
+      and (self.opts.cmd:match("%-%-fixed%-strings") or self.opts.cmd:match("%-F")) then
+    regex = utils.rg_escape(regex)
   end
 
   -- If called from tags previewer, can happen when using ctags cmd
