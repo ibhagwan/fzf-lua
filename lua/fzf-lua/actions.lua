@@ -593,7 +593,9 @@ M.man_tab = function(selected)
 end
 
 M.git_switch = function(selected, opts)
-  if not selected[1] then return end
+  if not selected[1] then
+    return
+  end
   local cmd = path.git_cwd({ "git", "checkout" }, opts)
   local git_ver = utils.git_version()
   -- git switch was added with git version 2.23
@@ -603,7 +605,9 @@ M.git_switch = function(selected, opts)
   -- remove anything past space
   local branch = selected[1]:match("[^ ]+")
   -- do nothing for active branch
-  if branch:find("%*") ~= nil then return end
+  if branch:find("%*") ~= nil then
+    return
+  end
   if branch:find("^remotes/") then
     table.insert(cmd, "--detach")
   end
@@ -674,11 +678,19 @@ M.git_worktree_add = function(selected, opts)
   else
     require("fzf-lua").git_branches({
       actions = {
-        ["enter"] = function(entry, _)
-          local branch = entry[1]:match("[^%s%*]+")
+        ["ctrl-a"] = nil,
+        ["ctrl-x"] = nil,
+        ["enter"] = function(_selected, _opts)
+          local branch
+          if _selected and #_selected > 0 then
+            branch = _selected[1]:match("[^%s%*]+")
+          else
+            M.git_branch_add(_selected, _opts)
+            branch = _opts.last_query
+          end
           require("git-worktree").create_worktree(worktree_path, branch)
-        end
-      }
+        end,
+      },
     })
   end
 end
@@ -690,6 +702,13 @@ M.git_worktree_del = function(selected, _)
     table.insert(worktree, str)
   end
   local worktree_path = worktree[1]
+  if worktree_path == "" then
+    utils.warn("Worktree Path name cannot be empty.")
+    return
+  elseif worktree_path == require("git-worktree").get_current_worktree_path() then
+    utils.warn("Cannot delete current worktree.")
+    return
+  end
 
   if vim.fn.confirm("Delete worktree " .. worktree_path .. "?", "&Yes\n&No") == 1 then
     require("git-worktree").delete_worktree(worktree_path)

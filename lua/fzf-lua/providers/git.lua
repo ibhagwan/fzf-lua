@@ -22,15 +22,6 @@ local function set_git_cwd_args(opts)
   return opts
 end
 
-local function git_cmd(opts)
-  opts = set_git_cwd_args(opts)
-  if not opts.cwd then
-    return
-  end
-  opts = core.set_header(opts, opts.headers or { "cwd" })
-  core.fzf_exec(opts.cmd, opts)
-end
-
 M.files = function(opts)
   opts = config.normalize_opts(opts, "git.files")
   if not opts then
@@ -108,6 +99,15 @@ M.status = function(opts)
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
 
   return core.fzf_exec(contents, opts)
+end
+
+local function git_cmd(opts)
+  opts = set_git_cwd_args(opts)
+  if not opts.cwd then
+    return
+  end
+  opts = core.set_header(opts, opts.headers or { "cwd" })
+  core.fzf_exec(opts.cmd, opts)
 end
 
 M.commits = function(opts)
