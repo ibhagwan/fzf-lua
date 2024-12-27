@@ -24,37 +24,42 @@ local filter_buffers = function(opts, unfiltered)
   end
 
   local excluded, max_bufnr = {}, 0
-  local bufnrs = vim.tbl_filter(function(b)
-    if not vim.api.nvim_buf_is_valid(b) then
-      excluded[b] = true
-    elseif not opts.show_unlisted and b ~= core.CTX().bufnr and vim.fn.buflisted(b) ~= 1 then
-      excluded[b] = true
-    elseif not opts.show_unloaded and not vim.api.nvim_buf_is_loaded(b) then
-      excluded[b] = true
-    elseif opts.ignore_current_buffer and b == core.CTX().bufnr then
-      excluded[b] = true
-    elseif opts.current_tab_only and not curtab_bufnrs[b] then
-      excluded[b] = true
-    elseif opts.no_term_buffers and utils.is_term_buffer(b) then
-      excluded[b] = true
-    elseif opts.cwd_only and not path.is_relative_to(vim.api.nvim_buf_get_name(b), uv.cwd()) then
-      excluded[b] = true
-    elseif opts.cwd and not path.is_relative_to(vim.api.nvim_buf_get_name(b), opts.cwd) then
-      excluded[b] = true
-    end
-    if utils.buf_is_qf(b) then
-      if opts.show_quickfix then
-        -- show_quickfix trumps show_unlisted
-        excluded[b] = nil
-      else
-        excluded[b] = true
-      end
-    end
-    if not excluded[b] and b > max_bufnr then
-      max_bufnr = b
-    end
-    return not excluded[b]
-  end, unfiltered)
+  local bufnrs = type(opts.buffers) == "table"
+      and vim.tbl_map(function(b)
+        max_bufnr = math.max(max_bufnr, b)
+        return b
+      end, opts.buffers)
+      or vim.tbl_filter(function(b)
+        if not vim.api.nvim_buf_is_valid(b) then
+          excluded[b] = true
+        elseif not opts.show_unlisted and b ~= core.CTX().bufnr and vim.fn.buflisted(b) ~= 1 then
+          excluded[b] = true
+        elseif not opts.show_unloaded and not vim.api.nvim_buf_is_loaded(b) then
+          excluded[b] = true
+        elseif opts.ignore_current_buffer and b == core.CTX().bufnr then
+          excluded[b] = true
+        elseif opts.current_tab_only and not curtab_bufnrs[b] then
+          excluded[b] = true
+        elseif opts.no_term_buffers and utils.is_term_buffer(b) then
+          excluded[b] = true
+        elseif opts.cwd_only and not path.is_relative_to(vim.api.nvim_buf_get_name(b), uv.cwd()) then
+          excluded[b] = true
+        elseif opts.cwd and not path.is_relative_to(vim.api.nvim_buf_get_name(b), opts.cwd) then
+          excluded[b] = true
+        end
+        if utils.buf_is_qf(b) then
+          if opts.show_quickfix then
+            -- show_quickfix trumps show_unlisted
+            excluded[b] = nil
+          else
+            excluded[b] = true
+          end
+        end
+        if not excluded[b] and b > max_bufnr then
+          max_bufnr = b
+        end
+        return not excluded[b]
+      end, unfiltered)
 
   return bufnrs, excluded, max_bufnr
 end
