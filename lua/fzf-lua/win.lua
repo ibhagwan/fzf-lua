@@ -1635,9 +1635,12 @@ function FzfWin.toggle_help()
     winopts.border = "single"
   end
 
+  local nvim_open_win = type(self._o.help_open_win) == "function"
+      and self._o.help_open_win or vim.api.nvim_open_win
+
   self.km_bufnr = vim.api.nvim_create_buf(false, true)
   vim.bo[self.km_bufnr].bufhidden = "wipe"
-  self.km_winid = config.setup_opts.help_open_win(self.km_bufnr, false, winopts)
+  self.km_winid = nvim_open_win(self.km_bufnr, false, winopts)
   vim.api.nvim_buf_set_name(self.km_bufnr, "_FzfLuaHelp")
   vim.wo[self.km_winid].winhl =
       string.format("Normal:%s,FloatBorder:%s", opts.normal_hl, opts.border_hl)

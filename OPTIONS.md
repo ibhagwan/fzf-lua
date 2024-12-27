@@ -117,6 +117,26 @@ If set to a `function` the return value will be used (`string|object`).
 
 If set to an `object`, fzf-lua expects a previewer class that will be initlaized with `object:new(...)`, see the advanced Wiki "Neovim builtin previewer" section for more info.
 
+#### setup.help_open_win
+
+Type: `fun(number, boolean, table)`,  Default: `vim.api.nvim_open_win`
+
+Function override for opening the help window (default bound to `<F1>`), will be called with the same arguments as `nvim_open_win(bufnr, enter, winopts)`. By default opens a floating window at the bottom of current screen.
+
+Override this function if you want to customize window configs of the help window (location, width, border, etc.).
+
+Example, opening a floating help window at the top of screen with single border:
+```lua
+    require("fzf-lua").setup({
+      help_open_win = function(buf, enter, opts)
+        opts.border = 'single'
+        opts.row = 0
+        opts.col = 0
+        return vim.api.nvim_open_win(buf, enter, opts)
+      end,
+    })
+```
+
 ---
 
 ## Global Options

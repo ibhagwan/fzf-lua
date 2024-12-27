@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*      For Neovim >= 0.8.0      Last change: 2024 December 17
+*fzf-lua-opts.txt*      For Neovim >= 0.8.0      Last change: 2024 December 18
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -148,6 +148,32 @@ If set to an `object`, fzf-lua expects a previewer class that will be
 initlaized with `object:new(...)`, see the advanced Wiki "Neovim builtin
 previewer" section for more info.
 
+
+                                                                              
+setup.help_open_win                         *fzf-lua-opts-setup.help_open_win*
+
+Type: `fun(number, boolean, table)`, Default: `vim.api.nvim_open_win`
+
+Function override for opening the help window (default bound to `<F1>`), will
+be called with the same arguments as `nvim_open_win(bufnr, enter, winopts)`.
+By default opens a floating window at the bottom of current screen.
+
+Override this function if you want to customize window configs of the help
+window (location, width, border, etc.).
+
+Example, opening a floating help window at the top of screen with single
+border:
+
+>lua
+        require("fzf-lua").setup({
+          help_open_win = function(buf, enter, opts)
+            opts.border = 'single'
+            opts.row = 0
+            opts.col = 0
+            return vim.api.nvim_open_win(buf, enter, opts)
+          end,
+        })
+<
 
 ------------------------------------------------------------------------------
 GLOBAL OPTIONS                                   *fzf-lua-opts-global-options*
@@ -1385,29 +1411,7 @@ defines the timeout (ms) for the LPS request via `vim.lsp.buf_request_sync`.
                                                                               
 MISC                                                       *fzf-lua-opts-misc*
 
-help_open_win                                *fzf-lua-opts-misc.help_open_win*
 
-Type: `fun(integer, boolean, table)`, same signature as `nvim_open_win`
-Default: `vim.api.nvim_open_win`
-
-Function to open the help window (default bound to `<F1>`).
-
-Default to open a floating window at the bottom on current screen.
-
-Override this function if you want to customize window configs of the
-help window (location, width, border, etc.).
-
-Example (open floating help window at the top of screen with single border):
->lua
-    require("fzf-lua").setup({
-      help_open_win = function(buf, enter, opts)
-        opts.border = 'single'
-        opts.row = 0
-        opts.col = 0
-        return vim.api.nvim_open_win(buf, enter, opts)
-      end,
-    })
-<
                                                                               
 resume                                                   *fzf-lua-opts-resume*
 

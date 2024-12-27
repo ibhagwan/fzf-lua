@@ -1198,7 +1198,8 @@ M.defaults.complete_line        = { complete = true }
 
 M.defaults.file_icon_padding    = ""
 
-M.help_open_win                 = vim.api.nvim_open_win
+-- No need to sset this, already defaults to `nvim_open_win`
+-- M.help_open_win              = vim.api.nvim_open_win
 
 M.defaults.dir_icon             = ""
 

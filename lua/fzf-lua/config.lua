@@ -320,13 +320,14 @@ function M.normalize_opts(opts, globals, __resume_key)
     "fzf_raw_args",
     "file_icon_padding",
     "dir_icon",
+    "help_open_win",
   }) do
     if opts[s] == nil then
       opts[s] = M.globals[s]
     end
     local pattern_prefix = "%-%-prompt="
     local pattern_prompt = ".-"
-    local surround = opts[s] and opts[s]:match(pattern_prefix .. "(.)")
+    local surround = type(opts[s]) == "string" and opts[s]:match(pattern_prefix .. "(.)")
     -- prompt was set without surrounding quotes
     -- technically an error but we can handle it gracefully instead
     if surround and surround ~= [[']] and surround ~= [["]] then

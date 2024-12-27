@@ -1470,10 +1470,6 @@ open an issue and I'll be more than happy to help.**
       -- uncomment if your terminal/font does not support unicode character
       -- 'EN SPACE' (U+2002), the below sets it to 'NBSP' (U+00A0) instead
       -- nbsp = '\xc2\xa0',
-      -- Function to open the help window (default bound to `<F1>`)
-      -- Override this function if you want to customize window configs of the
-      -- help window (location, width, border, etc.)
-      help_open_win = vim.api.nvim_open_win,
     }
 <
 
