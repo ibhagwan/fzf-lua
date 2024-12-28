@@ -135,7 +135,7 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
   for i, sel in ipairs(selected) do
     (function()
       -- Lua 5.1 goto compatiblity hack (function wrap)
-      local entry = path.entry_to_file(sel, opts, opts._uri)
+      local entry = path.entry_to_file(sel, opts)
       -- "<none>" could be set by `autocmds`
       if entry.path == "<none>" then return end
       local fullpath = entry.bufname or entry.uri and entry.uri:match("^%a+://(.*)") or entry.path

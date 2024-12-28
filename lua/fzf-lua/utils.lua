@@ -119,19 +119,12 @@ end
 ---@return string[]
 M.strsplit = function(inputstr, sep)
   local t = {}
-  -- Also match any single character class (e.g. %s, %a, etc)
-  if #sep == 1 or sep:match("^%%.$") then
-    for str in string.gmatch(inputstr, "([^" .. sep .. "]+)") do
-      table.insert(t, str)
-    end
-  else
-    local s, m, r = inputstr, nil, nil
-    repeat
-      m, r = s:match("^(.-)" .. sep .. "(.*)$")
-      s = r and r or s
-      table.insert(t, m or s)
-    until not m
-  end
+  local s, m, r = inputstr, nil, nil
+  repeat
+    m, r = s:match("^(.-)" .. sep .. "(.*)$")
+    s = r and r or s
+    table.insert(t, m or s)
+  until not m
   return t
 end
 
@@ -438,7 +431,7 @@ end
 function M.map_get(m, k)
   if not m then return end
   if not k then return m end
-  local keys = type(k) == "table" and k or M.strsplit(k, ".")
+  local keys = type(k) == "table" and k or M.strsplit(k, "%.")
   local iter = m
   for i = 1, #keys do
     iter = iter[keys[i]]
@@ -460,7 +453,7 @@ end
 ---@return table<string, unknown>
 function M.map_set(m, k, v)
   m = m or {}
-  local keys = type(k) == "table" and k or M.strsplit(k, ".")
+  local keys = type(k) == "table" and k or M.strsplit(k, "%.")
   local map = m
   for i = 1, #keys do
     local key = keys[i]

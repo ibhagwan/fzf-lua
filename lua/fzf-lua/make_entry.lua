@@ -119,7 +119,7 @@ M.glob_parse = function(query, opts)
   end
   local glob_args = ""
   local search_query, glob_str = query:match("(.*)" .. opts.glob_separator .. "(.*)")
-  for _, s in ipairs(utils.strsplit(glob_str, "%s")) do
+  for _, s in ipairs(utils.strsplit(glob_str, "%s+")) do
     glob_args = glob_args .. ("%s %s "):format(opts.glob_flag, libuv.shellescape(s))
   end
   return search_query, glob_args

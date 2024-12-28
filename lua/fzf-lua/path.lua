@@ -408,9 +408,8 @@ function M.entry_to_location(entry, opts)
   }
 end
 
-function M.entry_to_file(entry, opts, force_uri)
+function M.entry_to_file(entry, opts)
   opts = opts or {}
-  local cwd = opts.cwd
   if opts._fmt then
     if type(opts._fmt._from) == "function" then
       entry = opts._fmt._from(entry, opts)
@@ -419,33 +418,32 @@ function M.entry_to_file(entry, opts, force_uri)
       entry = opts._fmt.from(entry, opts)
     end
   end
-  -- Remove ansi coloring and prefixed icons
+  -- Remove ANSI coloring and prefixed icons
   entry = utils.strip_ansi_coloring(entry)
   local stripped, idx = stripBeforeLastOccurrenceOf(entry, utils.nbsp)
+  -- Convert "~" to "$HOME"
   stripped = M.tilde_to_HOME(stripped)
+  -- Prepend cwd unless entry is already a URI (e.g. nvim-jdtls "jdt://...")
   local isURI = stripped:match("^%a+://")
-  -- Prepend cwd before constructing the URI (#341)
-  if cwd and #cwd > 0 and not isURI and not M.is_absolute(stripped) then
-    stripped = M.join({ cwd, stripped })
+  if opts.cwd and #opts.cwd > 0 and not isURI and not M.is_absolute(stripped) then
+    stripped = M.join({ opts.cwd, stripped })
   end
-  -- #336: force LSP jumps using 'vim.lsp.util.show_document'
-  -- so that LSP entries are added to the tag stack
-  if not isURI and force_uri then
+  --Force LSP jumps using `vim.lsp.util.show_document` so that LSP entries are
+  --added to the tag stack (see `:help gettagstack`)
+  if not isURI and opts._uri then
     isURI = true
     stripped = "file://" .. stripped
   end
-  -- entries from 'buffers' contain '[<bufnr>]'
-  -- buffer placeholder always comes before the nbsp
-  local bufnr = idx > 1 and entry:sub(1, idx):match("%[(%d+)") or nil
+  -- Entry metadata (before `utils.nbsp`) can contain `[bufnr]` which should
+  -- be used instead of the file path, used in buffers, tabs, lines|blines
+  local bufnr = idx > 1 and entry:sub(1, idx):match("%[(%d+)%]") or nil
   if isURI and not bufnr then
-    -- Issue #195, when using nvim-jdtls
-    -- https://github.com/mfussenegger/nvim-jdtls
-    -- LSP entries inside .jar files appear as URIs
-    -- 'jdt://' which can then be opened with
-    -- 'vim.lsp.util.show_document' or
-    -- 'lua require('jdtls').open_jdt_link(vim.fn.expand('jdt://...'))'
-    -- Convert to location item so we can use 'jump_to_location'
-    -- This can also work with any 'file://' prefixes
+    -- LSP entries can appear as URIs, for example when using nvim-jdtls
+    -- references inside ".jar" files will have a prefix of "jdt://..."
+    -- we also "hack" our LSP entries to appear as URIs by prefixing the
+    -- entry with "file:// and then converting the entry to a URI that can
+    -- be used with `vim.lsp.utils.show_document` which adds the jump to
+    -- neovim's tagstack (see `:help gettagstack`)
     return M.entry_to_location(stripped, opts)
   end
   local s = utils.strsplit(stripped, ":")
@@ -568,9 +566,13 @@ function M.keymap_to_entry(str, opts)
   if not mode or not keymap then return {} end
   mode, keymap = vim.trim(mode), vim.trim(keymap)
   mode = valid_modes[mode] and mode or "" -- only valid modes
-  local vmap = utils.strsplit(
-    vim.fn.execute(string.format("verbose %smap %s", mode, keymap)), "\n")[1]
-  local out = utils.strsplit(vmap, "\n")
+  local out, vmap, cmd = nil, nil, string.format("verbose %smap %s", mode, keymap)
+  -- Run in the context of the originating buffer or keympas might return
+  -- "No mapping found"
+  pcall(vim.api.nvim_buf_call, opts.__CTX.bufnr, function()
+    out = utils.strsplit(vim.fn.execute(cmd), "\n")
+    _, vmap = next(vim.tbl_map(function(x) return #x > 0 and x or nil end, out))
+  end)
   local entry
   for i = #out, 1, -1 do
     if out[i]:match(utils.lua_regex_escape(keymap)) then

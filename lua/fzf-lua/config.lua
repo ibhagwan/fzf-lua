@@ -793,7 +793,7 @@ function M.normalize_opts(opts, globals, __resume_key)
 end
 
 M.bytecode = function(s, datatype)
-  local keys = utils.strsplit(s, ".")
+  local keys = utils.strsplit(s, "%.")
   local iter = M
   for i = 1, #keys do
     iter = iter[keys[i]]
