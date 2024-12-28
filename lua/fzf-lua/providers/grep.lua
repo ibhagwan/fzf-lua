@@ -91,6 +91,32 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     search_query = opts.search
   end
 
+  do
+    -- Auto add `--line-number` for grep and `--line-number --column` for rg
+    -- although `--column` implies `--line-number` with rg
+    local bin = path.tail(command:match("[^%s]+"))
+    local bin2flags = {
+      grep = { { "--line-number", "-n" }, { "--recursive", "-r" } },
+      rg = { { "--line-number", "-n" }, { "--column" } }
+    }
+    for _, flags in ipairs(bin2flags[bin] or {}) do
+      local has_flag_group
+      for _, f in ipairs(flags) do
+        if command:match(utils.lua_regex_escape(f)) then
+          has_flag_group = true
+        end
+      end
+      if not has_flag_group then
+        if not opts.silent then
+          utils.warn(string.format(
+            "Added missing '%s' flag to '%s'. Add 'silent=true' to hide this message.",
+            table.concat(flags, "|"), bin))
+        end
+      end
+      command = make_entry.rg_insert_args(command, flags[1])
+    end
+  end
+
   -- remove column numbers when search term is empty
   if not opts.no_column_hide and #search_query == 0 then
     command = command:gsub("%s%-%-column", "")

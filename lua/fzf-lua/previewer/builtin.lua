@@ -1029,7 +1029,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
 
   -- If called from tags previewer, can happen when using ctags cmd
   -- "ctags -R --c++-kinds=+p --fields=+iaS --extras=+q --excmd=combine"
-  regex = regex and utils.regex_to_magic(regex)
+  regex = regex and #regex > 0 and utils.regex_to_magic(regex)
       or entry.ctag and utils.ctag_to_magic(entry.ctag)
 
   pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
@@ -1049,23 +1049,26 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
     fn.clearmatches()
 
     -- If regex is available (grep/lgrep), match on current line
-    local regex_match_len = 0
+    local regex_start, regex_end = 0, nil
     if regex and self.win.hls.search then
       -- vim.regex is always magic, see `:help vim.regex`
       local ok, reg = pcall(vim.regex, regex)
       if ok then
-        _, regex_match_len = reg:match_line(self.preview_bufnr, lnum - 1, math.max(1, col) - 1)
-        regex_match_len = tonumber(regex_match_len) or 0
+        regex_start, regex_end = reg:match_line(self.preview_bufnr, lnum - 1, math.max(1, col) - 1)
+        regex_end = tonumber(regex_end) and regex_end - regex_start
+        regex_start = tonumber(regex_start) and regex_start + math.max(1, col) or 0
       elseif self.opts.silent ~= true then
-        utils.warn(string.format([[Unable to init vim.regex with "%s", %s]], regex, reg))
+        utils.warn(string.format(
+          [[Unable to init vim.regex with "%s", %s. . Add 'silent=true' to hide this message.]],
+          regex, reg))
       end
-      if regex_match_len > 0 then
-        fn.matchaddpos(self.win.hls.search, { { lnum, math.max(1, col), regex_match_len } }, 11)
+      if regex_start > 0 then
+        fn.matchaddpos(self.win.hls.search, { { lnum, regex_start, regex_end } }, 11)
       end
     end
 
     -- Fallback to cursor hl, only if column exists
-    if regex_match_len <= 0 and self.win.hls.cursor and col > 0 then
+    if regex_start <= 0 and self.win.hls.cursor and col > 0 then
       fn.matchaddpos(self.win.hls.cursor, { { lnum, math.max(1, col) } }, 11)
     end
 
