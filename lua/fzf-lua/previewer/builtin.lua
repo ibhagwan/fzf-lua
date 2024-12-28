@@ -1008,15 +1008,23 @@ function Previewer.base:maybe_set_cursorline(win, pos)
 end
 
 function Previewer.buffer_or_file:set_cursor_hl(entry)
-  local mgrep = require("fzf-lua.providers.grep")
+  local mgrep, glob_args = require("fzf-lua.providers.grep"), nil
   local regex = self.opts.__ACT_TO == mgrep.grep and self.opts._last_query
       or self.opts.__ACT_TO == mgrep.live_grep and self.opts.search or nil
   if regex and self.opts.rg_glob and self.opts.glob_separator then
-    regex = require("fzf-lua.make_entry").glob_parse(regex, self.opts)
+    regex, glob_args = require("fzf-lua.make_entry").glob_parse(regex, self.opts)
   end
-  if regex and self.opts.cmd
-      and (self.opts.cmd:match("%-%-fixed%-strings") or self.opts.cmd:match("%-F")) then
-    regex = utils.rg_escape(regex)
+  if regex then
+    (function()
+      -- Check both the cmd and glob_args in case the user has a custom
+      -- `rg_glob_fn` which uses raw args (as the wiki example)
+      for _, s in ipairs({ self.opts.cmd, glob_args }) do
+        if s and (s:match("%-%-fixed%-strings") or s:match("%-F")) then
+          regex = utils.rg_escape(regex)
+          return
+        end
+      end
+    end)()
   end
 
   -- If called from tags previewer, can happen when using ctags cmd
