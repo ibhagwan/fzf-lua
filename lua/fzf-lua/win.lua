@@ -506,6 +506,8 @@ function FzfWin:new(o)
   if _self and not _self:hidden() then
     -- utils.warn("Please close fzf-lua before starting a new instance")
     _self._reuse = true
+    -- switch to fzf-lua's main window in case the user switched out
+    vim.api.nvim_set_current_win(_self.fzf_winid)
     -- refersh treesitter settings as new picker might have it disabled
     _self._o.winopts.treesitter = o.winopts.treesitter
     return _self
@@ -859,7 +861,7 @@ function FzfWin:set_redraw_autocmd()
 end
 
 function FzfWin:set_winleave_autocmd()
-  self:_nvim_create_autocmd("WinLeave", self.win_leave, [[require('fzf-lua.win').win_leave()]])
+  self:_nvim_create_autocmd("WinClosed", self.win_leave, [[require('fzf-lua.win').win_leave()]])
 end
 
 function FzfWin:treesitter_detach(buf, noassert)
@@ -1305,6 +1307,7 @@ function FzfWin:update_scrollbar(hide)
   local style1 = {}
   style1.relative = "editor"
   style1.style = "minimal"
+  style1.focusable = false
   style1.width = 1
   style1.height = info.height
   style1.row = info.winrow - 1 + offset
