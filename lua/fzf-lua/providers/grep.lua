@@ -93,7 +93,8 @@ local get_grep_cmd = function(opts, search_query, no_esc)
 
   do
     -- Auto add `--line-number` for grep and `--line-number --column` for rg
-    -- although `--column` implies `--line-number` with rg
+    -- NOTE: although rg's `--column` implies `--line-number` we still add
+    -- `--line-number` since we remove `--column` when search regex is empty
     local bin = path.tail(command:match("[^%s]+"))
     local bin2flags = {
       grep = { { "--line-number", "-n" }, { "--recursive", "-r" } },
