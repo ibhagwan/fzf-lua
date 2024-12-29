@@ -408,7 +408,7 @@ function M.entry_to_location(entry, opts)
   }
 end
 
-function M.entry_to_file(entry, opts)
+function M.entry_to_file(entry, opts, force_uri)
   opts = opts or {}
   if opts._fmt then
     if type(opts._fmt._from) == "function" then
@@ -430,7 +430,7 @@ function M.entry_to_file(entry, opts)
   end
   --Force LSP jumps using `vim.lsp.util.show_document` so that LSP entries are
   --added to the tag stack (see `:help gettagstack`)
-  if not isURI and opts._uri then
+  if not isURI and force_uri then
     isURI = true
     stripped = "file://" .. stripped
   end
