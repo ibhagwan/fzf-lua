@@ -1,19 +1,15 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2024 December 27
+*fzf-lua.txt*         For Neovim >= 0.5.0        Last change: 2024 December 29
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
 
 Quickstart .............................................. |fzf-lua-quickstart|
-Coming from fzf.vim? .......................... |fzf-lua-coming-from-fzf.vim?|
-Rationale ................................................ |fzf-lua-rationale|
-Why Fzf-Lua ............................................ |fzf-lua-why-fzf-lua|
+Installation .......................................... |fzf-lua-installation|
 Dependencies .......................................... |fzf-lua-dependencies|
 Optional dependencies ........................ |fzf-lua-optional-dependencies|
 Windows Notes ........................................ |fzf-lua-windows-notes|
-Installation .......................................... |fzf-lua-installation|
 Usage ........................................................ |fzf-lua-usage|
 Resume ...................................................... |fzf-lua-resume|
-Options .................................................... |fzf-lua-options|
 Commands .................................................. |fzf-lua-commands|
 Buffers and Files ................................ |fzf-lua-buffers-and-files|
 Search ...................................................... |fzf-lua-search|
@@ -26,11 +22,15 @@ nvim-dap .................................................. |fzf-lua-nvim-dap|
 tmux .......................................................... |fzf-lua-tmux|
 Completion Functions .......................... |fzf-lua-completion-functions|
 Customization ........................................ |fzf-lua-customization|
+Inline Customization .......................... |fzf-lua-inline-customization|
 Profiles .................................................. |fzf-lua-profiles|
-Insert-mode Completion ...................... |fzf-lua-insert-mode-completion|
+Coming from fzf.vim? .......................... |fzf-lua-coming-from-fzf.vim?|
+Available Profiles .............................. |fzf-lua-available-profiles|
+Extensibility ........................................ |fzf-lua-extensibility|
+Insert-mode completion ...................... |fzf-lua-insert-mode-completion|
 Custom Completion ................................ |fzf-lua-custom-completion|
-Default Options .................................... |fzf-lua-default-options|
 Highlights .............................................. |fzf-lua-highlights|
+Highlight groups .................................. |fzf-lua-highlight-groups|
 Fzf Colors .............................................. |fzf-lua-fzf-colors|
 Credits .................................................... |fzf-lua-credits|
 
@@ -47,31 +47,12 @@ Quickstart <#quickstart> • Installation <#installation> • Usage <#usage>
 
 Demo <https://raw.githubusercontent.com/wiki/ibhagwan/fzf-lua/demo.gif>
 
-fzf <https://github.com/junegunn/fzf> changed my command life, it can change
-yours too, if you allow it.
+“because you can and you love fzf” - @junegunn
+<https://github.com/junegunn>
 
+"fzf changed my command life, it can change yours too, if you allow it" -
+@ibhagwan <https://github.com/ibhagwan>
 
-==============================================================================
-CONTENTS                                                    *fzf-lua-contents*
-
-
-- Quickstart <#quickstart>
-- Rationale <#rationale>
-- Why Fzf-lua <#why-fzf-lua>
-- Dependencies <#dependencies> + Optional Dependencies
-  <#optional-dependencies> + Windows Notes <#windows-notes>
-- Installation <#installation>
-- Usage <#usage> + Resume <#resume> + Options <#options>
-- Commands <#commands> + Buffers and Files <#buffers-and-files> + Search
-  <#search> + Tags <#tags> + Git <#git> + LSP | Diagnostics <#lspdiagnostics>
-  + Misc <#misc> + Neovim API <#neovim-api> + `nvim-dap` <#nvim-dap> + `tmux`
-  <#tmux> + Completion Functions <#completion-functions>
-- Customization <#customization> + Profiles <#profiles>
-- Insert-mode Completion <#insert-mode-completion> + Custom Completion
-  <#custom-completion>
-- Default Options <#default-options>
-- Highlights <#highlights> + Fzf Colors <#fzf-colors>
-- Credits <#credits>
 
 ------------------------------------------------------------------------------
 QUICKSTART                                                *fzf-lua-quickstart*
@@ -94,63 +75,33 @@ in it's own sandbox with the default keybinds below):
 | `<C-k>`     | builtin commands  | `<F1>`      | neovim help       |
 
 
+------------------------------------------------------------------------------
+INSTALLATION                                            *fzf-lua-installation*
+
+
+![LuaRocks](https://img.shields.io/luarocks/v/ibhagwan/fzf-lua?logo=lua&color=purple)
+<https://luarocks.org/modules/ibhagwan/fzf-lua>
+
+Using lazy.nvim <https://github.com/folke/lazy.nvim>
+
+>lua
+    {
+      "ibhagwan/fzf-lua",
+      -- optional for icon support
+      dependencies = { "nvim-tree/nvim-web-devicons" },
+      -- or if using mini.icons/mini.nvim
+      -- dependencies = { "echasnovski/mini.icons" },
+      opts = {}
+    }
+<
+
                                                                               
-COMING FROM FZF.VIM?                            *fzf-lua-coming-from-fzf.vim?*
-
-Easy! run `:FzfLua setup_fzfvim_cmds` and use the same familiar commands used
-by fzf.vim, i.e. `:Files`, `:Rg`, etc.
-
-  Using the builtin `fzf-vim` profile will also create fzf.vim's user commands,
-  i.e. `require("fzf-lua").setup({ "fzf-vim" })`
-
-
-------------------------------------------------------------------------------
-RATIONALE                                                  *fzf-lua-rationale*
-
-
-What more can be said about fzf <https://github.com/junegunn/fzf>? It is the
-single most impactful tool for my command line workflow, once I started using
-fzf I couldn’t see myself living without it.
-
-  **To understand fzf properly I highly recommended fzf screencast
-  <https://www.youtube.com/watch?v=qgG5Jhi_Els> by @samoshkin
-  <https://github.com/samoshkin>**
-
-This is my take on the original fzf.vim <https://github.com/junegunn/fzf.vim>,
-written in lua for neovim 0.5, it builds on the elegant nvim-fzf
-<https://github.com/vijaymarupudi/nvim-fzf> as an async interface to create a
-performant and lightweight fzf client for neovim that rivals any of the new
-shiny fuzzy finders for neovim.
-
-
-------------------------------------------------------------------------------
-WHY FZF-LUA                                              *fzf-lua-why-fzf-lua*
-
-
-... and not telescope <https://github.com/nvim-telescope/telescope.nvim> or
-any other vim/neovim household name?
-
-As @junegunn <https://github.com/junegunn> himself put it, “because you can
-and you love `fzf`”.
-
-If you’re happy with your current setup there is absolutely no reason to
-switch.
-
-That said, without taking anything away from the greatness of other plugins I
-found it more efficient having a uniform experience between my shell and my
-nvim. In addition `fzf` has been a rock for me since I started using it and
-hadn’t failed me once, it never hangs and can handle almost anything you
-throw at it. That, **and colorful file icons and git indicators!**.
-
-
-------------------------------------------------------------------------------
 DEPENDENCIES                                            *fzf-lua-dependencies*
 
-
 - `neovim` <https://github.com/neovim/neovim/releases> version > `0.5.0`
-- `fzf` <https://github.com/junegunn/fzf> version > `0.25` **or** `skim`
+- `fzf` <https://github.com/junegunn/fzf> version > `0.25` or `skim`
   <https://github.com/skim-rs/skim> binary installed
-- nvim-web-devicons <https://github.com/nvim-tree/nvim-web-devicons> **or**
+- nvim-web-devicons <https://github.com/nvim-tree/nvim-web-devicons> or
   mini.icons <https://github.com/echasnovski/mini.icons> (optional)
 
                                                                               
@@ -190,65 +141,10 @@ WINDOWS NOTES                                          *fzf-lua-windows-notes*
   <https://github.com/ScoopInstaller/Install>, chocolatey
   <https://chocolatey.org/install> or winget-cli
   <https://github.com/microsoft/winget-cli>
-- Although almost everything works on Windows exactly as the *NIX/OSX check
+- Although almost everything works on Windows exactly as the \*NIX/OSX check
   out the Windows README
   <https://github.com/ibhagwan/fzf-lua/blob/main/README-Win.md> for known
   issues and limitations.
-
-------------------------------------------------------------------------------
-INSTALLATION                                            *fzf-lua-installation*
-
-
-![LuaRocks](https://img.shields.io/luarocks/v/ibhagwan/fzf-lua?logo=lua&color=purple)
-<https://luarocks.org/modules/ibhagwan/fzf-lua>
-
-Using vim-plug <https://github.com/junegunn/vim-plug>
-
->vim
-    Plug 'ibhagwan/fzf-lua', {'branch': 'main'}
-    " optional for icon support
-    Plug 'nvim-tree/nvim-web-devicons'
-    " or if using mini.icons/mini.nvim
-    " Plug 'echasnovski/mini.icons'
-<
-Using packer.nvim <https://github.com/wbthomason/packer.nvim>
-
->lua
-    use { "ibhagwan/fzf-lua",
-      -- optional for icon support
-      requires = { "nvim-tree/nvim-web-devicons" }
-      -- or if using mini.icons/mini.nvim
-      -- requires = { "echasnovski/mini.icons" }
-    }
-<
-Using lazy.nvim <https://github.com/folke/lazy.nvim>
-
->lua
-    {
-      "ibhagwan/fzf-lua",
-      -- optional for icon support
-      dependencies = { "nvim-tree/nvim-web-devicons" },
-      config = function()
-        -- calling `setup` is optional for customization
-        require("fzf-lua").setup({})
-      end
-    }
-<
-  [!NOTE] if you already have fzf installed you do not need to install `fzf` or
-  `fzf.vim`, however if you do not have it installed, **you only need** fzf
-  which can be installed with (fzf.vim is not a requirement nor conflict):
->vim
-    Plug "junegunn/fzf", { "do": { -> fzf#install() } }
-<
-  or with packer.nvim <https://github.com/wbthomason/packer.nvim>:
->lua
-    use = { "junegunn/fzf", run = "./install --bin" }
-<
-  or with lazy.nvim <https://github.com/folke/lazy.nvim>
->lua
-    { "junegunn/fzf", build = "./install --bin" }
-<
-
 
 ------------------------------------------------------------------------------
 USAGE                                                          *fzf-lua-usage*
@@ -269,20 +165,6 @@ or with arguments:
     -- or using the `FzfLua` vim command:
     :FzfLua files cwd=~/.config
 <
-which can be easily mapped to:
-
->vim
-    nnoremap <c-P> <cmd>lua require('fzf-lua').files()<CR>
-<
-or if using `init.lua`:
-
-  Neovim versions below 0.7 can use `vim.api.nvim_set_keymap` instead
-
->lua
-    vim.keymap.set("n", "<c-P>", require('fzf-lua').files, { desc = "Fzf Files" })
-    -- Or, with args
-    vim.keymap.set("n", "<c-P>", function() require('fzf-lua').files({ ... }) end, { desc = "Fzf Files" })
-<
 
                                                                               
 RESUME                                                        *fzf-lua-resume*
@@ -294,20 +176,25 @@ Resuming work from where you left off is as easy as:
     -- or
     :FzfLua resume
 <
-Alternatively, resuming work on a specific provider:
+Alternatively, resuming work on a specific picker:
 
 >lua
     :lua require('fzf-lua').files({ resume = true })
     -- or
     :FzfLua files resume=true
 <
+  [!TIP] By default pressing esc or ctrl-c terminates the fzf process, as such
+  resume is not perfect and is limited to resuming the picker/query and
+  sometimes additional parameters such as regex in grep, etc, for a more
+  "complete" resume press alt-esc to hide the fzf process instead, this will
+  keep the fzf process running in the background and thus will restore the
+  process entirely including cursor position and selection. To configure hiding
+  by default:
+>lua
+    require("fzf-lua").setup({ keymap = { builtin = { true, ["<Esc>"] = "hide" } } })
+<
 
-                                                                              
-OPTIONS                                                      *fzf-lua-options*
-
-**Refer to OPTIONS <https://github.com/ibhagwan/fzf-lua/blob/main/OPTIONS.md>
-to see detailed usage notes and a comprehensive list of all available
-options.**
+**LIST OF AVAILABLE COMMANDS BELOW** 👇
 
 
 ------------------------------------------------------------------------------
@@ -318,33 +205,33 @@ COMMANDS                                                    *fzf-lua-commands*
                                                                               
 BUFFERS AND FILES                                  *fzf-lua-buffers-and-files*
 
-| Command          | List                                       |
-| ---------------- | ------------------------------------------ |
-| `buffers`          | open buffers                               |
-| `files`            | `find` or `fd` on a path                       |
-| `oldfiles`         | opened files history                       |
-| `quickfix`         | quickfix list                              |
-| `quickfix_stack`   | quickfix stack                             |
-| `loclist`          | location list                              |
-| `loclist_stack`    | location stack                             |
-| `lines`            | open buffers lines                         |
-| `blines`           | current buffer lines                       |
-| `treesitter`       | current buffer treesitter symbols          |
-| `tabs`             | open tabs                                  |
-| `args`             | argument list                              |
+| Command          | List                              |
+| ---------------- | --------------------------------- |
+| `buffers`        | open buffers                      |
+| `files`          | `find` or `fd` on a path          |
+| `oldfiles`       | opened files history              |
+| `quickfix`       | quickfix list                     |
+| `quickfix_stack` | quickfix stack                    |
+| `loclist`        | location list                     |
+| `loclist_stack`  | location stack                    |
+| `lines`          | open buffers lines                |
+| `blines`         | current buffer lines              |
+| `treesitter`     | current buffer treesitter symbols |
+| `tabs`           | open tabs                         |
+| `args`           | argument list                     |
 
 
                                                                               
 SEARCH                                                        *fzf-lua-search*
 
-| Command          | List                                       |
-| ---------------- | ------------------------------------------ |
-| `grep`             | search for a pattern with `grep` or `rg`       |
+| Command            | List                                       |
+| ------------------ | ------------------------------------------ |
+| `grep`             | search for a pattern with `grep` or `rg`   |
 | `grep_last`        | run search again with the last pattern     |
 | `grep_cword`       | search word under cursor                   |
 | `grep_cWORD`       | search WORD under cursor                   |
 | `grep_visual`      | search visual selection                    |
-| `grep_project`     | search all project lines (fzf.vim's `:Rg`)   |
+| `grep_project`     | search all project lines (fzf.vim's `:Rg`) |
 | `grep_curbuf`      | search current buffer lines                |
 | `grep_quickfix`    | search the quickfix list                   |
 | `grep_loclist`     | search the location list                   |
@@ -353,44 +240,44 @@ SEARCH                                                        *fzf-lua-search*
 | `lgrep_loclist`    | live grep the location list                |
 | `live_grep`        | live grep current project                  |
 | `live_grep_resume` | live grep continue last search             |
-| `live_grep_glob`   | live_grep with `rg --glob` support           |
-| `live_grep_native` | performant version of `live_grep`            |
+| `live_grep_glob`   | live_grep with `rg --glob` support         |
+| `live_grep_native` | performant version of `live_grep`          |
 
 
                                                                               
 TAGS                                                            *fzf-lua-tags*
 
-| Command          | List                                       |
-| ---------------- | ------------------------------------------ |
-| `tags`             | search project tags                        |
-| `btags`            | search buffer tags                         |
-| `tags_grep`        | grep project tags                          |
-| `tags_grep_cword`  | `tags_grep` word under cursor                |
-| `tags_grep_cWORD`  | `tags_grep` WORD under cursor                |
-| `tags_grep_visual` | `tags_grep` visual selection                 |
-| `tags_live_grep`   | live grep project tags                     |
+| Command            | List                          |
+| ------------------ | ----------------------------- |
+| `tags`             | search project tags           |
+| `btags`            | search buffer tags            |
+| `tags_grep`        | grep project tags             |
+| `tags_grep_cword`  | `tags_grep` word under cursor |
+| `tags_grep_cWORD`  | `tags_grep` WORD under cursor |
+| `tags_grep_visual` | `tags_grep` visual selection  |
+| `tags_live_grep`   | live grep project tags        |
 
 
                                                                               
 GIT                                                              *fzf-lua-git*
 
-| Command          | List                                       |
-| ---------------- | ------------------------------------------ |
-| `git_files`        | `git ls-files`                               |
-| `git_status`       | `git status`                                 |
-| `git_commits`      | git commit log (project)                   |
-| `git_bcommits`     | git commit log (buffer)                    |
-| `git_blame`        | git blame (buffer)                         |
-| `git_branches`     | git branches                               |
-| `git_tags`         | git tags                                   |
-| `git_stash`        | git stash                                  |
+| Command        | List                     |
+| -------------- | ------------------------ |
+| `git_files`    | `git ls-files`           |
+| `git_status`   | `git status`             |
+| `git_commits`  | git commit log (project) |
+| `git_bcommits` | git commit log (buffer)  |
+| `git_blame`    | git blame (buffer)       |
+| `git_branches` | git branches             |
+| `git_tags`     | git tags                 |
+| `git_stash`    | git stash                |
 
 
                                                                               
 LSP/DIAGNOSTICS                                      *fzf-lua-lsp/diagnostics*
 
-| Command          | List                                       |
-| ---------------- | ------------------------------------------ |
+| Command                      | List                             |
+| ---------------------------- | -------------------------------- |
 | `lsp_references`             | References                       |
 | `lsp_definitions`            | Definitions                      |
 | `lsp_declarations`           | Declarations                     |
@@ -405,37 +292,37 @@ LSP/DIAGNOSTICS                                      *fzf-lua-lsp/diagnostics*
 | `lsp_finder`                 | All LSP locations, combined view |
 | `diagnostics_document`       | Document Diagnostics             |
 | `diagnostics_workspace`      | Workspace Diagnostics            |
-| `lsp_document_diagnostics`   | alias to `diagnostics_document`    |
-| `lsp_workspace_diagnostics`  | alias to `diagnostics_workspace`   |
+| `lsp_document_diagnostics`   | alias to `diagnostics_document`  |
+| `lsp_workspace_diagnostics`  | alias to `diagnostics_workspace` |
 
 
                                                                               
 MISC                                                            *fzf-lua-misc*
 
-| Command          | List                                       |
-| ---------------- | ------------------------------------------ |
-| `resume`               | resume last command/query              |
-| `builtin`              | fzf-lua builtin commands               |
-| `profiles`             | fzf-lua configuration profiles         |
-| `helptags`             | help tags                              |
-| `manpages`             | man pages                              |
-| `colorschemes`         | color schemes                          |
-| `awesome_colorschemes` | Awesome Neovim color schemes           | 
-| `highlights`           | highlight groups                       |
-| `commands`             | neovim commands                        |
-| `command_history`      | command history                        |
-| `search_history`       | search history                         |
-| `marks`                | :marks                                 |
-| `jumps`                | :jumps                                 |
-| `changes`              | :changes                               |
-| `registers`            | :registers                             |
-| `tagstack`             | :tags                                  |
-| `autocmds`             | :autocmd                               |
-| `keymaps`              | key mappings                           |
-| `filetypes`            | filetypes                              |
-| `menus`                | menus                                  |
-| `spell_suggest`        | spelling suggestions                   |
-| `packadd`              | :packadd <package>                     |
+| Command                | List                           |
+| ---------------------- | ------------------------------ |
+| `resume`               | resume last command/query      |
+| `builtin`              | fzf-lua builtin commands       |
+| `profiles`             | fzf-lua configuration profiles |
+| `helptags`             | help tags                      |
+| `manpages`             | man pages                      |
+| `colorschemes`         | color schemes                  |
+| `awesome_colorschemes` | Awesome Neovim color schemes   |
+| `highlights`           | highlight groups               |
+| `commands`             | neovim commands                |
+| `command_history`      | command history                |
+| `search_history`       | search history                 |
+| `marks`                | :marks                         |
+| `jumps`                | :jumps                         |
+| `changes`              | :changes                       |
+| `registers`            | :registers                     |
+| `tagstack`             | :tags                          |
+| `autocmds`             | :autocmd                       |
+| `keymaps`              | key mappings                   |
+| `filetypes`            | filetypes                      |
+| `menus`                | menus                          |
+| `spell_suggest`        | spelling suggestions           |
+| `packadd`              | :packadd <package>             |
 
 
                                                                               
@@ -443,10 +330,10 @@ NEOVIM API                                                *fzf-lua-neovim-api*
 
   `:help vim.ui.select` for more info
 
-| Command              | List                                   |
-| -------------------- | -------------------------------------- |
-| `register_ui_select`   | register fzf-lua as the UI interface for `vim.ui.select`|
-| `deregister_ui_select` | de-register fzf-lua with `vim.ui.select` |
+| Command                | List                                                     |
+| ---------------------- | -------------------------------------------------------- |
+| `register_ui_select`   | register fzf-lua as the UI interface for `vim.ui.select` |
+| `deregister_ui_select` | de-register fzf-lua with `vim.ui.select`                 |
 
 
                                                                               
@@ -454,212 +341,79 @@ NVIM-DAP                                                    *fzf-lua-nvim-dap*
 
   Requires `nvim-dap` <https://github.com/mfussenegger/nvim-dap>
 
-| Command              | List                                       |
-| -------------------- | ------------------------------------------ |
-| `dap_commands`         | list,run `nvim-dap` builtin commands         |
-| `dap_configurations`   | list,run debug configurations              |
-| `dap_breakpoints`      | list,delete breakpoints                    |
-| `dap_variables`        | active session variables                   |
-| `dap_frames`           | active session jump to frame               |
+| Command              | List                                 |
+| -------------------- | ------------------------------------ |
+| `dap_commands`       | list,run `nvim-dap` builtin commands |
+| `dap_configurations` | list,run debug configurations        |
+| `dap_breakpoints`    | list,delete breakpoints              |
+| `dap_variables`      | active session variables             |
+| `dap_frames`         | active session jump to frame         |
 
 
                                                                               
 TMUX                                                            *fzf-lua-tmux*
 
-| Command              | List                                       |
-| -------------------- | ------------------------------------------ |
-| `tmux_buffers`         | list tmux paste buffers                    |
+| Command        | List                    |
+| -------------- | ----------------------- |
+| `tmux_buffers` | list tmux paste buffers |
 
 
                                                                               
 COMPLETION FUNCTIONS                            *fzf-lua-completion-functions*
 
-| Command              | List                                       |
-| -------------------- | ------------------------------------------ |
-| `complete_path`        | complete path under cursor (incl dirs)     |
-| `complete_file`        | complete file under cursor (excl dirs)     |
-| `complete_line`        | complete line (all open buffers)           |
-| `complete_bline`       | complete line (current buffer only)        |
+| Command          | List                                   |
+| ---------------- | -------------------------------------- |
+| `complete_path`  | complete path under cursor (incl dirs) |
+| `complete_file`  | complete file under cursor (excl dirs) |
+| `complete_line`  | complete line (all open buffers)       |
+| `complete_bline` | complete line (current buffer only)    |
 
 
 ------------------------------------------------------------------------------
 CUSTOMIZATION                                          *fzf-lua-customization*
 
 
-  **ADVANCED CUSTOMIZATION <https://github.com/ibhagwan/fzf-lua/wiki/Advanced> :
-  to create your own fzf-lua commands see Wiki/ADVANCED
-  <https://github.com/ibhagwan/fzf-lua/wiki/Advanced>**
-
-Customization can be achieved by calling the `setup()` function (optional) or
-individually sending parameters to a builtin command, A few examples below:
-
-  Different `fzf` layout:
+  [!NOTE] Refer to OPTIONS
+  <https://github.com/ibhagwan/fzf-lua/blob/main/OPTIONS.md> to see detailed
+  usage notes and a comprehensive list of yet more(!) available options.
 
 >lua
-    :lua require('fzf-lua').files({ fzf_opts = {['--layout'] = 'reverse-list'} })
-<
-  Using `files` with a different command and working directory:
-
->lua
-    :lua require'fzf-lua'.files({ prompt="LS> ", cmd = "ls", cwd="~/<folder>" })
-<
-  Using `live_grep` with `git grep`:
-
->lua
-    :lua require'fzf-lua'.live_grep({ cmd = "git grep --line-number --column --color=always" })
-<
-  `colorschemes` with non-default window size:
-
->lua
-    :lua require'fzf-lua'.colorschemes({ winopts = { height=0.33, width=0.33 } })
-<
-Use `setup()` If you wish for a setting to persist and not have to send it
-using the call arguments, e.g:
-
->lua
-    require('fzf-lua').setup{
-      winopts = {
-        ...
-      }
+    require("fzf-lua").setup{
+      -- MISC GLOBAL SETUP OPTIONS, SEE BELOW
+      -- fzf_bin = ...,
+      winopts = { ...  },     -- UI Options
+      keymap = { ...  },      -- Neovim keymaps / fzf binds
+      actions = { ...  },     -- Fzf "accept" binds
+      fzf_opts = { ...  },    -- Fzf CLI flags
+      fzf_colors = { ...  },  -- Fzf `--color` specification
+      hls = { ...  },         -- Highlights
+      previewers = { ...  },  -- Previewers options
+      -- SPECIFIC COMMAND/PICKER OPTIONS, SEE BELOW
+      -- files = { ... },
     }
 <
-Can also be called from a `.vim` file:
+**DEFAULT OPTIONS OF THE DIFFERENT CONFIG SECTIONS BELOW** 👇
 
 >lua
-    lua << EOF
-    require('fzf-lua').setup{
-      ...
-    }
-    EOF
+      -- Use skim (or a speccific fzf binary/version) instead of fzf?
+      -- fzf_bin = 'sk',
+      -- Padding can help kitty term users with double-width icon rendering
+      file_icon_padding = '',
+      -- Uncomment if your terminal/font does not support unicode character
+      -- 'EN SPACE' (U+2002), the below sets it to 'NBSP' (U+00A0) instead
+      -- nbsp = '\xc2\xa0',
+      -- Function override for opening the help window (default bound to `<F1>`)
+      -- Override this function if you want to customize window config of the
+      -- help window (location, width, border, etc.)
+      help_open_win = vim.api.nvim_open_win,
 <
-
-                                                                              
-PROFILES                                                    *fzf-lua-profiles*
-
-Conveniently, fzf-lua comes with a set of preconfigured profiles, notably:
-
-| Profile          | Details                                    |
-| ---------------- | ------------------------------------------ |
-| `default`          | fzf-lua defaults, uses neovim "builtin" previewer and devicons (if available) for git/files/buffers |
-| `default-title`    | fzf-lua defaults, using title instead of prompt |
-| `fzf-native`       | utilizes fzf's native previewing ability in the terminal where possible using `bat` for previews |
-| `fzf-tmux`         | similar to `fzf-native` and opens in a tmux popup (requires tmux > 3.2) |
-| `fzf-vim`          | closest to `fzf.vim`'s defaults (+icons), also sets up user commands (`:Files`, `:Rg`, etc) |
-| `max-perf`         | similar to `fzf-native` and disables icons globally for max performance |
-| `telescope`        | closest match to telescope defaults in look and feel and keybinds |
-| `skim`             | uses [`skim`](https://github.com/skim-rs/skim) as an fzf alternative, (requires the `sk` binary) |
-
-Use `:FzfLua profiles` to experiment with the different profiles, once you've
-found what you like and wish to make the profile persist, send a `string`
-argument at the first index of the table sent to the `setup` function:
-
-  [!NOTE] `setup` can be called multiple times for profile "live" switching
-
 >lua
-    require('fzf-lua').setup({'fzf-native'})
-<
-You can also start with a profile as "baseline" and customize it, for example,
-telescope defaults with `bat` previewer:
-
->lua
-    :lua require"fzf-lua".setup({"telescope",winopts={preview={default="bat"}}})
-<
-Combining of profiles is also available by sending table instead of string as
-the first argument:
-
->lua
-    :lua require"fzf-lua".setup({{"telescope","fzf-native"},winopts={fullscreen=true}})
-<
-See profiles
-<https://github.com/ibhagwan/fzf-lua/tree/main/lua/fzf-lua/profiles> for more
-info.
-
-
-                                                                              
-INSERT-MODE COMPLETION                        *fzf-lua-insert-mode-completion*
-
-Fzf-lua comes with a set of completion functions for paths/files and lines
-from open buffers as well as custom completion, for example, set
-path/completion using `<C-x><C-f>`:
-
->vim
-    inoremap <c-x><c-f> <cmd>lua require("fzf-lua").complete_path()<cr>
-<
-Or in all modes using lua:
-
->lua
-    vim.keymap.set({ "n", "v", "i" }, "<C-x><C-f>",
-      function() require("fzf-lua").complete_path() end,
-      { silent = true, desc = "Fuzzy complete path" })
-<
-Or with a custom command and preview:
-
-  [!NOTE] only `complete_file` supports a previewer
-
->lua
-    vim.keymap.set({ "i" }, "<C-x><C-f>",
-      function()
-        require("fzf-lua").complete_file({
-          cmd = "rg --files",
-          winopts = { preview = { hidden = "nohidden" } }
-        })
-      end, { silent = true, desc = "Fuzzy complete file" })
-<
-
-                                                                              
-CUSTOM COMPLETION                                  *fzf-lua-custom-completion*
-
-Every fzf-lua function can be easily converted to a completion function by
-sending `complete = true` in the options:
-
-  By default fzf-lua will insert the entry at the cursor location as if you used
-  `p` to paste the selected entry.
-
->lua
-    require("fzf-lua").fzf_exec({"foo", "bar"}, {complete = true})
-<
-Custom completion is possible using a custom completion callback, the example
-below will replace the text from the current cursor column with the selected
-entry:
-
->lua
-    require("fzf-lua").fzf_exec({"foo", "bar"}, {
-      -- @param selected: the selected entry or entries
-      -- @param opts: fzf-lua caller/provider options
-      -- @param line: originating buffer completed line
-      -- @param col: originating cursor column location
-      -- @return newline: will replace the current buffer line
-      -- @return newcol?: optional, sets the new cursor column
-      complete = function(selected, opts, line, col)
-        local newline = line:sub(1, col) .. selected[1]
-        -- set cursor to EOL, since `nvim_win_set_cursor`
-        -- is 0-based we have to lower the col value by 1
-        return newline, #newline - 1
-      end
-    })
-<
-
-                                                                              
-DEFAULT OPTIONS                                      *fzf-lua-default-options*
-
-**Below is a list of most (still, not all default settings), please also
-consult the issues if there's something you need and you can't find as there
-have been many obscure requests which have been fulfilled and are yet to be
-documented. If you're still having issues and/or questions do not hesitate to
-open an issue and I'll be more than happy to help.**
-
->lua
-    local actions = require "fzf-lua.actions"
-    require'fzf-lua'.setup {
-      -- fzf_bin         = 'sk',            -- use skim instead of fzf?
-                                            -- https://github.com/skim-rs/skim
-                                            -- can also be set to 'fzf-tmux'
-      winopts = {
-        -- split         = "belowright new",-- open in a split instead?
-                                            -- "belowright new"  : split below
-                                            -- "aboveleft new"   : split above
-                                            -- "belowright vnew" : split right
-                                            -- "aboveleft vnew   : split left
+    winopts = {
+        -- split = "belowright new",-- open in a split instead?
+                -- "belowright new"  : split below
+                -- "aboveleft new"   : split above
+                -- "belowright vnew" : split right
+                -- "aboveleft vnew   : split left
         -- Only valid when using a float window
         -- (i.e. when 'split' is not defined, default)
         height           = 0.85,            -- window height
@@ -667,14 +421,10 @@ open an issue and I'll be more than happy to help.**
         row              = 0.35,            -- window row position (0=top, 1=bottom)
         col              = 0.50,            -- window col position (0=left, 1=right)
         -- border argument passthrough to nvim_open_win(), also used
-        -- to manually draw the border characters around the preview
-        -- window, can be set to 'false' to remove all borders or to
         -- 'none', 'single', 'double', 'thicc' (+cc) or 'rounded' (default)
         border           = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
         -- Backdrop opacity, 0 is fully opaque, 100 is fully transparent (i.e. disabled)
         backdrop         = 60,
-        -- requires neovim > v0.9.0, passed as is to `nvim_open_win`
-        -- can be sent individually to any provider to set the win title
         -- title         = "Title",
         -- title_pos     = "center",    -- 'left', 'center' or 'right'
         fullscreen       = false,           -- start fullscreen?
@@ -726,13 +476,15 @@ open an issue and I'll be more than happy to help.**
         end,
         -- called once _after_ the fzf interface is closed
         -- on_close = function() ... end
-      },
-      keymap = {
+    }
+<
+>lua
+    keymap = {
         -- Below are the default binds, setting any value in these tables will override
         -- the defaults, to inherit from the defaults change [1] from `false` to `true`
         builtin = {
-          false,          -- do not inherit from defaults
           -- neovim `:tmap` mappings for the fzf win
+          -- true,        -- uncomment to inherit all the below in your custom config
           ["<M-Esc>"]     = "hide",     -- hide fzf-lua, `:FzfLua resume` to continue
           ["<F1>"]        = "toggle-help",
           ["<F2>"]        = "toggle-fullscreen",
@@ -753,8 +505,8 @@ open an issue and I'll be more than happy to help.**
           ["<M-S-up>"]    = "preview-up",
         },
         fzf = {
-          false,          -- do not inherit from defaults
           -- fzf '--bind=' options
+          -- true,        -- uncomment to inherit all the below in your custom config
           ["ctrl-z"]      = "abort",
           ["ctrl-u"]      = "unix-line-discard",
           ["ctrl-f"]      = "half-page-down",
@@ -770,12 +522,15 @@ open an issue and I'll be more than happy to help.**
           ["shift-down"]  = "preview-page-down",
           ["shift-up"]    = "preview-page-up",
         },
-      },
-      actions = {
+    },
+<
+>lua
+    local actions = require("fzf-lua").actions
+    actions = {
         -- Below are the default actions, setting any value in these tables will override
         -- the defaults, to inherit from the defaults change [1] from `false` to `true`
         files = {
-          false,          -- do not inherit from defaults
+          -- true,        -- uncomment to inherit all the below in your custom config
           -- Pickers inheriting these actions:
           --   files, git_files, git_status, grep, lsp, oldfiles, quickfix, loclist,
           --   tags, btags, args, buffers, tabs, lines, blines
@@ -789,8 +544,10 @@ open an issue and I'll be more than happy to help.**
           ["alt-q"]       = actions.file_sel_to_qf,
           ["alt-Q"]       = actions.file_sel_to_ll,
         },
-      },
-      fzf_opts = {
+      }
+<
+>lua
+    fzf_opts = {
         -- options are sent as `<left>=<right>`
         -- set to `false` to remove a flag
         -- set to `true` for a no-value flag
@@ -801,12 +558,17 @@ open an issue and I'll be more than happy to help.**
         ["--layout"]         = "reverse",
         ["--border"]         = "none",
         ["--highlight-line"] = true,           -- fzf >= v0.53
-      },
-      -- Only used when fzf_bin = "fzf-tmux", by default opens as a
-      -- popup 80% width, 80% height (note `-p` requires tmux > 3.2)
-      -- and removes the sides margin added by `fzf-tmux` (fzf#3162)
-      -- for more options run `fzf-tmux --help`
-      fzf_tmux_opts       = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
+      }
+    
+    -- Only used when fzf_bin = "fzf-tmux", by default opens as a
+    -- popup 80% width, 80% height (note `-p` requires tmux > 3.2)
+    -- and removes the sides margin added by `fzf-tmux` (fzf#3162)
+    -- for more options run `fzf-tmux --help`
+    fzf_tmux_opts       = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
+<
+  [!NOTE] See the Fzf Colors <#fzf-colors> section for more info.
+
+>lua
       -- 
       -- Set fzf's terminal colorscheme (optional)
       --
@@ -827,14 +589,15 @@ open an issue and I'll be more than happy to help.**
       -- Assuming `Comment.fg=#010101` the resulting fzf command line will be:
       --   `--color fg:#010101:underline:bold`
       -- NOTE: to pass raw arguments `fzf_opts["--color"]` or `fzf_args`
-      --[[ fzf_colors = {
+      -- NOTE: below is an example, not the defaults:
+      fzf_colors = {
           true,   -- inherit fzf colors that aren't specified below from
                   -- the auto-generated theme similar to `fzf_colors=true`
           ["fg"]          = { "fg", "CursorLine" },
           ["bg"]          = { "bg", "Normal" },
           ["hl"]          = { "fg", "Comment" },
-          ["fg+"]         = { "fg", "Normal" },
-          ["bg+"]         = { "bg", "CursorLine" },
+          ["fg+"]         = { "fg", "Normal", "underline" },
+          ["bg+"]         = { "bg", { "CursorLine", "Normal" } },
           ["hl+"]         = { "fg", "Statement" },
           ["info"]        = { "fg", "PreProc" },
           ["prompt"]      = { "fg", "Conditional" },
@@ -843,8 +606,20 @@ open an issue and I'll be more than happy to help.**
           ["spinner"]     = { "fg", "Label" },
           ["header"]      = { "fg", "Comment" },
           ["gutter"]      = "-1",
-      }, ]]
-      previewers = {
+      },
+<
+  [!NOTE] See the highlights <#highlights> section below for all available
+  highlight groups.
+
+>lua
+    hls = {
+        normal = "Normal"          -- highlight group for normal fg/bg
+        preview_normal = "Normal"  -- highlight group for preview fg/bg
+        ...
+    }
+<
+>lua
+    previewers = {
         cat = {
           cmd             = "cat",
           args            = "-n",
@@ -852,8 +627,6 @@ open an issue and I'll be more than happy to help.**
         bat = {
           cmd             = "bat",
           args            = "--color=always --style=numbers,changes",
-          -- uncomment to set a bat theme, `bat --list-themes`
-          -- theme           = 'Coldark-Dark',
         },
         head = {
           cmd             = "head",
@@ -932,9 +705,10 @@ open an issue and I'll be more than happy to help.**
           -- recommended styling for delta
           --pager = [[delta --width=$COLUMNS --hunk-header-style="omit" --file-style="omit"]],
         },
-      },
-      -- PROVIDERS SETUP
-      -- use `defaults` (table or function) if you wish to set "global-provider" defaults
+    }
+<
+>lua
+      -- use `defaults` (table or function) if you wish to set "global-picker" defaults
       -- for example, using "mini.icons" globally and open the quickfix list at the top
       --   defaults = {
       --     file_icons   = "mini",
@@ -1332,6 +1106,8 @@ open an issue and I'll be more than happy to help.**
         includeDeclaration = true,      -- include current declaration in LSP context
         -- settings for 'lsp_{document|workspace|lsp_live_workspace}_symbols'
         symbols = {
+            -- lsp_query      = "foo"       -- query passed to the LSP directly
+            -- query          = "bar"       -- query passed to fzf prompt for fuzzy matching
             async_or_timeout  = true,       -- symbols are async by default
             symbol_style      = 1,          -- style for document/workspace symbols
                                             -- false: disable,    1: icon+kind
@@ -1392,7 +1168,7 @@ open an issue and I'll be more than happy to help.**
             color_icons = true,
             git_icons   = false,
             async       = true,         -- async by default
-            silent      = true,         -- suppress "not found" 
+            silent      = true,         -- suppress "not found"
             separator   = "| ",         -- separator after provider prefix, `false` to disable
             includeDeclaration = true,  -- include current declaration in LSP context
             -- by default display all LSP locations
@@ -1417,25 +1193,6 @@ open an issue and I'll be more than happy to help.**
         diag_source       = true,   -- display diag source (e.g. [pycodestyle])
         icon_padding      = '',     -- add padding for wide diagnostics signs
         multiline         = true,   -- concatenate multi-line diags into a single line
-                                    -- set to `false` to display the first line only
-        -- by default icons and highlights are extracted from 'DiagnosticSignXXX'
-        -- and highlighted by a highlight group of the same name (which is usually
-        -- set by your colorscheme, for more info see:
-        --   :help DiagnosticSignHint'
-        --   :help hl-DiagnosticSignHint'
-        -- only uncomment below if you wish to override the signs/highlights
-        -- define only text, texthl or both (':help sign_define()' for more info)
-        -- signs = {
-        --   ["Error"] = { text = "", texthl = "DiagnosticError" },
-        --   ["Warn"]  = { text = "", texthl = "DiagnosticWarn" },
-        --   ["Info"]  = { text = "", texthl = "DiagnosticInfo" },
-        --   ["Hint"]  = { text = "󰌵", texthl = "DiagnosticHint" },
-        -- },
-        -- limit to specific severity, use either a string or num:
-        --   1 or "hint"
-        --   2 or "information"
-        --   3 or "warning"
-        --   4 or "error"
         -- severity_only:   keep any matching exact severity
         -- severity_limit:  keep any equal or more severe (lower)
         -- severity_bound:  keep any equal or less severe (higher)
@@ -1464,104 +1221,249 @@ open an issue and I'll be more than happy to help.**
       -- (instead of using a neovim floating window)
       -- manpages = { previewer = "man_native" },
       -- helptags = { previewer = "help_native" },
-      -- 
-      -- padding can help kitty term users with double-width icon rendering
-      file_icon_padding = '',
-      -- uncomment if your terminal/font does not support unicode character
-      -- 'EN SPACE' (U+2002), the below sets it to 'NBSP' (U+00A0) instead
-      -- nbsp = '\xc2\xa0',
-      -- Function override for opening the help window (default bound to `<F1>`)
-      -- Override this function if you want to customize window config of the
-      -- help window (location, width, border, etc.)
-      help_open_win = vim.api.nvim_open_win,
-    }
+<
+  [!TIP] To experiment with different options without modifying the global
+  config, options can be sent as inline parameters to the function calls. Expand
+  below to see examples of inline customization and Refer to OPTIONS
+  <https://github.com/ibhagwan/fzf-lua/blob/main/OPTIONS.md> for yet more
+  examples.
+
+
+                                                                              
+INLINE CUSTOMIZATION                            *fzf-lua-inline-customization*
+
+Different `fzf` layout:
+
+>lua
+    :lua require('fzf-lua').files({ fzf_opts = {['--layout'] = 'reverse-list'} })
+<
+Using `files` with a different command and working directory:
+
+>lua
+    :lua require'fzf-lua'.files({ prompt="LS> ", cmd = "ls", cwd="~/<folder>" })
+<
+Using `live_grep` with `git grep`:
+
+>lua
+    :lua require'fzf-lua'.live_grep({ cmd = "git grep --line-number --column --color=always" })
+<
+`colorschemes` with non-default window size:
+
+>lua
+    :lua require'fzf-lua'.colorschemes({ winopts = { height=0.33, width=0.33 } })
+<
+
+                                                                              
+PROFILES                                                    *fzf-lua-profiles*
+
+Conveniently, fzf-lua comes with a set of preconfigured profiles if you do not
+want to tinker with customization.
+
+Use `:FzfLua profiles` to experiment with the different profiles, once you've
+found what you like and wish to make the profile persist, send a `string`
+argument at the first index of the table sent to the `setup` function:
+
+  [!TIP] `setup` can be called multiple times for profile "live" switching, see
+  profiles <https://github.com/ibhagwan/fzf-lua/tree/main/lua/fzf-lua/profiles>
+  page for more info.
+
+>lua
+    require('fzf-lua').setup({'fzf-native'})
+<
+You can also start with a profile as "baseline" and customize it, for example,
+telescope defaults with `bat` previewer:
+
+>lua
+    :lua require"fzf-lua".setup({"telescope",winopts={preview={default="bat"}}})
+<
+Combining of profiles is also available by sending table instead of string as
+the first argument:
+
+>lua
+    :lua require"fzf-lua".setup({{"telescope","fzf-native"},winopts={fullscreen=true}})
+<
+
+                                                                              
+COMING FROM FZF.VIM?                            *fzf-lua-coming-from-fzf.vim?*
+
+Easy! just use the `fzf-vim` profile:
+
+>lua
+    require('fzf-lua').setup({'fzf-vim'})
+<
+  [!TIP] Using the `fzf-vim` profile will automatically create `fzf.vim`'s user
+  commands (i.e. `:Files`, `:Rg`), if you wish to use a different profile you
+  can create the same user commands by running `:FzfLua setup_fzfvim_cmds`.
+
+
+                                                                              
+AVAILABLE PROFILES                                *fzf-lua-available-profiles*
+
+| Profile         | Details                                                                                             |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| `default`       | fzf-lua defaults, uses neovim "builtin" previewer and devicons (if available) for git/files/buffers |
+| `default-title` | fzf-lua defaults, using title instead of prompt                                                     |
+| `fzf-native`    | utilizes fzf's native previewing ability in the terminal where possible using `bat` for previews    |
+| `fzf-tmux`      | similar to `fzf-native` and opens in a tmux popup (requires tmux > 3.2)                             |
+| `fzf-vim`       | closest to `fzf.vim`'s defaults (+icons), also sets up user commands (`:Files`, `:Rg`, etc)         |
+| `max-perf`      | similar to `fzf-native` and disables icons globally for max performance                             |
+| `telescope`     | closest match to telescope defaults in look and feel and keybinds                                   |
+| `skim`          | uses [`skim`](https://github.com/skim-rs/skim) as an fzf alternative, (requires the `sk` binary)    |
+
+
+                                                                              
+EXTENSIBILITY                                          *fzf-lua-extensibility*
+
+Fzf-lua can be easily extended and customised for your own needs: have a look
+at a full list of examples and plugins browsing the 💡Wiki
+<https://github.com/ibhagwan/fzf-lua/wiki/Advanced> 💡
+
+Have ideas for new pickers, plugins or extensions? Add it to the wiki, it's
+open edit!
+
+
+                                                                              
+INSERT-MODE COMPLETION                        *fzf-lua-insert-mode-completion*
+
+Fzf-lua comes with a set of completion functions for paths/files and lines
+from open buffers as well as custom completion, for example, set
+path/completion using `<C-x><C-f>`:
+
+>lua
+    vim.keymap.set({ "n", "v", "i" }, "<C-x><C-f>",
+      function() require("fzf-lua").complete_path() end,
+      { silent = true, desc = "Fuzzy complete path" })
+<
+Or with a custom command and preview:
+
+  [!NOTE] only `complete_file` supports a previewer as `complete_path` mixes
+  both files and directories.
+
+>lua
+    vim.keymap.set({ "i" }, "<C-x><C-f>",
+      function()
+        require("fzf-lua").complete_file({
+          cmd = "rg --files",
+          winopts = { preview = { hidden = "nohidden" } }
+        })
+      end, { silent = true, desc = "Fuzzy complete file" })
+<
+
+                                                                              
+CUSTOM COMPLETION                                  *fzf-lua-custom-completion*
+
+Every fzf-lua function can be easily converted to a completion function by
+sending `complete = true` in the options:
+
+  By default fzf-lua will insert the entry at the cursor location as if you used
+  `p` to paste the selected entry.
+
+>lua
+    require("fzf-lua").fzf_exec({"foo", "bar"}, {complete = true})
+<
+Custom completion is possible using a custom completion callback, the example
+below will replace the text from the current cursor column with the selected
+entry:
+
+>lua
+    require("fzf-lua").fzf_exec({"foo", "bar"}, {
+      -- @param selected: the selected entry or entries
+      -- @param opts: fzf-lua caller/provider options
+      -- @param line: originating buffer completed line
+      -- @param col: originating cursor column location
+      -- @return newline: will replace the current buffer line
+      -- @return newcol?: optional, sets the new cursor column
+      complete = function(selected, opts, line, col)
+        local newline = line:sub(1, col) .. selected[1]
+        -- set cursor to EOL, since `nvim_win_set_cursor`
+        -- is 0-based we have to lower the col value by 1
+        return newline, #newline - 1
+      end
+    })
 <
 
                                                                               
 HIGHLIGHTS                                                *fzf-lua-highlights*
 
-FzfLua conveniently creates the below highlights, each hlgroup can be
-temporarily overridden by its corresponding `winopts` option:
-
-| Highlight Group       | Default     | Override Via              | Notes |
-|-----------------------|-------------|---------------------------|-------|
-|FzfLuaNormal           |Normal       |`hls.normal`        |Main win `fg/bg`|
-|FzfLuaBorder           |Normal       |`hls.border`        |Main win border|
-|FzfLuaTitle            |FzfLuaNormal |`hls.title`         |Main win title|
-|FzfLuaBackdrop         |*bg=Black    |`hls.backdrop`      |Backdrop color|
-|FzfLuaPreviewNormal    |FzfLuaNormal |`hls.preview_normal`|Builtin preview `fg/bg`|
-|FzfLuaPreviewBorder    |FzfLuaBorder |`hls.preview_border`|Builtin preview border|
-|FzfLuaPreviewTitle     |FzfLuaTitle  |`hls.preview_title` |Builtin preview title|
-|FzfLuaCursor           |Cursor       |`hls.cursor`        |Builtin preview `Cursor`|
-|FzfLuaCursorLine       |CursorLine   |`hls.cursorline`    |Builtin preview `Cursorline`|
-|FzfLuaCursorLineNr     |CursorLineNr |`hls.cursorlinenr`  |Builtin preview `CursorLineNr`|
-|FzfLuaSearch           |IncSearch    |`hls.search`        |Builtin preview search matches|
-|FzfLuaScrollBorderEmpty|FzfLuaBorder |`hls.scrollborder_e`|Builtin preview `border` scroll empty|
-|FzfLuaScrollBorderFull |FzfLuaBorder |`hls.scrollborder_f`|Builtin preview `border` scroll full|
-|FzfLuaScrollFloatEmpty |PmenuSbar    |`hls.scrollfloat_e` |Builtin preview `float` scroll empty|
-|FzfLuaScrollFloatFull  |PmenuThumb   |`hls.scrollfloat_f` |Builtin preview `float` scroll full|
-|FzfLuaHelpNormal       |FzfLuaNormal |`hls.help_normal`   |Help win `fg/bg`|
-|FzfLuaHelpBorder       |FzfLuaBorder |`hls.help_border`   |Help win border|
-|FzfLuaHeaderBind   |*BlanchedAlmond  |`hls.header_bind`   |Header keybind|
-|FzfLuaHeaderText   |*Brown1          |`hls.header_text`   |Header text|
-|FzfLuaPathColNr    |*CadetBlue1      |`hls.path_colnr`    |Path col nr (`qf,lsp,diag`)|
-|FzfLuaPathLineNr   |*LightGreen      |`hls.path_linenr`   |Path line nr (`qf,lsp,diag`)|
-|FzfLuaBufName      |Directory        |`hls.buf_name`      |Buffer name (`lines`)|
-|FzfLuaBufId        |TabLine          |`hls.buf_id`        |Buffer ID (`lines`)|
-|FzfLuaBufNr        |*BlanchedAlmond  |`hls.buf_nr`        |Buffer number (`buffers,tabs`)|
-|FzfLuaBufLineNr    |LineNr           |`hls.buf_linenr`    |Buffer line nr (`lines,blines`)|
-|FzfLuaBufFlagCur   |*Brown1          |`hls.buf_flag_cur`  |Buffer line (`buffers`)|
-|FzfLuaBufFlagAlt   |*CadetBlue1      |`hls.buf_flag_alt`  |Buffer line (`buffers`)|
-|FzfLuaTabTitle     |*LightSkyBlue1   |`hls.tab_title`     |Tab title (`tabs`)|
-|FzfLuaTabMarker    |*BlanchedAlmond  |`hls.tab_marker`    |Tab marker (`tabs`)|
-|FzfLuaDirIcon      |Directory        |`hls.dir_icon`      |Paths directory icon|
-|FzfLuaDirPart      |Comment          |`hls.dir_part`      |Path formatters directory hl group|
-|FzfLuaFilePart     |@none            |`hls.file_part`     |Path formatters file hl group|
-|FzfLuaLiveSym      |*Brown1          |`hls.live_sym`      |LSP live symbols query match|
-|FzfLuaFzfNormal    |FzfLuaNormal     |`fzf.normal`        |fzf's `fg\|bg`|
-|FzfLuaFzfCursorLine|FzfLuaCursorLine |`fzf.cursorline`    |fzf's `fg+\|bg+`|
-|FzfLuaFzfMatch     |Special          |`fzf.match`         |fzf's `hl+`|
-|FzfLuaFzfBorder    |FzfLuaBorder     |`fzf.border`        |fzf's `border`|
-|FzfLuaFzfScrollbar |FzfLuaFzfBorder  |`fzf.scrollbar`     |fzf's `scrollbar`|
-|FzfLuaFzfSeparator |FzfLuaFzfBorder  |`fzf.separator`     |fzf's `separator`|
-|FzfLuaFzfGutter    |FzfLuaNormal     |`fzf.gutter`        |fzf's `gutter` (hl `bg` is used)|
-|FzfLuaFzfHeader    |FzfLuaTitle      |`fzf.header`        |fzf's `header`|
-|FzfLuaFzfInfo      |NonText          |`fzf.info`          |fzf's `info`|
-|FzfLuaFzfPointer   |Special          |`fzf.pointer`       |fzf's `pointer`|
-|FzfLuaFzfMarker    |FzfLuaFzfPointer |`fzf.marker`        |fzf's `marker`|
-|FzfLuaFzfSpinner   |FzfLuaFzfPointer |`fzf.spinner`       |fzf's `spinner`|
-|FzfLuaFzfPrompt    |Special          |`fzf.prompt`        |fzf's `prompt`|
-|FzfLuaFzfQuery     |FzfLuaNormal     |`fzf.query`         |fzf's `header`|
-
-<sup><sub>&ast;Not a highlight group, RGB color from
-`nvim_get_color_map`</sub></sup>
-
-These can be easily customized either via the lua API:
+Highlight groups can be easily customized either via the lua API:
 
 >lua
     :lua vim.api.nvim_set_hl(0, "FzfLuaBorder", { link = "FloatBorder" })
 <
-Or vimscript:
-
->vim
-    :hi! link FzfLuaBorder FloatBorder
-<
-If you wish to override a highlight without having to modify your colorscheme
-highlights, set the corresponding `hls` override or specify it directly via a
-call argument.
-
-Temporary highlight override:
-
->lua
-    :lua require'fzf-lua'.files({ hls={preview_title="IncSearch"} })
-<
-Permanent global override via `setup`:
+or via `setup`:
 
 >lua
     require('fzf-lua').setup {
       hls = { border = "FloatBorder" }
     }
 <
+or temporarily in the call:
+
+>lua
+    :lua require'fzf-lua'.files({ hls={preview_title="IncSearch"} })
+    -- vimL equivalent
+    :FzfLua files hls.preview_title=IncSearch
+<
+
+                                                                              
+HIGHLIGHT GROUPS                                    *fzf-lua-highlight-groups*
+
+FzfLua conveniently creates the below highlights, each hlgroup can be
+temporarily overridden by its corresponding `winopts` option:
+
+| Highlight Group         | Default          | Override Via         | Notes                                 |
+| ----------------------- | ---------------- | -------------------- | ------------------------------------- |
+| FzfLuaNormal            | Normal           | `hls.normal`         | Main win `fg/bg`                      |
+| FzfLuaBorder            | Normal           | `hls.border`         | Main win border                       |
+| FzfLuaTitle             | FzfLuaNormal     | `hls.title`          | Main win title                        |
+| FzfLuaBackdrop          | \*bg=Black       | `hls.backdrop`       | Backdrop color                        |
+| FzfLuaPreviewNormal     | FzfLuaNormal     | `hls.preview_normal` | Builtin preview `fg/bg`               |
+| FzfLuaPreviewBorder     | FzfLuaBorder     | `hls.preview_border` | Builtin preview border                |
+| FzfLuaPreviewTitle      | FzfLuaTitle      | `hls.preview_title`  | Builtin preview title                 |
+| FzfLuaCursor            | Cursor           | `hls.cursor`         | Builtin preview `Cursor`              |
+| FzfLuaCursorLine        | CursorLine       | `hls.cursorline`     | Builtin preview `Cursorline`          |
+| FzfLuaCursorLineNr      | CursorLineNr     | `hls.cursorlinenr`   | Builtin preview `CursorLineNr`        |
+| FzfLuaSearch            | IncSearch        | `hls.search`         | Builtin preview search matches        |
+| FzfLuaScrollBorderEmpty | FzfLuaBorder     | `hls.scrollborder_e` | Builtin preview `border` scroll empty |
+| FzfLuaScrollBorderFull  | FzfLuaBorder     | `hls.scrollborder_f` | Builtin preview `border` scroll full  |
+| FzfLuaScrollFloatEmpty  | PmenuSbar        | `hls.scrollfloat_e`  | Builtin preview `float` scroll empty  |
+| FzfLuaScrollFloatFull   | PmenuThumb       | `hls.scrollfloat_f`  | Builtin preview `float` scroll full   |
+| FzfLuaHelpNormal        | FzfLuaNormal     | `hls.help_normal`    | Help win `fg/bg`                      |
+| FzfLuaHelpBorder        | FzfLuaBorder     | `hls.help_border`    | Help win border                       |
+| FzfLuaHeaderBind        | \*BlanchedAlmond | `hls.header_bind`    | Header keybind                        |
+| FzfLuaHeaderText        | \*Brown1         | `hls.header_text`    | Header text                           |
+| FzfLuaPathColNr         | \*CadetBlue1     | `hls.path_colnr`     | Path col nr (`qf,lsp,diag`)           |
+| FzfLuaPathLineNr        | \*LightGreen     | `hls.path_linenr`    | Path line nr (`qf,lsp,diag`)          |
+| FzfLuaBufName           | Directory        | `hls.buf_name`       | Buffer name (`lines`)                 |
+| FzfLuaBufId             | TabLine          | `hls.buf_id`         | Buffer ID (`lines`)                   |
+| FzfLuaBufNr             | \*BlanchedAlmond | `hls.buf_nr`         | Buffer number (`buffers,tabs`)        |
+| FzfLuaBufLineNr         | LineNr           | `hls.buf_linenr`     | Buffer line nr (`lines,blines`)       |
+| FzfLuaBufFlagCur        | \*Brown1         | `hls.buf_flag_cur`   | Buffer line (`buffers`)               |
+| FzfLuaBufFlagAlt        | \*CadetBlue1     | `hls.buf_flag_alt`   | Buffer line (`buffers`)               |
+| FzfLuaTabTitle          | \*LightSkyBlue1  | `hls.tab_title`      | Tab title (`tabs`)                    |
+| FzfLuaTabMarker         | \*BlanchedAlmond | `hls.tab_marker`     | Tab marker (`tabs`)                   |
+| FzfLuaDirIcon           | Directory        | `hls.dir_icon`       | Paths directory icon                  |
+| FzfLuaDirPart           | Comment          | `hls.dir_part`       | Path formatters directory hl group    |
+| FzfLuaFilePart          | @none            | `hls.file_part`      | Path formatters file hl group         |
+| FzfLuaLiveSym           | \*Brown1         | `hls.live_sym`       | LSP live symbols query match          |
+| FzfLuaFzfNormal         | FzfLuaNormal     | `fzf.normal`         | fzf's `fg\|bg`                        |
+| FzfLuaFzfCursorLine     | FzfLuaCursorLine | `fzf.cursorline`     | fzf's `fg+\|bg+`                      |
+| FzfLuaFzfMatch          | Special          | `fzf.match`          | fzf's `hl+`                           |
+| FzfLuaFzfBorder         | FzfLuaBorder     | `fzf.border`         | fzf's `border`                        |
+| FzfLuaFzfScrollbar      | FzfLuaFzfBorder  | `fzf.scrollbar`      | fzf's `scrollbar`                     |
+| FzfLuaFzfSeparator      | FzfLuaFzfBorder  | `fzf.separator`      | fzf's `separator`                     |
+| FzfLuaFzfGutter         | FzfLuaNormal     | `fzf.gutter`         | fzf's `gutter` (hl `bg` is used)      |
+| FzfLuaFzfHeader         | FzfLuaTitle      | `fzf.header`         | fzf's `header`                        |
+| FzfLuaFzfInfo           | NonText          | `fzf.info`           | fzf's `info`                          |
+| FzfLuaFzfPointer        | Special          | `fzf.pointer`        | fzf's `pointer`                       |
+| FzfLuaFzfMarker         | FzfLuaFzfPointer | `fzf.marker`         | fzf's `marker`                        |
+| FzfLuaFzfSpinner        | FzfLuaFzfPointer | `fzf.spinner`        | fzf's `spinner`                       |
+| FzfLuaFzfPrompt         | Special          | `fzf.prompt`         | fzf's `prompt`                        |
+| FzfLuaFzfQuery          | FzfLuaNormal     | `fzf.query`          | fzf's `header`                        |
+
+<sup><sub>&ast;Not a highlight group, RGB color from
+`nvim_get_color_map`</sub></sup>
+
 
                                                                               
 FZF COLORS                                                *fzf-lua-fzf-colors*
@@ -1615,23 +1517,21 @@ Big thank you to all those I borrowed code/ideas from, I read so many configs
 and plugin codes that I probably forgot where I found some samples from so if
 I missed your name feel free to contact me and I'll add it below:
 
-- @vijaymarupudi <https://github.com/vijaymarupudi/> for his wonderful
-  nvim-fzf <https://github.com/vijaymarupudi/nvim-fzf> plugin which is at the
-  core of this plugin
++ @junegunn <https://github.com/junegunn/> for creating the magical fzf
+  <https://github.com/junegunn/fzf> and fzf.vim
+  <https://github.com/junegunn/fzf.vim>
+- @vijaymarupudi <https://github.com/vijaymarupudi/> for the wonderful
+  nvim-fzf <https://github.com/vijaymarupudi/nvim-fzf> plugin which started
+  this endeavour
 - @tjdevries <https://github.com/tjdevries/> for too many great things to list
-  here and for borrowing some of his nvim-telescope
-  <https://github.com/nvim-telescope/telescope.nvim> provider code
-- @lukas-reineke <https://github.com/lukas-reineke> for inspiring the solution
-  after browsing his dotfiles <https://github.com/lukas-reineke/dotfiles> and
-  coming across his fuzzy.lua
-  <https://github.com/lukas-reineke/dotfiles/blob/master/vim/lua/fuzzy.lua> ,
-  and while we're, also here for his great lua plugin indent-blankline
-  <https://github.com/lukas-reineke/indent-blankline.nvim>
-- @sindrets <https://github.com/sindrets> for borrowing utilities from his
-  fantastic lua plugin diffview.nvim
-  <https://github.com/sindrets/diffview.nvim>
-- @kevinhwang91 <https://github.com/kevinhwang91> for using his previewer code
-  as baseline for the builtin previewer and his must have plugin nvim-bqf
+  here and borrowing code from nvim-telescope
+  <https://github.com/nvim-telescope/telescope.nvim>
+- @lukas-reineke <https://github.com/lukas-reineke> for inspiration after
+  browsing dotfiles <https://github.com/lukas-reineke/dotfiles>
+- @sindrets <https://github.com/sindrets> for borrowing utilities from
+  diffview.nvim <https://github.com/sindrets/diffview.nvim>
+- @kevinhwang91 <https://github.com/kevinhwang91> for inspiring the builtin
+  previewer code while using nvim-bqf
   <https://github.com/kevinhwang91/nvim-bqf>
 
 vim:tw=78:ts=8:ft=help:norl:
