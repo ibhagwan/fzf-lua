@@ -573,7 +573,7 @@ end
 M.create_fzf_binds = function(opts)
   local binds = opts.keymap.fzf
   if not binds or utils.tbl_isempty(binds) then return end
-  local tbl = {}
+  local combine, separate = {}, {}
   local dedup = {}
   for k, v in pairs(binds) do
     -- value can be defined as a table with addl properties (help string)
@@ -594,9 +594,20 @@ M.create_fzf_binds = function(opts)
     then
       action = action:gsub("accept%s-$", "print(enter)+accept")
     end
-    table.insert(tbl, string.format("%s:%s", key, action))
+    local bind = string.format("%s:%s", key, action)
+    -- Separate "transform|execute|execute-silent" binds to their own `--bind` argument, this
+    -- way we can use `transform:...` and not be forced to use brackets, i.e. `transform(...)`
+    -- this enables us to use brackets in the inner actions, e.g. "zero:transform:rebind(...)"
+    if action:match("transform") or action:match("execute") then
+      table.insert(separate, bind)
+    else
+      table.insert(combine, bind)
+    end
   end
-  return table.concat(tbl, ",")
+  if not utils.tbl_isempty(combine) then
+    table.insert(separate, 1, table.concat(combine, ","))
+  end
+  return separate
 end
 
 ---@param opts table
@@ -646,9 +657,7 @@ M.build_fzf_cli = function(opts, fzf_win)
       opts.fzf_opts["--expect"] = table.concat(expect_keys, ",")
     end
     if expect_binds and #expect_binds > 0 then
-      local bind = opts.fzf_opts["--bind"]
-      opts.fzf_opts["--bind"] = string.format("%s%s%s",
-        bind or "", bind and "," or "", table.concat(expect_binds, ","))
+      table.insert(opts.fzf_opts["--bind"], table.concat(expect_binds, ","))
     end
   end
   if opts.fzf_opts["--preview-window"] == nil then
@@ -675,35 +684,40 @@ M.build_fzf_cli = function(opts, fzf_win)
     -- "$SKIM_DEFAULT_OPTIONS" will contain `--height`
     opts.fzf_opts["--height"] = nil
   end
-  for k, v in pairs(opts.fzf_opts) do
-    -- flag can be set to `false` to negate a default
-    if v then
-      local opt_v
-      if type(v) == "string" or type(v) == "number" then
-        v = tostring(v) -- convert number type to string
-        if k == "--query" then
-          opt_v = libuv.shellescape(v)
-        else
-          if utils.__IS_WINDOWS and type(v) == "string" and v:match([[^'.*'$]]) then
-            -- replace single quote shellescape
-            -- TODO: replace all so we never get here
-            v = [["]] .. v:sub(2, #v - 1) .. [["]]
+  for k, t in pairs(opts.fzf_opts) do
+    for _, v in ipairs(type(t) == "table" and t or { t }) do
+      (function()
+        -- flag can be set to `false` to negate a default
+        if not v then return end
+        local opt_v
+        if type(v) == "string" or type(v) == "number" then
+          v = tostring(v) -- convert number type to string
+          if k == "--query" then
+            opt_v = libuv.shellescape(v)
+          else
+            if utils.__IS_WINDOWS and type(v) == "string" and v:match([[^'.*'$]]) then
+              -- replace single quote shellescape
+              -- TODO: replace all so we never get here
+              v = [["]] .. v:sub(2, #v - 1) .. [["]]
+            end
+            if libuv.is_escaped(v) then
+              utils.warn(string.format("`fzf_opts` are automatically shellescaped."
+                .. " Please remove surrounding quotes from %s=%s", k, v))
+            end
+            opt_v = libuv.is_escaped(v) and v or libuv.shellescape(v)
           end
-          if libuv.is_escaped(v) then
-            utils.warn(string.format("`fzf_opts` are automatically shellescaped."
-              .. " Please remove surrounding quotes from %s=%s", k, v))
-          end
-          opt_v = libuv.is_escaped(v) and v or libuv.shellescape(v)
         end
-      end
-      if opts._is_skim then
-        -- skim has a bug with flag values that start with `-`, for example
-        -- specifying `--nth "-1.."` will fail but `--nth="-1.."` works (#1085)
-        table.insert(cli_args, not opt_v and k or string.format("%s=%s", k, opt_v))
-      else
-        table.insert(cli_args, k)
-        if opt_v then table.insert(cli_args, opt_v) end
-      end
+        if utils.has(opts, "sk") then
+          -- NOT FIXED in 0.11.11: https://github.com/skim-rs/skim/pull/586
+          -- TODO: reopen skim issue
+          -- skim has a bug with flag values that start with `-`, for example
+          -- specifying `--nth "-1.."` will fail but `--nth="-1.."` works (#1085)
+          table.insert(cli_args, not opt_v and k or string.format("%s=%s", k, opt_v))
+        else
+          table.insert(cli_args, k)
+          if opt_v then table.insert(cli_args, opt_v) end
+        end
+      end)()
     end
   end
   for _, o in ipairs({ "fzf_args", "fzf_raw_args", "fzf_cli_args", "_fzf_cli_args" }) do
