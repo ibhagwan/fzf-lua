@@ -507,7 +507,10 @@ function FzfWin:new(o)
     -- utils.warn("Please close fzf-lua before starting a new instance")
     _self._reuse = true
     -- switch to fzf-lua's main window in case the user switched out
-    vim.api.nvim_set_current_win(_self.fzf_winid)
+    -- NOTE: `self.fzf_winid == nil` when using fzf-tmux
+    if _self.fzf_winid and _self.fzf_winid ~= vim.api.nvim_get_current_win() then
+      vim.api.nvim_set_current_win(_self.fzf_winid)
+    end
     -- refersh treesitter settings as new picker might have it disabled
     _self._o.winopts.treesitter = o.winopts.treesitter
     return _self
