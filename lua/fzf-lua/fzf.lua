@@ -231,7 +231,11 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
             -- reason, for example, running `builtin` and opening another picker
             vim.defer_fn(function()
               -- Prevents inserting "i" when spamming `ctrl-g` in `grep_lgrep`
-              if vim.api.nvim_buf_is_valid(e.buf) then
+              -- Also verify we're not already in TERMINAL mode, could happen
+              -- if the user has an autocmd for TermOpen with `startinsert`
+              if vim.api.nvim_buf_is_valid(e.buf)
+                  and vim.api.nvim_get_mode().mode ~= "t"
+              then
                 utils.feed_keys_termcodes("i")
               end
             end, 0)
