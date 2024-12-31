@@ -94,8 +94,10 @@ function TSContext.update(winid, bufnr, opts)
   else
     assert(context_lines)
     local function open()
-      require("treesitter-context.render").open(bufnr, winid, context_ranges, context_lines)
-      TSContext._winids[tostring(winid)] = bufnr
+      if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_win_is_valid(winid) then
+        require("treesitter-context.render").open(bufnr, winid, context_ranges, context_lines)
+        TSContext._winids[tostring(winid)] = bufnr
+      end
     end
     if TSContext.is_attached(winid) == bufnr then
       open()
