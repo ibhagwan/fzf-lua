@@ -203,13 +203,36 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     end
   end)
 
-  -- https://github.com/neovim/neovim/issues/20726
-  -- https://github.com/neovim/neovim/pull/30056
-  if not utils.__HAS_NVIM_011 then
-    if vim.keymap then
-      vim.keymap.set("t", "<C-c>", "<Esc>", { buffer = 0 })
-    else
-      vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = true })
+  if not opts.is_fzf_tmux then
+    -- A pesky bug I fixed upstream and was merged in 0.11/0.10.2:
+    -- <C-c> in term buffers was making neovim freeze, as a workaround in older
+    -- versions (not perfect could still hang) we map <C-c> to <Esc> locally
+    -- https://github.com/neovim/neovim/issues/20726
+    -- https://github.com/neovim/neovim/pull/30056
+    if not utils.__HAS_NVIM_0102 then
+      if vim.keymap then
+        vim.keymap.set("t", "<C-c>", "<Esc>", { buffer = 0 })
+      else
+        vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = true })
+      end
+    end
+
+    -- A more robust way of entering TERMINAL mode "t". We had quite a few issues
+    -- sending `feedkeys|startinsert` after the term job is started, this approach
+    -- seems more consistent as it triggers when entering terminal normal mode "nt"
+    -- NOTE: "ModeChanged" was added with neovim 0.7
+    if utils.__HAS_NVIM_07 then
+      vim.api.nvim_create_autocmd("ModeChanged", {
+        once = true,
+        buffer = 0,
+        callback = function(e)
+          if e.match:match(":nt") then
+            -- NOTE: "startinsert" doesn't work here for all cases for some odd
+            -- reason, for example, running `builtin` and opening another picker
+            utils.feed_keys_termcodes("i")
+          end
+        end
+      })
     end
   end
 
@@ -297,10 +320,12 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     -- mode but our interface is still opened in NORMAL mode, either `startinsert` is not
     -- working (as it's technically already in INSERT) or creating a new terminal buffer
     -- within the same window starts in NORMAL mode while returning the wrong `nvim_get_mode`
-    if utils.__HAS_NVIM_06 and vim.api.nvim_get_mode().mode == "t" then
-      utils.feed_keys_termcodes("i")
-    else
-      vim.cmd [[startinsert]]
+    if not utils.__HAS_NVIM_07 then
+      if utils.__HAS_NVIM_06 and vim.api.nvim_get_mode().mode == "t" then
+        utils.feed_keys_termcodes("i")
+      else
+        vim.cmd [[startinsert]]
+      end
     end
   end
 
