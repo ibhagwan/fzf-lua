@@ -229,7 +229,12 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
           if e.match:match(":nt") then
             -- NOTE: "startinsert" doesn't work here for all cases for some odd
             -- reason, for example, running `builtin` and opening another picker
-            utils.feed_keys_termcodes("i")
+            vim.defer_fn(function()
+              -- Prevents inserting "i" when spamming `ctrl-g` in `grep_lgrep`
+              if vim.api.nvim_buf_is_valid(e.buf) then
+                utils.feed_keys_termcodes("i")
+              end
+            end, 0)
           end
         end
       })
