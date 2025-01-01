@@ -889,7 +889,7 @@ M.set_header = function(opts, hdr_tbl)
 
   if not opts then opts = {} end
   if opts.cwd_prompt then
-    opts.prompt = normalize_cwd(opts.cwd or uv.cwd())
+    opts.prompt = opts.prompt .. normalize_cwd(opts.cwd or uv.cwd())
     if tonumber(opts.cwd_prompt_shorten_len) and
         #opts.prompt >= tonumber(opts.cwd_prompt_shorten_len) then
       opts.prompt = path.shorten(opts.prompt, tonumber(opts.cwd_prompt_shorten_val) or 1)
