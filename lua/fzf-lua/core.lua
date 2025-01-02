@@ -572,7 +572,7 @@ end
 
 M.create_fzf_binds = function(opts)
   local binds = opts.keymap.fzf
-  if not binds or utils.tbl_isempty(binds) then return end
+  if not binds or utils.tbl_isempty(binds) then return {} end
   local combine, separate = {}, {}
   local dedup = {}
   for k, v in pairs(binds) do
