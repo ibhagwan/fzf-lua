@@ -187,7 +187,7 @@ M.spawn = function(opts, fn_transform, fn_done)
         -- can fail with premature process kill
         -- assert(not err)
         finish(130, 0, 2, pid)
-      elseif write_cb_count == 0 and on_exit_called then
+      elseif write_cb_count == 0 and not output_pipe:is_active() and on_exit_called then
         -- spawn callback already called and did not close the pipe
         -- due to write_cb_count>0, since this is the last call
         -- we can close the fzf pipe
