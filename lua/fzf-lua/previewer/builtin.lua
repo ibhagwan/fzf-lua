@@ -449,6 +449,21 @@ function Previewer.base:scroll(direction)
   if not self.preview_bufnr or preview_winid < 0 or not direction then return end
   if not api.nvim_win_is_valid(preview_winid) then return end
 
+  -- map direction to scroll commands ('g8' on char to display)
+  local input = ({
+    ["top"]            = "gg",
+    ["bottom"]         = "G",
+    ["half-page-up"]   = ("%c"):format(0x15), -- [[]]
+    ["half-page-down"] = ("%c"):format(0x04), -- [[]]
+    ["page-up"]        = ("%c"):format(0x02), -- [[]]
+    ["page-down"]      = ("%c"):format(0x06), -- [[]]
+    ["line-up"]        = "Mgk",               -- ^Y doesn't seem to work
+    ["line-down"]      = "Mgj",               -- ^E doesn't seem to work
+    ["reset"]          = true,                -- dummy for exit condition
+  })[direction]
+
+  if not input then return end
+
   if direction == "reset" then
     pcall(vim.api.nvim_win_call, preview_winid, function()
       -- for some reason 'nvim_win_set_cursor'
@@ -460,37 +475,23 @@ function Previewer.base:scroll(direction)
       utils.zz()
     end)
   elseif not self:preview_is_terminal() then
-    -- map direction to scroll commands ('g8' on char to display)
-    local input = ({
-      ["top"]            = "gg",
-      ["bottom"]         = "G",
-      ["half-page-up"]   = ("%c"):format(0x15), -- [[]]
-      ["half-page-down"] = ("%c"):format(0x04), -- [[]]
-      ["page-up"]        = ("%c"):format(0x02), -- [[]]
-      ["page-down"]      = ("%c"):format(0x06), -- [[]]
-      ["line-up"]        = "Mgk",               -- ^Y doesn't seem to work
-      ["line-down"]      = "Mgj",               -- ^E doesn't seem to work
-    })[direction]
-
-    if input then
-      pcall(vim.api.nvim_win_call, preview_winid, function()
-        -- ctrl-b (page-up) behaves in a non consistent way, unlike ctrl-u, if it can't
-        -- scroll a full page upwards it won't move the cursor, if the cursor is within
-        -- the first page it will still move the cursor to the bottom of the page (!?)
-        -- we therefore need special handling for both scenarios with `ctrl-b`:
-        --   (1) If the cursor is at line 1, do nothing
-        --   (2) Else, test the cursor before and after, if the new position is further
-        --       down the buffer than the original, we're in the first page ,goto line 1
-        local is_ctrl_b = string.byte(input, 1) == 2
-        local pos = is_ctrl_b and vim.api.nvim_win_get_cursor(0)
-        if is_ctrl_b and pos[1] == 1 then return end
-        vim.cmd([[norm! ]] .. input)
-        if is_ctrl_b and pos[1] <= vim.api.nvim_win_get_cursor(0)[1] + 1 then
-          vim.api.nvim_win_set_cursor(0, { 1, pos[2] })
-        end
-        utils.zz()
-      end)
-    end
+    pcall(vim.api.nvim_win_call, preview_winid, function()
+      -- ctrl-b (page-up) behaves in a non consistent way, unlike ctrl-u, if it can't
+      -- scroll a full page upwards it won't move the cursor, if the cursor is within
+      -- the first page it will still move the cursor to the bottom of the page (!?)
+      -- we therefore need special handling for both scenarios with `ctrl-b`:
+      --   (1) If the cursor is at line 1, do nothing
+      --   (2) Else, test the cursor before and after, if the new position is further
+      --       down the buffer than the original, we're in the first page ,goto line 1
+      local is_ctrl_b = string.byte(input, 1) == 2
+      local pos = is_ctrl_b and vim.api.nvim_win_get_cursor(0)
+      if is_ctrl_b and pos[1] == 1 then return end
+      vim.cmd([[norm! ]] .. input)
+      if is_ctrl_b and pos[1] <= vim.api.nvim_win_get_cursor(0)[1] + 1 then
+        vim.api.nvim_win_set_cursor(0, { 1, pos[2] })
+      end
+      utils.zz()
+    end)
   else
     -- we get here when using custom term commands using
     -- the extensions map (i.e. view term images with 'vui')
@@ -499,7 +500,6 @@ function Previewer.base:scroll(direction)
     -- https://github.com/neovim/neovim/issues/4895#issuecomment-303073838
     -- according to the above comment feedkeys is the correct workaround
     -- TODO: hide the typed command from the user (possible?)
-    local input = direction > 0 and "<C-d>" or "<C-u>"
     vim.cmd("stopinsert")
     utils.feed_keys_termcodes((":noa lua vim.api.nvim_win_call(" ..
         [[%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>]])
