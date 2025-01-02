@@ -125,7 +125,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   local EOL = opts.EOL or "\n"
   local output_pipe = uv.new_pipe(false)
   local error_pipe = uv.new_pipe(false)
-  local write_cb_count = 0
+  local write_cb_count, on_exit_called = 0, nil
   local prev_line_content = nil
 
   if opts.fn_transform then fn_transform = opts.fn_transform end
@@ -166,6 +166,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     env = opts.env,
     verbatim = _is_win,
   }, function(code, signal)
+    on_exit_called = true
     if write_cb_count == 0 and not output_pipe:is_active() then
       -- Do not call `:read_stop` or `:close` here as we may have data
       -- reads outstanding on slower Windows machines (#1521), only call
@@ -186,7 +187,7 @@ M.spawn = function(opts, fn_transform, fn_done)
         -- can fail with premature process kill
         -- assert(not err)
         finish(130, 0, 2, pid)
-      elseif write_cb_count == 0 and not output_pipe:is_active() then
+      elseif write_cb_count == 0 and on_exit_called then
         -- spawn callback already called and did not close the pipe
         -- due to write_cb_count>0, since this is the last call
         -- we can close the fzf pipe
@@ -251,6 +252,11 @@ M.spawn = function(opts, fn_transform, fn_done)
       finish(130, 0, 4, pid)
     end
     if not data then
+      -- https://github.com/LazyVim/LazyVim/discussions/5264
+      -- The pipe can remain active *after* on_exit was called
+      if write_cb_count == 0 and on_exit_called then
+        finish(0, 0, 5, pid)
+      end
       return
     end
 
