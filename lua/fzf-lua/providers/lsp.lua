@@ -660,7 +660,7 @@ local function fzf_lsp_locations(opts, fn_contents)
   if not opts then return end
   opts = core.set_fzf_field_index(opts)
   opts = fn_contents(opts)
-  if not opts.__contents then
+  if not opts or not opts.__contents then
     core.__CTX = nil
     return
   end
