@@ -5,6 +5,7 @@ vim.cmd("set packpath=" .. packpath)
 
 vim.o.termguicolors = true
 
+pcall(require, "nvim-web-devicons")
 require "fzf-lua".setup { defaults = { git_icons = false } }
 
 vim.api.nvim_set_keymap("n", "<C-\\>", [[<Cmd>lua require"fzf-lua".buffers()<CR>]], {})
