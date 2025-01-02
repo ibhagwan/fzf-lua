@@ -236,7 +236,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
               if vim.api.nvim_buf_is_valid(e.buf)
                   and vim.api.nvim_get_mode().mode ~= "t"
               then
-                utils.feed_keys_termcodes("i")
+                vim.cmd("startinsert")
               end
             end, 0)
           end
