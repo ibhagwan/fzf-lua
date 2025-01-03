@@ -208,6 +208,8 @@ function M.setup(opts, do_not_reset_defaults)
       opts.defaults = opts.defaults or {}
       opts.defaults[o] = opts[gopt]
       opts[gopt] = nil
+      utils.warn(string.format("Deprecated option: '%s = %s' -> 'defaults = { %s = %s }'",
+        gopt, tostring(opts.defaults[o]), o, tostring(opts.defaults[o])))
     end
   end
   -- set custom &nbsp if caller requested
