@@ -279,18 +279,6 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
-  -- prioritize fzf-tmux split pane flags over the
-  -- popup flag `-p` from fzf-lua defaults (#865)
-  opts._is_fzf_tmux_popup = true
-  if type(opts.fzf_tmux_opts) == "table" then
-    for _, flag in ipairs({ "-u", "-d", "-l", "-r" }) do
-      if opts.fzf_tmux_opts[flag] then
-        opts._is_fzf_tmux_popup = false
-        opts.fzf_tmux_opts["-p"] = nil
-      end
-    end
-  end
-
   -- Merge `winopts` with outputs from `winopts_fn`
   local winopts_fn = opts.winopts_fn or M.globals.winopts_fn
   if type(winopts_fn) == "function" then
@@ -648,6 +636,7 @@ function M.normalize_opts(opts, globals, __resume_key)
               ["--highlight-line"] = true,
             }
           },
+          ["0.53"] = { fzf_opts = { ["--tmux"] = true } },
           ["0.52"] = { fzf_opts = { ["--highlight-line"] = true } },
           ["0.42"] = {
             fzf_opts = {
@@ -720,22 +709,27 @@ function M.normalize_opts(opts, globals, __resume_key)
   end
 
   -- Are we using fzf-tmux? if so get available columns
-  opts._is_fzf_tmux = vim.env.TMUX
-      -- pre fzf v0.53 uses the fzf-tmux script
-      and opts.fzf_bin:match("fzf%-tmux$") and 1
-      -- fzf v0.53 added native tmux integration
-      or utils.has(opts, "fzf", { 0, 53 }) and opts.fzf_opts["--tmux"] and 2
-      -- skim v0.15.5 added native tmux integration
-      or utils.has(opts, "sk", { 0, 15, 5 }) and opts.fzf_opts["--tmux"] and 2
-  if opts._is_fzf_tmux then
-    local out = utils.io_system({ "tmux", "display-message", "-p", "#{window_width}" })
-    opts._tmux_columns = tonumber(out:match("%d+"))
-    opts.winopts.split = nil
-    if opts._is_fzf_tmux == 2 then
-      -- native tmux integration is implemented using tmux popups
-      opts._is_fzf_tmux_popup = true
+  opts._is_fzf_tmux = (function()
+    if not vim.env.TMUX then return end
+    local is_tmux =
+        (opts.fzf_bin:match("fzf%-tmux$") or opts.fzf_bin:match("sk%-tmux$")) and 1
+        -- fzf v0.53 added native tmux integration
+        or utils.has(opts, "fzf", { 0, 53 }) and opts.fzf_opts["--tmux"] and 2
+        -- skim v0.15.5 added native tmux integration
+        or utils.has(opts, "sk", { 0, 15, 5 }) and opts.fzf_opts["--tmux"] and 2
+    if is_tmux == 1 then
+      -- backward compat when using the `fzf-tmux` script: prioritize fzf-tmux
+      -- split pane flags over the popup flag `-p` from fzf-lua defaults (#865)
+      if type(opts.fzf_tmux_opts) == "table" then
+        for _, flag in ipairs({ "-u", "-d", "-l", "-r" }) do
+          if opts.fzf_tmux_opts[flag] then
+            opts.fzf_tmux_opts["-p"] = nil
+          end
+        end
+      end
     end
-  end
+    return is_tmux
+  end)()
 
   -- refresh highlights if background/colorscheme changed (#1092)
   if not M.__HLS_STATE

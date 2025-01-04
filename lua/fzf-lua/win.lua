@@ -266,13 +266,49 @@ local strip_borderchars_hl = function(border)
   return borderchars
 end
 
+function FzfWin:tmux_columns()
+  local is_popup, is_hsplit, opt_val = (function()
+    -- Backward compat using "fzf-tmux" script
+    if self._o._is_fzf_tmux == 1 then
+      for _, flag in ipairs({ "-l", "-r" }) do
+        if self._o.fzf_tmux_opts[flag] then
+          -- left/right split, not a popup, is an hsplit
+          return false, true, self._o.fzf_tmux_opts[flag]
+        end
+      end
+      for _, flag in ipairs({ "-u", "-d" }) do
+        if self._o.fzf_tmux_opts[flag] then
+          -- up/down split, not a popup, not an hsplit
+          return false, false, self._o.fzf_tmux_opts[flag]
+        end
+      end
+      -- Default is a popup with "-p" or without
+      return true, false, self._o.fzf_tmux_opts["-p"]
+    else
+      return true, false, self._o.fzf_opts["--tmux"]
+    end
+  end)()
+  local out = utils.io_system({
+    "tmux", "display-message", "-p",
+    is_popup and "#{window_width}" or "#{pane_width}"
+  })
+  local cols = tonumber(out:match("%d+"))
+  -- Calc the correct width when using tmux popup or left|right splits
+  -- fzf's defaults to "--tmux" is "center,50%" or "50%" for splits
+  if is_popup or is_hsplit then
+    local percent = type(opt_val) == "string" and tonumber(opt_val:match("(%d+)%%")) or 50
+    cols = math.floor(cols * percent / 100)
+  end
+  return cols
+end
+
 function FzfWin:columns(no_fullscreen)
   assert(self.winopts)
   -- When called from `core.preview_window` we need to get the no-fullscreen columns
   -- in order to get an accurate alternate layout trigger that will also be consistent
   -- when starting with `winopts.fullscreen == true`
   local winopts = no_fullscreen and self:normalize_winopts(false) or self.winopts
-  return self._o._is_fzf_tmux and self._o._is_fzf_tmux_popup and self._o._tmux_columns
+  return self._o._is_fzf_tmux and self:tmux_columns()
       or winopts.split and vim.api.nvim_win_get_width(self.fzf_winid or 0)
       or winopts.width
 end

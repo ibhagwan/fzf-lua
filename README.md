@@ -568,7 +568,10 @@ fzf_opts = {
 -- popup 80% width, 80% height (note `-p` requires tmux > 3.2)
 -- and removes the sides margin added by `fzf-tmux` (fzf#3162)
 -- for more options run `fzf-tmux --help`
-fzf_tmux_opts       = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
+-- NOTE: since fzf v0.53 / sk v0.15 it is recommended to use
+-- native tmux integration by adding the below to `fzf_opts`
+-- fzf_opts = { ["--tmux"] = "center,80%,60%" }
+fzf_tmux_opts = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
 ```
 
 </details>
