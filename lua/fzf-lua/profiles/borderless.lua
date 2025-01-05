@@ -8,19 +8,16 @@ return {
   winopts    = {
     border  = "none",
     preview = {
-      scrollbar = "float",
-      scrolloff = "-2",
-      title_pos = "center",
+      border = "none",
+      scrollbar = "border",
     },
   },
   hls        = {
     border         = hls.bg,
     preview_border = hls.bg,
     preview_title  = hls.sel,
-    scrollfloat_e  = "",
     scrollfloat_f  = hls.sel,
-    -- TODO: not working with `scrollbar = "border"` when `border = "none"
-    -- scrollborder_f = "@function",
+    scrollborder_f = hls.bg,
   },
   fzf_colors = {
     ["gutter"] = { "bg", hls.bg },

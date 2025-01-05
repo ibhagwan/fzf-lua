@@ -7,10 +7,11 @@ return {
   { "default-title" }, -- base profile
   desc       = "borderless and not so minimalistic",
   winopts    = {
-    border  = "empty",
+    border  = { " ", " ", " ", " ", "", "", "", " " }, -- "solid-top" (+side margins)
     preview = {
+      border = "solid",
       scrollbar = "float",
-      scrolloff = "-2",
+      scrolloff = "-1",
       title_pos = "center",
     },
   },

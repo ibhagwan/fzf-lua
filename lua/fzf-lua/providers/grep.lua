@@ -36,8 +36,11 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   opts._cmd = command
 
   if opts.rg_glob and not command:match("^rg") then
+    if not tonumber(opts.rg_glob) and not opts.silent then
+      -- Do not display the error message if using the defaults (rg_glob=1)
+      utils.warn("'--glob|iglob' flags require 'rg', ignoring 'rg_glob' option.")
+    end
     opts.rg_glob = false
-    utils.warn("'--glob|iglob' flags require 'rg', ignoring 'rg_glob' option.")
   end
 
   if opts.rg_glob then

@@ -263,8 +263,8 @@ function M.builtin:populate_preview_buf(entry_str)
   vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, lines)
   vim.bo[self.tmpbuf].filetype = "git"
   self:set_preview_buf(self.tmpbuf)
-  self.win:update_title(string.format(" Action #%d ", idx))
-  self.win:update_scrollbar()
+  self.win:update_preview_title(string.format(" Action #%d ", idx))
+  self.win:update_preview_scrollbar()
 end
 
 M.native = native.base:extend()

@@ -407,9 +407,6 @@ M.fzf = function(contents, opts)
 
   fzf_win:attach_previewer(previewer)
   local fzf_bufnr = fzf_win:create()
-  -- save the normalized winopts, otherwise we
-  -- lose overrides by 'winopts_fn|winopts_raw'
-  opts.winopts.preview = fzf_win.winopts.preview
   -- convert "reload" actions to fzf's `reload` binds
   -- convert "exec_silent" actions to fzf's `execute-silent` binds
   opts = M.convert_reload_actions(opts.__reload_cmd or contents, opts)
@@ -464,12 +461,50 @@ M.fzf = function(contents, opts)
   return selected
 end
 
+-- Best approximation of neovim border types to fzf border types
+local function translate_border(winopts, metadata)
+  local neovim2fzf = {
+    none       = "noborder",
+    single     = "border-sharp",
+    double     = "border-double",
+    rounded    = "border-rounded",
+    solid      = "noborder",
+    empty      = "border-block",
+    shadow     = "border-thinblock",
+    bold       = "border-bold",
+    block      = "border-block",
+    solidblock = "border-block",
+    thicc      = "border-bold",
+    thiccc     = "border-block",
+    thicccc    = "border-block",
+  }
+  local border = winopts.border
+  if not border then border = "none" end
+  if border == true then border = "border" end
+  if type(border) == "function" then
+    border = border(winopts, metadata)
+  end
+  border = type(border) == "string" and (neovim2fzf[border] or border) or nil
+  return border
+end
+
 ---@param o table
 ---@return string
 M.preview_window = function(o, fzf_win)
   local layout
-  local prefix = string.format("%s:%s:%s",
-    o.winopts.preview.hidden, o.winopts.preview.border, o.winopts.preview.wrap)
+  local prefix = string.format("%s:%s%s",
+    o.winopts.preview.hidden and "hidden" or "nohidden",
+    o.winopts.preview.wrap and "wrap" or "nowrap",
+    (function()
+      local border = (function()
+        local preview_str = fzf_win:fzf_preview_layout_str()
+        local preview_pos = preview_str:match("[^:]+") or "right"
+        return translate_border(o.winopts.preview,
+          { type = "fzf", name = "prev", layout = preview_pos })
+      end)()
+      return border and string.format(":%s", border) or ""
+    end)()
+  )
   if utils.has(o, "fzf", { 0, 31 })
       and o.winopts.preview.layout == "flex"
       and tonumber(o.winopts.preview.flip_columns) > 0

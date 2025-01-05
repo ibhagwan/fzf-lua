@@ -10,8 +10,6 @@ local uv = vim.uv or vim.loop
 
 local M = {}
 
-M.__HAS_NVIM_06 = vim.fn.has("nvim-0.6") == 1
-M.__HAS_NVIM_07 = vim.fn.has("nvim-0.7") == 1
 M.__HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
 M.__HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
 M.__HAS_NVIM_010 = vim.fn.has("nvim-0.10") == 1
@@ -843,9 +841,9 @@ end
 
 ---@param fname string
 ---@param name string|nil
----@param silent boolean
+---@param silent boolean|number
 function M.load_profile_fname(fname, name, silent)
-  local profile = name or fname:match("([^%p]+)%.lua$") or "<unknown>"
+  local profile = name or vim.fn.fnamemodify(fname, ":t:r") or "<unknown>"
   local ok, res = pcall(dofile, fname)
   if ok and type(res) == "table" then
     -- success
@@ -853,10 +851,10 @@ function M.load_profile_fname(fname, name, silent)
       M.info(string.format("Successfully loaded profile '%s'", profile))
     end
     return res
-  elseif silent then
-    return
   end
-  if not ok then
+  -- If called from `setup` we set `silent=1` so we can alert the user on
+  -- errors loading the requested profiles
+  if silent ~= true and not ok then
     M.warn(string.format("Unable to load profile '%s': %s", profile, res:match("[^\n]+")))
   elseif type(res) ~= "table" then
     M.warn(string.format("Unable to load profile '%s': wrong type %s", profile, type(res)))

@@ -13,7 +13,7 @@ return {
     width   = 0.8,
     height  = 0.9,
     preview = {
-      hidden       = "nohidden",
+      hidden       = false,
       vertical     = "up:45%",
       horizontal   = "right:50%",
       layout       = "flex",

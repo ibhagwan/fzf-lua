@@ -221,26 +221,24 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     -- sending `feedkeys|startinsert` after the term job is started, this approach
     -- seems more consistent as it triggers when entering terminal normal mode "nt"
     -- NOTE: "ModeChanged" was added with neovim 0.7
-    if utils.__HAS_NVIM_07 then
-      vim.api.nvim_create_autocmd("ModeChanged", {
-        once = true,
-        buffer = 0,
-        callback = function(e)
-          if e.match:match(":nt") then
-            vim.defer_fn(function()
-              -- Prevents inserting "i" when spamming `ctrl-g` in `grep_lgrep`
-              -- Also verify we're not already in TERMINAL mode, could happen
-              -- if the user has an autocmd for TermOpen with `startinsert`
-              if vim.api.nvim_buf_is_valid(e.buf)
-                  and vim.api.nvim_get_mode().mode ~= "t"
-              then
-                vim.cmd("startinsert")
-              end
-            end, 0)
-          end
+    vim.api.nvim_create_autocmd("ModeChanged", {
+      once = true,
+      buffer = 0,
+      callback = function(e)
+        if e.match:match(":nt") then
+          vim.defer_fn(function()
+            -- Prevents inserting "i" when spamming `ctrl-g` in `grep_lgrep`
+            -- Also verify we're not already in TERMINAL mode, could happen
+            -- if the user has an autocmd for TermOpen with `startinsert`
+            if vim.api.nvim_buf_is_valid(e.buf)
+                and vim.api.nvim_get_mode().mode ~= "t"
+            then
+              vim.cmd("startinsert")
+            end
+          end, 0)
         end
-      })
-    end
+      end
+    })
   end
 
   if opts.debug then
@@ -318,22 +316,6 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- fzf-tmux spawns outside neovim, don't set filetype/insert mode
   if not opts.is_fzf_tmux then
     vim.bo.filetype = "fzf"
-
-    -- https://github.com/neovim/neovim/pull/15878
-    -- Since patch-8.2.3461 which was released with 0.6 neovim distinguishes between
-    -- Normal mode and Terminal-Normal mode. However, this seems to have also introduced
-    -- a bug with `startinsert`: When fzf-lua reuses interfaces (e.g. called from "builtin"
-    -- or grep<->live_grep toggle) the current mode will be "t" which is Terminal (INSERT)
-    -- mode but our interface is still opened in NORMAL mode, either `startinsert` is not
-    -- working (as it's technically already in INSERT) or creating a new terminal buffer
-    -- within the same window starts in NORMAL mode while returning the wrong `nvim_get_mode`
-    if not utils.__HAS_NVIM_07 then
-      if utils.__HAS_NVIM_06 and vim.api.nvim_get_mode().mode == "t" then
-        utils.feed_keys_termcodes("i")
-      else
-        vim.cmd [[startinsert]]
-      end
-    end
   end
 
   if not utils.__IS_WINDOWS
