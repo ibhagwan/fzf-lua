@@ -3,7 +3,7 @@ local function title(str, opts)
     {
       prompt = false,
       winopts = {
-        -- title = { { " " .. str .. " ", hls.title } },
+        -- title = { { " " .. str .. " ", "IncSearch" } },
         title = " " .. str .. " ",
         title_pos = "center",
       }

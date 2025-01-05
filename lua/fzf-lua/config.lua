@@ -236,17 +236,37 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- merge with provider defaults from globals (defaults + setup options)
   opts = vim.tbl_deep_extend("keep", opts, utils.tbl_deep_clone(globals))
 
+  -- Backward compat: merge `winopts` with outputs from `winopts_fn`
+  local winopts_fn = opts.winopts_fn or M.globals.winopts_fn
+  if type(winopts_fn) == "function" then
+    if not opts.silent then
+      utils.warn(
+        "Deprecated option: 'winopts_fn' -> 'winopts'. Add 'silent=true' to hide this message.")
+    end
+    local ret = winopts_fn(opts) or {}
+    if not utils.tbl_isempty(ret) and (not opts.winopts or type(opts.winopts) == "table") then
+      opts.winopts = vim.tbl_deep_extend("force", opts.winopts or {}, ret)
+    end
+  end
+
   -- Merge values from globals
   for _, k in ipairs({
     "winopts", "keymap", "fzf_opts", "fzf_colors", "fzf_tmux_opts", "hls"
   }) do
     local setup_val = M.globals[k]
+    if type(setup_val) == "function" then
+      setup_val = setup_val(opts)
+      if type(setup_val) == "table" then
+        local default_val = utils.map_get(M.defaults, k)
+        if type(default_val) == "table" then
+          setup_val = vim.tbl_deep_extend("force", {}, default_val, setup_val)
+        end
+      end
+    end
     if type(setup_val) == "table" then
       -- must clone or map will be saved as reference
       -- and then overwritten if found in 'backward_compat'
       setup_val = utils.tbl_deep_clone(setup_val)
-    elseif type(setup_val) == "function" then
-      setup_val = setup_val(opts)
     end
     if opts[k] == nil then
       opts[k] = setup_val
@@ -268,6 +288,14 @@ function M.normalize_opts(opts, globals, __resume_key)
     if v == "" then opts.fzf_opts[k] = true end
   end
 
+  -- backward compat for `winopts.preview.{wrap|hidden}`
+  for k, v in pairs({ wrap = "nowrap", hidden = "nohidden" }) do
+    local val = utils.map_get(opts, "winopts.preview." .. k)
+    if type(val) == "string" then
+      utils.map_set(opts, "winopts.preview." .. k, not val:match(v))
+    end
+  end
+
   -- fzf.vim's `g:fzf_history_dir` (#1127)
   if vim.g.fzf_history_dir and opts.fzf_opts["--history"] == nil then
     local histdir = libuv.expand(vim.g.fzf_history_dir)
@@ -277,12 +305,6 @@ function M.normalize_opts(opts, globals, __resume_key)
     if vim.fn.isdirectory(histdir) == 1 and type(opts.__resume_key) == "string" then
       opts.fzf_opts["--history"] = path.join({ histdir, opts.__resume_key })
     end
-  end
-
-  -- Merge `winopts` with outputs from `winopts_fn`
-  local winopts_fn = opts.winopts_fn or M.globals.winopts_fn
-  if type(winopts_fn) == "function" then
-    opts.winopts = vim.tbl_deep_extend("force", opts.winopts, winopts_fn(opts) or {})
   end
 
   -- Merge arrays from globals|defaults, can't use 'vim.tbl_xxx'
@@ -449,10 +471,21 @@ function M.normalize_opts(opts, globals, __resume_key)
     -- globals.winopts.preview.default
     opts.previewer = opts.previewer()
   end
-  if type(opts.previewer) == "table" or opts.previewer == true then
-    -- merge with the default builtin previewer
+  -- "Shortcut" values to the builtin previewer
+  -- merge with builtin previewer defaults
+  if type(opts.previewer) == "table"
+      or opts.previewer == true
+      or opts.previewer == "hidden"
+      or opts.previewer == "nohidden"
+  then
+    -- of type string, can only be "hidden|nohidden"
+    if type(opts.previewer) == "string" then
+      assert(opts.previewer == "hidden" or opts.previewer == "nohidden")
+      utils.map_set(opts, "winopts.preview.hidden", opts.previewer ~= "nohidden")
+    end
     opts.previewer = vim.tbl_deep_extend("keep",
-      type(opts.previewer) == "table" and opts.previewer or {}, M.globals.previewers.builtin)
+      type(opts.previewer) == "table" and opts.previewer or {},
+      M.globals.previewers.builtin)
   end
 
   -- Convert again in case the bool option came from global opts

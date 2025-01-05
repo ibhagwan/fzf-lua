@@ -99,15 +99,16 @@ function TSContext.update(winid, bufnr, opts)
         TSContext._winids[tostring(winid)] = bufnr
       end
     end
-    if TSContext.is_attached(winid) == bufnr then
-      open()
-    else
-      -- HACK: but the entire nvim-treesitter-context is essentially a hack
-      -- https://github.com/ibhagwan/fzf-lua/issues/1552#issuecomment-2525456813
-      for _, t in ipairs({ 0, 20 }) do
-        vim.defer_fn(function() open() end, t)
-      end
-    end
+    -- NOTE: no longer required since adding `eventignore` to `FzfWin:set_winopts`
+    -- if TSContext.is_attached(winid) == bufnr then
+    open()
+    -- else
+    --   -- HACK: but the entire nvim-treesitter-context is essentially a hack
+    --   -- https://github.com/ibhagwan/fzf-lua/issues/1552#issuecomment-2525456813
+    --   for _, t in ipairs({ 0, 20 }) do
+    --     vim.defer_fn(function() open() end, t)
+    --   end
+    -- end
   end
 end
 
@@ -212,7 +213,8 @@ function Previewer.base:restore_winopts()
 end
 
 function Previewer.base:set_style_winopts()
-  self.win:set_winopts(self.win.preview_winid, self:gen_winopts())
+  -- NOTE: `true` to ignore events for initial TSContext.update
+  self.win:set_winopts(self.win.preview_winid, self:gen_winopts(), true)
 end
 
 function Previewer.base:preview_is_terminal()
@@ -322,8 +324,7 @@ function Previewer.base:clear_preview_buf(newbuf)
     retbuf = self:get_tmp_buffer()
     utils.win_set_buf_noautocmd(self.win.preview_winid, retbuf)
     -- redraw the title line and clear the scrollbar
-    self.win:redraw_preview_border()
-    self.win:update_scrollbar(true)
+    self.win:close_preview_scrollbar()
   end
   -- since our temp buffers have 'bufhidden=wipe' the tmp
   -- buffer will be automatically wiped and 'nvim_buf_is_valid'
@@ -371,10 +372,6 @@ function Previewer.base:display_entry(entry_str)
 
   local populate_preview_buf = function(entry_str_)
     if not self.win or not self.win:validate_preview() then return end
-
-    -- redraw the preview border, resets title
-    -- border scrollbar and border highlights
-    self.win:redraw_preview_border()
 
     -- specialized previewer populate function
     self:populate_preview_buf(entry_str_)
@@ -474,7 +471,7 @@ function Previewer.base:scroll(direction)
       end
       utils.zz()
     end)
-  elseif not self:preview_is_terminal() then
+  else
     pcall(vim.api.nvim_win_call, preview_winid, function()
       -- ctrl-b (page-up) behaves in a non consistent way, unlike ctrl-u, if it can't
       -- scroll a full page upwards it won't move the cursor, if the cursor is within
@@ -492,18 +489,6 @@ function Previewer.base:scroll(direction)
       end
       utils.zz()
     end)
-  else
-    -- we get here when using custom term commands using
-    -- the extensions map (i.e. view term images with 'vui')
-    -- we can't use ":norm!" with terminal buffers due to:
-    -- 'Vim(normal):Can't re-enter normal mode from terminal mode'
-    -- https://github.com/neovim/neovim/issues/4895#issuecomment-303073838
-    -- according to the above comment feedkeys is the correct workaround
-    -- TODO: hide the typed command from the user (possible?)
-    vim.cmd("stopinsert")
-    utils.feed_keys_termcodes((":noa lua vim.api.nvim_win_call(" ..
-        [[%d, function() vim.cmd("norm! <C-v>%s") vim.cmd("startinsert") end)<CR>]])
-      :format(tonumber(preview_winid), input))
   end
   -- 'cursorline' is effectively our match highlight. Once the
   -- user scrolls, the highlight is no longer relevant (#462).
@@ -517,9 +502,9 @@ function Previewer.base:scroll(direction)
       self.cached_bufnrs[tostring(self.preview_bufnr)] = vim.api.nvim_win_get_cursor(preview_winid)
     end
   end
-  self:update_ts_context()
+  self.win:update_preview_scrollbar()
   self:update_render_markdown()
-  self.win:update_scrollbar()
+  self:update_ts_context()
 end
 
 function Previewer.base:ts_ctx_toggle()
@@ -595,7 +580,7 @@ function Previewer.buffer_or_file:start_ueberzug()
     on_stderr = function(_, data, _)
       for _, l in ipairs(data or {}) do
         if #l > 0 then
-          utils.info(l)
+          utils.info("ueberzug: " .. l)
         end
       end
       -- populate the preview buffer with the error message
@@ -655,10 +640,10 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
     local params = {
       action     = "add",
       identifier = "preview",
-      x          = winpos[2],
-      y          = winpos[1],
-      width      = wincfg.width,
-      height     = wincfg.height,
+      x          = winpos[2] + 1,
+      y          = winpos[1] + 2,
+      width      = wincfg.width - 2,
+      height     = wincfg.height - 2,
       scaler     = self.ueberzug_scaler,
       path       = path.is_absolute(entry.path) and entry.path or
           path.join({ self.opts.cwd or uv.cwd(), entry.path }),
@@ -710,14 +695,14 @@ end
 
 function Previewer.buffer_or_file:key_from_entry(entry)
   assert(entry)
-  return entry.bufname
-      or entry.bufnr and string.format("bufnr:%d", entry.bufnr)
+  return entry.bufnr and string.format("bufnr:%d", entry.bufnr)
       or entry.uri
       or entry.path
 end
 
 function Previewer.buffer_or_file:populate_from_cache(entry)
   local key = self:key_from_entry(entry)
+  assert(type(key) == "string" and #key > 0)
   local cached = self.cached_buffers[key]
   assert(not cached or self.cached_bufnrs[tostring(cached.bufnr)])
   assert(not cached or vim.api.nvim_buf_is_valid(cached.bufnr))
@@ -744,11 +729,13 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   end
   if not self:should_load_buffer(entry) then
     -- same file/buffer as previous entry no need to reload content
-    -- call post to set cursor location, if line|col changed clear cached buffer position
+    -- only call post to set cursor location
     if type(self.cached_bufnrs[tostring(self.preview_bufnr)]) == "table"
-        and ((tonumber(entry.line) and entry.line ~= self.orig_pos[1])
-          or (tonumber(entry.col) and entry.col - 1 ~= self.orig_pos[2]))
+        and ((tonumber(entry.line) and entry.line > 0 and entry.line ~= self.orig_pos[1])
+          or (tonumber(entry.col) and entry.col > 0 and entry.col - 1 ~= self.orig_pos[2]))
     then
+      -- entry is within the same buffer but line|col has changed
+      -- clear cached buffer position so we scroll to entry's line|col
       self.cached_bufnrs[tostring(self.preview_bufnr)] = true
     end
     self:preview_buf_post(entry)
@@ -784,7 +771,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
         self.preview_bufnr = vim.api.nvim_get_current_buf()
       else
         -- in case of an error display the stacktrace in the preview buffer
-        local lines = vim.split(res, "\n") or { "null" }
+        local lines = type(res) == "string" and utils.strsplit(res, "\n") or { "null" }
         table.insert(lines, 1,
           string.format("lsp.util.%s failed for '%s':",
             utils.__HAS_NVIM_011 and "show_document" or "jump_to_location", entry.uri))
@@ -1078,31 +1065,29 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   end)
 end
 
-function Previewer.buffer_or_file:update_border(entry)
-  if self.title then
-    local filepath = entry.path
-    if filepath then
-      if filepath:match("^%[DEBUG]") then
-        filepath = "[DEBUG]"
-      else
-        if self.opts.cwd then
-          filepath = path.relative_to(entry.path, self.opts.cwd)
-        end
-        filepath = path.HOME_to_tilde(filepath)
+function Previewer.buffer_or_file:update_title(entry)
+  if not self.title then return end
+  local filepath = entry.path
+  if filepath then
+    if filepath:match("^%[DEBUG]") then
+      filepath = "[DEBUG]"
+    else
+      if self.opts.cwd then
+        filepath = path.relative_to(entry.path, self.opts.cwd)
       end
+      filepath = path.HOME_to_tilde(filepath)
     end
-    local title = filepath or entry.uri or entry.bufname
-    -- was transform function defined?
-    if self.title_fnamemodify then
-      local wincfg = vim.api.nvim_win_get_config(self.win.border_winid)
-      title = self.title_fnamemodify(title, wincfg and wincfg.width)
-    end
-    if entry.bufnr then
-      title = string.format("buf %d: %s", entry.bufnr, title)
-    end
-    self.win:update_title(" " .. title .. " ")
   end
-  self.win:update_scrollbar(entry.no_scrollbar)
+  local title = filepath or entry.uri or entry.bufname
+  -- was transform function defined?
+  if self.title_fnamemodify then
+    local wincfg = vim.api.nvim_win_get_config(self.win.preview_winid)
+    title = self.title_fnamemodify(title, wincfg and wincfg.width)
+  end
+  if entry.bufnr then
+    title = string.format("buf %d: %s", entry.bufnr, title)
+  end
+  self.win:update_preview_title(" " .. title .. " ")
 end
 
 function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
@@ -1127,7 +1112,13 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
     end
   end
 
-  self:update_border(entry)
+  self:update_title(entry)
+
+  if entry.no_scrollbar then
+    self.win:close_preview_scrollbar()
+  else
+    self.win:update_preview_scrollbar()
+  end
 
   -- save the loaded entry so we can compare
   -- bufnr|path with the next entry. If equal
@@ -1222,7 +1213,7 @@ function Previewer.man_pages:populate_preview_buf(entry_str)
   vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, output)
   vim.bo[tmpbuf].filetype = self.filetype
   self:set_preview_buf(tmpbuf)
-  self.win:update_scrollbar()
+  self.win:update_preview_scrollbar()
 end
 
 Previewer.marks = Previewer.buffer_or_file:extend()
@@ -1393,7 +1384,7 @@ function Previewer.highlights:populate_preview_buf(entry_str)
     self.orig_pos = api.nvim_win_get_cursor(0)
     utils.zz()
   end)
-  self.win:update_scrollbar()
+  self.win:update_preview_scrollbar()
 end
 
 Previewer.quickfix = Previewer.base:extend()
@@ -1444,8 +1435,8 @@ function Previewer.quickfix:populate_preview_buf(entry_str)
   vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, lines)
   vim.bo[self.tmpbuf].filetype = "qf"
   self:set_preview_buf(self.tmpbuf)
-  self.win:update_title(string.format("%s: %s", nr, qf_list.title))
-  self.win:update_scrollbar()
+  self.win:update_preview_title(string.format(" %s: %s ", nr, qf_list.title))
+  self.win:update_preview_scrollbar()
 end
 
 Previewer.autocmds = Previewer.buffer_or_file:extend()

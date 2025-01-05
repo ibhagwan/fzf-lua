@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*      For Neovim >= 0.8.0      Last change: 2024 December 18
+*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 January 05
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -408,7 +408,7 @@ previewer.
                                                                               
 globals.winopts.preview.wrap       *fzf-lua-opts-globals.winopts.preview.wrap*
 
-Type: `string`, Default: `nowrap`
+Type: `boolean`, Default: `false`
 
 Line wrap in both native fzf and the builtin previewer, mapped to fzf's
 `--preview-window:[no]wrap` flag.
@@ -417,7 +417,7 @@ Line wrap in both native fzf and the builtin previewer, mapped to fzf's
                                                                               
 globals.winopts.preview.hidden   *fzf-lua-opts-globals.winopts.preview.hidden*
 
-Type: `string`, Default: `nohidden`
+Type: `boolean`, Default: `false`
 
 Preview startup visibility in both native fzf and the builtin previewer,
 mapped to fzf's `--preview-window:[no]hidden` flag.
@@ -504,7 +504,7 @@ values are `float|border`.
                                                                               
 globals.winopts.preview.scrolloff*fzf-lua-opts-globals.winopts.preview.scrolloff*
 
-Type: `number`, Default: `-2`
+Type: `number`, Default: `-1`
 
 Float style scrollbar offset from the right edge of the preview window.
 

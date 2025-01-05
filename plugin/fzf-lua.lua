@@ -4,7 +4,7 @@ vim.g.loaded_fzf_lua = 1
 -- Should never be called, below nvim 0.7 "plugin/fzf-lua.vim"
 -- sets `vim.g.loaded_fzf_lua=1`
 if vim.fn.has("nvim-0.7") ~= 1 then
-  vim.api.nvim_err_writeln("Fzf-lua minimum requirement is Neovim versions 0.5")
+  vim.api.nvim_err_writeln("Fzf-lua minimum requirement is Neovim versions 0.7")
   return
 end
 

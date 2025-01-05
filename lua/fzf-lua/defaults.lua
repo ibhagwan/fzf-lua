@@ -6,7 +6,13 @@ local previewers = require "fzf-lua.previewer"
 local M = {}
 
 function M._default_previewer_fn()
-  local previewer = M.globals.default_previewer or M.globals.winopts.preview.default
+  local winopts = M.globals.winopts
+  if type(winopts) == "function" then
+    winopts = winopts() or {}
+    winopts.preview = type(winopts.preview) == "table" and winopts.preview or {}
+    winopts.preview.default = winopts.preview.default or M.defaults.winopts.preview.default
+  end
+  local previewer = M.globals.default_previewer or winopts.preview.default
   -- the setup function cannot have a custom previewer as deepcopy
   -- fails with stack overflow while trying to copy the custom class
   -- the workaround is to define the previewer as a function instead
@@ -52,9 +58,9 @@ M.defaults                      = {
     },
     preview    = {
       default      = "builtin",
-      border       = "border",
-      wrap         = "nowrap",
-      hidden       = "nohidden",
+      border       = "rounded",
+      wrap         = false,
+      hidden       = false,
       vertical     = "down:45%",
       horizontal   = "right:60%",
       layout       = "flex",
@@ -62,7 +68,7 @@ M.defaults                      = {
       title        = true,
       title_pos    = "center",
       scrollbar    = "border",
-      scrolloff    = "-2",
+      scrolloff    = -1,
       -- default preview delay, fzf native previewers has a 100ms delay:
       -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
       delay        = 20,
@@ -505,6 +511,7 @@ M.defaults.grep                 = {
       .. "--perl-regexp -e",
   rg_opts        = "--column --line-number --no-heading --color=always --smart-case "
       .. "--max-columns=4096 -e",
+  rg_glob        = 1, -- do not display warning if using `grep`
   _actions       = function() return M.globals.actions.files end,
   actions        = { ["ctrl-g"] = { actions.grep_lgrep } },
   -- live_grep_glob options
@@ -600,6 +607,7 @@ M.defaults.buffers              = {
   color_icons           = true,
   sort_lastused         = true,
   show_unloaded         = true,
+  show_unlisted         = false,
   ignore_current_buffer = false,
   no_action_set_cursor  = true,
   cwd_only              = false,
@@ -1186,7 +1194,7 @@ M.defaults.complete_file        = {
   _actions          = function() return M.globals.actions.files end,
   actions           = { ["enter"] = actions.complete },
   previewer         = M._default_previewer_fn,
-  winopts           = { preview = { hidden = "hidden" } },
+  winopts           = { preview = { hidden = true } },
   fzf_opts          = { ["--no-multi"] = true },
   _fzf_nth_devicons = true,
 }
@@ -1250,29 +1258,6 @@ M.defaults.__HLS                = {
     prompt     = "FzfLuaFzfPrompt",
     query      = "FzfLuaFzfQuery",
   }
-}
-
-M.defaults.__WINOPTS            = {
-  borderchars   = {
-    ["none"]    = { "", "", "", "", "", "", "", "" },
-    ["empty"]   = { " ", " ", " ", " ", " ", " ", " ", " " },
-    ["single"]  = { "┌", "─", "┐", "│", "┘", "─", "└", "│" },
-    ["double"]  = { "╔", "═", "╗", "║", "╝", "═", "╚", "║" },
-    ["rounded"] = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
-    ["thicc"]   = { "┏", "━", "┓", "┃", "┛", "━", "┗", "┃" },
-    ["thiccc"]  = { "▛", "▀", "▜", "▐", "▟", "▄", "▙", "▌" },
-    ["thicccc"] = { "█", "█", "█", "█", "█", "█", "█", "█" },
-  },
-  -- border chars reverse lookup for ambiwidth="double"
-  border2string = {
-    [" "] = "empty",
-    ["┌"] = "single",
-    ["╔"] = "double",
-    ["╭"] = "rounded",
-    ["┏"] = "double",
-    ["▛"] = "double",
-    ["█"] = "double",
-  },
 }
 
 return M

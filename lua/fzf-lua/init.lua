@@ -127,26 +127,12 @@ function M.setup_highlights(override)
         hl_def.default = false
       end
     end
-    if utils.__HAS_NVIM_07 then
-      vim.api.nvim_set_hl(0, hl_name, hl_def)
-    else
-      if hl_def.link then
-        vim.cmd(string.format("hi! %s link %s %s",
-          hl_def.default and "default" or "",
-          hl_name, hl_def.link))
-      else
-        vim.cmd(string.format("hi! %s %s %s%s%s",
-          hl_def.default and "default" or "", hl_name,
-          hl_def.fg and string.format(" guifg=%s", hl_def.fg) or "",
-          hl_def.bg and string.format(" guibg=%s", hl_def.bg) or "",
-          hl_def.bold and " gui=bold" or ""))
-      end
-    end
+    vim.api.nvim_set_hl(0, hl_name, hl_def)
   end
 
   -- linking to a cleared hl is bugged in neovim 0.8.x
   -- resulting in a pink background for hls linked to `Normal`
-  if vim.fn.has("nvim-0.9") == 0 and vim.fn.has("nvim-0.8") == 1 then
+  if not utils.__HAS_NVIM_09 and utils.__HAS_NVIM_08 then
     for _, a in ipairs(highlights) do
       local hl_name, opt_name = a[1], a[2]
       if utils.is_hl_cleared(hl_name) then
@@ -172,8 +158,10 @@ local function load_profiles(profiles)
       or type(profiles) == "string" and { profiles }
       or {}
   for _, profile in ipairs(profiles) do
+    -- backward compat, renamed "borderless_full" > "borderless-full"
+    if profile == "borderless_full" then profile = "borderless-full" end
     local fname = path.join({ vim.g.fzf_lua_directory, "profiles", profile .. ".lua" })
-    local profile_opts = utils.load_profile_fname(fname, nil, true)
+    local profile_opts = utils.load_profile_fname(fname, nil, 1)
     if type(profile_opts) == "table" then
       if profile_opts[1] then
         -- profile requires loading base profile(s)
@@ -192,6 +180,8 @@ end
 
 function M.setup(opts, do_not_reset_defaults)
   opts = type(opts) == "table" and opts or {}
+  -- Default to picker info in win title (vs fzf prompt) if neovim version >= 0.9
+  opts[1] = opts[1] == nil and utils.__HAS_NVIM_09 and "default-title" or opts[1]
   if opts[1] then
     -- Did the user supply profile(s) to load?
     opts = vim.tbl_deep_extend("keep", opts, load_profiles(opts[1]))

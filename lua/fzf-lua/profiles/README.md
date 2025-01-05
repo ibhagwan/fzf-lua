@@ -19,7 +19,7 @@ telescope defaults with `bat` previewer:
 | Profile          | Details                                    |
 | ---------------- | ------------------------------------------ |
 | `default`          | fzf-lua defaults, uses neovim "builtin" previewer and devicons (if available) for git/files/buffers |
-| `default-title`    | fzf-lua defaults, using title instead of prompt |
+| `default-title`    | fzf-lua defaults, using title instead of prompt (default on neovim > =0.9) |
 | `fzf-native`       | utilizes fzf's native previewing ability in the terminal where possible using `bat` for previews |
 | `fzf-tmux`         | similar to `fzf-native` and opens in a tmux popup (requires tmux > 3.2) |
 | `fzf-vim`          | closest to `fzf.vim`'s defaults (+icons), also sets up user commands (`:Files`, `:Rg`, etc) |
@@ -27,7 +27,8 @@ telescope defaults with `bat` previewer:
 | `telescope`        | closest match to telescope defaults in look and feel and keybinds |
 | `skim`             | uses [`skim`](https://github.com/skim-rs/skim) as an fzf alternative, (requires the `sk` binary) |
 | `borderless`       | borderless and minimalistic seamless look &amp; feel |
-| `borderless_full`  | borderless with description in window title (instead of prompt)  |
+| `borderless-full`  | borderless with description in window title (instead of prompt) |
+| `border-fused`     | single border around both fzf and the previewer |
 
 
 **Custom user settings which make sense and aren't mere duplications with minimal modifications

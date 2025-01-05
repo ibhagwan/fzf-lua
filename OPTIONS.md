@@ -312,13 +312,13 @@ Debounce time (milliseconds) for displaying the preview buffer in the builtin pr
 
 #### globals.winopts.preview.wrap
 
-Type: `string`, Default: `nowrap`
+Type: `boolean`, Default: `false`
 
 Line wrap in both native fzf and the builtin previewer, mapped to fzf's `--preview-window:[no]wrap` flag.
 
 #### globals.winopts.preview.hidden
 
-Type: `string`, Default: `nohidden`
+Type: `boolean`, Default: `false`
 
 Preview startup visibility in both native fzf and the builtin previewer, mapped to fzf's `--preview-window:[no]hidden` flag.
 
@@ -382,7 +382,7 @@ Scrollbar style in the builtin previewer, set to `false` to disable, possible va
 
 #### globals.winopts.preview.scrolloff
 
-Type: `number`, Default: `-2`
+Type: `number`, Default: `-1`
 
 Float style scrollbar offset from the right edge of the preview window.
 
