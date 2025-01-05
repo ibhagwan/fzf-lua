@@ -543,12 +543,19 @@ M.create_fzf_colors = function(opts)
       local what = list[1]
       -- [2] can be one or more highlights, first existing hl wins
       local hls = type(list[2]) == "table" and list[2] or { list[2] }
+      local has_hl = false
       for _, hl in ipairs(hls) do
         local hexcol = utils.hexcol_from_hl(hl, what)
         if hexcol and #hexcol > 0 then
           table.insert(spec, hexcol)
+          has_hl = true
           break
         end
+      end
+      if not has_hl then
+        -- Assume that the default terminal fg/bg was intended ("NONE") - "NONE" is translated to
+        -- nil by neovim.
+        table.insert(spec, "-1")
       end
       -- arguments in the 3rd slot onward are passed raw, this can
       -- be used to pass styling arguments, for more info see #413
