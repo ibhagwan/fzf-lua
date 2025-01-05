@@ -348,7 +348,7 @@ M.__DEVICONS = NvimWebDevicons:new()
 
 -- Load an icons provider and sets the module local var `M.PLUGIN`
 -- "auto" prefers nvim-web-devicons, "srv" RPC-queries main instance
----@param provider boolean|string|"auto"|"devicons"|"mini"|"srv"
+---@param provider nil|boolean|string|"auto"|"devicons"|"mini"|"srv"
 ---@return boolean success
 M.plugin_load = function(provider, do_not_lazy_load)
   -- Called from "make_entry.lua" without params (already loaded)

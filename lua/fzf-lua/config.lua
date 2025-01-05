@@ -761,8 +761,13 @@ function M.normalize_opts(opts, globals, __resume_key)
         })
     then
       -- Disable file_icons if requested package isn't available
-      utils.warn(string.format("error loading '%s', disabling 'file_icons'.",
-        opts.file_icons == "mini" and "mini.icons" or "nvim-web-devicons"))
+      -- we set the default value to "1" but since it's the default
+      -- don't display the warning unless the user specifically set
+      -- file_icons to `true` or `mini|devicons`
+      if not tonumber(opts.file_icons) then
+        utils.warn(string.format("error loading '%s', disabling 'file_icons'.",
+          opts.file_icons == "mini" and "mini.icons" or "nvim-web-devicons"))
+      end
       opts.file_icons = nil
     end
     if opts.file_icons == "mini" then

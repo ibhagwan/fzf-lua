@@ -1,12 +1,9 @@
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
-local devicons = require "fzf-lua.devicons"
 local previewers = require "fzf-lua.previewer"
 
 local M = {}
-
-M._has_devicons = devicons.plugin_loaded()
 
 function M._default_previewer_fn()
   local previewer = M.globals.default_previewer or M.globals.winopts.preview.default
@@ -332,7 +329,7 @@ M.defaults.files                = {
   prompt                 = "> ",
   cmd                    = nil, -- default: auto detect find|fd
   multiprocess           = true,
-  file_icons             = true and M._has_devicons,
+  file_icons             = 1,
   color_icons            = true,
   git_icons              = true,
   cwd_prompt             = true,
@@ -360,7 +357,7 @@ M.defaults.git                  = {
     prompt            = "GitFiles> ",
     cmd               = "git ls-files --exclude-standard",
     multiprocess      = true,
-    file_icons        = true and M._has_devicons,
+    file_icons        = 1,
     color_icons       = true,
     git_icons         = true,
     fzf_opts          = { ["--multi"] = true },
@@ -375,7 +372,7 @@ M.defaults.git                  = {
     cmd               = "git -c color.status=false --no-optional-locks status --porcelain=v1 -u",
     previewer         = "git_diff",
     multiprocess      = true,
-    file_icons        = true and M._has_devicons,
+    file_icons        = 1,
     color_icons       = true,
     git_icons         = true,
     fzf_opts          = { ["--multi"] = true },
@@ -497,7 +494,7 @@ M.defaults.grep                 = {
   input_prompt   = "Grep For> ",
   cmd            = nil, -- default: auto detect rg|grep
   multiprocess   = true,
-  file_icons     = true and M._has_devicons,
+  file_icons     = 1,
   color_icons    = true,
   git_icons      = false,
   fzf_opts       = { ["--multi"] = true },
@@ -531,7 +528,7 @@ M.defaults.args                 = {
   previewer         = M._default_previewer_fn,
   prompt            = "Args> ",
   files_only        = true,
-  file_icons        = true and M._has_devicons,
+  file_icons        = 1,
   color_icons       = true,
   git_icons         = true,
   fzf_opts          = { ["--multi"] = true },
@@ -543,7 +540,7 @@ M.defaults.args                 = {
 M.defaults.oldfiles             = {
   previewer         = M._default_previewer_fn,
   prompt            = "History> ",
-  file_icons        = true and M._has_devicons,
+  file_icons        = 1,
   color_icons       = true,
   git_icons         = false,
   stat_file         = true,
@@ -556,7 +553,7 @@ M.defaults.quickfix             = {
   previewer   = M._default_previewer_fn,
   prompt      = "Quickfix> ",
   separator   = "▏",
-  file_icons  = true and M._has_devicons,
+  file_icons  = 1,
   color_icons = true,
   git_icons   = false,
   fzf_opts    = { ["--multi"] = true },
@@ -578,7 +575,7 @@ M.defaults.loclist              = {
   previewer   = M._default_previewer_fn,
   prompt      = "Locations> ",
   separator   = "▏",
-  file_icons  = true and M._has_devicons,
+  file_icons  = 1,
   color_icons = true,
   git_icons   = false,
   fzf_opts    = { ["--multi"] = true },
@@ -599,7 +596,7 @@ M.defaults.loclist_stack        = {
 M.defaults.buffers              = {
   previewer             = M._default_previewer_fn,
   prompt                = "Buffers> ",
-  file_icons            = true and M._has_devicons,
+  file_icons            = 1,
   color_icons           = true,
   sort_lastused         = true,
   show_unloaded         = true,
@@ -620,7 +617,7 @@ M.defaults.tabs                 = {
   prompt      = "Tabs> ",
   tab_title   = "Tab",
   tab_marker  = "<<",
-  file_icons  = true and M._has_devicons,
+  file_icons  = 1,
   color_icons = true,
   _actions    = function()
     return M.globals.actions.buffers or M.globals.actions.files
@@ -640,7 +637,7 @@ M.defaults.tabs                 = {
 M.defaults.lines                = {
   previewer        = M._default_previewer_fn,
   prompt           = "Lines> ",
-  file_icons       = true and M._has_devicons,
+  file_icons       = 1,
   color_icons      = true,
   show_bufname     = 120,
   show_unloaded    = true,
@@ -719,7 +716,7 @@ M.defaults.tags                 = {
   rg_opts      = "--no-heading --color=always --smart-case",
   grep_opts    = "--color=auto --perl-regexp",
   multiprocess = true,
-  file_icons   = true and M._has_devicons,
+  file_icons   = 1,
   git_icons    = false,
   color_icons  = true,
   fzf_opts     = {
@@ -828,7 +825,7 @@ M.defaults.manpages             = {
 M.defaults.lsp                  = {
   previewer        = M._default_previewer_fn,
   prompt_postfix   = "> ",
-  file_icons       = true and M._has_devicons,
+  file_icons       = 1,
   color_icons      = true,
   git_icons        = false,
   async_or_timeout = 5000,
@@ -843,7 +840,7 @@ M.defaults.lsp                  = {
 M.defaults.lsp.symbols          = {
   previewer        = M._default_previewer_fn,
   prompt_postfix   = "> ",
-  file_icons       = true and M._has_devicons,
+  file_icons       = 1,
   color_icons      = true,
   git_icons        = false,
   symbol_style     = 1,
@@ -915,7 +912,7 @@ M.defaults.lsp.symbols          = {
 M.defaults.lsp.finder           = {
   previewer   = M._default_previewer_fn,
   prompt      = "LSP Finder> ",
-  file_icons  = true and M._has_devicons,
+  file_icons  = 1,
   color_icons = true,
   git_icons   = false,
   async       = true,
@@ -963,7 +960,7 @@ M.defaults.lsp.code_actions     = {
 M.defaults.diagnostics          = {
   previewer   = M._default_previewer_fn,
   prompt      = "Diagnostics> ",
-  file_icons  = true and M._has_devicons,
+  file_icons  = 1,
   color_icons = true,
   git_icons   = false,
   diag_icons  = true,
@@ -1025,7 +1022,7 @@ M.defaults.jumps                = {
 
 M.defaults.tagstack             = {
   prompt      = "Tagstack> ",
-  file_icons  = true and M._has_devicons,
+  file_icons  = 1,
   color_icons = true,
   git_icons   = true,
   fzf_opts    = { ["--multi"] = true },
@@ -1155,7 +1152,7 @@ M.defaults.dap                  = {
   },
   breakpoints = {
     prompt      = "DAP Breakpoints> ",
-    file_icons  = true and M._has_devicons,
+    file_icons  = 1,
     color_icons = true,
     git_icons   = false,
     previewer   = M._default_previewer_fn,
@@ -1183,7 +1180,7 @@ M.defaults.complete_path        = {
 M.defaults.complete_file        = {
   cmd               = nil, -- default: auto detect rg|fd|find
   multiprocess      = true,
-  file_icons        = true and M._has_devicons,
+  file_icons        = 1,
   color_icons       = true,
   git_icons         = false,
   _actions          = function() return M.globals.actions.files end,
