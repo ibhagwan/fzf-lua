@@ -220,25 +220,25 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     -- A more robust way of entering TERMINAL mode "t". We had quite a few issues
     -- sending `feedkeys|startinsert` after the term job is started, this approach
     -- seems more consistent as it triggers when entering terminal normal mode "nt"
-    -- NOTE: "ModeChanged" was added with neovim 0.7
-    vim.api.nvim_create_autocmd("ModeChanged", {
-      once = true,
-      buffer = 0,
-      callback = function(e)
-        if e.match:match(":nt") then
-          vim.defer_fn(function()
-            -- Prevents inserting "i" when spamming `ctrl-g` in `grep_lgrep`
-            -- Also verify we're not already in TERMINAL mode, could happen
-            -- if the user has an autocmd for TermOpen with `startinsert`
-            if vim.api.nvim_buf_is_valid(e.buf)
-                and vim.api.nvim_get_mode().mode ~= "t"
-            then
-              vim.cmd("startinsert")
-            end
-          end, 0)
-        end
-      end
-    })
+    -- NOTE: **DO NOT USE** seems to cause valrious issues see #1672
+    -- vim.api.nvim_create_autocmd("ModeChanged", {
+    --   once = true,
+    --   buffer = 0,
+    --   callback = function(e)
+    --     if e.match:match(":nt") then
+    --       vim.defer_fn(function()
+    --         -- Prevents inserting "i" when spamming `ctrl-g` in `grep_lgrep`
+    --         -- Also verify we're not already in TERMINAL mode, could happen
+    --         -- if the user has an autocmd for TermOpen with `startinsert`
+    --         if vim.api.nvim_buf_is_valid(e.buf)
+    --             and vim.api.nvim_get_mode().mode ~= "t"
+    --         then
+    --           vim.cmd("startinsert")
+    --         end
+    --       end, 0)
+    --     end
+    --   end
+    -- })
   end
 
   if opts.debug then
@@ -316,6 +316,14 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- fzf-tmux spawns outside neovim, don't set filetype/insert mode
   if not opts.is_fzf_tmux then
     vim.bo.filetype = "fzf"
+
+    -- See note in "ModeChanged" above
+    if vim.api.nvim_get_mode().mode == "nt" then
+      vim.cmd [[startinsert]]
+    else
+      -- Called from another fzf-win most likely
+      utils.feed_keys_termcodes("i")
+    end
   end
 
   if not utils.__IS_WINDOWS
