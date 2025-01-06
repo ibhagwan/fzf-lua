@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0         Last change: 2025 January 04
+*fzf-lua.txt*         For Neovim >= 0.5.0         Last change: 2025 January 06
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -39,7 +39,7 @@ FZF :HEART: LUA                                      *fzf-lua-fzf-:heart:-lua*
 
 
 Neovim version
-<https://img.shields.io/badge/Neovim-0.5-57A143?style=flat-square&logo=neovim>
+<https://img.shields.io/badge/Neovim-0.7-57A143?style=flat-square&logo=neovim>
 
 Quickstart <#quickstart> • Installation <#installation> • Usage <#usage>
 • Commands <#commands> • Customization <#customization> • Wiki
@@ -98,7 +98,7 @@ Using lazy.nvim <https://github.com/folke/lazy.nvim>
                                                                               
 DEPENDENCIES                                            *fzf-lua-dependencies*
 
-- `neovim` <https://github.com/neovim/neovim/releases> version > `0.5.0`
+- `neovim` <https://github.com/neovim/neovim/releases> version > `0.7.0`
 - `fzf` <https://github.com/junegunn/fzf> version > `0.25` or `skim`
   <https://github.com/skim-rs/skim> binary installed
 - nvim-web-devicons <https://github.com/nvim-tree/nvim-web-devicons> or
@@ -420,9 +420,8 @@ CUSTOMIZATION                                          *fzf-lua-customization*
         width            = 0.80,            -- window width
         row              = 0.35,            -- window row position (0=top, 1=bottom)
         col              = 0.50,            -- window col position (0=left, 1=right)
-        -- border argument passthrough to nvim_open_win(), also used
-        -- 'none', 'single', 'double', 'thicc' (+cc) or 'rounded' (default)
-        border           = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
+        -- border argument passthrough to nvim_open_win()
+        border           = "rounded",
         -- Backdrop opacity, 0 is fully opaque, 100 is fully transparent (i.e. disabled)
         backdrop         = 60,
         -- title         = "Title",
@@ -439,21 +438,23 @@ CUSTOMIZATION                                          *fzf-lua-customization*
         preview = {
           -- default     = 'bat',           -- override the default previewer?
                                             -- default uses the 'builtin' previewer
-          border         = 'border',        -- border|noborder, applies only to
+          border         = "rounded",       -- preview border: accepts both `nvim_open_win`
+                                            -- and fzf values (e.g. "border-top", "none")
                                             -- native fzf previewers (bat/cat/git/etc)
-          wrap           = 'nowrap',        -- wrap|nowrap
-          hidden         = 'nohidden',      -- hidden|nohidden
-          vertical       = 'down:45%',      -- up|down:size
-          horizontal     = 'right:60%',     -- right|left:size
-          layout         = 'flex',          -- horizontal|vertical|flex
+                                            -- can also be set to `fun(winopts, metadata)`
+          wrap           = false,           -- preview line wrap (fzf's 'wrap|nowrap')
+          hidden         = false,           -- start preview hidden
+          vertical       = "down:45%",      -- up|down:size
+          horizontal     = "right:60%",     -- right|left:size
+          layout         = "flex",          -- horizontal|vertical|flex
           flip_columns   = 100,             -- #cols to switch to horizontal on flex
           -- Only used with the builtin previewer:
           title          = true,            -- preview border title (file/buf)?
           title_pos      = "center",        -- left|center|right, title alignment
-          scrollbar      = 'float',         -- `false` or string:'float|border'
+          scrollbar      = "float",         -- `false` or string:'float|border'
                                             -- float:  in-window floating border
                                             -- border: in-border "block" marker
-          scrolloff      = '-2',            -- float scrollbar offset from right
+          scrolloff      = -1,              -- float scrollbar offset from right
                                             -- applies only when scrollbar = 'float'
           delay          = 20,              -- delay(ms) displaying the preview
                                             -- prevents lag on fast scrolling
@@ -461,12 +462,12 @@ CUSTOMIZATION                                          *fzf-lua-customization*
             number            = true,
             relativenumber    = false,
             cursorline        = true,
-            cursorlineopt     = 'both',
+            cursorlineopt     = "both",
             cursorcolumn      = false,
-            signcolumn        = 'no',
+            signcolumn        = "no",
             list              = false,
             foldenable        = false,
-            foldmethod        = 'manual',
+            foldmethod        = "manual",
           },
         },
         on_create = function()
@@ -912,7 +913,7 @@ CUSTOMIZATION                                          *fzf-lua-customization*
         -- search strings will be split using the 'glob_separator' and translated
         -- to '--iglob=' arguments, requires 'rg'
         -- can still be used when 'false' by calling 'live_grep_glob' directly
-        rg_glob           = false,        -- default to glob parsing?
+        rg_glob           = true,         -- default to glob parsing with `rg`
         glob_flag         = "--iglob",    -- for case sensitive globs use '--glob'
         glob_separator    = "%s%-%-",     -- query separator pattern (lua): ' --'
         -- advanced usage: for custom argument parsing define
@@ -1218,7 +1219,7 @@ CUSTOMIZATION                                          *fzf-lua-customization*
         -- actions inherit from 'actions.files' and merge
         actions      = { ["enter"] = actions.complete },
         -- previewer hidden by default
-        winopts      = { preview = { hidden = "hidden" } },
+        winopts      = { preview = { hidden = true } },
       },
       -- uncomment to use fzf native previewers
       -- (instead of using a neovim floating window)
@@ -1302,16 +1303,19 @@ Easy! just use the `fzf-vim` profile:
                                                                               
 AVAILABLE PROFILES                                *fzf-lua-available-profiles*
 
-| Profile         | Details                                                                                             |
-| --------------- | --------------------------------------------------------------------------------------------------- |
-| `default`       | fzf-lua defaults, uses neovim "builtin" previewer and devicons (if available) for git/files/buffers |
-| `default-title` | fzf-lua defaults, using title instead of prompt                                                     |
-| `fzf-native`    | utilizes fzf's native previewing ability in the terminal where possible using `bat` for previews    |
-| `fzf-tmux`      | similar to `fzf-native` and opens in a tmux popup (requires tmux > 3.2)                             |
-| `fzf-vim`       | closest to `fzf.vim`'s defaults (+icons), also sets up user commands (`:Files`, `:Rg`, etc)         |
-| `max-perf`      | similar to `fzf-native` and disables icons globally for max performance                             |
-| `telescope`     | closest match to telescope defaults in look and feel and keybinds                                   |
-| `skim`          | uses [`skim`](https://github.com/skim-rs/skim) as an fzf alternative, (requires the `sk` binary)    |
+| Profile           | Details                                                                                             |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| `default`         | fzf-lua defaults, uses neovim "builtin" previewer and devicons (if available) for git/files/buffers |
+| `default-title`   | fzf-lua defaults, using title instead of prompt (default on neovim > =0.9)                          |
+| `fzf-native`      | utilizes fzf's native previewing ability in the terminal where possible using `bat` for previews    |
+| `fzf-tmux`        | similar to `fzf-native` and opens in a tmux popup (requires tmux > 3.2)                             |
+| `fzf-vim`         | closest to `fzf.vim`'s defaults (+icons), also sets up user commands (`:Files`, `:Rg`, etc)         |
+| `max-perf`        | similar to `fzf-native` and disables icons globally for max performance                             |
+| `telescope`       | closest match to telescope defaults in look and feel and keybinds                                   |
+| `skim`            | uses [`skim`](https://github.com/skim-rs/skim) as an fzf alternative, (requires the `sk` binary)    |
+| `borderless`      | borderless and minimalistic seamless look &amp; feel                                                |
+| `borderless-full` | borderless with description in window title (instead of prompt)                                     |
+| `border-fused`    | single border around both fzf and the previewer                                                     |
 
 
                                                                               
@@ -1347,7 +1351,7 @@ Or with a custom command and preview:
       function()
         require("fzf-lua").complete_file({
           cmd = "rg --files",
-          winopts = { preview = { hidden = "nohidden" } }
+          winopts = { preview = { hidden = true } }
         })
       end, { silent = true, desc = "Fuzzy complete file" })
 <
