@@ -564,12 +564,15 @@ end
 
 function Previewer.buffer_or_file:start_ueberzug()
   if self._ueberzug_fifo then return self._ueberzug_fifo end
-  local fifo = ("fzf-lua-%d-ueberzug"):format(vim.fn.getpid())
-  self._ueberzug_fifo = utils.io_systemlist({ "mktemp", "--dry-run", "--suffix", fifo })[1]
+  self._ueberzug_fifo = path.join({
+    vim.fn.fnamemodify(vim.fn.tempname(), ":h"),
+    string.format("fzf-lua-%d-ueberzug", vim.fn.getpid())
+  })
   utils.io_system({ "mkfifo", self._ueberzug_fifo })
   self._ueberzug_job = vim.fn.jobstart({ "sh", "-c",
-    ("tail --follow %s | ueberzug layer --parser json")
-        :format(libuv.shellescape(self._ueberzug_fifo))
+    string.format(
+      "tail -f %s | ueberzug layer --parser json",
+      libuv.shellescape(self._ueberzug_fifo))
   }, {
     on_exit = function(_, rc, _)
       if rc ~= 0 and rc ~= 143 then
