@@ -318,11 +318,11 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     vim.bo.filetype = "fzf"
 
     -- See note in "ModeChanged" above
-    if vim.api.nvim_get_mode().mode == "nt" then
-      vim.cmd [[startinsert]]
-    else
+    if vim.api.nvim_get_mode().mode == "t" then
       -- Called from another fzf-win most likely
       utils.feed_keys_termcodes("i")
+    else
+      vim.cmd [[startinsert]]
     end
   end
 
