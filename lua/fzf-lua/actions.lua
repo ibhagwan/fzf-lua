@@ -187,8 +187,11 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
         if entry.terminal and vimcmd == "bd" then
           vimcmd = vimcmd .. "!"
         end
-        -- URI entries only execute new buffers (new|vnew|tabnew)
-        if not entry.uri then
+        if entry.uri then
+          -- URI entries only execute new buffers (new|vnew|tabnew)
+          -- remove the piped cmd, "vsplit | e" -> "vsplit" (#1677)
+          vimcmd = vimcmd:match("[^|]+")
+        else
           -- Force full paths when `autochdir=true` (#882)
           vimcmd = string.format("%s %s", vimcmd, (function()
             -- `:argdel|:argadd` uses only paths
