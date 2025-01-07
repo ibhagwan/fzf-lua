@@ -144,17 +144,25 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
       if not path.is_absolute(fullpath) then
         fullpath = path.join({ opts.cwd or opts._cwd or uv.cwd(), fullpath })
       end
-      -- Adjust "<auto>" edits based on entry being buffer or filename
-      local vimcmd = _vimcmd:gsub("<auto>", entry.bufnr and entry.bufname and "b" or "e")
-      -- Do not execute "edit" commands if we already have the same buffer/file open
-      -- or if we are dealing with a URI as it's open with `vim.lsp.util.show_document`
       -- opts.__CTX isn't guaranteed by API users (#1414)
       local CTX = opts.__CTX or utils.CTX()
-      if vimcmd == "e" and (entry.uri or path.equals(fullpath, CTX.bname))
-          or vimcmd == "b" and entry.bufnr and entry.bufnr == CTX.bufnr
-      then
-        vimcmd = nil
-      end
+      local target_equals_current = entry.bufnr and entry.bufnr == CTX.bufnr
+          or path.equals(fullpath, CTX.bname)
+      local vimcmd = (function()
+        -- Do not execute "edit" commands if we already have the same buffer/file open
+        -- or if we are dealing with a URI as it's open with `vim.lsp.util.show_document`
+        if _vimcmd == "<auto>" and (entry.uri or target_equals_current) then
+          return nil
+        end
+        -- Same buffer splits and URI entries only execute the split cmd
+        -- after a split we land in the same buffer, remove the piped edit
+        -- e.g. "vsplit | e" -> "vsplit" (#1677)
+        if _vimcmd:match("| <auto>") and (entry.uri or target_equals_current) then
+          return _vimcmd:gsub("| <auto>", "")
+        end
+        -- Replace "<auto>" based on entry being buffer or filename
+        return _vimcmd:gsub("<auto>", entry.bufnr and entry.bufname and "b" or "e")
+      end)()
       -- ":b" and ":e" commands replace the current buffer
       local will_replace_curbuf = vimcmd == "e" or vimcmd == "b"
       if will_replace_curbuf
@@ -187,11 +195,8 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
         if entry.terminal and vimcmd == "bd" then
           vimcmd = vimcmd .. "!"
         end
-        if entry.uri then
-          -- URI entries only execute new buffers (new|vnew|tabnew)
-          -- remove the piped cmd, "vsplit | e" -> "vsplit" (#1677)
-          vimcmd = vimcmd:match("[^|]+")
-        else
+        -- URI entries only execute new buffers (new|vnew|tabnew)
+        if not entry.uri then
           -- Force full paths when `autochdir=true` (#882)
           vimcmd = string.format("%s %s", vimcmd, (function()
             -- `:argdel|:argadd` uses only paths
