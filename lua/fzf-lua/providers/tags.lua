@@ -116,7 +116,7 @@ local function tags(opts)
     if M._TAGS2CWD[opts._ctags_file] then
       opts.cwd = opts.cwd or M._TAGS2CWD[opts._ctags_file]
     else
-      opts.cwd = opts.cwd or get_ctags_cwd(opts._ctags_file) or uv.cwd()
+      opts.cwd = opts.cwd or get_ctags_cwd(opts._ctags_file) or path.parent(opts.ctags_file)
       M._TAGS2CWD[opts._ctags_file] = opts.cwd
     end
   end
