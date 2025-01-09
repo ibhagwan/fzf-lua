@@ -96,7 +96,7 @@ M.ui_select = function(items, ui_opts, on_choice)
 
   -- Force override prompt or it stays cached (#786)
   local prompt = ui_opts.prompt or "Select one of:"
-  opts.fzf_opts["--prompt"] = prompt:gsub(":%s?$", "> ")
+  opts.prompt = prompt:gsub(":%s?$", "> ")
 
   -- save items so we can access them from the action
   opts._items = items
