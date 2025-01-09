@@ -4,13 +4,13 @@ local function title(str, opts)
       winopts = {
         -- title = { { " " .. str .. " ", "IncSearch" } },
         title = " " .. str .. " ",
-        title_pos = "center",
       }
     })
 end
 return {
   desc                 = "defaults using title instead of prompt",
   defaults             = { prompt = false },
+  winopts              = { title_pos = "center" },
   files                = title("Files"),
   buffers              = title("Buffers"),
   tabs                 = title("Tabs"),
@@ -43,8 +43,7 @@ return {
   manpages             = title("Man Pages"),
   lsp                  = {
     title_prefix = "LSP",
-    winopts      = { title_pos = "center" },
-    symbols      = { title_prefix = "LSP", winopts = { title_pos = "center" } },
+    symbols      = { title_prefix = "LSP" },
     finder       = title("LSP Finder"),
     code_actions = title("Code Actions"),
   },

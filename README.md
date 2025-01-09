@@ -411,7 +411,7 @@ winopts = {
     -- Backdrop opacity, 0 is fully opaque, 100 is fully transparent (i.e. disabled)
     backdrop         = 60,
     -- title         = "Title",
-    -- title_pos     = "center",    -- 'left', 'center' or 'right'
+    -- title_pos     = "center",        -- 'left', 'center' or 'right'
     fullscreen       = false,           -- start fullscreen?
     -- enable treesitter highlighting for the main fzf window will only have
     -- effect where grep like results are present, i.e. "file:line:col:text"

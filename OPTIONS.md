@@ -289,6 +289,18 @@ Type: `boolean`, Default: `false`
 
 Use fullscreen for the fzf-load floating window.
 
+#### globals.winopts.title
+
+Type: `string`, Default: `nil`
+
+Controls title display in the fzf window, set by the calling picker.
+
+#### globals.winopts.title_pos
+
+Type: `string`, Default: `center`
+
+Controls title display in the fzf window, possible values are `left|right|center`.
+
 #### globals.winopts.treesitter
 
 Type: `boolean`, Default: `false`

@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 January 05
+*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 January 06
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -375,6 +375,23 @@ globals.winopts.fullscreen           *fzf-lua-opts-globals.winopts.fullscreen*
 Type: `boolean`, Default: `false`
 
 Use fullscreen for the fzf-load floating window.
+
+
+                                                                              
+globals.winopts.title                     *fzf-lua-opts-globals.winopts.title*
+
+Type: `string`, Default: `nil`
+
+Controls title display in the fzf window, set by the calling picker.
+
+
+                                                                              
+globals.winopts.title_pos             *fzf-lua-opts-globals.winopts.title_pos*
+
+Type: `string`, Default: `center`
+
+Controls title display in the fzf window, possible values are
+`left|right|center`.
 
 
                                                                               

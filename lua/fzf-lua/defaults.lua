@@ -52,6 +52,7 @@ M.defaults                      = {
     zindex     = 50,
     backdrop   = 60,
     fullscreen = false,
+    title_pos  = "center",
     treesitter = {
       enabled    = false,
       fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" }

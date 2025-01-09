@@ -775,12 +775,19 @@ function FzfWin:redraw_main()
 
   self:generate_layout()
 
-  local winopts = vim.tbl_extend("keep", not utils.__HAS_NVIM_09 and {} or {
-    title = type(self.winopts.title) == "string" and type(self.hls.title) == "string"
-        and { { self.winopts.title, self.hls.title } }
-        or self.winopts.title,
-    title_pos = self.winopts.title_pos,
-  }, self.layout.fzf)
+  local winopts = vim.tbl_extend("keep", (function()
+    if not utils.__HAS_NVIM_09 or
+        (type(self.winopts.title) ~= "string" and type(self.winopts.title) ~= "table")
+    then
+      return {}
+    end
+    return {
+      title = type(self.winopts.title) == "string" and type(self.hls.title) == "string"
+          and { { self.winopts.title, self.hls.title } }
+          or self.winopts.title,
+      title_pos = self.winopts.title_pos,
+    }
+  end)(), self.layout.fzf)
 
   if self:validate() then
     if self._previewer
@@ -1298,7 +1305,9 @@ end
 
 function FzfWin:update_preview_title(title)
   -- neovim >= 0.9 added window title
-  if not utils.__HAS_NVIM_09 then return end
+  if not utils.__HAS_NVIM_09 or (type(title) ~= "string" and type(title) ~= "table") then
+    return
+  end
   -- since `nvim_win_set_config` removes all styling, save backup
   -- of the current options and restore after the call (#813)
   local style = self:get_winopts(self.preview_winid, self._previewer:gen_winopts())
