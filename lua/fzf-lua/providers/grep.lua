@@ -106,7 +106,9 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     for _, flags in ipairs(bin2flags[bin] or {}) do
       local has_flag_group
       for _, f in ipairs(flags) do
-        if command:match(utils.lua_regex_escape(f)) then
+        if command:match("^" .. utils.lua_regex_escape(f))
+            or command:match("%s+" .. utils.lua_regex_escape(f))
+        then
           has_flag_group = true
         end
       end
@@ -116,8 +118,8 @@ local get_grep_cmd = function(opts, search_query, no_esc)
             "Added missing '%s' flag to '%s'. Add 'silent=true' to hide this message.",
             table.concat(flags, "|"), bin))
         end
+        command = make_entry.rg_insert_args(command, flags[1])
       end
-      command = make_entry.rg_insert_args(command, flags[1])
     end
   end
 
