@@ -196,7 +196,7 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
           vimcmd = vimcmd .. "!"
         end
         -- URI entries only execute new buffers (new|vnew|tabnew)
-        if not entry.uri then
+        if not entry.uri and not target_equals_current then
           -- Force full paths when `autochdir=true` (#882)
           vimcmd = string.format("%s %s", vimcmd, (function()
             -- `:argdel|:argadd` uses only paths
