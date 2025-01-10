@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0         Last change: 2025 January 09
+*fzf-lua.txt*         For Neovim >= 0.5.0         Last change: 2025 January 10
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -848,6 +848,7 @@ CUSTOMIZATION                                          *fzf-lua-customization*
           prompt   = 'Branches❯ ',
           cmd      = "git branch --all --color",
           preview  = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
+          remotes  = "local", -- "detach|local", switch behavior for remotes
           actions  = {
             ["enter"]   = actions.git_switch,
             ["ctrl-x"]  = { fn = actions.git_branch_del, reload = true },
