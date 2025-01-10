@@ -619,7 +619,11 @@ M.git_switch = function(selected, opts)
   -- do nothing for active branch
   if branch:find("%*") ~= nil then return end
   if branch:find("^remotes/") then
-    table.insert(cmd, "--detach")
+    if opts.remotes == "detach" then
+      table.insert(cmd, "--detach")
+    else
+      branch = branch:match("remotes/.-/(.-)$")
+    end
   end
   table.insert(cmd, branch)
   local output, rc = utils.io_systemlist(cmd)
