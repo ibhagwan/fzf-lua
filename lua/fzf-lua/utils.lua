@@ -914,7 +914,7 @@ function M.save_dialog(bufnr)
   end
   local res = vim.fn.confirm(string.format([[Save changes to "%s"?]], info.name),
     "&Yes\n&No\n&Cancel")
-  if res == 3 then
+  if res == 0 or res == 3 then
     -- user cancelled
     return false
   end
