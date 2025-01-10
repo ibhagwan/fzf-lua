@@ -6,6 +6,10 @@ local serpent = require "fzf-lua.lib.serpent"
 
 local M = {}
 
+if _G.fzf_lua ~= nil then
+  builtin.setup(_G.fzf_lua)
+end
+
 function M.run_command(cmd, ...)
   local args = { ... }
   cmd = cmd or "builtin"
