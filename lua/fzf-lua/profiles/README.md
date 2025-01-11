@@ -36,6 +36,7 @@ require("fzf-lua").setup({ { "ivy", "hide" } })
 | `borderless-full`  | borderless with description in window title (instead of prompt) |
 | `border-fused`     | single border around both fzf and the previewer |
 | `ivy`              | UI at bottom, similar to telescope's ivy layout |
+| `hide`            | send fzf process to background instead of termination |
 
 
 **Custom user settings which make sense and aren't mere duplications with minimal modifications

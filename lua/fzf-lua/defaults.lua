@@ -445,7 +445,7 @@ M.defaults.git                  = {
     prompt     = "Branches> ",
     cmd        = "git branch --all --color",
     preview    = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
-    remotes     = "local",
+    remotes    = "local",
     actions    = {
       ["enter"]  = actions.git_switch,
       ["ctrl-x"] = { fn = actions.git_branch_del, reload = true },

@@ -145,15 +145,17 @@ Alternatively, resuming work on a specific picker:
 > By default pressing esc or ctrl-c terminates the fzf process,
 > as such resume is not perfect and is limited to resuming the
 > picker/query and sometimes additional parameters such as regex
-> in grep, etc, for a more "complete" resume press alt-esc to
-> hide the fzf process instead, this will keep the fzf process
-> running in the background and thus will restore the process
-> entirely including cursor position and selection.
+> in grep, etc, for a more complete resume use the "hide" profile,
+> this will keep the fzf process running in the background allowing
+> `:FzfLua resume` to restore the picker state entirely, including
+> cursor position and selection.
 > To configure hiding by default:
 > ```lua
-> require("fzf-lua").setup({ keymap = { builtin = { true, ["<Esc>"] = "hide" } } })
+> require("fzf-lua").setup({
+>   "hide",
+>   -- your other settings here 
+> })
 > ```
-
 
 **LIST OF AVAILABLE COMMANDS BELOW** 👇
 
@@ -1077,10 +1079,6 @@ previewers = {
     winopts           = { height = 0.55, width = 0.30, },
     -- uncomment to ignore colorschemes names (lua patterns)
     -- ignore_patterns   = { "^delek$", "^blue$" },
-    -- uncomment to execute a callback on preview|close
-    -- e.g. a call to reset statusline highlights
-    -- cb_preview        = function() ... end,
-    -- cb_exit           = function() ... end,
   },
   awesome_colorschemes = {
     prompt            = 'Colorschemes❯ ',
@@ -1099,9 +1097,6 @@ previewers = {
       ["ctrl-r"]  = { fn = actions.cs_update, reload = true },
       ["ctrl-x"]  = { fn = actions.cs_delete, reload = true },
     },
-    -- uncomment to execute a callback on preview|close
-    -- cb_preview        = function() ... end,
-    -- cb_exit           = function() ... end,
   },
   keymaps = {
     prompt            = "Keymaps> ",
@@ -1360,6 +1355,7 @@ require('fzf-lua').setup({'fzf-vim'})
 | `borderless-full` | borderless with description in window title (instead of prompt)                                     |
 | `border-fused`    | single border around both fzf and the previewer                                                     |
 | `ivy`             | UI at bottom, similar to telescope's ivy layout                                                     |
+| `hide`            | send fzf process to background instead of termination                                               |
 
 </details>
 

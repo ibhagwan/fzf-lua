@@ -12,7 +12,7 @@ local M = {}
 -- provider are 2 (`live_grep` with `multiprocess=false`)
 -- and 4 (`git_status` with preview and 3 reload binds)
 -- we can always increase if we need more
-local _MAX_LEN = vim.g.fzf_lua_shell_maxlen or 10
+local _MAX_LEN = 50
 local _index = 0
 local _registry = {}
 local _protected = {}

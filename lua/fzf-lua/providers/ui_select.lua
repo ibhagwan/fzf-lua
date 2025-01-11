@@ -108,7 +108,6 @@ M.ui_select = function(items, ui_opts, on_choice)
   })
 
   opts.fn_selected = function(selected, o)
-
     local function exec_choice()
       if not selected then
         -- with `actions.dummy_abort` this doesn't get called anymore
@@ -163,7 +162,8 @@ M.ui_select = function(items, ui_opts, on_choice)
     local previewer = _OPTS_ONCE.previewer
     _OPTS_ONCE.previewer = nil -- can't copy the previewer object
     opts = vim.tbl_deep_extend(opts_merge_strategy, _OPTS_ONCE, opts)
-    opts.actions = { ["enter"] = opts.actions.enter }
+    opts.actions = vim.tbl_deep_extend("force", opts.actions or {},
+      { ["enter"] = opts.actions.enter })
     opts.previewer = previewer
     -- Callback to set the coroutine so we know if the interface
     -- was opened or not (e.g. when no code actions are present)
