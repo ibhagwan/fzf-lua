@@ -61,32 +61,28 @@ M.colorschemes = function(opts)
     opts.fzf_opts["--preview-window"] = "nohidden:right:0"
     opts.preview = shell.raw_action(function(sel)
       if opts.live_preview and sel then
+        opts._live = sel[1]
         vim.cmd("colorscheme " .. sel[1])
-        if type(opts.cb_preview) == "function" then
-          opts.cb_preview(sel, opts)
-        end
       end
     end, nil, opts.debug)
   end
 
-  opts.fn_selected = function(selected, o)
+  opts.winopts = opts.winopts or {}
+  opts.winopts.on_close = function()
     -- reset color scheme if live_preview is enabled
-    -- and nothing or non-default action was selected
-    if opts.live_preview and (not selected or #selected[1] > 0) then
+    if opts._live and opts._live ~= current_colorscheme then
       vim.cmd("colorscheme " .. current_colorscheme)
       vim.o.background = current_background
     end
+  end
 
+  opts.fn_selected = function(selected, o)
     if selected then
       actions.act(opts.actions, selected, o)
     end
 
     -- setup fzf-lua's own highlight groups
     utils.setup_highlights()
-
-    if type(opts.cb_exit) == "function" then
-      opts.cb_exit(selected, opts)
-    end
   end
 
   core.fzf_exec(colors, opts)
@@ -486,12 +482,11 @@ M.awesome_colorschemes = function(opts)
           -- wrap in pcall as some colorschemes have bg triggers that can fail
           pcall(function() vim.o.background = opts._cur_background end)
           M.apply_awesome_theme(dbkey, idx, opts)
-          if type(opts.cb_preview) == "function" then
-            opts.cb_preview(sel, opts)
-          end
+          opts._live = true
         else
           vim.cmd("colorscheme " .. opts._cur_colorscheme)
           vim.o.background = opts._cur_background
+          opts._live = nil
         end
       end
     end, "{}", opts.debug)
@@ -506,6 +501,15 @@ M.awesome_colorschemes = function(opts)
     shell.set_protected(id)
     if prev_act_id then
       shell.set_protected(prev_act_id)
+    end
+  end
+
+  opts.winopts = opts.winopts or {}
+  opts.winopts.on_close = function()
+    -- reset color scheme if live_preview is enabled
+    if opts._live then
+      vim.cmd("colorscheme " .. opts._cur_colorscheme)
+      vim.o.background = opts._cur_background
     end
   end
 
@@ -530,10 +534,6 @@ M.awesome_colorschemes = function(opts)
 
     -- setup fzf-lua's own highlight groups
     utils.setup_highlights()
-
-    if type(o.cb_exit) == "function" then
-      o.cb_exit(sel, o)
-    end
   end
 
   opts = core.set_header(opts, opts.headers or { "actions" })

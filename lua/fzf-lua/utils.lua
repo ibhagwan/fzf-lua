@@ -820,6 +820,10 @@ function M.CTX()
   return loadstring("return require'fzf-lua'.core.CTX()")()
 end
 
+function M.__CTX()
+  return loadstring("return require'fzf-lua'.core.__CTX")()
+end
+
 function M.resume_get(what, opts)
   local f = loadstring("return require'fzf-lua'.config.resume_get")()
   return f(what, opts)
@@ -841,7 +845,7 @@ end
 
 ---@param fname string
 ---@param name string|nil
----@param silent boolean|number
+---@param silent boolean|integer
 function M.load_profile_fname(fname, name, silent)
   local profile = name or vim.fn.fnamemodify(fname, ":t:r") or "<unknown>"
   local ok, res = pcall(dofile, fname)
@@ -858,6 +862,19 @@ function M.load_profile_fname(fname, name, silent)
     M.warn(string.format("Unable to load profile '%s': %s", profile, res:match("[^\n]+")))
   elseif type(res) ~= "table" then
     M.warn(string.format("Unable to load profile '%s': wrong type %s", profile, type(res)))
+  end
+end
+
+function M.load_profiles(profiles)
+  local serpent = require("fzf-lua.lib.serpent")
+  profiles = type(profiles) == "table"
+      and serpent.line(profiles, { comment = false, sortkeys = false })
+      or type(profiles) == "string" and string.format("'%s'", profiles)
+      or nil
+  if type(profiles) == "string" then
+    loadstring(string.format(
+      "require'fzf-lua'.setup(require'fzf-lua'.load_profiles(%s, false))",
+      profiles))()
   end
 end
 

@@ -841,6 +841,10 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
+  if type(opts.enrich) == "function" then
+    opts = opts.enrich(opts)
+  end
+
   -- mark as normalized
   opts._normalized = true
 

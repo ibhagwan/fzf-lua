@@ -47,12 +47,12 @@ function TSInjector.deregister()
   TSInjector._setup = nil
 end
 
-function TSInjector.clear_cache(buf, noassert)
+function TSInjector.clear_cache(buf)
   -- If called from fzf-tmux buf will be `nil` (#1556)
   if not buf then return end
   TSInjector.cache[buf] = nil
   -- If called from `FzfWin.hide` cache will not be empty
-  assert(noassert or utils.tbl_isempty(TSInjector.cache))
+  assert(utils.tbl_isempty(TSInjector.cache))
 end
 
 ---@param buf number
@@ -834,8 +834,8 @@ function FzfWin:set_winleave_autocmd()
   self:_nvim_create_autocmd("WinClosed", self.win_leave)
 end
 
-function FzfWin:treesitter_detach(buf, noassert)
-  TSInjector.clear_cache(buf, noassert)
+function FzfWin:treesitter_detach(buf)
+  TSInjector.clear_cache(buf)
   TSInjector.deregister()
 end
 
@@ -889,7 +889,8 @@ function FzfWin:treesitter_attach()
             if #filepath == 0 or string.byte(text, 1) == 160 then
               if string.byte(text, 1) == 160 then text = text:sub(2) end -- remove A0+SPACE
               if string.byte(text, 1) == 32 then text = text:sub(2) end  -- remove leading SPACE
-              local b = filepath:match("^%d+") or utils.CTX().bufnr
+              -- IMPORTANT: use the `__CTX` version that doesn't trigger a new context
+              local b = filepath:match("^%d+") or utils.__CTX().bufnr
               return vim.api.nvim_buf_is_valid(tonumber(b)) and b or nil
             end
           end)()
@@ -943,8 +944,6 @@ function FzfWin:set_tmp_buffer(no_wipe)
   self:set_winleave_autocmd()
   -- automatically resize fzf window
   self:set_redraw_autocmd()
-  -- Use treesitter to highlight results on the main fzf window
-  self:treesitter_attach()
   -- since we have the cursorline workaround from
   -- issue #254, resume shows an ugly cursorline.
   -- remove it, nvim_win API is better than vim.wo?
@@ -1099,7 +1098,7 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
     vim.api.nvim_buf_delete(self.fzf_bufnr, { force = true })
   end
   -- Clear treesitter buffer cache and deregister decoration callbacks
-  self:treesitter_detach(self.fzf_bufnr, self._hidden_fzf_bufnr)
+  self:treesitter_detach(self._hidden_fzf_bufnr or self.fzf_bufnr)
   -- when using `split = "belowright new"` closing the fzf
   -- window may not always return to the correct source win
   -- depending on the user's split configuration (#397)

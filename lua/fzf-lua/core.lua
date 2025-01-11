@@ -610,7 +610,7 @@ M.create_fzf_binds = function(opts)
     -- Separate "transform|execute|execute-silent" binds to their own `--bind` argument, this
     -- way we can use `transform:...` and not be forced to use brackets, i.e. `transform(...)`
     -- this enables us to use brackets in the inner actions, e.g. "zero:transform:rebind(...)"
-    if action:match("transform") or action:match("execute") then
+    if action:match("transform") or action:match("execute") or action:match("reload") then
       table.insert(separate, bind)
     else
       table.insert(combine, bind)
@@ -1103,6 +1103,12 @@ M.convert_reload_actions = function(reload_cmd, opts)
       local shell_action = shell.raw_action(function(items, _, _)
         v.fn(items, opts)
       end, v.field_index == false and "" or v.field_index or "{+}", opts.debug)
+      if type(v.prefix) == "string" and not v.prefix:match("%+$") then
+        v.prefix = v.prefix .. "+"
+      end
+      if type(v.postfix) == "string" and not v.postfix:match("^%+") then
+        v.postfix = "+" .. v.postfix
+      end
       opts.keymap.fzf[k] = {
         string.format("%s%sexecute-silent(%s)+reload(%s)%s",
           type(v.prefix) == "string" and v.prefix or "",
@@ -1110,7 +1116,7 @@ M.convert_reload_actions = function(reload_cmd, opts)
           shell_action,
           reload_cmd,
           type(v.postfix) == "string" and v.postfix or ""),
-        desc = config.get_action_helpstr(v.fn)
+        desc = v.desc or config.get_action_helpstr(v.fn)
       }
       opts.actions[k] = nil
     end
@@ -1125,25 +1131,54 @@ end
 ---@param opts table
 ---@return table
 M.convert_exec_silent_actions = function(opts)
-  -- Does not work with fzf version < 0.36, fzf fails with
-  -- "error 2: bind action not specified:"
-  if not utils.has(opts, "fzf", { 0, 36 })
-      or utils.has(opts, "sk") then
+  -- `execute-silent` actions are bugged with skim (can't use quotes)
+  if utils.has(opts, "sk") then
     return opts
   end
   for k, v in pairs(opts.actions) do
     if type(v) == "table" and v.exec_silent then
       assert(type(v.fn) == "function")
+      -- Use both {q} and {+} as field indexes so we can update last query when
+      -- executing the action, without this we lose the last query on "hide" as
+      -- the process never terminates and `--print-query` isn't being printed
+      local field_index = v.field_index == false and "" or v.field_index or "{q} {+}"
       -- replace the action with shell cmd proxy to the original action
       local shell_action = shell.raw_action(function(items, _, _)
+        if field_index:match("^{q}") then
+          local query = table.remove(items, 1)
+          config.resume_set("query", query, opts)
+        end
         v.fn(items, opts)
-      end, v.field_index == false and "" or v.field_index or "{+}", opts.debug)
+      end, field_index, opts.debug)
+      if type(v.prefix) == "string" and not v.prefix:match("%+$") then
+        v.prefix = v.prefix .. "+"
+      end
+      if type(v.postfix) == "string" and not v.postfix:match("^%+") then
+        v.postfix = "+" .. v.postfix
+      end
+      -- `execute-silent(...)` with fzf version < 0.36, errors with:
+      -- 'error 2: bind action not specified' (due to inner brackets)
+      -- changing to `execute-silent:...` removes the need to care for
+      -- brackets within the command with the limitation of not using
+      -- potfix (must be the last part of the arg), from `man fzf`:
+      --
+      --   action-name:...
+      --      The last one is the special form that frees you from parse
+      --      errors as it does not expect the closing character. The catch is
+      --      that it should be the last one in the comma-separated list of
+      --      key-action pairs.
+      --
+      local has_fzf036 = utils.has(opts, "fzf", { 0, 36 })
       opts.keymap.fzf[k] = {
-        string.format("%sexecute-silent(%s)%s",
+        string.format("%sexecute-silent%s%s",
           type(v.prefix) == "string" and v.prefix or "",
-          shell_action,
-          type(v.postfix) == "string" and v.postfix or ""),
-        desc = config.get_action_helpstr(v.fn)
+          -- prefer "execute-silent:..." unless we have postfix
+          has_fzf036 and type(v.postfix) == "string"
+          and string.format("(%s)", shell_action)
+          or string.format(":%s", shell_action),
+          -- can't use postfix since we use "execute-silent:..."
+          has_fzf036 and type(v.postfix) == "string" and v.postfix or ""),
+        desc = v.desc or config.get_action_helpstr(v.fn)
       }
       opts.actions[k] = nil
     end

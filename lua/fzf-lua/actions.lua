@@ -696,7 +696,8 @@ M.git_yank_commit = function(selected, opts)
   -- copy to the yank register regardless
   vim.fn.setreg(reg, commit_hash)
   vim.fn.setreg([[0]], commit_hash)
-  utils.info(string.format("commit hash %s copied to register %s, use 'p' to paste.", commit_hash, reg))
+  utils.info(string.format("commit hash %s copied to register %s, use 'p' to paste.",
+    commit_hash, reg))
 end
 
 M.git_checkout = function(selected, opts)
