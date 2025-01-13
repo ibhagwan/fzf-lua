@@ -4,7 +4,7 @@ local _border  = true and _rounded or _single
 return {
   { "default-title" }, -- base profile
   desc = "Single border around the UI",
-  previewers = { bat = { args = "--color=always --style=default" } },
+  -- previewers = { bat = { args = "--color=always --style=default" } },
   winopts = {
     border  = function(_, m)
       assert(m.type == "nvim" and m.name == "fzf")
@@ -39,7 +39,7 @@ return {
       border = function(_, m)
         if m.type == "fzf" then
           -- Always return none, let `bat --style=default` to draw our border
-          return "none"
+          return "single"
         else
           assert(m.type == "nvim" and m.name == "prev" and type(m.layout) == "string")
           local b = vim.deepcopy(_border)
