@@ -3,20 +3,11 @@ local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local shell = require "fzf-lua.shell"
+local libuv = require "fzf-lua.libuv"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
-
-local function POSIX_find_compat(opts)
-  local ver = utils.find_version()
-  -- POSIX find does not have '--version'
-  -- we assume POSIX when 'ver==nil'
-  if not ver and opts:match("%-printf") then
-    utils.warn("POSIX find does not support the '-printf' option." ..
-      " Install 'fd' or set 'files.find_opts' to '-type f'.")
-  end
-end
 
 local get_files_cmd = function(opts)
   if opts.raw_cmd and #opts.raw_cmd > 0 then
@@ -25,18 +16,35 @@ local get_files_cmd = function(opts)
   if opts.cmd and #opts.cmd > 0 then
     return opts.cmd
   end
+  local search_paths = (function()
+    -- NOTE: deepcopy to avoid recursive shellescapes with `actions.toggle_ignore`
+    local search_paths = type(opts.search_paths) == "table" and vim.deepcopy(opts.search_paths)
+        or type(opts.search_paths) == "string" and { tostring(opts.search_paths) }
+    -- Make paths relative, note this will not work well with resuming if changing
+    -- the cwd, this is by design for perf reasons as having to deal with full paths
+    -- will result in more code routes taken in `make_entry.file`
+    if type(search_paths) == "table" then
+      for i, p in ipairs(search_paths) do
+        search_paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), uv.cwd()))
+      end
+      return table.concat(search_paths, " ")
+    end
+  end)()
   local command = nil
   if vim.fn.executable("fdfind") == 1 then
-    command = string.format("fdfind %s", opts.fd_opts)
+    command = string.format("fdfind %s%s", opts.fd_opts,
+      search_paths and string.format(" . %s", search_paths) or "")
   elseif vim.fn.executable("fd") == 1 then
-    command = string.format("fd %s", opts.fd_opts)
+    command = string.format("fd %s%s", opts.fd_opts,
+      search_paths and string.format(" . %s", search_paths) or "")
   elseif vim.fn.executable("rg") == 1 then
-    command = string.format("rg %s", opts.rg_opts)
+    command = string.format("rg %s%s", opts.rg_opts,
+      search_paths and string.format(" %s", search_paths) or "")
   elseif utils.__IS_WINDOWS then
     command = "dir /s/b/a:-d"
   else
-    POSIX_find_compat(opts.find_opts)
-    command = string.format("find -L . %s", opts.find_opts)
+    command = string.format("find -L %s %s",
+      search_paths and search_paths or ".", opts.find_opts)
   end
   return command
 end
