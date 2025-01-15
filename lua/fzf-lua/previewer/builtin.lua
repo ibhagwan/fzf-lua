@@ -887,8 +887,12 @@ function Previewer.base:update_render_markdown()
   if package.loaded["render-markdown"] then
     require("render-markdown.core.ui").update(bufnr, winid, "FzfLua", true)
   elseif package.loaded["markview"] then
-    local cmds = package.loaded["markview"].commands
-    if cmds and cmds.redraw then cmds.attach(bufnr, true) end
+    --- Render strictly to save performance.
+    ---
+    --- Use `strict:render(bufnr, 1000)` to stop rendering if
+    --- line count >= 1000.
+    local strict = package.loaded["markview"].strict_render;
+    if strict then strict:render(bufnr); end
   end
 end
 
