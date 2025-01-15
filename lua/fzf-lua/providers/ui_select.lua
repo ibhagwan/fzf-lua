@@ -103,12 +103,11 @@ M.ui_select = function(items, ui_opts, on_choice)
   opts._on_choice = on_choice
   opts._ui_select = ui_opts
 
-  opts.actions = vim.tbl_deep_extend("keep", opts.actions or {}, { ["enter"] = M.accept_item })
-
-  config.set_action_helpstr(M.accept_item, "accept-item")
+  opts.actions = vim.tbl_deep_extend("keep", opts.actions or {}, {
+    ["enter"] = { fn = M.accept_item, desc = "accept-item" }
+  })
 
   opts.fn_selected = function(selected, o)
-    config.set_action_helpstr(o.actions.enter, nil)
 
     local function exec_choice()
       if not selected then
