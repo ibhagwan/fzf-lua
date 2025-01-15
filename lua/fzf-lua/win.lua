@@ -1413,7 +1413,11 @@ function FzfWin.preview_scroll(direction)
   if self:validate_preview()
       and self._previewer
       and self._previewer.scroll then
+    -- Do not trigger "ModeChanged"
+    local save_ei = vim.o.eventignore
+    vim.o.eventignore = "all"
     self._previewer:scroll(direction)
+    vim.o.eventignore = save_ei
   end
 end
 
