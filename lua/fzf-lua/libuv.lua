@@ -769,7 +769,8 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess, fn_postprocess)
         _is_win and [[set VIMRUNTIME=%s& ]] or "VIMRUNTIME=%s ",
         _is_win and vim.fs.normalize(vim.env.VIMRUNTIME) or M.shellescape(vim.env.VIMRUNTIME)
       )
-  local lua_cmd = ("lua %sloadfile([[%s]])().spawn_stdio(%s,%s,%s,%s)"):format(
+  local lua_cmd = ("lua %s%sloadfile([[%s]])().spawn_stdio(%s,%s,%s,%s)"):format(
+    "vim.g.loaded_netrwPlugin=1;",
     _has_nvim_010 and "vim.g.did_load_filetypes=1; " or "",
     _is_win and vim.fs.normalize(__FILE__) or __FILE__,
     opts, fn_transform, fn_preprocess, fn_postprocess
