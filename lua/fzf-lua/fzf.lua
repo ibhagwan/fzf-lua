@@ -210,11 +210,14 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     -- https://github.com/neovim/neovim/issues/20726
     -- https://github.com/neovim/neovim/pull/30056
     if not utils.__HAS_NVIM_0102 then
-      if vim.keymap then
-        vim.keymap.set("t", "<C-c>", "<Esc>", { buffer = 0 })
-      else
-        vim.api.nvim_buf_set_keymap(0, "t", "<C-c>", "<Esc>", { noremap = true })
-      end
+      vim.keymap.set("t", "<C-c>", "<Esc>", { buffer = 0 })
+    end
+
+    -- Workaround for upstream issue, see #1714
+    -- https://github.com/neovim/neovim/issues/32019
+    if utils.__HAS_NVIM_011 then
+      vim.keymap.set("t", "<C-j>", "<C-j>", { buffer = 0 })
+      vim.keymap.set("t", "<C-k>", "<C-k>", { buffer = 0 })
     end
 
     -- A more robust way of entering TERMINAL mode "t". We had quite a few issues

@@ -155,14 +155,14 @@ function FzfWin:setup_keybinds()
   for key, action in pairs(self.keymap.builtin) do
     local keymap = keymap_tbl[action]
     if keymap and not utils.tbl_isempty(keymap) and action ~= false then
-      utils.keymap_set("t", key, funcref_str(keymap), { nowait = true, buffer = self.fzf_bufnr })
+      vim.keymap.set("t", key, funcref_str(keymap), { nowait = true, buffer = self.fzf_bufnr })
     end
   end
 
   -- If the user did not override the Esc action ensure it's
   -- not bound to anything else such as `<C-\><C-n>` (#663)
   if self.actions["esc"] == actions.dummy_abort and not self.keymap.builtin["<esc>"] then
-    utils.keymap_set("t", "<Esc>", "<Esc>", { buffer = self.fzf_bufnr, nowait = true })
+    vim.keymap.set("t", "<Esc>", "<Esc>", { buffer = self.fzf_bufnr, nowait = true })
   end
 end
 
