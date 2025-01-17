@@ -1075,7 +1075,7 @@ function FzfWin:close_preview(do_not_clear_cache)
   self.preview_winid = nil
 end
 
-function FzfWin:close(fzf_bufnr)
+function FzfWin:close(fzf_bufnr, do_not_clear_cache)
   -- When a window is reused, (e.g. open any fzf-lua interface, press <C-\-n> and run
   -- ":FzfLua") `FzfWin:set_tmp_buffer()` will call `nvim_buf_delete` on the original
   -- fzf terminal buffer which will terminate the fzf process and trigger the call to
@@ -1088,7 +1088,7 @@ function FzfWin:close(fzf_bufnr)
   self.closing = true
   self.close_help()
   self:close_backdrop()
-  self:close_preview()
+  self:close_preview(do_not_clear_cache)
   if self.fzf_winid and vim.api.nvim_win_is_valid(self.fzf_winid) then
     -- run in a pcall due to potential errors while closing the window
     -- Vim(lua):E5108: Error executing lua
@@ -1167,11 +1167,11 @@ function FzfWin.hide()
   -- do not apply to tmux, validate anyways in case called directly using the API
   if not self or self._o._is_fzf_tmux then return end
   if self:validate_preview() and not self.preview_hidden then
-    self:close_preview()
+    self:close_preview(true)
     self._hidden_had_preview = true
   end
   self:detach_fzf_buf()
-  self:close()
+  self:close(nil, true)
   -- Save self as `:close()` nullifies it
   _self = self
 end
