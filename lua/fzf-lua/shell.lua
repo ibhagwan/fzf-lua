@@ -98,7 +98,7 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- special shell chars ('+', '-', etc), examples where this can
   -- happen are the `git status` command and git branches from diff
   -- worktrees (#600)
-  local action_cmd = ("%s%s -n --headless --clean --cmd %s -- %s"):format(
+  local action_cmd = ("%s%s -n --headless -u NONE -i NONE --cmd %s -- %s"):format(
     nvim_runtime,
     libuv.shellescape(path.normalize(nvim_bin)),
     libuv.shellescape(("lua %sloadfile([[%s]])().rpc_nvim_exec_lua({%s})"):format(

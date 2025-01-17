@@ -359,7 +359,7 @@ M.plugin_load = function(provider, do_not_lazy_load)
       or provider == "mini" and M.__MINI
       or provider == "devicons" and M.__DEVICONS
       or (function()
-        if vim.g.fzf_lua_is_headless then
+        if _G._fzf_lua_is_headless then
           -- headless instance, fzf-lua server exists, attempt
           -- to load icons from main neovim instance
           ---@diagnostic disable-next-line: undefined-field
@@ -391,7 +391,7 @@ M.plugin_load = function(provider, do_not_lazy_load)
           ret = M.__MINI
         end
         -- Load custom setup file
-        if vim.g.fzf_lua_is_headless
+        if _G._fzf_lua_is_headless
             ---@diagnostic disable-next-line: undefined-field
             and _G._devicons_setup and uv.fs_stat(_G._devicons_setup) then
           ---@diagnostic disable-next-line: undefined-field

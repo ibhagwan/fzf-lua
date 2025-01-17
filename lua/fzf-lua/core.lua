@@ -863,8 +863,8 @@ M.mt_cmd_wrapper = function(opts)
     end
     local cmd = libuv.wrap_spawn_stdio(
       serialize(filter_opts(opts)),
-      serialize(opts.__mt_transform or [[return require("make_entry").file]]),
-      serialize(opts.__mt_preprocess or [[return require("make_entry").preprocess]]),
+      serialize(opts.__mt_transform or [[return require("fzf-lua.make_entry").file]]),
+      serialize(opts.__mt_preprocess or [[return require("fzf-lua.make_entry").preprocess]]),
       serialize(opts.__mt_postprocess or "nil")
     )
     if opts.argv_expr then

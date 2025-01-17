@@ -12,7 +12,7 @@ describe("Testing MiniIcons", function()
   vim.cmd("colorscheme default")
 
   local function load_package()
-    vim.g.fzf_lua_is_headless = nil
+    _G._fzf_lua_is_headless = nil
     _G._devicons_path = nil
     _G._fzf_lua_server = nil
     vim.opt.runtimepath:append(mini_path)
@@ -94,7 +94,7 @@ describe("Testing MiniIcons", function()
     validate_mini()
   end)
   it("headless: _G.devicons_path", function()
-    vim.g.fzf_lua_is_headless = true
+    _G._fzf_lua_is_headless = true
     _G._devicons_path = mini_path
     _G._fzf_lua_server = nil
     unload_package()
@@ -109,7 +109,7 @@ describe("Testing MiniIcons", function()
     unload_package()
     load_package()
     assert.are.same(devicons.plugin_name(), "mini")
-    vim.g.fzf_lua_is_headless = true
+    _G._fzf_lua_is_headless = true
     _G._devicons_path = nil
     _G._fzf_lua_server = vim.g.fzf_lua_server
     devicons.load({ plugin = "srv", srv_plugin = "mini" })

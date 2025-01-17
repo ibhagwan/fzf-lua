@@ -8,44 +8,6 @@ local M = {}
 -- path to current file
 local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
 
--- if loading this file as standalone ('--headless --clean')
--- add the current folder to package.path so we can 'require'
--- NOTE: loading this file before fzf-lua can cause unintended
--- effects (as 'vim.g.fzf_lua_directory=nil'). Run an additional
--- check if we are running headless with 'vim.api.nvim_list_uis'
-if not vim.g.fzf_lua_directory and #vim.api.nvim_list_uis() == 0 then
-  -- global var indicating a headless instance
-  vim.g.fzf_lua_is_headless = true
-
-  -- prepend this folder first, so our modules always get first
-  -- priority over some unknown random module with the same name
-  package.path = (";%s/?.lua;"):format(vim.fn.fnamemodify(__FILE__, ":h"))
-      .. package.path
-
-  -- override require to remove the 'fzf-lua.' part
-  -- since all files are going to be loaded locally
-  local _require = require
-  require = function(s) return _require(s:gsub("^fzf%-lua%.", "")) end
-
-  -- due to 'os.exit' neovim doesn't delete the temporary
-  -- directory, save it so we can delete prior to exit (#329)
-  -- NOTE: opted to delete the temp dir at the start due to:
-  --   (1) spawn_stdio doesn't need a temp directory
-  --   (2) avoid dangling temp dirs on process kill (i.e. live_grep)
-  local tmpdir = vim.fn.fnamemodify(vim.fn.tempname(), ":h")
-  if tmpdir and #tmpdir > 0 then
-    vim.fn.delete(tmpdir, "rf")
-    -- io.stdout:write("[DEBUG] "..tmpdir.."\n")
-  end
-  -- neovim might also automatically start the RPC server which will
-  -- generate a named pipe temp file, e.g. `/run/user/1000/nvim.14249.0`
-  -- we don't need the server in the headless "child" process, stopping
-  -- the server also deletes the temp file
-  if vim.v.servername and #vim.v.servername > 0 then
-    pcall(vim.fn.serverstop, vim.v.servername)
-  end
-end
-
 local base64 = require("fzf-lua.lib.base64")
 local serpent = require("fzf-lua.lib.serpent")
 
@@ -361,7 +323,7 @@ M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess, fn_postproces
   end
 end
 
----@param opts table
+---@param opts table|string
 ---@param fn_transform_str string
 ---@param fn_preprocess_str string
 ---@param fn_postprocess_str string
@@ -771,10 +733,10 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess, fn_postprocess)
       )
   local lua_cmd = ("lua %sloadfile([[%s]])().spawn_stdio(%s,%s,%s,%s)"):format(
     _has_nvim_010 and "vim.g.did_load_filetypes=1; " or "",
-    _is_win and vim.fs.normalize(__FILE__) or __FILE__,
+    vim.fn.fnamemodify(_is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") .. "/spawn.lua",
     opts, fn_transform, fn_preprocess, fn_postprocess
   )
-  local cmd_str = ("%s%s -n --headless --clean --cmd %s"):format(
+  local cmd_str = ("%s%s -n --headless -u NONE -i NONE --cmd %s"):format(
     nvim_runtime,
     M.shellescape(_is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
     M.shellescape(lua_cmd)
