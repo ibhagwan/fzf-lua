@@ -1,9 +1,3 @@
--- make value truthy so we can load the path module and subsequently
--- the libuv module without overriding the global require used only
--- for spawn_stdio headless instances, this way we can call
--- require("fzf-lua") from test specs (which also run headless)
-vim.g.fzf_lua_directory = ""
-
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"

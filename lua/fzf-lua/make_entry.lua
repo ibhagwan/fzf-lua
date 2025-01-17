@@ -15,7 +15,7 @@ do
 end
 
 local function load_config_section(s, datatype, optional)
-  if not vim.g.fzf_lua_is_headless then
+  if not _G._fzf_lua_is_headless then
     local val = utils.map_get(config, s)
     return type(val) == datatype and val or nil
     ---@diagnostic disable-next-line: undefined-field
@@ -79,7 +79,7 @@ M.get_diff_files = function(opts)
     local exec_str = string.format([[require"fzf-lua".utils.warn(]] ..
       [["'git status' took %.2f seconds, consider using `git_icons=false` in this repository or use `silent=true` to supress this message.")]]
       , seconds)
-    if not vim.g.fzf_lua_is_headless then
+    if not _G._fzf_lua_is_headless then
       loadstring(exec_str)()
     else
       ---@diagnostic disable-next-line: undefined-field

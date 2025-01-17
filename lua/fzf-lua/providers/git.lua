@@ -56,7 +56,7 @@ M.status = function(opts)
     --
     -- preprocess is required since the addition of `path.filename_first`
     -- will be set by `core.mt_cmd_wrapper` by commenting out the above
-    opts.__mt_transform = [[return require("make_entry").git_status]]
+    opts.__mt_transform = [[return require("fzf-lua.make_entry").git_status]]
     contents = core.mt_cmd_wrapper(opts)
   else
     opts.__fn_transform = opts.__fn_transform or

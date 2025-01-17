@@ -811,7 +811,7 @@ function M.normalize_opts(opts, globals, __resume_key)
       -- We also want to store the cached extensions/filenames in the main thread
       -- which we do in "make_entry.postprocess"
       opts.__mt_postprocess = opts.multiprocess
-          and [[return require("make_entry").postprocess]]
+          and [[return require("fzf-lua.make_entry").postprocess]]
           -- NOTE: we don't need to update mini when running on main thread
           -- or require("fzf-lua.make_entry").postprocess
           or nil

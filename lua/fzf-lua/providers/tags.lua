@@ -144,7 +144,7 @@ local function tags(opts)
   -- prevents 'file|git_icons=false' from overriding processing
   opts.requires_processing = true
   if opts.multiprocess then
-    opts.__mt_transform = [[return require("make_entry").tag]]
+    opts.__mt_transform = [[return require("fzf-lua.make_entry").tag]]
   else
     opts.__mt_transform = make_entry.tag
   end

@@ -8,7 +8,7 @@ describe("Testing NvimWebDevicons", function()
   local devicons = require("fzf-lua.devicons")
 
   local function load_package()
-    vim.g.fzf_lua_is_headless = nil
+    _G._fzf_lua_is_headless = nil
     _G._devicons_path = nil
     _G._fzf_lua_server = nil
     vim.opt.runtimepath:append(devicons_path)
@@ -63,7 +63,7 @@ describe("Testing NvimWebDevicons", function()
   it("headless: _G.devicons_path", function()
     _G._devicons_path = devicons_path
     _G._fzf_lua_server = nil
-    vim.g.fzf_lua_is_headless = true
+    _G._fzf_lua_is_headless = true
     unload_package()
     devicons.load()
     assert.is.True(devicons.plugin_loaded())
@@ -73,7 +73,7 @@ describe("Testing NvimWebDevicons", function()
   it(string.format("headless RPC: '%s'", vim.g.fzf_lua_server), function()
     unload_package()
     load_package()
-    vim.g.fzf_lua_is_headless = true
+    _G._fzf_lua_is_headless = true
     _G._devicons_path = nil
     _G._fzf_lua_server = vim.g.fzf_lua_server
     devicons.load({ plugin = "srv", srv_plugin = "devicons" })
