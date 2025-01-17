@@ -495,6 +495,29 @@ function M.normalize_opts(opts, globals, __resume_key)
   opts.fzf_colors = type(opts.fzf_colors) == "table" and opts.fzf_colors
       or opts.fzf_colors == true and { true } or {}
 
+  -- Inerherit from fzf.vim's g:fzf_colors
+  -- fzf.vim:
+  --   vim.g.fzf_colors = {
+  --     ["fg"] = { "fg" , "Comment", "Normal" }
+  --   }
+  -- fzf-lua:
+  --   fzf_colors = {
+  --     ["fg"] = { "fg" , { "Comment", "Normal" } }
+  --   }
+  opts.fzf_colors = vim.tbl_extend("keep", opts.fzf_colors,
+    vim.tbl_map(function(v)
+      -- Value isn't guaranteed a table, e.g:
+      --   vim.g.fzf_colors = { ["gutter"] = "-1" }
+      if type(v) ~= "table" then return tostring(v) end
+      -- We accept both fzf.vim and fzf-lua style values
+      if type(v[2]) == "table" then return v end
+      local new_v = { v[1], { v[2] } }
+      for i = 3, #v do
+        table.insert(new_v[2], v[i])
+      end
+      return new_v
+    end, type(vim.g.fzf_colors) == "table" and vim.g.fzf_colors or {}))
+
   if opts.fzf_colors[1] == true then
     opts.fzf_colors[1] = nil
     opts.fzf_colors = vim.tbl_deep_extend("keep", opts.fzf_colors, {
