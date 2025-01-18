@@ -3,7 +3,7 @@
 -- does not close the pipe before all writes are complete
 -- option to not add '\n' on content function callbacks
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf.lua
-local uv = vim.loop
+local uv = vim.uv or vim.loop
 
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
@@ -213,13 +213,6 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       vim.keymap.set("t", "<C-c>", "<Esc>", { buffer = 0 })
     end
 
-    -- Workaround for upstream issue, see #1714
-    -- https://github.com/neovim/neovim/issues/32019
-    if utils.__HAS_NVIM_011 then
-      vim.keymap.set("t", "<C-j>", "<C-j>", { buffer = 0 })
-      vim.keymap.set("t", "<C-k>", "<C-k>", { buffer = 0 })
-    end
-
     -- A more robust way of entering TERMINAL mode "t". We had quite a few issues
     -- sending `feedkeys|startinsert` after the term job is started, this approach
     -- seems more consistent as it triggers when entering terminal normal mode "nt"
@@ -250,7 +243,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end
 
   local co = coroutine.running()
-  local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or vim.fn.termopen
+  local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or utils.termopen
   local shell_cmd = utils.__IS_WINDOWS
       -- MSYS2 comes with "/usr/bin/cmd" that precedes "cmd.exe" (#1396)
       and { "cmd.exe", "/d", "/e:off", "/f:off", "/v:off", "/c" }

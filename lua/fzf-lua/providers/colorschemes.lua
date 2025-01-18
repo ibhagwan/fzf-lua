@@ -7,7 +7,7 @@ local actions = require "fzf-lua.actions"
 
 -- For AsyncDownloadManager
 local Object = require "fzf-lua.class"
-local uv = vim.loop
+local uv = vim.uv or vim.loop
 
 local function get_current_colorscheme()
   if vim.g.colors_name then

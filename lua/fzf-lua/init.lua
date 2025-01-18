@@ -16,9 +16,6 @@ do
   vim.g.fzf_lua_directory = path.normalize(path.parent(currFile))
   vim.g.fzf_lua_root = path.parent(path.parent(vim.g.fzf_lua_directory))
 
-  -- Manually source the vimL script containing ':FzfLua' cmd
-  -- does nothing if already loaded due to `vim.g.loaded_fzf_lua`
-  source_vimL({ vim.g.fzf_lua_root, "plugin", "fzf-lua.vim" })
   -- Autoload scipts dynamically loaded on `vim.fn[fzf_lua#...]` call
   -- `vim.fn.exists("*fzf_lua#...")` will return 0 unless we manuall source
   source_vimL({ vim.g.fzf_lua_root, "autoload", "fzf_lua.vim" })

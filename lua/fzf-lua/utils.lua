@@ -1289,4 +1289,15 @@ function M.jump_to_location(location, offset_encoding, reuse_win)
   end
 end
 
+--- Wrapper around vim.fn.termopen which was deprecated in v0.11
+function M.termopen(cmd, opts)
+  if M.__HAS_NVIM_011 then
+    opts = opts or {}
+    opts.term = true
+    return vim.fn.jobstart(cmd, opts)
+  else
+    return vim.fn.termopen(cmd, opts)
+  end
+end
+
 return M

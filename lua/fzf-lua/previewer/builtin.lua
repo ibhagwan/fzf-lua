@@ -678,7 +678,7 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
     -- must be modifiable or 'termopen' fails
     vim.bo[tmpbuf].modifiable = true
     vim.api.nvim_buf_call(tmpbuf, function()
-      self._job_id = vim.fn.termopen(cmd, {
+      self._job_id = utils.termopen(cmd, {
         cwd = self.opts.cwd,
         on_exit = function()
           -- run post only after terminal job finished
