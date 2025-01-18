@@ -841,7 +841,7 @@ M.live_workspace_symbols = function(opts)
   opts.__ACT_TO = opts.__ACT_TO or M.workspace_symbols
 
   -- prepend prompt with "*" to indicate "live" query
-  opts.prompt = type(opts.prompt) == "string" and opts.prompt or ""
+  opts.prompt = type(opts.prompt) == "string" and opts.prompt or "> "
   if opts.live_ast_prefix ~= false then
     opts.prompt = opts.prompt:match("^%*") and opts.prompt or ("*" .. opts.prompt)
   end
