@@ -537,22 +537,28 @@ M.create_fzf_colors = function(opts)
   -- In case the user already set fzf_opts["--color"] (#1052)
   table.insert(tbl, opts.fzf_opts and opts.fzf_opts["--color"])
 
+  local default_colors = require("fzf-lua.config").get_default_colors()
+  local default_highlights = require("fzf-lua").get_default_highlights()
   for flag, list in pairs(colors) do
     if type(list) == "table" then
       local spec = {}
       local what = list[1]
       -- [2] can be one or more highlights, first existing hl wins
       local hls = type(list[2]) == "table" and list[2] or { list[2] }
-      local has_hl = false
+      local has_defined_hl = false
+      local is_color_default = vim.deep_equal(list, default_colors[flag])
       for _, hl in ipairs(hls) do
         local hexcol = utils.hexcol_from_hl(hl, what)
+        if not vim.deep_equal(vim.api.nvim_get_hl(0, { name = hl }), default_highlights[hl][2]) then
+          is_color_default = false
+        end
         if hexcol and #hexcol > 0 then
           table.insert(spec, hexcol)
-          has_hl = true
+          has_defined_hl = true
           break
         end
       end
-      if not has_hl then
+      if not has_defined_hl and not is_color_default then
         -- Assume that the default terminal fg/bg was intended ("NONE") - "NONE" is translated to
         -- nil by neovim.
         table.insert(spec, "-1")

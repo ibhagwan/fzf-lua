@@ -43,83 +43,78 @@ end
 
 local M = {}
 
+function M.get_default_highlights()
+  local is_light = vim.o.bg == "light"
+  return {
+    FzfLuaNormal = { "normal", { link = "Normal" } },
+    FzfLuaBorder = { "border", { link = "Normal" } },
+    FzfLuaTitle = { "title", { link = "FzfLuaNormal" } },
+    FzfLuaBackdrop = { "backdrop", { bg = "Black" } },
+    FzfLuaHelpNormal = { "help_normal", { link = "FzfLuaNormal" } },
+    FzfLuaHelpBorder = { "help_border", { link = "FzfLuaBorder" } },
+    FzfLuaPreviewNormal = { "preview_normal", { link = "FzfLuaNormal" } },
+    FzfLuaPreviewBorder = { "preview_border", { link = "FzfLuaBorder" } },
+    FzfLuaPreviewTitle = { "preview_title", { link = "FzfLuaTitle" } },
+    FzfLuaCursor = { "cursor", { link = "Cursor" } },
+    FzfLuaCursorLine = { "cursorline", { link = "CursorLine" } },
+    FzfLuaCursorLineNr = { "cursorlinenr", { link = "CursorLineNr" } },
+    FzfLuaSearch = { "search", { link = "IncSearch" } },
+    FzfLuaScrollBorderEmpty = { "scrollborder_e", { link = "FzfLuaBorder" } },
+    FzfLuaScrollBorderFull = { "scrollborder_f", { link = "FzfLuaBorder" } },
+    FzfLuaScrollFloatEmpty = { "scrollfloat_e", { link = "PmenuSbar" } },
+    FzfLuaScrollFloatFull = { "scrollfloat_f", { link = "PmenuThumb" } },
+    FzfLuaDirIcon = { "dir_icon", { link = "Directory" } },
+    FzfLuaDirPart = { "dir_part", { link = "Comment" } },
+    FzfLuaFilePart = { "file_part", { link = utils.__HAS_NVIM_08 and "@none" or "Normal", } },
+    -- Fzf terminal hls, colors from `vim.api.nvim_get_color_map()`
+    FzfLuaHeaderBind = { "header_bind", { fg = is_light and "MediumSpringGreen" or "BlanchedAlmond" } },
+    FzfLuaHeaderText = { "header_text", { fg = is_light and "Brown4" or "Brown1" } },
+    FzfLuaPathColNr = { "path_colnr",   -- qf|diag|lsp
+      { fg = is_light and "CadetBlue4" or "CadetBlue1" } },
+    FzfLuaPathLineNr = { "path_linenr", -- qf|diag|lsp
+      { fg = is_light and "MediumSpringGreen" or "LightGreen" } },
+    FzfLuaLiveSym = { "live_sym",       -- lsp_live_workspace_symbols query
+      { fg = is_light and "Brown4" or "Brown1" } },
+    -- lines|blines|treesitter
+    FzfLuaBufId = { "buf_id", { link = "TabLine" } },
+    FzfLuaBufName = { "buf_name", { link = "Directory" } },
+    FzfLuaBufLineNr = { "buf_linenr", { link = "LineNr" } },
+    -- buffers|tabs
+    FzfLuaBufNr = { "buf_nr", { fg = is_light and "AquaMarine3" or "BlanchedAlmond" } },
+    FzfLuaBufFlagCur = { "buf_flag_cur", { fg = is_light and "Brown4" or "Brown1" } },
+    FzfLuaBufFlagAlt = { "buf_flag_alt", { fg = is_light and "CadetBlue4" or "CadetBlue1" } },
+    FzfLuaTabTitle = { "tab_title",   -- tabs only
+      { fg = is_light and "CadetBlue4" or "LightSkyBlue1", bold = true } },
+    FzfLuaTabMarker = { "tab_marker", -- tabs only
+      { fg = is_light and "MediumSpringGreen" or "BlanchedAlmond", bold = true } },
+    -- highlight groups for `fzf_colors=true`
+    FzfLuaFzfNormal = { "fzf.normal", { link = "FzfLuaNormal" } },
+    FzfLuaFzfCursorLine = { "fzf.cursorline", { link = "FzfLuaCursorLine" } },
+    FzfLuaFzfMatch = { "fzf.match", { link = "Special" } },
+    FzfLuaFzfBorder = { "fzf.border", { link = "FzfLuaBorder" } },
+    FzfLuaFzfScrollbar = { "fzf.scrollbar", { link = "FzfLuaFzfBorder" } },
+    FzfLuaFzfSeparator = { "fzf.separator", { link = "FzfLuaFzfBorder" } },
+    FzfLuaFzfGutter = { "fzf.gutter", { link = "FzfLuaNormal" } },
+    FzfLuaFzfHeader = { "fzf.header", { link = "FzfLuaTitle" } },
+    FzfLuaFzfInfo = { "fzf.info", { link = "NonText" } },
+    FzfLuaFzfPointer = { "fzf.pointer", { link = "Special" } },
+    FzfLuaFzfMarker = { "fzf.marker", { link = "FzfLuaFzfPointer" } },
+    FzfLuaFzfSpinner = { "fzf.spinner", { link = "FzfLuaFzfPointer" } },
+    FzfLuaFzfPrompt = { "fzf.prompt", { link = "Special" } },
+    FzfLuaFzfQuery = { "fzf.query", { link = "FzfLuaNormal" } },
+  }
+end
+
 -- Setup fzf-lua's highlights, use `override=true` to reset all highlights
 function M.setup_highlights(override)
-  local is_light = vim.o.bg == "light"
   local bg_changed = config.__HLS_STATE and config.__HLS_STATE.bg ~= vim.o.bg
   config.__HLS_STATE = { colorscheme = vim.g.colors_name, bg = vim.o.bg }
-  -- we use `default = true` so calling this function doesn't override the colorscheme
-  local default = not override
-  local highlights = {
-    { "FzfLuaNormal",            "normal",         { default = default, link = "Normal" } },
-    { "FzfLuaBorder",            "border",         { default = default, link = "Normal" } },
-    { "FzfLuaTitle",             "title",          { default = default, link = "FzfLuaNormal" } },
-    { "FzfLuaBackdrop",          "backdrop",       { default = default, bg = "Black" } },
-    { "FzfLuaHelpNormal",        "help_normal",    { default = default, link = "FzfLuaNormal" } },
-    { "FzfLuaHelpBorder",        "help_border",    { default = default, link = "FzfLuaBorder" } },
-    { "FzfLuaPreviewNormal",     "preview_normal", { default = default, link = "FzfLuaNormal" } },
-    { "FzfLuaPreviewBorder",     "preview_border", { default = default, link = "FzfLuaBorder" } },
-    { "FzfLuaPreviewTitle",      "preview_title",  { default = default, link = "FzfLuaTitle" } },
-    { "FzfLuaCursor",            "cursor",         { default = default, link = "Cursor" } },
-    { "FzfLuaCursorLine",        "cursorline",     { default = default, link = "CursorLine" } },
-    { "FzfLuaCursorLineNr",      "cursorlinenr",   { default = default, link = "CursorLineNr" } },
-    { "FzfLuaSearch",            "search",         { default = default, link = "IncSearch" } },
-    { "FzfLuaScrollBorderEmpty", "scrollborder_e", { default = default, link = "FzfLuaBorder" } },
-    { "FzfLuaScrollBorderFull",  "scrollborder_f", { default = default, link = "FzfLuaBorder" } },
-    { "FzfLuaScrollFloatEmpty",  "scrollfloat_e",  { default = default, link = "PmenuSbar" } },
-    { "FzfLuaScrollFloatFull",   "scrollfloat_f",  { default = default, link = "PmenuThumb" } },
-    { "FzfLuaDirIcon",           "dir_icon",       { default = default, link = "Directory" } },
-    { "FzfLuaDirPart",           "dir_part",       { default = default, link = "Comment" } },
-    { "FzfLuaFilePart", "file_part",
-      {
-        default = default,
-        link = utils.__HAS_NVIM_08 and "@none" or "Normal",
-      }
-    },
-    -- Fzf terminal hls, colors from `vim.api.nvim_get_color_map()`
-    { "FzfLuaHeaderBind", "header_bind",
-      { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond" } },
-    { "FzfLuaHeaderText", "header_text",
-      { default = default, fg = is_light and "Brown4" or "Brown1" } },
-    { "FzfLuaPathColNr", "path_colnr",   -- qf|diag|lsp
-      { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" } },
-    { "FzfLuaPathLineNr", "path_linenr", -- qf|diag|lsp
-      { default = default, fg = is_light and "MediumSpringGreen" or "LightGreen" } },
-    { "FzfLuaLiveSym", "live_sym",       -- lsp_live_workspace_symbols query
-      { default = default, fg = is_light and "Brown4" or "Brown1" } },
-    -- lines|blines|treesitter
-    { "FzfLuaBufId",     "buf_id",     { default = default, link = "TabLine" } },
-    { "FzfLuaBufName",   "buf_name",   { default = default, link = "Directory" } },
-    { "FzfLuaBufLineNr", "buf_linenr", { default = default, link = "LineNr" } },
-    -- buffers|tabs
-    { "FzfLuaBufNr", "buf_nr",
-      { default = default, fg = is_light and "AquaMarine3" or "BlanchedAlmond" } },
-    { "FzfLuaBufFlagCur", "buf_flag_cur",
-      { default = default, fg = is_light and "Brown4" or "Brown1" } },
-    { "FzfLuaBufFlagAlt", "buf_flag_alt",
-      { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" } },
-    { "FzfLuaTabTitle", "tab_title",   -- tabs only
-      { default = default, fg = is_light and "CadetBlue4" or "LightSkyBlue1", bold = true } },
-    { "FzfLuaTabMarker", "tab_marker", -- tabs only
-      { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond", bold = true } },
-    -- highlight groups for `fzf_colors=true`
-    { "FzfLuaFzfNormal",     "fzf.normal",     { default = default, link = "FzfLuaNormal" } },
-    { "FzfLuaFzfCursorLine", "fzf.cursorline", { default = default, link = "FzfLuaCursorLine" } },
-    { "FzfLuaFzfMatch",      "fzf.match",      { default = default, link = "Special" } },
-    { "FzfLuaFzfBorder",     "fzf.border",     { default = default, link = "FzfLuaBorder" } },
-    { "FzfLuaFzfScrollbar",  "fzf.scrollbar",  { default = default, link = "FzfLuaFzfBorder" } },
-    { "FzfLuaFzfSeparator",  "fzf.separator",  { default = default, link = "FzfLuaFzfBorder" } },
-    { "FzfLuaFzfGutter",     "fzf.gutter",     { default = default, link = "FzfLuaNormal" } },
-    { "FzfLuaFzfHeader",     "fzf.header",     { default = default, link = "FzfLuaTitle" } },
-    { "FzfLuaFzfInfo",       "fzf.info",       { default = default, link = "NonText" } },
-    { "FzfLuaFzfPointer",    "fzf.pointer",    { default = default, link = "Special" } },
-    { "FzfLuaFzfMarker",     "fzf.marker",     { default = default, link = "FzfLuaFzfPointer" } },
-    { "FzfLuaFzfSpinner",    "fzf.spinner",    { default = default, link = "FzfLuaFzfPointer" } },
-    { "FzfLuaFzfPrompt",     "fzf.prompt",     { default = default, link = "Special" } },
-    { "FzfLuaFzfQuery",      "fzf.query",      { default = default, link = "FzfLuaNormal" } },
-  }
-  for _, a in ipairs(highlights) do
-    local hl_name, _, hl_def = a[1], a[2], a[3]
+  local highlights = M.get_default_highlights()
+  -- we probably want these to be in order... oh well
+  for hl_name, a in pairs(highlights) do
+    local hl_def = a[2]
+    -- we use `default = true` so calling this function doesn't override the colorscheme
+    hl_def.default = not override
     -- If color was a linked colormap and bg changed set definition to override
     if hl_def.fg and bg_changed then
       local fg_current = vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl_name)), "fg")

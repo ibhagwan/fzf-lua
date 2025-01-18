@@ -23,6 +23,29 @@ M.resume_get = function(what, opts)
   return utils.map_get(M, what)
 end
 
+M.get_default_colors = function()
+  local fzf_hls = require("fzf-lua.defaults").defaults.__HLS.fzf
+  return {
+    ["fg"]        = { "fg", fzf_hls.normal },
+    ["bg"]        = { "bg", fzf_hls.normal },
+    ["hl"]        = { "fg", fzf_hls.match },
+    ["fg+"]       = { "fg", { fzf_hls.cursorline, fzf_hls.normal } },
+    ["bg+"]       = { "bg", fzf_hls.cursorline },
+    ["hl+"]       = { "fg", fzf_hls.match },
+    ["info"]      = { "fg", fzf_hls.info },
+    ["border"]    = { "fg", fzf_hls.border },
+    ["gutter"]    = { "bg", fzf_hls.gutter },
+    ["query"]     = { "fg", fzf_hls.query, "regular" },
+    ["prompt"]    = { "fg", fzf_hls.prompt },
+    ["pointer"]   = { "fg", fzf_hls.pointer },
+    ["marker"]    = { "fg", fzf_hls.marker },
+    ["spinner"]   = { "fg", fzf_hls.spinner },
+    ["header"]    = { "fg", fzf_hls.header },
+    ["separator"] = { "fg", fzf_hls.separator },
+    ["scrollbar"] = { "fg", fzf_hls.scrollbar }
+  }
+end
+
 -- store an option in both the resume options and provider specific __call_opts
 M.resume_set = function(what, val, opts)
   assert(opts.__resume_key)
@@ -464,25 +487,7 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   if opts.fzf_colors[1] == true then
     opts.fzf_colors[1] = nil
-    opts.fzf_colors = vim.tbl_deep_extend("keep", opts.fzf_colors, {
-      ["fg"]        = { "fg", opts.hls.fzf.normal },
-      ["bg"]        = { "bg", opts.hls.fzf.normal },
-      ["hl"]        = { "fg", opts.hls.fzf.match },
-      ["fg+"]       = { "fg", { opts.hls.fzf.cursorline, opts.hls.fzf.normal } },
-      ["bg+"]       = { "bg", opts.hls.fzf.cursorline },
-      ["hl+"]       = { "fg", opts.hls.fzf.match },
-      ["info"]      = { "fg", opts.hls.fzf.info },
-      ["border"]    = { "fg", opts.hls.fzf.border },
-      ["gutter"]    = { "bg", opts.hls.fzf.gutter },
-      ["query"]     = { "fg", opts.hls.fzf.query, "regular" },
-      ["prompt"]    = { "fg", opts.hls.fzf.prompt },
-      ["pointer"]   = { "fg", opts.hls.fzf.pointer },
-      ["marker"]    = { "fg", opts.hls.fzf.marker },
-      ["spinner"]   = { "fg", opts.hls.fzf.spinner },
-      ["header"]    = { "fg", opts.hls.fzf.header },
-      ["separator"] = { "fg", opts.hls.fzf.separator },
-      ["scrollbar"] = { "fg", opts.hls.fzf.scrollbar }
-    })
+    opts.fzf_colors = vim.tbl_deep_extend("keep", opts.fzf_colors, M.get_default_colors())
   end
 
   -- Adjust main fzf window treesitter settings
