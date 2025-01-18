@@ -23,8 +23,8 @@ function Previewer.base:new(o, opts)
   return self
 end
 
-function Previewer.base:preview_window(_)
-  return nil
+function Previewer.base:preview_window(old_preview_window)
+  return old_preview_window
 end
 
 function Previewer.base:_preview_offset()

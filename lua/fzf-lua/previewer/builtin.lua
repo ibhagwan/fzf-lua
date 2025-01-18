@@ -433,11 +433,11 @@ function Previewer.base:zero(_)
   return act
 end
 
-function Previewer.base:preview_window(_)
+function Previewer.base:preview_window(old_preview_window)
   if self.win and not self.win.winopts.split then
-    return "nohidden:right:0"
+    return (old_preview_window or "") .. ":nohidden:right:0"
   else
-    return nil
+    return old_preview_window
   end
 end
 

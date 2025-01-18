@@ -382,7 +382,7 @@ M.fzf = function(contents, opts)
       -- (1) when using a split we use the previewer as placeholder
       -- (2) we use 'nohidden:right:0' to trigger preview function
       --     calls without displaying the native fzf previewer split
-      opts.fzf_opts["--preview-window"] = previewer:preview_window(opts.preview_window)
+      opts.fzf_opts["--preview-window"] = previewer:preview_window(opts.fzf_opts["--preview-window"])
     end
     -- provides preview offset when using native previewers
     -- (bat/cat/etc) with providers that supply line numbers
