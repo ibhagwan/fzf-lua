@@ -1,6 +1,6 @@
 -- modified version of:
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf/actions.lua
-local uv = vim.loop
+local uv = vim.uv or vim.loop
 local utils = require "fzf-lua.utils"
 local path = require "fzf-lua.path"
 local libuv = require "fzf-lua.libuv"

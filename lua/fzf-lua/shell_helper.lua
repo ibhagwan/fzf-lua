@@ -1,6 +1,6 @@
 -- modified version of:
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/action_helper.lua
-local uv = vim.loop
+local uv = vim.uv or vim.loop
 
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 
