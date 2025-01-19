@@ -1359,6 +1359,7 @@ require('fzf-lua').setup({'fzf-vim'})
 | `borderless`      | borderless and minimalistic seamless look &amp; feel                                                |
 | `borderless-full` | borderless with description in window title (instead of prompt)                                     |
 | `border-fused`    | single border around both fzf and the previewer                                                     |
+| `ivy`             | UI at bottom, similar to telescope's ivy layout                                                     |
 
 </details>
 

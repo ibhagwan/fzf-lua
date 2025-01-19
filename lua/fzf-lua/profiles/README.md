@@ -14,6 +14,12 @@ telescope defaults with `bat` previewer:
 :lua require"fzf-lua".setup({"telescope",winopts={preview={default="bat"}}})
 ```
 
+Combining of profiles is also available by sending table instead of string as
+the first argument:
+```lua
+require("fzf-lua").setup({ { "ivy", "hide" } })
+```
+
 ### Current profiles list
 
 | Profile          | Details                                    |
@@ -29,6 +35,7 @@ telescope defaults with `bat` previewer:
 | `borderless`       | borderless and minimalistic seamless look &amp; feel |
 | `borderless-full`  | borderless with description in window title (instead of prompt) |
 | `border-fused`     | single border around both fzf and the previewer |
+| `ivy`              | UI at bottom, similar to telescope's ivy layout |
 
 
 **Custom user settings which make sense and aren't mere duplications with minimal modifications
