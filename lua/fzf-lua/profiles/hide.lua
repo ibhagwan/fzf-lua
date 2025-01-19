@@ -2,27 +2,28 @@ local uv = vim.uv or vim.loop
 local fzf = require("fzf-lua")
 return {
   desc     = "hide interface instead of abort",
-  keymap   = { builtin = { true, ["<M-Esc>"] = "abort" } },
+  keymap   = {
+    builtin = {
+      true,
+      ["<Esc>"] = "hide",
+      ["<M-Esc>"] = "abort"
+    }
+  },
   defaults = {
     enrich = function(opts)
       if opts._is_fzf_tmux then
         fzf.utils.warn("'hide' profile cannot work with tmux, ignoring.")
         return opts
       end
-      opts.actions = opts.actions or {}
-      opts.keymap = opts.keymap or {}
-      opts.keymap.builtin = opts.keymap.builtin or {}
       -- `execute-silent` actions are bugged with skim
-      if fzf.utils.has(opts, "sk") then
-        opts.actions["esc"] = false
-        opts.keymap.builtin["<Esc>"] = "hide"
-        return opts
-      end
+      if fzf.utils.has(opts, "sk") then return opts end
+      local histfile = opts.fzf_opts and opts.fzf_opts["--history"]
+      opts.actions = opts.actions or {}
       -- While we can use `keymap.builtin.<esc>` (to hide) this is better
       -- as it captures the query when execute-silent action is called as
       -- we add "{q}" as the first field index similar to `--print-query`
-      local histfile = opts.fzf_opts and opts.fzf_opts["--history"]
-      opts.actions["esc"] = { fn = fzf.actions.dummy_abort, desc = "hide" }
+      -- opts.actions["esc"] = { fn = fzf.actions.dummy_abort, desc = "hide" }
+      opts.actions["esc"] = false
       opts.actions = vim.tbl_map(function(act)
         act = type(act) == "function" and { fn = act } or act
         act = type(act) == "table" and type(act[1]) == "function"
