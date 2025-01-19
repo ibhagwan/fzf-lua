@@ -1186,7 +1186,6 @@ function FzfWin.hide()
     self:close_preview(true)
     self._hidden_had_preview = true
   end
-  self:store_last_query()
   self:detach_fzf_buf()
   self:close(nil, true)
   -- Save self as `:close()` nullifies it
