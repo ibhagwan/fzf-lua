@@ -865,17 +865,32 @@ function M.load_profile_fname(fname, name, silent)
   end
 end
 
-function M.load_profiles(profiles)
-  local serpent = require("fzf-lua.lib.serpent")
-  profiles = type(profiles) == "table"
-      and serpent.line(profiles, { comment = false, sortkeys = false })
-      or type(profiles) == "string" and string.format("'%s'", profiles)
-      or nil
-  if type(profiles) == "string" then
-    loadstring(string.format(
-      "require'fzf-lua'.setup(require'fzf-lua'.load_profiles(%s, false))",
-      profiles))()
+function M.load_profiles(profiles, silent, opts)
+  local ret = {}
+  local path = require("fzf-lua").path
+  profiles = type(profiles) == "table" and profiles
+      or type(profiles) == "string" and { profiles }
+      or {}
+  for _, profile in ipairs(profiles) do
+    -- backward compat, renamed "borderless_full" > "borderless-full"
+    if profile == "borderless_full" then profile = "borderless-full" end
+    local fname = path.join({ vim.g.fzf_lua_directory, "profiles", profile .. ".lua" })
+    local profile_opts = M.load_profile_fname(fname, nil, silent)
+    if type(profile_opts) == "table" then
+      if profile_opts[1] then
+        -- profile requires loading base profile(s)
+        -- silent = 1, only warn if failed to load
+        profile_opts = vim.tbl_deep_extend("keep",
+          profile_opts, M.load_profiles(profile_opts[1], 1, opts))
+      end
+      if type(profile_opts.fn_load) == "function" then
+        profile_opts.fn_load(opts)
+        profile_opts.fn_load = nil
+      end
+      ret = vim.tbl_deep_extend("force", ret, profile_opts)
+    end
   end
+  return ret
 end
 
 function M.send_ctrl_c()

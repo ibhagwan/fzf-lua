@@ -58,7 +58,8 @@ M.profiles = function(opts)
   if not opts then return end
 
   if opts.load then
-    utils.load_profiles(opts.load)
+    -- silent = [2]
+    require("fzf-lua").setup({ opts.load, false })
     return
   end
 

@@ -143,39 +143,14 @@ end
 -- case the user decides not to call `setup()`
 M.setup_highlights()
 
-function M.load_profiles(profiles, silent, opts)
-  local ret = {}
-  profiles = type(profiles) == "table" and profiles
-      or type(profiles) == "string" and { profiles }
-      or {}
-  for _, profile in ipairs(profiles) do
-    -- backward compat, renamed "borderless_full" > "borderless-full"
-    if profile == "borderless_full" then profile = "borderless-full" end
-    local fname = path.join({ vim.g.fzf_lua_directory, "profiles", profile .. ".lua" })
-    local profile_opts = utils.load_profile_fname(fname, nil, silent)
-    if type(profile_opts) == "table" then
-      if profile_opts[1] then
-        -- profile requires loading base profile(s)
-        profile_opts = vim.tbl_deep_extend("keep",
-          profile_opts, M.load_profiles(profile_opts[1], silent, opts))
-      end
-      if type(profile_opts.fn_load) == "function" then
-        profile_opts.fn_load(opts)
-        profile_opts.fn_load = nil
-      end
-      ret = vim.tbl_deep_extend("force", ret, profile_opts)
-    end
-  end
-  return ret
-end
-
 function M.setup(opts, do_not_reset_defaults)
   opts = type(opts) == "table" and opts or {}
   -- Default to picker info in win title (vs fzf prompt) if neovim version >= 0.9
   opts[1] = opts[1] == nil and utils.__HAS_NVIM_09 and "default-title" or opts[1]
   if opts[1] then
     -- Did the user supply profile(s) to load?
-    opts = vim.tbl_deep_extend("keep", opts, M.load_profiles(opts[1], 1, opts))
+    opts = vim.tbl_deep_extend("keep", opts,
+      utils.load_profiles(opts[1], opts[2] == nil and 1 or opts[2], opts))
   end
   if do_not_reset_defaults then
     -- no defaults reset requested, merge with previous setup options
@@ -381,7 +356,6 @@ M._exported_modules = {
 M._excluded_meta = {
   "setup",
   "redraw",
-  "load_profiles",
   "fzf",
   "fzf_raw",
   "fzf_wrap",
