@@ -27,6 +27,7 @@ return {
       end
       local histfile = opts.fzf_opts and opts.fzf_opts["--history"]
       opts.winopts = opts.winopts or {}
+      local _on_create = opts.winopts.on_create
       opts.winopts.on_create = function(e)
         -- While we can use `keymap.builtin.<esc>` (to hide) this is better
         -- as it captures the query when execute-silent action is called as
@@ -37,6 +38,10 @@ return {
           fzf.hide()
           vim.api.nvim_chan_send(vim.bo[e.bufnr].channel, "\x1b")
         end, { buffer = e.bufnr, nowait = true })
+        -- Call the users' on_create?
+        if type(_on_create) == "function" then
+          _on_create(e)
+        end
       end
       opts.actions["esc"] = {
         fn = fzf.actions.dummy_abort,
