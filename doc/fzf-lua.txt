@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0         Last change: 2025 January 13
+*fzf-lua.txt*         For Neovim >= 0.5.0         Last change: 2025 January 18
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1316,6 +1316,7 @@ AVAILABLE PROFILES                                *fzf-lua-available-profiles*
 | `borderless`      | borderless and minimalistic seamless look &amp; feel                                                |
 | `borderless-full` | borderless with description in window title (instead of prompt)                                     |
 | `border-fused`    | single border around both fzf and the previewer                                                     |
+| `ivy`             | UI at bottom, similar to telescope's ivy layout                                                     |
 
 
                                                                               
