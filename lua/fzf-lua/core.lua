@@ -37,6 +37,16 @@ M.ACTION_DEFINITIONS = {
       end
     end,
   },
+  [actions.toggle_follow]     = {
+    function(o)
+      local flag = o.toggle_follow_flag or "--follow"
+      if o.cmd and o.cmd:match(utils.lua_regex_escape(flag)) then
+        return "Disable symlink follow"
+      else
+        return "Enable symlink follow"
+      end
+    end,
+  },
   [actions.grep_lgrep]        = {
     function(o)
       if o.fn_reload then
@@ -452,9 +462,9 @@ M.fzf = function(contents, opts)
   local action = keybind and opts.actions and opts.actions[keybind]
   -- only close the window if autoclose wasn't specified or is 'true'
   -- or if the action wasn't a table or defined with `reload|noclose`
-  local noclose = type(action) == "table"
-      and (action[1] ~= nil or action.reload or action.noclose)
-  if (not fzf_win:autoclose() == false) and not noclose then
+  local do_not_close = type(action) == "table"
+      and (action[1] ~= nil or action.reload or action.noclose or action.reuse)
+  if (not fzf_win:autoclose() == false) and not do_not_close then
     fzf_win:close(fzf_bufnr)
     M.__CTX = nil
   end
@@ -888,6 +898,39 @@ M.set_fzf_field_index = function(opts, default_idx, default_expr)
   return opts
 end
 
+M.set_title_flags = function(opts, titles)
+  -- NOTE: we only support cmd titles ATM
+  if not vim.tbl_contains(titles or {}, "cmd") then return opts end
+  if opts.winopts.title_flags == false then return opts end
+  local flags = {}
+  local patterns = {
+    { { utils.lua_regex_escape(opts.toggle_hidden_flag) or "%-%-hidden" },     "h" },
+    { { utils.lua_regex_escape(opts.toggle_ignore_flag) or "%-%-no%-ignore" }, "i" },
+    { { utils.lua_regex_escape(opts.toggle_follow_flag) or "%-%-follow" },     "f" },
+  }
+  for _, def in ipairs(patterns) do
+    for _, p in ipairs(def[1]) do
+      if opts.cmd:match(p) then
+        table.insert(flags, string.format(" %s ", def[2]))
+      end
+    end
+  end
+  if not utils.tbl_isempty(flags) then
+    local title = utils.map_get(opts, "winopts.title")
+    if type(title) == "string" then
+      title = { { title, opts.hls.title } }
+    end
+    if type(title) == "table" then
+      for _, f in ipairs(flags) do
+        table.insert(title, { f, opts.hls.title_flags })
+        table.insert(title, { " " })
+      end
+      utils.map_set(opts, "winopts.title", title)
+    end
+  end
+  return opts
+end
+
 M.set_header = function(opts, hdr_tbl)
   local function normalize_cwd(cwd)
     if path.is_absolute(cwd) and not path.equals(cwd, uv.cwd()) then
@@ -973,22 +1016,25 @@ M.set_header = function(opts, hdr_tbl)
         local sorted = vim.tbl_keys(opts.actions or {})
         table.sort(sorted)
         for _, k in ipairs(sorted) do
-          local v = opts.actions[k]
-          local action = type(v) == "function" and v or type(v) == "table" and (v.fn or v[1])
-          local def, to = nil, type(v) == "table" and v.header
-          if not to and type(action) == "function" and defs[action] then
-            def = defs[action]
-            to = def[1]
-          end
-          if to then
-            if type(to) == "function" then
-              to = to(o)
+          (function()
+            local v = opts.actions[k]
+            local action = type(v) == "function" and v or type(v) == "table" and (v.fn or v[1])
+            if type(v) == "table" and v.header == false then return end
+            local def, to = nil, type(v) == "table" and v.header
+            if not to and type(action) == "function" and defs[action] then
+              def = defs[action]
+              to = def[1]
             end
-            table.insert(ret, def and def.pos or #ret + 1,
-              string.format("<%s> to %s",
-                utils.ansi_from_hl(opts.hls.header_bind, k),
-                utils.ansi_from_hl(opts.hls.header_text, tostring(to))))
-          end
+            if to then
+              if type(to) == "function" then
+                to = to(o)
+              end
+              table.insert(ret, def and def.pos or #ret + 1,
+                string.format("<%s> to %s",
+                  utils.ansi_from_hl(opts.hls.header_bind, k),
+                  utils.ansi_from_hl(opts.hls.header_text, tostring(to))))
+            end
+          end)()
         end
         -- table.concat fails if the table indexes aren't consecutive
         return not utils.tbl_isempty(ret) and (function()

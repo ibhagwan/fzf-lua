@@ -10,7 +10,7 @@ end
 return {
   desc                 = "defaults using title instead of prompt",
   defaults             = { prompt = false },
-  winopts              = { title_pos = "center" },
+  winopts              = { title_pos = "center", preview = { title_pos = "center" } },
   files                = title("Files"),
   buffers              = title("Buffers"),
   tabs                 = title("Tabs"),

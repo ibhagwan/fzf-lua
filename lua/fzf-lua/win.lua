@@ -620,6 +620,8 @@ function FzfWin:new(o)
     if _self.fzf_winid and _self.fzf_winid ~= vim.api.nvim_get_current_win() then
       vim.api.nvim_set_current_win(_self.fzf_winid)
     end
+    -- Update main win title, required for toggle action flags
+    _self:update_main_title(o.winopts.title)
     -- refersh treesitter settings as new picker might have it disabled
     _self._o.winopts.treesitter = o.winopts.treesitter
     return _self
@@ -1303,6 +1305,30 @@ function FzfWin:update_preview_scrollbar()
   end
 end
 
+function FzfWin.update_win_title(winid, winopts, o)
+  -- neovim >= 0.9 added window title
+  if not utils.__HAS_NVIM_09 or (type(o.title) ~= "string" and type(o.title) ~= "table") then
+    return
+  end
+  vim.api.nvim_win_set_config(winid,
+    -- NOTE: although we can set the title without winopts we add these
+    -- so we don't fail with "title requires border to be set" on wins
+    -- without top border
+    vim.tbl_extend("force", winopts, {
+      title = type(o.hl) == "string" and type(o.title) == "string"
+          and { { o.title, o.hl } } or o.title,
+      title_pos = o.title_pos,
+    }))
+end
+
+function FzfWin:update_main_title(title)
+  self.update_win_title(self.fzf_winid, self.layout.fzf, {
+    title = title,
+    title_pos = self.winopts.title_pos,
+    hl = self.hls.title,
+  })
+end
+
 function FzfWin:update_preview_title(title)
   -- neovim >= 0.9 added window title
   if not utils.__HAS_NVIM_09 or (type(title) ~= "string" and type(title) ~= "table") then
@@ -1311,12 +1337,11 @@ function FzfWin:update_preview_title(title)
   -- since `nvim_win_set_config` removes all styling, save backup
   -- of the current options and restore after the call (#813)
   local style = self:get_winopts(self.preview_winid, self._previewer:gen_winopts())
-  vim.api.nvim_win_set_config(self.preview_winid, vim.tbl_extend("keep", {
-    title = type(self.hls.preview_title) == "string"
-        and { { title, self.hls.preview_title } }
-        or title,
+  self.update_win_title(self.preview_winid, self.layout.preview, {
+    title = title,
     title_pos = self.winopts.preview.title_pos,
-  }, self.layout.preview))
+    hl = self.hls.preview_title,
+  })
   -- NOTE: `true` to ignore events for TSContext.update after selection change
   self:set_winopts(self.preview_winid, style, true)
 end
