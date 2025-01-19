@@ -5,7 +5,9 @@ return {
   keymap   = {
     builtin = {
       true,
-      ["<Esc>"] = "hide",
+      -- NOTE: we use a custom <Esc> callback that also sends esc to fzf
+      -- so we can store the last query on the execute-silent callback
+      -- ["<Esc>"] = "hide",
       ["<M-Esc>"] = "abort"
     }
   },
@@ -15,15 +17,34 @@ return {
         fzf.utils.warn("'hide' profile cannot work with tmux, ignoring.")
         return opts
       end
-      -- `execute-silent` actions are bugged with skim
-      if fzf.utils.has(opts, "sk") then return opts end
-      local histfile = opts.fzf_opts and opts.fzf_opts["--history"]
       opts.actions = opts.actions or {}
-      -- While we can use `keymap.builtin.<esc>` (to hide) this is better
-      -- as it captures the query when execute-silent action is called as
-      -- we add "{q}" as the first field index similar to `--print-query`
-      -- opts.actions["esc"] = { fn = fzf.actions.dummy_abort, desc = "hide" }
-      opts.actions["esc"] = false
+      if fzf.utils.has(opts, "sk") then
+        -- `execute-silent` actions are bugged with skim
+        -- Set esc to hide since we aren't using the custom callback
+        opts.actions["esc"] = false
+        opts.keymap.builtin["<Esc>"] = "hide"
+        return opts
+      end
+      local histfile = opts.fzf_opts and opts.fzf_opts["--history"]
+      opts.winopts = opts.winopts or {}
+      opts.winopts.on_create = function(e)
+        -- While we can use `keymap.builtin.<esc>` (to hide) this is better
+        -- as it captures the query when execute-silent action is called as
+        -- we add "{q}" as the first field index similar to `--print-query`
+        vim.keymap.set({ "t", "n" }, "<Esc>", function()
+          -- We hide the window first which happens instantly
+          -- and then send <Esc> directly to the term channel
+          fzf.hide()
+          vim.api.nvim_chan_send(vim.bo[e.bufnr].channel, "\x1b")
+        end, { buffer = e.bufnr, nowait = true })
+      end
+      opts.actions["esc"] = {
+        fn = fzf.actions.dummy_abort,
+        desc = "hide",
+        -- NOTE: we add this so esc action isn't converted in the
+        -- `tbl_map` below preventing fzf history append on esc
+        exec_silent = true,
+      }
       opts.actions = vim.tbl_map(function(act)
         act = type(act) == "function" and { fn = act } or act
         act = type(act) == "table" and type(act[1]) == "function"

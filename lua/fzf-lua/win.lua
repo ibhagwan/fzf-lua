@@ -1154,23 +1154,6 @@ function FzfWin.win_leave()
   self:close()
 end
 
-function FzfWin:store_last_query()
-  -- get the prompt line so we can save last query
-  local line = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, true)
-  -- remove `--info={inline|inline-right}`
-  -- fzf also supports custom info prefix, e.g --info="inline:❮ "
-  local prefix = (function()
-    local info = self._o.fzf_opts["--info"]
-    return type(info) == "string" and info:match(":(.+)")
-  end)()
-  local query = line[1]
-      :gsub((prefix and utils.lua_regex_escape(prefix) or "<?") .. "%s?%d+/%d+.-$", "")
-  -- remove prompt
-  local prompt = type(self._o.prompt) == "string" and self._o.prompt:gsub("^%*", "") or ">"
-  query = vim.trim(query:gsub("^%s-%*?" .. utils.lua_regex_escape(prompt) .. "%s?", ""))
-  config.resume_set("query", query, self._o)
-end
-
 function FzfWin:detach_fzf_buf()
   self._hidden_fzf_bufnr = self.fzf_bufnr
   vim.bo[self._hidden_fzf_bufnr].bufhidden = ""
@@ -1186,7 +1169,6 @@ function FzfWin.hide()
     self:close_preview(true)
     self._hidden_had_preview = true
   end
-  self:store_last_query()
   self:detach_fzf_buf()
   self:close(nil, true)
   -- Save self as `:close()` nullifies it

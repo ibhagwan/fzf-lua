@@ -1142,6 +1142,9 @@ M.convert_exec_silent_actions = function(opts)
       -- executing the action, without this we lose the last query on "hide" as
       -- the process never terminates and `--print-query` isn't being printed
       local field_index = v.field_index == false and "" or v.field_index or "{q} {+}"
+      if not field_index:match("^{q}") then
+        field_index = "{q} " .. field_index
+      end
       -- replace the action with shell cmd proxy to the original action
       local shell_action = shell.raw_action(function(items, _, _)
         if field_index:match("^{q}") then
