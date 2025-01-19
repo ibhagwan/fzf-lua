@@ -414,6 +414,7 @@ winopts = {
     backdrop         = 60,
     -- title         = "Title",
     -- title_pos     = "center",        -- 'left', 'center' or 'right'
+    -- title_flags   = false,           -- uncomment to disable title flags
     fullscreen       = false,           -- start fullscreen?
     -- enable treesitter highlighting for the main fzf window will only have
     -- effect where grep like results are present, i.e. "file:line:col:text"
@@ -544,6 +545,9 @@ actions = {
       ["ctrl-t"]      = actions.file_tabedit,
       ["alt-q"]       = actions.file_sel_to_qf,
       ["alt-Q"]       = actions.file_sel_to_ll,
+      ["alt-i"]       = actions.toggle_ignore,
+      ["alt-h"]       = actions.toggle_hidden,
+      ["alt-f"]       = actions.toggle_follow,
     },
   }
 ```
@@ -780,6 +784,7 @@ previewers = {
     cwd_prompt_shorten_val = 1,         -- shortened path parts length
     toggle_ignore_flag = "--no-ignore", -- flag toggled in `actions.toggle_ignore`
     toggle_hidden_flag = "--hidden",    -- flag toggled in `actions.toggle_hidden`
+    toggle_follow_flag = "--follow",    -- flag toggled in `actions.toggle_follow`
     actions = {
       -- inherits from 'actions.files', here we can override
       -- or set bind to 'false' to disable a default action
@@ -1465,6 +1470,7 @@ temporarily overridden by its corresponding `winopts` option:
 | FzfLuaNormal            | Normal           | `hls.normal`         | Main win `fg/bg`                      |
 | FzfLuaBorder            | Normal           | `hls.border`         | Main win border                       |
 | FzfLuaTitle             | FzfLuaNormal     | `hls.title`          | Main win title                        |
+| FzfLuaTitleFlag         | CursorLine       | `hls.title_flags`    | Main win title flags                  |
 | FzfLuaBackdrop          | \*bg=Black       | `hls.backdrop`       | Backdrop color                        |
 | FzfLuaPreviewNormal     | FzfLuaNormal     | `hls.preview_normal` | Builtin preview `fg/bg`               |
 | FzfLuaPreviewBorder     | FzfLuaBorder     | `hls.preview_border` | Builtin preview border                |

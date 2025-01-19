@@ -53,10 +53,13 @@ return {
       opts.actions = vim.tbl_map(function(act)
         act = type(act) == "function" and { fn = act } or act
         act = type(act) == "table" and type(act[1]) == "function"
-            and { fn = act[1], noclose = true } or act
+            and { fn = act[1], reuse = true } or act
         assert(type(act) == "table" and type(act.fn) == "function" or not act)
         if type(act) == "table" and
-            not act.exec_silent and not act.reload and not act.noclose
+            not act.exec_silent
+            and not act.reload
+            and not act.noclose
+            and not act.reuse
         then
           local fn = act.fn
           act.exec_silent = true

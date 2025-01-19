@@ -189,6 +189,7 @@ M.grep = function(opts)
   end
 
   -- search query in header line
+  opts = core.set_title_flags(opts, { "cmd" })
   opts = core.set_header(opts, opts.headers or { "actions", "cwd", "search" })
   opts = core.set_fzf_field_index(opts)
   core.fzf_exec(contents, opts)
@@ -292,6 +293,7 @@ M.live_grep_st = function(opts)
   end
 
   -- search query in header line
+  opts = core.set_title_flags(opts, { "cmd", "live" })
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts)
   core.fzf_exec(nil, opts)
@@ -327,6 +329,7 @@ M.live_grep_mt = function(opts)
   opts.fn_reload = command
 
   -- search query in header line
+  opts = core.set_title_flags(opts, { "cmd", "live" })
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts)
   core.fzf_exec(nil, opts)

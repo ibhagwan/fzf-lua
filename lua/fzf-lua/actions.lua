@@ -876,11 +876,13 @@ M.toggle_flag = function(_, opts)
   -- grep|live_grep sets `opts._cmd` to the original
   -- command without the search argument
   local cmd = opts._cmd or opts.cmd
-  if cmd:match(utils.lua_regex_escape(flag)) then
-    o.cmd = cmd:gsub(utils.lua_regex_escape(flag), "")
-  else
-    local bin, args = cmd:match("([^%s]+)(.*)$")
-    o.cmd = string.format("%s%s%s", bin, flag, args)
+  if type(cmd) == "string" then
+    if cmd:match(utils.lua_regex_escape(flag)) then
+      o.cmd = cmd:gsub(utils.lua_regex_escape(flag), "")
+    else
+      local bin, args = cmd:match("([^%s]+)(.*)$")
+      o.cmd = string.format("%s%s%s", bin, flag, args)
+    end
   end
   opts.__call_fn(o)
 end
@@ -892,6 +894,11 @@ end
 
 M.toggle_hidden = function(_, opts)
   local flag = opts.toggle_hidden_flag or "--hidden"
+  M.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = flag }))
+end
+
+M.toggle_follow = function(_, opts)
+  local flag = opts.toggle_follow_flag or "--follow"
   M.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = flag }))
 end
 

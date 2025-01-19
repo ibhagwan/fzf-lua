@@ -941,6 +941,7 @@ M._action_to_helpstr = {
   [actions.arg_del]             = "arg-list-delete",
   [actions.toggle_ignore]       = "toggle-ignore",
   [actions.toggle_hidden]       = "toggle-hidden",
+  [actions.toggle_follow]       = "toggle-follow",
   [actions.grep_lgrep]          = "grep<->lgrep",
   [actions.sym_lsym]            = "sym<->lsym",
   [actions.tmux_buf_set_reg]    = "set-register",

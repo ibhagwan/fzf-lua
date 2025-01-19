@@ -301,6 +301,12 @@ Type: `string`, Default: `center`
 
 Controls title display in the fzf window, possible values are `left|right|center`.
 
+#### globals.winopts.title_flags
+
+Type: `boolean`, Default: `nil`
+
+Set to `false` to disable fzf window title flags (hidden, ignore, etc).
+
 #### globals.winopts.treesitter
 
 Type: `boolean`, Default: `false`
@@ -477,6 +483,12 @@ Main fzf (terminal) window border highlight group.
 Type: `string`, Default: `FzfLuaTitle`
 
 Main fzf (terminal) window title highlight group.
+
+#### globals.hls.title_flags
+
+Type: `string`, Default: `CursorLine`
+
+Main fzf (terminal) window title flags highlight group (hidden, etc).
 
 #### globals.hls.backdrop
 
