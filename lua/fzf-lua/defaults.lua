@@ -54,7 +54,7 @@ M.defaults                      = {
     fullscreen = false,
     title_pos  = "center",
     treesitter = {
-      enabled    = false,
+      enabled    = true,
       fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" }
     },
     preview    = {
@@ -435,7 +435,6 @@ M.defaults.git                  = {
       ["ctrl-t"] = actions.git_buf_tabedit,
       ["ctrl-y"] = { fn = actions.git_yank_commit, exec_silent = true },
     },
-    winopts       = { treesitter = true },
     fzf_opts      = { ["--no-multi"] = true },
     _multiline    = false,
     -- `winopts.treesitter==true` line match format
@@ -565,9 +564,9 @@ M.defaults.quickfix             = {
   file_icons  = 1,
   color_icons = true,
   git_icons   = false,
+  only_valid  = false,
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
-  only_valid  = false,
   _treesitter = true,
   _cached_hls = { "path_colnr", "path_linenr" },
 }
@@ -587,9 +586,9 @@ M.defaults.loclist              = {
   file_icons  = 1,
   color_icons = true,
   git_icons   = false,
+  only_valid  = false,
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
-  only_valid  = false,
   _treesitter = true,
   _cached_hls = { "path_colnr", "path_linenr" },
 }
@@ -654,7 +653,6 @@ M.defaults.lines                = {
   show_unlisted    = false,
   no_term_buffers  = true,
   sort_lastused    = true,
-  winopts          = { treesitter = true },
   fzf_opts         = {
     ["--multi"]     = true,
     ["--delimiter"] = "[\t]",

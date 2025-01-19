@@ -857,6 +857,7 @@ function FzfWin:treesitter_attach()
         local min, max, tr = 0, nil, 4
         if not self.preview_hidden
             and (not self.previewer_is_builtin or self.winopts.split)
+            and vim.api.nvim_win_is_valid(self.fzf_winid)
         then
           local win_width = vim.api.nvim_win_get_width(self.fzf_winid)
           local layout = self:fzf_preview_layout_str()

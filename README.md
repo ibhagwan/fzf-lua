@@ -420,7 +420,7 @@ winopts = {
     -- due to highlight color collisions will also override `fzf_colors`
     -- set `fzf_colors=false` or `fzf_colors.hl=...` to override
     treesitter       = {
-      enabled    = false,
+      enabled    = true,
       fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" }
     },
     preview = {
