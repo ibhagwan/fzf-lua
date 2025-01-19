@@ -640,7 +640,6 @@ function FzfWin:new(o)
   self.preview_hidden = not not o.winopts.preview.hidden -- force boolean
   self.keymap = o.keymap
   self.previewer = o.previewer
-  self.prompt = o.prompt or o.fzf_opts["--prompt"]
   self:_set_autoclose(o.autoclose)
   -- Backward compat since removal of "border" scrollbar
   if self.winopts.preview.scrollbar == "border" then
@@ -1159,7 +1158,13 @@ function FzfWin:store_last_query()
   -- get the prompt line so we can save last query
   local line = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, true)
   -- remove `--info={inline|inline-right}`
-  local query = line[1]:gsub("<?%s?%d+/%d+.-$", "")
+  -- fzf also supports custom info prefix, e.g --info="inline:❮ "
+  local prefix = (function()
+    local info = self._o.fzf_opts["--info"]
+    return type(info) == "string" and info:match(":(.+)")
+  end)()
+  local query = line[1]
+      :gsub((prefix and utils.lua_regex_escape(prefix) or "<?") .. "%s?%d+/%d+.-$", "")
   -- remove prompt
   local prompt = type(self._o.prompt) == "string" and self._o.prompt:gsub("^%*", "") or ">"
   query = vim.trim(query:gsub("^%s-%*?" .. utils.lua_regex_escape(prompt) .. "%s?", ""))
