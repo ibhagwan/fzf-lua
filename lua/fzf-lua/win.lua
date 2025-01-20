@@ -1164,7 +1164,7 @@ end
 
 function FzfWin.hide()
   local self = _self
-  if self:hidden() then return end
+  if not self or self:hidden() then return end
   -- Note: we should never get here with a tmux profile as neovim binds (default: <A-Esc>)
   -- do not apply to tmux, validate anyways in case called directly using the API
   if not self or self._o._is_fzf_tmux then return end
