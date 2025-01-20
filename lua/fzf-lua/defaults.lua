@@ -1182,6 +1182,7 @@ M.defaults.__HLS                = {
   dir_icon       = "FzfLuaDirIcon",
   dir_part       = "FzfLuaDirPart",
   file_part      = "FzfLuaFilePart",
+  live_prompt    = "FzfLuaLivePrompt",
   live_sym       = "FzfLuaLiveSym",
   fzf            = {
     normal     = "FzfLuaFzfNormal",

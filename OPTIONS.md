@@ -665,6 +665,12 @@ Type: `string`, Default: `FzfLuaFilePart`
 
 Highlight group for the directory part when using `path.dirname_first` or `path.filename_first` formatters.
 
+#### globals.hls.live_prompt
+
+Type: `string`, Default: `FzfLuaLivePrompt`
+
+Highlight group for the prompt text in "live" pickers.
+
 #### globals.hls.live_sym
 
 Type: `string`, Default: `FzfLuaLiveSym`

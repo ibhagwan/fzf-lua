@@ -171,6 +171,10 @@ M.grep = function(opts)
     end
   end
 
+  if utils.has(opts, "fzf") and not opts.prompt and opts.search and #opts.search > 0 then
+    opts.prompt = utils.ansi_from_hl(opts.hls.live_prompt, opts.search) .. " > "
+  end
+
   -- get the grep command before saving the last search
   -- in case the search string is overwritten by 'rg_glob'
   opts.cmd = get_grep_cmd(opts, opts.search, opts.no_esc)
@@ -211,11 +215,12 @@ local function normalize_live_grep_opts(opts)
   -- to deref one level up to get to `live_grep_{mt|st}`
   opts.__call_fn = utils.__FNCREF2__()
 
+  -- NOTE: no longer used since we hl the query with `FzfLuaLivePrompt`
   -- prepend prompt with "*" to indicate "live" query
-  opts.prompt = type(opts.prompt) == "string" and opts.prompt or "> "
-  if opts.live_ast_prefix ~= false then
-    opts.prompt = opts.prompt:match("^%*") and opts.prompt or ("*" .. opts.prompt)
-  end
+  -- opts.prompt = type(opts.prompt) == "string" and opts.prompt or "> "
+  -- if opts.live_ast_prefix ~= false then
+  --   opts.prompt = opts.prompt:match("^%*") and opts.prompt or ("*" .. opts.prompt)
+  -- end
 
   -- when using live_grep there is no "query", the prompt input
   -- is a regex expression and should be saved as last "search"

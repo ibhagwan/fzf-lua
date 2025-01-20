@@ -77,8 +77,10 @@ function M.setup_highlights(override)
       { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" } },
     { "FzfLuaPathLineNr", "path_linenr", -- qf|diag|lsp
       { default = default, fg = is_light and "MediumSpringGreen" or "LightGreen" } },
+    { "FzfLuaLivePrompt", "live_prompt", -- "live" queries prompt text color
+      { default = default, fg = is_light and "PaleVioletRed1" or "PaleVioletRed1" } },
     { "FzfLuaLiveSym", "live_sym",       -- lsp_live_workspace_symbols query
-      { default = default, fg = is_light and "Brown4" or "Brown1" } },
+      { default = default, fg = is_light and "PaleVioletRed1" or "PaleVioletRed1" } },
     -- lines|blines|treesitter
     { "FzfLuaBufId",     "buf_id",     { default = default, link = "TabLine" } },
     { "FzfLuaBufName",   "buf_name",   { default = default, link = "Directory" } },

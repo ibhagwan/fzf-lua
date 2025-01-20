@@ -546,6 +546,10 @@ M.create_fzf_colors = function(opts)
   if type(opts.fzf_colors) ~= "table" then return end
   local colors = opts.fzf_colors
 
+  if opts.fn_reload then
+    colors.query = { "fg", opts.hls.live_prompt }
+  end
+
   -- Remove non supported colors from skim and older fzf versions
   if not utils.has(opts, "fzf", { 0, 35 }) or utils.has(opts, "sk") then
     colors.separator = nil
