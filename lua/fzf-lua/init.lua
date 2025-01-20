@@ -146,8 +146,8 @@ M.setup_highlights()
 
 function M.setup(opts, do_not_reset_defaults)
   opts = type(opts) == "table" and opts or {}
-  -- Default to picker info in win title (vs fzf prompt) if neovim version >= 0.9
-  opts[1] = opts[1] == nil and utils.__HAS_NVIM_09 and "default-title" or opts[1]
+  -- Defaults to picker info in win title if neovim version >= 0.9, prompt otherwise
+  opts[1] = opts[1] == nil and "default" or opts[1]
   if opts[1] then
     -- Did the user supply profile(s) to load?
     opts = vim.tbl_deep_extend("keep", opts,

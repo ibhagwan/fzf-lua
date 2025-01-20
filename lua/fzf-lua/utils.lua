@@ -871,6 +871,10 @@ function M.load_profiles(profiles, silent, opts)
   profiles = type(profiles) == "table" and profiles
       or type(profiles) == "string" and { profiles }
       or {}
+  -- If the use specified only the "hide" profile, inherit the defaults
+  if #profiles == 1 and profiles[1] == "hide" then
+    table.insert(profiles, 1, "default")
+  end
   for _, profile in ipairs(profiles) do
     -- backward compat, renamed "borderless_full" > "borderless-full"
     if profile == "borderless_full" then profile = "borderless-full" end

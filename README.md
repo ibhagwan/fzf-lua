@@ -146,10 +146,10 @@ Alternatively, resuming work on a specific picker:
 > as such resume is not perfect and is limited to resuming the
 > picker/query and sometimes additional parameters such as regex
 > in grep, etc, for a more complete resume use the "hide" profile,
-> this will keep the fzf process running in the background allowing
-> `:FzfLua resume` to restore the picker state entirely, including
-> cursor position and selection.
-> To configure hiding by default:
+> this will modify the esc bind to hide fzf-lua and keep the fzf
+> process running in the background allowing `:FzfLua resume` to
+> restore the picker state entirely, including cursor position
+> and selection. To configure hiding by default:
 > ```lua
 > require("fzf-lua").setup({
 >   "hide",
@@ -1275,12 +1275,16 @@ Different `fzf` layout:
 
 ```lua
 :lua require('fzf-lua').files({ fzf_opts = {['--layout'] = 'reverse-list'} })
+-- Or via the vimL command
+:FzfLua files fzf_opts.--layout=reverse-list
 ```
 
 Using `files` with a different command and working directory:
 
 ```lua
-:lua require'fzf-lua'.files({ prompt="LS> ", cmd = "ls", cwd="~/<folder>" })
+:lua require'fzf-lua'.files({ prompt="LS> ", cmd = "ls", cwd="~/.config" })
+-- Or via the vimL command
+:FzfLua files prompt="LS>\ " cmd=ls cwd=~/.config
 ```
 
 Using `live_grep` with `git grep`:
@@ -1289,10 +1293,13 @@ Using `live_grep` with `git grep`:
 :lua require'fzf-lua'.live_grep({ cmd = "git grep --line-number --column --color=always" })
 ```
 
-`colorschemes` with non-default window size:
+`spell_suggest` with non-default window size relative to cursor:
 
 ```lua
-:lua require'fzf-lua'.colorschemes({ winopts = { height=0.33, width=0.33 } })
+:lua require'fzf-lua'.spell_suggest({ winopts = { height=0.33, width=0.33, relative="cursor" } })
+-- Or via the vimL command
+:FzfLua spell_suggest winopts={height=0.33,width=0.33,relative=cursor}
+:FzfLua spell_suggest winopts={height=0.33,width=0.33} winopts.relative=cursor
 ```
 
 </details>
@@ -1348,8 +1355,9 @@ require('fzf-lua').setup({'fzf-vim'})
 
 | Profile           | Details                                                                                             |
 | ----------------- | --------------------------------------------------------------------------------------------------- |
-| `default`         | fzf-lua defaults, uses neovim "builtin" previewer and devicons (if available) for git/files/buffers |
-| `default-title`   | fzf-lua defaults, using title instead of prompt (default on neovim > =0.9)                          |
+| `default`         | fzf-lua defaults, uses neovim "builtin" buffer previewer and devicons (if available)                |
+| `default-title`   | fzf-lua defaults, using title for picker info (default on neovim >= 0.9)                            |
+| `default-prompt`  | fzf-lua defaults, using prompt for picker info (default on neovim < 0.9)                            |
 | `fzf-native`      | utilizes fzf's native previewing ability in the terminal where possible using `bat` for previews    |
 | `fzf-tmux`        | similar to `fzf-native` and opens in a tmux popup (requires tmux > 3.2)                             |
 | `fzf-vim`         | closest to `fzf.vim`'s defaults (+icons), also sets up user commands (`:Files`, `:Rg`, etc)         |

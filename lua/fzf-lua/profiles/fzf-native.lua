@@ -1,4 +1,5 @@
 return {
+  { "default-title" }, -- base profile
   desc = "fzf with `bat` as native previewer",
   winopts = { preview = { default = "bat" } },
   manpages = { previewer = "man_native" },

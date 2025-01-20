@@ -3,6 +3,7 @@ local hls = {
   sel = "PmenuSel",
 }
 return {
+  { "default-prompt" }, -- base profile
   desc       = "borderless and minimalistic",
   fzf_opts   = {},
   winopts    = {

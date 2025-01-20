@@ -336,7 +336,6 @@ M.defaults                      = {
 
 M.defaults.files                = {
   previewer              = M._default_previewer_fn,
-  prompt                 = "> ",
   cmd                    = nil, -- default: auto detect find|fd
   multiprocess           = true,
   file_icons             = 1,
@@ -365,7 +364,6 @@ M.defaults.files                = {
 M.defaults.git                  = {
   files = {
     previewer         = M._default_previewer_fn,
-    prompt            = "GitFiles> ",
     cmd               = "git ls-files --exclude-standard",
     multiprocess      = true,
     file_icons        = 1,
@@ -377,7 +375,6 @@ M.defaults.git                  = {
     winopts           = { preview = { winopts = { cursorline = false } } },
   },
   status = {
-    prompt            = "GitStatus> ",
     -- override `color.status=always`, technically not required
     -- since we now also call `utils.strip_ansi_coloring` (#706)
     cmd               = "git -c color.status=false --no-optional-locks status --porcelain=v1 -u",
@@ -399,7 +396,6 @@ M.defaults.git                  = {
     },
   },
   commits = {
-    prompt        = "Commits> ",
     cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
         .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
     preview       = "git show --color {1}",
@@ -412,7 +408,6 @@ M.defaults.git                  = {
     _multiline    = false,
   },
   bcommits = {
-    prompt        = "BCommits> ",
     cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
         .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {file}]],
     preview       = "git show --color {1} -- {file}",
@@ -428,7 +423,6 @@ M.defaults.git                  = {
     _multiline    = false,
   },
   blame = {
-    prompt        = "Blame> ",
     cmd           = [[git blame --color-lines {file}]],
     preview       = "git show --color {1} -- {file}",
     preview_pager = M._preview_pager_fn,
@@ -445,7 +439,6 @@ M.defaults.git                  = {
     _treesitter   = "(%s+)(%d+)%)(.+)$",
   },
   branches = {
-    prompt     = "Branches> ",
     cmd        = "git branch --all --color",
     preview    = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
     remotes    = "local",
@@ -460,7 +453,6 @@ M.defaults.git                  = {
     _multiline = false,
   },
   tags = {
-    prompt     = "Tags> ",
     cmd        = [[git for-each-ref --color --sort="-taggerdate" --format ]]
         .. [["%(color:yellow)%(refname:short)%(color:reset) ]]
         .. [[%(color:green)(%(taggerdate:relative))%(color:reset)]]
@@ -472,7 +464,6 @@ M.defaults.git                  = {
     _multiline = false,
   },
   stash = {
-    prompt        = "Stash> ",
     cmd           = "git --no-pager stash list",
     preview       = "git --no-pager stash show --patch --color {1}",
     preview_pager = M._preview_pager_fn,
@@ -501,7 +492,6 @@ M.defaults.git                  = {
 
 M.defaults.grep                 = {
   previewer      = M._default_previewer_fn,
-  prompt         = "Rg> ",
   input_prompt   = "Grep For> ",
   cmd            = nil, -- default: auto detect rg|grep
   multiprocess   = true,
@@ -526,7 +516,6 @@ M.defaults.grep                 = {
 }
 
 M.defaults.grep_curbuf          = vim.tbl_deep_extend("force", M.defaults.grep, {
-  prompt           = "BufRg> ",
   rg_glob          = false, -- meaningless for single file rg
   exec_empty_query = true,  -- makes sense to display lines immediately
   fzf_opts         = {
@@ -538,7 +527,6 @@ M.defaults.grep_curbuf          = vim.tbl_deep_extend("force", M.defaults.grep, 
 
 M.defaults.args                 = {
   previewer         = M._default_previewer_fn,
-  prompt            = "Args> ",
   files_only        = true,
   file_icons        = 1,
   color_icons       = true,
@@ -551,7 +539,6 @@ M.defaults.args                 = {
 
 M.defaults.oldfiles             = {
   previewer         = M._default_previewer_fn,
-  prompt            = "History> ",
   file_icons        = 1,
   color_icons       = true,
   git_icons         = false,
@@ -563,7 +550,6 @@ M.defaults.oldfiles             = {
 
 M.defaults.quickfix             = {
   previewer   = M._default_previewer_fn,
-  prompt      = "Quickfix> ",
   separator   = "▏",
   file_icons  = 1,
   color_icons = true,
@@ -576,7 +562,6 @@ M.defaults.quickfix             = {
 }
 
 M.defaults.quickfix_stack       = {
-  prompt    = "Quickfix Stack> ",
   marker    = ">",
   previewer = { _ctor = previewers.builtin.quickfix, },
   fzf_opts  = { ["--no-multi"] = true },
@@ -585,7 +570,6 @@ M.defaults.quickfix_stack       = {
 
 M.defaults.loclist              = {
   previewer   = M._default_previewer_fn,
-  prompt      = "Locations> ",
   separator   = "▏",
   file_icons  = 1,
   color_icons = true,
@@ -598,7 +582,6 @@ M.defaults.loclist              = {
 }
 
 M.defaults.loclist_stack        = {
-  prompt    = "Locations Stack> ",
   marker    = ">",
   previewer = { _ctor = previewers.builtin.quickfix, },
   fzf_opts  = { ["--no-multi"] = true },
@@ -607,7 +590,6 @@ M.defaults.loclist_stack        = {
 
 M.defaults.buffers              = {
   previewer             = M._default_previewer_fn,
-  prompt                = "Buffers> ",
   file_icons            = 1,
   color_icons           = true,
   sort_lastused         = true,
@@ -627,7 +609,6 @@ M.defaults.buffers              = {
 
 M.defaults.tabs                 = {
   previewer   = M._default_previewer_fn,
-  prompt      = "Tabs> ",
   tab_title   = "Tab",
   tab_marker  = "<<",
   file_icons  = 1,
@@ -649,7 +630,6 @@ M.defaults.tabs                 = {
 
 M.defaults.lines                = {
   previewer        = M._default_previewer_fn,
-  prompt           = "Lines> ",
   file_icons       = 1,
   color_icons      = true,
   show_bufname     = 120,
@@ -688,7 +668,6 @@ M.defaults.lines                = {
 }
 
 M.defaults.blines               = vim.tbl_deep_extend("force", M.defaults.lines, {
-  prompt       = "BLines> ",
   show_bufname = false,
   fzf_opts     = {
     ["--with-nth"] = "4..",
@@ -698,7 +677,6 @@ M.defaults.blines               = vim.tbl_deep_extend("force", M.defaults.lines,
 
 M.defaults.treesitter           = {
   previewer        = M._default_previewer_fn,
-  prompt           = "Treesitter> ",
   file_icons       = false,
   color_icons      = false,
   fzf_opts         = {
@@ -722,7 +700,6 @@ M.defaults.treesitter           = {
 
 M.defaults.tags                 = {
   previewer    = { _ctor = previewers.builtin.tags },
-  prompt       = "Tags> ",
   input_prompt = "[tags] Grep For> ",
   ctags_file   = nil, -- auto-detect
   rg_opts      = "--no-heading --color=always --smart-case",
@@ -743,7 +720,6 @@ M.defaults.tags                 = {
 
 M.defaults.btags                = {
   previewer     = { _ctor = previewers.builtin.tags },
-  prompt        = "BTags> ",
   ctags_file    = nil, -- auto-detect
   rg_opts       = "--color=never --no-heading",
   grep_opts     = "--color=never --perl-regexp",
@@ -764,7 +740,6 @@ M.defaults.btags                = {
 }
 
 M.defaults.colorschemes         = {
-  prompt       = "Colorschemes> ",
   live_preview = true,
   winopts      = { height = 0.55, width = 0.50, backdrop = false },
   fzf_opts     = { ["--no-multi"] = true },
@@ -772,14 +747,12 @@ M.defaults.colorschemes         = {
 }
 
 M.defaults.highlights           = {
-  prompt     = "Highlights> ",
   fzf_opts   = { ["--no-multi"] = true },
   fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
   previewer  = { _ctor = previewers.builtin.highlights, },
 }
 
 M.defaults.awesome_colorschemes = {
-  prompt       = "Awesome Colorschemes> ",
   winopts      = { row = 0, col = 0.99, width = 0.50, backdrop = false },
   live_preview = true,
   max_threads  = 5,
@@ -803,7 +776,6 @@ M.defaults.awesome_colorschemes = {
 }
 
 M.defaults.helptags             = {
-  prompt    = "Help> ",
   actions   = {
     ["enter"]  = actions.help,
     ["ctrl-s"] = actions.help,
@@ -822,7 +794,6 @@ M.defaults.helptags             = {
 }
 
 M.defaults.manpages             = {
-  prompt    = "Man> ",
   cmd       = "man -k .",
   actions   = {
     ["enter"]  = actions.man,
@@ -836,7 +807,6 @@ M.defaults.manpages             = {
 
 M.defaults.lsp                  = {
   previewer        = M._default_previewer_fn,
-  prompt_postfix   = "> ",
   file_icons       = 1,
   color_icons      = true,
   git_icons        = false,
@@ -851,7 +821,6 @@ M.defaults.lsp                  = {
 
 M.defaults.lsp.symbols          = {
   previewer        = M._default_previewer_fn,
-  prompt_postfix   = "> ",
   file_icons       = 1,
   color_icons      = true,
   git_icons        = false,
@@ -923,7 +892,6 @@ M.defaults.lsp.symbols          = {
 
 M.defaults.lsp.finder           = {
   previewer   = M._default_previewer_fn,
-  prompt      = "LSP Finder> ",
   file_icons  = 1,
   color_icons = true,
   git_icons   = false,
@@ -958,7 +926,6 @@ M.defaults.lsp.finder           = {
 }
 
 M.defaults.lsp.code_actions     = {
-  prompt           = "Code Actions> ",
   async_or_timeout = 5000,
   previewer        = "codeaction",
   -- previewer        = "codeaction_native",
@@ -971,7 +938,6 @@ M.defaults.lsp.code_actions     = {
 
 M.defaults.diagnostics          = {
   previewer   = M._default_previewer_fn,
-  prompt      = "Diagnostics> ",
   file_icons  = 1,
   color_icons = true,
   git_icons   = false,
@@ -990,7 +956,6 @@ M.defaults.diagnostics          = {
 }
 
 M.defaults.builtin              = {
-  prompt   = "Builtin> ",
   winopts  = {
     height = 0.65,
     width  = 0.50,
@@ -1001,7 +966,6 @@ M.defaults.builtin              = {
 
 M.defaults.profiles             = {
   previewer = M._default_previewer_fn,
-  prompt    = "FzfLua profiles> ",
   fzf_opts  = {
     ["--delimiter"] = "[:]",
     ["--with-nth"]  = "-1..",
@@ -1012,7 +976,6 @@ M.defaults.profiles             = {
 }
 
 M.defaults.marks                = {
-  prompt    = "Marks> ",
   fzf_opts  = { ["--no-multi"] = true },
   actions   = { ["enter"] = actions.goto_mark },
   previewer = { _ctor = previewers.builtin.marks },
@@ -1020,12 +983,10 @@ M.defaults.marks                = {
 
 M.defaults.changes              = {
   cmd = "changes",
-  prompt = "Changes> ",
   h1 = "change",
 }
 
 M.defaults.jumps                = {
-  prompt    = "Jumps> ",
   cmd       = "jumps",
   fzf_opts  = { ["--no-multi"] = true },
   actions   = { ["enter"] = actions.goto_jump },
@@ -1033,7 +994,6 @@ M.defaults.jumps                = {
 }
 
 M.defaults.tagstack             = {
-  prompt      = "Tagstack> ",
   file_icons  = 1,
   color_icons = true,
   git_icons   = true,
@@ -1043,13 +1003,11 @@ M.defaults.tagstack             = {
 }
 
 M.defaults.commands             = {
-  prompt          = "Commands> ",
   actions         = { ["enter"] = actions.ex_run },
   include_builtin = true,
 }
 
 M.defaults.autocmds             = {
-  prompt    = "Autocmds> ",
   previewer = { _ctor = previewers.builtin.autocmds },
   _actions  = function() return M.globals.actions.files end,
   fzf_opts  = {
@@ -1060,7 +1018,6 @@ M.defaults.autocmds             = {
 }
 
 M.defaults.command_history      = {
-  prompt   = "Command History> ",
   fzf_opts = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   actions  = {
     ["enter"]  = actions.ex_run_cr,
@@ -1069,7 +1026,6 @@ M.defaults.command_history      = {
 }
 
 M.defaults.search_history       = {
-  prompt   = "Search History> ",
   fzf_opts = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   actions  = {
     ["enter"]  = actions.search_cr,
@@ -1078,7 +1034,6 @@ M.defaults.search_history       = {
 }
 
 M.defaults.registers            = {
-  prompt       = "Registers> ",
   multiline    = true,
   ignore_empty = true,
   actions      = { ["enter"] = actions.paste_register },
@@ -1086,7 +1041,6 @@ M.defaults.registers            = {
 }
 
 M.defaults.keymaps              = {
-  prompt          = "Keymaps> ",
   previewer       = { _ctor = previewers.builtin.keymaps },
   winopts         = { preview = { layout = "vertical" } },
   fzf_opts        = { ["--tiebreak"] = "index", ["--no-multi"] = true },
@@ -1102,7 +1056,6 @@ M.defaults.keymaps              = {
 }
 
 M.defaults.spell_suggest        = {
-  prompt  = "Spelling Suggestions> ",
   winopts = {
     relative = "cursor",
     row      = 1,
@@ -1116,20 +1069,17 @@ M.defaults.spell_suggest        = {
 }
 
 M.defaults.filetypes            = {
-  prompt     = "Filetypes> ",
   file_icons = false,
   actions    = { ["enter"] = actions.set_filetype },
 }
 
 M.defaults.packadd              = {
-  prompt  = "packadd> ",
   actions = {
     ["enter"] = actions.packadd,
   },
 }
 
 M.defaults.menus                = {
-  prompt  = "Menu> ",
   actions = {
     ["enter"] = actions.exec_menu,
   },
@@ -1137,7 +1087,6 @@ M.defaults.menus                = {
 
 M.defaults.tmux                 = {
   buffers = {
-    prompt   = "Tmux Buffers> ",
     cmd      = "tmux list-buffers",
     register = [["]],
     actions  = { ["enter"] = actions.tmux_buf_set_reg },
@@ -1146,24 +1095,11 @@ M.defaults.tmux                 = {
 }
 
 M.defaults.dap                  = {
-  commands = {
-    prompt = "DAP Commands> ",
-    fzf_opts = { ["--no-multi"] = true },
-  },
-  configurations = {
-    prompt = "DAP Configurations> ",
-    fzf_opts = { ["--no-multi"] = true },
-  },
-  variables = {
-    prompt = "DAP Variables> ",
-    fzf_opts = { ["--no-multi"] = true },
-  },
-  frames = {
-    prompt = "DAP Frames> ",
-    fzf_opts = { ["--no-multi"] = true },
-  },
-  breakpoints = {
-    prompt      = "DAP Breakpoints> ",
+  commands       = { fzf_opts = { ["--no-multi"] = true }, },
+  configurations = { fzf_opts = { ["--no-multi"] = true }, },
+  variables      = { fzf_opts = { ["--no-multi"] = true }, },
+  frames         = { fzf_opts = { ["--no-multi"] = true }, },
+  breakpoints    = {
     file_icons  = 1,
     color_icons = true,
     git_icons   = false,
