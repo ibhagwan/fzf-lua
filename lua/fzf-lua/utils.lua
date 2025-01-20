@@ -1323,7 +1323,14 @@ end
 
 --- Wrapper around vim.fn.termopen which was deprecated in v0.11
 function M.termopen(cmd, opts)
-  if M.__HAS_NVIM_011 then
+  -- Workaround for #1732 (nightly builds prior to jobstart/term patch)
+  if M.__HAS_NVIM_011 and M._JOBSTART_HAS_TERM == nil then
+    local ok, err = pcall(vim.fn.jobstart, "", { term = 1 })
+    M._JOBSTART_HAS_TERM = not ok
+        and err:match [[Vim:E475: Invalid argument: 'term' must be Boolean]]
+        and true or false
+  end
+  if M.__HAS_NVIM_011 and M._JOBSTART_HAS_TERM then
     opts = opts or {}
     opts.term = true
     return vim.fn.jobstart(cmd, opts)
