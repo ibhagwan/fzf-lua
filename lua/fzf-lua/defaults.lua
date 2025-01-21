@@ -25,20 +25,18 @@ function M._preview_pager_fn()
 end
 
 function M._man_cmd_fn(bat_pager)
-  local cmd = utils.is_darwin() and "man -P cat {page} | col -bx"
-      or vim.fn.executable("mandb") == 1 and "man {page} | col -bx"
-      or "man -c {page} | col -bx"
-  if bat_pager then
-    local bat_cmd = (function()
-      for _, bin in ipairs({ "batcat", "bat" }) do
-        if vim.fn.executable(bin) == 1 then return bin end
+  local cmd = utils.is_darwin() and "man -P cat"
+      or vim.fn.executable("mandb") == 1 and "man"
+      or "man -c"
+  local bat_cmd = bat_pager and (function()
+    for _, bin in ipairs({ "batcat", "bat" }) do
+      if vim.fn.executable(bin) == 1 then
+        return string.format("%s --color=always -p -l man", bin)
       end
-    end)()
-    if bat_cmd then
-      cmd = string.format("%s | %s --color=always -p -l man", cmd, bat_cmd)
     end
-  end
-  return cmd:gsub("{page}", "%%s")
+  end)()
+  local pager = bat_cmd or "col -bx"
+  return string.format("%s %%s 2>/dev/null | %s", cmd, pager)
 end
 
 M.defaults                      = {
