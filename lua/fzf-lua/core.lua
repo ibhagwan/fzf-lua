@@ -906,6 +906,10 @@ M.set_title_flags = function(opts, titles)
   -- NOTE: we only support cmd titles ATM
   if not vim.tbl_contains(titles or {}, "cmd") then return opts end
   if opts.winopts.title_flags == false then return opts end
+  local cmd = type(opts.cmd) == "string" and opts.cmd
+      or type(opts.fn_reload) == "string" and opts.fn_reload
+      or nil
+  if not cmd then return opts end
   local flags = {}
   local patterns = {
     { { utils.lua_regex_escape(opts.toggle_hidden_flag) or "%-%-hidden" },     "h" },
@@ -926,8 +930,8 @@ M.set_title_flags = function(opts, titles)
     end
     if type(title) == "table" then
       for _, f in ipairs(flags) do
+        -- table.insert(title, { " " })
         table.insert(title, { f, opts.hls.title_flags })
-        table.insert(title, { " " })
       end
       utils.map_set(opts, "winopts.title", title)
     end

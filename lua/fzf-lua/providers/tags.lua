@@ -160,7 +160,7 @@ local function tags(opts)
     opts.rg_glob = false
     -- tags has it's own formatter
     opts.formatter, opts._fmt = false, { _to = false, to = false, from = false }
-    opts.filename = opts._ctags_file
+    opts.filespec = libuv.shellescape(opts._ctags_file)
     if opts.multiprocess then
       return require "fzf-lua.providers.grep".live_grep_mt(opts)
     else

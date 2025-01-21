@@ -94,7 +94,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     search_query = opts.search
   end
 
-  do
+  if not opts._ctags_file then
     -- Auto add `--line-number` for grep and `--line-number --column` for rg
     -- NOTE: although rg's `--column` implies `--line-number` we still add
     -- `--line-number` since we remove `--column` when search regex is empty
