@@ -19,7 +19,8 @@ M.expect = function(actions, opts)
     --   actions = { ["_myaction"] = function(sel, opts) ... end,
     (function()
       -- Lua 5.1 goto compatiblity hack (function wrap)
-      if not v or k:match("^_") then return end
+      -- Ignore `false` actions and execute-silent/reload actions
+      if not v or type(v) == "table" and v._ignore or k:match("^_") then return end
       k = k == "default" and "enter" or k
       v = type(v) == "table" and v or { fn = v }
       if utils.has(opts, "fzf", { 0, 53 }) then
@@ -52,11 +53,12 @@ M.expect = function(actions, opts)
   return #expect > 0 and expect or nil, #binds > 0 and binds or nil
 end
 
-M.normalize_selected = function(actions, selected, opts)
+M.normalize_selected = function(selected, opts)
   -- The below separates the keybind from the item(s)
   -- and makes sure 'selected' contains only item(s) or {}
   -- so it can always be enumerated safely
-  if not actions or not selected then return end
+  if not selected then return end
+  local actions = opts.actions
   if utils.has(opts, "fzf", { 0, 53 }) or utils.has(opts, "sk", { 0, 14 }) then
     -- Using the new `print` action keybind is expected at `selected[1]`
     -- NOTE: if `--select-1|-q` was used we'll be missing the keybind
@@ -92,9 +94,10 @@ M.normalize_selected = function(actions, selected, opts)
   end
 end
 
-M.act = function(actions, selected, opts)
-  if not actions or not selected then return end
-  local keybind, entries = M.normalize_selected(actions, selected, opts)
+M.act = function(selected, opts)
+  if not selected then return end
+  local actions = opts.actions
+  local keybind, entries = M.normalize_selected(selected, opts)
   -- fzf >= 0.53 and `--exit-0`
   if not keybind then return end
   local action = actions[keybind]

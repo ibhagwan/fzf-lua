@@ -154,8 +154,7 @@ M.fzf_exec = function(contents, opts)
   -- quickfix lists, use `pcall` because we will circular ref main object (#776)
   _, opts.__INFO = pcall(loadstring("return require'fzf-lua'.get_info()"))
   opts.fn_selected = opts.fn_selected or function(selected, o)
-    if not selected then return end
-    actions.act(opts.actions, selected, o)
+    actions.act(selected, o)
   end
   -- wrapper for command transformer
   if type(contents) == "string" and (opts.fn_transform or opts.fn_preprocess) then
@@ -458,7 +457,7 @@ M.fzf = function(contents, opts)
   -- retrieve the future action and check:
   --   * if it's a single function we can close the window
   --   * if it's a table of functions we do not close the window
-  local keybind = actions.normalize_selected(opts.actions, selected, opts)
+  local keybind = actions.normalize_selected(selected, opts)
   local action = keybind and opts.actions and opts.actions[keybind]
   -- only close the window if autoclose wasn't specified or is 'true'
   -- or if the action wasn't a table or defined with `reload|noclose`
@@ -1153,6 +1152,8 @@ M.convert_reload_actions = function(reload_cmd, opts)
   local rebind = bind_concat(reload_binds, "rebind")
   for k, v in pairs(opts.actions) do
     if type(v) == "table" and v.reload then
+      -- Modified actions should not be considered in `actions.expect`
+      opts.actions[k]._ignore = true
       -- replace the action with shell cmd proxy to the original action
       local shell_action = shell.raw_action(function(items, _, _)
         v.fn(items, opts)
@@ -1172,7 +1173,6 @@ M.convert_reload_actions = function(reload_cmd, opts)
           type(v.postfix) == "string" and v.postfix or ""),
         desc = v.desc or config.get_action_helpstr(v.fn)
       }
-      opts.actions[k] = nil
     end
   end
   -- Does nothing when 'rebind' is nil
@@ -1192,6 +1192,8 @@ M.convert_exec_silent_actions = function(opts)
   for k, v in pairs(opts.actions) do
     if type(v) == "table" and v.exec_silent then
       assert(type(v.fn) == "function")
+      -- Modified actions should not be considered in `actions.expect`
+      opts.actions[k]._ignore = true
       -- Use both {q} and {+} as field indexes so we can update last query when
       -- executing the action, without this we lose the last query on "hide" as
       -- the process never terminates and `--print-query` isn't being printed
@@ -1237,7 +1239,6 @@ M.convert_exec_silent_actions = function(opts)
           has_fzf036 and type(v.postfix) == "string" and v.postfix or ""),
         desc = v.desc or config.get_action_helpstr(v.fn)
       }
-      opts.actions[k] = nil
     end
   end
   return opts

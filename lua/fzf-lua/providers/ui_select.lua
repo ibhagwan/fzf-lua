@@ -116,7 +116,7 @@ M.ui_select = function(items, ui_opts, on_choice)
         on_choice(nil, nil)
       else
         o._on_choice_called = nil
-        actions.act(o.actions, selected, o)
+        actions.act(selected, o)
         if not o._on_choice_called then
           -- see  comment above, `on_choice` wasn't called, either
           -- "dummy_abort" (ctrl-c/esc) or (unlikely) the user setup

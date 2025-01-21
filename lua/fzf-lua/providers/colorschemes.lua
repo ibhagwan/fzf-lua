@@ -77,10 +77,7 @@ M.colorschemes = function(opts)
   end
 
   opts.fn_selected = function(selected, o)
-    if selected then
-      actions.act(opts.actions, selected, o)
-    end
-
+    actions.act(selected, o)
     -- setup fzf-lua's own highlight groups
     utils.setup_highlights()
   end
@@ -528,9 +525,7 @@ M.awesome_colorschemes = function(opts)
       vim.o.background = o._cur_background
     end
 
-    if sel then
-      actions.act(o.actions, sel, o)
-    end
+    actions.act(sel, o)
 
     -- setup fzf-lua's own highlight groups
     utils.setup_highlights()

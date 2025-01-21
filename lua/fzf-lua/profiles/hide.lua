@@ -48,7 +48,7 @@ return {
         desc = "hide",
         -- NOTE: we add this so esc action isn't converted in the
         -- `tbl_map` below preventing fzf history append on esc
-        exec_silent = true,
+        -- exec_silent = true,
       }
       opts.actions = vim.tbl_map(function(act)
         act = type(act) == "function" and { fn = act } or act
@@ -64,11 +64,12 @@ return {
           local fn = act.fn
           act.exec_silent = true
           act.desc = act.desc or fzf.config.get_action_helpstr(fn)
-          act.fn = function(s, o)
+          act.fn = function(...)
             fzf.hide()
-            fn(s, o)
+            fn(...)
             -- As the process never terminates fzf history is never written
             -- manually append to the fzf history file if needed
+            local o = select(2, ...)
             if histfile and type(o.last_query) == "string" and #o.last_query > 0 then
               local fd = uv.fs_open(histfile, "a", -1)
               if fd then
