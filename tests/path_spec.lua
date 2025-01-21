@@ -1,3 +1,6 @@
+local helpers = dofile("tests/helpers.lua")
+local assert = helpers.assert
+
 local fzf = require("fzf-lua")
 local path = fzf.path
 local utils = fzf.utils
@@ -347,5 +350,6 @@ describe("Testing path module", function()
     -- shorten len
     assert.are.equal(path.shorten([[c:\foo\bar\baz]], 2), [[c:\fo\ba\baz]])
     assert.are.equal(path.shorten([[c:/foo\bar\baz]], 2), [[c:/fo/ba/baz]])
+    utils.__IS_WINDOWS = nil
   end)
 end)

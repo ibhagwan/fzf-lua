@@ -1,4 +1,6 @@
----@diagnostic disable: undefined-global
+local helpers = dofile("tests/helpers.lua")
+local assert = helpers.assert
+
 local fzf = require("fzf-lua")
 local path = fzf.path
 local utils = fzf.utils

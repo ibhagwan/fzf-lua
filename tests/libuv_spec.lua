@@ -1,5 +1,7 @@
-local libuv = require("fzf-lua.libuv")
+local helpers = dofile("tests/helpers.lua")
+local assert = helpers.assert
 
+local libuv = require("fzf-lua.libuv")
 
 describe("Testing libuv module", function()
   it("is_escaped (posix)", function()

@@ -1,3 +1,6 @@
+local helpers = dofile("tests/helpers.lua")
+local assert = helpers.assert
+
 local fzf = require("fzf-lua")
 local utils = fzf.utils
 
@@ -13,6 +16,7 @@ describe("Testing utils module", function()
     assert.are.same(utils._if_win_normalize_vars("--w=$COLUMNS", 2), "--w=!COLUMNS!")
     assert.are.same(utils._if_win_normalize_vars("--w=%COLUMNS%", 2), "--w=!COLUMNS!")
     assert.are.same(utils._if_win_normalize_vars("-w=$C -l=$L", 2), "-w=!C! -l=!L!")
+    utils.__IS_WINDOWS = nil
   end)
 
   it("version formatter", function()
