@@ -59,16 +59,18 @@ local function mini_are_same(category, name, expected)
   assert.are.same(child.lua_get([[{ M.devicons.get_devicon(...) }]], { name }), expected)
 end
 
-local function validate_mini()
+local function validate_mini(headless_child)
   local utils = require("fzf-lua").utils
-  local state = child.lua_get([[M.devicons.state()]])
+  local nvchild = headless_child or child
+  local state = nvchild.lua_get([[M.devicons.state()]])
   local icons = state.icons
-  assert.are.equal(utils.tbl_count(icons.by_filename),
-    utils.tbl_count(MiniIcons.list("file")))
-  assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
-    -- +4 extensions that are causing issues in `vim.filetype.match`
-    -- https://github.com/ibhagwan/fzf-lua/issues/1358#issuecomment-2254215160
-    utils.tbl_count(MiniIcons.list("extension")) + 4)
+  if not headless_child then
+    assert.are.equal(utils.tbl_count(icons.by_filename), utils.tbl_count(MiniIcons.list("file")))
+    assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
+      -- +4 extensions that are causing issues in `vim.filetype.match`
+      -- https://github.com/ibhagwan/fzf-lua/issues/1358#issuecomment-2254215160
+      utils.tbl_count(MiniIcons.list("extension")) + 4)
+  end
   assert.is.True(utils.tbl_count(icons.ext_has_2part) == 0)
   assert.is.True(utils.tbl_count(icons.by_ext_2part) == 0)
   mini_are_same("file", "foo", { "󰈔", "" })
@@ -135,14 +137,26 @@ T["setup()"]["headless RPC, vim.g.fzf_lua_server"] = function()
   child.lua("vim.opt.runtimepath:append(...)", { _mini_path })
   child.lua([[
     require("mini.icons").setup({})
-    M.devicons.load() -- build the local icon set
+    M.devicons.load()
+  ]])
+  eq(child.lua_get([[M.devicons.plugin_name()]]), "mini")
+  validate_mini()
+  local fzf_lua_server = child.lua_get("vim.g.fzf_lua_server")
+  eq(#fzf_lua_server > 0, true)
+  local headless_child = helpers.new_child_neovim()
+  headless_child.init()
+  headless_child.lua(string.format([==[
     _G._fzf_lua_is_headless = true
     _G._devicons_path = nil
-    _G._fzf_lua_server = vim.g.fzf_lua_server
+    _G._fzf_lua_server = [[%s]]
+    M = { devicons = require("fzf-lua.devicons") }
     M.devicons.load({ plugin = "srv", srv_plugin = "mini" })
-  ]])
-  eq(child.lua_get([[M.devicons.plugin_name()]]), "srv")
-  validate_mini()
+  ]==], fzf_lua_server))
+  eq(headless_child.lua_get([[_G._fzf_lua_server]]), fzf_lua_server)
+  eq(headless_child.lua_get([[M.devicons.plugin_name()]]), "srv")
+  eq(child.lua_get([[M.devicons.state()]]), headless_child.lua_get([[M.devicons.state()]]))
+  validate_mini(headless_child)
+  headless_child.stop()
 end
 
 return T

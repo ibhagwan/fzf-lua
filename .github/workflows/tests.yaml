@@ -1,52 +1,49 @@
-name: test
+name: Tests
 
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
   pull_request:
-    branches:
-      - '*'
+    branches: "*"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.actor }}
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Run tests
-    timeout-minutes: 5
+  unit_tests:
+    name: unit tests
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        neovim_version: ['v0.10.3', 'nightly']
-    runs-on: ${{ matrix.os }}
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rev: [nightly, v0.10.3]
+        include:
+          - os: ubuntu-latest
+            install-deps: sudo apt-get update && sudo apt-get install -y fzf ripgrep fd-find
+          - os: macos-latest
+            install-deps: brew update && brew install fzf ripgrep fd
+          - os: windows-latest
+            install-deps: choco install fzf ripgrep fd
 
     steps:
       - uses: actions/checkout@v4
-      - name: Setup neovim
-        uses: rhysd/action-setup-vim@v1
+
+      - uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
-          version: ${{ matrix.neovim_version }}
-      - name: Install fzf
+          version: ${{ matrix.rev }}
+
+      - name: Prepare
         run: |
-          mkdir -p bin
-          cd bin
-          wget -O - https://github.com/junegunn/fzf/releases/download/v0.58.0/fzf-0.58.0-linux_amd64.tar.gz | tar zxf -
-      - name: Install ripgrep
-        run: |
-          mkdir -p bin
-          cd bin
-          wget -O - https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-unknown-linux-musl.tar.gz | tar zxf - --strip-component=1
-      - name: Install fd
-        run: |
-          mkdir -p bin
-          cd bin
-          wget -O - https://github.com/sharkdp/fd/releases/download/v10.2.0/fd-v10.2.0-x86_64-unknown-linux-musl.tar.gz | tar zxf - --strip-component=1
-      - name: Run tests
-        run: | 
+          ${{ matrix.install-deps }}
+          nvim --version
+          fzf --version
+          rg --version
           make prepare
-          env PATH="$PATH:$(realpath ./bin)" make test
+
+      - name: Run tests
+        run: |
+          make test
