@@ -73,6 +73,16 @@ local function rpc_nvim_exec_lua(opts)
     vim.fn.chanclose(chan_id)
   end)
 
+  -- Avoid dangling temp dir on premature process kills (live grep)
+  -- see more complete note in spawn.lua
+  local tmpdir = vim.fn.fnamemodify(vim.fn.tempname(), ":h")
+  if tmpdir and #tmpdir > 0 then
+    vim.fn.delete(tmpdir, "rf")
+  end
+  if vim.v.servername and #vim.v.servername > 0 then
+    pcall(vim.fn.serverstop, vim.v.servername)
+  end
+
   if not success or opts.debug then
     io.stderr:write(("[DEBUG] debug = %s\n"):format(opts.debug))
     io.stderr:write(("[DEBUG] function ID = %d\n"):format(opts.fnc_id))
