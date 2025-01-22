@@ -20,6 +20,10 @@ local sleep = function(ms) helpers.sleep(ms, child) end
 
 -- Setup mini.icons locally
 local _mini_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim")
+if not vim.uv.fs_stat(_mini_path) then
+  _mini_path = vim.fs.joinpath("deps", "mini.nvim")
+end
+
 require("mini.icons").setup()
 
 local T = new_set({

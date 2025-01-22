@@ -5,9 +5,11 @@ vim.opt.runtimepath:append(vim.uv.cwd())
 if #vim.api.nvim_list_uis() == 0 then
   -- Add 'mini.nvim' to 'runtimepath' to be able to use 'mini.test'
   -- Assumed that 'mini.nvim' is downloaded by 'lazy.nvim'
+  vim.opt.runtimepath:append(vim.fs.joinpath("deps", "mini.nvim"))
   vim.opt.runtimepath:append(vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim"))
 
   -- Add fzf-lua (lazy)
+  vim.opt.runtimepath:append(vim.fs.joinpath("deps", "fzf-lua"))
   vim.opt.runtimepath:append(vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "fzf-lua"))
 
   -- Set up 'mini.test'
