@@ -59,9 +59,10 @@ local theme = {
   icons_by_file_extension = require("nvim-web-devicons").get_icons_by_extension(),
 }
 
-local function validate_devicons()
+local function validate_devicons(headless_child)
   local utils = require("fzf-lua").utils
-  local state = child.lua_get([[M.devicons.state()]])
+  local nvchild = headless_child or child
+  local state = nvchild.lua_get([[M.devicons.state()]])
   local icons = state.icons
   assert.are.same(state.default_icon, { icon = "", color = "#6d8086" })
   assert.are.same(state.dir_icon, { icon = "", color = nil })
@@ -101,27 +102,37 @@ T["setup()"]["auto-detect"] = function()
 end
 
 T["setup()"]["_G.devicons_path"] = function()
-  child.lua(string.format([[
-    _G._devicons_path = '%s'
+  child.lua(string.format([==[
+    _G._devicons_path = [[%s]]
     _G._fzf_lua_server = nil
     _G._fzf_lua_is_headless = true
     M.devicons.load()
-  ]], _devicons_path))
+  ]==], _devicons_path))
   eq(child.lua_get([[M.devicons.plugin_name()]]), "devicons")
   validate_devicons()
 end
 
 T["setup()"]["headless RPC, vim.g.fzf_lua_server"] = function()
   child.lua("vim.opt.runtimepath:append(...)", { _devicons_path })
-  child.lua([[
-    M.devicons.load() -- build the local icon set
+  child.lua([[M.devicons.load()]])
+  eq(child.lua_get([[M.devicons.plugin_name()]]), "devicons")
+  validate_devicons()
+  local fzf_lua_server = child.lua_get("vim.g.fzf_lua_server")
+  eq(#fzf_lua_server > 0, true)
+  local headless_child = helpers.new_child_neovim()
+  headless_child.init()
+  headless_child.lua(string.format([==[
     _G._fzf_lua_is_headless = true
     _G._devicons_path = nil
-    _G._fzf_lua_server = vim.g.fzf_lua_server
+    _G._fzf_lua_server = [[%s]]
+    M = { devicons = require("fzf-lua.devicons") }
     M.devicons.load({ plugin = "srv", srv_plugin = "devicons" })
-  ]])
-  eq(child.lua_get([[M.devicons.plugin_name()]]), "srv")
-  validate_devicons()
+  ]==], fzf_lua_server))
+  eq(headless_child.lua_get([[_G._fzf_lua_server]]), fzf_lua_server)
+  eq(headless_child.lua_get([[M.devicons.plugin_name()]]), "srv")
+  eq(child.lua_get([[M.devicons.state()]]), headless_child.lua_get([[M.devicons.state()]]))
+  validate_devicons(headless_child)
+  headless_child.stop()
 end
 
 T["setup()"]["vim.o.background=dark"] = function()
