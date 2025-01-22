@@ -46,6 +46,8 @@ end
 -- NOT USED ANYMORE, we use `vim.g.fzf_lua_server` instead
 -- local action_server_address = nil
 
+local TMPDIR = vim.fn.fnamemodify(vim.fn.tempname(), ":h:h:h")
+
 function M.raw_async_action(fn, fzf_field_expression, debug)
   if not fzf_field_expression then
     fzf_field_expression = "{+}"
@@ -90,6 +92,10 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
     utils._if_win(path.normalize(vim.env.VIMRUNTIME),
       libuv.shellescape(vim.env.VIMRUNTIME)))
 
+  local tmp_dir = os.getenv("TMPDIR") and "" or string.format(
+    utils._if_win([[set TMPDIR=%s& ]], "TMPDIR=%s "),
+    utils._if_win(path.normalize(TMPDIR), libuv.shellescape(TMPDIR)))
+
   local call_args = ("fzf_lua_server=[[%s]], fnc_id=%d %s"):format(
     vim.g.fzf_lua_server, id, debug and ", debug=true" or "")
 
@@ -98,8 +104,9 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- special shell chars ('+', '-', etc), examples where this can
   -- happen are the `git status` command and git branches from diff
   -- worktrees (#600)
-  local action_cmd = ("%s%s -n --headless -u NONE -i NONE --cmd %s -- %s"):format(
+  local action_cmd = ("%s%s%s -n --headless -u NONE -i NONE --cmd %s -- %s"):format(
     nvim_runtime,
+    tmp_dir,
     libuv.shellescape(path.normalize(nvim_bin)),
     libuv.shellescape(("lua %sloadfile([[%s]])().rpc_nvim_exec_lua({%s})"):format(
       utils.__HAS_NVIM_010 and "vim.g.did_load_filetypes=1; " or "",

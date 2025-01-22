@@ -717,6 +717,9 @@ M.expand = function(s)
   return vim.fn.expand(s)
 end
 
+
+local TMPDIR = vim.fn.fnamemodify(vim.fn.tempname(), ":h:h:h")
+
 ---@param opts string
 ---@param fn_transform string?
 ---@param fn_preprocess string?
@@ -731,13 +734,18 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess, fn_postprocess)
         _is_win and [[set VIMRUNTIME=%s& ]] or "VIMRUNTIME=%s ",
         _is_win and vim.fs.normalize(vim.env.VIMRUNTIME) or M.shellescape(vim.env.VIMRUNTIME)
       )
+  local tmp_dir = os.getenv("TMPDIR") and "" or string.format(
+    _is_win and [[set TMPDIR=%s& ]] or "TMPDIR=%s ",
+    _is_win and vim.fs.normalize(TMPDIR) or M.shellescape(TMPDIR))
+
   local lua_cmd = ("lua %sloadfile([[%s]])().spawn_stdio(%s,%s,%s,%s)"):format(
     _has_nvim_010 and "vim.g.did_load_filetypes=1; " or "",
     vim.fn.fnamemodify(_is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") .. "/spawn.lua",
     opts, fn_transform, fn_preprocess, fn_postprocess
   )
-  local cmd_str = ("%s%s -n --headless -u NONE -i NONE --cmd %s"):format(
+  local cmd_str = ("%s%s%s -n --headless -u NONE -i NONE --cmd %s"):format(
     nvim_runtime,
+    tmp_dir,
     M.shellescape(_is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
     M.shellescape(lua_cmd)
   )
