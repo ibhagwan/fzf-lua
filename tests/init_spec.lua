@@ -1,16 +1,14 @@
+---@diagnostic disable: unused-local, unused-function
+local MiniTest = require("mini.test")
 local helpers = dofile("tests/helpers.lua")
-
 local child = helpers.new_child_neovim()
 local expect, eq = helpers.expect, helpers.expect.equality
 local new_set = MiniTest.new_set
 
 -- Helpers with child processes
 --stylua: ignore start
-local load_module = function(config) child.load(config) end
-local unload_module = function() child.unload("surround") end
-local reload_module = function(config)
-  unload_module(); load_module(config)
-end
+---@format disable-next
+local reload = function(config) child.unload(); child.setup(config) end
 local set_cursor = function(...) return child.set_cursor(...) end
 local get_cursor = function(...) return child.get_cursor(...) end
 local set_lines = function(...) return child.set_lines(...) end
@@ -22,8 +20,8 @@ local sleep = function(ms) helpers.sleep(ms, child) end
 local T = new_set({
   hooks = {
     pre_case = function()
-      child.setup()
-      load_module()
+      child.init()
+      child.setup({})
 
       -- Make all showed messages full width
       child.o.cmdheight = 10
@@ -35,14 +33,26 @@ local T = new_set({
 
 T["setup()"] = new_set()
 
-T["setup()"]["creates side effects"] = function()
-  -- Test require
-  eq(child.lua_get([[type(require "fzf-lua")]]), "table")
+T["setup()"]["setup global vars"] = function()
+  -- Global vars
+  eq(child.lua_get([[type(vim.g.fzf_lua_server)]]), "string")
+  eq(child.lua_get([[type(vim.g.fzf_lua_directory)]]), "string")
+end
 
+T["setup()"]["setup highlight groups"] = function()
   -- Highlight groups
-  child.cmd("hi clear")
-  load_module()
+  child.cmd("hi! clear")
+  expect.match(child.cmd_capture("hi FzfLuaHeaderBind"), "xxx cleared")
+
+  -- Default bg is dark
+  child.setup()
   expect.match(child.cmd_capture("hi FzfLuaNormal"), "links to Normal")
+  expect.match(child.cmd_capture("hi FzfLuaHeaderBind"), "guifg=BlanchedAlmond")
+
+  child.o.bg = "light"
+  child.cmd("hi! clear")
+  child.setup()
+  expect.match(child.cmd_capture("hi FzfLuaHeaderBind"), "guifg=MediumSpringGreen")
 end
 
 return T

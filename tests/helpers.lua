@@ -21,8 +21,7 @@ Helpers.expect.match = MiniTest.new_expectation(
   "string matching",
   function(str, pattern) return str:find(pattern) ~= nil end,
   function(str, pattern)
-    return string.format("Pattern: %s\nObserved string: %s",
-      vim.inspect(pattern), str)
+    return string.format("Pattern: %s\nObserved string: %s", vim.inspect(pattern), str)
   end
 )
 
@@ -30,8 +29,7 @@ Helpers.expect.no_match = MiniTest.new_expectation(
   "no string matching",
   function(str, pattern) return str:find(pattern) == nil end,
   function(str, pattern)
-    return string.format("Pattern: %s\nObserved string: %s",
-      vim.inspect(pattern), str)
+    return string.format("Pattern: %s\nObserved string: %s", vim.inspect(pattern), str)
   end
 )
 
@@ -53,8 +51,7 @@ Helpers.expect.equality_approx = MiniTest.new_expectation(
     return true
   end,
   function(x, y, tol)
-    return string.format("Left: %s\nRight: %s\nTolerance: %s", vim.inspect(x),
-      vim.inspect(y), tol)
+    return string.format("Left: %s\nRight: %s\nTolerance: %s", vim.inspect(x), vim.inspect(y), tol)
   end
 )
 
@@ -73,11 +70,11 @@ end
 Helpers.expect.equality_partial_tbl = MiniTest.new_expectation(
   "equality of tables only in reference fields",
   function(x, y)
-    if type(x) == "table" and type(y) == "table" then x = Helpers.make_partial_tbl(x, y, {}) end
+    if type(x) == "table" and type(y) == "table" then x = Helpers.make_partial_tbl(x, y) end
     return vim.deep_equal(x, y)
   end,
   function(x, y)
-    return string.format("Left: %s\nRight: %s", vim.inspect(Helpers.make_partial_tbl(x, y, {})),
+    return string.format("Left: %s\nRight: %s", vim.inspect(Helpers.make_partial_tbl(x, y)),
       vim.inspect(y))
   end
 )
@@ -93,12 +90,51 @@ Helpers.new_child_neovim = function()
     error(msg)
   end
 
-  child.setup = function()
+  child.init = function()
     child.restart({ "-u", "scripts/minimal_init.lua" })
 
     -- Change initial buffer to be readonly. This not only increases execution
     -- speed, but more closely resembles manually opened Neovim.
     child.bo.readonly = false
+  end
+
+  -- - `setup`      - load with "normal" table config
+  -- - `setup_str`  - load with "string" config, which is still a table but with
+  --   string values. Final loading is done by constructing final string table.
+  --   Needed to be used if one of the config entries is a function (as currently
+  --   there is no way to communicate a function object through RPC).
+  -- - `unload`     - unload module and revert common side effects.
+  child.setup = function(config)
+    local lua_cmd = [[require("fzf-lua").setup(...)]]
+    child.lua(lua_cmd, { config })
+  end
+
+  child.setup_str = function(strconfig)
+    local t = {}
+    for key, val in pairs(strconfig) do
+      table.insert(t, key .. " = " .. val)
+    end
+    local str = string.format("{ %s }", table.concat(t, ", "))
+
+    local command = ([[require("fzf-lua").setup(%s)]]):format(str)
+    child.lua(command)
+  end
+
+  child.unload = function()
+    -- Unload Lua module
+    child.lua([[package.loaded["fzf-lua"] = nil]])
+
+    -- Remove global vars
+    for _, var in ipairs({ "server", "directory", "root" }) do
+      vim.g["fzf_lua_" .. var] = nil
+    end
+
+    -- Remove autocmd groups
+    for _, group in ipairs({ "VimResize", "WinClosed" }) do
+      if child.fn.exists("#FzfLua" .. group) == 1 then
+        child.api.nvim_del_augroup_by_name("FzfLua" .. group)
+      end
+    end
   end
 
   child.set_lines = function(arr, start, finish)
@@ -158,46 +194,6 @@ Helpers.new_child_neovim = function()
     MiniTest.expect.equality(child.api.nvim_buf_get_mark(0, ">"), last)
   end
 
-  -- Work with 'mini.nvim':
-  -- - `mini_load` - load with "normal" table config
-  -- - `mini_load_strconfig` - load with "string" config, which is still a
-  --   table but with string values. Final loading is done by constructing
-  --   final string table. Needed to be used if one of the config entries is a
-  --   function (as currently there is no way to communicate a function object
-  --   through RPC).
-  -- - `mini_unload` - unload module and revert common side effects.
-  child.load = function(config)
-    local lua_cmd = [[require("fzf-lua").setup(...)]]
-    child.lua(lua_cmd, { config })
-  end
-
-  child.load_strconfig = function(strconfig)
-    local t = {}
-    for key, val in pairs(strconfig) do
-      table.insert(t, key .. " = " .. val)
-    end
-    local str = string.format("{ %s }", table.concat(t, ", "))
-
-    local command = ([[require("fzf-lua").setup(%s)]]):format(str)
-    child.lua(command)
-  end
-
-  child.unload = function()
-    -- Unload Lua module
-    child.lua([[package.loaded["fzf-lua"] = nil]])
-
-    -- Remove global table
-    for _, var in ipairs({ "server", "directory", "root" }) do
-      vim.g["fzf_lua_" .. var] = nil
-    end
-
-    -- Remove autocmd group
-    for _, group in ipairs({ "VimResize", "WinClosed" }) do
-      if child.fn.exists("#FzfLua" .. group) == 1 then
-        child.api.nvim_del_augroup_by_name("FzfLua" .. group)
-      end
-    end
-  end
 
   child.expect_screenshot = function(opts, path)
     opts = opts or {}
