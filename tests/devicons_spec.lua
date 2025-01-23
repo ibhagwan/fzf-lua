@@ -30,16 +30,7 @@ local T = new_set({
     pre_case = function()
       child.init()
       child.setup({})
-
-      -- Setup vars
-      child.lua([[
-        M = {
-          fzf = require("fzf-lua"),
-          devicons = require("fzf-lua.devicons")
-        }
-        M.path = M.fzf.path
-        M.utils = M.fzf.utils
-      ]])
+      child.lua([[M = { devicons = require("fzf-lua.devicons") }]])
 
       -- Make all showed messages full width
       child.o.cmdheight = 10
@@ -86,7 +77,7 @@ T["setup()"] = new_set()
 T["setup()"]["verify lazy load"] = function()
   child.lua("vim.opt.runtimepath:append(...)", { _devicons_path })
   -- Shouldn't be loaded after setup
-  eq(child.lua_get("type(M.fzf)"), "table")
+  eq(child.lua_get("type(M.devicons)"), "table")
   eq(child.lua_get("package.loaded['nvim-web-devicons']"), vim.NIL)
   -- eq(child.lua_get([[type(require "nvim-web-devicons")]]), "table")
 end

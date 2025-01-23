@@ -3,6 +3,8 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
+local M = {}
+
 do
   local function source_vimL(path_parts)
     local vimL_file = path.join(path_parts)
@@ -30,9 +32,10 @@ do
   if not vim.g.fzf_lua_server then
     vim.g.fzf_lua_server = vim.fn.serverstart("fzf-lua." .. os.time())
   end
-end
 
-local M = {}
+  -- Setup global var
+  _G.FzfLua = M
+end
 
 -- Setup fzf-lua's highlights, use `override=true` to reset all highlights
 function M.setup_highlights(override)

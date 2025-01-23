@@ -24,23 +24,15 @@ if not vim.uv.fs_stat(_mini_path) then
   _mini_path = vim.fs.joinpath("deps", "mini.nvim")
 end
 
-require("mini.icons").setup()
+local MiniIcons = require("mini.icons")
+MiniIcons.setup()
 
 local T = new_set({
   hooks = {
     pre_case = function()
       child.init()
       child.setup({})
-
-      -- Setup vars
-      child.lua([[
-        M = {
-          fzf = require("fzf-lua"),
-          devicons = require("fzf-lua.devicons")
-        }
-        M.path = M.fzf.path
-        M.utils = M.fzf.utils
-      ]])
+      child.lua([[M = { devicons = require("fzf-lua.devicons") }]])
 
       -- Make all showed messages full width
       child.o.cmdheight = 10
@@ -92,9 +84,9 @@ end
 T["setup()"] = new_set()
 
 T["setup()"]["verify lazy load"] = function()
-  eq(type(_G.MiniIcons), "table")
+  eq(type(MiniIcons), "table")
   -- Shouldn't be loaded after setup
-  eq(child.lua_get("type(M.fzf)"), "table")
+  eq(child.lua_get("type(M.devicons)"), "table")
   eq(child.lua_get("_G.MiniIcons"), vim.NIL)
 end
 
@@ -114,7 +106,7 @@ T["setup()"]["hlgroup modifications"] = function()
     vim.api.nvim_set_hl(0, "MiniIconsGrey", { default = false, link = "Directory" })
     M.devicons.load({ mode = "gui" })
   ]])
-  local hexcol = child.lua_get([[M.utils.hexcol_from_hl("Directory", "fg", "gui")]])
+  local hexcol = child.lua_get([[FzfLua.utils.hexcol_from_hl("Directory", "fg", "gui")]])
   mini_are_same("file", "foo", { "󰈔", hexcol })
   mini_are_same("file", "Makefile", { "󱁤", hexcol })
   mini_are_same("file", "makefile", { "󱁤", hexcol })
