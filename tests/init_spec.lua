@@ -35,8 +35,15 @@ T["setup()"] = new_set()
 
 T["setup()"]["setup global vars"] = function()
   -- Global vars
+  eq(child.lua_get([[type(_G.FzfLua)]]), "table")
   eq(child.lua_get([[type(vim.g.fzf_lua_server)]]), "string")
   eq(child.lua_get([[type(vim.g.fzf_lua_directory)]]), "string")
+
+  -- FzfLua command from "plugin/fzf-lua.lua"
+  eq(child.fn.exists(":FzfLua") ~= 0, true)
+
+  -- "autoload/fzf_lua.vim"
+  eq(child.fn.exists("*fzf_lua#getbufinfo") ~= 0, true)
 end
 
 T["setup()"]["setup highlight groups"] = function()

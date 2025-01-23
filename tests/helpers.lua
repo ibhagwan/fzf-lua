@@ -126,7 +126,7 @@ Helpers.new_child_neovim = function()
 
     -- Remove global vars
     for _, var in ipairs({ "server", "directory", "root" }) do
-      vim.g["fzf_lua_" .. var] = nil
+      child.g["fzf_lua_" .. var] = nil
     end
 
     -- Remove autocmd groups
