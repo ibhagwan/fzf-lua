@@ -297,8 +297,6 @@ M.lcol = function(entry, opts)
     or (" " .. (opts and opts.trim_entry and vim.trim(entry.text) or entry.text)))
 end
 
-local COLON_BYTE = string.byte(":")
-
 ---@param x string
 ---@param opts table
 ---@return string? entry
@@ -317,7 +315,7 @@ M.file = function(x, opts)
       colon_start_idx = 3
     end
   end
-  local colon_idx = utils.find_next_char(x, COLON_BYTE, colon_start_idx) or 0
+  local colon_idx = x:find(":", colon_start_idx, true) or 0
   local file_part = colon_idx > 1 and x:sub(1, colon_idx - 1) or x
   local rest_of_line = colon_idx > 1 and x:sub(colon_idx) or nil
   -- strip ansi coloring from path so we can use filters
@@ -325,12 +323,18 @@ M.file = function(x, opts)
   -- TODO: we only support path modification without ANSI
   -- escape sequences, it becomes too expensive to modify
   -- and restore the path with escape sequences
-  local stripped_filepath, file_is_ansi = utils.strip_ansi_coloring(file_part)
+  local stripped_filepath, file_is_ansi = (function()
+    if opts.no_ansi_colors then
+      return file_part, 0
+    else
+      return utils.strip_ansi_coloring(file_part)
+    end
+  end)()
   local filepath = stripped_filepath
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
   -- the './' prefix, will not work with '--color=always'
   -- https://github.com/sharkdp/fd/blob/master/CHANGELOG.md
-  if not (opts.strip_cwd_prefix == false) then
+  if opts.strip_cwd_prefix then
     filepath = path.strip_cwd_prefix(filepath)
   end
   -- make path relative
@@ -417,7 +421,6 @@ M.file = function(x, opts)
           .. "\n"
           .. string.rep(" ", 4)
           .. rest_of_line:sub(#filespec + 1)
-          .. (opts.multiline > 1 and "\n" or "")
     end
   end
   ret[#ret + 1] = rest_of_line

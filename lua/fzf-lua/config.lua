@@ -655,6 +655,8 @@ function M.normalize_opts(opts, globals, __resume_key)
     -- If `multiline` was specified we add both "read0" & "print0" flags
     opts.fzf_opts["--read0"] = true
     opts.fzf_opts["--print0"] = true
+    local gap = (tonumber(opts.multiline) or 1) - 1
+    if gap > 0 then opts.fzf_opts["--gap"] = gap end
   else
     -- If not possible (fzf v<0.53|skim), nullify the option
     opts.multiline = nil

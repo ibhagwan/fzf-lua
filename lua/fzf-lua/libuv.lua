@@ -11,38 +11,6 @@ local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
 local base64 = require("fzf-lua.lib.base64")
 local serpent = require("fzf-lua.lib.serpent")
 
--- save to upvalue for performance reasons
-local string_byte = string.byte
-local string_sub = string.sub
-
-local function find_last(str, bytecode)
-  for i = #str, 1, -1 do
-    if string_byte(str, i) == bytecode then
-      return i
-    end
-  end
-end
-
-local function find_next(str, bytecode, start_idx)
-  local bytecodes = type(bytecode) == "table" and bytecode or { bytecode }
-  for i = start_idx or 1, #str do
-    for _, b in ipairs(bytecodes) do
-      if string_byte(str, i) == b then
-        return i, string.char(b)
-      end
-    end
-  end
-end
-
-local function find_last_newline(str)
-  return find_last(str, 10)
-end
-
-local function find_next_newline(str, start_idx)
-  return find_next(str, 10, start_idx)
-end
-
-
 local function process_kill(pid, signal)
   if not pid or not tonumber(pid) then return false end
   if type(uv.os_getpriority(pid)) == "number" then
@@ -158,62 +126,15 @@ M.spawn = function(opts, fn_transform, fn_done)
     end)
   end
 
-  -- This is the old function used, worked very well
-  -- but couldn't handle 'fn_transform' nil retval
-  -- which we need for 'file_ignore_patterns'
-  --[[ local function process_lines(data)
-    -- assert(#data<=66560) -- 65K
-    write_cb(data:gsub("[^\n]+",
-      function(x)
-        return fn_transform(x)
-      end))
-  end ]]
-  local function process_lines(data)
-    local lines = {}
-    local nlines = 0
-    local start_idx = 1
-    local t_st = opts.profile and uv.hrtime()
-    if t_st then write_cb(string.format("[DEBUG] start: %.0f (ns)" .. EOL, t_st)) end
-    repeat
-      local nl_idx = find_next_newline(data, start_idx)
-      local line = data:sub(start_idx, nl_idx - 1)
-      -- We used to limit lines fed into fzf to 1K for perf reasons
-      -- but it turned out to have some negative consequnces (#580)
-      -- if #line > 1024 then
-      -- line = line:sub(1, 1024)
-      -- io.stderr:write(string.format("[Fzf-lua] long line detected (%db), "
-      --   .. "consider adding '--max-columns=512' to ripgrep options: %s\n",
-      --   #line, line:sub(1,256)))
-      -- end
-      line = fn_transform(line)
-      if line then
-        nlines = nlines + 1
-        if opts.process1 then
-          write_cb(line .. EOL)
-        else
-          table.insert(lines, line)
-        end
-      end
-      start_idx = nl_idx + 1
-    until start_idx >= #data
-    -- Testing shows better performance writing the entire table at once as opposed to
-    -- calling 'write_cb' for every line after 'fn_transform', we therefore only use
-    -- `process1` when using "mini.icons" as `vim.filetype.match` causes a signigicant
-    -- delay and having to wait for all lines to be processed has an apparent lag
-    if #lines > 0 then write_cb(table.concat(lines, EOL) .. EOL) end
-    if t_st then
-      local t_e = vim.uv.hrtime()
-      write_cb(string.format("[DEBUG] finish:%.0f (ns) %d lines took %.0f (ms)" .. EOL,
-        t_e, nlines, (t_e - t_st) / 1e6))
-    end
-  end
-
   local read_cb = function(err, data)
     if err then
       assert(not err)
       finish(130, 0, 4, pid)
     end
     if not data then
+      if prev_line_content then
+        write_cb(prev_line_content .. EOL)
+      end
       -- https://github.com/LazyVim/LazyVim/discussions/5264
       -- The pipe can remain active *after* on_exit was called
       if write_cb_count == 0 and on_exit_called then
@@ -222,30 +143,53 @@ M.spawn = function(opts, fn_transform, fn_done)
       return
     end
 
-    if prev_line_content then
-      if #prev_line_content > 4096 then
-        -- chunk size is 64K, limit previous line length to 4K
-        -- max line length is therefor 4K + 64K (leftover + full chunk)
-        -- without this we can memory fault on extremely long lines (#185)
-        -- or have UI freezes (#211)
-        prev_line_content = prev_line_content:sub(1, 4096)
-      end
-      data = prev_line_content .. data
-      prev_line_content = nil
-    end
-
     if not fn_transform then
       write_cb(data)
-    elseif string_byte(data, #data) == 10 then
-      process_lines(data)
     else
-      local nl_index = find_last_newline(data)
-      if not nl_index then
-        prev_line_content = data
-      else
-        prev_line_content = string_sub(data, nl_index + 1)
-        local stripped_with_newline = string_sub(data, 1, nl_index)
-        process_lines(stripped_with_newline)
+      local lines = {}
+      local nlines = 0
+      local start_idx = 1
+      local t_st = opts.profile and uv.hrtime()
+      if t_st then write_cb(string.format("[DEBUG] start: %.0f (ns)" .. EOL, t_st)) end
+      repeat
+        local nl_idx = data:find("\n", start_idx, true)
+        if nl_idx then
+          local line = data:sub(start_idx, nl_idx - 1)
+          if prev_line_content then
+            line = prev_line_content .. line
+            prev_line_content = nil
+          end
+          line = fn_transform(line)
+          if line then
+            nlines = nlines + 1
+            if opts.process1 then
+              write_cb(line .. EOL)
+            else
+              table.insert(lines, line)
+            end
+          end
+          start_idx = nl_idx + 1
+        else
+          -- assert(start_idx <= #data)
+          if prev_line_content and #prev_line_content > 4096 then
+            -- chunk size is 64K, limit previous line length to 4K
+            -- max line length is therefor 4K + 64K (leftover + full chunk)
+            -- without this we can memory fault on extremely long lines (#185)
+            -- or have UI freezes (#211)
+            prev_line_content = prev_line_content:sub(1, 4096)
+          end
+          prev_line_content = (prev_line_content or "") .. data:sub(start_idx)
+        end
+      until not nl_idx or start_idx > #data
+      -- Testing shows better performance writing the entire table at once as opposed to
+      -- calling 'write_cb' for every line after 'fn_transform', we therefore only use
+      -- `process1` when using "mini.icons" as `vim.filetype.match` causes a signigicant
+      -- delay and having to wait for all lines to be processed has an apparent lag
+      if #lines > 0 then write_cb(table.concat(lines, EOL) .. EOL) end
+      if t_st then
+        local t_e = vim.uv.hrtime()
+        write_cb(string.format("[DEBUG] finish:%.0f (ns) %d lines took %.0f (ms)" .. EOL,
+          t_e, nlines, (t_e - t_st) / 1e6))
       end
     end
   end
@@ -393,6 +337,11 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
 
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
+
+  if opts.cmd and opts.cmd:match("%-%-color[=%s]+never") then
+    -- perf: skip stripping ansi coloring in `make_file.entry`
+    opts.no_ansi_colors = true
+  end
 
   if opts.debug == "v" or opts.debug == "verbose" then
     for k, v in pairs(opts) do
