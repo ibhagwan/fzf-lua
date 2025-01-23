@@ -19,5 +19,17 @@ jobs:
           git remote add codeberg ssh://git@codeberg.org/ibhagwan/fzf-lua.git
           git push --tags --force --prune codeberg 'refs/remotes/origin/*:refs/heads/*'
           # GitLab
+          # NOTE: pushing refs fails with:
+          #   remote: GitLab: You cannot create a branch with an invalid name.
+          #   To ssh://gitlab.com/ibhagwan/fzf-lua.git
+          #    ! [remote rejected] origin/HEAD -> HEAD (pre-receive hook declined)
+          #    ! [remote rejected] origin/dev -> dev (pre-receive hook declined)
           git remote add gitlab ssh://git@gitlab.com/ibhagwan/fzf-lua.git
-          git push --tags --force --prune gitlab 'refs/remotes/origin/*:refs/heads/*'
+          # NOTE: `--all` syncs local branches only
+          # create tracking braches for all remote branches
+          for branch in $(git branch --all | grep '^\s*remotes' | grep -vP 'HEAD'); do
+            git rev-parse --verify "${branch##*/}" 1>/dev/null 2>&1 || \
+              git branch --track "${branch##*/}" "$branch"
+          done
+          git push --force --prune gitlab --all
+          git push --force gitlab --tags
