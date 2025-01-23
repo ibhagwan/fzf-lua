@@ -1,4 +1,4 @@
-name: Tests
+name: CI
 
 on:
   push:
@@ -36,13 +36,19 @@ jobs:
           neovim: true
           version: ${{ matrix.rev }}
 
-      - name: Prepare
+      - name: Install Dependencies
+        shell: bash
         run: |
           ${{ matrix.install-deps }}
           nvim --version
           fzf --version
           rg --version
-          make prepare
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            fdfind --version
+          else
+            fd --version
+          fi
+          make deps
 
       - name: Run tests
         run: |
