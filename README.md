@@ -760,7 +760,7 @@ previewers = {
                                         -- set to 'false' to disable
     prompt            = 'Files❯ ',
     multiprocess      = true,           -- run command in a separate process
-    git_icons         = true,           -- show git icons?
+    git_icons         = false,          -- show git icons?
     file_icons        = true,           -- show file icons (true|"devicons"|"mini")?
     color_icons       = true,           -- colorize file|git icons
     -- path_shorten   = 1,              -- 'true' or number, shorten path?
@@ -772,8 +772,8 @@ previewers = {
     -- default options are controlled by 'fd|rg|find|_opts'
     -- cmd            = "rg --files",
     find_opts         = [[-type f -not -path '*/\.git/*']],
-    rg_opts           = [[--color=never --files --hidden --follow -g "!.git"]],
-    fd_opts           = [[--color=never --type f --hidden --follow --exclude .git]],
+    rg_opts           = [[--color=never --files -g "!.git"]],
+    fd_opts           = [[--color=never --type f --type l --exclude .git]],
     -- by default, cwd appears in the header only if {opts} contain a cwd
     -- parameter to a different folder than the current working directory
     -- uncomment if you wish to force display of the cwd as part of the
@@ -813,7 +813,6 @@ previewers = {
       cmd           = "git -c color.status=false --no-optional-locks status --porcelain=v1 -u",
       multiprocess  = true,           -- run command in a separate process
       file_icons    = true,
-      git_icons     = true,
       color_icons   = true,
       previewer     = "git_diff",
       -- git-delta is automatically detected as pager, uncomment to disable
@@ -934,7 +933,7 @@ previewers = {
     prompt            = 'Rg❯ ',
     input_prompt      = 'Grep For❯ ',
     multiprocess      = true,           -- run command in a separate process
-    git_icons         = true,           -- show git icons?
+    git_icons         = false,          -- show git icons?
     file_icons        = true,           -- show file icons (true|"devicons"|"mini")?
     color_icons       = true,           -- colorize file|git icons
     -- executed command priority is 'cmd' (if exists)
@@ -1051,7 +1050,6 @@ previewers = {
     ctags_file            = nil,      -- auto-detect from tags-option
     multiprocess          = true,
     file_icons            = true,
-    git_icons             = true,
     color_icons           = true,
     -- 'tags_live_grep' options, `rg` prioritizes over `grep`
     rg_opts               = "--no-heading --color=always --smart-case",
@@ -1071,7 +1069,6 @@ previewers = {
     ctags_autogen         = true,     -- dynamically generate ctags each call
     multiprocess          = true,
     file_icons            = false,
-    git_icons             = false,
     rg_opts               = "--color=never --no-heading",
     grep_opts             = "--color=never --perl-regexp",
     fzf_opts              = { ["--tiebreak"] = "begin" },
@@ -1121,7 +1118,6 @@ previewers = {
   },
   quickfix = {
     file_icons        = true,
-    git_icons         = true,
     only_valid        = false, -- select among only the valid quickfix entries
   },
   quickfix_stack = {
@@ -1200,7 +1196,6 @@ previewers = {
         prompt      = "LSP Finder> ",
         file_icons  = true,
         color_icons = true,
-        git_icons   = false,
         async       = true,         -- async by default
         silent      = true,         -- suppress "not found"
         separator   = "| ",         -- separator after provider prefix, `false` to disable
@@ -1245,7 +1240,6 @@ previewers = {
     cmd          = nil, -- default: auto detect rg|fd|find
     file_icons   = true,
     color_icons  = true,
-    git_icons    = false,
     -- actions inherit from 'actions.files' and merge
     actions      = { ["enter"] = actions.complete },
     -- previewer hidden by default
