@@ -1,4 +1,4 @@
-local helpers = dofile("tests/helpers.lua")
+local helpers = require("fzf-lua.test.helpers")
 local assert = helpers.assert
 
 local libuv = require("fzf-lua.libuv")

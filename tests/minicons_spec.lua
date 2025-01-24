@@ -1,22 +1,10 @@
 ---@diagnostic disable: unused-local, unused-function
 local MiniTest = require("mini.test")
-local helpers = dofile("tests/helpers.lua")
+local helpers = require("fzf-lua.test.helpers")
 local assert = helpers.assert
 local child = helpers.new_child_neovim()
 local expect, eq = helpers.expect, helpers.expect.equality
 local new_set = MiniTest.new_set
-
--- Helpers with child processes
---stylua: ignore start
----@format disable-next
-local reload = function(config) child.unload(); child.setup(config) end
-local set_cursor = function(...) return child.set_cursor(...) end
-local get_cursor = function(...) return child.get_cursor(...) end
-local set_lines = function(...) return child.set_lines(...) end
-local get_lines = function(...) return child.get_lines(...) end
-local type_keys = function(...) return child.type_keys(...) end
-local sleep = function(ms) helpers.sleep(ms, child) end
---stylua: ignore end
 
 -- Setup mini.icons locally
 local _mini_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim")
@@ -27,26 +15,6 @@ end
 local MiniIcons = require("mini.icons")
 MiniIcons.setup()
 
-local T = new_set({
-  hooks = {
-    pre_case = function()
-      child.init()
-      child.setup({})
-      child.lua([[M = { devicons = require("fzf-lua.devicons") }]])
-
-      -- Make all showed messages full width
-      child.o.cmdheight = 10
-      child.o.termguicolors = true
-      child.o.background = "dark"
-    end,
-    post_case = function()
-      child.unload()
-    end,
-    post_once = child.stop,
-  },
-  -- n_retry = helpers.get_n_retry(2),
-})
-
 local function mini_are_same(category, name, expected)
   assert.are.same(child.lua_get([[{ M.devicons.get_devicon(...) }]], { name }), expected)
 end
@@ -56,13 +24,15 @@ local function validate_mini(headless_child)
   local nvchild = headless_child or child
   local state = nvchild.lua_get([[M.devicons.state()]])
   local icons = state.icons
-  if not headless_child then
-    assert.are.equal(utils.tbl_count(icons.by_filename), utils.tbl_count(MiniIcons.list("file")))
-    assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
-      -- +4 extensions that are causing issues in `vim.filetype.match`
-      -- https://github.com/ibhagwan/fzf-lua/issues/1358#issuecomment-2254215160
-      utils.tbl_count(MiniIcons.list("extension")) + 4)
+  local by_fname = child.lua_get([[MiniIcons.list("file")]])
+  for _, k in ipairs(by_fname) do
+    assert.are.equal(type(icons.by_filename[k]), "table")
   end
+  assert.are.equal(utils.tbl_count(icons.by_filename), utils.tbl_count(by_fname))
+  assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
+    -- +4 extensions that are causing issues in `vim.filetype.match`
+    -- https://github.com/ibhagwan/fzf-lua/issues/1358#issuecomment-2254215160
+    utils.tbl_count(MiniIcons.list("extension")) + 4)
   assert.is.True(utils.tbl_count(icons.ext_has_2part) == 0)
   assert.is.True(utils.tbl_count(icons.by_ext_2part) == 0)
   mini_are_same("file", "foo", { "󰈔", "" })
@@ -80,6 +50,16 @@ local function validate_mini(headless_child)
   mini_are_same("file", "foo.md", { "󰍔", "" })
   mini_are_same("file", "README.md", { "", "#fce094" })
 end
+
+local T = helpers.new_set_with_child(child, {
+  hooks = {
+    pre_case = function()
+      child.o.termguicolors = true
+      child.o.background = "dark"
+      child.lua([[M = { devicons = require("fzf-lua.devicons") }]])
+    end,
+  },
+})
 
 T["setup()"] = new_set()
 
@@ -132,7 +112,6 @@ T["setup()"]["headless RPC, vim.g.fzf_lua_server"] = function()
     M.devicons.load()
   ]])
   eq(child.lua_get([[M.devicons.plugin_name()]]), "mini")
-  validate_mini()
   local fzf_lua_server = child.lua_get("vim.g.fzf_lua_server")
   eq(#fzf_lua_server > 0, true)
   local headless_child = helpers.new_child_neovim()
