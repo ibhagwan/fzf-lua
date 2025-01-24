@@ -286,7 +286,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
   local function load_fn(fn_str)
     if type(fn_str) ~= "string" then return end
     local fn_loaded = nil
-    local fn = loadstring(fn_str) or load(fn_str)
+    local fn = loadstring(fn_str)
     if fn then fn_loaded = fn() end
     if type(fn_loaded) ~= "function" then
       fn_loaded = nil
@@ -345,7 +345,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
 
   if opts.debug == "v" or opts.debug == "verbose" then
     for k, v in pairs(opts) do
-      io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, v))
+      io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, tostring(v)))
     end
     io.stdout:write(string.format("[DEBUG] fn_transform=%s" .. EOL, fn_transform_str))
     io.stdout:write(string.format("[DEBUG] fn_preprocess=%s" .. EOL, fn_preprocess_str))
