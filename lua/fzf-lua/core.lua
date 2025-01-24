@@ -607,6 +607,12 @@ M.create_fzf_binds = function(opts)
     -- value can be defined as a table with addl properties (help string)
     if type(v) == "table" then
       v = v[1]
+    elseif type(v) == "function" then
+      if utils.has(opts, "fzf") then
+        v = "execute-silent:" .. shell.raw_action(v, nil, opts.debug)
+      else
+        v = nil
+      end
     end
     if v then
       dedup[k] = v
@@ -626,7 +632,14 @@ M.create_fzf_binds = function(opts)
     -- Separate "transform|execute|execute-silent" binds to their own `--bind` argument, this
     -- way we can use `transform:...` and not be forced to use brackets, i.e. `transform(...)`
     -- this enables us to use brackets in the inner actions, e.g. "zero:transform:rebind(...)"
-    if action:match("transform") or action:match("execute") or action:match("reload") then
+    if action:match("transform")
+        or action:match("execute")
+        or action:match("reload")
+        or key == "zero"
+        or key == "load"
+        or key == "start"
+        or key == "resize"
+    then
       table.insert(separate, bind)
     else
       table.insert(combine, bind)
@@ -1178,8 +1191,9 @@ M.convert_reload_actions = function(reload_cmd, opts)
       }
     end
   end
-  -- Does nothing when 'rebind' is nil
-  opts.keymap.fzf["load"] = rebind
+  -- TODO: fix existence of both load as function and rebind, e.g. git_status with:
+  -- setup({ keymap = { fzf = { true, load = function() _G._fzf_load_called = true end } } }
+  opts.keymap.fzf.load = rebind or opts.keymap.fzf.load
   return opts
 end
 

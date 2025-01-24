@@ -1,22 +1,10 @@
 ---@diagnostic disable: unused-local, unused-function
 local MiniTest = require("mini.test")
-local helpers = dofile("tests/helpers.lua")
+local helpers = require("fzf-lua.test.helpers")
 local assert = helpers.assert
 local child = helpers.new_child_neovim()
 local expect, eq = helpers.expect, helpers.expect.equality
 local new_set = MiniTest.new_set
-
--- Helpers with child processes
---stylua: ignore start
----@format disable-next
-local reload = function(config) child.unload(); child.setup(config) end
-local set_cursor = function(...) return child.set_cursor(...) end
-local get_cursor = function(...) return child.get_cursor(...) end
-local set_lines = function(...) return child.set_lines(...) end
-local get_lines = function(...) return child.get_lines(...) end
-local type_keys = function(...) return child.type_keys(...) end
-local sleep = function(ms) helpers.sleep(ms, child) end
---stylua: ignore end
 
 local _devicons_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "nvim-web-devicons")
 if not vim.uv.fs_stat(_devicons_path) then
@@ -25,45 +13,23 @@ end
 
 vim.opt.runtimepath:append(_devicons_path)
 
-local T = new_set({
-  hooks = {
-    pre_case = function()
-      child.init()
-      child.setup({})
-      child.lua([[M = { devicons = require("fzf-lua.devicons") }]])
-
-      -- Make all showed messages full width
-      child.o.cmdheight = 10
-      child.o.termguicolors = true
-      child.o.background = "dark"
-    end,
-    post_case = function()
-      child.unload()
-    end,
-    post_once = child.stop,
-  },
-  -- n_retry = helpers.get_n_retry(2),
-})
-
-local theme = {
-  icons_by_filename = require("nvim-web-devicons").get_icons_by_filename(),
-  icons_by_file_extension = require("nvim-web-devicons").get_icons_by_extension(),
-}
-
 local function validate_devicons(headless_child)
   local utils = require("fzf-lua").utils
   local nvchild = headless_child or child
   local state = nvchild.lua_get([[M.devicons.state()]])
   local icons = state.icons
+  local theme = {
+    icons_by_filename = child.lua_get([[require("nvim-web-devicons").get_icons_by_filename()]]),
+    icons_by_file_extension =
+        child.lua_get([[require("nvim-web-devicons").get_icons_by_extension()]])
+  }
   assert.are.same(state.default_icon, { icon = "", color = "#6d8086" })
   assert.are.same(state.dir_icon, { icon = "", color = nil })
   assert.is.True(utils.tbl_count(icons.ext_has_2part) > 4)
   assert.is.True(utils.tbl_count(icons.by_ext_2part) > 8)
-  -- TODO: sometimes fails with:
-  --   Failed expectation for equality.
-  --   Left:  180
-  --   Right: 181
-  -- assert.are.equal(utils.tbl_count(icons.by_filename), utils.tbl_count(theme.icons_by_filename))
+  for k, v in pairs(theme.icons_by_filename) do
+    assert.are.equal(v.color, icons.by_filename[k].color)
+  end
   assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
     utils.tbl_count(theme.icons_by_file_extension))
 end
@@ -71,6 +37,16 @@ end
 local function devicons_are_same(name, expected)
   assert.are.same(child.lua_get([[{ M.devicons.get_devicon(...) }]], { name }), expected)
 end
+
+local T = helpers.new_set_with_child(child, {
+  hooks = {
+    pre_case = function()
+      child.o.termguicolors = true
+      child.o.background = "dark"
+      child.lua([[M = { devicons = require("fzf-lua.devicons") }]])
+    end,
+  },
+})
 
 T["setup()"] = new_set()
 
@@ -107,7 +83,6 @@ T["setup()"]["headless RPC, vim.g.fzf_lua_server"] = function()
   child.lua("vim.opt.runtimepath:append(...)", { _devicons_path })
   child.lua([[M.devicons.load()]])
   eq(child.lua_get([[M.devicons.plugin_name()]]), "devicons")
-  validate_devicons()
   local fzf_lua_server = child.lua_get("vim.g.fzf_lua_server")
   eq(#fzf_lua_server > 0, true)
   local headless_child = helpers.new_child_neovim()

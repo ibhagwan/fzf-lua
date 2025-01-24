@@ -85,10 +85,10 @@ M.defaults                      = {
         scrolloff      = 1,
       },
     },
-    on_create  = function(_)
-      -- vim.cmd("set winhl=Normal:Normal,FloatBorder:Normal")
-      -- utils.keymap_set("t", "<A-Esc>", actions.hide, { nowait = true, buffer = e.bufnr })
-    end,
+    -- on_create  = function(_)
+    --   vim.cmd("set winhl=Normal:Normal,FloatBorder:Normal")
+    --   utils.keymap_set("t", "<A-Esc>", actions.hide, { nowait = true, buffer = e.bufnr })
+    -- end,
   },
   keymap        = {
     builtin = {

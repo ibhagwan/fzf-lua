@@ -21,12 +21,15 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         rev: [nightly, v0.10.3]
         include:
-          - os: ubuntu-latest
-            install-deps: sudo apt-get update && sudo apt-get install -y fzf ripgrep fd-find
           - os: macos-latest
             install-deps: brew update && brew install fzf ripgrep fd
           - os: windows-latest
             install-deps: choco install fzf ripgrep fd
+          - os: ubuntu-latest
+            install-deps: |
+              sudo apt-get update && sudo apt-get install -y ripgrep fd-find
+              wget -O - https://github.com/junegunn/fzf/releases/download/v0.58.0/fzf-0.58.0-linux_amd64.tar.gz | tar zxfv -
+              sudo mv ./fzf /bin
 
     steps:
       - uses: actions/checkout@v4
@@ -40,8 +43,8 @@ jobs:
         shell: bash
         run: |
           ${{ matrix.install-deps }}
-          nvim --version
           fzf --version
+          nvim --version
           rg --version
           if [ "$RUNNER_OS" == "Linux" ]; then
             fdfind --version

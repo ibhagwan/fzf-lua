@@ -1,6 +1,6 @@
 ---@diagnostic disable: unused-local, unused-function
 local MiniTest = require("mini.test")
-local helpers = dofile("tests/helpers.lua")
+local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
 local expect, eq = helpers.expect, helpers.expect.equality
 local new_set = MiniTest.new_set
@@ -17,26 +17,29 @@ local type_keys = function(...) return child.type_keys(...) end
 local sleep = function(ms) helpers.sleep(ms, child) end
 --stylua: ignore end
 
-local T = new_set({
-  hooks = {
-    pre_case = function()
-      child.init()
-      child.setup({})
+local T = helpers.new_set_with_child(child)
 
-      -- Make all showed messages full width
-      child.o.cmdheight = 10
-    end,
-    post_once = child.stop,
-  },
-  -- n_retry = helpers.get_n_retry(2),
+T["files()"] = new_set()
+
+T["files()"]["start and abort <esc>"] = new_set({
+  parametrize = { { "<esc>" }, { "<c-c>" } } }, {
+  function(key)
+    helpers.SKIP_IF_WIN()
+    -- Global vars
+    child.lua([[FzfLua.files()]])
+    eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
+    child.wait_until(function()
+      return child.lua_get([[_G._fzf_load_called]]) == true
+    end)
+    helpers.SKIP_IF_NOT_STABLE()
+    -- Ignore the prompt path and info line since the CI machine
+    -- path will be different as well as the file count
+    child.expect_screenshot({ ignore_lines = { 4 } })
+    child.type_keys(key)
+    child.wait_until(function()
+      return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+    end)
+  end,
 })
-
-T["setup()"] = new_set()
-
-T["setup()"]["setup global vars"] = function()
-  -- Global vars
-  eq(child.lua_get([[type(vim.g.fzf_lua_server)]]), "string")
-  eq(child.lua_get([[type(vim.g.fzf_lua_directory)]]), "string")
-end
 
 return T

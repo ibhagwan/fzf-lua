@@ -1,18 +1,18 @@
-NVIM_EXEC ?= nvim
+nvim ?= nvim
 
 #
 # Run all tests or specic module tests
 #
 # Test both stable and nightly (assuming `nv` is linked to nightly):
-# `make NVIM_EXEC="nvim nv" test`
+# `make test nvim=nv` or `make test nvim="nvim nv"` (for both)
 #
 # Test specific module(s) with `make test glob=file`
 # NOTE: glob is resolved using `vim.fn.globpath` so we can also run:
-# `make test glob=f
+# `make test glob=f`
 #
 .PHONY: test
 test:
-	for nvim_exec in $(NVIM_EXEC); do \
+	for nvim_exec in $(nvim); do \
 		printf "\n======\n\n" ; \
 		$$nvim_exec --version | head -n 1 && echo '' ; \
 		$$nvim_exec --headless --noplugin -u ./scripts/minimal_init.lua \
