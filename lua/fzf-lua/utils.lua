@@ -1280,6 +1280,14 @@ function M.create_user_command_callback(provider, arg, altmap)
   end
 end
 
+-- setmetatable wrapper, also enable `__gc`
+function M.setmetatable__gc(t, mt)
+  local prox = newproxy(true)
+  getmetatable(prox).__gc = function() mt.__gc(t) end
+  t[prox] = true
+  return setmetatable(t, mt)
+end
+
 --- Checks if treesitter parser for language is installed
 ---@param lang string
 function M.has_ts_parser(lang)

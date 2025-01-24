@@ -633,7 +633,16 @@ function FzfWin:new(o)
   end
   o = o or {}
   self._o = o
-  self = setmetatable({}, { __index = self })
+  self = utils.setmetatable__gc({}, {
+    __index = self,
+    __gc = function(s)
+      vim.schedule(function()
+        if s._previewer and s._previewer.clear_cached_buffers then
+          s._previewer:clear_cached_buffers()
+        end
+      end)
+    end
+  })
   self.hls = o.hls
   self.actions = o.actions
   self.fullscreen = o.winopts.fullscreen
