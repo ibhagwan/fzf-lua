@@ -257,7 +257,8 @@ end
 
 -- conditionally update the context if fzf-lua
 -- interface isn't open
-M.CTX = function(includeBuflist)
+M.CTX = function(opts)
+  opts = opts or {}
   -- save caller win/buf context, ignore when fzf
   -- is already open (actions.sym_lsym|grep_lgrep)
   local winobj = utils.fzf_winobj()
@@ -271,10 +272,12 @@ M.CTX = function(includeBuflist)
       -- not to resume or a different picker, i.e. hide files and open buffers
       or winobj and winobj:hidden()
   then
+    -- custom bufnr from caller? (#1757)
+    local bufnr = tonumber(opts.buf) or tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
     M.__CTX = {
       mode = vim.api.nvim_get_mode().mode,
-      bufnr = vim.api.nvim_get_current_buf(),
-      bname = vim.api.nvim_buf_get_name(0),
+      bufnr = bufnr,
+      bname = vim.api.nvim_buf_get_name(bufnr),
       winid = vim.api.nvim_get_current_win(),
       alt_bufnr = vim.fn.bufnr("#"),
       tabnr = vim.fn.tabpagenr(),
@@ -294,7 +297,7 @@ M.CTX = function(includeBuflist)
   -- perhaps a min impact optimization but since only
   -- buffers/tabs use these we only include the current
   -- list of buffers when requested
-  if includeBuflist and not M.__CTX.buflist then
+  if opts.includeBuflist and not M.__CTX.buflist then
     -- also add a map for faster lookups than `utils.tbl_contains`
     -- TODO: is it really faster since we must use string keys?
     M.__CTX.bufmap = {}
@@ -353,7 +356,7 @@ M.fzf = function(contents, opts)
   end
   -- update context and save a copy in options (for actions)
   -- call before creating the window or fzf_winobj is not nil
-  opts.__CTX = M.CTX()
+  opts.__CTX = M.CTX(opts.ctx)
   if opts.fn_pre_win then
     opts.fn_pre_win(opts)
   end
