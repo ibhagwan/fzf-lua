@@ -24,22 +24,46 @@ T["files()"] = new_set()
 T["files()"]["start and abort <esc>"] = new_set({
   parametrize = { { "<esc>" }, { "<c-c>" } } }, {
   function(key)
-    helpers.SKIP_IF_WIN()
-    -- Global vars
-    child.lua([[FzfLua.files()]])
+    -- sort output and remove cwd in prompt as will be different on CI
+    child.lua([[FzfLua.files({
+      previewer = false,
+      cwd_prompt = false,
+      cmd = "rg --files --sort=path",
+    })]])
     eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
-    helpers.SKIP_IF_NOT_STABLE()
-    -- Ignore the prompt path and info line since the CI machine
-    -- path will be different as well as the file count
-    child.expect_screenshot({ ignore_lines = { 4 } })
+    -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
+    local ignore_lines = { 28 }
+    if helpers.IS_WIN() then
+      for i = 12, 21 do table.insert(ignore_lines, i) end
+    end
+    -- NOTE: we compare screen lines without "attrs", this way
+    -- we can test on stable, nightly and windows
+    -- child.expect_screenshot({ ignore_lines = ignore_lines })
+    child.expect_screen_lines({ ignore_lines = ignore_lines })
     child.type_keys(key)
     child.wait_until(function()
       return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
     end)
   end,
 })
+
+T["files()"]["defaults with icons"] = function()
+  helpers.SKIP_IF_WIN()
+  helpers.SKIP_IF_NOT_STABLE()
+  -- sort output and remove cwd in prompt as will be different on CI
+  child.lua([[FzfLua.files({ cwd_prompt = false, cmd = "rg --files --sort=path" })]])
+  eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_load_called]]) == true
+  end)
+  child.expect_screenshot({ ignore_lines = { 28 } })
+  child.type_keys("<c-c>")
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+  end)
+end
 
 return T

@@ -3,6 +3,8 @@ local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
 vim.cmd.lcd(vim.fn.fnamemodify(__FILE__, ":p:h:h:h:h"))
 
 local MiniTest = require("mini.test")
+local screenshot = require("fzf-lua.test.screenshot")
+
 local M = {}
 
 -- Busted like expectations
@@ -26,19 +28,6 @@ M.NVIM_VERSION = function()
   return M._NVIM_VERSION
 end
 
-M.NVIM_IS_STABLE = function()
-  if M._IS_STABLE == nil then
-    M._IS_STABLE = M.NVIM_VERSION() == "0.10.3"
-  end
-  return M._IS_STABLE
-end
-
-M.SKIP_IF_NOT_STABLE = function()
-  if not M.NVIM_IS_STABLE() then
-    MiniTest.skip("Screenshots are only tested on latest stable release.")
-  end
-end
-
 local os_detect = {
   WIN = {
     name = "Windows",
@@ -46,9 +35,11 @@ local os_detect = {
   },
   MAC = { name = "MacOS", fn = function() return vim.fn.has("mac") == 1 end },
   LINUX = { name = "Linux", fn = function() return vim.fn.has("linux") == 1 end },
+  STABLE = { name = "Neovim stable", fn = function() return M.NVIM_VERSION() == "0.10.3" end },
+  NIGHTLY = { name = "Neovim nightly", fn = function() return vim.fn.has("nvim-0.11") == 1 end },
 }
 
--- Creates M.IS_WIN(), M.SKIP_IF_WIN(), etc
+-- Creates M.IS_WIN(), M.IS_NOT_WIN(), M.SKIP_IF_WIN(), etc
 for k, v in pairs(os_detect) do
   M["IS_" .. k] = function()
     local var = "_IS_" .. k
@@ -57,9 +48,17 @@ for k, v in pairs(os_detect) do
     end
     return M[var]
   end
+  M["IS_NOT_" .. k] = function()
+    return not M["IS_" .. k]
+  end
   M["SKIP_IF_" .. k] = function(msg)
     if M["IS_" .. k]() then
-      MiniTest.skip(msg or string.format("Does not test properly on %s", v.name))
+      MiniTest.skip(msg or string.format("Skip test on %s", v.name))
+    end
+  end
+  M["SKIP_IF_NOT_" .. k] = function(msg)
+    if not M["IS_" .. k]() then
+      MiniTest.skip(msg or string.format("Skip test: not %s", v.name))
     end
   end
 end
@@ -129,10 +128,9 @@ M.new_child_neovim = function()
   --- Setup fzf-lua
   ---@param config? table, config table
   child.setup = function(config)
-    local lua_cmd = [[
+    local lua_cmd = ([[
       require("fzf-lua").setup(vim.tbl_deep_extend("keep", ..., {
-        files = { cwd_prompt = false, cmd = "rg --files --sort=path" },
-        fzf_opts = { ["--no-scrollbar"] = true },
+        %s
         winopts = {
           on_create = function() _G._fzf_lua_on_create = true end,
           on_close = function() _G._fzf_lua_on_create = nil end,
@@ -142,7 +140,10 @@ M.new_child_neovim = function()
           load = function() _G._fzf_load_called = true end,
         } }
       }))
-    ]]
+    ]])
+        -- using "FZF_DEFAULT_OPTS" hangs the command on the
+        -- child process and the loading indicator never stops
+        :format(M.IS_WIN() and "defaults = { pipe_cmd = true }," or "")
     child.lua(lua_cmd, { config or {} })
   end
 
@@ -230,6 +231,27 @@ M.new_child_neovim = function()
     MiniTest.expect.reference_screenshot(child.get_screenshot(screenshot_opts), path, opts)
   end
 
+  child.get_screen_lines = function()
+    return screenshot.fromChildScreen(child)
+  end
+
+  -- Expect screenshot without the "attrs" (highlights)
+  child.expect_screen_lines = function(opts, path)
+    opts = opts or {}
+    opts.force = not not vim.env["update_screenshots"]
+    MiniTest.expect.reference_screenshot(child.get_screen_lines(), path, opts)
+  end
+
+  child.get_buf_lines = function(buf)
+    return screenshot.fromChildBufLines(child, buf)
+  end
+
+  child.expect_buflines = function(opts, path)
+    opts = opts or {}
+    opts.force = not not vim.env["update_screenshots"]
+    MiniTest.expect.reference_screenshot(child.get_buf_lines(), path, opts)
+  end
+
   --- waits until condition fn evals to true, checking every interval ms
   --- times out at timeout ms
   ---@param condition fun(): boolean
@@ -246,7 +268,8 @@ M.new_child_neovim = function()
       end
     end
 
-    error(string.format("Timed out waiting for condition after %d ms\n\n%s", max,
+    error(string.format("Timed out waiting for condition after %d ms\n\n%s\n\n%s", max,
+      tostring(child.cmd_capture("messages")),
       tostring(child.get_screenshot())
     ))
   end

@@ -431,6 +431,7 @@ M.fzf = function(contents, opts)
     {
       fzf_bin = opts.fzf_bin,
       cwd = opts.cwd,
+      pipe_cmd = opts.pipe_cmd,
       silent_fail = opts.silent_fail,
       is_fzf_tmux = opts._is_fzf_tmux,
       debug = opts.debug_cmd or opts.debug and not (opts.debug_cmd == false),

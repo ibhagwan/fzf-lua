@@ -248,7 +248,13 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- MSYS2 comes with "/usr/bin/cmd" that precedes "cmd.exe" (#1396)
       and { "cmd.exe", "/d", "/e:off", "/f:off", "/v:off", "/c" }
       or { "sh", "-c" }
-  if utils.__IS_WINDOWS then
+  if opts.pipe_cmd then
+    if FZF_DEFAULT_COMMAND then
+      table.insert(cmd, 1, string.format("(%s) | ", FZF_DEFAULT_COMMAND))
+      FZF_DEFAULT_COMMAND = nil
+    end
+    table.insert(shell_cmd, table.concat(cmd, " "))
+  elseif utils.__IS_WINDOWS then
     utils.tbl_join(shell_cmd, cmd)
   else
     table.insert(shell_cmd, table.concat(cmd, " "))
