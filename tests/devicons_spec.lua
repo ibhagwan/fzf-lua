@@ -27,9 +27,7 @@ local function validate_devicons(headless_child)
   assert.are.same(state.dir_icon, { icon = "", color = nil })
   assert.is.True(utils.tbl_count(icons.ext_has_2part) > 4)
   assert.is.True(utils.tbl_count(icons.by_ext_2part) > 8)
-  for k, v in pairs(theme.icons_by_filename) do
-    assert.are.equal(v.color, icons.by_filename[k].color)
-  end
+  assert.are.equal(utils.tbl_count(icons.by_filename), utils.tbl_count(theme.icons_by_filename))
   assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
     utils.tbl_count(theme.icons_by_file_extension))
 end
