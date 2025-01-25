@@ -35,7 +35,10 @@ local function validate_devicons(headless_child)
 end
 
 local function devicons_are_same(name, expected)
-  assert.are.same(child.lua_get([[{ M.devicons.get_devicon(...) }]], { name }), expected)
+  local from_child = child.lua_get([[{ M.devicons.get_devicon(...) }]], { name })
+  from_child[2] = from_child[2] and from_child[2]:upper() or from_child[2]
+  expected[2] = expected[2] and expected[2]:upper() or expected[2]
+  assert.are.same(from_child, expected)
 end
 
 local T = helpers.new_set_with_child(child, {
