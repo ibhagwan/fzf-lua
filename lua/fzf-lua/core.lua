@@ -272,12 +272,10 @@ M.CTX = function(opts)
       -- not to resume or a different picker, i.e. hide files and open buffers
       or winobj and winobj:hidden()
   then
-    -- custom bufnr from caller? (#1757)
-    local bufnr = tonumber(opts.buf) or tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
     M.__CTX = {
       mode = vim.api.nvim_get_mode().mode,
-      bufnr = bufnr,
-      bname = vim.api.nvim_buf_get_name(bufnr),
+      bufnr = vim.api.nvim_get_current_buf(),
+      bname = vim.api.nvim_buf_get_name(0),
       winid = vim.api.nvim_get_current_win(),
       alt_bufnr = vim.fn.bufnr("#"),
       tabnr = vim.fn.tabpagenr(),
@@ -305,6 +303,12 @@ M.CTX = function(opts)
     for _, b in ipairs(M.__CTX.buflist) do
       M.__CTX.bufmap[tostring(b)] = true
     end
+  end
+  -- custom bufnr from caller? (#1757)
+  local bufnr = tonumber(opts.buf) or tonumber(opts.bufnr)
+  if bufnr then
+    M.__CTX.bufnr = bufnr
+    M.__CTX.bname = vim.api.nvim_buf_get_name(bufnr)
   end
   return M.__CTX
 end
