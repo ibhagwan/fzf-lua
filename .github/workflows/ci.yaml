@@ -11,8 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  unit_tests:
-    name: unit tests
+  unit-tests:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
