@@ -502,20 +502,17 @@ function M.entry_to_file(entry, opts, force_uri)
 end
 
 function M.git_cwd(cmd, opts)
-  -- backward compat, used to be single cwd param
-  -- NOTE: we use deepcopy due to a bug with Windows network drives starting with "\\"
-  -- as `vim.fn.expand` would reduce the double slash to a single slash modifying the
-  -- original `opts.cwd` ref (#1429)
-  local o = opts and utils.tbl_deep_clone(opts) or {}
-  if type(o) == "string" then
-    o = { cwd = o }
-  end
   local git_args = {
     { "cwd",          "-C" },
     { "git_dir",      "--git-dir" },
     { "git_worktree", "--work-tree" },
     { "git_config",   "-c",         noexpand = true },
   }
+  -- NOTE: we copy the opts due to a bug with Windows network drives starting with "\\"
+  -- as `vim.fn.expand` would reduce the double slash to a single slash modifying the
+  -- original `opts.cwd` ref (#1429)
+  local o = {}
+  for _, a in ipairs(git_args) do o[a[1]] = opts[a[1]] end
   if type(cmd) == "string" then
     local args = ""
     for _, a in ipairs(git_args) do
