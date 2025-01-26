@@ -288,6 +288,7 @@ do
     complete_file = { "fzf-lua.complete", "file" },
     complete_line = { "fzf-lua.complete", "line" },
     complete_bline = { "fzf-lua.complete", "bline" },
+    zoxide = { "fzf-lua.providers.files", "zoxide" },
   }
 
   for k, v in pairs(lazyloaded_modules) do

@@ -130,4 +130,56 @@ M.args = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+M.zoxide = function(opts)
+  opts = config.normalize_opts(opts, "zoxide")
+  if not opts then return end
+
+  if vim.fn.executable("zoxide") ~= 1 then
+    utils.warn("Install zoxide to use this picker.")
+    return
+  end
+
+  -- we always require processing
+  opts.requires_processing = true
+
+  local contents
+  if opts.multiprocess then
+    opts.__mt_transform = [[return require("fzf-lua.make_entry").zoxide]]
+    contents = core.mt_cmd_wrapper(opts)
+  else
+    opts.__fn_transform = opts.__fn_transform or
+        function(x)
+          return make_entry.zoxide(x, opts)
+        end
+
+    opts.__fn_reload = function(_)
+      return opts.cmd
+    end
+
+    -- build the "reload" cmd and remove '-- {+}' from the initial cmd
+    local reload, id = shell.reload_action_cmd(opts, "{+}")
+    contents = reload:gsub("%-%-%s+{%+}$", "")
+    opts.__reload_cmd = reload
+
+    opts._fn_pre_fzf = function()
+      shell.set_protected(id)
+    end
+  end
+
+  if opts.header == nil then
+    opts.header = string.format("%8s\t%s", "score", "folder")
+  end
+
+  opts.preview = (function()
+    if opts.preview then return opts.preview end
+    return vim.fn.executable("lsd") == 1
+        and "lsd -la --color=always --icon=always --group-directories-first --literal {2}"
+        or vim.fn.executable("eza") == 1
+        and "eza -la --color=always --icons -g --group-directories-first {2}"
+        or "ls -la {2}"
+  end)()
+
+  return core.fzf_exec(contents, opts)
+end
+
 return M

@@ -494,4 +494,17 @@ M.git_status = function(x, opts)
   return entry
 end
 
+M.zoxide = function(x, opts)
+  local score, dir = x:match("(%d+%.%d+)%s+(.-)$")
+  if not score then return x end
+  if opts.cwd then
+    dir = path.relative_to(dir, opts.cwd)
+  end
+  local _fmt_postfix -- when using `path.filename_first` v2
+  if opts._fmt and type(opts._fmt.to) == "function" then
+    dir, _fmt_postfix = opts._fmt.to(dir, opts, { path = path, utils = utils })
+  end
+  return string.format("%8s\t%s%s", tostring(score), dir, _fmt_postfix or "")
+end
+
 return M
