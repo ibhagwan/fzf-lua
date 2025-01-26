@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0         Last change: 2025 January 24
+*fzf-lua.txt*         For Neovim >= 0.5.0         Last change: 2025 January 25
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -20,6 +20,7 @@ Misc .......................................................... |fzf-lua-misc|
 Neovim API .............................................. |fzf-lua-neovim-api|
 nvim-dap .................................................. |fzf-lua-nvim-dap|
 tmux .......................................................... |fzf-lua-tmux|
+zoxide ...................................................... |fzf-lua-zoxide|
 Completion Functions .......................... |fzf-lua-completion-functions|
 Customization ........................................ |fzf-lua-customization|
 Inline Customization .......................... |fzf-lua-inline-customization|
@@ -359,6 +360,14 @@ TMUX                                                            *fzf-lua-tmux*
 | Command        | List                    |
 | -------------- | ----------------------- |
 | `tmux_buffers` | list tmux paste buffers |
+
+
+                                                                              
+ZOXIDE                                                        *fzf-lua-zoxide*
+
+| Command        | List                    |
+| -------------- | ----------------------- |
+| `zoxide`       | list recent directories |
 
 
                                                                               
@@ -1215,6 +1224,19 @@ CUSTOMIZATION                                          *fzf-lua-customization*
         actions      = { ["enter"] = actions.complete },
         -- previewer hidden by default
         winopts      = { preview = { hidden = true } },
+      },
+      zoxide = {
+        cmd          = "zoxide query --list --score",
+        git_root     = false, -- auto-detect git root
+        formatter    = "path.dirname_first",
+        fzf_opts     = {
+          ["--no-multi"]  = true,
+          ["--delimiter"] = "[\t]",
+          ["--tabstop"]   = "4",
+          ["--tiebreak"]  = "end,index", -- prefer dirs ending with search term
+          ["--nth"]       = "2..",       -- exclude score from fuzzy matching
+        },
+        actions      = { enter = actions.cd }
       },
       -- uncomment to use fzf native previewers
       -- (instead of using a neovim floating window)
