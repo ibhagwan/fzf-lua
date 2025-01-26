@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 January 20
+*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 January 25
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -15,8 +15,7 @@ LSP/Diagnostics ............................... |fzf-lua-opts-lsp/diagnostics|
 Misc ..................................................... |fzf-lua-opts-misc|
 Neovim API ......................................... |fzf-lua-opts-neovim-api|
 nvim-dap ............................................. |fzf-lua-opts-nvim-dap|
-tmux ..................................................... |fzf-lua-opts-tmux|
-zoxide ................................................. |fzf-lua-opts-zoxide|
+shell integrations ......................... |fzf-lua-opts-shell-integrations|
 Completion Functions ..................... |fzf-lua-opts-completion-functions|
 
 ==============================================================================
@@ -1650,7 +1649,7 @@ DAP active session jump to frame
 
 
                                                                               
-TMUX                                                       *fzf-lua-opts-tmux*
+SHELL INTEGRATIONS                           *fzf-lua-opts-shell-integrations*
 
 
                                                                               
@@ -1660,13 +1659,9 @@ Tmux paste buffers
 
 
                                                                               
-ZOXIDE                                                   *fzf-lua-opts-zoxide*
-
-
-                                                                              
 zoxide                                                   *fzf-lua-opts-zoxide*
 
-zoxide recent directories
+Zoxide recent directories
 
 
                                                                               

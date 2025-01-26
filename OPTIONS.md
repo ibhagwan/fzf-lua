@@ -1193,19 +1193,15 @@ DAP active session variables
 DAP active session jump to frame
 
 
-### tmux
+### shell integrations
 
 #### tmux_buffers
 
 Tmux paste buffers
 
----
-
-### zoxide
-
 #### zoxide
 
-zoxide recent directories
+Zoxide recent directories
 
 ---
 
