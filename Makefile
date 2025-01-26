@@ -19,6 +19,16 @@ test:
 			-l ./scripts/make_cli.lua ; \
 	done
 
+# clean / update all screenshots
+.PHONY: screenshots
+screenshots:
+	make test update_screenshots=true
+
+.PHONY: clean-screenshots
+clean-screenshots:
+	rm -rf tests/screenshots/* 
+	make test
+
 #
 # Download 'mini.nvim' and `nvim-web-devicons` into "deps" subfolder
 # only used with the CI workflow, `minimal_init` will detect the deps

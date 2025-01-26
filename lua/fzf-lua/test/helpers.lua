@@ -239,6 +239,7 @@ M.new_child_neovim = function()
   child.expect_screen_lines = function(opts, path)
     opts = opts or {}
     opts.force = not not vim.env["update_screenshots"]
+    if opts.redraw ~= false then child.cmd("redraw") end
     MiniTest.expect.reference_screenshot(child.get_screen_lines(), path, opts)
   end
 
@@ -249,6 +250,7 @@ M.new_child_neovim = function()
   child.expect_buflines = function(opts, path)
     opts = opts or {}
     opts.force = not not vim.env["update_screenshots"]
+    if opts.redraw ~= false then child.cmd("redraw") end
     MiniTest.expect.reference_screenshot(child.get_buf_lines(), path, opts)
   end
 
@@ -285,6 +287,11 @@ M.new_child_neovim = function()
 
   -- Poke child's event loop to make it up to date
   child.poke_eventloop = function() child.api.nvim_eval("1") end
+
+  child.sleep = function(ms)
+    vim.uv.sleep(math.max(ms, 1))
+    child.poke_eventloop()
+  end
 
   return child
 end

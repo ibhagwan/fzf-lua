@@ -1,0 +1,59 @@
+--|---------|---------|---------|---------|---------|---------|----
+01|                                                                
+02|~                                                               
+03|~      ╭───────────────────── Files ─────────────────────╮      
+04|~      │>                                      94/94 (0) │      
+05|~      │──────────────────────────────────────────────── │      
+06|~      │  :: <ctrl-g> to Disable .gitignore              │      
+07|~      │▌  LICENSE                                     ││      
+08|~      │  󱁤 Makefile                                    ││      
+09|~      │  󰍔 OPTIONS.md                                   │      
+10|~      │  󰍔 README-Win.md                                │      
+11|~      │   README.md                                    │      
+12|~      │   autoload/fzf_lua.vim                         │      
+13|~      │   autoload/health/fzf_lua.vim                  │      
+14|~      │  󰦪 doc/fzf-lua-opts.txt                         │      
+15|~      │  󰦪 doc/fzf-lua.txt                              │      
+16|~      │  󰢱 lua/fzf-lua/_health.lua                      │      
+17|~      │  󰢱 lua/fzf-lua/actions.lua                      │      
+18|~      │  󰢱 lua/fzf-lua/class.lua                        │      
+19|~      │  󰢱 lua/fzf-lua/cmd.lua                          │      
+20|~      │  󰢱 lua/fzf-lua/cmp_src.lua                      │      
+21|~      │  󰢱 lua/fzf-lua/complete.lua                     │      
+22|~      ╰─────────────────────────────────────────────────╯      
+23|~                                                               
+24|[No Name]                                     0,0-1          All
+25|                                                                
+26|                                                                
+27|                                                                
+28|-- TERMINAL --                                1,0-1         All 
+
+--|-
+01| 
+02| 
+03| 
+04| 
+05| 
+06| 
+07| 
+08| 
+09| 
+10| 
+11| 
+12| 
+13| 
+14| 
+15| 
+16| 
+17| 
+18| 
+19| 
+20| 
+21| 
+22| 
+23| 
+24| 
+25| 
+26| 
+27| 
+28| 
