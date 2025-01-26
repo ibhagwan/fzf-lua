@@ -990,4 +990,19 @@ M.dap_bp_del = function(selected, opts)
   end
 end
 
+M.cd = function(selected, opts)
+  local cwd = selected[1]:match("[^\t]+$") or selected[1]
+  if opts.cwd then
+    cwd = path.join({ opts.cwd, cwd })
+  end
+  local git_root = opts.git_root and path.git_root({ cwd = cwd }, true) or nil
+  cwd = git_root or cwd
+  if uv.fs_stat(cwd) then
+    vim.cmd("cd " .. cwd)
+    utils.info(("cwd set to %s'%s'"):format(git_root and "git root " or "", cwd))
+  else
+    utils.warn(("Unable to set cwd to '%s', directory is not accessible"):format(cwd))
+  end
+end
+
 return M

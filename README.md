@@ -336,6 +336,16 @@ Alternatively, resuming work on a specific picker:
 
 </details>
 <details>
+<summary>Zoxide</summary>
+
+### zoxide
+
+| Command        | List                    |
+| -------------- | ----------------------- |
+| `zoxide`       | list recent directories |
+
+</details>
+<details>
 <summary>Completion Functions</summary>
 
 ### Completion Functions
@@ -1244,6 +1254,19 @@ previewers = {
     actions      = { ["enter"] = actions.complete },
     -- previewer hidden by default
     winopts      = { preview = { hidden = true } },
+  },
+  zoxide = {
+    cmd          = "zoxide query --list --score",
+    git_root     = false, -- auto-detect git root
+    formatter    = "path.dirname_first",
+    fzf_opts     = {
+      ["--no-multi"]  = true,
+      ["--delimiter"] = "[\t]",
+      ["--tabstop"]   = "4",
+      ["--tiebreak"]  = "end,index", -- prefer dirs ending with search term
+      ["--nth"]       = "2..",       -- exclude score from fuzzy matching
+    },
+    actions      = { enter = actions.cd }
   },
   -- uncomment to use fzf native previewers
   -- (instead of using a neovim floating window)

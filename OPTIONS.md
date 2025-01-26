@@ -1201,6 +1201,14 @@ Tmux paste buffers
 
 ---
 
+### zoxide
+
+#### zoxide
+
+zoxide recent directories
+
+---
+
 ### Completion Functions
 
 #### complete_path

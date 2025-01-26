@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 January 19
+*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 January 20
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -16,6 +16,7 @@ Misc ..................................................... |fzf-lua-opts-misc|
 Neovim API ......................................... |fzf-lua-opts-neovim-api|
 nvim-dap ............................................. |fzf-lua-opts-nvim-dap|
 tmux ..................................................... |fzf-lua-opts-tmux|
+zoxide ................................................. |fzf-lua-opts-zoxide|
 Completion Functions ..................... |fzf-lua-opts-completion-functions|
 
 ==============================================================================
@@ -889,6 +890,14 @@ Highlight group for the directory part when using `path.dirname_first` or
 
 
                                                                               
+globals.hls.live_prompt                 *fzf-lua-opts-globals.hls.live_prompt*
+
+Type: `string`, Default: `FzfLuaLivePrompt`
+
+Highlight group for the prompt text in "live" pickers.
+
+
+                                                                              
 globals.hls.live_sym                       *fzf-lua-opts-globals.hls.live_sym*
 
 Type: `string`, Default: `FzfLuaLiveSym`
@@ -1648,6 +1657,16 @@ TMUX                                                       *fzf-lua-opts-tmux*
 tmux_buffers                                       *fzf-lua-opts-tmux_buffers*
 
 Tmux paste buffers
+
+
+                                                                              
+ZOXIDE                                                   *fzf-lua-opts-zoxide*
+
+
+                                                                              
+zoxide                                                   *fzf-lua-opts-zoxide*
+
+zoxide recent directories
 
 
                                                                               

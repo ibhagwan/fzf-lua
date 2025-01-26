@@ -1136,6 +1136,21 @@ M.defaults.complete_file        = {
   _fzf_nth_devicons = true,
 }
 
+M.defaults.zoxide               = {
+  multiprocess = true,
+  cmd          = "zoxide query --list --score",
+  git_root     = false,
+  formatter    = "path.dirname_first",
+  fzf_opts     = {
+    ["--no-multi"]  = true,
+    ["--delimiter"] = "[\t]",
+    ["--tabstop"]   = "4",
+    ["--tiebreak"]  = "end,index",
+    ["--nth"]       = "2..",
+  },
+  actions      = { enter = actions.cd }
+}
+
 M.defaults.complete_line        = { complete = true }
 
 M.defaults.file_icon_padding    = ""

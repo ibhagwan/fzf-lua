@@ -956,6 +956,7 @@ M._action_to_helpstr = {
   [actions.cs_delete]           = "colorscheme-delete",
   [actions.cs_update]           = "colorscheme-update",
   [actions.toggle_bg]           = "toggle-background",
+  [actions.cd]                  = "change-directory",
 }
 
 return M
