@@ -349,6 +349,7 @@ M.defaults.files                = {
   find_opts              = [[-type f -not -path '*/\.git/*']],
   rg_opts                = [[--color=never --files -g "!.git"]],
   fd_opts                = [[--color=never --type f --type l --exclude .git]],
+  dir_opts               = [[/s/b/a:-d]],
   hidden                 = true,
   toggle_ignore_flag     = "--no-ignore",
   toggle_hidden_flag     = "--hidden",

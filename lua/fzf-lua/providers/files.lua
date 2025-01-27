@@ -41,7 +41,7 @@ local get_files_cmd = function(opts)
     command = string.format("rg %s%s", opts.rg_opts,
       search_paths and string.format(" %s", search_paths) or "")
   elseif utils.__IS_WINDOWS then
-    command = "dir /s/b/a:-d"
+    command = "dir " .. opts.dir_opts
   else
     command = string.format("find %s %s",
       search_paths and search_paths or ".", opts.find_opts)

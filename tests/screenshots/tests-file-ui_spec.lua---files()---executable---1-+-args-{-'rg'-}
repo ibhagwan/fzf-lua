@@ -2,24 +2,24 @@
 01|                                                                
 02|~                                                               
 03|~      ╭─────────────────── Files  h ────────────────────╮      
-04|~      │>                                    107/107 (0) │      
+04|~      │>                                    109/109 (0) │      
 05|~      │──────────────────────────────────────────────── │      
-06|~      │▌ .editorconfig                                 ││      
-07|~      │  .github/ISSUE_TEMPLATE/bug.yaml               ││      
-08|~      │  .github/ISSUE_TEMPLATE/config.yml              │      
-09|~      │  .github/ISSUE_TEMPLATE/feature.yaml            │      
-10|~      │  .github/workflows/ci.yaml                      │      
-11|~      │  .github/workflows/luarocks-release.yaml        │      
-12|~      │  .github/workflows/sync_remote.yaml             │      
-13|~      │  .github/workflows/vimdoc.yaml                  │      
-14|~      │  .gitignore                                     │      
-15|~      │  .luarc.jsonc                                   │      
-16|~      │  .stylua.toml                                   │      
-17|~      │  LICENSE                                        │      
-18|~      │  Makefile                                       │      
-19|~      │  OPTIONS.md                                     │      
-20|~      │  README-Win.md                                  │      
-21|~      │  README.md                                      │      
+06|~      │▌ [DEBUG] rg --hidden --files -g "!.git" --sor··││      
+07|~      │  .editorconfig                                 ││      
+08|~      │  .github/ISSUE_TEMPLATE/bug.yaml                │      
+09|~      │  .github/ISSUE_TEMPLATE/config.yml              │      
+10|~      │  .github/ISSUE_TEMPLATE/feature.yaml            │      
+11|~      │  .github/workflows/ci.yaml                      │      
+12|~      │  .github/workflows/luarocks-release.yaml        │      
+13|~      │  .github/workflows/sync_remote.yaml             │      
+14|~      │  .github/workflows/vimdoc.yaml                  │      
+15|~      │  .gitignore                                     │      
+16|~      │  .luarc.jsonc                                   │      
+17|~      │  .stylua.toml                                   │      
+18|~      │  LICENSE                                        │      
+19|~      │  Makefile                                       │      
+20|~      │  OPTIONS.md                                     │      
+21|~      │  README-Win.md                                  │      
 22|~      ╰─────────────────────────────────────────────────╯      
 23|~                                                               
 24|[No Name]                                     0,0-1          All

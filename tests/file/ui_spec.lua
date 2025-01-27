@@ -114,19 +114,30 @@ T["files()"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-
   end,
 })
 
-T["files()"]["exec-exclude"] = new_set({ parametrize = { { "fd" }, { "fd+rg" } } }, {
-  function(exclude)
-    local opts
-    if exclude == "fd" then
-      opts = [[rg_opts = '--files -g "!.git" --sort=path']]
+T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find|dir" } } }, {
+  function(exec)
+    -- Ignore last "-- TERMINAL --" line and "[DEBUG]" line containing the cmd
+    local screen_opts = { ignore_lines = { 6, 28 }, normalize_paths = helpers.IS_WIN() }
+    local opts, exclude
+    if exec == "fd" then
+      exclude = "{}"
+      opts = [[fd_opts = "--color=never --type f --type l --exclude .git | sort"]]
+    elseif exec == "rg" then
       exclude = [[{ "fd", "fdfind" }]]
+      opts = [[rg_opts = '--files -g "!.git" --sort=path']]
     else
-      helpers.SKIP_IF_WIN()
       exclude = [[{ "fd", "fdfind", "rg" }]]
       opts = [==[
         find_opts = [[-type f -not -path '*/\.git/*' -not -path '*/doc/tags' -not -path '*/deps/*' | sort]],
+        dir_opts = [[/s/b/a:-d | findstr -v "\.git\\" | findstr -v "doc\\tags" | findstr -v "deps" | sort]],
         strip_cwd_prefix = true,
       ]==]
+    end
+    -- sort produces different output on Windows, ignore the mismatch
+    if exec ~= "rg" and helpers.IS_WIN() then
+      for i = 18, 21 do
+        table.insert(screen_opts.ignore_lines, i)
+      end
     end
     child.lua(([[
       _G._exec = vim.fn.executable
@@ -137,19 +148,17 @@ T["files()"]["exec-exclude"] = new_set({ parametrize = { { "fd" }, { "fd+rg" } }
     ]]):format(exclude))
     child.lua(([[
       FzfLua.files({
+        debug = 1,
         previewer = false,
         cwd_prompt = false,
-        requires_processing = true, -- for "strip_cwd_prefix"
+        requires_processing = true, -- for "strip_cwd_prefix|debug"
         -- fzf_opts = { ["--wrap"] = true },
-        -- debug = 1,
         %s
       })]]):format(opts))
     eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
-    -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
-    local screen_opts = { ignore_lines = { 28 }, normalize_paths = helpers.IS_WIN() }
     child.expect_screen_lines(screen_opts)
     child.type_keys("<c-c>")
     child.wait_until(function()
