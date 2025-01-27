@@ -1236,8 +1236,14 @@ function Previewer.marks:parse_entry(entry_str)
   if not mark then return {} end
   -- try to acquire position from sending buffer
   -- if this succeeds (line>0) the mark is inside
-  local pos = vim.api.nvim_buf_get_mark(self.win.src_bufnr, mark)
-  if pos and pos[1] > 0 and pos[1] == tonumber(lnum) then
+
+  -- nvim_buf_get_mark cannot get `'` mark correctly without curwin
+  -- https://github.com/neovim/neovim/issues/29807
+  local pos = api.nvim_win_call(self.win.src_winid, function()
+    return vim.api.nvim_buf_get_mark(self.win.src_bufnr, mark)
+  end)
+  if pos and pos[1] > 0 then
+    assert(pos[1] == tonumber(lnum))
     bufnr = self.win.src_bufnr
     filepath = api.nvim_buf_get_name(bufnr)
   end
