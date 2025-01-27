@@ -114,4 +114,48 @@ T["files()"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-
   end,
 })
 
+T["files()"]["exec-exclude"] = new_set({ parametrize = { { "fd" }, { "fd+rg" } } }, {
+  function(exclude)
+    local opts
+    if exclude == "fd" then
+      opts = [[rg_opts = '--files -g "!.git" --sort=path']]
+      exclude = [[{ "fd", "fdfind" }]]
+    else
+      helpers.SKIP_IF_WIN()
+      exclude = [[{ "fd", "fdfind", "rg" }]]
+      opts = [==[
+        find_opts = [[-type f -not -path '*/\.git/*' -not -path '*/doc/tags' -not -path '*/deps/*' | sort]],
+        strip_cwd_prefix = true,
+      ]==]
+    end
+    child.lua(([[
+      _G._exec = vim.fn.executable
+      vim.fn.executable = function(x)
+        if vim.tbl_contains(%s, x) then return 0 end
+        return _G._exec(x)
+      end
+    ]]):format(exclude))
+    child.lua(([[
+      FzfLua.files({
+        previewer = false,
+        cwd_prompt = false,
+        requires_processing = true, -- for "strip_cwd_prefix"
+        -- fzf_opts = { ["--wrap"] = true },
+        -- debug = 1,
+        %s
+      })]]):format(opts))
+    eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
+    child.wait_until(function()
+      return child.lua_get([[_G._fzf_load_called]]) == true
+    end)
+    -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
+    local screen_opts = { ignore_lines = { 28 }, normalize_paths = helpers.IS_WIN() }
+    child.expect_screen_lines(screen_opts)
+    child.type_keys("<c-c>")
+    child.wait_until(function()
+      return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+    end)
+  end,
+})
+
 return T

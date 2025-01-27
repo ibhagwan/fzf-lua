@@ -52,9 +52,19 @@ local get_files_cmd = function(opts)
     no_ignore = opts.toggle_ignore_flag or "--no-ignore",
   }) do
     (function()
+      local toggle, is_find = opts[k], nil
       -- Do nothing unless opt was set
       if opts[k] == nil then return end
-      command = utils.toggle_cmd_flag(command, v, opts[k])
+      if command:match("^dir") then return end
+      if command:match("^find") then
+        if k == "no_ignore" then return end
+        if k == "hidden" then
+          is_find = true
+          toggle = not opts[k]
+          v = [[-not -path '*/\.*']]
+        end
+      end
+      command = utils.toggle_cmd_flag(command, v, toggle, is_find)
     end)()
   end
   return command

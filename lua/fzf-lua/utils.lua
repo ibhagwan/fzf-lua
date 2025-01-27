@@ -1330,7 +1330,7 @@ function M.termopen(cmd, opts)
   end
 end
 
-function M.toggle_cmd_flag(cmd, flag, enabled)
+function M.toggle_cmd_flag(cmd, flag, enabled, append)
   if not flag then
     M.err("'toggle_flag' not set")
     return
@@ -1348,7 +1348,11 @@ function M.toggle_cmd_flag(cmd, flag, enabled)
     cmd = cmd:gsub(M.lua_regex_escape(flag), "")
   elseif not cmd:match(M.lua_regex_escape(flag)) then
     local bin, args = cmd:match("([^%s]+)(.*)$")
-    cmd = string.format("%s%s%s", bin, flag, args)
+    if append then
+      cmd = string.format("%s %s", cmd, flag)
+    else
+      cmd = string.format("%s%s%s", bin, flag, args)
+    end
   end
 
   return cmd

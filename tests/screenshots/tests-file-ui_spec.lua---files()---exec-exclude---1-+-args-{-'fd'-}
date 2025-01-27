@@ -1,0 +1,59 @@
+--|---------|---------|---------|---------|---------|---------|----
+01|                                                                
+02|~                                                               
+03|~      ╭─────────────────── Files  h ────────────────────╮      
+04|~      │>                                    107/107 (0) │      
+05|~      │──────────────────────────────────────────────── │      
+06|~      │▌ .editorconfig                                 ││      
+07|~      │  .github/ISSUE_TEMPLATE/bug.yaml               ││      
+08|~      │  .github/ISSUE_TEMPLATE/config.yml              │      
+09|~      │  .github/ISSUE_TEMPLATE/feature.yaml            │      
+10|~      │  .github/workflows/ci.yaml                      │      
+11|~      │  .github/workflows/luarocks-release.yaml        │      
+12|~      │  .github/workflows/sync_remote.yaml             │      
+13|~      │  .github/workflows/vimdoc.yaml                  │      
+14|~      │  .gitignore                                     │      
+15|~      │  .luarc.jsonc                                   │      
+16|~      │  .stylua.toml                                   │      
+17|~      │  LICENSE                                        │      
+18|~      │  Makefile                                       │      
+19|~      │  OPTIONS.md                                     │      
+20|~      │  README-Win.md                                  │      
+21|~      │  README.md                                      │      
+22|~      ╰─────────────────────────────────────────────────╯      
+23|~                                                               
+24|[No Name]                                     0,0-1          All
+25|                                                                
+26|                                                                
+27|                                                                
+28|-- TERMINAL --                                1,0-1         All 
+
+--|-
+01| 
+02| 
+03| 
+04| 
+05| 
+06| 
+07| 
+08| 
+09| 
+10| 
+11| 
+12| 
+13| 
+14| 
+15| 
+16| 
+17| 
+18| 
+19| 
+20| 
+21| 
+22| 
+23| 
+24| 
+25| 
+26| 
+27| 
+28| 
