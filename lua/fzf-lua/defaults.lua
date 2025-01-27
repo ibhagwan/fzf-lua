@@ -347,8 +347,8 @@ M.defaults.files                = {
   git_status_cmd         = {
     "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" },
   find_opts              = [[-type f -not -path '*/\.git/*']],
-  rg_opts                = [[--color=never --files -g "!.git"]],
-  fd_opts                = [[--color=never --type f --type l --exclude .git]],
+  rg_opts                = [[--color=never --hidden --files -g "!.git"]],
+  fd_opts                = [[--color=never --hidden --type f --type l --exclude .git]],
   toggle_ignore_flag     = "--no-ignore",
   toggle_hidden_flag     = "--hidden",
   toggle_follow_flag     = "--follow",

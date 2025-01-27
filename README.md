@@ -782,8 +782,8 @@ previewers = {
     -- default options are controlled by 'fd|rg|find|_opts'
     -- cmd            = "rg --files",
     find_opts         = [[-type f -not -path '*/\.git/*']],
-    rg_opts           = [[--color=never --files -g "!.git"]],
-    fd_opts           = [[--color=never --type f --type l --exclude .git]],
+    rg_opts           = [[--color=never --hidden --files -g "!.git"]],
+    fd_opts           = [[--color=never --hidden --type f --type l --exclude .git]],
     -- by default, cwd appears in the header only if {opts} contain a cwd
     -- parameter to a different folder than the current working directory
     -- uncomment if you wish to force display of the cwd as part of the
