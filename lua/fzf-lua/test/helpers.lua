@@ -231,27 +231,29 @@ M.new_child_neovim = function()
     MiniTest.expect.reference_screenshot(child.get_screenshot(screenshot_opts), path, opts)
   end
 
-  child.get_screen_lines = function()
-    return screenshot.fromChildScreen(child)
+  child.get_screen_lines = function(opts)
+    return screenshot.fromChildScreen(child, opts)
   end
 
   -- Expect screenshot without the "attrs" (highlights)
   child.expect_screen_lines = function(opts, path)
     opts = opts or {}
+    local screenshot_opts = { redraw = opts.redraw, normalize_paths = opts.normalize_paths }
+    opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
-    if opts.redraw ~= false then child.cmd("redraw") end
-    MiniTest.expect.reference_screenshot(child.get_screen_lines(), path, opts)
+    MiniTest.expect.reference_screenshot(child.get_screen_lines(screenshot_opts), path, opts)
   end
 
-  child.get_buf_lines = function(buf)
-    return screenshot.fromChildBufLines(child, buf)
+  child.get_buf_lines = function(buf, opts)
+    return screenshot.fromChildBufLines(child, buf, opts)
   end
 
-  child.expect_buflines = function(opts, path)
+  child.expect_buflines = function(buf, opts, path)
     opts = opts or {}
+    local screenshot_opts = { redraw = opts.redraw, normalize_paths = opts.normalize_paths }
+    opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
-    if opts.redraw ~= false then child.cmd("redraw") end
-    MiniTest.expect.reference_screenshot(child.get_buf_lines(), path, opts)
+    MiniTest.expect.reference_screenshot(child.get_buf_lines(buf, screenshot_opts), path, opts)
   end
 
   --- waits until condition fn evals to true, checking every interval ms
