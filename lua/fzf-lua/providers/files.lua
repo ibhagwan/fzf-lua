@@ -43,8 +43,19 @@ local get_files_cmd = function(opts)
   elseif utils.__IS_WINDOWS then
     command = "dir /s/b/a:-d"
   else
-    command = string.format("find -L %s %s",
+    command = string.format("find %s %s",
       search_paths and search_paths or ".", opts.find_opts)
+  end
+  for k, v in pairs({
+    follow = opts.toggle_follow_flag or "-L",
+    hidden = opts.toggle_hidden_flag or "--hidden",
+    no_ignore = opts.toggle_ignore_flag or "--no-ignore",
+  }) do
+    (function()
+      -- Do nothing unless opt was set
+      if opts[k] == nil then return end
+      command = utils.toggle_cmd_flag(command, v, opts[k])
+    end)()
   end
   return command
 end

@@ -39,7 +39,7 @@ M.ACTION_DEFINITIONS = {
   },
   [actions.toggle_follow]     = {
     function(o)
-      local flag = o.toggle_follow_flag or "--follow"
+      local flag = o.toggle_follow_flag or "-L"
       if o.cmd and o.cmd:match(utils.lua_regex_escape(flag)) then
         return "Disable symlink follow"
       else
@@ -434,7 +434,7 @@ M.fzf = function(contents, opts)
       pipe_cmd = opts.pipe_cmd,
       silent_fail = opts.silent_fail,
       is_fzf_tmux = opts._is_fzf_tmux,
-      debug = opts.debug_cmd or opts.debug and not (opts.debug_cmd == false),
+      debug = opts.debug == true or opts.debug == "verbose",
       RIPGREP_CONFIG_PATH = opts.RIPGREP_CONFIG_PATH,
     })
   -- kill fzf piped process PID
@@ -934,7 +934,7 @@ M.set_title_flags = function(opts, titles)
   local patterns = {
     { { utils.lua_regex_escape(opts.toggle_hidden_flag) or "%-%-hidden" },     "h" },
     { { utils.lua_regex_escape(opts.toggle_ignore_flag) or "%-%-no%-ignore" }, "i" },
-    { { utils.lua_regex_escape(opts.toggle_follow_flag) or "%-%-follow" },     "f" },
+    { { utils.lua_regex_escape(opts.toggle_follow_flag) or "%-L" },            "f" },
   }
   for _, def in ipairs(patterns) do
     for _, p in ipairs(def[1]) do
@@ -954,6 +954,12 @@ M.set_title_flags = function(opts, titles)
         table.insert(title, { f, opts.hls.title_flags })
       end
       utils.map_set(opts, "winopts.title", title)
+      -- HACK: update the win title for "unhide" / "resume"
+      local winobj = win.__SELF()
+      if winobj then
+        utils.map_set(winobj, "winopts.title", title)
+        utils.map_set(winobj._o, "winopts.title", title)
+      end
     end
   end
   return opts
