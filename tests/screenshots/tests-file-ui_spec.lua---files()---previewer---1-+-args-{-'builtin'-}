@@ -4,13 +4,13 @@
 03|~      ╭───────────────────── Files ─────────────────────╮      
 04|~      │>                                      94/94 (0) │      
 05|~      │──────────────────────────────────────────────── │      
-06|~      │  :: <ctrl-g> to Disable .gitignore              │      
-07|~      │▌ LICENSE                                       ││      
-08|~      │  Makefile                                       │      
-09|~      │  OPTIONS.md                                     │      
-10|~      │  README-Win.md                                  │      
-11|~      │  README.md                                      │      
-12|~      │  autoload/fzf_lua.vim                           │      
+06|~      │▌ LICENSE                                       ││      
+07|~      │  Makefile                                       │      
+08|~      │  OPTIONS.md                                     │      
+09|~      │  README-Win.md                                  │      
+10|~      │  README.md                                      │      
+11|~      │  autoload/fzf_lua.vim                           │      
+12|~      │  autoload/health/fzf_lua.vim                    │      
 13|~      ╰─────────────────────────────────────────────────╯      
 14|~      ╭──────────────────── LICENSE ────────────────────╮      
 15|~      │  1 MIT License                                  │      

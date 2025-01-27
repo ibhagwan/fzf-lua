@@ -865,44 +865,35 @@ M.sym_lsym = function(_, opts)
   opts.__ACT_TO({ resume = true })
 end
 
+-- NOTE: not used, left for backward compat
+-- some users may still be using this func
 M.toggle_flag = function(_, opts)
+  local o = vim.tbl_deep_extend("keep", {
+    -- grep|live_grep sets `opts._cmd` to the original
+    -- command without the search argument
+    cmd = utils.toggle_cmd_flag(opts._cmd or opts.cmd, opts.toggle_flag),
+    resume = true
+  }, opts.__call_opts)
+  opts.__call_fn(o)
+end
+
+M.toggle_opt = function(opts, opt_name)
+  -- opts.__call_opts[opt_name] = not opts[opt_name]
   local o = vim.tbl_deep_extend("keep", { resume = true }, opts.__call_opts)
-  local flag = opts.toggle_flag
-  if not flag then
-    utils.err("'toggle_flag' not set")
-    return
-  end
-  if not flag:match("^%s") then
-    -- flag must be preceded by whitespace
-    flag = " " .. flag
-  end
-  -- grep|live_grep sets `opts._cmd` to the original
-  -- command without the search argument
-  local cmd = opts._cmd or opts.cmd
-  if type(cmd) == "string" then
-    if cmd:match(utils.lua_regex_escape(flag)) then
-      o.cmd = cmd:gsub(utils.lua_regex_escape(flag), "")
-    else
-      local bin, args = cmd:match("([^%s]+)(.*)$")
-      o.cmd = string.format("%s%s%s", bin, flag, args)
-    end
-  end
+  o[opt_name] = not opts[opt_name]
   opts.__call_fn(o)
 end
 
 M.toggle_ignore = function(_, opts)
-  local flag = opts.toggle_ignore_flag or "--no-ignore"
-  M.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = flag }))
+  M.toggle_opt(opts, "no_ignore")
 end
 
 M.toggle_hidden = function(_, opts)
-  local flag = opts.toggle_hidden_flag or "--hidden"
-  M.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = flag }))
+  M.toggle_opt(opts, "hidden")
 end
 
 M.toggle_follow = function(_, opts)
-  local flag = opts.toggle_follow_flag or "--follow"
-  M.toggle_flag(_, vim.tbl_extend("force", opts, { toggle_flag = flag }))
+  M.toggle_opt(opts, "follow")
 end
 
 M.tmux_buf_set_reg = function(selected, opts)

@@ -29,6 +29,17 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     is_grep = true
     command = string.format("grep %s", opts.grep_opts)
   end
+  for k, v in pairs({
+    follow = opts.toggle_follow_flag or "-L",
+    hidden = opts.toggle_hidden_flag or "--hidden",
+    no_ignore = opts.toggle_ignore_flag or "--no-ignore",
+  }) do
+    (function()
+      -- Do nothing unless opt was set
+      if opts[k] == nil then return end
+      command = utils.toggle_cmd_flag(command, v, opts[k])
+    end)()
+  end
 
   -- save a copy of the command for `actions.toggle_ignore`
   -- TODO: both `get_grep_cmd` and `get_files_cmd` need to

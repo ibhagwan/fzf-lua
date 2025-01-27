@@ -1330,4 +1330,28 @@ function M.termopen(cmd, opts)
   end
 end
 
+function M.toggle_cmd_flag(cmd, flag, enabled)
+  if not flag then
+    M.err("'toggle_flag' not set")
+    return
+  end
+
+  -- flag must be preceded by whitespace
+  if not flag:match("^%s") then flag = " " .. flag end
+
+  -- auto-detect toggle when nil
+  if enabled == nil then
+    enabled = not cmd:match(M.lua_regex_escape(flag))
+  end
+
+  if not enabled then
+    cmd = cmd:gsub(M.lua_regex_escape(flag), "")
+  elseif not cmd:match(M.lua_regex_escape(flag)) then
+    local bin, args = cmd:match("([^%s]+)(.*)$")
+    cmd = string.format("%s%s%s", bin, flag, args)
+  end
+
+  return cmd
+end
+
 return M

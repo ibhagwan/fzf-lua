@@ -4,22 +4,22 @@
 03|~      ╭───────────────────── Files ─────────────────────╮      
 04|~      │>                                      94/94 (0) │      
 05|~      │──────────────────────────────────────────────── │      
-06|~      │  :: <ctrl-g> to Disable .gitignore              │      
-07|~      │▌  LICENSE                                     ││      
-08|~      │  󱁤 Makefile                                    ││      
-09|~      │  󰍔 OPTIONS.md                                   │      
-10|~      │  󰍔 README-Win.md                                │      
-11|~      │   README.md                                    │      
-12|~      │   autoload/fzf_lua.vim                         │      
-13|~      │   autoload/health/fzf_lua.vim                  │      
-14|~      │  󰦪 doc/fzf-lua-opts.txt                         │      
-15|~      │  󰦪 doc/fzf-lua.txt                              │      
-16|~      │  󰢱 lua/fzf-lua/_health.lua                      │      
-17|~      │  󰢱 lua/fzf-lua/actions.lua                      │      
-18|~      │  󰢱 lua/fzf-lua/class.lua                        │      
-19|~      │  󰢱 lua/fzf-lua/cmd.lua                          │      
-20|~      │  󰢱 lua/fzf-lua/cmp_src.lua                      │      
-21|~      │  󰢱 lua/fzf-lua/complete.lua                     │      
+06|~      │▌  LICENSE                                     ││      
+07|~      │  󱁤 Makefile                                    ││      
+08|~      │  󰍔 OPTIONS.md                                   │      
+09|~      │  󰍔 README-Win.md                                │      
+10|~      │   README.md                                    │      
+11|~      │   autoload/fzf_lua.vim                         │      
+12|~      │   autoload/health/fzf_lua.vim                  │      
+13|~      │  󰦪 doc/fzf-lua-opts.txt                         │      
+14|~      │  󰦪 doc/fzf-lua.txt                              │      
+15|~      │  󰢱 lua/fzf-lua/_health.lua                      │      
+16|~      │  󰢱 lua/fzf-lua/actions.lua                      │      
+17|~      │  󰢱 lua/fzf-lua/class.lua                        │      
+18|~      │  󰢱 lua/fzf-lua/cmd.lua                          │      
+19|~      │  󰢱 lua/fzf-lua/cmp_src.lua                      │      
+20|~      │  󰢱 lua/fzf-lua/complete.lua                     │      
+21|~      │  󰢱 lua/fzf-lua/config.lua                       │      
 22|~      ╰─────────────────────────────────────────────────╯      
 23|~                                                               
 24|[No Name]                                     0,0-1          All
