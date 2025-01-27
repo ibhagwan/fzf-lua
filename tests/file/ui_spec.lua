@@ -34,14 +34,11 @@ T["files()"]["start and abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
     -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
-    local ignore_lines = { 28 }
-    if helpers.IS_WIN() then
-      for i = 12, 21 do table.insert(ignore_lines, i) end
-    end
-    -- NOTE: we compare screen lines without "attrs", this way
-    -- we can test on stable, nightly and windows
-    -- child.expect_screenshot({ ignore_lines = ignore_lines })
-    child.expect_screen_lines({ ignore_lines = ignore_lines })
+    local screen_opts = { ignore_lines = { 28 }, normalize_paths = helpers.IS_WIN() }
+    -- NOTE: we compare screen lines without "attrs"
+    -- so we can test on stable, nightly and windows
+    -- child.expect_screenshot(screen_opts)
+    child.expect_screen_lines(screen_opts)
     child.type_keys(key)
     child.wait_until(function()
       return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
@@ -51,15 +48,11 @@ T["files()"]["start and abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c
 
 T["files()"]["previewer"] = new_set({ parametrize = { { "ci" }, { "builtin" } } }, {
   function(previewer)
-    if previewer == "builtin" then
-      -- Windows is too slow to test this without hacks and waits
-      helpers.SKIP_IF_WIN()
-    end
-    if previewer == "ci" then previewer = false end
     child.lua(([[FzfLua.files({
       previewer = %s,
       cwd_prompt = false,
       cmd = "rg --files --sort=path",
+      winopts = { preview = { scrollbar = false } },
     })]]):format(previewer == "builtin"
       and [["builtin"]]
       or [[require("fzf-lua.test.previewer")]]
@@ -69,14 +62,11 @@ T["files()"]["previewer"] = new_set({ parametrize = { { "ci" }, { "builtin" } } 
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
     -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
-    local ignore_lines = { 28 }
-    if helpers.IS_WIN() then
-      table.insert(ignore_lines, 12)
-    end
+    local screen_opts = { ignore_lines = { 28 }, normalize_paths = helpers.IS_WIN() }
     child.wait_until(function()
       return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) == "LICENSE"
     end)
-    child.expect_screen_lines({ ignore_lines = ignore_lines })
+    child.expect_screen_lines(screen_opts)
     child.type_keys("<c-c>")
     child.wait_until(function()
       return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
@@ -89,10 +79,6 @@ T["files()"]["icons"] = new_set({ parametrize = { { "devicons" }, { "mini" } } }
 T["files()"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-attrs" } } }, {
   function(icons, attrs)
     attrs = attrs == "+attrs" and true or false
-    if icons == "mini" then
-      -- TODO: mini bugged on win returning wrong icon for Makefile / md
-      helpers.SKIP_IF_WIN()
-    end
     if attrs then
       helpers.SKIP_IF_NOT_STABLE()
       helpers.SKIP_IF_WIN()
@@ -116,14 +102,11 @@ T["files()"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
-    local ignore_lines = { 28 }
-    if helpers.IS_WIN() then
-      for i = 12, 21 do table.insert(ignore_lines, i) end
-    end
+    local screen_opts = { ignore_lines = { 28 }, normalize_paths = helpers.IS_WIN() }
     if attrs then
-      child.expect_screenshot({ ignore_lines = ignore_lines })
+      child.expect_screenshot(screen_opts)
     else
-      child.expect_screen_lines({ ignore_lines = ignore_lines })
+      child.expect_screen_lines(screen_opts)
     end
     child.type_keys("<c-c>")
     child.wait_until(function()

@@ -49,7 +49,10 @@ end
 ---@param text_lines string[]
 ---@param attr_lines? string[]
 ---@return MiniTestScreenshot
-function M.from_lines(text_lines, attr_lines)
+function M.from_lines(text_lines, attr_lines, opts)
+  if opts and opts.normalize_paths then
+    text_lines = vim.tbl_map(function(x) return x:gsub([[\]], [[/]]) end, text_lines)
+  end
   local attr_linez = attr_lines or {}
   for _ = 1, #text_lines do
     table.insert(attr_linez, " ")
@@ -61,12 +64,18 @@ function M.from_lines(text_lines, attr_lines)
   return screenshot_new({ text = vim.tbl_map(f, text_lines), attr = vim.tbl_map(f, attr_linez) })
 end
 
-function M.fromChildBufLines(child, buf)
-  local lines = child.api.nvim_buf_get_lines(buf or 0, 0, -1, true)
-  return M.from_lines(lines)
+local function normalize(text)
+  return text:gsub([[/]], [[\]])
 end
 
-function M.fromChildScreen(child)
+function M.fromChildBufLines(child, buf, opts)
+  if opts and opts.redraw then child.cmd("redraw") end
+  local lines = child.api.nvim_buf_get_lines(buf or 0, 0, -1, true)
+  return M.from_lines(lines, {}, opts)
+end
+
+function M.fromChildScreen(child, opts)
+  if opts and opts.redraw then child.cmd("redraw") end
   local lines = child.lua([[
       local lines = {}
       for i = 1, vim.o.lines do
@@ -78,7 +87,7 @@ function M.fromChildScreen(child)
       end
       return lines
     ]])
-  return M.from_lines(lines)
+  return M.from_lines(lines, {}, opts)
 end
 
 return M

@@ -13,9 +13,9 @@
 12|~      │  autoload/fzf_lua.vim                           │      
 13|~      ╰─────────────────────────────────────────────────╯      
 14|~      ╭──────────────────── LICENSE ────────────────────╮      
-15|~      │  1 MIT License                                         
-16|~      │  2                                                     
-17|~      │  3 Copyright (c) 2021 iBhagwan                         
+15|~      │  1 MIT License                                  │      
+16|~      │  2                                              │      
+17|~      │  3 Copyright (c) 2021 iBhagwan                  │      
 18|~      │  4                                              │      
 19|~      │  5 Permission is hereby granted, free of charge,│      
 20|~      │  6 of this software and associated documentation│      
