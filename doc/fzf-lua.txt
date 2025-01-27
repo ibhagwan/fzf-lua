@@ -764,12 +764,15 @@ CUSTOMIZATION                                          *fzf-lua-customization*
         cwd_prompt_shorten_val = 1,         -- shortened path parts length
         toggle_ignore_flag = "--no-ignore", -- flag toggled in `actions.toggle_ignore`
         toggle_hidden_flag = "--hidden",    -- flag toggled in `actions.toggle_hidden`
-        toggle_follow_flag = "--follow",    -- flag toggled in `actions.toggle_follow`
+        toggle_follow_flag = "-L",          -- flag toggled in `actions.toggle_follow`
+        hidden             = true,          -- enable hidden files by default
+        follow             = false,         -- do not follow symlinks by default
+        no_ignore          = false,         -- respect ".gitignore"  by default
         actions = {
           -- inherits from 'actions.files', here we can override
           -- or set bind to 'false' to disable a default action
           -- action to toggle `--no-ignore`, requires fd or rg installed
-          ["ctrl-g"]         = { actions.toggle_ignore },
+          ["alt-i"]        = { actions.toggle_ignore },
           -- uncomment to override `actions.file_edit_or_qf`
           --   ["enter"]     = actions.file_edit,
           -- custom actions are available too
@@ -922,6 +925,9 @@ CUSTOMIZATION                                          *fzf-lua-customization*
         -- cmd            = "rg --vimgrep",
         grep_opts         = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp -e",
         rg_opts           = "--column --line-number --no-heading --color=always --smart-case --max-columns=4096 -e",
+        hidden             = false,       -- enable hidden files by default
+        follow             = false,       -- do not follow symlinks by default
+        no_ignore          = false,       -- respect ".gitignore"  by default
         -- Uncomment to use the rg config file `$RIPGREP_CONFIG_PATH`
         -- RIPGREP_CONFIG_PATH = vim.env.RIPGREP_CONFIG_PATH
         --
