@@ -568,7 +568,9 @@ M.create_fzf_colors = function(opts)
   local tbl = {}
 
   -- In case the user already set fzf_opts["--color"] (#1052)
-  table.insert(tbl, opts.fzf_opts and opts.fzf_opts["--color"])
+  if opts.fzf_colors and type(opts.fzf_colors["--color"]) == "string" then
+    table.insert(tbl, opts.fzf_opts["--color"])
+  end
 
   for flag, list in pairs(colors) do
     if type(list) == "table" then
@@ -600,7 +602,9 @@ M.create_fzf_colors = function(opts)
     end
   end
 
-  return not utils.tbl_isempty(tbl) and table.concat(tbl, ",")
+  -- NOTE: return `nil` so we don't set `fzf_opts["--color"]` to false
+  -- although harmless (and now fixed) can cause "reload" issues (#1764)
+  return not utils.tbl_isempty(tbl) and table.concat(tbl, ",") or nil
 end
 
 M.create_fzf_binds = function(opts)
