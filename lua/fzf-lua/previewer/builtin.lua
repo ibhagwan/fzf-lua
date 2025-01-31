@@ -260,6 +260,10 @@ function Previewer.base:set_preview_buf(newbuf, min_winopts)
   -- Something went terribly wrong
   assert(curbuf ~= newbuf)
   utils.win_set_buf_noautocmd(self.win.preview_winid, newbuf)
+  vim.keymap.set("", "i", function()
+    vim.api.nvim_set_current_win(self.win.fzf_winid)
+    vim.cmd("startinsert")
+  end, { buffer = newbuf })
   self.preview_bufnr = newbuf
   -- set preview window options
   if min_winopts then
