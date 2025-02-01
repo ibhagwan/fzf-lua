@@ -551,6 +551,7 @@ for _, fname in ipairs({ "edit", "split", "vsplit", "tabedit" }) do
 end
 
 M.spell_apply = function(selected)
+  if not selected[1] then return false end
   local word = selected[1]
   vim.cmd("normal! ciw" .. word)
   vim.cmd("stopinsert")
