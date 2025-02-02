@@ -954,7 +954,7 @@ previewers = {
     -- cmd            = "rg --vimgrep",
     grep_opts         = "--binary-files=without-match --line-number --recursive --color=auto --perl-regexp -e",
     rg_opts           = "--column --line-number --no-heading --color=always --smart-case --max-columns=4096 -e",
-    hidden             = false,       -- enable hidden files by default
+    hidden             = false,       -- disable hidden files by default
     follow             = false,       -- do not follow symlinks by default
     no_ignore          = false,       -- respect ".gitignore"  by default
     -- Uncomment to use the rg config file `$RIPGREP_CONFIG_PATH`
