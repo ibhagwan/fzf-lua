@@ -512,8 +512,14 @@ M.goto_mark = function(selected)
 end
 
 M.mark_del = function(selected)
-  local marks = vim.tbl_map(function(s) return s:match "[^ ]+" end, selected)
-  vim.cmd.delm { args = marks }
+  local win = utils.CTX().winid
+  local buf = utils.CTX().bufnr
+  vim.api.nvim_win_call(win, function()
+    vim.tbl_map(function(s)
+      local mark = s:match "[^ ]+"
+      vim.api.nvim_buf_del_mark(buf, mark)
+    end, selected)
+  end)
 end
 
 M.goto_jump = function(selected, opts)
