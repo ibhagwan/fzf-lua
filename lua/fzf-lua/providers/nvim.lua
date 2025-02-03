@@ -229,7 +229,7 @@ M.marks = function(opts)
 
   opts.__fn_reload = opts.__fn_reload or function()
     return function(cb)
-      local marks = vim.api.nvim_buf_call(core.CTX().bufnr,
+      local marks = vim.api.nvim_win_call(core.CTX().winid,
         function() return vim.fn.execute("marks") end)
       marks = vim.split(marks, "\n")
       local entries = {}
