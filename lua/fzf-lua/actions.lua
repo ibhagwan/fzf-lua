@@ -517,7 +517,9 @@ M.mark_del = function(selected)
   vim.api.nvim_win_call(win, function()
     vim.tbl_map(function(s)
       local mark = s:match "[^ ]+"
-      vim.api.nvim_buf_del_mark(buf, mark)
+      local ok, res = pcall(vim.api.nvim_buf_del_mark, buf, mark)
+      if ok and res then return end
+      return vim.cmd.delm(mark)
     end, selected)
   end)
 end
