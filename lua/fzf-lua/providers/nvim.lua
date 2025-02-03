@@ -2,6 +2,7 @@ local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local devicons = require "fzf-lua.devicons"
 
@@ -226,29 +227,46 @@ M.marks = function(opts)
   opts = config.normalize_opts(opts, "marks")
   if not opts then return end
 
-  local marks = vim.fn.execute("marks")
-  marks = vim.split(marks, "\n")
+  opts.__fn_reload = opts.__fn_reload or function()
+    return function(cb)
+      local marks = vim.api.nvim_buf_call(core.CTX().bufnr,
+        function() return vim.fn.execute("marks") end)
+      marks = vim.split(marks, "\n")
+      local entries = {}
+      local pattern = opts.marks and opts.marks or ""
+      for i = #marks, 3, -1 do
+        local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
+        col = tostring(tonumber(col) + 1)
+        if path.is_absolute(text) then
+          text = path.HOME_to_tilde(text)
+        end
+        if not pattern or string.match(mark, pattern) then
+          table.insert(entries, string.format(" %-15s %15s %15s %s",
+            utils.ansi_codes.yellow(mark),
+            utils.ansi_codes.blue(line),
+            utils.ansi_codes.green(col),
+            text))
+        end
+      end
 
-  local entries = {}
-  local pattern = opts.marks and opts.marks or ""
-  for i = #marks, 3, -1 do
-    local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
-    col = tostring(tonumber(col) + 1)
-    if path.is_absolute(text) then
-      text = path.HOME_to_tilde(text)
-    end
-    if not pattern or string.match(mark, pattern) then
-      table.insert(entries, string.format(" %-15s %15s %15s %s",
-        utils.ansi_codes.yellow(mark),
-        utils.ansi_codes.blue(line),
-        utils.ansi_codes.green(col),
-        text))
+      table.sort(entries, function(a, b) return a < b end)
+      table.insert(entries, 1,
+        string.format("%-5s %s  %s %s", "mark", "line", "col", "file/text"))
+
+      vim.tbl_map(cb, entries)
+      cb(nil)
     end
   end
 
-  table.sort(entries, function(a, b) return a < b end)
-  table.insert(entries, 1,
-    string.format("%-5s %s  %s %s", "mark", "line", "col", "file/text"))
+  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
+  local reload, id = shell.reload_action_cmd(opts, "{+}")
+  local contents = reload:gsub("%-%-%s+{%+}$", "")
+  opts.__reload_cmd = reload
+
+  opts._fn_pre_fzf = function()
+    shell.set_protected(id)
+  end
+
 
   opts.fzf_opts["--header-lines"] = 1
   --[[ opts.preview = function (args, fzf_lines, _)
@@ -265,7 +283,7 @@ M.marks = function(opts)
     end
   end ]]
 
-  core.fzf_exec(entries, opts)
+  core.fzf_exec(contents, opts)
 end
 
 M.registers = function(opts)
