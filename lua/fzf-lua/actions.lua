@@ -511,6 +511,11 @@ M.goto_mark = function(selected)
   -- vim.fn.feedkeys(string.format("'%s", mark))
 end
 
+M.mark_del = function(selected)
+  local marks = vim.tbl_map(function(s) return s:match "[^ ]+" end, selected)
+  vim.cmd.delm { args = marks }
+end
+
 M.goto_jump = function(selected, opts)
   if opts.jump_using_norm then
     local jump, _, _, _ = selected[1]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")

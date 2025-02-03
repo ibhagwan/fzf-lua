@@ -975,7 +975,10 @@ M.defaults.profiles             = {
 
 M.defaults.marks                = {
   fzf_opts  = { ["--no-multi"] = true },
-  actions   = { ["enter"] = actions.goto_mark },
+  actions   = {
+    ["enter"] = actions.goto_mark,
+    ["ctrl-x"] = { fn = actions.mark_del, reload = true }
+  },
   previewer = { _ctor = previewers.builtin.marks },
 }
 
