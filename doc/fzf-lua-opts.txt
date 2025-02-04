@@ -1160,6 +1160,9 @@ new underlying grep command with the prompt input text, this can be more
 performant on large monorepos to narrow down the result set before switching
 to fuzzy matching with `ctrl-g` for further refinement.
 
+`search_paths` is an option to provide a root directory to
+the grep implementation, for example:
+`:lua FzfLua live_grep search_paths=/the/projects/sub/folder`
 
                                                                               
 live_grep_native                               *fzf-lua-opts-live_grep_native*
