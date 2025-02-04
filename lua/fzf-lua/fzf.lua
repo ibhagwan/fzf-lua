@@ -92,7 +92,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- use input redirection with skim to prevent interface opening delay
       local bin_is_sk = opts.fzf_bin and opts.fzf_bin:match("sk$")
       local fish_shell = vim.o.shell and vim.o.shell:match("fish$")
-      if not fish_shell or bin_is_sk then
+      if (not fish_shell or bin_is_sk) and not opts.pipe_cmd then
         table.insert(cmd, "<")
         table.insert(cmd, libuv.shellescape(fifotmpname))
       else
