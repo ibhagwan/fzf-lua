@@ -104,7 +104,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   table.insert(cmd, ">")
   table.insert(cmd, libuv.shellescape(outputtmpname))
 
-  local fd, output_pipe = nil, nil
+  local output_pipe = nil
   local finish_called = false
   local write_cb_count = 0
   local windows_pipe_server = nil
@@ -125,7 +125,16 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- We use tbl for perf reasons, from ':help system':
       --  If {cmd} is a List it runs directly (no 'shell')
       --  If {cmd} is a String it runs in the 'shell'
-      vim.fn.system({ "mkfifo", fifotmpname })
+      utils.io_system({ "mkfifo", fifotmpname })
+      -- have to open this after there is a reader (termopen)
+      -- otherwise this will block
+      uv.fs_open(fifotmpname, "w", -1, function(err, fd)
+        if err then error(err) end
+        output_pipe = uv.new_pipe(false)
+        output_pipe:open(fd)
+        -- print(output_pipe:getpeername())
+        handle_contents()
+      end)
     end
   end
 
@@ -326,18 +335,6 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     else
       vim.cmd [[startinsert]]
     end
-  end
-
-  if not utils.__IS_WINDOWS
-      and (type(contents) == "function" or type(contents) == "table")
-  then
-    -- have to open this after there is a reader (termopen)
-    -- otherwise this will block
-    fd = uv.fs_open(fifotmpname, "w", -1)
-    output_pipe = uv.new_pipe(false)
-    output_pipe:open(fd)
-    -- print(output_pipe:getpeername())
-    handle_contents()
   end
 
   return coroutine.yield()
