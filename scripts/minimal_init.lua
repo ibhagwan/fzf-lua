@@ -12,3 +12,6 @@ if #vim.api.nvim_list_uis() == 0 then
   vim.opt.runtimepath:append(vim.fs.joinpath("deps", "fzf-lua"))
   vim.opt.runtimepath:append(vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "fzf-lua"))
 end
+
+vim.env.FZF_DEFAULT_OPTS = nil
+vim.env.LC_ALL = "C"

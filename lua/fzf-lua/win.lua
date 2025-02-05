@@ -612,7 +612,11 @@ end
 ---@param o table
 ---@return FzfWin
 function FzfWin:new(o)
-  if _self and not _self:hidden() then
+  if not _self then
+  elseif _self:was_hidden() then
+    TSInjector.clear_cache(_self._hidden_fzf_bufnr)
+    _self = nil
+  elseif not _self:hidden() then
     -- utils.warn("Please close fzf-lua before starting a new instance")
     _self._reuse = true
     -- switch to fzf-lua's main window in case the user switched out
@@ -625,7 +629,7 @@ function FzfWin:new(o)
     -- refersh treesitter settings as new picker might have it disabled
     _self._o.winopts.treesitter = o.winopts.treesitter
     return _self
-  elseif _self and _self:hidden() then
+  elseif _self:hidden() then
     -- Clear the hidden buffers
     vim.api.nvim_buf_delete(_self._hidden_fzf_bufnr, { force = true })
     TSInjector.clear_cache(_self._hidden_fzf_bufnr)
