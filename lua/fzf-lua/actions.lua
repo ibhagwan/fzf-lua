@@ -59,6 +59,8 @@ M.normalize_selected = function(selected, opts)
   -- so it can always be enumerated safely
   if not selected then return end
   local actions = opts.actions
+  -- Backward compat, "default" action trumps "enter"
+  if actions.default then actions.enter = actions.default end
   if utils.has(opts, "fzf", { 0, 53 }) or utils.has(opts, "sk", { 0, 14 }) then
     -- Using the new `print` action keybind is expected at `selected[1]`
     -- NOTE: if `--select-1|-q` was used we'll be missing the keybind
