@@ -190,7 +190,7 @@
     "url": "Mofiqul/vscode.nvim",
     "colorschemes": ["vscode"]
   },
-  "darcula.nvim": {
+  "dracula.nvim": {
     "disp_name": "Dracula",
     "url": "Mofiqul/dracula.nvim",
     "colorschemes": ["dracula"]
@@ -464,11 +464,11 @@
         "lua": "require('starry').setup({style={name='moonlight'}}); vim.cmd.colorscheme('starry')"
       },
       {
-        "disp_name": "Starry Darcula",
+        "disp_name": "Starry Dracula",
         "lua": "require('starry').setup({style={name='dracula'}}); vim.cmd.colorscheme('starry')"
       },
       {
-        "disp_name": "Starry Darcula Blood",
+        "disp_name": "Starry Dracula Blood",
         "lua": "require('starry').setup({style={name='dracula_blood'}}); vim.cmd.colorscheme('starry')"
       },
       {
