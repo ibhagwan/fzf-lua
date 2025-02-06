@@ -289,6 +289,10 @@ do
     complete_line = { "fzf-lua.complete", "line" },
     complete_bline = { "fzf-lua.complete", "bline" },
     zoxide = { "fzf-lua.providers.files", "zoxide" },
+    -- API shortcuts
+    fzf_exec = { "fzf-lua.core", "fzf_exec" },
+    fzf_live = { "fzf-lua.core", "fzf_live" },
+    fzf_wrap = { "fzf-lua.core", "fzf_wrap" },
   }
 
   for k, v in pairs(lazyloaded_modules) do
@@ -339,12 +343,6 @@ end
 
 -- export the defaults module and deref
 M.defaults = require("fzf-lua.defaults").defaults
-
--- API shortcuts
-M.fzf_exec = require("fzf-lua.core").fzf_exec
-M.fzf_live = require("fzf-lua.core").fzf_live
-M.fzf_wrap = require("fzf-lua.core").fzf_wrap
--- M.fzf_raw = require( "fzf-lua.fzf").raw_fzf
 
 -- exported modules
 M._exported_modules = {
