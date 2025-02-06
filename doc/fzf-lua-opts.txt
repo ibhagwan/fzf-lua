@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 January 25
+*fzf-lua-opts.txt*      For Neovim >= 0.8.0      Last change: 2025 February 06
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -1148,6 +1148,19 @@ binary (e.g. `ag`).
 
 Unless `search=...` is specified will prompt for the search string.
 
+
+grep.search_paths                             *fzf-lua-opts-grep.search_paths*
+
+Type: `[string]`, Default: `nil`
+
+list of paths to be grep'd, for example:
+
+>lua
+    -- Using the vimL command
+    :FzfLua live_grep search_paths=/path/to/search
+    -- multiple paths using the lua command
+    :lua FzfLua.grep({ search_paths = { "/path1", "path2" } })
+<
 
                                                                               
 live_grep                                             *fzf-lua-opts-live_grep*

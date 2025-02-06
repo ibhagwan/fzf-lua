@@ -856,6 +856,20 @@ Search for strings/regexes using `rg`, `grep` or any other compatible grep'er bi
 
 Unless `search=...` is specified will prompt for the search string.
 
+##### grep.search_paths
+
+Type: `[string]`, Default: `nil`
+
+list of paths to be grep'd, for example:
+
+```lua
+-- Using the vimL command
+:FzfLua live_grep search_paths=/path/to/search
+-- multiple paths using the lua command
+:lua FzfLua.grep({ search_paths = { "/path1", "path2" } })
+```
+
+
 #### live_grep
 
 Search for strings/regexes using `rg`, `grep` or any other compatible grep'er binary (e.g. `ag`).
