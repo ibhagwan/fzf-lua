@@ -57,6 +57,7 @@ return {
   search_history       = title("Search history"),
   registers            = title("Registers"),
   keymaps              = title("Keymaps"),
+  options              = title("Options"),
   spell_suggest        = title("Spell Suggestions"),
   filetypes            = title("Filetypes"),
   packadd              = title("Packadd"),
