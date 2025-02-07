@@ -368,7 +368,7 @@ M.keymaps = function(opts)
   if opts.show_details == false then field_fmt.rhs = nil end
 
   local format = function(info)
-    info.desc = string.sub(info.desc or "", 1, 33)
+    info.desc = field_fmt.rhs and string.sub(info.desc or "", 1, 33) or info.desc
     local ret
     for _, f in ipairs(fields) do
       if field_fmt[f] then
