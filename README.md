@@ -289,6 +289,7 @@ Alternatively, resuming work on a specific picker:
 | `registers`            | :registers                     |
 | `tagstack`             | :tags                          |
 | `autocmds`             | :autocmd                       |
+| `options`              | neovim options                 |
 | `keymaps`              | key mappings                   |
 | `filetypes`            | filetypes                      |
 | `menus`                | menus                          |
@@ -1130,6 +1131,12 @@ previewers = {
       ["ctrl-v"]      = actions.keymap_vsplit,
       ["ctrl-t"]      = actions.keymap_tabedit,
     },
+  },
+  options = {
+    prompt            = "Options> ",
+    separator         = "│",  -- separator between option name and value
+    color_values      = true, -- colorize boolean values
+    actions           = { ["enter"] = actions.option_edit },
   },
   quickfix = {
     file_icons        = true,

@@ -568,6 +568,51 @@ for _, fname in ipairs({ "edit", "split", "vsplit", "tabedit" }) do
   end
 end
 
+M.option_edit = function(selected, opts)
+  local show_option_value_input = function(option, old, transform)
+    vim.ui.input({ prompt = option, default = old }, function(updated)
+      if not updated or updated == "" or updated == old then
+        return
+      end
+
+      local transformed_value = transform and transform(updated) or updated
+
+      local ok, err = pcall(function()
+        vim.cmd(string.format("set %s=%s", option, transformed_value))
+      end)
+      if not ok and err then
+        local extracted_error = err:match("Vim%([^%)]+%):%s*(.-)$") or err
+        vim.notify(extracted_error, vim.log.levels.ERROR)
+      end
+      M.resume()
+    end)
+  end
+
+  local parts = vim.split(selected[1], opts.separator)
+  local option = vim.trim(parts[1])
+  local old = vim.trim(parts[2])
+  local info = vim.api.nvim_get_option_info2(option, {})
+
+  if info.type == "boolean" then
+    local ok, err = pcall(function()
+      vim.cmd(string.format("set %s!", option))
+    end)
+    if not ok and err then
+      local extracted_error = err:match("Vim%([^%)]+%):%s*(.-)$") or err
+      vim.notify(extracted_error, vim.log.levels.ERROR)
+    end
+  elseif info.type == "number" then
+    vim.schedule(function()
+      show_option_value_input(option, old, tonumber)
+    end)
+  else
+    vim.schedule(function()
+      show_option_value_input(option, old, nil)
+    end)
+  end
+  M.resume()
+end
+
 M.spell_apply = function(selected)
   if not selected[1] then return false end
   local word = selected[1]

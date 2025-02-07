@@ -1530,4 +1530,86 @@ function Previewer.keymaps:populate_preview_buf(entry_str)
   Previewer.autocmds.super.populate_preview_buf(self, entry_str)
 end
 
+Previewer.options = Previewer.base:extend()
+
+function Previewer.options:new(o, opts, fzf_win)
+  Previewer.options.super.new(self, o, opts, fzf_win)
+  local paths = vim.fn.globpath(vim.o.rtp, "doc/options.txt", false, true)
+  self.lines = vim.fn.readfile(paths[1])
+end
+
+function Previewer.options:gen_winopts()
+  local winopts = {
+    wrap = true,
+    number = false,
+    relativenumber = false,
+    cursorline = false,
+  }
+  return vim.tbl_extend("keep", winopts, self.winopts)
+end
+
+function Previewer.options:get_help_text(tag)
+  local tag_pattern = "%*'" .. tag .. "'%*"
+
+  local start_index
+  for i, line in ipairs(self.lines) do
+    if line:match(tag_pattern) then
+      start_index = i
+      break
+    end
+  end
+  if not start_index then
+    return nil, nil
+  end
+
+  local heading_pattern = "%*'[^']*'%*"
+  local end_index = #self.lines
+  for j = start_index + 1, #self.lines do
+    if self.lines[j]:match(heading_pattern) then
+      end_index = j - 1
+      break
+    end
+  end
+
+  -- get lines between start and end
+  local lines = {}
+  for i = start_index, end_index do
+    lines[#lines + 1] = self.lines[i]
+  end
+
+  return lines
+end
+
+function Previewer.options:parse_entry(entry_str)
+  local parts = vim.split(entry_str, self.opts.separator)
+  local option = vim.trim(parts[1])
+  local value = vim.trim(parts[2])
+  return { name = option, value = value }
+end
+
+function Previewer.options:populate_preview_buf(entry_str)
+  if not self.win or not self.win:validate_preview() then return end
+  local entry = self:parse_entry(entry_str)
+  if utils.tbl_isempty(entry) then return end
+
+  local header = {
+    "Value: " .. entry.value,
+    "",
+    "",
+  }
+
+  local tmpbuf = self:get_tmp_buffer()
+  vim.api.nvim_set_option_value("filetype", "help", { buf = tmpbuf })
+
+  -- get_help_text might be slow. pcall to prevent errors when scrolling the list too quickly
+  pcall(function()
+    local lines = vim.list_extend(header, self:get_help_text(entry.name))
+    vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+    self:set_preview_buf(tmpbuf)
+  end)
+
+  self.win:update_preview_title(string.format(" %s ", entry.name))
+  self.win:update_preview_scrollbar()
+end
+
 return Previewer
