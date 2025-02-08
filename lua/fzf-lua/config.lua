@@ -686,6 +686,7 @@ function M.normalize_opts(opts, globals, __resume_key)
         }
       else
         return "fzf", opts.__FZF_VERSION, {
+          ["0.59"] = { fzf_opts = { ["--scheme"] = "path" } },
           ["0.56"] = { fzf_opts = { ["--gap"] = true } },
           ["0.54"] = {
             fzf_opts = {
