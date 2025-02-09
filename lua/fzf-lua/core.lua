@@ -473,7 +473,11 @@ M.fzf = function(contents, opts)
       and (action[1] ~= nil or action.reload or action.noclose or action.reuse)
   if (not fzf_win:autoclose() == false) and not do_not_close then
     fzf_win:close(fzf_bufnr)
-    M.__CTX = nil
+    -- only clear context if we didn't open a new interface, for example, opening
+    -- files, switching to normal with <c-\><c-n> and opening buffers (#1810)
+    if utils.fzf_winobj() == nil then
+      M.__CTX = nil
+    end
   end
   return selected
 end
