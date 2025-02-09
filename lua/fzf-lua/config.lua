@@ -675,6 +675,7 @@ function M.normalize_opts(opts, globals, __resume_key)
           -- All fzf flags not existing in skim
           ["all"] = {
             fzf_opts = {
+              ["--scheme"]         = false,
               ["--gap"]            = false,
               ["--info"]           = false,
               ["--border"]         = false,
