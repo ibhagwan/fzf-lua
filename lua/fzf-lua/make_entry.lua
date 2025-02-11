@@ -55,7 +55,7 @@ local function load_config_section(s, datatype, optional)
   end
 end
 
-if not config then
+if _G._fzf_lua_is_headless then
   local _config = { globals = { git = {}, files = {}, grep = {} } }
   _config.globals.git.icons = load_config_section("globals.git.icons", "table") or {}
   _config.globals.files.git_status_cmd =
