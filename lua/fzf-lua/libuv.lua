@@ -326,7 +326,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
   for k, v in pairs(opts.g or {}) do
     _G[k] = v
     if opts.debug == "v" or opts.debug == "verbose" then
-      io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, v))
+      io.stdout:write(string.format("[DEBUG] %s=%s" .. (k ~= "_EOL" and EOL or ""), k, v))
     end
   end
 

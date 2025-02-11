@@ -829,8 +829,11 @@ M.mt_cmd_wrapper = function(opts)
     t.g = {}
     for k, v in pairs({
       ["_fzf_lua_server"] = vim.g.fzf_lua_server,
-      ["_devicons_path"] = devicons.plugin_path(),
-      ["_devicons_setup"] = config._devicons_setup,
+      -- [NOTE] No longer needed, we use RPC for icons
+      -- ["_devicons_path"] = devicons.plugin_path(),
+      -- ["_devicons_setup"] = config._devicons_setup,
+      ["_EOL"] = opts.multiline and "\0" or "\n",
+      ["_debug"] = opts.debug,
     }) do
       t.g[k] = v
     end

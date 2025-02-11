@@ -41,9 +41,14 @@ local function load_config_section(s, datatype, optional)
     if ok and is_bytecode then
       ok, res = pcall(loadstring, res)
     end
+    ---@diagnostic disable-next-line: undefined-field
+    if _G._debug == "v" or _G._debug == "verbose" then
+      ---@diagnostic disable-next-line: undefined-field
+      io.stdout:write(("[DEBUG] [load_config] %s = %s" .. (_G._EOL or "\n"))
+        :format(s, not ok and errmsg or res))
+    end
     if not ok and not optional then
-      io.stderr:write(("Error loading remote config section '%s': %s\n")
-        :format(s, errmsg))
+      io.stderr:write(("Error loading remote config section '%s': %s\n"):format(s, errmsg))
     elseif ok and type(res) == datatype then
       return res
     end
