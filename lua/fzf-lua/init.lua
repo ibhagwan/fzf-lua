@@ -33,6 +33,18 @@ do
     vim.g.fzf_lua_server = vim.fn.serverstart("fzf-lua." .. os.time())
   end
 
+  -- Workaround for using `:wqa` with "hide"
+  -- https://github.com/neovim/neovim/issues/14061
+  vim.api.nvim_create_autocmd("QuitPre", {
+    group = vim.api.nvim_create_augroup("FzfLuaNvimQuit", { clear = true }),
+    callback = function()
+      local win = utils.fzf_winobj()
+      if win and win:hidden() then
+        vim.api.nvim_buf_delete(win._hidden_fzf_bufnr, { force = true })
+      end
+    end,
+  })
+
   -- Setup global var
   _G.FzfLua = M
 end
