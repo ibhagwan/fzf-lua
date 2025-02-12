@@ -382,6 +382,8 @@ function M.normalize_opts(opts, globals, __resume_key)
     { "cwd_prompt",                             "show_cwd_prompt" },
     { "resume",                                 "continue_last_search" },
     { "resume",                                 "repeat_last_search" },
+    { "jump1",                                  "jump_to_single_result" },
+    { "jump1_action",                           "jump_to_single_result_action" },
     { "hls.normal",                             "winopts.hl_normal" },
     { "hls.border",                             "winopts.hl_border" },
     { "hls.cursor",                             "previewers.builtin.hl_cursor" },

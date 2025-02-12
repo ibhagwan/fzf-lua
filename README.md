@@ -1146,6 +1146,8 @@ previewers = {
     async_or_timeout  = 5000,       -- timeout(ms) or 'true' for async calls
     file_icons        = true,
     git_icons         = false,
+    jump1             = true,       -- skip the UI when result is a single entry
+    jump1_action      = FzfLua.actions.file_edit
     -- The equivalent of using `includeDeclaration` in lsp buf calls, e.g:
     -- :lua vim.lsp.buf.references({includeDeclaration = false})
     includeDeclaration = true,      -- include current declaration in LSP context

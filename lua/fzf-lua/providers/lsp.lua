@@ -79,10 +79,10 @@ local jump_to_location = function(opts, result, enc)
   -- safe to call even if the interface is closed
   utils.fzf_exit()
 
-  local action = opts.jump_to_single_result_action
+  local action = opts.jump1_action
   if action then
     local entry = location_to_entry(result, enc)
-    return opts.jump_to_single_result_action({ entry }, opts)
+    return opts.jump1_action({ entry }, opts)
   end
 
   return utils.jump_to_location(result, enc)
@@ -155,7 +155,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
     opts._regex_filter_fn = regex_filter_fn(opts.regex_filter)
   end
   -- Although `make_entry.file` filters for `cwd_only` we filter
-  -- here to accurately determine `jump_to_single_result` (#980)
+  -- here to accurately determine `jump1` (#980)
   result = vim.tbl_filter(function(x)
     local item = vim.lsp.util.locations_to_items({ x }, encoding)[1]
     if (opts.cwd_only and not path.is_relative_to(item.filename, opts.cwd)) or
@@ -166,7 +166,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
     return true
   end, result)
   -- Jump immediately if there is only one location
-  if opts.jump_to_single_result and #result == 1 then
+  if opts.jump1 and #result == 1 then
     jump_to_location(opts, result[1], encoding)
   end
   for _, entry in ipairs(items) do
@@ -192,7 +192,7 @@ local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
         lnum = range.start.line + 1,
         col = range.start.character + 1,
       }
-      if opts.jump_to_single_result and #call_hierarchy_call.fromRanges == 1 then
+      if opts.jump1 and #call_hierarchy_call.fromRanges == 1 then
         jump_to_location(opts, location, encoding)
       end
       local entry = make_entry.lcol(location, opts)
@@ -514,7 +514,7 @@ local function gen_lsp_contents(opts)
         elseif not opts.silent then
           utils.info(string.format("No %s found", string.lower(lsp_handler.label)))
         end
-      elseif not (opts.jump_to_single_result and #results == 1) then
+      elseif not (opts.jump1 and #results == 1) then
         -- LSP request was synchronous but we still asyncify the fzf feeding
         opts.__contents = function(fzf_cb)
           coroutine.wrap(function()
@@ -949,7 +949,7 @@ M.code_actions = function(opts)
   if not registered then
     -- irrelevant for code actions and can cause
     -- single results to be skipped with 'async = false'
-    opts.jump_to_single_result = false
+    opts.jump1 = false
     opts.lsp_params = function(client)
       local params = vim.lsp.util.make_range_params(core.CTX().winid,
         -- nvim 0.11 requires offset_encoding param, `client` is first arg of called func

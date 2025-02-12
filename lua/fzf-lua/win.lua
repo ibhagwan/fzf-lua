@@ -1050,9 +1050,7 @@ function FzfWin:create()
   end
 
   -- verify the preview is closed, this can happen
-  -- when running async LSP with 'jump_to_single_result'
-  -- should also close issue #105
-  -- https://github.com/ibhagwan/fzf-lua/issues/105
+  -- when running async LSP with 'jump1'
   self:set_winleave_autocmd()
   -- automatically resize fzf window
   self:set_redraw_autocmd()

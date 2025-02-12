@@ -37,10 +37,6 @@ return {
     cursorlinenr   = hl_validate "TelescopeSelection",
     search         = hl_validate "IncSearch",
   },
-  lsp        = {
-    jump_to_single_result = true,
-    jump_to_single_result_action = actions.file_edit,
-  },
   fzf_colors = {
     ["fg"] = { "fg", "TelescopeNormal" },
     ["bg"] = { "bg", "TelescopeNormal" },

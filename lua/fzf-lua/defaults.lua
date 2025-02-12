@@ -809,6 +809,8 @@ M.defaults.lsp                  = {
   color_icons      = true,
   git_icons        = false,
   async_or_timeout = 5000,
+  jump1            = true,
+  jump1_action     = actions.file_edit,
   fzf_opts         = { ["--multi"] = true },
   _actions         = function() return M.globals.actions.files end,
   _cached_hls      = { "path_colnr", "path_linenr" },

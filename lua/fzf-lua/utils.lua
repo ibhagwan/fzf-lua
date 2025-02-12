@@ -783,9 +783,9 @@ end
 
 function M.fzf_exit()
   -- Usually called from the LSP module to exit the interface on "async" mode
-  -- when no results are found or when `jump_to_single_result` is used, when
-  -- the latter is used in "sync" mode we also need to make sure core.__CTX
-  -- is cleared or we'll have the wrong cursor coordinates (#928)
+  -- when no results are found or when `jump1` is used, when the latter is used
+  -- in "sync" mode we also need to make sure core.__CTX is cleared or we'll
+  -- have the wrong cursor coordinates (#928)
   return loadstring([[
     require('fzf-lua').core.__CTX = nil
     require('fzf-lua').win.win_leave()
