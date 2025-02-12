@@ -76,9 +76,11 @@ M.ui_select = function(items, ui_opts, on_choice)
     title = "Mark `mymainmenu` as defined global."
   } } ]]
   local entries = {}
+  local num_width = math.ceil(math.log10(#items))
+  local num_format_str = "%" .. num_width .. "d"
   for i, e in ipairs(items) do
     table.insert(entries,
-      ("%s. %s"):format(utils.ansi_codes.magenta(tostring(i)),
+      ("%s. %s"):format(utils.ansi_codes.magenta(num_format_str:format(i)),
         ui_opts.format_item and ui_opts.format_item(e) or tostring(e)))
   end
 
