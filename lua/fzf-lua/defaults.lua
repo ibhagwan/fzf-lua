@@ -1062,8 +1062,10 @@ M.defaults.options              = {
   previewer     = { _ctor = previewers.builtin.options },
   separator     = "│",
   color_values  = true,
-  nvim_set_opts = { scope = "local" },
-  actions       = { ["enter"] = { fn = actions.option_edit, reload = true } },
+  actions       = {
+    ["enter"] = { fn = function(selected, opts) actions.option_edit(selected, opts, "local") end, reload = true },
+    ["alt-enter"] = { fn = function(selected, opts) actions.option_edit(selected, opts, "global") end, reload = true },
+  },
   fzf_opts      = {
     ["--nth"] = 1,
     ["--delimiter"] = "[│]",
