@@ -151,8 +151,10 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
       end
       -- opts.__CTX isn't guaranteed by API users (#1414)
       local CTX = opts.__CTX or utils.CTX()
-      local target_equals_current = entry.bufnr and entry.bufnr == CTX.bufnr
-          or path.equals(fullpath, CTX.bname)
+      local target_equals_current =
+          (entry.bufnr and entry.bufnr == CTX.bufnr or path.equals(fullpath, CTX.bname))
+          -- we open a new buffer on tabs so target is always different (#1785)
+          and not _vimcmd:match("^tabnew")
       local vimcmd = (function()
         -- Do not execute "edit" commands if we already have the same buffer/file open
         -- or if we are dealing with a URI as it's open with `vim.lsp.util.show_document`
@@ -269,7 +271,8 @@ M.file_vsplit = function(selected, opts)
 end
 
 M.file_tabedit = function(selected, opts)
-  local vimcmd = "tab split | <auto>"
+  -- local vimcmd = "tab split | <auto>"
+  local vimcmd = "tabnew | setlocal bufhidden=wipe | <auto>"
   M.vimcmd_entry(vimcmd, selected, opts)
 end
 
@@ -606,7 +609,8 @@ M.help_vert = function(selected, opts)
 end
 
 M.help_tab = function(selected, opts)
-  vim.cmd("tab help " .. helptags(selected, opts)[1])
+  -- vim.cmd("tab help " .. helptags(selected, opts)[1])
+  vim.cmd("tabnew | setlocal bufhidden=wipe | help " .. helptags(selected, opts)[1] .. " | only")
 end
 
 local function mantags(s)
@@ -622,7 +626,8 @@ M.man_vert = function(selected)
 end
 
 M.man_tab = function(selected)
-  vim.cmd("tab Man " .. mantags(selected)[1])
+  -- vim.cmd("tab Man " .. mantags(selected)[1])
+  vim.cmd("tabnew | setlocal bufhidden=wipe | Man " .. mantags(selected)[1] .. " | only")
 end
 
 M.git_switch = function(selected, opts)
