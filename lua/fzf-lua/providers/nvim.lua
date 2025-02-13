@@ -478,9 +478,13 @@ M.nvim_options = function(opts)
 
     table.sort(entries)
     local header = format_str({ option = "Option", value = "Value" })
-    table.insert(entries, 1, header)
-    local keymaps = utils.ansi_from_hl("Comment", "(enter: local scope, alt-enter: global scope)")
+    local keymaps = (":: %s %s, %s %s"):format(
+      utils.ansi_from_hl(opts.hls.header_bind, "<enter>"),
+      utils.ansi_from_hl(opts.hls.header_text, "local scope"),
+      utils.ansi_from_hl(opts.hls.header_bind, "<alt-enter>"),
+      utils.ansi_from_hl(opts.hls.header_text, "global scope"))
     table.insert(entries, 1, keymaps)
+    table.insert(entries, 2, header)
     return entries
   end
 
