@@ -1136,7 +1136,8 @@ previewers = {
     prompt            = "Options> ",
     separator         = "│",  -- separator between option name and value
     color_values      = true, -- colorize boolean values
-    actions           = { ["enter"] = actions.option_edit },
+    nvim_set_opts     = { scope = "local" }, -- `:help nvim_set_option_value`
+    actions           = { ["enter"] = { fn = actions.option_edit, reload = true } },
   },
   quickfix = {
     file_icons        = true,
