@@ -565,7 +565,7 @@ for _, fname in ipairs({ "edit", "split", "vsplit", "tabedit" }) do
   end
 end
 
-M.option_edit = function(selected, opts, scope)
+M.nvim_option_edit = function(selected, opts, scope)
   local nvim_set_option = function(opt, val, info)
     local set_opts = {}
     if scope == "local" then

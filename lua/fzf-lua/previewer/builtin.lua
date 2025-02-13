@@ -1530,15 +1530,15 @@ function Previewer.keymaps:populate_preview_buf(entry_str)
   Previewer.autocmds.super.populate_preview_buf(self, entry_str)
 end
 
-Previewer.options = Previewer.base:extend()
+Previewer.nvim_options = Previewer.base:extend()
 
-function Previewer.options:new(o, opts, fzf_win)
-  Previewer.options.super.new(self, o, opts, fzf_win)
+function Previewer.nvim_options:new(o, opts, fzf_win)
+  Previewer.nvim_options.super.new(self, o, opts, fzf_win)
   local paths = vim.fn.globpath(vim.o.rtp, "doc/options.txt", false, true)
   self.lines = vim.fn.readfile(paths[1])
 end
 
-function Previewer.options:gen_winopts()
+function Previewer.nvim_options:gen_winopts()
   local winopts = {
     wrap = true,
     number = false,
@@ -1548,7 +1548,7 @@ function Previewer.options:gen_winopts()
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
-function Previewer.options:get_help_text(tag)
+function Previewer.nvim_options:get_help_text(tag)
   local tag_pattern = "%*'" .. tag .. "'%*"
 
   local start_index
@@ -1580,14 +1580,14 @@ function Previewer.options:get_help_text(tag)
   return lines
 end
 
-function Previewer.options:parse_entry(entry_str)
+function Previewer.nvim_options:parse_entry(entry_str)
   local parts = vim.split(entry_str, self.opts.separator)
   local option = vim.trim(parts[1])
   local value = vim.trim(parts[2])
   return { name = option, value = value }
 end
 
-function Previewer.options:populate_preview_buf(entry_str)
+function Previewer.nvim_options:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
   local entry = self:parse_entry(entry_str)
   if utils.tbl_isempty(entry) then return end

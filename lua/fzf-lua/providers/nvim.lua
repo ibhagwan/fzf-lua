@@ -435,8 +435,8 @@ M.keymaps = function(opts)
   core.fzf_exec(entries, opts)
 end
 
-M.options = function(opts)
-  opts = config.normalize_opts(opts, "options")
+M.nvim_options = function(opts)
+  opts = config.normalize_opts(opts, "nvim_options")
   if not opts then return end
 
   local format_str = function(info)
