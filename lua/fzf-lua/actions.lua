@@ -592,6 +592,10 @@ M.option_edit = function(selected, opts, scope)
     local updated = utils.input(
       (scope == "local" and ":setlocal " or ":set ") .. option .. "=", old)
     if not updated or updated == old then return end
+
+    if info.type == "number" then
+      updated = tonumber(updated)
+    end
     nvim_set_option(option, updated, info)
   end
 
