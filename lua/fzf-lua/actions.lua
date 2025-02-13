@@ -572,9 +572,10 @@ M.option_edit = function(selected, opts)
     local ok, err = pcall(vim.api.nvim_set_option_value, opt, val, set_opts)
     if not ok and err then utils.warn(err) end
   end
+
   local show_option_value_input = function(option, old)
     local updated = utils.input(
-      (opts.nvim_set_opts.scope == "local" and ":setlocal " or ":set ") .. option .. "=")
+      (opts.nvim_set_opts.scope == "local" and ":setlocal " or ":set ") .. option .. "=", old)
     if not updated or updated == old then return end
     nvim_set_option(option, updated)
   end
