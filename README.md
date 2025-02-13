@@ -1136,8 +1136,10 @@ previewers = {
     prompt            = "Nvim Options> ",
     separator         = "│",  -- separator between option name and value
     color_values      = true, -- colorize boolean values
-    ["enter"]         = { fn = function(selected, opts) actions.nvim_option_edit(selected, opts, "local") end, reload = true },
-    ["alt-enter"]     = { fn = function(selected, opts) actions.nvim_option_edit(selected, opts, "global") end, reload = true },
+    actions           = {
+      ["enter"]     = { fn = actions.nvim_opt_edit_local, reload = true },
+      ["alt-enter"] = { fn = actions.nvim_opt_edit_global, reload = true },
+    },
   },
   quickfix = {
     file_icons        = true,

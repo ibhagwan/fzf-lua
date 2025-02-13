@@ -568,7 +568,7 @@ for _, fname in ipairs({ "edit", "split", "vsplit", "tabedit" }) do
   end
 end
 
-M.nvim_option_edit = function(selected, opts, scope)
+local nvim_opt_edit = function(selected, opts, scope)
   local nvim_set_option = function(opt, val, info)
     local set_opts = {}
     if scope == "local" then
@@ -617,6 +617,14 @@ M.nvim_option_edit = function(selected, opts, scope)
       show_option_value_input(option, old, info)
     end
   end)
+end
+
+M.nvim_opt_edit_local = function(selected, opts)
+  return nvim_opt_edit(selected, opts, "local")
+end
+
+M.nvim_opt_edit_global = function(selected, opts)
+  return nvim_opt_edit(selected, opts, "global")
 end
 
 M.spell_apply = function(selected)

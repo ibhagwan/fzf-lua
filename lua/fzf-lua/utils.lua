@@ -1130,7 +1130,7 @@ function M.input(prompt, default)
   -- causes the return value to appear as cancellation
   -- if vim.ui then
   if false then
-    ok, _ = pcall(vim.ui.input, { prompt = prompt, default },
+    ok, _ = pcall(vim.ui.input, { prompt = prompt, default = default },
       function(input)
         res = input
       end)
