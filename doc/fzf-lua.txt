@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.7.0        Last change: 2025 February 11
+*fzf-lua.txt*         For Neovim >= 0.7.0        Last change: 2025 February 13
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -322,6 +322,7 @@ MISC                                                            *fzf-lua-misc*
 | `registers`            | :registers                     |
 | `tagstack`             | :tags                          |
 | `autocmds`             | :autocmd                       |
+| `nvim_options`         | neovim options                 |
 | `keymaps`              | key mappings                   |
 | `filetypes`            | filetypes                      |
 | `menus`                | menus                          |
@@ -1099,6 +1100,15 @@ CUSTOMIZATION                                          *fzf-lua-customization*
           ["ctrl-s"]      = actions.keymap_split,
           ["ctrl-v"]      = actions.keymap_vsplit,
           ["ctrl-t"]      = actions.keymap_tabedit,
+        },
+      },
+      nvim_options = {
+        prompt            = "Nvim Options> ",
+        separator         = "│",  -- separator between option name and value
+        color_values      = true, -- colorize boolean values
+        actions           = {
+          ["enter"]     = { fn = actions.nvim_opt_edit_local, reload = true },
+          ["alt-enter"] = { fn = actions.nvim_opt_edit_global, reload = true },
         },
       },
       quickfix = {
