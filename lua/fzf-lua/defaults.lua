@@ -1059,11 +1059,12 @@ M.defaults.keymaps              = {
 }
 
 M.defaults.options              = {
-  previewer    = { _ctor = previewers.builtin.options },
-  separator    = "│",
-  color_values = true,
-  actions      = { ["enter"] = actions.option_edit },
-  fzf_opts     = {
+  previewer     = { _ctor = previewers.builtin.options },
+  separator     = "│",
+  color_values  = true,
+  nvim_set_opts = { scope = "local" },
+  actions       = { ["enter"] = { fn = actions.option_edit, reload = true } },
+  fzf_opts      = {
     ["--nth"] = 1,
     ["--delimiter"] = "[│]",
     ["--no-multi"] = true,

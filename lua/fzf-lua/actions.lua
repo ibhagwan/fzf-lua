@@ -569,23 +569,17 @@ for _, fname in ipairs({ "edit", "split", "vsplit", "tabedit" }) do
 end
 
 M.option_edit = function(selected, opts)
-  local show_option_value_input = function(option, old, transform)
-    vim.ui.input({ prompt = option, default = old }, function(updated)
-      if not updated or updated == "" or updated == old then
-        return
-      end
-
-      local transformed_value = transform and transform(updated) or updated
-
-      local ok, err = pcall(function()
-        vim.cmd(string.format("set %s=%s", option, transformed_value))
-      end)
-      if not ok and err then
-        local extracted_error = err:match("Vim%([^%)]+%):%s*(.-)$") or err
-        vim.notify(extracted_error, vim.log.levels.ERROR)
-      end
-      M.resume()
-    end)
+  local nvim_set_option = function(opt, val)
+    local set_opts = vim.deepcopy(opts.nvim_set_opts or {})
+    if set_opts.scope == "local" then set_opts.win = opts.__CTX.winid end
+    local ok, err = pcall(vim.api.nvim_set_option_value, opt, val, set_opts)
+    if not ok and err then utils.warn(err) end
+  end
+  local show_option_value_input = function(option, old)
+    local updated = utils.input(
+      (opts.nvim_set_opts.scope == "local" and ":setlocal " or ":set ") .. option .. "=")
+    if not updated or updated == old then return end
+    nvim_set_option(option, updated)
   end
 
   local parts = vim.split(selected[1], opts.separator)
@@ -593,24 +587,16 @@ M.option_edit = function(selected, opts)
   local old = vim.trim(parts[2])
   local info = vim.api.nvim_get_option_info2(option, {})
 
-  if info.type == "boolean" then
-    local ok, err = pcall(function()
-      vim.cmd(string.format("set %s!", option))
-    end)
-    if not ok and err then
-      local extracted_error = err:match("Vim%([^%)]+%):%s*(.-)$") or err
-      vim.notify(extracted_error, vim.log.levels.ERROR)
+  vim.api.nvim_win_call(opts.__CTX.winid, function()
+    if info.type == "boolean" then
+      local str2bool = { ["true"] = true, ["false"] = false }
+      nvim_set_option(option, not str2bool[old])
+    elseif info.type == "number" then
+      show_option_value_input(option, tonumber(old))
+    else
+      show_option_value_input(option, old)
     end
-  elseif info.type == "number" then
-    vim.schedule(function()
-      show_option_value_input(option, old, tonumber)
-    end)
-  else
-    vim.schedule(function()
-      show_option_value_input(option, old, nil)
-    end)
-  end
-  M.resume()
+  end)
 end
 
 M.spell_apply = function(selected)

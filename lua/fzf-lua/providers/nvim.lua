@@ -482,25 +482,39 @@ M.options = function(opts)
     return entries
   end
 
-  local entries = function(cb)
-    coroutine.wrap(function()
-      local co = coroutine.running()
-      local entries = format_option_entries()
-      for _, entry in pairs(entries) do
-        vim.schedule(function()
-          cb(entry, function()
-            coroutine.resume(co)
-          end)
-        end)
-        coroutine.yield()
-      end
-      cb()
-    end)()
+  opts.func_async_callback = false
+  opts.__fn_reload = opts.__fn_reload or function(_)
+    return function(cb)
+      vim.api.nvim_win_call(opts.__CTX.winid, function()
+        coroutine.wrap(function()
+          local co = coroutine.running()
+          local entries = format_option_entries()
+          for _, entry in pairs(entries) do
+            vim.schedule(function()
+              cb(entry, function()
+                coroutine.resume(co)
+              end)
+            end)
+            coroutine.yield()
+          end
+          cb()
+        end)()
+      end)
+    end
+  end
+
+  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
+  local reload, id = shell.reload_action_cmd(opts, "{+}")
+  local contents = reload:gsub("%-%-%s+{%+}$", "")
+  opts.__reload_cmd = reload
+
+  opts._fn_pre_fzf = function()
+    shell.set_protected(id)
   end
 
   opts.fzf_opts["--header-lines"] = "1"
 
-  core.fzf_exec(entries, opts)
+  core.fzf_exec(contents, opts)
 end
 
 M.spell_suggest = function(opts)
