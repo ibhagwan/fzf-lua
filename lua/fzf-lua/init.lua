@@ -263,7 +263,7 @@ do
     marks = { "fzf-lua.providers.nvim", "marks" },
     menus = { "fzf-lua.providers.nvim", "menus" },
     keymaps = { "fzf-lua.providers.nvim", "keymaps" },
-    options = { "fzf-lua.providers.nvim", "options" },
+    nvim_options = { "fzf-lua.providers.nvim", "nvim_options" },
     autocmds = { "fzf-lua.providers.nvim", "autocmds" },
     registers = { "fzf-lua.providers.nvim", "registers" },
     commands = { "fzf-lua.providers.nvim", "commands" },

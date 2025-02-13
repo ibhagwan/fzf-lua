@@ -435,8 +435,8 @@ M.keymaps = function(opts)
   core.fzf_exec(entries, opts)
 end
 
-M.options = function(opts)
-  opts = config.normalize_opts(opts, "options")
+M.nvim_options = function(opts)
+  opts = config.normalize_opts(opts, "nvim_options")
   if not opts then return end
 
   local format_str = function(info)
@@ -479,6 +479,8 @@ M.options = function(opts)
     table.sort(entries)
     local header = format_str({ option = "Option", value = "Value" })
     table.insert(entries, 1, header)
+    local keymaps = utils.ansi_from_hl("Comment", "(enter: local scope, alt-enter: global scope)")
+    table.insert(entries, 1, keymaps)
     return entries
   end
 
@@ -512,7 +514,7 @@ M.options = function(opts)
     shell.set_protected(id)
   end
 
-  opts.fzf_opts["--header-lines"] = "1"
+  opts.fzf_opts["--header-lines"] = "2"
 
   core.fzf_exec(contents, opts)
 end
