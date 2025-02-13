@@ -1145,6 +1145,10 @@ Neovim's autocmds
 
 Neovims key mappings
 
+#### nvim_options
+
+Neovim's options
+
 #### filetypes
 
 Filetypes

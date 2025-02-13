@@ -565,6 +565,57 @@ for _, fname in ipairs({ "edit", "split", "vsplit", "tabedit" }) do
   end
 end
 
+M.nvim_option_edit = function(selected, opts, scope)
+  local nvim_set_option = function(opt, val, info)
+    local set_opts = {}
+    if scope == "local" then
+      if info.scope == "global" then
+        utils.warn("Cannot set global option " .. opt .. " in local scope")
+        return
+      elseif info.scope == "win" then
+        set_opts.win = opts.__CTX.winid
+      elseif info.scope == "buf" then
+        set_opts.buf = opts.__CTX.bufnr
+      end
+    elseif scope == "global" then
+      if (info.scope == "win" or info.scope == "buf") and info.global_local ~= true then
+        utils.warn("Cannot set local option " .. opt .. " in global scope")
+        return
+      end
+    end
+
+    local ok, err = pcall(vim.api.nvim_set_option_value, opt, val, set_opts)
+    if not ok and err then utils.warn(err) end
+  end
+
+  local show_option_value_input = function(option, old, info)
+    local updated = utils.input(
+      (scope == "local" and ":setlocal " or ":set ") .. option .. "=", old)
+    if not updated or updated == old then return end
+
+    if info.type == "number" then
+      updated = tonumber(updated)
+    end
+    nvim_set_option(option, updated, info)
+  end
+
+  local parts = vim.split(selected[1], opts.separator)
+  local option = vim.trim(parts[1])
+  local old = vim.trim(parts[2])
+  local info = vim.api.nvim_get_option_info2(option, {})
+
+  vim.api.nvim_win_call(opts.__CTX.winid, function()
+    if info.type == "boolean" then
+      local str2bool = { ["true"] = true, ["false"] = false }
+      nvim_set_option(option, not str2bool[old], info)
+    elseif info.type == "number" then
+      show_option_value_input(option, tonumber(old), info)
+    else
+      show_option_value_input(option, old, info)
+    end
+  end)
+end
+
 M.spell_apply = function(selected)
   if not selected[1] then return false end
   local word = selected[1]

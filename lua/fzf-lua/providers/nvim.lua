@@ -435,6 +435,90 @@ M.keymaps = function(opts)
   core.fzf_exec(entries, opts)
 end
 
+M.nvim_options = function(opts)
+  opts = config.normalize_opts(opts, "nvim_options")
+  if not opts then return end
+
+  local format_str = function(info)
+    local fields = { "option", "value" }
+    local field_fmt = { option = "%-20s", value = "%s" }
+    local ret
+
+    for _, f in ipairs(fields) do
+      if field_fmt[f] then
+        ret = string.format(
+          "%s%s" .. field_fmt[f],
+          ret or "",
+          ret and string.format(" %s ", utils.ansi_codes["grey"](opts.separator))
+          or " ",
+          info[f] or ""
+        )
+      end
+    end
+    return ret
+  end
+
+  local format_option_entries = function()
+    local entries = {}
+    for _, v in pairs(vim.api.nvim_get_all_options_info()) do
+      local ok, value = pcall(vim.api.nvim_get_option_value, v.name, {})
+
+      if ok then
+        local color_value = utils.ansi_codes["grey"](tostring(value))
+        if value == true and opts.color_values then
+          color_value = utils.ansi_codes["green"](tostring(value))
+        elseif value == false and opts.color_values then
+          color_value = utils.ansi_codes["red"](tostring(value))
+        end
+
+        local str = format_str({ option = v.name, value = color_value })
+        table.insert(entries, str)
+      end
+    end
+
+    table.sort(entries)
+    local header = format_str({ option = "Option", value = "Value" })
+    table.insert(entries, 1, header)
+    local keymaps = utils.ansi_from_hl("Comment", "(enter: local scope, alt-enter: global scope)")
+    table.insert(entries, 1, keymaps)
+    return entries
+  end
+
+  opts.func_async_callback = false
+  opts.__fn_reload = opts.__fn_reload or function(_)
+    return function(cb)
+      vim.api.nvim_win_call(opts.__CTX.winid, function()
+        coroutine.wrap(function()
+          local co = coroutine.running()
+          local entries = format_option_entries()
+          for _, entry in pairs(entries) do
+            vim.schedule(function()
+              cb(entry, function()
+                coroutine.resume(co)
+              end)
+            end)
+            coroutine.yield()
+          end
+          cb()
+        end)()
+      end)
+    end
+  end
+
+  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
+  local reload, id = shell.reload_action_cmd(opts, "{+}")
+  local contents = reload:gsub("%-%-%s+{%+}$", "")
+  opts.__reload_cmd = reload
+
+  opts._fn_pre_fzf = function()
+    shell.set_protected(id)
+  end
+
+  opts.fzf_opts["--header-lines"] = "2"
+
+  core.fzf_exec(contents, opts)
+end
+
 M.spell_suggest = function(opts)
   -- if not vim.wo.spell then return false end
   opts = config.normalize_opts(opts, "spell_suggest")

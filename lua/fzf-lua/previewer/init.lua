@@ -24,6 +24,7 @@ Previewer.builtin.quickfix = function() return require "fzf-lua.previewer.builti
 Previewer.builtin.highlights = function() return require "fzf-lua.previewer.builtin".highlights end
 Previewer.builtin.autocmds = function() return require "fzf-lua.previewer.builtin".autocmds end
 Previewer.builtin.keymaps = function() return require "fzf-lua.previewer.builtin".keymaps end
+Previewer.builtin.nvim_options = function() return require "fzf-lua.previewer.builtin".nvim_options end
 Previewer.builtin.codeaction = function() return require "fzf-lua.previewer.codeaction".builtin end
 
 return Previewer

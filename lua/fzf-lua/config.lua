@@ -917,6 +917,7 @@ M._action_to_helpstr = {
   [actions.keymap_split]        = "keymap-split",
   [actions.keymap_vsplit]       = "keymap-vsplit",
   [actions.keymap_tabedit]      = "keymap-tabedit",
+  [actions.nvim_option_edit]    = "nvim-option-edit",
   [actions.spell_apply]         = "spell-apply",
   [actions.set_filetype]        = "set-filetype",
   [actions.packadd]             = "packadd",

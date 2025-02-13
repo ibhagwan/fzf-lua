@@ -53,6 +53,7 @@ return {
   search_history       = prompt("Search history"),
   registers            = prompt("Registers"),
   keymaps              = prompt("Keymaps"),
+  nvim_options         = prompt("Nvim Options"),
   spell_suggest        = prompt("Spell Suggestions"),
   filetypes            = prompt("Filetypes"),
   packadd              = prompt("Packadd"),

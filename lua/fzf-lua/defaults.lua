@@ -1058,6 +1058,21 @@ M.defaults.keymaps              = {
   },
 }
 
+M.defaults.nvim_options              = {
+  previewer     = { _ctor = previewers.builtin.nvim_options },
+  separator     = "│",
+  color_values  = true,
+  actions       = {
+    ["enter"] = { fn = function(selected, opts) actions.nvim_option_edit(selected, opts, "local") end, reload = true },
+    ["alt-enter"] = { fn = function(selected, opts) actions.nvim_option_edit(selected, opts, "global") end, reload = true },
+  },
+  fzf_opts      = {
+    ["--nth"] = 1,
+    ["--delimiter"] = "[│]",
+    ["--no-multi"] = true,
+  },
+}
+
 M.defaults.spell_suggest        = {
   winopts = {
     relative = "cursor",
