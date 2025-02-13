@@ -289,7 +289,7 @@ Alternatively, resuming work on a specific picker:
 | `registers`            | :registers                     |
 | `tagstack`             | :tags                          |
 | `autocmds`             | :autocmd                       |
-| `options`              | neovim options                 |
+| `nvim_options`         | neovim options                 |
 | `keymaps`              | key mappings                   |
 | `filetypes`            | filetypes                      |
 | `menus`                | menus                          |
@@ -1132,12 +1132,12 @@ previewers = {
       ["ctrl-t"]      = actions.keymap_tabedit,
     },
   },
-  options = {
-    prompt            = "Options> ",
+  nvim_options = {
+    prompt            = "Nvim Options> ",
     separator         = "│",  -- separator between option name and value
     color_values      = true, -- colorize boolean values
-    nvim_set_opts     = { scope = "local" }, -- `:help nvim_set_option_value`
-    actions           = { ["enter"] = { fn = actions.option_edit, reload = true } },
+    ["enter"]         = { fn = function(selected, opts) actions.nvim_option_edit(selected, opts, "local") end, reload = true },
+    ["alt-enter"]     = { fn = function(selected, opts) actions.nvim_option_edit(selected, opts, "global") end, reload = true },
   },
   quickfix = {
     file_icons        = true,

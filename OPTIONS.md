@@ -1145,7 +1145,7 @@ Neovim's autocmds
 
 Neovims key mappings
 
-#### options
+#### nvim_options
 
 Neovim's options
 

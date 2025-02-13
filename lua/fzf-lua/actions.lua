@@ -568,18 +568,38 @@ for _, fname in ipairs({ "edit", "split", "vsplit", "tabedit" }) do
   end
 end
 
-M.option_edit = function(selected, opts)
-  local nvim_set_option = function(opt, val)
-    local set_opts = vim.deepcopy(opts.nvim_set_opts or {})
-    if set_opts.scope == "local" then set_opts.win = opts.__CTX.winid end
+M.nvim_option_edit = function(selected, opts, scope)
+  local nvim_set_option = function(opt, val, info)
+    local set_opts = {}
+    if scope == "local" then
+      if info.scope == "global" then
+        utils.warn("Cannot set global option " .. opt .. " in local scope")
+        return
+      elseif info.scope == "win" then
+        set_opts.win = opts.__CTX.winid
+      elseif info.scope == "buf" then
+        set_opts.buf = opts.__CTX.bufnr
+      end
+    elseif scope == "global" then
+      if (info.scope == "win" or info.scope == "buf") and info.global_local ~= true then
+        utils.warn("Cannot set local option " .. opt .. " in global scope")
+        return
+      end
+    end
+
     local ok, err = pcall(vim.api.nvim_set_option_value, opt, val, set_opts)
     if not ok and err then utils.warn(err) end
   end
-  local show_option_value_input = function(option, old)
+
+  local show_option_value_input = function(option, old, info)
     local updated = utils.input(
-      (opts.nvim_set_opts.scope == "local" and ":setlocal " or ":set ") .. option .. "=")
+      (scope == "local" and ":setlocal " or ":set ") .. option .. "=", old)
     if not updated or updated == old then return end
-    nvim_set_option(option, updated)
+
+    if info.type == "number" then
+      updated = tonumber(updated)
+    end
+    nvim_set_option(option, updated, info)
   end
 
   local parts = vim.split(selected[1], opts.separator)
@@ -590,11 +610,11 @@ M.option_edit = function(selected, opts)
   vim.api.nvim_win_call(opts.__CTX.winid, function()
     if info.type == "boolean" then
       local str2bool = { ["true"] = true, ["false"] = false }
-      nvim_set_option(option, not str2bool[old])
+      nvim_set_option(option, not str2bool[old], info)
     elseif info.type == "number" then
-      show_option_value_input(option, tonumber(old))
+      show_option_value_input(option, tonumber(old), info)
     else
-      show_option_value_input(option, old)
+      show_option_value_input(option, old, info)
     end
   end)
 end
