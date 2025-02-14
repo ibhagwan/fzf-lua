@@ -249,7 +249,7 @@ function M.builtin:populate_preview_buf(entry_str)
     self:clear_preview_buf(true)
     return
   end
-  local idx = tonumber(entry_str:match("^%d+%."))
+  local idx = tonumber(entry_str:match("^%s*(%d+)%."))
   assert(type(idx) == "number")
   local lines = self:preview_action_tuple(idx,
     -- use the async version for "codeAction/resolve"
