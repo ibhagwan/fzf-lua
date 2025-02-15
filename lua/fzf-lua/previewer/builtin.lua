@@ -352,15 +352,7 @@ function Previewer.base:display_last_entry()
 end
 
 function Previewer.base:display_entry(entry_str)
-  -- NOTE: prior to the zero event we may be sent an
-  -- empty string in the preview callback (#1567)
-  if not entry_str or #entry_str == 0 then
-    local winid = self.win.preview_winid
-    if TSContext.is_attached(winid) then
-      TSContext.close(winid)
-    end
-    return
-  end
+  if not entry_str then return end
   -- save last entry even if we don't display
   self.last_entry = entry_str
   if not self.win or not self.win:validate_preview() then return end
@@ -407,10 +399,15 @@ end
 
 function Previewer.base:cmdline(_)
   local act = shell.raw_action(function(items, _, _)
-    self.opts._last_query = type(items[2]) == "string" and items[2] or nil
-    self:display_entry(items[1])
+    local entry, query, idx = items[1], items[2], items[3]
+    local no_selected = #idx == 0 and #items[1] == 0
+    if no_selected then entry = nil end
+    assert(type(query) == "string")
+    self.opts._last_query = query
+    -- convert empty string to nil
+    self:display_entry(entry)
     return ""
-  end, "{} {q}", self.opts.debug)
+  end, "{} {q} {n}", self.opts.debug)
   return act
 end
 
@@ -429,10 +426,12 @@ function Previewer.base:zero(_)
     libuv.shellescape(self._zero_lock),
     shell.raw_action(function(_, _, _)
       vim.defer_fn(function()
-        if self.loaded_entry then
+        if self.win:validate_preview() then
           self:clear_preview_buf(true)
-          self.last_entry = nil
+          TSContext.close(self.win.preview_winid)
+          self.win:update_preview_title("")
         end
+        self.last_entry = nil
         vim.fn.delete(self._zero_lock, "d")
       end, self.delay)
     end, "", self.opts.debug))
@@ -1278,7 +1277,6 @@ function Previewer.jumps:new(o, opts, fzf_win)
 end
 
 function Previewer.jumps:parse_entry(entry_str)
-  if entry_str == "" then return {} end
   local bufnr = nil
   local _, lnum, col, filepath = entry_str:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
   if filepath then
