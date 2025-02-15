@@ -245,10 +245,6 @@ end
 
 function M.builtin:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
-  if entry_str == "" then
-    self:clear_preview_buf(true)
-    return
-  end
   local idx = tonumber(entry_str:match("^%s*(%d+)%."))
   assert(type(idx) == "number")
   local lines = self:preview_action_tuple(idx,
