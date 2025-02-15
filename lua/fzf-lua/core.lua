@@ -1236,15 +1236,21 @@ M.convert_exec_silent_actions = function(opts)
       -- Use both {q} and {+} as field indexes so we can update last query when
       -- executing the action, without this we lose the last query on "hide" as
       -- the process never terminates and `--print-query` isn't being printed
-      local field_index = v.field_index == false and "" or v.field_index or "{q} {+}"
-      if not field_index:match("^{q}") then
-        field_index = "{q} " .. field_index
+      -- When no entry selected (with {q} {+}), {+} will be forced expand to ''
+      -- Use {n} to know if we really select an empty string, or there's just no selected
+      local field_index = v.field_index == false and "" or v.field_index or "{q} {n} {+}"
+      if not field_index:match("^{q} {n}") then
+        field_index = "{q} {n}" .. field_index
       end
       -- replace the action with shell cmd proxy to the original action
       local shell_action = shell.raw_action(function(items, _, _)
-        if field_index:match("^{q}") then
+        if field_index:match("^{q} {n}") then
           local query = table.remove(items, 1)
           config.resume_set("query", query, opts)
+          local idx = table.remove(items, 1)
+          -- both {n} and {+} are expanded to '' (no selected)
+          local no_selected = #idx == 0 and #items == 1 and #items[1] == 0
+          items = no_selected and {} or items
         end
         v.fn(items, opts)
       end, field_index, opts.debug)
