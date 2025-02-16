@@ -1512,7 +1512,7 @@ temporarily overridden by its corresponding `winopts` option:
 | FzfLuaNormal            | Normal           | `hls.normal`         | Main win `fg/bg`                      |
 | FzfLuaBorder            | Normal           | `hls.border`         | Main win border                       |
 | FzfLuaTitle             | FzfLuaNormal     | `hls.title`          | Main win title                        |
-| FzfLuaTitleFlag         | CursorLine       | `hls.title_flags`    | Main win title flags                  |
+| FzfLuaTitleFlags        | CursorLine       | `hls.title_flags`    | Main win title flags                  |
 | FzfLuaBackdrop          | \*bg=Black       | `hls.backdrop`       | Backdrop color                        |
 | FzfLuaPreviewNormal     | FzfLuaNormal     | `hls.preview_normal` | Builtin preview `fg/bg`               |
 | FzfLuaPreviewBorder     | FzfLuaBorder     | `hls.preview_border` | Builtin preview border                |
