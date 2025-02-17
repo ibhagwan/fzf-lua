@@ -159,7 +159,7 @@ M.new_child_neovim = function()
     end
 
     -- Remove autocmd groups
-    for _, group in ipairs({ "VimResize", "WinClosed" }) do
+    for _, group in ipairs({ "VimResized", "WinClosed" }) do
       if child.fn.exists("#FzfLua" .. group) == 1 then
         child.api.nvim_del_augroup_by_name("FzfLua" .. group)
       end
