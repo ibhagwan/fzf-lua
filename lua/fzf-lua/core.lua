@@ -1240,7 +1240,7 @@ M.convert_exec_silent_actions = function(opts)
       -- Use {n} to know if we really select an empty string, or there's just no selected
       local field_index = v.field_index == false and "" or v.field_index or "{q} {n} {+}"
       if not field_index:match("^{q} {n}") then
-        field_index = "{q} {n}" .. field_index
+        field_index = "{q} {n} " .. field_index
       end
       -- replace the action with shell cmd proxy to the original action
       local shell_action = shell.raw_action(function(items, _, _)
