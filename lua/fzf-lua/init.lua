@@ -30,7 +30,14 @@ do
   -- fixed $NVIM_LISTEN_ADDRESS, different neovim instances will use the same path
   -- as their address and messages won't be received on older instances
   if not vim.g.fzf_lua_server then
-    vim.g.fzf_lua_server = vim.fn.serverstart("fzf-lua." .. os.time())
+    local ok, srv = pcall(vim.fn.serverstart, "fzf-lua." .. os.time())
+    if ok then
+      vim.g.fzf_lua_server = srv
+    else
+      error(string.format(
+        "serverstart(): %s. Please make sure 'XDG_RUNTIME_DIR' (%s) is writeable",
+        srv, vim.fn.stdpath("run")))
+    end
   end
 
   -- Workaround for using `:wqa` with "hide"
