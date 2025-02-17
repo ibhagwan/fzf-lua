@@ -1249,7 +1249,9 @@ M.convert_exec_silent_actions = function(opts)
           config.resume_set("query", query, opts)
           local idx = table.remove(items, 1)
           -- both {n} and {+} are expanded to '' (no selected)
-          local no_selected = #idx == 0 and #items == 1 and #items[1] == 0
+          -- older versions of fzf don't expand {n} to "", in this case
+          -- the items table will now be empty (#1833)
+          local no_selected = #idx == 0 and (#items == 0 or #items == 1 and #items[1] == 0)
           items = no_selected and {} or items
         end
         v.fn(items, opts)

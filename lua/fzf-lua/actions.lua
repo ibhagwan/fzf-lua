@@ -767,6 +767,7 @@ local match_commit_hash = function(line, opts)
 end
 
 M.git_yank_commit = function(selected, opts)
+  if not selected[1] then return end
   local commit_hash = match_commit_hash(selected[1], opts)
   local reg
   if vim.o.clipboard == "unnamed" then
