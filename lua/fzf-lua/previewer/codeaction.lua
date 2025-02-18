@@ -285,7 +285,7 @@ end
 function M.native:cmdline(o)
   o = o or {}
   local act = shell.raw_action(function(entries, _, _)
-    local idx = tonumber(entries[1]:match("^%d+%."))
+    local idx = tonumber(entries[1]:match("^%s*%d+%."))
     assert(type(idx) == "number")
     local lines = self:preview_action_tuple(idx)
     return table.concat(lines, "\r\n")
