@@ -628,4 +628,18 @@ function M.ft_match(args)
   if ok then return ft, on_detect end
 end
 
+function M.ft_match_fast_event(args)
+  local co = coroutine.running()
+  if co and vim.in_fast_event() then
+    local ft
+    vim.schedule(function()
+      ft = M.ft_match(args)
+      coroutine.resume(co, ft)
+    end)
+    return coroutine.yield()
+  else
+    return M.ft_match(args)
+  end
+end
+
 return M

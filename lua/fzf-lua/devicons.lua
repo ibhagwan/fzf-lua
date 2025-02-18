@@ -512,7 +512,7 @@ M.get_devicon = function(filepath, extensionOverride)
 
   -- mini.icons supports lookup by filetype
   if not icon and STATE.icons.by_filetype then
-    local ft = path.ft_match({ filename = filename })
+    local ft = path.ft_match_fast_event({ filename = filename })
     local by_ft = ft and #ft > 0 and STATE.icons.by_filetype[ft]
 
     if not by_ft then
