@@ -400,9 +400,8 @@ end
 function Previewer.base:cmdline(_)
   local act = shell.raw_action(function(items, _, _)
     local entry, query, idx = items[1], items[2], items[3]
-    -- older versions of fzf don't expand {n} to "", `idx` will be nil (#1833)
-    local no_selected = not idx or #idx == 0 and #items[1] == 0
-    if no_selected then entry = nil end
+    -- NOTE: see comment regarding {n} in `core.convert_exec_silent_actions`
+    if not tonumber(idx) then entry = nil end
     assert(type(query) == "string")
     self.opts._last_query = query
     -- convert empty string to nil

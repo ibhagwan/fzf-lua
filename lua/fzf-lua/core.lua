@@ -1248,11 +1248,12 @@ M.convert_exec_silent_actions = function(opts)
           local query = table.remove(items, 1)
           config.resume_set("query", query, opts)
           local idx = table.remove(items, 1)
-          -- both {n} and {+} are expanded to '' (no selected)
-          -- older versions of fzf don't expand {n} to "", in this case
-          -- the items table will now be empty (#1833)
-          local no_selected = #idx == 0 and (#items == 0 or #items == 1 and #items[1] == 0)
-          items = no_selected and {} or items
+          -- When no item is matching (empty list or non-matching query)
+          -- both {n} and {+} are expanded to "".
+          -- NOTE1: older versions of fzf don't expand {n} to "" (without match)
+          -- in such case the (empty) items table will be in `items[2]` (#1833)
+          -- NOTE2: on Windows, no match {n} is expanded to '' (#1836)
+          items = not tonumber(idx) and {} or items
         end
         v.fn(items, opts)
       end, field_index, opts.debug)
