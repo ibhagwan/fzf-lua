@@ -512,7 +512,12 @@ M.get_devicon = function(filepath, extensionOverride)
 
   -- mini.icons supports lookup by filetype
   if not icon and STATE.icons.by_filetype then
-    local ft = path.ft_match({ filename = filename })
+    -- NOTE: due to our mocks we should never fail on fast events but plugins such as
+    -- "snacks/bigfile" uses `vim.filetype.add` to a pattern function callback that makes
+    -- `vim.{api|fn}` calls so we still have to make sure we schedule the call on the
+    -- main thread but not on headless as it will fail due to uv callbacks (#1831/#1841)
+    local ft_match = _G._fzf_lua_is_headless and path.ft_match or path.ft_match_fast_event
+    local ft = ft_match({ filename = filename })
     local by_ft = ft and #ft > 0 and STATE.icons.by_filetype[ft]
 
     if not by_ft then

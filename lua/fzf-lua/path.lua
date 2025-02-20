@@ -633,7 +633,8 @@ function M.ft_match_fast_event(args)
   if co and vim.in_fast_event() then
     local ft
     vim.schedule(function()
-      ft = M.ft_match(args)
+      -- We're already scheduling, safe to use the original API
+      ft = vim.filetype.match(args)
       coroutine.resume(co, ft)
     end)
     return coroutine.yield()
