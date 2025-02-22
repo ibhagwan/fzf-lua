@@ -1616,6 +1616,7 @@ function FzfWin.toggle_help()
       and self._o.help_open_win or vim.api.nvim_open_win
 
   self.km_bufnr = vim.api.nvim_create_buf(false, true)
+  vim.bo[self.km_bufnr].modifiable = true
   vim.bo[self.km_bufnr].bufhidden = "wipe"
   self.km_winid = nvim_open_win(self.km_bufnr, false, winopts)
   vim.api.nvim_buf_set_name(self.km_bufnr, "_FzfLuaHelp")

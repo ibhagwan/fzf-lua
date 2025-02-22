@@ -224,6 +224,7 @@ end
 
 function Previewer.base:get_tmp_buffer()
   local tmp_buf = api.nvim_create_buf(false, true)
+  vim.bo[tmp_buf].modifiable = true
   vim.bo[tmp_buf].bufhidden = "wipe"
   return tmp_buf
 end
