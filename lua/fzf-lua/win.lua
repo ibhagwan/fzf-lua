@@ -948,7 +948,11 @@ function FzfWin:set_tmp_buffer(no_wipe)
   -- makes sure the call to `fzf_win:close` (which is triggered by the buf del)
   -- won't trigger a close due to mismatched buffers condition on `self:close`
   self.fzf_bufnr = api.nvim_create_buf(false, true)
-  vim.api.nvim_win_set_buf(self.fzf_winid, self.fzf_bufnr)
+  -- `hidden` must be set to true or the detached buffer will be deleted (#1850)
+  local old_hidden = vim.o.hidden
+  vim.o.hidden = true
+  utils.win_set_buf_noautocmd(self.fzf_winid, self.fzf_bufnr)
+  vim.o.hidden = old_hidden
   -- close the previous fzf term buffer without triggering autocmds
   -- this also kills the previous fzf process if its still running
   if not no_wipe then
