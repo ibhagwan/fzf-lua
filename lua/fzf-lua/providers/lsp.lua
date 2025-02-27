@@ -192,7 +192,7 @@ local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
         lnum = range.start.line + 1,
         col = range.start.character + 1,
       }
-      if opts.jump1 and #call_hierarchy_call.fromRanges == 1 then
+      if opts.jump1 and #result == 1 then
         jump_to_location(opts, location, encoding)
       end
       local entry = make_entry.lcol(location, opts)
