@@ -1210,6 +1210,7 @@ end
 function FzfWin.unhide()
   local self = _self
   if not self or not self:hidden() then return end
+  self._o.__CTX = utils.CTX()
   vim.bo[self._hidden_fzf_bufnr].bufhidden = "wipe"
   self.fzf_bufnr = self._hidden_fzf_bufnr
   self._hidden_fzf_bufnr = nil
