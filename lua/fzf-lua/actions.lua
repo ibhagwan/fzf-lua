@@ -147,8 +147,12 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
       -- Something is not right, goto next entry
       if not fullpath then return end
       if not path.is_absolute(fullpath) then
+        -- cwd priority is first user supplied, then original call cwd
+        -- technically we should never get to the `uv.cwd()` fallback
         fullpath = path.join({ opts.cwd or opts._cwd or uv.cwd(), fullpath })
       end
+      -- always open files relative to the current win/tab cwd (#1854)
+      local relpath = path.relative_to(fullpath, uv.cwd())
       -- opts.__CTX isn't guaranteed by API users (#1414)
       local CTX = opts.__CTX or utils.CTX()
       local target_equals_current =
@@ -212,7 +216,6 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
             -- We normalize the path or Windows will fail with directories starting
             -- with special characters, for example "C:\app\(web)" will be translated
             -- by neovim to "c:\app(web)" (#1082)
-            local relpath = vim.o.autochdir and fullpath or path.relative_to(entry.path, uv.cwd())
             return vim.fn.fnameescape(path.normalize(relpath))
           end)())
         end
