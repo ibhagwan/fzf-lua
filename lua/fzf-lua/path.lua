@@ -425,8 +425,9 @@ function M.entry_to_file(entry, opts, force_uri)
   stripped = M.tilde_to_HOME(stripped)
   -- Prepend cwd unless entry is already a URI (e.g. nvim-jdtls "jdt://...")
   local isURI = stripped:match("^%a+://")
-  if opts.cwd and #opts.cwd > 0 and not isURI and not M.is_absolute(stripped) then
-    stripped = M.join({ opts.cwd, stripped })
+  local cwd = opts.cwd or opts._cwd
+  if cwd and #cwd > 0 and not isURI and not M.is_absolute(stripped) then
+    stripped = M.join({ cwd, stripped })
   end
   --Force LSP jumps using `vim.lsp.util.show_document` so that LSP entries are
   --added to the tag stack (see `:help gettagstack`)

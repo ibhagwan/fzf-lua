@@ -170,4 +170,20 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
   end,
 })
 
+T["files()"]["preview should work after chdir #1864"] = function()
+  -- Ignore last "-- TERMINAL --" line and "[DEBUG]" line containing the cmd
+  local screen_opts = { ignore_lines = { 6, 28 }, normalize_paths = helpers.IS_WIN() }
+  eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
+  child.lua([[FzfLua.files {
+    cwd_prompt = false,
+    previewer = 'builtin',
+    winopts = { preview = { hidden = false  } }
+  }]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+  child.lua([[vim.cmd.cd("./tests")]])
+  child.type_keys([[<c-n>]])
+  sleep(100)
+  child.expect_screen_lines(screen_opts)
+end
+
 return T
