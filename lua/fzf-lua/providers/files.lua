@@ -13,9 +13,6 @@ local get_files_cmd = function(opts)
   if opts.raw_cmd and #opts.raw_cmd > 0 then
     return opts.raw_cmd
   end
-  if opts.cmd and #opts.cmd > 0 then
-    return opts.cmd
-  end
   local search_paths = (function()
     -- NOTE: deepcopy to avoid recursive shellescapes with `actions.toggle_ignore`
     local search_paths = type(opts.search_paths) == "table" and vim.deepcopy(opts.search_paths)
@@ -31,7 +28,9 @@ local get_files_cmd = function(opts)
     end
   end)()
   local command = nil
-  if vim.fn.executable("fdfind") == 1 then
+  if opts.cmd and #opts.cmd > 0 then
+    command = opts.cmd
+  elseif vim.fn.executable("fdfind") == 1 then
     command = string.format("fdfind %s%s", opts.fd_opts,
       search_paths and string.format(" . %s", search_paths) or "")
   elseif vim.fn.executable("fd") == 1 then
