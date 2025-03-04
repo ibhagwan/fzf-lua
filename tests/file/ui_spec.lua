@@ -25,6 +25,7 @@ T["files()"]["start and abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c
   function(key)
     -- sort output and remove cwd in prompt as will be different on CI
     child.lua([[FzfLua.files({
+      hidden = false,
       previewer = false,
       cwd_prompt = false,
       cmd = "rg --files --sort=path",
@@ -49,6 +50,7 @@ T["files()"]["start and abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c
 T["files()"]["previewer"] = new_set({ parametrize = { { "ci" }, { "builtin" } } }, {
   function(previewer)
     child.lua(([[FzfLua.files({
+      hidden = false,
       previewer = %s,
       cwd_prompt = false,
       cmd = "rg --files --sort=path",
@@ -92,6 +94,7 @@ T["files()"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-
     child.lua(([[require("%s").setup({})]]):format(icons == "mini" and "mini.icons" or plugin))
     -- sort output and remove cwd in prompt as will be different on CI
     child.lua(([[FzfLua.files({
+      hidden = false,
       previewer = false,
       file_icons = "%s",
       cwd_prompt = false,
