@@ -84,6 +84,10 @@ M.ACTION_DEFINITIONS = {
   [actions.git_yank_commit]   = { "copy commit hash" },
   [actions.git_branch_add]    = { "add branch" },
   [actions.git_branch_del]    = { "delete branch" },
+  [actions.ex_run]            = { "edit" },
+  [actions.ex_run_cr]         = { "execute" },
+  [actions.search]            = { "edit" },
+  [actions.search_cr]         = { "search" },
 }
 
 -- converts contents array sent to `fzf_exec` into a single contents
