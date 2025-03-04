@@ -110,17 +110,11 @@ local history = function(opts, str)
   core.fzf_exec(entries, opts)
 end
 
-local arg_header = function(sel_key, edit_key, text)
-  sel_key = utils.ansi_codes.yellow(sel_key)
-  edit_key = utils.ansi_codes.yellow(edit_key)
-  return (":: %s to %s, %s to edit"):format(sel_key, text, edit_key)
-end
-
 M.command_history = function(opts)
   opts = config.normalize_opts(opts, "command_history")
   if not opts then return end
   if opts.fzf_opts["--header"] == nil then
-    opts = core.set_header(opts, opts.headers)
+    opts = core.set_header(opts, opts.headers or { "actions" })
   end
   history(opts, "cmd")
 end
@@ -129,7 +123,7 @@ M.search_history = function(opts)
   opts = config.normalize_opts(opts, "search_history")
   if not opts then return end
   if opts.fzf_opts["--header"] == nil then
-    opts = core.set_header(opts, opts.headers)
+    opts = core.set_header(opts, opts.headers or { "actions" })
   end
   history(opts, "search")
 end
