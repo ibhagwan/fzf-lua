@@ -1339,7 +1339,7 @@ end
 
 function FzfWin:update_main_title(title)
   -- Can be called from fzf-tmux on ctrl-g
-  if not self.layout then return end
+  if not self.layout or self.winopts.split then return end
   self.winopts.title = title
   self._o.winopts.title = title
   self.update_win_title(self.fzf_winid, self.layout.fzf, {
