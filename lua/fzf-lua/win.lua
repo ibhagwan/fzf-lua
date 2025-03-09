@@ -171,7 +171,8 @@ function FzfWin:generate_layout(winopts)
   -- If previewer is hidden we use full fzf layout, when previewer toggle behavior
   -- is "extend" we still reduce fzf main layout as if the previewer is displayed
   if not self.previewer_is_builtin
-      or (self.preview_hidden and self._previewer.toggle_behavior ~= "extend")
+      or (self.preview_hidden
+        and (self._previewer.toggle_behavior ~= "extend" or self.fullscreen))
   then
     self.layout = {
       fzf = self:normalize_border({
