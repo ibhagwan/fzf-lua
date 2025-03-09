@@ -60,7 +60,7 @@ local get_files_cmd = function(opts)
         if k == "hidden" then
           is_find = true
           toggle = not opts[k]
-          v = [[-not -path '*/\.*']]
+          v = [[\! -path '*/.*']]
         end
       end
       command = utils.toggle_cmd_flag(command, v, toggle, is_find)
