@@ -131,7 +131,7 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
     else
       exclude = [[{ "fd", "fdfind", "rg" }]]
       opts = [==[
-        find_opts = [[-type f -not -path '*/\.git/*' -not -path '*/doc/tags' -not -path '*/deps/*' | sort]],
+        find_opts = [[-type f \! -path '*/.git/*' \! -path '*/doc/tags' \! -path '*/deps/*' | sort]],
         dir_opts = [[/s/b/a:-d | findstr -v "\.git\\" | findstr -v "doc\\tags" | findstr -v "deps" | sort]],
         strip_cwd_prefix = true,
       ]==]
