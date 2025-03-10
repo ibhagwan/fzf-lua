@@ -601,29 +601,35 @@ M.defaults.buffers              = {
   _actions              = function()
     return M.globals.actions.buffers or M.globals.actions.files
   end,
-  actions               = { ["ctrl-x"] = { fn = actions.buf_del, reload = true } },
+  actions               = {
+    ["ctrl-x"] = { fn = actions.buf_del, reload = true },
+    ["f11"] = { fn = actions.dummy_abort, reload = true },
+  },
+  _reload_bind          = "<F11>",
   _cached_hls           = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "path_linenr" },
 }
 
 M.defaults.tabs                 = {
-  previewer   = M._default_previewer_fn,
-  tab_title   = "Tab",
-  tab_marker  = "<<",
-  file_icons  = 1,
-  color_icons = true,
-  _actions    = function()
+  previewer    = M._default_previewer_fn,
+  tab_title    = "Tab",
+  tab_marker   = "<<",
+  file_icons   = 1,
+  color_icons  = true,
+  _actions     = function()
     return M.globals.actions.buffers or M.globals.actions.files
   end,
-  actions     = {
+  actions      = {
     ["enter"]  = actions.buf_switch,
     ["ctrl-x"] = { fn = actions.buf_del, reload = true },
+    ["f11"]    = { fn = actions.dummy_abort, reload = true },
   },
-  fzf_opts    = {
+  _reload_bind = "<F11>",
+  fzf_opts     = {
     ["--multi"]     = true,
     ["--delimiter"] = "[\\):]",
     ["--with-nth"]  = "5..",
   },
-  _cached_hls = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "tab_title", "tab_marker", "path_linenr" },
+  _cached_hls  = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "tab_title", "tab_marker", "path_linenr" },
 }
 
 M.defaults.lines                = {
