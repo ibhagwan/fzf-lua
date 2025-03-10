@@ -17,7 +17,7 @@
 
 ## Quickstart
 
-To quickly test this plugin without changing your configuration run (will run in it's own sandbox
+To quickly test this plugin without changing your configuration run (will run in its own sandbox
 with the default keybinds below):
 > [!NOTE]
 > it's good practice to first
