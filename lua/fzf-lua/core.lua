@@ -1218,11 +1218,15 @@ M.convert_reload_actions = function(reload_cmd, opts)
     end
   end
   opts.keymap.fzf.load = (function()
+    -- NOTE: this fixes existence of both load as function and rebind, e.g. git_status with:
+    -- setup({ keymap = { fzf = { true, load = function() _G._fzf_load_called = true end } } }
+    if type(opts.keymap.fzf.load) == "function" then
+      opts.keymap.fzf.load = "execute-silent:" ..
+          shell.raw_action(opts.keymap.fzf.load, nil, opts.debug)
+    end
     if rebind and type(opts.keymap.fzf.load) == "string" then
       return string.format("%s+%s", rebind, opts.keymap.fzf.load)
     else
-      -- TODO: fix existence of both load as function and rebind, e.g. git_status with:
-      -- setup({ keymap = { fzf = { true, load = function() _G._fzf_load_called = true end } } }
       return rebind or opts.keymap.fzf.load
     end
   end)()
