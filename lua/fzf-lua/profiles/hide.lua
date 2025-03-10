@@ -1,5 +1,6 @@
 local uv = vim.uv or vim.loop
 local fzf = require("fzf-lua")
+local shell = require "fzf-lua.shell"
 return {
   desc     = "hide interface instead of abort",
   keymap   = {
@@ -82,6 +83,15 @@ return {
         end
         return act
       end, opts.actions)
+      -- Hijack the resize event to reload buffer/tab list on unhide
+      opts.keymap.fzf.resize = "transform:" .. shell.raw_action(function(_, _, _)
+        if opts._unhide_called then
+          opts._unhide_called = nil
+          if opts.__reload_cmd then
+            return string.format("reload:%s", opts.__reload_cmd)
+          end
+        end
+      end, "{q}", opts.debug)
       return opts
     end,
   },
