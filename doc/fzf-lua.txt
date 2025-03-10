@@ -60,7 +60,7 @@ QUICKSTART                                                *fzf-lua-quickstart*
 
 
 To quickly test this plugin without changing your configuration run (will run
-in it's own sandbox with the default keybinds below):
+in its own sandbox with the default keybinds below):
 
   [!NOTE] it's good practice to first read the script
   <https://github.com/ibhagwan/fzf-lua/blob/main/scripts/mini.sh> before running
