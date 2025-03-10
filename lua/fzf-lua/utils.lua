@@ -797,8 +797,8 @@ function M.fzf_winobj()
   return loadstring("return require'fzf-lua'.win.__SELF()")()
 end
 
-function M.CTX()
-  return loadstring("return require'fzf-lua'.core.CTX()")()
+function M.CTX(...)
+  return loadstring("return require'fzf-lua'.core.CTX(...)")(...)
 end
 
 function M.__CTX()

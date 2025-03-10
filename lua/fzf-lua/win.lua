@@ -1210,7 +1210,11 @@ end
 function FzfWin.unhide()
   local self = _self
   if not self or not self:hidden() then return end
-  self._o.__CTX = utils.CTX()
+  self._o.__CTX = utils.CTX({ force = true })
+  -- reload list for buffers/tabs
+  if self._o._reload_bind then
+    utils.feed_keys_termcodes(self._o._reload_bind)
+  end
   vim.bo[self._hidden_fzf_bufnr].bufhidden = "wipe"
   self.fzf_bufnr = self._hidden_fzf_bufnr
   self._hidden_fzf_bufnr = nil

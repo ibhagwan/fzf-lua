@@ -299,7 +299,7 @@ M.CTX = function(opts)
   -- perhaps a min impact optimization but since only
   -- buffers/tabs use these we only include the current
   -- list of buffers when requested
-  if opts.includeBuflist and not M.__CTX.buflist then
+  if opts.force or opts.includeBuflist and not M.__CTX.buflist then
     -- also add a map for faster lookups than `utils.tbl_contains`
     -- TODO: is it really faster since we must use string keys?
     M.__CTX.bufmap = {}
