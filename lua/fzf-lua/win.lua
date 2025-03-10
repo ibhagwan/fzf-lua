@@ -1,5 +1,6 @@
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 
@@ -1211,7 +1212,12 @@ end
 function FzfWin.unhide()
   local self = _self
   if not self or not self:hidden() then return end
-  self._o.__CTX = utils.CTX()
+  self._o.__CTX = utils.CTX({ includeBuflist = true })
+  self._o._oneshot_prefzf = true
+  -- Send SIGWINCH to to trigger resize in the fzf process
+  -- We will use the trigger to reload necessary buffer lists
+  local pid = fn.jobpid(vim.bo[self._hidden_fzf_bufnr].channel)
+  libuv.process_kill(pid, 28)
   vim.bo[self._hidden_fzf_bufnr].bufhidden = "wipe"
   self.fzf_bufnr = self._hidden_fzf_bufnr
   self._hidden_fzf_bufnr = nil

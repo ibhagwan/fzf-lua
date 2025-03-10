@@ -14,6 +14,7 @@ local serpent = require("fzf-lua.lib.serpent")
 local function process_kill(pid, signal)
   if not pid or not tonumber(pid) then return false end
   if type(uv.os_getpriority(pid)) == "number" then
+    print("sent", pid, signal)
     uv.kill(pid, signal or 9)
     return true
   end

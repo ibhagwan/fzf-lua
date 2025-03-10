@@ -82,6 +82,10 @@ return {
         end
         return act
       end, opts.actions)
+      -- Hijack the resize event to reload buffer/tab list on unhide
+      opts.keymap.fzf.resize = function()
+        print("resize called", opts._oneshot_fzf)
+      end
       return opts
     end,
   },
