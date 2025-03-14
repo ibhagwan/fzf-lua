@@ -21,7 +21,8 @@ function M._default_previewer_fn()
 end
 
 function M._preview_pager_fn()
-  return vim.fn.executable("delta") == 1 and "delta --width=$COLUMNS" or nil
+  return vim.fn.executable("delta") == 1 and ("delta --width=$COLUMNS --%s"):format(vim.o.bg) or
+      nil
 end
 
 function M._man_cmd_fn(bat_pager)
