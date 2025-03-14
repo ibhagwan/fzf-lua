@@ -240,14 +240,15 @@ local function symbols_to_items(symbols, bufnr, child_prefix)
   return _symbols_to_items(symbols, {}, bufnr or 0, "")
 end
 
-local function symbol_handler(opts, cb, _, result, _, _)
+local function symbol_handler(opts, cb, _, result, ctx, _)
   result = utils.tbl_islist(result) and result or { result }
   local items
   if opts.child_prefix then
     items = symbols_to_items(result, core.CTX().bufnr,
       opts.child_prefix == true and string.rep(" ", 2) or opts.child_prefix)
   else
-    items = vim.lsp.util.symbols_to_items(result, core.CTX().bufnr)
+    local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
+    items = vim.lsp.util.symbols_to_items(result, core.CTX().bufnr, encoding)
   end
   if opts.regex_filter and opts._regex_filter_fn == nil then
     opts._regex_filter_fn = regex_filter_fn(opts.regex_filter)
