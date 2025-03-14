@@ -48,7 +48,7 @@ end
 -- set the cwd and prompt top the top level directory and
 -- the leftover match to the input query
 local set_cmp_opts_path = function(opts)
-  local match = "[^%s\"']*"
+  local match = opts.word_pattern or "[^%s\"']*"
   local line = vim.api.nvim_get_current_line()
   local col = vim.api.nvim_win_get_cursor(0)[2] + 1
   local before = col > 1 and line:sub(1, col - 1):reverse():match(match):reverse() or ""

@@ -1262,11 +1262,13 @@ previewers = {
   complete_path = {
     cmd          = nil, -- default: auto detect fd|rg|find
     complete     = { ["enter"] = actions.complete },
+    word_pattern = nil, -- default: "[^%s\"']*"
   },
   complete_file = {
     cmd          = nil, -- default: auto detect rg|fd|find
     file_icons   = true,
     color_icons  = true,
+    word_pattern = nil,
     -- actions inherit from 'actions.files' and merge
     actions      = { ["enter"] = actions.complete },
     -- previewer hidden by default

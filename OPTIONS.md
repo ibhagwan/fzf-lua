@@ -1229,9 +1229,21 @@ Zoxide recent directories
 
 Complete path under cursor (incl dirs)
 
+##### complete_path.word_pattern
+
+Type: `string`, Default: `nil`
+
+The pattern used to match the word under the cursor. Text around the cursor position that matches will be used as the initial query and replaced by a chosen completion. The default matches anything but spaces and single/double quotes.
+
 #### complete_file
 
 Complete file under cursor (excl dirs)
+
+##### complete_file.word_pattern
+
+Type: `string`, Default: `nil`
+
+See [`complete_path.word_pattern`](#complete_path.word_pattern)
 
 #### complete_line
 
