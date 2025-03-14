@@ -1693,10 +1693,27 @@ complete_path                                     *fzf-lua-opts-complete_path*
 Complete path under cursor (incl dirs)
 
 
+complete_path.word_pattern           *fzf-lua-opts-complete_path.word_pattern*
+
+Type: `string`, Default: `nil`
+
+The pattern used to match the word under the cursor. Text around the cursor
+position that matches will be used as the initial query and replaced by a
+chosen completion. The default matches anything but spaces and single/double
+quotes.
+
+
                                                                               
 complete_file                                     *fzf-lua-opts-complete_file*
 
 Complete file under cursor (excl dirs)
+
+
+complete_file.word_pattern           *fzf-lua-opts-complete_file.word_pattern*
+
+Type: `string`, Default: `nil`
+
+See |fzf-lua-opts-complete_path.word_pattern|.
 
 
                                                                               
