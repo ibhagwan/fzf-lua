@@ -403,8 +403,8 @@ function Previewer.base:cmdline(_)
     local entry, query, idx = items[1], items[2], items[3]
     -- NOTE: see comment regarding {n} in `core.convert_exec_silent_actions`
     if not tonumber(idx) then entry = nil end
-    assert(type(query) == "string")
-    self.opts._last_query = query
+    -- on windows, query may not be expanded to a string: #1887
+    self.opts._last_query = query or ""
     -- convert empty string to nil
     self:display_entry(entry)
     return ""
