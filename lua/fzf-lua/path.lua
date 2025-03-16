@@ -361,7 +361,7 @@ function M.lengthen(path)
 end
 
 local function lastIndexOf(haystack, needle)
-  local i = haystack:match(".*" .. needle .. "()")
+  local i = haystack and haystack:match(".*" .. needle .. "()")
   if i == nil then return nil else return i - 1 end
 end
 
