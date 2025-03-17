@@ -370,6 +370,8 @@ Alternatively, resuming work on a specific picker:
 require("fzf-lua").setup{
   -- MISC GLOBAL SETUP OPTIONS, SEE BELOW
   -- fzf_bin = ...,
+  -- each of these options can also be passed as function that return options table
+  -- e.g. winopts = function() return { ... } end
   winopts = { ...  },     -- UI Options
   keymap = { ...  },      -- Neovim keymaps / fzf binds
   actions = { ...  },     -- Fzf "accept" binds
