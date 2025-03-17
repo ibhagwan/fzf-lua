@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.7.0          Last change: 2025 March 13
+*fzf-lua.txt*          For Neovim >= 0.7.0          Last change: 2025 March 17
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -394,6 +394,8 @@ CUSTOMIZATION                                          *fzf-lua-customization*
     require("fzf-lua").setup{
       -- MISC GLOBAL SETUP OPTIONS, SEE BELOW
       -- fzf_bin = ...,
+      -- each of these options can also be passed as function that return options table
+      -- e.g. winopts = function() return { ... } end
       winopts = { ...  },     -- UI Options
       keymap = { ...  },      -- Neovim keymaps / fzf binds
       actions = { ...  },     -- Fzf "accept" binds
