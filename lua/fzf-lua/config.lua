@@ -127,6 +127,11 @@ do
   m.globals = M.globals
 end
 
+local eval = function(v, ...)
+  if vim.is_callable(v) then return v(...) end
+  return v
+end
+
 ---@param opts table<string, unknown>|fun():table?
 ---@param globals string|table?
 ---@param __resume_key string?
@@ -223,10 +228,10 @@ function M.normalize_opts(opts, globals, __resume_key)
     } or nil
   end
   local exclude_case_sensitive_alt = "^alt%-%a$"
-  opts.keymap = keymap_tolower(opts.keymap, exclude_case_sensitive_alt)
-  opts.actions = utils.map_tolower(opts.actions, exclude_case_sensitive_alt)
-  globals.keymap = keymap_tolower(globals.keymap, exclude_case_sensitive_alt)
-  globals.actions = utils.map_tolower(globals.actions, exclude_case_sensitive_alt)
+  opts.keymap = keymap_tolower(eval(opts.keymap, opts), exclude_case_sensitive_alt)
+  opts.actions = utils.map_tolower(eval(opts.actions, opts), exclude_case_sensitive_alt)
+  globals.keymap = keymap_tolower(eval(globals.keymap, opts), exclude_case_sensitive_alt)
+  globals.actions = utils.map_tolower(eval(globals.actions, opts), exclude_case_sensitive_alt)
 
   -- inherit from globals.actions?
   if type(globals._actions) == "function" then
