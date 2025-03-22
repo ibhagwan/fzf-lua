@@ -162,6 +162,7 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
+    sleep(100)
     child.expect_screen_lines(screen_opts)
     child.type_keys("<c-c>")
     child.wait_until(function()
