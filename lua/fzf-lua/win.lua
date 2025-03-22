@@ -1296,7 +1296,8 @@ function FzfWin:update_preview_scrollbar()
     height = o.wininfo.height,
     zindex = self.winopts.zindex + 1,
     row = 0,
-    col = o.wininfo.width + scrolloff
+    col = o.wininfo.width + scrolloff,
+    border = "none",
   }
   local full = vim.tbl_extend("keep", {
     zindex = empty.zindex + 1,
