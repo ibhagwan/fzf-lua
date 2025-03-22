@@ -199,9 +199,8 @@ M.buffers = function(opts)
   end
 
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local reload, id = shell.reload_action_cmd(opts, "{+}")
-  local contents = reload:gsub("%-%-%s+{%+}$", "")
-  opts.__reload_cmd = reload
+  local contents, id = shell.reload_action_cmd(opts, "")
+  opts.__reload_cmd = contents
 
   -- get current tab/buffer/previous buffer
   -- save as a func ref for resume to reuse
@@ -440,9 +439,8 @@ M.tabs = function(opts)
   end
 
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local reload, id = shell.reload_action_cmd(opts, "{+}")
-  local contents = reload:gsub("%-%-%s+{%+}$", "")
-  opts.__reload_cmd = reload
+  local contents, id = shell.reload_action_cmd(opts, "")
+  opts.__reload_cmd = contents
 
   -- get current tab/buffer/previous buffer
   -- save as a func ref for resume to reuse

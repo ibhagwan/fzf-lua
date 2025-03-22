@@ -255,9 +255,8 @@ M.marks = function(opts)
   end
 
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local reload, id = shell.reload_action_cmd(opts, "{+}")
-  local contents = reload:gsub("%-%-%s+{%+}$", "")
-  opts.__reload_cmd = reload
+  local contents, id = shell.reload_action_cmd(opts, "")
+  opts.__reload_cmd = contents
 
   opts._fn_pre_fzf = function()
     shell.set_protected(id)
@@ -504,9 +503,8 @@ M.nvim_options = function(opts)
   end
 
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local reload, id = shell.reload_action_cmd(opts, "{+}")
-  local contents = reload:gsub("%-%-%s+{%+}$", "")
-  opts.__reload_cmd = reload
+  local contents, id = shell.reload_action_cmd(opts, "")
+  opts.__reload_cmd = contents
 
   opts._fn_pre_fzf = function()
     shell.set_protected(id)
