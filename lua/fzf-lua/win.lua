@@ -590,6 +590,7 @@ function FzfWin:set_backdrop()
     focusable = false,
     -- -2 as preview border is -1
     zindex = self.winopts.zindex - 2,
+    border = 'none',
   })
   utils.wo(self.backdrop_win, "winhighlight", "Normal:" .. self.hls.backdrop)
   utils.wo(self.backdrop_win, "winblend", self.winopts.backdrop)
