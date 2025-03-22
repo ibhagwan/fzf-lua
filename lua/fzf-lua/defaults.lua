@@ -219,6 +219,7 @@ M.defaults                      = {
       ueberzug_scaler   = "cover",
       title_fnamemodify = function(s) return path.tail(s) end,
       render_markdown   = { enabled = true, filetypes = { ["markdown"] = true } },
+      snacks_image      = { enabled = true },
       _ctor             = previewers.builtin.buffer_or_file,
     },
     codeaction = {

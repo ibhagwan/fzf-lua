@@ -140,6 +140,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.render_markdown = type(o.render_markdown) == "table" and o.render_markdown or {}
   self.render_markdown.filetypes =
       type(self.render_markdown.filetypes) == "table" and self.render_markdown.filetypes or {}
+  self.snacks_image = type(o.snacks_image) == "table" and o.snacks_image or {}
   self.winopts = self.win.winopts.preview.winopts
   self.syntax = default(o.syntax, true)
   self.syntax_delay = tonumber(default(o.syntax_delay, 0))
@@ -149,6 +150,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.treesitter = type(o.treesitter) == "table" and o.treesitter or {}
   self.toggle_behavior = o.toggle_behavior
   self.winopts_orig = {}
+  self.winblend = self.winblend or self.winopts.winblend or vim.o.winblend
   -- convert extension map to lower case
   if o.extensions then
     self.extensions = {}
@@ -829,6 +831,13 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
           }
         end
       end
+      local simg = package.loaded["snacks.image"]
+      if simg and simg.supports(entry.path) then
+        simg.buf.attach(tmpbuf, { src = entry.path })
+        self:set_preview_buf(tmpbuf)
+        self:preview_buf_post(entry)
+        return
+      end
       if lines then
         pcall(vim.api.nvim_buf_set_lines, tmpbuf, 0, -1, false, lines)
         -- swap preview buffer with new one
@@ -856,6 +865,8 @@ end
 
 -- Attach ts highlighter, neovim >= v0.9
 local ts_attach = function(bufnr, ft)
+  -- ts is already attach, see $VIMRUNTIME/lua/vim/treesitter/highlighter.lua
+  if vim.b[bufnr].ts_highlight then return true end
   local lang = vim.treesitter.language.get_lang(ft)
   local loaded = lang and utils.has_ts_parser(lang)
   if lang and loaded then
@@ -928,11 +939,36 @@ function Previewer.base:update_render_markdown()
   end
 end
 
+function Previewer.base:attach_snacks_image()
+  local simg = package.loaded["snacks.image"]
+  local bufnr, preview_winid = self.preview_bufnr, self.win.preview_winid
+  if not simg
+      or not self.snacks_image.enabled
+      or not (simg.config.doc.inline and simg.terminal.env().placeholders)
+      or vim.b[bufnr].snacks_image_attached then
+    return
+  end
+
+  -- restore default winblend when on unsupport ft
+  local ft = vim.b[bufnr]._ft
+  if not ft then return end
+  _G._fzf_lua_snacks_langs = _G._fzf_lua_snacks_langs or simg.langs()
+  if not vim.tbl_contains(_G._fzf_lua_snacks_langs, vim.treesitter.language.get_lang(ft)) then
+    vim.wo[preview_winid].winblend = self.winblend
+    return
+  end
+
+  vim.wo[preview_winid].winblend = 0 -- https://github.com/folke/snacks.nvim/pull/1615
+  vim.b[bufnr].snacks_image_attached = simg.inline.new(bufnr)
+end
+
 function Previewer.buffer_or_file:do_syntax(entry)
   if not self.preview_bufnr then return end
   if not entry or not entry.path then return end
   local bufnr = self.preview_bufnr
   local preview_winid = self.win.preview_winid
+  -- can be used by snacks.image to get abspath of e.g. [file.png] https://github.com/folke/snacks.nvim/pull/1618
+  vim.b[bufnr].bufpath = entry.path
   if api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].filetype == "" then
     if fn.bufwinid(bufnr) == preview_winid then
       -- do not enable for large files, treesitter still has perf issues:
@@ -961,6 +997,10 @@ function Previewer.buffer_or_file:do_syntax(entry)
           if type(ft) ~= "string" then
             return true
           end
+          -- Use buf local var as setting ft might have unintended consequences
+          -- currently only being used in `update_render_markdown` but might be
+          -- of use in the future?
+          vim.b[bufnr]._ft = ft
           local ts_enabled = (function()
             if not self.treesitter or
                 self.treesitter.enabled == false or
@@ -977,10 +1017,6 @@ function Previewer.buffer_or_file:do_syntax(entry)
           if not ts_success then
             pcall(function() vim.bo[bufnr].syntax = ft end)
           else
-            -- Use buf local var as setting ft might have unintended consequences
-            -- currently only being used in `update_render_markdown` but might be
-            -- of use in the future?
-            vim.b[bufnr]._ft = ft
             self:update_render_markdown()
             self:update_ts_context()
           end
@@ -1141,10 +1177,12 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
         vim.defer_fn(function()
           if self.preview_bufnr == syntax_bufnr then
             self:do_syntax(entry)
+            self:attach_snacks_image()
           end
         end, self.syntax_delay)
       else
         self:do_syntax(entry)
+        self:attach_snacks_image()
       end
     end
   end
