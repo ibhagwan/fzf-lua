@@ -138,9 +138,8 @@ M.args = function(opts)
   end
 
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local reload, id = shell.reload_action_cmd(opts, "{+}")
-  local contents = reload:gsub("%-%-%s+{%+}$", "")
-  opts.__reload_cmd = reload
+  local contents, id = shell.reload_action_cmd(opts, "")
+  opts.__reload_cmd = contents
 
   opts._fn_pre_fzf = function()
     shell.set_protected(id)
@@ -162,7 +161,7 @@ M.zoxide = function(opts)
   -- we always require processing
   opts.requires_processing = true
 
-  local contents
+  local contents, id
   if opts.multiprocess then
     opts.__mt_transform = [[return require("fzf-lua.make_entry").zoxide]]
     contents = core.mt_cmd_wrapper(opts)
@@ -177,9 +176,8 @@ M.zoxide = function(opts)
     end
 
     -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-    local reload, id = shell.reload_action_cmd(opts, "{+}")
-    contents = reload:gsub("%-%-%s+{%+}$", "")
-    opts.__reload_cmd = reload
+    contents, id = shell.reload_action_cmd(opts, "")
+    opts.__reload_cmd = contents
 
     opts._fn_pre_fzf = function()
       shell.set_protected(id)

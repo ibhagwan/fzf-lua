@@ -47,7 +47,7 @@ M.status = function(opts)
   -- we always require processing (can't send the raw command to fzf)
   opts.requires_processing = true
 
-  local contents
+  local contents, id
   if opts.multiprocess then
     -- git status does not require preprocessing if not loading devicons
     -- opts.__mt_preprocess = opts.file_icons
@@ -72,9 +72,8 @@ M.status = function(opts)
     end
 
     -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-    local reload, id = shell.reload_action_cmd(opts, "{+}")
-    contents = reload:gsub("%-%-%s+{%+}$", "")
-    opts.__reload_cmd = reload
+    contents, id = shell.reload_action_cmd(opts, "")
+    opts.__reload_cmd = contents
 
     -- when the action resumes the preview re-attaches which registers
     -- a new shell function id, done enough times it will overwrite the
@@ -270,9 +269,8 @@ M.stash = function(opts)
   end
 
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local reload, id = shell.reload_action_cmd(opts, "{+}")
-  local contents = reload:gsub("%-%-%s+{%+}$", "")
-  opts.__reload_cmd = reload
+  local contents, id = shell.reload_action_cmd(opts, "")
+  opts.__reload_cmd = contents
 
   opts._fn_pre_fzf = function()
     shell.set_protected(id)
