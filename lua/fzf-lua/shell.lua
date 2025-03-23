@@ -113,7 +113,7 @@ end
 
 function M.raw_action(fn, fzf_field_expression, debug)
   local receiving_function = function(pipe, ...)
-    local ret = fn(...)
+    local ok, ret = pcall(fn, ...)
 
     local on_complete = function(_)
       -- We are NOT asserting, in case fzf closes
@@ -121,6 +121,9 @@ function M.raw_action(fn, fzf_field_expression, debug)
       -- assert(not err)
       uv.close(pipe)
     end
+
+    -- pipe must be closed, otherwise terminal will freeze
+    if not ok then on_complete() end
 
     if type(ret) == "string" then
       uv.write(pipe, ret, on_complete)
