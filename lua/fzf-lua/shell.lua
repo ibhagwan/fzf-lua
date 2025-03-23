@@ -123,7 +123,10 @@ function M.raw_action(fn, fzf_field_expression, debug)
     end
 
     -- pipe must be closed, otherwise terminal will freeze
-    if not ok then on_complete() end
+    if not ok then
+      utils.err(ret)
+      on_complete()
+    end
 
     if type(ret) == "string" then
       uv.write(pipe, ret, on_complete)
