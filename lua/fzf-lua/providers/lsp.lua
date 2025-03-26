@@ -31,7 +31,7 @@ local function check_capabilities(handler, silent)
       -- indicator to see if a server supports a feature. Instead use
       -- `client.supports_method(<method>)`. It considers both the dynamic
       -- capabilities and static `server_capabilities`.
-      if client:supports_method(handler.method) then
+      if client:supports_method(handler.prep or handler.method) then
         num_clients = num_clients + 1
       end
     elseif utils.__HAS_NVIM_08 then
@@ -384,6 +384,7 @@ local handlers = {
     resolved_capability = "call_hierarchy",
     server_capability = "callHierarchyProvider",
     method = "callHierarchy/incomingCalls",
+    prep = "textDocument/prepareCallHierarchy",
     handler = call_hierarchy_handler
   },
   ["outgoing_calls"] = {
@@ -391,6 +392,7 @@ local handlers = {
     resolved_capability = "call_hierarchy",
     server_capability = "callHierarchyProvider",
     method = "callHierarchy/outgoingCalls",
+    prep = "textDocument/prepareCallHierarchy",
     handler = call_hierarchy_handler
   },
 }
@@ -613,10 +615,9 @@ local function gen_lsp_contents_call_hierarchy(opts)
       or function(client)
         return vim.lsp.util.make_position_params(core.CTX().winid, client.offset_encoding)
       end
-  local method = "textDocument/prepareCallHierarchy"
-  local res, err = vim.lsp.buf_request_sync(0, method, lsp_params, 2000)
+  local res, err = vim.lsp.buf_request_sync(0, opts.lsp_handler.prep, lsp_params, 2000)
   if err then
-    utils.err(("Error executing '%s': %s"):format(method, err))
+    utils.err(("Error executing '%s': %s"):format(opts.lsp_handler.prep, err))
   else
     local _, response = next(res)
     if not response or not response.result or not response.result[1] then

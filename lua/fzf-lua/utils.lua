@@ -1365,9 +1365,9 @@ function M.lsp_get_clients(opts)
   if M.__HAS_NVIM_011 then
     return vim.lsp.get_clients(opts)
   end
-  local clients = opts.bufnr and vim.lsp.buf_get_clients(opts.bufnr)
-      or opts.id and { vim.lsp.get_client_by_id(opts.id) }
-      or vim.lsp.get_clients(opts)
+  ---@diagnostic disable-next-line: deprecated
+  local get = vim.lsp.get_clients or vim.lsp.get_active_clients
+  local clients = get(opts)
   return vim.tbl_map(function(client)
     return setmetatable({
       supports_method = function(_, ...) return client.supports_method(...) end,
