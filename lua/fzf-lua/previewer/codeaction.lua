@@ -129,7 +129,7 @@ local function diff_tuple(err, tuple, diff_opts)
   end
   local action = tuple[2]
   if action.edit then
-    local client = vim.lsp.get_client_by_id(tuple[1])
+    local client = utils.lsp_get_clients({ id = tuple[1] })[1]
     return diff_workspace_edit(action.edit, client.offset_encoding, diff_opts)
   else
     local command = type(action.command) == "table" and action.command or action
@@ -160,7 +160,7 @@ local function preview_action_tuple(self, idx, callback)
   end
   -- Not found in cache, check if the client supports code action resolving
   local client_id = tuple[1]
-  local client = assert(vim.lsp.get_client_by_id(client_id))
+  local client = assert(utils.lsp_get_clients({ id = client_id })[1])
   local action = tuple[2]
   local supports_resolve = utils.__HAS_NVIM_010
       -- runtime/lua/lsp/buf.lua:on_user_choice
@@ -171,7 +171,7 @@ local function preview_action_tuple(self, idx, callback)
         local bufnr = assert(choice.ctx.bufnr, "Must have buffer number")
         local reg = client.dynamic_capabilities:get(ms.textDocument_codeAction, { bufnr = bufnr })
         return utils.tbl_get(reg or {}, "registerOptions", "resolveProvider")
-            or client.supports_method(ms.codeAction_resolve)
+            or client:supports_method(ms.codeAction_resolve)
       end)()
       -- prior to nvim 0.10 we could check `client.server_capabilities`
       or utils.tbl_get(client.server_capabilities, "codeActionProvider", "resolveProvider")
@@ -202,13 +202,13 @@ local function preview_action_tuple(self, idx, callback)
       return resolved.tuple
     end
     if callback then
-      client.request("codeAction/resolve", action, function(err, resolved_action)
+      client:request("codeAction/resolve", action, function(err, resolved_action)
         local resolved_tuple = handle_resolved_response(err, resolved_action)
         callback(nil, not err and resolved_tuple or tuple)
       end)
       return { string.format("Resolving action (%s)...", action.kind) }
     else
-      local res = client.request_sync("codeAction/resolve", action)
+      local res = client:request_sync("codeAction/resolve", action)
       local err, resolved_action = res and res.err, res and res.result
       local resolved_tuple = handle_resolved_response(err, resolved_action)
       return diff_tuple(nil, not err and resolved_tuple or tuple, self.diff_opts)

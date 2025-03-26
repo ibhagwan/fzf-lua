@@ -17,10 +17,7 @@ local function handler_capability(handler)
 end
 
 local function check_capabilities(handler, silent)
-  local clients = utils.__HAS_NVIM_011
-      and vim.lsp.get_clients({ bufnr = core.CTX().bufnr })
-      ---@diagnostic disable-next-line: deprecated
-      or vim.lsp.buf_get_clients(core.CTX().bufnr)
+  local clients = utils.lsp_get_clients({ bufnr = core.CTX().bufnr })
 
   -- return the number of clients supporting the feature
   -- so the async version knows how many callbacks to wait for
@@ -34,7 +31,7 @@ local function check_capabilities(handler, silent)
       -- indicator to see if a server supports a feature. Instead use
       -- `client.supports_method(<method>)`. It considers both the dynamic
       -- capabilities and static `server_capabilities`.
-      if client.supports_method(handler.method) then
+      if client:supports_method(handler.method) then
         num_clients = num_clients + 1
       end
     elseif utils.__HAS_NVIM_08 then
