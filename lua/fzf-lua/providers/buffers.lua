@@ -473,8 +473,10 @@ M.treesitter = function(opts)
     opts._bufname = utils.nvim_buf_get_name(opts.bufnr)
   end
 
-  local ts_parsers = require("nvim-treesitter.parsers")
-  if not ts_parsers.has_parser(ts_parsers.get_buf_lang(opts.bufnr)) then
+
+  local ft = vim.bo[opts.bufnr].ft
+  local lang = vim.treesitter.language.get_lang(ft)
+  if not utils.has_ts_parser(lang) then
     utils.info(string.format("No treesitter parser found for '%s' (bufnr=%d).",
       opts._bufname, opts.bufnr))
     return
@@ -489,7 +491,7 @@ M.treesitter = function(opts)
     coroutine.wrap(function()
       local co = coroutine.running()
       local ts_locals = require("nvim-treesitter.locals")
-      for _, definition in ipairs(ts_locals.get_definitions(opts.bufnr)) do
+      for _, definition in ipairs((ts_locals.get or ts_locals.get_definitions)(opts.bufnr)) do
         local nodes = ts_locals.get_local_nodes(definition)
         for _, node in ipairs(nodes) do
           if node.node then
