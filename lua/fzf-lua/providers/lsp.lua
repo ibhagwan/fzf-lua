@@ -994,7 +994,11 @@ M.code_actions = function(opts)
   -- 3rd arg are "once" options to override
   -- existing "registered" ui_select options
   ui_select.register(opts, true, opts)
-  vim.lsp.buf.code_action({ context = opts.context, filter = opts.filter })
+  vim.lsp.buf.code_action({
+    apply = opts.fzf_opts['-1'] or opts.fzf_opts['--select-1'],
+    context = opts.context,
+    filter = opts.filter,
+  })
   -- vim.defer_fn(function()
   --   ui_select.deregister({}, true, true)
   -- end, 100)
