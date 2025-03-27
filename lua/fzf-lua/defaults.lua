@@ -53,7 +53,7 @@ M.defaults                      = {
     fullscreen = false,
     title_pos  = "center",
     treesitter = {
-      enabled    = true,
+      enabled    = utils.__HAS_NVIM_010,
       fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" }
     },
     preview    = {
