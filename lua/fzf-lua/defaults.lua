@@ -667,8 +667,11 @@ M.defaults.lines                = {
 }
 
 M.defaults.blines               = vim.tbl_deep_extend("force", M.defaults.lines, {
-  show_bufname = false,
-  fzf_opts     = {
+  show_bufname    = false,
+  show_unloaded   = true,
+  show_unlisted   = true,
+  no_term_buffers = false,
+  fzf_opts        = {
     ["--with-nth"] = "4..",
     ["--nth"]      = "2..",
   },
