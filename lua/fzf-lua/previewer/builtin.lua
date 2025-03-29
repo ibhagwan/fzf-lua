@@ -875,12 +875,29 @@ function Previewer.base:update_ts_context()
   then
     return
   end
-  TSContext.update(self.win.preview_winid, self.preview_bufnr, vim.tbl_extend("force",
-    type(self.treesitter.context) == "table" and self.treesitter.context or {}, {
-      -- `zindex` and `multiwindow` must be set regardless of user options
-      multiwindow = true,
-      zindex = self.win.winopts.zindex + 20
-    }))
+  -- HACK: since TS async parsing commit we cannot guarantee the TSContext ranges as these will
+  -- return empty unless parsing is complete and we have no access to the `on_parse` event
+  -- https://github.com/neovim/neovim/commit/45e606b1fddbfeee8fe28385b5371ca6f2fba71b
+  -- For more info see #1922
+  local lang = vim.treesitter.language.get_lang(vim.b[self.preview_bufnr]._ft)
+  local parser = vim.treesitter.get_parser(self.preview_bufnr, lang)
+  local context_updated
+  for _, t in ipairs({ 0, 20, 50, 100 }) do
+    vim.defer_fn(function()
+      if context_updated or not vim.api.nvim_buf_is_valid(self.preview_bufnr) then
+        return
+      end
+      if parser:is_valid(true) then
+        context_updated = true
+        TSContext.update(self.win.preview_winid, self.preview_bufnr, vim.tbl_extend("force",
+          type(self.treesitter.context) == "table" and self.treesitter.context or {}, {
+            -- `zindex` and `multiwindow` must be set regardless of user options
+            multiwindow = true,
+            zindex = self.win.winopts.zindex + 20
+          }))
+      end
+    end, t)
+  end
 end
 
 function Previewer.base:update_render_markdown()
