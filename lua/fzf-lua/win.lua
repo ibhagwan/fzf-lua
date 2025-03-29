@@ -580,7 +580,7 @@ function FzfWin:set_backdrop()
 
   -- Code from lazy.nvim (#1344)
   self.backdrop_buf = vim.api.nvim_create_buf(false, true)
-  self.backdrop_win = vim.api.nvim_open_win(self.backdrop_buf, false, {
+  self.backdrop_win = utils.nvim_open_win0(self.backdrop_buf, false, {
     relative = "editor",
     width = vim.o.columns,
     height = vim.o.lines,
@@ -590,7 +590,7 @@ function FzfWin:set_backdrop()
     focusable = false,
     -- -2 as preview border is -1
     zindex = self.winopts.zindex - 2,
-    border = 'none',
+    border = "none",
   })
   utils.wo(self.backdrop_win, "winhighlight", "Normal:" .. self.hls.backdrop)
   utils.wo(self.backdrop_win, "winblend", self.winopts.backdrop)
@@ -1312,7 +1312,7 @@ function FzfWin:update_preview_scrollbar()
     else
       empty.noautocmd = true
       self._sbuf1 = ensure_tmp_buf(self._sbuf1)
-      self._swin1 = vim.api.nvim_open_win(self._sbuf1, false, empty)
+      self._swin1 = utils.nvim_open_win0(self._sbuf1, false, empty)
       local hl = self.hls.scrollfloat_e or "PmenuSbar"
       vim.wo[self._swin1].winhighlight =
           ("Normal:%s,NormalNC:%s,NormalFloat:%s,EndOfBuffer:%s"):format(hl, hl, hl, hl)
@@ -1323,7 +1323,7 @@ function FzfWin:update_preview_scrollbar()
   else
     full.noautocmd = true
     self._sbuf2 = ensure_tmp_buf(self._sbuf2)
-    self._swin2 = vim.api.nvim_open_win(self._sbuf2, false, full)
+    self._swin2 = utils.nvim_open_win0(self._sbuf2, false, full)
     local hl = self.hls.scrollfloat_f or "PmenuThumb"
     vim.wo[self._swin2].winhighlight =
         ("Normal:%s,NormalNC:%s,NormalFloat:%s,EndOfBuffer:%s"):format(hl, hl, hl, hl)
