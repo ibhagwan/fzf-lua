@@ -94,10 +94,12 @@ function TSContext.update(winid, bufnr, opts)
   else
     assert(context_lines)
     local function open()
-      if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_win_is_valid(winid) then
-        require("treesitter-context.render").open(bufnr, winid, context_ranges, context_lines)
-        TSContext._winids[tostring(winid)] = bufnr
-      end
+      api.nvim_win_call(utils.CTX().winid, function()
+        if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_win_is_valid(winid) then
+          require("treesitter-context.render").open(bufnr, winid, context_ranges, context_lines)
+          TSContext._winids[tostring(winid)] = bufnr
+        end
+      end)
     end
     -- NOTE: no longer required since adding `eventignore` to `FzfWin:set_winopts`
     -- if TSContext.is_attached(winid) == bufnr then

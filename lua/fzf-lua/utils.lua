@@ -1058,6 +1058,12 @@ function M.nvim_open_win(bufnr, enter, config)
   return winid
 end
 
+function M.nvim_open_win0(bufnr, enter, config)
+  return vim.api.nvim_win_call(M.CTX().winid, function()
+    return vim.api.nvim_open_win(bufnr, enter, config)
+  end)
+end
+
 -- Close a window without triggering an autocmd
 function M.nvim_win_close(win, opts)
   local save_ei = vim.o.eventignore
