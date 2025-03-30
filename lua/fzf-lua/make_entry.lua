@@ -202,9 +202,18 @@ M.preprocess = function(opts)
       end
     end
 
+    -- For custom command transformations (#1927)
+    opts.fn_transform_cmd =
+        load_config_section("__resume_data.opts.fn_transform_cmd", "function", true)
+
     -- did the caller request rg with glob support?
     -- manipulation needs to be done before the argv replacement
-    if opts.rg_glob then
+    if opts.fn_transform_cmd then
+      local query = argv(nil, opts.debug)
+      local new_cmd, new_query = opts.fn_transform_cmd(query, opts.cmd:gsub(argvz, ""), opts)
+      opts.cmd = new_cmd or opts.cmd
+      opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(new_query or query))
+    elseif opts.rg_glob then
       local query = argv(nil, opts.debug)
       local search_query, glob_args = M.glob_parse(query, opts)
       if glob_args then
@@ -217,14 +226,6 @@ M.preprocess = function(opts)
         opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(search_query))
       end
     end
-  end
-
-  -- For custom command transformations (#1927)
-  opts.fn_transform_cmd =
-      load_config_section("__resume_data.opts.fn_transform_cmd", "function", true)
-  if opts.fn_transform_cmd then
-    local query = argv(nil, opts.debug)
-    opts.cmd = opts.fn_transform_cmd(query, opts.cmd:gsub("{argv.*}", "") ,opts)
   end
 
   -- nifty hack to avoid having to double escape quotations

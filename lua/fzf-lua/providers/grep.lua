@@ -54,7 +54,14 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     opts.rg_glob = false
   end
 
-  if opts.rg_glob then
+  if opts.fn_transform_cmd then
+    local new_cmd, new_query = opts.fn_transform_cmd(search_query, opts.cmd, opts)
+    if new_cmd then
+      opts.no_esc = true
+      opts.search = new_query
+      return new_cmd
+    end
+  elseif opts.rg_glob then
     local new_query, glob_args = make_entry.glob_parse(search_query, opts)
     if glob_args then
       -- since the search string mixes both the query and
