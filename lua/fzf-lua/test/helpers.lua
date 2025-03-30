@@ -151,7 +151,13 @@ M.new_child_neovim = function()
   child.unload = function()
     -- Unload Lua module
     child.lua([[_G.FzfLua = nil]])
-    child.lua([[package.loaded["fzf-lua"] = nil]])
+    child.lua([[
+      for k, v in pairs(package.loaded) do
+        if k:match("^fzf%-lua") then
+          package.loaded[k] = nil
+        end
+      end
+    ]])
 
     -- Remove global vars
     for _, var in ipairs({ "server", "directory", "root" }) do
