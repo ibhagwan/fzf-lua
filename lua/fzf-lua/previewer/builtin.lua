@@ -870,7 +870,10 @@ local ts_attach = function(bufnr, ft)
 end
 
 function Previewer.base:update_ts_context()
-  if not self.win
+  local bufnr = self.preview_bufnr
+  local ft = vim.b[bufnr] and vim.b[bufnr]._ft
+  if not ft
+      or not self.win
       or not self.win:validate_preview()
       or not self.treesitter.enabled
       or not self.treesitter.context
@@ -881,7 +884,7 @@ function Previewer.base:update_ts_context()
   -- return empty unless parsing is complete and we have no access to the `on_parse` event
   -- https://github.com/neovim/neovim/commit/45e606b1fddbfeee8fe28385b5371ca6f2fba71b
   -- For more info see #1922
-  local lang = vim.treesitter.language.get_lang(vim.b[self.preview_bufnr]._ft)
+  local lang = vim.treesitter.language.get_lang(ft)
   local parser = vim.treesitter.get_parser(self.preview_bufnr, lang)
   local context_updated
   for _, t in ipairs({ 0, 20, 50, 100 }) do
