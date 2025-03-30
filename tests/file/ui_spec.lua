@@ -24,15 +24,25 @@ T["files()"] = new_set()
 T["files()"]["start and abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c>" } } }, {
   function(key)
     -- sort output and remove cwd in prompt as will be different on CI
-    child.lua([[FzfLua.files({
+    eq(child.lua_get([[_G._fzf_postprocess_called]]), vim.NIL)
+    child.lua([==[FzfLua.files({
       hidden = false,
       previewer = false,
       cwd_prompt = false,
       cmd = "rg --files --sort=path",
-    })]])
+      requires_processing = true, -- for __mt_postprocess
+      __mt_postprocess = [[return function()
+        local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
+        vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
+        vim.fn.chanclose(chan_id)
+      end]],
+    })]==])
     eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
+    end)
+    child.wait_until(function()
+      return child.lua_get([[_G._fzf_postprocess_called]]) == true
     end)
     -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
     local screen_opts = { ignore_lines = { 28 }, normalize_paths = helpers.IS_WIN() }

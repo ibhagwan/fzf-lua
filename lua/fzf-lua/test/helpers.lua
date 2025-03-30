@@ -133,7 +133,10 @@ M.new_child_neovim = function()
         %s
         winopts = {
           on_create = function() _G._fzf_lua_on_create = true end,
-          on_close = function() _G._fzf_lua_on_create = nil end,
+          on_close = function()
+            _G._fzf_lua_on_create = nil
+            _G._fzf_postprocess_called = nil
+          end,
         },
         keymap = { fzf = {
           true,
