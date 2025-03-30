@@ -75,7 +75,7 @@ T["win"]["hide"]["buffer deleted after win hidden (#1783)"] = function()
 end
 
 T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
-  reload({ "hide" })
+  -- reload({ "hide" })
   eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
   child.cmd([[new]])
   child.lua([[FzfLua.files()]])

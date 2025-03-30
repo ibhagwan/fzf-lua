@@ -14,4 +14,7 @@ if #vim.api.nvim_list_uis() == 0 then
 end
 
 vim.env.FZF_DEFAULT_OPTS = nil
+vim.env.FZF_DEFAULT_OPTS_FILE = nil
+vim.env.FZF_DEFAULT_COMMAND = nil
+vim.env.FZF_API_KEY = nil
 vim.env.LC_ALL = "C"
