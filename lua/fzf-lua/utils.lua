@@ -1059,7 +1059,11 @@ function M.nvim_open_win(bufnr, enter, config)
 end
 
 function M.nvim_open_win0(bufnr, enter, config)
-  return vim.api.nvim_win_call(M.CTX().winid, function()
+  local winid = M.CTX().winid
+  if not vim.api.nvim_win_is_valid(winid) then
+    return vim.api.nvim_open_win(bufnr, enter, config)
+  end
+  return vim.api.nvim_win_call(winid, function()
     return vim.api.nvim_open_win(bufnr, enter, config)
   end)
 end

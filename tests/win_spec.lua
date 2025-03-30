@@ -74,4 +74,31 @@ T["win"]["hide"]["buffer deleted after win hidden (#1783)"] = function()
   end)
 end
 
+T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
+  reload({ "hide" })
+  eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
+  child.cmd([[new]])
+  child.lua([[FzfLua.files()]])
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_lua_on_create]]) == true
+  end)
+  vim.uv.sleep(100)
+  child.type_keys([[<esc>]])
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+  end)
+  vim.uv.sleep(100)
+  child.cmd([[close]])
+  vim.uv.sleep(100)
+  child.lua([[FzfLua.resume()]])
+  -- child.lua([[FzfLua.unhide()]])
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_lua_on_create]]) == true
+  end)
+  vim.uv.sleep(100)
+  child.type_keys("<c-j>")
+  vim.uv.sleep(100)
+  child.type_keys("<c-j>")
+end
+
 return T
