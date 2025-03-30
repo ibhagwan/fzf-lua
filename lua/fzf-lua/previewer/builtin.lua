@@ -886,7 +886,10 @@ function Previewer.base:update_ts_context()
   local context_updated
   for _, t in ipairs({ 0, 20, 50, 100 }) do
     vim.defer_fn(function()
-      if context_updated or not vim.api.nvim_buf_is_valid(self.preview_bufnr) then
+      if context_updated
+          or not tonumber(self.preview_bufnr)
+          or not vim.api.nvim_buf_is_valid(self.preview_bufnr)
+      then
         return
       end
       if parser:is_valid(true) then
