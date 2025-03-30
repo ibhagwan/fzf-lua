@@ -149,18 +149,29 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
         return _G._exec(x)
       end
     ]]):format(exclude))
-    child.lua(([[
+    -- Add postprocess callback for a more consistent wait on nixpkgs builds (#1914)
+    -- ensure we're starting with nil value
+    eq(child.lua_get([[_G._fzf_postprocess_called]]), vim.NIL)
+    child.lua(([==[
       FzfLua.files({
         debug = 1,
         previewer = false,
         cwd_prompt = false,
         requires_processing = true, -- for "strip_cwd_prefix|debug"
         -- fzf_opts = { ["--wrap"] = true },
+        __mt_postprocess = [[return function()
+          local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
+          vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
+          vim.fn.chanclose(chan_id)
+        end]],
         %s
-      })]]):format(opts))
+      })]==]):format(opts))
     eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
+    end)
+    child.wait_until(function()
+      return child.lua_get([[_G._fzf_postprocess_called]]) == true
     end)
     child.expect_screen_lines(screen_opts)
     child.type_keys("<c-c>")
