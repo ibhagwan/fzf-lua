@@ -76,7 +76,9 @@ function TSContext.inc_dec_maxlines(num, winid, bufnr)
   config.max_lines = math.max(0, max_lines + tonumber(num))
   utils.info(string.format("treesitter-context `max_lines` set to %d.", config.max_lines))
   if TSContext.is_attached(winid) then
-    TSContext.update(winid, bufnr)
+    for _, t in ipairs({ 0, 20 }) do
+      vim.defer_fn(function() TSContext.update(winid, bufnr) end, t)
+    end
   end
 end
 
