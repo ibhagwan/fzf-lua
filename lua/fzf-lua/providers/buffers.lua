@@ -312,13 +312,17 @@ M.buffer_lines = function(opts)
           return bname, bicon and bicon .. utils.nbsp or nil
         end)()
 
-        local offset, lines = 0, #data
-        if opts.current_buffer_only and opts.start == "cursor" then
-          -- start display from current line and wrap from bottom (#822)
-          offset = core.CTX().cursor[1] - 1
+        local offset, start_line, end_line, lines = 0, 1, #data, #data
+        if opts.current_buffer_only then
+          start_line = opts.start_line or 1
+          end_line = opts.end_line or end_line
+          if opts.start == "cursor" then
+            -- start display from current line and wrap from bottom (#822)
+            offset = core.CTX().cursor[1] - 1
+          end
         end
 
-        for i = 1, lines do
+        for i = start_line, end_line do
           local lnum = i + offset
           if lnum > lines then
             lnum = lnum % lines
