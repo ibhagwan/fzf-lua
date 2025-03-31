@@ -316,17 +316,19 @@ M.buffer_lines = function(opts)
         if opts.current_buffer_only then
           start_line = opts.start_line or 1
           end_line = opts.end_line or end_line
+          lines = end_line - start_line + 1
           if opts.start == "cursor" then
             -- start display from current line and wrap from bottom (#822)
-            offset = core.CTX().cursor[1] - 1
+            offset = core.CTX().cursor[1] - start_line
           end
         end
 
-        for i = start_line, end_line do
+        for i = 1, lines do
           local lnum = i + offset
           if lnum > lines then
             lnum = lnum % lines
           end
+          lnum = lnum + start_line - 1
 
           -- NOTE: Space after `lnum` is U+00A0 (decimal: 160)
           add_entry(string.format("[%s]\t%s\t%s%s\t%s \t%s",
