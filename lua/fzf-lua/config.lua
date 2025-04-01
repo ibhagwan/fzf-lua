@@ -62,13 +62,19 @@ end
 M.setup_opts = {}
 M.globals = setmetatable({}, {
   __index = function(_, index)
+    local function setup_opts()
+      return M._profile_opts or M.setup_opts
+    end
+    local function setup_defaults()
+      return M._profile_opts and (M._profile_opts.defaults or {}) or M.setup_opts.defaults or {}
+    end
     -- build normalized globals, option priority below:
     --   (1) provider specific globals (post-setup)
     --   (2) generic global-defaults (post-setup), i.e. `setup({ defaults = { ... } })`
     --   (3) fzf-lua's true defaults (pre-setup, static)
     local fzflua_default = utils.map_get(M.defaults, index)
-    local setup_default = utils.map_get(M.setup_opts.defaults, index)
-    local setup_value = utils.map_get(M.setup_opts, index)
+    local setup_default = utils.map_get(setup_defaults(), index)
+    local setup_value = utils.map_get(setup_opts(), index)
     local function build_bind_tables(keys)
       -- bind tables are logical exception, do not merge with defaults unless `[1] == true`
       -- normalize all binds as lowercase to prevent duplicate keys (#654)
@@ -108,10 +114,10 @@ M.globals = setmetatable({}, {
         or (setup_value and (setup_value.actions or setup_value._actions)) then
       -- (2) the existence of the `actions` key implies we're dealing with a picker
       -- override global provider defaults supplied by the user's setup `defaults` table
-      ret = vim.tbl_deep_extend("force", ret, M.setup_opts.defaults or {})
+      ret = vim.tbl_deep_extend("force", ret, setup_defaults())
     end
     -- (3) override with the specific provider options from the users's `setup` option
-    ret = vim.tbl_deep_extend("force", ret, utils.map_get(M.setup_opts, index) or {})
+    ret = vim.tbl_deep_extend("force", ret, utils.map_get(setup_opts(), index) or {})
     return ret
   end,
   __newindex = function(_, index, _)
@@ -141,6 +147,17 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- opts can also be a function that returns an opts table
   if type(opts) == "function" then
     opts = opts()
+  end
+
+  local profile = opts.profile or (function()
+    if type(globals) == "string" then
+      local picker_opts = M.globals[globals]
+      return picker_opts.profile or picker_opts[1]
+    end
+  end)()
+  if profile then
+    -- TODO: we should probably cache the profiles
+    M._profile_opts = utils.load_profiles(profile, 1)
   end
 
   -- expand opts that were specified with a dot
@@ -857,6 +874,9 @@ function M.normalize_opts(opts, globals, __resume_key)
   if type(opts.enrich) == "function" then
     opts = opts.enrich(opts)
   end
+
+  -- nullify profile options
+  M._profile_opts = nil
 
   -- mark as normalized
   opts._normalized = true

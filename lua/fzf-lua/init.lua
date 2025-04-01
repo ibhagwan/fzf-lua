@@ -175,7 +175,7 @@ function M.setup(opts, do_not_reset_defaults)
   if opts[1] then
     -- Did the user supply profile(s) to load?
     opts = vim.tbl_deep_extend("keep", opts,
-      utils.load_profiles(opts[1], opts[2] == nil and 1 or opts[2], opts))
+      utils.load_profiles(opts[1], opts[2] == nil and 1 or opts[2]))
   end
   if do_not_reset_defaults then
     -- no defaults reset requested, merge with previous setup options

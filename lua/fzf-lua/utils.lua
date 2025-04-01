@@ -846,7 +846,7 @@ function M.load_profile_fname(fname, name, silent)
   end
 end
 
-function M.load_profiles(profiles, silent, opts)
+function M.load_profiles(profiles, silent)
   local ret = {}
   local path = require("fzf-lua").path
   profiles = type(profiles) == "table" and profiles
@@ -866,10 +866,10 @@ function M.load_profiles(profiles, silent, opts)
         -- profile requires loading base profile(s)
         -- silent = 1, only warn if failed to load
         profile_opts = vim.tbl_deep_extend("keep",
-          profile_opts, M.load_profiles(profile_opts[1], 1, opts))
+          profile_opts, M.load_profiles(profile_opts[1], 1))
       end
       if type(profile_opts.fn_load) == "function" then
-        profile_opts.fn_load(opts)
+        profile_opts.fn_load()
         profile_opts.fn_load = nil
       end
       ret = vim.tbl_deep_extend("force", ret, profile_opts)
