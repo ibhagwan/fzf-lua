@@ -4,6 +4,10 @@ local uv = vim.uv or vim.loop
 
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 
+if vim.v.servername and #vim.v.servername > 0 then
+  pcall(vim.fn.serverstop, vim.v.servername)
+end
+
 ---@return string
 local function windows_pipename()
   local tmpname = vim.fn.tempname()
@@ -20,40 +24,41 @@ end
 
 local preview_socket, preview_socket_path = get_preview_socket()
 
-uv.listen(preview_socket, 100, function(_)
-  local preview_receive_socket = uv.new_pipe(false)
-  -- start listening
+local chan_id
+local preview_receive_socket
+uv.listen(preview_socket, 1, function(_)
+  preview_receive_socket = uv.new_pipe(false)
   uv.accept(preview_socket, preview_receive_socket)
+
+  -- Avoid dangling temp dir on premature process kills (live grep)
+  -- see more complete note in spawn.lua
+  if not _is_win then
+    uv.fs_unlink(preview_socket_path)
+    local tmpdir = vim.fn.fnamemodify(preview_socket_path, ":h")
+    if tmpdir and #tmpdir > 0 then uv.fs_rmdir(tmpdir) end
+  end
+
   preview_receive_socket:read_start(function(err, data)
     assert(not err)
     if not data then
       uv.close(preview_receive_socket)
       uv.close(preview_socket)
-      vim.schedule(function()
-        vim.cmd([[qall]])
-      end)
+      if _is_win then -- uv.stop() quit slow on windows
+        os.exit(0)
+      end
+      uv.stop() -- exit
       return
     end
     io.write(data)
   end)
 end)
 
-local function rpc_nvim_exec_lua(opts)
+local function rpc_nvim_exec_lua(opts, fzf_selection)
   local success, errmsg = pcall(function()
-    -- fzf selection is unpacked as the argument list
-    local fzf_selection = {}
-    local nargs = vim.fn.argc()
-    for i = 0, nargs - 1 do
-      -- On Windows, vim.fn.argv() normalizes the path (replaces bslash with fslash)
-      -- while vim.v.argv provides access to the raw argument, however, vim.v.argv
-      -- contains the headless wrapper arguments so we need to index backwards
-      table.insert(fzf_selection,
-        _is_win and vim.v.argv[#vim.v.argv - nargs + 1 + i] or vim.fn.argv(i))
-    end
     -- for skim compatibility
     local preview_lines = vim.env.FZF_PREVIEW_LINES or vim.env.LINES
     local preview_cols = vim.env.FZF_PREVIEW_COLUMNS or vim.env.COLUMNS
-    local chan_id = vim.fn.sockconnect("pipe", opts.fzf_lua_server, { rpc = true })
+    chan_id = vim.fn.sockconnect("pipe", vim.env.NVIM, { rpc = true })
     vim.rpcrequest(chan_id, "nvim_exec_lua", [[
       local luaargs = {...}
       local function_id = luaargs[1]
@@ -70,33 +75,14 @@ local function rpc_nvim_exec_lua(opts)
       tonumber(preview_lines),
       tonumber(preview_cols),
     })
-    vim.fn.chanclose(chan_id)
   end)
-
-  -- Avoid dangling temp dir on premature process kills (live grep)
-  -- see more complete note in spawn.lua
-  local tmpdir = vim.fn.fnamemodify(vim.fn.tempname(), ":h")
-  if tmpdir and #tmpdir > 0 then
-    vim.fn.delete(tmpdir, "rf")
-  end
-  if vim.v.servername and #vim.v.servername > 0 then
-    pcall(vim.fn.serverstop, vim.v.servername)
-  end
 
   if not success or opts.debug then
     io.stderr:write(("[DEBUG] debug = %s\n"):format(opts.debug))
     io.stderr:write(("[DEBUG] function ID = %d\n"):format(opts.fnc_id))
     io.stderr:write(("[DEBUG] fzf_lua_server = %s\n"):format(opts.fzf_lua_server))
-    for i = 1, #vim.v.argv do
-      io.stderr:write(("[DEBUG] argv[%d] = %s\n"):format(i, vim.v.argv[i]))
-    end
-    local nargs = vim.fn.argc()
-    for i = 0, nargs - 1 do
-      io.stderr:write(("[DEBUG] argv[%d] = %s\n"):format(i, vim.fn.argv(i)))
-    end
-    for i = 0, nargs - 1 do
-      local argv_idx = #vim.v.argv - nargs + 1 + i
-      io.stderr:write(("[DEBUG] v:arg[%d:%d] = %s\n"):format(i, argv_idx, vim.v.argv[argv_idx]))
+    for i, v in pairs(_G.arg) do
+      io.stderr:write(("[DEBUG] argv[%d] = %s\n"):format(i, v))
     end
     for _, var in ipairs({ "LINES", "COLUMNS" }) do
       io.stderr:write(("[DEBUG] $%s = %s\n"):format(var, os.getenv(var) or "<null>"))
@@ -105,10 +91,22 @@ local function rpc_nvim_exec_lua(opts)
 
   if not success then
     io.stderr:write(("FzfLua Error: %s\n"):format(errmsg or "<null>"))
-    vim.cmd([[qall]])
+    os.exit(1)
   end
+
+  uv.run() -- return when uv.stop()
+  vim.fn.chanclose(chan_id)
 end
 
-return {
-  rpc_nvim_exec_lua = rpc_nvim_exec_lua,
+
+local args = vim.deepcopy(_G.arg)
+-- remove filename
+args[0] = nil
+-- remove "--"
+table.remove(args, 1)
+-- remove serialized opts
+local opts = {
+  fnc_id = tonumber(table.remove(args, 1)),
+  debug = table.remove(args, 1) == "true",
 }
+rpc_nvim_exec_lua(opts, args)

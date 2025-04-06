@@ -90,22 +90,18 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
     utils._if_win(path.normalize(vim.env.VIMRUNTIME),
       libuv.shellescape(vim.env.VIMRUNTIME)))
 
-  local call_args = ("fzf_lua_server=[[%s]], fnc_id=%d %s"):format(
-    vim.g.fzf_lua_server, id, debug and ", debug=true" or "")
 
   -- we need to add '--' to mark the end of command options otherwise
   -- our preview command will fail when the selected items contain
   -- special shell chars ('+', '-', etc), examples where this can
   -- happen are the `git status` command and git branches from diff
   -- worktrees (#600)
-  local action_cmd = ("%s%s -n --headless -u NONE -i NONE --cmd %s -- %s"):format(
+  local action_cmd = ("%s%s -u NONE -l %s -- %s %s %s"):format(
     nvim_runtime,
     libuv.shellescape(path.normalize(nvim_bin)),
-    libuv.shellescape(("lua %sloadfile([[%s]])().rpc_nvim_exec_lua({%s})"):format(
-      utils.__HAS_NVIM_010 and "vim.g.did_load_filetypes=1; " or "",
-      path.join { vim.g.fzf_lua_directory, "shell_helper.lua" },
-      call_args
-    )),
+    libuv.shellescape(path.normalize(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" })),
+    id,
+    debug,
     fzf_field_expression)
 
   return action_cmd, id
