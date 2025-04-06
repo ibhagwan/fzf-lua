@@ -211,7 +211,8 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
           -- Force full paths when `autochdir=true` (#882)
           vimcmd = string.format("%s %s", vimcmd, (function()
             -- `:argdel|:argadd` uses only paths
-            if vimcmd:match("^arg") then return entry.path end
+            -- argdel only accepts relative path (#1949)
+            if vimcmd:match("^arg") then return path.relative_to(entry.path, uv.cwd()) end
             if entry.bufnr then return tostring(entry.bufnr) end
             -- We normalize the path or Windows will fail with directories starting
             -- with special characters, for example "C:\app\(web)" will be translated
@@ -431,6 +432,8 @@ end
 M.arg_add = function(selected, opts)
   local vimcmd = "argadd"
   M.vimcmd_entry(vimcmd, selected, opts)
+  ---@diagnostic disable-next-line: param-type-mismatch
+  pcall(vim.cmd, "argdedupe")
 end
 
 M.arg_del = function(selected, opts)
