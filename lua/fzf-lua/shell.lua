@@ -85,19 +85,9 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- this is for windows WSL and AppImage users, their nvim path isn't just
   -- 'nvim', it can be something else
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
-  local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and "" or string.format(
-    utils._if_win([[set VIMRUNTIME=%s& ]], "VIMRUNTIME=%s "),
-    utils._if_win(path.normalize(vim.env.VIMRUNTIME),
-      libuv.shellescape(vim.env.VIMRUNTIME)))
 
-
-  -- we need to add '--' to mark the end of command options otherwise
-  -- our preview command will fail when the selected items contain
-  -- special shell chars ('+', '-', etc), examples where this can
-  -- happen are the `git status` command and git branches from diff
-  -- worktrees (#600)
-  local action_cmd = ("%s%s -u NONE -l %s -- %s %s %s"):format(
-    nvim_runtime,
+  -- all args after `-l` will be in `_G.args`
+  local action_cmd = ("%s -u NONE -l %s %s %s %s"):format(
     libuv.shellescape(path.normalize(nvim_bin)),
     libuv.shellescape(path.normalize(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" })),
     id,
