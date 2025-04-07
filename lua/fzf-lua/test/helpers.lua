@@ -136,6 +136,7 @@ M.new_child_neovim = function()
           on_close = function()
             _G._fzf_lua_on_create = nil
             _G._fzf_postprocess_called = nil
+            _G._fzf_load_called = nil
           end,
         },
         keymap = { fzf = {
@@ -265,13 +266,14 @@ M.new_child_neovim = function()
     MiniTest.expect.reference_screenshot(child.get_buf_lines(buf, screenshot_opts), path, opts)
   end
 
+  local wait_timeout = (M.IS_WIN() and 5000 or 2000)
   --- waits until condition fn evals to true, checking every interval ms
   --- times out at timeout ms
   ---@param condition fun(): boolean
   ---@param timeout? integer, defaults to 2000
   ---@param interval? integer, defaults to 100
   child.wait_until = function(condition, timeout, interval)
-    local max = timeout or 2000
+    local max = timeout or wait_timeout
     local inc = interval or 100
     for _ = 0, max, inc do
       if condition() then
