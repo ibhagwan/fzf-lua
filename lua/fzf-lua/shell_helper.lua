@@ -24,7 +24,6 @@ end
 
 local preview_socket, preview_socket_path = get_preview_socket()
 
-local chan_id
 local preview_receive_socket
 uv.listen(preview_socket, 1, function(_)
   preview_receive_socket = uv.new_pipe(false)
@@ -43,22 +42,22 @@ uv.listen(preview_socket, 1, function(_)
     if not data then
       uv.close(preview_receive_socket)
       uv.close(preview_socket)
-      if _is_win then -- uv.stop() quit slow on windows
-        os.exit(0)
-      end
-      uv.stop() -- exit
+      -- on windows: ci fail when use uv.stop()
+      -- on linux: zero event can freeze https://github.com/ibhagwan/fzf-lua/pull/1955#issuecomment-2785474217
+      -- uv.stop()
+      os.exit(0)
       return
     end
     io.write(data)
   end)
 end)
 
-local function rpc_nvim_exec_lua(opts, fzf_selection)
+local rpc_nvim_exec_lua = function(opts)
   local success, errmsg = pcall(function()
     -- for skim compatibility
     local preview_lines = vim.env.FZF_PREVIEW_LINES or vim.env.LINES
     local preview_cols = vim.env.FZF_PREVIEW_COLUMNS or vim.env.COLUMNS
-    chan_id = vim.fn.sockconnect("pipe", vim.env.NVIM, { rpc = true })
+    local chan_id = vim.fn.sockconnect("pipe", vim.env.FZF_LUA_SERVER or vim.env.NVIM, { rpc = true })
     vim.rpcrequest(chan_id, "nvim_exec_lua", [[
       local luaargs = {...}
       local function_id = luaargs[1]
@@ -71,10 +70,11 @@ local function rpc_nvim_exec_lua(opts, fzf_selection)
     ]], {
       opts.fnc_id,
       preview_socket_path,
-      fzf_selection,
+      opts.fzf_selection,
       tonumber(preview_lines),
       tonumber(preview_cols),
     })
+    vim.fn.chanclose(chan_id)
   end)
 
   if not success or opts.debug then
@@ -94,19 +94,15 @@ local function rpc_nvim_exec_lua(opts, fzf_selection)
     os.exit(1)
   end
 
-  uv.run() -- return when uv.stop()
-  vim.fn.chanclose(chan_id)
+  uv.run("once")
+  uv.run() -- noreturn, quit by os.exit
 end
 
-
 local args = vim.deepcopy(_G.arg)
--- remove filename
-args[0] = nil
--- remove "--"
-table.remove(args, 1)
--- remove serialized opts
+args[0] = nil -- remove filename
 local opts = {
   fnc_id = tonumber(table.remove(args, 1)),
   debug = table.remove(args, 1) == "true",
+  fzf_selection = args
 }
-rpc_nvim_exec_lua(opts, args)
+rpc_nvim_exec_lua(opts)

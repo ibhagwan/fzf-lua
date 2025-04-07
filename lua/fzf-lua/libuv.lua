@@ -89,11 +89,26 @@ M.spawn = function(opts, fn_transform, fn_done)
   else
     table.insert(args, tostring(opts.cmd))
   end
+
+  ---@diagnostic disable-next-line: missing-fields
   local handle, pid = uv.spawn(shell, {
     args = args,
     stdio = { nil, output_pipe, error_pipe },
     cwd = opts.cwd,
-    env = opts.env,
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    env = (function()
+      -- uv.spawn will override all env when table provided?
+      -- steal from $VIMRUNTIME/lua/vim/_system.lua
+      local env = vim.fn.environ() --- @type table<string,string>
+      env["NVIM"] = vim.v.servername
+      env["NVIM_LISTEN_ADDRESS"] = nil
+      env = vim.tbl_extend("keep", opts.env or {}, env or {})
+      local renv = {} --- @type string[]
+      for k, v in pairs(env) do
+        renv[#renv + 1] = string.format("%s=%s", k, tostring(v))
+      end
+      return renv
+    end)(),
     verbatim = _is_win,
   }, function(code, signal)
     on_exit_called = true
@@ -675,18 +690,12 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess, fn_postprocess)
   assert(opts and type(opts) == "string")
   assert(not fn_transform or type(fn_transform) == "string")
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
-  local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and ""
-      or string.format(
-        _is_win and [[set VIMRUNTIME=%s& ]] or "VIMRUNTIME=%s ",
-        _is_win and vim.fs.normalize(vim.env.VIMRUNTIME) or M.shellescape(vim.env.VIMRUNTIME)
-      )
   local lua_cmd = ("lua %sloadfile([[%s]])().spawn_stdio(%s,%s,%s,%s)"):format(
     _has_nvim_010 and "vim.g.did_load_filetypes=1; " or "",
     vim.fn.fnamemodify(_is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") .. "/spawn.lua",
     opts, fn_transform, fn_preprocess, fn_postprocess
   )
-  local cmd_str = ("%s%s -n --headless -u NONE -i NONE --cmd %s"):format(
-    nvim_runtime,
+  local cmd_str = ("%s -n --headless -u NONE -i NONE --cmd %s"):format(
     M.shellescape(_is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
     M.shellescape(lua_cmd)
   )
