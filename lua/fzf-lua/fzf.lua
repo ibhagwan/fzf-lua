@@ -300,6 +300,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- with fzf-lua's rg opts (#1266)
       ["RIPGREP_CONFIG_PATH"] = type(opts.RIPGREP_CONFIG_PATH) == "string"
           and libuv.expand(opts.RIPGREP_CONFIG_PATH) or "",
+      -- Prevents spamming rust logs with skim (#1959)
+      ["RUST_LOG"] = "",
     },
     on_exit = function(_, rc, _)
       local output = {}
