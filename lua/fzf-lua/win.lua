@@ -1218,7 +1218,7 @@ function FzfWin.unhide()
   -- Send SIGWINCH to to trigger resize in the fzf process
   -- We will use the trigger to reload necessary buffer lists
   local pid = fn.jobpid(vim.bo[self._hidden_fzf_bufnr].channel)
-  vim.tbl_map(function(_pid) libuv.process_kill(_pid, 28) end, vim._os_proc_children(pid))
+  vim.tbl_map(function(_pid) libuv.process_kill(_pid, 28) end, api.nvim_get_proc_children(pid))
   vim.bo[self._hidden_fzf_bufnr].bufhidden = "wipe"
   self.fzf_bufnr = self._hidden_fzf_bufnr
   self._hidden_fzf_bufnr = nil
