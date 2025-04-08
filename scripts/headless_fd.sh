@@ -130,8 +130,7 @@ if [ $# -gt 0 ]; then
 fi
 
 VIMRUNTIME=/usr/share/nvim/runtime \
-/usr/bin/nvim -n --headless -u NONE -i NONE --cmd "lua vim.g.did_load_filetypes=1; loadfile(
-  [[${BASEDIR}/../lua/fzf-lua/spawn.lua]])().spawn_stdio(
+/usr/bin/nvim -u NONE -l ${BASEDIR}/../lua/fzf-lua/spawn.lua "return
   -- opts
   {
     g = {
@@ -155,4 +154,4 @@ VIMRUNTIME=/usr/share/nvim/runtime \
   [==[
     return require(\"fzf-lua.make_entry\").preprocess
   ]==]
-)"
+"

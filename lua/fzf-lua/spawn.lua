@@ -1,4 +1,5 @@
 -- This file should only be loaded from the headless instance
+local uv = vim.uv or vim.loop
 assert(#vim.api.nvim_list_uis() == 0)
 
 -- path to this file
@@ -31,5 +32,8 @@ end
 
 -- global var indicating a headless instance
 _G._fzf_lua_is_headless = true
-
-return { spawn_stdio = require("fzf-lua.libuv").spawn_stdio }
+local _, pid = require("fzf-lua.libuv").spawn_stdio(loadstring(_G.arg[1])())
+-- while vim.uv.run() do end -- os.exit in spawn_stdio
+while uv.os_getpriority(pid) do
+  vim.wait(100, function() return uv.os_getpriority(pid) == nil end)
+end
