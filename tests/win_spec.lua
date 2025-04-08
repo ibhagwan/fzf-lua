@@ -101,4 +101,21 @@ T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
   child.type_keys("<c-j>")
 end
 
+T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()
+  reload({ "hide" })
+  eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
+  child.lua([[FzfLua.files{
+    -- profile = "hide",
+    query = "README.md",
+    fzf_opts = { ["--multi"] = true },
+  }]])
+  -- not work with `profile = "hide"`?
+  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+  child.type_keys([[<tab>]])
+  child.type_keys([[a-non-exist-file]])
+  child.type_keys([[<cr>]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
+  eq("README.md", vim.fs.basename(child.lua_get([[vim.api.nvim_buf_get_name(0)]])))
+end
+
 return T

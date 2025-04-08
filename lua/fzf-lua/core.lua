@@ -1129,6 +1129,45 @@ M.set_header = function(opts, hdr_tbl)
   return opts
 end
 
+
+-- Use both {q} and {+} as field indexes so we can update last query when
+-- executing the action, without this we lose the last query on "hide" as
+-- the process never terminates and `--print-query` isn't being printed
+-- When no entry selected (with {q} {+}), {+} will be forced expand to ''
+-- Use {n} to know if we really select an empty string, or there's just no selected
+local patch_shell_action = function(v, opts)
+  local field_index = v.field_index == false and "" or v.field_index or "{+}"
+  local overide_f_idx
+  if not field_index:match("^{q} {n}") then
+    field_index = "{q} {n} " .. field_index
+    overide_f_idx = true
+  end
+  -- replace the action with shell cmd proxy to the original action
+  return shell.raw_action(function(items, _, _)
+    assert(field_index:match("^{q} {n}"))
+    local query, idx = unpack(items, 1, 2)
+    config.resume_set("query", query, opts)
+    if overide_f_idx then
+      table.remove(items, 1)
+      table.remove(items, 1)
+    end
+    -- fix side effect of "{q} {+}": {+} is forced expanded to ""
+    -- only when: user didn't set v.field_index (otherwise it can be complex/unpredictable)
+    -- {n} used to determine if "zero-selected && zero-match", then patch: "" -> nil
+    if not v.field_index then
+      -- When no item is matching (empty list or non-matching query)
+      -- both {n} and {+} are expanded to "".
+      -- NOTE1: older versions of fzf don't expand {n} to "" (without match)
+      -- in such case the (empty) items table will be in `items[2]` (#1833)
+      -- NOTE2: on Windows, no match {n} is expanded to '' (#1836)
+      local zero_matched = not tonumber(idx)
+      local zero_selected = #items == 0 or (#items == 1 and #items[1] == 0)
+      items = (zero_matched and zero_selected) and {} or items
+    end
+    v.fn(items, opts)
+  end, field_index, opts.debug)
+end
+
 -- converts actions defined with "reload=true" to use fzf's `reload` bind
 -- provides a better UI experience without a visible interface refresh
 ---@param reload_cmd content
@@ -1196,30 +1235,7 @@ M.convert_reload_actions = function(reload_cmd, opts)
     if type(v) == "table" and v.reload then
       -- Modified actions should not be considered in `actions.expect`
       opts.actions[k]._ignore = true
-      -- Use both {q} and {+} as field indexes so we can update last query when
-      -- executing the action, without this we lose the last query on "hide" as
-      -- the process never terminates and `--print-query` isn't being printed
-      -- When no entry selected (with {q} {+}), {+} will be forced expand to ''
-      -- Use {n} to know if we really select an empty string, or there's just no selected
-      local field_index = v.field_index == false and "" or v.field_index or "{q} {n} {+}"
-      if not field_index:match("^{q} {n}") then
-        field_index = "{q} {n} " .. field_index
-      end
-      -- replace the action with shell cmd proxy to the original action
-      local shell_action = shell.raw_action(function(items, _, _)
-        if field_index:match("^{q} {n}") then
-          local query = table.remove(items, 1)
-          config.resume_set("query", query, opts)
-          local idx = table.remove(items, 1)
-          -- When no item is matching (empty list or non-matching query)
-          -- both {n} and {+} are expanded to "".
-          -- NOTE1: older versions of fzf don't expand {n} to "" (without match)
-          -- in such case the (empty) items table will be in `items[2]` (#1833)
-          -- NOTE2: on Windows, no match {n} is expanded to '' (#1836)
-          items = not tonumber(idx) and {} or items
-        end
-        v.fn(items, opts)
-      end, field_index, opts.debug)
+      local shell_action = patch_shell_action(v, opts)
       if type(v.prefix) == "string" and not v.prefix:match("%+$") then
         v.prefix = v.prefix .. "+"
       end
@@ -1267,30 +1283,7 @@ M.convert_exec_silent_actions = function(opts)
       assert(type(v.fn) == "function")
       -- Modified actions should not be considered in `actions.expect`
       opts.actions[k]._ignore = true
-      -- Use both {q} and {+} as field indexes so we can update last query when
-      -- executing the action, without this we lose the last query on "hide" as
-      -- the process never terminates and `--print-query` isn't being printed
-      -- When no entry selected (with {q} {+}), {+} will be forced expand to ''
-      -- Use {n} to know if we really select an empty string, or there's just no selected
-      local field_index = v.field_index == false and "" or v.field_index or "{q} {n} {+}"
-      if not field_index:match("^{q} {n}") then
-        field_index = "{q} {n} " .. field_index
-      end
-      -- replace the action with shell cmd proxy to the original action
-      local shell_action = shell.raw_action(function(items, _, _)
-        if field_index:match("^{q} {n}") then
-          local query = table.remove(items, 1)
-          config.resume_set("query", query, opts)
-          local idx = table.remove(items, 1)
-          -- When no item is matching (empty list or non-matching query)
-          -- both {n} and {+} are expanded to "".
-          -- NOTE1: older versions of fzf don't expand {n} to "" (without match)
-          -- in such case the (empty) items table will be in `items[2]` (#1833)
-          -- NOTE2: on Windows, no match {n} is expanded to '' (#1836)
-          items = not tonumber(idx) and {} or items
-        end
-        v.fn(items, opts)
-      end, field_index, opts.debug)
+      local shell_action = patch_shell_action(v, opts)
       if type(v.prefix) == "string" and not v.prefix:match("%+$") then
         v.prefix = v.prefix .. "+"
       end
