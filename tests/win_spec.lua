@@ -24,7 +24,6 @@ T["win"] = new_set()
 T["win"]["hide"] = new_set()
 
 T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
-  helpers.SKIP_IF_WIN()
   child.lua([[
     _G._gc_called = nil
     local utils = FzfLua.utils
@@ -43,7 +42,8 @@ T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
-    child.lua([[FzfLua.hide()]])
+    -- child.lua([[FzfLua.hide()]])
+    child.type_keys("<esc>")
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == vim.NIL
     end)
