@@ -592,8 +592,8 @@ function FzfWin:set_backdrop()
     zindex = self.winopts.zindex - 2,
     border = "none",
   })
-  utils.wo(self.backdrop_win, "winhighlight", "Normal:" .. self.hls.backdrop)
-  utils.wo(self.backdrop_win, "winblend", self.winopts.backdrop)
+  vim.wo[self.backdrop_win].winhighlight = "Normal:" .. self.hls.backdrop
+  vim.wo[self.backdrop_win].winblend = self.winopts.backdrop
   vim.bo[self.backdrop_buf].buftype = "nofile"
   vim.bo[self.backdrop_buf].filetype = "fzflua_backdrop"
 end
@@ -701,13 +701,7 @@ function FzfWin:set_winopts(win, opts, ignore_events)
   end
   for opt, value in pairs(opts) do
     if utils.nvim_has_option(opt) then
-      -- PROBABLY DOESN'T MATTER (WHO USES 0.5?) BUT WHY NOT LOL
-      -- minor backward compatibility fix, with neovim version < 0.7
-      -- nvim_win_get_option("scroloff") which should return -1
-      -- returns an invalid (really big number instead which panics
-      -- when called with nvim_win_set_option, wrapping in a pcall
-      -- ensures this plugin still works for neovim version as low as 0.5!
-      pcall(function() vim.wo[win][opt] = value end)
+      vim.wo[win][opt] = value
     end
   end
   if save_ei then
@@ -793,9 +787,7 @@ function FzfWin:redraw_main()
   self:generate_layout()
 
   local winopts = vim.tbl_extend("keep", (function()
-    if not utils.__HAS_NVIM_09 or
-        (type(self.winopts.title) ~= "string" and type(self.winopts.title) ~= "table")
-    then
+    if type(self.winopts.title) ~= "string" and type(self.winopts.title) ~= "table" then
       return {}
     end
     return {
@@ -857,7 +849,6 @@ function FzfWin:treesitter_detach(buf)
 end
 
 function FzfWin:treesitter_attach()
-  if not utils.__HAS_NVIM_09 then return end
   if not self._o.winopts.treesitter then return end
   -- local utf8 = require("fzf-lua.lib.utf8")
   local function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
@@ -1331,8 +1322,7 @@ function FzfWin:update_preview_scrollbar()
 end
 
 function FzfWin.update_win_title(winid, winopts, o)
-  -- neovim >= 0.9 added window title
-  if not utils.__HAS_NVIM_09 or (type(o.title) ~= "string" and type(o.title) ~= "table") then
+  if type(o.title) ~= "string" and type(o.title) ~= "table" then
     return
   end
   vim.api.nvim_win_set_config(winid,
@@ -1359,8 +1349,7 @@ function FzfWin:update_main_title(title)
 end
 
 function FzfWin:update_preview_title(title)
-  -- neovim >= 0.9 added window title
-  if not utils.__HAS_NVIM_09 or (type(title) ~= "string" and type(title) ~= "table") then
+  if type(title) ~= "string" and type(title) ~= "table" then
     return
   end
   -- since `nvim_win_set_config` removes all styling, save backup
