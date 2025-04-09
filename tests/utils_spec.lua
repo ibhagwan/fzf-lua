@@ -80,4 +80,13 @@ describe("Testing utils module", function()
     assert.are.same(utils.has({ __FZF_VERSION = { 2, 5, 5 } }, "fzf", "2.5.5"), true)
     assert.are.same(utils.has({ __FZF_VERSION = { 2, 5, 5 } }, "fzf", "2.5.6"), false)
   end)
+
+  it("setmetatable__gc", function()
+    local gc_called = nil
+    local _obj = utils.setmetatable__gc({}, { __gc = function() gc_called = true end })
+    assert.are.same(gc_called, nil)
+    _obj = nil
+    collectgarbage("collect")
+    assert.are.same(gc_called, true)
+  end)
 end)

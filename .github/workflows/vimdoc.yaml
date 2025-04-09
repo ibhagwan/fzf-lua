@@ -14,7 +14,7 @@ jobs:
       - uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
-          version: v0.10.3
+          version: v0.10.4
       - name: Setup treesitter
         run: |
           mkdir -p ~/.local/share/nvim/site/pack/vendor/start
@@ -28,7 +28,7 @@ jobs:
         run: |
           export PATH="${PWD}/build/:${PATH}"
           export PACKPATH=$HOME/.local/share/nvim/site
-          nvim --headless -u ~/.local/share/nvim/site/pack/vendor/start/ts-vimdoc.nvim/scripts/init.lua  -c "lua require('ts-vimdoc').docgen({input_file='README.md', output_file='doc/fzf-lua.txt', project_name='fzf-lua', version='For Neovim >= 0.7.0'})" -c "qa"
+          nvim --headless -u ~/.local/share/nvim/site/pack/vendor/start/ts-vimdoc.nvim/scripts/init.lua  -c "lua require('ts-vimdoc').docgen({input_file='README.md', output_file='doc/fzf-lua.txt', project_name='fzf-lua', version='For Neovim >= 0.9.0'})" -c "qa"
       - name: Commit changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

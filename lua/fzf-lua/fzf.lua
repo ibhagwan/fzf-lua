@@ -279,6 +279,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       ["SHELL"] = shell_cmd[1],
       ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
       ["SKIM_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
+      ["FZF_LUA_SERVER"] = vim.g.fzf_lua_server,
+      ["VIMRUNTIME"] = vim.env.VIMRUNTIME,
       ["FZF_DEFAULT_OPTS"] = (function()
         -- Newer style `--preview-window` options in FZF_DEFAULT_OPTS such as:
         --   --preview-window "right,50%,hidden,<60(up,70%,hidden)"

@@ -45,8 +45,6 @@ function NvimWebDevicons:new()
 end
 
 function NvimWebDevicons:load(do_not_lazy_load)
-  -- limit devicons support to nvim >=0.8, although official support is >=0.7
-  -- running setup on 0.7 errs with "W18: Invalid character in group name"
   if not self._package_loaded
       -- do not trigger lazy loading
       and (not do_not_lazy_load or package.loaded[self._package_name])
@@ -180,7 +178,7 @@ function MiniIcons:new()
 end
 
 function MiniIcons:load(do_not_lazy_load)
-  if not self._package_loaded and utils.__HAS_NVIM_08
+  if not self._package_loaded
       -- do not trigger lazy loading
       and (not do_not_lazy_load or package.loaded[self._package_name])
   then

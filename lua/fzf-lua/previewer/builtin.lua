@@ -957,40 +957,37 @@ function Previewer.buffer_or_file:do_syntax(entry)
         ))
       end
       if syntax_limit_reached == 0 then
-        local fallback = not utils.__HAS_NVIM_09
-        if utils.__HAS_NVIM_09 then
-          fallback = (function()
-            local ft = entry.filetype
-                or self.ext_ft_override and self.ext_ft_override[path.extension(entry.path)]
-                or vim.filetype.match({ buf = bufnr, filename = entry.path })
-            if type(ft) ~= "string" then
-              return true
+        local fallback = (function()
+          local ft = entry.filetype
+              or self.ext_ft_override and self.ext_ft_override[path.extension(entry.path)]
+              or vim.filetype.match({ buf = bufnr, filename = entry.path })
+          if type(ft) ~= "string" then
+            return true
+          end
+          local ts_enabled = (function()
+            if not self.treesitter or
+                self.treesitter.enabled == false or
+                self.treesitter.disabled == true or
+                (type(self.treesitter.enabled) == "table" and
+                  not utils.tbl_contains(self.treesitter.enabled, ft)) or
+                (type(self.treesitter.disabled) == "table" and
+                  utils.tbl_contains(self.treesitter.disabled, ft)) then
+              return false
             end
-            local ts_enabled = (function()
-              if not self.treesitter or
-                  self.treesitter.enabled == false or
-                  self.treesitter.disabled == true or
-                  (type(self.treesitter.enabled) == "table" and
-                    not utils.tbl_contains(self.treesitter.enabled, ft)) or
-                  (type(self.treesitter.disabled) == "table" and
-                    utils.tbl_contains(self.treesitter.disabled, ft)) then
-                return false
-              end
-              return true
-            end)()
-            local ts_success = ts_enabled and ts_attach(bufnr, ft)
-            if not ts_success then
-              pcall(function() vim.bo[bufnr].syntax = ft end)
-            else
-              -- Use buf local var as setting ft might have unintended consequences
-              -- currently only being used in `update_render_markdown` but might be
-              -- of use in the future?
-              vim.b[bufnr]._ft = ft
-              self:update_render_markdown()
-              self:update_ts_context()
-            end
+            return true
           end)()
-        end
+          local ts_success = ts_enabled and ts_attach(bufnr, ft)
+          if not ts_success then
+            pcall(function() vim.bo[bufnr].syntax = ft end)
+          else
+            -- Use buf local var as setting ft might have unintended consequences
+            -- currently only being used in `update_render_markdown` but might be
+            -- of use in the future?
+            vim.b[bufnr]._ft = ft
+            self:update_render_markdown()
+            self:update_ts_context()
+          end
+        end)()
         if fallback then
           if entry.filetype == "help" then
             -- if entry.filetype and #entry.filetype>0 then

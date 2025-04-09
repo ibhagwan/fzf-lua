@@ -24,7 +24,6 @@ T["win"] = new_set()
 T["win"]["hide"] = new_set()
 
 T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
-  helpers.SKIP_IF_WIN()
   child.lua([[
     _G._gc_called = nil
     local utils = FzfLua.utils
@@ -38,21 +37,22 @@ T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
       return setmetatable(t, mt)
     end
   ]])
-  eq(child.lua_get([[_G._fzf_load_called]]), vim.NIL)
   child.wait_until(function()
-    child.lua(
-      [[FzfLua.files{ previewer = 'builtin', winopts = { preview = { hidden = false  } } }]])
+    child.lua([[FzfLua.files{previewer = 'builtin'}]])
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
-    end, 5000)
-    child.lua([[_G._fzf_load_called = nil]])
-    child.lua([[FzfLua.win.hide()]])
+    end)
+    -- TODO: <esc> can pass windows ci, but it defeats the purpose of #1782
+    -- we want to ensure gc work when: hide && previewer enabled
+    -- slowness related to size of function _registry (obj is referenced in action?)
+    -- child.type_keys("<esc>")
+    child.lua([[FzfLua.hide()]])
     child.wait_until(function()
-      return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
-    end, 5000)
+      return child.lua_get([[_G._fzf_load_called]]) == vim.NIL
+    end)
     child.lua([[collectgarbage('collect')]])
     return child.lua_get([[_G._gc_called]]) == true
-  end, 100000)
+  end)
 end
 
 T["win"]["hide"]["buffer deleted after win hidden (#1783)"] = function()
@@ -61,7 +61,7 @@ T["win"]["hide"]["buffer deleted after win hidden (#1783)"] = function()
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
   end)
-  child.lua([[FzfLua.win.hide()]])
+  child.lua([[FzfLua.hide()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
   end)
@@ -75,35 +75,27 @@ T["win"]["hide"]["buffer deleted after win hidden (#1783)"] = function()
 end
 
 T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
-  -- reload({ "hide" })
   eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
   child.cmd([[new]])
   child.lua([[FzfLua.files()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
   end)
-  vim.uv.sleep(100)
-  child.type_keys([[<esc>]])
+  child.lua([[FzfLua.hide()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
   end)
-  vim.uv.sleep(100)
   child.cmd([[close]])
-  vim.uv.sleep(100)
-  child.lua([[FzfLua.resume()]])
-  -- child.lua([[FzfLua.unhide()]])
+  child.lua([[FzfLua.unhide()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
   end)
-  vim.uv.sleep(100)
   child.type_keys("<c-j>")
-  vim.uv.sleep(100)
   child.type_keys("<c-j>")
 end
 
 T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()
   reload({ "hide" })
-  eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
   child.lua([[FzfLua.files{
     -- profile = "hide",
     query = "README.md",

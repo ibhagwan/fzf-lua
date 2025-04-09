@@ -84,12 +84,7 @@ function M.setup_highlights(override)
     { "FzfLuaScrollFloatFull",   "scrollfloat_f",  { default = default, link = "PmenuThumb" } },
     { "FzfLuaDirIcon",           "dir_icon",       { default = default, link = "Directory" } },
     { "FzfLuaDirPart",           "dir_part",       { default = default, link = "Comment" } },
-    { "FzfLuaFilePart", "file_part",
-      {
-        default = default,
-        link = utils.__HAS_NVIM_08 and "@none" or "Normal",
-      }
-    },
+    { "FzfLuaFilePart",          "file_part",      { default = default, link = "@none" } },
     -- Fzf terminal hls, colors from `vim.api.nvim_get_color_map()`
     { "FzfLuaHeaderBind", "header_bind",
       { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond" } },
@@ -144,20 +139,6 @@ function M.setup_highlights(override)
       end
     end
     vim.api.nvim_set_hl(0, hl_name, hl_def)
-  end
-
-  -- linking to a cleared hl is bugged in neovim 0.8.x
-  -- resulting in a pink background for hls linked to `Normal`
-  if not utils.__HAS_NVIM_09 and utils.__HAS_NVIM_08 then
-    for _, a in ipairs(highlights) do
-      local hl_name, opt_name = a[1], a[2]
-      if utils.is_hl_cleared(hl_name) then
-        -- reset any invalid hl, this will cause our 'winhighlight'
-        -- string to look something akin to `Normal:,FloatBorder:`
-        -- which uses terminal fg|bg colors instead
-        utils.map_set(config.setup_opts, "__HLS." .. opt_name, "")
-      end
-    end
   end
 
   -- Init the colormap singleton

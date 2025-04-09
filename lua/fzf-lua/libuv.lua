@@ -51,6 +51,8 @@ end
 ---@param opts {cwd: string, cmd: string|table, env: table?, cb_finish: function, cb_write: function, cb_err: function, cb_pid: function, fn_transform: function?, EOL: string?, process1: boolean?, profile: boolean?}
 ---@param fn_transform function?
 ---@param fn_done function?
+---@return uv.uv_process_t proc
+---@return integer         pid
 M.spawn = function(opts, fn_transform, fn_done)
   local EOL = opts.EOL or "\n"
   local output_pipe = uv.new_pipe(false)
@@ -89,11 +91,26 @@ M.spawn = function(opts, fn_transform, fn_done)
   else
     table.insert(args, tostring(opts.cmd))
   end
+
+  ---@diagnostic disable-next-line: missing-fields
   local handle, pid = uv.spawn(shell, {
     args = args,
     stdio = { nil, output_pipe, error_pipe },
     cwd = opts.cwd,
-    env = opts.env,
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    env = (function()
+      -- uv.spawn will override all env when table provided?
+      -- steal from $VIMRUNTIME/lua/vim/_system.lua
+      local env = vim.fn.environ() --- @type table<string,string>
+      env["NVIM"] = vim.v.servername
+      env["NVIM_LISTEN_ADDRESS"] = nil
+      env = vim.tbl_extend("keep", opts.env or {}, env or {})
+      local renv = {} --- @type string[]
+      for k, v in pairs(env) do
+        renv[#renv + 1] = string.format("%s=%s", k, tostring(v))
+      end
+      return renv
+    end)(),
     verbatim = _is_win,
   }, function(code, signal)
     on_exit_called = true
@@ -218,6 +235,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     output_pipe:read_start(read_cb)
     error_pipe:read_start(err_cb)
   end
+  return handle, pid
 end
 
 M.async_spawn = coroutinify(M.spawn)
@@ -675,20 +693,10 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess, fn_postprocess)
   assert(opts and type(opts) == "string")
   assert(not fn_transform or type(fn_transform) == "string")
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
-  local nvim_runtime = os.getenv("FZF_LUA_NVIM_BIN") and ""
-      or string.format(
-        _is_win and [[set VIMRUNTIME=%s& ]] or "VIMRUNTIME=%s ",
-        _is_win and vim.fs.normalize(vim.env.VIMRUNTIME) or M.shellescape(vim.env.VIMRUNTIME)
-      )
-  local lua_cmd = ("lua %sloadfile([[%s]])().spawn_stdio(%s,%s,%s,%s)"):format(
-    _has_nvim_010 and "vim.g.did_load_filetypes=1; " or "",
-    vim.fn.fnamemodify(_is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") .. "/spawn.lua",
-    opts, fn_transform, fn_preprocess, fn_postprocess
-  )
-  local cmd_str = ("%s%s -n --headless -u NONE -i NONE --cmd %s"):format(
-    nvim_runtime,
+  local cmd_str = ("%s -u NONE -l %s %s"):format(
     M.shellescape(_is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
-    M.shellescape(lua_cmd)
+    vim.fn.fnamemodify(_is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") .. "/spawn.lua",
+    M.shellescape(("return %s,%s,%s,%s"):format(opts, fn_transform, fn_preprocess, fn_postprocess))
   )
   return cmd_str
 end

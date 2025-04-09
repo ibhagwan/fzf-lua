@@ -2,7 +2,7 @@
 
 # fzf :heart: lua
 
-![Neovim version](https://img.shields.io/badge/Neovim-0.7-57A143?style=flat-square&logo=neovim)
+![Neovim version](https://img.shields.io/badge/Neovim-0.9-57A143?style=flat-square&logo=neovim)
 
 [Quickstart](#quickstart) • [Installation](#installation) • [Usage](#usage) • [Commands](#commands) • [Customization](#customization) • [Wiki](https://github.com/ibhagwan/fzf-lua/wiki)
 
@@ -55,7 +55,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 
 ### Dependencies
 
-- [`neovim`](https://github.com/neovim/neovim/releases) version > `0.7.0`
+- [`neovim`](https://github.com/neovim/neovim/releases) version >= `0.9`
 - [`fzf`](https://github.com/junegunn/fzf) version > `0.25`
   or [`skim`](https://github.com/skim-rs/skim) binary installed
 - [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons)

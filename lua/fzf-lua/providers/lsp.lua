@@ -8,14 +8,6 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
-local function handler_capability(handler)
-  if utils.__HAS_NVIM_08 then
-    return handler.server_capability
-  else
-    return handler.resolved_capability
-  end
-end
-
 local function check_capabilities(handler, silent)
   local clients = utils.lsp_get_clients({ bufnr = core.CTX().bufnr })
 
@@ -24,25 +16,14 @@ local function check_capabilities(handler, silent)
   local num_clients = 0
 
   for _, client in pairs(clients) do
-    if utils.__HAS_NVIM_09 then
-      -- https://github.com/neovim/neovim/blob/65738202f8be3ca63b75197d48f2c7a9324c035b/runtime/doc/news.txt#L118-L122
-      -- Dynamic registration of LSP capabilities. An implication of this change is
-      -- that checking a client's `server_capabilities` is no longer a sufficient
-      -- indicator to see if a server supports a feature. Instead use
-      -- `client.supports_method(<method>)`. It considers both the dynamic
-      -- capabilities and static `server_capabilities`.
-      if client:supports_method(handler.prep or handler.method) then
-        num_clients = num_clients + 1
-      end
-    elseif utils.__HAS_NVIM_08 then
-      if client.server_capabilities[handler.server_capability] then
-        num_clients = num_clients + 1
-      end
-    else
-      ---@diagnostic disable-next-line: undefined-field
-      if client.resolved_capabilities[handler.resolved_capability] then
-        num_clients = num_clients + 1
-      end
+    -- https://github.com/neovim/neovim/blob/65738202f8be3ca63b75197d48f2c7a9324c035b/runtime/doc/news.txt#L118-L122
+    -- Dynamic registration of LSP capabilities. An implication of this change is
+    -- that checking a client's `server_capabilities` is no longer a sufficient
+    -- indicator to see if a server supports a feature. Instead use
+    -- `client.supports_method(<method>)`. It considers both the dynamic
+    -- capabilities and static `server_capabilities`.
+    if client:supports_method(handler.prep or handler.method) then
+      num_clients = num_clients + 1
     end
   end
 
@@ -318,70 +299,60 @@ end
 local handlers = {
   ["code_actions"] = {
     label = "Code Actions",
-    resolved_capability = "code_action",
     server_capability = "codeActionProvider",
     method = "textDocument/codeAction",
     handler = code_action_handler
   },
   ["references"] = {
     label = "References",
-    resolved_capability = "find_references",
     server_capability = "referencesProvider",
     method = "textDocument/references",
     handler = location_handler
   },
   ["definitions"] = {
     label = "Definitions",
-    resolved_capability = "goto_definition",
     server_capability = "definitionProvider",
     method = "textDocument/definition",
     handler = location_handler
   },
   ["declarations"] = {
     label = "Declarations",
-    resolved_capability = "goto_declaration",
     server_capability = "declarationProvider",
     method = "textDocument/declaration",
     handler = location_handler
   },
   ["typedefs"] = {
     label = "Type Definitions",
-    resolved_capability = "type_definition",
     server_capability = "typeDefinitionProvider",
     method = "textDocument/typeDefinition",
     handler = location_handler
   },
   ["implementations"] = {
     label = "Implementations",
-    resolved_capability = "implementation",
     server_capability = "implementationProvider",
     method = "textDocument/implementation",
     handler = location_handler
   },
   ["document_symbols"] = {
     label = "Document Symbols",
-    resolved_capability = "document_symbol",
     server_capability = "documentSymbolProvider",
     method = "textDocument/documentSymbol",
     handler = symbol_handler
   },
   ["workspace_symbols"] = {
     label = "Workspace Symbols",
-    resolved_capability = "workspace_symbol",
     server_capability = "workspaceSymbolProvider",
     method = "workspace/symbol",
     handler = symbol_handler
   },
   ["live_workspace_symbols"] = {
     label = "Workspace Symbols",
-    resolved_capability = "workspace_symbol",
     server_capability = "workspaceSymbolProvider",
     method = "workspace/symbol",
     handler = symbol_handler
   },
   ["incoming_calls"] = {
     label = "Incoming Calls",
-    resolved_capability = "call_hierarchy",
     server_capability = "callHierarchyProvider",
     method = "callHierarchy/incomingCalls",
     prep = "textDocument/prepareCallHierarchy",
@@ -389,7 +360,6 @@ local handlers = {
   },
   ["outgoing_calls"] = {
     label = "Outgoing Calls",
-    resolved_capability = "call_hierarchy",
     server_capability = "callHierarchyProvider",
     method = "callHierarchy/outgoingCalls",
     prep = "textDocument/prepareCallHierarchy",
@@ -709,7 +679,7 @@ M.finder = function(opts)
       opts.silent = opts.silent == nil and true or opts.silent
       opts.no_autoclose = true
       opts.lsp_handler = handlers[method]
-      opts.lsp_handler.capability = handler_capability(opts.lsp_handler)
+      opts.lsp_handler.capability = opts.lsp_handler.server_capability
       opts.lsp_params = lsp_params -- reset previous calls params if existed
 
       -- returns nil for no client attached, false for unsupported capability
@@ -1006,7 +976,7 @@ local function wrap_fn(key, fn)
   return function(opts)
     opts = opts or {}
     opts.lsp_handler = handlers[key]
-    opts.lsp_handler.capability = handler_capability(opts.lsp_handler)
+    opts.lsp_handler.capability = opts.lsp_handler.server_capability
 
     -- check_capabilities will print the appropriate warning
     if not check_capabilities(opts.lsp_handler) then

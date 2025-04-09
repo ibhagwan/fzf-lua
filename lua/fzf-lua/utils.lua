@@ -10,8 +10,6 @@ local uv = vim.uv or vim.loop
 
 local M = {}
 
-M.__HAS_NVIM_08 = vim.fn.has("nvim-0.8") == 1
-M.__HAS_NVIM_09 = vim.fn.has("nvim-0.9") == 1
 M.__HAS_NVIM_010 = vim.fn.has("nvim-0.10") == 1
 M.__HAS_NVIM_0102 = vim.fn.has("nvim-0.10.2") == 1
 M.__HAS_NVIM_011 = vim.fn.has("nvim-0.11") == 1
@@ -587,21 +585,9 @@ end
 
 -- Helper func to test for invalid (cleared) highlights
 function M.is_hl_cleared(hl)
-  -- `vim.api.nvim_get_hl_by_name` is deprecated since v0.9.0
-  if vim.api.nvim_get_hl then
-    local ok, hl_def = pcall(vim.api.nvim_get_hl, 0, { name = hl, link = false })
-    if not ok or M.tbl_isempty(hl_def) then
-      return true
-    end
-  else
-    ---@diagnostic disable-next-line: deprecated
-    local ok, hl_def = pcall(vim.api.nvim_get_hl_by_name, hl, true)
-    -- Not sure if this is the right way but it seems that cleared
-    -- highlights return 'hl_def[true] == 6' (?) and 'hl_def[true]'
-    -- does not exist at all otherwise
-    if not ok or hl_def[true] then
-      return true
-    end
+  local ok, hl_def = pcall(vim.api.nvim_get_hl, 0, { name = hl, link = false })
+  if not ok or M.tbl_isempty(hl_def) then
+    return true
   end
 end
 
@@ -1009,14 +995,6 @@ function M.nvim_buf_get_name(bufnr, bufinfo)
   end
   assert(#bufname > 0)
   return bufname
-end
-
-function M.wo(win, k, v)
-  if M.__HAS_NVIM_08 then
-    vim.api.nvim_set_option_value(k, v, { scope = "local", win = win })
-  else
-    vim.wo[win][k] = v
-  end
 end
 
 function M.zz()
