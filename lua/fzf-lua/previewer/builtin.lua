@@ -150,6 +150,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.toggle_behavior = o.toggle_behavior
   self.ext_ft_override = o.ext_ft_override
   self.winopts_orig = {}
+  self.winblend = self.winblend or self.winopts.winblend or vim.o.winblend
   -- convert extension map to lower case
   if o.extensions then
     self.extensions = {}
@@ -830,6 +831,13 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
           }
         end
       end
+      local simg = package.loaded["snacks.image"]
+      if simg and simg.supports(entry.path) then
+        simg.buf.attach(tmpbuf, { src = entry.path })
+        self:set_preview_buf(tmpbuf)
+        self:preview_buf_post(entry)
+        return
+      end
       if lines then
         pcall(vim.api.nvim_buf_set_lines, tmpbuf, 0, -1, false, lines)
         -- swap preview buffer with new one
@@ -929,6 +937,28 @@ function Previewer.base:update_render_markdown()
   end
 end
 
+function Previewer.base:attach_snacks_image(entry)
+  local simg = package.loaded["snacks.image"]
+  local bufnr, preview_winid = self.preview_bufnr, self.win.preview_winid
+  if not simg
+      or not (simg.config.doc.inline and simg.terminal.env().placeholders)
+      or vim.b[bufnr].snacks_image_attached then
+    return
+  end
+
+  -- restore default winblend when on unsupport ft
+  local ft = vim.b[bufnr]._ft
+  _G._fzf_lua_snacks_langs = _G._fzf_lua_snacks_langs or simg.langs()
+  if not vim.tbl_contains(_G._fzf_lua_snacks_langs, vim.treesitter.language.get_lang(ft)) then
+    vim.wo[preview_winid].winblend = self.winblend
+    return
+  end
+
+  vim.b[bufnr].snacks_image_src = entry.path
+  vim.wo[preview_winid].winblend = 0 -- https://github.com/folke/snacks.nvim/pull/1615
+  vim.b[bufnr].snacks_image_attached = simg.inline.new(bufnr)
+end
+
 function Previewer.buffer_or_file:do_syntax(entry)
   if not self.preview_bufnr then return end
   if not entry or not entry.path then return end
@@ -988,6 +1018,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
               vim.b[bufnr]._ft = ft
               self:update_render_markdown()
               self:update_ts_context()
+              self:attach_snacks_image(entry)
             end
           end)()
         end
