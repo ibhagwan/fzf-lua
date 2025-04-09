@@ -1106,6 +1106,7 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
     pcall(vim.api.nvim_win_close, self.fzf_winid, true)
   end
   if self.fzf_bufnr and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
+    -- TODO: if comment out this line, gc also stop work
     vim.api.nvim_buf_delete(self.fzf_bufnr, { force = true })
   end
   -- Clear treesitter buffer cache and deregister decoration callbacks
@@ -1151,6 +1152,7 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
   self.closing = nil
   self._reuse = nil
   _self = nil
+  -- collectgarbage("collect")
   -- clear the main module picker __INFO
   utils.reset_info()
 end

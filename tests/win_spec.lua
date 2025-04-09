@@ -38,12 +38,15 @@ T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
     end
   ]])
   child.wait_until(function()
-    child.lua([[FzfLua.files{ previewer = false }]]) -- make it faster
+    child.lua([[FzfLua.files{previewer = 'builtin'}]])
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
-    -- child.lua([[FzfLua.hide()]])
-    child.type_keys("<esc>")
+    -- TODO: <esc> can pass windows ci, but it defeats the purpose of #1782
+    -- we want to ensure gc work when: hide && previewer enabled
+    -- slowness related to size of function _registry (obj is referenced in action?)
+    -- child.type_keys("<esc>")
+    child.lua([[FzfLua.hide()]])
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == vim.NIL
     end)
