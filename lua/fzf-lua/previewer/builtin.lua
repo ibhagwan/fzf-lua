@@ -148,7 +148,6 @@ function Previewer.base:new(o, opts, fzf_win)
   self.limit_b = tonumber(default(o.limit_b, 1024 * 1024 * 10))
   self.treesitter = type(o.treesitter) == "table" and o.treesitter or {}
   self.toggle_behavior = o.toggle_behavior
-  self.ext_ft_override = o.ext_ft_override
   self.winopts_orig = {}
   -- convert extension map to lower case
   if o.extensions then
@@ -958,9 +957,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
       end
       if syntax_limit_reached == 0 then
         local fallback = (function()
-          local ft = entry.filetype
-              or self.ext_ft_override and self.ext_ft_override[path.extension(entry.path)]
-              or vim.filetype.match({ buf = bufnr, filename = entry.path })
+          local ft = entry.filetype or vim.filetype.match({ buf = bufnr, filename = entry.path })
           if type(ft) ~= "string" then
             return true
           end
