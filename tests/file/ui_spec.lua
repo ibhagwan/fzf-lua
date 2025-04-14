@@ -92,7 +92,6 @@ T["files()"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-
   function(icons, attrs)
     attrs = attrs == "+attrs" and true or false
     if attrs then
-      helpers.SKIP_IF_NOT_STABLE()
       helpers.SKIP_IF_WIN()
     end
     local plugin = icons == "mini" and "mini.nvim" or "nvim-web-devicons"

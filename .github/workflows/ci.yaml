@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        rev: [nightly, v0.10.3]
+        rev: [nightly, v0.11.0]
         include:
           - os: macos-latest
             install-deps: brew update && brew install fzf ripgrep fd
