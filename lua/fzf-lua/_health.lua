@@ -19,7 +19,8 @@ function M.check()
     else
       local version = vim.fn.system(tool .. " --version") or ""
       version = vim.trim(vim.split(version, "\n")[1])
-      ok("'" .. tool .. "' `" .. version .. "`")
+      local is_ok = vim.v.shell_error == 0
+      (is_ok and ok or error)("'" .. tool .. "' `" .. version .. "`")
       return true
     end
   end
@@ -106,7 +107,7 @@ function M.check()
   if vim.env.FZF_DEFAULT_OPTS_FILE == nil then
     ok("`FZF_DEFAULT_OPTS_FILE` is not set")
   else
-    ok("`FZF_DEFAULT_OPTS_FILE` is set to `" .. vim.env.FZF_DEFAULT_OPTS_FILE .. "`")
+    ok("`$FZF_DEFAULT_OPTS_FILE` is set to `" .. vim.env.FZF_DEFAULT_OPTS_FILE .. "`")
   end
 end
 
