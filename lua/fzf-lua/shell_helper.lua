@@ -57,7 +57,7 @@ local rpc_nvim_exec_lua = function(opts)
     -- for skim compatibility
     local preview_lines = vim.env.FZF_PREVIEW_LINES or vim.env.LINES
     local preview_cols = vim.env.FZF_PREVIEW_COLUMNS or vim.env.COLUMNS
-    local chan_id = vim.fn.sockconnect("pipe", vim.env.FZF_LUA_SERVER or vim.env.NVIM, { rpc = true })
+    local chan_id = vim.fn.sockconnect("pipe", opts.fzf_lua_server, { rpc = true })
     vim.rpcrequest(chan_id, "nvim_exec_lua", [[
       local luaargs = {...}
       local function_id = luaargs[1]
@@ -103,6 +103,7 @@ args[0] = nil -- remove filename
 local opts = {
   fnc_id = tonumber(table.remove(args, 1)),
   debug = table.remove(args, 1) == "true",
-  fzf_selection = args
+  fzf_selection = args,
+  fzf_lua_server = vim.env.FZF_LUA_SERVER or vim.env.SKIM_FZF_LUA_SERVER or vim.env.NVIM,
 }
 rpc_nvim_exec_lua(opts)
