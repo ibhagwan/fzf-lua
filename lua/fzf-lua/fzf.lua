@@ -280,6 +280,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
       ["SKIM_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
       ["FZF_LUA_SERVER"] = vim.g.fzf_lua_server,
+      -- sk --tmux didn't pass all environemnt variable (https://github.com/skim-rs/skim/issues/732)
+      ["SKIM_FZF_LUA_SERVER"] = vim.g.fzf_lua_server,
       ["VIMRUNTIME"] = vim.env.VIMRUNTIME,
       ["FZF_DEFAULT_OPTS"] = (function()
         -- Newer style `--preview-window` options in FZF_DEFAULT_OPTS such as:
