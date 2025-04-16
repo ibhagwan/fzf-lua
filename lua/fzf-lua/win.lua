@@ -857,7 +857,10 @@ function FzfWin:treesitter_attach()
   if not self._o.winopts.treesitter then return end
   -- local utf8 = require("fzf-lua.lib.utf8")
   local function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
-  local _format = type(self._o._treesitter) == "string" and self._o._treesitter or nil
+  ---@type fun(filepath: string, _lnum: string, text: string)
+  local line_parser = vim.is_callable(self._o._treesitter) and self._o._treesitter or function(line)
+    return line:match("(.-):?(%d+)[: ](.+)$")
+  end
   vim.api.nvim_buf_attach(self.fzf_bufnr, false, {
     on_lines = function(_, bufnr)
       local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
@@ -891,7 +894,7 @@ function FzfWin:treesitter_attach()
           -- file:line:text       (grep_project or missing "--column" flag)
           -- line:col:text        (grep_curbuf)
           -- line<U+00A0>text     (lines|blines)
-          local filepath, _lnum, text = line:sub(min_col):match(_format or "(.-):?(%d+)[: ](.+)$")
+          local filepath, _lnum, text = line_parser(line:sub(min_col))
           if not text or text == 0 then return end
 
           text = text:gsub("^%d+:", "") -- remove col nr if exists
