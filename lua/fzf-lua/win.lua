@@ -185,6 +185,7 @@ function FzfWin:generate_layout(winopts)
         style = "minimal",
         relative = self.winopts.relative or "editor",
         zindex = self.winopts.zindex,
+        hide = self.winopts.hide,
       }, { type = "nvim", name = "fzf", nwin = 1 })
     }
     return
@@ -205,6 +206,7 @@ function FzfWin:generate_layout(winopts)
       width = api.nvim_win_get_width(self.fzf_winid) - signcol_width,
       signcol_width = signcol_width,
       split = self.winopts.split,
+      hide = self.winopts.hide,
     }
   end
 
@@ -282,12 +284,14 @@ function FzfWin:generate_layout(winopts)
         border = self._o.winopts.border,
         relative = self.winopts.relative or "editor",
         zindex = self.winopts.zindex,
+        hide = self.winopts.hide,
       }), { type = "nvim", name = "fzf", nwin = nwin, layout = preview_pos }),
     preview = self:normalize_border(vim.tbl_extend("force", pwopts, {
       style = "minimal",
       zindex = self.winopts.zindex,
       border = self._o.winopts.preview.border,
       focusable = true,
+      hide = self.winopts.hide,
     }), { type = "nvim", name = "prev", nwin = nwin, layout = preview_pos })
   }
 end
@@ -591,6 +595,7 @@ function FzfWin:set_backdrop()
     -- -2 as preview border is -1
     zindex = self.winopts.zindex - 2,
     border = "none",
+    hide = self.winopts.hide,
   })
   vim.wo[self.backdrop_win].winhighlight = "Normal:" .. self.hls.backdrop
   vim.wo[self.backdrop_win].winblend = self.winopts.backdrop
@@ -1290,6 +1295,7 @@ function FzfWin:update_preview_scrollbar()
     row = 0,
     col = o.wininfo.width + scrolloff,
     border = "none",
+    hide = self.winopts.hide,
   }
   local full = vim.tbl_extend("keep", {
     zindex = empty.zindex + 1,
