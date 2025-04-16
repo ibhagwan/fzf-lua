@@ -1,6 +1,5 @@
 local uv = vim.uv or vim.loop
 
-local _has_nvim_010 = vim.fn.has("nvim-0.10") == 1
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 
 local M = {}
@@ -48,7 +47,7 @@ local function coroutinify(fn)
   end
 end
 
----@param opts {cwd: string, cmd: string|table, env: table?, cb_finish: function, cb_write: function, cb_err: function, cb_pid: function, fn_transform: function?, EOL: string?, process1: boolean?, profile: boolean?}
+---@param opts {cwd: string, cmd: string|table, env: table?, cb_finish: function, cb_write: function, cb_err: function, cb_pid: function, fn_transform: function?, EOL: string?, process1: boolean?, profiler: boolean?}
 ---@param fn_transform function?
 ---@param fn_done function?
 ---@return uv.uv_process_t proc
@@ -166,7 +165,7 @@ M.spawn = function(opts, fn_transform, fn_done)
       local lines = {}
       local nlines = 0
       local start_idx = 1
-      local t_st = opts.profile and uv.hrtime()
+      local t_st = opts.profiler and uv.hrtime()
       if t_st then write_cb(string.format("[DEBUG] start: %.0f (ns)" .. EOL, t_st)) end
       repeat
         local nl_idx = data:find("\n", start_idx, true)
@@ -240,7 +239,7 @@ end
 
 M.async_spawn = coroutinify(M.spawn)
 
----@param opts {cmd: string, cwd: string, cb_pid: function, cb_finish: function, cb_write: function, multiline: boolean?, process1: boolean?, profile: boolean?}
+---@param opts {cmd: string, cwd: string, cb_pid: function, cb_finish: function, cb_write: function, multiline: boolean?, process1: boolean?, profiler: boolean?}
 ---@param fn_transform function?
 ---@param fn_preprocess function?
 ---@param fn_postprocess function?
@@ -279,7 +278,7 @@ M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess, fn_postproces
       cb_write = on_write,
       cb_pid = opts.cb_pid,
       process1 = opts.process1,
-      profile = opts.profile,
+      profiler = opts.profiler,
       EOL = opts.multiline and "\0" or "\n",
     }, fn_transform)
   end
@@ -479,7 +478,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
       cb_write = on_write,
       cb_err = on_err,
       process1 = opts.process1,
-      profile = opts.profile,
+      profiler = opts.profiler,
       EOL = EOL,
     },
     fn_transform and function(x)
