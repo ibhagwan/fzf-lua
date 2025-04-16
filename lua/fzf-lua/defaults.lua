@@ -435,7 +435,7 @@ M.defaults.git                  = {
     fzf_opts      = { ["--no-multi"] = true },
     _multiline    = false,
     -- `winopts.treesitter==true` line match format
-    _treesitter   = "(%s+)(%d+)%)(.+)$",
+    _treesitter   = function(line) return line:match("(%s+)(%d+)%)(.+)$") end,
   },
   branches = {
     cmd        = "git branch --all --color",
