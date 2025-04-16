@@ -24,7 +24,6 @@ T["win"] = new_set()
 T["win"]["hide"] = new_set()
 
 T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
-  helpers.SKIP_IF_WIN()
   child.lua([[
     _G._gc_called = nil
     local utils = FzfLua.utils
@@ -39,7 +38,17 @@ T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
     end
   ]])
   child.wait_until(function()
-    child.lua([[FzfLua.files{ previewer = false }]]) -- make it faster
+    if helpers.IS_WIN() then
+      if helpers.IS_WIN() then
+        local hidden_fzf_bufnr = child.lua_get(
+          [[(FzfLua.utils.fzf_winobj() or {})._hidden_fzf_bufnr]])
+        if hidden_fzf_bufnr ~= vim.NIL then
+          local chan = child.lua_get(([=[vim.bo[%s].channel]=]):format(hidden_fzf_bufnr))
+          child.api.nvim_chan_send(chan, vim.keycode("<c-c>"))
+        end
+      end
+    end
+    child.lua([[FzfLua.files{ previewer = 'builtin' }]])
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
