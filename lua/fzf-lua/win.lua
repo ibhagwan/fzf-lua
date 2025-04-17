@@ -595,7 +595,8 @@ function FzfWin:set_backdrop()
     -- -2 as preview border is -1
     zindex = self.winopts.zindex - 2,
     border = "none",
-    hide = self.winopts.hide,
+    -- NOTE: backdrop shoulnd't be hidden with winopts.hide
+    -- hide = self.winopts.hide,
   })
   vim.wo[self.backdrop_win].winhighlight = "Normal:" .. self.hls.backdrop
   vim.wo[self.backdrop_win].winblend = self.winopts.backdrop
