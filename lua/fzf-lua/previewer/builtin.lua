@@ -229,6 +229,7 @@ end
 
 function Previewer.base:get_tmp_buffer()
   local tmp_buf = api.nvim_create_buf(false, true)
+  vim.bo[tmp_buf].modeline = true
   vim.bo[tmp_buf].modifiable = true
   vim.bo[tmp_buf].bufhidden = "wipe"
   return tmp_buf
@@ -895,6 +896,7 @@ function Previewer.base:update_ts_context()
   -- https://github.com/neovim/neovim/commit/45e606b1fddbfeee8fe28385b5371ca6f2fba71b
   -- For more info see #1922
   local lang = vim.treesitter.language.get_lang(ft)
+  if not utils.has_ts_parser(lang) then return end
   local parser = vim.treesitter.get_parser(self.preview_bufnr, lang)
   local context_updated
   for _, t in ipairs({ 0, 20, 50, 100 }) do
@@ -967,87 +969,93 @@ function Previewer.buffer_or_file:do_syntax(entry)
   if not entry or not entry.path then return end
   local bufnr = self.preview_bufnr
   local preview_winid = self.win.preview_winid
-  -- can be used by snacks.image to get abspath of e.g. [file.png] https://github.com/folke/snacks.nvim/pull/1618
-  vim.b[bufnr].bufpath = entry.path
-  if api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].filetype == "" then
-    if fn.bufwinid(bufnr) == preview_winid then
-      -- do not enable for large files, treesitter still has perf issues:
-      -- https://github.com/nvim-treesitter/nvim-treesitter/issues/556
-      -- https://github.com/nvim-treesitter/nvim-treesitter/issues/898
-      local lcount = api.nvim_buf_line_count(bufnr)
-      local bytes = api.nvim_buf_get_offset(bufnr, lcount)
-      local syntax_limit_reached = 0
-      if self.syntax_limit_l > 0 and lcount > self.syntax_limit_l then
-        syntax_limit_reached = 1
-      end
-      if self.syntax_limit_b > 0 and bytes > self.syntax_limit_b then
-        syntax_limit_reached = 2
-      end
-      if syntax_limit_reached > 0 and self.opts.silent == false then
-        utils.info(string.format(
-          "syntax disabled for '%s' (%s), consider increasing '%s(%d)'", entry.path,
-          syntax_limit_reached == 1 and ("%d lines"):format(lcount) or ("%db"):format(bytes),
-          syntax_limit_reached == 1 and "syntax_limit_l" or "syntax_limit_b",
-          syntax_limit_reached == 1 and self.syntax_limit_l or self.syntax_limit_b
-        ))
-      end
-      if syntax_limit_reached == 0 then
-        local fallback = (function()
-          local ft = entry.filetype or vim.filetype.match({ buf = bufnr, filename = entry.path })
-          if type(ft) ~= "string" then
-            return true
-          end
-          -- Use buf local var as setting ft might have unintended consequences
-          -- currently only being used in `update_render_markdown` but might be
-          -- of use in the future?
-          vim.b[bufnr]._ft = ft
-          local ts_enabled = (function()
-            if not self.treesitter or
-                self.treesitter.enabled == false or
-                self.treesitter.disabled == true or
-                (type(self.treesitter.enabled) == "table" and
-                  not utils.tbl_contains(self.treesitter.enabled, ft)) or
-                (type(self.treesitter.disabled) == "table" and
-                  utils.tbl_contains(self.treesitter.disabled, ft)) then
-              return false
-            end
-            return true
-          end)()
-          local ts_success = ts_enabled and ts_attach(bufnr, ft)
-          if not ts_success then
-            pcall(function() vim.bo[bufnr].syntax = ft end)
-          else
-            self:update_render_markdown()
-            self:update_ts_context()
-          end
-        end)()
-        if fallback then
-          if entry.filetype == "help" then
-            -- if entry.filetype and #entry.filetype>0 then
-            -- filetype was saved from a loaded buffer
-            -- this helps avoid losing highlights for help buffers
-            -- which are '.txt' files with 'ft=help'
-            pcall(function() vim.bo[bufnr].filetype = "help" end)
-          else
-            -- prepend the buffer number to the path and
-            -- set as buffer name, this makes sure 'filetype detect'
-            -- gets the right filetype which enables the syntax
-            local tempname = path.join({ tostring(bufnr), entry.path })
-            pcall(api.nvim_buf_set_name, bufnr, tempname)
-          end
-          -- nvim_buf_call has less side-effects than window switch
-          local ok, _ = pcall(api.nvim_buf_call, bufnr, function()
-            vim.cmd("filetype detect")
-          end)
-          if not ok then
-            utils.warn(("syntax highlighting failed for filetype '%s', ")
-              :format(entry.path and path.extension(entry.path) or "<null>") ..
-              "open the file and run ':filetype detect' for more info.")
-          end
-        end
-      end
-    end
+  if not api.nvim_buf_is_valid(bufnr)
+      or vim.bo[bufnr].filetype ~= ""
+      or fn.bufwinid(bufnr) ~= preview_winid
+  then
+    return
   end
+
+  -- assign a name for noname scratch buffer
+  -- can be used by snacks.image to abspath e.g. [file.png]
+  -- https://github.com/folke/snacks.nvim/pull/1618
+  vim.b[bufnr].bufpath = entry.path
+
+  -- do not enable for large files, treesitter still has perf issues:
+  -- https://github.com/nvim-treesitter/nvim-treesitter/issues/556
+  -- https://github.com/nvim-treesitter/nvim-treesitter/issues/898
+  local lcount = api.nvim_buf_line_count(bufnr)
+  local bytes = api.nvim_buf_get_offset(bufnr, lcount)
+  local syntax_limit_reached = 0
+  if self.syntax_limit_l > 0 and lcount > self.syntax_limit_l then
+    syntax_limit_reached = 1
+  end
+  if self.syntax_limit_b > 0 and bytes > self.syntax_limit_b then
+    syntax_limit_reached = 2
+  end
+  if syntax_limit_reached > 0 and self.opts.silent == false then
+    utils.info(string.format(
+      "syntax disabled for '%s' (%s), consider increasing '%s(%d)'", entry.path,
+      syntax_limit_reached == 1 and ("%d lines"):format(lcount) or ("%db"):format(bytes),
+      syntax_limit_reached == 1 and "syntax_limit_l" or "syntax_limit_b",
+      syntax_limit_reached == 1 and self.syntax_limit_l or self.syntax_limit_b
+    ))
+  end
+
+  if syntax_limit_reached ~= 0 then
+    return
+  end
+
+  -- filetype detect
+  ---@type string
+  local ft = (function()
+    local ft = entry.filetype or vim.filetype.match({ buf = bufnr, filename = entry.path })
+    if type(ft) == "string" then
+      return ft
+    end
+    -- prepend the buffer number to the path and
+    -- set as buffer name, this makes sure 'filetype detect'
+    -- gets the right filetype which enables the syntax
+    local tempname = path.join({ tostring(bufnr), entry.path })
+    pcall(api.nvim_buf_set_name, bufnr, tempname)
+    -- nvim_buf_call has less side-effects than window switch
+    -- doautocmd filetypedetect BufRead (vim.filetype.match + ftdetect) + do_modeline
+    local ok, _ = pcall(api.nvim_buf_call, bufnr, function()
+      utils.eventignore(function() vim.cmd("filetype detect") end, preview_winid, "FileType")
+    end)
+    if not ok then
+      utils.warn(("':filetype detect' failed for '%s'"):format(entry.path or "<null>"))
+    end
+    return vim.bo[bufnr].filetype
+  end)()
+
+  if ft == "" then return end
+
+  -- Use buf local var as setting ft might have unintended consequences
+  -- used in `update_render_markdown`, `attach_snacks_image`
+  vim.b[bufnr]._ft = ft
+
+  local ts_enabled = (function()
+    if not self.treesitter or
+        self.treesitter.enabled == false or
+        self.treesitter.disabled == true or
+        (type(self.treesitter.enabled) == "table" and
+          not utils.tbl_contains(self.treesitter.enabled, ft)) or
+        (type(self.treesitter.disabled) == "table" and
+          utils.tbl_contains(self.treesitter.disabled, ft)) then
+      return false
+    end
+    return true
+  end)()
+
+  local ts_success = ts_enabled and ts_attach(bufnr, ft)
+  if not ts_success then
+    pcall(function() vim.bo[bufnr].syntax = ft end)
+    return
+  end
+
+  self:update_render_markdown()
+  self:update_ts_context()
 end
 
 function Previewer.base:maybe_set_cursorline(win, pos)
