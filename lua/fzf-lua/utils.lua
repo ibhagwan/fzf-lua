@@ -1019,21 +1019,32 @@ function M.zz()
   end
 end
 
+---@param func function
+---@param scope string?
+---@param win integer
+function M.eventignore(func, win, scope)
+  if win and vim.fn.exists("&eventignorewin") == 1 then
+    local save_ei = vim.wo[win][0].eventignorewin
+    vim.wo[win][0].eventignorewin = scope or "all"
+    local ret = { func() }
+    vim.wo[win][0].eventignorewin = save_ei
+    return unpack(ret)
+  end
+  local save_ei = vim.o.eventignore
+  vim.o.eventignore = scope or "all"
+  local ret = { func() }
+  vim.o.eventignore = save_ei
+  return unpack(ret)
+end
+
 -- Set buffer for window without an autocmd
 function M.win_set_buf_noautocmd(win, buf)
-  local save_ei = vim.o.eventignore
-  vim.o.eventignore = "all"
-  vim.api.nvim_win_set_buf(win, buf)
-  vim.o.eventignore = save_ei
+  return M.eventignore(function() return vim.api.nvim_win_set_buf(win, buf) end)
 end
 
 -- Open a window without triggering an autocmd
 function M.nvim_open_win(bufnr, enter, config)
-  local save_ei = vim.o.eventignore
-  vim.o.eventignore = "all"
-  local winid = vim.api.nvim_open_win(bufnr, enter, config)
-  vim.o.eventignore = save_ei
-  return winid
+  return M.eventignore(function() return vim.api.nvim_open_win(bufnr, enter, config) end)
 end
 
 function M.nvim_open_win0(bufnr, enter, config)
@@ -1048,19 +1059,15 @@ end
 
 -- Close a window without triggering an autocmd
 function M.nvim_win_close(win, opts)
-  local save_ei = vim.o.eventignore
-  vim.o.eventignore = "all"
-  vim.api.nvim_win_close(win, opts)
-  vim.o.eventignore = save_ei
+  return M.eventignore(function() return vim.api.nvim_win_close(win, opts) end)
 end
 
 -- Close a buffer without triggering an autocmd
 function M.nvim_buf_delete(bufnr, opts)
-  if not vim.api.nvim_buf_is_valid(bufnr) then return end
-  local save_ei = vim.o.eventignore
-  vim.o.eventignore = "all"
-  vim.api.nvim_buf_delete(bufnr, opts)
-  vim.o.eventignore = save_ei
+  return M.eventignore(function()
+    if not vim.api.nvim_buf_is_valid(bufnr) then return end
+    return vim.api.nvim_buf_delete(bufnr, opts)
+  end)
 end
 
 function M.getbufinfo(bufnr)
