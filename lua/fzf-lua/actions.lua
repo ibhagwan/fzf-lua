@@ -1077,6 +1077,7 @@ M.cd = function(selected, opts)
   cwd = git_root or cwd
   if uv.fs_stat(cwd) then
     vim.cmd("cd " .. cwd)
+    utils.io_system({ "zoxide", "add", "--", cwd })
     utils.info(("cwd set to %s'%s'"):format(git_root and "git root " or "", cwd))
   else
     utils.warn(("Unable to set cwd to '%s', directory is not accessible"):format(cwd))
