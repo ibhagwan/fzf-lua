@@ -39,13 +39,11 @@ T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
   ]])
   child.wait_until(function()
     if helpers.IS_WIN() then
-      if helpers.IS_WIN() then
-        local hidden_fzf_bufnr = child.lua_get(
-          [[(FzfLua.utils.fzf_winobj() or {})._hidden_fzf_bufnr]])
-        if hidden_fzf_bufnr ~= vim.NIL then
-          local chan = child.lua_get(([=[vim.bo[%s].channel]=]):format(hidden_fzf_bufnr))
-          child.api.nvim_chan_send(chan, vim.keycode("<c-c>"))
-        end
+      local hidden_fzf_bufnr = child.lua_get(
+        [[(FzfLua.utils.fzf_winobj() or {})._hidden_fzf_bufnr]])
+      if hidden_fzf_bufnr ~= vim.NIL then
+        local chan = child.lua_get(([=[vim.bo[%s].channel]=]):format(hidden_fzf_bufnr))
+        child.api.nvim_chan_send(chan, vim.keycode("<c-c>"))
       end
     end
     child.lua([[FzfLua.files{ previewer = 'builtin' }]])
@@ -114,6 +112,35 @@ T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()
   child.type_keys([[<cr>]])
   child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
   eq("README.md", vim.fs.basename(child.lua_get([[vim.api.nvim_buf_get_name(0)]])))
+end
+
+
+T["win"]["actions"] = new_set()
+
+T["win"]["actions"]["no error"] = function()
+  for file in ipairs({ "README.md", "^tests-", ".lua$" }) do
+    child.lua([[FzfLua.files { query = "README.md" }]])
+    -- not work with `profile = "hide"`?
+    child.wait_until(function()
+      return child.lua_get([[_G._fzf_load_called]]) == true
+    end)
+    for key, _actions in pairs({
+      ["<F1>"]       = "toggle-help",
+      ["<F2>"]       = "toggle-fullscreen",
+      ["<F3>"]       = "toggle-preview-wrap",
+      ["<F4>"]       = "toggle-preview",
+      ["<F5>"]       = "toggle-preview-ccw",
+      ["<F6>"]       = "toggle-preview-cw",
+      ["<S-Left>"]   = "preview-reset",
+      ["<S-down>"]   = "preview-page-down",
+      ["<S-up>"]     = "preview-page-up",
+      ["<M-S-down>"] = "preview-down",
+      ["<M-S-up>"]   = "preview-up",
+    }) do
+      child.type_keys(key)
+      child.type_keys(key)
+    end
+  end
 end
 
 return T
