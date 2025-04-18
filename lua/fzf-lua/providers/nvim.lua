@@ -523,6 +523,26 @@ M.spell_suggest = function(opts)
   local cursor_word = vim.fn.expand "<cword>"
   local entries = vim.fn.spellsuggest(cursor_word)
 
+  local match = opts.word_pattern or "[^%s\"'%(%)%.%%%+%-%*%?%[%]%^%$:#]*"
+  local line = vim.api.nvim_get_current_line()
+  local col = vim.api.nvim_win_get_cursor(0)[2] + 1
+  local before = col > 1 and line:sub(1, col - 1):reverse():match(match):reverse() or ""
+  local after = line:sub(col):match(match) or ""
+  -- special case when the cursor is on the left surrounding char
+  if #before == 0 and #after == 0 and #line > col then
+    col = col + 1
+    after = line:sub(col):match(match) or ""
+  end
+  opts.complete = function(selected, o, l, _)
+    if #selected == 0 then return end
+    local replace_at = col - #before
+    local before_path = replace_at > 1 and l:sub(1, replace_at - 1) or ""
+    local rest_of_line = #l >= (col + #after) and l:sub(col + #after) or ""
+    return before_path .. selected[1] .. rest_of_line,
+        -- this goes to `nvim_win_set_cursor` which is 0-based
+        replace_at + #selected[1] - 2
+  end
+
   if utils.tbl_isempty(entries) then return end
 
   core.fzf_exec(entries, opts)

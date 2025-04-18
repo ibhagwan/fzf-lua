@@ -1086,7 +1086,7 @@ M.defaults.spell_suggest        = {
     width    = 0.30,
   },
   actions = {
-    ["enter"] = actions.spell_apply,
+    ["enter"] = actions.complete,
   },
 }
 
