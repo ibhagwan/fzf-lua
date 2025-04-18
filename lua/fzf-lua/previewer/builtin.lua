@@ -147,6 +147,7 @@ function Previewer.base:new(o, opts, fzf_win)
   self.syntax_limit_b = tonumber(default(o.syntax_limit_b, 1024 * 1024))
   self.syntax_limit_l = tonumber(default(o.syntax_limit_l, 0))
   self.limit_b = tonumber(default(o.limit_b, 1024 * 1024 * 10))
+  self._ts_limit_b_per_line = tonumber(default(o._ts_limit_b_per_line, 1000))
   self.treesitter = type(o.treesitter) == "table" and o.treesitter or {}
   self.toggle_behavior = o.toggle_behavior
   self.winopts_orig = {}
@@ -1036,6 +1037,8 @@ function Previewer.buffer_or_file:do_syntax(entry)
   vim.b[bufnr]._ft = ft
 
   local ts_enabled = (function()
+    -- disable treesitter on minified (long line) file
+    if (bytes / lcount) > self._ts_limit_b_per_line then return false end
     if not self.treesitter or
         self.treesitter.enabled == false or
         self.treesitter.disabled == true or
