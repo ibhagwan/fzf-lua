@@ -520,10 +520,7 @@ M.spell_suggest = function(opts)
   opts = config.normalize_opts(opts, "spell_suggest")
   if not opts then return end
 
-  local cursor_word = vim.fn.expand "<cword>"
-  local entries = vim.fn.spellsuggest(cursor_word)
-
-  local match = opts.word_pattern or "[^%s\"'%(%)%.%%%+%-%*%?%[%]%^%$:#]*"
+  local match = opts.word_pattern or "[^%s\"'%(%)%.%%%+%-%*%?%[%]%^%$:#,]*"
   local line = vim.api.nvim_get_current_line()
   local col = vim.api.nvim_win_get_cursor(0)[2] + 1
   local before = col > 1 and line:sub(1, col - 1):reverse():match(match):reverse() or ""
@@ -533,6 +530,10 @@ M.spell_suggest = function(opts)
     col = col + 1
     after = line:sub(col):match(match) or ""
   end
+
+  local cursor_word = before .. after
+  local entries = vim.fn.spellsuggest(cursor_word)
+
   opts.complete = function(selected, o, l, _)
     if #selected == 0 then return end
     local replace_at = col - #before
