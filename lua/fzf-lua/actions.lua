@@ -633,11 +633,13 @@ M.nvim_opt_edit_global = function(selected, opts)
   return nvim_opt_edit(selected, opts, "global")
 end
 
-M.spell_apply = function(selected)
+M.spell_apply = function(selected, opts)
   if not selected[1] then return false end
   local word = selected[1]
-  vim.cmd("normal! ciw" .. word)
-  vim.cmd("stopinsert")
+  vim.cmd("normal! \"_ciw" .. word)
+  if opts.__CTX.mode == "i" then
+    vim.api.nvim_feedkeys("a", "n", true)
+  end
 end
 
 M.set_filetype = function(selected)
