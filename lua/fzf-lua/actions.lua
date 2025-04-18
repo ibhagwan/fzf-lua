@@ -128,7 +128,11 @@ M.act = function(selected, opts)
 end
 
 -- Dummy abort action for `esc|ctrl-c|ctrl-q`
-M.dummy_abort = function()
+M.dummy_abort = function(_, o)
+  -- try to resume mode if `complete` is set
+  if o.complete and o.__CTX.mode == "i" then
+    vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
+  end
 end
 
 M.resume = function(_, _)
@@ -1028,6 +1032,12 @@ M.apply_profile = function(selected, opts)
 end
 
 M.complete = function(selected, opts)
+  if #selected == 0 then
+    if opts.__CTX.mode == "i" then
+      vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
+    end
+    return
+  end
   -- cusror col is 0-based
   local col = opts.__CTX.cursor[2] + 1
   local newline, newcol

@@ -448,6 +448,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   if opts.complete then
     opts.actions = opts.actions or {}
     opts.actions.enter = actions.complete
+    opts.actions["ctrl-c"] = function() end
   end
 
   -- Merge highlight overrides with defaults, we only do this after the
