@@ -1174,6 +1174,7 @@ M.defaults.zoxide               = {
     ["--tabstop"]   = "4",
     ["--tiebreak"]  = "end,index",
     ["--nth"]       = "2..",
+    ["--no-sort"]   = true, -- sort by score
   },
   actions      = { enter = actions.cd }
 }
