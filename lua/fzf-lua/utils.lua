@@ -997,11 +997,20 @@ function M.nvim_buf_get_name(bufnr, bufinfo)
   return bufname
 end
 
+-- correctly handle virtual text, conceal lines
+function M.line_count(win, buf)
+  if vim.api.nvim_win_text_height then
+    return vim.api.nvim_win_text_height(win, {}).all
+  else
+    return vim.api.nvim_buf_line_count(buf)
+  end
+end
+
 function M.zz()
   -- skip for terminal buffers
   if M.is_term_buffer() then return end
   local lnum1 = vim.api.nvim_win_get_cursor(0)[1]
-  local lcount = vim.api.nvim_buf_line_count(0)
+  local lcount = M.line_count(0, 0)
   local zb = "keepj norm! %dzb"
   if lnum1 == lcount then
     vim.fn.execute(zb:format(lnum1))
