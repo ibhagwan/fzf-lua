@@ -640,7 +640,7 @@ function M.ft_match_fast_event(args)
     end)
     return coroutine.yield()
   else
-    return M.ft_match(args)
+    return M.vim.filetype.match(args)
   end
 end
 
