@@ -797,7 +797,11 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- Are we using fzf-tmux? if so get available columns
   opts._is_fzf_tmux = (function()
-    if not vim.env.TMUX then return end
+    if not vim.env.TMUX then
+      -- Could have adverse effects with skim (#1974)
+      opts.fzf_opts["--tmux"] = nil
+      return
+    end
     local is_tmux =
         (opts.fzf_bin:match("fzf%-tmux$") or opts.fzf_bin:match("sk%-tmux$")) and 1
         -- fzf v0.53 added native tmux integration
