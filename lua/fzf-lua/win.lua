@@ -1271,9 +1271,13 @@ function FzfWin:update_preview_scrollbar()
   local o = {}
   local buf = api.nvim_win_get_buf(self.preview_winid)
   o.wininfo = utils.getwininfo(self.preview_winid)
-  o.line_count = api.nvim_buf_line_count(buf)
+  o.line_count = utils.line_count(self.preview_winid, buf)
 
   local topline, height = o.wininfo.topline, o.wininfo.height
+  if api.nvim_win_text_height then
+    topline = topline == 1 and topline or
+        api.nvim_win_text_height(self.preview_winid, { end_row = topline - 1 }).all + 1
+  end
   o.bar_height = math.min(height, math.ceil(height * height / o.line_count))
   o.bar_offset = math.min(height - o.bar_height, math.floor(height * topline / o.line_count))
 

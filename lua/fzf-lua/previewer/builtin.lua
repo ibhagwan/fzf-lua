@@ -963,6 +963,9 @@ function Previewer.base:attach_snacks_image()
 
   vim.wo[preview_winid].winblend = 0 -- https://github.com/folke/snacks.nvim/pull/1615
   vim.b[bufnr].snacks_image_attached = simg.inline.new(bufnr)
+  vim.defer_fn(function()
+    self.win:update_preview_scrollbar()
+  end, 500)
 end
 
 function Previewer.buffer_or_file:do_syntax(entry)

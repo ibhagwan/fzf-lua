@@ -997,6 +997,15 @@ function M.nvim_buf_get_name(bufnr, bufinfo)
   return bufname
 end
 
+-- correctly handle virtual text, conceal lines
+function M.line_count(win, buf)
+  if vim.api.nvim_win_text_height then
+    return vim.api.nvim_win_text_height(win, {}).all
+  else
+    return vim.api.nvim_buf_line_count(buf)
+  end
+end
+
 function M.zz()
   -- skip for terminal buffers
   if M.is_term_buffer() then return end
