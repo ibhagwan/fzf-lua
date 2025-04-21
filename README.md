@@ -736,7 +736,7 @@ previewers = {
       -- render_markdown.nvim integration, enabled by default for markdown
       render_markdown = { enabled = true, filetypes = { ["markdown"] = true } },
       -- snacks.images integration, enabled by default
-      snacks_images = { enabled = true },
+      snacks_image = { enabled = true },
     },
     -- Code Action previewers, default is "codeaction" (set via `lsp.code_actions.previewer`)
     -- "codeaction_native" uses fzf's native previewer, recommended when combined with git-delta
