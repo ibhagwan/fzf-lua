@@ -1186,12 +1186,10 @@ function FzfWin.hide()
   -- Note: we should never get here with a tmux profile as neovim binds (default: <A-Esc>)
   -- do not apply to tmux, validate anyways in case called directly using the API
   if not self or self._o._is_fzf_tmux then return end
-  if self:validate_preview() and not self.preview_hidden then
-    self:close_preview(true)
-    self._hidden_had_preview = true
-  end
   self:detach_fzf_buf()
   self:close(nil, true)
+  -- save the current window size (VimResized won't emit when buffer hidden)
+  self._hidden_save_size = { vim.o.lines, vim.o.columns }
   -- Save self as `:close()` nullifies it
   _self = self
 end
@@ -1223,10 +1221,10 @@ function FzfWin.unhide()
   self.fzf_bufnr = self._hidden_fzf_bufnr
   self._hidden_fzf_bufnr = nil
   self:create()
-  if self._hidden_had_preview then
-    self._hidden_had_preview = nil
-    self:redraw_preview()
+  if not vim.deep_equal(self._hidden_save_size, { vim.o.lines, vim.o.columns }) then
+    self:redraw()
   end
+  self._hidden_save_size = nil
   vim.cmd("startinsert")
   return true
 end
