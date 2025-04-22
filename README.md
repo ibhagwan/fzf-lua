@@ -721,7 +721,7 @@ previewers = {
       -- from being modified when toggling the preview.
       toggle_behavior = "default",
       -- Title transform function, by default only displays the tail
-      -- title_fnamemodify = function(s) vim.fn.fnamemodify(s, ":t") end,
+      -- title_fnamemodify = function(s) return vim.fn.fnamemodify(s, ":t") end,
       -- preview extensions using a custom shell command:
       -- for example, use `viu` for image previews
       -- will do nothing if `viu` isn't executable
