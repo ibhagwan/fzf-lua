@@ -87,6 +87,11 @@ to configure in `previewer.builtin.extensions`):
 - [ueberzugpp](https://github.com/jstkdng/ueberzugpp) - terminal image previewer using X11/Wayland
   child windows, sixels, kitty and iterm2
 
+> [!TIP]
+> If your terminal supports the kitty graphics protocol (e.g. kitty, ghostty, etc) install
+> @folke's [snacks.nvim](https://github.com/folke/snacks.nvim) to render images using the
+> `snacks.image` module, it will be auto-detected by fzf-lua and requires no configuration.
+
 ### Windows Notes
 
 - [rg](https://github.com/BurntSushi/ripgrep) is required for `grep` and `tags`
@@ -118,7 +123,8 @@ run any fzf-lua command like this:
 or with arguments:
 
 ```lua
-:lua require('fzf-lua').files({ cwd = '~/.config' })
+-- Once fzf-lua is loaded you can also use the lua global `_G.FzfLua`
+:lua FzfLua.files({ cwd = '~/.config' })
 -- or using the `FzfLua` vim command:
 :FzfLua files cwd=~/.config
 ```
@@ -128,7 +134,7 @@ or with arguments:
 Resuming work from where you left off is as easy as:
 
 ```lua
-:lua require('fzf-lua').resume()
+:lua FzfLua.resume()
 -- or
 :FzfLua resume
 ```
@@ -136,7 +142,7 @@ Resuming work from where you left off is as easy as:
 Alternatively, resuming work on a specific picker:
 
 ```lua
-:lua require('fzf-lua').files({ resume = true })
+:lua FzfLua.files({ resume = true })
 -- or
 :FzfLua files resume=true
 ```
@@ -1311,7 +1317,7 @@ previewers = {
 Different `fzf` layout:
 
 ```lua
-:lua require('fzf-lua').files({ fzf_opts = {['--layout'] = 'reverse-list'} })
+:lua FzfLua.files({ fzf_opts = {['--layout'] = 'reverse-list'} })
 -- Or via the vimL command
 :FzfLua files fzf_opts.--layout=reverse-list
 ```
@@ -1319,7 +1325,7 @@ Different `fzf` layout:
 Using `files` with a different command and working directory:
 
 ```lua
-:lua require'fzf-lua'.files({ prompt="LS> ", cmd = "ls", cwd="~/.config" })
+:lua FzfLua.files({ prompt="LS> ", cmd = "ls", cwd="~/.config" })
 -- Or via the vimL command
 :FzfLua files prompt="LS>\ " cmd=ls cwd=~/.config
 ```
@@ -1497,7 +1503,7 @@ require('fzf-lua').setup {
 
 or temporarily in the call:
 ```lua
-:lua require'fzf-lua'.files({ hls={preview_title="IncSearch"} })
+:lua FzfLua.files({ hls={preview_title="IncSearch"} })
 -- vimL equivalent
 :FzfLua files hls.preview_title=IncSearch
 ```
@@ -1579,7 +1585,7 @@ your current Neovim colorscheme:
 ```lua
 require("fzf-lua").setup({ fzf_colors = true })
 -- Or in the direct call options
-:lua require("fzf-lua").files({ fzf_colors = true })
+:lua FzfLua.files({ fzf_colors = true })
 :FzfLua files fzf_colors=true
 ```
 
