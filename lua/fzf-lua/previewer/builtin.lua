@@ -814,6 +814,16 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
         return
       end
     end
+    if self:attach_snacks_image_buf(tmpbuf, entry) then
+      -- Similar settings as `populate_terminal_cmd`
+      entry.do_not_cache = true
+      entry.no_scrollbar = true
+      self.clear_on_redraw = true
+      -- 2nd arg `true`: minimal style window
+      self:set_preview_buf(tmpbuf, true)
+      self:preview_buf_post(entry)
+      return
+    end
     do
       local lines = nil
       if entry.path:match("^%[DEBUG]") then
@@ -832,13 +842,6 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
             -- "(configured via 'previewers.builtin.limit_b')"
           }
         end
-      end
-      local simg = package.loaded["snacks.image"]
-      if simg and simg.supports(entry.path) then
-        simg.buf.attach(tmpbuf, { src = entry.path })
-        self:set_preview_buf(tmpbuf)
-        self:preview_buf_post(entry)
-        return
       end
       if lines then
         pcall(vim.api.nvim_buf_set_lines, tmpbuf, 0, -1, false, lines)
@@ -942,11 +945,21 @@ function Previewer.base:update_render_markdown()
   end
 end
 
-function Previewer.base:attach_snacks_image()
+function Previewer.base:attach_snacks_image_buf(buf, entry)
+  local simg = self.snacks_image.enabled and package.loaded["snacks.image"]
+  if not simg or not simg.supports(entry.path) then
+    return false
+  end
+  simg.buf.attach(buf, { src = entry.path })
+  return true
+end
+
+function Previewer.base:attach_snacks_image_inline()
   local simg = package.loaded["snacks.image"]
   local bufnr, preview_winid = self.preview_bufnr, self.win.preview_winid
   if not simg
       or not self.snacks_image.enabled
+      or not simg.supports_terminal()
       or not (simg.config.doc.inline and simg.terminal.env().placeholders)
       or vim.b[bufnr].snacks_image_attached then
     return
@@ -1191,12 +1204,12 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
         vim.defer_fn(function()
           if self.preview_bufnr == syntax_bufnr then
             self:do_syntax(entry)
-            self:attach_snacks_image()
+            self:attach_snacks_image_inline()
           end
         end, self.syntax_delay)
       else
         self:do_syntax(entry)
-        self:attach_snacks_image()
+        self:attach_snacks_image_inline()
       end
     end
   end
