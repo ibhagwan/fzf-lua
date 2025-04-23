@@ -361,8 +361,6 @@ end
 
 function Previewer.base:display_entry(entry_str)
   if not entry_str then return end
-  -- save last entry even if we don't display
-  self.last_entry = entry_str
   if not self.win or not self.win:validate_preview() then return end
 
   -- verify backup the current window options
@@ -407,13 +405,17 @@ end
 
 function Previewer.base:cmdline(_)
   local act = shell.raw_action(function(items, _, _)
-    local entry, query, idx = items[1], items[2], items[3]
+    local entry, query, idx = unpack(items, 1, 3)
     -- NOTE: see comment regarding {n} in `core.convert_exec_silent_actions`
+    -- convert empty string to nil
     if not tonumber(idx) then entry = nil end
     -- on windows, query may not be expanded to a string: #1887
     self.opts._last_query = query or ""
-    -- convert empty string to nil
-    self:display_entry(entry)
+    if self.last_entry ~= entry then
+      -- save last entry even if we don't display
+      self.last_entry = entry
+      self:display_entry(entry)
+    end
     return ""
   end, "{} {q} {n}", self.opts.debug)
   return act
