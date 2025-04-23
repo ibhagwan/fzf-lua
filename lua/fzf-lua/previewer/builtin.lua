@@ -360,7 +360,7 @@ function Previewer.base:display_last_entry()
 end
 
 function Previewer.base:display_entry(entry_str)
-  if not entry_str then return end
+  if not entry_str or self.last_entry == entry_str then return end
   -- save last entry even if we don't display
   self.last_entry = entry_str
   if not self.win or not self.win:validate_preview() then return end
