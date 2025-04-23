@@ -946,7 +946,7 @@ function Previewer.base:update_render_markdown()
 end
 
 function Previewer.base:attach_snacks_image_buf(buf, entry)
-  local simg = self.snacks_image.enabled and package.loaded["snacks.image"]
+  local simg = self.snacks_image.enabled and (Snacks or {}).image
   if not simg or not simg.supports(entry.path) then
     return false
   end
@@ -955,7 +955,7 @@ function Previewer.base:attach_snacks_image_buf(buf, entry)
 end
 
 function Previewer.base:attach_snacks_image_inline()
-  local simg = package.loaded["snacks.image"]
+  local simg = (Snacks or {}).image
   local bufnr, preview_winid = self.preview_bufnr, self.win.preview_winid
   if not simg
       or not self.snacks_image.enabled
