@@ -266,7 +266,7 @@ M.new_child_neovim = function()
     MiniTest.expect.reference_screenshot(child.get_buf_lines(buf, screenshot_opts), path, opts)
   end
 
-  local wait_timeout = (M.IS_WIN() and 5000 or 2000)
+  local wait_timeout = (M.IS_LINUX() and 2000 or 5000)
   --- waits until condition fn evals to true, checking every interval ms
   --- times out at timeout ms
   ---@param condition fun(): boolean
