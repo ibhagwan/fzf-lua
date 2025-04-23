@@ -28,7 +28,7 @@ local function screenshot_new(t)
 
   return setmetatable(t, {
     __tostring = function(x)
-      return string.format("%s\n\n%s", process_screen(x.text), process_screen(x.attr))
+      return string.format("%s", process_screen(x.text))
     end,
   })
 end
