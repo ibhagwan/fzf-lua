@@ -7,7 +7,6 @@ local actions = require "fzf-lua.actions"
 local win = require "fzf-lua.win"
 local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
-local devicons = require "fzf-lua.devicons"
 local make_entry = require "fzf-lua.make_entry"
 local base64 = require "fzf-lua.lib.base64"
 local serpent = require "fzf-lua.lib.serpent"
@@ -1416,12 +1415,12 @@ end
 -- query placeholder for "live" queries
 M.fzf_query_placeholder = "<query>"
 
----@param opts {_is_skim: boolean}
+---@param opts {field_index: boolean, _is_skim: boolean}
 ---@return string
 M.fzf_field_expression = function(opts)
   -- fzf already adds single quotes around the placeholder when expanding.
   -- for skim we surround it with double quotes or single quote searches fail
-  return opts and opts._is_skim and [["{}"]] or "{q}"
+  return opts and opts.field_index or opts._is_skim and [["{}"]] or "{q}"
 end
 
 -- Sets up the flags and commands required for running a "live" interface
