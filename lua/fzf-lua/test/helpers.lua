@@ -338,13 +338,13 @@ M.new_set_with_child = function(child, opts, setup_opts)
         if opts.hooks.post_case then
           opts.hooks.post_case()
         end
-        child.unload()
+        pcall(child.unload) -- job may already die
       end,
       post_once = function()
         if opts.hooks.post_once then
           opts.hooks.post_once()
         end
-        child.stop()
+        pcall(child.stop) -- job may already die
       end,
     },
     -- n_retry = helpers.get_n_retry(2),
