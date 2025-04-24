@@ -96,6 +96,27 @@ T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
   end)
   child.type_keys("<c-j>")
   child.type_keys("<c-j>")
+
+  -- `:quit` on other window should not kill fzf job #2011
+  child.lua([[FzfLua.hide()]])
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+  end)
+  child.cmd([[new]])
+  child.cmd([[quit]])
+  child.lua([[FzfLua.unhide()]])
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_lua_on_create]]) == true
+  end)
+  child.lua([[FzfLua.hide()]])
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+  end)
+
+  -- can :wqa when there're hide job #1817
+  pcall(child.cmd, [[wqa]])
+  -- child.is_running() didn't work as expected
+  eq(vim.fn.jobwait({ child.job.id }, 1000)[1], 0)
 end
 
 T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()

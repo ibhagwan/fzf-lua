@@ -42,7 +42,7 @@ do
 
   -- Workaround for using `:wqa` with "hide"
   -- https://github.com/neovim/neovim/issues/14061
-  vim.api.nvim_create_autocmd("QuitPre", {
+  vim.api.nvim_create_autocmd("ExitPre", {
     group = vim.api.nvim_create_augroup("FzfLuaNvimQuit", { clear = true }),
     callback = function()
       local win = utils.fzf_winobj()
