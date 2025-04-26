@@ -1249,11 +1249,24 @@ function Previewer.help_tags:parse_entry(entry_str)
     return {}
   end
   local vimdoc = entry_str:match(string.format("[^%s]+$", utils.nbsp))
+  local hregex = (function()
+    -- lazy.nvim can generate helptags from markdown
+    -- https://github.com/folke/lazy.nvim/blob/56a34a825b55e0e30cd9df0e055e428a13afd4aa/lua/lazy/help.lua#L35
+    if package.loaded.lazy and vimdoc:match("%.md$") then
+      local tagfile = path.join({ path.parent(vimdoc), "tags" })
+      if uv.fs_stat(tagfile) then
+        for line in io.lines(tagfile) do
+          local res = line:match("^" .. vim.pesc(tag) .. "\t[^\t]+\t/(.*)")
+          if res then return res end
+        end
+      end
+    end
+    return ([[\V*%s*]]):format(tag:gsub([[\]], [[\\]]))
+  end)()
   return {
     htag = tag,
-    hregex = ([[\V*%s*]]):format(tag:gsub([[\]], [[\\]])),
+    hregex = hregex,
     path = vimdoc,
-    filetype = "help",
   }
 end
 
