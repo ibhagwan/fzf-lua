@@ -448,6 +448,7 @@ M.arg_del = function(selected, opts)
 end
 
 M.colorscheme = function(selected, opts)
+  if #selected == 0 then return end
   local dbkey, idx = selected[1]:match("^(.-):(%d+):")
   if dbkey then
     opts._apply_awesome_theme(dbkey, idx, opts)
@@ -482,11 +483,13 @@ M.toggle_bg = function(_, _)
 end
 
 M.run_builtin = function(selected)
+  if #selected == 0 then return end
   local method = selected[1]
   pcall(loadstring(string.format("require'fzf-lua'.%s()", method)))
 end
 
 M.ex_run = function(selected)
+  if #selected == 0 then return end
   local cmd = selected[1]
   vim.cmd("stopinsert")
   vim.fn.feedkeys(string.format(":%s", cmd), "n")
@@ -494,18 +497,21 @@ M.ex_run = function(selected)
 end
 
 M.ex_run_cr = function(selected)
+  if #selected == 0 then return end
   local cmd = selected[1]
   vim.cmd(cmd)
   vim.fn.histadd("cmd", cmd)
 end
 
 M.exec_menu = function(selected)
+  if #selected == 0 then return end
   local cmd = selected[1]
   vim.cmd("emenu " .. cmd)
 end
 
 
 M.search = function(selected, opts)
+  if #selected == 0 then return end
   local query = selected[1]
   vim.cmd("stopinsert")
   vim.fn.feedkeys(
@@ -519,6 +525,7 @@ M.search_cr = function(selected, opts)
 end
 
 M.goto_mark = function(selected)
+  if #selected == 0 then return end
   local mark = selected[1]
   mark = mark:match("[^ ]+")
   vim.cmd("stopinsert")
@@ -540,6 +547,7 @@ M.mark_del = function(selected)
 end
 
 M.goto_jump = function(selected, opts)
+  if #selected == 0 then return end
   if opts.jump_using_norm then
     local jump, _, _, _ = selected[1]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
     if tonumber(jump) then
@@ -564,6 +572,7 @@ M.goto_jump = function(selected, opts)
 end
 
 M.keymap_apply = function(selected)
+  if #selected == 0 then return end
   -- extract lhs in the keymap. The lhs can't contain a whitespace.
   local key = selected[1]:match("[│]%s+([^%s]*)%s+[│]")
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), "t", true)
@@ -672,14 +681,17 @@ local function helptags(s, opts)
 end
 
 M.help = function(selected, opts)
+  if #selected == 0 then return end
   vim.cmd("help " .. helptags(selected, opts)[1])
 end
 
 M.help_vert = function(selected, opts)
+  if #selected == 0 then return end
   vim.cmd("vert help " .. helptags(selected, opts)[1])
 end
 
 M.help_tab = function(selected, opts)
+  if #selected == 0 then return end
   -- vim.cmd("tab help " .. helptags(selected, opts)[1])
   vim.cmd("tabnew | setlocal bufhidden=wipe | help " .. helptags(selected, opts)[1] .. " | only")
 end
@@ -689,14 +701,17 @@ local function mantags(s)
 end
 
 M.man = function(selected)
+  if #selected == 0 then return end
   vim.cmd("Man " .. mantags(selected)[1])
 end
 
 M.man_vert = function(selected)
+  if #selected == 0 then return end
   vim.cmd("vert Man " .. mantags(selected)[1])
 end
 
 M.man_tab = function(selected)
+  if #selected == 0 then return end
   -- vim.cmd("tab Man " .. mantags(selected)[1])
   vim.cmd("tabnew | setlocal bufhidden=wipe | Man " .. mantags(selected)[1] .. " | only")
 end
@@ -751,6 +766,7 @@ M.git_branch_add = function(selected, opts)
 end
 
 M.git_branch_del = function(selected, opts)
+  if #selected == 0 then return end
   local cmd_del_branch = path.git_cwd(opts.cmd_del, opts)
   local cmd_cur_branch = path.git_cwd({ "git", "rev-parse", "--abbrev-ref", "HEAD" }, opts)
   local branch = selected[1]:match("[^%s%*]+")
@@ -781,19 +797,17 @@ end
 M.git_yank_commit = function(selected, opts)
   if not selected[1] then return end
   local commit_hash = match_commit_hash(selected[1], opts)
-  local reg
-  if vim.o.clipboard == "unnamed" then
-    reg = [[*]]
-  elseif vim.o.clipboard == "unnamedplus" then
-    reg = [[+]]
-  else
-    reg = [["]]
-  end
+  local regs, cb = {}, vim.o.clipboard
+  if cb:match("unnamed") then regs[#regs + 1] = [[*]] end
+  if cb:match("unnamedplus") then regs[#regs + 1] = [[+]] end
+  if #regs == 0 then regs[regs + 1] = [["]] end
   -- copy to the yank register regardless
-  vim.fn.setreg(reg, commit_hash)
+  for _, reg in ipairs(regs) do
+    vim.fn.setreg(reg, commit_hash)
+  end
   vim.fn.setreg([[0]], commit_hash)
   utils.info(string.format("commit hash %s copied to register %s, use 'p' to paste.",
-    commit_hash, reg))
+    commit_hash, regs[1]))
 end
 
 M.git_checkout = function(selected, opts)
@@ -899,6 +913,7 @@ M.git_stash_apply = function(selected, opts)
 end
 
 M.git_buf_edit = function(selected, opts)
+  if #selected == 0 then return end
   local cmd = path.git_cwd({ "git", "show" }, opts)
   local git_root = path.git_root(opts, true)
   local win = vim.api.nvim_get_current_win()
@@ -934,6 +949,7 @@ M.git_buf_vsplit = function(selected, opts)
 end
 
 M.git_goto_line = function(selected, _)
+  if #selected == 0 then return end
   local line = selected[1] and selected[1]:match("^.-(%d+)%)")
   if tonumber(line) then
     vim.api.nvim_win_set_cursor(0, { tonumber(line), 0 })
@@ -990,6 +1006,7 @@ M.toggle_follow = function(_, opts)
 end
 
 M.tmux_buf_set_reg = function(selected, opts)
+  if #selected == 0 then return end
   local buf = selected[1]:match("^%[(.-)%]")
   local data, rc = utils.io_system({ "tmux", "show-buffer", "-b", buf })
   if rc == 0 and data and #data > 0 then
@@ -1005,6 +1022,7 @@ M.tmux_buf_set_reg = function(selected, opts)
 end
 
 M.paste_register = function(selected)
+  if #selected == 0 then return end
   local reg = selected[1]:match("%[(.-)%]")
   local ok, data = pcall(vim.fn.getreg, reg)
   if ok and #data > 0 then
@@ -1013,6 +1031,7 @@ M.paste_register = function(selected)
 end
 
 M.set_qflist = function(selected, opts)
+  if #selected == 0 then return end
   local nr = selected[1]:match("[(%d+)]")
   vim.cmd(string.format("%d%s", tonumber(nr),
     opts._is_loclist and "lhistory" or "chistory"))
@@ -1022,6 +1041,7 @@ end
 ---@param selected string[]
 ---@param opts table
 M.apply_profile = function(selected, opts)
+  if #selected == 0 then return end
   local entry = path.entry_to_file(selected[1])
   local fname = entry.path
   local profile = entry.stripped:sub(#fname + 2):match("[^%s]+")
@@ -1081,6 +1101,7 @@ M.dap_bp_del = function(selected, opts)
 end
 
 M.cd = function(selected, opts)
+  if #selected == 0 then return end
   local cwd = selected[1]:match("[^\t]+$") or selected[1]
   if opts.cwd then
     cwd = path.join({ opts.cwd, cwd })
