@@ -84,8 +84,10 @@ function M.check()
   start("fzf-lua [optional]")
   if pcall(require, "nvim-web-devicons") then
     ok("`nvim-web-devicons` found")
+  elseif pcall(require, "mini.icons") then
+    ok("`mini.icons` found")
   else
-    warn("`nvim-web-devicons` not found")
+    warn("`nvim-web-devicons` or `mini.icons` not found")
   end
   for _, tool in ipairs({ "rg", "fd", "fdfind", "bat", "batcat", "delta" }) do
     have(tool, true)
