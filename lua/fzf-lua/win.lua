@@ -89,6 +89,8 @@ function TSInjector._attach_lang(buf, lang, regions)
   parser:set_included_regions(regions)
 end
 
+---@class fzf-lua.Win
+---@field _previewer fzf-lua.previewer.Builtin
 local FzfWin = {}
 
 -- singleton instance used in win_leave
@@ -515,7 +517,8 @@ function FzfWin:reset_win_highlights(win)
       hl = string.format("%s%s:%s", hl and hl .. "," or "", h[1], h[2])
     end
   end
-  vim.wo[win].winhighlight = hl
+  -- set win option is slow with bigfile
+  if vim.wo[win].winhighlight ~= hl then vim.wo[win].winhighlight = hl end
 end
 
 ---@param exit_code integer
@@ -617,9 +620,8 @@ function FzfWin:close_backdrop()
   -- vim.cmd("redraw")
 end
 
----@alias FzfWin table
----@param o table
----@return FzfWin
+---@param o fzf-lua.Config
+---@return fzf-lua.Win
 function FzfWin:new(o)
   if not _self then
   elseif _self:was_hidden() then
@@ -706,7 +708,8 @@ function FzfWin:set_winopts(win, opts, ignore_events)
     vim.o.eventignore = "all"
   end
   for opt, value in pairs(opts) do
-    if utils.nvim_has_option(opt) then
+    -- set win option can be slow
+    if utils.nvim_has_option(opt) and vim.wo[win][opt] ~= value then
       vim.wo[win][opt] = value
     end
   end
@@ -1337,7 +1340,7 @@ function FzfWin.update_win_title(winid, winopts, o)
   if type(o.title) ~= "string" and type(o.title) ~= "table" then
     return
   end
-  vim.api.nvim_win_set_config(winid,
+  utils.fast_win_set_config(winid,
     -- NOTE: although we can set the title without winopts we add these
     -- so we don't fail with "title requires border to be set" on wins
     -- without top border

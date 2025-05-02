@@ -1,0 +1,55 @@
+---@class fzf-lua.previewers
+---@field [string] fzf-lua.previewer.Builtin
+
+---@class fzf-lua.previewer.Builtin
+---@field type "builtin"
+---@field opts table
+---@field win fzf-lua.Win
+---@field delay integer
+---@field title string?
+---@field title_pos string?
+---@field title_fnamemodify fun(title: string, width: integer?): string
+---@field render_markdown table?
+---@field snacks_image table?
+---@field winopts table?
+---@field syntax boolean
+---@field syntax_delay integer
+---@field syntax_limit_b integer
+---@field syntax_limit_l integer
+---@field limit_b integer
+---@field _ts_limit_b_per_line integer
+---@field treesitter table
+---@field toggle_behavior "default"|"extend"
+---@field winopts_orig table
+---@field winblend integer
+---
+---@field cached_buffers { [string]: fzf-lua.buffer_or_file.Bcache? }
+---@field cached_bufnrs { [string]: fzf-lua.previewer.CursorPos? }
+---@field orig_pos fzf-lua.previewer.CursorPos
+---@alias fzf-lua.previewer.CursorPos (true|[integer, integer])
+
+---@class fzf-lua.previewer.BufferOrFile
+---@field match_id integer?
+
+---@class fzf-lua.Config
+---@field [string] any
+
+---@class fzf-lua.path.Entry
+---@field [string] any
+
+---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry, {}
+---@field do_not_cache boolean?
+---@field no_scrollbar boolean?
+---@field buf_is_valid boolean?
+---@field buf_is_loaded boolean?
+---@field tick integer?
+---@field fs_stat uv.fs_stat.result?
+---@field no_syntax boolean?
+---@field cached fzf-lua.buffer_or_file.Bcache?
+
+---@class fzf-lua.buffer_or_file.Bcache
+---@field bufnr integer
+---@field min_winopts boolean?
+---@field invalid boolean? buffer content changed
+---@field invalid_pos boolean? position changed
+---@field tick integer?
