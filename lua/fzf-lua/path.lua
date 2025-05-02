@@ -408,6 +408,10 @@ function M.entry_to_location(entry, opts)
   }
 end
 
+---@param entry string
+---@param opts fzf-lua.Config
+---@param force_uri boolean
+---@return fzf-lua.path.Entry
 function M.entry_to_file(entry, opts, force_uri)
   opts = opts or {}
   if opts._fmt then

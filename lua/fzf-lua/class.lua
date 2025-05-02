@@ -8,7 +8,7 @@
 -- the terms of the MIT license. See LICENSE for details.
 --
 
-
+---@class fzf-lua.Object
 local Object = {}
 Object.__index = Object
 
