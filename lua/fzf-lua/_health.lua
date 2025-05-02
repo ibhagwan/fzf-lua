@@ -82,9 +82,9 @@ function M.check()
   end
 
   start("fzf-lua [optional]")
-  if pcall(require, "nvim-web-devicons") then
+  if package.loaded["nvim-web-devicons"] then
     ok("`nvim-web-devicons` found")
-  elseif pcall(require, "mini.icons") then
+  elseif package.loaded["mini.icons"] then
     ok("`mini.icons` found")
   else
     warn("`nvim-web-devicons` or `mini.icons` not found")
