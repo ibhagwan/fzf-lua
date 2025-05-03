@@ -832,6 +832,9 @@ function M.load_profile_fname(fname, name, silent)
   end
 end
 
+---@param profiles table|string
+---@param silent boolean|integer
+---@return table
 function M.load_profiles(profiles, silent)
   local ret = {}
   local path = require("fzf-lua").path
@@ -1315,6 +1318,7 @@ function M.jump_to_location(location, offset_encoding, reuse_win)
     return vim.lsp.util.show_document(location, offset_encoding,
       { reuse_win = reuse_win, focus = true })
   else
+    ---@diagnostic disable-next-line: deprecated
     return vim.lsp.util.jump_to_location(location, offset_encoding, reuse_win)
   end
 end
@@ -1333,6 +1337,7 @@ function M.termopen(cmd, opts)
     opts.term = true
     return vim.fn.jobstart(cmd, opts)
   else
+    ---@diagnostic disable-next-line: deprecated
     return vim.fn.termopen(cmd, opts)
   end
 end

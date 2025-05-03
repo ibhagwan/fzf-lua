@@ -155,7 +155,7 @@ function M.normalize_opts(opts, globals, __resume_key)
       return picker_opts.profile or picker_opts[1]
     end
   end)()
-  if profile then
+  if type(profile) == "table" or type(profile) == "string" then
     -- TODO: we should probably cache the profiles
     M._profile_opts = utils.load_profiles(profile, 1)
   end
