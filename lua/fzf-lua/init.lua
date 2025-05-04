@@ -221,6 +221,7 @@ do
     tags_live_grep = { "fzf-lua.providers.tags", "live_grep" },
     git_files = { "fzf-lua.providers.git", "files" },
     git_status = { "fzf-lua.providers.git", "status" },
+    git_diff = { "fzf-lua.providers.git", "diff" },
     git_stash = { "fzf-lua.providers.git", "stash" },
     git_commits = { "fzf-lua.providers.git", "commits" },
     git_bcommits = { "fzf-lua.providers.git", "bcommits" },
