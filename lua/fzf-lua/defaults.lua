@@ -395,6 +395,17 @@ M.defaults.git                  = {
       -- ["ctrl-s"] = { actions.git_stage_unstage, actions.resume },
     },
   },
+  diff = {
+    branch            = "HEAD",
+    multiprocess      = true,
+    preview_pager     = M._preview_pager_fn,
+    file_icons        = 1,
+    color_icons       = true,
+    fzf_opts          = { ["--multi"] = true },
+    _fzf_nth_devicons = true,
+    _actions          = function() return M.globals.actions.files end,
+    actions           = {},
+  },
   commits = {
     cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
         .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
