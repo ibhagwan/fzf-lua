@@ -459,7 +459,7 @@ end
 M.get_devicon = function(filepath, extensionOverride)
   local STATE = M.state()
   if not STATE or not STATE.icons then
-    return unpack({ "", nil })
+    return "", nil
   end
 
   local function validate_hl(col)

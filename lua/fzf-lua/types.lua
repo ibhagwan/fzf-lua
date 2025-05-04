@@ -1,5 +1,5 @@
----@class fzf-lua.previewers
----@field [string] fzf-lua.previewer.Builtin
+---@class fzf-lua.Config
+---@field [string] any
 
 ---@class fzf-lua.previewer.Builtin
 ---@field type "builtin"
@@ -22,17 +22,18 @@
 ---@field toggle_behavior "default"|"extend"
 ---@field winopts_orig table
 ---@field winblend integer
----
----@field cached_buffers { [string]: fzf-lua.buffer_or_file.Bcache? }
+---@field extensions { [string]: string[]? }
+---@field ueberzug_scaler "crop"|"distort"|"contain"|"fit_contain"|"cover"|"forced_cover"
 ---@field cached_bufnrs { [string]: fzf-lua.previewer.CursorPos? }
+---@field cached_buffers { [string]: fzf-lua.buffer_or_file.Bcache? }
+---@field listed_buffers { [string]: boolean? }
+---
 ---@field orig_pos fzf-lua.previewer.CursorPos
 ---@alias fzf-lua.previewer.CursorPos (true|[integer, integer])
 
 ---@class fzf-lua.previewer.BufferOrFile
 ---@field match_id integer?
-
----@class fzf-lua.Config
----@field [string] any
+---@field clear_on_redraw boolean?
 
 ---@class fzf-lua.path.Entry
 ---@field [string] any
