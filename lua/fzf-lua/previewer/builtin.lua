@@ -11,6 +11,7 @@ local fn = vim.fn
 
 local TSContext = {}
 
+---@param opts? TSContext.UserConfig
 function TSContext.setup(opts)
   if TSContext._setup then return true end
   if not package.loaded["treesitter-context"] then
@@ -46,20 +47,21 @@ function TSContext.deregister()
   TSContext._setup = nil
 end
 
+---@param winid integer
 function TSContext.is_attached(winid)
   if not TSContext._setup then return false end
   return TSContext._winids[tostring(winid)]
 end
 
----@param winid number
+---@param winid integer
 function TSContext.close(winid)
   if not TSContext._setup then return end
   require("treesitter-context.render").close(tonumber(winid))
   TSContext._winids[tostring(winid)] = nil
 end
 
----@param winid number
----@param bufnr number
+---@param winid integer
+---@param bufnr integer
 function TSContext.toggle(winid, bufnr)
   if not TSContext._setup then return end
   if TSContext.is_attached(winid) then
@@ -82,8 +84,8 @@ function TSContext.inc_dec_maxlines(num, winid, bufnr)
   end
 end
 
----@param winid number
----@param bufnr number
+---@param winid integer
+---@param bufnr integer
 ---@param opts? { setup_opts: table, zindex: integer }
 function TSContext.update(winid, bufnr, opts)
   opts = opts or {}
@@ -204,6 +206,7 @@ function Previewer.base:new(o, opts, fzf_win)
   return self
 end
 
+---@param do_not_clear_cache boolean?
 function Previewer.base:close(do_not_clear_cache)
   TSContext.deregister()
   self:restore_winopts()
@@ -247,6 +250,8 @@ function Previewer.base:get_tmp_buffer()
   return tmp_buf
 end
 
+---@param bufnr integer
+---@param del_cached boolean?
 function Previewer.base:safe_buf_delete(bufnr, del_cached)
   -- can be nil after closing preview with <F4>
   if not bufnr then return end
@@ -271,6 +276,8 @@ function Previewer.base:safe_buf_delete(bufnr, del_cached)
   vim.api.nvim_buf_delete(bufnr, { force = true })
 end
 
+---@param newbuf integer
+---@param min_winopts boolean?
 function Previewer.base:set_preview_buf(newbuf, min_winopts)
   if not self.win or not self.win:validate_preview() then return end
   -- Set the preview window to the new buffer
@@ -337,6 +344,7 @@ function Previewer.base:clear_cached_buffers()
   self.cached_buffers = {}
 end
 
+---@param newbuf boolean
 function Previewer.base:clear_preview_buf(newbuf)
   local retbuf = nil
   if ((self.win and self.win._reuse) or newbuf)
@@ -476,6 +484,7 @@ function Previewer.base:preview_window(_)
   end
 end
 
+---@param direction '"top"'|'"bottom"'|'"half-page-up"'|'"half-page-down"'|'"page-up"'|'"page-down"'|'"line-up"'|'"line-down"'|'"reset"'
 function Previewer.base:scroll(direction)
   local preview_winid = self.win.preview_winid
   if not self.preview_bufnr or preview_winid < 0 or not direction then return end
@@ -1297,6 +1306,8 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
   end
 end
 
+---@class fzf-lua.previewer.HelpTags : fzf-lua.previewer.BufferOrFile,{}
+---@field super fzf-lua.previewer.BufferOrFile
 Previewer.help_tags = Previewer.buffer_or_file:extend()
 
 function Previewer.help_tags:new(o, opts, fzf_win)
@@ -1354,6 +1365,8 @@ function Previewer.help_tags:set_cursor_hl(entry)
   end)
 end
 
+---@class fzf-lua.previewer.ManPages : fzf-lua.previewer.Builtin,{}
+---@field super fzf-lua.previewer.Builtin,{}
 Previewer.man_pages = Previewer.base:extend()
 
 function Previewer.man_pages:should_clear_preview(_)
@@ -1394,6 +1407,8 @@ function Previewer.man_pages:populate_preview_buf(entry_str)
   self.win:update_preview_scrollbar()
 end
 
+---@class fzf-lua.previewer.Marks : fzf-lua.previewer.BufferOrFile,{}
+---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.marks = Previewer.buffer_or_file:extend()
 
 function Previewer.marks:new(o, opts, fzf_win)
@@ -1435,6 +1450,8 @@ function Previewer.marks:parse_entry(entry_str)
   }
 end
 
+---@class fzf-lua.previewer.Jumps : fzf-lua.previewer.BufferOrFile,{}
+---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.jumps = Previewer.buffer_or_file:extend()
 
 function Previewer.jumps:new(o, opts, fzf_win)
@@ -1465,6 +1482,8 @@ function Previewer.jumps:parse_entry(entry_str)
   }
 end
 
+---@class fzf-lua.previewer.Tags : fzf-lua.previewer.BufferOrFile,{}
+---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.tags = Previewer.buffer_or_file:extend()
 
 function Previewer.tags:new(o, opts, fzf_win)
@@ -1492,6 +1511,8 @@ function Previewer.tags:set_cursor_hl(entry)
   end)
 end
 
+---@class fzf-lua.previewer.Hightlights : fzf-lua.previewer.Builtin,{}
+---@field super fzf-lua.previewer.Builtin,{}
 Previewer.highlights = Previewer.base:extend()
 
 function Previewer.highlights:should_clear_preview(_)
@@ -1539,12 +1560,18 @@ function Previewer.highlights:populate_preview_buf(entry_str)
     self.tmpbuf = api.nvim_create_buf(false, true)
     self.listed_buffers[tostring(self.tmpbuf)] = true
 
+    pcall(vim.api.nvim_buf_clear_namespace, self.tmpbuf, self.ns_previewer, 0, -1)
     vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, hl_groups)
     for k, v in ipairs(hl_groups) do
       local startPos = string.find(v, "xxx", 1, true) - 1
       local endPos = startPos + 3
       local hlgroup = string.match(v, "([^ ]*)%s+.*")
-      pcall(vim.api.nvim_buf_add_highlight, self.tmpbuf, 0, hlgroup, k - 1, startPos, endPos)
+      vim.api.nvim_buf_set_extmark(self.tmpbuf, self.ns_previewer, k - 1, startPos, {
+        end_line = k - 1,
+        end_col = endPos,
+        hl_group = hlgroup,
+        hl_mode = "combine",
+      })
     end
   end
 
@@ -1554,7 +1581,6 @@ function Previewer.highlights:populate_preview_buf(entry_str)
   end
 
   local selected_hl = "^" .. utils.strip_ansi_coloring(entry_str) .. "\\>"
-  pcall(vim.api.nvim_buf_clear_namespace, self.tmpbuf, self.ns_previewer, 0, -1)
   pcall(api.nvim_win_call, self.win.preview_winid, function()
     -- start searching at line 1 in case we
     -- didn't reload the buffer (same file)
@@ -1570,6 +1596,8 @@ function Previewer.highlights:populate_preview_buf(entry_str)
   self.win:update_preview_scrollbar()
 end
 
+---@class fzf-lua.previewer.Quickfix : fzf-lua.previewer.Builtin,{}
+---@field super fzf-lua.previewer.Builtin,{}
 Previewer.quickfix = Previewer.base:extend()
 
 function Previewer.quickfix:should_clear_preview(_)
@@ -1622,6 +1650,8 @@ function Previewer.quickfix:populate_preview_buf(entry_str)
   self.win:update_preview_scrollbar()
 end
 
+---@class fzf-lua.previewer.Autocmds : fzf-lua.previewer.BufferOrFile,{}
+---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.autocmds = Previewer.buffer_or_file:extend()
 
 function Previewer.autocmds:new(o, opts, fzf_win)
@@ -1662,6 +1692,8 @@ function Previewer.autocmds:populate_preview_buf(entry_str)
   end
 end
 
+---@class fzf-lua.previewer.Keymaps : fzf-lua.previewer.BufferOrFile,{}
+---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.keymaps = Previewer.buffer_or_file:extend()
 
 function Previewer.autocmds:keymaps(o, opts, fzf_win)
@@ -1694,6 +1726,8 @@ function Previewer.keymaps:populate_preview_buf(entry_str)
   Previewer.autocmds.super.populate_preview_buf(self, entry_str)
 end
 
+---@class fzf-lua.previewer.NvimOptions : fzf-lua.previewer.Builtin,{}
+---@field super fzf-lua.previewer.Builtin,{}
 Previewer.nvim_options = Previewer.base:extend()
 
 function Previewer.nvim_options:new(o, opts, fzf_win)

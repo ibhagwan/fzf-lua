@@ -317,7 +317,7 @@ M.CTX = function(opts)
 end
 
 ---@param contents content
----@param opts table?
+---@param opts {}?
 ---@return string[]?
 M.fzf = function(contents, opts)
   -- Disable opening from the command-line window `:q`
@@ -368,8 +368,7 @@ M.fzf = function(contents, opts)
     opts.fn_pre_win(opts)
   end
   -- setup the fzf window and preview layout
-  local fzf_win = win(opts)
-  if not fzf_win then return end
+  local fzf_win = win:new(opts)
   -- instantiate the previewer
   local previewer, preview_opts = nil, nil
   if opts.previewer and type(opts.previewer) == "string" then

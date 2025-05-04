@@ -56,7 +56,7 @@ function TSInjector.clear_cache(buf)
   assert(utils.tbl_isempty(TSInjector.cache))
 end
 
----@param buf number
+---@param buf integer
 function TSInjector.attach(buf, regions)
   if not TSInjector.setup() then return end
 
@@ -70,7 +70,7 @@ function TSInjector.attach(buf, regions)
   end
 end
 
----@param buf number
+---@param buf integer
 ---@param lang? string
 function TSInjector._attach_lang(buf, lang, regions)
   if not TSInjector.cache[buf][lang] then
@@ -90,7 +90,8 @@ function TSInjector._attach_lang(buf, lang, regions)
 end
 
 ---@class fzf-lua.Win
----@field _previewer fzf-lua.previewer.Builtin
+---@field _previewer fzf-lua.previewer.Builtin|fzf-lua.previewer.BufferOrFile?
+---@field _preview_pos_force "up"|"down"
 local FzfWin = {}
 
 -- singleton instance used in win_leave
@@ -99,12 +100,6 @@ local _self = nil
 function FzfWin.__SELF()
   return _self
 end
-
-setmetatable(FzfWin, {
-  __call = function(cls, ...)
-    return cls:new(...)
-  end,
-})
 
 local _preview_keymaps = {
   ["toggle-preview"]         = { module = "win", fnc = "toggle_preview()" },
@@ -505,6 +500,7 @@ function FzfWin:normalize_winopts(fullscreen)
   return winopts
 end
 
+---@param win integer
 function FzfWin:reset_win_highlights(win)
   -- derive the highlights from the window type
   local key = "main"
@@ -718,6 +714,7 @@ function FzfWin:set_winopts(win, opts, ignore_events)
   end
 end
 
+---@param previewer fzf-lua.previewer.Builtin
 function FzfWin:attach_previewer(previewer)
   -- clear the previous previewer if existed
   if self._previewer and self._previewer.close then
@@ -730,11 +727,8 @@ function FzfWin:attach_previewer(previewer)
     end
     self._previewer:close()
   end
-  if self._previewer and self._previewer.win_leave then
-    self._previewer:win_leave()
-  end
   self._previewer = previewer
-  self.previewer_is_builtin = previewer and type(previewer.display_entry) == "function"
+  self.previewer_is_builtin = previewer and previewer.type == "builtin"
 end
 
 function FzfWin:validate_preview()
@@ -1169,10 +1163,6 @@ end
 
 function FzfWin.win_leave()
   local self = _self
-  if not self then return end
-  if self._previewer and self._previewer.win_leave then
-    self._previewer:win_leave()
-  end
   if not self or self.closing then return end
   self:close()
 end
@@ -1336,6 +1326,9 @@ function FzfWin:update_preview_scrollbar()
   end
 end
 
+---@param winid integer
+---@param winopts table
+---@param o table
 function FzfWin.update_win_title(winid, winopts, o)
   if type(o.title) ~= "string" and type(o.title) ~= "table" then
     return
@@ -1465,6 +1458,7 @@ function FzfWin.preview_ts_ctx_inc_dec(num)
   end
 end
 
+---@param direction "top"|"bottom"|"half-page-up"|"half-page-down"|"page-up"|"page-down"|"line-up"|"line-down"|"reset"
 function FzfWin.preview_scroll(direction)
   if not _self then return end
   local self = _self
