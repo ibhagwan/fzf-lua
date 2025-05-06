@@ -876,6 +876,26 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
+  if opts.line_query and not utils.has(opts, "fzf", { 0, 59 }) then
+    utils.warn("'line_query' requires fzf >= 0.59, ignoring.")
+  elseif opts.line_query then
+    utils.map_set(opts, "winopts.preview.winopts.cursorline", true)
+    utils.map_set(opts, "keymap.fzf.change",
+      "transform-search:" .. FzfLua.shell.raw_action(function(q, _, _)
+        q = q[1]:gsub(":%d*$", "")
+        return q
+      end, "{q}", opts.debug))
+    utils.map_set(opts, "keymap.fzf.result",
+      "execute-silent:" .. FzfLua.shell.raw_action(function(items, _, _)
+        local lnum = items[1]:match(":%d+$")
+        local win = lnum and FzfLua.win.__SELF()
+        if win and win.previewer then
+          local entry = items[2] .. lnum
+          win._previewer:display_entry(entry)
+        end
+      end, "{q} {}", opts.debug))
+  end
+
   if type(opts.enrich) == "function" then
     opts = opts.enrich(opts)
   end
