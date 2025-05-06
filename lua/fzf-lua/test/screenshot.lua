@@ -2,6 +2,13 @@
 -- Used to compare screenshots without "attrs" (highlights)
 local M = {}
 
+---@diagnostic disable: undefined-field, undefined-global
+
+local MiniTest = require("mini.test")
+
+-- get helper module from upvalues
+local _, H = debug.getupvalue(MiniTest.expect.reference_screenshot, 1)
+
 ---@class MiniTestScreenshot
 
 --- copied over from mini.test
@@ -28,7 +35,7 @@ local function screenshot_new(t)
 
   return setmetatable(t, {
     __tostring = function(x)
-      return string.format("%s\n\n%s", process_screen(x.text), process_screen(x.attr))
+      return string.format("%s", process_screen(x.text))
     end,
   })
 end
@@ -61,7 +68,7 @@ function M.from_lines(text_lines, attr_lines, opts)
   local f = function(x)
     return string_to_chars(x)
   end
-  return screenshot_new({ text = vim.tbl_map(f, text_lines), attr = vim.tbl_map(f, attr_linez) })
+  return screenshot_new({ text = vim.tbl_map(f, text_lines) })
 end
 
 function M.fromChildBufLines(child, buf, opts)
@@ -84,6 +91,103 @@ function M.fromChildScreen(child, opts)
       return lines
     ]])
   return M.from_lines(lines, {}, opts)
+end
+
+-- modified version expect path has no attr
+local screenshot_read = function(path)
+  local lines = vim.fn.readfile(path)
+  local text_lines = vim.list_slice(lines, 2, #lines)
+
+  local f = function(x) return H.string_to_chars(x:gsub("^%d+|", "")) end
+  return screenshot_new({ text = vim.tbl_map(f, text_lines) })
+end
+
+
+-- modified version expect path has no attr
+local screenshot_compare = function(screen_ref, screen_obs, opts)
+  local compare = function(x, y, desc)
+    if x ~= y then
+      return false,
+          ("Different %s. Reference: %s. Observed: %s."):format(desc, vim.inspect(x), vim.inspect(y))
+    end
+    return true, ""
+  end
+
+  --stylua: ignore start
+  local ok, cause
+  ok, cause = compare(#screen_ref.text, #screen_obs.text, "number of `text` lines")
+  if not ok then return ok, cause end
+
+  local lines_to_check, ignore_lines = {}, opts.ignore_lines
+  for i = 1, #screen_ref.text do
+    if not vim.tbl_contains(ignore_lines, i) then table.insert(lines_to_check, i) end
+  end
+
+  for _, i in ipairs(lines_to_check) do
+    ok, cause = compare(#screen_ref.text[i], #screen_obs.text[i],
+      "number of columns in `text` line " .. i)
+    if not ok then return ok, cause end
+
+    for j = 1, #screen_ref.text[i] do
+      ok, cause = compare(screen_ref.text[i][j], screen_obs.text[i][j],
+        string.format("`text` cell at line %s column %s", i, j))
+      if not ok then return ok, cause end
+    end
+  end
+  --stylua: ignore end
+
+  return true, ""
+end
+
+M.reference_screenshot = function(screenshot, path, opts)
+  if screenshot == nil then return true end
+
+  opts = vim.tbl_extend("force",
+    { force = false, ignore_lines = {}, directory = "tests/screenshots" }, opts or {})
+
+  H.cache.n_screenshots = H.cache.n_screenshots + 1
+
+  if path == nil then
+    -- Sanitize path. Replace any control characters, whitespace, OS specific
+    -- forbidden characters with '-' (with some useful exception)
+    local linux_forbidden = [[/]]
+    local windows_forbidden = [[<>:"/\|?*]]
+    local pattern = string.format("[%%c%%s%s%s]", vim.pesc(linux_forbidden),
+      vim.pesc(windows_forbidden))
+    local replacements = setmetatable({ ['"'] = "'" }, { __index = function() return "-" end })
+    local name = H.case_to_stringid(MiniTest.current.case):gsub(pattern, replacements)
+
+    -- Don't end with whitespace or dot (forbidden on Windows)
+    name = name:gsub("[%s%.]$", "-")
+
+    -- TODO: remove `:gsub()` after compatibility with Neovim=0.8 is dropped
+    path = vim.fs.normalize(opts.directory):gsub("/$", "") .. "/" .. name
+
+    -- Deal with multiple screenshots
+    if H.cache.n_screenshots > 1 then path = path .. string.format("-%03d", H.cache.n_screenshots) end
+  end
+
+  -- If there is no readable screenshot file, create it. Pass with note.
+  if opts.force or vim.fn.filereadable(path) == 0 then
+    local dir_path = vim.fn.fnamemodify(path, ":p:h")
+    vim.fn.mkdir(dir_path, "p")
+    H.screenshot_write(screenshot, path)
+
+    MiniTest.add_note("Created reference screenshot at path " .. vim.inspect(path))
+    return true
+  end
+
+  local reference = screenshot_read(path)
+
+  -- Compare
+  local are_same, cause = screenshot_compare(reference, screenshot, opts)
+
+  if are_same then return true end
+
+  local subject = "screenshot equality to reference at " .. vim.inspect(path)
+  local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause, tostring(reference),
+    tostring(screenshot))
+  H.error_expect(subject, context)
 end
 
 return M

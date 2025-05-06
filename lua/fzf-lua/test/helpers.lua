@@ -251,7 +251,7 @@ M.new_child_neovim = function()
     local screenshot_opts = { redraw = opts.redraw, normalize_paths = opts.normalize_paths }
     opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
-    MiniTest.expect.reference_screenshot(child.get_screen_lines(screenshot_opts), path, opts)
+    screenshot.reference_screenshot(child.get_screen_lines(screenshot_opts), path, opts)
   end
 
   child.get_buf_lines = function(buf, opts)
@@ -263,7 +263,7 @@ M.new_child_neovim = function()
     local screenshot_opts = { redraw = opts.redraw, normalize_paths = opts.normalize_paths }
     opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
-    MiniTest.expect.reference_screenshot(child.get_buf_lines(buf, screenshot_opts), path, opts)
+    screenshot.reference_screenshot(child.get_buf_lines(buf, screenshot_opts), path, opts)
   end
 
   local wait_timeout = (M.IS_LINUX() and 2000 or 5000)
