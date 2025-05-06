@@ -222,6 +222,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       vim.keymap.set("t", "<C-c>", "<Esc>", { buffer = 0 })
     end
 
+    vim.api.nvim_create_autocmd("TermOpen", { once = true, buffer = 0, command = "startinsert" })
     -- A more robust way of entering TERMINAL mode "t". We had quite a few issues
     -- sending `feedkeys|startinsert` after the term job is started, this approach
     -- seems more consistent as it triggers when entering terminal normal mode "nt"
@@ -333,14 +334,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- fzf-tmux spawns outside neovim, don't set filetype/insert mode
   if not opts.is_fzf_tmux then
     vim.bo.filetype = "fzf"
-
     -- See note in "ModeChanged" above
-    if vim.api.nvim_get_mode().mode == "t" then
-      -- Called from another fzf-win most likely
-      utils.feed_keys_termcodes("i")
-    else
-      vim.cmd [[startinsert]]
-    end
+    -- utils.ensure_startinsert()
   end
 
   return coroutine.yield()
