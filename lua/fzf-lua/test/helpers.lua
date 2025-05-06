@@ -241,6 +241,9 @@ M.new_child_neovim = function()
     MiniTest.expect.reference_screenshot(child.get_screenshot(screenshot_opts), path, opts)
   end
 
+  ---@alias test.ScreenOpts { start_line: integer?, end_line: integer?, no_ruler: boolean?,
+  ---normalize_paths: boolean?, redraw: boolean? }
+  ---@param opts test.ScreenOpts
   child.get_screen_lines = function(opts)
     return screenshot.fromChildScreen(child, opts)
   end
@@ -248,22 +251,50 @@ M.new_child_neovim = function()
   -- Expect screenshot without the "attrs" (highlights)
   child.expect_screen_lines = function(opts, path)
     opts = opts or {}
-    local screenshot_opts = { redraw = opts.redraw, normalize_paths = opts.normalize_paths }
+    ---@type test.ScreenOpts
+    local screenshot_opts = {
+      redraw = opts.redraw,
+      normalize_paths = opts.normalize_paths,
+      start_line = opts.start_line,
+      end_line = opts.end_line,
+      no_ruler = opts.no_ruler,
+    }
     opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
     screenshot.reference_screenshot(child.get_screen_lines(screenshot_opts), path, opts)
   end
 
+  ---@param opts test.ScreenOpts
   child.get_buf_lines = function(buf, opts)
     return screenshot.fromChildBufLines(child, buf, opts)
   end
 
   child.expect_buflines = function(buf, opts, path)
     opts = opts or {}
-    local screenshot_opts = { redraw = opts.redraw, normalize_paths = opts.normalize_paths }
+    ---@type test.ScreenOpts
+    local screenshot_opts = {
+      redraw = opts.redraw,
+      normalize_paths = opts.normalize_paths,
+      start_line = opts.start_line,
+      end_line = opts.end_line,
+      no_ruler = opts.no_ruler,
+    }
     opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
     screenshot.reference_screenshot(child.get_buf_lines(buf, screenshot_opts), path, opts)
+  end
+
+  ---@param str string
+  ---@param opts test.ScreenOpts
+  child.assert_screen_lines = function(str, opts)
+    opts = opts or {}
+    -- we don't need this if we compare inline
+    opts.no_ruler = true
+    local lines = str and vim.split(str, "\n") or { "" }
+    if #lines > 1 then lines[#lines] = nil end
+    local screen_ref = screenshot.from_lines(lines, opts)
+    local screen_obs = child.get_screen_lines(opts)
+    screenshot.compare(screen_ref, screen_obs, opts)
   end
 
   local wait_timeout = (M.IS_LINUX() and 2000 or 5000)
