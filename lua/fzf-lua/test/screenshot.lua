@@ -13,8 +13,10 @@ local _, H = debug.getupvalue(MiniTest.expect.reference_screenshot, 1)
 
 --- copied over from mini.test
 ---@param t { text: string[], attr: string[] }
+---@param opts test.ScreenOpts?
 ---@return MiniTestScreenshot
-local function screenshot_new(t)
+local function screenshot_new(t, opts)
+  opts = opts or {}
   local process_screen = function(arr_2d)
     local n_lines, n_cols = #arr_2d, #arr_2d[1]
 
@@ -26,6 +28,9 @@ local function screenshot_new(t)
       table.insert(lines, string.format(format, i, table.concat(arr_2d[i])))
     end
 
+    if opts.no_ruler then
+      return table.concat(lines, "\n")
+    end
     -- Make ruler
     local prefix = string.rep("-", n_digits) .. "|"
     local ruler = prefix .. ("---------|"):rep(math.ceil(0.1 * n_cols)):sub(1, n_cols)
@@ -54,34 +59,36 @@ end
 --- gets a screenshot from given text lines and attrs
 --- note that length of text lines and length of attrs must match
 ---@param text_lines string[]
----@param attr_lines? string[]
+---@param opts test.ScreenOpts?
 ---@return MiniTestScreenshot
-function M.from_lines(text_lines, attr_lines, opts)
+function M.from_lines(text_lines, opts)
+  opts = opts or {}
   if opts and opts.normalize_paths then
     text_lines = vim.tbl_map(function(x) return x:gsub([[\]], [[/]]) end, text_lines)
   end
-  local attr_linez = attr_lines or {}
-  for _ = 1, #text_lines do
-    table.insert(attr_linez, " ")
-  end
-
   local f = function(x)
     return string_to_chars(x)
   end
-  return screenshot_new({ text = vim.tbl_map(f, text_lines) })
+  return screenshot_new({ text = vim.tbl_map(f, text_lines) }, opts)
 end
 
+---@param buf integer
+---@param opts test.ScreenOpts?
 function M.fromChildBufLines(child, buf, opts)
+  opts = opts or {}
   if opts and opts.redraw then child.cmd("redraw") end
-  local lines = child.api.nvim_buf_get_lines(buf or 0, 0, -1, true)
-  return M.from_lines(lines, {}, opts)
+  local lines = child.api.nvim_buf_get_lines(buf or 0, opts.start_line and 0, opts.end_line + 1 or -1,
+    true)
+  return M.from_lines(lines, opts)
 end
 
+---@param opts test.ScreenOpts?
 function M.fromChildScreen(child, opts)
+  opts = opts or {}
   if opts and opts.redraw then child.cmd("redraw") end
-  local lines = child.lua([[
+  local lines = child.lua(([[
       local lines = {}
-      for i = 1, vim.o.lines do
+      for i = %s, %s do
         local line_text = {}
         for j = 1, vim.o.columns do
           table.insert(line_text, vim.fn.screenstring(i, j))
@@ -89,21 +96,21 @@ function M.fromChildScreen(child, opts)
         table.insert(lines, table.concat(line_text))
       end
       return lines
-    ]])
-  return M.from_lines(lines, {}, opts)
+  ]]):format(opts.start_line or 1, opts.end_line or [[vim.o.lines]]))
+  return M.from_lines(lines, opts)
 end
 
--- modified version expect path has no attr
+-- modified version (no attr)
 local screenshot_read = function(path)
   local lines = vim.fn.readfile(path)
   local text_lines = vim.list_slice(lines, 2, #lines)
 
   local f = function(x) return H.string_to_chars(x:gsub("^%d+|", "")) end
-  return screenshot_new({ text = vim.tbl_map(f, text_lines) })
+  return screenshot_new({ text = vim.tbl_map(f, text_lines) }, opts)
 end
 
 
--- modified version expect path has no attr
+-- modified version (no attr)
 local screenshot_compare = function(screen_ref, screen_obs, opts)
   local compare = function(x, y, desc)
     if x ~= y then
@@ -118,18 +125,27 @@ local screenshot_compare = function(screen_ref, screen_obs, opts)
   ok, cause = compare(#screen_ref.text, #screen_obs.text, "number of `text` lines")
   if not ok then return ok, cause end
 
-  local lines_to_check, ignore_lines = {}, opts.ignore_lines
+  local lines_to_check, ignore_lines = {}, opts.ignore_lines or {}
   for i = 1, #screen_ref.text do
     if not vim.tbl_contains(ignore_lines, i) then table.insert(lines_to_check, i) end
   end
 
   for _, i in ipairs(lines_to_check) do
-    ok, cause = compare(#screen_ref.text[i], #screen_obs.text[i],
+    -- ref can have less col
+    ok = #screen_ref.text[i] <= #screen_obs.text[i]
+    _, cause = compare(#screen_ref.text[i], #screen_obs.text[i],
       "number of columns in `text` line " .. i)
     if not ok then return ok, cause end
 
     for j = 1, #screen_ref.text[i] do
       ok, cause = compare(screen_ref.text[i][j], screen_obs.text[i][j],
+        string.format("`text` cell at line %s column %s", i, j))
+      if not ok then return ok, cause end
+    end
+
+    -- auto padding whitespace to screenshots inside lua file?
+    for j = #screen_ref.text[i] + 1, #screen_obs.text[i] do
+      ok, cause = compare(" ", screen_obs.text[i][j],
         string.format("`text` cell at line %s column %s", i, j))
       if not ok then return ok, cause end
     end
@@ -187,6 +203,32 @@ M.reference_screenshot = function(screenshot, path, opts)
   local subject = "screenshot equality to reference at " .. vim.inspect(path)
   local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause, tostring(reference),
     tostring(screenshot))
+  H.error_expect(subject, context)
+end
+
+-- modified version (no attr, trim trailing whitespace)
+M.compare = function(reference, screenshot, opts)
+  opts = opts or {}
+  -- Compare
+  local are_same, cause = screenshot_compare(reference, screenshot, opts)
+
+  -- make ruler if we don't embeded it in screenshot
+  local ruler = ""
+  if opts.no_ruler then
+    local arr_2d = reference.text
+    local n_lines, n_cols = #arr_2d, #arr_2d[1]
+    -- Prepend lines with line number of the form `01|`
+    local n_digits = math.floor(math.log10(n_lines)) + 1
+    local prefix = string.rep("-", n_digits) .. "|"
+    ruler = prefix .. ("---------|"):rep(math.ceil(0.1 * n_cols)):sub(1, n_cols) .. "\n"
+  end
+
+  if are_same then return true end
+
+  local subject = "screenshot equality to reference at " .. vim.inspect(path)
+  local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause,
+    ruler .. tostring(reference),
+    ruler .. tostring(screenshot))
   H.error_expect(subject, context)
 end
 
