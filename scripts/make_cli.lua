@@ -1,7 +1,7 @@
 -- NOTE: this script is called with `:help -l`
 local MiniTest = require("mini.test")
-local glob = vim.env.glob
-local find_files
+local glob, filter = vim.env.glob, vim.env.filter
+local find_files, filter_cases
 
 
 if glob then
@@ -20,4 +20,12 @@ else
   end
 end
 
-MiniTest.run({ collect = { find_files = find_files } })
+if filter then
+  filter_cases = function(case)
+    local desc = vim.deepcopy(case.desc)
+    table.remove(desc, 1)
+    return table.concat(desc, " "):match(filter)
+  end
+end
+
+MiniTest.run({ collect = { find_files = find_files, filter_cases = filter_cases } })
