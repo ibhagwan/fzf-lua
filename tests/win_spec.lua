@@ -140,7 +140,9 @@ T["win"]["actions"] = new_set()
 
 T["win"]["actions"]["no error"] = function()
   for file in ipairs({ "README.md", "^tests-", ".lua$" }) do
-    child.lua([[FzfLua.files { query = "README.md" }]])
+    child.lua(
+      ([[FzfLua.files { query = "%s", winopts = { preview = { wrap = false } } }]]):format(file)
+    )
     -- not work with `profile = "hide"`?
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
