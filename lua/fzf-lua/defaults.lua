@@ -753,6 +753,7 @@ M.defaults.highlights           = {
   fzf_opts   = { ["--no-multi"] = true },
   fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
   previewer  = { _ctor = previewers.builtin.highlights, },
+  actions    = { ["enter"] = actions.hi }
 }
 
 M.defaults.awesome_colorschemes = {

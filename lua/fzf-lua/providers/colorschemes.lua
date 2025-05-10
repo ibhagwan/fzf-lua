@@ -137,13 +137,6 @@ M.highlights = function(opts)
     end
   end
 
-  opts.fn_selected = function(selected)
-    if selected and selected[1] == "enter" then
-      vim.cmd("hi " .. selected[2])
-      vim.api.nvim_exec2("hi " .. selected[2], {})
-    end
-  end
-
   core.fzf_exec(contents, opts)
 end
 
