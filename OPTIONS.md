@@ -586,6 +586,12 @@ Type: `string`, Default: `FzfLuaHeaderText`
 
 Interactive headers description highlight group, e.g. `<ctrl-g> to Disable .gitignore`.
 
+#### globals.hls.path_filename
+
+Type: `string`, Default: `FzfLuaPathFilename`
+
+Highlight group for the file part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `quickfix`, `lsp`, `diagnostics`, etc.
+
 #### globals.hls.path_linenr
 
 Type: `string`, Default: `FzfLuaPathLineNr`

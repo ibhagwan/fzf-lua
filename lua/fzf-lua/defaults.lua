@@ -558,7 +558,7 @@ M.defaults.quickfix             = {
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
   _treesitter = true,
-  _cached_hls = { "path_colnr", "path_linenr" },
+  _cached_hls = { "path_filename", "path_colnr", "path_linenr" },
 }
 
 M.defaults.quickfix_stack       = {
@@ -578,7 +578,7 @@ M.defaults.loclist              = {
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
   _treesitter = true,
-  _cached_hls = { "path_colnr", "path_linenr" },
+  _cached_hls = { "path_filename", "path_colnr", "path_linenr" },
 }
 
 M.defaults.loclist_stack        = {
@@ -818,7 +818,7 @@ M.defaults.lsp                  = {
   jump1_action     = actions.file_edit,
   fzf_opts         = { ["--multi"] = true },
   _actions         = function() return M.globals.actions.files end,
-  _cached_hls      = { "path_colnr", "path_linenr" },
+  _cached_hls      = { "path_filename", "path_colnr", "path_linenr" },
   _treesitter      = true,
   -- Signals actions to use uri triggering the use of `lsp.util.show_document`
   _uri             = true,
@@ -891,7 +891,7 @@ M.defaults.lsp.symbols          = {
   },
   _actions         = function() return M.globals.actions.files end,
   actions          = { ["ctrl-g"] = { actions.sym_lsym } },
-  _cached_hls      = { "live_sym", "path_colnr", "path_linenr" },
+  _cached_hls      = { "live_sym", "path_filename", "path_colnr", "path_linenr" },
   _uri             = true,
 }
 
@@ -926,7 +926,7 @@ M.defaults.lsp.finder           = {
   },
   fzf_opts    = { ["--multi"] = true },
   _treesitter = true,
-  _cached_hls = { "path_colnr", "path_linenr" },
+  _cached_hls = { "path_filename", "path_colnr", "path_linenr" },
   _uri        = true,
 }
 
@@ -951,7 +951,7 @@ M.defaults.diagnostics          = {
   multiline   = true,
   fzf_opts    = { ["--multi"] = true },
   _actions    = function() return M.globals.actions.files end,
-  _cached_hls = { "path_colnr", "path_linenr" },
+  _cached_hls = { "path_filename", "path_colnr", "path_linenr" },
   -- signs = {
   --   ["Error"] = { text = "e", texthl = "DiagnosticError" },
   --   ["Warn"]  = { text = "w", texthl = "DiagnosticWarn" },
@@ -1133,7 +1133,7 @@ M.defaults.dap                  = {
       ["--delimiter"] = "[\\]:]",
       ["--with-nth"]  = "2..",
     },
-    _cached_hls = { "path_colnr", "path_linenr" },
+    _cached_hls = { "path_filename", "path_colnr", "path_linenr" },
   },
 }
 
@@ -1210,6 +1210,7 @@ M.defaults.__HLS                = {
   scrollfloat_f  = "FzfLuaScrollFloatFull",
   header_bind    = "FzfLuaHeaderBind",
   header_text    = "FzfLuaHeaderText",
+  path_filename  = "FzfLuaPathFileName",
   path_colnr     = "FzfLuaPathColNr",
   path_linenr    = "FzfLuaPathLineNr",
   buf_name       = "FzfLuaBufName",

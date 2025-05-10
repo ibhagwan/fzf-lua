@@ -90,6 +90,8 @@ function M.setup_highlights(override)
       { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond" } },
     { "FzfLuaHeaderText", "header_text",
       { default = default, fg = is_light and "Brown4" or "Brown1" } },
+    { "FzfLuaPathFilename", "path_filename", -- qf|diag|lsp
+      { default = default, fg = is_light and "Purple4" or "Purple1" } },
     { "FzfLuaPathColNr", "path_colnr",   -- qf|diag|lsp
       { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" } },
     { "FzfLuaPathLineNr", "path_linenr", -- qf|diag|lsp

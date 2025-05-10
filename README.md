@@ -1538,6 +1538,7 @@ temporarily overridden by its corresponding `winopts` option:
 | FzfLuaHelpBorder        | FzfLuaBorder     | `hls.help_border`    | Help win border                       |
 | FzfLuaHeaderBind        | \*BlanchedAlmond | `hls.header_bind`    | Header keybind                        |
 | FzfLuaHeaderText        | \*Brown1         | `hls.header_text`    | Header text                           |
+| FzfLuaPathFilename      | \*Purple         | `hls.path_filename`  | Path filename (`qf,lsp,diag`)           |
 | FzfLuaPathColNr         | \*CadetBlue1     | `hls.path_colnr`     | Path col nr (`qf,lsp,diag`)           |
 | FzfLuaPathLineNr        | \*LightGreen     | `hls.path_linenr`    | Path line nr (`qf,lsp,diag`)          |
 | FzfLuaBufName           | Directory        | `hls.buf_name`       | Buffer name (`lines`)                 |

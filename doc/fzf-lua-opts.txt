@@ -780,6 +780,15 @@ Interactive headers description highlight group, e.g. `<ctrl-g> to Disable
 
 
                                                                               
+globals.hls.path_filename             *fzf-lua-opts-globals.hls.path_filename*
+
+Type: `string`, Default: `FzfLuaPathFilename`
+
+Highlight group for the file part of paths, e.g. `file:<line>:<col>:`, used in
+pickers such as `buffers`, `quickfix`, `lsp`, `diagnostics`, etc.
+
+
+                                                                              
 globals.hls.path_linenr                 *fzf-lua-opts-globals.hls.path_linenr*
 
 Type: `string`, Default: `FzfLuaPathLineNr`

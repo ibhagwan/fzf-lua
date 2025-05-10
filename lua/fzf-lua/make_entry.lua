@@ -296,6 +296,8 @@ end
 
 M.lcol = function(entry, opts)
   if not entry then return nil end
+  local hl_filename = utils.tbl_contains(opts._cached_hls or {}, "path_filename")
+      and opts.hls.path_filename or "magenta"
   local hl_colnr = utils.tbl_contains(opts._cached_hls or {}, "path_colnr")
       and opts.hls.path_colnr or "blue"
   local hl_linenr = utils.tbl_contains(opts._cached_hls or {}, "path_linenr")
@@ -304,7 +306,7 @@ M.lcol = function(entry, opts)
   return string.format("%s:%s%s%s",
     -- uncomment to test URIs
     -- "file://" .. filename,
-    filename, --utils.ansi_codes.magenta(filename),
+    utils.ansi_codes[hl_filename](filename),
     tonumber(entry.lnum) == nil and "" or (utils.ansi_codes[hl_linenr](tostring(entry.lnum)) .. ":"),
     tonumber(entry.col) == nil and "" or (utils.ansi_codes[hl_colnr](tostring(entry.col)) .. ":"),
     type(entry.text) ~= "string" and ""
