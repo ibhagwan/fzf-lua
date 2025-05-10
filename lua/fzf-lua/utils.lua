@@ -1317,6 +1317,26 @@ function M.setmetatable__gc(t, mt)
   return setmetatable(t, mt)
 end
 
+---@param retry integer?
+---@param timeout integer?
+function M.ensure_startinsert(retry, timeout)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local function ensure_startinsert(_retry, _timeout)
+    -- abort for some reason we switch to another buffer
+    if vim.api.nvim_get_current_buf() ~= bufnr then return end
+    if vim.api.nvim_get_mode().mode ~= "t" or retry == 0 then
+      vim.cmd [[startinsert]]
+      return
+    end
+    -- Called from another fzf-win most likely
+    -- don't startinsert until we enter new terminal mode
+    return vim.defer_fn(function()
+      return ensure_startinsert(_retry - 1, math.min(100, _timeout * 2))
+    end, _timeout)
+  end
+  return ensure_startinsert(retry or 5, timeout or 10)
+end
+
 --- Checks if treesitter parser for language is installed
 ---@param lang string
 function M.has_ts_parser(lang)
