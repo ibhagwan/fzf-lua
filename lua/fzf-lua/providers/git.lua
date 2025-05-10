@@ -92,6 +92,57 @@ M.status = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+M.diff = function(opts)
+  opts = config.normalize_opts(opts, "git.diff")
+  if not opts then
+    return
+  end
+  opts.cmd     = "git show-ref --quiet --branches " .. opts.branch .. " && git diff " .. opts.branch .. " --name-only || echo Branch " .. opts.branch .. " not found"
+  opts.preview = "git show-ref --quiet --branches " .. opts.branch .. " && git diff " .. opts.branch .. " --color {2}"
+  opts = set_git_cwd_args(opts)
+  if not opts.cwd then
+    return
+  end
+  if opts.preview then
+    opts.preview = path.git_cwd(opts.preview, opts)
+  end
+
+  -- we always require processing (can't send the raw command to fzf)
+  opts.requires_processing = true
+
+  local contents, id
+  if opts.multiprocess then
+    opts.__mt_transform = [[return require("fzf-lua.make_entry").file]]
+    contents = core.mt_cmd_wrapper(opts)
+  else
+    opts.__fn_transform = opts.__fn_transform or function(x)
+      return make_entry.file(x, opts)
+    end
+
+    -- we are reusing the "live" reload action, this gets called once
+    -- on init and every reload and should return the command we wish
+    -- to execute, i.e. `git diff`
+    opts.__fn_reload = function(_)
+      return opts.cmd
+    end
+
+    -- build the "reload" cmd and remove '-- {+}' from the initial cmd
+    contents, id = shell.reload_action_cmd(opts, "")
+    opts.__reload_cmd = contents
+
+    -- when the action resumes the preview re-attaches which registers
+    -- a new shell function id, done enough times it will overwrite the
+    -- regisered function assigned to the reload action and the headless
+    -- cmd will err with "sh: 0: -c requires an argument"
+    -- gets cleared when resume data recycles
+    opts._fn_pre_fzf = function()
+      shell.set_protected(id)
+    end
+  end
+
+  return core.fzf_exec(contents, opts)
+end
+
 local function git_cmd(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
