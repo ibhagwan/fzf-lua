@@ -238,6 +238,7 @@ Alternatively, resuming work on a specific picker:
 | -------------- | ------------------------ |
 | `git_files`    | `git ls-files`           |
 | `git_status`   | `git status`             |
+| `git_diff`     | `git diff {ref}`         |
 | `git_commits`  | git commit log (project) |
 | `git_bcommits` | git commit log (buffer)  |
 | `git_blame`    | git blame (buffer)       |
@@ -851,6 +852,16 @@ previewers = {
       --   ["ctrl-x"]  = { fn = actions.git_reset, reload = true },
       --   ["ctrl-s"]  = { fn = actions.git_stage_unstage, reload = true },
       -- },
+    },
+    diff = {
+      cmd               = "git --no-pager diff --name-only {ref}",
+      ref               = "HEAD",
+      preview           = "git diff {ref} {file}",
+      -- git-delta is automatically detected as pager, uncomment to disable
+      -- preview_pager = false,
+      file_icons        = true,
+      color_icons       = true,
+      fzf_opts          = { ["--multi"] = true },
     },
     commits = {
       prompt        = 'Commits❯ ',

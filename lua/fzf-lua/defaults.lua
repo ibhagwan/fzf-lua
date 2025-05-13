@@ -396,15 +396,16 @@ M.defaults.git                  = {
     },
   },
   diff = {
-    branch            = "HEAD",
-    multiprocess      = true,
+    cmd               = "git --no-pager diff --name-only {ref}",
+    ref               = "HEAD",
+    preview           = "git diff {ref} {file}",
     preview_pager     = M._preview_pager_fn,
+    multiprocess      = true,
     file_icons        = 1,
     color_icons       = true,
     fzf_opts          = { ["--multi"] = true },
     _fzf_nth_devicons = true,
     _actions          = function() return M.globals.actions.files end,
-    actions           = {},
   },
   commits = {
     cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
