@@ -474,6 +474,9 @@ local function gen_lsp_contents(opts)
         if response.result then
           local context = { client_id = client_id }
           lsp_handler.handler(opts, cb, lsp_handler.method, response.result, context)
+        elseif response.err then
+          utils.warn(string.format("Error executing '%s': %s",
+            lsp_handler.method, response.err.message))
         end
       end
       if utils.tbl_isempty(results) then
@@ -911,44 +914,9 @@ M.code_actions = function(opts)
   local ui_select = require "fzf-lua.providers.ui_select"
   local registered = ui_select.is_registered()
 
-  -- when fzf-lua isn't registered for ui.select we need to test if
-  -- code actions exist before calling `vim.lsp.buf.code_action()`
-  -- if code actions don't exist the deregister callback is never
-  -- called and we remain registered
-  if not registered then
-    -- irrelevant for code actions and can cause
-    -- single results to be skipped with 'async = false'
-    opts.jump1 = false
-    opts.lsp_params = function(client)
-      local params = vim.lsp.util.make_range_params(core.CTX().winid,
-        -- nvim 0.11 requires offset_encoding param, `client` is first arg of called func
-        -- https://github.com/neovim/neovim/commit/629483e24eed3f2c07e55e0540c553361e0345a2
-        client and client.offset_encoding or nil)
-      params.context = opts.context or {
-        -- Neovim still uses `vim.lsp.diagnostic` API in "nvim/runtime/lua/vim/lsp/buf.lua"
-        -- continue to use it until proven otherwise, this also fixes #707 as diagnostics
-        -- must not be nil or some LSP servers will fail (e.g. ruff_lsp, rust_analyzer)
-        diagnostics = get_line_diagnostics(core.CTX().bufnr) or {}
-      }
-      return params
-    end
-    if not utils.__HAS_NVIM_011 and type(opts.lsp_params) == "function" then
-      opts.lsp_params = opts.lsp_params()
-    end
-
-    -- make sure 'gen_lsp_contents' is run synchronously
-    opts.async = false
-
-    -- when 'opts.async == false' calls 'vim.lsp.buf_request_sync'
-    -- so we can avoid calling 'ui_select.register' when no code
-    -- actions are available
-    local _, has_code_actions = gen_lsp_contents(opts)
-
-    -- error or no sync request no results
-    if not has_code_actions then
-      core.__CTX = nil
-      return
-    end
+  if not registered and not opts.silent then
+    utils.warn("FzfLua is not currently registered as 'vim.ui.select' backend, use 'silent=true'" ..
+      " to hide this message or register globally using ':FzfLua register_ui_select'.")
   end
 
   opts.actions = opts.actions or {}
