@@ -238,6 +238,7 @@ Alternatively, resuming work on a specific picker:
 | -------------- | ------------------------ |
 | `git_files`    | `git ls-files`           |
 | `git_status`   | `git status`             |
+| `git_diff`     | `git diff {ref}`         |
 | `git_commits`  | git commit log (project) |
 | `git_bcommits` | git commit log (buffer)  |
 | `git_blame`    | git blame (buffer)       |
