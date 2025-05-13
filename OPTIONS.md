@@ -970,6 +970,14 @@ Git files
 
 Git status
 
+#### git_diff
+
+Git diff (files) for any ref
+
+#### git_hunks
+
+Git diff (hunks) for any ref
+
 #### git_commits
 
 Git commits (project)

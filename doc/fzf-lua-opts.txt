@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*      For Neovim >= 0.8.0      Last change: 2025 February 13
+*fzf-lua-opts.txt*        For Neovim >= 0.8.0       Last change: 2025 March 13
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -1319,6 +1319,18 @@ Git status
 
 
                                                                               
+git_diff                                               *fzf-lua-opts-git_diff*
+
+Git diff (files) for any ref
+
+
+                                                                              
+git_hunks                                             *fzf-lua-opts-git_hunks*
+
+Git diff (hunks) for any ref
+
+
+                                                                              
 git_commits                                         *fzf-lua-opts-git_commits*
 
 Git commits (project)
@@ -1713,7 +1725,7 @@ complete_file.word_pattern           *fzf-lua-opts-complete_file.word_pattern*
 
 Type: `string`, Default: `nil`
 
-See |fzf-lua-opts-complete_path.word_pattern|.
+See `complete_path.word_pattern` <#complete_path.word_pattern>
 
 
                                                                               

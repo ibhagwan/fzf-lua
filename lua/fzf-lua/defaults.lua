@@ -2,7 +2,6 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
 local previewers = require "fzf-lua.previewer"
-
 local M = {}
 
 function M._default_previewer_fn()
@@ -404,6 +403,21 @@ M.defaults.git                  = {
     file_icons        = 1,
     color_icons       = true,
     fzf_opts          = { ["--multi"] = true },
+    _fzf_nth_devicons = true,
+    _actions          = function() return M.globals.actions.files end,
+  },
+  hunks = {
+    previewer         = M._default_previewer_fn,
+    cmd               = "git --no-pager diff --color=always {ref}",
+    ref               = "HEAD",
+    multiprocess      = true,
+    file_icons        = 1,
+    color_icons       = true,
+    fzf_opts          = {
+      ["--multi"] = true,
+      ["--delimiter"] = ":",
+      ["--nth"] = "3..",
+    },
     _fzf_nth_devicons = true,
     _actions          = function() return M.globals.actions.files end,
   },

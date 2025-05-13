@@ -508,6 +508,50 @@ M.git_status = function(x, opts)
   return entry
 end
 
+M.git_hunk = function(x, opts)
+  local entry
+  if not opts.__git_hunk_stats then
+    opts.__git_hunk_stats = { i = math.huge / 2 }
+  end
+  -- local ref for easy access
+  local S = opts.__git_hunk_stats
+  do
+    (function()
+      local l = utils.strip_ansi_coloring(x)
+      -- Skip the first 3 header lines, e.g:
+      --    diff --git a/lua/fzf-lua/defaults.lua b/lua/fzf-lua/defaults.lua
+      --    index 3354405..799e467 100644
+      --    --- a/lua/fzf-lua/defaults.lua
+      --    +++ b/lua/fzf-lua/defaults.lua
+      if l:match("^diff") then S.i = 0 end
+      if S.i < 3 then
+        return
+      end
+      -- Extract filename from the "b-line", e.g:
+      --  +++ b/lua/fzf-lua/defaults.lua
+      if S.i == 3 then
+        S.filename = l:match("^%+%+%+ b/(.*)")
+        return
+      end
+      -- Process only lines that start with + or -
+      local byte = string.byte(l, 1)
+      if byte == 43 or byte == 45 then
+        entry = string.format("%s:%d:%s", M.file(S.filename, opts), S.line, x)
+      elseif byte == 64 then
+        -- Extract line number
+        S.line = tonumber(l:match("^@@ %-%d+,%d+ %+(%d+),%d+ @@"))
+      end
+      -- Advance line number for non-modified or added lines
+      if byte == 32 or byte == 43 then
+        S.line = S.line + 1
+      end
+    end)()
+  end
+  -- Next line
+  S.i = S.i + 1
+  return entry
+end
+
 M.zoxide = function(x, opts)
   local score, dir = x:match("(%d+%.%d+)%s+(.-)$")
   if not score then return x end

@@ -239,6 +239,7 @@ Alternatively, resuming work on a specific picker:
 | `git_files`    | `git ls-files`           |
 | `git_status`   | `git status`             |
 | `git_diff`     | `git diff {ref}`         |
+| `git_hunks`    | `git hunks {ref}`        |
 | `git_commits`  | git commit log (project) |
 | `git_bcommits` | git commit log (buffer)  |
 | `git_blame`    | git blame (buffer)       |
@@ -862,6 +863,17 @@ previewers = {
       file_icons        = true,
       color_icons       = true,
       fzf_opts          = { ["--multi"] = true },
+    },
+    hunks = {
+      cmd               = "git --no-pager diff --color=always {ref}",
+      ref               = "HEAD",
+      file_icons        = true,
+      color_icons       = true,
+      fzf_opts          = {
+      ["--multi"] = true,
+      ["--delimiter"] = ":",
+      ["--nth"] = "3..",
+      },
     },
     commits = {
       prompt        = 'Commits❯ ',
