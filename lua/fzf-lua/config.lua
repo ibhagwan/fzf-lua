@@ -881,19 +881,17 @@ function M.normalize_opts(opts, globals, __resume_key)
   elseif opts.line_query then
     utils.map_set(opts, "winopts.preview.winopts.cursorline", true)
     utils.map_set(opts, "keymap.fzf.change",
-      "transform-search:" .. FzfLua.shell.raw_action(function(q, _, _)
+      "transform:" .. FzfLua.shell.raw_action(function(q, _, _)
+        local lnum = q[1]:match(":(%d+)$")
         q = q[1]:gsub(":%d*$", "")
-        return q
-      end, "{q}", opts.debug))
-    utils.map_set(opts, "keymap.fzf.result",
-      "execute-silent:" .. FzfLua.shell.raw_action(function(items, _, _)
-        local lnum = items[1]:match(":%d+$")
-        local win = lnum and FzfLua.win.__SELF()
-        if win and win.previewer then
-          local entry = items[2] .. lnum
-          win._previewer:display_entry(entry)
+        local optstr = opts.fzf_opts["--preview-window"]
+        local win = FzfLua.win.__SELF()
+        if win and win._previewer and win._previewer._preview_offset then
+          local off = win._previewer:_preview_offset(lnum)
+          optstr = off and (optstr .. ":" .. off) or optstr
         end
-      end, "{q} {}", opts.debug))
+        return ("change-preview-window(%s)+search(%s)"):format(optstr, q)
+      end, "{q}", opts.debug))
   end
 
   if type(opts.enrich) == "function" then
