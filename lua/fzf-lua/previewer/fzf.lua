@@ -178,6 +178,7 @@ end
 
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   local entry = path.entry_to_file(entrystr, self.opts)
+  entry.line = self.opts.line_query and tonumber(self._last_query:match(":(%d+)$")) or entry.line
   -- make relative for bat's header display
   local filepath = path.relative_to(entry.bufname or entry.path or "", uv.cwd())
   if self.opts._ctag then
@@ -210,17 +211,19 @@ end
 function Previewer.cmd_async:cmdline(o)
   o = o or {}
   local act = shell.raw_preview_action_cmd(function(items)
+    self._last_query = items[2] or ""
     local filepath, _, errcmd = self:parse_entry_and_verify(items[1])
     local cmd = errcmd or ("%s %s %s"):format(
       self.cmd, self.args, libuv.shellescape(filepath))
     return cmd
-  end, "{}", self.opts.debug)
+  end, "{} {q}", self.opts.debug)
   return act
 end
 
 Previewer.bat_async = Previewer.cmd_async:extend()
 
-function Previewer.bat_async:_preview_offset()
+---@param lnum string?
+function Previewer.bat_async:_preview_offset(lnum)
   if self.opts.preview_offset or self.preview_offset then
     return self.opts.preview_offset or self.preview_offset
   end
@@ -235,15 +238,16 @@ function Previewer.bat_async:_preview_offset()
     #
     '--preview-window '~3:+{2}+3/2''
   ]]
+  lnum = lnum or self.opts.line_field_index
   if not self.args or not self.args:match("%-%-style=default") then
     -- we don't need affixed header unless we use bat default style
     -- TODO: should also adjust for "--style=header-filename"
-    if self.opts.line_field_index then
-      return ("+%s-/2"):format(self.opts.line_field_index)
+    if lnum then
+      return ("+%s-/2"):format(lnum)
     end
   else
-    if self.opts.line_field_index then
-      return ("~3:+%s+3/2"):format(self.opts.line_field_index)
+    if lnum then
+      return ("~3:+%s+3/2"):format(lnum)
     else
       -- no line offset, affix header
       return "~3"
@@ -260,6 +264,7 @@ end
 function Previewer.bat_async:cmdline(o)
   o = o or {}
   local act = shell.raw_preview_action_cmd(function(items, fzf_lines)
+    self._last_query = items[2] or ""
     local filepath, entry, errcmd = self:parse_entry_and_verify(items[1])
     local line_range = ""
     if entry.ctag then
@@ -273,12 +278,12 @@ function Previewer.bat_async:cmdline(o)
     local cmd = errcmd or ("%s %s %s %s %s %s"):format(
       self.cmd, self.args,
       self.theme and string.format([[--theme="%s"]], self.theme) or "",
-      self.opts.line_field_index and tonumber(entry.line) and tonumber(entry.line) > 0
+      tonumber(entry.line) and tonumber(entry.line) > 0
       and string.format("--highlight-line=%d", entry.line) or "",
       line_range,
       libuv.shellescape(filepath))
     return cmd
-  end, "{}", self.opts.debug)
+  end, "{} {q}", self.opts.debug)
   return act
 end
 
