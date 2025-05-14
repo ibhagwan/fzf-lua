@@ -1043,10 +1043,11 @@ M.defaults.commands             = {
 }
 
 M.defaults.autocmds             = {
+  show_desc = true,
   previewer = { _ctor = previewers.builtin.autocmds },
   _actions  = function() return M.globals.actions.files end,
   fzf_opts  = {
-    ["--delimiter"] = "[|]",
+    ["--delimiter"] = "[│]",
     ["--with-nth"]  = "2..",
     ["--no-multi"]  = true,
   },

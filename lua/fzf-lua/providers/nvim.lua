@@ -619,9 +619,50 @@ M.autocmds = function(opts)
     return
   end
 
+  local separator = "│"
+  local fields = { "event", "pattern", "group", "code", "desc" }
+  local field_fmt = {
+    event = "%-28s",
+    pattern = "%-22s",
+    group = "%-40s",
+    code = "%-44s",
+    desc = "%s",
+  }
+
+  if opts.show_desc == false then field_fmt.desc = nil end
+
+  local format = function(info)
+    local ret
+    for _, f in ipairs(fields) do
+      if field_fmt[f] then
+        local fmt = field_fmt[f]
+        if info.color == false then
+          local len = tonumber(fmt:match("%d+"))
+          if len then
+            fmt = fmt:gsub("%d+", tostring(len - 11))
+          end
+        end
+        ret = string.format("%s%s" .. fmt, ret or "",
+          ret and string.format(" %s ", separator) or "", info[f] or "")
+      end
+    end
+    return ret
+  end
+
   local contents = function(cb)
     coroutine.wrap(function()
       local co = coroutine.running()
+      cb(string.format("%s:%d:%s%s", "<none>", 0, separator, format({
+        event = "event",
+        pattern = "pattern",
+        group = "group",
+        code = "code",
+        desc = "description",
+        color = false,
+      })), function(err)
+        coroutine.resume(co)
+        if err then cb(nil) end
+      end)
       for _, a in ipairs(autocmds) do
         local file, line = "<none>", 0
         if a.callback then
@@ -629,13 +670,13 @@ M.autocmds = function(opts)
           file = info and info.source and info.source:sub(2) or ""
           line = info and info.linedefined or 0
         end
-        local group = a.group_name and vim.trim(a.group_name) or " "
-        local entry = string.format("%s:%d:|%-28s │ %-34s │ %-18s │ %s",
-          file, line,
-          utils.ansi_codes.yellow(a.event),
-          utils.ansi_codes.blue(group),
-          a.pattern,
-          a.callback and utils.ansi_codes.red(tostring(a.callback)) or a.command)
+        local entry = string.format("%s:%d:%s%s", file, line, separator, format({
+          event = utils.ansi_codes.blue(a.event),
+          pattern = utils.ansi_codes.yellow(a.pattern),
+          group = utils.ansi_codes.green(a.group_name and vim.trim(a.group_name) or " "),
+          code = a.callback and utils.ansi_codes.red(tostring(a.callback)) or a.command,
+          desc = a.desc,
+        }))
         cb(entry, function(err)
           coroutine.resume(co)
           if err then cb(nil) end
@@ -646,6 +687,7 @@ M.autocmds = function(opts)
     end)()
   end
 
+  opts.fzf_opts["--header-lines"] = "1"
   return core.fzf_exec(contents, opts)
 end
 
