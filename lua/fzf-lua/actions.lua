@@ -806,7 +806,7 @@ M.git_yank_commit = function(selected, opts)
   local regs, cb = {}, vim.o.clipboard
   if cb:match("unnamed") then regs[#regs + 1] = [[*]] end
   if cb:match("unnamedplus") then regs[#regs + 1] = [[+]] end
-  if #regs == 0 then regs[regs + 1] = [["]] end
+  if #regs == 0 then regs[#regs + 1] = [["]] end
   -- copy to the yank register regardless
   for _, reg in ipairs(regs) do
     vim.fn.setreg(reg, commit_hash)
