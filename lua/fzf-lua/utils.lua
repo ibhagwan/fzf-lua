@@ -1317,10 +1317,11 @@ function M.setmetatable__gc(t, mt)
   return setmetatable(t, mt)
 end
 
+---@param bufnr
 ---@param retry integer?
 ---@param timeout integer?
-function M.ensure_startinsert(retry, timeout)
-  local bufnr = vim.api.nvim_get_current_buf()
+function M.ensure_startinsert(bufnr, retry, timeout)
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
   local function ensure_startinsert(_retry, _timeout)
     -- abort for some reason we switch to another buffer
     if vim.api.nvim_get_current_buf() ~= bufnr then return end
