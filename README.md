@@ -1057,6 +1057,7 @@ previewers = {
     prompt            = 'Tabs❯ ',
     tab_title         = "Tab",
     tab_marker        = "<<",
+    locate            = true,         -- position cursor at current window
     file_icons        = true,         -- show file icons (true|"devicons"|"mini")?
     color_icons       = true,         -- colorize file|git icons
     actions = {
