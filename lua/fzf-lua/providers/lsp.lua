@@ -788,6 +788,7 @@ M.workspace_symbols = function(opts)
   opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
   if not opts then return end
   opts.__ACT_TO = opts.__ACT_TO or M.live_workspace_symbols
+  opts.__call_fn = utils.__FNCREF__()
   opts.lsp_params = { query = opts.lsp_query or "" }
   opts = core.set_header(opts, opts.headers or
     { "actions", "cwd", "lsp_query", "regex_filter" })
@@ -814,6 +815,7 @@ M.live_workspace_symbols = function(opts)
 
   -- needed by 'actions.sym_lsym'
   opts.__ACT_TO = opts.__ACT_TO or M.workspace_symbols
+  opts.__call_fn = utils.__FNCREF__()
 
   -- NOTE: no longer used since we hl the query with `FzfLuaLivePrompt`
   -- prepend prompt with "*" to indicate "live" query
