@@ -637,6 +637,7 @@ M.defaults.tabs                 = {
   previewer   = M._default_previewer_fn,
   tab_title   = "Tab",
   tab_marker  = "<<",
+  locate      = true,
   file_icons  = 1,
   color_icons = true,
   _actions    = function()
