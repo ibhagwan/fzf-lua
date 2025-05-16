@@ -886,7 +886,7 @@ function M.normalize_opts(opts, globals, __resume_key)
         q = q[1]:gsub(":%d*$", "")
         local optstr = opts.fzf_opts["--preview-window"]
         local win = FzfLua.win.__SELF()
-        if win and win._previewer and win._previewer._preview_offset then
+        if lnum and win and win._previewer and win._previewer._preview_offset then
           local off = win._previewer:_preview_offset(lnum)
           optstr = off and (optstr .. ":" .. off) or optstr
         end

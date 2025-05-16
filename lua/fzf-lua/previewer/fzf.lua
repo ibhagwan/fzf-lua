@@ -27,10 +27,7 @@ function Previewer.base:preview_window(_)
   return nil
 end
 
-function Previewer.base:_preview_offset()
-  if self.opts.preview_offset or self.preview_offset then
-    return self.opts.preview_offset or self.preview_offset
-  end
+function Previewer.base:_preview_offset(lnum)
   --[[
     #
     #   Explanation of the fzf preview offset options:
@@ -42,8 +39,9 @@ function Previewer.base:_preview_offset()
     #
     '--preview-window '~3:+{2}+3/2''
   ]]
-  if self.opts.line_field_index then
-    return ("+%s-/2"):format(self.opts.line_field_index)
+  lnum = lnum or self.opts.line_field_index
+  if lnum then
+    return ("+%s-/2"):format(lnum)
   end
 end
 
@@ -224,9 +222,6 @@ Previewer.bat_async = Previewer.cmd_async:extend()
 
 ---@param lnum string?
 function Previewer.bat_async:_preview_offset(lnum)
-  if self.opts.preview_offset or self.preview_offset then
-    return self.opts.preview_offset or self.preview_offset
-  end
   --[[
     #
     #   Explanation of the fzf preview offset options:
