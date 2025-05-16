@@ -297,8 +297,7 @@ M.new_child_neovim = function()
     screenshot.compare(screen_ref, screen_obs, opts)
   end
 
-  -- TODO: find a better solution to the slow MacOS CI's
-  local wait_timeout = (M.IS_MAC() and 10000 or M.IS_WIN() and 5000 or 2000)
+  local wait_timeout = ((M.IS_MAC() or M.IS_WIN()) and 5000 or 2000)
   --- waits until condition fn evals to true, checking every interval ms
   --- times out at timeout ms
   ---@param condition fun(): boolean

@@ -34,6 +34,7 @@ T["files()"]["start and abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c
       __mt_postprocess = [[return function()
         local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
         vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
+        vim.uv.sleep(100)
         vim.fn.chanclose(chan_id)
       end]],
     })]==])
@@ -171,6 +172,7 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
         __mt_postprocess = [[return function()
           local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
           vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
+          vim.uv.sleep(100)
           vim.fn.chanclose(chan_id)
         end]],
         %s
