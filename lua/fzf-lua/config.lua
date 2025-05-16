@@ -883,14 +883,18 @@ function M.normalize_opts(opts, globals, __resume_key)
     utils.map_set(opts, "keymap.fzf.change",
       "transform:" .. FzfLua.shell.raw_action(function(q, _, _)
         local lnum = q[1]:match(":(%d+)$")
-        q = q[1]:gsub(":%d*$", "")
-        local optstr = opts.fzf_opts["--preview-window"]
+        local new_q, subs = q[1]:gsub(":%d*$", "")
+        -- No subs made, no ":" at end of string, do nothing
+        if subs == 0 then return end
+        local trans = string.format("search(%s)", new_q)
         local win = FzfLua.win.__SELF()
+        -- Do we need to change the offset in native fzf previewer (e.g. bat)?
         if lnum and win and win._previewer and win._previewer._preview_offset then
-          local off = win._previewer:_preview_offset(lnum)
-          optstr = off and (optstr .. ":" .. off) or optstr
+          local optstr = opts.fzf_opts["--preview-window"]
+          local offset = win._previewer:_preview_offset(lnum)
+          trans = string.format("%s+change-preview-window(%s:%s)", trans, optstr, offset)
         end
-        return ("change-preview-window(%s)+search(%s)"):format(optstr, q)
+        return trans
       end, "{q}", opts.debug))
   end
 
