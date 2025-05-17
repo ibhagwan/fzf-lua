@@ -228,6 +228,11 @@ end
 M.blines = function(opts)
   opts = config.normalize_opts(opts, "blines")
   opts.current_buffer_only = true
+  if utils.mode_is_visual() then
+    local _, sel = utils.get_visual_selection()
+    opts.start_line = opts.start_line or sel.start.line
+    opts.end_line = opts.end_line or sel["end"].line
+  end
   M.buffer_lines(opts)
 end
 
