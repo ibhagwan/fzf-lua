@@ -701,9 +701,6 @@ M.build_fzf_cli = function(opts, fzf_win)
     end
   end
   opts.fzf_opts["--bind"] = M.create_fzf_binds(opts)
-  if opts.__load_pos and type(opts.__load_pos) == "number" then
-    table.insert(opts.fzf_opts["--bind"], string.format("load:pos(%d)", opts.__load_pos))
-  end
   opts.fzf_opts["--color"] = M.create_fzf_colors(opts)
   do
     -- `actions.expect` parses the actions table and returns a list of

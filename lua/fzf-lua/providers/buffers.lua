@@ -384,21 +384,24 @@ M.tabs = function(opts)
     return msg, hl
   end
 
-  opts.fn_pre_fzf = opts.locate and function(opts)
-    local counter = 0
-    for tabnr, tabh in ipairs(vim.api.nvim_list_tabpages()) do
-      counter = counter + 1
-      for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabh)) do
-        local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
-        if b then
-          counter = counter + 1
-          if tabnr == core.CTX().tabnr and w == core.CTX().winid then
-            opts.__load_pos = counter
-            return
+  if opts.locate and utils.has(opts, "fzf", { 0, 36 }) then
+    -- Set cursor to current buffer
+    utils.map_set(opts, "keymap.fzf.load",
+      "transform:" .. FzfLua.shell.raw_action(function(_, _, _)
+        local pos = 0
+        for tabnr, tabh in ipairs(vim.api.nvim_list_tabpages()) do
+          pos = pos + 1
+          for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabh)) do
+            local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
+            if b then
+              pos = pos + 1
+              if tabnr == core.CTX().tabnr and w == core.CTX().winid then
+                return string.format("pos(%d)", pos)
+              end
+            end
           end
         end
-      end
-    end
+      end, "", opts.debug))
   end
 
   opts.__fn_reload = opts.__fn_reload or function(_)
