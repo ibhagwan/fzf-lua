@@ -1055,8 +1055,10 @@ M.defaults.autocmds             = {
 }
 
 M.defaults.command_history      = {
-  fzf_opts = { ["--tiebreak"] = "index", ["--no-multi"] = true },
-  actions  = {
+  fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
+  _treesitter = function(line) return "foo.vim", nil, line end,
+  fzf_colors  = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
+  actions     = {
     ["enter"]  = actions.ex_run_cr,
     ["ctrl-e"] = actions.ex_run,
   },
