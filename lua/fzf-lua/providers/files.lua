@@ -103,46 +103,35 @@ M.args = function(opts)
     return
   end
 
-  opts.func_async_callback = false
-  opts.__fn_reload = opts.__fn_reload or function(_)
-    return function(cb)
-      local argc = vim.fn.argc()
+  local contents = function(cb)
+    local argc = vim.fn.argc()
 
-      -- use coroutine & vim.schedule to avoid
-      -- E5560: vimL function must not be called in a lua loop callback
-      coroutine.wrap(function()
-        local co = coroutine.running()
+    -- use coroutine & vim.schedule to avoid
+    -- E5560: vimL function must not be called in a lua loop callback
+    coroutine.wrap(function()
+      local co = coroutine.running()
 
-        -- local start = os.time(); for _ = 1,10000,1 do
-        for i = 0, argc - 1 do
-          vim.schedule(function()
-            local s = vim.fn.argv(i)
-            local st = uv.fs_stat(s)
-            if opts.files_only == false or st and st.type == "file" then
-              s = make_entry.file(s, opts)
-              cb(s, function()
-                coroutine.resume(co)
-              end)
-            else
+      -- local start = os.time(); for _ = 1,10000,1 do
+      for i = 0, argc - 1 do
+        vim.schedule(function()
+          local s = vim.fn.argv(i)
+          local st = uv.fs_stat(s)
+          if opts.files_only == false or st and st.type == "file" then
+            s = make_entry.file(s, opts)
+            cb(s, function()
               coroutine.resume(co)
-            end
-          end)
-          coroutine.yield()
-        end
-        -- end; print("took", os.time()-start, "seconds.")
+            end)
+          else
+            coroutine.resume(co)
+          end
+        end)
+        coroutine.yield()
+      end
+      -- end; print("took", os.time()-start, "seconds.")
 
-        -- done
-        cb(nil)
-      end)()
-    end
-  end
-
-  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local contents, id = shell.reload_action_cmd(opts, "")
-  opts.__reload_cmd = contents
-
-  opts._fn_pre_fzf = function()
-    shell.set_protected(id)
+      -- done
+      cb(nil)
+    end)()
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
@@ -161,28 +150,9 @@ M.zoxide = function(opts)
   -- we always require processing
   opts.requires_processing = true
 
-  local contents, id
-  if opts.multiprocess then
-    opts.__mt_transform = [[return require("fzf-lua.make_entry").zoxide]]
-    contents = core.mt_cmd_wrapper(opts)
-  else
-    opts.__fn_transform = opts.__fn_transform or
-        function(x)
-          return make_entry.zoxide(x, opts)
-        end
-
-    opts.__fn_reload = function(_)
-      return opts.cmd
-    end
-
-    -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-    contents, id = shell.reload_action_cmd(opts, "")
-    opts.__reload_cmd = contents
-
-    opts._fn_pre_fzf = function()
-      shell.set_protected(id)
-    end
-  end
+  opts.__fn_transform = function(x) return make_entry.zoxide(x, opts) end
+  opts.__mt_transform = [[return require("fzf-lua.make_entry").zoxide]]
+  local contents = core.mt_cmd_wrapper(opts)
 
   if opts.header == nil then
     opts.header = string.format("%8s\t%s", "score", "folder")

@@ -911,12 +911,13 @@ function FzfWin:treesitter_attach()
               if string.byte(text, 1) == 160 then text = text:sub(2) end -- remove A0+SPACE
               if string.byte(text, 1) == 32 then text = text:sub(2) end  -- remove leading SPACE
               -- IMPORTANT: use the `__CTX` version that doesn't trigger a new context
-              local b = filepath:match("^%d+") or utils.__CTX().bufnr
-              return vim.api.nvim_buf_is_valid(tonumber(b)) and b or nil
+              local __CTX = utils.__CTX()
+              local b = tonumber(filepath:match("^%d+") or __CTX and __CTX.bufnr)
+              return b and vim.api.nvim_buf_is_valid(b) and b or nil
             end
           end)()
 
-          local ft = _ft or (ft_bufnr and vim.bo[tonumber(ft_bufnr)].ft
+          local ft = _ft or (ft_bufnr and vim.bo[ft_bufnr].ft
             or vim.filetype.match({ filename = path.tail(filepath) }))
           if not ft then return end
 

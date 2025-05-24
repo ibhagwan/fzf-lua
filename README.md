@@ -1175,7 +1175,7 @@ previewers = {
   },
   quickfix = {
     file_icons        = true,
-    only_valid        = false, -- select among only the valid quickfix entries
+    valid_only        = false, -- select among only the valid quickfix entries
   },
   quickfix_stack = {
     prompt = "Quickfix Stack> ",

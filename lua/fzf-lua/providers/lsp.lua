@@ -816,9 +816,6 @@ M.live_workspace_symbols = function(opts)
   opts.lsp_params = { query = opts.lsp_query or opts.query or "" }
   opts.query = opts.lsp_query or opts.query
 
-  -- don't use the automatic coroutine since we
-  -- use our own
-  opts.func_async_callback = false
   opts.fn_reload = function(query)
     opts.query = query
     opts.lsp_params = { query = query or "" }
