@@ -247,47 +247,37 @@ M.marks = function(opts)
   opts = config.normalize_opts(opts, "marks")
   if not opts then return end
 
-  opts.__fn_reload = opts.__fn_reload or function()
-    return function(cb)
-      local win = core.CTX().winid
-      local buf = core.CTX().bufnr
-      local marks = vim.api.nvim_win_call(win,
-        function() return vim.api.nvim_buf_call(buf, function() return vim.fn.execute("marks") end) end)
-      marks = vim.split(marks, "\n")
-      local entries = {}
-      local pattern = opts.marks and opts.marks or ""
-      for i = #marks, 3, -1 do
-        local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
-        col = tostring(tonumber(col) + 1)
-        if path.is_absolute(text) then
-          text = path.HOME_to_tilde(text)
-        end
-        if not pattern or string.match(mark, pattern) then
-          table.insert(entries, string.format(" %-15s %15s %15s %s",
-            utils.ansi_codes.yellow(mark),
-            utils.ansi_codes.blue(line),
-            utils.ansi_codes.green(col),
-            text))
-        end
+  local contents = function(cb)
+    local win = core.CTX().winid
+    local buf = core.CTX().bufnr
+    local marks = vim.api.nvim_win_call(win, function()
+      return vim.api.nvim_buf_call(buf, function() return vim.fn.execute("marks") end)
+    end)
+    marks = vim.split(marks, "\n")
+    local entries = {}
+    local pattern = opts.marks and opts.marks or ""
+    for i = #marks, 3, -1 do
+      local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
+      col = tostring(tonumber(col) + 1)
+      if path.is_absolute(text) then
+        text = path.HOME_to_tilde(text)
       end
-
-      table.sort(entries, function(a, b) return a < b end)
-      table.insert(entries, 1,
-        string.format("%-5s %s  %s %s", "mark", "line", "col", "file/text"))
-
-      vim.tbl_map(cb, entries)
-      cb(nil)
+      if not pattern or string.match(mark, pattern) then
+        table.insert(entries, string.format(" %-15s %15s %15s %s",
+          utils.ansi_codes.yellow(mark),
+          utils.ansi_codes.blue(line),
+          utils.ansi_codes.green(col),
+          text))
+      end
     end
+
+    table.sort(entries, function(a, b) return a < b end)
+    table.insert(entries, 1,
+      string.format("%-5s %s  %s %s", "mark", "line", "col", "file/text"))
+
+    vim.tbl_map(cb, entries)
+    cb(nil)
   end
-
-  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local contents, id = shell.reload_action_cmd(opts, "")
-  opts.__reload_cmd = contents
-
-  opts._fn_pre_fzf = function()
-    shell.set_protected(id)
-  end
-
 
   opts.fzf_opts["--header-lines"] = 1
   --[[ opts.preview = function (args, fzf_lines, _)
@@ -507,33 +497,22 @@ M.nvim_options = function(opts)
     return entries
   end
 
-  opts.func_async_callback = false
-  opts.__fn_reload = opts.__fn_reload or function(_)
-    return function(cb)
-      vim.api.nvim_win_call(opts.__CTX.winid, function()
-        coroutine.wrap(function()
-          local co = coroutine.running()
-          local entries = format_option_entries()
-          for _, entry in pairs(entries) do
-            vim.schedule(function()
-              cb(entry, function()
-                coroutine.resume(co)
-              end)
+  local contents = function(cb)
+    vim.api.nvim_win_call(opts.__CTX.winid, function()
+      coroutine.wrap(function()
+        local co = coroutine.running()
+        local entries = format_option_entries()
+        for _, entry in pairs(entries) do
+          vim.schedule(function()
+            cb(entry, function()
+              coroutine.resume(co)
             end)
-            coroutine.yield()
-          end
-          cb()
-        end)()
-      end)
-    end
-  end
-
-  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local contents, id = shell.reload_action_cmd(opts, "")
-  opts.__reload_cmd = contents
-
-  opts._fn_pre_fzf = function()
-    shell.set_protected(id)
+          end)
+          coroutine.yield()
+        end
+        cb()
+      end)()
+    end)
   end
 
   opts.fzf_opts["--header-lines"] = "2"

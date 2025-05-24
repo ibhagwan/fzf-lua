@@ -46,10 +46,12 @@ end
 -- NOT USED ANYMORE, we use `vim.g.fzf_lua_server` instead
 -- local action_server_address = nil
 
-function M.raw_async_action(fn, fzf_field_expression, debug)
-  if not fzf_field_expression then
-    fzf_field_expression = "{+}"
-  end
+---@param fn function
+---@param fzf_field_index string
+---@param debug boolean|integer
+---@return string, integer
+function M.raw_async_action(fn, fzf_field_index, debug)
+  fzf_field_index = fzf_field_index or "{+}"
 
   local receiving_function = function(pipe_path, ...)
     local pipe = uv.new_pipe(false)
@@ -92,12 +94,12 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
     libuv.shellescape(path.normalize(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" })),
     id,
     tostring(debug),
-    fzf_field_expression)
+    fzf_field_index)
 
   return action_cmd, id
 end
 
-function M.raw_action(fn, fzf_field_expression, debug)
+function M.raw_action(fn, fzf_field_index, debug)
   local receiving_function = function(pipe, ...)
     local ok, ret = pcall(fn, ...)
 
@@ -129,20 +131,10 @@ function M.raw_action(fn, fzf_field_expression, debug)
     end
   end
 
-  return M.raw_async_action(receiving_function, fzf_field_expression, debug)
+  return M.raw_async_action(receiving_function, fzf_field_index, debug)
 end
 
-function M.action(fn, fzf_field_expression, debug)
-  local action_string, id = M.raw_action(fn, fzf_field_expression, debug)
-  return libuv.shellescape(action_string), id
-end
-
-M.preview_action_cmd = function(fn, fzf_field_expression, debug)
-  local action_string, id = M.raw_preview_action_cmd(fn, fzf_field_expression, debug)
-  return libuv.shellescape(action_string), id
-end
-
-M.raw_preview_action_cmd = function(fn, fzf_field_expression, debug)
+M.raw_preview_action_cmd = function(fn, fzf_field_index, debug)
   return M.raw_async_action(function(pipe, ...)
     local function on_finish(_, _)
       if pipe and not uv.is_closing(pipe) then
@@ -173,21 +165,36 @@ M.raw_preview_action_cmd = function(fn, fzf_field_expression, debug)
       cb_write = on_write,
       cb_pid = function(pid) M.__pid_preview = pid end,
     }))
-  end, fzf_field_expression, debug)
+  end, fzf_field_index, debug)
 end
 
-M.reload_action_cmd = function(opts, fzf_field_expression)
-  if opts.fn_preprocess and type(opts.fn_preprocess) == "function" then
-    -- run the preprocessing fn
-    opts = vim.tbl_deep_extend("keep", opts, opts.fn_preprocess(opts))
-  end
+---@param opts {}
+---@return string, integer
+M.stringify = function(opts, fzf_field_index)
+  -- Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
+  fzf_field_index = fzf_field_index or opts.__fzf_field_index or ""
+
+  assert(type(opts.__fn_reload) == "function" or opts.__contents, "must supply contents")
+
+  -- Mark opts as already "stringified"
+  opts.__stringified = true
 
   return M.raw_async_action(function(pipe, args)
-    -- get the type of contents from the caller
-    local reload_contents = opts.__fn_reload(args[1])
+    -- Contents could be dependent or args, e.g. live_grep which
+    -- generates a different command based on the typed query
+    local contents = type(opts.__fn_reload) == "function"
+        and opts.__fn_reload(args[1])
+        or opts.__contents
     local write_cb_count = 0
     local pipe_want_close = false
     local EOL = opts.multiline and "\0" or "\n"
+
+    local fn_transform = opts.__fn_transform or opts.fn_transform
+    local fn_preprocess = opts.__fn_preprocess or opts.fn_preprocess
+    local fn_postprocess = opts.__fn_postprocess or opts.fn_postprocess
+
+    -- Run the preprocess function
+    if type(fn_preprocess) == "function" then fn_preprocess(opts) end
 
     -- local on_finish = function(code, sig, from, pid)
     -- print("finish", pipe, pipe_want_close, code, sig, from, pid)
@@ -198,6 +205,8 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         -- only close if all our uv.write calls are completed
         uv.close(pipe)
         pipe = nil
+        -- Run the postprocess function
+        if type(fn_postprocess) == "function" then fn_postprocess(opts) end
       end
     end
 
@@ -235,29 +244,29 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
       end
     end
 
-    if type(reload_contents) == "string" then
+    if type(contents) == "string" then
       -- string will be used as a shell command.
       -- terminate previously running commands
-      libuv.process_kill(M.__pid_reload)
-      M.__pid_reload = nil
+      libuv.process_kill(M.__pid)
+      M.__pid = nil
 
       -- spawn/async_spawn already async, no need to send opts.__co
       -- also, we can't call coroutine.yield inside a libuv callback
       -- due to: "attempt to yield across C-call boundary"
       libuv.async_spawn({
         cwd = opts.cwd,
-        cmd = reload_contents,
+        cmd = contents,
         cb_finish = on_finish,
         cb_write = on_write,
-        cb_pid = function(pid) M.__pid_reload = pid end,
+        cb_pid = function(pid) M.__pid = pid end,
+        process1 = opts.process1,
+        profiler = opts.profiler,
         EOL = EOL,
         -- must send false, 'coroutinify' adds callback as last argument
         -- which will conflict with the 'fn_transform' argument
-      }, opts.__fn_transform or false)
+      }, fn_transform or false)
     else
-      -- table or function runs in a coroutine
-      -- which isn't required for 'libuv.spawn'
-      coroutine.wrap(function()
+      local fn_load = function()
         if opts.__co then
           local costatus = coroutine.status(opts.__co)
           if costatus ~= "dead" then
@@ -268,7 +277,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
           assert(coroutine.status(opts.__co) == "dead")
         end
         -- reset var to current running routine
-        opts.__co = coroutine.running()
+        opts.__co = opts.__coroutinify and coroutine.running()
 
         -- callback with newline
         local on_write_nl = function(data, cb)
@@ -288,23 +297,27 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         end
 
 
-        if type(reload_contents) == "table" then
-          for _, l in ipairs(reload_contents) do
+        if type(contents) == "table" then
+          for _, l in ipairs(contents) do
             on_write_nl_co(l)
           end
           on_finish()
-        elseif type(reload_contents) == "function" then
-          -- by default we use the async callbacks
-          if opts.func_async_callback ~= false then
-            reload_contents(on_write_nl_co, on_write_co)
+        elseif type(contents) == "function" then
+          -- by default we use sync callbacks
+          if opts.__coroutinify then
+            contents(on_write_nl_co, on_write_co)
           else
-            reload_contents(on_write_nl, on_write)
+            contents(on_write_nl, on_write)
           end
         else
         end
-      end)()
+      end
+      if opts.__coroutinify then
+        fn_load = coroutine.wrap(fn_load)
+      end
+      fn_load()
     end
-  end, fzf_field_expression, opts.debug)
+  end, fzf_field_index, opts.debug)
 end
 
 return M

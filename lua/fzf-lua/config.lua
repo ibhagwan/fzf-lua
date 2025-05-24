@@ -1020,6 +1020,7 @@ M._action_to_helpstr = {
   [actions.tmux_buf_set_reg]     = "set-register",
   [actions.paste_register]       = "paste-register",
   [actions.set_qflist]           = "set-{qf|loc}list",
+  [actions.list_del]             = "list-delete",
   [actions.apply_profile]        = "apply-profile",
   [actions.complete]             = "complete",
   [actions.dap_bp_del]           = "dap-bp-delete",
