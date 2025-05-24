@@ -403,7 +403,6 @@ M.awesome_colorschemes = function(opts)
   -- Error creating cache directory
   if not opts._adm then return end
 
-  opts.func_async_callback = false
   opts.__fn_reload = function(_)
     return function(cb)
       -- use coroutine & vim.schedule to avoid

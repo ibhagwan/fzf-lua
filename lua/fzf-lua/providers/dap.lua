@@ -91,7 +91,6 @@ M.breakpoints = function(opts)
   -- display relative paths by default
   if opts.cwd == nil then opts.cwd = uv.cwd() end
 
-  opts.func_async_callback = false
   opts.__fn_reload = opts.__fn_reload or function(_)
     return function(cb)
       coroutine.wrap(function()

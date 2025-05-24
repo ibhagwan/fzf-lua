@@ -211,7 +211,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         if cb then cb(nil) end
       else
         write_cb_count = write_cb_count + 1
-        uv.write(pipe, tostring(data), function(err)
+        uv.write(pipe, tostring(data), vim.schedule_wrap(function(err)
           write_cb_count = write_cb_count - 1
           if co then coroutine.resume(co) end
           if cb then cb(err) end
@@ -223,7 +223,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
           if write_cb_count == 0 and pipe_want_close then
             on_finish(nil, nil, 3)
           end
-        end)
+        end))
         -- yield returns when uv.write completes
         -- or when a new coroutine calls resume(1)
         if co and coroutine.yield() == 1 then
@@ -255,9 +255,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         -- which will conflict with the 'fn_transform' argument
       }, opts.__fn_transform or false)
     else
-      -- table or function runs in a coroutine
-      -- which isn't required for 'libuv.spawn'
-      coroutine.wrap(function()
+      local fn_load = function()
         if opts.__co then
           local costatus = coroutine.status(opts.__co)
           if costatus ~= "dead" then
@@ -268,7 +266,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
           assert(coroutine.status(opts.__co) == "dead")
         end
         -- reset var to current running routine
-        opts.__co = coroutine.running()
+        opts.__co = opts.__coroutinify and coroutine.running()
 
         -- callback with newline
         local on_write_nl = function(data, cb)
@@ -294,15 +292,19 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
           end
           on_finish()
         elseif type(reload_contents) == "function" then
-          -- by default we use the async callbacks
-          if opts.func_async_callback ~= false then
+          -- by default we use sync callbacks
+          if opts.__coroutinify then
             reload_contents(on_write_nl_co, on_write_co)
           else
             reload_contents(on_write_nl, on_write)
           end
         else
         end
-      end)()
+      end
+      if opts.__coroutinify then
+        fn_load = coroutine.wrap(fn_load)
+      end
+      fn_load()
     end
   end, fzf_field_expression, opts.debug)
 end

@@ -103,7 +103,6 @@ M.args = function(opts)
     return
   end
 
-  opts.func_async_callback = false
   opts.__fn_reload = opts.__fn_reload or function(_)
     return function(cb)
       local argc = vim.fn.argc()
