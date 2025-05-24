@@ -10,26 +10,6 @@ local libuv = require "fzf-lua.libuv"
 
 local M = {}
 
--- workaround to a potential 'tempname' bug? (#222)
--- neovim doesn't guarantee the existence of the
--- parent temp dir potentially failing `mkfifo`
--- https://github.com/neovim/neovim/issues/1432
--- https://github.com/neovim/neovim/pull/11284
-local function tempname()
-  local tmpname = vim.fn.tempname()
-  local parent = vim.fn.fnamemodify(tmpname, ":h")
-  -- parent must exist for `mkfifo` to succeed
-  -- if the neovim temp dir was deleted or the
-  -- tempname already exists, we use 'os.tmpname'
-  if not uv.fs_stat(parent) or uv.fs_stat(tmpname) then
-    tmpname = os.tmpname()
-    -- 'os.tmpname' touches the file which
-    -- will also fail `mkfifo`, delete it
-    vim.fn.delete(tmpname)
-  end
-  return tmpname
-end
-
 -- contents can be either a table with tostring()able items, or a function that
 -- can be called repeatedly for values. The latter can use coroutines for async
 -- behavior.
@@ -46,8 +26,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   if not opts then opts = {} end
   local cwd = opts.fzf_cwd or opts.cwd
   local cmd = { opts.fzf_bin or "fzf" }
-  local fifotmpname = utils.__IS_WINDOWS and utils.windows_pipename() or tempname()
-  local outputtmpname = tempname()
+  local fifotmpname = opts.pipename or utils.pipename()
+  local outputtmpname = utils.tempname()
 
   -- we use a temporary env $FZF_DEFAULT_COMMAND instead of piping
   -- the command to fzf, this way fzf kills the command when it exits.
@@ -257,7 +237,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- MSYS2 comes with "/usr/bin/cmd" that precedes "cmd.exe" (#1396)
       and { "cmd.exe", "/d", "/e:off", "/f:off", "/v:off", "/c" }
       or { "sh", "-c" }
-  if opts.pipe_cmd then
+  if opts.pipecmd then
     if FZF_DEFAULT_COMMAND then
       table.insert(cmd, 1, string.format("(%s) | ", FZF_DEFAULT_COMMAND))
       FZF_DEFAULT_COMMAND = nil

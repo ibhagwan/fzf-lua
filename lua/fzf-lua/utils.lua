@@ -1276,6 +1276,32 @@ function M.windows_pipename()
   return ([[\\.\pipe\%s]]):format(tmpname)
 end
 
+-- workaround to a potential 'tempname' bug? (#222)
+-- neovim doesn't guarantee the existence of the
+-- parent temp dir potentially failing `mkfifo`
+-- https://github.com/neovim/neovim/issues/1432
+-- https://github.com/neovim/neovim/pull/11284
+function M.tempname()
+  local tmpname = vim.fn.tempname()
+  local parent = vim.fn.fnamemodify(tmpname, ":h")
+  -- parent must exist for `mkfifo` to succeed
+  -- if the neovim temp dir was deleted or the
+  -- tempname already exists, we use 'os.tmpname'
+  if not uv.fs_stat(parent) or uv.fs_stat(tmpname) then
+    tmpname = os.tmpname()
+    -- 'os.tmpname' touches the file which
+    -- will also fail `mkfifo`, delete it
+    vim.fn.delete(tmpname)
+  end
+  return tmpname
+end
+
+
+---@return string
+function M.pipename()
+  return M.__IS_WINDOWS and M.windows_pipename() or M.tempname()
+end
+
 function M.create_user_command_callback(provider, arg, altmap)
   local function fzflua_opts(o)
     local ret = {}

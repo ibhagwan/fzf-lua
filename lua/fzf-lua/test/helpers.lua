@@ -147,7 +147,7 @@ M.new_child_neovim = function()
     ]])
         -- using "FZF_DEFAULT_OPTS" hangs the command on the
         -- child process and the loading indicator never stops
-        :format(M.IS_WIN() and "defaults = { pipe_cmd = true }," or "")
+        :format(M.IS_WIN() and "defaults = { __pipecmd = true }," or "")
     child.lua(lua_cmd, { config or {} })
   end
 

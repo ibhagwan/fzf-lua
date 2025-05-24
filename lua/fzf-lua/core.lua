@@ -159,6 +159,10 @@ M.fzf_exec = function(contents, opts)
   opts.fn_selected = opts.fn_selected or function(selected, o)
     actions.act(selected, o)
   end
+  if type(contents) ~= "string" then
+    opts.__pipename = utils.pipename()
+    opts.__reload_cmd = string.format("cat %s", opts.__pipename)
+  end
   -- wrapper for command transformer
   if type(contents) == "string" and (opts.fn_transform or opts.fn_preprocess) then
     contents = libuv.spawn_nvim_fzf_cmd({
@@ -433,7 +437,8 @@ M.fzf = function(contents, opts)
     {
       fzf_bin = opts.fzf_bin,
       cwd = opts.cwd,
-      pipe_cmd = opts.pipe_cmd,
+      pipecmd = opts.__pipecmd,
+      pipename = opts.__pipename,
       silent_fail = opts.silent_fail,
       is_fzf_tmux = opts._is_fzf_tmux,
       debug = opts.debug == true or opts.debug == "verbose",
