@@ -1833,7 +1833,7 @@ function Previewer.nvim_options:populate_preview_buf(entry_str)
 
   -- get_help_text might be slow. pcall to prevent errors when scrolling the list too quickly
   pcall(function()
-    local lines = vim.list_extend(header, self:get_help_text(entry.name))
+    local lines = vim.list_extend(header, self:get_help_text(entry.name) or {})
     vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
     self:set_preview_buf(tmpbuf)
   end)
