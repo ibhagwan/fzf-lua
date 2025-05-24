@@ -72,6 +72,7 @@ M.ACTION_DEFINITIONS = {
   },
   [actions.buf_del]           = { "close" },
   [actions.arg_del]           = { "delete" },
+  [actions.list_del]          = { "delete" },
   [actions.dap_bp_del]        = { "delete" },
   [actions.cs_delete]         = { "uninstall" },
   [actions.cs_update]         = { "[down|re]-load" },
@@ -146,29 +147,31 @@ end
 ---@param contents content
 ---@param opts? {fn_reload: string|function, fn_transform: function, __fzf_init_cmd: string, _normalized: boolean}
 M.fzf_exec = function(contents, opts)
-  if type(contents) == "table" and type(contents[1]) == "table" then
-    contents = contents_from_arr(contents)
-  end
   if not opts or not opts._normalized then
     opts = config.normalize_opts(opts or {}, {})
     if not opts then return end
   end
-  -- save a copy of cprovider info in the opts, we later use it for better named
-  -- quickfix lists, use `pcall` because we will circular ref main object (#776)
-  _, opts.__INFO = pcall(loadstring("return require'fzf-lua'.get_info()"))
+  if type(contents) == "table" and type(contents[1]) == "table" then
+    contents = contents_from_arr(contents)
+  end
+  -- Save a copy of provider info in the opts, we will
+  -- later use it for better named quickfix lists (#776)
+  opts.__INFO = FzfLua.get_info()
+  -- Default fzf exit callback acts upon the selected items
   opts.fn_selected = opts.fn_selected or function(selected, o)
     actions.act(selected, o)
   end
-  -- wrapper for command transformer
-  if type(contents) == "string" and (opts.fn_transform or opts.fn_preprocess) then
-    contents = libuv.spawn_nvim_fzf_cmd({
-        cmd = contents,
-        cwd = opts.cwd,
-        cb_pid = function(pid) opts.__pid = pid end,
-      },
-      opts.fn_transform or function(x) return x end,
-      opts.fn_preprocess)
+  -- Contents sent to fzf can only be nil or a shell command (string)
+  -- the API accepts both tables and functions which we "stringify"
+  if contents ~= nil and type(contents) ~= "string" and not opts.__stringified then
+    opts.__contents = contents
+    local cmd, id = shell.stringify(opts)
+    -- Protect function ptr from being overwritten in the circular buffer
+    -- NOTE: will be cleared when a new picker is opened (not a resume)
+    shell.set_protected(id)
+    contents = cmd
   end
+  assert(contents == nil or type(contents) == "string", "contents must be of type string")
   -- setup as "live": disables fuzzy matching and reload the content
   -- every keystroke (query changed), utilizes fzf's 'change:reload'
   -- event trigger or skim's "interactive" mode
@@ -428,7 +431,7 @@ M.fzf = function(contents, opts)
   local fzf_bufnr = fzf_win:create()
   -- convert "reload" actions to fzf's `reload` binds
   -- convert "exec_silent" actions to fzf's `execute-silent` binds
-  opts = M.convert_reload_actions(opts.__reload_cmd or contents, opts)
+  opts = M.convert_reload_actions(contents, opts)
   opts = M.convert_exec_silent_actions(opts)
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts, fzf_win),
     {
@@ -898,22 +901,19 @@ M.mt_cmd_wrapper = function(opts)
     end
     return cmd
   else
-    assert(not opts.__mt_transform or type(opts.__mt_transform) == "function")
-    assert(not opts.__mt_preprocess or type(opts.__mt_preprocess) == "function")
-    assert(not opts.__mt_postprocess or type(opts.__mt_postprocess) == "function")
-    return libuv.spawn_nvim_fzf_cmd(opts,
-      function(x)
-        return opts.__mt_transform
-            and opts.__mt_transform(x, opts)
-            or make_entry.file(x, opts)
-      end,
-      function(o)
-        -- setup opts.cwd and git diff files
-        return opts.__mt_preprocess
-            and opts.__mt_preprocess(o)
-            or make_entry.preprocess(o)
-      end,
-      opts.__mt_postprocess and function(o) return opts.__mt_postprocess(o) end or nil)
+    assert(not opts.__fn_transform or type(opts.__fn_transform) == "function")
+    assert(not opts.__fn_preprocess or type(opts.__fn_preprocess) == "function")
+    assert(not opts.__fn_postprocess or type(opts.__fn_postprocess) == "function")
+    opts.__fn_transform = opts.__fn_transform == nil
+        and function(x) return make_entry.file(x, opts) end
+        or opts.__fn_transform
+    opts.__fn_preprocess = opts.__fn_preprocess == nil
+        and function(o) return make_entry.preprocess(o) end
+        or opts.__fn_preprocess
+    opts.__contents = opts.cmd
+    local cmd, id = shell.stringify(opts)
+    shell.set_protected(id)
+    return cmd
   end
 end
 
@@ -1431,7 +1431,7 @@ M.setup_fzf_interactive_wrap = function(opts)
 
   -- neovim shell wrapper for parsing the query and loading contents
   local fzf_field_expression = M.fzf_field_expression(opts)
-  local command = shell.reload_action_cmd(opts, fzf_field_expression)
+  local command = shell.stringify(opts, fzf_field_expression)
   return M.setup_fzf_interactive_flags(command, fzf_field_expression, opts)
 end
 

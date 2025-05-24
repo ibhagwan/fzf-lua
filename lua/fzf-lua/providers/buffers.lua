@@ -187,30 +187,23 @@ M.buffers = function(opts)
   opts = config.normalize_opts(opts, "buffers")
   if not opts then return end
 
-  opts.__fn_reload = opts.__fn_reload or function(_)
-    return function(cb)
-      local filtered, _, max_bufnr = filter_buffers(opts, core.CTX().buflist)
+  local contents = function(cb)
+    local filtered, _, max_bufnr = filter_buffers(opts, core.CTX().buflist)
 
-      if next(filtered) then
-        local buffers = populate_buffer_entries(opts, filtered)
-        for _, bufinfo in pairs(buffers) do
-          local ok, entry = pcall(gen_buffer_entry, opts, bufinfo, max_bufnr)
-          assert(ok and entry)
-          cb(entry)
-        end
+    if next(filtered) then
+      local buffers = populate_buffer_entries(opts, filtered)
+      for _, bufinfo in pairs(buffers) do
+        local ok, entry = pcall(gen_buffer_entry, opts, bufinfo, max_bufnr)
+        assert(ok and entry)
+        cb(entry)
       end
-      cb(nil)
     end
+    cb(nil)
   end
-
-  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local contents, id = shell.reload_action_cmd(opts, "")
-  opts.__reload_cmd = contents
 
   -- get current tab/buffer/previous buffer
   -- save as a func ref for resume to reuse
   opts._fn_pre_fzf = function()
-    shell.set_protected(id)
     core.CTX({ includeBuflist = true }) -- include `nvim_list_bufs` in context
   end
 
@@ -409,79 +402,65 @@ M.tabs = function(opts)
       end, "", opts.debug))
   end
 
-  opts.__fn_reload = opts.__fn_reload or function(_)
-    -- we do not return the populate function with cb directly to avoid
-    -- E5560: nvim_exec must not be called in a lua loop callback
-    local entries = {}
-    local populate = function(cb)
-      local max_bufnr = (function()
-        local ret = 0
-        for _, t in ipairs(vim.api.nvim_list_tabpages()) do
-          for _, w in ipairs(vim.api.nvim_tabpage_list_wins(t)) do
-            local b = vim.api.nvim_win_get_buf(w)
-            if b > ret then ret = b end
-          end
+  local contents = function(cb)
+    local max_bufnr = (function()
+      local ret = 0
+      for _, t in ipairs(vim.api.nvim_list_tabpages()) do
+        for _, w in ipairs(vim.api.nvim_tabpage_list_wins(t)) do
+          local b = vim.api.nvim_win_get_buf(w)
+          if b > ret then ret = b end
         end
-        return ret
-      end)()
+      end
+      return ret
+    end)()
 
-      for tabnr, tabh in ipairs(vim.api.nvim_list_tabpages()) do
-        (function()
-          if opts.current_tab_only and tabh ~= core.CTX().tabh then return end
+    for tabnr, tabh in ipairs(vim.api.nvim_list_tabpages()) do
+      (function()
+        if opts.current_tab_only and tabh ~= core.CTX().tabh then return end
 
-          local tab_cwd = vim.fn.getcwd(-1, tabnr)
-          local tab_cwd_tilde = path.HOME_to_tilde(tab_cwd)
-          local title, fn_title_hl = opt_hl(tabnr, "tab_title",
-            function(s)
-              return string.format("%s%s#%d%s", s, utils.nbsp, tabnr,
-                (uv.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde)))
-            end,
-            utils.ansi_codes[opts.hls.tab_title])
+        local tab_cwd = vim.fn.getcwd(-1, tabnr)
+        local tab_cwd_tilde = path.HOME_to_tilde(tab_cwd)
+        local title, fn_title_hl = opt_hl(tabnr, "tab_title",
+          function(s)
+            return string.format("%s%s#%d%s", s, utils.nbsp, tabnr,
+              (uv.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde)))
+          end,
+          utils.ansi_codes[opts.hls.tab_title])
 
-          local marker, fn_marker_hl = opt_hl(tabnr, "tab_marker",
-            function(s) return s end,
-            utils.ansi_codes[opts.hls.tab_marker])
+        local marker, fn_marker_hl = opt_hl(tabnr, "tab_marker",
+          function(s) return s end,
+          utils.ansi_codes[opts.hls.tab_marker])
 
-          local tab_cwd_tilde_base64 = base64.encode(tab_cwd_tilde)
-          if not opts.current_tab_only then
-            cb(string.format("%s:%d:%d:0)%s%s  %s",
-              tab_cwd_tilde_base64,
-              tabnr,
-              tabh,
-              utils.nbsp,
-              fn_title_hl(title),
-              (tabh == core.CTX().tabh) and fn_marker_hl(marker) or ""))
-          end
+        local tab_cwd_tilde_base64 = base64.encode(tab_cwd_tilde)
+        if not opts.current_tab_only then
+          cb(string.format("%s:%d:%d:0)%s%s  %s",
+            tab_cwd_tilde_base64,
+            tabnr,
+            tabh,
+            utils.nbsp,
+            fn_title_hl(title),
+            (tabh == core.CTX().tabh) and fn_marker_hl(marker) or ""))
+        end
 
-          for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabh)) do
-            if tabh ~= core.CTX().tabh or core.CTX().curtab_wins[tostring(w)] then
-              local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
-              if b then
-                local prefix = string.format("%s:%d:%d:%d)%s%s%s",
-                  tab_cwd_tilde_base64, tabnr, tabh, w, utils.nbsp, utils.nbsp, utils.nbsp)
-                local bufinfo = populate_buffer_entries({}, { b }, w)[1]
-                cb(gen_buffer_entry(opts, bufinfo, max_bufnr, tab_cwd, prefix))
-              end
+        for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabh)) do
+          if tabh ~= core.CTX().tabh or core.CTX().curtab_wins[tostring(w)] then
+            local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
+            if b then
+              local prefix = string.format("%s:%d:%d:%d)%s%s%s",
+                tab_cwd_tilde_base64, tabnr, tabh, w, utils.nbsp, utils.nbsp, utils.nbsp)
+              local bufinfo = populate_buffer_entries({}, { b }, w)[1]
+              cb(gen_buffer_entry(opts, bufinfo, max_bufnr, tab_cwd, prefix))
             end
           end
-        end)()
-      end
-      cb(nil)
+        end
+      end)()
     end
-    populate(function(e)
-      if e then table.insert(entries, e) end
-    end)
-    return entries
+    cb(nil)
   end
-
-  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local contents, id = shell.reload_action_cmd(opts, "")
-  opts.__reload_cmd = contents
 
   -- get current tab/buffer/previous buffer
   -- save as a func ref for resume to reuse
   opts._fn_pre_fzf = function()
-    shell.set_protected(id)
     core.CTX({ includeBuflist = true }) -- include `nvim_list_bufs` in context
   end
 
