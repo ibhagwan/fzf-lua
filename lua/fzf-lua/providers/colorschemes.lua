@@ -403,61 +403,58 @@ M.awesome_colorschemes = function(opts)
   -- Error creating cache directory
   if not opts._adm then return end
 
-  opts.func_async_callback = false
-  opts.__fn_reload = function(_)
-    return function(cb)
-      -- use coroutine & vim.schedule to avoid
-      -- E5560: vimL function must not be called in a lua loop callback
-      coroutine.wrap(function()
-        local co = coroutine.running()
+  local contents = function(cb)
+    -- use coroutine & vim.schedule to avoid
+    -- E5560: vimL function must not be called in a lua loop callback
+    coroutine.wrap(function()
+      local co = coroutine.running()
 
-        -- make sure our cache is in packpath
-        vim.opt.packpath:append(opts._packpath)
+      -- make sure our cache is in packpath
+      vim.opt.packpath:append(opts._packpath)
 
-        -- since resume uses deepcopy having multiple db's is going to
-        -- create all sorts of voodoo issues when running resume
-        -- HACK: find a better solution (singleton?)
-        if config.__resume_data and type(config.__resume_data.opts) == "table" then
-          config.__resume_data.opts._adm.db = opts._adm.db
-        end
+      -- since resume uses deepcopy having multiple db's is going to
+      -- create all sorts of voodoo issues when running resume
+      -- HACK: find a better solution (singleton?)
+      if config.__resume_data and type(config.__resume_data.opts) == "table" then
+        config.__resume_data.opts._adm.db = opts._adm.db
+      end
 
-        local sorted = vim.tbl_keys(json_db)
-        table.sort(sorted)
+      local sorted = vim.tbl_keys(json_db)
+      table.sort(sorted)
 
-        for _, dbkey in ipairs(sorted) do
-          local downloaded = opts._adm:downloaded(dbkey)
-          local info = opts._adm:get(dbkey)
-          for i, cs in ipairs(info.colorschemes) do
-            if opts._adm:downloading(dbkey) then
-              -- downloading, set `on_exit` callback and wait for resume
-              opts._adm:set_once_on_exit(dbkey, function(_, _, _)
-                coroutine.resume(co)
-              end)
-              coroutine.yield()
-            end
-            vim.schedule(function()
-              local icon = not downloaded
-                  and opts.icons[1]           -- download icon
-                  or i == 1 and opts.icons[2] -- colorscheme (package) icon
-                  or opts.icons[3]            -- colorscheme (variant) noicon
-              local entry = string.format("%s:%d:%s  %s %s",
-                dbkey,
-                i,
-                icon,
-                cs.disp_name,
-                i == 1 and string.format("(%s)", info.disp_url) or "")
-              cb(entry, function()
-                coroutine.resume(co)
-              end)
+      for _, dbkey in ipairs(sorted) do
+        local downloaded = opts._adm:downloaded(dbkey)
+        local info = opts._adm:get(dbkey)
+        for i, cs in ipairs(info.colorschemes) do
+          if opts._adm:downloading(dbkey) then
+            -- downloading, set `on_exit` callback and wait for resume
+            opts._adm:set_once_on_exit(dbkey, function(_, _, _)
+              coroutine.resume(co)
             end)
             coroutine.yield()
           end
+          vim.schedule(function()
+            local icon = not downloaded
+                and opts.icons[1]           -- download icon
+                or i == 1 and opts.icons[2] -- colorscheme (package) icon
+                or opts.icons[3]            -- colorscheme (variant) noicon
+            local entry = string.format("%s:%d:%s  %s %s",
+              dbkey,
+              i,
+              icon,
+              cs.disp_name,
+              i == 1 and string.format("(%s)", info.disp_url) or "")
+            cb(entry, function()
+              coroutine.resume(co)
+            end)
+          end)
+          coroutine.yield()
         end
+      end
 
-        -- done
-        cb(nil)
-      end)()
-    end
+      -- done
+      cb(nil)
+    end)()
   end
 
   local prev_act_id
@@ -482,15 +479,8 @@ M.awesome_colorschemes = function(opts)
     end, "{}", opts.debug)
   end
 
-  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local contents, id = shell.reload_action_cmd(opts, "")
-  opts.__reload_cmd = contents
-
   opts._fn_pre_fzf = function()
-    shell.set_protected(id)
-    if prev_act_id then
-      shell.set_protected(prev_act_id)
-    end
+    if prev_act_id then shell.set_protected(prev_act_id) end
   end
 
   opts.winopts = opts.winopts or {}
