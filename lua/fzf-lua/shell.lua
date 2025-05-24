@@ -211,7 +211,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         if cb then cb(nil) end
       else
         write_cb_count = write_cb_count + 1
-        uv.write(pipe, tostring(data), function(err)
+        uv.write(pipe, tostring(data), vim.schedule_wrap(function(err)
           write_cb_count = write_cb_count - 1
           if co then coroutine.resume(co) end
           if cb then cb(err) end
@@ -223,7 +223,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
           if write_cb_count == 0 and pipe_want_close then
             on_finish(nil, nil, 3)
           end
-        end)
+        end))
         -- yield returns when uv.write completes
         -- or when a new coroutine calls resume(1)
         if co and coroutine.yield() == 1 then

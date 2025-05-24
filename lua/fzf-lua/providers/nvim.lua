@@ -234,6 +234,7 @@ M.marks = function(opts)
   opts = config.normalize_opts(opts, "marks")
   if not opts then return end
 
+  opts.func_async_callback = false
   opts.__fn_reload = opts.__fn_reload or function()
     return function(cb)
       local win = core.CTX().winid

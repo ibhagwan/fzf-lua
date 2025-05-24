@@ -72,6 +72,7 @@ M.ACTION_DEFINITIONS = {
   },
   [actions.buf_del]           = { "close" },
   [actions.arg_del]           = { "delete" },
+  [actions.list_del]          = { "delete" },
   [actions.dap_bp_del]        = { "delete" },
   [actions.cs_delete]         = { "uninstall" },
   [actions.cs_update]         = { "[down|re]-load" },
@@ -158,6 +159,19 @@ M.fzf_exec = function(contents, opts)
   _, opts.__INFO = pcall(loadstring("return require'fzf-lua'.get_info()"))
   opts.fn_selected = opts.fn_selected or function(selected, o)
     actions.act(selected, o)
+  end
+  if type(contents) == "function" then
+    opts.__fn_reload = function(_)
+      return function(cb)
+        contents(function(data)
+          -- Calling function is responsible for sending nil as EOF
+          cb(data)
+        end)
+      end
+    end
+    local cmd, id = shell.reload_action_cmd(opts, "")
+    opts.__reload_cmd = cmd
+    shell.set_protected(id)
   end
   -- wrapper for command transformer
   if type(contents) == "string" and (opts.fn_transform or opts.fn_preprocess) then
