@@ -810,10 +810,9 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     assert(cached.bufnr == self.preview_bufnr)
     -- same file/buffer as previous entry no need to reload content
     -- only call post to set cursor location
-    if type(self.cached_bufnrs[tostring(self.preview_bufnr)]) == "table"
-        and ((tonumber(entry.line) and entry.line > 0 and entry.line ~= self.orig_pos[1])
-          or (tonumber(entry.col) and entry.col > 0 and entry.col - 1 ~= self.orig_pos[2]))
-    then
+    cached.invalid_pos = ((tonumber(entry.line) and entry.line > 0 and entry.line ~= self.orig_pos[1])
+      or (tonumber(entry.col) and entry.col > 0 and entry.col - 1 ~= self.orig_pos[2]))
+    if type(self.cached_bufnrs[tostring(self.preview_bufnr)]) == "table" and cached.invalid_pos then
       -- entry is within the same buffer but line|col has changed
       -- clear cached buffer position so we scroll to entry's line|col
       self.cached_bufnrs[tostring(self.preview_bufnr)] = true
@@ -1276,19 +1275,27 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
     -- set cursor highlights for line|col or tag
     self:set_cursor_hl(entry)
 
+    local syntax = function()
+      if not entry.cached then -- vim.bo[buf]._ft
+        self:do_syntax(entry)
+        self:attach_snacks_image_inline()
+      elseif entry.cached.invalid_pos then
+        self:update_ts_context()
+      end
+    end
+    -- self:update_ts_context()
+
     -- syntax highlighting
-    if self.syntax and not entry.cached then
+    if self.syntax then
       if self.syntax_delay > 0 then
         local syntax_bufnr = self.preview_bufnr
         vim.defer_fn(function()
           if self.preview_bufnr == syntax_bufnr then
-            self:do_syntax(entry)
-            self:attach_snacks_image_inline()
+            syntax()
           end
         end, self.syntax_delay)
       else
-        self:do_syntax(entry)
-        self:attach_snacks_image_inline()
+        syntax()
       end
     end
   end
