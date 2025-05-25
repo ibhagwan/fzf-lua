@@ -86,10 +86,9 @@ end
 
 ---@param winid integer
 ---@param bufnr integer
----@param opts? { setup_opts: table, zindex: integer }
+---@param opts table
 function TSContext.update(winid, bufnr, opts)
-  opts = opts or {}
-  if not TSContext.setup(opts.setup_opts) then return end
+  if not TSContext.setup(opts) then return end
   assert(bufnr == vim.api.nvim_win_get_buf(winid))
   -- excerpt from nvim-treesitter-context `update_single_context`
   require("treesitter-context.render").close_leaked_contexts()
@@ -100,16 +99,8 @@ function TSContext.update(winid, bufnr, opts)
     assert(context_lines)
     local function open()
       if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_win_is_valid(winid) then
-        -- ensure context win is above
-        local fix_zindex = function(win, zindex)
-          if win and api.nvim_win_is_valid(win) then api.nvim_win_set_config(win, { zindex = zindex }) end
-        end
         api.nvim_win_call(winid, function()
-          local window_context = require("treesitter-context.render").open(bufnr, winid,
-            context_ranges, context_lines)
-          if not window_context then return end
-          fix_zindex(window_context.context_winid, opts.zindex)
-          fix_zindex(window_context.gutter_winid, opts.zindex)
+          require("treesitter-context.render").open(bufnr, winid, context_ranges, context_lines)
         end)
         TSContext._winids[tostring(winid)] = bufnr
       end
@@ -974,15 +965,12 @@ function Previewer.base:update_ts_context()
       end
       if parser:is_valid(true) then
         context_updated = true
-        TSContext.update(self.win.preview_winid, self.preview_bufnr,
-          {
-            setup_opts = vim.tbl_extend("force",
-              type(self.treesitter.context) == "table" and self.treesitter.context or {}, {
-                -- `multiwindow` must be set regardless of user options
-                multiwindow = true,
-              }),
-            zindex = self.win.winopts.zindex + 20,
-          })
+        TSContext.update(self.win.preview_winid, self.preview_bufnr, vim.tbl_extend("force",
+          type(self.treesitter.context) == "table" and self.treesitter.context or {}, {
+            -- `zindex` and `multiwindow` must be set regardless of user options
+            multiwindow = true,
+            zindex = self.win.winopts.zindex + 20
+          }))
       end
     end, t)
   end
