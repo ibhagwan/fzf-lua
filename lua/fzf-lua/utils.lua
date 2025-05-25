@@ -1101,6 +1101,18 @@ function M.fast_win_set_config(winid, opts)
   end
 end
 
+function M.upvfind(func, upval_name)
+  -- Find the upvalue in a function
+  local i = 1
+  while true do
+    local name, value = debug.getupvalue(func, i)
+    if not name then break end
+    if name == upval_name then return value end
+    i = i + 1
+  end
+  return nil
+end
+
 function M.getbufinfo(bufnr)
   if M.__HAS_AUTOLOAD_FNS then
     return vim.fn["fzf_lua#getbufinfo"](bufnr)

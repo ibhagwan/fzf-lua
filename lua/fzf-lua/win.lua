@@ -766,6 +766,7 @@ function FzfWin:redraw_preview()
   end
   self:reset_win_highlights(self.preview_winid)
   self._previewer:display_last_entry()
+  self._previewer:update_ts_context()
 end
 
 function FzfWin:validate()
