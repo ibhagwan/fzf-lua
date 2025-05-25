@@ -708,6 +708,8 @@ function M.normalize_opts(opts, globals, __resume_key)
               ["--border"]         = false,
               ["--scrollbar"]      = false,
               ["--no-scrollbar"]   = false,
+              ["--wrap"]           = true,
+              ["--wrap-sign"]      = true,
               ["--highlight-line"] = false,
             }
           },
@@ -718,8 +720,8 @@ function M.normalize_opts(opts, globals, __resume_key)
           ["0.56"] = { fzf_opts = { ["--gap"] = true } },
           ["0.54"] = {
             fzf_opts = {
-              ["-wrap"]            = true,
-              ["-wrap-sign"]       = true,
+              ["--wrap"]           = true,
+              ["--wrap-sign"]      = true,
               ["--highlight-line"] = true,
             }
           },

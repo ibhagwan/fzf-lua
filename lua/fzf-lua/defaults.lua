@@ -977,7 +977,10 @@ M.defaults.diagnostics          = {
   diag_icons  = true,
   diag_source = false,
   multiline   = true,
-  fzf_opts    = { ["--multi"] = true },
+  fzf_opts    = {
+    ["--multi"] = true,
+    ["--wrap"]  = true,
+  },
   _actions    = function() return M.globals.actions.files end,
   _cached_hls = { "path_colnr", "path_linenr" },
   -- signs = {
