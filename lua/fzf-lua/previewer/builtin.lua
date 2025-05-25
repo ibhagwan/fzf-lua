@@ -109,9 +109,10 @@ function TSContext.update(winid, bufnr, opts)
         api.nvim_win_call(winid, function()
           local render_open = require("treesitter-context.render").open
           render_open(bufnr, winid, context_ranges, context_lines)
-          local name, window_contexts = debug.getupvalue(render_open, 3)
-          if name ~= "window_contexts" or not window_contexts then return end
-          local window_context = window_contexts[winid]
+          _G._fzf_lua_window_contexts = _G._fzf_lua_window_contexts or
+              utils.upvfind(render_open, "window_contexts")
+          if not _G._fzf_lua_window_contexts then return end
+          local window_context = _G._fzf_lua_window_contexts[winid]
           if not window_context then return end
           fix_zindex(window_context.context_winid, opts.zindex)
           fix_zindex(window_context.gutter_winid, opts.zindex)
@@ -951,6 +952,7 @@ end
 
 function Previewer.base:update_ts_context()
   local bufnr = self.preview_bufnr
+  if not bufnr or not package.loaded["treesitter-context"] then return end
   local ft = vim.b[bufnr] and vim.b[bufnr]._ft
   if not ft
       or not self.win
@@ -968,12 +970,18 @@ function Previewer.base:update_ts_context()
   if not utils.has_ts_parser(lang) then return end
   local parser = vim.treesitter.get_parser(self.preview_bufnr, lang)
   local context_updated
+  _G._fzf_lua_multiwindow_events = _G._fzf_lua_multiwindow_events or
+      utils.upvfind(utils.upvfind(require("treesitter-context").enable, "update") or function() end,
+        "multiwindow_events") or {}
+  local save = _G._fzf_lua_multiwindow_events.WinResized
+  _G._fzf_lua_multiwindow_events.WinResized = false
   for _, t in ipairs({ 0, 20, 50, 100 }) do
     vim.defer_fn(function()
       if context_updated
           or not tonumber(self.preview_bufnr)
           or not vim.api.nvim_buf_is_valid(self.preview_bufnr)
       then
+        _G._fzf_lua_multiwindow_events.WinResized = save
         return
       end
       if parser:is_valid(true) then
