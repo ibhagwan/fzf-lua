@@ -971,13 +971,13 @@ M.defaults.lsp.code_actions     = {
 
 M.defaults.diagnostics          = {
   previewer      = M._default_previewer_fn,
-  file_icons     = 1,
+  file_icons     = false,
   color_icons    = true,
-  color_headings = false,
+  color_headings = true,
   git_icons      = false,
   diag_icons     = true,
-  diag_source    = false,
-  diag_code      = false,
+  diag_source    = true,
+  diag_code      = true,
   multiline      = 2,
   fzf_opts       = {
     ["--multi"] = true,
