@@ -970,19 +970,21 @@ M.defaults.lsp.code_actions     = {
 }
 
 M.defaults.diagnostics          = {
-  previewer   = M._default_previewer_fn,
-  file_icons  = 1,
-  color_icons = true,
-  git_icons   = false,
-  diag_icons  = true,
-  diag_source = false,
-  multiline   = 2,
-  fzf_opts    = {
+  previewer      = M._default_previewer_fn,
+  file_icons     = 1,
+  color_icons    = true,
+  color_headings = false,
+  git_icons      = false,
+  diag_icons     = true,
+  diag_source    = false,
+  diag_code      = false,
+  multiline      = 2,
+  fzf_opts       = {
     ["--multi"] = true,
     ["--wrap"]  = true,
   },
-  _actions    = function() return M.globals.actions.files end,
-  _cached_hls = { "path_colnr", "path_linenr" },
+  _actions       = function() return M.globals.actions.files end,
+  _cached_hls    = { "path_colnr", "path_linenr" },
   -- signs = {
   --   ["Error"] = { text = "e", texthl = "DiagnosticError" },
   --   ["Warn"]  = { text = "w", texthl = "DiagnosticWarn" },
