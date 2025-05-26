@@ -91,7 +91,7 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
     libuv.shellescape(path.normalize(nvim_bin)),
     libuv.shellescape(path.normalize(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" })),
     id,
-    debug,
+    tostring(debug),
     fzf_field_expression)
 
   return action_cmd, id
