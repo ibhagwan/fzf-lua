@@ -194,6 +194,13 @@ M.diagnostics = function(opts)
                 coroutine.resume(co)
                 return
               end
+
+              local sign_def = opts.__signs[diag.severity]
+
+              if opts.color_headings then
+                diag_entry.filename = utils.ansi_from_hl(sign_def.texthl, diag_entry.filename)
+              end
+
               local entry = make_entry.lcol(diag_entry, opts)
               entry = make_entry.file(entry, opts)
               if not entry then
@@ -201,22 +208,27 @@ M.diagnostics = function(opts)
                 coroutine.resume(co)
               else
                 local icon = nil
-                if opts.__signs[diag.severity] then
-                  local sign_def = opts.__signs[diag.severity]
+                if sign_def then
                   icon = sign_def.text
                   if opts.color_icons then
                     icon = utils.ansi_from_hl(sign_def.texthl, icon)
                   end
                 end
+
+                if opts.diag_code and diag.code then
+                  entry = entry .. utils.ansi_from_hl('Comment', ' [' .. diag.code .. ']')
+                end
+
                 entry = string.format("%s%s%s",
                   icon and string.format("%s%s%s", icon, opts.icon_padding or "", utils.nbsp)
                   or "",
-                  opts.diag_source and string.format(
-                    "%s%s%s%s",
-                    "[", --utils.ansi_codes.bold("["),
-                    diag.source,
-                    "]", --utils.ansi_codes.bold("]"),
-                    utils.nbsp)
+                  opts.diag_source and utils.ansi_from_hl(
+                    opts.color_headings and sign_def.texthl, string.format(
+                      "%s%s%s%s",
+                      "[", --utils.ansi_codes.bold("["),
+                      diag.source,
+                      "]", --utils.ansi_codes.bold("]"),
+                      utils.nbsp))
                   or "",
                   entry)
                 fzf_cb(entry, function() coroutine.resume(co) end)

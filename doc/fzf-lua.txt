@@ -1244,11 +1244,13 @@ CUSTOMIZATION                                          *fzf-lua-customization*
       },
       diagnostics ={
         prompt            = 'Diagnostics❯ ',
+        color_headings    = false,  -- display filename and source in diag color (e.g. orange for warnings)
         cwd_only          = false,
         file_icons        = true,
         git_icons         = false,
         diag_icons        = true,
-        diag_source       = true,   -- display diag source (e.g. [pycodestyle])
+        diag_source       = false,  -- display diag source (e.g. [pycodestyle])
+        diag_code         = false,  -- display diag code (e.g. [E011])
         icon_padding      = '',     -- add padding for wide diagnostics signs
         multiline         = true,   -- concatenate multi-line diags into a single line
         -- severity_only:   keep any matching exact severity
