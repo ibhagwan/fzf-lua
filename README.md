@@ -1274,12 +1274,14 @@ previewers = {
   diagnostics ={
     prompt            = 'Diagnostics❯ ',
     cwd_only          = false,
-    file_icons        = true,
+    file_icons        = false,
     git_icons         = false,
-    diag_icons        = true,
+    color_headings    = true,   -- use diag highlights to color source & filepath
+    diag_icons        = true,   -- display icons from diag sign definitions
     diag_source       = true,   -- display diag source (e.g. [pycodestyle])
+    diag_code         = true,   -- display diag code (e.g. [undefined])
     icon_padding      = '',     -- add padding for wide diagnostics signs
-    multiline         = true,   -- concatenate multi-line diags into a single line
+    multiline         = 2,      -- split heading and diag to separate lines
     -- severity_only:   keep any matching exact severity
     -- severity_limit:  keep any equal or more severe (lower)
     -- severity_bound:  keep any equal or less severe (higher)
