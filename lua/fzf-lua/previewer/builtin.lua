@@ -1013,8 +1013,9 @@ function Previewer.base:attach_snacks_image_inline()
   local bufnr, preview_winid = self.preview_bufnr, self.win.preview_winid
   if not simg
       or not self.snacks_image.enabled
+      or not self.snacks_image.render_inline
       or not simg.supports_terminal()
-      or not (simg.config.doc.enabled and simg.config.doc.inline and simg.terminal.env().placeholders)
+      or not simg.terminal.env().placeholders
       or vim.b[bufnr].snacks_image_attached then
     return
   end
