@@ -91,8 +91,6 @@ function TSContext.update(winid, bufnr, opts)
   opts = opts or {}
   if not TSContext.setup(opts.setup_opts) then return end
   assert(bufnr == vim.api.nvim_win_get_buf(winid))
-  -- excerpt from nvim-treesitter-context `update_single_context`
-  require("treesitter-context.render").close_leaked_contexts()
   local context_ranges, context_lines = require("treesitter-context.context").get(bufnr, winid)
   if not context_ranges or #context_ranges == 0 then
     TSContext.close(winid)
