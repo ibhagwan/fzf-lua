@@ -91,6 +91,8 @@ function TSContext.update(winid, bufnr, opts)
   opts = opts or {}
   if not TSContext.setup(opts.setup_opts) then return end
   assert(bufnr == vim.api.nvim_win_get_buf(winid))
+  local render = require("treesitter-context.render")
+  render.close_contexts({ winid })
   local context_ranges, context_lines = require("treesitter-context.context").get(winid)
   if not context_ranges or #context_ranges == 0 then
     TSContext.close(winid)
@@ -106,9 +108,9 @@ function TSContext.update(winid, bufnr, opts)
         end
         api.nvim_win_call(winid, function()
           local render_open = require("treesitter-context.render").open
-          render_open(winid, context_ranges, context_lines)
+          render.open(winid, context_ranges, context_lines)
           _G._fzf_lua_window_contexts = _G._fzf_lua_window_contexts or
-              utils.upvfind(render_open, "window_contexts")
+              utils.upvfind(render.open, "window_contexts")
           if not _G._fzf_lua_window_contexts then return end
           local window_context = _G._fzf_lua_window_contexts[winid]
           if not window_context then return end
