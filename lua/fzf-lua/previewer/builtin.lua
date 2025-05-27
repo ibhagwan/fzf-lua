@@ -86,10 +86,10 @@ end
 
 ---@param winid integer
 ---@param bufnr integer
----@param opts? { setup_opts: table, zindex: integer }
+---@param opts? TSContext.UserConfig
 function TSContext.update(winid, bufnr, opts)
   opts = opts or {}
-  if not TSContext.setup(opts.setup_opts) then return end
+  if not TSContext.setup(opts) then return end
   assert(bufnr == vim.api.nvim_win_get_buf(winid))
   local render = require("treesitter-context.render")
   render.close_contexts({ winid })
@@ -101,20 +101,24 @@ function TSContext.update(winid, bufnr, opts)
     local function open()
       if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_win_is_valid(winid) then
         -- ensure context win is above
-        local fix_zindex = function(win, zindex)
+        local fix = function(win, zindex)
           if win and api.nvim_win_is_valid(win) and api.nvim_win_get_config(win).zindex ~= zindex then
             api.nvim_win_set_config(win, { zindex = zindex })
+            -- noautocmd don't ignore WinResized/WinScrolled
+            if fn.exists("+eventignorewin") and vim.wo[win].eventignorewin == "" then
+              vim.wo[win].eventignorewin = "WinResized"
+            end
           end
         end
         api.nvim_win_call(winid, function()
           render.open(winid, context_ranges, context_lines)
-          _G._fzf_lua_window_contexts = _G._fzf_lua_window_contexts or
+          TSContext.window_contexts = TSContext.window_contexts or
               utils.upvfind(render.open, "window_contexts")
-          if not _G._fzf_lua_window_contexts then return end
-          local window_context = _G._fzf_lua_window_contexts[winid]
+          if not TSContext.window_contexts then return end
+          local window_context = TSContext.window_contexts[winid]
           if not window_context then return end
-          fix_zindex(window_context.context_winid, opts.zindex)
-          fix_zindex(window_context.gutter_winid, opts.zindex)
+          fix(window_context.context_winid, TSContext.zindex)
+          fix(window_context.gutter_winid, TSContext.zindex)
         end)
         TSContext._winids[tostring(winid)] = bufnr
       end
@@ -969,31 +973,22 @@ function Previewer.base:update_ts_context()
   if not utils.has_ts_parser(lang) then return end
   local parser = vim.treesitter.get_parser(self.preview_bufnr, lang)
   local context_updated
-  _G._fzf_lua_multiwindow_events = _G._fzf_lua_multiwindow_events or
-      utils.upvfind(utils.upvfind(require("treesitter-context").enable, "update") or function() end,
-        "multiwindow_events") or {}
-  local save = _G._fzf_lua_multiwindow_events.WinResized
-  _G._fzf_lua_multiwindow_events.WinResized = false
+  TSContext.zindex = self.win.winopts.zindex + 20
   for _, t in ipairs({ 0, 20, 50, 100 }) do
     vim.defer_fn(function()
       if context_updated
           or not tonumber(self.preview_bufnr)
           or not vim.api.nvim_buf_is_valid(self.preview_bufnr)
       then
-        _G._fzf_lua_multiwindow_events.WinResized = save
         return
       end
       if parser:is_valid(true) then
         context_updated = true
-        TSContext.update(self.win.preview_winid, self.preview_bufnr,
-          {
-            setup_opts = vim.tbl_extend("force",
-              type(self.treesitter.context) == "table" and self.treesitter.context or {}, {
-                -- `multiwindow` must be set regardless of user options
-                multiwindow = true,
-              }),
-            zindex = self.win.winopts.zindex + 20,
-          })
+        TSContext.update(self.win.preview_winid, self.preview_bufnr, vim.tbl_extend("force",
+          type(self.treesitter.context) == "table" and self.treesitter.context or {}, {
+            -- `multiwindow` must be set regardless of user options
+            multiwindow = true,
+          }))
       end
     end, t)
   end
@@ -1152,7 +1147,6 @@ function Previewer.buffer_or_file:do_syntax(entry)
   end
 
   self:update_render_markdown()
-  self:update_ts_context()
 end
 
 function Previewer.base:maybe_set_cursorline(win, pos)
@@ -1286,11 +1280,9 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
       if not entry.cached then -- vim.bo[buf]._ft
         self:do_syntax(entry)
         self:attach_snacks_image_inline()
-      elseif entry.cached.invalid_pos then
-        self:update_ts_context()
       end
+      self:update_ts_context()
     end
-    -- self:update_ts_context()
 
     -- syntax highlighting
     if self.syntax then
