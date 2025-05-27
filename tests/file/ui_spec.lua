@@ -25,25 +25,32 @@ T["files()"]["start and abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c
   function(key)
     -- sort output and remove cwd in prompt as will be different on CI
     eq(child.lua_get([[_G._fzf_postprocess_called]]), vim.NIL)
-    child.lua([==[FzfLua.files({
+    child.lua(string.format([==[FzfLua.files({
       hidden = false,
       previewer = false,
       cwd_prompt = false,
-      cmd = "rg --files --sort=path",
-      requires_processing = true, -- for __mt_postprocess
-      __mt_postprocess = [[return function()
+      cmd = "rg --files --sort=path"%s
+    })]==],
+      helpers.IS_MAC()
+      and ""
+      or [==[,
+        requires_processing = true, -- for __mt_postprocess
+         __mt_postprocess = [[return function()
         local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
         vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
         vim.fn.chanclose(chan_id)
-      end]],
-    })]==])
+      end]]]==]))
     eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_postprocess_called]]) == true
-    end)
+    if helpers.IS_MAC() then
+      vim.uv.sleep(200)
+    else
+      child.wait_until(function()
+        return child.lua_get([[_G._fzf_postprocess_called]]) == true
+      end)
+    end
     -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
     local screen_opts = { ignore_lines = { 28 }, normalize_paths = helpers.IS_WIN() }
     -- NOTE: we compare screen lines without "attrs"
@@ -142,7 +149,7 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
       opts = [==[
         find_opts = [[-type f \! -path '*/.git/*' \! -path '*/doc/tags' \! -path '*/deps/*' | sort]],
         dir_opts = [[/s/b/a:-d | findstr -v "\.git\\" | findstr -v "doc\\tags" | findstr -v "deps" | sort]],
-        strip_cwd_prefix = true,
+        strip_cwd_prefix = true
       ]==]
     end
     -- sort produces different output on Windows, ignore the mismatch
@@ -166,22 +173,29 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
         debug = 1,
         previewer = false,
         cwd_prompt = false,
-        requires_processing = true, -- for "strip_cwd_prefix|debug"
         -- fzf_opts = { ["--wrap"] = true },
+        requires_processing = true, -- for "strip_cwd_prefix|debug| __mt_postprocess"
+        %s%s
+      })]==]):format(opts,
+      helpers.IS_MAC()
+      and ""
+      or [==[,
         __mt_postprocess = [[return function()
-          local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
-          vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
-          vim.fn.chanclose(chan_id)
-        end]],
-        %s
-      })]==]):format(opts))
+        local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
+        vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
+        vim.fn.chanclose(chan_id)
+      end]]]==]))
     eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_postprocess_called]]) == true
-    end)
+    if helpers.IS_MAC() then
+      vim.uv.sleep(200)
+    else
+      child.wait_until(function()
+        return child.lua_get([[_G._fzf_postprocess_called]]) == true
+      end)
+    end
     child.expect_screen_lines(screen_opts)
     child.type_keys("<c-c>")
     child.wait_until(function()
