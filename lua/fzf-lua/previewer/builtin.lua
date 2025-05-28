@@ -527,23 +527,16 @@ function Previewer.base:scroll(direction)
     end)
   else
     pcall(vim.api.nvim_win_call, preview_winid, function()
-      -- ctrl-b (page-up) behaves in a non consistent way, unlike ctrl-u, if it can't
-      -- scroll a full page upwards it won't move the cursor, if the cursor is within
-      -- the first page it will still move the cursor to the bottom of the page (!?)
-      -- we therefore need special handling for both scenarios with `ctrl-b`:
-      --   (1) If the cursor is at line 1, do nothing
-      --   (2) Else, test the cursor before and after, if the new position is further
-      --       down the buffer than the original, we're in the first page ,goto line 1
-      local is_ctrl_b = string.byte(input, 1) == 2
-      local pos = is_ctrl_b and vim.api.nvim_win_get_cursor(0)
-      if is_ctrl_b and pos[1] == 1 then return end
       vim.cmd([[norm! ]] .. input)
-      if is_ctrl_b and pos[1] <= vim.api.nvim_win_get_cursor(0)[1] + 1 then
-        vim.api.nvim_win_set_cursor(0, { 1, pos[2] })
-      end
-      utils.zz()
+      -- TODO: if we're at bottom of file `zb`
+      -- local wi = utils.getwininfo(preview_winid)
+      -- local lines = wi.botline - wi.topline + 1
+      -- if lines < wi.height then
+      --   vim.cmd("norm! zvzb")
+      -- end
     end)
   end
+
   -- 'cursorline' is effectively our match highlight. Once the
   -- user scrolls, the highlight is no longer relevant (#462).
   -- Conditionally toggle 'cursorline' based on cursor position
@@ -1162,6 +1155,9 @@ function Previewer.base:maybe_set_cursorline(win, pos)
     -- local curpos = vim.api.nvim_win_get_cursor(win)
     vim.api.nvim_win_set_cursor(win, pos)
     cursorline = self.winopts.cursorline
+    pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
+      utils.zz()
+    end)
   end
   if cursorline ~= vim.wo[win].cursorline then
     vim.wo[win].cursorline = cursorline
