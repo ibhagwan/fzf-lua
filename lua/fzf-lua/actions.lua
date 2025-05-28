@@ -1078,6 +1078,10 @@ M.complete = function(selected, opts)
     newline = line:sub(1, col) .. selected[1] .. after
     newcol = col + #selected[1]
   end
+  if opts.__CTX.mode == "t" and vim.bo[opts.__CTX.bufnr].buftype == "terminal" then
+    vim.api.nvim_chan_send(vim.bo.channel, newline)
+    return
+  end
   vim.api.nvim_set_current_line(newline or opts.__CTX.line)
   vim.api.nvim_win_set_cursor(0, { opts.__CTX.cursor[1], newcol or col })
   if opts.__CTX.mode == "i" then
