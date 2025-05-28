@@ -528,12 +528,12 @@ function Previewer.base:scroll(direction)
   else
     pcall(vim.api.nvim_win_call, preview_winid, function()
       vim.cmd([[norm! ]] .. input)
-      -- TODO: if we're at bottom of file `zb`
-      -- local wi = utils.getwininfo(preview_winid)
-      -- local lines = wi.botline - wi.topline + 1
-      -- if lines < wi.height then
-      --   vim.cmd("norm! zvzb")
-      -- end
+      -- `zb` at bottom?
+      local wi = utils.getwininfo(preview_winid)
+      if wi.height > (wi.botline - wi.topline) then
+        api.nvim_win_set_cursor(0, { wi.botline, 1 })
+        vim.cmd("norm! zvzb")
+      end
     end)
   end
 
@@ -1155,9 +1155,6 @@ function Previewer.base:maybe_set_cursorline(win, pos)
     -- local curpos = vim.api.nvim_win_get_cursor(win)
     vim.api.nvim_win_set_cursor(win, pos)
     cursorline = self.winopts.cursorline
-    pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
-      utils.zz()
-    end)
   end
   if cursorline ~= vim.wo[win].cursorline then
     vim.wo[win].cursorline = cursorline
