@@ -86,6 +86,7 @@ function TSInjector._attach_lang(buf, lang, regions)
   if not parser then return end
 
   TSInjector.cache[buf][lang].enabled = true
+  ---@diagnostic disable-next-line: invisible
   parser:set_included_regions(regions)
 end
 
@@ -893,6 +894,7 @@ function FzfWin:treesitter_attach()
           -- file:line:text       (grep_project or missing "--column" flag)
           -- line:col:text        (grep_curbuf)
           -- line<U+00A0>text     (lines|blines)
+          ---@diagnostic disable-next-line: unused-local
           local filepath, _lnum, text = line_parser(line:sub(min_col))
           if not text or text == 0 then return end
 

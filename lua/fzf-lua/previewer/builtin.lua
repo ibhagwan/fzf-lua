@@ -84,6 +84,7 @@ function TSContext.inc_dec_maxlines(num, winid, bufnr)
   end
 end
 
+---@alias TSContext.UserConfig table
 ---@param winid integer
 ---@param bufnr integer
 ---@param opts? TSContext.UserConfig
