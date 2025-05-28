@@ -180,6 +180,27 @@ M.frames = function(opts)
 
   opts._frames = session.threads[session.stopped_thread_id].frames
 
+  opts.previewer = {
+    _ctor = function()
+      local p = require("fzf-lua.previewer.builtin").buffer_or_file:extend()
+      ---@param entry_str string
+      ---@return fzf-lua.buffer_or_file.Entry
+      function p:parse_entry(entry_str)
+        local idx = entry_str and tonumber(entry_str:match("(%d+).")) or nil
+        if not idx then return {} end
+        local f = opts._frames[idx]
+        if not f then return {} end
+        return {
+          path = f.source and f.source.path,
+          line = f.line,
+          -- col = f.column,
+        }
+      end
+
+      return p
+    end,
+  }
+
   opts.actions = {
     ["enter"] = function(selected, o)
       local sess = _dap.session()
