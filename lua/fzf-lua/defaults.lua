@@ -1045,6 +1045,7 @@ M.defaults.tagstack             = {
 
 M.defaults.commands             = {
   actions         = { ["enter"] = actions.ex_run },
+  flatten         = {},
   include_builtin = true,
 }
 
