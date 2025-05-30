@@ -52,7 +52,7 @@ T["files()"]["start and abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c
       end)
     end
     -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
-    local screen_opts = { ignore_lines = { 28 }, normalize_paths = helpers.IS_WIN() }
+    local screen_opts = { ignore_text = { 28 }, normalize_paths = helpers.IS_WIN() }
     -- NOTE: we compare screen lines without "attrs"
     -- so we can test on stable, nightly and windows
     -- child.expect_screenshot(screen_opts)
@@ -81,7 +81,7 @@ T["files()"]["previewer"] = new_set({ parametrize = { { "ci" }, { "builtin" } } 
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
     -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
-    local screen_opts = { ignore_lines = { 28 }, normalize_paths = helpers.IS_WIN() }
+    local screen_opts = { ignore_text = { 28 }, normalize_paths = helpers.IS_WIN() }
     child.wait_until(function()
       return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) == "LICENSE"
     end)
@@ -120,7 +120,7 @@ T["files()"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
-    local screen_opts = { ignore_lines = { 28 }, normalize_paths = helpers.IS_WIN() }
+    local screen_opts = { ignore_text = { 28 }, normalize_paths = helpers.IS_WIN() }
     if attrs then
       child.expect_screenshot(screen_opts)
     else
@@ -136,7 +136,7 @@ T["files()"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-
 T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find|dir" } } }, {
   function(exec)
     -- Ignore last "-- TERMINAL --" line and "[DEBUG]" line containing the cmd
-    local screen_opts = { ignore_lines = { 6, 28 }, normalize_paths = helpers.IS_WIN() }
+    local screen_opts = { ignore_text = { 6, 28 }, normalize_paths = helpers.IS_WIN() }
     local opts, exclude
     if exec == "fd" then
       exclude = "{}"
@@ -155,7 +155,7 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
     -- sort produces different output on Windows, ignore the mismatch
     if exec ~= "rg" and helpers.IS_WIN() then
       for i = 18, 21 do
-        table.insert(screen_opts.ignore_lines, i)
+        table.insert(screen_opts.ignore_text, i)
       end
     end
     child.lua(([[
@@ -206,7 +206,7 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
 
 T["files()"]["preview should work after chdir #1864"] = function()
   -- Ignore last "-- TERMINAL --" line and "[DEBUG]" line containing the cmd
-  local screen_opts = { ignore_lines = { 6, 28 }, normalize_paths = helpers.IS_WIN() }
+  local screen_opts = { ignore_text = { 6, 28 }, normalize_paths = helpers.IS_WIN() }
   eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
   child.lua([[FzfLua.files {
     cwd_prompt = false,

@@ -125,9 +125,9 @@ local screenshot_compare = function(screen_ref, screen_obs, opts)
   ok, cause = compare(#screen_ref.text, #screen_obs.text, "number of `text` lines")
   if not ok then return ok, cause end
 
-  local lines_to_check, ignore_lines = {}, opts.ignore_lines or {}
+  local lines_to_check, ignore_text = {}, opts.ignore_text or {}
   for i = 1, #screen_ref.text do
-    if not vim.tbl_contains(ignore_lines, i) then table.insert(lines_to_check, i) end
+    if not vim.tbl_contains(ignore_text, i) then table.insert(lines_to_check, i) end
   end
 
   for _, i in ipairs(lines_to_check) do
@@ -159,7 +159,7 @@ M.reference_screenshot = function(screenshot, path, opts)
   if screenshot == nil then return true end
 
   opts = vim.tbl_extend("force",
-    { force = false, ignore_lines = {}, directory = "tests/screenshots" }, opts or {})
+    { force = false, ignore_text = {}, directory = "tests/screenshots" }, opts or {})
 
   H.cache.n_screenshots = H.cache.n_screenshots + 1
 
