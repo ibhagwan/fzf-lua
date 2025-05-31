@@ -47,6 +47,7 @@
 ---@field fs_stat uv.fs_stat.result?
 ---@field no_syntax boolean?
 ---@field cached fzf-lua.buffer_or_file.Bcache?
+---@field content string[]?
 
 ---@class fzf-lua.buffer_or_file.Bcache
 ---@field bufnr integer

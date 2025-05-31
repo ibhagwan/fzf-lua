@@ -891,6 +891,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       local lines = nil
       if entry.path:match("^%[DEBUG]") then
         lines = { tostring(entry.path:gsub("^%[DEBUG]", "")) }
+      elseif entry.content then
+        lines = entry.content
       else
         -- make sure the file is readable (or bad entry.path)
         local fs_stat = entry.fs_stat or uv.fs_stat(entry.path)

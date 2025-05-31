@@ -189,12 +189,39 @@ M.frames = function(opts)
         local idx = entry_str and tonumber(entry_str:match("(%d+).")) or nil
         if not idx then return {} end
         local f = opts._frames[idx]
-        if not f then return {} end
-        return {
-          path = f.source and f.source.path,
-          line = f.line,
-          -- col = f.column,
-        }
+
+        if (not f) or not f.source then
+          return {}
+        end
+        if f.source.path then
+          local path = f.source.path
+          local fs_stat = vim.uv.fs_stat(path)
+          if fs_stat and fs_stat.type == "file" then
+            return {
+              path = path,
+              line = f.line,
+              -- col = f.column,
+            }
+          end
+        end
+        if f.source.sourceReference ~= 0 then
+          local source_ref = f.source.sourceReference
+          local err, result = nil, nil
+          session:request("source", { sourceReference = source_ref }, function(e, r)
+            err = e
+            result = r
+          end)
+          vim.wait(100, function()
+            return err ~= nil or result ~= nil
+          end)
+          return {
+            path = f.source.path,
+            content = vim.split(result.content or "", "\n"),
+            line = f.line,
+          }
+        end
+
+        return { path = f.source.path }
       end
 
       return p
