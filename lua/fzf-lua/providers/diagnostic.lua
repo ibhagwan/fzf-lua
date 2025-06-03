@@ -71,7 +71,8 @@ M.diagnostics = function(opts)
 
     -- from vim.diagnostic
     if utils.__HAS_NVIM_010 then
-      local sign_confs = vim.diagnostic.config().signs
+      local sign_confs = type(opts.diag_icons) == "table" and { text = opts.diag_icons }
+          or vim.diagnostic.config().signs
       local level = vim.diagnostic.severity[k:upper()]
       if type(sign_confs) ~= "table" or utils.tbl_isempty(sign_confs) then sign_confs = nil end
       opts.__signs[v.severity].text =
