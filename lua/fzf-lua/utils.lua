@@ -1035,7 +1035,7 @@ end
 ---@param scope string?
 ---@param win integer
 function M.eventignore(func, win, scope)
-  if win and vim.fn.exists("&eventignorewin") == 1 then
+  if win and vim.fn.exists("+eventignorewin") == 1 then
     local save_ei = vim.wo[win][0].eventignorewin
     vim.wo[win][0].eventignorewin = scope or "all"
     local ret = { func() }
