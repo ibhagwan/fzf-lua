@@ -93,7 +93,6 @@ function TSContext.update(winid, bufnr, opts)
   if not TSContext.setup(opts) then return end
   assert(bufnr == vim.api.nvim_win_get_buf(winid))
   local render = require("treesitter-context.render")
-  render.close_contexts({ winid })
   local context_ranges, context_lines = require("treesitter-context.context").get(winid)
   if not context_ranges or #context_ranges == 0 then
     TSContext.close(winid)
@@ -106,8 +105,8 @@ function TSContext.update(winid, bufnr, opts)
           if win and api.nvim_win_is_valid(win) and api.nvim_win_get_config(win).zindex ~= zindex then
             api.nvim_win_set_config(win, { zindex = zindex })
             -- noautocmd don't ignore WinResized/WinScrolled
-            if fn.exists("+eventignorewin") and vim.wo[win].eventignorewin == "" then
-              vim.wo[win].eventignorewin = "WinResized"
+            if fn.exists("+eventignorewin") == 1 and vim.wo[win][0].eventignorewin == "" then
+              vim.wo[win][0].eventignorewin = "WinResized"
             end
           end
         end
