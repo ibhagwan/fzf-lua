@@ -128,7 +128,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
       return true
     end, result)
   end
-  local items = {}
+  local entries = {}
   if opts.regex_filter and opts._regex_filter_fn == nil then
     opts._regex_filter_fn = regex_filter_fn(opts.regex_filter)
   end
@@ -140,19 +140,24 @@ local function location_handler(opts, cb, _, result, ctx, _)
         (opts._regex_filter_fn and not opts._regex_filter_fn(item, core.CTX())) then
       return false
     end
-    table.insert(items, item)
-    return true
+    if opts.current_buffer_only and not path.equals(core.CTX().bname, item.filename) then
+      return false
+    end
+    local entry = make_entry.lcol(item, opts)
+    entry = make_entry.file(entry, opts)
+    if not entry then
+      -- Filtered by cwd / file_ignore_patterns, etc
+      return false
+    else
+      table.insert(entries, { entry = entry, result = x })
+      return true
+    end
   end, result)
   -- Jump immediately if there is only one location
-  if opts.jump1 and #result == 1 then
-    jump_to_location(opts, result[1], encoding)
-  end
-  for _, entry in ipairs(items) do
-    if not opts.current_buffer_only or core.CTX().bname == entry.filename then
-      entry = make_entry.lcol(entry, opts)
-      entry = make_entry.file(entry, opts)
-      if entry then cb(entry) end
-    end
+  if opts.jump1 and #entries == 1 then
+    jump_to_location(opts, entries[1].result, encoding)
+  else
+    vim.tbl_map(function(x) cb(x.entry) end, entries)
   end
 end
 
@@ -872,36 +877,6 @@ M.live_workspace_symbols = function(opts)
   end
   return core.fzf_exec(nil, opts)
 end
-
--- Converts 'vim.diagnostic.get' to legacy style 'get_line_diagnostics()'
--- TODO: not needed anymore, it seems that `vim.lsp.buf.code_action` still
--- uses the old `vim.lsp.diagnostic` API, we will do the same until neovim
--- stops using this API
-local get_line_diagnostics = utils.__HAS_NVIM_011 and function(_)
-  local diag = vim.diagnostic.get(core.CTX().bufnr, { lnum = vim.api.nvim_win_get_cursor(0)[1] - 1 })
-  return diag and diag[1]
-      and { {
-        source = diag[1].source,
-        message = diag[1].message,
-        severity = diag[1].severity,
-        code = diag[1].user_data and diag[1].user_data.lsp and diag[1].user_data.lsp.code,
-        codeDescription = diag[1].user_data and diag[1].user_data.lsp and
-            diag[1].user_data.lsp.codeDescription,
-        range = {
-          ["start"] = {
-            line = diag[1].lnum,
-            character = diag[1].col,
-          },
-          ["end"] = {
-            line = diag[1].end_lnum,
-            character = diag[1].end_col,
-          }
-        },
-        data = diag[1].user_data and diag[1].user_data.lsp and diag[1].user_data.lsp.data
-      } }
-      -- Must return an empty table or some LSP servers fail (#707)
-      or {}
-end or vim.lsp.diagnostic.get_line_diagnostics
 
 M.code_actions = function(opts)
   opts = normalize_lsp_opts(opts, "lsp.code_actions")
