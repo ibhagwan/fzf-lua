@@ -356,6 +356,39 @@ function M.tbl_deep_clone(t)
   return clone
 end
 
+-- Similar to `vim.tbl_deep_extend`
+-- Recursively merge two or more tables by extending
+-- the first table and returning its original pointer
+---@param behavior "keep"|"force"|"error"
+---@rerurn table
+function M.tbl_deep_extend(behavior, ...)
+  local tbls = { ... }
+  local ret = tbls[1]
+  for i = 2, #tbls do
+    local t = tbls[i]
+    for k, v in pairs(t) do
+      ret[k] = (function()
+        if type(v) == table then
+          return M.tbl_deep_extend(behavior, ret[k] or {}, v)
+        elseif behavior == "force" then
+          return v
+        elseif behavior == "keep" then
+          if ret[k] ~= nil then
+            return ret[k]
+          else
+            return v
+          end
+        elseif behavior == "error" then
+          error(string.format("key '%s' found in more than one map", k))
+        else
+          error(string.format("invalid behavior '%s'", behavior))
+        end
+      end)()
+    end
+  end
+  return ret
+end
+
 ---@diagnostic disable-next-line: deprecated
 M.tbl_islist = vim.islist or vim.tbl_islist
 
