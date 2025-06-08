@@ -1312,6 +1312,7 @@ function FzfWin:update_preview_scrollbar()
       empty.noautocmd = true
       self._sbuf1 = ensure_tmp_buf(self._sbuf1)
       self._swin1 = utils.nvim_open_win0(self._sbuf1, false, empty)
+      self:set_winopts(self._swin1, { eventignorewin = "WinResized" })
       local hl = self.hls.scrollfloat_e or "PmenuSbar"
       vim.wo[self._swin1].winhighlight =
           ("Normal:%s,NormalNC:%s,NormalFloat:%s,EndOfBuffer:%s"):format(hl, hl, hl, hl)
@@ -1323,6 +1324,7 @@ function FzfWin:update_preview_scrollbar()
     full.noautocmd = true
     self._sbuf2 = ensure_tmp_buf(self._sbuf2)
     self._swin2 = utils.nvim_open_win0(self._sbuf2, false, full)
+    self:set_winopts(self._swin2, { eventignorewin = "WinResized" })
     local hl = self.hls.scrollfloat_f or "PmenuThumb"
     vim.wo[self._swin2].winhighlight =
         ("Normal:%s,NormalNC:%s,NormalFloat:%s,EndOfBuffer:%s"):format(hl, hl, hl, hl)
