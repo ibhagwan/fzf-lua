@@ -156,9 +156,9 @@ local function location_handler(opts, cb, _, result, ctx, _)
   -- Jump immediately if there is only one location
   if opts.jump1 and #entries == 1 then
     jump_to_location(opts, entries[1].result, encoding)
-  else
-    vim.tbl_map(function(x) cb(x.entry) end, entries)
   end
+  -- Perform the callback to avoid the "No xxx found" message
+  vim.tbl_map(function(x) cb(x.entry) end, entries)
 end
 
 local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
