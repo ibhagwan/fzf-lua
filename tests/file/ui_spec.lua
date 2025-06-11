@@ -220,4 +220,25 @@ T["files()"]["preview should work after chdir #1864"] = function()
   child.expect_screen_lines(screen_opts)
 end
 
+T["files()"]["perioldly reset mode"] = function()
+  child.cmd [[exe 'au TermOpen * startinsert' | term]]
+  sleep(10)
+  child.lua [=[
+    FzfLua.files {
+      cwd_prompt = false,
+      fzf_opts = { ["--no-info"] = "", ["--info"] = false },
+      query = "foo",
+    }
+  ]=]
+  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+  -- child.expect_screen_lines({ start_line = 1, end_line = 3 })
+  -- print("\n")
+  -- print(child.get_screen_lines({ start_line = 1, end_line = 3 }))
+  child.assert_screen_lines([[
+       ╭─────────────────── Files  h ────────────────────╮
+       │> foo                                            │
+       │──────────────────────────────────────────────── │
+ ]], { start_line = 3, end_line = 5 })
+end
+
 return T
