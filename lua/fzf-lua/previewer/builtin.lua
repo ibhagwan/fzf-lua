@@ -507,8 +507,16 @@ function Previewer.base:scroll(direction)
     ["half-page-down"] = ("%c"):format(0x04), -- [[]]
     ["page-up"]        = ("%c"):format(0x02), -- [[]]
     ["page-down"]      = ("%c"):format(0x06), -- [[]]
-    ["line-up"]        = "Mgk",               -- ^Y doesn't seem to work
-    ["line-down"]      = "Mgj",               -- ^E doesn't seem to work
+    -- ^Y/^E doesn't seem to work, "Mgk" also doesn't (#2111)
+    -- TODO: Can't scroll above line 2?
+    ["line-up"]        = (function()
+      local wi = utils.getwininfo(preview_winid)
+      return wi.topline <= 2 and "gg" or function()
+        api.nvim_win_set_cursor(0, { wi.topline, 1 })
+        vim.cmd("norm! gk")
+      end
+    end)(),
+    ["line-down"]      = "Mgj",
     ["reset"]          = true,                -- dummy for exit condition
   })[direction]
 
@@ -526,7 +534,11 @@ function Previewer.base:scroll(direction)
     end)
   else
     pcall(vim.api.nvim_win_call, preview_winid, function()
-      vim.cmd([[norm! ]] .. input)
+      if type(input)  == "function" then
+        input()
+      else
+        vim.cmd([[norm! ]] .. input)
+      end
       -- `zb` at bottom?
       local wi = utils.getwininfo(preview_winid)
       if wi.height > (wi.botline - wi.topline) then
