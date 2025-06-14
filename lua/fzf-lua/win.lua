@@ -1185,7 +1185,7 @@ function FzfWin.hide()
   self:detach_fzf_buf()
   self:close(nil, true)
   -- save the current window size (VimResized won't emit when buffer hidden)
-  self._hidden_save_size = { vim.o.lines, vim.o.columns }
+  self._hidden_save_size = { vim.o.lines, vim.o.columns, vim.o.cmdheight }
   -- Save self as `:close()` nullifies it
   _self = self
 end
@@ -1217,7 +1217,7 @@ function FzfWin.unhide()
   self.fzf_bufnr = self._hidden_fzf_bufnr
   self._hidden_fzf_bufnr = nil
   self:create()
-  if not vim.deep_equal(self._hidden_save_size, { vim.o.lines, vim.o.columns }) then
+  if not vim.deep_equal(self._hidden_save_size, { vim.o.lines, vim.o.columns, vim.o.cmdheight }) then
     self:redraw()
   end
   self._hidden_save_size = nil
