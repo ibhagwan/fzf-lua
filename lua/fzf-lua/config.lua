@@ -486,7 +486,13 @@ function M.normalize_opts(opts, globals, __resume_key)
   end
 
   -- Exclude file icons from the fuzzy matching (#1080)
-  if opts.file_icons and opts._fzf_nth_devicons and not opts.fzf_opts["--delimiter"] then
+  if opts.file_icons
+      and opts._fzf_nth_devicons
+      and not opts.fzf_opts["--delimiter"]
+      -- Can't work due to : delimiter (#2112)
+      and opts.previewer ~= "bat"
+      and opts.previewer ~= "bat_native"
+  then
     opts.fzf_opts["--nth"] = opts.fzf_opts["--nth"] or "-1.."
     opts.fzf_opts["--delimiter"] = string.format("[%s]", utils.nbsp)
   end
