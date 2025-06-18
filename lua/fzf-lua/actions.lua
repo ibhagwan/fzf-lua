@@ -501,7 +501,7 @@ M.ex_run = function(selected)
   if #selected == 0 then return end
   local cmd = selected[1]
   vim.cmd("stopinsert")
-  vim.fn.feedkeys(string.format(":%s", cmd), "n")
+  vim.fn.feedkeys(string.format(":%s", cmd), "nt")
   return cmd
 end
 
