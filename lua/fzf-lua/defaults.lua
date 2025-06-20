@@ -190,11 +190,11 @@ M.defaults                      = {
     },
     man = {
       _ctor = previewers.builtin.man_pages,
-      cmd = M._man_cmd_fn(),
+      cmd = function() return M._man_cmd_fn() end,
     },
     man_native = {
       _ctor = previewers.fzf.man_pages,
-      cmd = M._man_cmd_fn(true),
+      cmd = function() return M._man_cmd_fn(true) end,
     },
     help_tags = {
       _ctor = previewers.builtin.help_tags,
