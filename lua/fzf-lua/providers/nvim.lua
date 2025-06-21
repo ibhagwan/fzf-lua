@@ -107,13 +107,30 @@ M.commands = function(opts)
 end
 
 local history = function(opts, str)
-  local histnr = vim.fn.histnr(str)
-  local entries = {}
-  for i = histnr, 3, -1 do
-    local item = vim.fn.histget(":", i)
-    table.insert(entries, opts.reverse_list and 1 or #entries + 1, item)
-  end
-  core.fzf_exec(entries, opts)
+  local histnr          = vim.fn.histnr(str)
+  local dr              = opts.reverse_list and 1 or -1
+  local bulk            = 500
+  local from, to, delta = dr, dr * histnr, dr * bulk
+  local content         = coroutine.wrap(function(cb)
+    local co = coroutine.running()
+    for i = from, to, delta do
+      vim.schedule(function()
+        local count = bulk
+        for j = 0, delta - dr, dr do
+          local index = i + j
+          if dr > 0 and index <= to or dr < 0 and index >= to then
+            cb(vim.fn.histget(":", index), function()
+              count = count - 1
+              if count == 0 then coroutine.resume(co) end
+            end)
+          end
+        end
+      end)
+      coroutine.yield()
+    end
+    cb(nil)
+  end)
+  core.fzf_exec(content, opts)
 end
 
 M.command_history = function(opts)
