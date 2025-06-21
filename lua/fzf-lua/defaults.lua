@@ -1071,8 +1071,10 @@ M.defaults.command_history      = {
 }
 
 M.defaults.search_history       = {
-  fzf_opts = { ["--tiebreak"] = "index", ["--no-multi"] = true },
-  actions  = {
+  fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
+  _treesitter = function(line) return "", nil, line, "regex" end,
+  fzf_colors  = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
+  actions     = {
     ["enter"]  = actions.search_cr,
     ["ctrl-e"] = actions.search,
   },
