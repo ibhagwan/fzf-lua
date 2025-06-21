@@ -122,7 +122,9 @@ local history = function(opts, str)
           if dr > 0 and index <= to or dr < 0 and index >= to then
             cb(vim.fn.histget(str, index), function()
               count = count - 1
-              if count == 0 then coroutine.resume(co) end
+              if count == 0 or index == to then
+                coroutine.resume(co)
+              end
             end)
           end
         end
