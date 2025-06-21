@@ -106,6 +106,7 @@ M.commands = function(opts)
   core.fzf_exec(entries, opts)
 end
 
+---@param str ":"|"/"
 local history = function(opts, str)
   local histnr          = vim.fn.histnr(str)
   local dr              = opts.reverse_list and 1 or -1
@@ -119,7 +120,7 @@ local history = function(opts, str)
         for j = 0, delta - dr, dr do
           local index = i + j
           if dr > 0 and index <= to or dr < 0 and index >= to then
-            cb(vim.fn.histget(":", index), function()
+            cb(vim.fn.histget(str, index), function()
               count = count - 1
               if count == 0 then coroutine.resume(co) end
             end)
