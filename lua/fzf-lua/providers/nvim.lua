@@ -107,19 +107,12 @@ M.commands = function(opts)
 end
 
 local history = function(opts, str)
-  local history = vim.fn.execute("history " .. str)
-  history = vim.split(history, "\n")
-
+  local histnr = vim.fn.histnr(str)
   local entries = {}
-  for i = #history, 3, -1 do
-    local item = history[i]
-    local _, finish = string.find(item, "%d+ +")
-    table.insert(
-      entries,
-      opts.reverse_list and 1 or #entries + 1,
-      string.sub(item, finish + 1))
+  for i = histnr, 3, -1 do
+    local item = vim.fn.histget(":", i)
+    table.insert(entries, opts.reverse_list and 1 or #entries + 1, item)
   end
-
   core.fzf_exec(entries, opts)
 end
 
@@ -129,7 +122,7 @@ M.command_history = function(opts)
   if opts.fzf_opts["--header"] == nil then
     opts = core.set_header(opts, opts.headers or { "actions" })
   end
-  history(opts, "cmd")
+  history(opts, ":")
 end
 
 M.search_history = function(opts)
@@ -138,7 +131,7 @@ M.search_history = function(opts)
   if opts.fzf_opts["--header"] == nil then
     opts = core.set_header(opts, opts.headers or { "actions" })
   end
-  history(opts, "search")
+  history(opts, "/")
 end
 
 M.changes = function(opts)
