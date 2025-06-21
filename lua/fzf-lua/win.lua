@@ -898,7 +898,7 @@ function FzfWin:treesitter_attach()
           -- line:col:text        (grep_curbuf)
           -- line<U+00A0>text     (lines|blines)
           ---@diagnostic disable-next-line: unused-local
-          local filepath, _lnum, text = line_parser(line:sub(min_col))
+          local filepath, _lnum, text, _ft = line_parser(line:sub(min_col))
           if not text or text == 0 then return end
 
           text = text:gsub("^%d+:", "") -- remove col nr if exists
@@ -916,8 +916,8 @@ function FzfWin:treesitter_attach()
             end
           end)()
 
-          local ft = ft_bufnr and vim.bo[tonumber(ft_bufnr)].ft
-              or vim.filetype.match({ filename = path.tail(filepath) })
+          local ft = _ft or (ft_bufnr and vim.bo[tonumber(ft_bufnr)].ft
+            or vim.filetype.match({ filename = path.tail(filepath) }))
           if not ft then return end
 
           local lang = vim.treesitter.language.get_lang(ft)
