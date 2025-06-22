@@ -468,10 +468,9 @@ function FzfWin:normalize_winopts(fullscreen)
   }
 
   -- #2121 we can suppress cmdline area when zindex >= 200
-  local suppress_ch = fullscreen and winopts.zindex >= 200
-  local max_width = suppress_ch and vim.o.columns or vim.o.columns - 2
-  local max_height = suppress_ch and vim.o.lines or
-      vim.o.lines - vim.o.cmdheight - 2
+  local ch = fullscreen and winopts.zindex >= 200 and 0 or vim.o.cmdheight
+  local max_width = vim.o.columns - 2
+  local max_height = vim.o.lines - ch - 2
   winopts.width = math.min(max_width, winopts.width)
   winopts.height = math.min(max_height, winopts.height)
   if winopts.height <= 1 then
