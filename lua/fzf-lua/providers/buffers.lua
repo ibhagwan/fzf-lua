@@ -10,6 +10,9 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+---@param opts fzf-lua.Config
+---@param unfiltered integer[]|fun():integer[]
+---@return integer[], table, integer
 local filter_buffers = function(opts, unfiltered)
   if type(unfiltered) == "function" then
     unfiltered = unfiltered()
@@ -30,7 +33,8 @@ local filter_buffers = function(opts, unfiltered)
         return b
       end, opts.buffers)
       or vim.tbl_filter(function(b)
-        if not vim.api.nvim_buf_is_valid(b) then
+        local buf_valid = vim.api.nvim_buf_is_valid(b)
+        if not buf_valid then
           excluded[b] = true
         elseif not opts.show_unlisted and b ~= core.CTX().bufnr and vim.fn.buflisted(b) ~= 1 then
           excluded[b] = true
@@ -47,13 +51,8 @@ local filter_buffers = function(opts, unfiltered)
         elseif opts.cwd and not path.is_relative_to(vim.api.nvim_buf_get_name(b), opts.cwd) then
           excluded[b] = true
         end
-        if utils.buf_is_qf(b) then
-          if opts.show_quickfix then
-            -- show_quickfix trumps show_unlisted
-            excluded[b] = nil
-          else
-            excluded[b] = true
-          end
+        if buf_valid and vim.api.nvim_get_option_value("ft", { buf = b }) == "qf" then
+          excluded[b] = not opts.show_quickfix and true or nil
         end
         if not excluded[b] and b > max_bufnr then
           max_bufnr = b
@@ -64,7 +63,7 @@ local filter_buffers = function(opts, unfiltered)
   return bufnrs, excluded, max_bufnr
 end
 
-
+---@param buf integer
 local getbuf = function(buf)
   return {
     bufnr = buf,
@@ -83,11 +82,9 @@ end
 -- DON'T FORCE ME TO UPDATE THIS HACK NEOVIM LOL
 -- NOTE: reduced to 2038 due to 32bit sys limit (#1636)
 local _FUTURE = os.time({ year = 2038, month = 1, day = 1, hour = 0, minute = 00 })
+---@param buf table
+---@return integer
 local get_unixtime = function(buf)
-  if tonumber(buf) then
-    -- When called from `buffer_lines`
-    buf = getbuf(buf)
-  end
   if buf.flag == "%" then
     return _FUTURE
   elseif buf.flag == "#" then
@@ -97,7 +94,12 @@ local get_unixtime = function(buf)
   end
 end
 
+---@param opts fzf-lua.Config
+---@param bufnrs integer[]
+---@param winid integer?
+---@return table[]
 local populate_buffer_entries = function(opts, bufnrs, winid)
+  ---@type table[]
   local buffers = {}
   for _, bufnr in ipairs(bufnrs) do
     local buf = getbuf(bufnr)
@@ -260,7 +262,7 @@ M.buffer_lines = function(opts)
 
       if opts.sort_lastused and utils.tbl_count(buffers) > 1 then
         table.sort(buffers, function(a, b)
-          return get_unixtime(a) > get_unixtime(b)
+          return get_unixtime(getbuf(a)) > get_unixtime(getbuf(b))
         end)
       end
 
