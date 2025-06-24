@@ -968,6 +968,9 @@ end
 -- returns:
 --   1 for qf list
 --   2 for loc list
+---@param winid integer
+---@param wininfo table?
+---@return 1|2|false
 function M.win_is_qf(winid, wininfo)
   wininfo = wininfo or (vim.api.nvim_win_is_valid(winid) and M.getwininfo(winid))
   if wininfo and wininfo.quickfix == 1 then
@@ -976,6 +979,9 @@ function M.win_is_qf(winid, wininfo)
   return false
 end
 
+---@param bufnr integer
+---@param bufinfo table?
+---@return 1|2|false
 function M.buf_is_qf(bufnr, bufinfo)
   bufinfo = bufinfo or (vim.api.nvim_buf_is_valid(bufnr) and M.getbufinfo(bufnr))
   if bufinfo and bufinfo.variables and
@@ -1014,6 +1020,9 @@ function M.winid_from_tabi(tabi, bufnr)
   return M.winid_from_tabh(tabh, bufnr)
 end
 
+---@param bufnr integer
+---@param bufinfo table?
+---@return string?
 function M.nvim_buf_get_name(bufnr, bufinfo)
   assert(not vim.in_fast_event())
   if not vim.api.nvim_buf_is_valid(bufnr) then return end
