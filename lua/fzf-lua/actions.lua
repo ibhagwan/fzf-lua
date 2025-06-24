@@ -702,7 +702,9 @@ end
 M.help_tab = function(selected, opts)
   if #selected == 0 then return end
   -- vim.cmd("tab help " .. helptags(selected, opts)[1])
-  vim.cmd("tabnew | setlocal bufhidden=wipe | help " .. helptags(selected, opts)[1] .. " | only")
+  utils.with({ go = { splitkeep = "cursor" } }, function()
+    vim.cmd("tabnew | setlocal bufhidden=wipe | help " .. helptags(selected, opts)[1] .. " | only")
+  end)
 end
 
 local function mantags(s)
@@ -721,8 +723,9 @@ end
 
 M.man_tab = function(selected)
   if #selected == 0 then return end
-  -- vim.cmd("tab Man " .. mantags(selected)[1])
-  vim.cmd("tabnew | setlocal bufhidden=wipe | Man " .. mantags(selected)[1] .. " | only")
+  utils.with({ go = { splitkeep = "cursor" } }, function()
+    vim.cmd("tabnew | setlocal bufhidden=wipe | Man " .. mantags(selected)[1] .. " | only")
+  end)
 end
 
 M.git_switch = function(selected, opts)
