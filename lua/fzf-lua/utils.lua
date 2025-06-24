@@ -1073,6 +1073,14 @@ function M.zz()
   end
 end
 
+---@param context vim.context.mods
+function M.with(context, func)
+  if vim._with then
+    return vim._with(context, func)
+  end
+  return func()
+end
+
 ---@param func function
 ---@param scope string?
 ---@param win integer
