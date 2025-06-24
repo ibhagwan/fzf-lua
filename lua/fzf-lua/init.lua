@@ -272,6 +272,7 @@ do
     lsp_workspace_symbols = { "fzf-lua.providers.lsp", "workspace_symbols" },
     lsp_live_workspace_symbols = { "fzf-lua.providers.lsp", "live_workspace_symbols" },
     lsp_code_actions = { "fzf-lua.providers.lsp", "code_actions" },
+    lsp_code_lenses = { "fzf-lua.providers.lsp", "code_lenses" },
     lsp_incoming_calls = { "fzf-lua.providers.lsp", "incoming_calls" },
     lsp_outgoing_calls = { "fzf-lua.providers.lsp", "outgoing_calls" },
     lsp_document_diagnostics = { "fzf-lua.providers.diagnostic", "diagnostics" },

@@ -301,12 +301,35 @@ local function code_action_handler(opts, cb, _, code_actions, context, _)
   end
 end
 
+local function code_len_handler(opts, cb, _, code_lenses, context, _)
+  if not opts.code_lenses then opts.code_lenses = {} end
+  local i = utils.tbl_count(opts.code_lenses) + 1
+  for _, len in ipairs(code_lenses) do
+    local text = string.format("%s %s",
+      utils.ansi_codes.magenta(string.format("%d:", i)), len.command)
+    local entry = {
+      client_id = context.client_id,
+      command = len,
+    }
+    opts.code_lenses[tostring(i)] = entry
+    cb(text)
+    i = i + 1
+  end
+end
+
+
 local handlers = {
   ["code_actions"] = {
     label = "Code Actions",
     server_capability = "codeActionProvider",
     method = "textDocument/codeAction",
     handler = code_action_handler
+  },
+  ["code_lenses"] = {
+    label = "Code Lenses",
+    server_capability = "codeLensProvider",
+    method = "textDocument/codeLens",
+    handler = code_len_handler
   },
   ["references"] = {
     label = "References",
@@ -672,6 +695,39 @@ end
 
 M.outgoing_calls = function(opts)
   return fzf_lsp_locations(opts, gen_lsp_contents_call_hierarchy)
+end
+
+M.code_lenses = function(opts)
+  opts = normalize_lsp_opts(opts, "lsp.code_lenses")
+  if not opts then return end
+
+  -- code actions uses `vim.ui.select`, requires neovim >= 0.6
+  if vim.fn.has("nvim-0.6") ~= 1 then
+    utils.info("LSP code lenses requires neovim >= 0.6")
+    return
+  end
+
+  local ui_select = require "fzf-lua.providers.ui_select"
+  local registered = ui_select.is_registered()
+
+  if not registered and not opts.silent then
+    utils.warn("FzfLua is not currently registered as 'vim.ui.select' backend, use 'silent=true'" ..
+      " to hide this message or register globally using ':FzfLua register_ui_select'.")
+  end
+
+  opts.actions = opts.actions or {}
+  opts.actions.enter = nil
+  -- only dereg if we aren't registered
+  if not registered then
+    opts.post_action_cb = function()
+      ui_select.deregister({}, true, true)
+    end
+  end
+
+  -- 3rd arg are "once" options to override
+  -- existing "registered" ui_select options
+  ui_select.register(opts, true, opts)
+  vim.lsp.codelens.run()
 end
 
 M.finder = function(opts)
