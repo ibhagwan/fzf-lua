@@ -63,7 +63,7 @@ local jump_to_location = function(opts, result, enc)
     return opts.jump1_action({ entry }, opts)
   end
 
-  return utils.jump_to_location(result, enc)
+  return utils.jump_to_location(result, enc, opts.reuse_win)
 end
 
 local regex_filter_fn = function(regex_filter)
