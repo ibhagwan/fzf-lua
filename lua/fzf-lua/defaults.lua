@@ -728,6 +728,33 @@ M.defaults.treesitter           = {
   },
 }
 
+M.defaults.spellcheck           = {
+  previewer        = M._default_previewer_fn,
+  file_icons       = false,
+  color_icons      = false,
+  word_separator   = "[%s%p]",
+  fzf_opts         = {
+    ["--multi"]     = true,
+    ["--tabstop"]   = "4",
+    ["--delimiter"] = "[:]",
+    ["--with-nth"]  = "2..",
+  },
+  line_field_index = "{2}",
+  _actions         = function()
+    return M.globals.actions.buffers or M.globals.actions.files
+  end,
+  actions          = {
+    ["ctrl-s"] = { fn = actions.spell_suggest, header = "spell suggest" }
+  },
+  _cached_hls      = { "buf_name", "buf_nr", "buf_linenr", "path_colnr" },
+  _fmt             = {
+    to   = false,
+    from = function(s, _)
+      return s:gsub("\t\t", ": ")
+    end
+  },
+}
+
 M.defaults.tags                 = {
   previewer    = { _ctor = previewers.builtin.tags },
   input_prompt = "[tags] Grep For> ",

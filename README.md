@@ -301,6 +301,7 @@ Alternatively, resuming work on a specific picker:
 | `keymaps`              | key mappings                   |
 | `filetypes`            | filetypes                      |
 | `menus`                | menus                          |
+| `spellcheck`           | misspelled words in buffer     |
 | `spell_suggest`        | spelling suggestions           |
 | `packadd`              | :packadd <package>             |
 

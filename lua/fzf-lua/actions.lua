@@ -664,6 +664,12 @@ M.spell_apply = function(selected, opts)
   end
 end
 
+M.spell_suggest = function(selected, opts)
+  if not selected[1] then return false end
+  M.file_edit(selected, opts)
+  FzfLua.spell_suggest({ no_resume = true })
+end
+
 M.set_filetype = function(selected)
   vim.bo.filetype = selected[1]:match("[^" .. utils.nbsp .. "]+$")
 end
