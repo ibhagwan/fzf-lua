@@ -1165,6 +1165,10 @@ Filetypes
 
 Neovim's menus
 
+#### spellcheck
+
+Misspelled words in buffer
+
 #### spell_suggest
 
 Spelling suggestions

@@ -622,4 +622,107 @@ M.treesitter = function(opts)
   core.fzf_exec(contents, opts)
 end
 
+M.spellcheck = function(opts)
+  opts = config.normalize_opts(opts, "spellcheck")
+  if not opts then return end
+
+  if #vim.bo.spelllang == 0 then
+    utils.info("Spell language not set, use ':setl spl=...' to enable spell checking.")
+    return
+  end
+
+  -- Default to current buffer
+  opts._bufnr = tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
+  opts._bufname = path.basename(vim.api.nvim_buf_get_name(opts._bufnr))
+  if not opts._bufname or #opts._bufname == 0 then
+    opts._bufname = utils.nvim_buf_get_name(opts._bufnr)
+  end
+
+  if utils.mode_is_visual() then
+    local _, sel = utils.get_visual_selection()
+    opts.start_line = opts.start_line or sel.start.line
+    opts.end_line = opts.end_line or sel["end"].line
+  end
+
+  local contents = function(cb)
+    coroutine.wrap(function()
+      local co = coroutine.running()
+      local data = {}
+
+      -- Use vim.schedule to avoid
+      -- E5560: vimL function must not be called in a lua loop callback
+      vim.schedule(function()
+        local bufnr = opts._bufnr
+        local filepath = vim.api.nvim_buf_get_name(bufnr)
+        if vim.api.nvim_buf_is_loaded(bufnr) then
+          data = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        elseif vim.fn.filereadable(filepath) ~= 0 then
+          data = vim.fn.readfile(filepath, "")
+        end
+        coroutine.resume(co)
+      end)
+
+      -- wait for vim.schedule
+      coroutine.yield()
+
+      local offset = 0
+      local start_line = opts.start_line or 1
+      local end_line = opts.end_line or #data
+      local lines = end_line - start_line + 1
+
+      if opts.start == "cursor" then
+        -- start display from current line and wrap from bottom
+        offset = core.CTX().cursor[1] - start_line
+      end
+
+      for i = 1, lines do
+        local lnum = i + offset
+        if lnum > lines then
+          lnum = lnum % lines
+        end
+        lnum = lnum + start_line - 1
+
+        local line, from, to = data[lnum], 1, nil
+        repeat
+          local word_separator = opts.word_separator or "[%s%p]"
+          local function trim(s)
+            return s:gsub("^" .. word_separator .. "+", ""):gsub(word_separator .. "+$", "")
+          end
+          from, to = string.find(line, "%w+", from)
+          local word = from and string.sub(line, from, to)
+          local prefix = from and string.sub(line, from - 1, from - 1) or ""
+          local postfix = to and string.sub(line, to + 1, to + 1) or ""
+          local valid_word = word
+              and (#prefix == 0 or prefix:match("^" .. word_separator))
+              and (#postfix == 0 or postfix:match(word_separator .. "$"))
+          if valid_word then
+            local _, lead = word:find("^" .. word_separator .. "+")
+            local spell = vim.spell.check(trim(word))[1]
+            if spell then
+              cb(string.format("[%s]%s%s:%s:%s\t\t%s",
+                utils.ansi_codes[opts.hls.buf_nr](tostring(opts._bufnr)),
+                utils.nbsp,
+                utils.ansi_codes[opts.hls.buf_name](opts._bufname),
+                utils.ansi_codes[opts.hls.buf_linenr](tostring(lnum)),
+                utils.ansi_codes[opts.hls.path_colnr](tostring(from + (lead or 0))),
+                trim(word)
+              ), function(err)
+                coroutine.resume(co)
+                if err then cb(nil) end
+              end)
+              coroutine.yield()
+            end
+          end
+          if from then from = to + 1 end
+        until not from
+      end
+      cb(nil)
+    end)()
+  end
+
+  opts = core.set_header(opts, opts.headers or { "actions" })
+
+  core.fzf_exec(contents, opts)
+end
+
 return M

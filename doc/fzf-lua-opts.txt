@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*        For Neovim >= 0.8.0       Last change: 2025 March 13
+*fzf-lua-opts.txt*         For Neovim >= 0.8.0        Last change: 2025 May 13
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -1602,6 +1602,12 @@ Filetypes
 menus                                                     *fzf-lua-opts-menus*
 
 Neovim's menus
+
+
+                                                                              
+spellcheck                                           *fzf-lua-opts-spellcheck*
+
+Misspelled words in buffer
 
 
                                                                               

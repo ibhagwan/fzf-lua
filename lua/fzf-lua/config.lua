@@ -982,6 +982,7 @@ M._action_to_helpstr = {
   [actions.nvim_opt_edit_local]  = "nvim-opt-edit-local",
   [actions.nvim_opt_edit_global] = "nvim-opt-edit-global",
   [actions.spell_apply]          = "spell-apply",
+  [actions.spell_suggest]        = "spell-suggest",
   [actions.set_filetype]         = "set-filetype",
   [actions.packadd]              = "packadd",
   [actions.help]                 = "help-open",
