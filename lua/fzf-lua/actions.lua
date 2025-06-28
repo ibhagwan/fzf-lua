@@ -488,7 +488,6 @@ end
 M.hi = function(selected)
   if #selected == 0 then return end
   vim.cmd("hi " .. selected[1])
-  vim.api.nvim_exec2("hi " .. selected[1], {})
 end
 
 M.run_builtin = function(selected)
