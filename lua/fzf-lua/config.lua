@@ -79,17 +79,21 @@ M.globals = setmetatable({}, {
       -- bind tables are logical exception, do not merge with defaults unless `[1] == true`
       -- normalize all binds as lowercase to prevent duplicate keys (#654)
       local ret = {}
+      -- exclude case-sensitive alt-binds from being lowercased
+      local exclude_case_sensitive_alt = "^alt%-%a$"
       for _, k in ipairs(keys) do
-        ret[k] = setup_value and type(setup_value[k]) == "table"
-            and vim.tbl_deep_extend("keep", utils.tbl_deep_clone(setup_value[k]),
-              setup_value[k][1] == true and fzflua_default[k] or {})
-            or utils.tbl_deep_clone(fzflua_default[k])
-        if ret[k] then
+        local inherit_defaults
+        if setup_value and type(setup_value[k]) == "table" and setup_value[k][1] == true then
           -- Remove the [1] indicating inheritance from defaults and
-          -- exclude case-sensitive alt-binds from being lowercased
-          ret[k][1] = nil
-          ret[k] = utils.map_tolower(ret[k], "^alt%-%a$")
+          setup_value[k][1] = nil
+          inherit_defaults = true
         end
+        ret[k] = setup_value and type(setup_value[k]) == "table"
+            and vim.tbl_deep_extend("keep",
+              utils.map_tolower(utils.tbl_deep_clone(setup_value[k]), exclude_case_sensitive_alt),
+              inherit_defaults and
+              utils.map_tolower(fzflua_default[k], exclude_case_sensitive_alt) or {})
+            or utils.map_tolower(utils.tbl_deep_clone(fzflua_default[k]), exclude_case_sensitive_alt)
       end
       return ret
     end
