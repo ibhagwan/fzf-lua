@@ -82,18 +82,16 @@ M.globals = setmetatable({}, {
       -- exclude case-sensitive alt-binds from being lowercased
       local exclude_case_sensitive_alt = "^alt%-%a$"
       for _, k in ipairs(keys) do
-        local inherit_defaults
-        if setup_value and type(setup_value[k]) == "table" and setup_value[k][1] == true then
-          -- Remove the [1] indicating inheritance from defaults and
-          setup_value[k][1] = nil
-          inherit_defaults = true
-        end
         ret[k] = setup_value and type(setup_value[k]) == "table"
             and vim.tbl_deep_extend("keep",
               utils.map_tolower(utils.tbl_deep_clone(setup_value[k]), exclude_case_sensitive_alt),
-              inherit_defaults and
+              setup_value[k][1] == true and
               utils.map_tolower(fzflua_default[k], exclude_case_sensitive_alt) or {})
             or utils.map_tolower(utils.tbl_deep_clone(fzflua_default[k]), exclude_case_sensitive_alt)
+        if ret[k] and ret[k][1] == true then
+          -- Remove the [1] indicating inheritance from defaults and
+          ret[k][1] = nil
+        end
       end
       return ret
     end

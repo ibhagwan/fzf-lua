@@ -492,6 +492,9 @@ function M.map_tolower(m, exclude_patterns)
   local ret = {}
   for k, v in pairs(m) do
     local lower_k = (function()
+      if type(k) ~= "string" then
+        return k
+      end
       for _, p in ipairs(exclude_patterns) do
         if k:match(p) then return k end
       end
