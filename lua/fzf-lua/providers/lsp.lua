@@ -372,30 +372,8 @@ local handlers = {
   },
 }
 
--- see neovim #15504
--- https://github.com/neovim/neovim/pull/15504#discussion_r698424017
-local mk_handler = function(fn)
-  return function(...)
-    local is_new = not select(4, ...) or type(select(4, ...)) ~= "number"
-    if is_new then
-      -- function(err, result, context, config)
-      fn(...)
-    else
-      -- function(err, method, params, client_id, bufnr, config)
-      local err = select(1, ...)
-      local method = select(2, ...)
-      local result = select(3, ...)
-      local client_id = select(4, ...)
-      local bufnr = select(5, ...)
-      local lspcfg = select(6, ...)
-      fn(err, result,
-        { method = method, client_id = client_id, bufnr = bufnr }, lspcfg)
-    end
-  end
-end
-
 local function async_lsp_handler(co, handler, opts)
-  return mk_handler(function(err, result, context, lspcfg)
+  return function(err, result, context, lspcfg)
     -- increment callback & result counters
     opts.num_callbacks = opts.num_callbacks + 1
     opts.num_results = (opts.num_results or 0) + (result and utils.tbl_count(result) or 0)
@@ -424,7 +402,7 @@ local function async_lsp_handler(co, handler, opts)
       -- resume the coroutine
       coroutine.resume(co, done, err, result, context, lspcfg)
     end
-  end)
+  end
 end
 
 local function gen_lsp_contents(opts)
