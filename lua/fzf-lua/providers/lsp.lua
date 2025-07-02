@@ -87,7 +87,7 @@ local regex_filter_fn = function(regex_filter)
   return false
 end
 
-local function location_handler(opts, cb, _, result, ctx, _)
+local function location_handler(opts, cb, _, result, ctx, _, jump1)
   local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
   result = utils.tbl_islist(result) and result or { result }
   -- HACK: make sure target URI is valid for buggy LSPs (#1317)
@@ -154,7 +154,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
     end
   end, result)
   -- Jump immediately if there is only one location
-  if opts.jump1 and #entries == 1 then
+  if jump1 and opts.jump1 and #entries == 1 then
     jump_to_location(opts, entries[1].result, encoding)
   end
   -- Perform the callback to avoid the "No xxx found" message
@@ -475,10 +475,14 @@ local function gen_lsp_contents(opts)
     else
       local results = {}
       local cb = function(text) table.insert(results, text) end
+      local clients_responded, client_idx = utils.tbl_count(lsp_results), 0
       for client_id, response in pairs(lsp_results) do
+        client_idx = client_idx + 1
         if response.result then
           local context = { client_id = client_id }
-          lsp_handler.handler(opts, cb, lsp_handler.method, response.result, context)
+          lsp_handler.handler(opts, cb, lsp_handler.method, response.result, context, nil,
+            -- Only jump1 if previous entry count == 0 (#2148)
+            #results == 0 and client_idx == clients_responded)
         elseif response.err then
           utils.warn(string.format("Error executing '%s': %s",
             lsp_handler.method, response.err.message))
@@ -560,14 +564,18 @@ local function gen_lsp_contents(opts)
 
         -- process results from all LSP client
         local err, result, context, lspcfg, done
+        local count = 0
         repeat
           done, err, result, context, lspcfg = coroutine.yield()
           if not err and type(result) == "table" then
             local cb = function(e)
+              count = count + 1
               fzf_cb(e, function() coroutine.resume(co) end)
               coroutine.yield()
             end
-            lsp_handler.handler(opts, cb, lsp_handler.method, result, context, lspcfg)
+            lsp_handler.handler(opts, cb, lsp_handler.method, result, context, lspcfg,
+              -- Only jump1 if previous entry count == 0 (#2148)
+              done and count == 0)
           end
           -- some clients may not always return results (null-ls?)
           -- so don't terminate the loop when 'result == nil`
