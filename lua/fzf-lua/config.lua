@@ -88,7 +88,7 @@ M.globals = setmetatable({}, {
               setup_value[k][1] == true and
               utils.map_tolower(fzflua_default[k], exclude_case_sensitive_alt) or {})
             or utils.map_tolower(utils.tbl_deep_clone(fzflua_default[k]), exclude_case_sensitive_alt)
-        if ret[k] and ret[k][1] == true then
+        if ret[k] and ret[k][1] ~= nil then
           -- Remove the [1] indicating inheritance from defaults and
           ret[k][1] = nil
         end
