@@ -88,10 +88,9 @@ M.files = function(opts)
     -- set `opts.cwd` for relative path display
     opts.cwd = uv.cwd()
   end
-  local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_title_flags(opts, { "cmd" })
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 M.args = function(opts)
@@ -152,7 +151,6 @@ M.zoxide = function(opts)
 
   opts.__fn_transform = function(x) return make_entry.zoxide(x, opts) end
   opts.__mt_transform = [[return require("fzf-lua.make_entry").zoxide]]
-  local contents = core.mt_cmd_wrapper(opts)
 
   if opts.header == nil then
     opts.header = string.format("%8s\t%s", "score", "folder")
@@ -167,7 +165,7 @@ M.zoxide = function(opts)
         or "ls -la {2}"
   end)()
 
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 return M
