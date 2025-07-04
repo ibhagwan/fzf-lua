@@ -33,7 +33,7 @@ end
 -- contents can be either a table with tostring()able items, or a function that
 -- can be called repeatedly for values. The latter can use coroutines for async
 -- behavior.
----@param contents string[]|table|function?
+---@param contents string
 ---@param fzf_cli_args string[]
 ---@param opts table
 ---@return table selected

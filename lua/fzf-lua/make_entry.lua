@@ -27,7 +27,7 @@ local function load_config_section(s, datatype, optional)
     if datatype == "function" then
       is_bytecode = true
       exec_opts = { s, datatype }
-      exec_str = ("return require'fzf-lua'.config.bytecode(...)"):format(s)
+      exec_str = "return require'fzf-lua'.config.bytecode(...)"
     else
       exec_opts = {}
       exec_str = ("return require'fzf-lua'.config.%s"):format(s)

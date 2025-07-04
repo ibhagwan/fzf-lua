@@ -169,7 +169,7 @@ M.raw_preview_action_cmd = function(fn, fzf_field_index, debug)
 end
 
 ---@param opts {}
----@return string, integer
+---@return string, integer?
 M.stringify = function(opts, fzf_field_index)
   -- Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
   fzf_field_index = fzf_field_index or opts.__fzf_field_index or ""
@@ -177,9 +177,17 @@ M.stringify = function(opts, fzf_field_index)
   assert(type(opts.__fn_reload) == "function" or opts.__contents, "must supply contents")
 
   -- Mark opts as already "stringified"
+  assert(not opts.__stringified, "twice stringified")
   opts.__stringified = true
 
-  return M.raw_async_action(function(pipe, args)
+  -- no register function
+  if type(opts.__contents) == "string" then
+    opts.cmd = opts.__contents
+    local cmd = require("fzf-lua.core").mt_cmd_wrapper(opts)
+    if cmd then return cmd, nil end
+  end
+
+  local cmd, id = M.raw_async_action(function(pipe, args)
     -- Contents could be dependent or args, e.g. live_grep which
     -- generates a different command based on the typed query
     local contents = type(opts.__fn_reload) == "function"
@@ -318,6 +326,9 @@ M.stringify = function(opts, fzf_field_index)
       fn_load()
     end
   end, fzf_field_index, opts.debug)
+
+  M.set_protected(id)
+  return cmd, id
 end
 
 return M

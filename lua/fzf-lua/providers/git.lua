@@ -27,9 +27,8 @@ M.files = function(opts)
   if not opts then return end
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
-  local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, opts.headers or { "cwd" })
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 M.status = function(opts)
@@ -56,13 +55,12 @@ M.status = function(opts)
   -- will be set by `core.mt_cmd_wrapper` by commenting out the above
   opts.__fn_transform = function(x) return make_entry.git_status(x, opts) end
   opts.__mt_transform = [[return require("fzf-lua.make_entry").git_status]]
-  local contents = core.mt_cmd_wrapper(opts)
 
   opts.header_prefix = opts.header_prefix or "+ -  "
   opts.header_separator = opts.header_separator or "|"
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
 
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 local function git_cmd(opts)
@@ -108,9 +106,8 @@ M.diff = function(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   opts.preview = git_preview(opts, "{-1}")
-  local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, opts.headers or { "cwd" })
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 M.commits = function(opts)
@@ -261,13 +258,12 @@ M.hunks = function(opts)
 
   opts.__fn_transform = function(x) return make_entry.git_hunk(x, opts) end
   opts.__mt_transform = [[return require("fzf-lua.make_entry").git_hunk]]
-  local contents = core.mt_cmd_wrapper(opts)
 
   opts.header_prefix = opts.header_prefix or "+ -  "
   opts.header_separator = opts.header_separator or "|"
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
 
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 return M

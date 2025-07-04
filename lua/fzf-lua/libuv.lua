@@ -694,7 +694,8 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess, fn_postprocess)
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   local cmd_str = ("%s -u NONE -l %s %s"):format(
     M.shellescape(_is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
-    M.shellescape(vim.fn.fnamemodify(_is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") .. "/spawn.lua"),
+    M.shellescape(vim.fn.fnamemodify(_is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") ..
+      "/spawn.lua"),
     M.shellescape(("return %s,%s,%s,%s"):format(opts, fn_transform, fn_preprocess, fn_postprocess))
   )
   return cmd_str
