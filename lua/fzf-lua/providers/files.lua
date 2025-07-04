@@ -2,7 +2,6 @@ local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
-local shell = require "fzf-lua.shell"
 local libuv = require "fzf-lua.libuv"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
@@ -148,9 +147,7 @@ M.zoxide = function(opts)
 
   -- we always require processing
   opts.requires_processing = true
-
-  opts.__fn_transform = function(x) return make_entry.zoxide(x, opts) end
-  opts.__mt_transform = [[return require("fzf-lua.make_entry").zoxide]]
+  opts.fn_transform = [[return require("fzf-lua.make_entry").zoxide]]
 
   if opts.header == nil then
     opts.header = string.format("%8s\t%s", "score", "folder")

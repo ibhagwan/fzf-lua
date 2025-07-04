@@ -30,7 +30,7 @@ M.colorschemes = function(opts)
   local lazy = package.loaded["lazy.core.util"]
   if lazy and lazy.get_unloaded_rtp then
     local paths = lazy.get_unloaded_rtp("")
-    local all_files = vim.fn.globpath(table.concat(paths, ","), "colors/*", 1, 1)
+    local all_files = vim.fn.globpath(table.concat(paths, ","), "colors/*", true, true)
     for _, f in ipairs(all_files) do
       table.insert(colors, vim.fn.fnamemodify(f, ":t:r"))
     end
@@ -59,12 +59,12 @@ M.colorschemes = function(opts)
   if opts.live_preview then
     -- must add ':nohidden' or fzf ignores the preview action
     opts.fzf_opts["--preview-window"] = "nohidden:right:0"
-    opts.preview = shell.raw_action(function(sel)
+    opts.preview = shell.stringify_data(function(sel)
       if opts.live_preview and sel then
         opts._live = sel[1]
         vim.cmd("colorscheme " .. sel[1])
       end
-    end, nil, opts.debug)
+    end, opts, "{}")
   end
 
   opts.winopts = opts.winopts or {}
@@ -460,7 +460,7 @@ M.awesome_colorschemes = function(opts)
   local prev_act_id
   if opts.live_preview then
     opts.fzf_opts["--preview-window"] = "nohidden:right:0"
-    opts.preview, prev_act_id = shell.raw_action(function(sel)
+    opts.preview, prev_act_id = shell.stringify_data(function(sel)
       if opts.live_preview and sel then
         local dbkey, idx = sel[1]:match("^(.-):(%d+):")
         if opts._adm:downloaded(dbkey) then
@@ -476,7 +476,7 @@ M.awesome_colorschemes = function(opts)
           opts._live = nil
         end
       end
-    end, "{}", opts.debug)
+    end, opts, "{}")
   end
 
   opts._fn_pre_fzf = function()

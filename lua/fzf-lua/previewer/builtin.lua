@@ -443,7 +443,7 @@ function Previewer.base:display_entry(entry_str)
 end
 
 function Previewer.base:cmdline(_)
-  local act = shell.raw_action(function(items, _, _)
+  local act = shell.stringify_data(function(items, _, _)
     local entry, query, idx = unpack(items, 1, 3)
     -- NOTE: see comment regarding {n} in `core.convert_exec_silent_actions`
     -- convert empty string to nil
@@ -454,7 +454,7 @@ function Previewer.base:cmdline(_)
     -- save last entry even if we don't display
     self.last_entry = entry
     return ""
-  end, "{} {q} {n}", self.opts.debug)
+  end, self.opts, "{} {q} {n}")
   return act
 end
 
@@ -471,7 +471,7 @@ function Previewer.base:zero(_)
   self._zero_lock = self._zero_lock or path.normalize(vim.fn.tempname())
   local act = string.format("execute-silent(mkdir %s && %s)",
     libuv.shellescape(self._zero_lock),
-    shell.raw_action(function(_, _, _)
+    shell.stringify_data(function(_, _, _)
       vim.defer_fn(function()
         if self.win:validate_preview() then
           self:clear_preview_buf(true)
@@ -481,7 +481,7 @@ function Previewer.base:zero(_)
         self.last_entry = nil
         vim.fn.delete(self._zero_lock, "d")
       end, self.delay)
-    end, "", self.opts.debug))
+    end, self.opts, ""))
   return act
 end
 
