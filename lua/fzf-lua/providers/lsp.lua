@@ -816,7 +816,7 @@ M.live_workspace_symbols = function(opts)
   opts.lsp_params = { query = opts.lsp_query or opts.query or "" }
   opts.query = opts.lsp_query or opts.query
 
-  opts.fn_reload = function(query)
+  local contents = function(query)
     opts.query = query
     opts.lsp_params = { query = query or "" }
     opts = gen_lsp_contents(opts)
@@ -829,7 +829,7 @@ M.live_workspace_symbols = function(opts)
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
   end
-  return core.fzf_exec(nil, opts)
+  return core.fzf_live(contents, opts)
 end
 
 M.code_actions = function(opts)

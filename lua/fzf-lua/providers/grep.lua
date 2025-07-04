@@ -198,23 +198,15 @@ M.grep = function(opts)
   opts.cmd = get_grep_cmd(opts, opts.search, opts.no_esc)
   if not opts.cmd then return end
 
-  local contents = core.mt_cmd_wrapper(vim.tbl_deep_extend("force", opts,
-    -- query was already parsed for globs inside 'get_grep_cmd'
-    -- no need for our external headless instance to parse again
-    { rg_glob = false }))
-
-  -- by redirecting the error stream to stdout
-  -- we make sure a clear error message is displayed
-  -- when the user enters bad regex expressions
-  if type(contents) == "string" then
-    contents = contents .. " 2>&1"
-  end
+  -- query was already parsed for globs inside 'get_grep_cmd'
+  -- no need for our external headless instance to parse again
+  opts.rg_glob = false
 
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd" })
   opts = core.set_header(opts, opts.headers or { "actions", "cwd", "search" })
   opts = core.set_fzf_field_index(opts)
-  core.fzf_exec(contents, opts)
+  core.fzf_exec(opts.cmd, opts)
 end
 
 local function normalize_live_grep_opts(opts)
@@ -297,13 +289,6 @@ M.live_grep_st = function(opts)
 
   assert(not opts.multiprocess)
 
-  opts.fn_reload = function(query)
-    -- can be nil when called as fzf initial command
-    query = query or ""
-    opts.no_esc = nil
-    return get_grep_cmd(opts, query, true)
-  end
-
   if opts.requires_processing or opts.git_icons or opts.file_icons then
     opts.fn_transform = opts.fn_transform or
         function(x)
@@ -319,7 +304,13 @@ M.live_grep_st = function(opts)
   opts = core.set_title_flags(opts, { "cmd", "live" })
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts)
-  core.fzf_exec(nil, opts)
+
+  core.fzf_live(function(query)
+    -- can be nil when called as fzf initial command
+    query = query or ""
+    opts.no_esc = nil
+    return get_grep_cmd(opts, query, true)
+  end, opts)
 end
 
 -- multi threaded (multi-process actually) version
@@ -345,17 +336,11 @@ M.live_grep_mt = function(opts)
   opts.cmd = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
   if not opts.cmd then return end
 
-  local command = core.mt_cmd_wrapper(opts)
-
-  -- signal 'fzf_exec' to set 'change:reload' parameters
-  -- or skim's "interactive" mode (AKA "live query")
-  opts.fn_reload = command
-
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd", "live" })
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts)
-  core.fzf_exec(nil, opts)
+  core.fzf_live(opts.cmd, opts)
 end
 
 M.live_grep_glob_st = function(opts)
