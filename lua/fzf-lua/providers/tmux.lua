@@ -14,10 +14,10 @@ M.buffers = function(opts)
     return string.format("[%s] %s", utils.ansi_codes.yellow(buf), data)
   end
 
-  opts.fzf_opts["--preview"] = shell.raw_preview_action_cmd(function(items)
+  opts.fzf_opts["--preview"] = shell.stringify_cmd(function(items)
     local buf = items[1]:match("^%[(.-)%]")
     return string.format("tmux show-buffer -b %s", buf)
-  end, opts.debug)
+  end, opts, "{}")
 
   core.fzf_exec(opts.cmd, opts)
 end

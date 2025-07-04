@@ -819,20 +819,18 @@ M.live_workspace_symbols = function(opts)
   opts.lsp_params = { query = opts.lsp_query or opts.query or "" }
   opts.query = opts.lsp_query or opts.query
 
-  local contents = function(query)
-    opts.query = query
-    opts.lsp_params = { query = query or "" }
-    opts = gen_lsp_contents(opts)
-    return opts.__contents
-  end
-
   opts = core.set_header(opts, opts.headers or { "actions", "cwd", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   if opts.symbol_style or opts.symbol_fmt then
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
   end
-  return core.fzf_live(contents, opts)
+  return core.fzf_live(function(args)
+    opts.query = args[1]
+    opts.lsp_params = { query = args[1] or "" }
+    opts = gen_lsp_contents(opts)
+    return opts.__contents
+  end, opts)
 end
 
 M.code_actions = function(opts)

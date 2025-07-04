@@ -230,7 +230,7 @@ M.preprocess = function(opts)
 
   -- nifty hack to avoid having to double escape quotations
   -- see my comment inside 'live_grep' initial_command code
-  if opts.argv_expr then
+  if opts.argv_expr and opts.cmd then
     opts.cmd = opts.cmd:gsub("{argv.*}",
       function(x)
         local idx = x:match("{argv(.*)}")

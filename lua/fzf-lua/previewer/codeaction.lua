@@ -284,12 +284,12 @@ end
 
 function M.native:cmdline(o)
   o = o or {}
-  local act = shell.raw_action(function(entries, _, _)
+  local act = shell.stringify_data(function(entries, _, _)
     local idx = tonumber(entries[1]:match("^%s*%d+%."))
     assert(type(idx) == "number")
     local lines = self:preview_action_tuple(idx)
     return table.concat(lines, "\r\n")
-  end, "{}", self.opts.debug)
+  end, self.opts, "{}")
   if self.pager and #self.pager > 0 and vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
     act = act .. " | " .. utils._if_win_normalize_vars(self.pager)
   end
