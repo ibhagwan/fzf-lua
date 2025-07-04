@@ -879,7 +879,7 @@ function M.normalize_opts(opts, globals, __resume_key)
       opts.process1 = opts.process1 == nil and true or opts.process1
       -- We also want to store the cached extensions/filenames in the main thread
       -- which we do in "make_entry.postprocess"
-      opts.__mt_postprocess = opts.multiprocess
+      opts.fn_postprocess = opts.multiprocess
           and [[return require("fzf-lua.make_entry").postprocess]]
           -- NOTE: we don't need to update mini when running on main thread
           -- or require("fzf-lua.make_entry").postprocess
@@ -892,7 +892,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   elseif opts.line_query then
     utils.map_set(opts, "winopts.preview.winopts.cursorline", true)
     utils.map_set(opts, "keymap.fzf.change",
-      "transform:" .. FzfLua.shell.raw_action(function(q, _, _)
+      "transform:" .. FzfLua.shell.stringify_data(function(q, _, _)
         local lnum = q[1]:match(":(%d+)$")
         local new_q, subs = q[1]:gsub(":%d*$", "")
         -- No subs made, no ":" at end of string, do nothing
@@ -906,7 +906,7 @@ function M.normalize_opts(opts, globals, __resume_key)
           trans = string.format("%s+change-preview-window(%s:%s)", trans, optstr, offset)
         end
         return trans
-      end, "{q}", opts.debug))
+      end, opts, "{q}"))
   end
 
   if type(opts.enrich) == "function" then
