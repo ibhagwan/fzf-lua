@@ -282,43 +282,9 @@ local function normalize_live_grep_opts(opts)
   return opts
 end
 
--- single threaded version
-M.live_grep_st = function(opts)
+M.live_grep = function(opts)
   opts = normalize_live_grep_opts(opts)
   if not opts then return end
-
-  assert(not opts.multiprocess)
-
-  if opts.requires_processing or opts.git_icons or opts.file_icons then
-    opts.fn_transform = opts.fn_transform or
-        function(x)
-          return make_entry.file(x, opts)
-        end
-    opts.fn_preprocess = opts.fn_preprocess or
-        function(o)
-          return make_entry.preprocess(o)
-        end
-  end
-
-  -- search query in header line
-  opts = core.set_title_flags(opts, { "cmd", "live" })
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
-  opts = core.set_fzf_field_index(opts)
-
-  core.fzf_live(function(query)
-    -- can be nil when called as fzf initial command
-    query = query or ""
-    opts.no_esc = nil
-    return get_grep_cmd(opts, query, true)
-  end, opts)
-end
-
--- multi threaded (multi-process actually) version
-M.live_grep_mt = function(opts)
-  opts = normalize_live_grep_opts(opts)
-  if not opts then return end
-
-  assert(opts.multiprocess)
 
   -- when using glob parsing, we must use the external
   -- headless instance for processing the query. This
@@ -329,34 +295,25 @@ M.live_grep_mt = function(opts)
   end
 
   -- signal to preprocess we are looking to replace {argvz}
-  opts.argv_expr = true
+  opts.argv_expr = opts.multiprocess
 
   -- this will be replaced by the appropriate fzf
   -- FIELD INDEX EXPRESSION by 'fzf_exec'
-  opts.cmd = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
-  if not opts.cmd then return end
+  opts.cmd = opts.multiprocess and get_grep_cmd(opts, core.fzf_query_placeholder, 2)
 
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd", "live" })
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts)
-  core.fzf_live(opts.cmd, opts)
+  core.fzf_live(opts.cmd or function(s)
+    -- can be nil when called as fzf initial command
+    local query = s[1] or ""
+    opts.no_esc = nil
+    return get_grep_cmd(opts, query, true)
+  end, opts)
 end
 
-M.live_grep_glob_st = function(opts)
-  if vim.fn.executable("rg") ~= 1 then
-    utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
-    return
-  end
-
-  -- 'rg_glob = true' enables glob
-  -- processing in 'get_grep_cmd'
-  opts = opts or {}
-  opts.rg_glob = true
-  return M.live_grep_st(opts)
-end
-
-M.live_grep_glob_mt = function(opts)
+M.live_grep_glob = function(opts)
   if vim.fn.executable("rg") ~= 1 then
     utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
     return
@@ -366,7 +323,7 @@ M.live_grep_glob_mt = function(opts)
   -- 'make_entry.preprocess', only supported with multiprocess
   opts = opts or {}
   opts.rg_glob = true
-  return M.live_grep_mt(opts)
+  return M.live_grep(opts)
 end
 
 M.live_grep_native = function(opts)
@@ -380,39 +337,27 @@ M.live_grep_native = function(opts)
   opts.formatter = false
   opts.rg_glob = false
   opts.multiprocess = true
-  return M.live_grep_mt(opts)
-end
-
-M.live_grep = function(opts)
-  opts = config.normalize_opts(opts, "grep")
-  if not opts then return end
-
-  if opts.multiprocess then
-    return M.live_grep_mt(opts)
-  else
-    return M.live_grep_st(opts)
-  end
-end
-
-M.live_grep_glob = function(opts)
-  opts = config.normalize_opts(opts, "grep")
-  if not opts then return end
-
-  if opts.multiprocess then
-    return M.live_grep_glob_mt(opts)
-  else
-    return M.live_grep_glob_st(opts)
-  end
+  return M.live_grep(opts)
 end
 
 M.live_grep_resume = function(opts)
-  if not opts then opts = {} end
+  vim.deprecate(
+    [['live_grep_resume']],
+    [[':FzfLua live_grep resume=true' or ':lua FzfLua.live_grep({resume=true})']],
+    "Jan 2026", "FzfLua"
+  )
+  opts = opts or {}
   opts.resume = true
   return M.live_grep(opts)
 end
 
 M.grep_last = function(opts)
-  if not opts then opts = {} end
+  vim.deprecate(
+    [['grep_last']],
+    [[':FzfLua grep resume=true' or ':lua FzfLua.grep({resume=true})']],
+    "Jan 2026", "FzfLua"
+  )
+  opts = opts or {}
   opts.resume = true
   return M.grep(opts)
 end
