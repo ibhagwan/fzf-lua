@@ -143,11 +143,7 @@ local function tags(opts)
 
   -- prevents 'file|git_icons=false' from overriding processing
   opts.requires_processing = true
-  if opts.multiprocess then
-    opts.__mt_transform = [[return require("fzf-lua.make_entry").tag]]
-  else
-    opts.__mt_transform = make_entry.tag
-  end
+  opts.fn_transform = [[return require("fzf-lua.make_entry").tag]]
 
   if opts.lgrep then
     -- we need this for 'actions.grep_lgrep'
@@ -161,15 +157,7 @@ local function tags(opts)
     -- tags has its own formatter
     opts.formatter, opts._fmt = false, { _to = false, to = false, from = false }
     opts.filespec = libuv.shellescape(opts._ctags_file)
-    if opts.multiprocess then
-      return require "fzf-lua.providers.grep".live_grep_mt(opts)
-    else
-      -- 'live_grep_st' uses different signature 'fn_transform'
-      opts.fn_transform = function(x)
-        return make_entry.tag(x, opts)
-      end
-      return require "fzf-lua.providers.grep".live_grep_st(opts)
-    end
+    return require "fzf-lua.providers.grep".live_grep(opts)
   else
     -- we need this for 'actions.grep_lgrep'
     opts.__ACT_TO = opts.__ACT_TO or M.live_grep

@@ -142,7 +142,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     end)
   end
 
-  local read_cb = function(err, data)
+  local _read_cb = function(err, data)
     if err then
       assert(not err)
       finish(130, 0, 4, pid)
@@ -208,6 +208,13 @@ M.spawn = function(opts, fn_transform, fn_done)
           t_e, nlines, (t_e - t_st) / 1e6))
       end
     end
+  end
+
+  local read_cb = function(err, data)
+    local read = function() _read_cb(err, data) end
+    -- Avoid "attempt to yield across C-call boundary"
+    -- if vim.in_fast_event() then vim.schedule(read) else read() end
+    read()
   end
 
   local err_cb = function(err, data)
