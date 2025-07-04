@@ -163,13 +163,9 @@ M.fzf_exec = function(contents, opts)
   end
   -- Contents sent to fzf can only be nil or a shell command (string)
   -- the API accepts both tables and functions which we "stringify"
-  if contents ~= nil and type(contents) ~= "string" and not opts.__stringified then
+  if not opts.fn_reload then
     opts.__contents = contents
-    local cmd, id = shell.stringify(opts)
-    -- Protect function ptr from being overwritten in the circular buffer
-    -- NOTE: will be cleared when a new picker is opened (not a resume)
-    shell.set_protected(id)
-    contents = cmd
+    contents = shell.stringify(opts)
   end
   assert(contents == nil or type(contents) == "string", "contents must be of type string")
   -- setup as "live": disables fuzzy matching and reload the content
@@ -180,6 +176,7 @@ M.fzf_exec = function(contents, opts)
       -- TODO: add support for 'fn_transform' using 'mt_cmd_wrapper'
       -- functions can be stored using 'config.bytecode' which uses
       -- 'string.dump' to convert from function code to bytes
+      opts.fn_reload = M.mt_cmd_wrapper(opts) or opts.fn_reload
       opts = M.setup_fzf_interactive_native(opts.fn_reload, opts)
       contents = opts.__fzf_init_cmd
     else
@@ -233,7 +230,7 @@ M.fzf_resume = function(opts)
 end
 
 ---@param opts table
----@param contents content
+---@param contents string?
 ---@param fn_selected function?
 ---@return thread
 M.fzf_wrap = function(opts, contents, fn_selected)
@@ -320,7 +317,7 @@ M.CTX = function(opts)
   return M.__CTX
 end
 
----@param contents content
+---@param contents string?
 ---@param opts {}?
 ---@return string[]?
 M.fzf = function(contents, opts)
@@ -789,7 +786,7 @@ M.build_fzf_cli = function(opts, fzf_win)
 end
 
 ---@param opts table
----@return string|function
+---@return string?
 M.mt_cmd_wrapper = function(opts)
   assert(opts and opts.cmd)
   ---@param o table<string, unknown>
@@ -910,10 +907,7 @@ M.mt_cmd_wrapper = function(opts)
     opts.__fn_preprocess = opts.__fn_preprocess == nil
         and function(o) return make_entry.preprocess(o) end
         or opts.__fn_preprocess
-    opts.__contents = opts.cmd
-    local cmd, id = shell.stringify(opts)
-    shell.set_protected(id)
-    return cmd
+    return nil
   end
 end
 
@@ -1169,18 +1163,17 @@ end
 
 -- converts actions defined with "reload=true" to use fzf's `reload` bind
 -- provides a better UI experience without a visible interface refresh
----@param reload_cmd content
+---@param reload_cmd string?
 ---@param opts table
 ---@return table
 M.convert_reload_actions = function(reload_cmd, opts)
   local fallback ---@type boolean?
-  local has_reload ---@type boolean?
   -- Does not work with fzf version < 0.36, fzf fails with
   -- "error 2: bind action not specified:" (#735)
   -- Not yet supported with skim
   if not utils.has(opts, "fzf", { 0, 36 })
       or utils.has(opts, "sk")
-      or type(reload_cmd) ~= "string" then
+      or not reload_cmd then
     fallback = true
   end
   -- Two types of action as table:
@@ -1191,7 +1184,6 @@ M.convert_reload_actions = function(reload_cmd, opts)
     if type(v) == "function" or type(v) == "table" then
       assert(type(v) == "function" or (v.fn and v[1] == nil) or (v[1] and v.fn == nil))
       if type(v) == "table" and v.reload then
-        has_reload = true
         assert(type(v.fn) == "function")
         -- fallback: we cannot use the `reload` event (old fzf or skim)
         -- convert to "old-style" interface reload using `resume`
@@ -1206,10 +1198,6 @@ M.convert_reload_actions = function(reload_cmd, opts)
         opts.actions[k] = { fn = v[1], reload = true }
       end
     end
-  end
-  if opts.silent ~= true and has_reload and reload_cmd and type(reload_cmd) ~= "string" then
-    utils.warn(
-      "actions with `reload` are only supported with string commands, using resume fallback")
   end
   if fallback then
     -- for fallback, conversion to "old-style" actions is sufficient
