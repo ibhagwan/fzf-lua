@@ -529,8 +529,11 @@ M.git_hunk = function(x, opts)
       end
       -- Extract filename from the "b-line", e.g:
       --  +++ b/lua/fzf-lua/defaults.lua
+      -- NOTE: prefix can also appear as {i|w} (#2151)
+      --  --- i/<file>
+      --  +++ w/<file>
       if S.i == 3 then
-        S.filename = l:match("^%+%+%+ b/(.*)")
+        S.filename = l:match("^%+%+%+ %l/(.*)")
         return
       end
       -- Process only lines that start with + or -
