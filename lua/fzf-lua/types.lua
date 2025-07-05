@@ -56,6 +56,12 @@
 ---@field no_syntax boolean?
 ---@field cached fzf-lua.buffer_or_file.Bcache?
 ---@field content string[]?
+---@field uri string?
+
+---@class fzf-lua.keymap.Entry
+---@field vmap string?
+---@field mode string?
+---@field key string?
 
 ---@class fzf-lua.buffer_or_file.Bcache
 ---@field bufnr integer

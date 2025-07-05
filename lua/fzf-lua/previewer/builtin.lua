@@ -1732,6 +1732,7 @@ function Previewer.autocmds:keymaps(o, opts, fzf_win)
   return self
 end
 
+---@return fzf-lua.path.Entry|fzf-lua.keymap.Entry
 function Previewer.keymaps:parse_entry(entry_str)
   return path.keymap_to_entry(entry_str, self.opts)
 end
