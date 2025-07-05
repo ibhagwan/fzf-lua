@@ -599,9 +599,16 @@ function Previewer.buffer_or_file:close(do_not_clear_cache)
 end
 
 ---@param entry_str string
+---@return fzf-lua.path.Entry
+function Previewer.buffer_or_file:entry_to_file(entry_str)
+  return path.entry_to_file(entry_str, self.opts)
+end
+
+---@param entry_str string
 ---@return fzf-lua.buffer_or_file.Entry
 function Previewer.buffer_or_file:parse_entry(entry_str)
-  local entry = path.entry_to_file(entry_str, self.opts)
+  ---@type fzf-lua.buffer_or_file.Entry
+  local entry = self:entry_to_file(entry_str)
   -- if enabled, query can contain line no, e.g. "file:40"
   local lnum = self.opts.line_query and tonumber(self.opts._last_query:match(":(%d+)$"))
   entry.line = lnum or entry.line
