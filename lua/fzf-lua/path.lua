@@ -441,7 +441,7 @@ function M.entry_to_file(entry, opts, force_uri)
   end
   -- Entry metadata (before `utils.nbsp`) can contain `[bufnr]` which should
   -- be used instead of the file path, used in buffers, tabs, lines|blines
-  local bufnr = idx > 1 and entry:sub(1, idx):match("%[(%d+)%]") or nil
+  local bufnr = not opts._ctag and idx > 1 and entry:sub(1, idx):match("%[(%d+)%]") or nil
   if isURI and not bufnr then
     -- LSP entries can appear as URIs, for example when using nvim-jdtls
     -- references inside ".jar" files will have a prefix of "jdt://..."

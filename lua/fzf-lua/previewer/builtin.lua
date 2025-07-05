@@ -517,7 +517,7 @@ function Previewer.base:scroll(direction)
       end
     end)(),
     ["line-down"]      = "Mgj",
-    ["reset"]          = true,                -- dummy for exit condition
+    ["reset"]          = true, -- dummy for exit condition
   })[direction]
 
   if not input then return end
@@ -534,7 +534,7 @@ function Previewer.base:scroll(direction)
     end)
   else
     pcall(vim.api.nvim_win_call, preview_winid, function()
-      if type(input)  == "function" then
+      if type(input) == "function" then
         input()
       else
         vim.cmd([[norm! ]] .. input)
@@ -813,27 +813,29 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   local entry = self:parse_entry(entry_str)
   if utils.tbl_isempty(entry) then return end
   local cached = self:get_bcache(entry)
-  local invalid_cached = cached and cached.invalid and cached
   entry.cached = cached
-  if not invalid_cached and not self:should_load_buffer(entry) then
+  if cached and not cached.invalid and not self:should_load_buffer(entry) then
     assert(cached.bufnr == self.preview_bufnr)
     -- same file/buffer as previous entry no need to reload content
     -- only call post to set cursor location
-    cached.invalid_pos = ((tonumber(entry.line) and entry.line > 0 and entry.line ~= self.orig_pos[1])
-      or (tonumber(entry.col) and entry.col > 0 and entry.col - 1 ~= self.orig_pos[2]))
-    if type(self.cached_bufnrs[tostring(self.preview_bufnr)]) == "table" and cached.invalid_pos then
-      -- entry is within the same buffer but line|col has changed
-      -- clear cached buffer position so we scroll to entry's line|col
-      self.cached_bufnrs[tostring(self.preview_bufnr)] = true
+    if type(self.cached_bufnrs[tostring(self.preview_bufnr)]) == "table" then
+      cached.invalid_pos = ((tonumber(entry.line) and entry.line > 0 and entry.line ~= self.orig_pos[1])
+        or (tonumber(entry.col) and entry.col > 0 and entry.col - 1 ~= self.orig_pos[2]))
+      if cached.invalid_pos then
+        -- entry is within the same buffer but line|col has changed
+        -- clear cached buffer position so we scroll to entry's line|col
+        self.cached_bufnrs[tostring(self.preview_bufnr)] = true
+      end
     end
     self:preview_buf_post(entry)
     return
   end
-  if cached and not invalid_cached then
+  if cached and not cached.invalid then
     self:set_preview_buf(cached.bufnr, cached.min_winopts)
     self:preview_buf_post(entry, cached.min_winopts)
     return
   end
+  local invalid_cached = cached -- cached must be invalid now if exists
   self.clear_on_redraw = false
   -- kill previously running terminal jobs
   -- when using external commands extension map
