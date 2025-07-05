@@ -64,7 +64,9 @@ end
 function M.from_lines(text_lines, opts)
   opts = opts or {}
   if opts and opts.normalize_paths then
-    text_lines = vim.tbl_map(function(x) return x:gsub([[\]], [[/]]) end, text_lines)
+    text_lines = vim.tbl_map(function(x)
+      return x:gsub([[\]], [[/]])
+    end, text_lines)
   end
   local f = function(x)
     return string_to_chars(x)
@@ -76,16 +78,20 @@ end
 ---@param opts test.ScreenOpts?
 function M.fromChildBufLines(child, buf, opts)
   opts = opts or {}
-  if opts and opts.redraw then child.cmd("redraw") end
-  local lines = child.api.nvim_buf_get_lines(buf or 0, opts.start_line and 0, opts.end_line + 1 or -1,
-    true)
+  if opts and opts.redraw then
+    child.cmd("redraw")
+  end
+  local lines =
+    child.api.nvim_buf_get_lines(buf or 0, opts.start_line and 0, opts.end_line + 1 or -1, true)
   return M.from_lines(lines, opts)
 end
 
 ---@param opts test.ScreenOpts?
 function M.fromChildScreen(child, opts)
   opts = opts or {}
-  if opts and opts.redraw then child.cmd("redraw") end
+  if opts and opts.redraw then
+    child.cmd("redraw")
+  end
   local lines = child.lua(([[
       local lines = {}
       for i = %s, %s do
@@ -105,17 +111,18 @@ local screenshot_read = function(path)
   local lines = vim.fn.readfile(path)
   local text_lines = vim.list_slice(lines, 2, #lines)
 
-  local f = function(x) return H.string_to_chars(x:gsub("^%d+|", "")) end
+  local f = function(x)
+    return H.string_to_chars(x:gsub("^%d+|", ""))
+  end
   return screenshot_new({ text = vim.tbl_map(f, text_lines) }, opts)
 end
-
 
 -- modified version (no attr)
 local screenshot_compare = function(screen_ref, screen_obs, opts)
   local compare = function(x, y, desc)
     if x ~= y then
       return false,
-          ("Different %s. Reference: %s. Observed: %s."):format(desc, vim.inspect(x), vim.inspect(y))
+        ("Different %s. Reference: %s. Observed: %s."):format(desc, vim.inspect(x), vim.inspect(y))
     end
     return true, ""
   end
@@ -156,10 +163,15 @@ local screenshot_compare = function(screen_ref, screen_obs, opts)
 end
 
 M.reference_screenshot = function(screenshot, path, opts)
-  if screenshot == nil then return true end
+  if screenshot == nil then
+    return true
+  end
 
-  opts = vim.tbl_extend("force",
-    { force = false, ignore_text = {}, directory = "tests/screenshots" }, opts or {})
+  opts = vim.tbl_extend(
+    "force",
+    { force = false, ignore_text = {}, directory = "tests/screenshots" },
+    opts or {}
+  )
 
   H.cache.n_screenshots = H.cache.n_screenshots + 1
 
@@ -168,9 +180,13 @@ M.reference_screenshot = function(screenshot, path, opts)
     -- forbidden characters with '-' (with some useful exception)
     local linux_forbidden = [[/]]
     local windows_forbidden = [[<>:"/\|?*]]
-    local pattern = string.format("[%%c%%s%s%s]", vim.pesc(linux_forbidden),
-      vim.pesc(windows_forbidden))
-    local replacements = setmetatable({ ['"'] = "'" }, { __index = function() return "-" end })
+    local pattern =
+      string.format("[%%c%%s%s%s]", vim.pesc(linux_forbidden), vim.pesc(windows_forbidden))
+    local replacements = setmetatable({ ['"'] = "'" }, {
+      __index = function()
+        return "-"
+      end,
+    })
     local name = H.case_to_stringid(MiniTest.current.case):gsub(pattern, replacements)
 
     -- Don't end with whitespace or dot (forbidden on Windows)
@@ -180,7 +196,9 @@ M.reference_screenshot = function(screenshot, path, opts)
     path = vim.fs.normalize(opts.directory):gsub("/$", "") .. "/" .. name
 
     -- Deal with multiple screenshots
-    if H.cache.n_screenshots > 1 then path = path .. string.format("-%03d", H.cache.n_screenshots) end
+    if H.cache.n_screenshots > 1 then
+      path = path .. string.format("-%03d", H.cache.n_screenshots)
+    end
   end
 
   -- If there is no readable screenshot file, create it. Pass with note.
@@ -198,11 +216,17 @@ M.reference_screenshot = function(screenshot, path, opts)
   -- Compare
   local are_same, cause = screenshot_compare(reference, screenshot, opts)
 
-  if are_same then return true end
+  if are_same then
+    return true
+  end
 
   local subject = "screenshot equality to reference at " .. vim.inspect(path)
-  local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause, tostring(reference),
-    tostring(screenshot))
+  local context = string.format(
+    "%s\nReference:\n%s\n\nObserved:\n%s",
+    cause,
+    tostring(reference),
+    tostring(screenshot)
+  )
   H.error_expect(subject, context)
 end
 
@@ -223,12 +247,17 @@ M.compare = function(reference, screenshot, opts)
     ruler = prefix .. ("---------|"):rep(math.ceil(0.1 * n_cols)):sub(1, n_cols) .. "\n"
   end
 
-  if are_same then return true end
+  if are_same then
+    return true
+  end
 
   local subject = "screenshot equality to reference at " .. vim.inspect(path)
-  local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause,
+  local context = string.format(
+    "%s\nReference:\n%s\n\nObserved:\n%s",
+    cause,
     ruler .. tostring(reference),
-    ruler .. tostring(screenshot))
+    ruler .. tostring(screenshot)
+  )
   H.error_expect(subject, context)
 end
 

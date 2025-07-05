@@ -1,5 +1,5 @@
-local utils = require "fzf-lua.utils"
-local shell = require "fzf-lua.shell"
+local utils = require("fzf-lua.utils")
+local shell = require("fzf-lua.shell")
 local native = require("fzf-lua.previewer.fzf")
 local builtin = require("fzf-lua.previewer.builtin")
 
@@ -33,10 +33,8 @@ local function diff_text_edits(text_edits, bufnr, offset_encoding, diff_opts)
   vim.lsp.util.apply_text_edits(text_edits, tmpbuf, offset_encoding)
   local new_lines = get_lines(tmpbuf)
   vim.api.nvim_buf_delete(tmpbuf, { force = true })
-  local diff = vim.diff(
-    table.concat(orig_lines, eol) .. eol,
-    table.concat(new_lines, eol) .. eol,
-    diff_opts)
+  local diff =
+    vim.diff(table.concat(orig_lines, eol) .. eol, table.concat(new_lines, eol) .. eol, diff_opts)
   -- Windows: some LSPs use "\n" for EOL (e.g clangd)
   -- remove both "\n" and "\r\n" (#1172)
   return utils.strsplit(vim.trim(diff), "\r?\n")
@@ -124,7 +122,7 @@ end
 local function diff_tuple(err, tuple, diff_opts)
   if err then
     return {
-      string.format('"codeAction/resolve" failed with error %d: %s', err.code, err.message)
+      string.format('"codeAction/resolve" failed with error %d: %s', err.code, err.message),
     }
   end
   local action = tuple[2]
@@ -136,9 +134,11 @@ local function diff_tuple(err, tuple, diff_opts)
     return {
       string.format(
         "Code action preview is only available for document/workspace edits (%s).",
-        command and type(command.command) == "string"
-        and string.format("command:%s", command.command)
-        or string.format("kind:%s", action.kind))
+        command
+            and type(command.command) == "string"
+            and string.format("command:%s", command.command)
+          or string.format("kind:%s", action.kind)
+      ),
     }
   end
 end
@@ -171,10 +171,10 @@ local function preview_action_tuple(self, idx, callback)
         local bufnr = assert(choice.ctx.bufnr, "Must have buffer number")
         local reg = client.dynamic_capabilities:get(ms.textDocument_codeAction, { bufnr = bufnr })
         return utils.tbl_get(reg or {}, "registerOptions", "resolveProvider")
-            or client:supports_method(ms.codeAction_resolve)
+          or client:supports_method(ms.codeAction_resolve)
       end)()
-      -- prior to nvim 0.10 we could check `client.server_capabilities`
-      or utils.tbl_get(client.server_capabilities, "codeActionProvider", "resolveProvider")
+    -- prior to nvim 0.10 we could check `client.server_capabilities`
+    or utils.tbl_get(client.server_capabilities, "codeActionProvider", "resolveProvider")
   if not action.edit and client and supports_resolve then
     -- Action is not a workspace edit, attempt to resolve the code action
     -- in case it resolves to a workspace edit
@@ -187,7 +187,7 @@ local function preview_action_tuple(self, idx, callback)
         err = err,
         -- Due to a bug in `typescript-tools.nvim` only the first call to `codeAction/resolve`
         -- returns a valid action (non-nil), return nil tuple if the action is nil (#949)
-        tuple = resolved_action and { client_id, resolved_action } or nil
+        tuple = resolved_action and { client_id, resolved_action } or nil,
       }
       self._resolved_actions[idx] = resolved
       -- HACK: due to upstream bug with jdtls calling resolve messes
@@ -218,7 +218,6 @@ local function preview_action_tuple(self, idx, callback)
   end
 end
 
-
 M.builtin = builtin.base:extend()
 M.builtin.preview_action_tuple = preview_action_tuple
 
@@ -236,25 +235,34 @@ end
 
 function M.builtin:gen_winopts()
   local winopts = {
-    wrap       = false,
+    wrap = false,
     cursorline = false,
-    number     = false
+    number = false,
   }
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
 function M.builtin:populate_preview_buf(entry_str)
-  if not self.win or not self.win:validate_preview() then return end
+  if not self.win or not self.win:validate_preview() then
+    return
+  end
   local idx = tonumber(entry_str:match("^%s*(%d+)%."))
   assert(type(idx) == "number")
-  local lines = self:preview_action_tuple(idx,
+  local lines = self:preview_action_tuple(
+    idx,
     -- use the async version for "codeAction/resolve"
     function(err, resolved_tuple)
       if vim.api.nvim_buf_is_valid(self.tmpbuf) then
-        vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false,
-          diff_tuple(err, resolved_tuple, self.diff_opts))
+        vim.api.nvim_buf_set_lines(
+          self.tmpbuf,
+          0,
+          -1,
+          false,
+          diff_tuple(err, resolved_tuple, self.diff_opts)
+        )
       end
-    end)
+    end
+  )
   self.tmpbuf = self:get_tmp_buffer()
   vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, lines)
   vim.bo[self.tmpbuf].filetype = "git"

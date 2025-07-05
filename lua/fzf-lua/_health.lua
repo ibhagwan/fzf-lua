@@ -56,8 +56,8 @@ function M.check()
   if not uv.fs_access(run, "rwx") then
     error(
       "Your 'run' directory is invalid `"
-      .. run
-      .. "`.\nPlease make sure `XDG_RUNTIME_DIR` is set correctly."
+        .. run
+        .. "`.\nPlease make sure `XDG_RUNTIME_DIR` is set correctly."
     )
   end
 
@@ -65,11 +65,13 @@ function M.check()
   if srv_ok then
     vim.fn.delete(srv_pipe)
   else
-    error(string.format(
-      "`vim.fn.serverstart()` failed with '%s'\n%s",
-      srv_ok,
-      "Please make sure `XDG_RUNTIME_DIR` is writeable."
-    ))
+    error(
+      string.format(
+        "`vim.fn.serverstart()` failed with '%s'\n%s",
+        srv_ok,
+        "Please make sure `XDG_RUNTIME_DIR` is writeable."
+      )
+    )
   end
 
   if vim.fn.executable("fzf") == 1 then

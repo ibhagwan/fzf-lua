@@ -1,19 +1,25 @@
 local uv = vim.uv or vim.loop
-local core = require "fzf-lua.core"
-local utils = require "fzf-lua.utils"
-local config = require "fzf-lua.config"
-local make_entry = require "fzf-lua.make_entry"
+local core = require("fzf-lua.core")
+local utils = require("fzf-lua.utils")
+local config = require("fzf-lua.config")
+local make_entry = require("fzf-lua.make_entry")
 
 local M = {}
 
 local quickfix_run = function(opts, cfg, locations)
-  if not locations then return {} end
+  if not locations then
+    return {}
+  end
   local results = {}
 
   opts = config.normalize_opts(opts, cfg)
-  if not opts then return end
+  if not opts then
+    return
+  end
 
-  if not opts.cwd then opts.cwd = uv.cwd() end
+  if not opts.cwd then
+    opts.cwd = uv.cwd()
+  end
 
   for _, entry in ipairs(locations) do
     if entry.valid == 1 or not opts.only_valid then
@@ -27,7 +33,9 @@ local quickfix_run = function(opts, cfg, locations)
       x = make_entry.file(x, opts)
       if x then
         cb(x, function(err)
-          if err then return end
+          if err then
+            return
+          end
           -- close the pipe to fzf, this
           -- removes the loading indicator in fzf
           cb(nil)
@@ -66,20 +74,19 @@ M.loclist = function(opts)
   return quickfix_run(opts, "loclist", locations)
 end
 
-
 local qfstack_exec = function(opts, cfg, is_loclist)
   opts = config.normalize_opts(opts, cfg)
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   opts.fn_pre_fzf = function()
-    opts.__history = vim.split(
-      vim.fn.execute(is_loclist and "lhistory" or "chistory"), "\n")
+    opts.__history = vim.split(vim.fn.execute(is_loclist and "lhistory" or "chistory"), "\n")
   end
   opts.fn_pre_fzf()
 
   if utils.tbl_isempty(opts.__history) or opts.__history[2] == "No entries" then
-    utils.info(string.format("No %s",
-      is_loclist and "location lists" or "quickfix lists"))
+    utils.info(string.format("No %s", is_loclist and "location lists" or "quickfix lists"))
     return
   end
 
@@ -91,13 +98,17 @@ local qfstack_exec = function(opts, cfg, is_loclist)
         local is_current = line:match("^>")
         local nr, name = line:match("list (%d+) of %d+; %d+ errors%s+(.*)$")
         if nr and tonumber(nr) > 0 then
-          local entry = string.format("[%s] %s %s",
-            utils.ansi_codes.yellow(nr), is_current
-            and utils.ansi_codes.red(opts.marker)
-            or " ", name)
+          local entry = string.format(
+            "[%s] %s %s",
+            utils.ansi_codes.yellow(nr),
+            is_current and utils.ansi_codes.red(opts.marker) or " ",
+            name
+          )
           cb(entry, function(err)
             coroutine.resume(co)
-            if err then cb(nil) end
+            if err then
+              cb(nil)
+            end
           end)
           coroutine.yield()
         end

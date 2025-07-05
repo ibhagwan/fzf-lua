@@ -1,6 +1,6 @@
 local uv = vim.uv or vim.loop
-local utils = require "fzf-lua.utils"
-local libuv = require "fzf-lua.libuv"
+local utils = require("fzf-lua.utils")
+local libuv = require("fzf-lua.libuv")
 local string_sub = string.sub
 local string_byte = string.byte
 
@@ -73,17 +73,15 @@ end
 ---@param path string
 ---@return boolean
 M.is_absolute = function(path)
-  return utils._if_win(
-    string_byte(path, 2) == M.colon_byte,
-    string_byte(path, 1) == M.fslash_byte)
+  return utils._if_win(string_byte(path, 2) == M.colon_byte, string_byte(path, 1) == M.fslash_byte)
 end
 
 ---@param path string
 ---@return boolean
 M.has_cwd_prefix = function(path)
   return #path > 1
-      and string_byte(path, 1) == M.dot_byte
-      and M.byte_is_separator(string_byte(path, 2))
+    and string_byte(path, 1) == M.dot_byte
+    and M.byte_is_separator(string_byte(path, 2))
 end
 
 ---@param path string
@@ -174,11 +172,15 @@ function M.is_relative_to(path, relative_to)
       repeat
         ridx = ridx + 1
       until not M.byte_is_separator(string.byte(relative_to, ridx))
-    elseif utils.__IS_WINDOWS and pbyte and rbyte
+    elseif
+      utils.__IS_WINDOWS
+        and pbyte
+        and rbyte
         -- case insensitive matching on windows
         and string.char(pbyte):lower() == string.char(rbyte):lower()
-        -- byte matching on Unix/BSD
-        or pbyte == rbyte then
+      -- byte matching on Unix/BSD
+      or pbyte == rbyte
+    then
       -- character matches, move to next
       pidx = pidx + 1
       ridx = ridx + 1
@@ -251,7 +253,9 @@ end
 ---@param path string?
 ---@return string?
 function M.HOME_to_tilde(path)
-  if not path then return end
+  if not path then
+    return
+  end
   if utils.__IS_WINDOWS then
     local home = M.HOME()
     if path:sub(1, #home):lower() == home:lower() then
@@ -264,8 +268,7 @@ function M.HOME_to_tilde(path)
 end
 
 local function find_next_separator(str, start_idx)
-  local SEPARATOR_BYTES = utils._if_win(
-    { M.fslash_byte, M.bslash_byte }, { M.fslash_byte })
+  local SEPARATOR_BYTES = utils._if_win({ M.fslash_byte, M.bslash_byte }, { M.fslash_byte })
   for i = start_idx or 1, #str do
     for _, byte in ipairs(SEPARATOR_BYTES) do
       if string_byte(str, i) == byte then
@@ -333,7 +336,9 @@ function M.shorten(path, max_len, sep)
       part = utf8_sub(path, start_idx, end_idx + 1)
     end
     table.insert(parts, part)
-    if i then start_idx = i + 1 end
+    if i then
+      start_idx = i + 1
+    end
   until not i
   return table.concat(parts, sep)
 end
@@ -356,13 +361,17 @@ function M.lengthen(path)
   -- replace separator with wildcard + separator
   glob_expr = glob_expr_prefix .. glob_expr:gsub(separator, "%*" .. separator)
   return vim.fn.glob(glob_expr):match("[^\n]+")
-      -- or string.format("<glob expand failed for '%s'>", path)
-      or string.format("<glob expand failed for '%s'>", glob_expr)
+    -- or string.format("<glob expand failed for '%s'>", path)
+    or string.format("<glob expand failed for '%s'>", glob_expr)
 end
 
 local function lastIndexOf(haystack, needle)
   local i = haystack:match(".*" .. needle .. "()")
-  if i == nil then return nil else return i - 1 end
+  if i == nil then
+    return nil
+  else
+    return i - 1
+  end
 end
 
 local function stripBeforeLastOccurrenceOf(str, sep)
@@ -379,10 +388,9 @@ function M.entry_to_ctag(entry, noesc)
   if ctag and not noesc then
     -- required escapes for vim.fn.search()
     -- \ ] ~ *
-    ctag = ctag:gsub("[\\%]~*]",
-      function(x)
-        return "\\" .. x
-      end)
+    ctag = ctag:gsub("[\\%]~*]", function(x)
+      return "\\" .. x
+    end)
   end
   return ctag
 end
@@ -403,8 +411,8 @@ function M.entry_to_location(entry, opts)
       start = {
         line = line - 1,
         character = col - 1,
-      }
-    }
+      },
+    },
   }
 end
 
@@ -452,7 +460,9 @@ function M.entry_to_file(entry, opts, force_uri)
     return M.entry_to_location(stripped, opts)
   end
   local s = utils.strsplit(stripped, ":")
-  if not s[1] then return {} end
+  if not s[1] then
+    return {}
+  end
   if utils.__IS_WINDOWS and M.is_absolute(stripped) then
     -- adjust split for "C:\..."
     s[1] = s[1] .. ":" .. s[2]
@@ -460,7 +470,7 @@ function M.entry_to_file(entry, opts, force_uri)
   end
   local file = s[1]
   local line = tonumber(s[2])
-  local col  = tonumber(s[3])
+  local col = tonumber(s[3])
   -- if the filename contains ':' we will have the wrong filename.
   -- test for existence on the longest possible match on the file
   -- system so we can accept files that end with ':', for example:
@@ -495,29 +505,32 @@ function M.entry_to_file(entry, opts, force_uri)
   end
   return {
     stripped = stripped,
-    bufnr    = tonumber(bufnr),
-    bufname  = bufnr and vim.api.nvim_buf_is_valid(tonumber(bufnr))
-        and vim.api.nvim_buf_get_name(tonumber(bufnr)),
+    bufnr = tonumber(bufnr),
+    bufname = bufnr and vim.api.nvim_buf_is_valid(tonumber(bufnr)) and vim.api.nvim_buf_get_name(
+      tonumber(bufnr)
+    ),
     terminal = terminal,
-    path     = file,
-    line     = tonumber(line) or 0,
-    col      = tonumber(col) or 0,
-    ctag     = opts._ctag and M.entry_to_ctag(stripped) or nil,
+    path = file,
+    line = tonumber(line) or 0,
+    col = tonumber(col) or 0,
+    ctag = opts._ctag and M.entry_to_ctag(stripped) or nil,
   }
 end
 
 function M.git_cwd(cmd, opts)
   local git_args = {
-    { "cwd",          "-C" },
-    { "git_dir",      "--git-dir" },
+    { "cwd", "-C" },
+    { "git_dir", "--git-dir" },
     { "git_worktree", "--work-tree" },
-    { "git_config",   "-c",         noexpand = true },
+    { "git_config", "-c", noexpand = true },
   }
   -- NOTE: we copy the opts due to a bug with Windows network drives starting with "\\"
   -- as `vim.fn.expand` would reduce the double slash to a single slash modifying the
   -- original `opts.cwd` ref (#1429)
   local o = {}
-  for _, a in ipairs(git_args) do o[a[1]] = opts[a[1]] end
+  for _, a in ipairs(git_args) do
+    o[a[1]] = opts[a[1]]
+  end
   if type(cmd) == "string" then
     local args = ""
     for _, a in ipairs(git_args) do
@@ -550,7 +563,9 @@ function M.git_root(opts, noerr)
   local cmd = M.git_cwd({ "git", "rev-parse", "--show-toplevel" }, opts)
   local output, err = utils.io_systemlist(cmd)
   if err ~= 0 then
-    if not noerr then utils.info(unpack(output)) end
+    if not noerr then
+      utils.info(unpack(output))
+    end
     return nil
   end
   return output[1]
@@ -565,7 +580,9 @@ function M.keymap_to_entry(str, opts)
     t = true,
   }
   local mode, keymap = string.match(str, "^(.-)│(.-)│")
-  if not mode or not keymap then return {} end
+  if not mode or not keymap then
+    return {}
+  end
   mode, keymap = vim.trim(mode), vim.trim(keymap)
   mode = valid_modes[mode] and mode or "" -- only valid modes
   local out, vmap, cmd = nil, nil, string.format("verbose %smap %s", mode, keymap)
@@ -573,7 +590,9 @@ function M.keymap_to_entry(str, opts)
   -- "No mapping found"
   pcall(vim.api.nvim_buf_call, opts.__CTX.bufnr, function()
     out = utils.strsplit(vim.fn.execute(cmd), "\n")
-    _, vmap = next(vim.tbl_map(function(x) return #x > 0 and x or nil end, out))
+    _, vmap = next(vim.tbl_map(function(x)
+      return #x > 0 and x or nil
+    end, out))
   end)
   local entry
   for i = #out, 1, -1 do
@@ -600,11 +619,15 @@ end
 M._env = setmetatable({}, {
   __index = function(_, index)
     return os.getenv(index)
-  end
+  end,
 })
 
-M._nvim_buf_get_lines = function() return {} end
-M._nvim_buf_line_count = function() return 0 end
+M._nvim_buf_get_lines = function()
+  return {}
+end
+M._nvim_buf_line_count = function()
+  return 0
+end
 
 function M.ft_match(args)
   if not args or not args.filename then
@@ -630,7 +653,9 @@ function M.ft_match(args)
   vim.api.nvim_buf_line_count = _nvim_buf_line_count
   vim.fn.fnamemodify = _fnamemodify
   vim.env = _env
-  if ok then return ft, on_detect end
+  if ok then
+    return ft, on_detect
+  end
 end
 
 function M.ft_match_fast_event(args)

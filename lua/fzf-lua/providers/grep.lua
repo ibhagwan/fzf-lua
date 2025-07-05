@@ -1,10 +1,10 @@
 local uv = vim.uv or vim.loop
-local path = require "fzf-lua.path"
-local core = require "fzf-lua.core"
-local utils = require "fzf-lua.utils"
-local config = require "fzf-lua.config"
-local libuv = require "fzf-lua.libuv"
-local make_entry = require "fzf-lua.make_entry"
+local path = require("fzf-lua.path")
+local core = require("fzf-lua.core")
+local utils = require("fzf-lua.utils")
+local config = require("fzf-lua.config")
+local libuv = require("fzf-lua.libuv")
+local make_entry = require("fzf-lua.make_entry")
 
 local M = {}
 
@@ -36,7 +36,9 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   }) do
     (function()
       -- Do nothing unless opt was set
-      if opts[k] == nil then return end
+      if opts[k] == nil then
+        return
+      end
       command = utils.toggle_cmd_flag(command, v, opts[k])
     end)()
   end
@@ -69,8 +71,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
       if not (no_esc or opts.no_esc) then
         new_query = utils.rg_escape(new_query)
         opts.no_esc = true
-        opts.search = ("%s%s"):format(new_query,
-          search_query:match(opts.glob_separator .. ".*"))
+        opts.search = ("%s%s"):format(new_query, search_query:match(opts.glob_separator .. ".*"))
       end
       search_query = new_query
       command = make_entry.rg_insert_args(command, glob_args)
@@ -90,7 +91,8 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   elseif opts.search_paths then
     local search_paths = type(opts.search_paths) == "table"
         -- NOTE: deepcopy to avoid recursive shellescapes with `actions.grep_lgrep`
-        and vim.deepcopy(opts.search_paths) or { tostring(opts.search_paths) }
+        and vim.deepcopy(opts.search_paths)
+      or { tostring(opts.search_paths) }
     -- Make paths relative, note this will not work well with resuming if changing
     -- the cwd, this is by design for perf reasons as having to deal with full paths
     -- will result in more code rouets taken in `make_entry.file`
@@ -119,22 +121,27 @@ local get_grep_cmd = function(opts, search_query, no_esc)
     local bin = path.tail(command:match("[^%s]+"))
     local bin2flags = {
       grep = { { "--line-number", "-n" }, { "--recursive", "-r" } },
-      rg = { { "--line-number", "-n" }, { "--column" } }
+      rg = { { "--line-number", "-n" }, { "--column" } },
     }
     for _, flags in ipairs(bin2flags[bin] or {}) do
       local has_flag_group
       for _, f in ipairs(flags) do
-        if command:match("^" .. utils.lua_regex_escape(f))
-            or command:match("%s+" .. utils.lua_regex_escape(f))
+        if
+          command:match("^" .. utils.lua_regex_escape(f))
+          or command:match("%s+" .. utils.lua_regex_escape(f))
         then
           has_flag_group = true
         end
       end
       if not has_flag_group then
         if not opts.silent then
-          utils.warn(string.format(
-            "Added missing '%s' flag to '%s'. Add 'silent=true' to hide this message.",
-            table.concat(flags, "|"), bin))
+          utils.warn(
+            string.format(
+              "Added missing '%s' flag to '%s'. Add 'silent=true' to hide this message.",
+              table.concat(flags, "|"),
+              bin
+            )
+          )
         end
         command = make_entry.rg_insert_args(command, flags[1])
       end
@@ -166,7 +173,9 @@ end
 
 M.grep = function(opts)
   opts = config.normalize_opts(opts, "grep")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   -- we need this for `actions.grep_lgrep`
   opts.__ACT_TO = opts.__ACT_TO or M.live_grep
@@ -196,12 +205,17 @@ M.grep = function(opts)
   -- get the grep command before saving the last search
   -- in case the search string is overwritten by 'rg_glob'
   opts.cmd = get_grep_cmd(opts, opts.search, opts.no_esc)
-  if not opts.cmd then return end
+  if not opts.cmd then
+    return
+  end
 
-  local contents = core.mt_cmd_wrapper(vim.tbl_deep_extend("force", opts,
+  local contents = core.mt_cmd_wrapper(vim.tbl_deep_extend(
+    "force",
+    opts,
     -- query was already parsed for globs inside 'get_grep_cmd'
     -- no need for our external headless instance to parse again
-    { rg_glob = false }))
+    { rg_glob = false }
+  ))
 
   -- by redirecting the error stream to stdout
   -- we make sure a clear error message is displayed
@@ -223,7 +237,9 @@ local function normalize_live_grep_opts(opts)
   opts._treesitter = false
 
   opts = config.normalize_opts(opts, "grep")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   -- we need this for `actions.grep_lgrep`
   opts.__ACT_TO = opts.__ACT_TO or M.grep
@@ -260,7 +276,8 @@ local function normalize_live_grep_opts(opts)
   opts.__resume_get = function(what, o)
     return config.resume_get(
       what == "query" and "search" or what,
-      { __resume_key = o.__resume_key })
+      { __resume_key = o.__resume_key }
+    )
   end
 
   -- when using an empty string grep (as in 'grep_project') or
@@ -293,7 +310,9 @@ end
 -- single threaded version
 M.live_grep_st = function(opts)
   opts = normalize_live_grep_opts(opts)
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   assert(not opts.multiprocess)
 
@@ -305,14 +324,14 @@ M.live_grep_st = function(opts)
   end
 
   if opts.requires_processing or opts.git_icons or opts.file_icons then
-    opts.fn_transform = opts.fn_transform or
-        function(x)
-          return make_entry.file(x, opts)
-        end
-    opts.fn_preprocess = opts.fn_preprocess or
-        function(o)
-          return make_entry.preprocess(o)
-        end
+    opts.fn_transform = opts.fn_transform
+      or function(x)
+        return make_entry.file(x, opts)
+      end
+    opts.fn_preprocess = opts.fn_preprocess
+      or function(o)
+        return make_entry.preprocess(o)
+      end
   end
 
   -- search query in header line
@@ -325,7 +344,9 @@ end
 -- multi threaded (multi-process actually) version
 M.live_grep_mt = function(opts)
   opts = normalize_live_grep_opts(opts)
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   assert(opts.multiprocess)
 
@@ -343,7 +364,9 @@ M.live_grep_mt = function(opts)
   -- this will be replaced by the appropriate fzf
   -- FIELD INDEX EXPRESSION by 'fzf_exec'
   opts.cmd = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
-  if not opts.cmd then return end
+  if not opts.cmd then
+    return
+  end
 
   local command = core.mt_cmd_wrapper(opts)
 
@@ -400,7 +423,9 @@ end
 
 M.live_grep = function(opts)
   opts = config.normalize_opts(opts, "grep")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   if opts.multiprocess then
     return M.live_grep_mt(opts)
@@ -411,7 +436,9 @@ end
 
 M.live_grep_glob = function(opts)
   opts = config.normalize_opts(opts, "grep")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   if opts.multiprocess then
     return M.live_grep_glob_mt(opts)
@@ -421,19 +448,25 @@ M.live_grep_glob = function(opts)
 end
 
 M.live_grep_resume = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.resume = true
   return M.live_grep(opts)
 end
 
 M.grep_last = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.resume = true
   return M.grep(opts)
 end
 
 M.grep_cword = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.no_esc = true
   -- match whole words only (#968)
   opts.search = [[\b]] .. utils.rg_escape(vim.fn.expand("<cword>")) .. [[\b]]
@@ -441,7 +474,9 @@ M.grep_cword = function(opts)
 end
 
 M.grep_cWORD = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.no_esc = true
   -- match neovim's WORD, match only surrounding space|SOL|EOL
   opts.search = [[(^|\s)]] .. utils.rg_escape(vim.fn.expand("<cWORD>")) .. [[($|\s)]]
@@ -449,14 +484,20 @@ M.grep_cWORD = function(opts)
 end
 
 M.grep_visual = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.search = utils.get_visual_selection()
   return M.grep(opts)
 end
 
 M.grep_project = function(opts)
-  if not opts then opts = {} end
-  if not opts.search then opts.search = "" end
+  if not opts then
+    opts = {}
+  end
+  if not opts.search then
+    opts.search = ""
+  end
   -- by default, do not include filename in search
   opts.fzf_opts = opts.fzf_opts or {}
   if opts.fzf_opts["--delimiter"] == nil then
@@ -473,7 +514,9 @@ M.grep_curbuf = function(opts, lgrep)
   -- options in the resume data store under the key "bgrep"
   -- 3rd arg is an override for resume data store lookup key
   opts = config.normalize_opts(opts, "grep_curbuf", "bgrep")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   opts.filename = vim.api.nvim_buf_get_name(core.CTX().bufnr)
   if #opts.filename == 0 or not uv.fs_stat(opts.filename) then
@@ -484,8 +527,7 @@ M.grep_curbuf = function(opts, lgrep)
   end
 
   -- Persist call options so we don't revert to global grep on `grep_lgrep`
-  opts.__call_opts = vim.tbl_deep_extend("keep",
-    opts.__call_opts or {}, config.globals.grep_curbuf)
+  opts.__call_opts = vim.tbl_deep_extend("keep", opts.__call_opts or {}, config.globals.grep_curbuf)
   opts.__call_opts.filename = opts.filename
 
   if lgrep then
@@ -520,13 +562,17 @@ local grep_list = function(opts, lgrep, loclist)
   end
   opts.search_paths = files_from_qf(loclist)
   if utils.tbl_isempty(opts.search_paths) then
-    utils.info((loclist and "Location" or "Quickfix")
-      .. " list is empty or does not contain valid file buffers.")
+    utils.info(
+      (loclist and "Location" or "Quickfix")
+        .. " list is empty or does not contain valid file buffers."
+    )
     return
   end
   opts.exec_empty_query = opts.exec_empty_query == nil and true
   opts = config.normalize_opts(opts, "grep")
-  if not opts then return end
+  if not opts then
+    return
+  end
   if lgrep then
     return M.live_grep(opts)
   else

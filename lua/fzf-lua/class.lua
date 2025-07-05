@@ -12,10 +12,8 @@
 local Object = {}
 Object.__index = Object
 
-
 ---@diagnostic disable-next-line: unused-vararg
-function Object:new(...)
-end
+function Object:new(...) end
 
 function Object:extend()
   local cls = {}

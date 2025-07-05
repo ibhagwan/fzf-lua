@@ -1,7 +1,7 @@
-local core = require "fzf-lua.core"
-local utils = require "fzf-lua.utils"
-local config = require "fzf-lua.config"
-local libuv = require "fzf-lua.libuv"
+local core = require("fzf-lua.core")
+local utils = require("fzf-lua.utils")
+local config = require("fzf-lua.config")
+local libuv = require("fzf-lua.libuv")
 
 local M = {}
 
@@ -28,7 +28,9 @@ end
 
 M.manpages = function(opts)
   opts = config.normalize_opts(opts, "manpages")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   if utils.__IS_WINDOWS then
     utils.warn("man is not supported on Windows.")

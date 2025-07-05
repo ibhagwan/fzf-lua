@@ -34,7 +34,9 @@ end
 ---@return lsp.MarkupContent?
 function Src:_get_documentation(completion_item)
   local options_md = require("fzf-lua.cmd").options_md()
-  if not options_md or not next(options_md) then return end
+  if not options_md or not next(options_md) then
+    return
+  end
   -- Test for `label:lower()` to match both `grep_c{word|WORD}`
   local markdown = options_md[completion_item.label] or options_md[completion_item.label:lower()]
   if not markdown and completion_item.data then
@@ -63,14 +65,20 @@ end
 function Src._register_cmdline()
   local ok, cmp, config
   ok, cmp = pcall(require, "cmp")
-  if not ok then return end
+  if not ok then
+    return
+  end
   -- Using blink.cmp in nvim-cmp compat mode doesn't have config (#1522)
   ok, config = pcall(require, "cmp.config")
-  if not ok then return end
+  if not ok then
+    return
+  end
   cmp.register_source("FzfLua", Src)
   Src._registered = true
   local cmdline_cfg = config.cmdline
-  if not cmdline_cfg or not cmdline_cfg[":"] then return end
+  if not cmdline_cfg or not cmdline_cfg[":"] then
+    return
+  end
   local has_fzf_lua = false
   for _, s in ipairs(cmdline_cfg[":"].sources or {}) do
     if s.name == "FzfLua" then
@@ -85,7 +93,7 @@ function Src._register_cmdline()
         keyword_length = 1,
         group_index = 1,
         name = "FzfLua",
-        option = {}
+        option = {},
       })
     end
   end
@@ -97,9 +105,9 @@ function Src._complete()
       require("cmp").complete({
         config = {
           sources = {
-            { name = "FzfLua" }
-          }
-        }
+            { name = "FzfLua" },
+          },
+        },
       })
     end)
   end

@@ -5,8 +5,8 @@
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf.lua
 local uv = vim.uv or vim.loop
 
-local utils = require "fzf-lua.utils"
-local libuv = require "fzf-lua.libuv"
+local utils = require("fzf-lua.utils")
+local libuv = require("fzf-lua.libuv")
 
 local M = {}
 
@@ -43,7 +43,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     error("[Fzf-lua] function must be called inside a coroutine.")
   end
 
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   local cwd = opts.fzf_cwd or opts.cwd
   local cmd = { opts.fzf_bin or "fzf" }
   local fifotmpname = utils.__IS_WINDOWS and utils.windows_pipename() or tempname()
@@ -129,7 +131,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- have to open this after there is a reader (termopen)
       -- otherwise this will block
       uv.fs_open(fifotmpname, "w", -1, function(err, fd)
-        if err then error(err) end
+        if err then
+          error(err)
+        end
         output_pipe = uv.new_pipe(false)
         output_pipe:open(fd)
         -- print(output_pipe:getpeername())
@@ -149,13 +153,17 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end
 
   local function write_cb(data, cb)
-    if not output_pipe then return end
+    if not output_pipe then
+      return
+    end
     write_cb_count = write_cb_count + 1
     output_pipe:write(data, function(err)
       -- decrement write call count
       write_cb_count = write_cb_count - 1
       -- this will call the user's cb
-      if cb then cb(err) end
+      if cb then
+        cb(err)
+      end
       if err then
         -- can fail with premature process kill
         finish(2)
@@ -175,7 +183,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   local function usr_write_cb(nl)
     local function end_of_data(usrdata, cb)
       if usrdata == nil then
-        if cb then cb(nil) end
+        if cb then
+          cb(nil)
+        end
         finish(5)
         return true
       end
@@ -256,7 +266,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   local shell_cmd = utils.__IS_WINDOWS
       -- MSYS2 comes with "/usr/bin/cmd" that precedes "cmd.exe" (#1396)
       and { "cmd.exe", "/d", "/e:off", "/f:off", "/v:off", "/c" }
-      or { "sh", "-c" }
+    or { "sh", "-c" }
   if opts.pipe_cmd then
     if FZF_DEFAULT_COMMAND then
       table.insert(cmd, 1, string.format("(%s) | ", FZF_DEFAULT_COMMAND))
@@ -271,7 +281,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- This obscure option makes jobstart fail with: "The syntax of the command is incorrect"
   -- temporarily set to `false`, for more info see `:help shellslash` (#1055)
   local nvim_opt_shellslash = utils.__WIN_HAS_SHELLSLASH and vim.o.shellslash
-  if nvim_opt_shellslash then vim.o.shellslash = false end
+  if nvim_opt_shellslash then
+    vim.o.shellslash = false
+  end
   jobstart(shell_cmd, {
     cwd = cwd,
     pty = true,
@@ -290,7 +302,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
         -- a reason to inherit `preview-window` options it can be safely stripped
         -- from FZF_DEFAULT_OPTS (#1107)
         local default_opts = os.getenv("FZF_DEFAULT_OPTS")
-        if not default_opts then return end
+        if not default_opts then
+          return
+        end
         local patterns = { "--preview-window" }
         for _, p in ipairs(patterns) do
           -- remove flag end of string
@@ -302,8 +316,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       end)(),
       -- Nullify user's RG config as this can cause conflicts
       -- with fzf-lua's rg opts (#1266)
-      ["RIPGREP_CONFIG_PATH"] = type(opts.RIPGREP_CONFIG_PATH) == "string"
-          and libuv.expand(opts.RIPGREP_CONFIG_PATH) or "",
+      ["RIPGREP_CONFIG_PATH"] = type(opts.RIPGREP_CONFIG_PATH) == "string" and libuv.expand(
+        opts.RIPGREP_CONFIG_PATH
+      ) or "",
       -- Prevents spamming rust logs with skim (#1959)
       ["RUST_LOG"] = "",
     },
@@ -321,13 +336,19 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
         windows_pipe_server:close()
       end
       -- in windows, pipes that are not used are automatically cleaned up
-      if not utils.__IS_WINDOWS then vim.fn.delete(fifotmpname) end
+      if not utils.__IS_WINDOWS then
+        vim.fn.delete(fifotmpname)
+      end
       -- Windows only, restore `shellslash` if was true before `jobstart`
-      if nvim_opt_shellslash then vim.o.shellslash = nvim_opt_shellslash end
+      if nvim_opt_shellslash then
+        vim.o.shellslash = nvim_opt_shellslash
+      end
       vim.fn.delete(outputtmpname)
-      if #output == 0 then output = nil end
+      if #output == 0 then
+        output = nil
+      end
       coroutine.resume(co, output, rc)
-    end
+    end,
   })
 
   -- fzf-tmux spawns outside neovim, don't set filetype/insert mode
@@ -339,7 +360,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- Called from another fzf-win most likely
       utils.feed_keys_termcodes("i")
     else
-      vim.cmd [[startinsert]]
+      vim.cmd([[startinsert]])
     end
   end
 

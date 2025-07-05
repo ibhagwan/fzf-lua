@@ -1,9 +1,9 @@
 local uv = vim.uv or vim.loop
-local path = require "fzf-lua.path"
-local shell = require "fzf-lua.shell"
-local utils = require "fzf-lua.utils"
-local libuv = require "fzf-lua.libuv"
-local Object = require "fzf-lua.class"
+local path = require("fzf-lua.path")
+local shell = require("fzf-lua.shell")
+local utils = require("fzf-lua.utils")
+local libuv = require("fzf-lua.libuv")
+local Object = require("fzf-lua.class")
 
 local Previewer = {}
 
@@ -12,14 +12,14 @@ Previewer.base = Object:extend()
 -- Previewer base object
 function Previewer.base:new(o, opts)
   o = o or {}
-  self.type = "cmd";
-  self.cmd = o.cmd;
+  self.type = "cmd"
+  self.cmd = o.cmd
   if type(self.cmd) == "function" then
     self.cmd = self.cmd()
   end
-  self.args = o.args or "";
+  self.args = o.args or ""
   self.preview_offset = o.preview_offset
-  self.opts = opts;
+  self.opts = opts
   return self
 end
 
@@ -72,8 +72,7 @@ function Previewer.cmd:new(o, opts)
 end
 
 function Previewer.cmd:format_cmd(cmd, args, action, extra_args)
-  return string.format([[%s %s %s "$(%s)"]],
-    cmd, args or "", extra_args or "", action)
+  return string.format([[%s %s %s "$(%s)"]], cmd, args or "", extra_args or "", action)
 end
 
 function Previewer.cmd:cmdline(o)
@@ -144,10 +143,11 @@ local grep_tag = function(file, tag)
   local line = 1
   local filepath = file
   local pattern = utils.rg_escape(vim.trim(tag))
-  if not pattern or not filepath then return line end
-  local grep_cmd = vim.fn.executable("rg") == 1
-      and { "rg", "--line-number" }
-      or { "grep", "-n", "-P" }
+  if not pattern or not filepath then
+    return line
+  end
+  local grep_cmd = vim.fn.executable("rg") == 1 and { "rg", "--line-number" }
+    or { "grep", "-n", "-P" }
   -- ctags uses '$' at the end of short patterns
   -- 'rg|grep' does not match these properly when
   -- 'fileformat' isn't set to 'unix', when set to
@@ -198,9 +198,13 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   else
     -- verify the file exists on disk and is accessible
     if #filepath == 0 or not uv.fs_stat(filepath) then
-      errcmd = "echo " .. libuv.shellescape(
-        string.format("'%s: NO SUCH FILE OR ACCESS DENIED",
-          filepath and #filepath > 0 and filepath or "<null>"))
+      errcmd = "echo "
+        .. libuv.shellescape(
+          string.format(
+            "'%s: NO SUCH FILE OR ACCESS DENIED",
+            filepath and #filepath > 0 and filepath or "<null>"
+          )
+        )
     end
   end
   return filepath, entry, errcmd
@@ -211,8 +215,7 @@ function Previewer.cmd_async:cmdline(o)
   local act = shell.raw_preview_action_cmd(function(items)
     self._last_query = items[2] or ""
     local filepath, _, errcmd = self:parse_entry_and_verify(items[1])
-    local cmd = errcmd or ("%s %s %s"):format(
-      self.cmd, self.args, libuv.shellescape(filepath))
+    local cmd = errcmd or ("%s %s %s"):format(self.cmd, self.args, libuv.shellescape(filepath))
     return cmd
   end, "{} {q}", self.opts.debug)
   return act
@@ -270,13 +273,18 @@ function Previewer.bat_async:cmdline(o)
       local end_line = start_line + fzf_lines - 1
       line_range = ("--line-range=%d:%d"):format(start_line, end_line)
     end
-    local cmd = errcmd or ("%s %s %s %s %s %s"):format(
-      self.cmd, self.args,
-      self.theme and string.format([[--theme="%s"]], self.theme) or "",
-      tonumber(entry.line) and tonumber(entry.line) > 0
-      and string.format("--highlight-line=%d", entry.line) or "",
-      line_range,
-      libuv.shellescape(filepath))
+    local cmd = errcmd
+      or ("%s %s %s %s %s %s"):format(
+        self.cmd,
+        self.args,
+        self.theme and string.format([[--theme="%s"]], self.theme) or "",
+        tonumber(entry.line)
+            and tonumber(entry.line) > 0
+            and string.format("--highlight-line=%d", entry.line)
+          or "",
+        line_range,
+        libuv.shellescape(filepath)
+      )
     return cmd
   end, "{} {q}", self.opts.debug)
   return act
@@ -298,9 +306,10 @@ function Previewer.git_diff:new(o, opts)
     local icons_overrides = o._fn_git_icons and o._fn_git_icons()
     self.git_icons = {}
     for _, i in ipairs({ "D", "M", "R", "A", "C", "T", "?" }) do
-      self.git_icons[i] =
-          icons_overrides and icons_overrides[i] and
-          utils.lua_regex_escape(icons_overrides[i].icon) or i
+      self.git_icons[i] = icons_overrides
+          and icons_overrides[i]
+          and utils.lua_regex_escape(icons_overrides[i].icon)
+        or i
     end
   end
   return self
@@ -314,16 +323,18 @@ function Previewer.git_diff:cmdline(o)
       return
     end
     local is_deleted = items[1]:match(self.git_icons["D"] .. utils.nbsp) ~= nil
-    local is_modified = items[1]:match("[" ..
-      self.git_icons["M"] ..
-      self.git_icons["R"] ..
-      self.git_icons["A"] ..
-      self.git_icons["T"] ..
-      "]" .. utils.nbsp) ~= nil
-    local is_untracked = items[1]:match("[" ..
-      self.git_icons["?"] ..
-      self.git_icons["C"] ..
-      "]" .. utils.nbsp) ~= nil
+    local is_modified = items[1]:match(
+      "["
+        .. self.git_icons["M"]
+        .. self.git_icons["R"]
+        .. self.git_icons["A"]
+        .. self.git_icons["T"]
+        .. "]"
+        .. utils.nbsp
+    ) ~= nil
+    local is_untracked = items[1]:match(
+      "[" .. self.git_icons["?"] .. self.git_icons["C"] .. "]" .. utils.nbsp
+    ) ~= nil
     local file = items[1]
     if file:match("%s%->%s") then
       -- for renames, we take only the last part (#864)
@@ -343,11 +354,14 @@ function Previewer.git_diff:cmdline(o)
         cmd = self.cmd_untracked
       end
     end
-    if not cmd then return "" end
-    if type(cmd) == "table" then return table.concat(cmd, " ") end
+    if not cmd then
+      return ""
+    end
+    if type(cmd) == "table" then
+      return table.concat(cmd, " ")
+    end
     local pager = ""
-    if self.pager and #self.pager > 0 and
-        vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
+    if self.pager and #self.pager > 0 and vim.fn.executable(self.pager:match("[^%s]+")) == 1 then
       -- style 2: as we are unable to use %var% within a "cmd /c" without !var! expansion
       -- https://superuser.com/questions/223104/setting-and-using-variable-within-same-command-line-in-windows-cmd-ex
       pager = "| " .. utils._if_win_normalize_vars(self.pager, 2)
@@ -368,9 +382,9 @@ function Previewer.git_diff:cmdline(o)
       cmd = string.format("%s %s", cmd, fname_escaped)
     end
     local env = {
-      ["LINES"]               = fzf_lines,
-      ["COLUMNS"]             = fzf_columns,
-      ["FZF_PREVIEW_LINES"]   = fzf_lines,
+      ["LINES"] = fzf_lines,
+      ["COLUMNS"] = fzf_columns,
+      ["FZF_PREVIEW_LINES"] = fzf_lines,
       ["FZF_PREVIEW_COLUMNS"] = fzf_columns,
     }
     local setenv = utils.shell_setenv_str(env)
@@ -409,9 +423,9 @@ end
 
 function Previewer.help_tags:new(o, opts)
   Previewer.help_tags.super.new(self, o, opts)
-  self.cmd = self.cmd or vim.fn.executable("bat") == 1
-      and "bat -p -l help --color=always %s"
-      or "cat %s"
+  self.cmd = self.cmd
+    or vim.fn.executable("bat") == 1 and "bat -p -l help --color=always %s"
+    or "cat %s"
   return self
 end
 

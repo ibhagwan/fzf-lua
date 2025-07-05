@@ -1,10 +1,10 @@
 local uv = vim.uv or vim.loop
-local core = require "fzf-lua.core"
-local path = require "fzf-lua.path"
-local utils = require "fzf-lua.utils"
-local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
-local make_entry = require "fzf-lua.make_entry"
+local core = require("fzf-lua.core")
+local path = require("fzf-lua.path")
+local utils = require("fzf-lua.utils")
+local config = require("fzf-lua.config")
+local actions = require("fzf-lua.actions")
+local make_entry = require("fzf-lua.make_entry")
 
 local M = {}
 
@@ -75,7 +75,9 @@ local regex_filter_fn = function(regex_filter)
   end
   if type(regex_filter) == "table" and type(regex_filter[1]) == "string" then
     return function(item, _)
-      if not item.text then return true end
+      if not item.text then
+        return true
+      end
       local is_match = item.text:match(regex_filter[1]) ~= nil
       if regex_filter.exclude then
         return not is_match
@@ -115,13 +117,13 @@ local function location_handler(opts, cb, _, result, ctx, _)
     local uri = vim.uri_from_bufnr(core.CTX().bufnr)
     local cursor_line = core.CTX().cursor[1] - 1
     result = vim.tbl_filter(function(l)
-      if (l.uri
-            and l.uri == uri
-            and utils.map_get(l, "range.start.line") == cursor_line)
-          or
-          (l.targetUri
-            and l.targetUri == uri
-            and utils.map_get(l, "targetRange.start.line") == cursor_line)
+      if
+        (l.uri and l.uri == uri and utils.map_get(l, "range.start.line") == cursor_line)
+        or (
+          l.targetUri
+          and l.targetUri == uri
+          and utils.map_get(l, "targetRange.start.line") == cursor_line
+        )
       then
         return false
       end
@@ -136,8 +138,10 @@ local function location_handler(opts, cb, _, result, ctx, _)
   -- here to accurately determine `jump1` (#980)
   result = vim.tbl_filter(function(x)
     local item = vim.lsp.util.locations_to_items({ x }, encoding)[1]
-    if (opts.cwd_only and not path.is_relative_to(item.filename, opts.cwd)) or
-        (opts._regex_filter_fn and not opts._regex_filter_fn(item, core.CTX())) then
+    if
+      (opts.cwd_only and not path.is_relative_to(item.filename, opts.cwd))
+      or (opts._regex_filter_fn and not opts._regex_filter_fn(item, core.CTX()))
+    then
       return false
     end
     if opts.current_buffer_only and not path.equals(core.CTX().bname, item.filename) then
@@ -154,7 +158,9 @@ local function location_handler(opts, cb, _, result, ctx, _)
     end
   end, result)
   -- Populate post-filter entries
-  vim.tbl_map(function(x) cb(x.entry, x) end, entries)
+  vim.tbl_map(function(x)
+    cb(x.entry, x)
+  end, entries)
 end
 
 local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
@@ -176,7 +182,9 @@ local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
       end
       local entry = make_entry.lcol(location, opts)
       entry = make_entry.file(entry, opts)
-      if entry then cb(entry) end
+      if entry then
+        cb(entry)
+      end
     end
   end
 end
@@ -206,7 +214,9 @@ local function symbols_to_items(symbols, bufnr, child_prefix)
           text = prefix .. "[" .. kind .. "] " .. symbol.name,
         })
         if symbol.children then
-          for _, v in ipairs(_symbols_to_items(symbol.children, _items, _bufnr, prefix .. child_prefix)) do
+          for _, v in
+            ipairs(_symbols_to_items(symbol.children, _items, _bufnr, prefix .. child_prefix))
+          do
             for _, s in ipairs(v) do
               table.insert(_items, s)
             end
@@ -223,8 +233,11 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
   result = utils.tbl_islist(result) and result or { result }
   local items
   if opts.child_prefix then
-    items = symbols_to_items(result, core.CTX().bufnr,
-      opts.child_prefix == true and string.rep(" ", 2) or opts.child_prefix)
+    items = symbols_to_items(
+      result,
+      core.CTX().bufnr,
+      opts.child_prefix == true and string.rep(" ", 2) or opts.child_prefix
+    )
   else
     local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
     items = vim.lsp.util.symbols_to_items(result, core.CTX().bufnr, encoding)
@@ -233,20 +246,23 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
     opts._regex_filter_fn = regex_filter_fn(opts.regex_filter)
   end
   for _, entry in ipairs(items) do
-    if (not opts.current_buffer_only or core.CTX().bname == entry.filename) and
-        (not opts._regex_filter_fn or opts._regex_filter_fn(entry, core.CTX())) then
+    if
+      (not opts.current_buffer_only or core.CTX().bname == entry.filename)
+      and (not opts._regex_filter_fn or opts._regex_filter_fn(entry, core.CTX()))
+    then
       local mbicon_align = 0
       if opts.fn_reload and type(opts.query) == "string" and #opts.query > 0 then
         -- highlight exact matches with `live_workspace_symbols` (#1028)
         local sym, text = entry.text:match("^(.+%])(.*)$")
-        local pattern = "[" .. utils.lua_regex_escape(
-          opts.query:gsub("%a", function(x)
+        local pattern = "["
+          .. utils.lua_regex_escape(opts.query:gsub("%a", function(x)
             return string.upper(x) .. string.lower(x)
+          end))
+          .. "]+"
+        entry.text = sym
+          .. text:gsub(pattern, function(x)
+            return utils.ansi_codes[opts.hls.live_sym](x)
           end)
-        ) .. "]+"
-        entry.text = sym .. text:gsub(pattern, function(x)
-          return utils.ansi_codes[opts.hls.live_sym](x)
-        end)
       end
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
@@ -291,63 +307,63 @@ local handlers = {
     label = "References",
     server_capability = "referencesProvider",
     method = "textDocument/references",
-    handler = location_handler
+    handler = location_handler,
   },
   ["definitions"] = {
     label = "Definitions",
     server_capability = "definitionProvider",
     method = "textDocument/definition",
-    handler = location_handler
+    handler = location_handler,
   },
   ["declarations"] = {
     label = "Declarations",
     server_capability = "declarationProvider",
     method = "textDocument/declaration",
-    handler = location_handler
+    handler = location_handler,
   },
   ["typedefs"] = {
     label = "Type Definitions",
     server_capability = "typeDefinitionProvider",
     method = "textDocument/typeDefinition",
-    handler = location_handler
+    handler = location_handler,
   },
   ["implementations"] = {
     label = "Implementations",
     server_capability = "implementationProvider",
     method = "textDocument/implementation",
-    handler = location_handler
+    handler = location_handler,
   },
   ["document_symbols"] = {
     label = "Document Symbols",
     server_capability = "documentSymbolProvider",
     method = "textDocument/documentSymbol",
-    handler = symbol_handler
+    handler = symbol_handler,
   },
   ["workspace_symbols"] = {
     label = "Workspace Symbols",
     server_capability = "workspaceSymbolProvider",
     method = "workspace/symbol",
-    handler = symbol_handler
+    handler = symbol_handler,
   },
   ["live_workspace_symbols"] = {
     label = "Workspace Symbols",
     server_capability = "workspaceSymbolProvider",
     method = "workspace/symbol",
-    handler = symbol_handler
+    handler = symbol_handler,
   },
   ["incoming_calls"] = {
     label = "Incoming Calls",
     server_capability = "callHierarchyProvider",
     method = "callHierarchy/incomingCalls",
     prep = "textDocument/prepareCallHierarchy",
-    handler = call_hierarchy_handler
+    handler = call_hierarchy_handler,
   },
   ["outgoing_calls"] = {
     label = "Outgoing Calls",
     server_capability = "callHierarchyProvider",
     method = "callHierarchy/outgoingCalls",
     prep = "textDocument/prepareCallHierarchy",
-    handler = call_hierarchy_handler
+    handler = call_hierarchy_handler,
   },
 }
 
@@ -372,12 +388,14 @@ local function gen_lsp_contents(opts)
   -- from the context buffer and cursor position
   if not lsp_params then
     lsp_params = function(client)
-      local params = vim.lsp.util.make_position_params(core.CTX().winid,
+      local params = vim.lsp.util.make_position_params(
+        core.CTX().winid,
         -- nvim 0.11 requires offset_encoding param, `client` is first arg of called func
         -- https://github.com/neovim/neovim/commit/629483e24eed3f2c07e55e0540c553361e0345a2
-        client and client.offset_encoding or nil)
+        client and client.offset_encoding or nil
+      )
       params.context = {
-        includeDeclaration = opts.includeDeclaration == nil and true or opts.includeDeclaration
+        includeDeclaration = opts.includeDeclaration == nil and true or opts.includeDeclaration,
       }
       return params
     end
@@ -392,8 +410,8 @@ local function gen_lsp_contents(opts)
     if type(opts.async_or_timeout) == "number" then
       timeout = opts.async_or_timeout
     end
-    local lsp_results, err = vim.lsp.buf_request_sync(core.CTX().bufnr,
-      lsp_handler.method, lsp_params, timeout)
+    local lsp_results, err =
+      vim.lsp.buf_request_sync(core.CTX().bufnr, lsp_handler.method, lsp_params, timeout)
     if err then
       utils.err(string.format("Error executing '%s': %s", lsp_handler.method, err))
     else
@@ -401,8 +419,12 @@ local function gen_lsp_contents(opts)
       local jump1
       local cb = function(text, x)
         -- Only populate jump1 with the first entry
-        if jump1 then jump1 = false end
-        if x and jump1 == nil then jump1 = { result = x.result, encoding = x.encoding } end
+        if jump1 then
+          jump1 = false
+        end
+        if x and jump1 == nil then
+          jump1 = { result = x.result, encoding = x.encoding }
+        end
         table.insert(results, text)
       end
       for client_id, response in pairs(lsp_results) do
@@ -410,8 +432,9 @@ local function gen_lsp_contents(opts)
           local context = { client_id = client_id }
           lsp_handler.handler(opts, cb, lsp_handler.method, response.result, context, nil)
         elseif response.error then
-          utils.warn(string.format("Error executing '%s': %s",
-            lsp_handler.method, response.error.message))
+          utils.warn(
+            string.format("Error executing '%s': %s", lsp_handler.method, response.error.message)
+          )
         end
       end
       if utils.tbl_isempty(results) then
@@ -430,7 +453,9 @@ local function gen_lsp_contents(opts)
           coroutine.wrap(function()
             local co = coroutine.running()
             for _, e in ipairs(results) do
-              fzf_cb(e, function() coroutine.resume(co) end)
+              fzf_cb(e, function()
+                coroutine.resume(co)
+              end)
               coroutine.yield()
             end
             fzf_cb(nil)
@@ -458,13 +483,13 @@ local function gen_lsp_contents(opts)
         -- so we can determine if all callbacks were completed (#468)
         local async_opts = {
           num_callbacks = 0,
-          num_clients   = check_capabilities(lsp_handler, opts.silent),
+          num_clients = check_capabilities(lsp_handler, opts.silent),
           -- signals the handler to not print a warning when empty result set
           -- is returned, important for `live_workspace_symbols` when the user
           -- inputs a query that returns no results
           -- also used with `finder` to prevent the window from being closed
-          no_autoclose  = opts.no_autoclose or opts.fn_reload,
-          silent        = opts.silent or opts.fn_reload,
+          no_autoclose = opts.no_autoclose or opts.fn_reload,
+          silent = opts.silent or opts.fn_reload,
         }
 
         -- when used with 'live_workspace_symbols'
@@ -474,8 +499,10 @@ local function gen_lsp_contents(opts)
         local async_buf_request = function()
           -- save cancel all fnref so we can cancel all requests
           -- when using `live_ws_symbols`
-          _, opts._cancel_all = vim.lsp.buf_request(core.CTX().bufnr,
-            lsp_handler.method, lsp_params,
+          _, opts._cancel_all = vim.lsp.buf_request(
+            core.CTX().bufnr,
+            lsp_handler.method,
+            lsp_params,
             function(err, result, context, lspcfg)
               -- Increment client callback counter
               async_opts.num_callbacks = async_opts.num_callbacks + 1
@@ -485,7 +512,8 @@ local function gen_lsp_contents(opts)
                 utils.err(string.format("Error executing '%s': %s", lsp_handler.method, err))
               end
               coroutine.resume(co, done, err, result, context, lspcfg)
-            end)
+            end
+          )
         end
 
         -- When called from another coroutine callback (when using 'finder') will err:
@@ -508,15 +536,21 @@ local function gen_lsp_contents(opts)
               -- Increment result callback counter
               num_results = num_results + 1
               -- Only populate jump1 with the first entry
-              if jump1 then jump1 = false end
-              if x and jump1 == nil then jump1 = { result = x.result, encoding = x.encoding } end
-              fzf_cb(e, function() coroutine.resume(co) end)
+              if jump1 then
+                jump1 = false
+              end
+              if x and jump1 == nil then
+                jump1 = { result = x.result, encoding = x.encoding }
+              end
+              fzf_cb(e, function()
+                coroutine.resume(co)
+              end)
               coroutine.yield()
             end
             lsp_handler.handler(opts, cb, lsp_handler.method, result, context, lspcfg)
           end
-          -- some clients may not always return results (null-ls?)
-          -- so don't terminate the loop when 'result == nil`
+        -- some clients may not always return results (null-ls?)
+        -- so don't terminate the loop when 'result == nil`
         until done
 
         -- no more results
@@ -549,10 +583,10 @@ end
 -- see $VIMRUNTIME/lua/vim/buf.lua:pick_call_hierarchy_item()
 local function gen_lsp_contents_call_hierarchy(opts)
   local lsp_params = opts.lsp_params
-      or not utils.__HAS_NVIM_011 and vim.lsp.util.make_position_params(core.CTX().winid)
-      or function(client)
-        return vim.lsp.util.make_position_params(core.CTX().winid, client.offset_encoding)
-      end
+    or not utils.__HAS_NVIM_011 and vim.lsp.util.make_position_params(core.CTX().winid)
+    or function(client)
+      return vim.lsp.util.make_position_params(core.CTX().winid, client.offset_encoding)
+    end
   local res, err = vim.lsp.buf_request_sync(0, opts.lsp_handler.prep, lsp_params, 2000)
   if err then
     utils.err(("Error executing '%s': %s"):format(opts.lsp_handler.prep, err))
@@ -572,12 +606,17 @@ end
 
 local normalize_lsp_opts = function(opts, cfg, __resume_key)
   opts = config.normalize_opts(opts, cfg, __resume_key)
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   -- `title_prefix` is priortized over both `prompt` and `prompt_prefix`
   if (not opts.winopts or opts.winopts.title == nil) and opts.title_prefix then
-    utils.map_set(opts,
-      "winopts.title", string.format(" %s %s ", opts.title_prefix, opts.lsp_handler.label))
+    utils.map_set(
+      opts,
+      "winopts.title",
+      string.format(" %s %s ", opts.title_prefix, opts.lsp_handler.label)
+    )
   elseif opts.prompt == nil and opts.prompt_postfix then
     opts.prompt = opts.lsp_handler.label .. (opts.prompt_postfix or "")
   end
@@ -594,7 +633,9 @@ end
 
 local function fzf_lsp_locations(opts, fn_contents)
   opts = normalize_lsp_opts(opts, "lsp")
-  if not opts then return end
+  if not opts then
+    return
+  end
   opts = core.set_fzf_field_index(opts)
   opts = fn_contents(opts)
   if not opts or not opts.__contents then
@@ -636,7 +677,9 @@ end
 
 M.finder = function(opts)
   opts = normalize_lsp_opts(opts, "lsp.finder")
-  if not opts then return end
+  if not opts then
+    return
+  end
   local contents = {}
   local lsp_params = opts.lsp_params
   for _, p in ipairs(opts.providers) do
@@ -667,8 +710,10 @@ M.finder = function(opts)
         -- make sure we add only valid contents
         -- sync returns empty table when no results are found
         if type(c) == "function" then
-          table.insert(contents,
-            { prefix = (p.prefix or "") .. (opts.separator or ""), contents = c })
+          table.insert(
+            contents,
+            { prefix = (p.prefix or "") .. (opts.separator or ""), contents = c }
+          )
         end
       end
     end
@@ -685,7 +730,9 @@ end
 
 local function gen_sym2style_map(opts)
   assert(opts.symbol_style ~= nil)
-  if M._sym2style then return end
+  if M._sym2style then
+    return
+  end
   M._sym2style = {}
   for kind, icon in pairs(opts.symbol_icons) do
     -- style==1: "<icon> <kind>"
@@ -717,11 +764,12 @@ end
 
 M.document_symbols = function(opts)
   opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_document_symbols")
-  if not opts then return end
+  if not opts then
+    return
+  end
   -- no support for sym_lsym
   for k, fn in pairs(opts.actions or {}) do
-    if type(fn) == "table" and
-        (fn[1] == actions.sym_lsym or fn.fn == actions.sym_lsym) then
+    if type(fn) == "table" and (fn[1] == actions.sym_lsym or fn.fn == actions.sym_lsym) then
       opts.actions[k] = nil
     end
   end
@@ -736,8 +784,12 @@ M.document_symbols = function(opts)
     opts.fzf_opts["--with-nth"] = "..-4"
   end
   if opts.symbol_style or opts.symbol_fmt then
-    opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
-    opts.fn_post_fzf = function() M._sym2style = nil end
+    opts.fn_pre_fzf = function()
+      gen_sym2style_map(opts)
+    end
+    opts.fn_post_fzf = function()
+      M._sym2style = nil
+    end
     -- run once in case we're not running async
     opts.fn_pre_fzf()
   end
@@ -751,12 +803,13 @@ end
 
 M.workspace_symbols = function(opts)
   opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
-  if not opts then return end
+  if not opts then
+    return
+  end
   opts.__ACT_TO = opts.__ACT_TO or M.live_workspace_symbols
   opts.__call_fn = utils.__FNCREF__()
   opts.lsp_params = { query = opts.lsp_query or "" }
-  opts = core.set_header(opts, opts.headers or
-    { "actions", "cwd", "lsp_query", "regex_filter" })
+  opts = core.set_header(opts, opts.headers or { "actions", "cwd", "lsp_query", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   opts = gen_lsp_contents(opts)
   if not opts.__contents then
@@ -767,16 +820,21 @@ M.workspace_symbols = function(opts)
     opts.prompt = utils.ansi_from_hl(opts.hls.live_prompt, opts.lsp_query) .. " > "
   end
   if opts.symbol_style or opts.symbol_fmt then
-    opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
-    opts.fn_post_fzf = function() M._sym2style = nil end
+    opts.fn_pre_fzf = function()
+      gen_sym2style_map(opts)
+    end
+    opts.fn_post_fzf = function()
+      M._sym2style = nil
+    end
   end
   return core.fzf_exec(opts.__contents, opts)
 end
 
-
 M.live_workspace_symbols = function(opts)
   opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   -- needed by 'actions.sym_lsym'
   opts.__ACT_TO = opts.__ACT_TO or M.workspace_symbols
@@ -793,8 +851,10 @@ M.live_workspace_symbols = function(opts)
   -- the prompt input is the LSP query, store as "lsp_query"
   opts.__resume_set = function(what, val, o)
     config.resume_set(
-      what == "query" and "lsp_query" or what, val,
-      { __resume_key = o.__resume_key })
+      what == "query" and "lsp_query" or what,
+      val,
+      { __resume_key = o.__resume_key }
+    )
     utils.map_set(config, "__resume_data.last_query", val)
     -- also store query for `fzf_resume` (#963)
     utils.map_set(config, "__resume_data.opts.query", val)
@@ -804,7 +864,8 @@ M.live_workspace_symbols = function(opts)
   opts.__resume_get = function(what, o)
     return config.resume_get(
       what == "query" and "lsp_query" or what,
-      { __resume_key = o.__resume_key })
+      { __resume_key = o.__resume_key }
+    )
   end
 
   -- if no lsp_query was set, use previous prompt query (from the non-live version)
@@ -832,15 +893,21 @@ M.live_workspace_symbols = function(opts)
   opts = core.set_header(opts, opts.headers or { "actions", "cwd", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   if opts.symbol_style or opts.symbol_fmt then
-    opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
-    opts.fn_post_fzf = function() M._sym2style = nil end
+    opts.fn_pre_fzf = function()
+      gen_sym2style_map(opts)
+    end
+    opts.fn_post_fzf = function()
+      M._sym2style = nil
+    end
   end
   return core.fzf_exec(nil, opts)
 end
 
 M.code_actions = function(opts)
   opts = normalize_lsp_opts(opts, "lsp.code_actions")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   -- code actions uses `vim.ui.select`, requires neovim >= 0.6
   if vim.fn.has("nvim-0.6") ~= 1 then
@@ -848,12 +915,14 @@ M.code_actions = function(opts)
     return
   end
 
-  local ui_select = require "fzf-lua.providers.ui_select"
+  local ui_select = require("fzf-lua.providers.ui_select")
   local registered = ui_select.is_registered()
 
   if not registered and not opts.silent then
-    utils.warn("FzfLua is not currently registered as 'vim.ui.select' backend, use 'silent=true'" ..
-      " to hide this message or register globally using ':FzfLua register_ui_select'.")
+    utils.warn(
+      "FzfLua is not currently registered as 'vim.ui.select' backend, use 'silent=true'"
+        .. " to hide this message or register globally using ':FzfLua register_ui_select'."
+    )
   end
 
   opts.actions = opts.actions or {}
@@ -900,5 +969,5 @@ return setmetatable({}, {
     else
       return M[key]
     end
-  end
+  end,
 })

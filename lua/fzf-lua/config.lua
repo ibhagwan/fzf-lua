@@ -1,9 +1,9 @@
 local uv = vim.uv or vim.loop
-local path = require "fzf-lua.path"
-local utils = require "fzf-lua.utils"
-local libuv = require "fzf-lua.libuv"
-local actions = require "fzf-lua.actions"
-local devicons = require "fzf-lua.devicons"
+local path = require("fzf-lua.path")
+local utils = require("fzf-lua.utils")
+local libuv = require("fzf-lua.libuv")
+local actions = require("fzf-lua.actions")
+local devicons = require("fzf-lua.devicons")
 
 local M = {}
 
@@ -17,8 +17,7 @@ M.resume_get = function(what, opts)
     return opts.__resume_get(what, opts)
   end
   local fn_key = tostring(opts.__resume_key):match("[^%s]+$")
-  what = string.format("__resume_map.%s%s", fn_key,
-    type(what) == "string" and ("." .. what) or "")
+  what = string.format("__resume_map.%s%s", fn_key, type(what) == "string" and ("." .. what) or "")
   -- _G.dump("resume_get", what, utils.map_get(M, what))
   return utils.map_get(M, what)
 end
@@ -31,8 +30,8 @@ M.resume_set = function(what, val, opts)
     return opts.__resume_set(what, val, opts)
   end
   local fn_key = tostring(opts.__resume_key):match("[^%s]+$")
-  local key1 = string.format("__resume_map.%s%s", fn_key,
-    type(what) == "string" and ("." .. what) or "")
+  local key1 =
+    string.format("__resume_map.%s%s", fn_key, type(what) == "string" and ("." .. what) or "")
   utils.map_set(M, key1, val)
   if type(what) == "string" then
     local key2 = string.format("__resume_data.opts.%s", what)
@@ -82,12 +81,16 @@ M.globals = setmetatable({}, {
       -- exclude case-sensitive alt-binds from being lowercased
       local exclude_case_sensitive_alt = "^alt%-%a$"
       for _, k in ipairs(keys) do
-        ret[k] = setup_value and type(setup_value[k]) == "table"
-            and vim.tbl_deep_extend("keep",
+        ret[k] = setup_value
+            and type(setup_value[k]) == "table"
+            and vim.tbl_deep_extend(
+              "keep",
               utils.map_tolower(utils.tbl_deep_clone(setup_value[k]), exclude_case_sensitive_alt),
-              setup_value[k][1] == true and
-              utils.map_tolower(fzflua_default[k], exclude_case_sensitive_alt) or {})
-            or utils.map_tolower(utils.tbl_deep_clone(fzflua_default[k]), exclude_case_sensitive_alt)
+              setup_value[k][1] == true
+                  and utils.map_tolower(fzflua_default[k], exclude_case_sensitive_alt)
+                or {}
+            )
+          or utils.map_tolower(utils.tbl_deep_clone(fzflua_default[k]), exclude_case_sensitive_alt)
         if ret[k] and ret[k][1] ~= nil then
           -- Remove the [1] indicating inheritance from defaults and
           ret[k][1] = nil
@@ -112,8 +115,10 @@ M.globals = setmetatable({}, {
     end
     -- (1) use fzf-lua's true defaults (pre-setup) as our options base
     local ret = utils.tbl_deep_clone(fzflua_default) or {}
-    if (fzflua_default and (fzflua_default.actions or fzflua_default._actions))
-        or (setup_value and (setup_value.actions or setup_value._actions)) then
+    if
+      (fzflua_default and (fzflua_default.actions or fzflua_default._actions))
+      or (setup_value and (setup_value.actions or setup_value._actions))
+    then
       -- (2) the existence of the `actions` key implies we're dealing with a picker
       -- override global provider defaults supplied by the user's setup `defaults` table
       ret = vim.tbl_deep_extend("force", ret, setup_defaults())
@@ -124,7 +129,7 @@ M.globals = setmetatable({}, {
   end,
   __newindex = function(_, index, _)
     assert(false, string.format("modifying globals directly isn't allowed [index: %s]", index))
-  end
+  end,
 })
 
 do
@@ -136,7 +141,9 @@ do
 end
 
 local eval = function(v, ...)
-  if vim.is_callable(v) then return v(...) end
+  if vim.is_callable(v) then
+    return v(...)
+  end
   return v
 end
 
@@ -144,19 +151,22 @@ end
 ---@param globals string|table?
 ---@param __resume_key string?
 function M.normalize_opts(opts, globals, __resume_key)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
 
   -- opts can also be a function that returns an opts table
   if type(opts) == "function" then
     opts = opts()
   end
 
-  local profile = opts.profile or (function()
-    if type(globals) == "string" then
-      local picker_opts = M.globals[globals]
-      return picker_opts.profile or picker_opts[1]
-    end
-  end)()
+  local profile = opts.profile
+    or (function()
+      if type(globals) == "string" then
+        local picker_opts = M.globals[globals]
+        return picker_opts.profile or picker_opts[1]
+      end
+    end)()
   if type(profile) == "table" or type(profile) == "string" then
     -- TODO: we should probably cache the profiles
     M._profile_opts = utils.load_profiles(profile, 1)
@@ -186,10 +196,10 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- resume storage data lookup key, default to the calling function ref
   -- __FNCREF2__ will use the 2nd function ref in the stack (calling fn)
   opts.__resume_key = __resume_key
-      or opts.__resume_key
-      or (type(globals) == "string" and globals)
-      or (type(globals) == "table" and globals.__resume_key)
-      or utils.__FNCREF2__()
+    or opts.__resume_key
+    or (type(globals) == "string" and globals)
+    or (type(globals) == "table" and globals.__resume_key)
+    or utils.__FNCREF2__()
 
   if type(globals) == "string" then
     -- globals is a string, generate provider globals
@@ -223,14 +233,17 @@ function M.normalize_opts(opts, globals, __resume_key)
       ["winopts.treesitter"] = "winopts.treesitter",
       ["previewer.treesitter"] = "previewers.builtin.treesitter",
       ["previewer.render_markdown"] = "previewers.builtin.render_markdown",
-    })
-    do
+    }) do
       local v = utils.map_get(opts, k)
       if v == false then
         utils.map_set(opts, k, { enabled = false })
       elseif v == true or type(v) == "table" then
-        local newv = vim.tbl_deep_extend("keep", type(v) == "table" and v or {},
-          { enabled = true }, utils.map_get(M.defaults, vfrom) or {})
+        local newv = vim.tbl_deep_extend(
+          "keep",
+          type(v) == "table" and v or {},
+          { enabled = true },
+          utils.map_get(M.defaults, vfrom) or {}
+        )
         utils.map_set(opts, k, newv)
       end
     end
@@ -241,10 +254,12 @@ function M.normalize_opts(opts, globals, __resume_key)
   ---@param m {fzf: table<string, unknown>, builtin: table<string, unknown>}
   ---@return {fzf: table<string, unknown>, builtin: table<string, unknown>}?
   local keymap_tolower = function(m, exclude_patterns)
-    return m and {
-      fzf = utils.map_tolower(m.fzf, exclude_patterns),
-      builtin = utils.map_tolower(m.builtin, exclude_patterns),
-    } or nil
+    return m
+        and {
+          fzf = utils.map_tolower(m.fzf, exclude_patterns),
+          builtin = utils.map_tolower(m.builtin, exclude_patterns),
+        }
+      or nil
   end
   local exclude_case_sensitive_alt = "^alt%-%a$"
   opts.keymap = keymap_tolower(eval(opts.keymap, opts), exclude_case_sensitive_alt)
@@ -265,7 +280,8 @@ function M.normalize_opts(opts, globals, __resume_key)
   if type(winopts_fn) == "function" then
     if not opts.silent then
       utils.warn(
-        "Deprecated option: 'winopts_fn' -> 'winopts'. Add 'silent=true' to hide this message.")
+        "Deprecated option: 'winopts_fn' -> 'winopts'. Add 'silent=true' to hide this message."
+      )
     end
     local ret = winopts_fn(opts) or {}
     if not utils.tbl_isempty(ret) and (not opts.winopts or type(opts.winopts) == "table") then
@@ -275,7 +291,12 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- Merge values from globals
   for _, k in ipairs({
-    "winopts", "keymap", "fzf_opts", "fzf_colors", "fzf_tmux_opts", "hls"
+    "winopts",
+    "keymap",
+    "fzf_opts",
+    "fzf_colors",
+    "fzf_tmux_opts",
+    "hls",
   }) do
     local setup_val = M.globals[k]
     if type(setup_val) == "function" then
@@ -299,8 +320,8 @@ function M.normalize_opts(opts, globals, __resume_key)
         opts[k] = opts[k](opts)
       end
       if type(opts[k]) == "table" then
-        opts[k] = vim.tbl_deep_extend("keep",
-          opts[k], type(setup_val) == "table" and setup_val or {})
+        opts[k] =
+          vim.tbl_deep_extend("keep", opts[k], type(setup_val) == "table" and setup_val or {})
       end
     end
   end
@@ -309,7 +330,9 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- would be set to an empty string which would now translate into a shell escaped
   -- string as we automatically shell escape all fzf_opts
   for k, v in pairs(opts.fzf_opts) do
-    if v == "" then opts.fzf_opts[k] = true end
+    if v == "" then
+      opts.fzf_opts[k] = true
+    end
   end
 
   -- backward compat for `winopts.preview.{wrap|hidden}`
@@ -337,7 +360,9 @@ function M.normalize_opts(opts, globals, __resume_key)
     for _, m in ipairs({ globals, M.globals }) do
       if m[k] then
         for _, item in ipairs(m[k]) do
-          if not opts[k] then opts[k] = {} end
+          if not opts[k] then
+            opts[k] = {}
+          end
           table.insert(opts[k], item)
         end
       end
@@ -369,10 +394,9 @@ function M.normalize_opts(opts, globals, __resume_key)
       pattern_prompt = "[^%s]+"
     end
     if surround then
-      local pattern_capture = pattern_prefix ..
-          ("%s(%s)%s"):format(surround, pattern_prompt, surround)
-      local pattern_gsub = pattern_prefix ..
-          ("%s%s%s"):format(surround, pattern_prompt, surround)
+      local pattern_capture = pattern_prefix
+        .. ("%s(%s)%s"):format(surround, pattern_prompt, surround)
+      local pattern_gsub = pattern_prefix .. ("%s%s%s"):format(surround, pattern_prompt, surround)
       if opts[s]:match(pattern_gsub) then
         opts.prompt = opts[s]:match(pattern_capture)
         opts[s] = opts[s]:gsub(pattern_gsub, "")
@@ -383,39 +407,39 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- backward compatibility, rhs overrides lhs
   -- (rhs being the "old" option)
   local backward_compat = {
-    { "winopts.row",                            "winopts.win_row" },
-    { "winopts.col",                            "winopts.win_col" },
-    { "winopts.width",                          "winopts.win_width" },
-    { "winopts.height",                         "winopts.win_height" },
-    { "winopts.border",                         "winopts.win_border" },
-    { "winopts.on_create",                      "winopts.window_on_create" },
-    { "winopts.preview.wrap",                   "preview_wrap" },
-    { "winopts.preview.border",                 "preview_border" },
-    { "winopts.preview.hidden",                 "preview_opts" },
-    { "winopts.preview.vertical",               "preview_vertical" },
-    { "winopts.preview.horizontal",             "preview_horizontal" },
-    { "winopts.preview.layout",                 "preview_layout" },
-    { "winopts.preview.flip_columns",           "flip_columns" },
-    { "winopts.preview.default",                "default_previewer" },
-    { "winopts.preview.delay",                  "previewers.builtin.delay" },
-    { "winopts.preview.title",                  "previewers.builtin.title" },
-    { "winopts.preview.title_pos",              "winopts.preview.title_align" },
-    { "winopts.preview.scrollbar",              "previewers.builtin.scrollbar" },
-    { "winopts.preview.scrollchar",             "previewers.builtin.scrollchar" },
-    { "cwd_header",                             "show_cwd_header" },
-    { "cwd_prompt",                             "show_cwd_prompt" },
-    { "resume",                                 "continue_last_search" },
-    { "resume",                                 "repeat_last_search" },
-    { "jump1",                                  "jump_to_single_result" },
-    { "jump1_action",                           "jump_to_single_result_action" },
-    { "hls.normal",                             "winopts.hl_normal" },
-    { "hls.border",                             "winopts.hl_border" },
-    { "hls.cursor",                             "previewers.builtin.hl_cursor" },
-    { "hls.cursorline",                         "previewers.builtin.hl_cursorline" },
-    { "hls",                                    "winopts.hl" },
-    { "previewer.treesitter.enabled",           "previewer.treesitter.enable" },
-    { "previewer.treesitter.disabled",          "previewer.treesitter.disable" },
-    { "previewers.builtin.treesitter.enabled",  "previewers.builtin.treesitter.enable" },
+    { "winopts.row", "winopts.win_row" },
+    { "winopts.col", "winopts.win_col" },
+    { "winopts.width", "winopts.win_width" },
+    { "winopts.height", "winopts.win_height" },
+    { "winopts.border", "winopts.win_border" },
+    { "winopts.on_create", "winopts.window_on_create" },
+    { "winopts.preview.wrap", "preview_wrap" },
+    { "winopts.preview.border", "preview_border" },
+    { "winopts.preview.hidden", "preview_opts" },
+    { "winopts.preview.vertical", "preview_vertical" },
+    { "winopts.preview.horizontal", "preview_horizontal" },
+    { "winopts.preview.layout", "preview_layout" },
+    { "winopts.preview.flip_columns", "flip_columns" },
+    { "winopts.preview.default", "default_previewer" },
+    { "winopts.preview.delay", "previewers.builtin.delay" },
+    { "winopts.preview.title", "previewers.builtin.title" },
+    { "winopts.preview.title_pos", "winopts.preview.title_align" },
+    { "winopts.preview.scrollbar", "previewers.builtin.scrollbar" },
+    { "winopts.preview.scrollchar", "previewers.builtin.scrollchar" },
+    { "cwd_header", "show_cwd_header" },
+    { "cwd_prompt", "show_cwd_prompt" },
+    { "resume", "continue_last_search" },
+    { "resume", "repeat_last_search" },
+    { "jump1", "jump_to_single_result" },
+    { "jump1_action", "jump_to_single_result_action" },
+    { "hls.normal", "winopts.hl_normal" },
+    { "hls.border", "winopts.hl_border" },
+    { "hls.cursor", "previewers.builtin.hl_cursor" },
+    { "hls.cursorline", "previewers.builtin.hl_cursorline" },
+    { "hls", "winopts.hl" },
+    { "previewer.treesitter.enabled", "previewer.treesitter.enable" },
+    { "previewer.treesitter.disabled", "previewer.treesitter.disable" },
+    { "previewers.builtin.treesitter.enabled", "previewers.builtin.treesitter.enable" },
     { "previewers.builtin.treesitter.disabled", "previewers.builtin.treesitter.disable" },
   }
 
@@ -433,9 +457,13 @@ function M.normalize_opts(opts, globals, __resume_key)
       end
       utils.map_set(opts, old_key, nil)
       if not opts.silent then
-        utils.warn(string.format(
-          "Deprecated option: '%s' -> '%s'. Add 'silent=true' to hide this message.",
-          old_key, new_key))
+        utils.warn(
+          string.format(
+            "Deprecated option: '%s' -> '%s'. Add 'silent=true' to hide this message.",
+            old_key,
+            new_key
+          )
+        )
       end
     end
   end
@@ -488,12 +516,13 @@ function M.normalize_opts(opts, globals, __resume_key)
   end
 
   -- Exclude file icons from the fuzzy matching (#1080)
-  if opts.file_icons
-      and opts._fzf_nth_devicons
-      and not opts.fzf_opts["--delimiter"]
-      -- Can't work due to : delimiter (#2112)
-      and opts.previewer ~= "bat"
-      and opts.previewer ~= "bat_native"
+  if
+    opts.file_icons
+    and opts._fzf_nth_devicons
+    and not opts.fzf_opts["--delimiter"]
+    -- Can't work due to : delimiter (#2112)
+    and opts.previewer ~= "bat"
+    and opts.previewer ~= "bat_native"
   then
     opts.fzf_opts["--nth"] = opts.fzf_opts["--nth"] or "-1.."
     opts.fzf_opts["--delimiter"] = string.format("[%s]", utils.nbsp)
@@ -506,19 +535,22 @@ function M.normalize_opts(opts, globals, __resume_key)
   end
   -- "Shortcut" values to the builtin previewer
   -- merge with builtin previewer defaults
-  if type(opts.previewer) == "table"
-      or opts.previewer == true
-      or opts.previewer == "hidden"
-      or opts.previewer == "nohidden"
+  if
+    type(opts.previewer) == "table"
+    or opts.previewer == true
+    or opts.previewer == "hidden"
+    or opts.previewer == "nohidden"
   then
     -- of type string, can only be "hidden|nohidden"
     if type(opts.previewer) == "string" then
       assert(opts.previewer == "hidden" or opts.previewer == "nohidden")
       utils.map_set(opts, "winopts.preview.hidden", opts.previewer ~= "nohidden")
     end
-    opts.previewer = vim.tbl_deep_extend("keep",
+    opts.previewer = vim.tbl_deep_extend(
+      "keep",
       type(opts.previewer) == "table" and opts.previewer or {},
-      M.globals.previewers.builtin)
+      M.globals.previewers.builtin
+    )
   end
 
   -- Convert again in case the bool option came from global opts
@@ -526,7 +558,8 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- Auto-generate fzf's colorscheme
   opts.fzf_colors = type(opts.fzf_colors) == "table" and opts.fzf_colors
-      or opts.fzf_colors == true and { true } or {}
+    or opts.fzf_colors == true and { true }
+    or {}
 
   -- Inerherit from fzf.vim's g:fzf_colors
   -- fzf.vim:
@@ -537,47 +570,56 @@ function M.normalize_opts(opts, globals, __resume_key)
   --   fzf_colors = {
   --     ["fg"] = { "fg" , { "Comment", "Normal" } }
   --   }
-  opts.fzf_colors = vim.tbl_extend("keep", opts.fzf_colors,
+  opts.fzf_colors = vim.tbl_extend(
+    "keep",
+    opts.fzf_colors,
     vim.tbl_map(function(v)
       -- Value isn't guaranteed a table, e.g:
       --   vim.g.fzf_colors = { ["gutter"] = "-1" }
-      if type(v) ~= "table" then return tostring(v) end
+      if type(v) ~= "table" then
+        return tostring(v)
+      end
       -- We accept both fzf.vim and fzf-lua style values
-      if type(v[2]) == "table" then return v end
+      if type(v[2]) == "table" then
+        return v
+      end
       local new_v = { v[1], { v[2] } }
       for i = 3, #v do
         table.insert(new_v[2], v[i])
       end
       return new_v
-    end, type(vim.g.fzf_colors) == "table" and vim.g.fzf_colors or {}))
+    end, type(vim.g.fzf_colors) == "table" and vim.g.fzf_colors or {})
+  )
 
   if opts.fzf_colors[1] == true then
     opts.fzf_colors[1] = nil
     opts.fzf_colors = vim.tbl_deep_extend("keep", opts.fzf_colors, {
-      ["fg"]        = { "fg", opts.hls.fzf.normal },
-      ["bg"]        = { "bg", opts.hls.fzf.normal },
-      ["hl"]        = { "fg", opts.hls.fzf.match },
-      ["fg+"]       = { "fg", { opts.hls.fzf.cursorline, opts.hls.fzf.normal } },
-      ["bg+"]       = { "bg", opts.hls.fzf.cursorline },
-      ["hl+"]       = { "fg", opts.hls.fzf.match },
-      ["info"]      = { "fg", opts.hls.fzf.info },
-      ["border"]    = { "fg", opts.hls.fzf.border },
-      ["gutter"]    = { "bg", opts.hls.fzf.gutter },
-      ["query"]     = { "fg", opts.hls.fzf.query, "regular" },
-      ["prompt"]    = { "fg", opts.hls.fzf.prompt },
-      ["pointer"]   = { "fg", opts.hls.fzf.pointer },
-      ["marker"]    = { "fg", opts.hls.fzf.marker },
-      ["spinner"]   = { "fg", opts.hls.fzf.spinner },
-      ["header"]    = { "fg", opts.hls.fzf.header },
+      ["fg"] = { "fg", opts.hls.fzf.normal },
+      ["bg"] = { "bg", opts.hls.fzf.normal },
+      ["hl"] = { "fg", opts.hls.fzf.match },
+      ["fg+"] = { "fg", { opts.hls.fzf.cursorline, opts.hls.fzf.normal } },
+      ["bg+"] = { "bg", opts.hls.fzf.cursorline },
+      ["hl+"] = { "fg", opts.hls.fzf.match },
+      ["info"] = { "fg", opts.hls.fzf.info },
+      ["border"] = { "fg", opts.hls.fzf.border },
+      ["gutter"] = { "bg", opts.hls.fzf.gutter },
+      ["query"] = { "fg", opts.hls.fzf.query, "regular" },
+      ["prompt"] = { "fg", opts.hls.fzf.prompt },
+      ["pointer"] = { "fg", opts.hls.fzf.pointer },
+      ["marker"] = { "fg", opts.hls.fzf.marker },
+      ["spinner"] = { "fg", opts.hls.fzf.spinner },
+      ["header"] = { "fg", opts.hls.fzf.header },
       ["separator"] = { "fg", opts.hls.fzf.separator },
-      ["scrollbar"] = { "fg", opts.hls.fzf.scrollbar }
+      ["scrollbar"] = { "fg", opts.hls.fzf.scrollbar },
     })
   end
 
   -- Adjust main fzf window treesitter settings
   -- Disabled unless the picker is TS enabled with `_treesitter=true`
   -- Unless `enabled=false` is specifically set `true` is asssumed
-  if not opts._treesitter then opts.winopts.treesitter = nil end
+  if not opts._treesitter then
+    opts.winopts.treesitter = nil
+  end
   if not opts.winopts.treesitter or opts.winopts.treesitter.enabled == false then
     opts.winopts.treesitter = nil
   else
@@ -588,11 +630,13 @@ function M.normalize_opts(opts, globals, __resume_key)
     -- color for matches to the corresponding original foreground color
     -- NOTE: `fzf_colors` inherited from `defaults.winopts.treesitter`
     if opts.winopts.treesitter.fzf_colors ~= false then
-      opts.fzf_colors = vim.tbl_deep_extend("force",
+      opts.fzf_colors = vim.tbl_deep_extend(
+        "force",
         type(opts.fzf_colors) == "table" and opts.fzf_colors or {},
         M.defaults.winopts.treesitter.fzf_colors,
-        type(opts.winopts.treesitter.fzf_colors) == "table"
-        and opts.winopts.treesitter.fzf_colors or {})
+        type(opts.winopts.treesitter.fzf_colors) == "table" and opts.winopts.treesitter.fzf_colors
+          or {}
+      )
     end
   end
 
@@ -641,8 +685,7 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   opts.fzf_bin = opts.fzf_bin or M.globals.fzf_bin
   opts.fzf_bin = opts.fzf_bin and libuv.expand(opts.fzf_bin) or nil
-  if not opts.fzf_bin or
-      not executable(opts.fzf_bin, utils.warn, "fallback to 'fzf'.") then
+  if not opts.fzf_bin or not executable(opts.fzf_bin, utils.warn, "fallback to 'fzf'.") then
     -- default|fallback to fzf
     opts.fzf_bin = "fzf"
     -- try fzf plugin if fzf is not installed globally
@@ -652,8 +695,9 @@ function M.normalize_opts(opts, globals, __resume_key)
         opts.fzf_bin = fzf_plug
       end
     end
-    if not executable(opts.fzf_bin, utils.err,
-          "aborting. Please make sure 'fzf' is in installed.") then
+    if
+      not executable(opts.fzf_bin, utils.err, "aborting. Please make sure 'fzf' is in installed.")
+    then
       return nil
     end
   end
@@ -671,8 +715,12 @@ function M.normalize_opts(opts, globals, __resume_key)
       utils.err(string.format("'fzf --version' failed with error %s: %s", rc, err))
       return nil
     elseif not utils.has(opts, "fzf", { 0, 25 }) then
-      utils.err(string.format("fzf version %s is lower than minimum (0.25), aborting.",
-        utils.ver2str(opts.__FZF_VERSION)))
+      utils.err(
+        string.format(
+          "fzf version %s is lower than minimum (0.25), aborting.",
+          utils.ver2str(opts.__FZF_VERSION)
+        )
+      )
       return nil
     end
   else
@@ -684,14 +732,19 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
-  if utils.has(opts, "fzf", { 0, 53 })
-      -- `_multiline` is used to override `multiline` inherited from `defaults = {}`
-      and opts.multiline and opts._multiline ~= false then
+  if
+    utils.has(opts, "fzf", { 0, 53 })
+    -- `_multiline` is used to override `multiline` inherited from `defaults = {}`
+    and opts.multiline
+    and opts._multiline ~= false
+  then
     -- If `multiline` was specified we add both "read0" & "print0" flags
     opts.fzf_opts["--read0"] = true
     opts.fzf_opts["--print0"] = true
     local gap = (tonumber(opts.multiline) or 1) - 1
-    if gap > 0 then opts.fzf_opts["--gap"] = gap end
+    if gap > 0 then
+      opts.fzf_opts["--gap"] = gap
+    end
   else
     -- If not possible (fzf v<0.53|skim), nullify the option
     opts.multiline = nil
@@ -704,96 +757,114 @@ function M.normalize_opts(opts, globals, __resume_key)
     --   (3) `table` flags are removed if the value is contained
     local bin, version, changelog = (function()
       if opts.__SK_VERSION then
-        return "sk", opts.__SK_VERSION, {
-          ["0.15.5"] = { fzf_opts = { ["--tmux"] = true } },
-          ["0.53"] = { fzf_opts = { ["--inline-info"] = true } },
-          -- All fzf flags not existing in skim
-          ["all"] = {
-            fzf_opts = {
-              ["--scheme"]         = false,
-              ["--gap"]            = false,
-              ["--info"]           = false,
-              ["--border"]         = false,
-              ["--scrollbar"]      = false,
-              ["--no-scrollbar"]   = false,
-              ["--wrap"]           = true,
-              ["--wrap-sign"]      = true,
-              ["--highlight-line"] = false,
-            }
-          },
-        }
+        return "sk",
+          opts.__SK_VERSION,
+          {
+            ["0.15.5"] = { fzf_opts = { ["--tmux"] = true } },
+            ["0.53"] = { fzf_opts = { ["--inline-info"] = true } },
+            -- All fzf flags not existing in skim
+            ["all"] = {
+              fzf_opts = {
+                ["--scheme"] = false,
+                ["--gap"] = false,
+                ["--info"] = false,
+                ["--border"] = false,
+                ["--scrollbar"] = false,
+                ["--no-scrollbar"] = false,
+                ["--wrap"] = true,
+                ["--wrap-sign"] = true,
+                ["--highlight-line"] = false,
+              },
+            },
+          }
       else
-        return "fzf", opts.__FZF_VERSION, {
-          ["0.59"] = { fzf_opts = { ["--scheme"] = "path" } },
-          ["0.56"] = { fzf_opts = { ["--gap"] = true } },
-          ["0.54"] = {
-            fzf_opts = {
-              ["--wrap"]           = true,
-              ["--wrap-sign"]      = true,
-              ["--highlight-line"] = true,
-            }
-          },
-          ["0.53"] = { fzf_opts = { ["--tmux"] = true } },
-          ["0.52"] = { fzf_opts = { ["--highlight-line"] = true } },
-          ["0.42"] = {
-            fzf_opts = {
-              ["--info"] = { "right", "inline-right" },
-            }
-          },
-          ["0.39"] = { fzf_opts = { ["--track"] = true } },
-          ["0.36"] = {
-            fzf_opts = {
-              ["--listen"]       = true,
-              ["--scrollbar"]    = true,
-              ["--no-scrollbar"] = true,
-            }
-          },
-          ["0.35"] = {
-            fzf_opts = {
-              ["--border"]            = { "bold", "double" },
-              ["--border-label"]      = true,
-              ["--border-label-pos"]  = true,
-              ["--preview-label"]     = true,
-              ["--preview-label-pos"] = true,
-            }
-          },
-          ["0.33"] = { fzf_opts = { ["--scheme"] = true } },
-          ["0.30"] = { fzf_opts = { ["--ellipsis"] = true } },
-          ["0.28"] = {
-            fzf_opts = {
-              ["--header-first"] = true,
-              ["--scroll-off"]   = true,
-            }
-          },
-          ["0.27"] = { fzf_opts = { ["--border"] = "none" } },
-          -- All skim flags not existing in fzf
-          ["all"] = {
-            fzf_opts = {
-              ["--inline-info"] = false,
-            }
-          },
-        }
+        return "fzf",
+          opts.__FZF_VERSION,
+          {
+            ["0.59"] = { fzf_opts = { ["--scheme"] = "path" } },
+            ["0.56"] = { fzf_opts = { ["--gap"] = true } },
+            ["0.54"] = {
+              fzf_opts = {
+                ["--wrap"] = true,
+                ["--wrap-sign"] = true,
+                ["--highlight-line"] = true,
+              },
+            },
+            ["0.53"] = { fzf_opts = { ["--tmux"] = true } },
+            ["0.52"] = { fzf_opts = { ["--highlight-line"] = true } },
+            ["0.42"] = {
+              fzf_opts = {
+                ["--info"] = { "right", "inline-right" },
+              },
+            },
+            ["0.39"] = { fzf_opts = { ["--track"] = true } },
+            ["0.36"] = {
+              fzf_opts = {
+                ["--listen"] = true,
+                ["--scrollbar"] = true,
+                ["--no-scrollbar"] = true,
+              },
+            },
+            ["0.35"] = {
+              fzf_opts = {
+                ["--border"] = { "bold", "double" },
+                ["--border-label"] = true,
+                ["--border-label-pos"] = true,
+                ["--preview-label"] = true,
+                ["--preview-label-pos"] = true,
+              },
+            },
+            ["0.33"] = { fzf_opts = { ["--scheme"] = true } },
+            ["0.30"] = { fzf_opts = { ["--ellipsis"] = true } },
+            ["0.28"] = {
+              fzf_opts = {
+                ["--header-first"] = true,
+                ["--scroll-off"] = true,
+              },
+            },
+            ["0.27"] = { fzf_opts = { ["--border"] = "none" } },
+            -- All skim flags not existing in fzf
+            ["all"] = {
+              fzf_opts = {
+                ["--inline-info"] = false,
+              },
+            },
+          }
       end
     end)()
     local function warn(flag, val, min_ver)
-      return utils.warn(string.format("Removed flag '%s%s', %s.",
-        flag, type(val) == "string" and "=" .. val or "",
-        not min_ver and string.format("not supported with %s", bin)
-        or string.format("only supported with %s v%s (has=%s)",
-          bin, utils.ver2str(min_ver), utils.ver2str(version))
-      ))
+      return utils.warn(
+        string.format(
+          "Removed flag '%s%s', %s.",
+          flag,
+          type(val) == "string" and "=" .. val or "",
+          not min_ver and string.format("not supported with %s", bin)
+            or string.format(
+              "only supported with %s v%s (has=%s)",
+              bin,
+              utils.ver2str(min_ver),
+              utils.ver2str(version)
+            )
+        )
+      )
     end
     for min_verstr, ver_data in pairs(changelog) do
       for flag, non_compat_value in pairs(ver_data.fzf_opts) do
         (function()
           local min_ver = utils.parse_verstr(min_verstr)
           local opt_value = opts.fzf_opts[flag]
-          if not opt_value then return end
-          non_compat_value = type(non_compat_value) == "string"
-              and { non_compat_value } or non_compat_value
-          if not min_ver or not utils.has(opts, bin, min_ver)
-              and (non_compat_value == true or type(non_compat_value) == "table"
-                and utils.tbl_contains(non_compat_value, opt_value))
+          if not opt_value then
+            return
+          end
+          non_compat_value = type(non_compat_value) == "string" and { non_compat_value }
+            or non_compat_value
+          if
+            not min_ver
+            or not utils.has(opts, bin, min_ver)
+              and (non_compat_value == true or type(non_compat_value) == "table" and utils.tbl_contains(
+                non_compat_value,
+                opt_value
+              ))
           then
             if opts.compat_warn == true then
               warn(flag, opt_value, min_ver)
@@ -812,12 +883,11 @@ function M.normalize_opts(opts, globals, __resume_key)
       opts.fzf_opts["--tmux"] = nil
       return
     end
-    local is_tmux =
-        (opts.fzf_bin:match("fzf%-tmux$") or opts.fzf_bin:match("sk%-tmux$")) and 1
-        -- fzf v0.53 added native tmux integration
-        or utils.has(opts, "fzf", { 0, 53 }) and opts.fzf_opts["--tmux"] and 2
-        -- skim v0.15.5 added native tmux integration
-        or utils.has(opts, "sk", { 0, 15, 5 }) and opts.fzf_opts["--tmux"] and 2
+    local is_tmux = (opts.fzf_bin:match("fzf%-tmux$") or opts.fzf_bin:match("sk%-tmux$")) and 1
+      -- fzf v0.53 added native tmux integration
+      or utils.has(opts, "fzf", { 0, 53 }) and opts.fzf_opts["--tmux"] and 2
+      -- skim v0.15.5 added native tmux integration
+      or utils.has(opts, "sk", { 0, 15, 5 }) and opts.fzf_opts["--tmux"] and 2
     if is_tmux == 1 then
       -- backward compat when using the `fzf-tmux` script: prioritize fzf-tmux
       -- split pane flags over the popup flag `-p` from fzf-lua defaults (#865)
@@ -833,9 +903,11 @@ function M.normalize_opts(opts, globals, __resume_key)
   end)()
 
   -- refresh highlights if background/colorscheme changed (#1092)
-  if not M.__HLS_STATE
-      or M.__HLS_STATE.bg ~= vim.o.bg
-      or M.__HLS_STATE.colorscheme ~= vim.g.colors_name then
+  if
+    not M.__HLS_STATE
+    or M.__HLS_STATE.bg ~= vim.o.bg
+    or M.__HLS_STATE.colorscheme ~= vim.g.colors_name
+  then
     utils.setup_highlights()
   end
 
@@ -849,25 +921,29 @@ function M.normalize_opts(opts, globals, __resume_key)
     utils.cache_ansi_escseq(hlgroup, escseq)
   end
 
-
   if opts.file_icons then
     -- refresh icons, does nothing if "vim.o.bg" didn't change
-    if not devicons.load({
-          plugin = opts.file_icons,
-          icon_padding = opts.file_icon_padding,
-          dir_icon = {
-            icon = opts.dir_icon,
-            color = utils.hexcol_from_hl(opts.hls.dir_icon, "fg")
-          }
-        })
+    if
+      not devicons.load({
+        plugin = opts.file_icons,
+        icon_padding = opts.file_icon_padding,
+        dir_icon = {
+          icon = opts.dir_icon,
+          color = utils.hexcol_from_hl(opts.hls.dir_icon, "fg"),
+        },
+      })
     then
       -- Disable file_icons if requested package isn't available
       -- we set the default value to "1" but since it's the default
       -- don't display the warning unless the user specifically set
       -- file_icons to `true` or `mini|devicons`
       if not tonumber(opts.file_icons) then
-        utils.warn(string.format("error loading '%s', disabling 'file_icons'.",
-          opts.file_icons == "mini" and "mini.icons" or "nvim-web-devicons"))
+        utils.warn(
+          string.format(
+            "error loading '%s', disabling 'file_icons'.",
+            opts.file_icons == "mini" and "mini.icons" or "nvim-web-devicons"
+          )
+        )
       end
       opts.file_icons = nil
     end
@@ -880,9 +956,9 @@ function M.normalize_opts(opts, globals, __resume_key)
       -- which we do in "make_entry.postprocess"
       opts.__mt_postprocess = opts.multiprocess
           and [[return require("fzf-lua.make_entry").postprocess]]
-          -- NOTE: we don't need to update mini when running on main thread
-          -- or require("fzf-lua.make_entry").postprocess
-          or nil
+        -- NOTE: we don't need to update mini when running on main thread
+        -- or require("fzf-lua.make_entry").postprocess
+        or nil
     end
   end
 
@@ -890,22 +966,28 @@ function M.normalize_opts(opts, globals, __resume_key)
     utils.warn("'line_query' requires fzf >= 0.59, ignoring.")
   elseif opts.line_query then
     utils.map_set(opts, "winopts.preview.winopts.cursorline", true)
-    utils.map_set(opts, "keymap.fzf.change",
-      "transform:" .. FzfLua.shell.raw_action(function(q, _, _)
-        local lnum = q[1]:match(":(%d+)$")
-        local new_q, subs = q[1]:gsub(":%d*$", "")
-        -- No subs made, no ":" at end of string, do nothing
-        if subs == 0 then return end
-        local trans = string.format("search(%s)", new_q)
-        local win = FzfLua.win.__SELF()
-        -- Do we need to change the offset in native fzf previewer (e.g. bat)?
-        if lnum and win and win._previewer and win._previewer._preview_offset then
-          local optstr = opts.fzf_opts["--preview-window"]
-          local offset = win._previewer:_preview_offset(lnum)
-          trans = string.format("%s+change-preview-window(%s:%s)", trans, optstr, offset)
-        end
-        return trans
-      end, "{q}", opts.debug))
+    utils.map_set(
+      opts,
+      "keymap.fzf.change",
+      "transform:"
+        .. FzfLua.shell.raw_action(function(q, _, _)
+          local lnum = q[1]:match(":(%d+)$")
+          local new_q, subs = q[1]:gsub(":%d*$", "")
+          -- No subs made, no ":" at end of string, do nothing
+          if subs == 0 then
+            return
+          end
+          local trans = string.format("search(%s)", new_q)
+          local win = FzfLua.win.__SELF()
+          -- Do we need to change the offset in native fzf previewer (e.g. bat)?
+          if lnum and win and win._previewer and win._previewer._preview_offset then
+            local optstr = opts.fzf_opts["--preview-window"]
+            local offset = win._previewer:_preview_offset(lnum)
+            trans = string.format("%s+change-preview-window(%s:%s)", trans, optstr, offset)
+          end
+          return trans
+        end, "{q}", opts.debug)
+    )
   end
 
   if type(opts.enrich) == "function" then
@@ -926,7 +1008,9 @@ M.bytecode = function(s, datatype)
   local iter = M
   for i = 1, #keys do
     iter = iter[keys[i]]
-    if not iter then break end
+    if not iter then
+      break
+    end
     if i == #keys and type(iter) == datatype then
       -- Not sure if second argument 'true' is needed
       -- can't find any references for it other than
@@ -946,16 +1030,16 @@ M.get_action_helpstr = function(fn)
 end
 
 M._action_to_helpstr = {
-  [actions.dummy_abort]          = "abort",
-  [actions.file_edit]            = "file-edit",
-  [actions.file_edit_or_qf]      = "file-edit-or-qf",
-  [actions.file_split]           = "file-split",
-  [actions.file_vsplit]          = "file-vsplit",
-  [actions.file_tabedit]         = "file-tabedit",
-  [actions.file_sel_to_qf]       = "file-selection-to-qf",
-  [actions.file_sel_to_ll]       = "file-selection-to-loclist",
-  [actions.file_switch]          = "file-switch",
-  [actions.file_switch_or_edit]  = "file-switch-or-edit",
+  [actions.dummy_abort] = "abort",
+  [actions.file_edit] = "file-edit",
+  [actions.file_edit_or_qf] = "file-edit-or-qf",
+  [actions.file_split] = "file-split",
+  [actions.file_vsplit] = "file-vsplit",
+  [actions.file_tabedit] = "file-tabedit",
+  [actions.file_sel_to_qf] = "file-selection-to-qf",
+  [actions.file_sel_to_ll] = "file-selection-to-loclist",
+  [actions.file_switch] = "file-switch",
+  [actions.file_switch_or_edit] = "file-switch-or-edit",
   -- Since default actions refactor these are just refs to
   -- their correspondent `file_xxx` equivalents
   -- [actions.buf_edit]            = "buffer-edit",
@@ -967,67 +1051,67 @@ M._action_to_helpstr = {
   -- [actions.buf_tabedit]         = "buffer-tabedit",
   -- [actions.buf_switch]          = "buffer-switch",
   -- [actions.buf_switch_or_edit]  = "buffer-switch-or-edit",
-  [actions.buf_del]              = "buffer-delete",
-  [actions.run_builtin]          = "run-builtin",
-  [actions.ex_run]               = "edit-cmd",
-  [actions.ex_run_cr]            = "exec-cmd",
-  [actions.exec_menu]            = "exec-menu",
-  [actions.search]               = "edit-search",
-  [actions.search_cr]            = "exec-search",
-  [actions.goto_mark]            = "goto-mark",
-  [actions.goto_jump]            = "goto-jump",
-  [actions.keymap_apply]         = "keymap-apply",
-  [actions.keymap_edit]          = "keymap-edit",
-  [actions.keymap_split]         = "keymap-split",
-  [actions.keymap_vsplit]        = "keymap-vsplit",
-  [actions.keymap_tabedit]       = "keymap-tabedit",
-  [actions.nvim_opt_edit_local]  = "nvim-opt-edit-local",
+  [actions.buf_del] = "buffer-delete",
+  [actions.run_builtin] = "run-builtin",
+  [actions.ex_run] = "edit-cmd",
+  [actions.ex_run_cr] = "exec-cmd",
+  [actions.exec_menu] = "exec-menu",
+  [actions.search] = "edit-search",
+  [actions.search_cr] = "exec-search",
+  [actions.goto_mark] = "goto-mark",
+  [actions.goto_jump] = "goto-jump",
+  [actions.keymap_apply] = "keymap-apply",
+  [actions.keymap_edit] = "keymap-edit",
+  [actions.keymap_split] = "keymap-split",
+  [actions.keymap_vsplit] = "keymap-vsplit",
+  [actions.keymap_tabedit] = "keymap-tabedit",
+  [actions.nvim_opt_edit_local] = "nvim-opt-edit-local",
   [actions.nvim_opt_edit_global] = "nvim-opt-edit-global",
-  [actions.spell_apply]          = "spell-apply",
-  [actions.spell_suggest]        = "spell-suggest",
-  [actions.set_filetype]         = "set-filetype",
-  [actions.packadd]              = "packadd",
-  [actions.help]                 = "help-open",
-  [actions.help_vert]            = "help-vertical",
-  [actions.help_tab]             = "help-tab",
-  [actions.man]                  = "man-open",
-  [actions.man_vert]             = "man-vertical",
-  [actions.man_tab]              = "man-tab",
-  [actions.git_branch_add]       = "git-branch-add",
-  [actions.git_branch_del]       = "git-branch-del",
-  [actions.git_switch]           = "git-switch",
-  [actions.git_checkout]         = "git-checkout",
-  [actions.git_reset]            = "git-reset",
-  [actions.git_stage]            = "git-stage",
-  [actions.git_unstage]          = "git-unstage",
-  [actions.git_stage_unstage]    = "git-stage-unstage",
-  [actions.git_stash_pop]        = "git-stash-pop",
-  [actions.git_stash_drop]       = "git-stash-drop",
-  [actions.git_stash_apply]      = "git-stash-apply",
-  [actions.git_buf_edit]         = "git-buffer-edit",
-  [actions.git_buf_tabedit]      = "git-buffer-tabedit",
-  [actions.git_buf_split]        = "git-buffer-split",
-  [actions.git_buf_vsplit]       = "git-buffer-vsplit",
-  [actions.git_goto_line]        = "git-goto-line",
-  [actions.git_yank_commit]      = "git-yank-commit",
-  [actions.arg_add]              = "arg-list-add",
-  [actions.arg_del]              = "arg-list-delete",
-  [actions.toggle_ignore]        = "toggle-ignore",
-  [actions.toggle_hidden]        = "toggle-hidden",
-  [actions.toggle_follow]        = "toggle-follow",
-  [actions.grep_lgrep]           = "grep<->lgrep",
-  [actions.sym_lsym]             = "sym<->lsym",
-  [actions.tmux_buf_set_reg]     = "set-register",
-  [actions.paste_register]       = "paste-register",
-  [actions.set_qflist]           = "set-{qf|loc}list",
-  [actions.apply_profile]        = "apply-profile",
-  [actions.complete]             = "complete",
-  [actions.dap_bp_del]           = "dap-bp-delete",
-  [actions.colorscheme]          = "colorscheme-apply",
-  [actions.cs_delete]            = "colorscheme-delete",
-  [actions.cs_update]            = "colorscheme-update",
-  [actions.toggle_bg]            = "toggle-background",
-  [actions.cd]                   = "change-directory",
+  [actions.spell_apply] = "spell-apply",
+  [actions.spell_suggest] = "spell-suggest",
+  [actions.set_filetype] = "set-filetype",
+  [actions.packadd] = "packadd",
+  [actions.help] = "help-open",
+  [actions.help_vert] = "help-vertical",
+  [actions.help_tab] = "help-tab",
+  [actions.man] = "man-open",
+  [actions.man_vert] = "man-vertical",
+  [actions.man_tab] = "man-tab",
+  [actions.git_branch_add] = "git-branch-add",
+  [actions.git_branch_del] = "git-branch-del",
+  [actions.git_switch] = "git-switch",
+  [actions.git_checkout] = "git-checkout",
+  [actions.git_reset] = "git-reset",
+  [actions.git_stage] = "git-stage",
+  [actions.git_unstage] = "git-unstage",
+  [actions.git_stage_unstage] = "git-stage-unstage",
+  [actions.git_stash_pop] = "git-stash-pop",
+  [actions.git_stash_drop] = "git-stash-drop",
+  [actions.git_stash_apply] = "git-stash-apply",
+  [actions.git_buf_edit] = "git-buffer-edit",
+  [actions.git_buf_tabedit] = "git-buffer-tabedit",
+  [actions.git_buf_split] = "git-buffer-split",
+  [actions.git_buf_vsplit] = "git-buffer-vsplit",
+  [actions.git_goto_line] = "git-goto-line",
+  [actions.git_yank_commit] = "git-yank-commit",
+  [actions.arg_add] = "arg-list-add",
+  [actions.arg_del] = "arg-list-delete",
+  [actions.toggle_ignore] = "toggle-ignore",
+  [actions.toggle_hidden] = "toggle-hidden",
+  [actions.toggle_follow] = "toggle-follow",
+  [actions.grep_lgrep] = "grep<->lgrep",
+  [actions.sym_lsym] = "sym<->lsym",
+  [actions.tmux_buf_set_reg] = "set-register",
+  [actions.paste_register] = "paste-register",
+  [actions.set_qflist] = "set-{qf|loc}list",
+  [actions.apply_profile] = "apply-profile",
+  [actions.complete] = "complete",
+  [actions.dap_bp_del] = "dap-bp-delete",
+  [actions.colorscheme] = "colorscheme-apply",
+  [actions.cs_delete] = "colorscheme-delete",
+  [actions.cs_update] = "colorscheme-update",
+  [actions.toggle_bg] = "toggle-background",
+  [actions.cd] = "change-directory",
 }
 
 return M

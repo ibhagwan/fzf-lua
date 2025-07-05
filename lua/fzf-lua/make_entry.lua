@@ -1,17 +1,19 @@
 local M = {}
 
 local uv = vim.uv or vim.loop
-local path = require "fzf-lua.path"
-local utils = require "fzf-lua.utils"
-local libuv = require "fzf-lua.libuv"
-local devicons = require "fzf-lua.devicons"
+local path = require("fzf-lua.path")
+local utils = require("fzf-lua.utils")
+local libuv = require("fzf-lua.libuv")
+local devicons = require("fzf-lua.devicons")
 local config = nil
 
 -- attempt to load the current config
 -- should fail if we're running headless
 do
   local ok, module = pcall(require, "fzf-lua.config")
-  if ok then config = module end
+  if ok then
+    config = module
+  end
 end
 
 local function load_config_section(s, datatype, optional)
@@ -44,8 +46,9 @@ local function load_config_section(s, datatype, optional)
     ---@diagnostic disable-next-line: undefined-field
     if _G._debug == "v" or _G._debug == "verbose" then
       ---@diagnostic disable-next-line: undefined-field
-      io.stdout:write(("[DEBUG] [load_config] %s = %s" .. (_G._EOL or "\n"))
-        :format(s, not ok and errmsg or res))
+      io.stdout:write(
+        ("[DEBUG] [load_config] %s = %s" .. (_G._EOL or "\n")):format(s, not ok and errmsg or res)
+      )
     end
     if not ok and not optional then
       io.stderr:write(("Error loading remote config section '%s': %s\n"):format(s, errmsg))
@@ -58,17 +61,22 @@ end
 if _G._fzf_lua_is_headless then
   local _config = { globals = { git = {}, files = {}, grep = {} } }
   _config.globals.git.icons = load_config_section("globals.git.icons", "table") or {}
-  _config.globals.files.git_status_cmd =
-      load_config_section("globals.files.git_status_cmd", "table")
-      or { "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" }
+  _config.globals.files.git_status_cmd = load_config_section(
+    "globals.files.git_status_cmd",
+    "table"
+  ) or { "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" }
 
   -- prioritize `opts.rg_glob_fn` over globals
-  _config.globals.grep.rg_glob_fn =
-      load_config_section("__resume_data.opts.rg_glob_fn", "function", true) or
-      load_config_section("globals.grep.rg_glob_fn", "function", true)
+  _config.globals.grep.rg_glob_fn = load_config_section(
+    "__resume_data.opts.rg_glob_fn",
+    "function",
+    true
+  ) or load_config_section("globals.grep.rg_glob_fn", "function", true)
 
   _config.globals.nbsp = load_config_section("globals.nbsp", "string")
-  if _config.globals.nbsp then utils.nbsp = _config.globals.nbsp end
+  if _config.globals.nbsp then
+    utils.nbsp = _config.globals.nbsp
+  end
 
   config = _config
 end
@@ -76,14 +84,18 @@ end
 M.get_diff_files = function(opts)
   local diff_files = {}
   local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd
-  if not cmd then return {} end
+  if not cmd then
+    return {}
+  end
   local start = uv.hrtime()
   local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts))
   local seconds = (uv.hrtime() - start) / 1e9
   if seconds >= 0.5 and opts.silent ~= true then
-    local exec_str = string.format([[require"fzf-lua".utils.warn(]] ..
-      [["'git status' took %.2f seconds, consider using `git_icons=false` in this repository or use `silent=true` to supress this message.")]]
-      , seconds)
+    local exec_str = string.format(
+      [[require"fzf-lua".utils.warn(]]
+        .. [["'git status' took %.2f seconds, consider using `git_icons=false` in this repository or use `silent=true` to supress this message.")]],
+      seconds
+    )
     if not _G._fzf_lua_is_headless then
       loadstring(exec_str)()
     else
@@ -139,7 +151,7 @@ end
 M.rg_insert_args = function(cmd, args, relocate_pattern)
   local patterns = {}
   for _, a in ipairs({
-    { "%s+%-e",  "-e" },
+    { "%s+%-e", "-e" },
     { "%s+%-%-", "--" },
   }) do
     -- if pattern was specified search for `-e <pattern>`
@@ -204,7 +216,7 @@ M.preprocess = function(opts)
 
     -- For custom command transformations (#1927)
     opts.fn_transform_cmd =
-        load_config_section("__resume_data.opts.fn_transform_cmd", "function", true)
+      load_config_section("__resume_data.opts.fn_transform_cmd", "function", true)
 
     -- did the caller request rg with glob support?
     -- manipulation needs to be done before the argv replacement
@@ -231,11 +243,10 @@ M.preprocess = function(opts)
   -- nifty hack to avoid having to double escape quotations
   -- see my comment inside 'live_grep' initial_command code
   if opts.argv_expr then
-    opts.cmd = opts.cmd:gsub("{argv.*}",
-      function(x)
-        local idx = x:match("{argv(.*)}")
-        return libuv.shellescape(argv(idx, not opts.rg_glob and opts.debug))
-      end)
+    opts.cmd = opts.cmd:gsub("{argv.*}", function(x)
+      local idx = x:match("{argv(.*)}")
+      return libuv.shellescape(argv(idx, not opts.rg_glob and opts.debug))
+    end)
   end
 
   if utils.__IS_WINDOWS and opts.cmd:match("!") then
@@ -295,20 +306,25 @@ M.postprocess = function(opts)
 end
 
 M.lcol = function(entry, opts)
-  if not entry then return nil end
-  local hl_colnr = utils.tbl_contains(opts._cached_hls or {}, "path_colnr")
-      and opts.hls.path_colnr or "blue"
+  if not entry then
+    return nil
+  end
+  local hl_colnr = utils.tbl_contains(opts._cached_hls or {}, "path_colnr") and opts.hls.path_colnr
+    or "blue"
   local hl_linenr = utils.tbl_contains(opts._cached_hls or {}, "path_linenr")
-      and opts.hls.path_linenr or "green"
+      and opts.hls.path_linenr
+    or "green"
   local filename = entry.filename or vim.api.nvim_buf_get_name(entry.bufnr)
-  return string.format("%s:%s%s%s",
+  return string.format(
+    "%s:%s%s%s",
     -- uncomment to test URIs
     -- "file://" .. filename,
     filename, --utils.ansi_codes.magenta(filename),
     tonumber(entry.lnum) == nil and "" or (utils.ansi_codes[hl_linenr](tostring(entry.lnum)) .. ":"),
     tonumber(entry.col) == nil and "" or (utils.ansi_codes[hl_colnr](tostring(entry.col)) .. ":"),
     type(entry.text) ~= "string" and ""
-    or (" " .. (opts and opts.trim_entry and vim.trim(entry.text) or entry.text)))
+      or (" " .. (opts and opts.trim_entry and vim.trim(entry.text) or entry.text))
+  )
 end
 
 ---@param x string
@@ -379,15 +395,20 @@ M.file = function(x, opts)
   -- save a copy for git indicator and icon lookups
   local origpath = filepath
   if opts.path_shorten then
-    filepath = path.shorten(filepath, tonumber(opts.path_shorten),
+    filepath = path.shorten(
+      filepath,
+      tonumber(opts.path_shorten),
       -- On Windows we want to shorten using the separator used by the `cwd` arg
       -- otherwise we might have issues "lenghening" as in the case of git which
       -- uses normalized paths (using /) for `rev-parse --show-toplevel` and `ls-files`
-      utils.__IS_WINDOWS and opts.cwd and path.separator(opts.cwd))
+      utils.__IS_WINDOWS
+        and opts.cwd
+        and path.separator(opts.cwd)
+    )
   end
   if opts.git_icons then
     local diff_info = opts.diff_files
-        and opts.diff_files[utils._if_win(path.normalize(origpath), origpath)]
+      and opts.diff_files[utils._if_win(path.normalize(origpath), origpath)]
     local indicators = diff_info and diff_info[1] or " "
     for i = 1, #indicators do
       icon = indicators:sub(i, i)
@@ -420,7 +441,7 @@ M.file = function(x, opts)
         -- filename is ansi escape colored, replace the inner string (#819)
         -- escape `%` in path, since `string.gsub` also use it in target (#1443)
         and file_part:gsub(utils.lua_regex_escape(stripped_filepath), (filepath:gsub("%%", "%%%%")))
-        or filepath
+      or filepath
   end
   -- multiline is only enabled with grep-like output PATH:LINE:COL:
   if opts.multiline and rest_of_line then
@@ -429,12 +450,9 @@ M.file = function(x, opts)
     -- PATH:LINE:TEXT and PATH:LINE:COL:TEXT
     local ansi_num = "[%[%d;m]"
     local filespec = rest_of_line:match(string.format("^:%s-:%s-:", ansi_num, ansi_num))
-        or rest_of_line:match(string.format("^:%s-:", ansi_num))
+      or rest_of_line:match(string.format("^:%s-:", ansi_num))
     if filespec then
-      rest_of_line = filespec
-          .. "\n"
-          .. string.rep(" ", 4)
-          .. rest_of_line:sub(#filespec + 1)
+      rest_of_line = filespec .. "\n" .. string.rep(" ", 4) .. rest_of_line:sub(#filespec + 1)
     end
   end
   ret[#ret + 1] = rest_of_line
@@ -444,7 +462,9 @@ end
 
 M.tag = function(x, opts)
   local name, file, text = x:match("([^\t]+)\t([^\t]+)\t(.*)")
-  if not file or not name or not text then return x end
+  if not file or not name or not text then
+    return x
+  end
   text = text:match([[(.*);"]]) or text -- remove ctag comments
   -- unescape ctags special chars
   -- '\/' -> '/'
@@ -462,13 +482,15 @@ M.tag = function(x, opts)
     line = text:match("%d+")
   end
   line = line and #line > 0 and tonumber(line)
-  return string.format("%-" .. tostring(align) .. "s%s%s%s: %s",
+  return string.format(
+    "%-" .. tostring(align) .. "s%s%s%s: %s",
     name,
     utils.nbsp,
     M.file(file, opts),
     not line and "" or ":" .. utils.ansi_codes.green(tostring(line)),
     utils.ansi_codes.blue(tag)
-  ), line
+  ),
+    line
 end
 
 M.git_status = function(x, opts)
@@ -483,7 +505,9 @@ M.git_status = function(x, opts)
     return icon
   end
   -- unrecognizable format, return
-  if not x or #x < 4 then return x end
+  if not x or #x < 4 then
+    return x
+  end
   -- strip ansi coloring or the pattern matching fails
   -- when git config has `color.status=always` (#706)
   x = utils.strip_ansi_coloring(x)
@@ -498,13 +522,19 @@ M.git_status = function(x, opts)
   end
   f1 = f1 and M.file(f1, opts)
   -- accommodate 'file_ignore_patterns'
-  if not f1 then return end
+  if not f1 then
+    return
+  end
   f2 = f2 and M.file(f2, opts)
   local staged = git_iconify(x:sub(1, 1):gsub("?", " "), true)
   local unstaged = git_iconify(x:sub(2, 2))
   local entry = ("%s%s%s%s%s"):format(
-    staged, utils.nbsp, unstaged, utils.nbsp .. utils.nbsp,
-    (f2 and ("%s -> %s"):format(f1, f2) or f1))
+    staged,
+    utils.nbsp,
+    unstaged,
+    utils.nbsp .. utils.nbsp,
+    (f2 and ("%s -> %s"):format(f1, f2) or f1)
+  )
   return entry
 end
 
@@ -523,7 +553,9 @@ M.git_hunk = function(x, opts)
       --    index 3354405..799e467 100644
       --    --- a/lua/fzf-lua/defaults.lua
       --    +++ b/lua/fzf-lua/defaults.lua
-      if l:match("^diff") then S.i = 0 end
+      if l:match("^diff") then
+        S.i = 0
+      end
       if S.i < 3 then
         return
       end
@@ -557,7 +589,9 @@ end
 
 M.zoxide = function(x, opts)
   local score, dir = x:match("(%d+%.%d+)%s+(.-)$")
-  if not score then return x end
+  if not score then
+    return x
+  end
   if opts.cwd then
     dir = path.relative_to(dir, opts.cwd)
   end

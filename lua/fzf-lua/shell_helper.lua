@@ -34,7 +34,9 @@ uv.listen(preview_socket, 1, function(_)
   if not _is_win then
     uv.fs_unlink(preview_socket_path)
     local tmpdir = vim.fn.fnamemodify(preview_socket_path, ":h")
-    if tmpdir and #tmpdir > 0 then uv.fs_rmdir(tmpdir) end
+    if tmpdir and #tmpdir > 0 then
+      uv.fs_rmdir(tmpdir)
+    end
   end
 
   preview_receive_socket:read_start(function(err, data)
@@ -58,7 +60,10 @@ local rpc_nvim_exec_lua = function(opts)
     local preview_lines = vim.env.FZF_PREVIEW_LINES or vim.env.LINES
     local preview_cols = vim.env.FZF_PREVIEW_COLUMNS or vim.env.COLUMNS
     local chan_id = vim.fn.sockconnect("pipe", opts.fzf_lua_server, { rpc = true })
-    vim.rpcrequest(chan_id, "nvim_exec_lua", [[
+    vim.rpcrequest(
+      chan_id,
+      "nvim_exec_lua",
+      [[
       local luaargs = {...}
       local function_id = luaargs[1]
       local preview_socket_path = luaargs[2]
@@ -67,13 +72,15 @@ local rpc_nvim_exec_lua = function(opts)
       local fzf_columns = luaargs[5]
       local usr_func = require"fzf-lua.shell".get_func(function_id)
       return usr_func(preview_socket_path, fzf_selection, fzf_lines, fzf_columns)
-    ]], {
-      opts.fnc_id,
-      preview_socket_path,
-      opts.fzf_selection,
-      tonumber(preview_lines),
-      tonumber(preview_cols),
-    })
+    ]],
+      {
+        opts.fnc_id,
+        preview_socket_path,
+        opts.fzf_selection,
+        tonumber(preview_lines),
+        tonumber(preview_cols),
+      }
+    )
     vim.fn.chanclose(chan_id)
   end)
 

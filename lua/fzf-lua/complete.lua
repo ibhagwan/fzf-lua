@@ -1,9 +1,9 @@
 local uv = vim.uv or vim.loop
-local core = require "fzf-lua.core"
-local path = require "fzf-lua.path"
-local utils = require "fzf-lua.utils"
-local config = require "fzf-lua.config"
-local libuv = require "fzf-lua.libuv"
+local core = require("fzf-lua.core")
+local path = require("fzf-lua.path")
+local utils = require("fzf-lua.utils")
+local config = require("fzf-lua.config")
+local libuv = require("fzf-lua.libuv")
 
 local M = {}
 
@@ -65,33 +65,40 @@ local set_cmp_opts_path = function(opts)
   -- completion function rebuilds the line with the full path
   opts.complete = function(selected, o, l, _)
     -- query fuzzy matching is empty
-    if #selected == 0 then return end
+    if #selected == 0 then
+      return
+    end
     local replace_at = col - #before
     local relpath = path.relative_to(path.entry_to_file(selected[1], o).path, opts.cwd)
     local before_path = replace_at > 1 and l:sub(1, replace_at - 1) or ""
     local rest_of_line = #l >= (col + #after) and l:sub(col + #after) or ""
     local resolved_path = opts._cwd and path.join({ opts._cwd, relpath }) or relpath
     return before_path .. resolved_path .. rest_of_line,
-        -- this goes to `nvim_win_set_cursor` which is 0-based
-        replace_at + #resolved_path - 2
+      -- this goes to `nvim_win_set_cursor` which is 0-based
+      replace_at
+        + #resolved_path
+        - 2
   end
   return opts
 end
 
 M.path = function(opts)
   opts = config.normalize_opts(opts, "complete_path")
-  if not opts then return end
-  opts.cmd = opts.cmd or (function()
-    if vim.fn.executable("fdfind") == 1 then
-      return "fdfind --strip-cwd-prefix"
-    elseif vim.fn.executable("fd") == 1 then
-      return "fd --strip-cwd-prefix"
-    elseif utils.__IS_WINDOWS then
-      return "dir /s/b"
-    else
-      return [[find ! -path '.' ! -path '*/\.git/*' -printf '%P\n']]
-    end
-  end)()
+  if not opts then
+    return
+  end
+  opts.cmd = opts.cmd
+    or (function()
+      if vim.fn.executable("fdfind") == 1 then
+        return "fdfind --strip-cwd-prefix"
+      elseif vim.fn.executable("fd") == 1 then
+        return "fd --strip-cwd-prefix"
+      elseif utils.__IS_WINDOWS then
+        return "dir /s/b"
+      else
+        return [[find ! -path '.' ! -path '*/\.git/*' -printf '%P\n']]
+      end
+    end)()
   opts = set_cmp_opts_path(opts)
   local contents = core.mt_cmd_wrapper(opts)
   return core.fzf_exec(contents, opts)
@@ -99,21 +106,24 @@ end
 
 M.file = function(opts)
   opts = config.normalize_opts(opts, "complete_file")
-  if not opts then return end
+  if not opts then
+    return
+  end
   opts.cmp_is_file = true
-  opts.cmd = opts.cmd or (function()
-    if vim.fn.executable("fdfind") == 1 then
-      return "fdfind --strip-cwd-prefix --type f --exclude .git"
-    elseif vim.fn.executable("fd") == 1 then
-      return "fd --strip-cwd-prefix --type f --exclude .git"
-    elseif vim.fn.executable("rg") == 1 then
-      return "rg --files"
-    elseif utils.__IS_WINDOWS then
-      return "dir /s/b"
-    else
-      return [[find -type f ! -path '*/\.git/*' -printf '%P\n']]
-    end
-  end)()
+  opts.cmd = opts.cmd
+    or (function()
+      if vim.fn.executable("fdfind") == 1 then
+        return "fdfind --strip-cwd-prefix --type f --exclude .git"
+      elseif vim.fn.executable("fd") == 1 then
+        return "fd --strip-cwd-prefix --type f --exclude .git"
+      elseif vim.fn.executable("rg") == 1 then
+        return "rg --files"
+      elseif utils.__IS_WINDOWS then
+        return "dir /s/b"
+      else
+        return [[find -type f ! -path '*/\.git/*' -printf '%P\n']]
+      end
+    end)()
   opts = set_cmp_opts_path(opts)
   local contents = core.mt_cmd_wrapper(opts)
   return core.fzf_exec(contents, opts)
@@ -130,7 +140,7 @@ M.line = function(opts)
     local newline = selected[1]:match(" (.-)$")
     return newline, #newline
   end
-  return require "fzf-lua.providers.buffers".lines(opts)
+  return require("fzf-lua.providers.buffers").lines(opts)
 end
 
 M.bline = function(opts)

@@ -1,15 +1,19 @@
 local uv = vim.uv or vim.loop
-local core = require "fzf-lua.core"
-local path = require "fzf-lua.path"
-local utils = require "fzf-lua.utils"
-local config = require "fzf-lua.config"
+local core = require("fzf-lua.core")
+local path = require("fzf-lua.path")
+local utils = require("fzf-lua.utils")
+local config = require("fzf-lua.config")
 
 local M = {}
 
 M.metatable = function(opts)
-  if not opts then return end
+  if not opts then
+    return
+  end
 
-  if not opts.metatable then opts.metatable = getmetatable("").__index end
+  if not opts.metatable then
+    opts.metatable = getmetatable("").__index
+  end
 
   local methods = {}
   for k, _ in pairs(opts.metatable) do
@@ -18,7 +22,9 @@ M.metatable = function(opts)
     end
   end
 
-  table.sort(methods, function(a, b) return a < b end)
+  table.sort(methods, function(a, b)
+    return a < b
+  end)
 
   opts.preview = function(args)
     local options_md = require("fzf-lua.cmd").options_md()
@@ -55,7 +61,9 @@ end
 
 M.profiles = function(opts)
   opts = config.normalize_opts(opts, "profiles")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   if opts.load then
     -- silent = [2]
@@ -64,7 +72,7 @@ M.profiles = function(opts)
   end
 
   local dirs = {
-    path.join({ vim.g.fzf_lua_directory, "profiles" })
+    path.join({ vim.g.fzf_lua_directory, "profiles" }),
   }
 
   local contents = function(cb)
@@ -78,11 +86,13 @@ M.profiles = function(opts)
             local profile = name:sub(1, #name - 4)
             local res = utils.load_profile_fname(fname, profile, true)
             if res then
-              local entry = string.format("%s:%-30s%s", fname,
-                utils.ansi_codes.yellow(profile), res.desc or "")
+              local entry =
+                string.format("%s:%-30s%s", fname, utils.ansi_codes.yellow(profile), res.desc or "")
               cb(entry, function(err)
                 coroutine.resume(co)
-                if err then cb(nil) end
+                if err then
+                  cb(nil)
+                end
               end)
               coroutine.yield()
             end

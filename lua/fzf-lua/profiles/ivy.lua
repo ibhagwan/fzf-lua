@@ -1,4 +1,4 @@
-local M       = {
+local M = {
   { "default-title" }, -- base profile
   desc = "UI at the bottom of the screen",
   winopts = {
@@ -36,11 +36,11 @@ local M       = {
           return b
         end
       end,
-    }
+    },
   },
 }
 
-local up      = {
+local up = {
   row = 1,
   col = 0,
   width = 1,
@@ -52,10 +52,10 @@ local up      = {
   },
 }
 
-M.blines      = { winopts = up, previewer = { toggle_behavior = "extend" } }
-M.lines       = M.blines
-M.grep        = M.blines
+M.blines = { winopts = up, previewer = { toggle_behavior = "extend" } }
+M.lines = M.blines
+M.grep = M.blines
 M.grep_curbuf = M.blines
-M.git         = { blame = { winopts = up } }
+M.git = { blame = { winopts = up } }
 
 return M

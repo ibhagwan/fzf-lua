@@ -1,14 +1,16 @@
 local uv = vim.uv or vim.loop
-local core = require "fzf-lua.core"
-local utils = require "fzf-lua.utils"
-local config = require "fzf-lua.config"
-local make_entry = require "fzf-lua.make_entry"
+local core = require("fzf-lua.core")
+local utils = require("fzf-lua.utils")
+local config = require("fzf-lua.config")
+local make_entry = require("fzf-lua.make_entry")
 
 local M = {}
 
 M.oldfiles = function(opts)
   opts = config.normalize_opts(opts, "oldfiles")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   -- cwd implies we want `cwd_only=true`
   if opts.cwd and opts.cwd_only == nil then
@@ -20,15 +22,17 @@ M.oldfiles = function(opts)
   local sess_tbl = {}
   local sess_map = {}
 
-  local stat_fn = not opts.stat_file and function(_) return true end
-      or type(opts.stat_file) == "function" and opts.stat_file
-      or function(file)
-        local stat = uv.fs_stat(file)
-        return (not utils.path_is_directory(file, stat)
-          -- FIFO blocks `fs_open` indefinitely (#908)
-          and not utils.file_is_fifo(file, stat)
-          and utils.file_is_readable(file))
-      end
+  local stat_fn = not opts.stat_file and function(_)
+    return true
+  end or type(opts.stat_file) == "function" and opts.stat_file or function(file)
+    local stat = uv.fs_stat(file)
+    return (
+      not utils.path_is_directory(file, stat)
+      -- FIFO blocks `fs_open` indefinitely (#908)
+      and not utils.file_is_fifo(file, stat)
+      and utils.file_is_readable(file)
+    )
+  end
 
   if opts.include_current_session then
     for _, buffer in ipairs(vim.split(vim.fn.execute(":buffers! t"), "\n")) do
@@ -47,7 +51,9 @@ M.oldfiles = function(opts)
   local contents = function(cb)
     local function add_entry(x, co)
       x = make_entry.file(x, opts)
-      if not x then return end
+      if not x then
+        return
+      end
       cb(x, function(err)
         coroutine.resume(co)
         if err then

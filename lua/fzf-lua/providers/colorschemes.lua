@@ -1,12 +1,12 @@
-local core = require "fzf-lua.core"
-local path = require "fzf-lua.path"
-local utils = require "fzf-lua.utils"
-local shell = require "fzf-lua.shell"
-local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
+local core = require("fzf-lua.core")
+local path = require("fzf-lua.path")
+local utils = require("fzf-lua.utils")
+local shell = require("fzf-lua.shell")
+local config = require("fzf-lua.config")
+local actions = require("fzf-lua.actions")
 
 -- For AsyncDownloadManager
-local Object = require "fzf-lua.class"
+local Object = require("fzf-lua.class")
 local uv = vim.uv or vim.loop
 
 local function get_current_colorscheme()
@@ -21,7 +21,9 @@ local M = {}
 
 M.colorschemes = function(opts)
   opts = config.normalize_opts(opts, "colorschemes")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local current_colorscheme = get_current_colorscheme()
   local current_background = vim.o.background
@@ -87,7 +89,9 @@ end
 
 M.highlights = function(opts)
   opts = config.normalize_opts(opts, "highlights")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local contents = function(cb)
     local highlights = vim.fn.getcompletion("", "highlight")
@@ -96,13 +100,17 @@ M.highlights = function(opts)
       -- translate the highlight using ansi escape sequences
       local x = utils.ansi_from_hl(hl, hl)
       cb(x, function(err)
-        if co then coroutine.resume(co) end
+        if co then
+          coroutine.resume(co)
+        end
         if err then
           -- error, close fzf pipe
           cb(nil)
         end
       end)
-      if co then coroutine.yield() end
+      if co then
+        coroutine.yield()
+      end
     end
 
     local function populate(entries, fn, co)
@@ -111,7 +119,9 @@ M.highlights = function(opts)
       end
 
       cb(nil, function()
-        if co then coroutine.resume(co) end
+        if co then
+          coroutine.resume(co)
+        end
       end)
     end
 
@@ -125,13 +135,11 @@ M.highlights = function(opts)
         -- E5560: vimL function must not be called in a lua loop callback
         -- and using 'vim.schedule'
         -- attempt to yield across C-call boundary
-        populate(highlights,
-          function(x, co)
-            vim.schedule(function()
-              add_entry(x, co)
-            end)
-          end,
-          coroutine.running())
+        populate(highlights, function(x, co)
+          vim.schedule(function()
+            add_entry(x, co)
+          end)
+        end, coroutine.running())
         coroutine.yield()
       end)()
     end
@@ -139,7 +147,6 @@ M.highlights = function(opts)
 
   core.fzf_exec(contents, opts)
 end
-
 
 local AsyncDownloadManager = Object:extend()
 
@@ -149,8 +156,9 @@ function AsyncDownloadManager:new(opts)
   self.max_threads = tonumber(opts.max_threads) > 0 and tonumber(opts.max_threads) or 5
   local stat, _ = uv.fs_stat(self.path)
   if stat and stat.type ~= "directory" then
-    utils.warn(string.format(
-      [["%s" already exists and is not a directory (type:%s)]], self.path, stat.type))
+    utils.warn(
+      string.format([["%s" already exists and is not a directory (type:%s)]], self.path, stat.type)
+    )
     return
   end
   if not stat then
@@ -180,7 +188,9 @@ function AsyncDownloadManager:jobwait_all(co)
   end
   if #jobs > 0 then
     vim.fn.jobwait(jobs)
-    if co then coroutine.resume(co) end
+    if co then
+      coroutine.resume(co)
+    end
   end
 end
 
@@ -212,8 +222,9 @@ function AsyncDownloadManager:load_db(db)
     for i, v in ipairs(p.colorschemes) do
       p.colorschemes[i].disp_name = v.disp_name or p.disp_name
       if not v.name and not v.lua and not v.vim then
-        utils.warn(string.format(
-          "package %s: colorschemes[%d], must contain at least 'name|lua|vim'", k, i))
+        utils.warn(
+          string.format("package %s: colorschemes[%d], must contain at least 'name|lua|vim'", k, i)
+        )
         return false
       end
     end
@@ -223,8 +234,7 @@ function AsyncDownloadManager:load_db(db)
   if self.dl_status == 0 or self.dl_status == 1 then
     for k, _ in pairs(self.db or {}) do
       local downloaded = self:downloaded(k)
-      if self.dl_status == 0 and downloaded
-          or self.dl_status == 1 and not downloaded then
+      if self.dl_status == 0 and downloaded or self.dl_status == 1 and not downloaded then
         self.db[k] = nil
       end
     end
@@ -234,7 +244,9 @@ end
 
 function AsyncDownloadManager:downloaded(plugin)
   local info = plugin and self.db[plugin]
-  if not info then return end
+  if not info then
+    return
+  end
   local stat = uv.fs_stat(info.path)
   return stat and stat.type == "directory"
 end
@@ -249,7 +261,9 @@ function AsyncDownloadManager:get(plugin)
 end
 
 function AsyncDownloadManager:set_once_on_exit(plugin, fn)
-  if not plugin or not self.db[plugin] then return end
+  if not plugin or not self.db[plugin] then
+    return
+  end
   self.db[plugin].on_exit = function(...)
     fn(...)
     self.db[plugin].on_exit = nil
@@ -258,12 +272,16 @@ end
 
 function AsyncDownloadManager:jobwait(plugin)
   local info = plugin and self.db[plugin]
-  if not info or not info.job_id then return end
+  if not info or not info.job_id then
+    return
+  end
   vim.fn.jobwait({ info.job_id })
 end
 
 function AsyncDownloadManager:delete(plugin)
-  if not plugin or not self.db[plugin] then return end
+  if not plugin or not self.db[plugin] then
+    return
+  end
   if self:downloaded(plugin) then
     vim.fn.delete(self.db[plugin].path, "rf")
   end
@@ -287,25 +305,30 @@ function AsyncDownloadManager:dequeue()
 end
 
 function AsyncDownloadManager:jobstart(plugin, job_args)
-  if not plugin then return end
+  if not plugin then
+    return
+  end
   local info = plugin and self.db[plugin]
-  local msg = string.format("%s %s (%s)",
-    job_args[1][2] == "clone" and "Cloning" or "Updating", info.disp_name, info.dir)
+  local msg = string.format(
+    "%s %s (%s)",
+    job_args[1][2] == "clone" and "Cloning" or "Updating",
+    info.disp_name,
+    info.dir
+  )
   local job_id
-  job_args[2] = vim.tbl_extend("keep", job_args[2] or {},
-    {
-      on_exit = function(_, rc, _)
-        utils.info(string.format("%s [job_id:%d] finished with exit code %s", plugin, job_id, rc))
-        if type(info.on_exit) == "function" then
-          -- this calls `coroutine.resume` and resumes fzf's reload input stream
-          info.on_exit(_, rc, _)
-        end
-        self.job_ids[tostring(job_id)] = nil
-        self.db[plugin].job_id = nil
-        -- dequeue the next job
-        self:dequeue()
+  job_args[2] = vim.tbl_extend("keep", job_args[2] or {}, {
+    on_exit = function(_, rc, _)
+      utils.info(string.format("%s [job_id:%d] finished with exit code %s", plugin, job_id, rc))
+      if type(info.on_exit) == "function" then
+        -- this calls `coroutine.resume` and resumes fzf's reload input stream
+        info.on_exit(_, rc, _)
       end
-    })
+      self.job_ids[tostring(job_id)] = nil
+      self.db[plugin].job_id = nil
+      -- dequeue the next job
+      self:dequeue()
+    end,
+  })
   job_id = vim.fn.jobstart(unpack(job_args))
   if job_id == 0 then
     utils.warn("jobstart: invalid args")
@@ -313,8 +336,9 @@ function AsyncDownloadManager:jobstart(plugin, job_args)
     utils.warn(string.format([[jobstart: "%s" is not executable]], job_args[1]))
   else
     -- job started successfully
-    utils.info(string.format("%s [path:%s] [job_id:%d]...",
-      msg, path.HOME_to_tilde(info.path), job_id))
+    utils.info(
+      string.format("%s [path:%s] [job_id:%d]...", msg, path.HOME_to_tilde(info.path), job_id)
+    )
     self.job_ids[tostring(job_id)] = { plugin = plugin, args = job_args }
     self.db[plugin].job_id = job_id
   end
@@ -322,19 +346,21 @@ end
 
 function AsyncDownloadManager:update(plugin)
   local info = plugin and self.db[plugin]
-  if not info then return end
+  if not info then
+    return
+  end
   if self:downloaded(plugin) then
     -- git pull
     self:queue(plugin, {
       ---@format disable-next
-      { "git",          "pull", "--rebase" },
-      { cwd = info.path }
+      { "git", "pull", "--rebase" },
+      { cwd = info.path },
     })
   else
     -- git clone
     self:queue(plugin, {
       -- { "git", "clone", "--depth=1", info.url, info.dir }  -- shallow clone
-      { "git", "clone", "--filter", "tree:0", info.url, info.path } -- treeless clone
+      { "git", "clone", "--filter", "tree:0", info.url, info.path }, -- treeless clone
     })
   end
 end
@@ -347,7 +373,9 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
   assert(tonumber(idx) > 0, "colorscheme index is invalid")
   local cs = p.colorschemes[tonumber(idx)]
   -- TODO: should we check `package.loaded[...]` before packadd?
-  local ok, out = pcall(function() vim.cmd("packadd " .. p.dir) end)
+  local ok, out = pcall(function()
+    vim.cmd("packadd " .. p.dir)
+  end)
   if not ok then
     utils.warn(string.format("Unable to packadd  %s: %s", p.dir, tostring(out)))
     return
@@ -355,9 +383,13 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
   if cs.vim then
     ok, out = pcall(vim.api.nvim_exec2, cs.vim, { output = true })
   elseif cs.lua then
-    ok, out = pcall(function() loadstring(cs.lua)() end)
+    ok, out = pcall(function()
+      loadstring(cs.lua)()
+    end)
   else
-    ok, out = pcall(function() vim.cmd("colorscheme " .. cs.name) end)
+    ok, out = pcall(function()
+      vim.cmd("colorscheme " .. cs.name)
+    end)
   end
   if not ok then
     utils.warn(string.format("Unable to apply colorscheme %s: %s", cs.disp_name, tostring(out)))
@@ -366,7 +398,9 @@ end
 
 M.awesome_colorschemes = function(opts)
   opts = config.normalize_opts(opts, "awesome_colorschemes")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   opts._cur_colorscheme = get_current_colorscheme()
   opts._cur_background = vim.o.background
@@ -391,17 +425,18 @@ M.awesome_colorschemes = function(opts)
   -- save a ref for action
   opts._apply_awesome_theme = M.apply_awesome_theme
 
-  opts._packpath = type(opts.packpath) == "function"
-      and opts.packpath() or tostring(opts.packpath)
+  opts._packpath = type(opts.packpath) == "function" and opts.packpath() or tostring(opts.packpath)
 
   opts._adm = AsyncDownloadManager:new({
     db = json_db,
     dl_status = opts.dl_status,
     max_threads = opts.max_threads,
-    path = path.join({ opts._packpath, "pack", "fzf-lua", "opt" })
+    path = path.join({ opts._packpath, "pack", "fzf-lua", "opt" }),
   })
   -- Error creating cache directory
-  if not opts._adm then return end
+  if not opts._adm then
+    return
+  end
 
   opts.func_async_callback = false
   opts.__fn_reload = function(_)
@@ -436,16 +471,17 @@ M.awesome_colorschemes = function(opts)
               coroutine.yield()
             end
             vim.schedule(function()
-              local icon = not downloaded
-                  and opts.icons[1]           -- download icon
-                  or i == 1 and opts.icons[2] -- colorscheme (package) icon
-                  or opts.icons[3]            -- colorscheme (variant) noicon
-              local entry = string.format("%s:%d:%s  %s %s",
+              local icon = not downloaded and opts.icons[1] -- download icon
+                or i == 1 and opts.icons[2] -- colorscheme (package) icon
+                or opts.icons[3] -- colorscheme (variant) noicon
+              local entry = string.format(
+                "%s:%d:%s  %s %s",
                 dbkey,
                 i,
                 icon,
                 cs.disp_name,
-                i == 1 and string.format("(%s)", info.disp_url) or "")
+                i == 1 and string.format("(%s)", info.disp_url) or ""
+              )
               cb(entry, function()
                 coroutine.resume(co)
               end)
@@ -470,7 +506,9 @@ M.awesome_colorschemes = function(opts)
           -- some colorschemes choose a different theme based on dark|light bg
           -- restore to the original background when interface was opened
           -- wrap in pcall as some colorschemes have bg triggers that can fail
-          pcall(function() vim.o.background = opts._cur_background end)
+          pcall(function()
+            vim.o.background = opts._cur_background
+          end)
           M.apply_awesome_theme(dbkey, idx, opts)
           opts._live = true
         else

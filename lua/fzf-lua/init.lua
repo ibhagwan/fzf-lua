@@ -1,7 +1,7 @@
 local uv = vim.uv or vim.loop
-local path = require "fzf-lua.path"
-local utils = require "fzf-lua.utils"
-local config = require "fzf-lua.config"
+local path = require("fzf-lua.path")
+local utils = require("fzf-lua.utils")
+local config = require("fzf-lua.config")
 
 local M = {}
 
@@ -34,9 +34,13 @@ do
     if ok then
       vim.g.fzf_lua_server = srv
     else
-      error(string.format(
-        "serverstart(): %s. Please make sure 'XDG_RUNTIME_DIR' (%s) is writeable",
-        srv, vim.fn.stdpath("run")))
+      error(
+        string.format(
+          "serverstart(): %s. Please make sure 'XDG_RUNTIME_DIR' (%s) is writeable",
+          srv,
+          vim.fn.stdpath("run")
+        )
+      )
     end
   end
 
@@ -64,70 +68,103 @@ function M.setup_highlights(override)
   -- we use `default = true` so calling this function doesn't override the colorscheme
   local default = not override
   local highlights = {
-    { "FzfLuaNormal",            "normal",         { default = default, link = "Normal" } },
-    { "FzfLuaBorder",            "border",         { default = default, link = "Normal" } },
-    { "FzfLuaTitle",             "title",          { default = default, link = "FzfLuaNormal" } },
-    { "FzfLuaTitleFlags",        "title_flags",    { default = default, link = "CursorLine" } },
-    { "FzfLuaBackdrop",          "backdrop",       { default = default, bg = "Black" } },
-    { "FzfLuaHelpNormal",        "help_normal",    { default = default, link = "FzfLuaNormal" } },
-    { "FzfLuaHelpBorder",        "help_border",    { default = default, link = "FzfLuaBorder" } },
-    { "FzfLuaPreviewNormal",     "preview_normal", { default = default, link = "FzfLuaNormal" } },
-    { "FzfLuaPreviewBorder",     "preview_border", { default = default, link = "FzfLuaBorder" } },
-    { "FzfLuaPreviewTitle",      "preview_title",  { default = default, link = "FzfLuaTitle" } },
-    { "FzfLuaCursor",            "cursor",         { default = default, link = "Cursor" } },
-    { "FzfLuaCursorLine",        "cursorline",     { default = default, link = "CursorLine" } },
-    { "FzfLuaCursorLineNr",      "cursorlinenr",   { default = default, link = "CursorLineNr" } },
-    { "FzfLuaSearch",            "search",         { default = default, link = "IncSearch" } },
+    { "FzfLuaNormal", "normal", { default = default, link = "Normal" } },
+    { "FzfLuaBorder", "border", { default = default, link = "Normal" } },
+    { "FzfLuaTitle", "title", { default = default, link = "FzfLuaNormal" } },
+    { "FzfLuaTitleFlags", "title_flags", { default = default, link = "CursorLine" } },
+    { "FzfLuaBackdrop", "backdrop", { default = default, bg = "Black" } },
+    { "FzfLuaHelpNormal", "help_normal", { default = default, link = "FzfLuaNormal" } },
+    { "FzfLuaHelpBorder", "help_border", { default = default, link = "FzfLuaBorder" } },
+    { "FzfLuaPreviewNormal", "preview_normal", { default = default, link = "FzfLuaNormal" } },
+    { "FzfLuaPreviewBorder", "preview_border", { default = default, link = "FzfLuaBorder" } },
+    { "FzfLuaPreviewTitle", "preview_title", { default = default, link = "FzfLuaTitle" } },
+    { "FzfLuaCursor", "cursor", { default = default, link = "Cursor" } },
+    { "FzfLuaCursorLine", "cursorline", { default = default, link = "CursorLine" } },
+    { "FzfLuaCursorLineNr", "cursorlinenr", { default = default, link = "CursorLineNr" } },
+    { "FzfLuaSearch", "search", { default = default, link = "IncSearch" } },
     { "FzfLuaScrollBorderEmpty", "scrollborder_e", { default = default, link = "FzfLuaBorder" } },
-    { "FzfLuaScrollBorderFull",  "scrollborder_f", { default = default, link = "FzfLuaBorder" } },
-    { "FzfLuaScrollFloatEmpty",  "scrollfloat_e",  { default = default, link = "PmenuSbar" } },
-    { "FzfLuaScrollFloatFull",   "scrollfloat_f",  { default = default, link = "PmenuThumb" } },
-    { "FzfLuaDirIcon",           "dir_icon",       { default = default, link = "Directory" } },
-    { "FzfLuaDirPart",           "dir_part",       { default = default, link = "Comment" } },
-    { "FzfLuaFilePart",          "file_part",      { default = default, link = "@none" } },
+    { "FzfLuaScrollBorderFull", "scrollborder_f", { default = default, link = "FzfLuaBorder" } },
+    { "FzfLuaScrollFloatEmpty", "scrollfloat_e", { default = default, link = "PmenuSbar" } },
+    { "FzfLuaScrollFloatFull", "scrollfloat_f", { default = default, link = "PmenuThumb" } },
+    { "FzfLuaDirIcon", "dir_icon", { default = default, link = "Directory" } },
+    { "FzfLuaDirPart", "dir_part", { default = default, link = "Comment" } },
+    { "FzfLuaFilePart", "file_part", { default = default, link = "@none" } },
     -- Fzf terminal hls, colors from `vim.api.nvim_get_color_map()`
-    { "FzfLuaHeaderBind", "header_bind",
-      { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond" } },
-    { "FzfLuaHeaderText", "header_text",
-      { default = default, fg = is_light and "Brown4" or "Brown1" } },
-    { "FzfLuaPathColNr", "path_colnr",   -- qf|diag|lsp
-      { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" } },
-    { "FzfLuaPathLineNr", "path_linenr", -- qf|diag|lsp
-      { default = default, fg = is_light and "MediumSpringGreen" or "LightGreen" } },
-    { "FzfLuaLivePrompt", "live_prompt", -- "live" queries prompt text color
-      { default = default, fg = is_light and "PaleVioletRed1" or "PaleVioletRed1" } },
-    { "FzfLuaLiveSym", "live_sym",       -- lsp_live_workspace_symbols query
-      { default = default, fg = is_light and "PaleVioletRed1" or "PaleVioletRed1" } },
+    {
+      "FzfLuaHeaderBind",
+      "header_bind",
+      { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond" },
+    },
+    {
+      "FzfLuaHeaderText",
+      "header_text",
+      { default = default, fg = is_light and "Brown4" or "Brown1" },
+    },
+    {
+      "FzfLuaPathColNr",
+      "path_colnr", -- qf|diag|lsp
+      { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" },
+    },
+    {
+      "FzfLuaPathLineNr",
+      "path_linenr", -- qf|diag|lsp
+      { default = default, fg = is_light and "MediumSpringGreen" or "LightGreen" },
+    },
+    {
+      "FzfLuaLivePrompt",
+      "live_prompt", -- "live" queries prompt text color
+      { default = default, fg = is_light and "PaleVioletRed1" or "PaleVioletRed1" },
+    },
+    {
+      "FzfLuaLiveSym",
+      "live_sym", -- lsp_live_workspace_symbols query
+      { default = default, fg = is_light and "PaleVioletRed1" or "PaleVioletRed1" },
+    },
     -- lines|blines|treesitter
-    { "FzfLuaBufId",     "buf_id",     { default = default, link = "TabLine" } },
-    { "FzfLuaBufName",   "buf_name",   { default = default, link = "Directory" } },
+    { "FzfLuaBufId", "buf_id", { default = default, link = "TabLine" } },
+    { "FzfLuaBufName", "buf_name", { default = default, link = "Directory" } },
     { "FzfLuaBufLineNr", "buf_linenr", { default = default, link = "LineNr" } },
     -- buffers|tabs
-    { "FzfLuaBufNr", "buf_nr",
-      { default = default, fg = is_light and "AquaMarine3" or "BlanchedAlmond" } },
-    { "FzfLuaBufFlagCur", "buf_flag_cur",
-      { default = default, fg = is_light and "Brown4" or "Brown1" } },
-    { "FzfLuaBufFlagAlt", "buf_flag_alt",
-      { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" } },
-    { "FzfLuaTabTitle", "tab_title",   -- tabs only
-      { default = default, fg = is_light and "CadetBlue4" or "LightSkyBlue1", bold = true } },
-    { "FzfLuaTabMarker", "tab_marker", -- tabs only
-      { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond", bold = true } },
+    {
+      "FzfLuaBufNr",
+      "buf_nr",
+      { default = default, fg = is_light and "AquaMarine3" or "BlanchedAlmond" },
+    },
+    {
+      "FzfLuaBufFlagCur",
+      "buf_flag_cur",
+      { default = default, fg = is_light and "Brown4" or "Brown1" },
+    },
+    {
+      "FzfLuaBufFlagAlt",
+      "buf_flag_alt",
+      { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" },
+    },
+    {
+      "FzfLuaTabTitle",
+      "tab_title", -- tabs only
+      { default = default, fg = is_light and "CadetBlue4" or "LightSkyBlue1", bold = true },
+    },
+    {
+      "FzfLuaTabMarker",
+      "tab_marker", -- tabs only
+      { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond", bold = true },
+    },
     -- highlight groups for `fzf_colors=true`
-    { "FzfLuaFzfNormal",     "fzf.normal",     { default = default, link = "FzfLuaNormal" } },
+    { "FzfLuaFzfNormal", "fzf.normal", { default = default, link = "FzfLuaNormal" } },
     { "FzfLuaFzfCursorLine", "fzf.cursorline", { default = default, link = "FzfLuaCursorLine" } },
-    { "FzfLuaFzfMatch",      "fzf.match",      { default = default, link = "Special" } },
-    { "FzfLuaFzfBorder",     "fzf.border",     { default = default, link = "FzfLuaBorder" } },
-    { "FzfLuaFzfScrollbar",  "fzf.scrollbar",  { default = default, link = "FzfLuaFzfBorder" } },
-    { "FzfLuaFzfSeparator",  "fzf.separator",  { default = default, link = "FzfLuaFzfBorder" } },
-    { "FzfLuaFzfGutter",     "fzf.gutter",     { default = default, link = "FzfLuaNormal" } },
-    { "FzfLuaFzfHeader",     "fzf.header",     { default = default, link = "FzfLuaTitle" } },
-    { "FzfLuaFzfInfo",       "fzf.info",       { default = default, link = "NonText" } },
-    { "FzfLuaFzfPointer",    "fzf.pointer",    { default = default, link = "Special" } },
-    { "FzfLuaFzfMarker",     "fzf.marker",     { default = default, link = "FzfLuaFzfPointer" } },
-    { "FzfLuaFzfSpinner",    "fzf.spinner",    { default = default, link = "FzfLuaFzfPointer" } },
-    { "FzfLuaFzfPrompt",     "fzf.prompt",     { default = default, link = "Special" } },
-    { "FzfLuaFzfQuery",      "fzf.query",      { default = default, link = "FzfLuaNormal" } },
+    { "FzfLuaFzfMatch", "fzf.match", { default = default, link = "Special" } },
+    { "FzfLuaFzfBorder", "fzf.border", { default = default, link = "FzfLuaBorder" } },
+    { "FzfLuaFzfScrollbar", "fzf.scrollbar", { default = default, link = "FzfLuaFzfBorder" } },
+    { "FzfLuaFzfSeparator", "fzf.separator", { default = default, link = "FzfLuaFzfBorder" } },
+    { "FzfLuaFzfGutter", "fzf.gutter", { default = default, link = "FzfLuaNormal" } },
+    { "FzfLuaFzfHeader", "fzf.header", { default = default, link = "FzfLuaTitle" } },
+    { "FzfLuaFzfInfo", "fzf.info", { default = default, link = "NonText" } },
+    { "FzfLuaFzfPointer", "fzf.pointer", { default = default, link = "Special" } },
+    { "FzfLuaFzfMarker", "fzf.marker", { default = default, link = "FzfLuaFzfPointer" } },
+    { "FzfLuaFzfSpinner", "fzf.spinner", { default = default, link = "FzfLuaFzfPointer" } },
+    { "FzfLuaFzfPrompt", "fzf.prompt", { default = default, link = "Special" } },
+    { "FzfLuaFzfQuery", "fzf.query", { default = default, link = "FzfLuaNormal" } },
   }
   for _, a in ipairs(highlights) do
     local hl_name, _, hl_def = a[1], a[2], a[3]
@@ -155,8 +192,11 @@ function M.setup(opts, do_not_reset_defaults)
   opts[1] = opts[1] == nil and "default" or opts[1]
   if opts[1] then
     -- Did the user supply profile(s) to load?
-    opts = vim.tbl_deep_extend("keep", opts,
-      utils.load_profiles(opts[1], opts[2] == nil and 1 or opts[2]))
+    opts = vim.tbl_deep_extend(
+      "keep",
+      opts,
+      utils.load_profiles(opts[1], opts[2] == nil and 1 or opts[2])
+    )
   end
   if do_not_reset_defaults then
     -- no defaults reset requested, merge with previous setup options
@@ -170,12 +210,21 @@ function M.setup(opts, do_not_reset_defaults)
       opts.defaults = opts.defaults or {}
       opts.defaults[o] = opts[gopt]
       opts[gopt] = nil
-      utils.warn(string.format("Deprecated option: '%s = %s' -> 'defaults = { %s = %s }'",
-        gopt, tostring(opts.defaults[o]), o, tostring(opts.defaults[o])))
+      utils.warn(
+        string.format(
+          "Deprecated option: '%s = %s' -> 'defaults = { %s = %s }'",
+          gopt,
+          tostring(opts.defaults[o]),
+          o,
+          tostring(opts.defaults[o])
+        )
+      )
     end
   end
   -- set custom &nbsp if caller requested
-  if opts.nbsp then utils.nbsp = opts.nbsp end
+  if opts.nbsp then
+    utils.nbsp = opts.nbsp
+  end
   -- store the setup options
   config.setup_opts = opts
   -- setup highlights
@@ -183,7 +232,7 @@ function M.setup(opts, do_not_reset_defaults)
 end
 
 M.redraw = function()
-  local winobj = require "fzf-lua".win.__SELF()
+  local winobj = require("fzf-lua").win.__SELF()
   if winobj then
     winobj:redraw()
   end
@@ -305,11 +354,11 @@ do
       -- we use an additional wrapper in order to save the
       -- current provider info: {cmd-name|module|function}
       M[k] = function(...)
-        M.set_info {
+        M.set_info({
           cmd = k,
           mod = v[1],
           fnc = v[2],
-        }
+        })
         return require(v[1])[v[2]](...)
       end
       return M[k](...)
@@ -400,10 +449,12 @@ end
 
 M.builtin = function(opts)
   opts = config.normalize_opts(opts, "builtin")
-  if not opts then return end
+  if not opts then
+    return
+  end
   opts.metatable = M
   opts.metatable_exclude = M._excluded_metamap
-  return require "fzf-lua.providers.module".metatable(opts)
+  return require("fzf-lua.providers.module").metatable(opts)
 end
 
 return M

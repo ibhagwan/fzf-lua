@@ -13,7 +13,7 @@ function M:populate_preview_buf(entry_str)
   local fname = fzf.path.tail(entry.path)
   local buf = self:get_tmp_buffer()
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
-    string.format("SELECTED FILE: %s", fname)
+    string.format("SELECTED FILE: %s", fname),
   })
   self:set_preview_buf(buf)
   self.win:update_preview_title(fname)

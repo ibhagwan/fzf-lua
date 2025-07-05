@@ -1,13 +1,15 @@
-local path = require "fzf-lua.path"
-local core = require "fzf-lua.core"
-local utils = require "fzf-lua.utils"
-local config = require "fzf-lua.config"
+local path = require("fzf-lua.path")
+local core = require("fzf-lua.core")
+local utils = require("fzf-lua.utils")
+local config = require("fzf-lua.config")
 
 local M = {}
 
 M.helptags = function(opts)
   opts = config.normalize_opts(opts, "helptags")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local contents = function(cb)
     opts.lang = opts.lang or vim.o.helplang
@@ -56,13 +58,15 @@ M.helptags = function(opts)
 
     local hl = (function()
       local _, _, fn = utils.ansi_from_hl("Label", "foo")
-      return function(s) return fn(s) end
+      return function(s)
+        return fn(s)
+      end
     end)()
 
     local add_tag = function(t, fzf_cb, co)
       local w = 80 + string.len(t.tag) - vim.fn.strwidth(t.tag)
-      local tag = string.format("%-" .. w .. "s %s%s%s", hl(t.tag), t.filename, utils.nbsp,
-        t.filepath)
+      local tag =
+        string.format("%-" .. w .. "s %s%s%s", hl(t.tag), t.filename, utils.nbsp, t.filepath)
       fzf_cb(tag, function()
         coroutine.resume(co)
       end)
@@ -77,7 +81,7 @@ M.helptags = function(opts)
           local lines = vim.split(utils.read_file(file), "\n")
           for _, line in ipairs(lines) do
             -- TODO: also ignore tagComment starting with ';'
-            if not line:match "^!_TAG_" then
+            if not line:match("^!_TAG_") then
               local fields = vim.split(line, delimiter)
               if #fields == 3 and not tags_map[fields[1]] then
                 add_tag({

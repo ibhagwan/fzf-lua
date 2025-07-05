@@ -11,8 +11,12 @@ local M = {}
 M.assert = {
   is = {
     same = MiniTest.expect.equality,
-    True = function(b) return MiniTest.expect.equality(b, true) end,
-    False = function(b) return MiniTest.expect.equality(b, false) end,
+    True = function(b)
+      return MiniTest.expect.equality(b, true)
+    end,
+    False = function(b)
+      return MiniTest.expect.equality(b, false)
+    end,
   },
   are = {
     same = MiniTest.expect.equality,
@@ -31,12 +35,34 @@ end
 local os_detect = {
   WIN = {
     name = "Windows",
-    fn = function() return vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 end
+    fn = function()
+      return vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
+    end,
   },
-  MAC = { name = "MacOS", fn = function() return vim.fn.has("mac") == 1 end },
-  LINUX = { name = "Linux", fn = function() return vim.fn.has("linux") == 1 end },
-  STABLE = { name = "Neovim stable", fn = function() return M.NVIM_VERSION() == "0.11.1" end },
-  NIGHTLY = { name = "Neovim nightly", fn = function() return vim.fn.has("nvim-0.12") == 1 end },
+  MAC = {
+    name = "MacOS",
+    fn = function()
+      return vim.fn.has("mac") == 1
+    end,
+  },
+  LINUX = {
+    name = "Linux",
+    fn = function()
+      return vim.fn.has("linux") == 1
+    end,
+  },
+  STABLE = {
+    name = "Neovim stable",
+    fn = function()
+      return M.NVIM_VERSION() == "0.11.1"
+    end,
+  },
+  NIGHTLY = {
+    name = "Neovim nightly",
+    fn = function()
+      return vim.fn.has("nvim-0.12") == 1
+    end,
+  },
 }
 
 -- Creates M.IS_WIN(), M.IS_NOT_WIN(), M.SKIP_IF_WIN(), etc
@@ -66,30 +92,28 @@ end
 -- Add extra expectations
 M.expect = vim.deepcopy(MiniTest.expect)
 
-M.expect.match = MiniTest.new_expectation(
-  "string matching",
-  function(str, pattern) return str:find(pattern) ~= nil end,
-  function(str, pattern)
-    return string.format("Pattern: %s\nObserved string: %s", vim.inspect(pattern), str)
-  end
-)
+M.expect.match = MiniTest.new_expectation("string matching", function(str, pattern)
+  return str:find(pattern) ~= nil
+end, function(str, pattern)
+  return string.format("Pattern: %s\nObserved string: %s", vim.inspect(pattern), str)
+end)
 
-M.expect.no_match = MiniTest.new_expectation(
-  "no string matching",
-  function(str, pattern) return str:find(pattern) == nil end,
-  function(str, pattern)
-    return string.format("Pattern: %s\nObserved string: %s", vim.inspect(pattern), str)
-  end
-)
+M.expect.no_match = MiniTest.new_expectation("no string matching", function(str, pattern)
+  return str:find(pattern) == nil
+end, function(str, pattern)
+  return string.format("Pattern: %s\nObserved string: %s", vim.inspect(pattern), str)
+end)
 
 M.make_partial_tbl = function(tbl, ref)
   local res = {}
   for k, v in pairs(ref) do
-    res[k] = (type(tbl[k]) == "table" and type(v) == "table") and M.make_partial_tbl(tbl[k], v) or
-        tbl[k]
+    res[k] = (type(tbl[k]) == "table" and type(v) == "table") and M.make_partial_tbl(tbl[k], v)
+      or tbl[k]
   end
   for i = 1, #tbl do
-    if ref[i] == nil then res[i] = tbl[i] end
+    if ref[i] == nil then
+      res[i] = tbl[i]
+    end
   end
   return res
 end
@@ -97,12 +121,17 @@ end
 M.expect.equality_partial_tbl = MiniTest.new_expectation(
   "equality of tables only in reference fields",
   function(x, y)
-    if type(x) == "table" and type(y) == "table" then x = M.make_partial_tbl(x, y) end
+    if type(x) == "table" and type(y) == "table" then
+      x = M.make_partial_tbl(x, y)
+    end
     return vim.deep_equal(x, y)
   end,
   function(x, y)
-    return string.format("Left: %s\nRight: %s", vim.inspect(M.make_partial_tbl(x, y)),
-      vim.inspect(y))
+    return string.format(
+      "Left: %s\nRight: %s",
+      vim.inspect(M.make_partial_tbl(x, y)),
+      vim.inspect(y)
+    )
   end
 )
 
@@ -111,7 +140,9 @@ M.new_child_neovim = function()
   local child = MiniTest.new_child_neovim()
 
   local prevent_hanging = function(method)
-    if not child.is_blocked() then return end
+    if not child.is_blocked() then
+      return
+    end
 
     local msg = string.format("Can not use `child.%s` because child process is blocked.", method)
     error(msg)
@@ -145,9 +176,11 @@ M.new_child_neovim = function()
         } }
       }))
     ]])
-        -- using "FZF_DEFAULT_OPTS" hangs the command on the
-        -- child process and the loading indicator never stops
-        :format(M.IS_WIN() and "defaults = { pipe_cmd = true }," or "")
+      -- using "FZF_DEFAULT_OPTS" hangs the command on the
+      -- child process and the loading indicator never stops
+      :format(
+        M.IS_WIN() and "defaults = { pipe_cmd = true }," or ""
+      )
     child.lua(lua_cmd, { config or {} })
   end
 
@@ -179,7 +212,9 @@ M.new_child_neovim = function()
   child.set_lines = function(arr, start, finish)
     prevent_hanging("set_lines")
 
-    if type(arr) == "string" then arr = vim.split(arr, "\n") end
+    if type(arr) == "string" then
+      arr = vim.split(arr, "\n")
+    end
 
     child.api.nvim_buf_set_lines(0, start or 0, finish or -1, false, arr)
   end
@@ -205,9 +240,13 @@ M.new_child_neovim = function()
   child.set_size = function(lines, columns)
     prevent_hanging("set_size")
 
-    if type(lines) == "number" then child.o.lines = lines end
+    if type(lines) == "number" then
+      child.o.lines = lines
+    end
 
-    if type(columns) == "number" then child.o.columns = columns end
+    if type(columns) == "number" then
+      child.o.columns = columns
+    end
   end
 
   child.get_size = function()
@@ -291,7 +330,9 @@ M.new_child_neovim = function()
     -- we don't need this if we compare inline
     opts.no_ruler = true
     local lines = str and vim.split(str, "\n") or { "" }
-    if #lines > 1 then lines[#lines] = nil end
+    if #lines > 1 then
+      lines[#lines] = nil
+    end
     local screen_ref = screenshot.from_lines(lines, opts)
     local screen_obs = child.get_screen_lines(opts)
     screenshot.compare(screen_ref, screen_obs, opts)
@@ -314,10 +355,14 @@ M.new_child_neovim = function()
       end
     end
 
-    error(string.format("Timed out waiting for condition after %d ms\n\n%s\n\n%s", max,
-      tostring(child.cmd_capture("messages")),
-      tostring(child.get_screenshot())
-    ))
+    error(
+      string.format(
+        "Timed out waiting for condition after %d ms\n\n%s\n\n%s",
+        max,
+        tostring(child.cmd_capture("messages")),
+        tostring(child.get_screenshot())
+      )
+    )
   end
 
   --- waits until child screenshot contains text
@@ -330,7 +375,9 @@ M.new_child_neovim = function()
   end
 
   -- Poke child's event loop to make it up to date
-  child.poke_eventloop = function() child.api.nvim_eval("1") end
+  child.poke_eventloop = function()
+    child.api.nvim_eval("1")
+  end
 
   child.sleep = function(ms)
     vim.uv.sleep(math.max(ms, 1))
@@ -384,7 +431,9 @@ end
 
 M.sleep = function(ms, child)
   vim.uv.sleep(math.max(ms, 1))
-  if child ~= nil then child.poke_eventloop() end
+  if child ~= nil then
+    child.poke_eventloop()
+  end
 end
 
 return M

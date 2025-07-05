@@ -1,9 +1,9 @@
 -- modified version of:
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf/actions.lua
 local uv = vim.uv or vim.loop
-local utils = require "fzf-lua.utils"
-local path = require "fzf-lua.path"
-local libuv = require "fzf-lua.libuv"
+local utils = require("fzf-lua.utils")
+local path = require("fzf-lua.path")
+local libuv = require("fzf-lua.libuv")
 
 local M = {}
 
@@ -65,8 +65,7 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
     pcall(function()
       local module = loadstring("return require'fzf-lua'")()
       if module then
-        module.__INFO = vim.tbl_deep_extend("force",
-          module.__INFO or {}, { selected = args[1][1] })
+        module.__INFO = vim.tbl_deep_extend("force", module.__INFO or {}, { selected = args[1][1] })
       end
     end)
     uv.pipe_connect(pipe, pipe_path, function(err)
@@ -89,10 +88,11 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- all args after `-l` will be in `_G.args`
   local action_cmd = ("%s -u NONE -l %s %s %s %s"):format(
     libuv.shellescape(path.normalize(nvim_bin)),
-    libuv.shellescape(path.normalize(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" })),
+    libuv.shellescape(path.normalize(path.join({ vim.g.fzf_lua_directory, "shell_helper.lua" }))),
     id,
     tostring(debug),
-    fzf_field_expression)
+    fzf_field_expression
+  )
 
   return action_cmd, id
 end
@@ -120,7 +120,13 @@ function M.raw_action(fn, fzf_field_expression, debug)
       on_complete()
     elseif type(ret) == "table" then
       if not utils.tbl_isempty(ret) then
-        uv.write(pipe, vim.tbl_map(function(x) return x .. "\n" end, ret), on_complete)
+        uv.write(
+          pipe,
+          vim.tbl_map(function(x)
+            return x .. "\n"
+          end, ret),
+          on_complete
+        )
       else
         on_complete()
       end
@@ -171,7 +177,9 @@ M.raw_preview_action_cmd = function(fn, fzf_field_expression, debug)
     return libuv.spawn(vim.tbl_extend("force", opts, {
       cb_finish = on_finish,
       cb_write = on_write,
-      cb_pid = function(pid) M.__pid_preview = pid end,
+      cb_pid = function(pid)
+        M.__pid_preview = pid
+      end,
     }))
   end, fzf_field_expression, debug)
 end
@@ -192,7 +200,9 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
     -- local on_finish = function(code, sig, from, pid)
     -- print("finish", pipe, pipe_want_close, code, sig, from, pid)
     local on_finish = function(_, _, _, _)
-      if not pipe then return end
+      if not pipe then
+        return
+      end
       pipe_want_close = true
       if write_cb_count == 0 then
         -- only close if all our uv.write calls are completed
@@ -205,16 +215,24 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
       -- pipe can be nil when using a shell command with spawn
       -- and typing quickly, the process will terminate
       assert(not co or (co and pipe and not uv.is_closing(pipe)))
-      if not pipe then return end
+      if not pipe then
+        return
+      end
       if not data then
         on_finish(nil, nil, 5)
-        if cb then cb(nil) end
+        if cb then
+          cb(nil)
+        end
       else
         write_cb_count = write_cb_count + 1
         uv.write(pipe, tostring(data), function(err)
           write_cb_count = write_cb_count - 1
-          if co then coroutine.resume(co) end
-          if cb then cb(err) end
+          if co then
+            coroutine.resume(co)
+          end
+          if cb then
+            cb(err)
+          end
           if err then
             -- force close on error
             write_cb_count = 0
@@ -249,7 +267,9 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         cmd = reload_contents,
         cb_finish = on_finish,
         cb_write = on_write,
-        cb_pid = function(pid) M.__pid_reload = pid end,
+        cb_pid = function(pid)
+          M.__pid_reload = pid
+        end,
         EOL = EOL,
         -- must send false, 'coroutinify' adds callback as last argument
         -- which will conflict with the 'fn_transform' argument
@@ -286,7 +306,6 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         local on_write_co = function(data, cb)
           return on_write(data, cb, opts.__co)
         end
-
 
         if type(reload_contents) == "table" then
           for _, l in ipairs(reload_contents) do

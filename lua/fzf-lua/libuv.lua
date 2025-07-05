@@ -11,7 +11,9 @@ local base64 = require("fzf-lua.lib.base64")
 local serpent = require("fzf-lua.lib.serpent")
 
 local function process_kill(pid, signal)
-  if not pid or not tonumber(pid) then return false end
+  if not pid or not tonumber(pid) then
+    return false
+  end
   if type(uv.os_getpriority(pid)) == "number" then
     uv.kill(pid, signal or 9)
     return true
@@ -59,14 +61,20 @@ M.spawn = function(opts, fn_transform, fn_done)
   local write_cb_count, on_exit_called = 0, nil
   local prev_line_content = nil
 
-  if opts.fn_transform then fn_transform = opts.fn_transform end
+  if opts.fn_transform then
+    fn_transform = opts.fn_transform
+  end
 
   local finish = function(code, sig, from, pid)
     -- Uncomment to debug pipe closure timing issues (#1521)
     -- output_pipe:close(function() print("closed o") end)
     -- error_pipe:close(function() print("closed e") end)
-    if not output_pipe:is_closing() then output_pipe:close() end
-    if not error_pipe:is_closing() then error_pipe:close() end
+    if not output_pipe:is_closing() then
+      output_pipe:close()
+    end
+    if not error_pipe:is_closing() then
+      error_pipe:close()
+    end
     if opts.cb_finish then
       opts.cb_finish(code, sig, from, pid)
     end
@@ -123,7 +131,9 @@ M.spawn = function(opts, fn_transform, fn_done)
   end)
 
   -- save current process pid
-  if opts.cb_pid then opts.cb_pid(pid) end
+  if opts.cb_pid then
+    opts.cb_pid(pid)
+  end
 
   local function write_cb(data)
     write_cb_count = write_cb_count + 1
@@ -166,7 +176,9 @@ M.spawn = function(opts, fn_transform, fn_done)
       local nlines = 0
       local start_idx = 1
       local t_st = opts.profiler and uv.hrtime()
-      if t_st then write_cb(string.format("[DEBUG] start: %.0f (ns)" .. EOL, t_st)) end
+      if t_st then
+        write_cb(string.format("[DEBUG] start: %.0f (ns)" .. EOL, t_st))
+      end
       repeat
         local nl_idx = data:find("\n", start_idx, true)
         if nl_idx then
@@ -201,11 +213,19 @@ M.spawn = function(opts, fn_transform, fn_done)
       -- calling 'write_cb' for every line after 'fn_transform', we therefore only use
       -- `process1` when using "mini.icons" as `vim.filetype.match` causes a signigicant
       -- delay and having to wait for all lines to be processed has an apparent lag
-      if #lines > 0 then write_cb(table.concat(lines, EOL) .. EOL) end
+      if #lines > 0 then
+        write_cb(table.concat(lines, EOL) .. EOL)
+      end
       if t_st then
         local t_e = vim.uv.hrtime()
-        write_cb(string.format("[DEBUG] finish:%.0f (ns) %d lines took %.0f (ms)" .. EOL,
-          t_e, nlines, (t_e - t_st) / 1e6))
+        write_cb(
+          string.format(
+            "[DEBUG] finish:%.0f (ns) %d lines took %.0f (ms)" .. EOL,
+            t_e,
+            nlines,
+            (t_e - t_st) / 1e6
+          )
+        )
       end
     end
   end
@@ -293,7 +313,9 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
   ---@param str string|table
   ---@return string|table
   local base64_conditional_decode = function(str)
-    if opts._base64 == false or type(str) ~= "string" then return str end
+    if opts._base64 == false or type(str) ~= "string" then
+      return str
+    end
     local ok, decoded = pcall(base64.decode, str)
     return ok and decoded or str
   end
@@ -301,10 +323,14 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
   ---@param fn_str string
   ---@return function?
   local function load_fn(fn_str)
-    if type(fn_str) ~= "string" then return end
+    if type(fn_str) ~= "string" then
+      return
+    end
     local fn_loaded = nil
     local fn = loadstring(fn_str)
-    if fn then fn_loaded = fn() end
+    if fn then
+      fn_loaded = fn()
+    end
     if type(fn_loaded) ~= "function" then
       fn_loaded = nil
     end
@@ -330,12 +356,11 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
   -- rendering issues on Mac (#316, #287) and Linux (#414)
   -- switch 'stderr' stream to 'line' buffering
   -- https://www.lua.org/manual/5.2/manual.html#pdf-file%3asetvbuf
-  io.stderr:setvbuf "line"
+  io.stderr:setvbuf("line")
 
   -- redirect 'stderr' to 'stdout' on Macs by default
   -- only takes effect if 'opts.stderr' was not set
-  if opts.stderr_to_stdout == nil and
-      uv.os_uname().sysname == "Darwin" then
+  if opts.stderr_to_stdout == nil and uv.os_uname().sysname == "Darwin" then
     opts.stderr_to_stdout = true
   end
 
@@ -351,9 +376,10 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
   local fn_preprocess = load_fn(fn_preprocess_str)
   local fn_postprocess = load_fn(fn_postprocess_str)
 
-
   -- run the preprocessing fn
-  if fn_preprocess then fn_preprocess(opts) end
+  if fn_preprocess then
+    fn_preprocess(opts)
+  end
 
   if opts.cmd and opts.cmd:match("%-%-color[=%s]+never") then
     -- perf: skip stripping ansi coloring in `make_file.entry`
@@ -383,12 +409,16 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
   end
 
   local function exit(exit_code, msg)
-    if msg then stderr_write(msg) end
+    if msg then
+      stderr_write(msg)
+    end
     os.exit(exit_code)
   end
 
   local function pipe_open(pipename)
-    if not pipename then return end
+    if not pipename then
+      return
+    end
     local fd = uv.fs_open(pipename, "w", -1)
     if type(fd) ~= "number" then
       exit(1, ("error opening '%s': %s" .. EOL):format(pipename, fd))
@@ -405,18 +435,21 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
   end
 
   local function pipe_write(pipe, data, cb)
-    if not pipe or pipe:is_closing() then return end
-    pipe:write(data,
-      function(err)
-        -- if the user cancels the call prematurely with
-        -- <C-c>, err will be either EPIPE or ECANCELED
-        -- don't really need to do anything since the
-        -- processes will be killed anyways with os.exit()
-        if err then
-          stderr_write(("pipe:write error: %s" .. EOL):format(err))
-        end
-        if cb then cb(err) end
-      end)
+    if not pipe or pipe:is_closing() then
+      return
+    end
+    pipe:write(data, function(err)
+      -- if the user cancels the call prematurely with
+      -- <C-c>, err will be either EPIPE or ECANCELED
+      -- don't really need to do anything since the
+      -- processes will be killed anyways with os.exit()
+      if err then
+        stderr_write(("pipe:write error: %s" .. EOL):format(err))
+      end
+      if cb then
+        cb(err)
+      end
+    end)
   end
 
   if type(opts.stderr) == "string" then
@@ -426,71 +459,71 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
     stdout = pipe_open(opts.stdout)
   end
 
-  local on_finish = opts.on_finish or
-      function(code)
-        pipe_close(stdout)
-        pipe_close(stderr)
-        if fn_postprocess then
-          vim.schedule(function()
-            fn_postprocess(opts)
-            exit(code)
-          end)
-        else
+  local on_finish = opts.on_finish
+    or function(code)
+      pipe_close(stdout)
+      pipe_close(stderr)
+      if fn_postprocess then
+        vim.schedule(function()
+          fn_postprocess(opts)
           exit(code)
-        end
+        end)
+      else
+        exit(code)
       end
+    end
 
-  local on_write = opts.on_write or
-      function(data, cb)
-        if stdout then
-          pipe_write(stdout, data, cb)
+  local on_write = opts.on_write
+    or function(data, cb)
+      if stdout then
+        pipe_write(stdout, data, cb)
+      else
+        -- on success: rc=true, err=nil
+        -- on failure: rc=nil, err="Broken pipe"
+        -- cb with an err ends the process
+        local rc, err = io.stdout:write(data)
+        if not rc then
+          stderr_write(("io.stdout:write error: %s" .. EOL):format(err))
+          cb(err or true)
         else
-          -- on success: rc=true, err=nil
-          -- on failure: rc=nil, err="Broken pipe"
-          -- cb with an err ends the process
-          local rc, err = io.stdout:write(data)
-          if not rc then
-            stderr_write(("io.stdout:write error: %s" .. EOL):format(err))
-            cb(err or true)
-          else
-            cb(nil)
-          end
+          cb(nil)
         end
       end
+    end
 
-  local on_err = opts.on_err or
-      function(data)
-        if stderr then
-          pipe_write(stderr, data)
-        elseif opts.stderr ~= false then
-          if opts.stderr_to_stdout then
-            io.stdout:write(data)
-          else
-            io.stderr:write(data)
-          end
+  local on_err = opts.on_err
+    or function(data)
+      if stderr then
+        pipe_write(stderr, data)
+      elseif opts.stderr ~= false then
+        if opts.stderr_to_stdout then
+          io.stdout:write(data)
+        else
+          io.stderr:write(data)
         end
       end
+    end
 
   return M.spawn({
-      cwd = opts.cwd,
-      cmd = opts.cmd,
-      cb_finish = on_finish,
-      cb_write = on_write,
-      cb_err = on_err,
-      process1 = opts.process1,
-      profiler = opts.profiler,
-      EOL = EOL,
-    },
-    fn_transform and function(x)
-      return fn_transform(x, opts)
-    end)
+    cwd = opts.cwd,
+    cmd = opts.cmd,
+    cb_finish = on_finish,
+    cb_write = on_write,
+    cb_err = on_err,
+    process1 = opts.process1,
+    profiler = opts.profiler,
+    EOL = EOL,
+  }, fn_transform and function(x)
+    return fn_transform(x, opts)
+  end)
 end
-
 
 M.is_escaped = function(s, is_win)
   local m
   -- test spec override
-  if is_win == nil then is_win = _is_win end
+  if is_win == nil then
+    is_win = _is_win
+  end
   if is_win then
     m = s:match([[^".*"$]]) or s:match([[^%^".*%^"$]])
   else
@@ -584,7 +617,7 @@ M.shellescape = function(s, win_style)
           -- although we currently only transfer 1 caret, the below
           -- can handle any number of carets with the regex [[\-%^-"]]
           local carets = x:match("%^+") or ""
-          x = carets .. string.rep([[\]], #x - #(carets)) .. x:gsub("%^+", "")
+          x = carets .. string.rep([[\]], #x - #carets) .. x:gsub("%^+", "")
           return x
         end)
         -- escape all windows metacharacters but quotes
@@ -646,13 +679,18 @@ end
 -- isn't a backslash, test with:
 -- fzf --disabled --height 30% --preview-window up --preview "echo {q}"
 M.unescape_fzf = function(s, fzf_version, is_win)
-  if is_win == nil then is_win = _is_win end
-  if not is_win then return s end
-  if tonumber(fzf_version) and tonumber(fzf_version) >= 0.52 then return s end
+  if is_win == nil then
+    is_win = _is_win
+  end
+  if not is_win then
+    return s
+  end
+  if tonumber(fzf_version) and tonumber(fzf_version) >= 0.52 then
+    return s
+  end
   local ret = s:gsub("\\+[^\\]", function(x)
     local bslash_num = #x:match([[\+]])
-    return string.rep([[\]],
-      bslash_num == 1 and bslash_num or bslash_num / 2) .. x:sub(-1)
+    return string.rep([[\]], bslash_num == 1 and bslash_num or bslash_num / 2) .. x:sub(-1)
   end)
   return ret
 end
@@ -663,9 +701,15 @@ end
 -- {q} being sent via the reload action as the initial command
 -- TODO: better solution for these stupid hacks (upstream issues?)
 M.escape_fzf = function(s, fzf_version, is_win)
-  if is_win == nil then is_win = _is_win end
-  if not is_win then return s end
-  if tonumber(fzf_version) and tonumber(fzf_version) >= 0.52 then return s end
+  if is_win == nil then
+    is_win = _is_win
+  end
+  if not is_win then
+    return s
+  end
+  if tonumber(fzf_version) and tonumber(fzf_version) >= 0.52 then
+    return s
+  end
   local ret = s:gsub("\\+[^\\]", function(x)
     local bslash_num = #x:match([[\+]])
     return string.rep([[\]], bslash_num * 2) .. x:sub(-1)
@@ -694,7 +738,9 @@ M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess, fn_postprocess)
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   local cmd_str = ("%s -u NONE -l %s %s"):format(
     M.shellescape(_is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
-    M.shellescape(vim.fn.fnamemodify(_is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") .. "/spawn.lua"),
+    M.shellescape(
+      vim.fn.fnamemodify(_is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") .. "/spawn.lua"
+    ),
     M.shellescape(("return %s,%s,%s,%s"):format(opts, fn_transform, fn_preprocess, fn_postprocess))
   )
   return cmd_str

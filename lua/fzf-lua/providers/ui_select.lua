@@ -1,7 +1,7 @@
-local core = require "fzf-lua.core"
-local utils = require "fzf-lua.utils"
-local config = require "fzf-lua.config"
-local actions = require "fzf-lua.actions"
+local core = require("fzf-lua.core")
+local utils = require("fzf-lua.utils")
+local config = require("fzf-lua.config")
+local actions = require("fzf-lua.actions")
 
 local M = {}
 
@@ -47,7 +47,9 @@ M.register = function(opts, silent, opts_once)
 end
 
 M.accept_item = function(selected, o)
-  if #selected == 0 then return end
+  if #selected == 0 then
+    return
+  end
   local idx = selected and tonumber(selected[1]:match("^%s*(%d+)%.")) or nil
   o._on_choice(idx and o._items[idx] or nil, idx)
   o._on_choice_called = true
@@ -79,9 +81,13 @@ M.ui_select = function(items, ui_opts, on_choice)
   local num_width = math.ceil(math.log10(#items))
   local num_format_str = "%" .. num_width .. "d"
   for i, e in ipairs(items) do
-    table.insert(entries,
-      ("%s. %s"):format(utils.ansi_codes.magenta(num_format_str:format(i)),
-        ui_opts.format_item and ui_opts.format_item(e) or tostring(e)))
+    table.insert(
+      entries,
+      ("%s. %s"):format(
+        utils.ansi_codes.magenta(num_format_str:format(i)),
+        ui_opts.format_item and ui_opts.format_item(e) or tostring(e)
+      )
+    )
   end
 
   local opts = _OPTS or {}
@@ -92,7 +98,7 @@ M.ui_select = function(items, ui_opts, on_choice)
   end
 
   opts.fzf_opts = vim.tbl_extend("keep", opts.fzf_opts or {}, {
-    ["--no-multi"]       = true,
+    ["--no-multi"] = true,
     ["--preview-window"] = "hidden:right:0",
   })
 
@@ -106,7 +112,7 @@ M.ui_select = function(items, ui_opts, on_choice)
   opts._ui_select = ui_opts
 
   opts.actions = vim.tbl_deep_extend("keep", opts.actions or {}, {
-    ["enter"] = { fn = M.accept_item, desc = "accept-item" }
+    ["enter"] = { fn = M.accept_item, desc = "accept-item" },
   })
 
   opts.fn_selected = function(selected, o)
@@ -137,15 +143,16 @@ M.ui_select = function(items, ui_opts, on_choice)
     if o.__CTX.mode == "i" then
       -- If called from INSERT mode we have to schedule the callback
       -- till **after** the mode is changed (#1572)
-      vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
+      vim.cmd([[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]])
       vim.api.nvim_create_autocmd("ModeChanged", {
-        pattern = "*:i*", once = true, callback = exec_choice
+        pattern = "*:i*",
+        once = true,
+        callback = exec_choice,
       })
     else
       exec_choice()
     end
   end
-
 
   -- ui.select is code actions
   -- inherit from defaults if not triggered by lsp_code_actions
@@ -164,15 +171,17 @@ M.ui_select = function(items, ui_opts, on_choice)
     local previewer = _OPTS_ONCE.previewer
     _OPTS_ONCE.previewer = nil -- can't copy the previewer object
     opts = vim.tbl_deep_extend(opts_merge_strategy, _OPTS_ONCE, opts)
-    opts.actions = vim.tbl_deep_extend("force", opts.actions or {},
-      { ["enter"] = opts.actions.enter })
+    opts.actions =
+      vim.tbl_deep_extend("force", opts.actions or {}, { ["enter"] = opts.actions.enter })
     opts.previewer = previewer
     -- Callback to set the coroutine so we know if the interface
     -- was opened or not (e.g. when no code actions are present)
     opts.cb_co = (function()
       -- NOTE: use clojure  as `_OPTS_ONCE` is otherwise nullified
       local opts_once_ref = _OPTS_ONCE
-      return function(co) opts_once_ref._co = co end
+      return function(co)
+        opts_once_ref._co = co
+      end
     end)()
     _OPTS_ONCE = nil
   end

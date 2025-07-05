@@ -1,8 +1,8 @@
-local builtin = require "fzf-lua"
-local path = require "fzf-lua.path"
-local utils = require "fzf-lua.utils"
-local defaults = require "fzf-lua.defaults".defaults
-local serpent = require "fzf-lua.lib.serpent"
+local builtin = require("fzf-lua")
+local path = require("fzf-lua.path")
+local utils = require("fzf-lua.utils")
+local defaults = require("fzf-lua.defaults").defaults
+local serpent = require("fzf-lua.lib.serpent")
 
 local M = {}
 
@@ -23,7 +23,9 @@ function M.run_command(cmd, ...)
     if val and #val > 0 then
       local ok, loaded = serpent.load(val)
       -- Parsed string wasn't "nil"  but loaded as `nil`, use as is
-      if val ~= "nil" and loaded == nil then ok = false end
+      if val ~= "nil" and loaded == nil then
+        ok = false
+      end
       if ok and (type(loaded) ~= "table" or not utils.tbl_isempty(loaded)) then
         opts[key] = loaded
       else
@@ -38,7 +40,9 @@ end
 ---@return table
 function M.options_md()
   -- Only attempt to load from file once, if failed we ditch the docs
-  if M._options_md ~= nil then return M._options_md end
+  if M._options_md ~= nil then
+    return M._options_md
+  end
   M._options_md = {}
   local filepath = path.join({ vim.g.fzf_lua_root, "OPTIONS.md" })
   local lines = vim.split(utils.read_file(filepath), "\n")
@@ -96,7 +100,9 @@ function M._candidates(line, cmp_items)
   local n = #l - 2
 
   -- We can reach here after on :FzfLua+<+Space>+<BS>
-  if n < 0 then return end
+  if n < 0 then
+    return
+  end
 
   if n == 0 then
     local commands = utils.tbl_flatten({ builtin_list })
@@ -111,26 +117,64 @@ function M._candidates(line, cmp_items)
 
   -- Not all commands have their opts under the same key
   local function cmd2key(cmd)
-    if not cmd then return end
+    if not cmd then
+      return
+    end
     local cmd2cfg = {
       {
         patterns = { "^git_", "^dap", "^tmux_" },
-        transform = function(c) return c:gsub("_", ".") end
+        transform = function(c)
+          return c:gsub("_", ".")
+        end,
       },
       {
         patterns = { "^lsp_code_actions$" },
-        transform = function(_) return "lsp.code_actions" end
+        transform = function(_)
+          return "lsp.code_actions"
+        end,
       },
-      { patterns = { "^lsp_.*_symbols$" }, transform = function(_) return "lsp.symbols" end },
-      { patterns = { "^lsp_" },            transform = function(_) return "lsp" end },
-      { patterns = { "^diagnostics_" },    transform = function(_) return "diagnostics" end },
-      { patterns = { "^tags" },            transform = function(_) return "tags" end },
-      { patterns = { "grep" },             transform = function(_) return "grep" end },
-      { patterns = { "^complete_bline$" }, transform = function(_) return "complete_line" end },
+      {
+        patterns = { "^lsp_.*_symbols$" },
+        transform = function(_)
+          return "lsp.symbols"
+        end,
+      },
+      {
+        patterns = { "^lsp_" },
+        transform = function(_)
+          return "lsp"
+        end,
+      },
+      {
+        patterns = { "^diagnostics_" },
+        transform = function(_)
+          return "diagnostics"
+        end,
+      },
+      {
+        patterns = { "^tags" },
+        transform = function(_)
+          return "tags"
+        end,
+      },
+      {
+        patterns = { "grep" },
+        transform = function(_)
+          return "grep"
+        end,
+      },
+      {
+        patterns = { "^complete_bline$" },
+        transform = function(_)
+          return "complete_line"
+        end,
+      },
     }
     for _, v in pairs(cmd2cfg) do
       for _, p in ipairs(v.patterns) do
-        if cmd:match(p) then return v.transform(cmd) end
+        if cmd:match(p) then
+          return v.transform(cmd)
+        end
       end
     end
     return cmd
@@ -146,17 +190,19 @@ function M._candidates(line, cmp_items)
   -- Add globals recursively, e.g. `winopts.fullscreen`
   -- will be later retrieved using `utils.map_get(...)`
   for k, v in pairs({
-    winopts  = false,
-    keymap   = false,
+    winopts = false,
+    keymap = false,
     fzf_opts = false,
-    __HLS    = "hls", -- rename prefix
+    __HLS = "hls", -- rename prefix
   }) do
-    opts = utils.tbl_flatten({ opts, vim.tbl_filter(function(x)
+    opts = utils.tbl_flatten({
+      opts,
+      vim.tbl_filter(function(x)
         -- Exclude global options that can be specified only during `setup`,
         -- e.g.'`winopts.preview.default` as this might confuse the user
         return not M.options_md()["setup." .. x]
-      end,
-      vim.tbl_keys(utils.map_flatten(defaults[k] or {}, v or k))) })
+      end, vim.tbl_keys(utils.map_flatten(defaults[k] or {}, v or k))),
+    })
   end
 
   -- Add options from docs, so we also have options defaulting to `nil`

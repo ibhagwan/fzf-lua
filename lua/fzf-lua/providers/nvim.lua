@@ -1,18 +1,20 @@
 local uv = vim.uv or vim.loop
-local core = require "fzf-lua.core"
-local path = require "fzf-lua.path"
-local utils = require "fzf-lua.utils"
-local shell = require "fzf-lua.shell"
-local config = require "fzf-lua.config"
-local devicons = require "fzf-lua.devicons"
+local core = require("fzf-lua.core")
+local path = require("fzf-lua.path")
+local utils = require("fzf-lua.utils")
+local shell = require("fzf-lua.shell")
+local config = require("fzf-lua.config")
+local devicons = require("fzf-lua.devicons")
 
 local M = {}
 
 M.commands = function(opts)
   opts = config.normalize_opts(opts, "commands")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
-  local global_commands = vim.api.nvim_get_commands {}
+  local global_commands = vim.api.nvim_get_commands({})
   local buf_commands = vim.api.nvim_buf_get_commands(0, {})
 
   local builtin_commands = {}
@@ -23,17 +25,23 @@ M.commands = function(opts)
       local cmd, desc
       for line in utils.read_file(help):gmatch("[^\n]*\n") do
         if line:match("^|:[^|]") then
-          if cmd then builtin_commands[cmd] = desc end
+          if cmd then
+            builtin_commands[cmd] = desc
+          end
           cmd, desc = line:match("^|:(%S+)|%s*%S+%s*(.*%S)")
         elseif cmd then -- found
           if line:match("^%s+%S") then
             local desc_continue = line:match("^%s*(.*%S)")
             desc = desc .. (desc_continue and " " .. desc_continue or "")
           end
-          if line:match("^%s*$") then break end
+          if line:match("^%s*$") then
+            break
+          end
         end
       end
-      if cmd then builtin_commands[cmd] = desc end
+      if cmd then
+        builtin_commands[cmd] = desc
+      end
     end
   end
 
@@ -67,28 +75,36 @@ M.commands = function(opts)
   for k, _ in pairs(global_commands) do
     table.insert(entries, utils.ansi_codes.blue(k))
     local flattened = vim.is_callable(opts.flatten[k]) and opts.flatten[k](opts)
-        or opts.flatten[k] and vim.fn.getcompletion(k .. " ", "cmdline")
-        or {}
-    vim.list_extend(entries,
-      vim.tbl_map(function(cmd) return utils.ansi_codes.blue(k .. " " .. cmd) end,
-        flattened))
+      or opts.flatten[k] and vim.fn.getcompletion(k .. " ", "cmdline")
+      or {}
+    vim.list_extend(
+      entries,
+      vim.tbl_map(function(cmd)
+        return utils.ansi_codes.blue(k .. " " .. cmd)
+      end, flattened)
+    )
   end
 
   for k, v in pairs(buf_commands) do
     if type(v) == "table" then
       table.insert(entries, utils.ansi_codes.green(k))
       local flattened = vim.is_callable(opts.flatten[k]) and opts.flatten[k](opts)
-          or opts.flatten[k] and vim.fn.getcompletion(k .. " ", "cmdline")
-          or {}
-      vim.list_extend(entries,
-        vim.tbl_map(function(cmd) return utils.ansi_codes.green(k .. " " .. cmd) end,
-          flattened))
+        or opts.flatten[k] and vim.fn.getcompletion(k .. " ", "cmdline")
+        or {}
+      vim.list_extend(
+        entries,
+        vim.tbl_map(function(cmd)
+          return utils.ansi_codes.green(k .. " " .. cmd)
+        end, flattened)
+      )
     end
   end
 
   -- Sort before adding "builtin" so they don't end up atop the list
   if not opts.sort_lastused then
-    table.sort(entries, function(a, b) return a < b end)
+    table.sort(entries, function(a, b)
+      return a < b
+    end)
   end
 
   for k, _ in pairs(builtin_commands) do
@@ -108,11 +124,11 @@ end
 
 ---@param str ":"|"/"
 local history = function(opts, str)
-  local histnr          = vim.fn.histnr(str)
-  local dr              = opts.reverse_list and 1 or -1
-  local bulk            = 500
+  local histnr = vim.fn.histnr(str)
+  local dr = opts.reverse_list and 1 or -1
+  local bulk = 500
   local from, to, delta = dr, dr * histnr, dr * bulk
-  local content         = coroutine.wrap(function(cb)
+  local content = coroutine.wrap(function(cb)
     local co = coroutine.running()
     for i = from, to, delta do
       vim.schedule(function()
@@ -138,7 +154,9 @@ end
 
 M.command_history = function(opts)
   opts = config.normalize_opts(opts, "command_history")
-  if not opts then return end
+  if not opts then
+    return
+  end
   if opts.fzf_opts["--header"] == nil then
     opts = core.set_header(opts, opts.headers or { "actions" })
   end
@@ -147,7 +165,9 @@ end
 
 M.search_history = function(opts)
   opts = config.normalize_opts(opts, "search_history")
-  if not opts then return end
+  if not opts then
+    return
+  end
   if opts.fzf_opts["--header"] == nil then
     opts = core.set_header(opts, opts.headers or { "actions" })
   end
@@ -161,7 +181,9 @@ end
 
 M.jumps = function(opts)
   opts = config.normalize_opts(opts, "jumps")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local jumps = vim.fn.execute(opts.cmd)
   jumps = vim.split(jumps, "\n")
@@ -169,11 +191,16 @@ M.jumps = function(opts)
   local entries = {}
   for i = #jumps - 1, 3, -1 do
     local jump, line, col, text = jumps[i]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
-    table.insert(entries, string.format(" %16s %15s %15s %s",
-      utils.ansi_codes.yellow(jump),
-      utils.ansi_codes.blue(line),
-      utils.ansi_codes.green(col),
-      text))
+    table.insert(
+      entries,
+      string.format(
+        " %16s %15s %15s %s",
+        utils.ansi_codes.yellow(jump),
+        utils.ansi_codes.blue(line),
+        utils.ansi_codes.green(col),
+        text
+      )
+    )
   end
 
   if utils.tbl_isempty(entries) then
@@ -181,8 +208,11 @@ M.jumps = function(opts)
     return
   end
 
-  table.insert(entries, 1,
-    string.format("%6s %s  %s %s", opts.h1 or "jump", "line", "col", "file/text"))
+  table.insert(
+    entries,
+    1,
+    string.format("%6s %s  %s %s", opts.h1 or "jump", "line", "col", "file/text")
+  )
 
   opts.fzf_opts["--header-lines"] = 1
 
@@ -191,7 +221,9 @@ end
 
 M.tagstack = function(opts)
   opts = config.normalize_opts(opts, "tagstack")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local tagstack = vim.fn.gettagstack().items
 
@@ -225,60 +257,79 @@ M.tagstack = function(opts)
       end
     end
     -- table.insert(entries, ("%s)%s[%s]%s%s%s%s:%s:%s: %s %s"):format(
-    table.insert(entries, ("%s)%s%s%s%s:%s:%s: %s %s"):format(
-      utils.ansi_codes.yellow(tostring(i)),
-      utils.nbsp,
-      -- utils.ansi_codes.yellow(tostring(tag.bufnr)),
-      -- utils.nbsp,
-      buficon or "",
-      buficon and utils.nbsp or "",
-      utils.ansi_codes.magenta(#bufname > 0 and bufname or "[No Name]"),
-      utils.ansi_codes.green(tostring(tag.lnum)),
-      tag.col,
-      utils.ansi_codes.red("[" .. tag.tagname .. "]"),
-      tag.text))
+    table.insert(
+      entries,
+      ("%s)%s%s%s%s:%s:%s: %s %s"):format(
+        utils.ansi_codes.yellow(tostring(i)),
+        utils.nbsp,
+        -- utils.ansi_codes.yellow(tostring(tag.bufnr)),
+        -- utils.nbsp,
+        buficon or "",
+        buficon and utils.nbsp or "",
+        utils.ansi_codes.magenta(#bufname > 0 and bufname or "[No Name]"),
+        utils.ansi_codes.green(tostring(tag.lnum)),
+        tag.col,
+        utils.ansi_codes.red("[" .. tag.tagname .. "]"),
+        tag.text
+      )
+    )
   end
 
   core.fzf_exec(entries, opts)
 end
 
-
 M.marks = function(opts)
   opts = config.normalize_opts(opts, "marks")
-  if not opts then return end
-
-  opts.__fn_reload = opts.__fn_reload or function()
-    return function(cb)
-      local win = core.CTX().winid
-      local buf = core.CTX().bufnr
-      local marks = vim.api.nvim_win_call(win,
-        function() return vim.api.nvim_buf_call(buf, function() return vim.fn.execute("marks") end) end)
-      marks = vim.split(marks, "\n")
-      local entries = {}
-      local pattern = opts.marks and opts.marks or ""
-      for i = #marks, 3, -1 do
-        local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
-        col = tostring(tonumber(col) + 1)
-        if path.is_absolute(text) then
-          text = path.HOME_to_tilde(text)
-        end
-        if not pattern or string.match(mark, pattern) then
-          table.insert(entries, string.format(" %-15s %15s %15s %s",
-            utils.ansi_codes.yellow(mark),
-            utils.ansi_codes.blue(line),
-            utils.ansi_codes.green(col),
-            text))
-        end
-      end
-
-      table.sort(entries, function(a, b) return a < b end)
-      table.insert(entries, 1,
-        string.format("%-5s %s  %s %s", "mark", "line", "col", "file/text"))
-
-      vim.tbl_map(cb, entries)
-      cb(nil)
-    end
+  if not opts then
+    return
   end
+
+  opts.__fn_reload = opts.__fn_reload
+    or function()
+      return function(cb)
+        local win = core.CTX().winid
+        local buf = core.CTX().bufnr
+        local marks = vim.api.nvim_win_call(win, function()
+          return vim.api.nvim_buf_call(buf, function()
+            return vim.fn.execute("marks")
+          end)
+        end)
+        marks = vim.split(marks, "\n")
+        local entries = {}
+        local pattern = opts.marks and opts.marks or ""
+        for i = #marks, 3, -1 do
+          local mark, line, col, text = marks[i]:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
+          col = tostring(tonumber(col) + 1)
+          if path.is_absolute(text) then
+            text = path.HOME_to_tilde(text)
+          end
+          if not pattern or string.match(mark, pattern) then
+            table.insert(
+              entries,
+              string.format(
+                " %-15s %15s %15s %s",
+                utils.ansi_codes.yellow(mark),
+                utils.ansi_codes.blue(line),
+                utils.ansi_codes.green(col),
+                text
+              )
+            )
+          end
+        end
+
+        table.sort(entries, function(a, b)
+          return a < b
+        end)
+        table.insert(
+          entries,
+          1,
+          string.format("%-5s %s  %s %s", "mark", "line", "col", "file/text")
+        )
+
+        vim.tbl_map(cb, entries)
+        cb(nil)
+      end
+    end
 
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
   local contents, id = shell.reload_action_cmd(opts, "")
@@ -287,7 +338,6 @@ M.marks = function(opts)
   opts._fn_pre_fzf = function()
     shell.set_protected(id)
   end
-
 
   opts.fzf_opts["--header-lines"] = 1
   --[[ opts.preview = function (args, fzf_lines, _)
@@ -309,7 +359,9 @@ end
 
 M.registers = function(opts)
   opts = config.normalize_opts(opts, "registers")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local registers = { [["]], "_", "#", "=", "_", "/", "*", "+", ":", ".", "%" }
   -- named
@@ -323,16 +375,18 @@ M.registers = function(opts)
 
   if type(opts.filter) == "string" or type(opts.filter) == "function" then
     local filter = type(opts.filter) == "function" and opts.filter
-        or function(r)
-          return r:match(opts.filter) ~= nil
-        end
+      or function(r)
+        return r:match(opts.filter) ~= nil
+      end
     registers = vim.tbl_filter(filter, registers)
   end
 
   local function register_escape_special(reg, nl)
-    if not reg then return end
+    if not reg then
+      return
+    end
     local gsub_map = {
-      ["\3"]  = "^C", -- <C-c>
+      ["\3"] = "^C", -- <C-c>
       ["\27"] = "^[", -- <Esc>
       ["\18"] = "^R", -- <C-r>
     }
@@ -340,8 +394,8 @@ M.registers = function(opts)
       reg = reg:gsub(k, utils.ansi_codes.magenta(v))
     end
     return not nl and reg
-        or nl == 2 and reg:gsub("\n$", "")
-        or reg:gsub("\n", utils.ansi_codes.magenta("\\n"))
+      or nl == 2 and reg:gsub("\n$", "")
+      or reg:gsub("\n", utils.ansi_codes.magenta("\\n"))
   end
 
   local entries = {}
@@ -352,8 +406,7 @@ M.registers = function(opts)
     local _, contents = pcall(vim.fn.getreg, r)
     contents = register_escape_special(contents, opts.multiline and 2 or 1)
     if (contents and #contents > 0) or not opts.ignore_empty then
-      table.insert(entries, string.format("[%s] %s",
-        utils.ansi_codes.yellow(r), contents))
+      table.insert(entries, string.format("[%s] %s", utils.ansi_codes.yellow(r), contents))
     end
   end
 
@@ -368,7 +421,9 @@ end
 
 M.keymaps = function(opts)
   opts = config.normalize_opts(opts, "keymaps")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local key_modes = opts.modes or { "n", "i", "c", "v", "t" }
   local modes = {
@@ -376,23 +431,31 @@ M.keymaps = function(opts)
     i = "red",
     c = "yellow",
     v = "magenta",
-    t = "green"
+    t = "green",
   }
   local keymaps = {}
   local separator = "│"
   local fields = { "mode", "lhs", "desc", "rhs" }
   local field_fmt = { mode = "%s", lhs = "%-14s", desc = "%-33s", rhs = "%s" }
 
-  if opts.show_desc == false then field_fmt.desc = nil end
-  if opts.show_details == false then field_fmt.rhs = nil end
+  if opts.show_desc == false then
+    field_fmt.desc = nil
+  end
+  if opts.show_details == false then
+    field_fmt.rhs = nil
+  end
 
   local format = function(info)
     info.desc = field_fmt.rhs and string.sub(info.desc or "", 1, 33) or info.desc
     local ret
     for _, f in ipairs(fields) do
       if field_fmt[f] then
-        ret = string.format("%s%s" .. field_fmt[f], ret or "",
-          ret and string.format(" %s ", separator) or "", info[f] or "")
+        ret = string.format(
+          "%s%s" .. field_fmt[f],
+          ret or "",
+          ret and string.format(" %s ", separator) or "",
+          info[f] or ""
+        )
       end
     end
     return ret
@@ -417,10 +480,10 @@ M.keymaps = function(opts)
 
     keymap.str = format({
       mode = utils.ansi_codes[modes[keymap.mode] or "blue"](keymap.mode),
-      lhs  = keymap.lhs:gsub("%s", "<Space>"),
+      lhs = keymap.lhs:gsub("%s", "<Space>"),
       -- desc can be a multi-line string, normalize it
       desc = keymap.desc and string.gsub(keymap.desc, "\n%s+", "\r"),
-      rhs  = keymap.rhs or string.format("%s", keymap.callback)
+      rhs = keymap.rhs or string.format("%s", keymap.callback),
     })
 
     local k = string.format("[%s:%s:%s]", keymap.buffer, keymap.mode, keymap.lhs)
@@ -456,7 +519,9 @@ end
 
 M.nvim_options = function(opts)
   opts = config.normalize_opts(opts, "nvim_options")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local format_str = function(info)
     local fields = { "option", "value" }
@@ -468,8 +533,7 @@ M.nvim_options = function(opts)
         ret = string.format(
           "%s%s" .. field_fmt[f],
           ret or "",
-          ret and string.format(" %s ", utils.ansi_codes["grey"](opts.separator))
-          or " ",
+          ret and string.format(" %s ", utils.ansi_codes["grey"](opts.separator)) or " ",
           info[f] or ""
         )
       end
@@ -501,32 +565,34 @@ M.nvim_options = function(opts)
       utils.ansi_from_hl(opts.hls.header_bind, "<enter>"),
       utils.ansi_from_hl(opts.hls.header_text, "local scope"),
       utils.ansi_from_hl(opts.hls.header_bind, "<alt-enter>"),
-      utils.ansi_from_hl(opts.hls.header_text, "global scope"))
+      utils.ansi_from_hl(opts.hls.header_text, "global scope")
+    )
     table.insert(entries, 1, keymaps)
     table.insert(entries, 2, header)
     return entries
   end
 
   opts.func_async_callback = false
-  opts.__fn_reload = opts.__fn_reload or function(_)
-    return function(cb)
-      vim.api.nvim_win_call(opts.__CTX.winid, function()
-        coroutine.wrap(function()
-          local co = coroutine.running()
-          local entries = format_option_entries()
-          for _, entry in pairs(entries) do
-            vim.schedule(function()
-              cb(entry, function()
-                coroutine.resume(co)
+  opts.__fn_reload = opts.__fn_reload
+    or function(_)
+      return function(cb)
+        vim.api.nvim_win_call(opts.__CTX.winid, function()
+          coroutine.wrap(function()
+            local co = coroutine.running()
+            local entries = format_option_entries()
+            for _, entry in pairs(entries) do
+              vim.schedule(function()
+                cb(entry, function()
+                  coroutine.resume(co)
+                end)
               end)
-            end)
-            coroutine.yield()
-          end
-          cb()
-        end)()
-      end)
+              coroutine.yield()
+            end
+            cb()
+          end)()
+        end)
+      end
     end
-  end
 
   -- build the "reload" cmd and remove '-- {+}' from the initial cmd
   local contents, id = shell.reload_action_cmd(opts, "")
@@ -544,7 +610,9 @@ end
 M.spell_suggest = function(opts)
   -- if not vim.wo.spell then return false end
   opts = config.normalize_opts(opts, "spell_suggest")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local match = opts.word_pattern or "[^%s\"'%(%)%.%%%+%-%*%?%[%]%^%$:#,]*"
   local line = vim.api.nvim_get_current_line()
@@ -561,32 +629,46 @@ M.spell_suggest = function(opts)
   local entries = vim.fn.spellsuggest(cursor_word)
 
   opts.complete = function(selected, o, l, _)
-    if #selected == 0 then return end
+    if #selected == 0 then
+      return
+    end
     local replace_at = col - #before
     local before_path = replace_at > 1 and l:sub(1, replace_at - 1) or ""
     local rest_of_line = #l >= (col + #after) and l:sub(col + #after) or ""
     return before_path .. selected[1] .. rest_of_line,
-        -- this goes to `nvim_win_set_cursor` which is 0-based
-        replace_at + #selected[1] - 2
+      -- this goes to `nvim_win_set_cursor` which is 0-based
+      replace_at
+        + #selected[1]
+        - 2
   end
 
-  if utils.tbl_isempty(entries) then return end
+  if utils.tbl_isempty(entries) then
+    return
+  end
 
   core.fzf_exec(entries, opts)
 end
 
 M.filetypes = function(opts)
   opts = config.normalize_opts(opts, "filetypes")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local entries = vim.fn.getcompletion("", "filetype")
-  if utils.tbl_isempty(entries) then return end
+  if utils.tbl_isempty(entries) then
+    return
+  end
 
   if opts.file_icons then
     entries = vim.tbl_map(function(ft)
       local buficon, hl = devicons.icon_by_ft(ft)
-      if not buficon then buficon = " " end
-      if hl then buficon = utils.ansi_from_hl(hl, buficon) end
+      if not buficon then
+        buficon = " "
+      end
+      if hl then
+        buficon = utils.ansi_from_hl(hl, buficon)
+      end
       return string.format("%s%s%s", buficon, utils.nbsp, ft)
     end, entries)
   end
@@ -596,37 +678,41 @@ end
 
 M.packadd = function(opts)
   opts = config.normalize_opts(opts, "packadd")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local entries = vim.fn.getcompletion("", "packadd")
-  if utils.tbl_isempty(entries) then return end
+  if utils.tbl_isempty(entries) then
+    return
+  end
 
   core.fzf_exec(entries, opts)
 end
 
 M.menus = function(opts)
   opts = config.normalize_opts(opts, "menus")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   -- @param prefix will be prepended to the entry name
   local function gen_menu_entries(prefix, entry)
     local name = prefix and ("%s.%s"):format(prefix, entry.name) or entry.name
     if entry.submenus then
       -- entry.submenus is a list of {}
-      return vim.tbl_map(
-        function(x)
-          return gen_menu_entries(name, x)
-        end, entry.submenus)
+      return vim.tbl_map(function(x)
+        return gen_menu_entries(name, x)
+      end, entry.submenus)
     else
       -- if we reached a leaf
       return name
     end
   end
 
-  local entries = utils.tbl_flatten(vim.tbl_map(
-    function(x)
-      return gen_menu_entries(nil, x)
-    end, vim.fn.menu_get("")))
+  local entries = utils.tbl_flatten(vim.tbl_map(function(x)
+    return gen_menu_entries(nil, x)
+  end, vim.fn.menu_get("")))
 
   if utils.tbl_isempty(entries) then
     utils.info("No menus available")
@@ -638,7 +724,9 @@ end
 
 M.autocmds = function(opts)
   opts = config.normalize_opts(opts, "autocmds")
-  if not opts then return end
+  if not opts then
+    return
+  end
 
   local autocmds = vim.api.nvim_get_autocmds({})
   if not autocmds or utils.tbl_isempty(autocmds) then
@@ -655,7 +743,9 @@ M.autocmds = function(opts)
     desc = "%s",
   }
 
-  if opts.show_desc == false then field_fmt.desc = nil end
+  if opts.show_desc == false then
+    field_fmt.desc = nil
+  end
 
   local format = function(info)
     local ret
@@ -668,8 +758,12 @@ M.autocmds = function(opts)
             fmt = fmt:gsub("%d+", tostring(len - 11))
           end
         end
-        ret = string.format("%s%s" .. fmt, ret or "",
-          ret and string.format(" %s ", separator) or "", info[f] or "")
+        ret = string.format(
+          "%s%s" .. fmt,
+          ret or "",
+          ret and string.format(" %s ", separator) or "",
+          info[f] or ""
+        )
       end
     end
     return ret
@@ -678,17 +772,28 @@ M.autocmds = function(opts)
   local contents = function(cb)
     coroutine.wrap(function()
       local co = coroutine.running()
-      cb(string.format("%s:%d:%s%s", "<none>", 0, separator, format({
-        event = "event",
-        pattern = "pattern",
-        group = "group",
-        code = "code",
-        desc = "description",
-        color = false,
-      })), function(err)
-        coroutine.resume(co)
-        if err then cb(nil) end
-      end)
+      cb(
+        string.format(
+          "%s:%d:%s%s",
+          "<none>",
+          0,
+          separator,
+          format({
+            event = "event",
+            pattern = "pattern",
+            group = "group",
+            code = "code",
+            desc = "description",
+            color = false,
+          })
+        ),
+        function(err)
+          coroutine.resume(co)
+          if err then
+            cb(nil)
+          end
+        end
+      )
       for _, a in ipairs(autocmds) do
         local file, line = "<none>", 0
         if a.callback then
@@ -696,16 +801,24 @@ M.autocmds = function(opts)
           file = info and info.source and info.source:sub(2) or ""
           line = info and info.linedefined or 0
         end
-        local entry = string.format("%s:%d:%s%s", file, line, separator, format({
-          event = utils.ansi_codes.blue(a.event),
-          pattern = utils.ansi_codes.yellow(a.pattern),
-          group = utils.ansi_codes.green(a.group_name and vim.trim(a.group_name) or " "),
-          code = a.callback and utils.ansi_codes.red(tostring(a.callback)) or a.command,
-          desc = a.desc,
-        }))
+        local entry = string.format(
+          "%s:%d:%s%s",
+          file,
+          line,
+          separator,
+          format({
+            event = utils.ansi_codes.blue(a.event),
+            pattern = utils.ansi_codes.yellow(a.pattern),
+            group = utils.ansi_codes.green(a.group_name and vim.trim(a.group_name) or " "),
+            code = a.callback and utils.ansi_codes.red(tostring(a.callback)) or a.command,
+            desc = a.desc,
+          })
+        )
         cb(entry, function(err)
           coroutine.resume(co)
-          if err then cb(nil) end
+          if err then
+            cb(nil)
+          end
         end)
         coroutine.yield()
       end

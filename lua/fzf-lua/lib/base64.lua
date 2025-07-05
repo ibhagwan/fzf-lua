@@ -47,20 +47,81 @@ if not extract then
       return w
     end
   else -- Lua 5.3+
-    extract = load [[return function( v, from, width )
+    extract = load([[return function( v, from, width )
       return ( v >> from ) & ((1 << width) - 1)
-    end]] ()
+    end]])()
   end
 end
 
-
 function base64.makeencoder(s62, s63, spad)
   local encoder = {}
-  for b64code, char in pairs { [0] = 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-    'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
-    'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-    'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2',
-    '3', '4', '5', '6', '7', '8', '9', s62 or '+', s63 or '/', spad or '=' } do
+  for b64code, char in pairs({
+    [0] = "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "j",
+    "k",
+    "l",
+    "m",
+    "n",
+    "o",
+    "p",
+    "q",
+    "r",
+    "s",
+    "t",
+    "u",
+    "v",
+    "w",
+    "x",
+    "y",
+    "z",
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    s62 or "+",
+    s63 or "/",
+    spad or "=",
+  }) do
     encoder[b64code] = char:byte()
   end
   return encoder
@@ -91,13 +152,21 @@ function base64.encode(str, encoder, usecaching)
     if usecaching then
       s = cache[v]
       if not s then
-        s = char(encoder[extract(v, 18, 6)], encoder[extract(v, 12, 6)], encoder[extract(v, 6, 6)],
-          encoder[extract(v, 0, 6)])
+        s = char(
+          encoder[extract(v, 18, 6)],
+          encoder[extract(v, 12, 6)],
+          encoder[extract(v, 6, 6)],
+          encoder[extract(v, 0, 6)]
+        )
         cache[v] = s
       end
     else
-      s = char(encoder[extract(v, 18, 6)], encoder[extract(v, 12, 6)], encoder[extract(v, 6, 6)],
-        encoder[extract(v, 0, 6)])
+      s = char(
+        encoder[extract(v, 18, 6)],
+        encoder[extract(v, 12, 6)],
+        encoder[extract(v, 6, 6)],
+        encoder[extract(v, 0, 6)]
+      )
     end
     t[k] = s
     k = k + 1
@@ -105,8 +174,12 @@ function base64.encode(str, encoder, usecaching)
   if lastn == 2 then
     local a, b = str:byte(n - 1, n)
     local v = a * 0x10000 + b * 0x100
-    t[k] = char(encoder[extract(v, 18, 6)], encoder[extract(v, 12, 6)], encoder[extract(v, 6, 6)],
-      encoder[64])
+    t[k] = char(
+      encoder[extract(v, 18, 6)],
+      encoder[extract(v, 12, 6)],
+      encoder[extract(v, 6, 6)],
+      encoder[64]
+    )
   elseif lastn == 1 then
     local v = str:byte(n) * 0x10000
     t[k] = char(encoder[extract(v, 18, 6)], encoder[extract(v, 12, 6)], encoder[64], encoder[64])
@@ -116,21 +189,23 @@ end
 
 function base64.decode(b64, decoder, usecaching)
   decoder = decoder or DEFAULT_DECODER
-  local pattern = '[^%w%+%/%=]'
+  local pattern = "[^%w%+%/%=]"
   if decoder then
     local s62, s63
     for charcode, b64code in pairs(decoder) do
-      if b64code == 62 then s62 = charcode
-      elseif b64code == 63 then s63 = charcode
+      if b64code == 62 then
+        s62 = charcode
+      elseif b64code == 63 then
+        s63 = charcode
       end
     end
-    pattern = ('[^%%w%%%s%%%s%%=]'):format(char(s62), char(s63))
+    pattern = ("[^%%w%%%s%%%s%%=]"):format(char(s62), char(s63))
   end
-  b64 = b64:gsub(pattern, '')
+  b64 = b64:gsub(pattern, "")
   local cache = usecaching and {}
   local t, k = {}, 1
   local n = #b64
-  local padding = b64:sub(-2) == '==' and 2 or b64:sub(-1) == '=' and 1 or 0
+  local padding = b64:sub(-2) == "==" and 2 or b64:sub(-1) == "=" and 1 or 0
   for i = 1, padding > 0 and n - 4 or n, 4 do
     local a, b, c, d = b64:byte(i, i + 3)
     local s

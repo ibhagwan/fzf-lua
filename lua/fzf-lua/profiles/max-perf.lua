@@ -10,12 +10,11 @@ return {
   btags = { previewer = "bat" },
   files = { fzf_opts = { ["--ansi"] = false } },
   grep = {
-    fzf_opts  = { ["--ansi"] = false },
-    rg_glob   = false, -- will trigger `opts.requires_processing`
+    fzf_opts = { ["--ansi"] = false },
+    rg_glob = false, -- will trigger `opts.requires_processing`
     grep_opts = require("fzf-lua.utils").is_darwin()
         and "--color=never --binary-files=without-match --line-number --recursive --extended-regexp -e"
-        or "--color=never --binary-files=without-match --line-number --recursive --perl-regexp -e",
-    rg_opts   =
-    " --color=never --column --line-number --no-heading --smart-case --max-columns=4096 -e",
+      or "--color=never --binary-files=without-match --line-number --recursive --perl-regexp -e",
+    rg_opts = " --color=never --column --line-number --no-heading --smart-case --max-columns=4096 -e",
   },
 }

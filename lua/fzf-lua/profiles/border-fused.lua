@@ -1,12 +1,12 @@
-local _single  = { "┌", "─", "┐", "│", "┘", "─", "└", "│" }
+local _single = { "┌", "─", "┐", "│", "┘", "─", "└", "│" }
 local _rounded = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" }
-local _border  = true and _rounded or _single
+local _border = true and _rounded or _single
 return {
   { "default-title" }, -- base profile
   desc = "Single border around the UI",
   -- previewers = { bat = { args = "--color=always --style=default" } },
   winopts = {
-    border  = function(_, m)
+    border = function(_, m)
       assert(m.type == "nvim" and m.name == "fzf")
       if m.nwin == 1 then
         -- No preview, return the border whole

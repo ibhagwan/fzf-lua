@@ -1,15 +1,17 @@
 local uv = vim.uv or vim.loop
-local path = require "fzf-lua.path"
-local utils = require "fzf-lua.utils"
-local libuv = require "fzf-lua.libuv"
-local config = require "fzf-lua.config"
-local make_entry = require "fzf-lua.make_entry"
+local path = require("fzf-lua.path")
+local utils = require("fzf-lua.utils")
+local libuv = require("fzf-lua.libuv")
+local config = require("fzf-lua.config")
+local make_entry = require("fzf-lua.make_entry")
 
 local M = {}
 
 local function get_tags_cmd(opts)
   -- command already set by `ctags_autogen`?
-  if opts.cmd then return opts.cmd end
+  if opts.cmd then
+    return opts.cmd
+  end
   local query, filter = nil, nil
   local bin, flags = nil, nil
   if vim.fn.executable("rg") == 1 then
@@ -25,19 +27,21 @@ local function get_tags_cmd(opts)
   if opts.filename and #opts.filename > 0 then
     -- tags use relative paths, by now we should
     -- have the correct cwd from `get_ctags_cwd`
-    query = libuv.shellescape(
-      utils.rg_escape(path.relative_to(opts.filename, opts.cwd or uv.cwd())))
+    query =
+      libuv.shellescape(utils.rg_escape(path.relative_to(opts.filename, opts.cwd or uv.cwd())))
   elseif opts.search and #opts.search > 0 then
     filter = ([[%s -v "^!"]]):format(bin)
-    query = libuv.shellescape(opts.no_esc and opts.search or
-      utils.rg_escape(opts.search))
+    query = libuv.shellescape(opts.no_esc and opts.search or utils.rg_escape(opts.search))
   else
     query = [[-v "^!_TAG_"]]
   end
   return ("%s %s %s %s"):format(
-    bin, flags, query,
+    bin,
+    flags,
+    query,
     opts._ctags_file and libuv.shellescape(opts._ctags_file) or ""
-  ), filter
+  ),
+    filter
 end
 
 local get_ctags_file = function(opts)
@@ -57,9 +61,13 @@ end
 
 -- search the headers of the tags file for "!TAG_PROC_CWD"
 local get_ctags_cwd = function(ctags_file)
-  if vim.fn.filereadable(ctags_file) == 0 then return end
+  if vim.fn.filereadable(ctags_file) == 0 then
+    return
+  end
   local lines = vim.fn.readfile(ctags_file, "", 10)
-  if utils.tbl_isempty(lines) then return end
+  if utils.tbl_isempty(lines) then
+    return
+  end
   for _, l in ipairs(lines) do
     local cwd = l:match("^!_TAG_PROC_CWD%s+(.*)%s+//$")
     if cwd then
@@ -73,7 +81,9 @@ M._TAGS2CWD = {}
 
 local function tags(opts)
   -- make sure we have the correct 'bat' previewer for tags
-  if opts.previewer == "bat_native" then opts.previewer = "bat" end
+  if opts.previewer == "bat_native" then
+    opts.previewer = "bat"
+  end
 
   -- signal actions this is a ctag
   opts._ctag = true
@@ -94,13 +104,16 @@ local function tags(opts)
       if vim.fn.executable(opts.ctags_bin) == 1 then
         opts.cmd = opts.cmd or opts._btags_cmd
       else
-        utils.info("Unable to locate `ctags` executable, " ..
-          "install `ctags` or supply its path using 'ctags_bin'")
+        utils.info(
+          "Unable to locate `ctags` executable, "
+            .. "install `ctags` or supply its path using 'ctags_bin'"
+        )
         return
       end
     else
-      utils.info(("Tags file ('%s') does not exist. Create one with ctags -R")
-        :format(opts._ctags_file))
+      utils.info(
+        ("Tags file ('%s') does not exist. Create one with ctags -R"):format(opts._ctags_file)
+      )
       return
     end
   end
@@ -154,7 +167,9 @@ local function tags(opts)
     opts.__ACT_TO = opts.__ACT_TO or M.grep
     -- live_grep requested by caller ('tags_live_grep')
     local cmd, filter = get_tags_cmd({ search = "dummy" })
-    if not cmd then return end -- cmd only used for this test
+    if not cmd then
+      return
+    end -- cmd only used for this test
     opts.filter = (opts.filter == nil) and filter or opts.filter
     -- rg globs are meaningless here since we are searching a single file
     opts.rg_glob = false
@@ -162,13 +177,13 @@ local function tags(opts)
     opts.formatter, opts._fmt = false, { _to = false, to = false, from = false }
     opts.filespec = libuv.shellescape(opts._ctags_file)
     if opts.multiprocess then
-      return require "fzf-lua.providers.grep".live_grep_mt(opts)
+      return require("fzf-lua.providers.grep").live_grep_mt(opts)
     else
       -- 'live_grep_st' uses different signature 'fn_transform'
       opts.fn_transform = function(x)
         return make_entry.tag(x, opts)
       end
-      return require "fzf-lua.providers.grep".live_grep_st(opts)
+      return require("fzf-lua.providers.grep").live_grep_st(opts)
     end
   else
     -- we need this for 'actions.grep_lgrep'
@@ -177,7 +192,9 @@ local function tags(opts)
     -- Since we cannot use include and exclude in the
     -- same grep command, we need to use a pipe to filter
     local cmd, filter = get_tags_cmd(opts)
-    if not cmd then return end
+    if not cmd then
+      return
+    end
     opts.raw_cmd = cmd
     opts.filter = (opts.filter == nil) and filter or opts.filter
     if opts.filter and #opts.filter > 0 then
@@ -185,19 +202,23 @@ local function tags(opts)
     end
     -- tags has its own formatter
     opts.formatter, opts._fmt = false, { _to = false, to = false, from = false }
-    return require "fzf-lua.providers.grep".grep(opts)
+    return require("fzf-lua.providers.grep").grep(opts)
   end
 end
 
 M.tags = function(opts)
   opts = config.normalize_opts(opts, "tags")
-  if not opts then return end
+  if not opts then
+    return
+  end
   return tags(opts)
 end
 
 M.btags = function(opts)
   opts = config.normalize_opts(opts, "btags")
-  if not opts then return end
+  if not opts then
+    return
+  end
   opts.filename = vim.api.nvim_buf_get_name(0)
   if #opts.filename == 0 then
     utils.info("'btags' is not available for unnamed buffers.")
@@ -205,10 +226,8 @@ M.btags = function(opts)
   end
   -- store the autogen command in case tags file doesn't exist.
   -- Used as fallback to pipe the tags into fzf from stdout
-  opts._btags_cmd = string.format("%s %s %s",
-    opts.ctags_bin or "ctags",
-    opts.ctags_args or "-f -",
-    opts.filename)
+  opts._btags_cmd =
+    string.format("%s %s %s", opts.ctags_bin or "ctags", opts.ctags_args or "-f -", opts.filename)
   if opts.ctags_autogen then
     opts.cmd = opts.cmd or opts._btags_cmd
   end
@@ -240,20 +259,26 @@ end
 
 M.live_grep = function(opts)
   opts = config.normalize_opts(opts, "tags")
-  if not opts then return end
+  if not opts then
+    return
+  end
   opts.lgrep = true
   return tags(opts)
 end
 
 M.grep_cword = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.no_esc = true
   opts.search = [[\b]] .. utils.rg_escape(vim.fn.expand("<cword>")) .. [[\b]]
   return M.grep(opts)
 end
 
 M.grep_cWORD = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.no_esc = true
   -- since we're searching a tags file also search for surrounding literals ^ $
   opts.search = [[(^|\^|\s)]] .. utils.rg_escape(vim.fn.expand("<cWORD>")) .. [[($|\$|\s)]]
@@ -261,7 +286,9 @@ M.grep_cWORD = function(opts)
 end
 
 M.grep_visual = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.search = utils.get_visual_selection()
   return M.grep(opts)
 end
