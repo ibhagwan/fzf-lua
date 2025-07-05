@@ -36,7 +36,15 @@
 ---@field clear_on_redraw boolean?
 
 ---@class fzf-lua.path.Entry
----@field [string] any
+---@field stripped string
+---@field bufnr integer?
+---@field bufname string?
+---@field terminal boolean?
+---@field path string?
+---@field line integer
+---@field col integer
+---@field ctag string?
+
 
 ---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry, {}
 ---@field do_not_cache boolean?
