@@ -580,8 +580,13 @@ M.defaults.quickfix             = {
   file_icons  = 1,
   color_icons = true,
   git_icons   = false,
-  only_valid  = false,
-  fzf_opts    = { ["--multi"] = true },
+  valid_only  = false,
+  fzf_opts    = {
+    ["--multi"]     = true,
+    ["--delimiter"] = "[\\]:]",
+    ["--with-nth"]  = "2..",
+  },
+  actions     = { ["ctrl-x"] = { fn = actions.list_del, reload = true } },
   _actions    = function() return M.globals.actions.files end,
   _treesitter = true,
   _cached_hls = { "path_colnr", "path_linenr" },
@@ -600,8 +605,13 @@ M.defaults.loclist              = {
   file_icons  = 1,
   color_icons = true,
   git_icons   = false,
-  only_valid  = false,
-  fzf_opts    = { ["--multi"] = true },
+  valid_only  = false,
+  fzf_opts    = {
+    ["--multi"]     = true,
+    ["--delimiter"] = "[\\]:]",
+    ["--with-nth"]  = "2..",
+  },
+  actions     = { ["ctrl-x"] = { fn = actions.list_del, reload = true } },
   _actions    = function() return M.globals.actions.files end,
   _treesitter = true,
   _cached_hls = { "path_colnr", "path_linenr" },
@@ -828,7 +838,7 @@ M.defaults.awesome_colorschemes = {
   actions      = {
     ["enter"]  = actions.colorscheme,
     ["ctrl-g"] = { fn = actions.toggle_bg, exec_silent = true },
-    ["ctrl-r"] = { fn = actions.cs_update, reload = true },
+    ["ctrl-d"] = { fn = actions.cs_update, reload = true },
     ["ctrl-x"] = { fn = actions.cs_delete, reload = true },
   }
 }

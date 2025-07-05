@@ -4,7 +4,6 @@ local libuv = require "fzf-lua.libuv"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local shell = require "fzf-lua.shell"
-local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -27,9 +26,8 @@ M.files = function(opts)
   if not opts then return end
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
-  local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, opts.headers or { "cwd" })
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 M.status = function(opts)
@@ -47,49 +45,20 @@ M.status = function(opts)
   -- we always require processing (can't send the raw command to fzf)
   opts.requires_processing = true
 
-  local contents, id
-  if opts.multiprocess then
-    -- git status does not require preprocessing if not loading devicons
-    -- opts.__mt_preprocess = opts.file_icons
-    --     and [[return require("fzf-lua.devicons").load()]]
-    --     or [[return true]]
-    --
-    -- preprocess is required since the addition of `path.filename_first`
-    -- will be set by `core.mt_cmd_wrapper` by commenting out the above
-    opts.__mt_transform = [[return require("fzf-lua.make_entry").git_status]]
-    contents = core.mt_cmd_wrapper(opts)
-  else
-    opts.__fn_transform = opts.__fn_transform or
-        function(x)
-          return make_entry.git_status(x, opts)
-        end
-
-    -- we are reusing the "live" reload action, this gets called once
-    -- on init and every reload and should return the command we wish
-    -- to execute, i.e. `git status -sb`
-    opts.__fn_reload = function(_)
-      return opts.cmd
-    end
-
-    -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-    contents, id = shell.reload_action_cmd(opts, "")
-    opts.__reload_cmd = contents
-
-    -- when the action resumes the preview re-attaches which registers
-    -- a new shell function id, done enough times it will overwrite the
-    -- regisered function assigned to the reload action and the headless
-    -- cmd will err with "sh: 0: -c requires an argument"
-    -- gets cleared when resume data recycles
-    opts._fn_pre_fzf = function()
-      shell.set_protected(id)
-    end
-  end
+  -- git status does not require preprocessing if not loading devicons
+  -- opts.fn_preprocess = opts.file_icons
+  --     and [[return require("fzf-lua.devicons").load()]]
+  --     or [[return true]]
+  --
+  -- preprocess is required since the addition of `path.filename_first`
+  -- will be set by `core.mt_cmd_wrapper` by commenting out the above
+  opts.fn_transform = [[return require("fzf-lua.make_entry").git_status]]
 
   opts.header_prefix = opts.header_prefix or "+ -  "
   opts.header_separator = opts.header_separator or "|"
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
 
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 local function git_cmd(opts)
@@ -135,9 +104,8 @@ M.diff = function(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   opts.preview = git_preview(opts, "{-1}")
-  local contents = core.mt_cmd_wrapper(opts)
   opts = core.set_header(opts, opts.headers or { "cwd" })
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 M.commits = function(opts)
@@ -217,7 +185,7 @@ M.branches = function(opts)
   if not opts then return end
   if opts.preview then
     opts.__preview = path.git_cwd(opts.preview, opts)
-    opts.preview = shell.raw_preview_action_cmd(function(items)
+    opts.preview = shell.stringify_cmd(function(items)
       -- all possible options:
       --   branch
       -- * branch
@@ -225,7 +193,7 @@ M.branches = function(opts)
       --   (HEAD detached at origin/branch)
       local branch = items[1]:match("[^%s%*]*$"):gsub("%)$", "")
       return opts.__preview:gsub("{.*}", branch)
-    end, nil, opts.debug)
+    end, opts, "{}")
   end
   opts.headers = opts.headers or { "cwd", "actions" }
   return git_cmd(opts)
@@ -251,32 +219,19 @@ M.stash = function(opts)
     opts.cmd = opts.cmd .. " -G " .. libuv.shellescape(opts.search)
   end
 
-  opts.__fn_transform = opts.__fn_transform or
-      function(x)
-        local stash, rest = x:match("([^:]+)(.*)")
-        if stash then
-          stash = utils.ansi_codes.yellow(stash)
-          stash = stash:gsub("{%d+}", function(s)
-            return ("%s"):format(utils.ansi_codes.green(tostring(s)))
-          end)
-        end
-        return (not stash or not rest) and x or stash .. rest
-      end
-
-  opts.__fn_reload = function(_)
-    return opts.cmd
-  end
-
-  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local contents, id = shell.reload_action_cmd(opts, "")
-  opts.__reload_cmd = contents
-
-  opts._fn_pre_fzf = function()
-    shell.set_protected(id)
+  opts.fn_transform = function(x)
+    local stash, rest = x:match("([^:]+)(.*)")
+    if stash then
+      stash = utils.ansi_codes.yellow(stash)
+      stash = stash:gsub("{%d+}", function(s)
+        return ("%s"):format(utils.ansi_codes.green(tostring(s)))
+      end)
+    end
+    return (not stash or not rest) and x or stash .. rest
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd", "search" })
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 M.hunks = function(opts)
@@ -298,43 +253,13 @@ M.hunks = function(opts)
 
   -- we always require processing (can't send the raw command to fzf)
   opts.requires_processing = true
-
-  local contents, id
-  if opts.multiprocess then
-    opts.__mt_transform = [[return require("fzf-lua.make_entry").git_hunk]]
-    contents = core.mt_cmd_wrapper(opts)
-  else
-    opts.__fn_transform = opts.__fn_transform or
-        function(x)
-          return make_entry.git_hunk(x, opts)
-        end
-
-    -- we are reusing the "live" reload action, this gets called once
-    -- on init and every reload and should return the command we wish
-    -- to execute, i.e. `git status -sb`
-    opts.__fn_reload = function(_)
-      return opts.cmd
-    end
-
-    -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-    contents, id = shell.reload_action_cmd(opts, "")
-    opts.__reload_cmd = contents
-
-    -- when the action resumes the preview re-attaches which registers
-    -- a new shell function id, done enough times it will overwrite the
-    -- regisered function assigned to the reload action and the headless
-    -- cmd will err with "sh: 0: -c requires an argument"
-    -- gets cleared when resume data recycles
-    opts._fn_pre_fzf = function()
-      shell.set_protected(id)
-    end
-  end
+  opts.fn_transform = [[return require("fzf-lua.make_entry").git_hunk]]
 
   opts.header_prefix = opts.header_prefix or "+ -  "
   opts.header_separator = opts.header_separator or "|"
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
 
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 return M

@@ -1,9 +1,9 @@
--- modified version of:
--- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf/actions.lua
 local uv = vim.uv or vim.loop
 local utils = require "fzf-lua.utils"
 local path = require "fzf-lua.path"
 local libuv = require "fzf-lua.libuv"
+local base64 = require "fzf-lua.lib.base64"
+local serpent = require "fzf-lua.lib.serpent"
 
 local M = {}
 
@@ -46,10 +46,12 @@ end
 -- NOT USED ANYMORE, we use `vim.g.fzf_lua_server` instead
 -- local action_server_address = nil
 
-function M.raw_async_action(fn, fzf_field_expression, debug)
-  if not fzf_field_expression then
-    fzf_field_expression = "{+}"
-  end
+---@param fn function
+---@param fzf_field_index string
+---@param debug boolean|integer
+---@return string, integer
+function M.pipe_wrap_fn(fn, fzf_field_index, debug)
+  fzf_field_index = fzf_field_index or "{+}"
 
   local receiving_function = function(pipe_path, ...)
     local pipe = uv.new_pipe(false)
@@ -89,105 +91,221 @@ function M.raw_async_action(fn, fzf_field_expression, debug)
   -- all args after `-l` will be in `_G.args`
   local action_cmd = ("%s -u NONE -l %s %s %s %s"):format(
     libuv.shellescape(path.normalize(nvim_bin)),
-    libuv.shellescape(path.normalize(path.join { vim.g.fzf_lua_directory, "shell_helper.lua" })),
+    libuv.shellescape(path.normalize(path.join { vim.g.fzf_lua_directory, "rpc.lua" })),
     id,
     tostring(debug),
-    fzf_field_expression)
+    fzf_field_index)
 
   return action_cmd, id
 end
 
-function M.raw_action(fn, fzf_field_expression, debug)
-  local receiving_function = function(pipe, ...)
-    local ok, ret = pcall(fn, ...)
-
-    local on_complete = function(_)
-      -- We are NOT asserting, in case fzf closes
-      -- the pipe before we can send the preview
-      -- assert(not err)
-      uv.close(pipe)
+---@param opts table
+---@return string?
+M.stringify_mt = function(cmd, opts)
+  assert(type(opts) == "table", "opts must be supplied")
+  assert(cmd or opts and opts.cmd, "cmd must be supplied")
+  opts.cmd = cmd or opts and opts.cmd
+  ---@param o table<string, unknown>
+  ---@return table
+  local filter_opts = function(o)
+    local names = {
+      "debug",
+      "profile",
+      "process1",
+      "silent",
+      "argv_expr",
+      "cmd",
+      "cwd",
+      "stdout",
+      "stderr",
+      "stderr_to_stdout",
+      "formatter",
+      "multiline",
+      "git_dir",
+      "git_worktree",
+      "git_icons",
+      "file_icons",
+      "color_icons",
+      "path_shorten",
+      "strip_cwd_prefix",
+      "exec_empty_query",
+      "file_ignore_patterns",
+      "rg_glob",
+      "_base64",
+      utils.__IS_WINDOWS and "__FZF_VERSION" or nil,
+    }
+    -- caller requested rg with glob support
+    if o.rg_glob then
+      table.insert(names, "glob_flag")
+      table.insert(names, "glob_separator")
     end
-
-    -- pipe must be closed, otherwise terminal will freeze
-    if not ok then
-      utils.err(ret)
-      on_complete()
-    end
-
-    if type(ret) == "string" then
-      uv.write(pipe, ret, on_complete)
-    elseif type(ret) == nil then
-      on_complete()
-    elseif type(ret) == "table" then
-      if not utils.tbl_isempty(ret) then
-        uv.write(pipe, vim.tbl_map(function(x) return x .. "\n" end, ret), on_complete)
-      else
-        on_complete()
+    local t = {}
+    for _, name in ipairs(names) do
+      if o[name] ~= nil then
+        t[name] = o[name]
       end
+    end
+    t.g = {}
+    for k, v in pairs({
+      ["_fzf_lua_server"] = vim.g.fzf_lua_server,
+      -- [NOTE] No longer needed, we use RPC for icons
+      -- ["_devicons_path"] = devicons.plugin_path(),
+      -- ["_devicons_setup"] = config._devicons_setup,
+      ["_EOL"] = opts.multiline and "\0" or "\n",
+      ["_debug"] = opts.debug,
+    }) do
+      t.g[k] = v
+    end
+    return t
+  end
+
+  ---@param obj table|string
+  ---@return string
+  local serialize = function(obj)
+    local str = type(obj) == "table"
+        and serpent.line(obj, { comment = false, sortkeys = false })
+        or tostring(obj)
+    if opts._base64 ~= false then
+      -- by default, base64 encode all arguments
+      return "[==[" .. base64.encode(str) .. "]==]"
     else
-      uv.write(pipe, tostring(ret) .. "\n", on_complete)
+      -- if not encoding, don't string wrap the table
+      return type(obj) == "table" and str
+          or "[==[" .. str .. "]==]"
     end
   end
 
-  return M.raw_async_action(receiving_function, fzf_field_expression, debug)
-end
-
-function M.action(fn, fzf_field_expression, debug)
-  local action_string, id = M.raw_action(fn, fzf_field_expression, debug)
-  return libuv.shellescape(action_string), id
-end
-
-M.preview_action_cmd = function(fn, fzf_field_expression, debug)
-  local action_string, id = M.raw_preview_action_cmd(fn, fzf_field_expression, debug)
-  return libuv.shellescape(action_string), id
-end
-
-M.raw_preview_action_cmd = function(fn, fzf_field_expression, debug)
-  return M.raw_async_action(function(pipe, ...)
-    local function on_finish(_, _)
-      if pipe and not uv.is_closing(pipe) then
-        uv.close(pipe)
-        pipe = nil
-      end
+  if not opts.requires_processing
+      and not opts.git_icons
+      and not opts.file_icons
+      and not opts.file_ignore_patterns
+      and not opts.path_shorten
+      and not opts.formatter
+      and not opts.multiline
+  then
+    -- command does not require any processing, we also reset `argv_expr`
+    -- to keep `setup_fzf_interactive_flags::no_query_condi` in the command
+    opts.argv_expr = nil
+    return opts.cmd
+  elseif opts.multiprocess then
+    for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
+      local v = opts[k]
+      assert(not v or type(v) == "string", "multiprocess requires lua string callbacks")
     end
+    if opts.argv_expr then
+      -- Since the `rg` command will be wrapped inside the shell escaped
+      -- '--headless .. --cmd', we won't be able to search single quotes
+      -- as it will break the escape sequence. So we use a nifty trick:
+      --   * replace the placeholder with {argv1}
+      --   * re-add the placeholder at the end of the command
+      --   * preprocess then replace it with vim.fn.argv(1)
+      -- NOTE: since we cannot guarantee the positional index
+      -- of arguments (#291), we use the last argument instead
+      opts.cmd = opts.cmd:gsub(FzfLua.core.fzf_query_placeholder, "{argvz}")
+    end
+    local spawn_cmd = libuv.wrap_spawn_stdio(
+      serialize(filter_opts(opts)),
+      serialize(opts.fn_transform or "nil"),
+      serialize(opts.fn_preprocess or "nil"),
+      serialize(opts.fn_postprocess or "nil")
+    )
+    if opts.argv_expr then
+      -- prefix the query with `--` so we can support `--fixed-strings` (#781)
+      spawn_cmd = string.format("%s -- %s", spawn_cmd, FzfLua.core.fzf_query_placeholder)
+    end
+    return spawn_cmd
+  end
+end
 
-    local function on_write(data, cb)
-      if not pipe then
-        cb(true)
+---@param contents table|function|string
+---@param opts {}
+---Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
+---@param fzf_field_index string?
+---@return string, integer?
+M.stringify = function(contents, opts, fzf_field_index)
+  assert(contents, "must supply contents")
+
+  -- Mark opts as already "stringified"
+  -- assert(not opts.__stringified, "twice stringified")
+  -- opts.__stringified = true
+  if opts.__stringified then return contents end
+
+  if opts.multiprocess ~= nil then
+    opts.fn_transform = opts.fn_transform == nil
+        and [[return require("fzf-lua.make_entry").file]]
+        or opts.fn_transform
+    opts.fn_preprocess = opts.fn_preprocess == nil
+        and [[return require("fzf-lua.make_entry").preprocess]]
+        or opts.fn_preprocess
+  end
+
+  -- No need to register function id (2nd `nil` in tuple), the wrapped multiprocess
+  -- command is independent, most of it's options are serialized as strings and the
+  -- rest are read from the main instance config over RPC
+  if opts.multiprocess and type(contents) == "string" then
+    local cmd = M.stringify_mt(contents, opts)
+    if cmd then return cmd, nil end
+  end
+
+  ---@param fn_str string
+  ---@return function?
+  local function load_fn(fn_str)
+    if type(fn_str) ~= "string" then return end
+    local fn_loaded = nil
+    local fn = loadstring(fn_str)
+    if fn then fn_loaded = fn() end
+    if type(fn_loaded) ~= "function" then
+      fn_loaded = nil
+    end
+    return fn_loaded
+  end
+
+  -- Convert string callbacks to callback functions
+  for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
+    local v = opts[k]
+    opts[k] = load_fn(opts[k]) or v
+  end
+
+  if type(opts.fn_reload) == "string" then
+    fzf_field_index = fzf_field_index or "{q}"
+    local cmd = opts.fn_reload --[[@as string]]
+    contents = function(args)
+      local query = libuv.shellescape(args[1] or "")
+      if cmd:match(FzfLua.core.fzf_query_placeholder) then
+        return cmd:gsub(FzfLua.core.fzf_query_placeholder, query)
       else
-        uv.write(pipe, data, cb)
+        return string.format("%s %s", cmd, query)
       end
     end
-
-    libuv.process_kill(M.__pid_preview)
-    M.__pid_preview = nil
-
-    local opts = fn(...)
-    if type(opts) == "string" then
-      --backward compat
-      opts = { cmd = opts }
-    end
-
-    return libuv.spawn(vim.tbl_extend("force", opts, {
-      cb_finish = on_finish,
-      cb_write = on_write,
-      cb_pid = function(pid) M.__pid_preview = pid end,
-    }))
-  end, fzf_field_expression, debug)
-end
-
-M.reload_action_cmd = function(opts, fzf_field_expression)
-  if opts.fn_preprocess and type(opts.fn_preprocess) == "function" then
-    -- run the preprocessing fn
-    opts = vim.tbl_deep_extend("keep", opts, opts.fn_preprocess(opts))
   end
 
-  return M.raw_async_action(function(pipe, args)
-    -- get the type of contents from the caller
-    local reload_contents = opts.__fn_reload(args[1])
+  assert(not opts.fn_reload or type(contents) == "function", "fn_reload must be of type function")
+
+  local cmd, id = M.pipe_wrap_fn(function(pipe, ...)
+    local args = { ... }
+    -- Contents could be dependent or args, e.g. live_grep which
+    -- generates a different command based on the typed query
+    -- redefine local contents to prevent override on function call
+    ---@diagnostic disable-next-line: redefined-local
+    local contents, env = (function()
+      local ret = (opts.fn_reload or opts.__stringify_cmd)
+          and contents(unpack(args))
+          or contents
+      if opts.__stringify_cmd and type(ret) == "table" then
+        return ret.cmd, (ret.env or opts.env)
+      else
+        return ret, opts.env
+      end
+    end)()
     local write_cb_count = 0
     local pipe_want_close = false
     local EOL = opts.multiline and "\0" or "\n"
+    local fn_transform = opts.fn_transform
+    local fn_preprocess = opts.fn_preprocess
+    local fn_postprocess = opts.fn_postprocess
+
+    -- Run the preprocess function
+    if type(fn_preprocess) == "function" then fn_preprocess(opts) end
 
     -- local on_finish = function(code, sig, from, pid)
     -- print("finish", pipe, pipe_want_close, code, sig, from, pid)
@@ -198,6 +316,8 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         -- only close if all our uv.write calls are completed
         uv.close(pipe)
         pipe = nil
+        -- Run the postprocess function
+        if type(fn_postprocess) == "function" then fn_postprocess(opts) end
       end
     end
 
@@ -235,29 +355,31 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
       end
     end
 
-    if type(reload_contents) == "string" then
+    if type(contents) == "string" then
       -- string will be used as a shell command.
       -- terminate previously running commands
-      libuv.process_kill(M.__pid_reload)
-      M.__pid_reload = nil
+      libuv.process_kill(M.__pid)
+      M.__pid = nil
 
       -- spawn/async_spawn already async, no need to send opts.__co
       -- also, we can't call coroutine.yield inside a libuv callback
       -- due to: "attempt to yield across C-call boundary"
       libuv.async_spawn({
         cwd = opts.cwd,
-        cmd = reload_contents,
+        cmd = contents,
+        env = env,
         cb_finish = on_finish,
         cb_write = on_write,
-        cb_pid = function(pid) M.__pid_reload = pid end,
+        cb_pid = function(pid) M.__pid = pid end,
+        process1 = opts.process1,
+        profiler = opts.profiler,
         EOL = EOL,
         -- must send false, 'coroutinify' adds callback as last argument
         -- which will conflict with the 'fn_transform' argument
-      }, opts.__fn_transform or false)
+        -- convert `fn_transform(x)` to `fn_transform(x, opts)`
+      }, fn_transform and function(x) return fn_transform(x, opts) end or false)
     else
-      -- table or function runs in a coroutine
-      -- which isn't required for 'libuv.spawn'
-      coroutine.wrap(function()
+      local fn_load = function()
         if opts.__co then
           local costatus = coroutine.status(opts.__co)
           if costatus ~= "dead" then
@@ -268,7 +390,7 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
           assert(coroutine.status(opts.__co) == "dead")
         end
         -- reset var to current running routine
-        opts.__co = coroutine.running()
+        opts.__co = opts.__coroutinify and coroutine.running()
 
         -- callback with newline
         local on_write_nl = function(data, cb)
@@ -288,23 +410,54 @@ M.reload_action_cmd = function(opts, fzf_field_expression)
         end
 
 
-        if type(reload_contents) == "table" then
-          for _, l in ipairs(reload_contents) do
+        if type(contents) == "table" then
+          for _, l in ipairs(contents) do
             on_write_nl_co(l)
           end
           on_finish()
-        elseif type(reload_contents) == "function" then
-          -- by default we use the async callbacks
-          if opts.func_async_callback ~= false then
-            reload_contents(on_write_nl_co, on_write_co)
+        elseif type(contents) == "function" then
+          -- by default we use sync callbacks
+          if opts.__coroutinify then
+            contents(on_write_nl_co, on_write_co, unpack(args))
           else
-            reload_contents(on_write_nl, on_write)
+            contents(on_write_nl, on_write, unpack(args))
           end
         else
         end
-      end)()
+      end
+      if opts.__coroutinify then
+        fn_load = coroutine.wrap(fn_load)
+      end
+      fn_load()
     end
-  end, fzf_field_expression, opts.debug)
+  end, fzf_field_index or "", opts.debug)
+
+  M.set_protected(id)
+  return cmd, id
+end
+
+M.stringify_cmd = function(fn, opts, fzf_field_index)
+  assert(type(fn) == "function", "fn must be of type function")
+  return M.stringify(fn, { __stringify_cmd = true, debug = opts.debug }, fzf_field_index)
+end
+
+M.stringify_data = function(fn, opts, fzf_field_index)
+  assert(type(fn) == "function", "fn must be of type function")
+  return M.stringify(
+    function(cb, _, ...)
+      local ret = fn(...)
+      if type(ret) == "table" then
+        if not utils.tbl_isempty(ret) then
+          vim.tbl_map(function(x) cb(x) end, ret)
+        end
+      else
+        cb(tostring(ret))
+      end
+      cb(nil)
+    end,
+    { __stringify_data = true, debug = opts.debug },
+    fzf_field_index
+  )
 end
 
 return M

@@ -93,8 +93,7 @@ M.path = function(opts)
     end
   end)()
   opts = set_cmp_opts_path(opts)
-  local contents = core.mt_cmd_wrapper(opts)
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 M.file = function(opts)
@@ -115,8 +114,7 @@ M.file = function(opts)
     end
   end)()
   opts = set_cmp_opts_path(opts)
-  local contents = core.mt_cmd_wrapper(opts)
-  return core.fzf_exec(contents, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 M.line = function(opts)

@@ -91,37 +91,26 @@ M.breakpoints = function(opts)
   -- display relative paths by default
   if opts.cwd == nil then opts.cwd = uv.cwd() end
 
-  opts.func_async_callback = false
-  opts.__fn_reload = opts.__fn_reload or function(_)
-    return function(cb)
-      coroutine.wrap(function()
-        local co = coroutine.running()
-        local bps = dap_bps.to_qf_list(dap_bps.get())
-        for _, b in ipairs(bps) do
-          vim.schedule(function()
-            local entry = make_entry.lcol(b, opts)
-            entry = string.format("[%s]%s%s",
-              -- tostring(opts._locations[i].bufnr),
-              utils.ansi_codes.yellow(tostring(b.bufnr)),
-              utils.nbsp,
-              make_entry.file(entry, opts))
-            cb(entry, function()
-              coroutine.resume(co)
-            end)
+  local contents = function(cb)
+    coroutine.wrap(function()
+      local co = coroutine.running()
+      local bps = dap_bps.to_qf_list(dap_bps.get())
+      for _, b in ipairs(bps) do
+        vim.schedule(function()
+          local entry = make_entry.lcol(b, opts)
+          entry = string.format("[%s]%s%s",
+            -- tostring(opts._locations[i].bufnr),
+            utils.ansi_codes.yellow(tostring(b.bufnr)),
+            utils.nbsp,
+            make_entry.file(entry, opts))
+          cb(entry, function()
+            coroutine.resume(co)
           end)
-          coroutine.yield()
-        end
-        cb(nil)
-      end)()
-    end
-  end
-
-  -- build the "reload" cmd and remove '-- {+}' from the initial cmd
-  local contents, id = shell.reload_action_cmd(opts, "")
-  opts.__reload_cmd = contents
-
-  opts._fn_pre_fzf = function()
-    shell.set_protected(id)
+        end)
+        coroutine.yield()
+      end
+      cb(nil)
+    end)()
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
