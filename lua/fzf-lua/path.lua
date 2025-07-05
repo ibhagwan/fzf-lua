@@ -556,6 +556,9 @@ function M.git_root(opts, noerr)
   return output[1]
 end
 
+---@param str string
+---@param opts fzf-lua.Config
+---@return fzf-lua.path.Entry|fzf-lua.keymap.Entry
 function M.keymap_to_entry(str, opts)
   local valid_modes = {
     n = true,
