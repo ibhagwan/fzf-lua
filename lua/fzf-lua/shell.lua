@@ -190,6 +190,20 @@ M.stringify_mt = function(cmd, opts)
   elseif opts.multiprocess then
     for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
       local v = opts[k]
+      if type(v) == "function" and utils.__HAS_NVIM_010 then
+        -- Attempt to convert function to its bytecode representation
+        -- NOTE: limited to neovim >= 0.10 due to vim.base64
+        v = string.format(
+          [[return loadstring(vim.base64.decode("%s"))]],
+          vim.base64.encode(string.dump(v, true)))
+        -- Test the function once with nil value (imprefect?)
+        -- to see if there's an issue with upvalue refs
+        local f = loadstring(v)()
+        local ok, err = pcall(f)
+        assert(ok or not err:match("attempt to index upvalue"),
+          string.format("multiprocess '%s' cannot have upvalue referecnces", k))
+        opts[k] = v
+      end
       assert(not v or type(v) == "string", "multiprocess requires lua string callbacks")
     end
     if opts.argv_expr then
