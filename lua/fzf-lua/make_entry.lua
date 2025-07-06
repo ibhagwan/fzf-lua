@@ -170,11 +170,8 @@ end
 M.preprocess = function(opts)
   local EOL = opts.multiline and "\0" or "\n"
   local argv = function(i, debug)
-    -- argv1 is actually the 7th argument if we count
-    -- arguments already supplied by 'wrap_spawn_stdio'.
-    -- If no index was supplied use the last argument
-    local idx = tonumber(i) and tonumber(i) + 6 or #vim.v.argv
-    local arg = vim.v.argv[idx]
+    local idx = tonumber(i) or #_G.arg
+    local arg = _G.arg[idx]
     if debug == "v" or debug == "verbose" then
       io.stdout:write(("[DEBUG] raw_argv(%d) = %s" .. EOL):format(idx, arg))
     end
