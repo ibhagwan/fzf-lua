@@ -156,7 +156,9 @@ M.fzf_exec = function(contents, opts)
     -- each keypress reloads fzf's input usually based on the typed query
     -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
     opts.fn_reload = shell.stringify(opts.fn_reload, opts)
-    opts = M.setup_fzf_interactive_native(opts.fn_reload, opts)
+    local fzf_field_index = M.fzf_field_index(opts)
+    local cmd = M.expand_query(opts.fn_reload, fzf_field_index)
+    opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
     contents = opts.__fzf_init_cmd
   elseif contents then
     -- Contents sent to fzf can only be nil or a shell command (string)
@@ -1252,12 +1254,6 @@ M.expand_query = function(cmd, fzf_field_index)
   else
     return ("%s %s"):format(cmd, fzf_field_index)
   end
-end
-
-M.setup_fzf_interactive_native = function(cmd, opts)
-  local fzf_field_index = M.fzf_field_index(opts)
-  cmd = M.expand_query(cmd, fzf_field_index)
-  return M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
 end
 
 return M
