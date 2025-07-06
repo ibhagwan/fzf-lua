@@ -291,7 +291,7 @@ M.live_grep = function(opts)
   -- prevents 'file|git_icons=false' from overriding
   -- processing inside 'core.mt_cmd_wrapper'
   if opts.rg_glob then
-    opts.requires_processing = true
+    opts.multiprocess = opts.multiprocess and 1
   end
 
   -- signal to preprocess we are looking to replace {argvz}
@@ -333,10 +333,13 @@ M.live_grep_native = function(opts)
   opts = opts or {}
   opts.git_icons = false
   opts.file_icons = false
+  opts.file_ignore_patterns = false
+  opts.strip_cwd_prefix = false
   opts.path_shorten = false
   opts.formatter = false
+  opts.multiline = false
   opts.rg_glob = false
-  opts.multiprocess = true
+  opts.multiprocess = 1
   return M.live_grep(opts)
 end
 

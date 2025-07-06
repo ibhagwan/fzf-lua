@@ -886,6 +886,26 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
+  -- entry type is file, "optional file processing, only trandform
+  -- entries if an option is present which requires a transform
+  if opts._type == "file"
+      and (opts.git_icons
+        or opts.file_icons
+        or opts.file_ignore_patterns
+        or opts.strip_cwd_prefix
+        or opts.path_shorten
+        or opts.formatter
+        or opts.multiline
+        or opts.rg_glob)
+  then
+    opts.fn_transform = opts.fn_transform == nil
+        and [[return require("fzf-lua.make_entry").file]]
+        or opts.fn_transform
+    opts.fn_preprocess = opts.fn_preprocess == nil
+        and [[return require("fzf-lua.make_entry").preprocess]]
+        or opts.fn_preprocess
+  end
+
   if opts.line_query and not utils.has(opts, "fzf", { 0, 59 }) then
     utils.warn("'line_query' requires fzf >= 0.59, ignoring.")
   elseif opts.line_query then
