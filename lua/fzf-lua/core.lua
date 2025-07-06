@@ -151,11 +151,6 @@ M.fzf_exec = function(contents, opts)
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
   end
-  -- Save a copy of provider info in the opts, we will
-  -- later use it for better named quickfix lists (#776)
-  opts.__INFO = FzfLua.get_info()
-  -- pid getter/setter, used by stringify to terminate previous pid
-  opts.PidObject = utils.pid_object("__stringify_pid", opts)
   if opts.fn_reload then
     -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
     -- each keypress reloads fzf's input usually based on the typed query
