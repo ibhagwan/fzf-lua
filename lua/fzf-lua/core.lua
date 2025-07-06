@@ -1139,10 +1139,10 @@ M.convert_exec_silent_actions = function(opts)
 end
 
 ---@param command string
----@param fzf_field_expression string
+---@param fzf_field_index string
 ---@param opts table
 ---@return table
-M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
+M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
   -- query cannot be 'nil'
   opts.query = opts.query or ""
 
@@ -1179,7 +1179,7 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
           utils.has(opts, "fzf", { 0, 51 }) and [[IF %s NEQ ^"^" ]] or [[IF ^%s NEQ ^^"^" ]],
           "[ -z %s ] || "),
         -- {q} for fzf is automatically shell escaped
-        fzf_field_expression
+        fzf_field_index
       )
 
   if opts._is_skim then
@@ -1217,7 +1217,7 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
           or libuv.escape_fzf(opts.query, utils.has(opts, "fzf", { 0, 52 }) and 0.52 or 0)
       -- gsub doesn't like single % on rhs
       local escaped_q = libuv.shellescape(q):gsub("%%", "%%%%")
-      opts.__fzf_init_cmd = initial_command:gsub(fzf_field_expression, escaped_q)
+      opts.__fzf_init_cmd = initial_command:gsub(fzf_field_index, escaped_q)
     end
     opts.fzf_opts["--disabled"] = true
     opts.fzf_opts["--query"] = opts.query
@@ -1237,27 +1237,27 @@ M.fzf_query_placeholder = "<query>"
 
 ---@param opts {field_index: boolean, _is_skim: boolean}
 ---@return string
-M.fzf_field_expression = function(opts)
+M.fzf_field_index = function(opts)
   -- fzf already adds single quotes around the placeholder when expanding.
   -- for skim we surround it with double quotes or single quote searches fail
   return opts and opts.field_index or opts._is_skim and [["{}"]] or "{q}"
 end
 
 ---@param cmd string
----@param fzf_field_expression string
+---@param fzf_field_index string
 ---@return string
-M.expand_query = function(cmd, fzf_field_expression)
+M.expand_query = function(cmd, fzf_field_index)
   if cmd:match(M.fzf_query_placeholder) then
-    return (cmd:gsub(M.fzf_query_placeholder, fzf_field_expression))
+    return (cmd:gsub(M.fzf_query_placeholder, fzf_field_index))
   else
-    return ("%s %s"):format(cmd, fzf_field_expression)
+    return ("%s %s"):format(cmd, fzf_field_index)
   end
 end
 
 M.setup_fzf_interactive_native = function(cmd, opts)
-  local fzf_field_expression = M.fzf_field_expression(opts)
-  cmd = M.expand_query(cmd, fzf_field_expression)
-  return M.setup_fzf_interactive_flags(cmd, fzf_field_expression, opts)
+  local fzf_field_index = M.fzf_field_index(opts)
+  cmd = M.expand_query(cmd, fzf_field_index)
+  return M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
 end
 
 return M
