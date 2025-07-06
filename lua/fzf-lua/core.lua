@@ -770,7 +770,7 @@ M.set_title_flags = function(opts, titles)
   if not vim.tbl_contains(titles or {}, "cmd") then return opts end
   if opts.winopts.title_flags == false then return opts end
   local cmd = type(opts.cmd) == "string" and opts.cmd
-      or type(opts.fn_reload) == "string" and opts.fn_reload
+      or type(opts._cmd) == "string" and opts._cmd
       or nil
   if not cmd then return opts end
   local flags = {}
@@ -781,7 +781,7 @@ M.set_title_flags = function(opts, titles)
   }
   for _, def in ipairs(patterns) do
     for _, p in ipairs(def[1]) do
-      if opts.cmd:match(p) then
+      if cmd:match(p) then
         table.insert(flags, string.format(" %s ", def[2]))
       end
     end
