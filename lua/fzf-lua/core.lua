@@ -151,29 +151,11 @@ M.fzf_exec = function(contents, opts)
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
   end
-  -- Save a copy of provider info in the opts, we will
-  -- later use it for better named quickfix lists (#776)
-  opts.__INFO = FzfLua.get_info()
-  -- Default fzf exit callback acts upon the selected items
-  opts.fn_selected = opts.fn_selected or function(selected, o)
-    actions.act(selected, o)
-  end
-  -- pid getter/setter, used by stringify to terminate previous pid
-  opts.PidObject = utils.pid_object("__stringify_pid", opts)
-  if opts.fn_reload then
-    -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
-    -- each keypress reloads fzf's input usually based on the typed query
-    -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
-    opts.fn_reload = shell.stringify(opts.fn_reload, opts)
-    opts = M.setup_fzf_interactive_native(opts.fn_reload, opts)
-    contents = opts.__fzf_init_cmd
-  elseif contents then
-    -- Contents sent to fzf can only be nil or a shell command (string)
-    -- the API accepts both tables and functions which we "stringify"
-    -- We also send string commands as stringify is also responsible
-    -- for multiprocess wrapping of shell commands with processing
-    contents = shell.stringify(contents, opts) or nil
-  end
+  -- Contents sent to fzf can only be nil or a shell command (string)
+  -- the API accepts both tables and functions which we "stringify"
+  -- We also send string commands as stringify is also responsible
+  -- for multiprocess wrapping of shell commands with processing
+  contents = contents and shell.stringify(contents, opts) or nil
   assert(contents == nil or type(contents) == "string", "contents must be of type string")
   return M.fzf_wrap(contents, opts)
 end
@@ -182,9 +164,20 @@ end
 ---@param opts? table
 M.fzf_live = function(contents, opts)
   assert(contents)
-  opts = opts or {}
+  if not opts or not opts._normalized then
+    opts = config.normalize_opts(opts or {}, {})
+    if not opts then return end
+  end
   opts.fn_reload = contents
-  return M.fzf_exec(nil, opts)
+  -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
+  -- each keypress reloads fzf's input usually based on the typed query
+  -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
+  opts.fn_reload = shell.stringify(contents, opts)
+  local fzf_field_index = M.fzf_field_index(opts)
+  local cmd = M.expand_query(opts.fn_reload, fzf_field_index)
+  opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
+  contents = opts.__fzf_init_cmd
+  return M.fzf_wrap(contents, opts)
 end
 
 M.fzf_resume = function(opts)
@@ -204,30 +197,26 @@ end
 
 ---@param contents string?
 ---@param opts table
----@param fn_selected function?
 ---@return thread
-M.fzf_wrap = function(contents, opts, fn_selected)
+M.fzf_wrap = function(contents, opts)
   opts = opts or {}
   local _co
   coroutine.wrap(function()
     _co = coroutine.running()
     if type(opts.cb_co) == "function" then opts.cb_co(_co) end
-    opts.fn_selected = opts.fn_selected or fn_selected
+    -- Default fzf exit callback acts upon the selected items
     local selected = M.fzf(contents, opts)
-    if opts.fn_selected then
-      -- errors thrown here gets silenced possibly
-      -- due to a coroutine, so catch explicitly
-      xpcall(function()
-        opts.fn_selected(selected, opts)
-      end, function(err)
-        -- ignore existing swap file error, the choices dialog will still be
-        -- displayed to user to make a selection once fzf-lua exits (#1011)
-        if err:match("Vim%(edit%):E325") then
-          return
-        end
-        utils.err("fn_selected threw an error: " .. debug.traceback(err, 1))
-      end)
+    local fn_selected = opts.fn_selected or actions.act
+    if not fn_selected then return end
+    -- errors thrown here gets silenced possibly
+    -- due to a coroutine, so catch explicitly
+    local _, err = pcall(fn_selected, selected, opts)
+    -- ignore existing swap file error, the choices dialog will still be
+    -- displayed to user to make a selection once fzf-lua exits (#1011)
+    if err and err:match("Vim%(edit%):E325") then
+      return
     end
+    utils.err("fn_selected threw an error: " .. debug.traceback(err, 1))
   end)()
   return _co
 end
@@ -781,7 +770,7 @@ M.set_title_flags = function(opts, titles)
   if not vim.tbl_contains(titles or {}, "cmd") then return opts end
   if opts.winopts.title_flags == false then return opts end
   local cmd = type(opts.cmd) == "string" and opts.cmd
-      or type(opts.fn_reload) == "string" and opts.fn_reload
+      or type(opts._cmd) == "string" and opts._cmd
       or nil
   if not cmd then return opts end
   local flags = {}
@@ -792,7 +781,7 @@ M.set_title_flags = function(opts, titles)
   }
   for _, def in ipairs(patterns) do
     for _, p in ipairs(def[1]) do
-      if opts.cmd:match(p) then
+      if cmd:match(p) then
         table.insert(flags, string.format(" %s ", def[2]))
       end
     end
@@ -1152,10 +1141,10 @@ M.convert_exec_silent_actions = function(opts)
 end
 
 ---@param command string
----@param fzf_field_expression string
+---@param fzf_field_index string
 ---@param opts table
 ---@return table
-M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
+M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
   -- query cannot be 'nil'
   opts.query = opts.query or ""
 
@@ -1192,7 +1181,7 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
           utils.has(opts, "fzf", { 0, 51 }) and [[IF %s NEQ ^"^" ]] or [[IF ^%s NEQ ^^"^" ]],
           "[ -z %s ] || "),
         -- {q} for fzf is automatically shell escaped
-        fzf_field_expression
+        fzf_field_index
       )
 
   if opts._is_skim then
@@ -1230,7 +1219,7 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_expression, opts)
           or libuv.escape_fzf(opts.query, utils.has(opts, "fzf", { 0, 52 }) and 0.52 or 0)
       -- gsub doesn't like single % on rhs
       local escaped_q = libuv.shellescape(q):gsub("%%", "%%%%")
-      opts.__fzf_init_cmd = initial_command:gsub(fzf_field_expression, escaped_q)
+      opts.__fzf_init_cmd = initial_command:gsub(fzf_field_index, escaped_q)
     end
     opts.fzf_opts["--disabled"] = true
     opts.fzf_opts["--query"] = opts.query
@@ -1250,25 +1239,21 @@ M.fzf_query_placeholder = "<query>"
 
 ---@param opts {field_index: boolean, _is_skim: boolean}
 ---@return string
-M.fzf_field_expression = function(opts)
+M.fzf_field_index = function(opts)
   -- fzf already adds single quotes around the placeholder when expanding.
   -- for skim we surround it with double quotes or single quote searches fail
   return opts and opts.field_index or opts._is_skim and [["{}"]] or "{q}"
 end
 
-M.setup_fzf_interactive_native = function(command, opts)
-  local fzf_field_expression = M.fzf_field_expression(opts)
-
-  -- replace placeholder with the field index expression.
-  -- If the command doesn't contain our placeholder, append
-  -- the field index expression instead
-  if command:match(M.fzf_query_placeholder) then
-    command = opts.fn_reload:gsub(M.fzf_query_placeholder, fzf_field_expression)
+---@param cmd string
+---@param fzf_field_index string
+---@return string
+M.expand_query = function(cmd, fzf_field_index)
+  if cmd:match(M.fzf_query_placeholder) then
+    return (cmd:gsub(M.fzf_query_placeholder, fzf_field_index))
   else
-    command = ("%s %s"):format(command, fzf_field_expression)
+    return ("%s %s"):format(cmd, fzf_field_index)
   end
-
-  return M.setup_fzf_interactive_flags(command, fzf_field_expression, opts)
 end
 
 return M

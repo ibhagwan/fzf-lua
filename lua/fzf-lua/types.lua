@@ -1,3 +1,8 @@
+FzfLua = require("fzf-lua")
+FzfLua.core = require("fzf-lua.core")
+FzfLua.shell = require("fzf-lua.shell")
+FzfLua.win = require("fzf-lua.win")
+
 ---@class fzf-lua.Config
 ---@field [string] any
 
