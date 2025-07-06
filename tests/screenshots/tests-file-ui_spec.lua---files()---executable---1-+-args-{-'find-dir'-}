@@ -2,9 +2,9 @@
 01|                                                                
 02|~                                                               
 03|~      ╭───────────────────── Files ─────────────────────╮      
-04|~      │>                                    112/112 (0) │      
+04|~      │>                                    113/113 (0) │      
 05|~      │──────────────────────────────────────────────── │      
-06|~      │▌ [DEBUG] find . -type f \! -path '*/.git/*' \··││      
+06|~      │▌ [DEBUG] [mt] find . -type f \! -path '*/.git··││      
 07|~      │  .editorconfig                                 ││      
 08|~      │  .github/ISSUE_TEMPLATE/bug.yaml                │      
 09|~      │  .github/ISSUE_TEMPLATE/config.yml              │      

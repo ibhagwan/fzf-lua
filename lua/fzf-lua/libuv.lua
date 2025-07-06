@@ -10,6 +10,9 @@ local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
 local base64 = require("fzf-lua.lib.base64")
 local serpent = require("fzf-lua.lib.serpent")
 
+---@param pid integer
+---@param signal integer?
+---@returns boolean
 local function process_kill(pid, signal)
   if not pid or not tonumber(pid) then return false end
   if type(uv.os_getpriority(pid)) == "number" then
@@ -47,7 +50,10 @@ local function coroutinify(fn)
   end
 end
 
----@param opts {cwd: string, cmd: string|table, env: table?, cb_finish: function, cb_write: function, cb_err: function, cb_pid: function, fn_transform: function?, EOL: string?, process1: boolean?, profiler: boolean?}
+---@param opts {cwd: string, cmd: string|table, env: table?, cb_finish: function,
+---cb_write: function?, cb_write_lines: function?, cb_err: function, cb_pid: function,
+---fn_transform: function?, EOL: string?, process1: boolean?, profiler: boolean?,
+---use_queue: boolean?}
 ---@param fn_transform function?
 ---@param fn_done function?
 ---@return uv.uv_process_t proc
@@ -58,9 +64,19 @@ M.spawn = function(opts, fn_transform, fn_done)
   local error_pipe = uv.new_pipe(false)
   local write_cb_count, read_cb_count, on_exit_called = 0, 0, nil
   local prev_line_content = nil
+  local handle, pid
+  local co = coroutine.running()
+  local queue = require("fzf-lua.lib.queue").new()
+  local work_ctx
 
-  if opts.fn_transform then fn_transform = opts.fn_transform end
+  -- Disable queue if running headless due to
+  -- "Attempt to yield across a C-call boundary"
+  opts.use_queue = not _G._fzf_lua_is_headless and opts.use_queue
 
+  -- cb_write_lines trumps cb_write
+  if opts.cb_write_lines then opts.cb_write = opts.cb_write_lines end
+
+  ---@diagnostic disable-next-line: redefined-local
   local finish = function(code, sig, from, pid)
     -- Uncomment to debug pipe closure timing issues (#1521)
     -- output_pipe:close(function() print("closed o") end)
@@ -70,10 +86,17 @@ M.spawn = function(opts, fn_transform, fn_done)
     if opts.cb_finish then
       opts.cb_finish(code, sig, from, pid)
     end
-    -- coroutinify callback
-    if fn_done then
-      fn_done(pid)
+    queue:clear()
+    if not handle:is_closing() then
+      handle:kill("sigterm")
+      vim.defer_fn(function()
+        if not handle:is_closing() then
+          handle:kill("sigkill")
+        end
+      end, 200)
     end
+    -- NO LONGER USED, was coroutinify callback
+    if fn_done then fn_done(pid) end
   end
 
   -- https://github.com/luvit/luv/blob/master/docs.md
@@ -91,7 +114,6 @@ M.spawn = function(opts, fn_transform, fn_done)
     table.insert(args, tostring(opts.cmd))
   end
 
-  local handle, pid
   ---@diagnostic disable-next-line: missing-fields
   handle, pid = uv.spawn(shell, {
     args = args,
@@ -150,66 +172,93 @@ M.spawn = function(opts, fn_transform, fn_done)
     end)
   end
 
-  local _read_cb = function(err, data)
-    if err then
-      assert(not err)
-      finish(130, 0, 4, pid)
-    end
-    if not data then
-      if prev_line_content then
-        write_cb(prev_line_content .. EOL)
+  ---@param data string data stream
+  ---@param prev string? rest of line from previous call
+  ---@param trans function? line transformation function
+  ---@return table, string line array, partial last line (no EOL)
+  local function split_lines(data, prev, trans)
+    local ret = {}
+    local start_idx = 1
+    repeat
+      local nl_idx = data:find("\n", start_idx, true)
+      if nl_idx then
+        local line = data:sub(start_idx, nl_idx - 1)
+        if prev then
+          line = prev .. line
+          prev = nil
+        end
+        if trans then line = trans(line) end
+        if line then table.insert(ret, line) end
+        start_idx = nl_idx + 1
+      else
+        -- assert(start_idx <= #data)
+        if prev and #prev > 4096 then
+          -- chunk size is 64K, limit previous line length to 4K
+          -- max line length is therefor 4K + 64K (leftover + full chunk)
+          -- without this we can memory fault on extremely long lines (#185)
+          -- or have UI freezes (#211)
+          prev = prev:sub(1, 4096)
+        end
+        prev = (prev or "") .. data:sub(start_idx)
       end
+    until not nl_idx or start_idx > #data
+    return ret, prev
+  end
+
+  --- Called with nil to process the leftover data
+  ---@param data string?
+  local process_data = function(data)
+    data = data or prev_line_content and (prev_line_content .. EOL) or nil
+    if not data then
       -- https://github.com/LazyVim/LazyVim/discussions/5264
       -- The pipe can remain active *after* on_exit was called
-      if write_cb_count == 0 and on_exit_called then
+      if write_cb_count == 0
+          and read_cb_count == 0
+          and on_exit_called
+      then
         finish(0, 0, 5, pid)
       end
       return
     end
-
     if not fn_transform then
       write_cb(data)
     else
-      local lines = {}
-      local nlines = 0
-      local start_idx = 1
+      -- NOTE: cannot use due to "yield across a C-call boundary"
+      -- if co and not work_ctx then
+      --   work_ctx = uv.new_work(split_lines, function(lines, prev)
+      --     coroutine.resume(co, lines, prev)
+      --   end)
+      -- end
+      local nlines, lines = 0, nil
       local t_st = opts.profiler and uv.hrtime()
       if t_st then write_cb(string.format("[DEBUG] start: %.0f (ns)" .. EOL, t_st)) end
-      repeat
-        local nl_idx = data:find("\n", start_idx, true)
-        if nl_idx then
-          local line = data:sub(start_idx, nl_idx - 1)
-          if prev_line_content then
-            line = prev_line_content .. line
-            prev_line_content = nil
-          end
-          line = fn_transform(line)
-          if line then
-            nlines = nlines + 1
-            if opts.process1 then
-              write_cb(line .. EOL)
-            else
-              table.insert(lines, line)
-            end
-          end
-          start_idx = nl_idx + 1
+      if work_ctx then
+        -- should never get here, work_ctx is never initialized
+        -- code remains as a solemn reminder to my efforts of making
+        -- multiprocess=false a lag free experience
+        uv.queue_work(work_ctx, data, prev_line_content)
+        lines, prev_line_content = coroutine.yield()
+      else
+        lines, prev_line_content = split_lines(data, prev_line_content,
+          -- NOTE `fn_transform=true` is used to force line split without transformation
+          type(fn_transform) == "function" and fn_transform or nil)
+      end
+      nlines = nlines + #lines
+      if #lines > 0 then
+        if opts.cb_write_lines then
+          write_cb(lines)
         else
-          -- assert(start_idx <= #data)
-          if prev_line_content and #prev_line_content > 4096 then
-            -- chunk size is 64K, limit previous line length to 4K
-            -- max line length is therefor 4K + 64K (leftover + full chunk)
-            -- without this we can memory fault on extremely long lines (#185)
-            -- or have UI freezes (#211)
-            prev_line_content = prev_line_content:sub(1, 4096)
+          -- Testing shows better performance writing the entire table at once as opposed to
+          -- calling 'write_cb' for every line after 'fn_transform', we therefore only use
+          -- `process1` when using "mini.icons" as `vim.filetype.match` causes a signigicant
+          -- delay and having to wait for all lines to be processed has an apparent lag
+          if opts.process1 then
+            vim.tbl_map(function(l) write_cb(l .. EOL) end, lines)
+          else
+            write_cb(table.concat(lines, EOL) .. EOL)
           end
-          prev_line_content = (prev_line_content or "") .. data:sub(start_idx)
         end
-      until not nl_idx or start_idx > #data
-      -- Testing shows better performance writing the entire table at once as opposed to
-      -- calling 'write_cb' for every line after 'fn_transform', we therefore only use
-      -- `process1` when using "mini.icons" as `vim.filetype.match` causes a signigicant
-      -- delay and having to wait for all lines to be processed has an apparent lag
-      if #lines > 0 then write_cb(table.concat(lines, EOL) .. EOL) end
+      end
       if t_st then
         local t_e = vim.uv.hrtime()
         write_cb(string.format("[DEBUG] finish:%.0f (ns) %d lines took %.0f (ms)" .. EOL,
@@ -219,13 +268,26 @@ M.spawn = function(opts, fn_transform, fn_done)
   end
 
   local read_cb = function(err, data)
-    read_cb_count = read_cb_count + 1
-    local read = function()
-      _read_cb(err, data)
-      read_cb_count = read_cb_count - 1
+    if err then
+      finish(130, 0, 4, pid)
+      return
     end
-    -- Avoid "attempt to yield across C-call boundary"
-    if vim.in_fast_event() then vim.schedule(read) else read() end
+    if opts.use_queue then
+      if data then
+        queue:push(data)
+        coroutine.resume(co)
+      end
+    else
+      -- Schedule data processing, will call finish if data is nil
+      -- and no leftover data is present
+      read_cb_count = read_cb_count + 1
+      local process = function()
+        read_cb_count = read_cb_count - 1
+        process_data(data)
+      end
+      -- Avoid "attempt to yield across C-call boundary" by using vim.schedule
+      if vim.in_fast_event() then vim.schedule(process) else process() end
+    end
   end
 
   local err_cb = function(err, data)
@@ -252,9 +314,23 @@ M.spawn = function(opts, fn_transform, fn_done)
     output_pipe:read_start(read_cb)
     error_pipe:read_start(err_cb)
   end
+
+  if opts.use_queue then
+    while not (output_pipe:is_closing() and queue:empty()) do
+      if queue:empty() then
+        coroutine.yield()
+      else
+        process_data(queue:pop())
+      end
+    end
+    -- process the leftover line from `processs_data`
+    process_data(nil)
+  end
+
   return handle, pid
 end
 
+-- Coroutine version of spawn so we can use queue
 M.async_spawn = coroutinify(M.spawn)
 
 ---@param opts {cmd: string, cwd: string, cb_pid: function, cb_finish: function, cb_write: function, multiline: boolean?, process1: boolean?, profiler: boolean?}
