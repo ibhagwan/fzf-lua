@@ -154,10 +154,6 @@ M.fzf_exec = function(contents, opts)
   -- Save a copy of provider info in the opts, we will
   -- later use it for better named quickfix lists (#776)
   opts.__INFO = FzfLua.get_info()
-  -- Default fzf exit callback acts upon the selected items
-  opts.fn_selected = opts.fn_selected or function(selected, o)
-    actions.act(selected, o)
-  end
   -- pid getter/setter, used by stringify to terminate previous pid
   opts.PidObject = utils.pid_object("__stringify_pid", opts)
   if opts.fn_reload then
@@ -204,30 +200,26 @@ end
 
 ---@param contents string?
 ---@param opts table
----@param fn_selected function?
 ---@return thread
-M.fzf_wrap = function(contents, opts, fn_selected)
+M.fzf_wrap = function(contents, opts)
   opts = opts or {}
   local _co
   coroutine.wrap(function()
     _co = coroutine.running()
     if type(opts.cb_co) == "function" then opts.cb_co(_co) end
-    opts.fn_selected = opts.fn_selected or fn_selected
+    -- Default fzf exit callback acts upon the selected items
     local selected = M.fzf(contents, opts)
-    if opts.fn_selected then
-      -- errors thrown here gets silenced possibly
-      -- due to a coroutine, so catch explicitly
-      xpcall(function()
-        opts.fn_selected(selected, opts)
-      end, function(err)
-        -- ignore existing swap file error, the choices dialog will still be
-        -- displayed to user to make a selection once fzf-lua exits (#1011)
-        if err:match("Vim%(edit%):E325") then
-          return
-        end
-        utils.err("fn_selected threw an error: " .. debug.traceback(err, 1))
-      end)
+    local fn_selected = opts.fn_selected or actions.act
+    if not fn_selected then return end
+    -- errors thrown here gets silenced possibly
+    -- due to a coroutine, so catch explicitly
+    local _, err = pcall(fn_selected, selected, opts)
+    -- ignore existing swap file error, the choices dialog will still be
+    -- displayed to user to make a selection once fzf-lua exits (#1011)
+    if err and err:match("Vim%(edit%):E325") then
+      return
     end
+    utils.err("fn_selected threw an error: " .. debug.traceback(err, 1))
   end)()
   return _co
 end
