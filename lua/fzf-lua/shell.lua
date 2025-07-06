@@ -175,16 +175,12 @@ M.stringify_mt = function(cmd, opts)
     end
   end
 
-  -- `multiprocess=true` is somewhat "optional" if no opt which requires processing
+  -- `multiprocess=1` is "optional" if no opt which requires processing
   -- is present we return the command as is to be piped to fzf "natively"
-  -- `multiprocess=1` resolves `not tonumber(1)` to false always forcing processing
-  if not tonumber(opts.multiprocess)
-      and not opts.git_icons
-      and not opts.file_icons
-      and not opts.file_ignore_patterns
-      and not opts.path_shorten
-      and not opts.formatter
-      and not opts.multiline
+  if opts.multiprocess == 1
+      and not opts.fn_transform
+      and not opts.fn_preprocess
+      and not opts.fn_postprocess
   then
     -- command does not require any processing, we also reset `argv_expr`
     -- to keep `setup_fzf_interactive_flags::no_query_condi` in the command
@@ -367,6 +363,10 @@ M.stringify = function(contents, opts, fzf_field_index)
       if opts.PidObject then
         libuv.process_kill(opts.PidObject:get())
         opts.PidObject:set(nil)
+      end
+
+      if opts.debug then
+        on_write("[DEBUG] [st] " .. opts.cmd .. EOL)
       end
 
       libuv.async_spawn({

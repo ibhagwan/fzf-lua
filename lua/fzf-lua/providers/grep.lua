@@ -334,10 +334,13 @@ M.live_grep_native = function(opts)
   opts = opts or {}
   opts.git_icons = false
   opts.file_icons = false
+  opts.file_ignore_patterns = false
+  opts.strip_cwd_prefix = false
   opts.path_shorten = false
   opts.formatter = false
+  opts.multiline = false
   opts.rg_glob = false
-  opts.multiprocess = true
+  opts.multiprocess = 1
   return M.live_grep(opts)
 end
 
