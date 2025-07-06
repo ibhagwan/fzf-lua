@@ -141,10 +141,6 @@ local function tags(opts)
     end
   end ]]
 
-  -- prevents 'file|git_icons=false' from overriding processing
-  opts.requires_processing = true
-  opts.fn_transform = [[return require("fzf-lua.make_entry").tag]]
-
   if opts.lgrep then
     -- we need this for 'actions.grep_lgrep'
     opts.__ACT_TO = opts.__ACT_TO or M.grep

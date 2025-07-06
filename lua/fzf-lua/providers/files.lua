@@ -145,10 +145,6 @@ M.zoxide = function(opts)
     return
   end
 
-  -- we always require processing
-  opts.requires_processing = true
-  opts.fn_transform = [[return require("fzf-lua.make_entry").zoxide]]
-
   if opts.header == nil then
     opts.header = string.format("%8s\t%s", "score", "folder")
   end

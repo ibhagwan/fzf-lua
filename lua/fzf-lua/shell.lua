@@ -175,13 +175,12 @@ M.stringify_mt = function(cmd, opts)
     end
   end
 
-  if not opts.requires_processing
-      and not opts.git_icons
-      and not opts.file_icons
-      and not opts.file_ignore_patterns
-      and not opts.path_shorten
-      and not opts.formatter
-      and not opts.multiline
+  -- `multiprocess=1` is "optional" if no opt which requires processing
+  -- is present we return the command as is to be piped to fzf "natively"
+  if opts.multiprocess == 1
+      and not opts.fn_transform
+      and not opts.fn_preprocess
+      and not opts.fn_postprocess
   then
     -- command does not require any processing, we also reset `argv_expr`
     -- to keep `setup_fzf_interactive_flags::no_query_condi` in the command
@@ -239,19 +238,13 @@ end
 M.stringify = function(contents, opts, fzf_field_index)
   assert(contents, "must supply contents")
 
-  -- Mark opts as already "stringified"
-  -- assert(not opts.__stringified, "twice stringified")
-  -- opts.__stringified = true
+  -- TODO: should we let this assert?
+  -- are there any conditions in which stringify is called subsequently?
   if opts.__stringified then return contents end
 
-  if opts.multiprocess ~= nil then
-    opts.fn_transform = opts.fn_transform == nil
-        and [[return require("fzf-lua.make_entry").file]]
-        or opts.fn_transform
-    opts.fn_preprocess = opts.fn_preprocess == nil
-        and [[return require("fzf-lua.make_entry").preprocess]]
-        or opts.fn_preprocess
-  end
+  -- Mark opts as already "stringified"
+  assert(not opts.__stringified, "twice stringified")
+  opts.__stringified = true
 
   -- No need to register function id (2nd `nil` in tuple), the wrapped multiprocess
   -- command is independent, most of it's options are serialized as strings and the
@@ -374,6 +367,10 @@ M.stringify = function(contents, opts, fzf_field_index)
       if opts.PidObject then
         libuv.process_kill(opts.PidObject:get())
         opts.PidObject:set(nil)
+      end
+
+      if opts.debug then
+        on_write("[DEBUG] [st] " .. contents .. EOL)
       end
 
       libuv.async_spawn({

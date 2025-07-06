@@ -386,7 +386,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
     io.stdout:write(string.format("[DEBUG] fn_preprocess=%s" .. EOL, fn_preprocess_str))
     io.stdout:write(string.format("[DEBUG] fn_postprocess=%s" .. EOL, fn_postprocess_str))
   elseif opts.debug then
-    io.stdout:write("[DEBUG] " .. opts.cmd .. EOL)
+    io.stdout:write("[DEBUG] [mt] " .. opts.cmd .. EOL)
   end
 
   local stderr, stdout = nil, nil
