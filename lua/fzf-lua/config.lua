@@ -929,9 +929,11 @@ M.bytecode = function(s, datatype)
     iter = iter[keys[i]]
     if not iter then break end
     if i == #keys and type(iter) == datatype then
-      -- Not sure if second argument 'true' is needed
-      -- can't find any references for it other than
-      -- it being used in packer.nvim
+      -- string.dump (function [, strip])
+      -- Returns a string containing a binary representation (a binary chunk) of the given
+      -- function, so that a later load on this string returns a copy of the function (but
+      -- with new upvalues). If strip is a true value, the binary representation may not
+      -- include all debug information about the function, to save space.
       return string.dump(iter, true)
     end
   end
