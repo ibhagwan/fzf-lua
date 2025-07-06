@@ -11,7 +11,7 @@ return {
   files = { fzf_opts = { ["--ansi"] = false } },
   grep = {
     fzf_opts  = { ["--ansi"] = false },
-    rg_glob   = false, -- will trigger `opts.requires_processing`
+    rg_glob   = false, -- will trigger `opts.multiprocess = 1`
     grep_opts = require("fzf-lua.utils").is_darwin()
         and "--color=never --binary-files=without-match --line-number --recursive --extended-regexp -e"
         or "--color=never --binary-files=without-match --line-number --recursive --perl-regexp -e",
