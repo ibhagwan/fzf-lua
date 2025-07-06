@@ -282,11 +282,7 @@ M.stringify = function(contents, opts, fzf_field_index)
     local cmd = opts.fn_reload --[[@as string]]
     contents = function(args)
       local query = libuv.shellescape(args[1] or "")
-      if cmd:match(FzfLua.core.fzf_query_placeholder) then
-        return cmd:gsub(FzfLua.core.fzf_query_placeholder, query)
-      else
-        return string.format("%s %s", cmd, query)
-      end
+      return FzfLua.core.expand_query(cmd, query)
     end
   end
 

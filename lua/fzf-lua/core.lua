@@ -1256,19 +1256,21 @@ M.fzf_field_expression = function(opts)
   return opts and opts.field_index or opts._is_skim and [["{}"]] or "{q}"
 end
 
-M.setup_fzf_interactive_native = function(command, opts)
-  local fzf_field_expression = M.fzf_field_expression(opts)
-
-  -- replace placeholder with the field index expression.
-  -- If the command doesn't contain our placeholder, append
-  -- the field index expression instead
-  if command:match(M.fzf_query_placeholder) then
-    command = opts.fn_reload:gsub(M.fzf_query_placeholder, fzf_field_expression)
+---@param cmd string
+---@param fzf_field_expression string
+---@return string
+M.expand_query = function(cmd, fzf_field_expression)
+  if cmd:match(M.fzf_query_placeholder) then
+    return (cmd:gsub(M.fzf_query_placeholder, fzf_field_expression))
   else
-    command = ("%s %s"):format(command, fzf_field_expression)
+    return ("%s %s"):format(cmd, fzf_field_expression)
   end
+end
 
-  return M.setup_fzf_interactive_flags(command, fzf_field_expression, opts)
+M.setup_fzf_interactive_native = function(cmd, opts)
+  local fzf_field_expression = M.fzf_field_expression(opts)
+  cmd = M.expand_query(cmd, fzf_field_expression)
+  return M.setup_fzf_interactive_flags(cmd, fzf_field_expression, opts)
 end
 
 return M
