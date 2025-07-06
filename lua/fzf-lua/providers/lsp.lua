@@ -171,12 +171,9 @@ local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
         lnum = range.start.line + 1,
         col = range.start.character + 1,
       }
-      if opts.jump1 and #result == 1 then
-        jump_to_location(opts, location, encoding)
-      end
       local entry = make_entry.lcol(location, opts)
       entry = make_entry.file(entry, opts)
-      if entry then cb(entry) end
+      if entry then cb(entry, { result = location, encoding = encoding }) end
     end
   end
 end
