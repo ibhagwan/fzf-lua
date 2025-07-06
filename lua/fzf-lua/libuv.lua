@@ -56,7 +56,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   local EOL = opts.EOL or "\n"
   local output_pipe = uv.new_pipe(false)
   local error_pipe = uv.new_pipe(false)
-  local write_cb_count, on_exit_called = 0, nil
+  local write_cb_count, read_cb_count, on_exit_called = 0, 0, nil
   local prev_line_content = nil
 
   if opts.fn_transform then fn_transform = opts.fn_transform end
@@ -91,8 +91,9 @@ M.spawn = function(opts, fn_transform, fn_done)
     table.insert(args, tostring(opts.cmd))
   end
 
+  local handle, pid
   ---@diagnostic disable-next-line: missing-fields
-  local handle, pid = uv.spawn(shell, {
+  handle, pid = uv.spawn(shell, {
     args = args,
     stdio = { nil, output_pipe, error_pipe },
     cwd = opts.cwd,
@@ -113,12 +114,15 @@ M.spawn = function(opts, fn_transform, fn_done)
     verbatim = _is_win,
   }, function(code, signal)
     on_exit_called = true
-    if write_cb_count == 0 and not output_pipe:is_active() then
+    if write_cb_count == 0
+        and read_cb_count == 0
+        and not output_pipe:is_active()
+    then
       -- Do not call `:read_stop` or `:close` here as we may have data
       -- reads outstanding on slower Windows machines (#1521), only call
       -- `finish` if all our `uv.write` calls are completed and the pipe
       -- is no longer active (i.e. no more read cb's expected)
-      finish(code, signal, 1)
+      finish(code, signal, 1, pid)
     end
   end)
 
@@ -133,7 +137,11 @@ M.spawn = function(opts, fn_transform, fn_done)
         -- can fail with premature process kill
         -- assert(not err)
         finish(130, 0, 2, pid)
-      elseif write_cb_count == 0 and not output_pipe:is_active() and on_exit_called then
+      elseif write_cb_count == 0
+          and read_cb_count == 0
+          and on_exit_called
+          and not output_pipe:is_active()
+      then
         -- spawn callback already called and did not close the pipe
         -- due to write_cb_count>0, since this is the last call
         -- we can close the fzf pipe
@@ -211,10 +219,13 @@ M.spawn = function(opts, fn_transform, fn_done)
   end
 
   local read_cb = function(err, data)
-    local read = function() _read_cb(err, data) end
+    read_cb_count = read_cb_count + 1
+    local read = function()
+      _read_cb(err, data)
+      read_cb_count = read_cb_count - 1
+    end
     -- Avoid "attempt to yield across C-call boundary"
-    -- if vim.in_fast_event() then vim.schedule(read) else read() end
-    read()
+    if vim.in_fast_event() then vim.schedule(read) else read() end
   end
 
   local err_cb = function(err, data)
