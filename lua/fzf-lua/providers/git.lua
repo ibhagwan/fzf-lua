@@ -42,17 +42,11 @@ M.status = function(opts)
   -- as part of our `git status -s`
   opts.git_icons = false
 
-  -- we always require processing (can't send the raw command to fzf)
-  opts.requires_processing = true
-
   -- git status does not require preprocessing if not loading devicons
   -- opts.fn_preprocess = opts.file_icons
   --     and [[return require("fzf-lua.devicons").load()]]
   --     or [[return true]]
   --
-  -- preprocess is required since the addition of `path.filename_first`
-  -- will be set by `core.mt_cmd_wrapper` by commenting out the above
-  opts.fn_transform = [[return require("fzf-lua.make_entry").git_status]]
 
   opts.header_prefix = opts.header_prefix or "+ -  "
   opts.header_separator = opts.header_separator or "|"
@@ -250,10 +244,6 @@ M.hunks = function(opts)
   -- we don't need git icons since we get them
   -- as part of our `git status -s`
   opts.git_icons = false
-
-  -- we always require processing (can't send the raw command to fzf)
-  opts.requires_processing = true
-  opts.fn_transform = [[return require("fzf-lua.make_entry").git_hunk]]
 
   opts.header_prefix = opts.header_prefix or "+ -  "
   opts.header_separator = opts.header_separator or "|"

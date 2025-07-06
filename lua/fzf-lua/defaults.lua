@@ -336,7 +336,8 @@ M.defaults                      = {
 M.defaults.files                = {
   previewer              = M._default_previewer_fn,
   cmd                    = nil, -- default: auto detect find|fd
-  multiprocess           = true,
+  multiprocess           = 1,
+  _type                  = "file",
   file_icons             = 1,
   color_icons            = true,
   git_icons              = false,
@@ -365,7 +366,8 @@ M.defaults.git                  = {
   files = {
     previewer         = M._default_previewer_fn,
     cmd               = "git ls-files --exclude-standard",
-    multiprocess      = true,
+    multiprocess      = 1,
+    _type             = "file",
     file_icons        = 1,
     color_icons       = true,
     git_icons         = true,
@@ -380,6 +382,8 @@ M.defaults.git                  = {
     cmd               = "git -c color.status=false --no-optional-locks status --porcelain=v1 -u",
     previewer         = "git_diff",
     multiprocess      = true,
+    fn_transform      = [[return require("fzf-lua.make_entry").git_status]],
+    fn_preprocess     = [[return require("fzf-lua.make_entry").preprocess]],
     file_icons        = 1,
     color_icons       = true,
     fzf_opts          = { ["--multi"] = true },
@@ -399,7 +403,8 @@ M.defaults.git                  = {
     ref               = "HEAD",
     preview           = "git diff {ref} {file}",
     preview_pager     = M._preview_pager_fn,
-    multiprocess      = true,
+    multiprocess      = 1,
+    _type             = "file",
     file_icons        = 1,
     color_icons       = true,
     fzf_opts          = { ["--multi"] = true },
@@ -411,6 +416,8 @@ M.defaults.git                  = {
     cmd               = "git --no-pager diff --color=always {ref}",
     ref               = "HEAD",
     multiprocess      = true,
+    fn_transform      = [[return require("fzf-lua.make_entry").git_hunk]],
+    fn_preprocess     = [[return require("fzf-lua.make_entry").preprocess]],
     file_icons        = 1,
     color_icons       = true,
     fzf_opts          = {
@@ -520,7 +527,8 @@ M.defaults.grep                 = {
   previewer      = M._default_previewer_fn,
   input_prompt   = "Grep For> ",
   cmd            = nil, -- default: auto detect rg|grep
-  multiprocess   = true,
+  multiprocess   = 1,
+  _type          = "file",
   file_icons     = 1,
   color_icons    = true,
   git_icons      = false,
@@ -766,23 +774,25 @@ M.defaults.spellcheck           = {
 }
 
 M.defaults.tags                 = {
-  previewer    = { _ctor = previewers.builtin.tags },
-  input_prompt = "[tags] Grep For> ",
-  ctags_file   = nil, -- auto-detect
-  rg_opts      = "--no-heading --color=always --smart-case",
-  grep_opts    = "--color=auto --perl-regexp",
-  multiprocess = true,
-  file_icons   = 1,
-  git_icons    = false,
-  color_icons  = true,
-  fzf_opts     = {
+  previewer     = { _ctor = previewers.builtin.tags },
+  input_prompt  = "[tags] Grep For> ",
+  ctags_file    = nil, -- auto-detect
+  rg_opts       = "--no-heading --color=always --smart-case",
+  grep_opts     = "--color=auto --perl-regexp",
+  multiprocess  = true,
+  fn_transform  = [[return require("fzf-lua.make_entry").tag]],
+  fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]],
+  file_icons    = 1,
+  git_icons     = false,
+  color_icons   = true,
+  fzf_opts      = {
     ["--no-multi"]  = true,
     ["--delimiter"] = string.format("[:%s]", utils.nbsp),
     ["--tiebreak"]  = "begin",
   },
-  _actions     = function() return M.globals.actions.files end,
-  actions      = { ["ctrl-g"] = { actions.grep_lgrep } },
-  formatter    = false,
+  _actions      = function() return M.globals.actions.files end,
+  actions       = { ["ctrl-g"] = { actions.grep_lgrep } },
+  formatter     = false,
 }
 
 M.defaults.btags                = {
@@ -791,6 +801,8 @@ M.defaults.btags                = {
   rg_opts       = "--color=never --no-heading",
   grep_opts     = "--color=never --perl-regexp",
   multiprocess  = true,
+  fn_transform  = [[return require("fzf-lua.make_entry").tag]],
+  fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]],
   file_icons    = false,
   git_icons     = false,
   color_icons   = true,
@@ -1218,7 +1230,8 @@ M.defaults.complete_path        = {
   file_icons        = false,
   git_icons         = false,
   color_icons       = true,
-  multiprocess      = true,
+  multiprocess      = 1,
+  _type             = "file",
   word_pattern      = nil,
   fzf_opts          = { ["--no-multi"] = true },
   _fzf_nth_devicons = true,
@@ -1227,7 +1240,8 @@ M.defaults.complete_path        = {
 
 M.defaults.complete_file        = {
   cmd               = nil, -- default: auto detect rg|fd|find
-  multiprocess      = true,
+  multiprocess      = 1,
+  _type             = "file",
   file_icons        = 1,
   color_icons       = true,
   git_icons         = false,
@@ -1241,11 +1255,13 @@ M.defaults.complete_file        = {
 }
 
 M.defaults.zoxide               = {
-  multiprocess = true,
-  cmd          = "zoxide query --list --score",
-  git_root     = false,
-  formatter    = "path.dirname_first",
-  fzf_opts     = {
+  multiprocess  = true,
+  fn_transform  = [[return require("fzf-lua.make_entry").zoxide]],
+  fn_preprocess = [[nil]],
+  cmd           = "zoxide query --list --score",
+  git_root      = false,
+  formatter     = "path.dirname_first",
+  fzf_opts      = {
     ["--no-multi"]  = true,
     ["--delimiter"] = "[\t]",
     ["--tabstop"]   = "4",
@@ -1253,7 +1269,7 @@ M.defaults.zoxide               = {
     ["--nth"]       = "2..",
     ["--no-sort"]   = true, -- sort by score
   },
-  actions      = { enter = actions.cd }
+  actions       = { enter = actions.cd }
 }
 
 M.defaults.complete_line        = { complete = true }
