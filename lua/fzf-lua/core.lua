@@ -151,22 +151,11 @@ M.fzf_exec = function(contents, opts)
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
   end
-  if opts.fn_reload then
-    -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
-    -- each keypress reloads fzf's input usually based on the typed query
-    -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
-    opts.fn_reload = shell.stringify(opts.fn_reload, opts)
-    local fzf_field_index = M.fzf_field_index(opts)
-    local cmd = M.expand_query(opts.fn_reload, fzf_field_index)
-    opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
-    contents = opts.__fzf_init_cmd
-  elseif contents then
-    -- Contents sent to fzf can only be nil or a shell command (string)
-    -- the API accepts both tables and functions which we "stringify"
-    -- We also send string commands as stringify is also responsible
-    -- for multiprocess wrapping of shell commands with processing
-    contents = shell.stringify(contents, opts) or nil
-  end
+  -- Contents sent to fzf can only be nil or a shell command (string)
+  -- the API accepts both tables and functions which we "stringify"
+  -- We also send string commands as stringify is also responsible
+  -- for multiprocess wrapping of shell commands with processing
+  contents = contents and shell.stringify(contents, opts) or nil
   assert(contents == nil or type(contents) == "string", "contents must be of type string")
   return M.fzf_wrap(contents, opts)
 end
@@ -175,9 +164,20 @@ end
 ---@param opts? table
 M.fzf_live = function(contents, opts)
   assert(contents)
-  opts = opts or {}
+  if not opts or not opts._normalized then
+    opts = config.normalize_opts(opts or {}, {})
+    if not opts then return end
+  end
   opts.fn_reload = contents
-  return M.fzf_exec(nil, opts)
+  -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
+  -- each keypress reloads fzf's input usually based on the typed query
+  -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
+  opts.fn_reload = shell.stringify(contents, opts)
+  local fzf_field_index = M.fzf_field_index(opts)
+  local cmd = M.expand_query(opts.fn_reload, fzf_field_index)
+  opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
+  contents = opts.__fzf_init_cmd
+  return M.fzf_wrap(contents, opts)
 end
 
 M.fzf_resume = function(opts)
