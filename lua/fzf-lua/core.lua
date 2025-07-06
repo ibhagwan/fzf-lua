@@ -158,6 +158,8 @@ M.fzf_exec = function(contents, opts)
   opts.fn_selected = opts.fn_selected or function(selected, o)
     actions.act(selected, o)
   end
+  -- pid getter/setter, used by stringify to terminate previous pid
+  opts.PidObject = utils.pid_object("__stringify_pid", opts)
   if opts.fn_reload then
     -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
     -- each keypress reloads fzf's input usually based on the typed query

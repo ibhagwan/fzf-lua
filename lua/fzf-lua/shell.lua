@@ -356,21 +356,19 @@ M.stringify = function(contents, opts, fzf_field_index)
     end
 
     if type(contents) == "string" then
-      -- string will be used as a shell command.
-      -- terminate previously running commands
-      libuv.process_kill(M.__pid)
-      M.__pid = nil
+      -- Terminate previously running command
+      if opts.PidObject then
+        libuv.process_kill(opts.PidObject:get())
+        opts.PidObject:set(nil)
+      end
 
-      -- spawn/async_spawn already async, no need to send opts.__co
-      -- also, we can't call coroutine.yield inside a libuv callback
-      -- due to: "attempt to yield across C-call boundary"
       libuv.async_spawn({
         cwd = opts.cwd,
         cmd = contents,
         env = env,
         cb_finish = on_finish,
         cb_write = on_write,
-        cb_pid = function(pid) M.__pid = pid end,
+        cb_pid = function(pid) if opts.PidObject then opts.PidObject:set(pid) end end,
         process1 = opts.process1,
         profiler = opts.profiler,
         EOL = EOL,
@@ -438,26 +436,26 @@ end
 
 M.stringify_cmd = function(fn, opts, fzf_field_index)
   assert(type(fn) == "function", "fn must be of type function")
-  return M.stringify(fn, { __stringify_cmd = true, debug = opts.debug }, fzf_field_index)
+  return M.stringify(fn, {
+    __stringify_cmd = true,
+    PidObject = utils.pid_object("__stringify_cmd_pid", opts),
+    debug = opts.debug,
+  }, fzf_field_index)
 end
 
 M.stringify_data = function(fn, opts, fzf_field_index)
   assert(type(fn) == "function", "fn must be of type function")
-  return M.stringify(
-    function(cb, _, ...)
-      local ret = fn(...)
-      if type(ret) == "table" then
-        if not utils.tbl_isempty(ret) then
-          vim.tbl_map(function(x) cb(x) end, ret)
-        end
-      else
-        cb(tostring(ret))
+  return M.stringify(function(cb, _, ...)
+    local ret = fn(...)
+    if type(ret) == "table" then
+      if not utils.tbl_isempty(ret) then
+        vim.tbl_map(function(x) cb(x) end, ret)
       end
-      cb(nil)
-    end,
-    { __stringify_data = true, debug = opts.debug },
-    fzf_field_index
-  )
+    else
+      cb(tostring(ret))
+    end
+    cb(nil)
+  end, { debug = opts.debug }, fzf_field_index)
 end
 
 return M
