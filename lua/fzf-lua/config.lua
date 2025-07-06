@@ -82,6 +82,7 @@ M.globals = setmetatable({}, {
       -- exclude case-sensitive alt-binds from being lowercased
       local exclude_case_sensitive_alt = "^alt%-%a$"
       for _, k in ipairs(keys) do
+        if type(setup_value) == "function" then setup_value = setup_value() end
         ret[k] = setup_value and type(setup_value[k]) == "table"
             and vim.tbl_deep_extend("keep",
               utils.map_tolower(utils.tbl_deep_clone(setup_value[k]), exclude_case_sensitive_alt),
