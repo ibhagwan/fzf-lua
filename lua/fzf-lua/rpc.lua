@@ -1,5 +1,3 @@
--- modified version of:
--- https://github.com/vijaymarupudi/nvim-fzf/blob/master/action_helper.lua
 local uv = vim.uv or vim.loop
 
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
@@ -15,42 +13,49 @@ local function windows_pipename()
   return ([[\\.\pipe\%s]]):format(tmpname)
 end
 
-local function get_preview_socket()
+local function new_pipe()
   local tmp = _is_win and windows_pipename() or vim.fn.tempname()
   local socket = uv.new_pipe(false)
   uv.pipe_bind(socket, tmp)
   return socket, tmp
 end
 
-local preview_socket, preview_socket_path = get_preview_socket()
+local function server_listen(server_socket, server_socket_path)
+  uv.listen(server_socket, 10, function(_)
+    local receive_socket = uv.new_pipe(false)
+    uv.accept(server_socket, receive_socket)
 
-local preview_receive_socket
-uv.listen(preview_socket, 1, function(_)
-  preview_receive_socket = uv.new_pipe(false)
-  uv.accept(preview_socket, preview_receive_socket)
-
-  -- Avoid dangling temp dir on premature process kills (live grep)
-  -- see more complete note in spawn.lua
-  if not _is_win then
-    uv.fs_unlink(preview_socket_path)
-    local tmpdir = vim.fn.fnamemodify(preview_socket_path, ":h")
-    if tmpdir and #tmpdir > 0 then uv.fs_rmdir(tmpdir) end
-  end
-
-  preview_receive_socket:read_start(function(err, data)
-    assert(not err)
-    if not data then
-      uv.close(preview_receive_socket)
-      uv.close(preview_socket)
-      -- on windows: ci fail when use uv.stop()
-      -- on linux: zero event can freeze https://github.com/ibhagwan/fzf-lua/pull/1955#issuecomment-2785474217
-      -- uv.stop()
-      os.exit(0)
-      return
+    -- Avoid dangling temp dir on premature process kills (live grep)
+    -- see more complete note in spawn.lua
+    if not _is_win then
+      uv.fs_unlink(server_socket_path)
+      local tmpdir = vim.fn.fnamemodify(server_socket_path, ":h")
+      if tmpdir and #tmpdir > 0 then uv.fs_rmdir(tmpdir) end
     end
-    io.write(data)
+
+    receive_socket:read_start(function(err, data)
+      assert(not err)
+      if not data then
+        uv.close(receive_socket)
+        uv.close(server_socket)
+        -- on windows: ci fail when use uv.stop()
+        -- on linux: zero event can freeze
+        -- https://github.com/ibhagwan/fzf-lua/pull/1955#issuecomment-2785474217
+        -- uv.stop()
+        os.exit(0)
+        return
+      end
+      io.write(data)
+    end)
   end)
-end)
+end
+
+local server_socket, server_socket_path = new_pipe()
+server_listen(server_socket, server_socket_path)
+---@diagnostic disable-next-line: param-type-mismatch
+-- TODO: makes `uv.listen` never return or callback
+-- local thread = uv.new_thread(server_listen, server_socket, server_socket_path)
+-- io.stdout:write(string.format("thread %s\n", tostring(thread)))
 
 local rpc_nvim_exec_lua = function(opts)
   local success, errmsg = pcall(function()
@@ -61,15 +66,15 @@ local rpc_nvim_exec_lua = function(opts)
     vim.rpcrequest(chan_id, "nvim_exec_lua", [[
       local luaargs = {...}
       local function_id = luaargs[1]
-      local preview_socket_path = luaargs[2]
+      local server_socket_path = luaargs[2]
       local fzf_selection = luaargs[3]
       local fzf_lines = luaargs[4]
       local fzf_columns = luaargs[5]
       local usr_func = require"fzf-lua.shell".get_func(function_id)
-      return usr_func(preview_socket_path, fzf_selection, fzf_lines, fzf_columns)
+      return usr_func(server_socket_path, fzf_selection, fzf_lines, fzf_columns)
     ]], {
       opts.fnc_id,
-      preview_socket_path,
+      server_socket_path,
       opts.fzf_selection,
       tonumber(preview_lines),
       tonumber(preview_cols),

@@ -306,6 +306,7 @@ M.stringify = function(contents, opts, fzf_field_index)
     local fn_transform = opts.fn_transform
     local fn_preprocess = opts.fn_preprocess
     local fn_postprocess = opts.fn_postprocess
+    local co = coroutine.running()
 
     -- Run the preprocess function
     if type(fn_preprocess) == "function" then fn_preprocess(opts) end
@@ -324,19 +325,24 @@ M.stringify = function(contents, opts, fzf_field_index)
       end
     end
 
-    local on_write = function(data, cb, co)
+    local on_write = function(data, cb)
       -- pipe can be nil when using a shell command with spawn
       -- and typing quickly, the process will terminate
-      assert(not co or (co and pipe and not uv.is_closing(pipe)))
       if not pipe then return end
       if not data then
         on_finish(nil, nil, 5)
         if cb then cb(nil) end
       else
         write_cb_count = write_cb_count + 1
+        if type(data) == "table" then
+          -- cb_write_lines was sent instead of cb_lines
+          if fn_transform then
+            data = vim.tbl_map(function(x) return fn_transform(x, opts) end, data)
+          end
+          data = table.concat(data, EOL) .. EOL
+        end
         uv.write(pipe, tostring(data), function(err)
           write_cb_count = write_cb_count - 1
-          if co then coroutine.resume(co) end
           if cb then cb(err) end
           if err then
             -- force close on error
@@ -346,19 +352,23 @@ M.stringify = function(contents, opts, fzf_field_index)
           if write_cb_count == 0 and pipe_want_close then
             on_finish(nil, nil, 3)
           end
+          -- if opts.throttle then uv.sleep(1000) end
+          if opts.throttle then coroutine.resume(co) end
         end)
-        -- yield returns when uv.write completes
-        -- or when a new coroutine calls resume(1)
-        if co and coroutine.yield() == 1 then
-          -- we have a new routine in opts.__co, this
-          -- routine is no longer relevant so kill it
-          write_cb_count = 0
-          on_finish(nil, nil, 4)
-        end
+        -- TODO: why does this freeze fzf's UI?
+        -- shouldn't the yield free the UI to update?
+        -- if opts.throttle then uv.sleep(1000) end
+        if opts.throttle then coroutine.yield() end
       end
     end
 
     if type(contents) == "string" then
+      -- Use queue in libuv.spawn by default
+      opts.use_queue = opts.use_queue == nil and true or opts.use_queue
+
+      -- Throttle pipe writes by default
+      -- opts.throttle = opts.throttle == nil and true or opts.throttle
+
       -- Terminate previously running command
       if opts.PidObject then
         libuv.process_kill(opts.PidObject:get())
@@ -366,7 +376,8 @@ M.stringify = function(contents, opts, fzf_field_index)
       end
 
       if opts.debug then
-        on_write("[DEBUG] [st] " .. contents .. EOL)
+        -- coroutinify or we err with "yield across a C-call boundary" with throttle
+        coroutine.wrap(function() on_write("[DEBUG] [st] " .. contents .. EOL) end)()
       end
 
       libuv.async_spawn({
@@ -374,66 +385,29 @@ M.stringify = function(contents, opts, fzf_field_index)
         cmd = contents,
         env = env,
         cb_finish = on_finish,
-        cb_write = on_write,
+        cb_write_lines = on_write,
         cb_pid = function(pid) if opts.PidObject then opts.PidObject:set(pid) end end,
         process1 = opts.process1,
         profiler = opts.profiler,
+        use_queue = opts.use_queue,
         EOL = EOL,
-        -- must send false, 'coroutinify' adds callback as last argument
+        -- Must send value, 'coroutinify' adds callback as last argument
         -- which will conflict with the 'fn_transform' argument
-        -- convert `fn_transform(x)` to `fn_transform(x, opts)`
-      }, fn_transform and function(x) return fn_transform(x, opts) end or false)
+        -- send true to force line processing without transformation
+      }, true)
     else
-      local fn_load = function()
-        if opts.__co then
-          local costatus = coroutine.status(opts.__co)
-          if costatus ~= "dead" then
-            -- the previous routine is either 'running' or 'suspended'
-            -- return 1 from yield to signal abort to 'on_write'
-            coroutine.resume(opts.__co, 1)
-          end
-          assert(coroutine.status(opts.__co) == "dead")
-        end
-        -- reset var to current running routine
-        opts.__co = opts.__coroutinify and coroutine.running()
-
-        -- callback with newline
-        local on_write_nl = function(data, cb)
-          data = data and tostring(data) .. EOL or nil
-          return on_write(data, cb)
-        end
-
-        -- callback with newline and coroutine
-        local on_write_nl_co = function(data, cb)
-          data = data and tostring(data) .. EOL or nil
-          return on_write(data, cb, opts.__co)
-        end
-
-        -- callback with coroutine (no NL)
-        local on_write_co = function(data, cb)
-          return on_write(data, cb, opts.__co)
-        end
-
-
-        if type(contents) == "table" then
-          for _, l in ipairs(contents) do
-            on_write_nl_co(l)
-          end
-          on_finish()
-        elseif type(contents) == "function" then
-          -- by default we use sync callbacks
-          if opts.__coroutinify then
-            contents(on_write_nl_co, on_write_co, unpack(args))
-          else
-            contents(on_write_nl, on_write, unpack(args))
-          end
-        else
-        end
+      -- callback with newline
+      local on_write_nl = function(data, cb)
+        data = data and tostring(data) .. EOL or nil
+        return on_write(data, cb)
       end
-      if opts.__coroutinify then
-        fn_load = coroutine.wrap(fn_load)
+
+      if type(contents) == "table" then
+        vim.tbl_map(function(x) on_write_nl(x) end, contents)
+        on_finish()
+      elseif type(contents) == "function" then
+        contents(on_write_nl, on_write, unpack(args))
       end
-      fn_load()
     end
   end, fzf_field_index or "", opts.debug)
 
