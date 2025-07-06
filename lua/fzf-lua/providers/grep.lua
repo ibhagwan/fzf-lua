@@ -291,7 +291,7 @@ M.live_grep = function(opts)
   -- prevents 'file|git_icons=false' from overriding
   -- processing inside 'core.mt_cmd_wrapper'
   if opts.rg_glob then
-    opts.requires_processing = true
+    opts.multiprocess = opts.multiprocess and 1
   end
 
   -- signal to preprocess we are looking to replace {argvz}

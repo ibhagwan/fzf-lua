@@ -34,7 +34,7 @@ T["files()"]["start and abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c
       helpers.IS_MAC()
       and ""
       or [==[,
-        requires_processing = true, -- for fn_postprocess
+        multiprocess = 1, -- for fn_postprocess
         fn_postprocess = [[return function()
         local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
         vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
@@ -174,7 +174,7 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
         previewer = false,
         cwd_prompt = false,
         -- fzf_opts = { ["--wrap"] = true },
-        requires_processing = true, -- for "strip_cwd_prefix|debug| fn_postprocess"
+        multiprocess = 1, -- for "strip_cwd_prefix|debug| fn_postprocess"
         %s%s
       })]==]):format(opts,
       helpers.IS_MAC()

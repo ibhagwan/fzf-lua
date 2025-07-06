@@ -175,7 +175,10 @@ M.stringify_mt = function(cmd, opts)
     end
   end
 
-  if not opts.requires_processing
+  -- `multiprocess=true` is somewhat "optional" if no opt which requires processing
+  -- is present we return the command as is to be piped to fzf "natively"
+  -- `multiprocess=1` resolves `not tonumber(1)` to false always forcing processing
+  if not tonumber(opts.multiprocess)
       and not opts.git_icons
       and not opts.file_icons
       and not opts.file_ignore_patterns
@@ -239,19 +242,13 @@ end
 M.stringify = function(contents, opts, fzf_field_index)
   assert(contents, "must supply contents")
 
-  -- Mark opts as already "stringified"
-  -- assert(not opts.__stringified, "twice stringified")
-  -- opts.__stringified = true
+  -- TODO: should we let this assert?
+  -- are there any conditions in which stringify is called subsequently?
   if opts.__stringified then return contents end
 
-  if opts.multiprocess ~= nil then
-    opts.fn_transform = opts.fn_transform == nil
-        and [[return require("fzf-lua.make_entry").file]]
-        or opts.fn_transform
-    opts.fn_preprocess = opts.fn_preprocess == nil
-        and [[return require("fzf-lua.make_entry").preprocess]]
-        or opts.fn_preprocess
-  end
+  -- Mark opts as already "stringified"
+  assert(not opts.__stringified, "twice stringified")
+  opts.__stringified = true
 
   -- No need to register function id (2nd `nil` in tuple), the wrapped multiprocess
   -- command is independent, most of it's options are serialized as strings and the
