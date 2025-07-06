@@ -299,7 +299,8 @@ M.live_grep = function(opts)
 
   -- this will be replaced by the appropriate fzf
   -- FIELD INDEX EXPRESSION by 'fzf_exec'
-  opts.cmd = opts.multiprocess and get_grep_cmd(opts, core.fzf_query_placeholder, 2)
+  local cmd = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
+  opts.cmd = opts.multiprocess and cmd
 
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd", "live" })
