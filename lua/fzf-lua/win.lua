@@ -119,7 +119,7 @@ local _preview_keymaps = {
   ["preview-reset"]          = { module = "win", fnc = "preview_scroll('reset')" },
   ["preview-top"]            = { module = "win", fnc = "preview_scroll('top')" },
   ["preview-bottom"]         = { module = "win", fnc = "preview_scroll('bottom')" },
-  ['focus-preview']          = { module = "win", fnc = "focus_preview()" },
+  ["focus-preview"]          = { module = "win", fnc = "focus_preview()" },
 }
 
 function FzfWin:setup_keybinds()
@@ -1389,7 +1389,6 @@ function FzfWin.toggle_fullscreen()
 end
 
 function FzfWin.focus_preview()
-  vim.brint('focus preview')
   if not _self then return end
   local self = _self
   vim.api.nvim_set_current_win(self.preview_winid)
