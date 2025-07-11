@@ -217,7 +217,8 @@ M.diagnostics = function(opts)
                 end
 
                 if opts.diag_code and diag.code then
-                  entry = entry .. utils.ansi_from_hl("Comment", " [" .. diag.code .. "]")
+                  entry = entry
+                      .. utils.ansi_from_hl("Comment", " [" .. tostring(diag.code) .. "]")
                 end
 
                 entry = string.format("%s%s%s",
