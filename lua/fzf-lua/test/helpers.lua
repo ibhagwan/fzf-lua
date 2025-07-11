@@ -387,4 +387,108 @@ M.sleep = function(ms, child)
   if child ~= nil then child.poke_eventloop() end
 end
 
+--- Helper object to run fzf-lua API's via a child process and expect a screenshot
+--- e.g. helpers.FzfLua.files({...}) or helpers.FzfLua.fzf_exec(contents, {...})
+M.FzfLua = setmetatable({}, {
+  __index = function(_, api)
+    return function(child, ...)
+      local serpent = require "fzf-lua.lib.serpent"
+      local eq = M.expect.equality
+      local args = { ... }
+
+      -- When using `fzf_exec` opts are at index[2], or otherwise at index[1]
+      -- remove index[1] into "contents" so index[1] is always our "opts"
+      local contents = api == "fzf_exec" and (table.remove(args, 1) .. ",") or ""
+
+      -- Split "opts" and "ci_opts" which are double underscore prefixed
+      local opts, ci_opts = (function()
+        local o, ci_o = {}, {}
+        for k, v in pairs(args[1] or {}) do
+          if k:match("^__") then
+            ci_o[k] = v
+          else
+            o[k] = v
+          end
+        end
+        return o, ci_o
+      end)()
+
+      -- Override args[1] with stripped opts (excluding ci_opts)
+      args[1] = opts
+
+      -- Added addittional wait for `fn_postprocess` due to #1914, proved to be flakey
+      -- on MacOs but I actually like it that we're testing `fn_postprocess` as well as
+      -- RPC connection from child to main instance using with `_G._fzf_lua_server`
+      if ci_opts.__postprocess_wait then
+        opts.fn_postprocess = opts.multiprocess
+            and [[return function(opts)
+              vim.uv.sleep(100)
+              local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
+              vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
+              vim.fn.chanclose(chan_id)
+            end]]
+            or [[return function(_) vim.uv.sleep(100); _G._fzf_postprocess_called = true end]]
+      end
+
+      -- Stringify supplied opts
+      local serlialized = serpent.block(args, { comment = false, sortkeys = false })
+
+      -- HACK: test previewer needs to be unquoted
+      serlialized = serlialized:gsub([[(")(require%(.-%))(")]], "%2")
+      -- print("c", contents, "o", serlialized)
+
+      -- Verify postprocess var is nil before opening fzf-lua
+      eq(child.lua_get([[_G._fzf_postprocess_called]]), vim.NIL)
+
+      -- Open fzf-lua with args, can open both fzf_exec and files, grep, etc
+      child.lua(string.format("FzfLua.%s(%sunpack(%s))", api, contents, serlialized))
+
+      -- Verify `winopts.on_create` was called
+      eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
+
+      -- Wait for fzf's "load" event
+      child.wait_until(function()
+        return child.lua_get([[_G._fzf_load_called]]) == true
+      end)
+
+      -- If requested, wait for `fn_postprocess` to be calleed
+      if ci_opts.__postprocess_wait then
+        if M.IS_MAC() then
+          vim.uv.sleep(200)
+        else
+          child.wait_until(function()
+            return child.lua_get([[_G._fzf_postprocess_called]]) == true
+          end)
+        end
+      end
+
+      -- Call the "after open" callback (set by some tests)
+      if type(ci_opts.__after_open) == "function" then
+        ci_opts.__after_open()
+      end
+
+      -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
+      local screen_opts = ci_opts.__screen_opts
+          or { ignore_text = { 28 }, normalize_paths = M.IS_WIN() }
+
+      if ci_opts.__expect_lines then
+        -- Compare screen lines without "attrs" so we can test on
+        -- stable, nightly and windows
+        child.expect_screen_lines(screen_opts)
+      else
+        -- Compare screenshots including attrs (highlights, etc)
+        child.expect_screenshot(screen_opts)
+      end
+
+      -- Feed the abort key and exit fzf
+      child.type_keys(ci_opts.__abort_key or "<c-c>")
+
+      -- Wait for `winopts.on_close` to be called
+      child.wait_until(function()
+        return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+      end)
+    end
+  end
+})
+
 return M

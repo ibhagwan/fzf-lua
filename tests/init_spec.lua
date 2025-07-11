@@ -7,9 +7,9 @@ local new_set = MiniTest.new_set
 
 local T = helpers.new_set_with_child(child, nil, { winopts = { col = 0, row = 1 } })
 
-T["setup()"] = new_set()
+T["setup"] = new_set()
 
-T["setup()"]["setup global vars"] = function()
+T["setup"]["setup global vars"] = function()
   -- Global vars
   eq(child.lua_get([[type(_G.FzfLua)]]), "table")
   eq(child.lua_get([[type(vim.g.fzf_lua_server)]]), "string")
@@ -30,7 +30,7 @@ T["setup()"]["setup global vars"] = function()
   eq(child.fn.exists("*fzf_lua#getbufinfo") ~= 0, true)
 end
 
-T["setup()"]["setup highlight groups"] = function()
+T["setup"]["setup highlight groups"] = function()
   -- Highlight groups
   child.cmd("hi! clear")
   expect.match(child.cmd_capture("hi FzfLuaHeaderBind"), "xxx cleared")
