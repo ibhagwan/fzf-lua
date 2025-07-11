@@ -387,4 +387,48 @@ M.sleep = function(ms, child)
   if child ~= nil then child.poke_eventloop() end
 end
 
+M.FzfLua = function(child, api, ...)
+  local serpent = require "fzf-lua.lib.serpent"
+  local eq = M.expect.equality
+  local args = { ... }
+  local contents = api == "fzf_exec" and (table.remove(args, 1) .. ",") or ""
+  args[1] = args[1] or {}
+  local opts = args[1]
+  opts.fn_postprocess = opts.multiprocess
+      and [[return function(opts)
+        local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
+        vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
+        vim.fn.chanclose(chan_id)
+      end]]
+      or [[return function(_) _G._fzf_postprocess_called = true end]]
+  local serlialized = serpent.block(args, { comment = false, sortkeys = false })
+  -- print("c", contents, "o", serlialized)
+  eq(child.lua_get([[_G._fzf_postprocess_called]]), vim.NIL)
+  child.lua(string.format("FzfLua.%s(%sunpack(%s))", api, contents, serlialized))
+  eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_load_called]]) == true
+  end)
+  if M.IS_MAC() then
+    vim.uv.sleep(200)
+  else
+    child.wait_until(function()
+      return child.lua_get([[_G._fzf_postprocess_called]]) == true
+    end)
+  end
+  -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
+  local screen_opts = { ignore_text = { 28 }, normalize_paths = M.IS_WIN() }
+  -- NOTE: we compare screen lines without "attrs"
+  -- so we can test on stable, nightly and windows
+  if opts.__expect_lines then
+    child.expect_screen_lines(screen_opts)
+  else
+    child.expect_screenshot(screen_opts)
+  end
+  child.type_keys(opts.__abort_key or "<c-c>")
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+  end)
+end
+
 return M
