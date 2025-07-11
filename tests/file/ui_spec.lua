@@ -19,87 +19,69 @@ local sleep = function(ms) helpers.sleep(ms, child) end
 
 local T = helpers.new_set_with_child(child)
 
-T["files()"] = new_set()
+T["files"] = new_set()
 
-T["files()"]["start and abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c>" } } }, {
+T["files"]["close|abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c>" } } }, {
   function(key)
-    -- sort output and remove cwd in prompt as will be different on CI
-    eq(child.lua_get([[_G._fzf_postprocess_called]]), vim.NIL)
-    child.lua(string.format([==[FzfLua.files({
+    -- sort produces different output on Windows, ignore the mismatch
+    helpers.FzfLua.files(child, {
+      __abort_key = key,
+      __expect_lines = true,
+      debug = 1,
       hidden = false,
       previewer = false,
       cwd_prompt = false,
-      cmd = "rg --files --sort=path"%s
-    })]==],
-      helpers.IS_MAC()
-      and ""
-      or [==[,
-        fn_postprocess = [[return function()
-        local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
-        vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
-        vim.fn.chanclose(chan_id)
-      end]]]==]))
-    eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_load_called]]) == true
-    end)
-    if helpers.IS_MAC() then
-      vim.uv.sleep(200)
-    else
-      child.wait_until(function()
-        return child.lua_get([[_G._fzf_postprocess_called]]) == true
-      end)
-    end
-    -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
-    local screen_opts = { ignore_text = { 28 }, normalize_paths = helpers.IS_WIN() }
-    -- NOTE: we compare screen lines without "attrs"
-    -- so we can test on stable, nightly and windows
-    -- child.expect_screenshot(screen_opts)
-    child.expect_screen_lines(screen_opts)
-    child.type_keys(key)
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
-    end)
+      multiprocess = true,
+      cmd = "rg --files --sort=path",
+    })
   end,
 })
 
-T["files()"]["previewer"] = new_set({ parametrize = { { "ci" }, { "builtin" } } }, {
-  function(previewer)
-    child.lua(([[FzfLua.files({
+T["files"]["multiprocess"] = new_set({ parametrize = { { false }, { true } } }, {
+  function(multiprocess)
+    helpers.FzfLua.files(child, {
+      __expect_lines = true,
+      __postprocess_wait = true,
+      debug = 1,
       hidden = false,
-      previewer = %s,
+      previewer = false,
       cwd_prompt = false,
+      multiprocess = multiprocess,
+      cmd = "rg --files --sort=path",
+    })
+  end,
+})
+
+T["files"]["previewer"] = new_set({ parametrize = { { "ci" }, { "builtin" } } }, {
+  function(previewer)
+    helpers.FzfLua.files(child, {
+      __expect_lines = true,
+      debug = 1,
+      hidden = false,
+      cwd_prompt = false,
+      multiprocess = true,
       cmd = "rg --files --sort=path",
       winopts = { preview = { scrollbar = false } },
-    })]]):format(previewer == "builtin"
-      and [["builtin"]]
-      or [[require("fzf-lua.test.previewer")]]
-    ))
-    eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_load_called]]) == true
-    end)
-    -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
-    local screen_opts = { ignore_text = { 28 }, normalize_paths = helpers.IS_WIN() }
-    child.wait_until(function()
-      return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) == "LICENSE"
-    end)
-    child.expect_screen_lines(screen_opts)
-    child.type_keys("<c-c>")
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
-    end)
+      previewer = previewer == "builtin"
+          and "builtin"
+          or [[require('fzf-lua.test.previewer')]],
+      __after_open = function()
+        -- Verify previewer "last_entry" was set
+        child.type_keys("<c-j>")
+        child.wait_until(function()
+          return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) == "LICENSE"
+        end)
+      end,
+    })
   end,
 })
 
-T["files()"]["icons"] = new_set({ parametrize = { { "devicons" }, { "mini" } } })
+T["files"]["icons"] = new_set({ parametrize = { { "devicons" }, { "mini" } } })
 
-T["files()"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-attrs" } } }, {
+T["files"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-attrs" } } }, {
   function(icons, attrs)
     attrs = attrs == "+attrs" and true or false
-    if attrs then
-      helpers.SKIP_IF_WIN()
-    end
+    if attrs then helpers.SKIP_IF_WIN() end
     local plugin = icons == "mini" and "mini.nvim" or "nvim-web-devicons"
     local path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", plugin)
     if not vim.uv.fs_stat(path) then
@@ -107,49 +89,37 @@ T["files()"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-
     end
     child.lua("vim.opt.runtimepath:append(...)", { path })
     child.lua(([[require("%s").setup({})]]):format(icons == "mini" and "mini.icons" or plugin))
-    -- sort output and remove cwd in prompt as will be different on CI
-    child.lua(([[FzfLua.files({
+    helpers.FzfLua.files(child, {
+      __expect_lines = not attrs,
       hidden = false,
       previewer = false,
-      file_icons = "%s",
       cwd_prompt = false,
+      file_icons = icons,
       cmd = "rg --files --sort=path",
-    })]]):format(icons))
-    eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_load_called]]) == true
-    end)
-    local screen_opts = { ignore_text = { 28 }, normalize_paths = helpers.IS_WIN() }
-    if attrs then
-      child.expect_screenshot(screen_opts)
-    else
-      child.expect_screen_lines(screen_opts)
-    end
-    child.type_keys("<c-c>")
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
-    end)
+    })
   end,
 })
 
-T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find|dir" } } }, {
+T["files"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find|dir" } } }, {
   function(exec)
     -- Ignore last "-- TERMINAL --" line and "[DEBUG]" line containing the cmd
     local screen_opts = { ignore_text = { 6, 28 }, normalize_paths = helpers.IS_WIN() }
     local opts, exclude
     if exec == "fd" then
       exclude = "{}"
-      opts = [[fd_opts = "--color=never --type f --type l --exclude .git | sort"]]
+      opts = { fd_opts = "--color=never --type f --type l --exclude .git | sort" }
     elseif exec == "rg" then
       exclude = [[{ "fd", "fdfind" }]]
-      opts = [[rg_opts = '--files -g "!.git" --sort=path']]
+      opts = { rg_opts = '--files -g "!.git" --sort=path' }
     else
       exclude = [[{ "fd", "fdfind", "rg" }]]
-      opts = [==[
-        find_opts = [[-type f \! -path '*/.git/*' \! -path '*/doc/tags' \! -path '*/deps/*' | sort]],
-        dir_opts = [[/s/b/a:-d | findstr -v "\.git\\" | findstr -v "doc\\tags" | findstr -v "deps" | sort]],
+      opts = {
+        find_opts =
+        [[-type f \! -path '*/.git/*' \! -path '*/doc/tags' \! -path '*/deps/*' | sort]],
+        dir_opts =
+        [[/s/b/a:-d | findstr -v "\.git\\" | findstr -v "doc\\tags" | findstr -v "deps" | sort]],
         strip_cwd_prefix = true
-      ]==]
+      }
     end
     -- sort produces different output on Windows, ignore the mismatch
     if exec ~= "rg" and helpers.IS_WIN() then
@@ -164,46 +134,18 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
         return _G._exec(x)
       end
     ]]):format(exclude))
-    -- Add postprocess callback for a more consistent wait on nixpkgs builds (#1914)
-    -- ensure we're starting with nil value
-    eq(child.lua_get([[_G._fzf_postprocess_called]]), vim.NIL)
-    child.lua(([==[
-      FzfLua.files({
-        debug = 1,
-        previewer = false,
-        cwd_prompt = false,
-        -- fzf_opts = { ["--wrap"] = true },
-        multiprocess = true, -- force mp for "[DEBUG]" line
-        %s%s
-      })]==]):format(opts,
-      helpers.IS_MAC()
-      and ""
-      or [==[,
-        fn_postprocess = [[return function()
-        local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
-        vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
-        vim.fn.chanclose(chan_id)
-      end]]]==]))
-    eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_load_called]]) == true
-    end)
-    if helpers.IS_MAC() then
-      vim.uv.sleep(200)
-    else
-      child.wait_until(function()
-        return child.lua_get([[_G._fzf_postprocess_called]]) == true
-      end)
-    end
-    child.expect_screen_lines(screen_opts)
-    child.type_keys("<c-c>")
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
-    end)
+    helpers.FzfLua.files(child, vim.tbl_extend("keep", opts, {
+      __expect_lines = true,
+      __screen_opts = screen_opts,
+      debug = 1,
+      previewer = false,
+      cwd_prompt = false,
+      multiprocess = true, -- force mp for "[DEBUG]" line
+    }))
   end,
 })
 
-T["files()"]["preview should work after chdir #1864"] = function()
+T["files"]["preview should work after chdir #1864"] = function()
   -- Ignore last "-- TERMINAL --" line and "[DEBUG]" line containing the cmd
   local screen_opts = { ignore_text = { 6, 28 }, normalize_paths = helpers.IS_WIN() }
   eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
