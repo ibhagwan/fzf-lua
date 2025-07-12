@@ -1470,4 +1470,22 @@ function M.lsp_get_clients(opts)
   end, clients)
 end
 
+function M.pid_object(key, opts)
+  local Pid = {}
+
+  function Pid:new(__key, __opts)
+    local newPid = setmetatable({}, self)
+    self.__index = self
+    self.key = __key
+    self.opts = __opts
+    return newPid
+  end
+
+  function Pid:get() return self.opts[self.key] end
+
+  function Pid:set(pid) self.opts[self.key] = pid end
+
+  return Pid:new(key, opts)
+end
+
 return M

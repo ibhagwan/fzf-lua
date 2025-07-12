@@ -27,7 +27,7 @@ local function load_config_section(s, datatype, optional)
     if datatype == "function" then
       is_bytecode = true
       exec_opts = { s, datatype }
-      exec_str = ("return require'fzf-lua'.config.bytecode(...)"):format(s)
+      exec_str = "return require'fzf-lua'.config.bytecode(...)"
     else
       exec_opts = {}
       exec_str = ("return require'fzf-lua'.config.%s"):format(s)
@@ -170,11 +170,8 @@ end
 M.preprocess = function(opts)
   local EOL = opts.multiline and "\0" or "\n"
   local argv = function(i, debug)
-    -- argv1 is actually the 7th argument if we count
-    -- arguments already supplied by 'wrap_spawn_stdio'.
-    -- If no index was supplied use the last argument
-    local idx = tonumber(i) and tonumber(i) + 6 or #vim.v.argv
-    local arg = vim.v.argv[idx]
+    local idx = tonumber(i) or #_G.arg
+    local arg = _G.arg[idx]
     if debug == "v" or debug == "verbose" then
       io.stdout:write(("[DEBUG] raw_argv(%d) = %s" .. EOL):format(idx, arg))
     end
@@ -230,7 +227,7 @@ M.preprocess = function(opts)
 
   -- nifty hack to avoid having to double escape quotations
   -- see my comment inside 'live_grep' initial_command code
-  if opts.argv_expr then
+  if opts.argv_expr and opts.cmd then
     opts.cmd = opts.cmd:gsub("{argv.*}",
       function(x)
         local idx = x:match("{argv(.*)}")

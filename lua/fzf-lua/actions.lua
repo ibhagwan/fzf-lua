@@ -347,6 +347,33 @@ local sel_to_qf = function(selected, opts, is_loclist)
   end
 end
 
+M.list_del = function(selected, opts)
+  local winid = opts.__CTX.winid
+  local list = opts.is_loclist and vim.fn.getloclist(winid) or vim.fn.getqflist()
+
+  local buf_del = (function()
+    local ret = {}
+    for _, s in ipairs(selected) do
+      local b = s:match("%[(%d+)%]")
+      ret[b] = true
+    end
+    return ret
+  end)()
+
+  local newlist = {}
+  for _, l in ipairs(list) do
+    if not buf_del[tostring(l.bufnr)] then
+      table.insert(newlist, l)
+    end
+  end
+
+  if opts.is_loclist then
+    vim.fn.setloclist(winid, newlist, "r")
+  else
+    vim.fn.setqflist(newlist, "r")
+  end
+end
+
 M.file_sel_to_qf = function(selected, opts)
   sel_to_qf(selected, opts)
 end
@@ -981,7 +1008,7 @@ M.grep_lgrep = function(_, opts)
     __resume_key = opts.__resume_key,
     rg_glob = opts.rg_glob or opts.__call_opts.rg_glob,
     -- globs always require command processing with 'multiprocess'
-    requires_processing = opts.rg_glob or opts.__call_opts.rg_glob,
+    multiprocess = opts.multiprcess and (opts.rg_glob or opts.__call_opts.rg_glob) and 1,
     -- when used with tags pass the resolved ctags_file from tags-option as
     -- `tagfiles()` might not return the correct file called from the float (#700)
     ctags_file = opts.ctags_file,

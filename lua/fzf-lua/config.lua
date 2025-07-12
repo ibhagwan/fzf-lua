@@ -876,10 +876,11 @@ function M.normalize_opts(opts, globals, __resume_key)
       -- When using "mini.icons" process lines 1-by-1 in the luv callback as having
       -- to wait for all lines takes much longer due to the `vim.filetype.match` call
       -- which makes the UX appear laggy
-      opts.process1 = opts.process1 == nil and true or opts.process1
+      -- NOTE: DO NOT UNCOMMENT, bad perforamnce
+      -- opts.process1 = opts.process1 == nil and true or opts.process1
       -- We also want to store the cached extensions/filenames in the main thread
       -- which we do in "make_entry.postprocess"
-      opts.__mt_postprocess = opts.multiprocess
+      opts.fn_postprocess = opts.multiprocess
           and [[return require("fzf-lua.make_entry").postprocess]]
           -- NOTE: we don't need to update mini when running on main thread
           -- or require("fzf-lua.make_entry").postprocess
@@ -887,12 +888,32 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
+  -- entry type is file, "optional file processing, only trandform
+  -- entries if an option is present which requires a transform
+  if opts._type == "file"
+      and (opts.git_icons
+        or opts.file_icons
+        or opts.file_ignore_patterns
+        or opts.strip_cwd_prefix
+        or opts.path_shorten
+        or opts.formatter
+        or opts.multiline
+        or opts.rg_glob)
+  then
+    opts.fn_transform = opts.fn_transform == nil
+        and [[return require("fzf-lua.make_entry").file]]
+        or opts.fn_transform
+    opts.fn_preprocess = opts.fn_preprocess == nil
+        and [[return require("fzf-lua.make_entry").preprocess]]
+        or opts.fn_preprocess
+  end
+
   if opts.line_query and not utils.has(opts, "fzf", { 0, 59 }) then
     utils.warn("'line_query' requires fzf >= 0.59, ignoring.")
   elseif opts.line_query then
     utils.map_set(opts, "winopts.preview.winopts.cursorline", true)
     utils.map_set(opts, "keymap.fzf.change",
-      "transform:" .. FzfLua.shell.raw_action(function(q, _, _)
+      "transform:" .. FzfLua.shell.stringify_data(function(q, _, _)
         local lnum = q[1]:match(":(%d+)$")
         local new_q, subs = q[1]:gsub(":%d*$", "")
         -- No subs made, no ":" at end of string, do nothing
@@ -906,7 +927,7 @@ function M.normalize_opts(opts, globals, __resume_key)
           trans = string.format("%s+change-preview-window(%s:%s)", trans, optstr, offset)
         end
         return trans
-      end, "{q}", opts.debug))
+      end, opts, "{q}"))
   end
 
   if type(opts.enrich) == "function" then
@@ -915,6 +936,13 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- nullify profile options
   M._profile_opts = nil
+
+  -- Save a copy of provider info in the opts, we will
+  -- later use it for better named quickfix lists (#776)
+  opts.__INFO = FzfLua.get_info()
+
+  -- pid getter/setter, used by stringify to terminate previous pid
+  opts.PidObject = utils.pid_object("__stringify_pid", opts)
 
   -- mark as normalized
   opts._normalized = true
@@ -929,9 +957,11 @@ M.bytecode = function(s, datatype)
     iter = iter[keys[i]]
     if not iter then break end
     if i == #keys and type(iter) == datatype then
-      -- Not sure if second argument 'true' is needed
-      -- can't find any references for it other than
-      -- it being used in packer.nvim
+      -- string.dump (function [, strip])
+      -- Returns a string containing a binary representation (a binary chunk) of the given
+      -- function, so that a later load on this string returns a copy of the function (but
+      -- with new upvalues). If strip is a true value, the binary representation may not
+      -- include all debug information about the function, to save space.
       return string.dump(iter, true)
     end
   end
@@ -1021,6 +1051,7 @@ M._action_to_helpstr = {
   [actions.tmux_buf_set_reg]     = "set-register",
   [actions.paste_register]       = "paste-register",
   [actions.set_qflist]           = "set-{qf|loc}list",
+  [actions.list_del]             = "list-delete",
   [actions.apply_profile]        = "apply-profile",
   [actions.complete]             = "complete",
   [actions.dap_bp_del]           = "dap-bp-delete",

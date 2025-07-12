@@ -23,44 +23,15 @@ T["files()"] = new_set()
 
 T["files()"]["start and abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c>" } } }, {
   function(key)
-    -- sort output and remove cwd in prompt as will be different on CI
-    eq(child.lua_get([[_G._fzf_postprocess_called]]), vim.NIL)
-    child.lua(string.format([==[FzfLua.files({
+    helpers.FzfLua(child, "files", {
+      __abort_key = key,
+      __expect_lines = true,
       hidden = false,
       previewer = false,
       cwd_prompt = false,
-      cmd = "rg --files --sort=path"%s
-    })]==],
-      helpers.IS_MAC()
-      and ""
-      or [==[,
-        requires_processing = true, -- for __mt_postprocess
-         __mt_postprocess = [[return function()
-        local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
-        vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
-        vim.fn.chanclose(chan_id)
-      end]]]==]))
-    eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_load_called]]) == true
-    end)
-    if helpers.IS_MAC() then
-      vim.uv.sleep(200)
-    else
-      child.wait_until(function()
-        return child.lua_get([[_G._fzf_postprocess_called]]) == true
-      end)
-    end
-    -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
-    local screen_opts = { ignore_text = { 28 }, normalize_paths = helpers.IS_WIN() }
-    -- NOTE: we compare screen lines without "attrs"
-    -- so we can test on stable, nightly and windows
-    -- child.expect_screenshot(screen_opts)
-    child.expect_screen_lines(screen_opts)
-    child.type_keys(key)
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
-    end)
+      cmd = "rg --files --sort=path",
+      multiprocess = true,
+    })
   end,
 })
 
@@ -174,13 +145,13 @@ T["files()"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "fi
         previewer = false,
         cwd_prompt = false,
         -- fzf_opts = { ["--wrap"] = true },
-        requires_processing = true, -- for "strip_cwd_prefix|debug| __mt_postprocess"
+        multiprocess = true, -- force mp for "[DEBUG]" line
         %s%s
       })]==]):format(opts,
       helpers.IS_MAC()
       and ""
       or [==[,
-        __mt_postprocess = [[return function()
+        fn_postprocess = [[return function()
         local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
         vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
         vim.fn.chanclose(chan_id)
