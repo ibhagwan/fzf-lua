@@ -82,7 +82,7 @@ M.colorschemes = function(opts)
     utils.setup_highlights()
   end
 
-  core.fzf_exec(colors, opts)
+  return core.fzf_exec(colors, opts)
 end
 
 M.highlights = function(opts)
@@ -137,7 +137,7 @@ M.highlights = function(opts)
     end
   end
 
-  core.fzf_exec(contents, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 

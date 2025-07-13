@@ -214,12 +214,12 @@ M.buffers = function(opts)
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = opts.filename_only and opts or core.set_fzf_field_index(opts)
 
-  core.fzf_exec(contents, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 M.lines = function(opts)
   opts = config.normalize_opts(opts, "lines")
-  M.buffer_lines(opts)
+  return M.buffer_lines(opts)
 end
 
 M.blines = function(opts)
@@ -230,7 +230,7 @@ M.blines = function(opts)
     opts.start_line = opts.start_line or sel.start.line
     opts.end_line = opts.end_line or sel["end"].line
   end
-  M.buffer_lines(opts)
+  return M.buffer_lines(opts)
 end
 
 
@@ -352,7 +352,7 @@ M.buffer_lines = function(opts)
   end
 
   opts = core.set_fzf_field_index(opts, "{3}", opts._is_skim and "{}" or "{..-2}")
-  core.fzf_exec(contents, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 M.tabs = function(opts)
@@ -466,7 +466,7 @@ M.tabs = function(opts)
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = opts.filename_only and opts or core.set_fzf_field_index(opts, "{4}", "{}")
 
-  core.fzf_exec(contents, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 
@@ -600,7 +600,7 @@ M.treesitter = function(opts)
 
   opts = core.set_header(opts, opts.headers or { "actions" })
 
-  core.fzf_exec(contents, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 M.spellcheck = function(opts)
@@ -703,7 +703,7 @@ M.spellcheck = function(opts)
 
   opts = core.set_header(opts, opts.headers or { "actions" })
 
-  core.fzf_exec(contents, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 return M

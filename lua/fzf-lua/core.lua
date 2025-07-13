@@ -197,11 +197,11 @@ end
 
 ---@param contents string?
 ---@param opts table
----@return thread
+---@return thread, string, table
 M.fzf_wrap = function(contents, opts)
   opts = opts or {}
   local _co
-  coroutine.wrap(function()
+  local wrapped = coroutine.wrap(function()
     _co = coroutine.running()
     if type(opts.cb_co) == "function" then opts.cb_co(_co) end
     -- Default fzf exit callback acts upon the selected items
@@ -217,8 +217,13 @@ M.fzf_wrap = function(contents, opts)
       return
     end
     utils.err("fn_selected threw an error: " .. debug.traceback(err, 1))
-  end)()
-  return _co
+  end)
+  -- Do not strt fzf, return the stringified contents and opts onlu
+  -- used by the "combine" picker to merge inputs
+  if opts._start ~= false then
+    wrapped()
+  end
+  return _co, contents, opts
 end
 
 -- conditionally update the context if fzf-lua

@@ -40,7 +40,7 @@ M.commands = function(opts)
     end,
   }
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 M.configurations = function(opts)
@@ -73,7 +73,7 @@ M.configurations = function(opts)
     end,
   }
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 M.breakpoints = function(opts)
@@ -116,7 +116,7 @@ M.breakpoints = function(opts)
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts, "{3}", opts._is_skim and "{}" or "{..-2}")
 
-  core.fzf_exec(contents, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 M.variables = function(opts)
@@ -147,7 +147,7 @@ M.variables = function(opts)
     end
   end
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 M.frames = function(opts)
@@ -238,7 +238,7 @@ M.frames = function(opts)
     ))
   end
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 return M
