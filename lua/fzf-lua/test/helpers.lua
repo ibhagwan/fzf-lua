@@ -422,12 +422,11 @@ M.FzfLua = setmetatable({}, {
       if ci_opts.__postprocess_wait then
         opts.fn_postprocess = opts.multiprocess
             and [[return function(opts)
-              vim.uv.sleep(100)
               local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
               vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
               vim.fn.chanclose(chan_id)
             end]]
-            or [[return function(_) vim.uv.sleep(100); _G._fzf_postprocess_called = true end]]
+            or [[return function(_) _G._fzf_postprocess_called = true end]]
       end
 
       -- Stringify supplied opts

@@ -82,7 +82,7 @@ local rpc_nvim_exec_lua = function(opts)
     vim.fn.chanclose(chan_id)
   end)
 
-  if not success or opts.debug then
+  if not success or opts.debug == "v" or opts.debug == 2 then
     io.stderr:write(("[DEBUG] debug = %s\n"):format(opts.debug))
     io.stderr:write(("[DEBUG] function ID = %d\n"):format(opts.fnc_id))
     io.stderr:write(("[DEBUG] fzf_lua_server = %s\n"):format(opts.fzf_lua_server))
@@ -107,7 +107,18 @@ local args = vim.deepcopy(_G.arg)
 args[0] = nil -- remove filename
 local opts = {
   fnc_id = tonumber(table.remove(args, 1)),
-  debug = table.remove(args, 1) == "true",
+  debug = (function()
+    local ret = table.remove(args, 1)
+    if ret == "nil" then
+      return nil
+    elseif ret == "true" then
+      return true
+    elseif ret == "false" then
+      return false
+    else
+      return tonumber(ret) or tostring(ret)
+    end
+  end)(),
   fzf_selection = args,
   fzf_lua_server = vim.env.FZF_LUA_SERVER or vim.env.SKIM_FZF_LUA_SERVER or vim.env.NVIM,
 }
