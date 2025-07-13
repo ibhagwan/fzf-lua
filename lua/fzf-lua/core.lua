@@ -155,9 +155,10 @@ M.fzf_exec = function(contents, opts)
   -- the API accepts both tables and functions which we "stringify"
   -- We also send string commands as stringify is also responsible
   -- for multiprocess wrapping of shell commands with processing
-  contents = contents and shell.stringify(contents, opts) or nil
+  shell.clear_protected()
+  contents = contents and shell.stringify(contents, opts, nil, true) or nil
   assert(contents == nil or type(contents) == "string", "contents must be of type string")
-  return M.fzf_wrap(contents, opts)
+  return M.fzf_wrap(contents, opts, true)
 end
 
 ---@param contents string|fun(query: string): string|string[]|function
@@ -172,12 +173,14 @@ M.fzf_live = function(contents, opts)
   -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
   -- each keypress reloads fzf's input usually based on the typed query
   -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
-  opts.fn_reload = shell.stringify(contents, opts)
+  -- convert "reload" actions to fzf's `reload` binds
+  -- convert "exec_silent" actions to fzf's `execute-silent` binds
+  shell.clear_protected()
+  opts.fn_reload = shell.stringify(contents, opts, nil, true)
   local fzf_field_index = M.fzf_field_index(opts)
   local cmd = M.expand_query(opts.fn_reload, fzf_field_index)
-  opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
-  contents = opts.__fzf_init_cmd
-  return M.fzf_wrap(contents, opts)
+  contents, opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
+  return M.fzf_wrap(contents, opts, true)
 end
 
 M.fzf_resume = function(opts)
@@ -191,15 +194,19 @@ M.fzf_resume = function(opts)
   assert(opts == config.__resume_data.opts)
   opts = M.set_header(opts, opts.headers or {})
   opts.cwd = opts.cwd and libuv.expand(opts.cwd) or nil
-  opts.__resuming = true
-  M.fzf_exec(config.__resume_data.contents, config.__resume_data.opts)
+  M.fzf_wrap(config.__resume_data.contents, config.__resume_data.opts)
 end
 
 ---@param contents string?
 ---@param opts table
+---@param convert_actions boolean?
 ---@return thread, string, table
-M.fzf_wrap = function(contents, opts)
+M.fzf_wrap = function(contents, opts, convert_actions)
   opts = opts or {}
+  if convert_actions and type(opts.actions) == "table" then
+    opts = M.convert_reload_actions(contents, opts)
+    opts = M.convert_exec_silent_actions(opts)
+  end
   local _co
   local wrapped = coroutine.wrap(function()
     _co = coroutine.running()
@@ -316,11 +323,6 @@ M.fzf = function(contents, opts)
       opts.actions[k] = actions.dummy_abort
     end
   end
-  if not opts.__resuming then
-    -- `opts.__resuming` is only set from `fzf_resume`, since we
-    -- not resuming clear the shell protected functions registry
-    shell.clear_protected()
-  end
   -- store last call opts for resume
   config.resume_set(nil, opts.__call_opts, opts)
   -- caller specified not to resume this call (used by "builtin" provider)
@@ -393,10 +395,6 @@ M.fzf = function(contents, opts)
 
   fzf_win:attach_previewer(previewer)
   local fzf_bufnr = fzf_win:create()
-  -- convert "reload" actions to fzf's `reload` binds
-  -- convert "exec_silent" actions to fzf's `execute-silent` binds
-  opts = M.convert_reload_actions(contents, opts)
-  opts = M.convert_exec_silent_actions(opts)
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts, fzf_win),
     {
       fzf_bin = opts.fzf_bin,
@@ -998,7 +996,7 @@ local patch_shell_action = function(v, opts)
       items = (zero_matched and zero_selected) and {} or items
     end
     v.fn(items, opts)
-  end, opts, field_index)
+  end, opts, field_index, true)
 end
 
 -- converts actions defined with "reload=true" to use fzf's `reload` bind
@@ -1084,7 +1082,8 @@ M.convert_reload_actions = function(reload_cmd, opts)
     -- NOTE: this fixes existence of both load as function and rebind, e.g. git_status with:
     -- setup({ keymap = { fzf = { true, load = function() _G._fzf_load_called = true end } } }
     if type(opts.keymap.fzf.load) == "function" then
-      opts.keymap.fzf.load = "execute-silent:" .. shell.stringify_data(opts.keymap.fzf.load, opts)
+      opts.keymap.fzf.load = "execute-silent:"
+          .. shell.stringify_data(opts.keymap.fzf.load, opts, nil, true)
     end
     if rebind and type(opts.keymap.fzf.load) == "string" then
       return string.format("%s+%s", rebind, opts.keymap.fzf.load)
@@ -1148,7 +1147,7 @@ end
 ---@param command string
 ---@param fzf_field_index string
 ---@param opts table
----@return table
+---@return string?, table
 M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
   -- query cannot be 'nil'
   opts.query = opts.query or ""
@@ -1190,8 +1189,6 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
       )
 
   if opts._is_skim then
-    -- skim interactive mode does not need a piped command
-    opts.__fzf_init_cmd = nil
     opts.prompt = opts.__prompt or opts.prompt or opts.fzf_opts["--prompt"]
     if opts.prompt then
       opts.fzf_opts["--prompt"] = opts.prompt:match("[^%*]+")
@@ -1215,17 +1212,6 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
     opts._fzf_cli_args = string.format("--interactive --cmd %s",
       libuv.shellescape(no_query_condi .. reload_command))
   else
-    -- **send an empty table to avoid running $FZF_DEFAULT_COMMAND
-    -- The above seems to create a hang in some systems
-    -- use `true` as $FZF_DEFAULT_COMMAND instead (#510)
-    opts.__fzf_init_cmd = utils.shell_nop()
-    if opts.exec_empty_query or (opts.query and #opts.query > 0) then
-      local q = not utils.__IS_WINDOWS and opts.query
-          or libuv.escape_fzf(opts.query, utils.has(opts, "fzf", { 0, 52 }) and 0.52 or 0)
-      -- gsub doesn't like single % on rhs
-      local escaped_q = libuv.shellescape(q):gsub("%%", "%%%%")
-      opts.__fzf_init_cmd = initial_command:gsub(fzf_field_index, escaped_q)
-    end
     opts.fzf_opts["--disabled"] = true
     opts.fzf_opts["--query"] = opts.query
     -- OR with true to avoid fzf's "Command failed:" message
@@ -1234,9 +1220,13 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
     end
     opts._fzf_cli_args = string.format("--bind=%s", libuv.shellescape(
       string.format("change:reload:%s%s", no_query_condi, reload_command)))
+    if utils.has(opts, "fzf", { 0, 35 }) then
+      opts._fzf_cli_args = opts._fzf_cli_args .. string.format(" --bind=%s",
+        libuv.shellescape(string.format("start:reload:%s%s", no_query_condi, reload_command)))
+    end
   end
 
-  return opts
+  return utils.shell_nop(), opts
 end
 
 -- query placeholder for "live" queries

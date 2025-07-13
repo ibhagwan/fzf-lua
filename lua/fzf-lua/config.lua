@@ -671,8 +671,8 @@ function M.normalize_opts(opts, globals, __resume_key)
     if not opts.__FZF_VERSION then
       utils.err(string.format("'fzf --version' failed with error %s: %s", rc, err))
       return nil
-    elseif not utils.has(opts, "fzf", { 0, 25 }) then
-      utils.err(string.format("fzf version %s is lower than minimum (0.25), aborting.",
+    elseif not utils.has(opts, "fzf", { 0, 36 }) then
+      utils.err(string.format("fzf version %s is lower than minimum (0.36), aborting.",
         utils.ver2str(opts.__FZF_VERSION)))
       return nil
     end

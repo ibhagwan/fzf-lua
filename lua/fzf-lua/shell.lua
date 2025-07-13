@@ -235,7 +235,7 @@ end
 ---Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
 ---@param fzf_field_index string?
 ---@return string, integer?
-M.stringify = function(contents, opts, fzf_field_index)
+M.stringify = function(contents, opts, fzf_field_index, protect)
   assert(contents, "must supply contents")
 
   -- TODO: should we let this assert?
@@ -411,20 +411,27 @@ M.stringify = function(contents, opts, fzf_field_index)
     end
   end, fzf_field_index or "", opts.debug)
 
-  M.set_protected(id)
+  -- "protect" a function ptr, cleared when opening a new picker in `core.fzf()`
+  -- protected functions include init (content) commands and acrions (reload
+  -- and execute-silent), previewer trigger commands are excluded (zero event
+  -- and preview callback)
+  if protect then
+    M.set_protected(id)
+  end
+
   return cmd, id
 end
 
-M.stringify_cmd = function(fn, opts, fzf_field_index)
+M.stringify_cmd = function(fn, opts, fzf_field_index, protect)
   assert(type(fn) == "function", "fn must be of type function")
   return M.stringify(fn, {
     __stringify_cmd = true,
     PidObject = utils.pid_object("__stringify_cmd_pid", opts),
     debug = opts.debug,
-  }, fzf_field_index)
+  }, fzf_field_index, protect)
 end
 
-M.stringify_data = function(fn, opts, fzf_field_index)
+M.stringify_data = function(fn, opts, fzf_field_index, protect)
   assert(type(fn) == "function", "fn must be of type function")
   return M.stringify(function(cb, _, ...)
     local ret = fn(...)
@@ -436,7 +443,7 @@ M.stringify_data = function(fn, opts, fzf_field_index)
       cb(tostring(ret))
     end
     cb(nil)
-  end, { debug = opts.debug }, fzf_field_index)
+  end, { debug = opts.debug }, fzf_field_index, protect)
 end
 
 return M

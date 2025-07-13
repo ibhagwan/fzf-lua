@@ -454,7 +454,7 @@ function Previewer.base:cmdline(_)
     -- save last entry even if we don't display
     self.last_entry = entry
     return ""
-  end, self.opts, "{} {q} {n}")
+  end, self.opts, "{} {q} {n}", false)
   return act
 end
 
@@ -481,7 +481,7 @@ function Previewer.base:zero(_)
         self.last_entry = nil
         vim.fn.delete(self._zero_lock, "d")
       end, self.delay)
-    end, self.opts, ""))
+    end, self.opts, "", false))
   return act
 end
 

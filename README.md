@@ -56,7 +56,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 ### Dependencies
 
 - [`neovim`](https://github.com/neovim/neovim/releases) version >= `0.9`
-- [`fzf`](https://github.com/junegunn/fzf) version > `0.25`
+- [`fzf`](https://github.com/junegunn/fzf) version > `0.36`
   or [`skim`](https://github.com/skim-rs/skim) binary installed
 - [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons)
   or [mini.icons](https://github.com/echasnovski/mini.icons)

@@ -37,16 +37,14 @@ T["api"]["fzf_exec"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
         ]==],
         { __expect_lines = true, __postprocess_wait = true })
     else
-      helpers.FzfLua.fzf_exec(child, [==[(function(fzf_cb)
-          coroutine.wrap(function()
-            local co = coroutine.running()
-            for i=1, 1000 do
-              fzf_cb(tostring(i), function() coroutine.resume(co) end)
-              coroutine.yield()
-            end
-            fzf_cb(nil)
-          end)()
-        end)
+      helpers.FzfLua.fzf_exec(child, [==[(coroutine.wrap(function(fzf_cb)
+          local co = coroutine.running()
+          for i=1, 1000 do
+            fzf_cb(tostring(i), function() coroutine.resume(co) end)
+            coroutine.yield()
+          end
+          fzf_cb(nil)
+        end))
         ]==],
         { __expect_lines = true, __postprocess_wait = true })
     end
