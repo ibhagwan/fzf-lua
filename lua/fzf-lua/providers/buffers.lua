@@ -50,6 +50,9 @@ local filter_buffers = function(opts, unfiltered)
           excluded[b] = true
         elseif opts.cwd and not path.is_relative_to(vim.api.nvim_buf_get_name(b), opts.cwd) then
           excluded[b] = true
+        elseif type(opts.filter) == "function" then
+          -- Custom buffer filter #2162
+          excluded[b] = not opts.filter(b)
         end
         if buf_valid and vim.api.nvim_get_option_value("ft", { buf = b }) == "qf" then
           excluded[b] = not opts.show_quickfix and true or nil
