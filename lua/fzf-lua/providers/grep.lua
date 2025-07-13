@@ -206,7 +206,7 @@ M.grep = function(opts)
   opts = core.set_title_flags(opts, { "cmd" })
   opts = core.set_header(opts, opts.headers or { "actions", "cwd", "search" })
   opts = core.set_fzf_field_index(opts)
-  core.fzf_exec(opts.cmd, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 local function normalize_live_grep_opts(opts)

@@ -19,7 +19,7 @@ M.buffers = function(opts)
     return string.format("tmux show-buffer -b %s", buf)
   end, opts, "{}")
 
-  core.fzf_exec(opts.cmd, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 return M

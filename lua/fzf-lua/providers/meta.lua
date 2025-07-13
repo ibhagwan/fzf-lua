@@ -31,7 +31,7 @@ M.metatable = function(opts)
   -- as the behavior might confuse users (#267)
   opts.no_resume = true
 
-  core.fzf_exec(methods, opts)
+  return core.fzf_exec(methods, opts)
 end
 
 ---@param dir string
@@ -95,6 +95,57 @@ M.profiles = function(opts)
   end
 
   return core.fzf_exec(contents, opts)
+end
+
+M.combine = function(t)
+  t = t or {}
+  t.pickers = type(t.pickers) == "table" and type(t.pickers)
+      or type(t.pickers) == "string" and utils.strsplit(t.pickers, "[,;]")
+      or nil
+
+  -- First picker options set the tone
+  local opts1 = (function()
+    if t.pickers[1] then
+      local ok, opts = pcall(config.normalize_opts, t, t.pickers[1])
+      if not ok or not opts then
+        utils.warn("Must specify at least one valid picker")
+      else
+        return opts
+      end
+    end
+  end)()
+  if not opts1 then return end
+
+  -- Let fzf_wrap know to NOT start the coroutine
+  opts1._start = false
+
+  local cmds, opts = (function()
+    local ret, opts = {}, nil
+    for i, p in ipairs(t.pickers) do
+      -- local ok, msg, cmd, o = pcall(FzfLua[p], opts1)
+      -- if not ok or not cmd then
+      local _, cmd, o = FzfLua[p](opts1)
+      if not cmd or not o then
+        -- utils.warn(string.format("Error loading picker '%s', ignoring.\nError: %s", p, msg))
+        utils.warn(string.format("Error loading picker '%s', ignoring.", p))
+      else
+        table.insert(ret, cmd)
+        -- NOTE: we use the [first picker] modified opts after picker setup
+        -- as pickers can modify opts / add important parts (fn_pre_fzf, etc)
+        if not opts then opts = o end
+      end
+    end
+    return ret, opts
+  end)()
+  if not opts then return end
+
+  -- Let fzf_wrap know to START the coroutine
+  opts._start = nil
+
+  -- _G.dump(cmds)
+  local contents = table.concat(cmds, utils.__IS_WINDOWS and "&" or ";")
+
+  return core.fzf_wrap(contents, opts)
 end
 
 return M

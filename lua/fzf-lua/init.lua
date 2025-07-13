@@ -287,7 +287,8 @@ do
     register_ui_select = { "fzf-lua.providers.ui_select", "register" },
     deregister_ui_select = { "fzf-lua.providers.ui_select", "deregister" },
     tmux_buffers = { "fzf-lua.providers.tmux", "buffers" },
-    profiles = { "fzf-lua.providers.module", "profiles" },
+    profiles = { "fzf-lua.providers.meta", "profiles" },
+    combine = { "fzf-lua.providers.meta", "combine" },
     complete_path = { "fzf-lua.complete", "path" },
     complete_file = { "fzf-lua.complete", "file" },
     complete_line = { "fzf-lua.complete", "line" },
@@ -403,7 +404,7 @@ M.builtin = function(opts)
   if not opts then return end
   opts.metatable = M
   opts.metatable_exclude = M._excluded_metamap
-  return require "fzf-lua.providers.module".metatable(opts)
+  return require "fzf-lua.providers.meta".metatable(opts)
 end
 
 return M

@@ -99,7 +99,7 @@ M.helptags = function(opts)
     end)()
   end
 
-  core.fzf_exec(contents, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 return M

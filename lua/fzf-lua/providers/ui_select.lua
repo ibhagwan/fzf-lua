@@ -177,7 +177,7 @@ M.ui_select = function(items, ui_opts, on_choice)
     _OPTS_ONCE = nil
   end
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 return M

@@ -103,7 +103,7 @@ M.commands = function(opts)
     return cmd
   end
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 ---@param str ":"|"/"
@@ -133,7 +133,7 @@ local history = function(opts, str)
     end
     cb(nil)
   end)
-  core.fzf_exec(content, opts)
+  return core.fzf_exec(content, opts)
 end
 
 M.command_history = function(opts)
@@ -186,7 +186,7 @@ M.jumps = function(opts)
 
   opts.fzf_opts["--header-lines"] = 1
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 M.tagstack = function(opts)
@@ -239,7 +239,7 @@ M.tagstack = function(opts)
       tag.text))
   end
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 
@@ -294,7 +294,7 @@ M.marks = function(opts)
     end
   end ]]
 
-  core.fzf_exec(contents, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 M.registers = function(opts)
@@ -353,7 +353,7 @@ M.registers = function(opts)
     return contents and register_escape_special(contents) or args[1]
   end
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 M.keymaps = function(opts)
@@ -441,7 +441,7 @@ M.keymaps = function(opts)
   local header_str = format({ mode = "m", lhs = "keymap", desc = "description", rhs = "detail" })
   table.insert(entries, 1, header_str)
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 M.nvim_options = function(opts)
@@ -517,7 +517,7 @@ M.nvim_options = function(opts)
 
   opts.fzf_opts["--header-lines"] = "2"
 
-  core.fzf_exec(contents, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 M.spell_suggest = function(opts)
@@ -551,7 +551,7 @@ M.spell_suggest = function(opts)
 
   if utils.tbl_isempty(entries) then return end
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 M.filetypes = function(opts)
@@ -570,7 +570,7 @@ M.filetypes = function(opts)
     end, entries)
   end
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 M.packadd = function(opts)
@@ -580,7 +580,7 @@ M.packadd = function(opts)
   local entries = vim.fn.getcompletion("", "packadd")
   if utils.tbl_isempty(entries) then return end
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 M.menus = function(opts)
@@ -612,7 +612,7 @@ M.menus = function(opts)
     return
   end
 
-  core.fzf_exec(entries, opts)
+  return core.fzf_exec(entries, opts)
 end
 
 M.autocmds = function(opts)

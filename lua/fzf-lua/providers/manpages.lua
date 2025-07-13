@@ -41,7 +41,7 @@ M.manpages = function(opts)
     return string.format("%-45s %s", man, desc)
   end
 
-  core.fzf_exec(opts.cmd, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 return M

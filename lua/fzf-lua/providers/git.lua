@@ -59,7 +59,7 @@ local function git_cmd(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   opts = core.set_header(opts, opts.headers or { "cwd" })
-  core.fzf_exec(opts.cmd, opts)
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 local function git_preview(opts, file)
