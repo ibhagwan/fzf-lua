@@ -175,4 +175,46 @@ T["api"]["fzf_live"]["rg"]["no error"] = new_set(
   }
 )
 
+T["api"]["events"] = new_set(
+  { parametrize = { { "fzf_exec" }, { "fzf_live" } } },
+  {
+    function(api)
+      local prompt = "EventsPrompt>"
+      helpers.FzfLua[api](child,
+        api == "fzf_exec"
+        and [[(function() return { "foo", "bar", "baz" } end)()]]
+        or [[function() return { "foo", "bar", "baz" } end ]],
+        {
+          __expect_lines = true,
+          prompt = prompt,
+          exec_empty_query = true,
+          actions = {
+            start = {
+              fn = function(s) _G._fzf_prompt = s[1] end,
+              field_index = helpers.IS_WIN()
+                  and "%FZF_PROMPT% %FZF_TOTAL_COUNT%"
+                  or "$FZF_PROMPT $FZF_TOTAL_COUNT",
+              exec_silent = true,
+            },
+            load = {
+              fn = function(s) _G._fzf_total_count = tonumber(s[2]) end,
+              field_index = helpers.IS_WIN()
+                  and "%FZF_PROMPT% %FZF_TOTAL_COUNT%"
+                  or "$FZF_PROMPT $FZF_TOTAL_COUNT",
+              exec_silent = true,
+            },
+          },
+          __after_open = function()
+            child.wait_until(function()
+              return child.lua_get([[_G._fzf_prompt]]) == prompt
+            end)
+            child.wait_until(function()
+              return child.lua_get([[_G._fzf_total_count]]) == 3
+            end)
+          end,
+        })
+    end
+  }
+)
+
 return T
