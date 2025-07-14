@@ -1413,7 +1413,7 @@ function M.termopen(cmd, opts)
   if M.__HAS_NVIM_011 and M._JOBSTART_HAS_TERM == nil then
     local ok, err = pcall(vim.fn.jobstart, "", { term = 1 })
     M._JOBSTART_HAS_TERM = not ok
-        and err:match [[Vim:E475: Invalid argument: 'term' must be Boolean]]
+        and err --[[@as string]]:match [[Vim:E475: Invalid argument: 'term' must be Boolean]]
         and true or false
   end
   if M.__HAS_NVIM_011 and M._JOBSTART_HAS_TERM then
