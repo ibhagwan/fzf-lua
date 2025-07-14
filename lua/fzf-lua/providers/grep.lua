@@ -294,9 +294,6 @@ M.live_grep = function(opts)
     opts.multiprocess = opts.multiprocess and 1
   end
 
-  -- signal to preprocess we are looking to replace {argvz}
-  opts.argv_expr = opts.multiprocess
-
   -- this will be replaced by the appropriate fzf
   -- FIELD INDEX EXPRESSION by 'fzf_exec'
   local cmd = get_grep_cmd(opts, core.fzf_query_placeholder, 2)

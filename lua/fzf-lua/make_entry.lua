@@ -71,6 +71,16 @@ if _G._fzf_lua_is_headless then
   if _config.globals.nbsp then utils.nbsp = _config.globals.nbsp end
 
   config = _config
+
+  -- Compat global with known modules so we can use it in callbacks (fn_transform, etc)
+  _G.FzfLua = {
+    make_entry = M,
+    config = config,
+    path = path,
+    utils = utils,
+    libuv = libuv,
+    devicons = devicons,
+  }
 end
 
 M.get_diff_files = function(opts)
