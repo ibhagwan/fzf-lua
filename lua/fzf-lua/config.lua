@@ -907,6 +907,15 @@ function M.normalize_opts(opts, globals, __resume_key)
         and [[return require("fzf-lua.make_entry").preprocess]]
         or opts.fn_preprocess
   end
+  -- Must have preprocess to load icon sets, relocate {argvz}, etc
+  if opts.fn_preprocess == nil
+      and (opts.file_icons
+        or opts.git_icons
+        or opts.formatter
+        or opts.fn_transform_cmd)
+  then
+    opts.fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]]
+  end
 
   if opts.line_query and not utils.has(opts, "fzf", { 0, 59 }) then
     utils.warn("'line_query' requires fzf >= 0.59, ignoring.")

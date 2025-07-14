@@ -441,6 +441,11 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
     end
   end
 
+  -- Requiring make_entry will create the pseudo `_G.FzfLua` global
+  -- Must be called after global vars are created or devicons will
+  -- err with "fzf-lua fatal: '_G._fzf_lua_server', '_G._devicons_path' both nil"
+  pcall(require, "fzf-lua.make_entry")
+
   local fn_transform = load_fn(fn_transform_str)
   local fn_preprocess = load_fn(fn_preprocess_str)
   local fn_postprocess = load_fn(fn_postprocess_str)

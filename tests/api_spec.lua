@@ -49,6 +49,19 @@ T["api"]["fzf_exec"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
   end,
 })
 
+T["api"]["fzf_exec"]["rg"] = new_set({ parametrize = { { true }, { false }, { 1 } } }, {
+  function(multiprocess)
+    helpers.FzfLua.fzf_exec(child,
+      [['rg --files -g "!.git" --sort=path']],
+      {
+        __expect_lines = true,
+        debug = 1,
+        multiprocess = multiprocess,
+      })
+  end
+})
+
+
 T["api"]["fzf_live"] = new_set()
 
 T["api"]["fzf_live"]["table"] = function()
@@ -122,5 +135,43 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
     end
   end,
 })
+
+T["api"]["fzf_live"]["rg"] = new_set()
+
+T["api"]["fzf_live"]["rg"]["error"] = new_set({ parametrize = { { true }, { false }, { 1 } } }, {
+  function(multiprocess)
+    helpers.FzfLua.fzf_live(child, [["rg --column --line-number --smart-case"]], {
+      __expect_lines = true,
+      -- multiprocess==1 should fallback to native (no [DEBUG] line)
+      -- as no fn_transform or fn_preprocess are present
+      multiprocess = multiprocess,
+      debug = 1,
+      query = "["
+      -- fzf_opts = { ["--wrap"] = true },
+    })
+  end
+})
+
+T["api"]["fzf_live"]["rg"]["no error"] = new_set(
+  { parametrize = { { "[" }, { [[table of cont]] } } },
+  {
+    function(query)
+      helpers.FzfLua.fzf_live(child,
+        string.format(
+          [["rg --column --line-number --smart-case --sort=path -g !tests/ -- <query> 2> %s"]],
+          helpers.IS_WIN() and "nul" or "/dev/null"
+        ),
+        {
+          __expect_lines = true,
+          debug = 1,
+          query = query,
+          -- Windows fails due to the spaced query term with the native
+          -- exec_empty_query shell condition, disable empty query to
+          -- remove the empty query condition from the shell command
+          exec_empty_query = true,
+        })
+    end
+  }
+)
 
 return T

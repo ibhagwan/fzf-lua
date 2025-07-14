@@ -215,6 +215,11 @@ M.stringify_mt = function(cmd, opts)
       -- NOTE: since we cannot guarantee the positional index
       -- of arguments (#291), we use the last argument instead
       opts.cmd = opts.cmd:gsub(FzfLua.core.fzf_query_placeholder, "{argvz}")
+      -- NOTE: we add preprocess in config.normalize_opts but `opts.argv_expr`
+      -- isn't yet set at that point
+      if opts.fn_preprocess == nil then
+        opts.fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]]
+      end
     end
     local spawn_cmd = libuv.wrap_spawn_stdio(
       serialize(filter_opts(opts)),
