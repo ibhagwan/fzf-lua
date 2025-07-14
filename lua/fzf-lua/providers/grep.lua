@@ -314,19 +314,6 @@ M.live_grep = function(opts)
   end, opts)
 end
 
-M.live_grep_glob = function(opts)
-  if vim.fn.executable("rg") ~= 1 then
-    utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
-    return
-  end
-
-  -- 'rg_glob = true' enables the glob processing in
-  -- 'make_entry.preprocess', only supported with multiprocess
-  opts = opts or {}
-  opts.rg_glob = true
-  return M.live_grep(opts)
-end
-
 M.live_grep_native = function(opts)
   -- backward compatibility, by setting git|files icons to false
   -- we force 'mt_cmd_wrapper' to pipe the command as is, so fzf
@@ -343,6 +330,25 @@ M.live_grep_native = function(opts)
   opts.multiprocess = 1
   return M.live_grep(opts)
 end
+
+M.live_grep_glob = function(opts)
+  vim.deprecate(
+    [['live_grep_glob']],
+    [[':FzfLua live_grep' or ':lua FzfLua.live_grep()' (glob parsing enabled by default)]],
+    "Jan 2026", "FzfLua"
+  )
+  if vim.fn.executable("rg") ~= 1 then
+    utils.warn("'--glob|iglob' flags requires 'rg' (https://github.com/BurntSushi/ripgrep)")
+    return
+  end
+
+  -- 'rg_glob = true' enables the glob processing in
+  -- 'make_entry.preprocess', only supported with multiprocess
+  opts = opts or {}
+  opts.rg_glob = true
+  return M.live_grep(opts)
+end
+
 
 M.live_grep_resume = function(opts)
   vim.deprecate(
