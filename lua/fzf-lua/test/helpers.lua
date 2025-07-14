@@ -139,10 +139,12 @@ M.new_child_neovim = function()
             _G._fzf_load_called = nil
           end,
         },
-        keymap = { fzf = {
-          true,
-          load = function() _G._fzf_load_called = true end,
-        } }
+        -- TODO: why is gc called with builtin with this one?
+        -- keymap = { fzf = { true, load = function() _G._fzf_load_called = true end } }
+        fzf_cli_args = "--bind=" .. FzfLua.libuv.shellescape("load:+execute-silent:"
+          .. FzfLua.shell.stringify_data(function(_, _, _)
+              _G._fzf_load_called = true
+            end, {}))
       }))
     ]])
         -- using "FZF_DEFAULT_OPTS" hangs the command on the

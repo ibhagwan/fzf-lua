@@ -315,6 +315,8 @@ M.fzf = function(contents, opts)
     opts = config.normalize_opts(opts or {}, {})
     if not opts then return end
   end
+  -- Store contents for unhide
+  opts._contents = contents
   -- flag used to print the query on stdout line 1
   -- later to be removed from the result by M.fzf()
   -- this provides a solution for saving the query
@@ -371,7 +373,8 @@ M.fzf = function(contents, opts)
     -- fzf 0.40 added 'zero' event for when there's no match
     -- clears the preview when there are no matching entries
     if utils.has(opts, "fzf", { 0, 40 }) and previewer.zero then
-      utils.map_set(opts, "keymap.fzf.zero", previewer:zero())
+      table.insert(opts._fzf_cli_args, "--bind="
+        .. libuv.shellescape("zero:+" .. previewer:zero()))
     end
     if type(previewer.preview_window) == "function" then
       -- do we need to override the preview_window args?
@@ -751,8 +754,14 @@ M.build_fzf_cli = function(opts, fzf_win)
     end
   end
   for _, o in ipairs({ "fzf_args", "fzf_raw_args", "fzf_cli_args", "_fzf_cli_args" }) do
-    if opts[o] then
-      table.insert(cli_args, type(opts[o]) == "table" and opts[o] or tostring(opts[o]))
+    local args = opts[o]
+    if args then
+      if type(args) ~= "table" then
+        args = { tostring(args) }
+      end
+      for _, arg in ipairs(args) do
+        table.insert(cli_args, arg)
+      end
     end
   end
   return cli_args
@@ -1087,19 +1096,11 @@ M.convert_reload_actions = function(reload_cmd, opts)
       }
     end
   end
-  opts.keymap.fzf.load = (function()
-    -- NOTE: this fixes existence of both load as function and rebind, e.g. git_status with:
-    -- setup({ keymap = { fzf = { true, load = function() _G._fzf_load_called = true end } } }
-    if type(opts.keymap.fzf.load) == "function" then
-      opts.keymap.fzf.load = "execute-silent:"
-          .. shell.stringify_data(opts.keymap.fzf.load, opts, nil, true)
-    end
-    if rebind and type(opts.keymap.fzf.load) == "string" then
-      return string.format("%s+%s", rebind, opts.keymap.fzf.load)
-    else
-      return rebind or opts.keymap.fzf.load
-    end
-  end)()
+
+  if rebind then
+    table.insert(opts._fzf_cli_args,
+      "--bind=" .. libuv.shellescape(string.format("load:+%s", rebind)))
+  end
   return opts
 end
 
@@ -1218,8 +1219,8 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
     opts.fzf_opts["--query"] = nil
     opts.query = nil
     -- setup as interactive
-    opts._fzf_cli_args = string.format("--interactive --cmd %s",
-      libuv.shellescape(no_query_condi .. reload_command))
+    table.insert(opts._fzf_cli_args, string.format("--interactive --cmd %s",
+      libuv.shellescape(no_query_condi .. reload_command)))
   else
     opts.fzf_opts["--disabled"] = true
     opts.fzf_opts["--query"] = opts.query
@@ -1227,11 +1228,11 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
     if opts.silent_fail ~= false then
       reload_command = reload_command .. " || " .. utils.shell_nop()
     end
-    opts._fzf_cli_args = string.format("--bind=%s", libuv.shellescape(
-      string.format("change:reload:%s%s", no_query_condi, reload_command)))
+    table.insert(opts._fzf_cli_args, "--bind="
+      .. libuv.shellescape(string.format("change:+reload:%s%s", no_query_condi, reload_command)))
     if utils.has(opts, "fzf", { 0, 35 }) then
-      opts._fzf_cli_args = opts._fzf_cli_args .. string.format(" --bind=%s",
-        libuv.shellescape(string.format("start:reload:%s%s", no_query_condi, reload_command)))
+      table.insert(opts._fzf_cli_args, "--bind="
+        .. libuv.shellescape(string.format("start:+reload:%s%s", no_query_condi, reload_command)))
     end
   end
 

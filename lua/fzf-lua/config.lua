@@ -381,6 +381,9 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
+  -- `fzf_cli_args` is string, `_fzf_cli_args` is a table used internally
+  opts._fzf_cli_args = {}
+
   -- backward compatibility, rhs overrides lhs
   -- (rhs being the "old" option)
   local backward_compat = {
@@ -921,8 +924,8 @@ function M.normalize_opts(opts, globals, __resume_key)
     utils.warn("'line_query' requires fzf >= 0.59, ignoring.")
   elseif opts.line_query then
     utils.map_set(opts, "winopts.preview.winopts.cursorline", true)
-    utils.map_set(opts, "keymap.fzf.change",
-      "transform:" .. FzfLua.shell.stringify_data(function(q, _, _)
+    table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("change:+transform:"
+      .. FzfLua.shell.stringify_data(function(q, _, _)
         local lnum = q[1]:match(":(%d+)$")
         local new_q, subs = q[1]:gsub(":%d*$", "")
         -- No subs made, no ":" at end of string, do nothing
@@ -936,7 +939,7 @@ function M.normalize_opts(opts, globals, __resume_key)
           trans = string.format("%s+change-preview-window(%s:%s)", trans, optstr, offset)
         end
         return trans
-      end, opts, "{q}"))
+      end, opts, "{q}")))
   end
 
   if type(opts.enrich) == "function" then
