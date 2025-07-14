@@ -398,7 +398,8 @@ M.FzfLua = setmetatable({}, {
 
       -- When using `fzf_exec` opts are at index[2], or otherwise at index[1]
       -- remove index[1] into "contents" so index[1] is always our "opts"
-      local contents = api == "fzf_exec" and (table.remove(args, 1) .. ",") or ""
+      local contents = (api == "fzf_exec" or api == "fzf_live")
+          and (table.remove(args, 1) .. ",") or ""
 
       -- Split "opts" and "ci_opts" which are double underscore prefixed
       local opts, ci_opts = (function()
