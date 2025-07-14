@@ -2,6 +2,7 @@ local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local config = require "fzf-lua.config"
 local base64 = require "fzf-lua.lib.base64"
 local devicons = require "fzf-lua.devicons"
@@ -383,8 +384,8 @@ M.tabs = function(opts)
 
   if opts.locate and utils.has(opts, "fzf", { 0, 36 }) then
     -- Set cursor to current buffer
-    utils.map_set(opts, "keymap.fzf.load",
-      "transform:" .. FzfLua.shell.stringify_data(function(_, _, _)
+    table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("load:+transform:"
+      .. FzfLua.shell.stringify_data(function(_, _, _)
         local pos = 0
         for tabnr, tabh in ipairs(vim.api.nvim_list_tabpages()) do
           pos = pos + 1
@@ -398,7 +399,7 @@ M.tabs = function(opts)
             end
           end
         end
-      end, opts))
+      end, opts)))
   end
 
   local contents = function(cb)

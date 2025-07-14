@@ -55,6 +55,7 @@ T["api"]["fzf_exec"]["rg"] = new_set({ parametrize = { { true }, { false }, { 1 
       [['rg --files -g "!.git" --sort=path']],
       {
         __expect_lines = true,
+        -- __postprocess_wait = multiprocess ~= 1,
         debug = 1,
         multiprocess = multiprocess,
       })
