@@ -38,6 +38,12 @@ function M.clear_protected()
   _protected = {}
 end
 
+function M.clear_registry()
+  _index = 0
+  _registry = {}
+  _protected = {}
+end
+
 -- creates a new address to listen to messages from actions. This is important
 -- if the user is using a custom fixed $NVIM_LISTEN_ADDRESS. Different neovim
 -- instances will then use the same path as the address and it causes a mess,

@@ -35,7 +35,7 @@ local os_detect = {
   },
   MAC = { name = "MacOS", fn = function() return vim.fn.has("mac") == 1 end },
   LINUX = { name = "Linux", fn = function() return vim.fn.has("linux") == 1 end },
-  STABLE = { name = "Neovim stable", fn = function() return M.NVIM_VERSION() == "0.11.1" end },
+  STABLE = { name = "Neovim stable", fn = function() return M.NVIM_VERSION() == "0.11.2" end },
   NIGHTLY = { name = "Neovim nightly", fn = function() return vim.fn.has("nvim-0.12") == 1 end },
 }
 
@@ -139,7 +139,7 @@ M.new_child_neovim = function()
             _G._fzf_load_called = nil
           end,
         },
-        -- TODO: why is gc called with builtin with this one?
+        -- Using _fzf_cli_args so we can test keymap.fzf.load actions.load (api.events)
         -- keymap = { fzf = { true, load = function() _G._fzf_load_called = true end } }
         fzf_cli_args = "--bind=" .. FzfLua.libuv.shellescape("load:+execute-silent:"
           .. FzfLua.shell.stringify_data(function(_, _, _)
