@@ -36,42 +36,32 @@ T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
       return setmetatable(t, mt)
     end
   ]])
-  if helpers.IS_WIN() then
-    local hidden_fzf_bufnr = child.lua_get(
-      [[(FzfLua.utils.fzf_winobj() or {})._hidden_fzf_bufnr]])
-    if hidden_fzf_bufnr ~= vim.NIL then
-      local chan = child.lua_get(([=[vim.bo[%s].channel]=]):format(hidden_fzf_bufnr))
-      child.api.nvim_chan_send(chan, vim.keycode("<c-c>"))
+  -- Reduce cache size to 20 so functions get evicted quicker
+  -- otherwise opts refs that are stored in the funcs are never
+  -- cleared preventing the win object's __gc from being called
+  child.lua([[FzfLua.shell.cache_set_size(20)]])
+  child.wait_until(function()
+    if helpers.IS_WIN() then
+      local hidden_fzf_bufnr = child.lua_get(
+        [[(FzfLua.utils.fzf_winobj() or {})._hidden_fzf_bufnr]])
+      if hidden_fzf_bufnr ~= vim.NIL then
+        local chan = child.lua_get(([=[vim.bo[%s].channel]=]):format(hidden_fzf_bufnr))
+        child.api.nvim_chan_send(chan, vim.keycode("<c-c>"))
+      end
     end
-  end
-  child.lua([[FzfLua.files{ previewer = 'builtin' }]])
-  -- child.lua([[FzfLua.files{ previewer = false }]])
-  child.wait_until(function()
-    return child.lua_get([[_G._fzf_load_called]]) == true
-  end)
-  child.lua([[FzfLua.hide()]])
-  child.wait_until(function()
-    return child.lua_get([[_G._fzf_load_called]]) == vim.NIL
-  end)
-  -- Clear the function registry to unref all the stored opts
-  -- and verify we're cleared by testing the id of a new func
-  child.lua([[FzfLua.shell.clear_registry()]])
-  eq(child.lua_get([[FzfLua.shell.register_func(function() end)]]), 1)
-  -- Open a new picker to unref the hidden window object, since
-  -- we cleared the registry we need to re-setup the load event
-  child.lua([[FzfLua.buffers{
-    previewer = false,
-    -- both keymap.fzf and actions work here
-    -- keymap = { fzf = { load = function() _G._fzf_load_called = true end } }
-    actions = { load = { fn = function() _G._fzf_load_called = true end, exec_silent = true } },
-  }]])
-  child.wait_until(function()
-    return child.lua_get([[_G._fzf_load_called]]) == true
-  end)
-  child.lua([[collectgarbage('collect')]])
-  child.wait_until(function()
+    child.lua([[FzfLua.files{ previewer = 'builtin' }]])
+    child.wait_until(function()
+      return child.lua_get([[_G._fzf_load_called]]) == true
+    end)
+    child.lua([[FzfLua.hide()]])
+    child.wait_until(function()
+      return child.lua_get([[_G._fzf_load_called]]) == vim.NIL
+    end)
+    child.lua([[collectgarbage('collect')]])
     return child.lua_get([[_G._gc_called]]) == true
   end)
+  -- Restore original cache size
+  child.lua([[FzfLua.shell.cache_set_size(50)]])
 end
 
 T["win"]["hide"]["buffer deleted after win hidden (#1783)"] = function()

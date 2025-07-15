@@ -457,10 +457,9 @@ M.awesome_colorschemes = function(opts)
     end)()
   end
 
-  local prev_act_id
   if opts.live_preview then
     opts.fzf_opts["--preview-window"] = "nohidden:right:0"
-    opts.preview, prev_act_id = shell.stringify_data(function(sel)
+    opts.preview = shell.stringify_data(function(sel)
       if opts.live_preview and sel then
         local dbkey, idx = sel[1]:match("^(.-):(%d+):")
         if opts._adm:downloaded(dbkey) then
@@ -477,10 +476,6 @@ M.awesome_colorschemes = function(opts)
         end
       end
     end, opts, "{}")
-  end
-
-  opts._fn_pre_fzf = function()
-    if prev_act_id then shell.set_protected(prev_act_id) end
   end
 
   opts.winopts = opts.winopts or {}

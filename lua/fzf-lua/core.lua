@@ -155,8 +155,7 @@ M.fzf_exec = function(contents, opts)
   -- the API accepts both tables and functions which we "stringify"
   -- We also send string commands as stringify is also responsible
   -- for multiprocess wrapping of shell commands with processing
-  shell.clear_protected()
-  contents = contents and shell.stringify(contents, opts, nil, true) or nil
+  contents = contents and shell.stringify(contents, opts, nil) or nil
   assert(contents == nil or type(contents) == "string", "contents must be of type string")
   return M.fzf_wrap(contents, opts, true)
 end
@@ -175,7 +174,6 @@ M.fzf_live = function(contents, opts)
   -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
   -- convert "reload" actions to fzf's `reload` binds
   -- convert "exec_silent" actions to fzf's `execute-silent` binds
-  shell.clear_protected()
   if type(contents) == "string" then
     -- Signal to stringify_mt we are relocating <query>
     -- Signal to preprocess we are looking to replace {argvz}
@@ -185,7 +183,7 @@ M.fzf_live = function(contents, opts)
       contents = ("%s %s"):format(contents, M.fzf_query_placeholder)
     end
   end
-  opts.fn_reload = shell.stringify(contents, opts, nil, true)
+  opts.fn_reload = shell.stringify(contents, opts, nil)
   local fzf_field_index = M.fzf_field_index(opts)
   local cmd = M.expand_query(opts.fn_reload, fzf_field_index)
   contents, opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
@@ -1014,7 +1012,7 @@ local patch_shell_action = function(v, opts)
       items = (zero_matched and zero_selected) and {} or items
     end
     v.fn(items, opts)
-  end, opts, field_index, true)
+  end, opts, field_index)
 end
 
 -- converts actions defined with "reload=true" to use fzf's `reload` bind
