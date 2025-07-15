@@ -87,7 +87,7 @@ function Previewer.cmd:action(o)
   local act = shell.stringify_data(function(items, _, _)
     local entry = path.entry_to_file(items[1], self.opts)
     return entry.bufname or entry.path
-  end, self.opts, self.opts.field_index_expr or "{}", false)
+  end, self.opts, self.opts.field_index_expr or "{}")
   return act
 end
 

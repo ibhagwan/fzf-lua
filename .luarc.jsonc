@@ -3,7 +3,7 @@
   "runtime.version": "LuaJIT",
   "diagnostics": {
     "enable": true,
-    "globals": ["vim"],
+    "globals": ["vim", "describe", "it" ],
     "neededFileStatus": {
       "codestyle-check": "Any"
     },

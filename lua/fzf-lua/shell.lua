@@ -5,43 +5,108 @@ local libuv = require "fzf-lua.libuv"
 local base64 = require "fzf-lua.lib.base64"
 local serpent = require "fzf-lua.lib.serpent"
 
+---@class fzf-lua.lru
+---@field max_size integer
+---@field max_id integer
+---@field last_id integer
+---@field mru integer[]
+---@field store any[]
+---@field lookup table<string, integer>
+local LRU = {}
+
+function LRU:new(size)
+  local obj = {
+    max_size = size,
+    -- Arbitrary, should be big enough to assert
+    -- when accessing an evicted item
+    max_id = size * 20,
+    last_id = 0,
+    mru = {},
+    store = {},
+    lookup = {},
+  }
+  setmetatable(obj, self)
+  self.__index = self
+  return obj
+end
+
+---@param value any
+---@return integer, integer new element id and evicted (if evicted)
+function LRU:set(value)
+  local store_idx, evicted_id
+  local id = self.last_id + 1
+  if id > self.max_id then id = 1 end
+  if #self.store >= self.max_size then
+    -- Remove the last element in the MRU table
+    evicted_id = tostring(table.remove(self.mru))
+    store_idx = self.lookup[evicted_id]
+    self.lookup[evicted_id] = nil
+  else
+    store_idx = #self.store + 1
+  end
+  -- New id is always at the top of the MRU
+  table.insert(self.mru, 1, id)
+  self.store[store_idx] = value
+  self.lookup[tostring(id)] = store_idx
+  self.last_id = id
+  return id, tonumber(evicted_id)
+end
+
+---@return integer
+function LRU:len()
+  return #self.store
+end
+
+---@param size integer
+function LRU:set_size(size)
+  assert(size >= #self.store, "new size must be larger than current store size")
+  self.max_size = size
+end
+
+---@param id integer
+---@return any
+function LRU:get(id)
+  local store_idx = self.lookup[tostring(id)]
+  assert(store_idx, string.format("get nonexistent id %d", id))
+  self.mru = (function()
+    -- Remove all previous occurances of the id in the MRU
+    -- and insert the current id at the top
+    -- TODO: more efficient way?
+    local ret = {}
+    table.insert(ret, id)
+    for _, x in ipairs(self.mru) do
+      if x ~= id then
+        table.insert(ret, x)
+      end
+    end
+    return ret
+  end)()
+  return self.store[store_idx]
+end
+
+-- Cache should be able to hold all function callbacks of a single picker
+-- max cache size of 50 should be more than enough, we don't want it to be
+-- too big as this will prevent clearing of referecnces to "opts" which
+-- prevents garabage collection from freeing the resources
+local function new_cache(size) return LRU:new(size or 50) end
+local _cache = new_cache()
+
 local M = {}
 
--- Circular buffer used to store registered function IDs
--- set max length to 10, ATM most actions used by a single
--- provider are 2 (`live_grep` with `multiprocess=false`)
--- and 4 (`git_status` with preview and 3 reload binds)
--- we can always increase if we need more
-local _MAX_LEN = 50
-local _index = 0
-local _registry = {}
-local _protected = {}
+-- Export LRU for testing
+M.LRU = LRU
+
+-- NOTE: CI ONLY - DO NOT USE
+function M.cache_new(size) _cache = new_cache(size) end
+function M.cache_set_size(size) _cache:set_size(size) end
+
 
 function M.register_func(fn)
-  repeat
-    _index = _index % _MAX_LEN + 1
-  until not _protected[_index]
-  _registry[_index] = fn
-  return _index
+  return (_cache:set(fn))
 end
 
 function M.get_func(id)
-  return _registry[id]
-end
-
-function M.set_protected(id)
-  _protected[id] = true
-  assert(_MAX_LEN > utils.tbl_count(_protected))
-end
-
-function M.clear_protected()
-  _protected = {}
-end
-
-function M.clear_registry()
-  _index = 0
-  _registry = {}
-  _protected = {}
+  return _cache:get(id)
 end
 
 -- creates a new address to listen to messages from actions. This is important
@@ -246,7 +311,7 @@ end
 ---Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
 ---@param fzf_field_index string?
 ---@return string, integer?
-M.stringify = function(contents, opts, fzf_field_index, protect)
+M.stringify = function(contents, opts, fzf_field_index)
   assert(contents, "must supply contents")
 
   -- TODO: should we let this assert?
@@ -422,27 +487,19 @@ M.stringify = function(contents, opts, fzf_field_index, protect)
     end
   end, fzf_field_index or "", opts.debug)
 
-  -- "protect" a function ptr, cleared when opening a new picker in `core.fzf()`
-  -- protected functions include init (content) commands and acrions (reload
-  -- and execute-silent), previewer trigger commands are excluded (zero event
-  -- and preview callback)
-  if protect then
-    M.set_protected(id)
-  end
-
   return cmd, id
 end
 
-M.stringify_cmd = function(fn, opts, fzf_field_index, protect)
+M.stringify_cmd = function(fn, opts, fzf_field_index)
   assert(type(fn) == "function", "fn must be of type function")
   return M.stringify(fn, {
     __stringify_cmd = true,
     PidObject = utils.pid_object("__stringify_cmd_pid", opts),
     debug = opts.debug,
-  }, fzf_field_index, protect)
+  }, fzf_field_index)
 end
 
-M.stringify_data = function(fn, opts, fzf_field_index, protect)
+M.stringify_data = function(fn, opts, fzf_field_index)
   assert(type(fn) == "function", "fn must be of type function")
   return M.stringify(function(cb, _, ...)
     local ret = fn(...)
@@ -454,7 +511,7 @@ M.stringify_data = function(fn, opts, fzf_field_index, protect)
       cb(tostring(ret))
     end
     cb(nil)
-  end, { debug = opts.debug }, fzf_field_index, protect)
+  end, { debug = opts.debug }, fzf_field_index)
 end
 
 return M
