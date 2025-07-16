@@ -103,7 +103,7 @@ describe("Testing cache module", function()
   it("size set: err", function()
     local ok, err = pcall(cache.set_size, cache, 10)
     assert.is.False(ok)
-    assert.is.True(err:match("new size must be larger than current store size") ~= nil)
+    assert.is.True(err:match("cannot be smaller than current length") ~= nil)
   end)
 
   it("size set: ok", function()
