@@ -11,14 +11,17 @@ local serpent = require "fzf-lua.lib.serpent"
 ---@field last_id integer
 ---@field mru integer[]
 ---@field store any[]
----@field lookup table<string, integer>
+---@field lookup table<integer, integer>
 local LRU = {}
 
 function LRU:new(size)
   local obj = {
     max_size = size,
-    -- Arbitrary, should be big enough to assert
-    -- when accessing an evicted item
+    -- Technically we can drop this var and let the IDs increment indefinitely
+    -- but since the IDs are used in the shell command callback it makes it simpler
+    -- to debug when it wraps around 1000 back to 1, size should be big enough to
+    -- assert when accessing an evicted item and we wrapped around (if we set max
+    -- ID to max size we will just rotate slots and return the wrong item)
     max_id = size * 20,
     last_id = 0,
     mru = {},
@@ -31,25 +34,25 @@ function LRU:new(size)
 end
 
 ---@param value any
----@return integer, integer new element id and evicted (if evicted)
+---@return integer, integer? new element id and evicted id (if any)
 function LRU:set(value)
   local store_idx, evicted_id
   local id = self.last_id + 1
   if id > self.max_id then id = 1 end
   if #self.store >= self.max_size then
-    -- Remove the last element in the MRU table
-    evicted_id = tostring(table.remove(self.mru))
+    -- Evict the least recently used (last in MRU)
+    evicted_id = table.remove(self.mru)
     store_idx = self.lookup[evicted_id]
     self.lookup[evicted_id] = nil
   else
     store_idx = #self.store + 1
   end
-  -- New id is always at the top of the MRU
+  -- New ID is inserted at the front of MRU
   table.insert(self.mru, 1, id)
   self.store[store_idx] = value
-  self.lookup[tostring(id)] = store_idx
+  self.lookup[id] = store_idx
   self.last_id = id
-  return id, tonumber(evicted_id)
+  return id, evicted_id
 end
 
 ---@return integer
@@ -59,28 +62,23 @@ end
 
 ---@param size integer
 function LRU:set_size(size)
-  assert(size >= #self.store, "new size must be larger than current store size")
+  assert(size >= self:len(), "new size cannot be smaller than current length")
   self.max_size = size
 end
 
 ---@param id integer
 ---@return any
 function LRU:get(id)
-  local store_idx = self.lookup[tostring(id)]
-  assert(store_idx, string.format("get nonexistent id %d", id))
-  self.mru = (function()
-    -- Remove all previous occurances of the id in the MRU
-    -- and insert the current id at the top
-    -- TODO: more efficient way?
-    local ret = {}
-    table.insert(ret, id)
-    for _, x in ipairs(self.mru) do
-      if x ~= id then
-        table.insert(ret, x)
-      end
+  local store_idx = self.lookup[id]
+  assert(store_idx, string.format("attempt to get nonexistent id %d", id))
+  -- Move id to the front of MRU
+  for i = 1, #self.mru do
+    if self.mru[i] == id then
+      table.remove(self.mru, i)
+      break
     end
-    return ret
-  end)()
+  end
+  table.insert(self.mru, 1, id)
   return self.store[store_idx]
 end
 
