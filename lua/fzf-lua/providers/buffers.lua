@@ -201,16 +201,8 @@ M.buffers = function(opts)
     cb(nil)
   end
 
-  -- get current tab/buffer/previous buffer
-  -- save as a func ref for resume to reuse
-  opts._fn_pre_fzf = function()
-    core.CTX({ includeBuflist = true }) -- include `nvim_list_bufs` in context
-  end
-
-  if opts.fzf_opts["--header-lines"] == nil then
-    opts.fzf_opts["--header-lines"] =
-        (not opts.ignore_current_buffer and opts.sort_lastused) and "1"
-  end
+  opts.fzf_opts["--header-lines"] = opts.fzf_opts["--header-lines"] == nil
+      and (not opts.ignore_current_buffer and opts.sort_lastused) and "1" or nil
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = opts.filename_only and opts or core.set_fzf_field_index(opts)
@@ -237,9 +229,6 @@ end
 
 M.buffer_lines = function(opts)
   if not opts then return end
-
-  opts.fn_pre_fzf = function() core.CTX({ includeBuflist = true }) end
-  opts.fn_pre_fzf()
 
   local contents = function(cb)
     local function add_entry(x, co)
@@ -456,12 +445,6 @@ M.tabs = function(opts)
       end)()
     end
     cb(nil)
-  end
-
-  -- get current tab/buffer/previous buffer
-  -- save as a func ref for resume to reuse
-  opts._fn_pre_fzf = function()
-    core.CTX({ includeBuflist = true }) -- include `nvim_list_bufs` in context
   end
 
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })

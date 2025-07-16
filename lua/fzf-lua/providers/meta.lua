@@ -131,7 +131,7 @@ M.combine = function(t)
       else
         table.insert(ret, cmd)
         -- NOTE: we use the [first picker] modified opts after picker setup
-        -- as pickers can modify opts / add important parts (fn_pre_fzf, etc)
+        -- as pickers can modify opts / add important parts
         if not opts then opts = o end
       end
     end

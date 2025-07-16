@@ -90,8 +90,8 @@ return {
           if opts._unhide_called then
             opts._unhide_called = nil
             if type(opts._contents) == "string"
-                and type(opts.reload_on_unhide) == "function"
-                and opts.reload_on_unhide(opts)
+                and (opts._resume_reload == true
+                  or type(opts._resume_reload) == "function" and opts._resume_reload(opts))
             then
               return string.format("reload:%s", opts._contents)
             end

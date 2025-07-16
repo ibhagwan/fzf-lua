@@ -445,7 +445,10 @@ local function gen_lsp_contents(opts)
         o._cancel_all = nil
       end
     end
-    opts._fn_post_fzf = fn_cancel_all
+    opts.fn_selected = function(...)
+      fn_cancel_all(opts)
+      actions.act(...)
+    end
 
     opts.__contents = function(fzf_cb)
       coroutine.wrap(function()
@@ -733,10 +736,8 @@ M.document_symbols = function(opts)
     opts.fzf_opts["--with-nth"] = "..-4"
   end
   if opts.symbol_style or opts.symbol_fmt then
-    opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
-    opts.fn_post_fzf = function() M._sym2style = nil end
-    -- run once in case we're not running async
-    opts.fn_pre_fzf()
+    M._sym2style = nil
+    gen_sym2style_map(opts)
   end
   opts = gen_lsp_contents(opts)
   if not opts.__contents then
@@ -764,8 +765,8 @@ M.workspace_symbols = function(opts)
     opts.prompt = utils.ansi_from_hl(opts.hls.live_prompt, opts.lsp_query) .. " > "
   end
   if opts.symbol_style or opts.symbol_fmt then
-    opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
-    opts.fn_post_fzf = function() M._sym2style = nil end
+    M._sym2style = nil
+    gen_sym2style_map(opts)
   end
   return core.fzf_exec(opts.__contents, opts)
 end
@@ -819,8 +820,8 @@ M.live_workspace_symbols = function(opts)
   opts = core.set_header(opts, opts.headers or { "actions", "cwd", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   if opts.symbol_style or opts.symbol_fmt then
-    opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
-    opts.fn_post_fzf = function() M._sym2style = nil end
+    M._sym2style = nil
+    gen_sym2style_map(opts)
   end
   return core.fzf_live(function(args)
     opts.query = args[1]
