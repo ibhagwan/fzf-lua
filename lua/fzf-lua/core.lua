@@ -340,12 +340,11 @@ M.fzf = function(contents, opts)
     config.__resume_data.opts = opts
     config.__resume_data.contents = contents
   end
+
   -- update context and save a copy in options (for actions)
   -- call before creating the window or fzf_winobj is not nil
-  opts.__CTX = M.CTX(opts.ctx)
-  if opts.fn_pre_win then
-    opts.fn_pre_win(opts)
-  end
+  opts.__CTX = M.CTX(opts._ctx)
+
   -- setup the fzf window and preview layout
   local fzf_win = win:new(opts)
   -- instantiate the previewer
@@ -397,12 +396,6 @@ M.fzf = function(contents, opts)
     opts.fzf_opts["--preview-window"] = "hidden:right:0"
   end
 
-  -- some functions such as buffers|tabs
-  -- need to reacquire current buffer|tab state
-  if opts.__fn_pre_fzf then opts.__fn_pre_fzf(opts) end
-  if opts._fn_pre_fzf then opts._fn_pre_fzf(opts) end
-  if opts.fn_pre_fzf then opts.fn_pre_fzf(opts) end
-
   fzf_win:attach_previewer(previewer)
   local fzf_bufnr = fzf_win:create()
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts, fzf_win),
@@ -431,14 +424,10 @@ M.fzf = function(contents, opts)
       -- reminder: this doesn't get called with 'live_grep' when using skim
       -- due to a bug where '--print-query --interactive' combo is broken:
       -- skim always prints an empty line where the typed query should be.
-      -- see additional note above 'opts.fn_post_fzf' inside 'live_grep'
       config.resume_set("query", selected[1], opts)
     end
     table.remove(selected, 1)
   end
-  if opts.__fn_post_fzf then opts.__fn_post_fzf(opts, selected) end
-  if opts._fn_post_fzf then opts._fn_post_fzf(opts, selected) end
-  if opts.fn_post_fzf then opts.fn_post_fzf(opts, selected) end
   fzf_win:check_exit_status(exit_code, fzf_bufnr)
   -- retrieve the future action and check:
   --   * if it's a single function we can close the window

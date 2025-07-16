@@ -76,11 +76,13 @@ local qfstack_exec = function(opts, cfg)
   opts = config.normalize_opts(opts, cfg)
   if not opts then return end
 
-  opts.fn_pre_fzf = function()
+  opts.__gethist = function()
     opts.__history = vim.split(
       vim.fn.execute(opts.is_loclist and "lhistory" or "chistory"), "\n")
   end
-  opts.fn_pre_fzf()
+
+  -- Get once to determine if empty
+  opts.__gethist()
 
   if utils.tbl_isempty(opts.__history) or opts.__history[2] == "No entries" then
     utils.warn(string.format("No %s",
@@ -91,6 +93,9 @@ local qfstack_exec = function(opts, cfg)
   local contents = function(cb)
     coroutine.wrap(function()
       local co = coroutine.running()
+
+      -- Get the list again for accuracy on resume
+      opts.__gethist()
 
       for _, line in ipairs(opts.__history) do
         local is_current = line:match("^>")

@@ -649,28 +649,32 @@ M.defaults.buffers              = {
   end,
   actions               = { ["ctrl-x"] = { fn = actions.buf_del, reload = true } },
   _cached_hls           = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "path_linenr" },
+  _ctx                  = { includeBuflist = true },
+  _resume_reload        = true,
 }
 
 M.defaults.tabs                 = {
-  previewer   = M._default_previewer_fn,
-  tab_title   = "Tab",
-  tab_marker  = "<<",
-  locate      = true,
-  file_icons  = 1,
-  color_icons = true,
-  _actions    = function()
+  previewer      = M._default_previewer_fn,
+  tab_title      = "Tab",
+  tab_marker     = "<<",
+  locate         = true,
+  file_icons     = 1,
+  color_icons    = true,
+  _actions       = function()
     return M.globals.actions.buffers or M.globals.actions.files
   end,
-  actions     = {
+  actions        = {
     ["enter"]  = actions.buf_switch,
     ["ctrl-x"] = { fn = actions.buf_del, reload = true },
   },
-  fzf_opts    = {
+  fzf_opts       = {
     ["--multi"]     = true,
     ["--delimiter"] = "[\\):]",
     ["--with-nth"]  = "5..",
   },
-  _cached_hls = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "tab_title", "tab_marker", "path_linenr" },
+  _cached_hls    = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "tab_title", "tab_marker", "path_linenr" },
+  _ctx           = { includeBuflist = true },
+  _resume_reload = true,
 }
 
 M.defaults.lines                = {
@@ -710,6 +714,7 @@ M.defaults.lines                = {
   _actions         = function()
     return M.globals.actions.buffers or M.globals.actions.files
   end,
+  _ctx             = { includeBuflist = true },
 }
 
 M.defaults.blines               = vim.tbl_deep_extend("force", M.defaults.lines, {
@@ -721,6 +726,7 @@ M.defaults.blines               = vim.tbl_deep_extend("force", M.defaults.lines,
     ["--with-nth"] = "4..",
     ["--nth"]      = "2..",
   },
+  _resume_reload  = true,
 })
 
 M.defaults.treesitter           = {
