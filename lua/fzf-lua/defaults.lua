@@ -360,6 +360,21 @@ M.defaults.files                = {
   winopts                = { preview = { winopts = { cursorline = false } } },
 }
 
+M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files, {
+  cwd_prompt        = true,
+  line_query        = true,
+  pickers           = {
+    [""]  = "files",
+    ["$"] = "buffers",
+    ["@"] = "lsp_document_symbols",
+    ["#"] = "lsp_workspace_symbols",
+  },
+  fzf_opts          = { ["--nth"] = false, ["--with-nth"] = false },
+  winopts           = { preview = { winopts = { cursorline = true } } },
+  _ctx              = { includeBuflist = true }, -- we include a buffer picker
+  _fzf_nth_devicons = false,
+})
+
 -- Must construct our opts table in stages
 -- so we can reference 'M.globals.files'
 M.defaults.git                  = {

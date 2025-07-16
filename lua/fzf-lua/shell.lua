@@ -83,10 +83,12 @@ function LRU:get(id)
 end
 
 -- Cache should be able to hold all function callbacks of a single picker
--- max cache size of 50 should be more than enough, we don't want it to be
+-- max cache size of 100 should be more than enough, we don't want it to be
 -- too big as this will prevent clearing of referecnces to "opts" which
 -- prevents garabage collection from freeing the resources
-local function new_cache(size) return LRU:new(size or 50) end
+-- NOTE: with combine/global the no. of callbacks has increased significantly
+-- so monitor the number of callbacks 
+local function new_cache(size) return LRU:new(size or 100) end
 local _cache = new_cache()
 
 local M = {}
