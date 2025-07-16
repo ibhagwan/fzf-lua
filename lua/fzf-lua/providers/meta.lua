@@ -2,6 +2,7 @@ local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
+local libuv = require "fzf-lua.libuv"
 local config = require "fzf-lua.config"
 
 local M = {}
@@ -121,7 +122,7 @@ M.combine = function(t)
 
   local cmds, opts = (function()
     local ret, opts = {}, nil
-    for i, p in ipairs(t.pickers) do
+    for _, p in ipairs(t.pickers) do
       -- local ok, msg, cmd, o = pcall(FzfLua[p], opts1)
       -- if not ok or not cmd then
       local _, cmd, o = FzfLua[p](opts1)
@@ -146,6 +147,102 @@ M.combine = function(t)
   local contents = table.concat(cmds, utils.__IS_WINDOWS and "&" or ";")
 
   return core.fzf_wrap(contents, opts)
+end
+
+M.global = function(opts)
+  opts = config.normalize_opts(opts, "global")
+  if not opts then return end
+
+  if opts.line_query and not utils.has(opts, "fzf", { 0, 59 }) then
+    utils.warn("'global' requires fzf >= 0.59, reverting to files.")
+    return FzfLua.files(opts)
+  end
+
+  -- Tells fzf_wrap to not start the fzf process
+  opts._start = false
+  local pickers = {}
+  local opts_copy = vim.deepcopy(opts)
+  for c, p in pairs(opts.pickers) do
+    if FzfLua[p] then
+      if #c == 0 then
+        -- Default picker opts set the tone for this picker options
+        -- this way convert reload / exec_silent actions will use a consistent
+        -- opts ref in the callbacks so we can later modify internal values
+        pickers[p] = { FzfLua[p](opts) }
+        -- Override opts with the return opts and store a copy of `pickers[]`
+        -- as we patch the opts when switching a picker in the change event
+        opts = pickers[p][3]
+        opts._start = nil -- remove the start suppression
+        pickers[p][3] = vim.deepcopy(opts)
+      else
+        -- Each subsequent picker gets a fresh copy of the original opts
+        -- (unmodified by the default picker)
+        pickers[p] = { FzfLua[p](opts_copy) }
+      end
+    else
+      utils.warn(string.format("invalid picker '%s', ignoring.", p))
+    end
+  end
+
+  ---@param q string
+  ---@return table?, integer?
+  local get_picker = function(q)
+    q = type(q) == "string" and q or ""
+    if #q == 0 then
+      return pickers[opts.pickers[""]], 1
+    end
+    for c, p in pairs(opts.pickers) do
+      if #c > 0 and q:match("^" .. utils.lua_regex_escape(c)) then
+        return pickers[p], #c + 1
+      end
+    end
+  end
+
+  -- Copy all keys without destroying the parent opts ref
+  -- or we will mess up the actions (especially hide)
+  local patch_opts = function(t1, t2)
+    for k, _ in pairs(t1) do
+      if k ~= "actions" then t1[k] = nil end
+    end
+    for k, v in pairs(t2) do
+      (function()
+        if k == "actions" then return end
+        if type(v) == "table" then
+          t1[k] = vim.tbl_deep_extend("force", t1[k] or {}, v)
+        else
+          t1[k] = v
+        end
+      end)()
+    end
+    return t1
+  end
+
+  -- Get starting picker
+  local cur_picker, cur_sub = get_picker()
+  if not cur_picker then
+    utils.warn("default picker not found, aborting.")
+    return
+  end
+
+  table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("change:+transform:"
+    .. FzfLua.shell.stringify_data(function(args, _, _)
+      local q = args[1]
+      local new_picker, new_sub = get_picker(q)
+      local reload = ""
+      if new_picker and new_picker ~= cur_picker then
+        -- New picker requested, reload the contents and transform
+        -- the search string to exclude the picker prefix
+        cur_sub = new_sub
+        cur_picker = new_picker
+        -- Patch the opts refs with important values for path parsing
+        -- e.g. formatter, path_shorten, etc
+        opts = patch_opts(opts, cur_picker[3])
+        reload = string.format("reload(%s)+", new_picker[2])
+      end
+      return reload .. string.format("search(%s)", q:sub(cur_sub))
+    end, opts, "{q}")))
+
+  return core.fzf_wrap(cur_picker[2], opts)
 end
 
 return M

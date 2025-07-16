@@ -289,6 +289,7 @@ do
     tmux_buffers = { "fzf-lua.providers.tmux", "buffers" },
     profiles = { "fzf-lua.providers.meta", "profiles" },
     combine = { "fzf-lua.providers.meta", "combine" },
+    global = { "fzf-lua.providers.meta", "global" },
     complete_path = { "fzf-lua.complete", "path" },
     complete_file = { "fzf-lua.complete", "file" },
     complete_line = { "fzf-lua.complete", "line" },
