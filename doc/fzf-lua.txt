@@ -100,7 +100,7 @@ Using lazy.nvim <https://github.com/folke/lazy.nvim>
 DEPENDENCIES                                            *fzf-lua-dependencies*
 
 - `neovim` <https://github.com/neovim/neovim/releases> version >= `0.9`
-- `fzf` <https://github.com/junegunn/fzf> version > `0.35` or `skim`
+- `fzf` <https://github.com/junegunn/fzf> version > `0.25` or `skim`
   <https://github.com/skim-rs/skim> binary installed
 - nvim-web-devicons <https://github.com/nvim-tree/nvim-web-devicons> or
   mini.icons <https://github.com/echasnovski/mini.icons> (optional)
@@ -1146,7 +1146,7 @@ CUSTOMIZATION                                          *fzf-lua-customization*
       },
       quickfix = {
         file_icons        = true,
-        valid_only        = false, -- select among only the valid quickfix entries
+        only_valid        = false, -- select among only the valid quickfix entries
       },
       quickfix_stack = {
         prompt = "Quickfix Stack> ",
