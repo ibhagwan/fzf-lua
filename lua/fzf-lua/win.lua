@@ -1554,6 +1554,7 @@ function FzfWin.toggle_help()
           if m == "builtin" then
             k = utils.neovim_bind_to_fzf(k)
           end
+          v = type(v) == "function" and config.get_action_helpstr(v) or tostring(v)
           table.insert(keymaps,
             format_bind(m, k, v, opts.mode_width, opts.keybind_width, opts.name_width))
         end
