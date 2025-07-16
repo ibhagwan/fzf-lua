@@ -9,6 +9,7 @@ end
 return {
   desc                 = "defaults using title for picker info",
   winopts              = { title_pos = "center", preview = { title_pos = "center" } },
+  global               = title("Global"),
   files                = title("Files"),
   buffers              = title("Buffers"),
   tabs                 = title("Tabs"),

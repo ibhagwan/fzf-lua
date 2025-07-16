@@ -6,6 +6,7 @@ return {
   winopts              = { title_pos = "center", preview = { title_pos = "center" } },
   -- Uses `cwd_prompt` by default
   -- files                = prompt("Files"),
+  global               = prompt("Global"),
   buffers              = prompt("Buffers"),
   tabs                 = prompt("Tabs"),
   lines                = prompt("Lines"),

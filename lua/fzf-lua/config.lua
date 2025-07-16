@@ -382,7 +382,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   end
 
   -- `fzf_cli_args` is string, `_fzf_cli_args` is a table used internally
-  opts._fzf_cli_args = {}
+  opts._fzf_cli_args = type(opts._fzf_cli_args) == "table" and opts._fzf_cli_args or {}
 
   -- backward compatibility, rhs overrides lhs
   -- (rhs being the "old" option)
