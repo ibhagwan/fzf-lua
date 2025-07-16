@@ -4,6 +4,7 @@ local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
 local expect, eq = helpers.expect, helpers.expect.equality
 local new_set = MiniTest.new_set
+local exec_lua = child.lua
 
 -- Helpers with child processes
 --stylua: ignore start
@@ -140,32 +141,22 @@ T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()
   eq("README.md", vim.fs.basename(child.lua_get([[vim.api.nvim_buf_get_name(0)]])))
 end
 
+T["win"]["keymap"] = new_set()
 
-T["win"]["actions"] = new_set()
-
-T["win"]["actions"]["no error"] = function()
-  for file in ipairs({ "README.md", "^tests-", ".lua$" }) do
-    child.lua(
-      ([[FzfLua.files { query = "%s", winopts = { preview = { wrap = false } } }]]):format(file)
-    )
-    -- not work with `profile = "hide"`?
-    child.wait_until(function()
-      return child.lua_get([[_G._fzf_load_called]]) == true
-    end)
-    for key, _actions in pairs({
-      ["<F1>"]       = "toggle-help",
-      ["<F2>"]       = "toggle-fullscreen",
-      ["<F3>"]       = "toggle-preview-wrap",
-      ["<F4>"]       = "toggle-preview",
-      ["<F5>"]       = "toggle-preview-ccw",
-      ["<F6>"]       = "toggle-preview-cw",
-      ["<S-Left>"]   = "preview-reset",
-      ["<S-down>"]   = "preview-page-down",
-      ["<S-up>"]     = "preview-page-up",
-      ["<M-S-down>"] = "preview-down",
-      ["<M-S-up>"]   = "preview-up",
-    }) do
-      child.type_keys(key)
+T["win"]["keymap"]["no error"] = function()
+  local builtin = child.lua_get [[FzfLua.defaults.keymap.builtin]]
+  for _, event in ipairs({ "start", "load", "result" }) do
+    for key, actions in pairs(builtin) do
+      exec_lua([[
+        FzfLua.files {
+          query = "README.md",
+          winopts = { preview = { wrap = false } },
+          keymap = { true, fzf = { [...] = function() end } },
+        }
+      ]], { event })
+      child.wait_until(function()
+        return child.lua_get([[_G._fzf_load_called]]) == true
+      end)
       child.type_keys(key)
     end
   end
