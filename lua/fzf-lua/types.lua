@@ -1,7 +1,7 @@
-FzfLua = require("fzf-lua")
-FzfLua.core = require("fzf-lua.core")
-FzfLua.shell = require("fzf-lua.shell")
-FzfLua.win = require("fzf-lua.win")
+---@meta
+error("Cannot require a meta file")
+
+_G.FzfLua = require("fzf-lua")
 
 ---@class fzf-lua.Config
 ---@field [string] any
@@ -74,7 +74,3 @@ FzfLua.win = require("fzf-lua.win")
 ---@field invalid boolean? buffer content changed
 ---@field invalid_pos boolean? position changed
 ---@field tick integer?
-
-
-_G.FzfLua.shell = require("fzf-lua.shell")
-_G.FzfLua.win = require("fzf-lua.win")
