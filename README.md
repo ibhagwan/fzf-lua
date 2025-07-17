@@ -163,6 +163,40 @@ Alternatively, resuming work on a specific picker:
 > })
 > ```
 
+### Combining Pickers
+
+Fzf-Lua can combine any of the available pickers into a single display
+using the `combine` method, for example file history (oldfiles) and
+git-files:
+```lua
+:lua FzfLua.combine({ pickers = "oldfiles;git_files" })
+-- or using the `FzfLua` vim command:
+:FzfLua combine pickers=oldfiles;git_files
+```
+
+> [!NOTE]
+> The first picker options determine the options used by the combined
+> picker, that includes formatters, previewer, path_shorten, etc.
+> To avoid errors combine only pickers of the same entry types (i.e files)
+
+### Global Picker
+
+Fzf-Lua conveniently comes with a VS-Code like picker by default
+(customizable) combining files, buffers and LSP symbols:
+
+|Prefix     |Behavior                           |
+|-----------|-----------------------------------|
+|`no prefix`|Files                              |
+|`$`        |Buffers                            |
+|`@`        |LSP Symbols (current buffer)       |
+|`#`        |LSP Symbols (workspace/project)    |
+
+```lua
+:lua FzfLua.global()
+-- or using the `FzfLua` vim command:
+:FzfLua global
+```
+
 **LIST OF AVAILABLE COMMANDS BELOW** 👇
 
 ## Commands
@@ -278,32 +312,34 @@ Alternatively, resuming work on a specific picker:
 
 ### Misc
 
-| Command                | List                           |
-| ---------------------- | ------------------------------ |
-| `resume`               | resume last command/query      |
-| `builtin`              | fzf-lua builtin commands       |
-| `profiles`             | fzf-lua configuration profiles |
-| `helptags`             | help tags                      |
-| `manpages`             | man pages                      |
-| `colorschemes`         | color schemes                  |
-| `awesome_colorschemes` | Awesome Neovim color schemes   |
-| `highlights`           | highlight groups               |
-| `commands`             | neovim commands                |
-| `command_history`      | command history                |
-| `search_history`       | search history                 |
-| `marks`                | :marks                         |
-| `jumps`                | :jumps                         |
-| `changes`              | :changes                       |
-| `registers`            | :registers                     |
-| `tagstack`             | :tags                          |
-| `autocmds`             | :autocmd                       |
-| `nvim_options`         | neovim options                 |
-| `keymaps`              | key mappings                   |
-| `filetypes`            | filetypes                      |
-| `menus`                | menus                          |
-| `spellcheck`           | misspelled words in buffer     |
-| `spell_suggest`        | spelling suggestions           |
-| `packadd`              | :packadd <package>             |
+| Command                | List                                          |
+| ---------------------- | --------------------------------------------- |
+| `resume`               | resume last command/query                     |
+| `builtin`              | fzf-lua builtin commands                      |
+| `combine`              | combine different fzf-kua pickers             |
+| `global`               | global picker for files,buffers and symbols   |
+| `profiles`             | fzf-lua configuration profiles                |
+| `helptags`             | help tags                                     |
+| `manpages`             | man pages                                     |
+| `colorschemes`         | color schemes                                 |
+| `awesome_colorschemes` | Awesome Neovim color schemes                  |
+| `highlights`           | highlight groups                              |
+| `commands`             | neovim commands                               |
+| `command_history`      | command history                               |
+| `search_history`       | search history                                |
+| `marks`                | :marks                                        |
+| `jumps`                | :jumps                                        |
+| `changes`              | :changes                                      |
+| `registers`            | :registers                                    |
+| `tagstack`             | :tags                                         |
+| `autocmds`             | :autocmd                                      |
+| `nvim_options`         | neovim options                                |
+| `keymaps`              | key mappings                                  |
+| `filetypes`            | filetypes                                     |
+| `menus`                | menus                                         |
+| `spellcheck`           | misspelled words in buffer                    |
+| `spell_suggest`        | spelling suggestions                          |
+| `packadd`              | :packadd <package>                            |
 
 </details>
 <details>

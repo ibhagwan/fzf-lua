@@ -106,23 +106,22 @@ M.combine = function(t)
 
   -- First picker options set the tone
   local opts1 = (function()
-    if t.pickers[1] then
+    if t.pickers and t.pickers[1] then
       local ok, opts = pcall(config.normalize_opts, t, t.pickers[1])
-      if not ok or not opts then
-        utils.warn("Must specify at least one valid picker")
-      else
-        return opts
-      end
+      return ok and opts
     end
   end)()
-  if not opts1 then return end
+  if not opts1 then
+    utils.warn("Must specify at least one valid picker")
+    return
+  end
 
   -- Let fzf_wrap know to NOT start the coroutine
   opts1._start = false
 
   local cmds, opts = (function()
     local ret, opts = {}, nil
-    for _, p in ipairs(t.pickers) do
+    for _, p in ipairs(t.pickers --[[@as table]]) do
       -- local ok, msg, cmd, o = pcall(FzfLua[p], opts1)
       -- if not ok or not cmd then
       local _, cmd, o = FzfLua[p](opts1)
@@ -162,87 +161,92 @@ M.global = function(opts)
   opts._start = false
   local pickers = {}
   local opts_copy = vim.deepcopy(opts)
-  for c, p in pairs(opts.pickers) do
-    if FzfLua[p] then
-      if #c == 0 then
+  for _, t in ipairs(opts.pickers) do
+    local name = t[1]
+    if FzfLua[name] then
+      if not t.prefix then
         -- Default picker opts set the tone for this picker options
         -- this way convert reload / exec_silent actions will use a consistent
         -- opts ref in the callbacks so we can later modify internal values
-        pickers[p] = { FzfLua[p](opts) }
+        pickers[name] = { FzfLua[name](opts) }
         -- Override opts with the return opts and store a copy of `pickers[]`
         -- as we patch the opts when switching a picker in the change event
-        opts = pickers[p][3]
+        opts = pickers[name][3]
         opts._start = nil -- remove the start suppression
-        pickers[p][3] = vim.deepcopy(opts)
+        pickers[name][3] = vim.deepcopy(opts)
       else
         -- Each subsequent picker gets a fresh copy of the original opts
         -- (unmodified by the default picker)
-        pickers[p] = { FzfLua[p](opts_copy) }
+        pickers[name] = { FzfLua[name](opts_copy) }
       end
     else
-      utils.warn(string.format("invalid picker '%s', ignoring.", p))
+      utils.warn(string.format("invalid picker '%s', ignoring.", name))
     end
+  end
+
+  -- Test for default/starting picker
+  local default_picker = opts.pickers[1] and pickers[opts.pickers[1][1]]
+  if not default_picker or default_picker.prefix then
+    utils.err("default picker not defined or has a prefix, aborting.")
+    return
   end
 
   ---@param q string?
   ---@return table?, integer?
   local get_picker = function(q)
-    q = type(q) == "string" and q or ""
-    if #q == 0 then
-      return pickers[opts.pickers[""]], 1
-    end
-    for c, p in pairs(opts.pickers) do
-      if #c > 0 and q:match("^" .. utils.lua_regex_escape(c)) then
-        return pickers[p], #c + 1
+    if type(q) == "string" and #q > 0 then
+      for _, t in ipairs(opts.pickers) do
+        local name = t[1]
+        if t.prefix and #t.prefix > 0 and q:match("^" .. utils.lua_regex_escape(t.prefix)) then
+          return pickers[name], #t.prefix + 1
+        end
       end
     end
+    return default_picker, 1
   end
 
-  -- Copy all keys without destroying the parent opts ref
-  -- or we will mess up the actions (especially hide)
-  local patch_opts = function(t1, t2)
-    for k, _ in pairs(t1) do
-      if k ~= "actions" then t1[k] = nil end
-    end
-    for k, v in pairs(t2) do
-      (function()
-        if k == "actions" then return end
-        if type(v) == "table" then
-          t1[k] = vim.tbl_deep_extend("force", t1[k] or {}, v)
-        else
-          t1[k] = v
-        end
-      end)()
-    end
-    return t1
-  end
 
-  -- Get starting picker
-  local cur_picker, cur_sub = get_picker()
-  if not cur_picker then
-    utils.warn("default picker not found, aborting.")
-    return
-  end
+  local cur_picker, cur_sub
 
-  table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("change:+transform:"
-    .. FzfLua.shell.stringify_data(function(args, _, _)
+  local transform_picker = function(start)
+    return FzfLua.shell.stringify_data(function(args, _, _)
       local q = args[1]
       local new_picker, new_sub = get_picker(q)
+      assert(new_picker)
       local reload = ""
-      if new_picker and new_picker ~= cur_picker then
+      if start or new_picker and new_picker ~= cur_picker then
         -- New picker requested, reload the contents and transform
         -- the search string to exclude the picker prefix
         cur_sub = new_sub
         cur_picker = new_picker
         -- Patch the opts refs with important values for path parsing
         -- e.g. formatter, path_shorten, etc
-        opts = patch_opts(opts, cur_picker[3])
+        -- TODO: is there a better way to override the callback opts ref?
+        opts.__alt_opts = new_picker[3]
         reload = string.format("reload(%s)+", new_picker[2])
       end
       return reload .. string.format("search(%s)", q:sub(cur_sub))
-    end, opts, "{q}")))
+    end, opts, "{q}")
+  end
 
-  return core.fzf_wrap(cur_picker[2], opts)
+  table.insert(opts._fzf_cli_args, "--bind="
+    .. libuv.shellescape("start:+transform:" .. transform_picker(true)))
+
+  table.insert(opts._fzf_cli_args, "--bind="
+    .. libuv.shellescape("change:+transform:" .. transform_picker(false)))
+
+  if opts.header ~= false then
+    local header = {}
+    for _, t in pairs(opts.pickers) do
+      table.insert(header, string.format("<%s> %s",
+        utils.ansi_from_hl(opts.hls.header_bind, t.prefix or "default"),
+        utils.ansi_from_hl(opts.hls.header_text, t.desc or t[1])))
+    end
+
+    opts.header = table.concat(header, "|")
+  end
+
+  return core.fzf_wrap(utils.shell_nop(), opts)
 end
 
 return M

@@ -67,11 +67,16 @@ return {
           act.exec_silent = true
           act.desc = act.desc or fzf.config.get_action_helpstr(fn)
           act.fn = function(...)
+            local sel = select(1, ...)
+            local o = select(2, ...)
+            if o.__alt_opts then
+              o.__alt_opts.last_query = o.last_query
+              o.__alt_opts.__INFO = o.__INFO
+            end
             fzf.hide()
-            fn(...)
+            fn(sel, o.__alt_opts or o)
             -- As the process never terminates fzf history is never written
             -- manually append to the fzf history file if needed
-            local o = select(2, ...)
             if histfile and type(o.last_query) == "string" and #o.last_query > 0 then
               local fd = uv.fs_open(histfile, "a", -1)
               if fd then
