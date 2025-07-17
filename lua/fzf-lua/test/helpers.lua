@@ -247,6 +247,7 @@ M.new_child_neovim = function()
   ---@alias test.ScreenOpts { start_line: integer?, end_line: integer?, no_ruler: boolean?,
   ---normalize_paths: boolean?, redraw: boolean? }
   ---@param opts test.ScreenOpts
+  ---@return MiniTestScreenshot
   child.get_screen_lines = function(opts)
     return screenshot.fromChildScreen(child, opts)
   end
@@ -268,6 +269,8 @@ M.new_child_neovim = function()
   end
 
   ---@param opts test.ScreenOpts
+  ---@param buf integer
+  ---@return MiniTestScreenshot
   child.get_buf_lines = function(buf, opts)
     return screenshot.fromChildBufLines(child, buf, opts)
   end

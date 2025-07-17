@@ -12,6 +12,7 @@ local fn = vim.fn
 local TSContext = {}
 
 ---@param opts? TSContext.UserConfig
+---@return boolean
 function TSContext.setup(opts)
   if TSContext._setup then return true end
   if not package.loaded["treesitter-context"] then
@@ -48,6 +49,7 @@ function TSContext.deregister()
 end
 
 ---@param winid integer
+---@return boolean?
 function TSContext.is_attached(winid)
   if not TSContext._setup then return false end
   return TSContext._winids[tostring(winid)]
@@ -141,7 +143,10 @@ local Previewer = {}
 ---@class fzf-lua.previewer.Builtin : fzf-lua.Object,{}
 Previewer.base = Object:extend()
 
+---@param o table
+---@param opts table
 ---@param fzf_win fzf-lua.Win
+---@return fzf-lua.previewer.Builtin
 function Previewer.base:new(o, opts, fzf_win)
   local function default(var, def)
     if var ~= nil then
@@ -353,7 +358,8 @@ function Previewer.base:clear_cached_buffers()
   self.cached_buffers = {}
 end
 
----@param newbuf boolean
+---@param newbuf boolean?
+---@return integer
 function Previewer.base:clear_preview_buf(newbuf)
   local retbuf = nil
   if ((self.win and self.win._reuse) or newbuf)
@@ -636,6 +642,7 @@ function Previewer.buffer_or_file:should_clear_preview(_)
 end
 
 ---@param entry fzf-lua.buffer_or_file.Entry
+---@return boolean
 function Previewer.buffer_or_file:should_load_buffer(entry)
   -- we don't have a previous entry to compare to or `do_not_cache` is set meaning
   -- it's a terminal command (chafa, viu, ueberzug) which requires a reload
@@ -1286,6 +1293,7 @@ function Previewer.buffer_or_file:update_title(entry)
 end
 
 ---@param entry fzf-lua.buffer_or_file.Entry
+---@param min_winopts boolean?
 function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
   if not self.win or not self.win:validate_preview() then return end
   if not self:preview_is_terminal() then
@@ -1427,6 +1435,7 @@ end
 
 function Previewer.man_pages:populate_preview_buf(entry_str)
   local entry = self:parse_entry(entry_str)
+  ---@type string|string[]
   local cmd = self.cmd:format(entry)
   if type(cmd) == "string" then cmd = { "sh", "-c", cmd } end
   local output, _ = utils.io_systemlist(cmd)
@@ -1732,6 +1741,7 @@ function Previewer.autocmds:keymaps(o, opts, fzf_win)
   return self
 end
 
+---@param entry_str string
 ---@return fzf-lua.path.Entry|fzf-lua.keymap.Entry
 function Previewer.keymaps:parse_entry(entry_str)
   return path.keymap_to_entry(entry_str, self.opts)

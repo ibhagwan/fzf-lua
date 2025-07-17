@@ -184,7 +184,7 @@ M.global = function(opts)
     end
   end
 
-  ---@param q string
+  ---@param q string?
   ---@return table?, integer?
   local get_picker = function(q)
     q = type(q) == "string" and q or ""

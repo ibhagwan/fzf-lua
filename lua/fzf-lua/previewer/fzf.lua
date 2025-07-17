@@ -221,6 +221,7 @@ end
 Previewer.bat_async = Previewer.cmd_async:extend()
 
 ---@param lnum string?
+---@return string?
 function Previewer.bat_async:_preview_offset(lnum)
   --[[
     #
@@ -324,19 +325,19 @@ function Previewer.git_diff:cmdline(o)
       self.git_icons["?"] ..
       self.git_icons["C"] ..
       "]" .. utils.nbsp) ~= nil
-    local file = items[1]
-    if file:match("%s%->%s") then
+    local s = items[1]
+    if s:match("%s%->%s") then
       -- for renames, we take only the last part (#864)
-      file = file:match("%s%->%s(.*)$")
+      s = s:match("%s%->%s(.*)$")
     end
-    file = path.entry_to_file(file, self.opts)
+    local entry = path.entry_to_file(s, self.opts)
     local cmd = nil
     if is_modified then
       cmd = self.cmd_modified
     elseif is_deleted then
       cmd = self.cmd_deleted
     elseif is_untracked then
-      local stat = uv.fs_stat(file.path)
+      local stat = uv.fs_stat(entry.path)
       if stat and stat.type == "directory" then
         cmd = utils._if_win({ "dir" }, { "ls", "-la" })
       else
@@ -359,7 +360,7 @@ function Previewer.git_diff:cmdline(o)
     -- }
     -- we use ':format' directly on the user's command, see
     -- issue #392 for more info (limiting diff output width)
-    local fname_escaped = libuv.shellescape(file.path)
+    local fname_escaped = libuv.shellescape(entry.path)
     if cmd:match("[<{]file[}>]") then
       cmd = cmd:gsub("[<{]file[}>]", fname_escaped)
     elseif cmd:match("%%s") then

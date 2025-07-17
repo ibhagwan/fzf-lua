@@ -23,6 +23,7 @@ end
 ---Invoke completion (required).
 ---@param params cmp.SourceCompletionApiParams
 ---@param callback fun(response: lsp.CompletionResponse|nil)
+---@return nil
 function Src:complete(params, callback)
   if not params.context.cursor_before_line:match("FzfLua") then
     return callback()

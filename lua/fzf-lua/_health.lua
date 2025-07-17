@@ -114,6 +114,7 @@ function M.check()
 end
 
 ---@param str string
+---@return string
 function M.format(str)
   str = str:gsub("%s+", " ")
   local options = vim.split(vim.trim(str), " -", { plain = true })

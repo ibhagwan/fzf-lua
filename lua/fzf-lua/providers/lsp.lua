@@ -262,17 +262,17 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
       -- will be restored in preview/actions by `opts._fmt.from`
       local symbol = entry.text
       entry.text = nil
-      entry = make_entry.lcol(entry, opts)
-      entry = make_entry.file(entry, opts)
-      if entry then
+      local entry0 = make_entry.lcol(entry, opts)
+      local entry1 = make_entry.file(entry0, opts)
+      if entry1 then
         local align = 48 + mbicon_align + utils.ansi_escseq_len(symbol)
         -- TODO: string.format %-{n}s fails with align > ~100?
-        -- entry = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry)
+        -- entry1 = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry1)
         if align > #symbol then
           symbol = symbol .. string.rep(" ", align - #symbol)
         end
-        entry = symbol .. utils.nbsp .. entry
-        cb(entry)
+        entry1 = symbol .. utils.nbsp .. entry1
+        cb(entry1)
       end
     end
   end
@@ -382,6 +382,7 @@ local function gen_lsp_contents(opts)
       return params
     end
     if not utils.__HAS_NVIM_011 and type(lsp_params) == "function" then
+      ---@diagnostic disable-next-line: missing-parameter
       lsp_params = lsp_params()
     end
   end
@@ -552,6 +553,7 @@ end
 -- see $VIMRUNTIME/lua/vim/buf.lua:pick_call_hierarchy_item()
 local function gen_lsp_contents_call_hierarchy(opts)
   local lsp_params = opts.lsp_params
+      ---@diagnostic disable-next-line: missing-parameter
       or not utils.__HAS_NVIM_011 and vim.lsp.util.make_position_params(core.CTX().winid)
       or function(client)
         return vim.lsp.util.make_position_params(core.CTX().winid, client.offset_encoding)

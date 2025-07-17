@@ -1077,8 +1077,8 @@ end
 function M.upper(s)
 	return upper(s)
 end
-function M.rep(s)
-	return rep(s)
+function M.rep(s, n)
+	return rep(s, n)
 end
 
 return M

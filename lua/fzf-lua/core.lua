@@ -143,6 +143,7 @@ end
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
 ---@param contents content
 ---@param opts? {fn_reload: string|function, fn_transform: function, __fzf_init_cmd: string, _normalized: boolean}
+---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
   if not opts or not opts._normalized then
     opts = config.normalize_opts(opts or {}, {})
@@ -160,8 +161,9 @@ M.fzf_exec = function(contents, opts)
   return M.fzf_wrap(contents, opts, true)
 end
 
----@param contents string|fun(query: string[]): string|string[]|function
+---@param contents string|fun(query: string[]): string|string[]|function?
 ---@param opts? table
+---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
   assert(contents)
   if not opts or not opts._normalized then
@@ -477,6 +479,7 @@ local function translate_border(winopts, metadata)
 end
 
 ---@param o table
+---@param fzf_win fzf-lua.Win
 ---@return string
 M.preview_window = function(o, fzf_win)
   local layout
@@ -632,6 +635,7 @@ M.create_fzf_binds = function(opts)
 end
 
 ---@param opts table
+---@param fzf_win fzf-lua.Win
 ---@return string[]
 M.build_fzf_cli = function(opts, fzf_win)
   -- below options can be specified directly in opts and will be
@@ -905,7 +909,7 @@ M.set_header = function(opts, hdr_tbl)
             local v = opts.actions[k]
             local action = type(v) == "function" and v or type(v) == "table" and (v.fn or v[1])
             if type(v) == "table" and v.header == false then return end
-            local def, to = nil, type(v) == "table" and v.header
+            local def, to = nil, type(v) == "table" and v.header or nil
             if not to and type(action) == "function" and defs[action] then
               def = defs[action]
               to = def[1]

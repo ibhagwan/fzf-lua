@@ -80,6 +80,7 @@ M.diagnostics = function(opts)
           and v.default or vim.trim(sign_confs.text[level])
       opts.__signs[v.severity].texthl = v.name
     else
+      ---@type vim.fn.sign_getdefined.ret.item[]?
       local sign_def = vim.fn.sign_getdefined(v.name)
       -- can be empty when config set to (#480):
       -- vim.diagnostic.config({ signs = false })

@@ -144,6 +144,7 @@ end
 ---@param opts table<string, unknown>|fun():table?
 ---@param globals string|table?
 ---@param __resume_key string?
+---@return fzf-lua.Config?
 function M.normalize_opts(opts, globals, __resume_key)
   if not opts then opts = {} end
 
@@ -240,6 +241,7 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- normalize all binds as lowercase or we can have duplicate keys (#654)
   ---@param m {fzf: table<string, unknown>, builtin: table<string, unknown>}
+  ---@param exclude_patterns string
   ---@return {fzf: table<string, unknown>, builtin: table<string, unknown>}?
   local keymap_tolower = function(m, exclude_patterns)
     return m and {
@@ -362,7 +364,8 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
     local pattern_prefix = "%-%-prompt="
     local pattern_prompt = ".-"
-    local surround = type(opts[s]) == "string" and opts[s]:match(pattern_prefix .. "(.)")
+    ---@type string?
+    local surround = type(opts[s]) == "string" and opts[s]:match(pattern_prefix .. "(.)") or nil
     -- prompt was set without surrounding quotes
     -- technically an error but we can handle it gracefully instead
     if surround and surround ~= [[']] and surround ~= [["]] then

@@ -170,6 +170,7 @@ function M.pipe_wrap_fn(fn, fzf_field_index, debug)
   return action_cmd, id
 end
 
+---@param cmd string
 ---@param opts table
 ---@return string?
 M.stringify_mt = function(cmd, opts)

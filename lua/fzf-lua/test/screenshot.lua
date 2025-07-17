@@ -72,8 +72,10 @@ function M.from_lines(text_lines, opts)
   return screenshot_new({ text = vim.tbl_map(f, text_lines) }, opts)
 end
 
+---@param child MiniTest.child
 ---@param buf integer
 ---@param opts test.ScreenOpts?
+---@return MiniTestScreenshot
 function M.fromChildBufLines(child, buf, opts)
   opts = opts or {}
   if opts and opts.redraw then child.cmd("redraw") end
@@ -82,7 +84,9 @@ function M.fromChildBufLines(child, buf, opts)
   return M.from_lines(lines, opts)
 end
 
+---@param child MiniTest.child
 ---@param opts test.ScreenOpts?
+---@return MiniTestScreenshot
 function M.fromChildScreen(child, opts)
   opts = opts or {}
   if opts and opts.redraw then child.cmd("redraw") end
