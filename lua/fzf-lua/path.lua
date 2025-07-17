@@ -387,6 +387,7 @@ function M.entry_to_ctag(entry, noesc)
   return ctag
 end
 
+---@return fzf-lua.path.Entry
 function M.entry_to_location(entry, opts)
   local uri, line, col = entry:match("^(.*://.*):(%d+):(%d+):")
   line = line and tonumber(line) > 0 and tonumber(line) or 1
@@ -410,7 +411,7 @@ end
 
 ---@param entry string
 ---@param opts fzf-lua.Config
----@param force_uri boolean
+---@param force_uri boolean?
 ---@return fzf-lua.path.Entry
 function M.entry_to_file(entry, opts, force_uri)
   opts = opts or {}

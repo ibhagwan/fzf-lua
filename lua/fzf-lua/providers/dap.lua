@@ -1,7 +1,7 @@
+---@diagnostic disable: undefined-field, param-type-mismatch
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
-local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
 
@@ -205,7 +205,7 @@ M.frames = function(opts)
           end)
           return {
             path = f.source.path,
-            content = vim.split(result.content or "", "\n"),
+            content = result and vim.split(result.content or "", "\n") or nil,
             line = f.line,
           }
         end
