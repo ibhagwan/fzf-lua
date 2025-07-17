@@ -12,7 +12,7 @@ jobs:
         uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
-          version: v0.11.2
+          version: v0.11.3
 
       - name: install lua-language-server
         env:

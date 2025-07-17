@@ -7,7 +7,7 @@ local new_set = MiniTest.new_set
 
 local T = helpers.new_set_with_child(child)
 
-T["api"] = new_set()
+T["api"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
 T["api"]["fzf_exec"] = new_set()
 
