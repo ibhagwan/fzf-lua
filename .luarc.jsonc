@@ -10,23 +10,22 @@
   },
   "diagnostics": {
     "enable": true,
-    "globals": ["vim", "describe", "it"],
     "neededFileStatus": {
       "codestyle-check": "Any"
     },
     "groupFileStatus": {
-      // "strict": "Opened",
+      "strict": "Opened",
       // "strong": "Opened",
-      // "ambiguity": "Opened",
-      // "duplicate": "Opened",
-      // "global": "Opened",
-      // "luadoc": "Opened",
-      // "redefined": "Opened",
-      // "type-check": "Opened",
-      // "unbalanced": "Opened",
-      // "unused": "Opened"
+      "ambiguity": "Opened",
+      "duplicate": "Opened",
+      "global": "Opened",
+      "luadoc": "Opened",
+      "redefined": "Opened",
+      "type-check": "Opened",
+      "unbalanced": "Opened",
+      "unused": "Opened"
     },
-    "disable": ["need-check-nil", "missing-parameter", "cast-local-type"],
+    "disable": ["need-check-nil", "different-requires"],
     "unusedLocalExclude": ["_*"]
   },
   "workspace": {

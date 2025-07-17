@@ -114,7 +114,7 @@ M.basename = M.tail
 ---Get the path to the parent directory of the given path.
 -- Returns `nil` if the path has no parent.
 ---@param path string
----@param remove_trailing boolean
+---@param remove_trailing boolean?
 ---@return string?
 function M.parent(path, remove_trailing)
   path = M.remove_trailing(path)
@@ -200,6 +200,7 @@ function M.relative_to(path, relative_to)
 end
 
 ---@param path string
+---@param no_tail boolean?
 ---@return string?
 function M.extension(path, no_tail)
   local file = no_tail and path or M.tail(path)
@@ -387,6 +388,8 @@ function M.entry_to_ctag(entry, noesc)
   return ctag
 end
 
+---@param entry string
+---@param opts table
 ---@return fzf-lua.path.Entry
 function M.entry_to_location(entry, opts)
   local uri, line, col = entry:match("^(.*://.*):(%d+):(%d+):")
@@ -410,7 +413,7 @@ function M.entry_to_location(entry, opts)
 end
 
 ---@param entry string
----@param opts fzf-lua.Config
+---@param opts fzf-lua.Config?
 ---@param force_uri boolean?
 ---@return fzf-lua.path.Entry
 function M.entry_to_file(entry, opts, force_uri)
@@ -460,8 +463,8 @@ function M.entry_to_file(entry, opts, force_uri)
     table.remove(s, 2)
   end
   local file = s[1]
-  local line = tonumber(s[2])
-  local col  = tonumber(s[3])
+  local line = s[2]
+  local col  = s[3]
   -- if the filename contains ':' we will have the wrong filename.
   -- test for existence on the longest possible match on the file
   -- system so we can accept files that end with ':', for example:

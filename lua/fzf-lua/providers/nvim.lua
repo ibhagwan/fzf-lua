@@ -105,6 +105,7 @@ M.commands = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts table
 ---@param str ":"|"/"
 local history = function(opts, str)
   local histnr          = vim.fn.histnr(str)
@@ -132,7 +133,7 @@ local history = function(opts, str)
     end
     cb(nil)
   end)
-  return core.fzf_exec(content, opts)
+  core.fzf_exec(content, opts)
 end
 
 M.command_history = function(opts)
@@ -162,8 +163,7 @@ M.jumps = function(opts)
   opts = config.normalize_opts(opts, "jumps")
   if not opts then return end
 
-  local jumps = vim.fn.execute(opts.cmd)
-  jumps = vim.split(jumps, "\n")
+  local jumps = vim.split(vim.fn.execute(opts.cmd), "\n")
 
   local entries = {}
   for i = #jumps - 1, 3, -1 do

@@ -3,7 +3,6 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local config = require "fzf-lua.config"
-local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 

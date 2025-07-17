@@ -56,7 +56,10 @@ function TSInjector.clear_cache(buf)
   assert(utils.tbl_isempty(TSInjector.cache))
 end
 
+---@alias TSRegion (Range4|Range6|TSNode)[][]
+
 ---@param buf integer
+---@param regions table<string, TSRegion>
 function TSInjector.attach(buf, regions)
   if not TSInjector.setup() then return end
 
@@ -65,13 +68,14 @@ function TSInjector.attach(buf, regions)
     TSInjector.cache[buf][lang].enabled = regions[lang] ~= nil
   end
 
-  for lang, _ in pairs(regions) do
-    TSInjector._attach_lang(buf, lang, regions[lang])
+  for lang, region in pairs(regions) do
+    TSInjector._attach_lang(buf, lang, region)
   end
 end
 
 ---@param buf integer
 ---@param lang? string
+---@param regions table<string, TSRegion>
 function TSInjector._attach_lang(buf, lang, regions)
   if not TSInjector.cache[buf][lang] then
     local ok, parser = pcall(vim.treesitter.languagetree.new, buf, lang)
@@ -350,8 +354,9 @@ function FzfWin:fzf_preview_layout_str()
   return is_hsplit and self._o.winopts.preview.horizontal or self._o.winopts.preview.vertical
 end
 
---- @param winopts table
---- @return table winopts, number? scrolloff
+---@param winopts table
+---@param metadata { type: "nvim"|"fzf", name: string, nwin: integer }
+---@return table winopts, number? scrolloff
 function FzfWin:normalize_border(winopts, metadata)
   local border = winopts.border
   if type(border) == "function" then
@@ -860,7 +865,7 @@ function FzfWin:treesitter_attach()
   if not self._o.winopts.treesitter then return end
   -- local utf8 = require("fzf-lua.lib.utf8")
   local function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
-  ---@type fun(filepath: string, _lnum: string, text: string)
+  ---@type fun(filepath: string, _lnum: string?, text: string?)
   local line_parser = vim.is_callable(self._o._treesitter) and self._o._treesitter or function(line)
     return line:match("(.-):?(%d+)[: ](.+)$")
   end
@@ -897,7 +902,6 @@ function FzfWin:treesitter_attach()
           -- file:line:text       (grep_project or missing "--column" flag)
           -- line:col:text        (grep_curbuf)
           -- line<U+00A0>text     (lines|blines)
-          ---@diagnostic disable-next-line: unused-local
           local filepath, _lnum, text, _ft = line_parser(line:sub(min_col))
           if not text or text == 0 then return end
 

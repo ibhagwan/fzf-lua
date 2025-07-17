@@ -657,9 +657,10 @@ local nvim_opt_edit = function(selected, opts, scope)
     if not updated or updated == old then return end
 
     if info.type == "number" then
-      updated = tonumber(updated)
+      nvim_set_option(option, tonumber(updated), info)
+    else
+      nvim_set_option(option, updated, info)
     end
-    nvim_set_option(option, updated, info)
   end
 
   local parts = vim.split(selected[1], opts.separator)

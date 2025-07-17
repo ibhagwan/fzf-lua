@@ -12,7 +12,7 @@ local serpent = require("fzf-lua.lib.serpent")
 
 ---@param pid integer
 ---@param signal integer|string?
----@returns boolean
+---@return boolean
 local function process_kill(pid, signal)
   if not pid or not tonumber(pid) then return false end
   if type(uv.os_getpriority(pid)) == "number" then
@@ -337,6 +337,7 @@ M.async_spawn = coroutinify(M.spawn)
 ---@param fn_transform function?
 ---@param fn_preprocess function?
 ---@param fn_postprocess function?
+---@return fun(_, fzf_cb: function, _): uv.uv_process_t, integer
 M.spawn_nvim_fzf_cmd = function(opts, fn_transform, fn_preprocess, fn_postprocess)
   assert(not fn_transform or type(fn_transform) == "function")
 
@@ -382,6 +383,7 @@ end
 ---@param fn_transform_str string
 ---@param fn_preprocess_str string
 ---@param fn_postprocess_str string
+---@return uv.uv_process_t, integer
 M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postprocess_str)
   -- attempt base64 decoding on all params
   ---@param str string|table

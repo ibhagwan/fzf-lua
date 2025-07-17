@@ -67,6 +67,7 @@ local filter_buffers = function(opts, unfiltered)
 end
 
 ---@param buf integer
+---@return { bufnr: integer, flag: string, info: table, readonly: boolean }
 local getbuf = function(buf)
   return {
     bufnr = buf,

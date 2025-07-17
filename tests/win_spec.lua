@@ -25,7 +25,7 @@ T["win"] = new_set()
 T["win"]["hide"] = new_set()
 
 T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
-  child.lua([[
+  exec_lua([[
     _G._gc_called = nil
     FzfLua.utils.setmetatable__gc = function(t, mt)
       local prox = newproxy(true)
@@ -141,7 +141,7 @@ T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()
   eq("README.md", vim.fs.basename(child.lua_get([[vim.api.nvim_buf_get_name(0)]])))
 end
 
-T["win"]["keymap"] = new_set()
+T["win"]["keymap"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
 T["win"]["keymap"]["no error"] = function()
   local builtin = child.lua_get [[FzfLua.defaults.keymap.builtin]]
@@ -158,6 +158,7 @@ T["win"]["keymap"]["no error"] = function()
         return child.lua_get([[_G._fzf_load_called]]) == true
       end)
       child.type_keys(key)
+      if helpers.IS_WIN() then child.type_keys("<c-c>") end
     end
   end
 end

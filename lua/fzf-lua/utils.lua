@@ -360,7 +360,8 @@ end
 -- Recursively merge two or more tables by extending
 -- the first table and returning its original pointer
 ---@param behavior "keep"|"force"|"error"
----@rerurn table
+---@param ... table<any,any>
+---@return table
 function M.tbl_deep_extend(behavior, ...)
   local tbls = { ... }
   local ret = tbls[1]
@@ -479,6 +480,7 @@ function M.map_set(m, k, v)
 end
 
 ---@param m table<string, unknown>?
+---@param exclude_patterns string|string[]?
 ---@return table<string, unknown>?
 function M.map_tolower(m, exclude_patterns)
   -- We use "exclude_patterns" to filter "alt-{a|A}"
@@ -513,6 +515,7 @@ end
 --     ["a.a2"] = ...,
 --   }
 ---@param m table<string, unknown>?
+---@param prefix string?
 ---@return table<string, unknown>?
 function M.map_flatten(m, prefix)
   if M.tbl_isempty(m) then return {} end
@@ -853,6 +856,7 @@ end
 ---@param fname string
 ---@param name string|nil
 ---@param silent boolean|integer
+---@return table?
 function M.load_profile_fname(fname, name, silent)
   local profile = name or vim.fn.fnamemodify(fname, ":t:r") or "<unknown>"
   local ok, res = pcall(dofile, fname)
@@ -1081,6 +1085,8 @@ function M.zz()
 end
 
 ---@param context vim.context.mods
+---@param func function
+---@return ... any
 function M.with(context, func)
   if vim._with then
     return vim._with(context, func)
@@ -1090,7 +1096,8 @@ end
 
 ---@param func function
 ---@param scope string?
----@param win integer
+---@param win integer?
+---@return ... any
 function M.eventignore(func, win, scope)
   if win and vim.fn.exists("+eventignorewin") == 1 then
     local save_ei = vim.wo[win][0].eventignorewin
@@ -1391,11 +1398,12 @@ end
 
 --- Checks if treesitter parser for language is installed
 ---@param lang string
+---@return boolean
 function M.has_ts_parser(lang)
   if M.__HAS_NVIM_011 then
-    return vim.treesitter.language.add(lang)
+    return vim.treesitter.language.add(lang) and true or false
   else
-    return pcall(vim.treesitter.language.add, lang)
+    return (pcall(vim.treesitter.language.add, lang))
   end
 end
 
