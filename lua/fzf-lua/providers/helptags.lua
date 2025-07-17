@@ -56,6 +56,7 @@ M.helptags = function(opts)
 
     local hl = (function()
       local _, _, fn = utils.ansi_from_hl("Label", "foo")
+      assert(fn)
       return function(s) return fn(s) end
     end)()
 

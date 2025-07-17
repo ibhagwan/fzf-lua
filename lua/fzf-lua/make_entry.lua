@@ -5,7 +5,7 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local devicons = require "fzf-lua.devicons"
-local config = nil
+local config
 
 -- attempt to load the current config
 -- should fail if we're running headless

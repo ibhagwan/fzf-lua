@@ -200,6 +200,7 @@ end
 
 M.grep = function(opts)
   opts = config.normalize_opts(opts, "tags")
+  if not opts then return end
 
   if not opts.search then
     -- resume implies no input prompt

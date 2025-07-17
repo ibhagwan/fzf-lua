@@ -132,6 +132,7 @@ M.bcommits = function(opts)
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
+    if not sel then return end
     range = string.format("-L %d,%d:%s --no-patch", sel.start.line, sel["end"].line, file)
   end
   if opts.cmd:match("[<{]file") then
@@ -162,6 +163,7 @@ M.blame = function(opts)
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
+    if not sel then return end
     range = string.format("-L %d,%d %s", sel.start.line, sel["end"].line, file)
   end
   if opts.cmd:match("[<{]file") then

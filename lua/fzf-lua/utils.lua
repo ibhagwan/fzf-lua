@@ -316,7 +316,7 @@ M.read_file_async = function(filepath, callback)
       return
     end
     uv.fs_fstat(fd, function(err_fstat, stat)
-      assert(not err_fstat, err_fstat)
+      assert(not err_fstat and stat, err_fstat)
       if stat.type ~= "file" then return callback("") end
       uv.fs_read(fd, stat.size, 0, function(err_read, data)
         assert(not err_read, err_read)
@@ -738,8 +738,9 @@ function M.has_ansi_coloring(str)
   return str:match("%[[%d;]-m")
 end
 
+---@param str string
+---@return string, integer
 function M.strip_ansi_coloring(str)
-  if not str then return str end
   -- remove escape sequences of the following formats:
   -- 1. ^[[34m
   -- 2. ^[[0;34m

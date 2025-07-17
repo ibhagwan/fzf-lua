@@ -60,8 +60,8 @@ end
 ---@return integer         pid
 M.spawn = function(opts, fn_transform, fn_done)
   local EOL = opts.EOL or "\n"
-  local output_pipe = uv.new_pipe(false)
-  local error_pipe = uv.new_pipe(false)
+  local output_pipe = assert(uv.new_pipe(false))
+  local error_pipe = assert(uv.new_pipe(false))
   local write_cb_count, read_cb_count, on_exit_called = 0, 0, nil
   local prev_line_content = nil
   local handle, pid
@@ -494,7 +494,7 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
     if type(fd) ~= "number" then
       exit(1, ("error opening '%s': %s" .. EOL):format(pipename, fd))
     end
-    local pipe = uv.new_pipe(false)
+    local pipe = assert(uv.new_pipe(false))
     pipe:open(fd)
     return pipe
   end

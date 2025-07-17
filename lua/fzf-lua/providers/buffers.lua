@@ -218,9 +218,12 @@ end
 
 M.blines = function(opts)
   opts = config.normalize_opts(opts, "blines")
+  -- TODO: remove this guard
+  if not opts then return end
   opts.current_buffer_only = true
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
+    if not sel then return end
     opts.start_line = opts.start_line or sel.start.line
     opts.end_line = opts.end_line or sel["end"].line
   end
@@ -255,6 +258,7 @@ M.buffer_lines = function(opts)
       local bnames = {}
       local longest_bname = 0
       for _, b in ipairs(buffers) do
+        ---@type string
         local bname = utils.nvim_buf_get_name(b)
         if not bname:match("^%[") then
           bname = path.shorten(vim.fn.fnamemodify(bname, ":~:."))
@@ -606,6 +610,7 @@ M.spellcheck = function(opts)
 
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
+    if not sel then return end
     opts.start_line = opts.start_line or sel.start.line
     opts.end_line = opts.end_line or sel["end"].line
   end
@@ -655,7 +660,7 @@ M.spellcheck = function(opts)
             return s:gsub("^" .. word_separator .. "+", ""):gsub(word_separator .. "+$", "")
           end
           from, to = string.find(line, "%w+", from)
-          local word = from and string.sub(line, from, to)
+          local word = from and string.sub(line, from, to) or ""
           local prefix = from and string.sub(line, from - 1, from - 1) or ""
           local postfix = to and string.sub(line, to + 1, to + 1) or ""
           local valid_word = word

@@ -76,6 +76,7 @@ M.globals = setmetatable({}, {
     local setup_default = utils.map_get(setup_defaults(), index)
     local setup_value = utils.map_get(setup_opts(), index)
     local function build_bind_tables(keys)
+      assert(fzflua_default)
       -- bind tables are logical exception, do not merge with defaults unless `[1] == true`
       -- normalize all binds as lowercase to prevent duplicate keys (#654)
       local ret = {}
@@ -150,7 +151,7 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- opts can also be a function that returns an opts table
   if type(opts) == "function" then
-    opts = opts()
+    opts = opts() or {}
   end
 
   local profile = opts.profile or (function()
@@ -202,6 +203,7 @@ function M.normalize_opts(opts, globals, __resume_key)
     -- merge with setup options "defaults" table
     globals = vim.tbl_deep_extend("keep", globals, M.setup_opts.defaults or {})
   end
+  ---@cast globals table
 
   -- merge current opts with revious __call_opts on resume
   if opts.resume then
