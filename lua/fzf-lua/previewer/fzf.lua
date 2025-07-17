@@ -214,7 +214,7 @@ function Previewer.cmd_async:cmdline(o)
     local cmd = errcmd or ("%s %s %s"):format(
       self.cmd, self.args, libuv.shellescape(filepath))
     return cmd
-  end, self.opts, "{} {q}", false)
+  end, self.opts, "{} {q}")
   return act
 end
 
@@ -278,7 +278,7 @@ function Previewer.bat_async:cmdline(o)
       line_range,
       libuv.shellescape(filepath))
     return cmd
-  end, self.opts, "{} {q}", false)
+  end, self.opts, "{} {q}")
   return act
 end
 
@@ -379,7 +379,7 @@ function Previewer.git_diff:cmdline(o)
     -- cmd = string.format("%s %s %s", table.concat(setenv, " "), cmd, pager)
     cmd = string.format("%s %s", cmd, pager)
     return { cmd = cmd, env = env }
-  end, self.opts, "{}", false)
+  end, self.opts, "{}")
   return act
 end
 
@@ -398,7 +398,7 @@ function Previewer.man_pages:cmdline(o)
     local manpage = require("fzf-lua.providers.manpages").manpage_sh_arg(items[1])
     local cmd = self.cmd:format(manpage)
     return cmd
-  end, self.opts, "{}", false)
+  end, self.opts, "{}")
   return act
 end
 
@@ -435,7 +435,7 @@ function Previewer.help_tags:cmdline(o)
       end
     end
     return cmd
-  end, self.opts, "{}", false)
+  end, self.opts, "{}")
   return act
 end
 

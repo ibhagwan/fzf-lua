@@ -41,7 +41,7 @@ M.helptags = function(opts)
       local paths = lazy.get_unloaded_rtp("")
       rtp = rtp .. "," .. table.concat(paths, ",")
     end
-    local all_files = vim.fn.globpath(rtp, "doc/*", 1, 1)
+    local all_files = vim.fn.globpath(rtp, "doc/*", true, true)
     for _, fullpath in ipairs(all_files) do
       local file = path.tail(fullpath)
       if file == "tags" then

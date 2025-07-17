@@ -26,7 +26,7 @@ screenshots:
 
 .PHONY: clean-screenshots
 clean-screenshots:
-	rm -rf tests/screenshots/* 
+	rm -rf tests/screenshots/*
 	make test
 
 #
@@ -39,8 +39,13 @@ deps:
 	make clean
 	@mkdir -p deps
 	git clone --depth=1 --single-branch https://github.com/echasnovski/mini.nvim deps/mini.nvim
-	git clone --depth=1 --single-branch https://github.com/nvim-tree/nvim-web-devicons \
-		deps/nvim-web-devicons
+	git clone --depth=1 --single-branch https://github.com/nvim-tree/nvim-web-devicons deps/nvim-web-devicons
+	git clone --depth=1 --single-branch https://github.com/hrsh7th/nvim-cmp deps/nvim-cmp
+
+.PHONY: lint
+lint:
+	VIMRUNTIME="$$(nvim --clean --headless +'echo $$VIMRUNTIME' +q 2>&1)" lua-language-server --configpath=../.luarc.jsonc --check=.
+
 
 # clean up
 .PHONY: clean

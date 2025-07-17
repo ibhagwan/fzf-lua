@@ -1766,6 +1766,7 @@ function Previewer.nvim_options:new(o, opts, fzf_win)
   Previewer.nvim_options.super.new(self, o, opts, fzf_win)
   local paths = vim.fn.globpath(vim.o.rtp, "doc/options.txt", false, true)
   self.lines = vim.fn.readfile(paths[1])
+  return self
 end
 
 function Previewer.nvim_options:gen_winopts()

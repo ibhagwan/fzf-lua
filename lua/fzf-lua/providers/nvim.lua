@@ -2,7 +2,6 @@ local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
-local shell = require "fzf-lua.shell"
 local config = require "fzf-lua.config"
 local devicons = require "fzf-lua.devicons"
 
@@ -539,7 +538,7 @@ M.spell_suggest = function(opts)
   local cursor_word = before .. after
   local entries = vim.fn.spellsuggest(cursor_word)
 
-  opts.complete = function(selected, o, l, _)
+  opts.complete = function(selected, _o, l, _)
     if #selected == 0 then return end
     local replace_at = col - #before
     local before_path = replace_at > 1 and l:sub(1, replace_at - 1) or ""
@@ -678,7 +677,7 @@ M.autocmds = function(opts)
         local entry = string.format("%s:%d:%s%s", file, line, separator, format({
           event = utils.ansi_codes.blue(a.event),
           pattern = utils.ansi_codes.yellow(a.pattern),
-          group = utils.ansi_codes.green(a.group_name and vim.trim(a.group_name) or " "),
+          group = utils.ansi_codes.green(a.group_name and vim.trim(tostring(a.group_name)) or " "),
           code = a.callback and utils.ansi_codes.red(tostring(a.callback)) or a.command,
           desc = a.desc,
         }))

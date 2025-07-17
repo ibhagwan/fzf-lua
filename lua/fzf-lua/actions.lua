@@ -140,6 +140,11 @@ M.resume = function(_, _)
   loadstring([[require("fzf-lua").resume()]])()
 end
 
+---@param _vimcmd string
+---@param selected string[]
+---@param opts fzf-lua.Config
+---@param pcall_vimcmd boolean?
+---@return string?
 M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
   for i, sel in ipairs(selected) do
     (function()
@@ -244,7 +249,7 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
           -- nvim_exec2(): Vim(normal):Can't re-enter normal mode from terminal mode
           pcall(utils.jump_to_location, entry, "utf-16", opts.reuse_win)
         else
-          utils.jump_to_location(entry, "utf-16", opts.reuse_win)
+          utils.jump_to_location(entry --[[@as lsp.Location]], "utf-16", opts.reuse_win)
         end
       elseif entry.ctag and entry.line == 0 then
         vim.api.nvim_win_set_cursor(0, { 1, 0 })
@@ -333,7 +338,7 @@ local sel_to_qf = function(selected, opts, is_loclist)
   else
     -- Set the quickfix title to last query and
     -- append a new list to end of the stack (#635)
-    vim.fn.setqflist({}, " ", {
+    vim.fn.setqflist({}, " ", { ---@diagnostic disable-next-line: assign-type-mismatch
       nr = "$",
       items = qf_list,
       title = title,

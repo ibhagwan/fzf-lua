@@ -585,7 +585,7 @@ end
   end
 }) ]]
 
-M.ansi_codes = {}
+M.ansi_codes = {} ---@type table<string, fun(string: string):string>
 M.ansi_escseq = {
   -- the "\x1b" esc sequence causes issues
   -- with older Lua versions
@@ -606,7 +606,11 @@ M.ansi_escseq = {
   dark_grey = "[0;97m",
 }
 
+---@param name string
+---@param escseq string
 M.cache_ansi_escseq = function(name, escseq)
+  ---@param string string
+  ---@return string
   M.ansi_codes[name] = function(string)
     if string == nil or #string == 0 then return "" end
     if not escseq or #escseq == 0 then return string end
@@ -1214,6 +1218,9 @@ end
 
 -- wrapper around |input()| to allow cancellation with `<C-c>`
 -- without "E5108: Error executing lua Keyboard interrupt"
+---@param prompt string?
+---@param default string?
+---@return string?
 function M.input(prompt, default)
   default = default or ""
   local ok, res

@@ -214,6 +214,7 @@ describe("Testing path module", function()
     -- [1]: path
     -- [2]: relative_to
     -- [3]: expected result (bool, relative_path)
+    ---@type ({ [1]: string, [2]: string, [3]: [boolean, string?] })[]
     local unix = {
       { "/some/path",          "/some/path",          { true, "." } },
       { "/some/path",          "/some/path//",        { true, "." } },
@@ -259,13 +260,14 @@ describe("Testing path module", function()
     }
     utils.__IS_WINDOWS = false
     for _, v in ipairs(unix) do
-      assert.are.same({ path.is_relative_to(v[1], v[2]) }, v[3],
-        string.format('\n\nis_relative_to("%s", "%s") ~= "%s"\n', v[1], v[2], v[3][2]))
+      assert.are.same({ path.is_relative_to(v[1], v[2]) }, v[3])
+      -- mini.nvim shim support 2 args only
+      -- string.format('\n\nis_relative_to("%s", "%s") ~= "%s"\n', v[1], v[2], v[3][2])
     end
     utils.__IS_WINDOWS = true
     for _, v in ipairs(win) do
-      assert.are.same({ path.is_relative_to(v[1], v[2]) }, v[3],
-        string.format('\n\nis_relative_to("%s", "%s") ~= "%s"\n', v[1], v[2], v[3][2]))
+      assert.are.same({ path.is_relative_to(v[1], v[2]) }, v[3])
+      -- string.format('\n\nis_relative_to("%s", "%s") ~= "%s"\n', v[1], v[2], v[3][2])
     end
   end)
 

@@ -11,7 +11,7 @@ local base64 = require("fzf-lua.lib.base64")
 local serpent = require("fzf-lua.lib.serpent")
 
 ---@param pid integer
----@param signal integer?
+---@param signal integer|string?
 ---@returns boolean
 local function process_kill(pid, signal)
   if not pid or not tonumber(pid) then return false end

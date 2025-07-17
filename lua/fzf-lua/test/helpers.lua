@@ -1,3 +1,4 @@
+---@diagnostic disable: inject-field
 -- lcd so we can run current file even if cwd isn't fzf-lua
 local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
 vim.cmd.lcd(vim.fn.fnamemodify(__FILE__, ":p:h:h:h:h"))
