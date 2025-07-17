@@ -134,7 +134,7 @@ end
 function M.normalize(path)
   local p = M.tilde_to_HOME(path)
   if utils.__IS_WINDOWS then
-    p = p:gsub([[\]], [[/]])
+    p = (p:gsub([[\]], [[/]]))
   end
   return p
 end
@@ -243,16 +243,15 @@ M.HOME = function()
   return M.__HOME
 end
 
----@param path string?
----@return string?
+---@param path string
+---@return string
 function M.tilde_to_HOME(path)
-  return path and path:gsub("^~", M.HOME()) or nil
+  return (path:gsub("^~", M.HOME()))
 end
 
----@param path string?
----@return string?
+---@param path string
+---@return string
 function M.HOME_to_tilde(path)
-  if not path then return end
   if utils.__IS_WINDOWS then
     local home = M.HOME()
     if path:sub(1, #home):lower() == home:lower() then
@@ -575,7 +574,8 @@ function M.keymap_to_entry(str, opts)
   if not mode or not keymap then return {} end
   mode, keymap = vim.trim(mode), vim.trim(keymap)
   mode = valid_modes[mode] and mode or "" -- only valid modes
-  local out, vmap, cmd = nil, nil, string.format("verbose %smap %s", mode, keymap)
+  local out
+  local vmap, cmd = nil, string.format("verbose %smap %s", mode, keymap)
   -- Run in the context of the originating buffer or keympas might return
   -- "No mapping found"
   pcall(vim.api.nvim_buf_call, opts.__CTX.bufnr, function()

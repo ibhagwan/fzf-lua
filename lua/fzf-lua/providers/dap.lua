@@ -5,7 +5,8 @@ local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
 
-local _has_dap, _dap = nil, nil
+local _has_dap
+local _dap
 
 local M = {}
 

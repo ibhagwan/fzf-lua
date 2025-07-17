@@ -77,6 +77,7 @@ M.diagnostics = function(opts)
       if type(sign_confs) ~= "table" or utils.tbl_isempty(sign_confs) then sign_confs = nil end
       opts.__signs[v.severity].text =
           (not opts.diag_icons or not sign_confs or not sign_confs.text or not sign_confs.text[level])
+          ---@diagnostic disable-next-line: need-check-nil
           and v.default or vim.trim(sign_confs.text[level])
       opts.__signs[v.severity].texthl = v.name
     else
@@ -86,7 +87,7 @@ M.diagnostics = function(opts)
       -- vim.diagnostic.config({ signs = false })
       if utils.tbl_isempty(sign_def) then sign_def = nil end
       opts.__signs[v.severity].text =
-          (not opts.diag_icons or not sign_def or not sign_def[1].text)
+          (not opts.diag_icons or not sign_def or not sign_def[1].text) ---@diagnostic disable-next-line: need-check-nil
           and v.default or vim.trim(sign_def[1].text)
       opts.__signs[v.severity].texthl = sign_def and sign_def[1].texthl or nil
     end

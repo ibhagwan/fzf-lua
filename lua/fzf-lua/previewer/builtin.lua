@@ -995,6 +995,7 @@ function Previewer.base:update_ts_context()
   local lang = vim.treesitter.language.get_lang(ft)
   if not utils.has_ts_parser(lang) then return end
   local parser = vim.treesitter.get_parser(self.preview_bufnr, lang)
+  if not parser then return end
   local context_updated
   TSContext.zindex = self.win.winopts.zindex + 20
   for _, t in ipairs({ 0, 20, 50, 100 }) do

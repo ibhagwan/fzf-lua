@@ -314,7 +314,7 @@ function AsyncDownloadManager:jobstart(plugin, job_args)
   else
     -- job started successfully
     utils.info(string.format("%s [path:%s] [job_id:%d]...",
-      msg, path.HOME_to_tilde(info.path), job_id))
+      msg, path.HOME_to_tilde(assert(info.path)), job_id))
     self.job_ids[tostring(job_id)] = { plugin = plugin, args = job_args }
     self.db[plugin].job_id = job_id
   end

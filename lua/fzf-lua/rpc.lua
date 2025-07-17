@@ -22,7 +22,7 @@ end
 
 local function server_listen(server_socket, server_socket_path)
   uv.listen(server_socket, 10, function(_)
-    local receive_socket = uv.new_pipe(false)
+    local receive_socket = assert(uv.new_pipe(false))
     uv.accept(server_socket, receive_socket)
 
     -- Avoid dangling temp dir on premature process kills (live grep)

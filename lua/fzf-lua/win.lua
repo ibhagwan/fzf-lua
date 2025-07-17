@@ -77,6 +77,7 @@ end
 ---@param lang? string
 ---@param regions table<string, TSRegion>
 function TSInjector._attach_lang(buf, lang, regions)
+  if not lang then return end
   if not TSInjector.cache[buf][lang] then
     local ok, parser = pcall(vim.treesitter.languagetree.new, buf, lang)
     if not ok then return end
@@ -444,7 +445,7 @@ end
 
 function FzfWin:normalize_winopts(fullscreen)
   -- make a local copy of winopts so we don't pollute the user's options
-  local winopts = utils.tbl_deep_clone(self._o.winopts)
+  local winopts = utils.tbl_deep_clone(self._o.winopts) or {}
 
   if fullscreen then
     -- NOTE: we set `winopts.relative=editor` so fullscreen
@@ -926,6 +927,7 @@ function FzfWin:treesitter_attach()
           if not ft then return end
 
           local lang = vim.treesitter.language.get_lang(ft)
+          if not lang then return end
           local loaded = lang and utils.has_ts_parser(lang)
           if not loaded then return end
 

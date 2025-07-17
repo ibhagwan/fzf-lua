@@ -821,6 +821,8 @@ M.set_title_flags = function(opts, titles)
 end
 
 M.set_header = function(opts, hdr_tbl)
+  ---@param cwd string
+  ---@return string
   local function normalize_cwd(cwd)
     if path.is_absolute(cwd) and not path.equals(cwd, uv.cwd()) then
       -- since we're always converting cwd to full path
