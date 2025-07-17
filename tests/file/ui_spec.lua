@@ -52,12 +52,23 @@ T["files"]["multiprocess"] = new_set({ parametrize = { { false }, { true } } }, 
   end,
 })
 
-T["files"]["previewer"] = new_set({ parametrize = { { "ci" }, { "builtin" } } }, {
-  function(previewer)
+T["files"]["previewer"] = new_set({ parametrize = { { false }, { true } } })
+
+T["files"]["previewer"]["builtin"] = new_set({ parametrize = { { "ci" }, { "builtin" } } }, {
+  function(icons, previewer)
+    if icons then
+      local path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim")
+      if not vim.uv.fs_stat(path) then
+        path = vim.fs.joinpath("deps", "mini.nvim")
+      end
+      child.lua("vim.opt.runtimepath:append(...)", { path })
+      child.lua([[require("mini.icons").setup({})]])
+    end
     helpers.FzfLua.files(child, {
       __expect_lines = true,
       debug = 1,
       hidden = false,
+      file_icons = icons,
       cwd_prompt = false,
       multiprocess = true,
       cmd = "rg --files --sort=path",
@@ -69,7 +80,8 @@ T["files"]["previewer"] = new_set({ parametrize = { { "ci" }, { "builtin" } } },
         -- Verify previewer "last_entry" was set
         child.type_keys("<c-j>")
         child.wait_until(function()
-          return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) == "LICENSE"
+          return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) ==
+              (icons and " LICENSE" or "LICENSE")
         end)
       end,
     })
