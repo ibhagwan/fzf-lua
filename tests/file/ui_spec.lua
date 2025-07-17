@@ -19,7 +19,7 @@ local sleep = function(ms) helpers.sleep(ms, child) end
 
 local T = helpers.new_set_with_child(child)
 
-T["files"] = new_set()
+T["files"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
 T["files"]["close|abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c>" } } }, {
   function(key)
