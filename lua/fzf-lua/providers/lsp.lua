@@ -368,11 +368,14 @@ local function gen_lsp_contents(opts)
   -- build positional params for the LSP query
   -- from the context buffer and cursor position
   if not lsp_params then
+    ---@param client vim.lsp.Client
+    ---@return table?
     lsp_params = function(client)
       local params = vim.lsp.util.make_position_params(core.CTX().winid,
         -- nvim 0.11 requires offset_encoding param, `client` is first arg of called func
         -- https://github.com/neovim/neovim/commit/629483e24eed3f2c07e55e0540c553361e0345a2
         client and client.offset_encoding or nil)
+      ---@diagnostic disable-next-line: inject-field
       params.context = {
         includeDeclaration = opts.includeDeclaration == nil and true or opts.includeDeclaration
       }

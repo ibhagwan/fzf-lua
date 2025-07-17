@@ -49,7 +49,8 @@ FzfLua.win = require("fzf-lua.win")
 ---@field line integer
 ---@field col integer
 ---@field ctag string?
-
+---@field uri string?
+---@field range { start: { line: integer, col: integer } }?
 
 ---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry, {}
 ---@field do_not_cache boolean?
@@ -61,7 +62,6 @@ FzfLua.win = require("fzf-lua.win")
 ---@field no_syntax boolean?
 ---@field cached fzf-lua.buffer_or_file.Bcache?
 ---@field content string[]?
----@field uri string?
 
 ---@class fzf-lua.keymap.Entry
 ---@field vmap string?
@@ -74,3 +74,7 @@ FzfLua.win = require("fzf-lua.win")
 ---@field invalid boolean? buffer content changed
 ---@field invalid_pos boolean? position changed
 ---@field tick integer?
+
+
+_G.FzfLua.shell = require("fzf-lua.shell")
+_G.FzfLua.win = require("fzf-lua.win")

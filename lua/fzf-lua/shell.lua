@@ -96,8 +96,8 @@ M.LRU = LRU
 
 -- NOTE: CI ONLY - DO NOT USE
 function M.cache_new(size) _cache = new_cache(size) end
-function M.cache_set_size(size) _cache:set_size(size) end
 
+function M.cache_set_size(size) _cache:set_size(size) end
 
 function M.register_func(fn)
   return (_cache:set(fn))
@@ -308,7 +308,7 @@ end
 ---@param opts {}
 ---Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
 ---@param fzf_field_index string?
----@return string, integer?
+---@return string?, integer?
 M.stringify = function(contents, opts, fzf_field_index)
   assert(contents, "must supply contents")
 
@@ -488,6 +488,10 @@ M.stringify = function(contents, opts, fzf_field_index)
   return cmd, id
 end
 
+---@param fn fun(item: string[], fzf_lines: integer, fzf_columns, integer): string|string[]?
+---@param opts table
+---@param fzf_field_index string?
+---@return string, integer?
 M.stringify_cmd = function(fn, opts, fzf_field_index)
   assert(type(fn) == "function", "fn must be of type function")
   return M.stringify(fn, {

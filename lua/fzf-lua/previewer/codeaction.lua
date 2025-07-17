@@ -33,7 +33,8 @@ local function diff_text_edits(text_edits, bufnr, offset_encoding, diff_opts)
   vim.lsp.util.apply_text_edits(text_edits, tmpbuf, offset_encoding)
   local new_lines = get_lines(tmpbuf)
   vim.api.nvim_buf_delete(tmpbuf, { force = true })
-  local diff = vim.diff(
+  ---@diagnostic disable-next-line: deprecated
+  local diff = (vim.diff or vim.text.diff)(
     table.concat(orig_lines, eol) .. eol,
     table.concat(new_lines, eol) .. eol,
     diff_opts)

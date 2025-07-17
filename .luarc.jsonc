@@ -1,29 +1,46 @@
 {
   "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
   "runtime.version": "LuaJIT",
+  "format": {
+    "enable": true,
+    "defaultConfig": {
+      "indent_style": "space",
+      "indent_size": "2"
+    }
+  },
   "diagnostics": {
     "enable": true,
-    "globals": ["vim", "describe", "it" ],
+    "globals": ["vim", "describe", "it"],
     "neededFileStatus": {
       "codestyle-check": "Any"
     },
-    "disable": ["need-check-nil", "missing-parameter", "cast-local-type"]
+    "groupFileStatus": {
+      // "strict": "Opened",
+      // "strong": "Opened",
+      // "ambiguity": "Opened",
+      // "duplicate": "Opened",
+      // "global": "Opened",
+      // "luadoc": "Opened",
+      // "redefined": "Opened",
+      // "type-check": "Opened",
+      // "unbalanced": "Opened",
+      // "unused": "Opened"
+    },
+    "disable": ["need-check-nil", "missing-parameter", "cast-local-type"],
+    "unusedLocalExclude": ["_*"]
   },
   "workspace": {
     "library": [
-      "lua",
-      "$VIMRUNTIME/lua",
+      "$VIMRUNTIME",
       "${3rd}/luv/library",
-      "$XDG_DATA_HOME/nvim/lazy/plenary.nvim/lua",
-      "$LOCALAPPDATA/nvim-data/lazy/plenary.nvim/lua",
       // For "cmp_src.lua" type resolving
-      "$XDG_DATA_HOME/nvim/lazy/nvim-cmp/lua",
-      "$LOCALAPPDATA/nvim-data/lazy/nvim-cmp/lua"
+      "deps/mini.nvim",
+      "deps/nvim-web-devicons",
+      "deps/nvim-cmp"
     ],
     "checkThirdParty": false,
     "maxPreload": 2000,
-    "preloadFileSize": 1000,
-    "ignoreDir": ["tests/"]
+    "preloadFileSize": 1000
   },
   "type": {
     "weakNilCheck": true,
@@ -32,7 +49,7 @@
   },
   "hint": {
     "enable": true,
-    "setType": true,
+    "setType": true
   },
   "telemetry.enable": false
 }
