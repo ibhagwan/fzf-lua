@@ -98,10 +98,6 @@ end
 
 M.act = function(selected, opts)
   if not selected then return end
-  if opts.__alt_opts then
-    opts.__alt_opts.last_query = opts.last_query
-    opts.__alt_opts.__INFO = opts.__INFO
-  end
   local actions = opts.actions
   local keybind, entries = M.normalize_selected(selected, opts)
   -- fzf >= 0.53 and `--exit-0`
@@ -116,10 +112,10 @@ M.act = function(selected, opts)
     --   (1) map containing action properties (reload, noclose, etc)
     --   (2) array of actions to be executed serially
     if action.fn then
-      action.fn(entries, opts.__alt_opts or opts)
+      action.fn(entries, opts)
     else
       for _, f in ipairs(action) do
-        f(entries, opts.__alt_opts or opts)
+        f(entries, opts)
       end
     end
   elseif type(action) == "function" then

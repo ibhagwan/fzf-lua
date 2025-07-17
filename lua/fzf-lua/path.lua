@@ -416,7 +416,8 @@ end
 ---@param force_uri boolean?
 ---@return fzf-lua.path.Entry
 function M.entry_to_file(entry, opts, force_uri)
-  opts = opts or {}
+  -- NOTE: see note in meta.lua:global regarding alt options
+  opts = opts and opts.__alt_opts or opts or {}
   if opts._fmt then
     if type(opts._fmt._from) == "function" then
       entry = opts._fmt._from(entry, opts)
