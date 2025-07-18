@@ -816,42 +816,36 @@ function M.fzf_exit()
   -- when no results are found or when `jump1` is used, when the latter is used
   -- in "sync" mode we also need to make sure core.__CTX is cleared or we'll
   -- have the wrong cursor coordinates (#928)
-  return loadstring([[
-    require('fzf-lua').core.__CTX = nil
-    require('fzf-lua').win.win_leave()
-  ]])()
+  require("fzf-lua").core.__CTX = nil
+  require("fzf-lua").win.win_leave()
 end
 
 function M.fzf_winobj()
-  -- use 'loadstring' to prevent circular require
-  return loadstring("return require'fzf-lua'.win.__SELF()")()
+  return require("fzf-lua").win.__SELF()
 end
 
 function M.CTX(...)
-  return loadstring("return require'fzf-lua'.core.CTX(...)")(...)
+  return require("fzf-lua").core.CTX(...)
 end
 
 function M.__CTX()
-  return loadstring("return require'fzf-lua'.core.__CTX")()
+  return require("fzf-lua").core.__CTX
 end
 
 function M.resume_get(what, opts)
-  local f = loadstring("return require'fzf-lua'.config.resume_get")()
-  return f(what, opts)
+  return require("fzf-lua").config.resume_get(what, opts)
 end
 
 M.resume_set = function(what, val, opts)
-  local f = loadstring("return require'fzf-lua'.config.resume_set")()
-  return f(what, val, opts)
+  return require("fzf-lua").config.resume_set(what, val, opts)
 end
 
 function M.reset_info()
-  pcall(loadstring("require'fzf-lua'.set_info(nil)"))
+  pcall(require("fzf-lua").set_info, nil)
 end
 
 function M.setup_highlights(override)
-  pcall(loadstring(string.format(
-    "require'fzf-lua'.setup_highlights(%s)", override and "true" or "")))
+  pcall(require("fzf-lua").setup_highlights, override and "true" or "")
 end
 
 ---@param fname string

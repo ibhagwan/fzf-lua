@@ -322,16 +322,15 @@ M.get_last_query = function()
 end
 
 M.setup_fzfvim_cmds = function(...)
-  local fn = loadstring("return require'fzf-lua.profiles.fzf-vim'.fn_load")()
-  return fn(...)
+  return require("fzf-lua.profiles.fzf-vim").fn_load(...)
 end
 
 function M.hide()
-  return loadstring("return require'fzf-lua'.win.hide()")()
+  return FzfLua.win.hide()
 end
 
 function M.unhide()
-  return loadstring("return require'fzf-lua'.win.unhide()")()
+  return FzfLua.win.unhide()
 end
 
 -- export the defaults module and deref
