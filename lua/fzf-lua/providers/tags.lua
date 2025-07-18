@@ -98,8 +98,10 @@ local function tags(opts)
         return
       end
     else
-      utils.info(("Tags file ('%s') does not exist. Create one with ctags -R")
-        :format(opts._ctags_file))
+      if opts.silent ~= true then
+        utils.info(("Tags file ('%s') does not exist. Create one with ctags -R")
+          :format(opts._ctags_file))
+      end
       return
     end
   end

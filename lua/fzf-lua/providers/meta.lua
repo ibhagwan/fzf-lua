@@ -157,6 +157,10 @@ M.global = function(opts)
     return FzfLua.files(opts)
   end
 
+  if type(opts.pickers) == "function" then
+    opts.pickers = opts.pickers()
+  end
+
   -- Tells fzf_wrap to not start the fzf process
   opts._start = false
   local pickers = {}
@@ -177,7 +181,8 @@ M.global = function(opts)
       else
         -- Each subsequent picker gets a fresh copy of the original opts
         -- (unmodified by the default picker)
-        pickers[name] = { FzfLua[name](opts_copy) }
+        pickers[name] = { FzfLua[name](t.opts and
+          vim.tbl_deep_extend("force", {}, opts_copy, t.opts) or opts_copy) }
       end
     else
       utils.warn(string.format("invalid picker '%s', ignoring.", name))

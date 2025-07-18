@@ -361,14 +361,40 @@ M.defaults.files                = {
 }
 
 M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files, {
+  silent            = true,
   cwd_prompt        = true,
   line_query        = true,
-  pickers           = {
-    { "files", desc = "Files" },
-    { "buffers", desc = "Bufs", prefix = "$" },
-    { "lsp_document_symbols", desc = "Symbols (buf)", prefix = "@" },
-    { "lsp_workspace_symbols", desc = "Symbols (project)", prefix = "#" },
-  },
+  pickers           = function()
+    local clients = utils.lsp_get_clients({ bufnr = FzfLua.core.CTX().bufnr })
+    return utils.tbl_isempty(clients) and {
+          { "files",   desc = "Files" },
+          { "buffers", desc = "Bufs", prefix = "$" },
+          {
+            "btags",
+            desc = "Tags (buf)",
+            prefix = "@",
+            opts = {
+              fn_transform = [[return require("fzf-lua.make_entry").tag]],
+            }
+          },
+          {
+            "tags",
+            desc = "Tags (project)",
+            prefix = "#",
+            opts = {
+              fn_transform = [[return require("fzf-lua.make_entry").tag]],
+              rg_opts      = "--no-heading --color=always --smart-case",
+              grep_opts    = "--color=auto --perl-regexp",
+            }
+          },
+        }
+        or {
+          { "files",                 desc = "Files" },
+          { "buffers",               desc = "Bufs",              prefix = "$" },
+          { "lsp_document_symbols",  desc = "Symbols (buf)",     prefix = "@" },
+          { "lsp_workspace_symbols", desc = "Symbols (project)", prefix = "#" },
+        }
+  end,
   fzf_opts          = { ["--nth"] = false, ["--with-nth"] = false },
   winopts           = { preview = { winopts = { cursorline = true } } },
   _ctx              = { includeBuflist = true }, -- we include a buffer picker
