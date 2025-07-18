@@ -30,6 +30,16 @@
   },
   "workspace": {
     "library": [
+      //
+      // Trigger loading our meta definition file "types.lua"
+      // without this we get warnings about global "FzfLua"
+      // also enables inter-module resolving and completion
+      // i.e. defs/refs/impl for utils, libuv, shell, etc
+      //
+      // For more info:
+      // https://luals.github.io/wiki/definition-files
+      //
+      "lua",
       "$VIMRUNTIME/lua",
       "${3rd}/luv/library",
       // For "cmp_src.lua" type resolving
