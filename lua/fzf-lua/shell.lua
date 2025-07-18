@@ -414,9 +414,17 @@ M.stringify = function(contents, opts, fzf_field_index)
         if type(data) == "table" then
           -- cb_write_lines was sent instead of cb_lines
           if fn_transform then
-            data = vim.tbl_map(function(x) return fn_transform(x, opts) end, data)
+            -- Iterate back to front so we can remove items safely
+            for i = #data, 1, -1 do
+              local v = fn_transform(data[i], opts)
+              if not v then
+                table.remove(data, i)
+              else
+                data[i] = v
+              end
+            end
           end
-          data = table.concat(data, EOL) .. EOL
+          data = #data > 0 and (table.concat(data, EOL) .. EOL) or ""
         end
         uv.write(pipe, tostring(data), function(err)
           write_cb_count = write_cb_count - 1
