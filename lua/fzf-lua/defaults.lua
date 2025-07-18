@@ -366,34 +366,35 @@ M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files,
   line_query        = true,
   pickers           = function()
     local clients = utils.lsp_get_clients({ bufnr = FzfLua.core.CTX().bufnr })
-    return utils.tbl_isempty(clients) and {
-          { "files",   desc = "Files" },
-          { "buffers", desc = "Bufs", prefix = "$" },
-          {
-            "btags",
-            desc = "Tags (buf)",
-            prefix = "@",
-            opts = {
-              fn_transform = [[return require("fzf-lua.make_entry").tag]],
-            }
-          },
-          {
-            "tags",
-            desc = "Tags (project)",
-            prefix = "#",
-            opts = {
-              fn_transform = [[return require("fzf-lua.make_entry").tag]],
-              rg_opts      = "--no-heading --color=always --smart-case",
-              grep_opts    = "--color=auto --perl-regexp",
-            }
-          },
+    local doc_sym_supported = vim.iter(clients):any(function(client)
+      return client.supports_method("textDocument/documentSymbol")
+    end)
+    local wks_sym_supported = vim.iter(clients):any(function(client)
+      return client.supports_method("workspace/symbol")
+    end)
+    return {
+      { "files",   desc = "Files" },
+      { "buffers", desc = "Bufs", prefix = "$" },
+      doc_sym_supported and { "lsp_document_symbols", desc = "Symbols (buf)", prefix = "@" } or {
+        "btags",
+        desc = "Tags (buf)",
+        prefix = "@",
+        opts = {
+          fn_transform = [[return require("fzf-lua.make_entry").tag]],
         }
-        or {
-          { "files",                 desc = "Files" },
-          { "buffers",               desc = "Bufs",              prefix = "$" },
-          { "lsp_document_symbols",  desc = "Symbols (buf)",     prefix = "@" },
-          { "lsp_workspace_symbols", desc = "Symbols (project)", prefix = "#" },
+      },
+      wks_sym_supported and { "lsp_workspace_symbols", desc = "Symbols (project)", prefix = "#" } or
+      {
+        "tags",
+        desc = "Tags (project)",
+        prefix = "#",
+        opts = {
+          fn_transform = [[return require("fzf-lua.make_entry").tag]],
+          rg_opts      = "--no-heading --color=always --smart-case",
+          grep_opts    = "--color=auto --perl-regexp",
         }
+      },
+    }
   end,
   fzf_opts          = { ["--nth"] = false, ["--with-nth"] = false },
   winopts           = { preview = { winopts = { cursorline = true } } },
