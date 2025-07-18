@@ -136,8 +136,7 @@ M.dummy_abort = function(_, o)
 end
 
 M.resume = function(_, _)
-  -- call via loadstring to prevent a circular ref
-  loadstring([[require("fzf-lua").resume()]])()
+  require("fzf-lua").resume()
 end
 
 ---@param _vimcmd string
@@ -526,7 +525,7 @@ end
 M.run_builtin = function(selected)
   if #selected == 0 then return end
   local method = selected[1]
-  pcall(loadstring(string.format("require'fzf-lua'.%s()", method)))
+  pcall(require "fzf-lua"[method])
 end
 
 M.ex_run = function(selected)
@@ -1098,7 +1097,7 @@ M.apply_profile = function(selected, opts)
   local profile = entry.stripped:sub(#fname + 2):match("[^%s]+")
   local ok = utils.load_profile_fname(fname, profile, opts.silent)
   if ok then
-    loadstring(string.format([[require("fzf-lua").setup({"%s"})]], profile))()
+    require("fzf-lua").setup({ profile })
   end
 end
 

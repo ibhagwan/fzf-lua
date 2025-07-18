@@ -134,9 +134,8 @@ function M.pipe_wrap_fn(fn, fzf_field_index, debug)
       end, args[1])
     end
     -- save selected item in main module's __INFO
-    -- use loadstring to avoid circular require
     pcall(function()
-      local module = loadstring("return require'fzf-lua'")()
+      local module = require("fzf-lua")
       if module then
         module.__INFO = vim.tbl_deep_extend("force",
           module.__INFO or {}, { selected = args[1][1] })
