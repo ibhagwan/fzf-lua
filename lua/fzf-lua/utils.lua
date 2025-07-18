@@ -1442,12 +1442,12 @@ function M.termopen(cmd, opts)
   end
 end
 
+---@param cmd string
+---@param flag string
+---@param enabled boolean?
+---@param append boolean?
+---@return string
 function M.toggle_cmd_flag(cmd, flag, enabled, append)
-  if not flag then
-    M.err("'toggle_flag' not set")
-    return
-  end
-
   -- flag must be preceded by whitespace
   if not flag:match("^%s") then flag = " " .. flag end
 
