@@ -182,7 +182,8 @@ M.spawn = function(opts, fn_transform, fn_done)
     repeat
       local nl_idx = data:find("\n", start_idx, true)
       if nl_idx then
-        local line = data:sub(start_idx, nl_idx - 1)
+        local cr = data:byte(nl_idx - 1, nl_idx - 1) == 13 -- \r
+        local line = data:sub(start_idx, nl_idx - (cr and 2 or 1))
         if prev then
           line = prev .. line
           prev = nil
