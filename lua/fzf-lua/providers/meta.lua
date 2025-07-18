@@ -168,21 +168,38 @@ M.global = function(opts)
   for _, t in ipairs(opts.pickers) do
     local name = t[1]
     if FzfLua[name] then
+      local def
+      local function gen_def(n, o)
+        local wrapped = { FzfLua[n](o) }
+        return {
+          name = n,
+          opts = wrapped[3],
+          contents = wrapped[2],
+        }
+      end
       if not t.prefix then
         -- Default picker opts set the tone for this picker options
         -- this way convert reload / exec_silent actions will use a consistent
         -- opts ref in the callbacks so we can later modify internal values
-        pickers[name] = { FzfLua[name](opts) }
+        def = gen_def(name, opts)
+        pickers[name] = def
         -- Override opts with the return opts and store a copy of `pickers[]`
         -- as we patch the opts when switching a picker in the change event
-        opts = pickers[name][3]
+        opts = def.opts
         opts._start = nil -- remove the start suppression
-        pickers[name][3] = vim.deepcopy(opts)
+        def.opts = vim.deepcopy(opts)
       else
         -- Each subsequent picker gets a fresh copy of the original opts
         -- (unmodified by the default picker)
-        pickers[name] = { FzfLua[name](t.opts and
-          vim.tbl_deep_extend("force", {}, opts_copy, t.opts) or opts_copy) }
+        def = gen_def(name, t.opts
+          and vim.tbl_deep_extend("force", {}, opts_copy, t.opts)
+          or opts_copy)
+        pickers[name] = def
+      end
+      -- Instantiate the previewer, opts isn't guaranteed if the picker
+      -- isn't avilable, e.g. `tags` when not tags file exists
+      if def.opts and def.opts.previewer then
+        def.previewer = require("fzf-lua.previewer").new(def.opts.previewer, def.opts)
       end
     else
       utils.warn(string.format("invalid picker '%s', ignoring.", name))
@@ -222,13 +239,24 @@ M.global = function(opts)
       if start or new_picker and new_picker ~= cur_picker then
         -- New picker requested, reload the contents and transform
         -- the search string to exclude the picker prefix
-        cur_sub = new_sub
-        cur_picker = new_picker
         -- Patch the opts refs with important values for path parsing
         -- e.g. formatter, path_shorten, etc
+        cur_picker = cur_picker or new_picker
         -- TODO: is there a better way to override the callback opts ref?
-        opts.__alt_opts = new_picker[3]
-        reload = string.format("reload(%s)+", new_picker[2])
+        opts.__alt_opts = new_picker.opts
+        -- Attach a new previewer if exists
+        local win = FzfLua.utils.fzf_winobj()
+        if win
+            and new_picker.previewer
+            and new_picker.previewer ~= cur_picker.previewer
+        then
+          win:close_preview()
+          win:attach_previewer(new_picker.previewer)
+          win:redraw_preview()
+        end
+        reload = string.format("reload(%s)+", new_picker.contents)
+        cur_sub = new_sub
+        cur_picker = new_picker
       end
       return reload .. string.format("search(%s)", q:sub(cur_sub))
     end, opts, "{q}")

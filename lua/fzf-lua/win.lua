@@ -726,6 +726,12 @@ end
 
 ---@param previewer fzf-lua.previewer.Builtin
 function FzfWin:attach_previewer(previewer)
+  previewer.win = self
+  previewer.delay = self.winopts.preview.delay or 100
+  previewer.title = self.winopts.preview.title
+  previewer.title_pos = self.winopts.preview.title_pos
+  previewer.winopts = self.winopts.preview.winopts
+  previewer.winblend = previewer.winblend or previewer.winopts.winblend or vim.o.winblend
   -- clear the previous previewer if existed
   if self._previewer and self._previewer.close then
     -- if we press ctrl-g too quickly 'previewer.preview_bufnr' will be nil

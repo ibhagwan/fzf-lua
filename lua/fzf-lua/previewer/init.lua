@@ -27,4 +27,31 @@ Previewer.builtin.keymaps = function() return require "fzf-lua.previewer.builtin
 Previewer.builtin.nvim_options = function() return require "fzf-lua.previewer.builtin".nvim_options end
 Previewer.builtin.codeaction = function() return require "fzf-lua.previewer.codeaction".builtin end
 
+
+---Instantiate previewer from spec
+---@param spec table
+---@param opts table
+---@return fzf-lua.previewer?
+Previewer.new = function(spec, opts)
+  if not spec then return end
+  local previewer, preview_opts = nil, nil
+  if type(spec) == "string" then
+    preview_opts = FzfLua.config.globals.previewers[spec]
+    if not preview_opts then
+      FzfLua.utils.warn(("invalid previewer '%s'"):format(spec))
+    end
+  elseif type(spec) == "table" then
+    preview_opts = spec
+  end
+  -- Backward compat: can instantiate with `_ctor|new|_new`
+  if preview_opts and type(preview_opts.new) == "function" then
+    previewer = preview_opts:new(preview_opts, opts)
+  elseif preview_opts and type(preview_opts._new) == "function" then
+    previewer = preview_opts._new()(preview_opts, opts)
+  elseif preview_opts and type(preview_opts._ctor) == "function" then
+    previewer = preview_opts._ctor()(preview_opts, opts)
+  end
+  return previewer
+end
+
 return Previewer

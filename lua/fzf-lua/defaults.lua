@@ -367,10 +367,10 @@ M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files,
   pickers           = function()
     local clients = utils.lsp_get_clients({ bufnr = FzfLua.core.CTX().bufnr })
     local doc_sym_supported = vim.iter(clients):any(function(client)
-      return client.supports_method("textDocument/documentSymbol")
+      return client:supports_method("textDocument/documentSymbol")
     end)
     local wks_sym_supported = vim.iter(clients):any(function(client)
-      return client.supports_method("workspace/symbol")
+      return client:supports_method("workspace/symbol")
     end)
     return {
       { "files",   desc = "Files" },
@@ -380,6 +380,7 @@ M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files,
         desc = "Tags (buf)",
         prefix = "@",
         opts = {
+          previewer    = { _ctor = previewers.builtin.tags },
           fn_transform = [[return require("fzf-lua.make_entry").tag]],
         }
       },
@@ -389,6 +390,7 @@ M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files,
         desc = "Tags (project)",
         prefix = "#",
         opts = {
+          previewer    = { _ctor = previewers.builtin.tags },
           fn_transform = [[return require("fzf-lua.make_entry").tag]],
           rg_opts      = "--no-heading --color=always --smart-case",
           grep_opts    = "--color=auto --perl-regexp",

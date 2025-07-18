@@ -6,6 +6,14 @@ _G.FzfLua = require("fzf-lua")
 ---@class fzf-lua.Config
 ---@field [string] any
 
+---@class fzf-lua.previewer
+---@field new function
+---@field zero function?
+---@field cmdline function?
+---@field fzf_delimiter function?
+---@field preview_window function?
+---@field _preview_offset function?
+
 ---@class fzf-lua.previewer.Builtin
 ---@field type "builtin"
 ---@field opts table

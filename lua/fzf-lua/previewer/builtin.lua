@@ -145,9 +145,8 @@ Previewer.base = Object:extend()
 
 ---@param o table
 ---@param opts table
----@param fzf_win fzf-lua.Win
 ---@return fzf-lua.previewer.Builtin
-function Previewer.base:new(o, opts, fzf_win)
+function Previewer.base:new(o, opts)
   local function default(var, def)
     if var ~= nil then
       return var
@@ -159,16 +158,11 @@ function Previewer.base:new(o, opts, fzf_win)
   o = o or {}
   self.type = "builtin"
   self.opts = opts;
-  self.win = fzf_win
-  self.delay = self.win.winopts.preview.delay or 100
-  self.title = self.win.winopts.preview.title
-  self.title_pos = self.win.winopts.preview.title_pos
   self.title_fnamemodify = o.title_fnamemodify
   self.render_markdown = type(o.render_markdown) == "table" and o.render_markdown or {}
   self.render_markdown.filetypes =
       type(self.render_markdown.filetypes) == "table" and self.render_markdown.filetypes or {}
   self.snacks_image = type(o.snacks_image) == "table" and o.snacks_image or {}
-  self.winopts = self.win.winopts.preview.winopts
   self.syntax = default(o.syntax, true)
   self.syntax_delay = tonumber(default(o.syntax_delay, 0))
   self.syntax_limit_b = tonumber(default(o.syntax_limit_b, 1024 * 1024))
@@ -178,7 +172,6 @@ function Previewer.base:new(o, opts, fzf_win)
   self.treesitter = type(o.treesitter) == "table" and o.treesitter or {}
   self.toggle_behavior = o.toggle_behavior
   self.winopts_orig = {}
-  self.winblend = self.winblend or self.winopts.winblend or vim.o.winblend
   -- convert extension map to lower case
   if o.extensions then
     self.extensions = {}
@@ -454,6 +447,8 @@ function Previewer.base:cmdline(_)
     -- NOTE: see comment regarding {n} in `core.convert_exec_silent_actions`
     -- convert empty string to nil
     if not tonumber(idx) then entry = nil end
+    -- upvalue incase previewer was detached/re-attached (global picker)
+    self = self.win._previewer or self
     -- on windows, query may not be expanded to a string: #1887
     self.opts._last_query = query or ""
     self:display_entry(entry)
@@ -594,8 +589,8 @@ end
 ---@field super fzf-lua.previewer.Builtin
 Previewer.buffer_or_file = Previewer.base:extend()
 
-function Previewer.buffer_or_file:new(o, opts, fzf_win)
-  Previewer.buffer_or_file.super.new(self, o, opts, fzf_win)
+function Previewer.buffer_or_file:new(o, opts)
+  Previewer.buffer_or_file.super.new(self, o, opts)
   return self
 end
 
@@ -1350,8 +1345,8 @@ end
 ---@field super fzf-lua.previewer.BufferOrFile
 Previewer.help_tags = Previewer.buffer_or_file:extend()
 
-function Previewer.help_tags:new(o, opts, fzf_win)
-  Previewer.help_tags.super.new(self, o, opts, fzf_win)
+function Previewer.help_tags:new(o, opts)
+  Previewer.help_tags.super.new(self, o, opts)
   return self
 end
 
@@ -1422,8 +1417,8 @@ function Previewer.man_pages:gen_winopts()
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
-function Previewer.man_pages:new(o, opts, fzf_win)
-  Previewer.man_pages.super.new(self, o, opts, fzf_win)
+function Previewer.man_pages:new(o, opts)
+  Previewer.man_pages.super.new(self, o, opts)
   self.filetype = "man"
   self.cmd = o.cmd or "man -c %s | col -bx"
   self.cmd = type(self.cmd) == "function" and self.cmd() or self.cmd
@@ -1452,8 +1447,8 @@ end
 ---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.marks = Previewer.buffer_or_file:extend()
 
-function Previewer.marks:new(o, opts, fzf_win)
-  Previewer.marks.super.new(self, o, opts, fzf_win)
+function Previewer.marks:new(o, opts)
+  Previewer.marks.super.new(self, o, opts)
   return self
 end
 
@@ -1495,8 +1490,8 @@ end
 ---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.jumps = Previewer.buffer_or_file:extend()
 
-function Previewer.jumps:new(o, opts, fzf_win)
-  Previewer.jumps.super.new(self, o, opts, fzf_win)
+function Previewer.jumps:new(o, opts)
+  Previewer.jumps.super.new(self, o, opts)
   return self
 end
 
@@ -1527,8 +1522,8 @@ end
 ---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.tags = Previewer.buffer_or_file:extend()
 
-function Previewer.tags:new(o, opts, fzf_win)
-  Previewer.tags.super.new(self, o, opts, fzf_win)
+function Previewer.tags:new(o, opts)
+  Previewer.tags.super.new(self, o, opts)
   return self
 end
 
@@ -1568,8 +1563,8 @@ function Previewer.highlights:gen_winopts()
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
-function Previewer.highlights:new(o, opts, fzf_win)
-  Previewer.highlights.super.new(self, o, opts, fzf_win)
+function Previewer.highlights:new(o, opts)
+  Previewer.highlights.super.new(self, o, opts)
   self.ns_previewer = vim.api.nvim_create_namespace("fzf-lua.previewer.hl")
   return self
 end
@@ -1654,8 +1649,8 @@ function Previewer.quickfix:gen_winopts()
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
-function Previewer.quickfix:new(o, opts, fzf_win)
-  Previewer.quickfix.super.new(self, o, opts, fzf_win)
+function Previewer.quickfix:new(o, opts)
+  Previewer.quickfix.super.new(self, o, opts)
   return self
 end
 
@@ -1695,8 +1690,8 @@ end
 ---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.autocmds = Previewer.buffer_or_file:extend()
 
-function Previewer.autocmds:new(o, opts, fzf_win)
-  Previewer.autocmds.super.new(self, o, opts, fzf_win)
+function Previewer.autocmds:new(o, opts)
+  Previewer.autocmds.super.new(self, o, opts)
   return self
 end
 
@@ -1737,8 +1732,8 @@ end
 ---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.keymaps = Previewer.buffer_or_file:extend()
 
-function Previewer.autocmds:keymaps(o, opts, fzf_win)
-  Previewer.autocmds.super.new(self, o, opts, fzf_win)
+function Previewer.autocmds:keymaps(o, opts)
+  Previewer.autocmds.super.new(self, o, opts)
   return self
 end
 
@@ -1773,8 +1768,8 @@ end
 ---@field super fzf-lua.previewer.Builtin,{}
 Previewer.nvim_options = Previewer.base:extend()
 
-function Previewer.nvim_options:new(o, opts, fzf_win)
-  Previewer.nvim_options.super.new(self, o, opts, fzf_win)
+function Previewer.nvim_options:new(o, opts)
+  Previewer.nvim_options.super.new(self, o, opts)
   local paths = vim.fn.globpath(vim.o.rtp, "doc/options.txt", false, true)
   self.lines = vim.fn.readfile(paths[1])
   return self

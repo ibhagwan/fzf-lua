@@ -350,23 +350,10 @@ M.fzf = function(contents, opts)
   -- setup the fzf window and preview layout
   local fzf_win = win:new(opts)
   -- instantiate the previewer
-  local previewer, preview_opts = nil, nil
-  if opts.previewer and type(opts.previewer) == "string" then
-    preview_opts = config.globals.previewers[opts.previewer]
-    if not preview_opts then
-      utils.warn(("invalid previewer '%s'"):format(opts.previewer))
-    end
-  elseif opts.previewer and type(opts.previewer) == "table" then
-    preview_opts = opts.previewer
-  end
-  if preview_opts and type(preview_opts.new) == "function" then
-    previewer = preview_opts:new(preview_opts, opts, fzf_win)
-  elseif preview_opts and type(preview_opts._new) == "function" then
-    previewer = preview_opts._new()(preview_opts, opts, fzf_win)
-  elseif preview_opts and type(preview_opts._ctor) == "function" then
-    previewer = preview_opts._ctor()(preview_opts, opts, fzf_win)
-  end
+  local previewer = require("fzf-lua.previewer").new(opts.previewer, opts)
   if previewer then
+    -- Attach the previewer to the windows
+    fzf_win:attach_previewer(previewer)
     -- Set the preview command line
     opts.preview = previewer:cmdline()
     -- fzf 0.40 added 'zero' event for when there's no match
@@ -398,7 +385,6 @@ M.fzf = function(contents, opts)
     opts.fzf_opts["--preview-window"] = "hidden:right:0"
   end
 
-  fzf_win:attach_previewer(previewer)
   local fzf_bufnr = fzf_win:create()
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts, fzf_win),
     {
