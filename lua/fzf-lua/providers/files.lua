@@ -8,6 +8,8 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+---@param opts table
+---@return string
 local get_files_cmd = function(opts)
   if opts.raw_cmd and #opts.raw_cmd > 0 then
     return opts.raw_cmd

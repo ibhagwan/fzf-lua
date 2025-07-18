@@ -245,7 +245,7 @@ M.preprocess = function(opts)
       end)
   end
 
-  if utils.__IS_WINDOWS and opts.cmd:match("!") then
+  if utils.__IS_WINDOWS and opts.cmd and opts.cmd:match("!") then
     -- https://ss64.com/nt/syntax-esc.html
     -- This changes slightly if you are running with DelayedExpansion of variables:
     -- if any part of the command line includes an '!' then CMD will escape a second

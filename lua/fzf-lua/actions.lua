@@ -1031,7 +1031,7 @@ M.toggle_flag = function(_, opts)
   local o = vim.tbl_deep_extend("keep", {
     -- grep|live_grep sets `opts._cmd` to the original
     -- command without the search argument
-    cmd = utils.toggle_cmd_flag(opts._cmd or opts.cmd, opts.toggle_flag),
+    cmd = utils.toggle_cmd_flag(assert(opts._cmd or opts.cmd), assert(opts.toggle_flag)),
     resume = true
   }, opts.__call_opts)
   opts.__call_fn(o)
