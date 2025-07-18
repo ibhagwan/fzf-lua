@@ -62,6 +62,33 @@ T["api"]["fzf_exec"]["rg"] = new_set({ parametrize = { { true }, { false }, { 1 
   end
 })
 
+T["api"]["fzf_exec"]["fn_transform"] = new_set({ parametrize = { { true }, { false } } })
+
+T["api"]["fzf_exec"]["fn_transform"]["filter"] = new_set(
+  { parametrize = { { 0 }, { 13 }, { 24 } } }, {
+    function(multiprocess, filter)
+      local AND = helpers.IS_WIN() and "&" or "&&"
+      helpers.FzfLua.fzf_exec(child,
+        string.format([["echo one%secho two%secho three%secho four"]], AND, AND, AND),
+        {
+          -- __postprocess_wait = multiprocess ~= 1,
+          __expect_lines = true,
+          multiprocess = multiprocess,
+          fn_transform = filter == 13 and function(item)
+                if vim.tbl_contains({ "one", "three" }, item) then return end
+                return string.format("TRANSFORMED: %s, base64: %s", item, vim.base64.encode(item))
+              end
+              or filter == 24 and function(item)
+                if vim.tbl_contains({ "two", "four" }, item) then return end
+                return string.format("TRANSFORMED: %s, base64: %s", item, vim.base64.encode(item))
+              end
+              or function(item)
+                return string.format("TRANSFORMED: %s, base64: %s", item, vim.base64.encode(item))
+              end
+        })
+    end
+  })
+
 
 T["api"]["fzf_live"] = new_set()
 
