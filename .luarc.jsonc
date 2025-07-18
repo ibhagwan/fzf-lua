@@ -30,7 +30,7 @@
   },
   "workspace": {
     "library": [
-      "$VIMRUNTIME",
+      "$VIMRUNTIME/lua",
       "${3rd}/luv/library",
       // For "cmp_src.lua" type resolving
       "deps/mini.nvim",
