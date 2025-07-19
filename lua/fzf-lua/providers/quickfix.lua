@@ -14,7 +14,7 @@ local quickfix_run = function(opts, cfg)
 
   local function getlist()
     if opts.__locations then return nil end
-    opts.__locations = opts.is_loclist and vim.fn.getloclist(core.CTX().winid) or vim.fn.getqflist()
+    opts.__locations = opts.is_loclist and vim.fn.getloclist(utils.CTX().winid) or vim.fn.getqflist()
     if opts.is_loclist then
       for _, value in pairs(opts.__locations) do
         value.filename = vim.api.nvim_buf_get_name(value.bufnr)

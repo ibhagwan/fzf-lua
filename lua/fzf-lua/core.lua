@@ -145,31 +145,33 @@ end
 ---@param opts? {fn_reload: string|function, fn_transform: function, __fzf_init_cmd: string, _normalized: boolean}
 ---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
-  if not opts or not opts._normalized then
-    opts = config.normalize_opts(opts or {}, {})
-    if not opts then return end
+  opts = config.normalize_opts(opts or {}, {})
+  if not opts then return end
+  if not contents then
+    local cmd = opts.cmd and shell.stringify_mt(opts.cmd, opts) or nil
+    return M.fzf_wrap(cmd, opts, true)
   end
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
   end
+  -- stringify_mt: No register function id, the wrapped multiprocess
+  -- command is independent, most of it's options are serialized as strings and the
+  -- rest are read from the main instance config over RPC
+  local cmd = (opts.multiprocess and type(contents) == "string")
+      and shell.stringify_mt(contents, opts) or shell.stringify(contents, opts, nil)
   -- Contents sent to fzf can only be nil or a shell command (string)
   -- the API accepts both tables and functions which we "stringify"
   -- We also send string commands as stringify is also responsible
   -- for multiprocess wrapping of shell commands with processing
-  contents = contents and shell.stringify(contents, opts, nil) or nil
-  assert(contents == nil or type(contents) == "string", "contents must be of type string")
-  return M.fzf_wrap(contents, opts, true)
+  return M.fzf_wrap(cmd, opts, true)
 end
 
 ---@param contents string|fun(query: string[]): string|string[]|function?
 ---@param opts? table
 ---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
-  assert(contents)
-  if not opts or not opts._normalized then
-    opts = config.normalize_opts(opts or {}, {})
-    if not opts then return end
-  end
+  opts = config.normalize_opts(opts or {}, {})
+  if not opts then return end
   opts.fn_reload = contents
   -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
   -- each keypress reloads fzf's input usually based on the typed query
@@ -185,11 +187,13 @@ M.fzf_live = function(contents, opts)
       contents = ("%s %s"):format(contents, M.fzf_query_placeholder)
     end
   end
-  opts.fn_reload = shell.stringify(contents, opts, nil)
+  local cmd = (opts.multiprocess and type(contents) == "string")
+      and shell.stringify_mt(contents, opts) or shell.stringify(contents, opts, nil)
   local fzf_field_index = M.fzf_field_index(opts)
-  local cmd = M.expand_query(opts.fn_reload, fzf_field_index)
-  contents, opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
-  return M.fzf_wrap(contents, opts, true)
+  cmd = (opts.multiprocess or type(contents) ~= "string")
+      and M.expand_query(cmd, fzf_field_index) or cmd
+  cmd, opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
+  return M.fzf_wrap(cmd, opts, true)
 end
 
 M.fzf_resume = function(opts)
@@ -206,14 +210,14 @@ M.fzf_resume = function(opts)
   M.fzf_wrap(config.__resume_data.contents, config.__resume_data.opts)
 end
 
----@param contents string?
+---@param cmd string?
 ---@param opts table
 ---@param convert_actions boolean?
 ---@return thread, string, table
-M.fzf_wrap = function(contents, opts, convert_actions)
+M.fzf_wrap = function(cmd, opts, convert_actions)
   opts = opts or {}
   if convert_actions and type(opts.actions) == "table" then
-    opts = M.convert_reload_actions(contents, opts)
+    opts = M.convert_reload_actions(cmd, opts)
     opts = M.convert_exec_silent_actions(opts)
   end
   local _co
@@ -221,7 +225,7 @@ M.fzf_wrap = function(contents, opts, convert_actions)
     _co = coroutine.running()
     if type(opts.cb_co) == "function" then opts.cb_co(_co) end
     -- Default fzf exit callback acts upon the selected items
-    local selected = M.fzf(contents, opts)
+    local selected = M.fzf(cmd, opts)
     local fn_selected = opts.fn_selected or actions.act
     if not fn_selected then return end
     -- errors thrown here gets silenced possibly
@@ -239,65 +243,7 @@ M.fzf_wrap = function(contents, opts, convert_actions)
   if opts._start ~= false then
     wrapped()
   end
-  return _co, contents, opts
-end
-
--- conditionally update the context if fzf-lua
--- interface isn't open
-M.CTX = function(opts)
-  opts = opts or {}
-  -- save caller win/buf context, ignore when fzf
-  -- is already open (actions.sym_lsym|grep_lgrep)
-  local winobj = utils.fzf_winobj()
-  if not M.__CTX
-      -- when called from the LSP module in "sync" mode when no results are found
-      -- the fzf window won't open (e.g. "No references found") and the context is
-      -- never cleared. The below condition validates the source window when the
-      -- UI is not open (#907)
-      or (not winobj and M.__CTX.bufnr ~= vim.api.nvim_get_current_buf())
-      -- we should never get here when fzf process is hidden unless the user requested
-      -- not to resume or a different picker, i.e. hide files and open buffers
-      or winobj and winobj:hidden()
-  then
-    M.__CTX = {
-      mode = vim.api.nvim_get_mode().mode,
-      bufnr = vim.api.nvim_get_current_buf(),
-      bname = vim.api.nvim_buf_get_name(0),
-      winid = vim.api.nvim_get_current_win(),
-      alt_bufnr = vim.fn.bufnr("#"),
-      tabnr = vim.fn.tabpagenr(),
-      tabh = vim.api.nvim_win_get_tabpage(0),
-      cursor = vim.api.nvim_win_get_cursor(0),
-      line = vim.api.nvim_get_current_line(),
-      curtab_wins = (function()
-        local ret = {}
-        local wins = vim.api.nvim_tabpage_list_wins(0)
-        for _, w in ipairs(wins) do
-          ret[tostring(w)] = true
-        end
-        return ret
-      end)()
-    }
-  end
-  -- perhaps a min impact optimization but since only
-  -- buffers/tabs use these we only include the current
-  -- list of buffers when requested
-  if opts.includeBuflist and not M.__CTX.buflist then
-    -- also add a map for faster lookups than `utils.tbl_contains`
-    -- TODO: is it really faster since we must use string keys?
-    M.__CTX.bufmap = {}
-    M.__CTX.buflist = vim.api.nvim_list_bufs()
-    for _, b in ipairs(M.__CTX.buflist) do
-      M.__CTX.bufmap[tostring(b)] = true
-    end
-  end
-  -- custom bufnr from caller? (#1757)
-  local bufnr = tonumber(opts.buf) or tonumber(opts.bufnr)
-  if bufnr then
-    M.__CTX.bufnr = bufnr
-    M.__CTX.bname = vim.api.nvim_buf_get_name(bufnr)
-  end
-  return M.__CTX
+  return _co, cmd, opts
 end
 
 ---@param contents string?
@@ -311,10 +257,8 @@ M.fzf = function(contents, opts)
     return
   end
   -- normalize with globals if not already normalized
-  if not opts or not opts._normalized then
-    opts = config.normalize_opts(opts or {}, {})
-    if not opts then return end
-  end
+  opts = config.normalize_opts(opts or {}, {})
+  if not opts then return end
   -- Store contents for unhide
   opts._contents = contents
   -- flag used to print the query on stdout line 1
@@ -345,7 +289,7 @@ M.fzf = function(contents, opts)
 
   -- update context and save a copy in options (for actions)
   -- call before creating the window or fzf_winobj is not nil
-  opts.__CTX = M.CTX(opts._ctx)
+  opts.__CTX = utils.CTX(opts._ctx)
 
   -- setup the fzf window and preview layout
   local fzf_win = win:new(opts)
@@ -431,7 +375,7 @@ M.fzf = function(contents, opts)
     -- only clear context if we didn't open a new interface, for example, opening
     -- files, switching to normal with <c-\><c-n> and opening buffers (#1810)
     if utils.fzf_winobj() == nil then
-      M.__CTX = nil
+      utils.clear_CTX()
     end
   end
   return selected
@@ -957,45 +901,6 @@ M.set_header = function(opts, hdr_tbl)
   return opts
 end
 
-
--- Use both {q} and {+} as field indexes so we can update last query when
--- executing the action, without this we lose the last query on "hide" as
--- the process never terminates and `--print-query` isn't being printed
--- When no entry selected (with {q} {+}), {+} will be forced expand to ''
--- Use {n} to know if we really select an empty string, or there's just no selected
-local patch_shell_action = function(v, opts)
-  local field_index = v.field_index == false and "" or v.field_index or "{+}"
-  local overide_f_idx
-  if not field_index:match("^{q} {n}") then
-    field_index = "{q} {n} " .. field_index
-    overide_f_idx = true
-  end
-  -- replace the action with shell cmd proxy to the original action
-  return shell.stringify_data(function(items, _, _)
-    assert(field_index:match("^{q} {n}"))
-    local query, idx = unpack(items, 1, 2)
-    config.resume_set("query", query, opts)
-    if overide_f_idx then
-      table.remove(items, 1)
-      table.remove(items, 1)
-    end
-    -- fix side effect of "{q} {+}": {+} is forced expanded to ""
-    -- only when: user didn't set v.field_index (otherwise it can be complex/unpredictable)
-    -- {n} used to determine if "zero-selected && zero-match", then patch: "" -> nil
-    if not v.field_index then
-      -- When no item is matching (empty list or non-matching query)
-      -- both {n} and {+} are expanded to "".
-      -- NOTE1: older versions of fzf don't expand {n} to "" (without match)
-      -- in such case the (empty) items table will be in `items[2]` (#1833)
-      -- NOTE2: on Windows, no match {n} is expanded to '' (#1836)
-      local zero_matched = not tonumber(idx)
-      local zero_selected = #items == 0 or (#items == 1 and #items[1] == 0)
-      items = (zero_matched and zero_selected) and {} or items
-    end
-    v.fn(items, opts)
-  end, opts, field_index)
-end
-
 -- converts actions defined with "reload=true" to use fzf's `reload` bind
 -- provides a better UI experience without a visible interface refresh
 ---@param reload_cmd string?
@@ -1057,18 +962,18 @@ M.convert_reload_actions = function(reload_cmd, opts)
     if type(v) == "table" and v.reload then
       -- Modified actions should not be considered in `actions.expect`
       opts.actions[k]._ignore = true
-      local shell_action = patch_shell_action(v, opts)
       if type(v.prefix) == "string" and not v.prefix:match("%+$") then
         v.prefix = v.prefix .. "+"
       end
       if type(v.postfix) == "string" and not v.postfix:match("^%+") then
         v.postfix = "+" .. v.postfix
       end
+      local cmd = shell.stringify_data2(v.fn, opts, v.field_index or "{+}")
       opts.keymap.fzf[k] = {
         string.format("%s%sexecute-silent(%s)+reload(%s)%s",
           type(v.prefix) == "string" and v.prefix or "",
           unbind and (unbind .. "+") or "",
-          shell_action,
+          cmd,
           reload_cmd,
           type(v.postfix) == "string" and v.postfix or ""),
         desc = v.desc or config.get_action_helpstr(v.fn)
@@ -1097,7 +1002,6 @@ M.convert_exec_silent_actions = function(opts)
       assert(type(v.fn) == "function")
       -- Modified actions should not be considered in `actions.expect`
       opts.actions[k]._ignore = true
-      local shell_action = patch_shell_action(v, opts)
       if type(v.prefix) == "string" and not v.prefix:match("%+$") then
         v.prefix = v.prefix .. "+"
       end
@@ -1117,13 +1021,14 @@ M.convert_exec_silent_actions = function(opts)
       --      key-action pairs.
       --
       local has_fzf036 = utils.has(opts, "fzf", { 0, 36 })
+      local cmd = shell.stringify_data2(v.fn, opts, v.field_index or "{+}")
       opts.keymap.fzf[k] = {
         string.format("%sexecute-silent%s%s",
           type(v.prefix) == "string" and v.prefix or "",
           -- prefer "execute-silent:..." unless we have postfix
           has_fzf036 and type(v.postfix) == "string"
-          and string.format("(%s)", shell_action)
-          or string.format(":%s", shell_action),
+          and string.format("(%s)", cmd)
+          or string.format(":%s", cmd),
           -- can't use postfix since we use "execute-silent:..."
           has_fzf036 and type(v.postfix) == "string" and v.postfix or ""),
         desc = v.desc or config.get_action_helpstr(v.fn)
@@ -1136,7 +1041,7 @@ end
 ---@param command string
 ---@param fzf_field_index string
 ---@param opts table
----@return string?, table
+---@return string, table
 M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
   -- query cannot be 'nil'
   opts.query = opts.query or ""

@@ -412,7 +412,7 @@ M.grep_curbuf = function(opts, lgrep)
   opts = config.normalize_opts(opts, "grep_curbuf", "bgrep")
   if not opts then return end
 
-  opts.filename = vim.api.nvim_buf_get_name(core.CTX().bufnr)
+  opts.filename = vim.api.nvim_buf_get_name(utils.CTX().bufnr)
   if #opts.filename == 0 or not uv.fs_stat(opts.filename) then
     utils.info("Rg current buffer requires file on disk")
     return

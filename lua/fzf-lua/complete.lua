@@ -119,6 +119,7 @@ end
 
 M.line = function(opts)
   opts = config.normalize_opts(opts, "complete_line")
+  if not opts then return end
   opts.query = (function()
     local col = vim.api.nvim_win_get_cursor(0)[2] + 1
     local line = vim.api.nvim_get_current_line()

@@ -443,6 +443,7 @@ end
 
 function Previewer.base:cmdline(_)
   local act = shell.stringify_data(function(items, _, _)
+    ---@type string?, string?, string?
     local entry, query, idx = unpack(items, 1, 3)
     -- NOTE: see comment regarding {n} in `core.convert_exec_silent_actions`
     -- convert empty string to nil

@@ -133,14 +133,7 @@ function M.pipe_wrap_fn(fn, fzf_field_index, debug)
         return libuv.unescape_fzf(x, vim.g.fzf_lua_fzf_version)
       end, args[1])
     end
-    -- save selected item in main module's __INFO
-    pcall(function()
-      local module = require("fzf-lua")
-      if module then
-        module.__INFO = vim.tbl_deep_extend("force",
-          module.__INFO or {}, { selected = args[1][1] })
-      end
-    end)
+    utils.get_info().selected = args[1] and args[1][1] or nil
     uv.pipe_connect(pipe, pipe_path, function(err)
       if err then
         error(string.format("pipe_connect(%s) failed with error: %s", pipe_path, err))
@@ -171,11 +164,10 @@ end
 
 ---@param cmd string
 ---@param opts table
----@return string?
+---@return string
 M.stringify_mt = function(cmd, opts)
-  assert(type(opts) == "table", "opts must be supplied")
-  assert(cmd or opts and opts.cmd, "cmd must be supplied")
-  opts.cmd = cmd or opts and opts.cmd
+  assert(opts.multiprocess, "multiprocess must be set to true/1")
+  opts.cmd = cmd or opts.cmd
   ---@param o table<string, unknown>
   ---@return table
   local filter_opts = function(o)
@@ -257,7 +249,7 @@ M.stringify_mt = function(cmd, opts)
     -- to keep `setup_fzf_interactive_flags::no_query_condi` in the command
     opts.argv_expr = nil
     return opts.cmd
-  elseif opts.multiprocess then
+  else -- if opts.multiprocess then
     for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
       local v = opts[k]
       if type(v) == "function" and utils.__HAS_NVIM_010 then
@@ -306,14 +298,12 @@ M.stringify_mt = function(cmd, opts)
   end
 end
 
+---Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
 ---@param contents table|function|string
 ---@param opts {}
----Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
 ---@param fzf_field_index string?
----@return string?, integer?
+---@return string, integer?
 M.stringify = function(contents, opts, fzf_field_index)
-  assert(contents, "must supply contents")
-
   -- TODO: should we let this assert?
   -- are there any conditions in which stringify is called subsequently?
   if opts.__stringified then return contents end
@@ -321,14 +311,6 @@ M.stringify = function(contents, opts, fzf_field_index)
   -- Mark opts as already "stringified"
   assert(not opts.__stringified, "twice stringified")
   opts.__stringified = true
-
-  -- No need to register function id (2nd `nil` in tuple), the wrapped multiprocess
-  -- command is independent, most of it's options are serialized as strings and the
-  -- rest are read from the main instance config over RPC
-  if opts.multiprocess and type(contents) == "string" then
-    local cmd = M.stringify_mt(contents, opts)
-    if cmd then return cmd, nil end
-  end
 
   ---@param fn_str string
   ---@return function?
@@ -353,7 +335,9 @@ M.stringify = function(contents, opts, fzf_field_index)
     fzf_field_index = fzf_field_index or "{q}"
     local cmd = contents
     contents = function(args)
-      local query = libuv.shellescape(args[1] or "")
+      local query = args[1] or ""
+      query = (query:gsub("%%", "%%%%"))
+      query = libuv.shellescape(query)
       return FzfLua.core.expand_query(cmd, query)
     end
   end
@@ -498,7 +482,7 @@ M.stringify = function(contents, opts, fzf_field_index)
   return cmd, id
 end
 
----@param fn fun(item: string[], fzf_lines: integer, fzf_columns, integer): string|string[]?
+---@param fn fun(items: string[], fzf_lines: integer, fzf_columns: integer): string|{ cmd: string|string[], env: table? }?
 ---@param opts table
 ---@param fzf_field_index string?
 ---@return string, integer?
@@ -511,6 +495,10 @@ M.stringify_cmd = function(fn, opts, fzf_field_index)
   }, fzf_field_index)
 end
 
+---@param fn fun(items: string[], fzf_lines: integer, fzf_columns: integer): string|string[]?
+---@param opts table
+---@param fzf_field_index string?
+---@return string, integer?
 M.stringify_data = function(fn, opts, fzf_field_index)
   assert(type(fn) == "function", "fn must be of type function")
   return M.stringify(function(cb, _, ...)
@@ -524,6 +512,48 @@ M.stringify_data = function(fn, opts, fzf_field_index)
     end
     cb(nil)
   end, { debug = opts.debug }, fzf_field_index)
+end
+
+-- Patched version of stringify_data
+-- Use both {q} and {+} as field indexes so we can update last query when
+-- executing the action, without this we lose the last query on "hide" as
+-- the process never terminates and `--print-query` isn't being printed
+-- When no entry selected (with {q} {+}), {+} will be forced expand to ''
+-- Use {n} to know if we really select an empty string, or there's just no selected
+---@param fn fun(items: string[], opts: table): string|string[]?
+---@param opts table
+---@param field_index string
+---@return string
+M.stringify_data2 = function(fn, opts, field_index)
+  local field_index0 = field_index
+  local did_override = false
+  if not field_index:match("{q} {n}$") then
+    field_index = field_index .. " {q} {n}"
+    did_override = true
+  end
+  -- replace the action with shell cmd proxy to the original action
+  return M.stringify_data(function(items, _, _)
+    local query, idx = items[#items - 1], items[#items]
+    FzfLua.config.resume_set("query", query, opts)
+    if did_override then
+      table.remove(items)
+      table.remove(items)
+    end
+    -- fix side effect of "{q} {+}": {+} is forced expanded to ""
+    -- only when field_index is empty (otherwise it can be complex/unpredictable)
+    -- {n} used to determine if "zero-selected && zero-match", then patch: "" -> nil
+    if #field_index0 == 0 then
+      -- When no item is matching (empty list or non-matching query)
+      -- both {n} and {+} are expanded to "".
+      -- NOTE1: older versions of fzf don't expand {n} to "" (without match)
+      -- in such case the (empty) items table will be in `items[2]` (#1833)
+      -- NOTE2: on Windows, no match {n} is expanded to '' (#1836)
+      local zero_matched = not tonumber(idx)
+      local zero_selected = #items == 0 or (#items == 1 and #items[1] == 0)
+      items = (zero_matched and zero_selected) and {} or items
+    end
+    fn(items, opts)
+  end, opts, field_index)
 end
 
 return M

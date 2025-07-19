@@ -320,8 +320,9 @@ local sel_to_qf = function(selected, opts, is_loclist)
       return a.filename < b.filename
     end
   end)
-  local title = string.format("[FzfLua] %s%s",
-    opts.__INFO and opts.__INFO.cmd .. ": " or "",
+
+  local cmd = utils.get_info().cmd
+  local title = string.format("[FzfLua] %s%s", cmd and cmd .. ": " or "",
     utils.resume_get("query", opts) or "")
   if is_loclist then
     vim.fn.setloclist(0, {}, " ", {

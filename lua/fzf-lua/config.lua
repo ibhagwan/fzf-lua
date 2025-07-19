@@ -154,6 +154,10 @@ function M.normalize_opts(opts, globals, __resume_key)
     opts = opts() or {}
   end
 
+  if opts._normalized then
+    return opts
+  end
+
   local profile = opts.profile or (function()
     if type(globals) == "string" then
       local picker_opts = M.globals[globals]
@@ -953,10 +957,6 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- nullify profile options
   M._profile_opts = nil
-
-  -- Save a copy of provider info in the opts, we will
-  -- later use it for better named quickfix lists (#776)
-  opts.__INFO = FzfLua.get_info()
 
   -- pid getter/setter, used by stringify to terminate previous pid
   opts.PidObject = utils.pid_object("__stringify_pid", opts)
