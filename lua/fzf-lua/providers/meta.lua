@@ -161,8 +161,8 @@ M.global = function(opts)
     opts.pickers = opts.pickers()
   end
 
-  -- Tells fzf_wrap to not start the fzf process
-  opts._start = false
+  opts._start = false    -- Tells fzf_wrap to not start the fzf process
+  opts._normalized = nil -- We need to "normalize" again with the picker opts
   local pickers = {}
   local opts_copy = vim.deepcopy(opts)
   for _, t in ipairs(opts.pickers) do
