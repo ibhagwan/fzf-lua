@@ -307,7 +307,8 @@ M.live_grep = function(opts)
     -- can be nil when called as fzf initial command
     local query = s[1] or ""
     opts.no_esc = nil
-    return get_grep_cmd(opts, query, true)
+    local cmd0 = get_grep_cmd(opts, query, true)
+    return core.can_transform(opts) and ("reload:" .. cmd0) or cmd0
   end, opts)
 end
 

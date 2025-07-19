@@ -167,6 +167,16 @@ M.fzf_exec = function(contents, opts)
   return M.fzf_wrap(cmd, opts, true)
 end
 
+---@param opts table
+---@return boolean
+M.can_transform = function(opts)
+  return opts.rg_glob
+      and not opts.multiprocess
+      and not opts.fn_transform
+      and not opts.fn_preprocess
+      and not opts.fn_postprocess
+end
+
 ---@param contents string|fun(query: string[]): string|string[]|function?
 ---@param opts? table
 ---@return thread?, string?, table?
@@ -188,6 +198,12 @@ M.fzf_live = function(contents, opts)
       contents = ("%s %s"):format(contents, M.fzf_query_placeholder)
     end
   end
+  local fzf_field_index = M.fzf_field_index(opts)
+  if type(contents) == "function" and M.can_transform(opts) then
+    local cmd = shell.stringify_data(contents, opts, fzf_field_index)
+    M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
+    return M.fzf_wrap(nil, opts, true)
+  end
   local cmd0 = contents ---@type string
   local func_contents = type(contents) == "function"
       and contents or function(args)
@@ -196,7 +212,6 @@ M.fzf_live = function(contents, opts)
         query = libuv.shellescape(query)
         return M.expand_query(cmd0, query)
       end
-  local fzf_field_index = M.fzf_field_index(opts)
   local mt = (opts.multiprocess and type(contents) == "string")
   local cmd = mt and shell.stringify_mt(contents, opts) or
       shell.stringify(func_contents, opts, fzf_field_index)
@@ -1134,11 +1149,20 @@ M.setup_fzf_live_flags = function(command, fzf_field_index, opts)
     if opts.silent_fail ~= false then
       reload_command = reload_command .. " || " .. utils.shell_nop()
     end
-    table.insert(opts._fzf_cli_args, "--bind="
-      .. libuv.shellescape(string.format("change:+reload:%s%s", no_query_condi, reload_command)))
-    if utils.has(opts, "fzf", { 0, 35 }) then
+    if M.can_transform(opts) then
       table.insert(opts._fzf_cli_args, "--bind="
-        .. libuv.shellescape(string.format("start:+reload:%s%s", no_query_condi, reload_command)))
+        .. libuv.shellescape(string.format("change:+transform:%s", reload_command)))
+      if utils.has(opts, "fzf", { 0, 35 }) then
+        table.insert(opts._fzf_cli_args, "--bind="
+          .. libuv.shellescape(string.format("start:+transform:%s", reload_command)))
+      end
+    else
+      table.insert(opts._fzf_cli_args, "--bind="
+        .. libuv.shellescape(string.format("change:+reload:%s%s", no_query_condi, reload_command)))
+      if utils.has(opts, "fzf", { 0, 35 }) then
+        table.insert(opts._fzf_cli_args, "--bind="
+          .. libuv.shellescape(string.format("start:+reload:%s%s", no_query_condi, reload_command)))
+      end
     end
   end
 end
