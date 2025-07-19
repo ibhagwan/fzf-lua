@@ -306,9 +306,9 @@ M.stringify_mt = function(cmd, opts)
   end
 end
 
+---Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
 ---@param contents table|function|string
 ---@param opts {}
----Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
 ---@param fzf_field_index string?
 ---@return string?, integer?
 M.stringify = function(contents, opts, fzf_field_index)
@@ -498,7 +498,7 @@ M.stringify = function(contents, opts, fzf_field_index)
   return cmd, id
 end
 
----@param fn fun(item: string[], fzf_lines: integer, fzf_columns, integer): string|string[]?
+---@param fn fun(items: string[], fzf_lines: integer, fzf_columns: integer): string|{ cmd: string|string[], env: table? }?
 ---@param opts table
 ---@param fzf_field_index string?
 ---@return string, integer?
@@ -511,6 +511,10 @@ M.stringify_cmd = function(fn, opts, fzf_field_index)
   }, fzf_field_index)
 end
 
+---@param fn fun(items: string[], fzf_lines: integer, fzf_columns: integer): string|string[]?
+---@param opts table
+---@param fzf_field_index string?
+---@return string, integer?
 M.stringify_data = function(fn, opts, fzf_field_index)
   assert(type(fn) == "function", "fn must be of type function")
   return M.stringify(function(cb, _, ...)
@@ -524,6 +528,48 @@ M.stringify_data = function(fn, opts, fzf_field_index)
     end
     cb(nil)
   end, { debug = opts.debug }, fzf_field_index)
+end
+
+-- Patched version of stringify_data
+-- Use both {q} and {+} as field indexes so we can update last query when
+-- executing the action, without this we lose the last query on "hide" as
+-- the process never terminates and `--print-query` isn't being printed
+-- When no entry selected (with {q} {+}), {+} will be forced expand to ''
+-- Use {n} to know if we really select an empty string, or there's just no selected
+---@param fn fun(items: string[], opts: table): string|string[]?
+---@param opts table
+---@param field_index string
+---@return string
+M.stringify_data2 = function(fn, opts, field_index)
+  local field_index0 = field_index
+  local did_override = false
+  if not field_index:match("{q} {n}$") then
+    field_index = field_index .. " {q} {n}"
+    did_override = true
+  end
+  -- replace the action with shell cmd proxy to the original action
+  return M.stringify_data(function(items, _, _)
+    local query, idx = items[#items - 1], items[#items]
+    FzfLua.config.resume_set("query", query, opts)
+    if did_override then
+      table.remove(items)
+      table.remove(items)
+    end
+    -- fix side effect of "{q} {+}": {+} is forced expanded to ""
+    -- only when field_index is empty (otherwise it can be complex/unpredictable)
+    -- {n} used to determine if "zero-selected && zero-match", then patch: "" -> nil
+    if #field_index0 == 0 then
+      -- When no item is matching (empty list or non-matching query)
+      -- both {n} and {+} are expanded to "".
+      -- NOTE1: older versions of fzf don't expand {n} to "" (without match)
+      -- in such case the (empty) items table will be in `items[2]` (#1833)
+      -- NOTE2: on Windows, no match {n} is expanded to '' (#1836)
+      local zero_matched = not tonumber(idx)
+      local zero_selected = #items == 0 or (#items == 1 and #items[1] == 0)
+      items = (zero_matched and zero_selected) and {} or items
+    end
+    fn(items, opts)
+  end, opts, field_index)
 end
 
 return M
