@@ -331,17 +331,6 @@ M.stringify = function(contents, opts, fzf_field_index)
     opts[k] = load_fn(opts[k]) or v
   end
 
-  if opts.fn_reload and type(contents) == "string" then
-    fzf_field_index = fzf_field_index or "{q}"
-    local cmd = contents
-    contents = function(args)
-      local query = args[1] or ""
-      query = (query:gsub("%%", "%%%%"))
-      query = libuv.shellescape(query)
-      return FzfLua.core.expand_query(cmd, query)
-    end
-  end
-
   assert(not opts.fn_reload or type(contents) == "function", "fn_reload must be of type function")
 
   local cmd, id = M.pipe_wrap_fn(function(pipe, ...)
