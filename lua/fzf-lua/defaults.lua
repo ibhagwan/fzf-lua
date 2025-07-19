@@ -365,7 +365,7 @@ M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files,
   cwd_prompt        = true,
   line_query        = true,
   pickers           = function()
-    local clients = utils.lsp_get_clients({ bufnr = FzfLua.core.CTX().bufnr })
+    local clients = utils.lsp_get_clients({ bufnr = utils.CTX().bufnr })
     local doc_sym_supported = vim.iter(clients):any(function(client)
       return client.supports_method("textDocument/documentSymbol")
     end)

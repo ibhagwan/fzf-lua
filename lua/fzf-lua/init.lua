@@ -301,24 +301,17 @@ local lazyloaded_modules = {
 for k, v in pairs(lazyloaded_modules) do
   local v1, v2 = v[1], v[2] -- avoid reference v (table) in a function
   M[k] = function(...)
-    M.set_info { cmd = k, mod = v1, fnc = v2 }
-    return require(v[1])[v[2]](...)
+    utils.set_info({ cmd = k, mod = v1, fnc = v2 })
+    return require(v1)[v2](...)
   end
 end
 
-M.get_info = function(filter)
-  if filter and filter.winobj and type(M.__INFO) == "table" then
-    M.__INFO.winobj = utils.fzf_winobj()
-  end
-  return M.__INFO
-end
+M.get_info = utils.get_info
 
-M.set_info = function(x)
-  M.__INFO = x
-end
+M.set_info = utils.set_info
 
 M.get_last_query = function()
-  return M.config.__resume_data and M.config.__resume_data.last_query
+  return utils.get_info().last_query
 end
 
 M.setup_fzfvim_cmds = function(...)
@@ -326,11 +319,11 @@ M.setup_fzfvim_cmds = function(...)
 end
 
 function M.hide()
-  return FzfLua.win.hide()
+  return M.win.hide()
 end
 
 function M.unhide()
-  return FzfLua.win.unhide()
+  return M.win.unhide()
 end
 
 -- export the defaults module and deref
@@ -361,7 +354,6 @@ M._excluded_meta = {
   "defaults",
   "_excluded_meta",
   "_excluded_metamap",
-  "__INFO",
   "get_info",
   "set_info",
   "get_last_query",

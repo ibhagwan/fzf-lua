@@ -133,14 +133,7 @@ function M.pipe_wrap_fn(fn, fzf_field_index, debug)
         return libuv.unescape_fzf(x, vim.g.fzf_lua_fzf_version)
       end, args[1])
     end
-    -- save selected item in main module's __INFO
-    pcall(function()
-      local module = require("fzf-lua")
-      if module then
-        module.__INFO = vim.tbl_deep_extend("force",
-          module.__INFO or {}, { selected = args[1][1] })
-      end
-    end)
+    utils.get_info().selected = args[1] and args[1][1] or nil
     uv.pipe_connect(pipe, pipe_path, function(err)
       if err then
         error(string.format("pipe_connect(%s) failed with error: %s", pipe_path, err))

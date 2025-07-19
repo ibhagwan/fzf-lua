@@ -1170,8 +1170,7 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
   self.closing = nil
   self._reuse = nil
   _self = nil
-  -- clear the main module picker __INFO
-  utils.reset_info()
+  utils.set_info({}) -- clear info
 end
 
 function FzfWin.win_leave()
