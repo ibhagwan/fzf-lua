@@ -147,16 +147,23 @@ end
 M.fzf_exec = function(contents, opts)
   opts = config.normalize_opts(opts or {}, {})
   if not opts then return end
+  if not contents then
+    local cmd = opts.cmd and shell.stringify_mt(opts.cmd, opts) or nil
+    return M.fzf_wrap(cmd, opts, true)
+  end
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
   end
+  -- stringify_mt: No register function id, the wrapped multiprocess
+  -- command is independent, most of it's options are serialized as strings and the
+  -- rest are read from the main instance config over RPC
+  local cmd = (opts.multiprocess and type(contents) == "string")
+      and shell.stringify_mt(contents, opts) or shell.stringify(contents, opts, nil)
   -- Contents sent to fzf can only be nil or a shell command (string)
   -- the API accepts both tables and functions which we "stringify"
   -- We also send string commands as stringify is also responsible
   -- for multiprocess wrapping of shell commands with processing
-  contents = contents and shell.stringify(contents, opts, nil) or nil
-  assert(contents == nil or type(contents) == "string", "contents must be of type string")
-  return M.fzf_wrap(contents, opts, true)
+  return M.fzf_wrap(cmd, opts, true)
 end
 
 ---@param contents string|fun(query: string[]): string|string[]|function?
@@ -180,12 +187,13 @@ M.fzf_live = function(contents, opts)
       contents = ("%s %s"):format(contents, M.fzf_query_placeholder)
     end
   end
-  local cmd = shell.stringify(contents, opts, nil)
+  local cmd = (opts.multiprocess and type(contents) == "string")
+      and shell.stringify_mt(contents, opts) or shell.stringify(contents, opts, nil)
   local fzf_field_index = M.fzf_field_index(opts)
-  cmd = (opts.multiprocess or type(contents) ~= "string") and M.expand_query(cmd, fzf_field_index) or
-      cmd
-  contents, opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
-  return M.fzf_wrap(contents, opts, true)
+  cmd = (opts.multiprocess or type(contents) ~= "string")
+      and M.expand_query(cmd, fzf_field_index) or cmd
+  cmd, opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
+  return M.fzf_wrap(cmd, opts, true)
 end
 
 M.fzf_resume = function(opts)
@@ -202,14 +210,14 @@ M.fzf_resume = function(opts)
   M.fzf_wrap(config.__resume_data.contents, config.__resume_data.opts)
 end
 
----@param contents string?
+---@param cmd string?
 ---@param opts table
 ---@param convert_actions boolean?
 ---@return thread, string, table
-M.fzf_wrap = function(contents, opts, convert_actions)
+M.fzf_wrap = function(cmd, opts, convert_actions)
   opts = opts or {}
   if convert_actions and type(opts.actions) == "table" then
-    opts = M.convert_reload_actions(contents, opts)
+    opts = M.convert_reload_actions(cmd, opts)
     opts = M.convert_exec_silent_actions(opts)
   end
   local _co
@@ -217,7 +225,7 @@ M.fzf_wrap = function(contents, opts, convert_actions)
     _co = coroutine.running()
     if type(opts.cb_co) == "function" then opts.cb_co(_co) end
     -- Default fzf exit callback acts upon the selected items
-    local selected = M.fzf(contents, opts)
+    local selected = M.fzf(cmd, opts)
     local fn_selected = opts.fn_selected or actions.act
     if not fn_selected then return end
     -- errors thrown here gets silenced possibly
@@ -235,7 +243,7 @@ M.fzf_wrap = function(contents, opts, convert_actions)
   if opts._start ~= false then
     wrapped()
   end
-  return _co, contents, opts
+  return _co, cmd, opts
 end
 
 ---@param contents string?
@@ -1033,7 +1041,7 @@ end
 ---@param command string
 ---@param fzf_field_index string
 ---@param opts table
----@return string?, table
+---@return string, table
 M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
   -- query cannot be 'nil'
   opts.query = opts.query or ""
