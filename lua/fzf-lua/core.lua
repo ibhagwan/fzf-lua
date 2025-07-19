@@ -180,9 +180,10 @@ M.fzf_live = function(contents, opts)
       contents = ("%s %s"):format(contents, M.fzf_query_placeholder)
     end
   end
-  opts.fn_reload = shell.stringify(contents, opts, nil)
+  local cmd = shell.stringify(contents, opts, nil)
   local fzf_field_index = M.fzf_field_index(opts)
-  local cmd = M.expand_query(opts.fn_reload, fzf_field_index)
+  cmd = (opts.multiprocess or type(contents) ~= "string") and M.expand_query(cmd, fzf_field_index) or
+      cmd
   contents, opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
   return M.fzf_wrap(contents, opts, true)
 end
