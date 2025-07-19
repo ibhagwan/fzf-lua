@@ -142,7 +142,7 @@ end
 -- Main API, see:
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
 ---@param contents content
----@param opts? {fn_reload: string|function, fn_transform: function, __fzf_init_cmd: string, _normalized: boolean}
+---@param opts? {fn_transform: function}
 ---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
   opts = config.normalize_opts(opts or {}, {})
@@ -157,8 +157,9 @@ M.fzf_exec = function(contents, opts)
   -- stringify_mt: No register function id, the wrapped multiprocess
   -- command is independent, most of it's options are serialized as strings and the
   -- rest are read from the main instance config over RPC
-  local cmd = (opts.multiprocess and type(contents) == "string")
-      and shell.stringify_mt(contents, opts) or shell.stringify(contents, opts, nil)
+  local mt = (opts.multiprocess and type(contents) == "string")
+  local cmd = mt and shell.stringify_mt(contents, opts)
+      or shell.stringify(contents, opts, nil)
   -- Contents sent to fzf can only be nil or a shell command (string)
   -- the API accepts both tables and functions which we "stringify"
   -- We also send string commands as stringify is also responsible
@@ -187,13 +188,21 @@ M.fzf_live = function(contents, opts)
       contents = ("%s %s"):format(contents, M.fzf_query_placeholder)
     end
   end
-  local cmd = (opts.multiprocess and type(contents) == "string")
-      and shell.stringify_mt(contents, opts) or shell.stringify(contents, opts, nil)
+  local cmd0 = contents ---@type string
+  local func_contents = type(contents) == "function"
+      and contents or function(args)
+        local query = args[1] or ""
+        query = (query:gsub("%%", "%%%%"))
+        query = libuv.shellescape(query)
+        return M.expand_query(cmd0, query)
+      end
   local fzf_field_index = M.fzf_field_index(opts)
-  cmd = (opts.multiprocess or type(contents) ~= "string")
-      and M.expand_query(cmd, fzf_field_index) or cmd
-  cmd, opts = M.setup_fzf_interactive_flags(cmd, fzf_field_index, opts)
-  return M.fzf_wrap(cmd, opts, true)
+  local mt = (opts.multiprocess and type(contents) == "string")
+  local cmd = mt and shell.stringify_mt(contents, opts) or
+      shell.stringify(func_contents, opts, fzf_field_index)
+  cmd = mt and M.expand_query(cmd, fzf_field_index) or cmd
+  M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
+  return M.fzf_wrap(nil, opts, true)
 end
 
 M.fzf_resume = function(opts)
@@ -1055,8 +1064,7 @@ end
 ---@param command string
 ---@param fzf_field_index string
 ---@param opts table
----@return string, table
-M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
+M.setup_fzf_live_flags = function(command, fzf_field_index, opts)
   -- query cannot be 'nil'
   opts.query = opts.query or ""
 
@@ -1133,14 +1141,12 @@ M.setup_fzf_interactive_flags = function(command, fzf_field_index, opts)
         .. libuv.shellescape(string.format("start:+reload:%s%s", no_query_condi, reload_command)))
     end
   end
-
-  return utils.shell_nop(), opts
 end
 
 -- query placeholder for "live" queries
 M.fzf_query_placeholder = "<query>"
 
----@param opts {field_index: boolean, _is_skim: boolean}
+---@param opts { field_index?: boolean, _is_skim?: boolean }
 ---@return string
 M.fzf_field_index = function(opts)
   -- fzf already adds single quotes around the placeholder when expanding.
