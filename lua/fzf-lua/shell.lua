@@ -346,7 +346,9 @@ M.stringify = function(contents, opts, fzf_field_index)
     fzf_field_index = fzf_field_index or "{q}"
     local cmd = contents
     contents = function(args)
-      local query = libuv.shellescape(args[1] or "")
+      local query = args[1] or ""
+      query = (query:gsub("%%", "%%%%"))
+      query = libuv.shellescape(query)
       return FzfLua.core.expand_query(cmd, query)
     end
   end
