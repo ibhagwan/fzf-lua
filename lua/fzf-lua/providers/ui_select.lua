@@ -152,6 +152,7 @@ M.ui_select = function(items, ui_opts, on_choice)
   local opts_merge_strategy = "keep"
   if not _OPTS_ONCE and ui_opts.kind == "codeaction" then
     _OPTS_ONCE = config.normalize_opts({}, "lsp.code_actions")
+    if not _OPTS_ONCE then return end
     -- auto-detected code actions, prioritize the ui_select
     -- options over `lsp.code_actions` (#999)
     opts_merge_strategy = "force"
