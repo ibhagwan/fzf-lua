@@ -164,11 +164,10 @@ end
 
 ---@param cmd string
 ---@param opts table
----@return string?
+---@return string
 M.stringify_mt = function(cmd, opts)
-  assert(type(opts) == "table", "opts must be supplied")
-  assert(cmd or opts and opts.cmd, "cmd must be supplied")
-  opts.cmd = cmd or opts and opts.cmd
+  assert(opts.multiprocess, "multiprocess must be set to true/1")
+  opts.cmd = cmd or opts.cmd
   ---@param o table<string, unknown>
   ---@return table
   local filter_opts = function(o)
@@ -250,7 +249,7 @@ M.stringify_mt = function(cmd, opts)
     -- to keep `setup_fzf_interactive_flags::no_query_condi` in the command
     opts.argv_expr = nil
     return opts.cmd
-  elseif opts.multiprocess then
+  else -- if opts.multiprocess then
     for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
       local v = opts[k]
       if type(v) == "function" and utils.__HAS_NVIM_010 then
@@ -303,10 +302,8 @@ end
 ---@param contents table|function|string
 ---@param opts {}
 ---@param fzf_field_index string?
----@return string?, integer?
+---@return string, integer?
 M.stringify = function(contents, opts, fzf_field_index)
-  assert(contents, "must supply contents")
-
   -- TODO: should we let this assert?
   -- are there any conditions in which stringify is called subsequently?
   if opts.__stringified then return contents end
@@ -314,14 +311,6 @@ M.stringify = function(contents, opts, fzf_field_index)
   -- Mark opts as already "stringified"
   assert(not opts.__stringified, "twice stringified")
   opts.__stringified = true
-
-  -- No need to register function id (2nd `nil` in tuple), the wrapped multiprocess
-  -- command is independent, most of it's options are serialized as strings and the
-  -- rest are read from the main instance config over RPC
-  if opts.multiprocess and type(contents) == "string" then
-    local cmd = M.stringify_mt(contents, opts)
-    if cmd then return cmd, nil end
-  end
 
   ---@param fn_str string
   ---@return function?
