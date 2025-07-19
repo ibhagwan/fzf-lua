@@ -814,9 +814,9 @@ end
 function M.fzf_exit()
   -- Usually called from the LSP module to exit the interface on "async" mode
   -- when no results are found or when `jump1` is used, when the latter is used
-  -- in "sync" mode we also need to make sure core.__CTX is cleared or we'll
+  -- in "sync" mode we also need to make sure __CTX is cleared or we'll
   -- have the wrong cursor coordinates (#928)
-  require("fzf-lua").core.__CTX = nil
+  M.clear_CTX()
   require("fzf-lua").win.win_leave()
 end
 
@@ -824,12 +824,30 @@ function M.fzf_winobj()
   return require("fzf-lua").win.__SELF()
 end
 
-function M.CTX(...)
-  return require("fzf-lua").core.CTX(...)
+---@param opts? { includeBuflist?: boolean, buf?: integer|string, bufnr?: integer|string }
+---@return fzf-lua.Ctx
+function M.CTX(opts)
+  return require("fzf-lua.ctx").refresh(opts)
 end
 
+---@return fzf-lua.Ctx?
 function M.__CTX()
-  return require("fzf-lua").core.__CTX
+  return require("fzf-lua.ctx").get()
+end
+
+function M.clear_CTX()
+  require("fzf-lua.ctx").reset()
+end
+
+---@param filter table?
+---@return fzf-lua.Info
+function M.get_info(filter)
+  return require("fzf-lua.ctx").info(filter)
+end
+
+---@param x fzf-lua.Info
+function M.set_info(x)
+  require("fzf-lua.ctx").set_info(x)
 end
 
 function M.resume_get(what, opts)
@@ -838,10 +856,6 @@ end
 
 M.resume_set = function(what, val, opts)
   return require("fzf-lua").config.resume_set(what, val, opts)
-end
-
-function M.reset_info()
-  pcall(require("fzf-lua").set_info, nil)
 end
 
 function M.setup_highlights(override)

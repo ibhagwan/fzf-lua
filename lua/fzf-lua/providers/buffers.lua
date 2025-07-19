@@ -20,7 +20,7 @@ local filter_buffers = function(opts, unfiltered)
 
   local curtab_bufnrs = {}
   if opts.current_tab_only then
-    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(core.CTX().tabh)) do
+    for _, w in ipairs(vim.api.nvim_tabpage_list_wins(utils.CTX().tabh)) do
       local b = vim.api.nvim_win_get_buf(w)
       curtab_bufnrs[b] = true
     end
@@ -36,11 +36,11 @@ local filter_buffers = function(opts, unfiltered)
         local buf_valid = vim.api.nvim_buf_is_valid(b)
         if not buf_valid then
           excluded[b] = true
-        elseif not opts.show_unlisted and b ~= core.CTX().bufnr and vim.fn.buflisted(b) ~= 1 then
+        elseif not opts.show_unlisted and b ~= utils.CTX().bufnr and vim.fn.buflisted(b) ~= 1 then
           excluded[b] = true
         elseif not opts.show_unloaded and not vim.api.nvim_buf_is_loaded(b) then
           excluded[b] = true
-        elseif opts.ignore_current_buffer and b == core.CTX().bufnr then
+        elseif opts.ignore_current_buffer and b == utils.CTX().bufnr then
           excluded[b] = true
         elseif opts.current_tab_only and not curtab_bufnrs[b] then
           excluded[b] = true
@@ -71,8 +71,8 @@ end
 local getbuf = function(buf)
   return {
     bufnr = buf,
-    flag = (buf == core.CTX().bufnr and "%")
-        or (buf == core.CTX().alt_bufnr and "#") or " ",
+    flag = (buf == utils.CTX().bufnr and "%")
+        or (buf == utils.CTX().alt_bufnr and "#") or " ",
     info = utils.getbufinfo(buf),
     readonly = vim.bo[buf].readonly
   }
@@ -189,7 +189,7 @@ M.buffers = function(opts)
   if not opts then return end
 
   local contents = function(cb)
-    local filtered, _, max_bufnr = filter_buffers(opts, core.CTX().buflist)
+    local filtered, _, max_bufnr = filter_buffers(opts, utils.CTX().buflist)
 
     if next(filtered) then
       local buffers = populate_buffer_entries(opts, filtered)
@@ -247,7 +247,7 @@ M.buffer_lines = function(opts)
       local co = coroutine.running()
 
       local buffers = filter_buffers(opts,
-        opts.current_buffer_only and { core.CTX().bufnr } or core.CTX().buflist)
+        opts.current_buffer_only and { utils.CTX().bufnr } or utils.CTX().buflist)
 
       if opts.sort_lastused and utils.tbl_count(buffers) > 1 then
         table.sort(buffers, function(a, b)
@@ -316,7 +316,7 @@ M.buffer_lines = function(opts)
           lines = end_line - start_line + 1
           if opts.start == "cursor" then
             -- start display from current line and wrap from bottom (#822)
-            offset = core.CTX().cursor[1] - start_line
+            offset = utils.CTX().cursor[1] - start_line
           end
         end
 
@@ -359,7 +359,7 @@ M.tabs = function(opts)
     local msg = default_msg and default_msg(opts[k]) or opts[k]
     if type(opts[k]) == "table" then
       if type(opts[k][1]) == "function" then
-        msg = opts[k][1](t, t == core.CTX().tabnr)
+        msg = opts[k][1](t, t == utils.CTX().tabnr)
       elseif type(opts[k][1]) == "string" then
         msg = default_msg(opts[k][1])
       else
@@ -371,7 +371,7 @@ M.tabs = function(opts)
         end
       end
     elseif type(opts[k]) == "function" then
-      msg = opts[k](t, t == core.CTX().tabnr)
+      msg = opts[k](t, t == utils.CTX().tabnr)
     end
     return msg, hl
   end
@@ -387,7 +387,7 @@ M.tabs = function(opts)
             local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
             if b then
               pos = pos + 1
-              if tabnr == core.CTX().tabnr and w == core.CTX().winid then
+              if tabnr == utils.CTX().tabnr and w == utils.CTX().winid then
                 return string.format("pos(%d)", pos)
               end
             end
@@ -410,7 +410,7 @@ M.tabs = function(opts)
 
     for tabnr, tabh in ipairs(vim.api.nvim_list_tabpages()) do
       (function()
-        if opts.current_tab_only and tabh ~= core.CTX().tabh then return end
+        if opts.current_tab_only and tabh ~= utils.CTX().tabh then return end
 
         local tab_cwd = vim.fn.getcwd(-1, tabnr)
         local tab_cwd_tilde = path.HOME_to_tilde(tab_cwd)
@@ -433,11 +433,11 @@ M.tabs = function(opts)
             tabh,
             utils.nbsp,
             fn_title_hl(title),
-            (tabh == core.CTX().tabh) and fn_marker_hl(marker) or ""))
+            (tabh == utils.CTX().tabh) and fn_marker_hl(marker) or ""))
         end
 
         for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabh)) do
-          if tabh ~= core.CTX().tabh or core.CTX().curtab_wins[tostring(w)] then
+          if tabh ~= utils.CTX().tabh or utils.CTX().curtab_wins[tostring(w)] then
             local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
             if b then
               local prefix = string.format("%s:%d:%d:%d)%s%s%s",
@@ -643,7 +643,7 @@ M.spellcheck = function(opts)
 
       if opts.start == "cursor" then
         -- start display from current line and wrap from bottom
-        offset = core.CTX().cursor[1] - start_line
+        offset = utils.CTX().cursor[1] - start_line
       end
 
       for i = 1, lines do

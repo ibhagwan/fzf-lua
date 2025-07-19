@@ -247,8 +247,8 @@ M.marks = function(opts)
   if not opts then return end
 
   local contents = function(cb)
-    local win = core.CTX().winid
-    local buf = core.CTX().bufnr
+    local win = utils.CTX().winid
+    local buf = utils.CTX().bufnr
     local marks = vim.api.nvim_win_call(win, function()
       return vim.api.nvim_buf_call(buf, function() return vim.fn.execute("marks") end)
     end)

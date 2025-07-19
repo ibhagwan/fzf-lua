@@ -242,64 +242,6 @@ M.fzf_wrap = function(contents, opts, convert_actions)
   return _co, contents, opts
 end
 
--- conditionally update the context if fzf-lua
--- interface isn't open
-M.CTX = function(opts)
-  opts = opts or {}
-  -- save caller win/buf context, ignore when fzf
-  -- is already open (actions.sym_lsym|grep_lgrep)
-  local winobj = utils.fzf_winobj()
-  if not M.__CTX
-      -- when called from the LSP module in "sync" mode when no results are found
-      -- the fzf window won't open (e.g. "No references found") and the context is
-      -- never cleared. The below condition validates the source window when the
-      -- UI is not open (#907)
-      or (not winobj and M.__CTX.bufnr ~= vim.api.nvim_get_current_buf())
-      -- we should never get here when fzf process is hidden unless the user requested
-      -- not to resume or a different picker, i.e. hide files and open buffers
-      or winobj and winobj:hidden()
-  then
-    M.__CTX = {
-      mode = vim.api.nvim_get_mode().mode,
-      bufnr = vim.api.nvim_get_current_buf(),
-      bname = vim.api.nvim_buf_get_name(0),
-      winid = vim.api.nvim_get_current_win(),
-      alt_bufnr = vim.fn.bufnr("#"),
-      tabnr = vim.fn.tabpagenr(),
-      tabh = vim.api.nvim_win_get_tabpage(0),
-      cursor = vim.api.nvim_win_get_cursor(0),
-      line = vim.api.nvim_get_current_line(),
-      curtab_wins = (function()
-        local ret = {}
-        local wins = vim.api.nvim_tabpage_list_wins(0)
-        for _, w in ipairs(wins) do
-          ret[tostring(w)] = true
-        end
-        return ret
-      end)()
-    }
-  end
-  -- perhaps a min impact optimization but since only
-  -- buffers/tabs use these we only include the current
-  -- list of buffers when requested
-  if opts.includeBuflist and not M.__CTX.buflist then
-    -- also add a map for faster lookups than `utils.tbl_contains`
-    -- TODO: is it really faster since we must use string keys?
-    M.__CTX.bufmap = {}
-    M.__CTX.buflist = vim.api.nvim_list_bufs()
-    for _, b in ipairs(M.__CTX.buflist) do
-      M.__CTX.bufmap[tostring(b)] = true
-    end
-  end
-  -- custom bufnr from caller? (#1757)
-  local bufnr = tonumber(opts.buf) or tonumber(opts.bufnr)
-  if bufnr then
-    M.__CTX.bufnr = bufnr
-    M.__CTX.bname = vim.api.nvim_buf_get_name(bufnr)
-  end
-  return M.__CTX
-end
-
 ---@param contents string?
 ---@param opts {}?
 ---@return string[]?
@@ -345,7 +287,7 @@ M.fzf = function(contents, opts)
 
   -- update context and save a copy in options (for actions)
   -- call before creating the window or fzf_winobj is not nil
-  opts.__CTX = M.CTX(opts._ctx)
+  opts.__CTX = utils.CTX(opts._ctx)
 
   -- setup the fzf window and preview layout
   local fzf_win = win:new(opts)
@@ -431,7 +373,7 @@ M.fzf = function(contents, opts)
     -- only clear context if we didn't open a new interface, for example, opening
     -- files, switching to normal with <c-\><c-n> and opening buffers (#1810)
     if utils.fzf_winobj() == nil then
-      M.__CTX = nil
+      utils.clear_CTX()
     end
   end
   return selected

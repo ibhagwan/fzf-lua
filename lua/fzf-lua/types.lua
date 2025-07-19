@@ -4,6 +4,7 @@ error("Cannot require a meta file")
 _G.FzfLua = require("fzf-lua")
 
 ---@class fzf-lua.Config
+---@field __CTX fzf-lua.Ctx?
 ---@field [string] any
 
 ---@class fzf-lua.previewer

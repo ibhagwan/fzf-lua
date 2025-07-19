@@ -9,7 +9,7 @@ local make_entry = require "fzf-lua.make_entry"
 local M = {}
 
 local function check_capabilities(handler, silent)
-  local clients = utils.lsp_get_clients({ bufnr = core.CTX().bufnr })
+  local clients = utils.lsp_get_clients({ bufnr = utils.CTX().bufnr })
 
   -- return the number of clients supporting the feature
   -- so the async version knows how many callbacks to wait for
@@ -32,7 +32,7 @@ local function check_capabilities(handler, silent)
   end
 
   -- UI won't open, reset the CTX
-  core.__CTX = nil
+  utils.clear_CTX()
 
   if utils.tbl_isempty(clients) then
     if not silent then
@@ -112,8 +112,8 @@ local function location_handler(opts, cb, _, result, ctx, _)
     result = _result
   end
   if opts.ignore_current_line then
-    local uri = vim.uri_from_bufnr(core.CTX().bufnr)
-    local cursor_line = core.CTX().cursor[1] - 1
+    local uri = vim.uri_from_bufnr(utils.CTX().bufnr)
+    local cursor_line = utils.CTX().cursor[1] - 1
     result = vim.tbl_filter(function(l)
       if (l.uri
             and l.uri == uri
@@ -137,10 +137,10 @@ local function location_handler(opts, cb, _, result, ctx, _)
   result = vim.tbl_filter(function(x)
     local item = vim.lsp.util.locations_to_items({ x }, encoding)[1]
     if (opts.cwd_only and not path.is_relative_to(item.filename, opts.cwd)) or
-        (opts._regex_filter_fn and not opts._regex_filter_fn(item, core.CTX())) then
+        (opts._regex_filter_fn and not opts._regex_filter_fn(item, utils.CTX())) then
       return false
     end
-    if opts.current_buffer_only and not path.equals(core.CTX().bname, item.filename) then
+    if opts.current_buffer_only and not path.equals(utils.CTX().bname, item.filename) then
       return false
     end
     local entry = make_entry.lcol(item, opts)
@@ -220,18 +220,18 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
   result = utils.tbl_islist(result) and result or { result }
   local items
   if opts.child_prefix then
-    items = symbols_to_items(result, core.CTX().bufnr,
+    items = symbols_to_items(result, utils.CTX().bufnr,
       opts.child_prefix == true and string.rep(" ", 2) or opts.child_prefix)
   else
     local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
-    items = vim.lsp.util.symbols_to_items(result, core.CTX().bufnr, encoding)
+    items = vim.lsp.util.symbols_to_items(result, utils.CTX().bufnr, encoding)
   end
   if opts.regex_filter and opts._regex_filter_fn == nil then
     opts._regex_filter_fn = regex_filter_fn(opts.regex_filter)
   end
   for _, entry in ipairs(items) do
-    if (not opts.current_buffer_only or core.CTX().bname == entry.filename) and
-        (not opts._regex_filter_fn or opts._regex_filter_fn(entry, core.CTX())) then
+    if (not opts.current_buffer_only or utils.CTX().bname == entry.filename) and
+        (not opts._regex_filter_fn or opts._regex_filter_fn(entry, utils.CTX())) then
       local mbicon_align = 0
       if opts.fn_reload and type(opts.query) == "string" and #opts.query > 0 then
         -- highlight exact matches with `live_workspace_symbols` (#1028)
@@ -371,7 +371,7 @@ local function gen_lsp_contents(opts)
     ---@param client vim.lsp.Client
     ---@return table?
     lsp_params = function(client)
-      local params = vim.lsp.util.make_position_params(core.CTX().winid,
+      local params = vim.lsp.util.make_position_params(utils.CTX().winid,
         -- nvim 0.11 requires offset_encoding param, `client` is first arg of called func
         -- https://github.com/neovim/neovim/commit/629483e24eed3f2c07e55e0540c553361e0345a2
         client and client.offset_encoding or nil)
@@ -393,7 +393,7 @@ local function gen_lsp_contents(opts)
     if type(opts.async_or_timeout) == "number" then
       timeout = opts.async_or_timeout
     end
-    local lsp_results, err = vim.lsp.buf_request_sync(core.CTX().bufnr,
+    local lsp_results, err = vim.lsp.buf_request_sync(utils.CTX().bufnr,
       lsp_handler.method, lsp_params, timeout)
     if err then
       utils.err(string.format("Error executing '%s': %s", lsp_handler.method, err))
@@ -478,7 +478,7 @@ local function gen_lsp_contents(opts)
         local async_buf_request = function()
           -- save cancel all fnref so we can cancel all requests
           -- when using `live_ws_symbols`
-          _, opts._cancel_all = vim.lsp.buf_request(core.CTX().bufnr,
+          _, opts._cancel_all = vim.lsp.buf_request(utils.CTX().bufnr,
             lsp_handler.method, lsp_params,
             function(err, result, context, lspcfg)
               -- Increment client callback counter
@@ -554,9 +554,9 @@ end
 local function gen_lsp_contents_call_hierarchy(opts)
   local lsp_params = opts.lsp_params
       ---@diagnostic disable-next-line: missing-parameter
-      or not utils.__HAS_NVIM_011 and vim.lsp.util.make_position_params(core.CTX().winid)
+      or not utils.__HAS_NVIM_011 and vim.lsp.util.make_position_params(utils.CTX().winid)
       or function(client)
-        return vim.lsp.util.make_position_params(core.CTX().winid, client.offset_encoding)
+        return vim.lsp.util.make_position_params(utils.CTX().winid, client.offset_encoding)
       end
   local res, err = vim.lsp.buf_request_sync(0, opts.lsp_handler.prep, lsp_params, 2000)
   if err then
@@ -603,7 +603,7 @@ local function fzf_lsp_locations(opts, fn_contents)
   opts = core.set_fzf_field_index(opts)
   opts = fn_contents(opts)
   if not opts or not opts.__contents then
-    core.__CTX = nil
+    utils.clear_CTX()
     return
   end
   opts = core.set_header(opts, opts.headers or { "cwd", "regex_filter" })
@@ -680,7 +680,7 @@ M.finder = function(opts)
   end
   if #contents == 0 then
     utils.info("LSP: no locations found")
-    core.__CTX = nil
+    utils.clear_CTX()
     return
   end
   opts = core.set_header(opts, opts.headers or { "cwd", "regex_filter" })
@@ -746,7 +746,7 @@ M.document_symbols = function(opts)
   end
   opts = gen_lsp_contents(opts)
   if not opts.__contents then
-    core.__CTX = nil
+    utils.clear_CTX()
     return
   end
   return core.fzf_exec(opts.__contents, opts)
@@ -763,7 +763,7 @@ M.workspace_symbols = function(opts)
   opts = core.set_fzf_field_index(opts)
   opts = gen_lsp_contents(opts)
   if not opts.__contents then
-    core.__CTX = nil
+    utils.clear_CTX()
     return
   end
   if utils.has(opts, "fzf") and not opts.prompt and opts.lsp_query and #opts.lsp_query > 0 then
