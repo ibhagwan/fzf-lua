@@ -218,7 +218,6 @@ end
 
 M.blines = function(opts)
   opts = config.normalize_opts(opts, "blines")
-  -- TODO: remove this guard
   if not opts then return end
   opts.current_buffer_only = true
   if utils.mode_is_visual() then

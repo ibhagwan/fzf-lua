@@ -145,10 +145,8 @@ end
 ---@param opts? {fn_reload: string|function, fn_transform: function, __fzf_init_cmd: string, _normalized: boolean}
 ---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
-  if not opts or not opts._normalized then
-    opts = config.normalize_opts(opts or {}, {})
-    if not opts then return end
-  end
+  opts = config.normalize_opts(opts or {}, {})
+  if not opts then return end
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
   end
@@ -165,11 +163,8 @@ end
 ---@param opts? table
 ---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
-  assert(contents)
-  if not opts or not opts._normalized then
-    opts = config.normalize_opts(opts or {}, {})
-    if not opts then return end
-  end
+  opts = config.normalize_opts(opts or {}, {})
+  if not opts then return end
   opts.fn_reload = contents
   -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
   -- each keypress reloads fzf's input usually based on the typed query
@@ -253,10 +248,8 @@ M.fzf = function(contents, opts)
     return
   end
   -- normalize with globals if not already normalized
-  if not opts or not opts._normalized then
-    opts = config.normalize_opts(opts or {}, {})
-    if not opts then return end
-  end
+  opts = config.normalize_opts(opts or {}, {})
+  if not opts then return end
   -- Store contents for unhide
   opts._contents = contents
   -- flag used to print the query on stdout line 1

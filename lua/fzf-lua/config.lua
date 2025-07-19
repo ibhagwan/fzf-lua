@@ -154,6 +154,10 @@ function M.normalize_opts(opts, globals, __resume_key)
     opts = opts() or {}
   end
 
+  if opts._normalized then
+    return opts
+  end
+
   local profile = opts.profile or (function()
     if type(globals) == "string" then
       local picker_opts = M.globals[globals]
