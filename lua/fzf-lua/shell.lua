@@ -5,6 +5,9 @@ local libuv = require "fzf-lua.libuv"
 local base64 = require "fzf-lua.lib.base64"
 local serpent = require "fzf-lua.lib.serpent"
 
+-- path to current file
+local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
+
 ---@class fzf-lua.lru
 ---@field max_size integer
 ---@field max_id integer
@@ -284,7 +287,7 @@ M.stringify_mt = function(cmd, opts)
         opts.fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]]
       end
     end
-    local spawn_cmd = libuv.wrap_spawn_stdio(
+    local spawn_cmd = M.wrap_spawn_stdio(
       serialize(filter_opts(opts)),
       serialize(opts.fn_transform or "nil"),
       serialize(opts.fn_preprocess or "nil"),
@@ -543,6 +546,23 @@ M.stringify_data2 = function(fn, opts, field_index)
     end
     fn(items, opts)
   end, opts, field_index)
+end
+
+---@param opts string
+---@param fn_transform string
+---@param fn_preprocess string
+---@param fn_postprocess string
+---@return string
+M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess, fn_postprocess)
+  local is_win = utils.__IS_WINDOWS
+  local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
+  local cmd_str = ("%s -u NONE -l %s %s"):format(
+    libuv.shellescape(is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
+    libuv.shellescape(vim.fn.fnamemodify(is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") ..
+      "/spawn.lua"),
+    libuv.shellescape(("return %s,%s,%s,%s"):format(opts, fn_transform, fn_preprocess, fn_postprocess))
+  )
+  return cmd_str
 end
 
 return M

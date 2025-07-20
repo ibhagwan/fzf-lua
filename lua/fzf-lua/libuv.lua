@@ -4,16 +4,13 @@ local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 
 local M = {}
 
--- path to current file
-local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
-
 local base64 = require("fzf-lua.lib.base64")
 local serpent = require("fzf-lua.lib.serpent")
 
 ---@param pid integer
 ---@param signal integer|string?
 ---@return boolean
-local function process_kill(pid, signal)
+M.process_kill = function(pid, signal)
   if not pid or not tonumber(pid) then return false end
   if type(uv.os_getpriority(pid)) == "number" then
     uv.kill(pid, signal or 9)
@@ -22,8 +19,6 @@ local function process_kill(pid, signal)
   return false
 end
 
-M.process_kill = process_kill
-
 local function coroutine_callback(fn)
   local co = coroutine.running()
   local callback = function(...)
@@ -31,7 +26,7 @@ local function coroutine_callback(fn)
       coroutine.resume(co, ...)
     else
       local pid = unpack({ ... })
-      process_kill(pid)
+      M.process_kill(pid)
     end
   end
   fn(callback)
@@ -783,24 +778,6 @@ M.expand = function(s)
     s = s:gsub([[\]], [[\\]])
   end
   return vim.fn.expand(s)
-end
-
----@param opts string
----@param fn_transform string?
----@param fn_preprocess string?
----@param fn_postprocess string?
----@return string
-M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess, fn_postprocess)
-  assert(opts and type(opts) == "string")
-  assert(not fn_transform or type(fn_transform) == "string")
-  local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
-  local cmd_str = ("%s -u NONE -l %s %s"):format(
-    M.shellescape(_is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
-    M.shellescape(vim.fn.fnamemodify(_is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") ..
-      "/spawn.lua"),
-    M.shellescape(("return %s,%s,%s,%s"):format(opts, fn_transform, fn_preprocess, fn_postprocess))
-  )
-  return cmd_str
 end
 
 return M
