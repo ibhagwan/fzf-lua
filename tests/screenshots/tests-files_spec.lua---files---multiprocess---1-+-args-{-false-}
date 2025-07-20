@@ -2,11 +2,11 @@
 01|                                                                
 02|~                                                               
 03|~      ╭───────────────────── Files ─────────────────────╮      
-04|~      │>                                    134/134 (0) │      
+04|~      │>                                      83/83 (0) │      
 05|~      │──────────────────────────────────────────────── │      
-06|~      │▌ [DEBUG] [st] rg --files --sort=path           ││      
-07|~      │  LICENSE                                        │      
-08|~      │  Makefile                                       │      
+06|~      │▌ [DEBUG] [st] rg --files --sort=path -g !test··││      
+07|~      │  LICENSE                                       ││      
+08|~      │  Makefile                                      ││      
 09|~      │  OPTIONS.md                                     │      
 10|~      │  README-Win.md                                  │      
 11|~      │  README.md                                      │      

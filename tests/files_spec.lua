@@ -32,7 +32,7 @@ T["files"]["close|abort"] = new_set({ parametrize = { { "<esc>" }, { "<c-c>" } }
       previewer = false,
       cwd_prompt = false,
       multiprocess = true,
-      cmd = "rg --files --sort=path",
+      cmd = "rg --files --sort=path -g !tests/**",
     })
   end,
 })
@@ -47,7 +47,7 @@ T["files"]["multiprocess"] = new_set({ parametrize = { { false }, { true } } }, 
       previewer = false,
       cwd_prompt = false,
       multiprocess = multiprocess,
-      cmd = "rg --files --sort=path",
+      cmd = "rg --files --sort=path -g !tests/**",
     })
   end,
 })
@@ -66,12 +66,15 @@ T["files"]["previewer"]["builtin"] = new_set({ parametrize = { { "ci" }, { "buil
     end
     helpers.FzfLua.files(child, {
       __expect_lines = true,
+      __screen_opts = helpers.IS_WIN()
+          -- Ignore debug command due to ^! escape sequence on Win
+          and { ignore_text = { 6, 28 }, normalize_paths = true } or nil,
       debug = 1,
       hidden = false,
       file_icons = icons,
       cwd_prompt = false,
       multiprocess = true,
-      cmd = "rg --files --sort=path",
+      cmd = "rg --files --sort=path -g !tests/**",
       winopts = { preview = { scrollbar = false } },
       previewer = previewer == "builtin"
           and "builtin"
@@ -107,7 +110,7 @@ T["files"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-at
       previewer = false,
       cwd_prompt = false,
       file_icons = icons,
-      cmd = "rg --files --sort=path",
+      cmd = "rg --files --sort=path -g !tests/**",
     })
   end,
 })
@@ -119,17 +122,18 @@ T["files"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find
     local opts, exclude
     if exec == "fd" then
       exclude = "{}"
-      opts = { fd_opts = "--color=never --type f --type l --exclude .git | sort" }
+      opts = {
+        fd_opts = "--color=never --type f --type l --exclude .git --exclude tests | sort" }
     elseif exec == "rg" then
       exclude = [[{ "fd", "fdfind" }]]
-      opts = { rg_opts = '--files -g "!.git" --sort=path' }
+      opts = { rg_opts = '--files -g "!.git" --sort=path -g !tests/**' }
     else
       exclude = [[{ "fd", "fdfind", "rg" }]]
       opts = {
         find_opts =
-        [[-type f \! -path '*/.git/*' \! -path '*/doc/tags' \! -path '*/deps/*' | sort]],
+        [[-type f \! -path '*/.git/*' \! -path '*/doc/tags' \! -path '*/deps/*' ! -path '*/tests/*'| sort]],
         dir_opts =
-        [[/s/b/a:-d | findstr -v "\.git\\" | findstr -v "doc\\tags" | findstr -v "deps" | sort]],
+        [[/s/b/a:-d | findstr -v "\.git\\" | findstr -v "doc\\tags" | findstr -v "deps" | findstr -v "tests" | sort]],
         strip_cwd_prefix = true
       }
     end
@@ -160,17 +164,20 @@ T["files"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find
 T["files"]["preview should work after chdir #1864"] = function()
   -- Ignore last "-- TERMINAL --" line and "[DEBUG]" line containing the cmd
   local screen_opts = { ignore_text = { 6, 28 }, normalize_paths = helpers.IS_WIN() }
-  eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
-  child.lua([[FzfLua.files {
+  helpers.FzfLua.files(child, {
+    __expect_lines = true,
+    __screen_opts = screen_opts,
+    cmd = "rg --files --sort=path -g !tests/**",
+    hidden = false,
     cwd_prompt = false,
-    previewer = 'builtin',
-    winopts = { preview = { hidden = false  } }
-  }]])
-  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
-  child.lua([[vim.cmd.cd("./tests")]])
-  child.type_keys([[<c-n>]])
-  sleep(100)
-  child.expect_screen_lines(screen_opts)
+    previewer = "builtin",
+    winopts = { preview = { hidden = false } },
+    __after_open = function()
+      child.lua([[vim.cmd.cd("./tests")]])
+      child.type_keys([[<c-n>]])
+      sleep(100)
+    end
+  })
 end
 
 return T

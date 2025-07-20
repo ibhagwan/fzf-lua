@@ -52,7 +52,7 @@ T["api"]["fzf_exec"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
 T["api"]["fzf_exec"]["rg"] = new_set({ parametrize = { { true }, { false }, { 1 } } }, {
   function(multiprocess)
     helpers.FzfLua.fzf_exec(child,
-      [['rg --files -g "!.git" --sort=path']],
+      [['rg --files -g !.git -g !tests/** --sort=path']],
       {
         __expect_lines = true,
         -- __postprocess_wait = multiprocess ~= 1,
