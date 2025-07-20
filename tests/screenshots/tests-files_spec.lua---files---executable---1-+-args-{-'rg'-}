@@ -2,10 +2,10 @@
 01|                                                                
 02|~                                                               
 03|~      ╭─────────────────── Files  h ────────────────────╮      
-04|~      │>                                    146/146 (0) │      
+04|~      │>                                      95/95 (0) │      
 05|~      │──────────────────────────────────────────────── │      
 06|~      │▌ [DEBUG] [mt] rg --hidden --files -g "!.git" ··││      
-07|~      │  .editorconfig                                  │      
+07|~      │  .editorconfig                                 ││      
 08|~      │  .github/ISSUE_TEMPLATE/bug.yaml                │      
 09|~      │  .github/ISSUE_TEMPLATE/config.yml              │      
 10|~      │  .github/ISSUE_TEMPLATE/feature.yaml            │      
