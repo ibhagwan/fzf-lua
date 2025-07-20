@@ -185,7 +185,9 @@ M.btags = function(opts)
   if not opts then return end
   opts.filename = vim.api.nvim_buf_get_name(0)
   if #opts.filename == 0 then
-    utils.info("'btags' is not available for unnamed buffers.")
+    if opts.silent ~= true then
+      utils.info("'btags' is not available for unnamed buffers.")
+    end
     return
   end
   -- store the autogen command in case tags file doesn't exist.
