@@ -21,7 +21,9 @@ jobs:
         rev: [nightly, v0.11.3]
         include:
           - os: macos-latest
-            install-deps: brew update && brew install fzf ripgrep fd
+            install-deps: |
+              brew update && brew install fzf ripgrep fd gnu-getopt
+              brew link --force gnu-getopt
           - os: windows-latest
             install-deps: choco install fzf ripgrep fd
           - os: ubuntu-latest

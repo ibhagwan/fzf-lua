@@ -47,7 +47,10 @@ T["files"]["multiprocess"] = new_set({ parametrize = { { false }, { true } } }, 
       previewer = false,
       cwd_prompt = false,
       multiprocess = multiprocess,
-      cmd = "rg --files --sort=path -g !tests/**",
+      -- Test file_ignore_patterns instead of rg filter
+      file_ignore_patterns = { "^tests" },
+      cmd = "rg --files --sort=path",
+      -- cmd = "rg --files --sort=path -g !tests/**",
     })
   end,
 })
@@ -110,7 +113,10 @@ T["files"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-at
       previewer = false,
       cwd_prompt = false,
       file_icons = icons,
-      cmd = "rg --files --sort=path -g !tests/**",
+      -- Test file_ignore_patterns instead of rg filter
+      file_ignore_patterns = { "^tests" },
+      cmd = "rg --files --sort=path",
+      -- cmd = "rg --files --sort=path -g !tests/**",
     })
   end,
 })
