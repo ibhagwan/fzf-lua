@@ -170,7 +170,8 @@ end
 ---@param opts table
 ---@return boolean
 M.can_transform = function(opts)
-  return opts.rg_glob
+  return utils.has(opts, "fzf", { 0, 45 })
+      and opts.rg_glob
       and not opts.multiprocess
       and not opts.fn_transform
       and not opts.fn_preprocess
