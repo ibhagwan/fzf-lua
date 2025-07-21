@@ -426,11 +426,17 @@ M.stringify = function(contents, opts, fzf_field_index)
         return on_write(data, cb)
       end
 
-      if type(contents) == "table" then
-        vim.tbl_map(function(x) on_write_nl(x) end, contents)
+      local ok, err = pcall(function()
+        if type(contents) == "table" then
+          vim.tbl_map(function(x) on_write_nl(x) end, contents)
+          on_finish()
+        elseif type(contents) == "function" then
+          contents(on_write_nl, on_write, unpack(args))
+        end
+      end)
+      if not ok and err then
         on_finish()
-      elseif type(contents) == "function" then
-        contents(on_write_nl, on_write, unpack(args))
+        error(err)
       end
     end
   end, fzf_field_index or "", opts.debug)
