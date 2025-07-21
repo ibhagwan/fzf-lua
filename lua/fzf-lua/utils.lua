@@ -858,8 +858,9 @@ M.resume_set = function(what, val, opts)
   return require("fzf-lua").config.resume_set(what, val, opts)
 end
 
+---@param override? boolean
 function M.setup_highlights(override)
-  pcall(require("fzf-lua").setup_highlights, override and "true" or "")
+  pcall(require("fzf-lua").setup_highlights, override)
 end
 
 ---@param fname string
