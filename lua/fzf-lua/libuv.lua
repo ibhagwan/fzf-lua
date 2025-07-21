@@ -329,46 +329,43 @@ end
 -- Coroutine version of spawn so we can use queue
 M.async_spawn = coroutinify(M.spawn)
 
----@param opts table|string
----@param fn_transform_str string
----@param fn_preprocess_str string
----@param fn_postprocess_str string
+---@param obj table
+---@param b64? boolean
+---@return string, boolean -- boolean used for ./scripts/headless_fd.sh
+M.serialize = function(obj, b64)
+  local str = serpent.line(obj, { comment = false, sortkeys = false })
+  str = b64 ~= false and base64.encode(str) or str
+  return "return [==[" .. str .. "]==]", (b64 ~= false and true or false)
+end
+
+---@param str string
+---@param b64? boolean
+---@return table
+M.deserialize = function(str, b64)
+  local res = loadstring(str)()
+  if type(res) == "table" then return res --[[@as table]] end -- ./scripts/headless_fd.sh
+  res = b64 ~= false and base64.decode(res) or res
+  local _, obj = serpent.load(res)
+  assert(type(obj) == "table")
+  return obj
+end
+
+---@param fn_str string
+---@return function?
+M.load_fn = function(fn_str)
+  if type(fn_str) ~= "string" then return end
+  local fn_loaded = nil
+  local fn = loadstring(fn_str)
+  if fn then fn_loaded = fn() end
+  if type(fn_loaded) ~= "function" then
+    fn_loaded = nil
+  end
+  return fn_loaded
+end
+
+---@param opts table
 ---@return uv.uv_process_t, integer
-M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postprocess_str)
-  -- attempt base64 decoding on all params
-  ---@param str string|table
-  ---@return string|table
-  local base64_conditional_decode = function(str)
-    if opts._base64 == false or type(str) ~= "string" then return str end
-    local ok, decoded = pcall(base64.decode, str)
-    return ok and decoded or str
-  end
-
-  ---@param fn_str string
-  ---@return function?
-  local function load_fn(fn_str)
-    if type(fn_str) ~= "string" then return end
-    local fn_loaded = nil
-    local fn = loadstring(fn_str)
-    if fn then fn_loaded = fn() end
-    if type(fn_loaded) ~= "function" then
-      fn_loaded = nil
-    end
-    return fn_loaded
-  end
-
-  -- conditionally base64 decode, if not a base64 string, returns original value
-  opts = base64_conditional_decode(opts)
-  fn_transform_str = base64_conditional_decode(fn_transform_str)
-  fn_preprocess_str = base64_conditional_decode(fn_preprocess_str)
-  fn_postprocess_str = base64_conditional_decode(fn_postprocess_str)
-
-  -- opts must be a table, if opts is a string deserialize
-  if type(opts) == "string" then
-    _, opts = serpent.load(opts)
-    assert(type(opts) == "table")
-  end
-
+M.spawn_stdio = function(opts)
   local EOL = opts.multiline and "\0" or "\n"
 
   -- stdin/stdout are already buffered, not stderr. This means
@@ -398,10 +395,13 @@ M.spawn_stdio = function(opts, fn_transform_str, fn_preprocess_str, fn_postproce
   -- err with "fzf-lua fatal: '_G._fzf_lua_server', '_G._devicons_path' both nil"
   pcall(require, "fzf-lua.make_entry")
 
-  local fn_transform = load_fn(fn_transform_str)
-  local fn_preprocess = load_fn(fn_preprocess_str)
-  local fn_postprocess = load_fn(fn_postprocess_str)
+  local fn_transform_str = opts.fn_transform
+  local fn_preprocess_str = opts.fn_preprocess
+  local fn_postprocess_str = opts.fn_postprocess
 
+  local fn_transform = M.load_fn(opts.fn_transform)
+  local fn_preprocess = M.load_fn(opts.fn_preprocess)
+  local fn_postprocess = M.load_fn(opts.fn_postprocess)
 
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
@@ -568,6 +568,9 @@ end
 --
 -- this function is a better fit for utils but we're
 -- trying to avoid having any 'require' in this file
+---@param s string
+---@param win_style integer|string? 1=classic, 2=caret
+---@return string
 M.shellescape = function(s, win_style)
   if _is_win or win_style then
     if tonumber(win_style) == 1 then

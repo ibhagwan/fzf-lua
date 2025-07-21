@@ -32,7 +32,8 @@ end
 
 -- global var indicating a headless instance
 _G._fzf_lua_is_headless = true
-local _, pid = require("fzf-lua.libuv").spawn_stdio(loadstring(_G.arg[1])())
+local opts = require("fzf-lua.libuv").deserialize(_G.arg[1])
+local _, pid = require("fzf-lua.libuv").spawn_stdio(opts)
 -- while vim.uv.run() do end -- os.exit in spawn_stdio
 while uv.os_getpriority(pid) do
   vim.wait(100, function() return uv.os_getpriority(pid) == nil end)

@@ -140,20 +140,17 @@ nvim -u NONE -l ${BASEDIR}/../lua/fzf-lua/spawn.lua "return
       _devicons_path = [[${ICONS_PATH}]],
       _devicons_setup = [[${ICONS_SETUP}]],
     },
-    _base64 = false,
     debug = [[$debug]] == [[v]] and [[v]] or $debug,
     file_icons = [[${file_icons}]] == true or [[${file_icons}]],
     git_icons = ${git_icons},
     color_icons = ${color_icons},
     cmd = [[${cmd:-fd --color=never}]],
     cwd = vim.fn.expand([[${cwd:-$BASEDIR}]]),
-  },
-  -- fn_transform
-  [==[
-    return require(\"fzf-lua.make_entry\").file
-  ]==],
-  -- fn_preprocess
-  [==[
-    return require(\"fzf-lua.make_entry\").preprocess
-  ]==]
+    fn_transform = [==[
+      return require(\"fzf-lua.make_entry\").file
+    ]==],
+    fn_preprocess = [==[
+      return require(\"fzf-lua.make_entry\").preprocess
+    ]==]
+  }
 "
