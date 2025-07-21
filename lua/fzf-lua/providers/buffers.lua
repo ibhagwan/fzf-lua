@@ -375,24 +375,20 @@ M.tabs = function(opts)
     return msg, hl
   end
 
-  if opts.locate and utils.has(opts, "fzf", { 0, 36 }) then
-    -- Set cursor to current buffer
-    table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("load:+transform:"
-      .. FzfLua.shell.stringify_data(function(_, _, _)
-        local pos = 0
-        for tabnr, tabh in ipairs(vim.api.nvim_list_tabpages()) do
+  if opts.locate then
+    local pos = 0
+    for tabnr, tabh in ipairs(vim.api.nvim_list_tabpages()) do
+      pos = pos + 1
+      for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabh)) do
+        local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
+        if b then
           pos = pos + 1
-          for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabh)) do
-            local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
-            if b then
-              pos = pos + 1
-              if tabnr == utils.CTX().tabnr and w == utils.CTX().winid then
-                return string.format("pos(%d)", pos)
-              end
-            end
+          if tabnr == utils.CTX().tabnr and w == utils.CTX().winid then
+            opts.__locate_pos = pos
           end
         end
-      end, opts)))
+      end
+    end
   end
 
   local contents = function(cb)

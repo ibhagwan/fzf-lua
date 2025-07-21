@@ -1233,6 +1233,7 @@ previewers = {
     symbols = {
         -- lsp_query      = "foo"       -- query passed to the LSP directly
         -- query          = "bar"       -- query passed to fzf prompt for fuzzy matching
+        locate            = false,      -- attempt to position cursor at current symbol
         async_or_timeout  = true,       -- symbols are async by default
         symbol_style      = 1,          -- style for document/workspace symbols
                                         -- false: disable,    1: icon+kind

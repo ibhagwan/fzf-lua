@@ -265,6 +265,13 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
       local entry0 = make_entry.lcol(entry, opts)
       local entry1 = make_entry.file(entry0, opts)
       if entry1 then
+        if opts.locate and not opts.__locate_pos then
+          opts.__locate_count = opts.__locate_count or 0
+          opts.__locate_count = opts.__locate_count + 1
+          if entry.lnum == utils.CTX().cursor[1] then
+            opts.__locate_pos = opts.__locate_count
+          end
+        end
         local align = 48 + mbicon_align + utils.ansi_escseq_len(symbol)
         -- TODO: string.format %-{n}s fails with align > ~100?
         -- entry1 = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry1)
@@ -755,6 +762,7 @@ end
 M.workspace_symbols = function(opts)
   opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
   if not opts then return end
+  opts.locate = false -- Makes no sense for workspace symbols
   opts.__ACT_TO = opts.__ACT_TO or M.live_workspace_symbols
   opts.__call_fn = utils.__FNCREF__()
   opts.lsp_params = { query = opts.lsp_query or "" }

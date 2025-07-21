@@ -362,6 +362,9 @@ M.defaults.files                = {
 
 M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files, {
   silent            = true,
+  -- TODO: lsp_workspace_symbols locate, not working yet
+  -- as opts.__locate_pos is inside the symbols picker opts
+  -- locate            = true,
   cwd_prompt        = true,
   line_query        = true,
   pickers           = function()
@@ -953,6 +956,7 @@ M.defaults.lsp                  = {
 
 M.defaults.lsp.symbols          = {
   previewer        = M._default_previewer_fn,
+  locate           = false,
   file_icons       = 1,
   color_icons      = true,
   git_icons        = false,

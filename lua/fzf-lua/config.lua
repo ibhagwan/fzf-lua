@@ -929,6 +929,15 @@ function M.normalize_opts(opts, globals, __resume_key)
     opts.fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]]
   end
 
+  if opts.locate and utils.has(opts, "fzf", { 0, 36 }) then
+    table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("load:+transform:"
+      .. FzfLua.shell.stringify_data(function(_, _, _)
+        if opts.__locate_pos then
+          return string.format("pos(%d)", opts.__locate_pos)
+        end
+      end, opts)))
+  end
+
   if opts.line_query and not utils.has(opts, "fzf", { 0, 59 }) then
     utils.warn("'line_query' requires fzf >= 0.59, ignoring.")
   elseif opts.line_query then
