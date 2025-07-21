@@ -2,8 +2,6 @@ local uv = vim.uv or vim.loop
 local utils = require "fzf-lua.utils"
 local path = require "fzf-lua.path"
 local libuv = require "fzf-lua.libuv"
-local base64 = require "fzf-lua.lib.base64"
-local serpent = require "fzf-lua.lib.serpent"
 
 -- path to current file
 local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
@@ -197,7 +195,9 @@ M.stringify_mt = function(cmd, opts)
       "exec_empty_query",
       "file_ignore_patterns",
       "rg_glob",
-      "_base64",
+      "fn_transform",
+      "fn_preprocess",
+      "fn_postprocess",
       utils.__IS_WINDOWS and "__FZF_VERSION" or nil,
     }
     -- caller requested rg with glob support
@@ -223,22 +223,6 @@ M.stringify_mt = function(cmd, opts)
       t.g[k] = v
     end
     return t
-  end
-
-  ---@param obj table|string
-  ---@return string
-  local serialize = function(obj)
-    local str = type(obj) == "table"
-        and serpent.line(obj, { comment = false, sortkeys = false })
-        or tostring(obj)
-    if opts._base64 ~= false then
-      -- by default, base64 encode all arguments
-      return "[==[" .. base64.encode(str) .. "]==]"
-    else
-      -- if not encoding, don't string wrap the table
-      return type(obj) == "table" and str
-          or "[==[" .. str .. "]==]"
-    end
   end
 
   -- `multiprocess=1` is "optional" if no opt which requires processing
@@ -287,12 +271,7 @@ M.stringify_mt = function(cmd, opts)
         opts.fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]]
       end
     end
-    local spawn_cmd = M.wrap_spawn_stdio(
-      serialize(filter_opts(opts)),
-      serialize(opts.fn_transform or "nil"),
-      serialize(opts.fn_preprocess or "nil"),
-      serialize(opts.fn_postprocess or "nil")
-    )
+    local spawn_cmd = M.wrap_spawn_stdio(filter_opts(opts))
     if opts.argv_expr then
       -- prefix the query with `--` so we can support `--fixed-strings` (#781)
       spawn_cmd = string.format("%s -- %s", spawn_cmd, FzfLua.core.fzf_query_placeholder)
@@ -315,26 +294,11 @@ M.stringify = function(contents, opts, fzf_field_index)
   assert(not opts.__stringified, "twice stringified")
   opts.__stringified = true
 
-  ---@param fn_str string
-  ---@return function?
-  local function load_fn(fn_str)
-    if type(fn_str) ~= "string" then return end
-    local fn_loaded = nil
-    local fn = loadstring(fn_str)
-    if fn then fn_loaded = fn() end
-    if type(fn_loaded) ~= "function" then
-      fn_loaded = nil
-    end
-    return fn_loaded
-  end
-
   -- Convert string callbacks to callback functions
   for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
     local v = opts[k]
-    opts[k] = load_fn(opts[k]) or v
+    opts[k] = libuv.load_fn(opts[k]) or v
   end
-
-  assert(not opts.fn_reload or type(contents) == "function", "fn_reload must be of type function")
 
   local cmd, id = M.pipe_wrap_fn(function(pipe, ...)
     local args = { ... }
@@ -548,20 +512,16 @@ M.stringify_data2 = function(fn, opts, field_index)
   end, opts, field_index)
 end
 
----@param opts string
----@param fn_transform string
----@param fn_preprocess string
----@param fn_postprocess string
+---@param opts table
 ---@return string
-M.wrap_spawn_stdio = function(opts, fn_transform, fn_preprocess, fn_postprocess)
+M.wrap_spawn_stdio = function(opts)
   local is_win = utils.__IS_WINDOWS
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   local cmd_str = ("%s -u NONE -l %s %s"):format(
     libuv.shellescape(is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
     libuv.shellescape(vim.fn.fnamemodify(is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") ..
       "/spawn.lua"),
-    libuv.shellescape(("return %s,%s,%s,%s"):format(opts, fn_transform, fn_preprocess, fn_postprocess))
-  )
+    libuv.shellescape((libuv.serialize(opts, true))))
   return cmd_str
 end
 

@@ -1,3 +1,8 @@
+if vim.base64 then
+  return vim.base64
+end
+
+---@format disable
 --[[
 
 Source: https://github.com/iskolbin/lbase64
