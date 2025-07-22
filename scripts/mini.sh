@@ -45,7 +45,18 @@ else
     download_plugin "ibhagwan" "fzf-lua"
 fi
 
+
+# can be removed when full bump to neovim 0.10+?
+export HOME=${TEMPDIR}
+export XDG_CONFIG_HOME="${HOME}/.config"
+export XDG_DATA_HOME="${HOME}/.local/share"
+export XDG_STATE_HOME="${HOME}/.local/state"
+export XDG_CACHE_HOME="${HOME}/.cache"
+export PACKPATH=${packpath}
+
+export NVIM_APPNAME=fzf-lua
+
 # Run neovim
-HOME=${TEMPDIR} PACKPATH=${packpath} ${nvim_bin} -u ${tmp_rtp}/${plug_name}/scripts/init.lua
+${nvim_bin} -u ${tmp_rtp}/${plug_name}/scripts/init.lua
 
 echo "\nDone."
