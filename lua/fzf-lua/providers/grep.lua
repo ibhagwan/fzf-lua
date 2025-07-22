@@ -165,6 +165,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
 end
 
 M.grep = function(opts)
+  ---@type fzf-lua.config.Grep
   opts = config.normalize_opts(opts, "grep")
   if not opts then return end
 
@@ -214,6 +215,7 @@ local function normalize_live_grep_opts(opts)
   opts = opts or {}
   opts._treesitter = false
 
+  ---@type fzf-lua.config.Grep
   opts = config.normalize_opts(opts, "grep")
   if not opts then return end
 
@@ -413,6 +415,7 @@ M.grep_curbuf = function(opts, lgrep)
   -- call `normalize_opts` here as we want to store all previous
   -- options in the resume data store under the key "bgrep"
   -- 3rd arg is an override for resume data store lookup key
+  ---@type fzf-lua.config.GrepCurbuf
   opts = config.normalize_opts(opts, "grep_curbuf", "bgrep")
   if not opts then return end
 
@@ -466,6 +469,7 @@ local grep_list = function(opts, lgrep, loclist)
     return
   end
   opts.exec_empty_query = opts.exec_empty_query == nil and true
+  ---@type fzf-lua.config.Grep
   opts = config.normalize_opts(opts, "grep")
   if not opts then return end
   if lgrep then

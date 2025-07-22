@@ -2,7 +2,6 @@ local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
-local libuv = require "fzf-lua.libuv"
 local config = require "fzf-lua.config"
 local base64 = require "fzf-lua.lib.base64"
 local devicons = require "fzf-lua.devicons"
@@ -185,6 +184,7 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
 end
 
 M.buffers = function(opts)
+  ---@type fzf-lua.config.Buffers
   opts = config.normalize_opts(opts, "buffers")
   if not opts then return end
 
@@ -212,11 +212,14 @@ M.buffers = function(opts)
 end
 
 M.lines = function(opts)
+  ---@type fzf-lua.config.Lines
   opts = config.normalize_opts(opts, "lines")
+  if not opts then return end
   return M.buffer_lines(opts)
 end
 
 M.blines = function(opts)
+  ---@type fzf-lua.config.Blines
   opts = config.normalize_opts(opts, "blines")
   if not opts then return end
   opts.current_buffer_only = true
@@ -229,10 +232,9 @@ M.blines = function(opts)
   return M.buffer_lines(opts)
 end
 
-
+---@param opts fzf-lua.config.BufferLines
+---@return thread?, string?, table?
 M.buffer_lines = function(opts)
-  if not opts then return end
-
   local contents = function(cb)
     local function add_entry(x, co)
       cb(x, function(err)
@@ -350,6 +352,7 @@ M.buffer_lines = function(opts)
 end
 
 M.tabs = function(opts)
+  ---@type fzf-lua.config.Tabs
   opts = config.normalize_opts(opts, "tabs")
   if not opts then return end
 
@@ -455,6 +458,7 @@ end
 
 
 M.treesitter = function(opts)
+  ---@type fzf-lua.config.Treesitter
   opts = config.normalize_opts(opts, "treesitter")
   if not opts then return end
 
@@ -465,18 +469,18 @@ M.treesitter = function(opts)
   end
 
   -- Default to current buffer
-  opts.bufnr = tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
-  opts._bufname = path.basename(vim.api.nvim_buf_get_name(opts.bufnr))
-  if not opts._bufname or #opts._bufname == 0 then
-    opts._bufname = utils.nvim_buf_get_name(opts.bufnr)
+  local bufnr0 = tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
+  local bufname0 = path.basename(vim.api.nvim_buf_get_name(bufnr0))
+  if not bufname0 or #bufname0 == 0 then
+    bufname0 = utils.nvim_buf_get_name(bufnr0)
   end
 
   local ts = vim.treesitter
-  local ft = vim.bo[opts.bufnr].ft
+  local ft = vim.bo[bufnr0].ft
   local lang = ts.language.get_lang(ft) or ft
   if not utils.has_ts_parser(lang) then
     utils.info(string.format("No treesitter parser found for '%s' (bufnr=%d).",
-      opts._bufname, opts.bufnr))
+      bufname0, bufnr0))
     return
   end
 
@@ -485,7 +489,7 @@ M.treesitter = function(opts)
     return "@" .. (map[kind] or kind)
   end
 
-  local parser = ts.get_parser(opts.bufnr)
+  local parser = ts.get_parser(bufnr0)
   if not parser then return end
   parser:parse()
   local root = parser:trees()[1]:root()
@@ -551,7 +555,7 @@ M.treesitter = function(opts)
   local contents = function(cb)
     coroutine.wrap(function()
       local co = coroutine.running()
-      for _, definition in ipairs(get(opts.bufnr)) do
+      for _, definition in ipairs(get(bufnr0)) do
         local nodes = get_local_nodes(definition)
         for _, node in ipairs(nodes) do
           if node.node then
@@ -559,12 +563,12 @@ M.treesitter = function(opts)
               -- Remove node prefix, e.g. `locals.definition.var`
               node.kind = node.kind and node.kind:gsub(".*%.", "")
               local lnum, col, _, _ = vim.treesitter.get_node_range(node.node)
-              local node_text = vim.treesitter.get_node_text(node.node, opts.bufnr)
+              local node_text = vim.treesitter.get_node_text(node.node, bufnr0)
               local node_kind = node.kind and utils.ansi_from_hl(kind2hl(node.kind), node.kind)
               local entry = string.format("[%s]%s%s:%s:%s\t\t[%s] %s",
-                utils.ansi_codes[opts.hls.buf_nr](tostring(opts.bufnr)),
+                utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr0)),
                 utils.nbsp,
-                utils.ansi_codes[opts.hls.buf_name](opts._bufname),
+                utils.ansi_codes[opts.hls.buf_name](bufname0),
                 utils.ansi_codes[opts.hls.buf_linenr](tostring(lnum + 1)),
                 utils.ansi_codes[opts.hls.path_colnr](tostring(col + 1)),
                 node_kind or "",
@@ -588,6 +592,7 @@ M.treesitter = function(opts)
 end
 
 M.spellcheck = function(opts)
+  ---@type fzf-lua.config.Spellcheck
   opts = config.normalize_opts(opts, "spellcheck")
   if not opts then return end
 
@@ -597,10 +602,10 @@ M.spellcheck = function(opts)
   end
 
   -- Default to current buffer
-  opts._bufnr = tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
-  opts._bufname = path.basename(vim.api.nvim_buf_get_name(opts._bufnr))
-  if not opts._bufname or #opts._bufname == 0 then
-    opts._bufname = utils.nvim_buf_get_name(opts._bufnr)
+  local bufnr0 = tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
+  local bufname0 = path.basename(vim.api.nvim_buf_get_name(bufnr0))
+  if not bufname0 or #bufname0 == 0 then
+    bufname0 = utils.nvim_buf_get_name(bufnr0)
   end
 
   if utils.mode_is_visual() then
@@ -618,7 +623,7 @@ M.spellcheck = function(opts)
       -- Use vim.schedule to avoid
       -- E5560: vimL function must not be called in a lua loop callback
       vim.schedule(function()
-        local bufnr = opts._bufnr
+        local bufnr = bufnr0
         local filepath = vim.api.nvim_buf_get_name(bufnr)
         if vim.api.nvim_buf_is_loaded(bufnr) then
           data = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
@@ -666,9 +671,9 @@ M.spellcheck = function(opts)
             local spell = vim.spell.check(trim(word))[1]
             if spell then
               cb(string.format("[%s]%s%s:%s:%s\t\t%s",
-                utils.ansi_codes[opts.hls.buf_nr](tostring(opts._bufnr)),
+                utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr0)),
                 utils.nbsp,
-                utils.ansi_codes[opts.hls.buf_name](opts._bufname),
+                utils.ansi_codes[opts.hls.buf_name](bufname0),
                 utils.ansi_codes[opts.hls.buf_linenr](tostring(lnum)),
                 utils.ansi_codes[opts.hls.path_colnr](tostring(from + (lead or 0))),
                 trim(word)

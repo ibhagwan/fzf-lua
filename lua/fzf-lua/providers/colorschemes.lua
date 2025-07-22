@@ -20,6 +20,7 @@ end
 local M = {}
 
 M.colorschemes = function(opts)
+  ---@type fzf-lua.config.Colorschemes
   opts = config.normalize_opts(opts, "colorschemes")
   if not opts then return end
 
@@ -56,12 +57,13 @@ M.colorschemes = function(opts)
     end
   end
 
+  local live
   if opts.live_preview then
     -- must add ':nohidden' or fzf ignores the preview action
     opts.fzf_opts["--preview-window"] = "nohidden:right:0"
     opts.preview = shell.stringify_data(function(sel)
       if opts.live_preview and sel then
-        opts._live = sel[1]
+        live = sel[1]
         vim.cmd("colorscheme " .. sel[1])
       end
     end, opts, "{}")
@@ -70,7 +72,7 @@ M.colorschemes = function(opts)
   opts.winopts = opts.winopts or {}
   opts.winopts.on_close = function()
     -- reset color scheme if live_preview is enabled
-    if opts._live and opts._live ~= current_colorscheme then
+    if live and live ~= current_colorscheme then
       vim.cmd("colorscheme " .. current_colorscheme)
       vim.o.background = current_background
     end
@@ -86,6 +88,7 @@ M.colorschemes = function(opts)
 end
 
 M.highlights = function(opts)
+  ---@type fzf-lua.config.Highlights
   opts = config.normalize_opts(opts, "highlights")
   if not opts then return end
 
@@ -115,7 +118,7 @@ M.highlights = function(opts)
       end)
     end
 
-    local coroutinify = (opts.coroutinify == nil) and false or opts.coroutinify
+    local coroutinify = false
 
     if not coroutinify then
       populate(highlights, add_entry)
@@ -365,11 +368,12 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
 end
 
 M.awesome_colorschemes = function(opts)
+  ---@type fzf-lua.config.AwesomeColorschemes
   opts = config.normalize_opts(opts, "awesome_colorschemes")
   if not opts then return end
 
-  opts._cur_colorscheme = get_current_colorscheme()
-  opts._cur_background = vim.o.background
+  local cur_colorscheme = get_current_colorscheme()
+  local cur_background = vim.o.background
 
   local dbfile = vim.fn.expand(opts.dbfile)
   if not path.is_absolute(dbfile) then
@@ -391,14 +395,14 @@ M.awesome_colorschemes = function(opts)
   -- save a ref for action
   opts._apply_awesome_theme = M.apply_awesome_theme
 
-  opts._packpath = type(opts.packpath) == "function"
+  local packpath = type(opts.packpath) == "function"
       and opts.packpath() or tostring(opts.packpath)
 
   opts._adm = AsyncDownloadManager:new({
     db = json_db,
     dl_status = opts.dl_status,
     max_threads = opts.max_threads,
-    path = path.join({ opts._packpath, "pack", "fzf-lua", "opt" })
+    path = path.join({ packpath, "pack", "fzf-lua", "opt" })
   })
   -- Error creating cache directory
   if not opts._adm then return end
@@ -410,7 +414,7 @@ M.awesome_colorschemes = function(opts)
       local co = coroutine.running()
 
       -- make sure our cache is in packpath
-      vim.opt.packpath:append(opts._packpath)
+      vim.opt.packpath:append(packpath)
 
       -- since resume uses deepcopy having multiple db's is going to
       -- create all sorts of voodoo issues when running resume
@@ -457,6 +461,7 @@ M.awesome_colorschemes = function(opts)
     end)()
   end
 
+  local live
   if opts.live_preview then
     opts.fzf_opts["--preview-window"] = "nohidden:right:0"
     opts.preview = shell.stringify_data(function(sel)
@@ -466,13 +471,13 @@ M.awesome_colorschemes = function(opts)
           -- some colorschemes choose a different theme based on dark|light bg
           -- restore to the original background when interface was opened
           -- wrap in pcall as some colorschemes have bg triggers that can fail
-          pcall(function() vim.o.background = opts._cur_background end)
+          pcall(function() vim.o.background = cur_background end)
           M.apply_awesome_theme(dbkey, idx, opts)
-          opts._live = true
+          live = true
         else
-          vim.cmd("colorscheme " .. opts._cur_colorscheme)
-          vim.o.background = opts._cur_background
-          opts._live = nil
+          vim.cmd("colorscheme " .. cur_colorscheme)
+          vim.o.background = cur_background
+          live = nil
         end
       end
     end, opts, "{}")
@@ -481,16 +486,16 @@ M.awesome_colorschemes = function(opts)
   opts.winopts = opts.winopts or {}
   opts.winopts.on_close = function()
     -- reset color scheme if live_preview is enabled
-    if opts._live then
-      vim.cmd("colorscheme " .. opts._cur_colorscheme)
-      vim.o.background = opts._cur_background
+    if live then
+      vim.cmd("colorscheme " .. cur_colorscheme)
+      vim.o.background = cur_background
     end
   end
 
   opts.fn_selected = function(sel, o)
     -- do not remove our cache path from packpath
     -- or packadd in `apply_awesome_theme` fails
-    -- vim.opt.packpath:remove(o._packpath)
+    -- vim.opt.packpath:remove(packpath)
 
     -- cleanup AsyncDownloadManager
     o._adm:destruct()
@@ -498,8 +503,8 @@ M.awesome_colorschemes = function(opts)
     -- reset color scheme if live_preview is enabled
     -- and nothing or non-default action was selected
     if o.live_preview and (not sel or #sel[1] > 0) then
-      vim.cmd("colorscheme " .. o._cur_colorscheme)
-      vim.o.background = o._cur_background
+      vim.cmd("colorscheme " .. cur_colorscheme)
+      vim.o.background = cur_background
     end
 
     actions.act(sel, o)

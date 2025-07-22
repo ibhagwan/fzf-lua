@@ -510,6 +510,9 @@ function M.entry_to_file(entry, opts, force_uri)
   }
 end
 
+---@param cmd string|string[]
+---@param opts table
+---@return string|string[]
 function M.git_cwd(cmd, opts)
   local git_args = {
     { "cwd",          "-C" },
@@ -531,7 +534,7 @@ function M.git_cwd(cmd, opts)
       end
     end
     cmd = cmd:gsub("^git ", "git " .. args)
-  else
+  elseif type(cmd) == "table" then
     local idx = 2
     cmd = utils.tbl_deep_clone(cmd)
     for _, a in ipairs(git_args) do

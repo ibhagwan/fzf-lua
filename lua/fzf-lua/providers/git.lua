@@ -22,6 +22,7 @@ local function set_git_cwd_args(opts)
 end
 
 M.files = function(opts)
+  ---@type fzf-lua.config.GitFiles
   opts = config.normalize_opts(opts, "git.files")
   if not opts then return end
   opts = set_git_cwd_args(opts)
@@ -31,12 +32,13 @@ M.files = function(opts)
 end
 
 M.status = function(opts)
+  ---@type fzf-lua.config.GitStatus
   opts = config.normalize_opts(opts, "git.status")
   if not opts then return end
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   if opts.preview then
-    opts.preview = path.git_cwd(opts.preview, opts)
+    opts.preview = path.git_cwd(opts.preview --[[@as string]], opts)
   end
   -- we don't need git icons since we get them
   -- as part of our `git status -s`
@@ -84,6 +86,7 @@ local function git_preview(opts, file)
 end
 
 M.diff = function(opts)
+  ---@type fzf-lua.config.GitDiff
   opts = config.normalize_opts(opts, "git.diff")
   if not opts then return end
   local cmd = path.git_cwd({ "git", "rev-parse", "--verify", opts.ref }, opts)
@@ -103,6 +106,7 @@ M.diff = function(opts)
 end
 
 M.commits = function(opts)
+  ---@type fzf-lua.config.GitCommits
   opts = config.normalize_opts(opts, "git.commits")
   if not opts then return end
   opts.preview = git_preview(opts)
@@ -111,6 +115,7 @@ M.commits = function(opts)
 end
 
 M.bcommits = function(opts)
+  ---@type fzf-lua.config.GitBcommits
   opts = config.normalize_opts(opts, "git.bcommits")
   if not opts then return end
   local bufname = vim.api.nvim_buf_get_name(0)
@@ -146,6 +151,7 @@ M.bcommits = function(opts)
 end
 
 M.blame = function(opts)
+  ---@type fzf-lua.config.GitBlame
   opts = config.normalize_opts(opts, "git.blame")
   if not opts then return end
   local bufname = vim.api.nvim_buf_get_name(0)
@@ -177,10 +183,11 @@ M.blame = function(opts)
 end
 
 M.branches = function(opts)
+  ---@type fzf-lua.config.GitBranches
   opts = config.normalize_opts(opts, "git.branches")
   if not opts then return end
   if opts.preview then
-    opts.__preview = path.git_cwd(opts.preview, opts)
+    local preview = path.git_cwd(opts.preview, opts)
     opts.preview = shell.stringify_cmd(function(items)
       -- all possible options:
       --   branch
@@ -188,7 +195,7 @@ M.branches = function(opts)
       --   remotes/origin/branch
       --   (HEAD detached at origin/branch)
       local branch = items[1]:match("[^%s%*]*$"):gsub("%)$", "")
-      return opts.__preview:gsub("{.*}", branch)
+      return (preview:gsub("{.*}", branch))
     end, opts, "{}")
   end
   opts.headers = opts.headers or { "cwd", "actions" }
@@ -196,12 +203,14 @@ M.branches = function(opts)
 end
 
 M.tags = function(opts)
+  ---@type fzf-lua.config.GitTags
   opts = config.normalize_opts(opts, "git.tags")
   if not opts then return end
   return git_cmd(opts)
 end
 
 M.stash = function(opts)
+  ---@type fzf-lua.config.GitStash
   opts = config.normalize_opts(opts, "git.stash")
   if not opts then return end
   opts = set_git_cwd_args(opts)
@@ -231,6 +240,7 @@ M.stash = function(opts)
 end
 
 M.hunks = function(opts)
+  ---@type fzf-lua.config.GitHunks
   opts = config.normalize_opts(opts, "git.hunks")
   if not opts then return end
   local cmd = path.git_cwd({ "git", "rev-parse", "--verify", opts.ref }, opts)

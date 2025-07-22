@@ -175,12 +175,14 @@ local function tags(opts)
 end
 
 M.tags = function(opts)
+  ---@type fzf-lua.config.Tags
   opts = config.normalize_opts(opts, "tags")
   if not opts then return end
   return tags(opts)
 end
 
 M.btags = function(opts)
+  ---@type fzf-lua.config.Btags
   opts = config.normalize_opts(opts, "btags")
   if not opts then return end
   opts.filename = vim.api.nvim_buf_get_name(0)
@@ -203,6 +205,7 @@ M.btags = function(opts)
 end
 
 M.grep = function(opts)
+  ---@type fzf-lua.config.TagsGrep
   opts = config.normalize_opts(opts, "tags")
   if not opts then return end
 
@@ -227,6 +230,7 @@ M.grep = function(opts)
 end
 
 M.live_grep = function(opts)
+  ---@type fzf-lua.config.TagsGrep
   opts = config.normalize_opts(opts, "tags")
   if not opts then return end
   opts.lgrep = true

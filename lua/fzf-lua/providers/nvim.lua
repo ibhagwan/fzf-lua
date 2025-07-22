@@ -8,6 +8,7 @@ local devicons = require "fzf-lua.devicons"
 local M = {}
 
 M.commands = function(opts)
+  ---@type fzf-lua.config.Commands
   opts = config.normalize_opts(opts, "commands")
   if not opts then return end
 
@@ -137,6 +138,7 @@ local history = function(opts, str)
 end
 
 M.command_history = function(opts)
+  ---@type fzf-lua.config.CommandHistory
   opts = config.normalize_opts(opts, "command_history")
   if not opts then return end
   if opts.fzf_opts["--header"] == nil then
@@ -146,6 +148,7 @@ M.command_history = function(opts)
 end
 
 M.search_history = function(opts)
+  ---@type fzf-lua.config.SearchHistory
   opts = config.normalize_opts(opts, "search_history")
   if not opts then return end
   if opts.fzf_opts["--header"] == nil then
@@ -155,14 +158,20 @@ M.search_history = function(opts)
 end
 
 M.changes = function(opts)
+  ---@type fzf-lua.config.Changes
   opts = config.normalize_opts(opts, "changes")
-  return M.jumps(opts)
+  if not opts then return end
+  return M.changes_or_jumps(opts)
 end
 
 M.jumps = function(opts)
+  ---@type fzf-lua.config.Jumps
   opts = config.normalize_opts(opts, "jumps")
   if not opts then return end
+  return M.changes_or_jumps(opts)
+end
 
+M.changes_or_jumps = function(opts)
   local jumps = vim.split(vim.fn.execute(opts.cmd), "\n")
 
   local entries = {}
@@ -189,6 +198,7 @@ M.jumps = function(opts)
 end
 
 M.tagstack = function(opts)
+  ---@type fzf-lua.config.Tagstack
   opts = config.normalize_opts(opts, "tagstack")
   if not opts then return end
 
@@ -243,6 +253,7 @@ end
 
 
 M.marks = function(opts)
+  ---@type fzf-lua.config.Marks
   opts = config.normalize_opts(opts, "marks")
   if not opts then return end
 
@@ -297,6 +308,7 @@ M.marks = function(opts)
 end
 
 M.registers = function(opts)
+  ---@type fzf-lua.config.Registers
   opts = config.normalize_opts(opts, "registers")
   if not opts then return end
 
@@ -356,6 +368,7 @@ M.registers = function(opts)
 end
 
 M.keymaps = function(opts)
+  ---@type fzf-lua.config.Keymaps
   opts = config.normalize_opts(opts, "keymaps")
   if not opts then return end
 
@@ -444,6 +457,7 @@ M.keymaps = function(opts)
 end
 
 M.nvim_options = function(opts)
+  ---@type fzf-lua.config.NvimOptions
   opts = config.normalize_opts(opts, "nvim_options")
   if not opts then return end
 
@@ -521,6 +535,7 @@ end
 
 M.spell_suggest = function(opts)
   -- if not vim.wo.spell then return false end
+  ---@type fzf-lua.config.SpellSuggest
   opts = config.normalize_opts(opts, "spell_suggest")
   if not opts then return end
 
@@ -554,6 +569,7 @@ M.spell_suggest = function(opts)
 end
 
 M.filetypes = function(opts)
+  ---@type fzf-lua.config.Filetypes
   opts = config.normalize_opts(opts, "filetypes")
   if not opts then return end
 
@@ -573,6 +589,7 @@ M.filetypes = function(opts)
 end
 
 M.packadd = function(opts)
+  ---@type fzf-lua.config.Packadd
   opts = config.normalize_opts(opts, "packadd")
   if not opts then return end
 
@@ -583,6 +600,7 @@ M.packadd = function(opts)
 end
 
 M.menus = function(opts)
+  ---@type fzf-lua.config.Menus
   opts = config.normalize_opts(opts, "menus")
   if not opts then return end
 
@@ -615,6 +633,7 @@ M.menus = function(opts)
 end
 
 M.autocmds = function(opts)
+  ---@type fzf-lua.config.Autocmds
   opts = config.normalize_opts(opts, "autocmds")
   if not opts then return end
 

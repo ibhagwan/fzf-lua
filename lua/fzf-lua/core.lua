@@ -142,7 +142,7 @@ end
 -- Main API, see:
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
 ---@param contents content
----@param opts? {fn_transform: function}
+---@param opts? fzf-lua.config.Base|{}
 ---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
   opts = config.normalize_opts(opts or {}, {})
@@ -158,7 +158,7 @@ M.fzf_exec = function(contents, opts)
   -- command is independent, most of it's options are serialized as strings and the
   -- rest are read from the main instance config over RPC
   local mt = (opts.multiprocess and type(contents) == "string")
-  local cmd = mt and shell.stringify_mt(contents, opts)
+  local cmd = mt and shell.stringify_mt(contents --[[@as string]], opts)
       or shell.stringify(contents, opts, nil)
   -- Contents sent to fzf can only be nil or a shell command (string)
   -- the API accepts both tables and functions which we "stringify"
