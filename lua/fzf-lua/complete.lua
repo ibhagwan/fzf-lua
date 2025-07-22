@@ -79,6 +79,7 @@ local set_cmp_opts_path = function(opts)
 end
 
 M.path = function(opts)
+  ---@type fzf-lua.config.CompletePath
   opts = config.normalize_opts(opts, "complete_path")
   if not opts then return end
   opts.cmd = opts.cmd or (function()
@@ -97,9 +98,9 @@ M.path = function(opts)
 end
 
 M.file = function(opts)
+  ---@type fzf-lua.config.CompleteFile
   opts = config.normalize_opts(opts, "complete_file")
   if not opts then return end
-  opts.cmp_is_file = true
   opts.cmd = opts.cmd or (function()
     if vim.fn.executable("fdfind") == 1 then
       return "fdfind --strip-cwd-prefix --type f --exclude .git"
@@ -118,6 +119,7 @@ M.file = function(opts)
 end
 
 M.line = function(opts)
+  ---@type fzf-lua.config.CompleteLine
   opts = config.normalize_opts(opts, "complete_line")
   if not opts then return end
   opts.query = (function()
@@ -133,6 +135,7 @@ M.line = function(opts)
 end
 
 M.bline = function(opts)
+  ---@type fzf-lua.config.CompleteBline
   opts = opts or {}
   opts.current_buffer_only = true
   return M.line(opts)

@@ -7,6 +7,7 @@ local make_entry = require "fzf-lua.make_entry"
 local M = {}
 
 M.oldfiles = function(opts)
+  ---@type fzf-lua.config.Oldfiles
   opts = config.normalize_opts(opts, "oldfiles")
   if not opts then return end
 

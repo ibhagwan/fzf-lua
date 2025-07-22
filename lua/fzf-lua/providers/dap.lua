@@ -25,6 +25,7 @@ end
 M.commands = function(opts)
   if not dap() then return end
 
+  ---@type fzf-lua.config.DapCommands
   opts = config.normalize_opts(opts, "dap.commands")
   if not opts then return end
 
@@ -47,14 +48,15 @@ end
 M.configurations = function(opts)
   if not dap() then return end
 
+  ---@type fzf-lua.config.DapConfigurations
   opts = config.normalize_opts(opts, "dap.configurations")
   if not opts then return end
 
   local entries = {}
-  opts._cfgs = {}
+  local cfgs = {}
   for lang, lang_cfgs in pairs(_dap.configurations) do
     for _, cfg in ipairs(lang_cfgs) do
-      opts._cfgs[#entries + 1] = cfg
+      cfgs[#entries + 1] = cfg
       table.insert(entries, ("[%s] %s. %s"):format(
         utils.ansi_codes.green(lang),
         utils.ansi_codes.magenta(tostring(#entries + 1)),
@@ -68,8 +70,8 @@ M.configurations = function(opts)
       -- cannot run while in session
       if _dap.session() then return end
       local idx = selected and tonumber(selected[1]:match("(%d+).")) or nil
-      if idx and opts._cfgs[idx] then
-        _dap.run(opts._cfgs[idx])
+      if idx and cfgs[idx] then
+        _dap.run(cfgs[idx])
       end
     end,
   }
@@ -78,6 +80,7 @@ M.configurations = function(opts)
 end
 
 M.breakpoints = function(opts)
+  ---@type fzf-lua.config.DapBreakpoints
   opts = config.normalize_opts(opts, "dap.breakpoints")
   if not opts then return end
 
@@ -123,6 +126,7 @@ end
 M.variables = function(opts)
   if not dap() then return end
 
+  ---@type fzf-lua.config.DapVariables
   opts = config.normalize_opts(opts, "dap.variables")
   if not opts then return end
 
@@ -154,6 +158,7 @@ end
 M.frames = function(opts)
   if not dap() then return end
 
+  ---@type fzf-lua.config.DapFrames
   opts = config.normalize_opts(opts, "dap.frames")
   if not opts then return end
 
@@ -168,7 +173,7 @@ M.frames = function(opts)
     return
   end
 
-  opts._frames = session.threads[session.stopped_thread_id].frames
+  local frames = session.threads[session.stopped_thread_id].frames
 
   opts.previewer = {
     _ctor = function()
@@ -178,7 +183,7 @@ M.frames = function(opts)
       function p:parse_entry(entry_str)
         local idx = entry_str and tonumber(entry_str:match("(%d+).")) or nil
         if not idx then return {} end
-        local f = opts._frames[idx]
+        local f = frames[idx]
 
         if (not f) or not f.source then
           return {}
@@ -219,18 +224,18 @@ M.frames = function(opts)
   }
 
   opts.actions = {
-    ["enter"] = function(selected, o)
+    ["enter"] = function(selected, _)
       local sess = _dap.session()
       if not sess or not sess.stopped_thread_id then return end
       local idx = selected and tonumber(selected[1]:match("(%d+).")) or nil
-      if idx and o._frames[idx] then
-        session:_frame_set(o._frames[idx])
+      if idx and frames[idx] then
+        session:_frame_set(frames[idx])
       end
     end,
   }
 
   local entries = {}
-  for i, f in ipairs(opts._frames) do
+  for i, f in ipairs(frames) do
     table.insert(entries, ("%s. [%s] %s%s"):format(
       utils.ansi_codes.magenta(tostring(i)),
       utils.ansi_codes.green(f.name),

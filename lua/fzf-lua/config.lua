@@ -142,7 +142,7 @@ local eval = function(v, ...)
   return v
 end
 
----@param opts table<string, unknown>|fun():table?
+---@param opts fzf-lua.config.Base|{}|fun():table?
 ---@param globals string|table?
 ---@param __resume_key string?
 ---@return fzf-lua.Config?
@@ -272,10 +272,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- Backward compat: merge `winopts` with outputs from `winopts_fn`
   local winopts_fn = opts.winopts_fn or M.globals.winopts_fn
   if type(winopts_fn) == "function" then
-    if not opts.silent then
-      utils.warn(
-        "Deprecated option: 'winopts_fn' -> 'winopts'. Add 'silent=true' to hide this message.")
-    end
+    vim.deprecate("winopts_fn", "winopts", "Jan 2026", "FzfLua")
     local ret = winopts_fn(opts) or {}
     if not utils.tbl_isempty(ret) and (not opts.winopts or type(opts.winopts) == "table") then
       opts.winopts = vim.tbl_deep_extend("force", opts.winopts or {}, ret)
@@ -445,11 +442,7 @@ function M.normalize_opts(opts, globals, __resume_key)
         utils.map_set(opts, new_key, old_val)
       end
       utils.map_set(opts, old_key, nil)
-      if not opts.silent then
-        utils.warn(string.format(
-          "Deprecated option: '%s' -> '%s'. Add 'silent=true' to hide this message.",
-          old_key, new_key))
-      end
+      vim.deprecate(old_key, new_key, "Jan 2026", "FzfLua")
     end
   end
 

@@ -39,6 +39,9 @@ function M._man_cmd_fn(bat_pager)
   return string.format("%s %%s 2>/dev/null | %s", cmd, pager)
 end
 
+---missing fields are injected later, not sure how to tell luals about it
+---@diagnostic disable: missing-fields
+---@type fzf-lua.config.Defaults
 M.defaults                      = {
   nbsp          = utils.nbsp,
   winopts       = {
@@ -360,6 +363,7 @@ M.defaults.files                = {
   winopts                = { preview = { winopts = { cursorline = false } } },
 }
 
+---@diagnostic disable-next-line: assign-type-mismatch
 M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files, {
   silent            = true,
   -- TODO: lsp_workspace_symbols locate, not working yet
@@ -596,6 +600,7 @@ M.defaults.grep                 = {
   _treesitter    = true,
 }
 
+---@diagnostic disable-next-line: assign-type-mismatch
 M.defaults.grep_curbuf          = vim.tbl_deep_extend("force", M.defaults.grep, {
   rg_glob          = false, -- meaningless for single file rg
   exec_empty_query = true,  -- makes sense to display lines immediately
@@ -764,6 +769,7 @@ M.defaults.lines                = {
   _ctx             = { includeBuflist = true },
 }
 
+---@diagnostic disable-next-line: assign-type-mismatch
 M.defaults.blines               = vim.tbl_deep_extend("force", M.defaults.lines, {
   show_bufname    = false,
   show_unloaded   = true,
@@ -1126,8 +1132,10 @@ M.defaults.marks                = {
 }
 
 M.defaults.changes              = {
-  cmd = "changes",
-  h1 = "change",
+  cmd       = "changes",
+  h1        = "change",
+  actions   = { ["enter"] = actions.goto_jump },
+  previewer = { _ctor = previewers.builtin.jumps },
 }
 
 M.defaults.jumps                = {

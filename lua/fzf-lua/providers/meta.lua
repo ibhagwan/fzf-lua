@@ -55,6 +55,7 @@ local function ls(dir, fn)
 end
 
 M.profiles = function(opts)
+  ---@type fzf-lua.config.Profiles
   opts = config.normalize_opts(opts, "profiles")
   if not opts then return end
 
@@ -149,6 +150,7 @@ M.combine = function(t)
 end
 
 M.global = function(opts)
+  ---@type fzf-lua.config.Global
   opts = config.normalize_opts(opts, "global")
   if not opts then return end
 

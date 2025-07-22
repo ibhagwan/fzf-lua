@@ -605,6 +605,7 @@ local normalize_lsp_opts = function(opts, cfg, __resume_key)
 end
 
 local function fzf_lsp_locations(opts, fn_contents)
+  ---@type fzf-lua.config.Lsp
   opts = normalize_lsp_opts(opts, "lsp")
   if not opts then return end
   opts = core.set_fzf_field_index(opts)
@@ -647,6 +648,7 @@ M.outgoing_calls = function(opts)
 end
 
 M.finder = function(opts)
+  ---@type fzf-lua.config.LspFinder
   opts = normalize_lsp_opts(opts, "lsp.finder")
   if not opts then return end
   local contents = {}
@@ -728,6 +730,7 @@ local function gen_sym2style_map(opts)
 end
 
 M.document_symbols = function(opts)
+  ---@type fzf-lua.config.LspSymbols
   opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_document_symbols")
   if not opts then return end
   -- no support for sym_lsym
@@ -760,6 +763,7 @@ M.document_symbols = function(opts)
 end
 
 M.workspace_symbols = function(opts)
+  ---@type fzf-lua.config.LspWorkspaceSymbols
   opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
   if not opts then return end
   opts.locate = false -- Makes no sense for workspace symbols
@@ -786,6 +790,7 @@ end
 
 
 M.live_workspace_symbols = function(opts)
+  ---@type fzf-lua.config.LspLiveWorkspaceSymbols
   opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
   if not opts then return end
 
@@ -845,6 +850,7 @@ M.live_workspace_symbols = function(opts)
 end
 
 M.code_actions = function(opts)
+  ---@type fzf-lua.config.LspCodeActions
   opts = normalize_lsp_opts(opts, "lsp.code_actions")
   if not opts then return end
 

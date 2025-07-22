@@ -71,6 +71,7 @@ local get_files_cmd = function(opts)
 end
 
 M.files = function(opts)
+  ---@type fzf-lua.config.Files
   opts = config.normalize_opts(opts, "files")
   if not opts then return end
   if opts.ignore_current_file then
@@ -95,6 +96,7 @@ M.files = function(opts)
 end
 
 M.args = function(opts)
+  ---@type fzf-lua.config.Args
   opts = config.normalize_opts(opts, "args")
   if not opts then return end
 
@@ -139,6 +141,7 @@ M.args = function(opts)
 end
 
 M.zoxide = function(opts)
+  ---@type fzf-lua.config.Zoxide
   opts = config.normalize_opts(opts, "zoxide")
   if not opts then return end
 
