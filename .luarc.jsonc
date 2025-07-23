@@ -5,13 +5,13 @@
     "enable": true,
     "defaultConfig": {
       "indent_style": "space",
-      "indent_size": "2"
-    }
+      "indent_size": "2",
+    },
   },
   "diagnostics": {
     "enable": true,
     "neededFileStatus": {
-      "codestyle-check": "Any"
+      "codestyle-check": "Any",
     },
     "groupFileStatus": {
       "strict": "Opened",
@@ -23,42 +23,36 @@
       "redefined": "Opened",
       "type-check": "Opened",
       "unbalanced": "Opened",
-      "unused": "Opened"
+      "unused": "Opened",
     },
     "disable": ["different-requires"],
-    "unusedLocalExclude": ["_*"]
+    "unusedLocalExclude": ["_*"],
   },
   "workspace": {
     "library": [
-      //
-      // Trigger loading our meta definition file "types.lua"
-      // without this we get warnings about global "FzfLua"
-      // also enables inter-module resolving and completion
-      // i.e. defs/refs/impl for utils, libuv, shell, etc
-      //
-      // For more info:
-      // https://luals.github.io/wiki/definition-files
-      //
-      "lua",
-      "$VIMRUNTIME/lua",
+      "$VIMRUNTIME",
       "${3rd}/luv/library",
       // For "cmp_src.lua" type resolving
       "deps/mini.nvim",
       "deps/nvim-web-devicons",
-      "deps/nvim-cmp"
+      "deps/nvim-cmp",
+      // For local dec env resolving from lazy.nvim's cache
+      "$XDG_DATA_HOME/nvim/lazy/mini.nvim",
+      "$XDG_DATA_HOME/nvim/lazy/nvim-web-devicons",
+      "$XDG_DATA_HOME/nvim/lazy/nvim-cmp",
     ],
     "checkThirdParty": false,
     "maxPreload": 2000,
-    "preloadFileSize": 1000
+    "preloadFileSize": 1000,
   },
   "type": {
     "weakNilCheck": true,
     "weakUnionCheck": true,
-    "castNumberToInteger": true
+    "castNumberToInteger": true,
   },
   "hint": {
     "enable": true,
-    "setType": true
+    "setType": true,
   },
-  "telemetry.enable": false
+  "telemetry.enable": false,
 }
