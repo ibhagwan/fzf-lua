@@ -203,7 +203,7 @@ M.fzf_live = function(contents, opts)
   if type(contents) == "function" and M.can_transform(opts) then
     local cmd = shell.stringify_data(contents, opts, fzf_field_index)
     M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
-    return M.fzf_wrap(nil, opts, true)
+    return M.fzf_wrap(utils.shell_nop(), opts, true)
   end
   local cmd0 = contents ---@type string
   local func_contents = type(contents) == "function"
@@ -218,7 +218,7 @@ M.fzf_live = function(contents, opts)
       shell.stringify(func_contents, opts, fzf_field_index)
   cmd = mt and M.expand_query(cmd, fzf_field_index) or cmd
   M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
-  return M.fzf_wrap(nil, opts, true)
+  return M.fzf_wrap(utils.shell_nop(), opts, true)
 end
 
 M.fzf_resume = function(opts)
