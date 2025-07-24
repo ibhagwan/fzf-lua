@@ -308,7 +308,10 @@ M.live_grep = function(opts)
     local query = s[1] or ""
     opts.no_esc = nil
     local cmd0 = get_grep_cmd(opts, query, true)
-    return core.can_transform(opts) and ("reload:" .. cmd0) or cmd0
+    return core.can_transform(opts) and
+        ("reload:" .. (
+          not opts.exec_empty_query and #query == 0 and FzfLua.utils.shell_nop() or cmd0))
+        or cmd0
   end, opts)
 end
 
