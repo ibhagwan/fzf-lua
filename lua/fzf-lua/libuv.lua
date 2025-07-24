@@ -422,6 +422,11 @@ M.spawn_stdio = function(opts)
     io.stdout:write("[DEBUG] [mt] " .. opts.cmd .. EOL)
   end
 
+  if not fn_transform and not fn_postprocess and not _is_win and opts.cmd and pcall(require, "ffi") then
+    require("ffi").cdef([[int execl(const char *, const char *, ...);]])
+    require("ffi").C.execl("/bin/sh", "sh", "-c", opts.cmd, nil) -- noreturn
+  end
+
   local stderr, stdout = nil, nil
 
   local function stderr_write(msg)
