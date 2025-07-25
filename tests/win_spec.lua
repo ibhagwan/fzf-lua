@@ -40,7 +40,7 @@ T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
   -- Reduce cache size to 20 so functions get evicted quicker
   -- otherwise opts refs that are stored in the funcs are never
   -- cleared preventing the win object's __gc from being called
-  child.lua([[FzfLua.shell.cache_set_size(20)]])
+  exec_lua([[FzfLua.shell.cache_set_size(20)]])
   child.wait_until(function()
     if helpers.IS_WIN() then
       local hidden_fzf_bufnr = child.lua_get(
@@ -50,32 +50,32 @@ T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
         child.api.nvim_chan_send(chan, vim.keycode("<c-c>"))
       end
     end
-    child.lua([[FzfLua.files{ previewer = 'builtin' }]])
+    exec_lua([[FzfLua.files{ previewer = 'builtin' }]])
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == true
     end)
-    child.lua([[FzfLua.hide()]])
+    exec_lua([[FzfLua.hide()]])
     child.wait_until(function()
       return child.lua_get([[_G._fzf_load_called]]) == vim.NIL
     end)
-    child.lua([[collectgarbage('collect')]])
+    exec_lua([[collectgarbage('collect')]])
     return child.lua_get([[_G._gc_called]]) == true
   end)
   -- Restore original cache size
-  child.lua([[FzfLua.shell.cache_set_size(50)]])
+  exec_lua([[FzfLua.shell.cache_set_size(50)]])
 end
 
 T["win"]["hide"]["buffer deleted after win hidden (#1783)"] = function()
   eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
-  child.lua([[FzfLua.files()]])
+  exec_lua([[FzfLua.files()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
   end)
-  child.lua([[FzfLua.hide()]])
+  exec_lua([[FzfLua.hide()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
   end)
-  child.lua([[
+  exec_lua([[
     vim.cmd("%bd!")
     FzfLua.files()
   ]])
@@ -87,16 +87,16 @@ end
 T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
   eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
   child.cmd([[new]])
-  child.lua([[FzfLua.files()]])
+  exec_lua([[FzfLua.files()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
   end)
-  child.lua([[FzfLua.hide()]])
+  exec_lua([[FzfLua.hide()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
   end)
   child.cmd([[close]])
-  child.lua([[FzfLua.unhide()]])
+  exec_lua([[FzfLua.unhide()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
   end)
@@ -104,17 +104,17 @@ T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
   child.type_keys("<c-j>")
 
   -- `:quit` on other window should not kill fzf job #2011
-  child.lua([[FzfLua.hide()]])
+  exec_lua([[FzfLua.hide()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
   end)
   child.cmd([[new]])
   child.cmd([[quit]])
-  child.lua([[FzfLua.unhide()]])
+  exec_lua([[FzfLua.unhide()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
   end)
-  child.lua([[FzfLua.hide()]])
+  exec_lua([[FzfLua.hide()]])
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
   end)
@@ -127,7 +127,7 @@ end
 
 T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()
   reload({ "hide" })
-  child.lua([[FzfLua.files{
+  exec_lua([[FzfLua.files{
     -- profile = "hide",
     query = "README.md",
     fzf_opts = { ["--multi"] = true },

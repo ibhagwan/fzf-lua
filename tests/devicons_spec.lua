@@ -5,6 +5,7 @@ local assert = helpers.assert
 local child = helpers.new_child_neovim()
 local expect, eq = helpers.expect, helpers.expect.equality
 local new_set = MiniTest.new_set
+local exec_lua = child.lua
 
 local _devicons_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "nvim-web-devicons")
 if not vim.uv.fs_stat(_devicons_path) then
@@ -51,7 +52,7 @@ local T = helpers.new_set_with_child(child, {
     pre_case = function()
       child.o.termguicolors = true
       child.o.background = "dark"
-      child.lua([[M = { devicons = require("fzf-lua.devicons") }]])
+      exec_lua([[M = { devicons = require("fzf-lua.devicons") }]])
     end,
   },
 })
@@ -59,7 +60,7 @@ local T = helpers.new_set_with_child(child, {
 T["setup"] = new_set()
 
 T["setup"]["verify lazy load"] = function()
-  child.lua("vim.opt.runtimepath:append(...)", { _devicons_path })
+  exec_lua("vim.opt.runtimepath:append(...)", { _devicons_path })
   -- Shouldn't be loaded after setup
   eq(child.lua_get("type(M.devicons)"), "table")
   eq(child.lua_get("package.loaded['nvim-web-devicons']"), vim.NIL)
@@ -67,8 +68,8 @@ T["setup"]["verify lazy load"] = function()
 end
 
 T["setup"]["auto-detect"] = function()
-  child.lua("vim.opt.runtimepath:append(...)", { _devicons_path })
-  child.lua([[
+  exec_lua("vim.opt.runtimepath:append(...)", { _devicons_path })
+  exec_lua([[
     require("nvim-web-devicons").setup({})
     M.devicons.load()
   ]])
@@ -77,7 +78,7 @@ T["setup"]["auto-detect"] = function()
 end
 
 T["setup"]["_G.devicons_path"] = function()
-  child.lua(string.format([==[
+  exec_lua(string.format([==[
     _G._devicons_path = [[%s]]
     _G._fzf_lua_server = nil
     _G._fzf_lua_is_headless = true
@@ -88,8 +89,8 @@ T["setup"]["_G.devicons_path"] = function()
 end
 
 T["setup"]["headless RPC, vim.g.fzf_lua_server"] = function()
-  child.lua("vim.opt.runtimepath:append(...)", { _devicons_path })
-  child.lua([[M.devicons.load()]])
+  exec_lua("vim.opt.runtimepath:append(...)", { _devicons_path })
+  exec_lua([[M.devicons.load()]])
   eq(child.lua_get([[M.devicons.plugin_name()]]), "devicons")
   local fzf_lua_server = child.lua_get("vim.g.fzf_lua_server")
   eq(#fzf_lua_server > 0, true)
@@ -110,9 +111,9 @@ T["setup"]["headless RPC, vim.g.fzf_lua_server"] = function()
 end
 
 T["setup"]["vim.o.background=dark"] = function()
-  child.lua("vim.opt.runtimepath:append(...)", { _devicons_path })
+  exec_lua("vim.opt.runtimepath:append(...)", { _devicons_path })
   child.o.background = "dark"
-  child.lua([[M.devicons.load()]])
+  exec_lua([[M.devicons.load()]])
   devicons_are_same("foo/", { "", nil })
   devicons_are_same("", { "", "#6d8086" })
   devicons_are_same(".", { "", "#6d8086" })
@@ -135,12 +136,12 @@ T["setup"]["vim.o.background=dark"] = function()
 end
 
 T["setup"]["vim.o.background=light"] = function()
-  child.lua("vim.opt.runtimepath:append(...)", { _devicons_path })
+  exec_lua("vim.opt.runtimepath:append(...)", { _devicons_path })
   -- NOTE: test bg change with a loaded pkg
   child.o.background = "dark"
-  child.lua([[M.devicons.load()]])
+  exec_lua([[M.devicons.load()]])
   child.o.background = "light"
-  child.lua([[M.devicons.load()]])
+  exec_lua([[M.devicons.load()]])
   devicons_are_same("foo/", { "", nil })
   devicons_are_same("", { "", "#6d8086" })
   devicons_are_same(".", { "", "#6d8086" })
@@ -163,10 +164,10 @@ T["setup"]["vim.o.background=light"] = function()
 end
 
 T["setup"]["notermguicolors (dark)"] = function()
-  child.lua("vim.opt.runtimepath:append(...)", { _devicons_path })
+  exec_lua("vim.opt.runtimepath:append(...)", { _devicons_path })
   child.o.background = "dark"
   child.o.termguicolors = false
-  child.lua([[M.devicons.load()]])
+  exec_lua([[M.devicons.load()]])
   devicons_are_same("foo/", { "", nil })
   devicons_are_same("", { "", "66" })
   devicons_are_same(".", { "", "66" })
@@ -188,10 +189,10 @@ T["setup"]["notermguicolors (dark)"] = function()
   devicons_are_same("foo.R", { "󰟔", "25" })
 end
 T["setup"]["notermguicolors (light)"] = function()
-  child.lua("vim.opt.runtimepath:append(...)", { _devicons_path })
+  exec_lua("vim.opt.runtimepath:append(...)", { _devicons_path })
   child.o.background = "light"
   child.o.termguicolors = false
-  child.lua([[M.devicons.load()]])
+  exec_lua([[M.devicons.load()]])
   devicons_are_same("foo/", { "", nil })
   devicons_are_same("", { "", "66" })
   devicons_are_same(".", { "", "66" })

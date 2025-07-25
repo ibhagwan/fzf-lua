@@ -4,6 +4,7 @@ local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
 local expect, eq = helpers.expect, helpers.expect.equality
 local new_set = MiniTest.new_set
+local exec_lua = child.lua
 
 local _mini_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim")
 if not vim.uv.fs_stat(_mini_path) then
@@ -21,7 +22,7 @@ local T = helpers.new_set_with_child(child, {
       child.o.shell = "/bin/sh"
       child.o.termguicolors = true
       child.o.background = "dark"
-      child.lua([[M = { devicons = require("fzf-lua.devicons") }]])
+      exec_lua([[M = { devicons = require("fzf-lua.devicons") }]])
     end,
   },
 })
@@ -67,13 +68,13 @@ T["headless"]["file_icons"]["server"] = new_set({ parametrize = { { "devicons" }
     helpers.SKIP_IF_WIN()
     -- helpers.SKIP_IF_NOT_LINUX()
     if icons == "mini" then
-      child.lua("vim.opt.runtimepath:append(...)", { _mini_path })
-      child.lua([[require("mini.icons").setup({})]])
+      exec_lua("vim.opt.runtimepath:append(...)", { _mini_path })
+      exec_lua([[require("mini.icons").setup({})]])
     else
-      child.lua("vim.opt.runtimepath:append(...)", { _devicons_path })
-      child.lua([[ require("nvim-web-devicons").setup({})]])
+      exec_lua("vim.opt.runtimepath:append(...)", { _devicons_path })
+      exec_lua([[ require("nvim-web-devicons").setup({})]])
     end
-    child.lua([[M.devicons.load()]])
+    exec_lua([[M.devicons.load()]])
     eq(child.lua_get([[M.devicons.plugin_name()]]), icons)
     local fzf_lua_server = child.lua_get("vim.g.fzf_lua_server")
     eq(#fzf_lua_server > 0, true)

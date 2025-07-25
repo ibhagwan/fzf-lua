@@ -4,7 +4,7 @@ local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
 local expect, eq = helpers.expect, helpers.expect.equality
 local new_set = MiniTest.new_set
-
+local exec_lua = child.lua
 
 local T = helpers.new_set_with_child(child)
 
@@ -24,8 +24,8 @@ T["grep"]["search"]["regex"] = new_set({ parametrize = { { false }, { true } } }
     if not vim.uv.fs_stat(path) then
       path = vim.fs.joinpath("deps", "nvim-web-devicons")
     end
-    child.lua("vim.opt.runtimepath:append(...)", { path })
-    child.lua([[require("nvim-web-devicons").setup({})]])
+    exec_lua("vim.opt.runtimepath:append(...)", { path })
+    exec_lua([[require("nvim-web-devicons").setup({})]])
     helpers.FzfLua.grep(child, {
       __expect_lines = true,
       __screen_opts = screen_opts,

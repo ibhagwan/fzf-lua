@@ -5,6 +5,7 @@ local assert = helpers.assert
 local child = helpers.new_child_neovim()
 local expect, eq = helpers.expect, helpers.expect.equality
 local new_set = MiniTest.new_set
+local exec_lua = child.lua
 
 -- Setup mini.icons locally
 local _mini_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim")
@@ -56,7 +57,7 @@ local T = helpers.new_set_with_child(child, {
     pre_case = function()
       child.o.termguicolors = true
       child.o.background = "dark"
-      child.lua([[M = { devicons = require("fzf-lua.devicons") }]])
+      exec_lua([[M = { devicons = require("fzf-lua.devicons") }]])
     end,
   },
 })
@@ -71,7 +72,7 @@ T["setup"]["verify lazy load"] = function()
 end
 
 T["setup"]["auto-detect"] = function()
-  child.lua([[
+  exec_lua([[
     require("mini.icons").setup({})
     M.devicons.load()
   ]])
@@ -81,7 +82,7 @@ T["setup"]["auto-detect"] = function()
 end
 
 T["setup"]["hlgroup modifications"] = function()
-  child.lua([[
+  exec_lua([[
     require("mini.icons").setup({})
     vim.api.nvim_set_hl(0, "MiniIconsGrey", { default = false, link = "Directory" })
     M.devicons.load({ mode = "gui" })
@@ -96,7 +97,7 @@ T["setup"]["hlgroup modifications"] = function()
 end
 
 T["setup"]["devicons mock"] = function()
-  child.lua([[
+  exec_lua([[
     require("mini.icons").mock_nvim_web_devicons()
     M.devicons.load({ mode = "gui" })
   ]])
@@ -106,8 +107,8 @@ T["setup"]["devicons mock"] = function()
 end
 
 T["setup"]["headless RPC, vim.g.fzf_lua_server"] = function()
-  child.lua("vim.opt.runtimepath:append(...)", { _mini_path })
-  child.lua([[
+  exec_lua("vim.opt.runtimepath:append(...)", { _mini_path })
+  exec_lua([[
     require("mini.icons").setup({})
     M.devicons.load()
   ]])

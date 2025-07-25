@@ -4,6 +4,7 @@ local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
 local expect, eq = helpers.expect, helpers.expect.equality
 local new_set = MiniTest.new_set
+local exec_lua = child.lua
 
 -- Helpers with child processes
 --stylua: ignore start
@@ -64,8 +65,8 @@ T["files"]["previewer"]["builtin"] = new_set({ parametrize = { { "ci" }, { "buil
       if not vim.uv.fs_stat(path) then
         path = vim.fs.joinpath("deps", "mini.nvim")
       end
-      child.lua("vim.opt.runtimepath:append(...)", { path })
-      child.lua([[require("mini.icons").setup({})]])
+      exec_lua("vim.opt.runtimepath:append(...)", { path })
+      exec_lua([[require("mini.icons").setup({})]])
     end
     helpers.FzfLua.files(child, {
       __expect_lines = true,
@@ -105,8 +106,8 @@ T["files"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-at
     if not vim.uv.fs_stat(path) then
       path = vim.fs.joinpath("deps", plugin)
     end
-    child.lua("vim.opt.runtimepath:append(...)", { path })
-    child.lua(([[require("%s").setup({})]]):format(icons == "mini" and "mini.icons" or plugin))
+    exec_lua("vim.opt.runtimepath:append(...)", { path })
+    exec_lua(([[require("%s").setup({})]]):format(icons == "mini" and "mini.icons" or plugin))
     helpers.FzfLua.files(child, {
       __expect_lines = not attrs,
       hidden = false,
@@ -149,7 +150,7 @@ T["files"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find
         table.insert(screen_opts.ignore_text, i)
       end
     end
-    child.lua(([[
+    exec_lua(([[
       _G._exec = vim.fn.executable
       vim.fn.executable = function(x)
         if vim.tbl_contains(%s, x) then return 0 end
@@ -179,7 +180,7 @@ T["files"]["preview should work after chdir #1864"] = function()
     previewer = "builtin",
     winopts = { preview = { hidden = false } },
     __after_open = function()
-      child.lua([[vim.cmd.cd("./tests")]])
+      exec_lua([[vim.cmd.cd("./tests")]])
       child.type_keys([[<c-n>]])
       sleep(100)
     end
