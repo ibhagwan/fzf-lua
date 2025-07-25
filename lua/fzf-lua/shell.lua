@@ -167,7 +167,6 @@ end
 ---@param opts table
 ---@return string
 M.stringify_mt = function(cmd, opts)
-  assert(opts.multiprocess, "multiprocess must be set to true/1")
   opts.cmd = cmd or opts.cmd
   ---@param o table<string, unknown>
   ---@return table
@@ -227,7 +226,7 @@ M.stringify_mt = function(cmd, opts)
 
   -- `multiprocess=1` is "optional" if no opt which requires processing
   -- is present we return the command as is to be piped to fzf "natively"
-  if opts.multiprocess == 1
+  if (opts.multiprocess == nil or opts.multiprocess == 1)
       and not opts.fn_transform
       and not opts.fn_preprocess
       and not opts.fn_postprocess

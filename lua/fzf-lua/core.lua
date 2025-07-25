@@ -145,19 +145,17 @@ end
 ---@param opts? fzf-lua.config.Base|{}
 ---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
+  assert(contents, "must supply contents")
   opts = config.normalize_opts(opts or {}, {})
   if not opts then return end
-  if not contents then
-    local cmd = opts.cmd and shell.stringify_mt(opts.cmd, opts) or nil
-    return M.fzf_wrap(cmd, opts, true)
-  end
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
   end
-  -- stringify_mt: No register function id, the wrapped multiprocess
-  -- command is independent, most of it's options are serialized as strings and the
-  -- rest are read from the main instance config over RPC
-  local mt = (opts.multiprocess and type(contents) == "string")
+  -- stringify_mt: the wrapped multiprocess command is independent, most of it's
+  -- options are serialized as strings and the rest are read from the main instance
+  -- config over RPC, if the command doesn't require any processing it will be piped
+  -- directly to fzf using $FZF_DEFAULT_COMMAND
+  local mt = (opts.multiprocess ~= false and type(contents) == "string")
   local cmd = mt and shell.stringify_mt(contents --[[@as string]], opts)
       or shell.stringify(contents, opts, nil)
   -- Contents sent to fzf can only be nil or a shell command (string)
@@ -213,7 +211,7 @@ M.fzf_live = function(contents, opts)
         query = libuv.shellescape(query)
         return M.expand_query(cmd0, query)
       end
-  local mt = (opts.multiprocess and type(contents) == "string")
+  local mt = (opts.multiprocess ~= false and type(contents) == "string")
   local cmd = mt and shell.stringify_mt(contents, opts) or
       shell.stringify(func_contents, opts, fzf_field_index)
   cmd = mt and M.expand_query(cmd, fzf_field_index) or cmd

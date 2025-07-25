@@ -191,6 +191,7 @@ T["api"]["fzf_live"]["rg"]["no error"] = new_set(
         ),
         {
           __expect_lines = true,
+          multiprocess = false,
           debug = 1,
           query = query,
           -- Windows fails due to the spaced query term with the native

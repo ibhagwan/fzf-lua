@@ -913,7 +913,7 @@ function M.normalize_opts(opts, globals, __resume_key)
         or opts.fn_preprocess
   end
   -- Must have preprocess to load icon sets, relocate {argvz}, etc
-  if opts.fn_preprocess == nil
+  if opts.fn_transform and opts.fn_preprocess == nil
       and (opts.file_icons
         or opts.git_icons
         or opts.formatter
