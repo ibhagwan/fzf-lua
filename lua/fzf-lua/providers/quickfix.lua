@@ -26,7 +26,7 @@ local quickfix_run = function(opts, cfg)
   getlist()
 
   if utils.tbl_isempty(opts.__locations) or opts.__locations[2] == "No entries" then
-    utils.warn(string.format("%s list is empty.", opts.is_loclist and "Location" or "Quickfix"))
+    utils.info("%s list is empty.", opts.is_loclist and "Location" or "Quickfix")
     return
   end
 
@@ -85,8 +85,7 @@ local qfstack_exec = function(opts, cfg)
   opts.__gethist()
 
   if utils.tbl_isempty(opts.__history) or opts.__history[2] == "No entries" then
-    utils.warn(string.format("No %s",
-      opts.is_loclist and "location lists" or "quickfix lists"))
+    utils.info("No %s", opts.is_loclist and "location lists" or "quickfix lists")
     return
   end
 

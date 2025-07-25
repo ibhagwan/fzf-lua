@@ -399,7 +399,7 @@ function FzfWin:normalize_border(winopts, metadata)
   if type(border) == "string" then
     if not valid_borders[border] then
       if not self._o.silent then
-        utils.warn(string.format("Invalid border style '%s', will use 'rounded'.", border))
+        utils.warn("Invalid border style '%s', will use 'rounded'.", border)
       end
       border = "rounded"
     else
@@ -407,7 +407,7 @@ function FzfWin:normalize_border(winopts, metadata)
     end
   elseif type(border) ~= "table" then
     if not self._o.silent then
-      utils.warn(string.format("Invalid border type '%s', will use 'rounded'.", type(border)))
+      utils.warn("Invalid border type '%s', will use 'rounded'.", type(border))
     end
     border = "rounded"
   end
@@ -415,8 +415,7 @@ function FzfWin:normalize_border(winopts, metadata)
     -- when ambiwdith="double" `nvim_open_win` with border chars fails:
     -- with "border chars must be one cell", force string border (#874)
     if not self._o.silent then
-      utils.warn(string.format(
-        "Invalid border type for 'ambiwidth=double', will use 'rounded'.", border))
+      utils.warn("Invalid border type for 'ambiwidth=double', will use 'rounded'.", border)
     end
     border = "rounded"
   end
@@ -542,8 +541,7 @@ function FzfWin:check_exit_status(exit_code, fzf_bufnr)
   --    130    Interrupted with CTRL-C or ESC
   if exit_code == 2 then
     local lines = vim.api.nvim_buf_get_lines(self.fzf_bufnr, 0, 1, false)
-    utils.warn(string.format("fzf error %d: %s", exit_code,
-      lines and #lines[1] > 0 and lines[1] or "<null>"))
+    utils.error("fzf error %d: %s", exit_code, lines and #lines[1] > 0 and lines[1] or "<null>")
   end
 end
 

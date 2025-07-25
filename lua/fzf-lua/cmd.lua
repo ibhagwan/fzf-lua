@@ -11,7 +11,7 @@ function M.run_command(cmd, ...)
   cmd = cmd or "builtin"
 
   if not builtin[cmd] then
-    utils.info(string.format("invalid command '%s'", cmd))
+    utils.error("invalid command '%s'", cmd)
     return
   end
 

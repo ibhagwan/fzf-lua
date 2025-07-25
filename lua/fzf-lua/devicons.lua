@@ -105,7 +105,7 @@ function NvimWebDevicons:load_icons(opts)
   end)
   if not ok or not all_devicons or utils.tbl_isempty(all_devicons) then
     -- something is wrong with devicons
-    utils.err("devicons.get_icons() is nil or empty!")
+    utils.error("devicons.get_icons() is nil or empty!")
     return
   end
   local icons = {

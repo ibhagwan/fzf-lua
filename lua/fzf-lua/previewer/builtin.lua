@@ -78,7 +78,7 @@ function TSContext.inc_dec_maxlines(num, winid, bufnr)
   local config = require("treesitter-context.config")
   local max_lines = config.max_lines or 0
   config.max_lines = math.max(0, max_lines + tonumber(num))
-  utils.info(string.format("treesitter-context `max_lines` set to %d.", config.max_lines))
+  utils.info("treesitter-context `max_lines` set to %d.", config.max_lines)
   if TSContext.is_attached(winid) then
     for _, t in ipairs({ 0, 20 }) do
       vim.defer_fn(function() TSContext.update(winid, bufnr) end, t)
@@ -93,7 +93,7 @@ end
 function TSContext.update(winid, bufnr, opts)
   opts = opts or {}
   if not TSContext.setup(opts) then return end
-  assert(bufnr == vim.api.nvim_win_get_buf(winid))
+  assert(not vim.api.nvim_win_is_valid(winid) or bufnr == vim.api.nvim_win_get_buf(winid))
   local render = require("treesitter-context.render")
   local context_ranges, context_lines = require("treesitter-context.context").get(winid)
   if not context_ranges or #context_ranges == 0 then
@@ -965,8 +965,7 @@ local ts_attach = function(bufnr, ft)
   if lang and loaded then
     local ok, err = pcall(vim.treesitter.start, bufnr, lang)
     if not ok then
-      utils.warn(string.format(
-        "unable to attach treesitter highlighter for filetype '%s': %s", ft, err))
+      utils.warn("unable to attach treesitter highlighter for filetype '%s': %s", ft, err)
     end
     return ok
   end
@@ -1104,12 +1103,12 @@ function Previewer.buffer_or_file:do_syntax(entry)
     syntax_limit_reached = 2
   end
   if syntax_limit_reached > 0 and self.opts.silent == false then
-    utils.info(string.format(
+    utils.info(
       "syntax disabled for '%s' (%s), consider increasing '%s(%d)'", entry.path,
       syntax_limit_reached == 1 and ("%d lines"):format(lcount) or ("%db"):format(bytes),
       syntax_limit_reached == 1 and "syntax_limit_l" or "syntax_limit_b",
       syntax_limit_reached == 1 and self.syntax_limit_l or self.syntax_limit_b
-    ))
+    )
   end
 
   if syntax_limit_reached ~= 0 then
@@ -1246,9 +1245,9 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
         regex_end = tonumber(regex_end) and regex_end - regex_start
         regex_start = tonumber(regex_start) and regex_start + math.max(1, col) or 0
       elseif self.opts.silent ~= true then
-        utils.warn(string.format(
+        utils.warn(
           [[Unable to init vim.regex with "%s", %s. . Add 'silent=true' to hide this message.]],
-          regex, reg))
+          regex, reg)
       end
       if regex_start > 0 then
         self.match_id = fn.matchaddpos(self.win.hls.search, { { lnum, regex_start, regex_end } }, 11)

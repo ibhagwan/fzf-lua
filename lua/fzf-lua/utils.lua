@@ -137,26 +137,73 @@ function M.nvim_has_option(option)
   return vim.fn.exists("&" .. option) == 1
 end
 
-local fast_event_aware_notify = function(msg, level, opts)
+M._notify_header = "LineNr"
+
+--- Fancy notification wrapper, idea borrowed from blink.nvim
+--- @param lvl? number
+--- @param ... string|number|[string, string?][]
+function M.notify(lvl, ...)
+  -- Message can be specified directly as table with highlights, i.e. { "foo", "Error" }
+  -- or as a vararg of strings/numbers to be sent to string.format
+  local msg = type(select(1, ...)) == "table" and select(1, ...) or string.format(...)
+
+  local header_hl, chunks = (function()
+    local hl = (function()
+      if lvl == vim.log.levels.ERROR then
+        return "DiagnosticVirtualLinesError"
+      elseif lvl == vim.log.levels.WARN then
+        return "DiagnosticVirtualLinesWarn"
+      elseif lvl == vim.log.levels.INFO then
+        return "DiagnosticVirtualLinesInfo"
+      else
+        return "DiagnosticVirtualLinesHint"
+      end
+    end)()
+    -- When using vararg for msg (i.e. only text) we color the text based on the
+    -- requested log level, when msg is already highlighted (i.e. table) we leave
+    -- the msg highlights as requested by the caller and color the header (plugin
+    -- name) instead
+    if type(msg) == "table" then
+      for i, v in ipairs(msg) do
+        if type(v) ~= "table" or not v[2] then
+          msg[i] = { type(v) ~= "table" and tostring(v) or v[1], "" }
+        end
+      end
+      return hl, msg
+    else
+      return M._notify_header, { { msg, hl } }
+    end
+  end)()
+
+  assert(type(chunks) == "table")
+
+  table.insert(chunks, 1, { "[Fzf-lua]", header_hl })
+  table.insert(chunks, 2, { " " })
+
+  local function nvim_echo()
+    local echo_opts = {
+      verbose = false,
+      err = M.__HAS_NVIM_011 and vim.log.levels.ERROR and true or nil,
+    }
+    vim.api.nvim_echo(chunks, true, echo_opts)
+  end
   if vim.in_fast_event() then
-    vim.schedule(function()
-      vim.notify("[Fzf-lua] " .. msg, level, opts)
-    end)
+    vim.schedule(nvim_echo)
   else
-    vim.notify("[Fzf-lua] " .. msg, level, opts)
+    nvim_echo()
   end
 end
 
-function M.info(msg)
-  fast_event_aware_notify(msg, vim.log.levels.INFO, {})
+function M.info(...)
+  M.notify(vim.log.levels.INFO, ...)
 end
 
-function M.warn(msg)
-  fast_event_aware_notify(msg, vim.log.levels.WARN, {})
+function M.warn(...)
+  M.notify(vim.log.levels.WARN, ...)
 end
 
-function M.err(msg)
-  fast_event_aware_notify(msg, vim.log.levels.ERROR, {})
+function M.error(...)
+  M.notify(vim.log.levels.ERROR, ...)
 end
 
 function M.is_darwin()

@@ -233,7 +233,7 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
         end
         if pcall_vimcmd ~= false then
           local ok, err = pcall(function() vim.cmd(vimcmd) end)
-          if not ok then utils.warn(string.format("':%s' failed: %s", vimcmd, err)) end
+          if not ok then utils.error("':%s' failed: %s", vimcmd, err) end
         else
           vim.cmd(vimcmd)
         end
@@ -514,7 +514,7 @@ end
 M.toggle_bg = function(_, _)
   vim.o.background = vim.o.background == "dark" and "light" or "dark"
   utils.setup_highlights()
-  utils.info(string.format([[background set to "%s"]], vim.o.background))
+  utils.info([[background set to '%s']], vim.o.background)
 end
 
 M.hi = function(selected)
@@ -789,7 +789,7 @@ M.git_switch = function(selected, opts)
   table.insert(cmd, branch)
   local output, rc = utils.io_systemlist(cmd)
   if rc ~= 0 then
-    utils.err(unpack(output))
+    utils.error(unpack(output))
   else
     utils.info(unpack(output))
     vim.cmd("checktime")
@@ -809,9 +809,9 @@ M.git_branch_add = function(selected, opts)
     table.insert(cmd_add_branch, branch)
     local output, rc = utils.io_systemlist(cmd_add_branch)
     if rc ~= 0 then
-      utils.err(unpack(output))
+      utils.error(unpack(output))
     else
-      utils.info(string.format("Created branch '%s'.", branch))
+      utils.info("Created branch '%s'.", branch)
     end
   end
 end
@@ -823,14 +823,14 @@ M.git_branch_del = function(selected, opts)
   local branch = selected[1]:match("[^%s%*]+")
   local cur_branch = utils.io_systemlist(cmd_cur_branch)[1]
   if branch == cur_branch then
-    utils.warn(string.format("Cannot delete active branch '%s'", branch))
+    utils.warn("Cannot delete active branch '%s'", branch)
     return
   end
   if vim.fn.confirm("Delete branch " .. branch .. "?", "&Yes\n&No") == 1 then
     table.insert(cmd_del_branch, branch)
     local output, rc = utils.io_systemlist(cmd_del_branch)
     if rc ~= 0 then
-      utils.err(unpack(output))
+      utils.error(unpack(output))
     else
       utils.info(unpack(output))
     end
@@ -857,8 +857,15 @@ M.git_yank_commit = function(selected, opts)
     vim.fn.setreg(reg, commit_hash)
   end
   vim.fn.setreg([[0]], commit_hash)
-  utils.info(string.format("commit hash %s copied to register %s, use 'p' to paste.",
-    commit_hash, regs[1]))
+  utils.info({
+    "commit hash ",
+    { commit_hash, "DiagnosticVirtualLinesWarn" },
+    " copied to register ",
+    { regs[1],     "DiagnosticVirtualLinesHint" },
+    ", use '",
+    { "p", "DiagnosticVirtualLinesHint" },
+    "' to paste.",
+  })
 end
 
 M.git_checkout = function(selected, opts)
@@ -871,7 +878,7 @@ M.git_checkout = function(selected, opts)
     table.insert(cmd_checkout, commit_hash)
     local output, rc = utils.io_systemlist(cmd_checkout)
     if rc ~= 0 then
-      utils.err(unpack(output))
+      utils.error(unpack(output))
     else
       utils.info(unpack(output))
       vim.cmd("checktime")
@@ -887,7 +894,7 @@ local git_exec = function(selected, opts, cmd, silent)
     table.insert(_cmd, file)
     local output, rc = utils.io_systemlist(_cmd)
     if rc ~= 0 and not silent then
-      utils.err(unpack(output) or string.format("exit code %d", rc))
+      utils.error(unpack(output) or string.format("exit code %d", rc))
     end
     success = rc == 0
   end
@@ -1064,10 +1071,9 @@ M.tmux_buf_set_reg = function(selected, opts)
     opts.register = opts.register or [["]]
     local ok, err = pcall(vim.fn.setreg, opts.register, data)
     if ok then
-      utils.info(string.format("%d characters copied into register %s",
-        #data, opts.register))
+      utils.info("%d characters copied into register %s", #data, opts.register)
     else
-      utils.err(string.format("setreg(%s) failed: %s", opts.register, err))
+      utils.error("setreg(%s) failed: %s", opts.register, err)
     end
   end
 end

@@ -152,13 +152,12 @@ function AsyncDownloadManager:new(opts)
   self.max_threads = tonumber(opts.max_threads) > 0 and tonumber(opts.max_threads) or 5
   local stat, _ = uv.fs_stat(self.path)
   if stat and stat.type ~= "directory" then
-    utils.warn(string.format(
-      [["%s" already exists and is not a directory (type:%s)]], self.path, stat.type))
+    utils.error([["%s" already exists and is not a directory (type:%s)]], self.path, stat.type)
     return
   end
   if not stat then
     if vim.fn.mkdir(self.path, "p") ~= 1 then
-      utils.warn(string.format([[Unable to create cache directory "%s"]], self.path))
+      utils.error([[Unable to create cache directory "%s"]], self.path)
       return
     end
   end
@@ -192,11 +191,11 @@ function AsyncDownloadManager:load_db(db)
   self.db = db
   for k, p in pairs(self.db or {}) do
     if type(p.url) ~= "string" then
-      utils.warn(string.format("package %s: missing 'url'", k))
+      utils.warn("package %s: missing 'url'", k)
       return false
     end
     if type(p.colorschemes) ~= "table" or utils.tbl_isempty(p.colorschemes) then
-      utils.warn(string.format("package %s: missing or empty 'colorschemes'", k))
+      utils.warn("package %s: missing or empty 'colorschemes'", k)
       return false
     end
     local github_url = "https://github.com/"
@@ -215,8 +214,7 @@ function AsyncDownloadManager:load_db(db)
     for i, v in ipairs(p.colorschemes) do
       p.colorschemes[i].disp_name = v.disp_name or p.disp_name
       if not v.name and not v.lua and not v.vim then
-        utils.warn(string.format(
-          "package %s: colorschemes[%d], must contain at least 'name|lua|vim'", k, i))
+        utils.warn("package %s: colorschemes[%d], must contain at least 'name|lua|vim'", k, i)
         return false
       end
     end
@@ -298,7 +296,7 @@ function AsyncDownloadManager:jobstart(plugin, job_args)
   job_args[2] = vim.tbl_extend("keep", job_args[2] or {},
     {
       on_exit = function(_, rc, _)
-        utils.info(string.format("%s [job_id:%d] finished with exit code %s", plugin, job_id, rc))
+        utils.info("%s [job_id:%d] finished with exit code %s", plugin, job_id, rc)
         if type(info.on_exit) == "function" then
           -- this calls `coroutine.resume` and resumes fzf's reload input stream
           info.on_exit(_, rc, _)
@@ -313,11 +311,10 @@ function AsyncDownloadManager:jobstart(plugin, job_args)
   if job_id == 0 then
     utils.warn("jobstart: invalid args")
   elseif job_id == -1 then
-    utils.warn(string.format([[jobstart: "%s" is not executable]], job_args[1]))
+    utils.warn([[jobstart: "%s" is not executable]], job_args[1])
   else
     -- job started successfully
-    utils.info(string.format("%s [path:%s] [job_id:%d]...",
-      msg, path.HOME_to_tilde(assert(info.path)), job_id))
+    utils.info("%s [path:%s] [job_id:%d]...", msg, path.HOME_to_tilde(assert(info.path)), job_id)
     self.job_ids[tostring(job_id)] = { plugin = plugin, args = job_args }
     self.db[plugin].job_id = job_id
   end
@@ -352,7 +349,7 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
   -- TODO: should we check `package.loaded[...]` before packadd?
   local ok, out = pcall(function() vim.cmd("packadd " .. p.dir) end)
   if not ok then
-    utils.warn(string.format("Unable to packadd  %s: %s", p.dir, tostring(out)))
+    utils.error("Unable to packadd  %s: %s", p.dir, tostring(out))
     return
   end
   if cs.vim then
@@ -363,7 +360,7 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
     ok, out = pcall(function() vim.cmd("colorscheme " .. cs.name) end)
   end
   if not ok then
-    utils.warn(string.format("Unable to apply colorscheme %s: %s", cs.disp_name, tostring(out)))
+    utils.error("Unable to apply colorscheme %s: %s", cs.disp_name, tostring(out))
   end
 end
 
@@ -382,13 +379,13 @@ M.awesome_colorschemes = function(opts)
 
   local json_string = utils.read_file(dbfile)
   if not json_string or #json_string == 0 then
-    utils.warn(string.format("Unable to load json db (%s)", opts.dbfile))
+    utils.error("Unable to load json db (%s)", opts.dbfile)
     return
   end
 
   local ok, json_db = pcall(vim.json.decode, json_string)
   if not ok then
-    utils.warn(string.format("Json decode failed: %s", json_db))
+    utils.error(string.format("Json decode failed: %s", json_db))
     return
   end
 

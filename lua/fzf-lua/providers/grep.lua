@@ -132,9 +132,9 @@ local get_grep_cmd = function(opts, search_query, no_esc)
       end
       if not has_flag_group then
         if not opts.silent then
-          utils.warn(string.format(
+          utils.info(
             "Added missing '%s' flag to '%s'. Add 'silent=true' to hide this message.",
-            table.concat(flags, "|"), bin))
+            table.concat(flags, "|"), bin)
         end
         command = make_entry.rg_insert_args(command, flags[1])
       end

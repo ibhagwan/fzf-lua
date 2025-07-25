@@ -92,7 +92,7 @@ M.diff = function(opts)
   local cmd = path.git_cwd({ "git", "rev-parse", "--verify", opts.ref }, opts)
   local _, err = utils.io_systemlist(cmd)
   if err ~= 0 then
-    utils.warn(string.format("Invalid git ref %s", opts.ref))
+    utils.warn("Invalid git ref %s", opts.ref)
     return
   end
   for _, k in ipairs({ "cmd", "preview" }) do
@@ -246,7 +246,7 @@ M.hunks = function(opts)
   local cmd = path.git_cwd({ "git", "rev-parse", "--verify", opts.ref }, opts)
   local _, err = utils.io_systemlist(cmd)
   if err ~= 0 then
-    utils.warn(string.format("Invalid git ref %s", opts.ref))
+    utils.warn("Invalid git ref %s", opts.ref)
     return
   end
   opts.cmd = opts.cmd:gsub("[<{]ref[}>]", opts.ref)

@@ -127,8 +127,7 @@ M.combine = function(t)
       -- if not ok or not cmd then
       local _, cmd, o = FzfLua[p](opts1)
       if not cmd or not o then
-        -- utils.warn(string.format("Error loading picker '%s', ignoring.\nError: %s", p, msg))
-        utils.warn(string.format("Error loading picker '%s', ignoring.", p))
+        utils.error("Error loading picker '%s', ignoring.", p)
       else
         table.insert(ret, cmd)
         -- NOTE: we use the [first picker] modified opts after picker setup
@@ -204,14 +203,14 @@ M.global = function(opts)
         def.previewer = require("fzf-lua.previewer").new(def.opts.previewer, def.opts)
       end
     else
-      utils.warn(string.format("invalid picker '%s', ignoring.", name))
+      utils.warn("invalid picker '%s', ignoring.", name)
     end
   end
 
   -- Test for default/starting picker
   local default_picker = opts.pickers[1] and pickers[opts.pickers[1][1]]
   if not default_picker or default_picker.prefix then
-    utils.err("default picker not defined or has a prefix, aborting.")
+    utils.error("default picker not defined or has a prefix, aborting.")
     return
   end
 

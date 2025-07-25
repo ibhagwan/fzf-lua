@@ -259,7 +259,7 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
     if err and err:match("Vim%(edit%):E325") then
       return
     end
-    utils.err("fn_selected threw an error: " .. debug.traceback(err, 1))
+    utils.error("fn_selected threw an error: " .. debug.traceback(err, 1))
   end)
   -- Do not strt fzf, return the stringified contents and opts onlu
   -- used by the "combine" picker to merge inputs
@@ -678,8 +678,8 @@ M.build_fzf_cli = function(opts, fzf_win)
               v = [["]] .. v:sub(2, #v - 1) .. [["]]
             end
             if libuv.is_escaped(v) then
-              utils.warn(string.format("`fzf_opts` are automatically shellescaped."
-                .. " Please remove surrounding quotes from %s=%s", k, v))
+              utils.warn("`fzf_opts` are automatically shellescaped."
+                .. " Please remove surrounding quotes from %s=%s", k, v)
             end
             opt_v = libuv.is_escaped(v) and v or libuv.shellescape(v)
           end

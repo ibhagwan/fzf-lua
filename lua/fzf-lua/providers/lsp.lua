@@ -403,7 +403,7 @@ local function gen_lsp_contents(opts)
     local lsp_results, err = vim.lsp.buf_request_sync(utils.CTX().bufnr,
       lsp_handler.method, lsp_params, timeout)
     if err then
-      utils.err(string.format("Error executing '%s': %s", lsp_handler.method, err))
+      utils.error("Error executing '%s': %s", lsp_handler.method, err)
     else
       local results = {}
       local jump1
@@ -418,8 +418,7 @@ local function gen_lsp_contents(opts)
           local context = { client_id = client_id }
           lsp_handler.handler(opts, cb, lsp_handler.method, response.result, context, nil)
         elseif response.error then
-          utils.warn(string.format("Error executing '%s': %s",
-            lsp_handler.method, response.error.message))
+          utils.error("Error executing '%s': %s", lsp_handler.method, response.error.message)
         end
       end
       if utils.tbl_isempty(results) then
@@ -428,7 +427,7 @@ local function gen_lsp_contents(opts)
           -- cleared on live_workspace_symbols (#468)
           opts.__contents = {}
         elseif not opts.silent then
-          utils.info(string.format("No %s found", string.lower(lsp_handler.label)))
+          utils.info("No %s found", string.lower(lsp_handler.label))
         end
       elseif opts.jump1 and jump1 then
         jump_to_location(opts, jump1.result, jump1.encoding)
@@ -493,7 +492,7 @@ local function gen_lsp_contents(opts)
               -- did all clients send back their responses?
               local done = async_opts.num_callbacks == async_opts.num_clients
               if err and not async_opts.silent then
-                utils.err(string.format("Error executing '%s': %s", lsp_handler.method, err))
+                utils.error("Error executing '%s': %s", lsp_handler.method, err)
               end
               coroutine.resume(co, done, err, result, context, lspcfg)
             end)
@@ -536,7 +535,7 @@ local function gen_lsp_contents(opts)
         vim.schedule(function()
           if num_results == 0 then
             if not async_opts.silent then
-              utils.info(string.format("No %s found", string.lower(lsp_handler.label)))
+              utils.info("No %s found", string.lower(lsp_handler.label))
             end
             if not async_opts.no_autoclose then
               utils.fzf_exit()
@@ -567,7 +566,7 @@ local function gen_lsp_contents_call_hierarchy(opts)
       end
   local res, err = vim.lsp.buf_request_sync(0, opts.lsp_handler.prep, lsp_params, 2000)
   if err then
-    utils.err(("Error executing '%s': %s"):format(opts.lsp_handler.prep, err))
+    utils.error(("Error executing '%s': %s"):format(opts.lsp_handler.prep, err))
   else
     local _, response = next(res)
     if not response or not response.result or not response.result[1] then
@@ -656,7 +655,7 @@ M.finder = function(opts)
   for _, p in ipairs(opts.providers) do
     local method = p[1]
     if not opts._providers[method] then
-      utils.warn(string.format("Unsupported provider: %s", method))
+      utils.warn("Unsupported provider: %s", method)
     else
       opts.silent = opts.silent == nil and true or opts.silent
       opts.no_autoclose = true

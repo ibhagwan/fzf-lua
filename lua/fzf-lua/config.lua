@@ -674,18 +674,18 @@ function M.normalize_opts(opts, globals, __resume_key)
     opts.__FZF_VERSION = FZF_VERSION
     vim.g.fzf_lua_fzf_version = FZF_VERSION
     if not opts.__FZF_VERSION then
-      utils.err(string.format("'fzf --version' failed with error %s: %s", rc, err))
+      utils.error("'fzf --version' failed with error %s: %s", rc, err)
       return nil
     elseif not utils.has(opts, "fzf", { 0, 36 }) then
-      utils.err(string.format("fzf version %s is lower than minimum (0.36), aborting.",
-        utils.ver2str(opts.__FZF_VERSION)))
+      utils.error("fzf version %s is lower than minimum (0.36), aborting.",
+        utils.ver2str(opts.__FZF_VERSION))
       return nil
     end
   else
     local SK_VERSION, rc, err = utils.sk_version(opts)
     opts.__SK_VERSION = SK_VERSION
     if not opts.__SK_VERSION then
-      utils.err(string.format("'sk --version' failed with error %s: %s", rc, err))
+      utils.error("'sk --version' failed with error %s: %s", rc, err)
       return nil
     end
   end
@@ -782,12 +782,12 @@ function M.normalize_opts(opts, globals, __resume_key)
       end
     end)()
     local function warn(flag, val, min_ver)
-      return utils.warn(string.format("Removed flag '%s%s', %s.",
+      return utils.warn("Removed flag '%s%s', %s.",
         flag, type(val) == "string" and "=" .. val or "",
         not min_ver and string.format("not supported with %s", bin)
         or string.format("only supported with %s v%s (has=%s)",
           bin, utils.ver2str(min_ver), utils.ver2str(version))
-      ))
+      )
     end
     for min_verstr, ver_data in pairs(changelog) do
       for flag, non_compat_value in pairs(ver_data.fzf_opts) do
@@ -872,8 +872,8 @@ function M.normalize_opts(opts, globals, __resume_key)
       -- don't display the warning unless the user specifically set
       -- file_icons to `true` or `mini|devicons`
       if not tonumber(opts.file_icons) then
-        utils.warn(string.format("error loading '%s', disabling 'file_icons'.",
-          opts.file_icons == "mini" and "mini.icons" or "nvim-web-devicons"))
+        utils.warn("error loading '%s', disabling 'file_icons'.",
+          opts.file_icons == "mini" and "mini.icons" or "nvim-web-devicons")
       end
       opts.file_icons = nil
     end

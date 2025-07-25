@@ -153,7 +153,7 @@ M.diagnostics = function(opts)
     end
   end
   if not has_diags then
-    utils.info(string.format("No %s found", "diagnostics"))
+    utils.info("No %s found", "diagnostics")
     return
   end
 
