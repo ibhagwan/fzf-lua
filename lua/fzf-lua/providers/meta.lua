@@ -101,46 +101,50 @@ end
 
 M.combine = function(t)
   t = t or {}
-  t.pickers = type(t.pickers) == "table" and type(t.pickers)
+
+  local pickers = type(t.pickers) == "table" and type(t.pickers)
       or type(t.pickers) == "string" and utils.strsplit(t.pickers, "[,;]")
       or nil
 
-  -- First picker options set the tone
-  local opts1 = (function()
-    if t.pickers and t.pickers[1] then
-      local ok, opts = pcall(config.normalize_opts, t, t.pickers[1])
-      return ok and opts
-    end
-  end)()
-  if not opts1 then
-    utils.warn("Must specify at least one valid picker")
-    return
-  end
+  local opts = t
+  t.pickers = nil
 
-  -- Let fzf_wrap know to NOT start the coroutine
-  opts1._start = false
+  -- Tells fzf_wrap to not start the fzf process
+  opts._start = false
 
-  local cmds, opts = (function()
-    local ret, opts = {}, nil
-    for _, p in ipairs(t.pickers --[[@as table]]) do
-      -- local ok, msg, cmd, o = pcall(FzfLua[p], opts1)
-      -- if not ok or not cmd then
-      local _, cmd, o = FzfLua[p](opts1)
-      if not cmd or not o then
-        utils.error("Error loading picker '%s', ignoring.", p)
-      else
-        table.insert(ret, cmd)
-        -- NOTE: we use the [first picker] modified opts after picker setup
-        -- as pickers can modify opts / add important parts
-        if not opts then opts = o end
+  local cmds = {}
+  local opts_copy = vim.deepcopy(opts)
+  for i, name in ipairs(pickers) do
+    if FzfLua[name] then
+      local def
+      local function gen_def(n, o)
+        local wrapped = { FzfLua[n](o) }
+        return {
+          name = n,
+          opts = wrapped[3],
+          contents = wrapped[2],
+        }
       end
+      -- Default picker opts set the tone for this picker options
+      -- this way convert reload / exec_silent actions will use a consistent
+      -- opts ref in the callbacks so we can later modify internal values
+      def = gen_def(name, i == 1 and opts or opts_copy)
+      if i == 1 then
+        -- Override opts with the modified return opts and remove start suppression
+        opts = def.opts
+        opts._start = nil
+      end
+      -- Instantiate the previewer, nil check as opts isn't guaranteed if the
+      -- picker isn't avilable, e.g. `tags` when no tags file exists
+      if def.opts and def.opts.previewer then
+        def.previewer = require("fzf-lua.previewer").new(def.opts.previewer, def.opts)
+      end
+      -- Add content (shell command) to cmd array
+      table.insert(cmds, def.contents)
+    else
+      utils.warn("invalid picker '%s', ignoring.", name)
     end
-    return ret, opts
-  end)()
-  if not opts then return end
-
-  -- Let fzf_wrap know to START the coroutine
-  opts._start = nil
+  end
 
   -- _G.dump(cmds)
   local contents = table.concat(cmds, utils.__IS_WINDOWS and "&" or ";")
