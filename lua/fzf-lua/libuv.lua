@@ -57,7 +57,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   local EOL = opts.EOL or "\n"
   local output_pipe = assert(uv.new_pipe(false))
   local error_pipe = assert(uv.new_pipe(false))
-  local write_cb_count, read_cb_count, on_exit_called = 0, 0, nil
+  local write_cb_count, read_cb_count = 0, 0
   local prev_line_content = nil
   local handle, pid
   local co = coroutine.running()
@@ -70,6 +70,15 @@ M.spawn = function(opts, fn_transform, fn_done)
 
   -- cb_write_lines trumps cb_write
   if opts.cb_write_lines then opts.cb_write = opts.cb_write_lines end
+
+  local can_finish = function()
+    if not output_pipe:is_active() -- EOF signalled or process is aborting
+        and read_cb_count == 0     -- no outstanding read_cb data processing
+        and write_cb_count == 0    -- no outstanding write callbacks
+    then
+      return true
+    end
+  end
 
   ---@diagnostic disable-next-line: redefined-local
   local finish = function(code, sig, from, pid)
@@ -130,19 +139,14 @@ M.spawn = function(opts, fn_transform, fn_done)
     end)(),
     verbatim = _is_win,
   }, function(code, signal)
-    on_exit_called = true
-    if write_cb_count == 0
-        and read_cb_count == 0
-        and not output_pipe:is_active()
-        -- on_exit is called before queue processing of the last line (#2205)
-        and (not opts.use_queue or queue:empty())
-    then
+    if can_finish() or code ~= 0 then
       -- Do not call `:read_stop` or `:close` here as we may have data
       -- reads outstanding on slower Windows machines (#1521), only call
       -- `finish` if all our `uv.write` calls are completed and the pipe
       -- is no longer active (i.e. no more read cb's expected)
-      finish(code, signal, 1, pid)
+      finish(code, signal, "[on_exit]", pid)
     end
+    handle:close()
   end)
 
   -- save current process pid
@@ -155,16 +159,12 @@ M.spawn = function(opts, fn_transform, fn_done)
       if err then
         -- can fail with premature process kill
         -- assert(not err)
-        finish(130, 0, 2, pid)
-      elseif write_cb_count == 0
-          and read_cb_count == 0
-          and on_exit_called
-          and not output_pipe:is_active()
-      then
-        -- spawn callback already called and did not close the pipe
-        -- due to write_cb_count>0, since this is the last call
-        -- we can close the fzf pipe
-        finish(0, 0, 3, pid)
+        finish(130, 0, "[write_cb: err]", pid)
+      elseif can_finish() then
+        -- on_exit callback already called and did not close the
+        -- pipe due to write_cb_count>0, since this is the last
+        -- call we can close the fzf pipe
+        finish(0, 0, "[write_cb: finish]", pid)
       end
     end)
   end
@@ -172,7 +172,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   ---@param data string data stream
   ---@param prev string? rest of line from previous call
   ---@param trans function? line transformation function
-  ---@return table, string line array, partial last line (no EOL)
+  ---@return table, string? line array, partial last line (no EOL)
   local function split_lines(data, prev, trans)
     local ret = {}
     local start_idx = 1
@@ -208,13 +208,11 @@ M.spawn = function(opts, fn_transform, fn_done)
   local process_data = function(data)
     data = data or prev_line_content and (prev_line_content .. EOL) or nil
     if not data then
-      -- https://github.com/LazyVim/LazyVim/discussions/5264
-      -- The pipe can remain active *after* on_exit was called
-      if write_cb_count == 0
-          and read_cb_count == 0
-          and on_exit_called
-      then
-        finish(0, 0, 5, pid)
+      -- NOTE: this isn't called when prev_line_content is not nil but that's
+      -- not a problem as the write_cb will call finish once the callback is done
+      -- since the output_pipe is already in "closing" state
+      if can_finish() then
+        finish(0, 0, "[EOF]", pid)
       end
       return
     end
@@ -267,33 +265,34 @@ M.spawn = function(opts, fn_transform, fn_done)
 
   local read_cb = function(err, data)
     if err then
-      finish(130, 0, 4, pid)
+      finish(130, 0, "[read_cb: err]", pid)
       return
     end
+    if not data then
+      -- EOF signalled, we can close the pipe
+      output_pipe:close()
+    end
     if opts.use_queue then
-      if data then
-        queue:push(data)
-      elseif prev_line_content then
-        queue:push(prev_line_content .. EOL)
-        prev_line_content = nil
-      end
+      if data then queue:push(data) end
+      -- Either we have outstanding data enqueued or the pipe is closing
+      -- due to the above `output_pipe:close`, in both cases we need to
+      -- resume the dequeue loop
       coroutine.resume(co)
     else
-      -- Schedule data processing, will call finish if data is nil
-      -- and no leftover data is present
       read_cb_count = read_cb_count + 1
       local process = function()
         read_cb_count = read_cb_count - 1
         process_data(data)
       end
-      -- Avoid "attempt to yield across C-call boundary" by using vim.schedule
+      -- Schedule data processing if we're in fast event
+      -- avoids "attempt to yield across C-call boundary" by using vim.schedule
       if vim.in_fast_event() then vim.schedule(process) else process() end
     end
   end
 
   local err_cb = function(err, data)
     if err then
-      finish(130, 0, 9, pid)
+      finish(130, 0, "[err_cb]", pid)
     end
     if not data then
       return
@@ -324,6 +323,10 @@ M.spawn = function(opts, fn_transform, fn_done)
         process_data(queue:pop())
       end
     end
+    -- process the leftover line from `processs_data`
+    -- will call `finish` immediately if there's no last line
+    -- otherwise, finish is called in the write callback
+    process_data(nil)
   end
 
   return handle, pid
