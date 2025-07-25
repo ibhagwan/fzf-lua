@@ -134,6 +134,8 @@ M.spawn = function(opts, fn_transform, fn_done)
     if write_cb_count == 0
         and read_cb_count == 0
         and not output_pipe:is_active()
+        -- on_exit is called before queue processing of the last line (#2205)
+        and (not opts.use_queue or queue:empty())
     then
       -- Do not call `:read_stop` or `:close` here as we may have data
       -- reads outstanding on slower Windows machines (#1521), only call
@@ -271,8 +273,11 @@ M.spawn = function(opts, fn_transform, fn_done)
     if opts.use_queue then
       if data then
         queue:push(data)
-        coroutine.resume(co)
+      elseif prev_line_content then
+        queue:push(prev_line_content .. EOL)
+        prev_line_content = nil
       end
+      coroutine.resume(co)
     else
       -- Schedule data processing, will call finish if data is nil
       -- and no leftover data is present
@@ -319,8 +324,6 @@ M.spawn = function(opts, fn_transform, fn_done)
         process_data(queue:pop())
       end
     end
-    -- process the leftover line from `processs_data`
-    process_data(nil)
   end
 
   return handle, pid
