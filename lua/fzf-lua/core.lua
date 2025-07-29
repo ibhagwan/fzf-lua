@@ -313,6 +313,7 @@ M.fzf = function(contents, opts)
   -- update context and save a copy in options (for actions)
   -- call before creating the window or fzf_winobj is not nil
   opts.__CTX = utils.CTX(opts._ctx)
+  opts.__INFO = FzfLua.get_info()
 
   -- setup the fzf window and preview layout
   local fzf_win = win:new(opts)
