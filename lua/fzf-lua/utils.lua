@@ -183,7 +183,7 @@ function M.notify(lvl, ...)
   local function nvim_echo()
     local echo_opts = {
       verbose = false,
-      err = M.__HAS_NVIM_011 and vim.log.levels.ERROR and true or nil,
+      err = M.__HAS_NVIM_011 and lvl == vim.log.levels.ERROR and true or nil,
     }
     vim.api.nvim_echo(chunks, true, echo_opts)
   end
