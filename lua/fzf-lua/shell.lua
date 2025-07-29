@@ -179,6 +179,7 @@ M.stringify_mt = function(cmd, opts)
       "argv_expr",
       "cmd",
       "cwd",
+      "cwd_only",
       "stdout",
       "stderr",
       "stderr_to_stdout",

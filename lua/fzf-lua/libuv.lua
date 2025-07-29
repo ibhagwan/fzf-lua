@@ -421,9 +421,6 @@ M.spawn_stdio = function(opts)
     for k, v in pairs(opts) do
       io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, tostring(v)))
     end
-    io.stdout:write(string.format("[DEBUG] fn_transform=%s" .. EOL, fn_transform_str))
-    io.stdout:write(string.format("[DEBUG] fn_preprocess=%s" .. EOL, fn_preprocess_str))
-    io.stdout:write(string.format("[DEBUG] fn_postprocess=%s" .. EOL, fn_postprocess_str))
   elseif opts.debug then
     io.stdout:write("[DEBUG] [mt] " .. opts.cmd .. EOL)
   end
