@@ -429,6 +429,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field start "cursor"?
 
 ---@class fzf-lua.config.Buffers: fzf-lua.config.BufferLines
+---@field filename_only boolean
 ---@field sort_lastused boolean
 ---@field show_unloaded boolean
 ---@field show_unlisted boolean
@@ -439,6 +440,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field _resume_reload boolean
 
 ---@class fzf-lua.config.Tabs: fzf-lua.config.Base
+---@field filename_only boolean
 ---@field tab_title string
 ---@field tab_marker string
 ---@field locate boolean
