@@ -141,9 +141,6 @@ M.command_history = function(opts)
   ---@type fzf-lua.config.CommandHistory
   opts = config.normalize_opts(opts, "command_history")
   if not opts then return end
-  if opts.fzf_opts["--header"] == nil then
-    opts = core.set_header(opts, opts.headers or { "actions" })
-  end
   history(opts, ":")
 end
 
@@ -151,9 +148,6 @@ M.search_history = function(opts)
   ---@type fzf-lua.config.SearchHistory
   opts = config.normalize_opts(opts, "search_history")
   if not opts then return end
-  if opts.fzf_opts["--header"] == nil then
-    opts = core.set_header(opts, opts.headers or { "actions" })
-  end
   history(opts, "/")
 end
 

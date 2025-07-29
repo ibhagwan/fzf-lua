@@ -117,9 +117,7 @@ M.breakpoints = function(opts)
     end)()
   end
 
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts, "{3}", opts._is_skim and "{}" or "{..-2}")
-
   return core.fzf_exec(contents, opts)
 end
 

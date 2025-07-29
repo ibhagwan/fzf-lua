@@ -205,7 +205,6 @@ M.buffers = function(opts)
   opts.fzf_opts["--header-lines"] = opts.fzf_opts["--header-lines"] == nil
       and (not opts.ignore_current_buffer and opts.sort_lastused) and "1" or nil
 
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = opts.filename_only and opts or core.set_fzf_field_index(opts)
 
   return core.fzf_exec(contents, opts)
@@ -450,7 +449,6 @@ M.tabs = function(opts)
     cb(nil)
   end
 
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = opts.filename_only and opts or core.set_fzf_field_index(opts, "{4}", "{}")
 
   return core.fzf_exec(contents, opts)
@@ -585,8 +583,6 @@ M.treesitter = function(opts)
     end)()
   end
 
-  opts = core.set_header(opts, opts.headers or { "actions" })
-
   return core.fzf_exec(contents, opts)
 end
 
@@ -689,8 +685,6 @@ M.spellcheck = function(opts)
       cb(nil)
     end)()
   end
-
-  opts = core.set_header(opts, opts.headers or { "actions" })
 
   return core.fzf_exec(contents, opts)
 end

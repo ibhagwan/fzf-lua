@@ -510,7 +510,6 @@ M.awesome_colorschemes = function(opts)
     utils.setup_highlights()
   end
 
-  opts = core.set_header(opts, opts.headers or { "actions" })
   return core.fzf_exec(contents, opts)
 end
 

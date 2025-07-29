@@ -27,7 +27,6 @@ M.files = function(opts)
   if not opts then return end
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
-  opts = core.set_header(opts, opts.headers or { "cwd" })
   return core.fzf_exec(opts.cmd, opts)
 end
 
@@ -52,7 +51,6 @@ M.status = function(opts)
 
   opts.header_prefix = opts.header_prefix or "+ -  "
   opts.header_separator = opts.header_separator or "|"
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
 
   return core.fzf_exec(opts.cmd, opts)
 end
@@ -60,7 +58,6 @@ end
 local function git_cmd(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
-  opts = core.set_header(opts, opts.headers or { "cwd" })
   return core.fzf_exec(opts.cmd, opts)
 end
 
@@ -101,7 +98,6 @@ M.diff = function(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   opts.preview = git_preview(opts, "{-1}")
-  opts = core.set_header(opts, opts.headers or { "cwd" })
   return core.fzf_exec(opts.cmd, opts)
 end
 
@@ -110,7 +106,6 @@ M.commits = function(opts)
   opts = config.normalize_opts(opts, "git.commits")
   if not opts then return end
   opts.preview = git_preview(opts)
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   return git_cmd(opts)
 end
 
@@ -146,7 +141,6 @@ M.bcommits = function(opts)
     opts.cmd = opts.cmd .. " " .. (range or file)
   end
   opts.preview = git_preview(opts, file)
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   return git_cmd(opts)
 end
 
@@ -178,7 +172,6 @@ M.blame = function(opts)
     opts.cmd = opts.cmd .. " " .. (range or file)
   end
   opts.preview = git_preview(opts, file)
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   return git_cmd(opts)
 end
 
@@ -198,7 +191,6 @@ M.branches = function(opts)
       return (preview:gsub("{.*}", branch))
     end, opts, "{}")
   end
-  opts.headers = opts.headers or { "cwd", "actions" }
   return git_cmd(opts)
 end
 
@@ -235,7 +227,6 @@ M.stash = function(opts)
     return (not stash or not rest) and x or stash .. rest
   end
 
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd", "search" })
   return core.fzf_exec(opts.cmd, opts)
 end
 
@@ -259,7 +250,6 @@ M.hunks = function(opts)
 
   opts.header_prefix = opts.header_prefix or "+ -  "
   opts.header_separator = opts.header_separator or "|"
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
 
   return core.fzf_exec(opts.cmd, opts)
 end

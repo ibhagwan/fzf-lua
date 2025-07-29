@@ -228,7 +228,6 @@ M.fzf_resume = function(opts)
   end
   opts = utils.tbl_deep_extend("force", config.__resume_data.opts, opts or {})
   assert(opts == config.__resume_data.opts)
-  opts = M.set_header(opts, opts.headers or {})
   opts.cwd = opts.cwd and libuv.expand(opts.cwd) or nil
   M.fzf_wrap(config.__resume_data.contents, config.__resume_data.opts)
 end
@@ -239,6 +238,7 @@ end
 ---@return thread, string, table
 M.fzf_wrap = function(cmd, opts, convert_actions)
   opts = opts or {}
+  M.set_header(opts)
   if convert_actions and type(opts.actions) == "table" then
     opts = M.convert_reload_actions(cmd, opts)
     opts = M.convert_exec_silent_actions(opts)
@@ -774,7 +774,15 @@ M.set_title_flags = function(opts, titles)
   return opts
 end
 
-M.set_header = function(opts, hdr_tbl)
+M.set_header = function(opts)
+  opts = opts or {}
+  if opts.header ~= nil
+      or opts.headers == false
+      or type(opts._headers) ~= "table"
+      or vim.tbl_isempty(opts._headers) then
+    return opts
+  end
+
   ---@param cwd string
   ---@return string
   local function normalize_cwd(cwd)
@@ -787,7 +795,6 @@ M.set_header = function(opts, hdr_tbl)
     return path.HOME_to_tilde(cwd)
   end
 
-  if not opts then opts = {} end
   if opts.cwd_prompt then
     opts.prompt = normalize_cwd(opts.cwd or uv.cwd())
     if tonumber(opts.cwd_prompt_shorten_len) and
@@ -795,9 +802,6 @@ M.set_header = function(opts, hdr_tbl)
       opts.prompt = path.shorten(opts.prompt, tonumber(opts.cwd_prompt_shorten_val) or 1)
     end
     opts.prompt = path.add_trailing(opts.prompt)
-  end
-  if opts.no_header or opts.headers == false then
-    return opts
   end
   local definitions = {
     -- key: opt name
@@ -893,13 +897,8 @@ M.set_header = function(opts, hdr_tbl)
       end,
     },
   }
-  -- by default we only display cwd headers
-  -- header string constructed in array order
-  if not opts.headers then
-    opts.headers = hdr_tbl or { "cwd" }
-  end
   -- override header text with the user's settings
-  for _, h in ipairs(opts.headers) do
+  for _, h in ipairs(opts._headers) do
     assert(definitions[h])
     local hdr_text = opts[definitions[h].hdr_txt_opt]
     if hdr_text then
@@ -908,7 +907,7 @@ M.set_header = function(opts, hdr_tbl)
   end
   -- build the header string
   local hdr_str
-  for _, h in ipairs(opts.headers) do
+  for _, h in ipairs(opts._headers) do
     assert(definitions[h])
     local def = definitions[h]
     local txt = def.val(opts)

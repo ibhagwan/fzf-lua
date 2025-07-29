@@ -84,7 +84,6 @@ M.oldfiles = function(opts)
 
   -- for 'file_ignore_patterns' to work on relative paths
   opts.cwd = opts.cwd or uv.cwd()
-  opts = core.set_header(opts, opts.headers or { "cwd" })
   return core.fzf_exec(contents, opts)
 end
 

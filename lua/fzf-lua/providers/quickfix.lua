@@ -57,7 +57,6 @@ local quickfix_run = function(opts, cfg)
   end
 
   opts = core.set_fzf_field_index(opts)
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   return core.fzf_exec(contents, opts)
 end
 

@@ -91,7 +91,6 @@ M.files = function(opts)
     opts.cwd = uv.cwd()
   end
   opts = core.set_title_flags(opts, { "cmd" })
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   return core.fzf_exec(opts.cmd, opts)
 end
 
@@ -136,7 +135,6 @@ M.args = function(opts)
     end)()
   end
 
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   return core.fzf_exec(contents, opts)
 end
 

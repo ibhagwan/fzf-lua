@@ -258,7 +258,6 @@ M.diagnostics = function(opts)
     end)()
   end
 
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts)
   return core.fzf_exec(contents, opts)
 end

@@ -204,8 +204,8 @@ M.grep = function(opts)
   opts.rg_glob = false
 
   -- search query in header line
+  if type(opts._headers) == "table" then table.insert(opts._headers, "search") end
   opts = core.set_title_flags(opts, { "cmd" })
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd", "search" })
   opts = core.set_fzf_field_index(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
@@ -303,7 +303,6 @@ M.live_grep = function(opts)
 
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd", "live" })
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
   opts = core.set_fzf_field_index(opts)
   core.fzf_live(opts.cmd or function(s)
     -- can be nil when called as fzf initial command

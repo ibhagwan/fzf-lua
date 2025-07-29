@@ -613,7 +613,6 @@ local function fzf_lsp_locations(opts, fn_contents)
     utils.clear_CTX()
     return
   end
-  opts = core.set_header(opts, opts.headers or { "cwd", "regex_filter" })
   return core.fzf_exec(opts.__contents, opts)
 end
 
@@ -691,7 +690,6 @@ M.finder = function(opts)
     utils.clear_CTX()
     return
   end
-  opts = core.set_header(opts, opts.headers or { "cwd", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   return core.fzf_exec(contents, opts)
 end
@@ -739,7 +737,6 @@ M.document_symbols = function(opts)
       opts.actions[k] = nil
     end
   end
-  opts = core.set_header(opts, opts.headers or { "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   if not opts.fzf_opts or opts.fzf_opts["--with-nth"] == nil then
     -- our delims are {nbsp,:} make sure entry has no icons
@@ -769,8 +766,7 @@ M.workspace_symbols = function(opts)
   opts.__ACT_TO = opts.__ACT_TO or M.live_workspace_symbols
   opts.__call_fn = utils.__FNCREF__()
   opts.lsp_params = { query = opts.lsp_query or "" }
-  opts = core.set_header(opts, opts.headers or
-    { "actions", "cwd", "lsp_query", "regex_filter" })
+  if type(opts._headers) == "table" then table.insert(opts._headers, "lsp_query") end
   opts = core.set_fzf_field_index(opts)
   opts = gen_lsp_contents(opts)
   if not opts.__contents then
@@ -834,7 +830,6 @@ M.live_workspace_symbols = function(opts)
   opts.lsp_params = { query = opts.lsp_query or opts.query or "" }
   opts.query = opts.lsp_query or opts.query
 
-  opts = core.set_header(opts, opts.headers or { "actions", "cwd", "regex_filter" })
   opts = core.set_fzf_field_index(opts)
   if opts.symbol_style or opts.symbol_fmt then
     M._sym2style = nil

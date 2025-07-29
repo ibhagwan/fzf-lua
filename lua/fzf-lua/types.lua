@@ -149,6 +149,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field resume boolean?
 ---@field no_resume boolean?
 ---set_headers
+---@field _headers string[]?
 ---@field headers string[]?
 ---@field cwd_prompt_shorten_len integer?
 ---@field cwd_prompt_shorten_val integer?

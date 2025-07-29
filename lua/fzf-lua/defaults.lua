@@ -360,6 +360,7 @@ M.defaults.files                = {
   toggle_hidden_flag     = "--hidden",
   toggle_follow_flag     = "-L",
   _actions               = function() return M.globals.actions.files end,
+  _headers               = { "actions", "cwd" },
   winopts                = { preview = { winopts = { cursorline = false } } },
 }
 
@@ -425,6 +426,7 @@ M.defaults.git                  = {
     fzf_opts          = { ["--multi"] = true, ["--scheme"] = "path" },
     _fzf_nth_devicons = true,
     _actions          = function() return M.globals.actions.files end,
+    _headers          = { "cwd" },
     winopts           = { preview = { winopts = { cursorline = false } } },
   },
   status = {
@@ -440,6 +442,7 @@ M.defaults.git                  = {
     fzf_opts          = { ["--multi"] = true },
     _fzf_nth_devicons = true,
     _actions          = function() return M.globals.actions.files end,
+    _headers          = { "actions", "cwd" },
     actions           = {
       ["right"]  = { fn = actions.git_unstage, reload = true },
       ["left"]   = { fn = actions.git_stage, reload = true },
@@ -461,6 +464,7 @@ M.defaults.git                  = {
     fzf_opts          = { ["--multi"] = true },
     _fzf_nth_devicons = true,
     _actions          = function() return M.globals.actions.files end,
+    _headers          = { "cwd" },
   },
   hunks = {
     previewer         = M._default_previewer_fn,
@@ -478,6 +482,7 @@ M.defaults.git                  = {
     },
     _fzf_nth_devicons = true,
     _actions          = function() return M.globals.actions.files end,
+    _headers          = { "cwd" },
   },
   commits = {
     cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
@@ -489,6 +494,7 @@ M.defaults.git                  = {
       ["ctrl-y"] = { fn = actions.git_yank_commit, exec_silent = true },
     },
     fzf_opts      = { ["--no-multi"] = true },
+    _headers      = { "actions", "cwd" },
     _multiline    = false,
   },
   bcommits = {
@@ -504,6 +510,7 @@ M.defaults.git                  = {
       ["ctrl-y"] = { fn = actions.git_yank_commit, exec_silent = true },
     },
     fzf_opts      = { ["--no-multi"] = true },
+    _headers      = { "actions", "cwd" },
     _multiline    = false,
   },
   blame = {
@@ -534,6 +541,7 @@ M.defaults.git                  = {
     cmd_add    = { "git", "branch" },
     cmd_del    = { "git", "branch", "--delete" },
     fzf_opts   = { ["--no-multi"] = true },
+    _headers   = { "actions", "cwd" },
     _multiline = false,
   },
   tags = {
@@ -545,6 +553,7 @@ M.defaults.git                  = {
         .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {1}]],
     actions    = { ["enter"] = actions.git_checkout },
     fzf_opts   = { ["--no-multi"] = true },
+    _headers   = { "cwd" },
     _multiline = false,
   },
   stash = {
@@ -562,6 +571,7 @@ M.defaults.git                  = {
       ["--no-multi"]  = true,
       ["--delimiter"] = "[:]",
     },
+    _headers      = { "actions", "cwd", "search" },
   },
   icons = {
     ["M"] = { icon = "M", color = "yellow" },
@@ -598,6 +608,7 @@ M.defaults.grep                 = {
   glob_flag      = "--iglob", -- for case sensitive globs use '--glob'
   glob_separator = "%s%-%-",  -- query separator pattern (lua): ' --'
   _treesitter    = true,
+  _headers       = { "actions", "cwd" },
 }
 
 ---@diagnostic disable-next-line: assign-type-mismatch
@@ -621,6 +632,7 @@ M.defaults.args                 = {
   _fzf_nth_devicons = true,
   _actions          = function() return M.globals.actions.files end,
   actions           = { ["ctrl-x"] = { fn = actions.arg_del, reload = true } },
+  _headers          = { "actions", "cwd" },
 }
 
 M.defaults.oldfiles             = {
@@ -632,6 +644,7 @@ M.defaults.oldfiles             = {
   fzf_opts          = { ["--tiebreak"] = "index", ["--multi"] = true },
   _fzf_nth_devicons = true,
   _actions          = function() return M.globals.actions.files end,
+  _headers          = { "cwd" },
 }
 
 M.defaults.quickfix             = {
@@ -650,6 +663,7 @@ M.defaults.quickfix             = {
   _actions    = function() return M.globals.actions.files end,
   _treesitter = true,
   _cached_hls = { "path_colnr", "path_linenr" },
+  _headers    = { "actions", "cwd" },
 }
 
 M.defaults.quickfix_stack       = {
@@ -675,6 +689,7 @@ M.defaults.loclist              = {
   _actions    = function() return M.globals.actions.files end,
   _treesitter = true,
   _cached_hls = { "path_colnr", "path_linenr" },
+  _headers    = { "actions", "cwd" },
 }
 
 M.defaults.loclist_stack        = {
@@ -701,6 +716,7 @@ M.defaults.buffers              = {
   end,
   actions               = { ["ctrl-x"] = { fn = actions.buf_del, reload = true } },
   _cached_hls           = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "path_linenr" },
+  _headers              = { "actions", "cwd" },
   _ctx                  = { includeBuflist = true },
   _resume_reload        = true,
 }
@@ -725,6 +741,7 @@ M.defaults.tabs                 = {
     ["--with-nth"]  = "5..",
   },
   _cached_hls    = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "tab_title", "tab_marker", "path_linenr" },
+  _headers       = { "actions", "cwd" },
   _ctx           = { includeBuflist = true },
   _resume_reload = true,
 }
@@ -824,6 +841,7 @@ M.defaults.spellcheck           = {
     ["ctrl-s"] = { fn = actions.spell_suggest, header = "spell suggest" }
   },
   _cached_hls      = { "buf_name", "buf_nr", "buf_linenr", "path_colnr" },
+  _headers         = { "actions" },
   _fmt             = {
     to   = false,
     from = function(s, _)
@@ -882,6 +900,7 @@ M.defaults.colorschemes         = {
   winopts      = { height = 0.55, width = 0.50, backdrop = false },
   fzf_opts     = { ["--no-multi"] = true },
   actions      = { ["enter"] = actions.colorscheme },
+  _headers     = { "actions" },
 }
 
 M.defaults.highlights           = {
@@ -958,6 +977,7 @@ M.defaults.lsp                  = {
   _treesitter      = true,
   -- Signals actions to use uri triggering the use of `lsp.util.show_document`
   _uri             = true,
+  _headers         = { "actions", "regex_filter" },
 }
 
 M.defaults.lsp.symbols          = {
@@ -1029,6 +1049,7 @@ M.defaults.lsp.symbols          = {
   _actions         = function() return M.globals.actions.files end,
   actions          = { ["ctrl-g"] = { actions.sym_lsym } },
   _cached_hls      = { "live_sym", "path_colnr", "path_linenr" },
+  _headers         = { "actions", "cwd", "regex_filter" },
   _uri             = true,
 }
 
@@ -1064,6 +1085,7 @@ M.defaults.lsp.finder           = {
   fzf_opts    = { ["--multi"] = true },
   _treesitter = true,
   _cached_hls = { "path_colnr", "path_linenr" },
+  _headers    = { "actions", "regex_filter" },
   _uri        = true,
 }
 
@@ -1094,6 +1116,7 @@ M.defaults.diagnostics          = {
   },
   _actions       = function() return M.globals.actions.files end,
   _cached_hls    = { "path_colnr", "path_linenr" },
+  _headers       = { "actions", "cwd" },
   -- signs = {
   --   ["Error"] = { text = "e", texthl = "DiagnosticError" },
   --   ["Warn"]  = { text = "w", texthl = "DiagnosticWarn" },
@@ -1179,6 +1202,7 @@ M.defaults.command_history      = {
     ["enter"]  = actions.ex_run_cr,
     ["ctrl-e"] = actions.ex_run,
   },
+  _headers    = { "actions" },
 }
 
 M.defaults.search_history       = {
@@ -1189,6 +1213,7 @@ M.defaults.search_history       = {
     ["enter"]  = actions.search_cr,
     ["ctrl-e"] = actions.search,
   },
+  _headers    = { "actions" },
 }
 
 M.defaults.registers            = {
@@ -1284,6 +1309,7 @@ M.defaults.dap                  = {
       ["--with-nth"]  = "2..",
     },
     _cached_hls = { "path_colnr", "path_linenr" },
+    _headers    = { "actions", "cwd" },
   },
 }
 
