@@ -365,6 +365,7 @@ M._excluded_meta = {
   --   man_pages -> manpages
   "help_tags",
   "man_pages",
+  "register_extension",
 }
 
 for _, m in ipairs(exported_modules) do
@@ -387,6 +388,17 @@ M.builtin = function(opts)
   return require "fzf-lua.providers.meta".metatable(opts)
 end
 
+M.register_extension = function(name, fun, default_opts, override)
+  if not override and M[name] then
+    utils.warn("Extension '%s' already exists, set 3rd arg to 'true' to override", name)
+    return
+  end
+  M.defaults[name] = utils.deepcopy(default_opts)
+  M[name] = function(...)
+    utils.set_info({ cmd = name, fnc = name })
+    return fun(...)
+  end
+end
 
 -- generate api typings
 -- for _, v in vim.spairs(exported_modules) do print(([[M.%s = require("fzf-lua.%s")]]):format(v, v)) end
