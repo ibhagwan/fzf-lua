@@ -84,8 +84,7 @@ M.defaults                      = {
         list           = false,
         foldenable     = false,
         foldmethod     = "manual",
-        -- >0 to prevent scrolling issues (#500)
-        scrolloff      = 1,
+        scrolloff      = 0,
       },
     },
     -- on_create  = function(_)
