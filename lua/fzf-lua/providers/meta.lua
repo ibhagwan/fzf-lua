@@ -102,7 +102,7 @@ end
 M.combine = function(t)
   t = t or {}
 
-  local pickers = type(t.pickers) == "table" and type(t.pickers)
+  local pickers = type(t.pickers) == "table" and t.pickers
       or type(t.pickers) == "string" and utils.strsplit(t.pickers, "[,;]")
       or nil
 
