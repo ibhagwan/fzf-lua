@@ -474,6 +474,8 @@ function Previewer.base:zero(_)
   local act = string.format("execute-silent(mkdir %s && %s)",
     libuv.shellescape(self._zero_lock),
     shell.stringify_data(function(_, _, _)
+      -- upvalue incase previewer was detached/re-attached (global picker)
+      self = self.win._previewer or self
       vim.defer_fn(function()
         if self.win:validate_preview() then
           self:clear_preview_buf(true)

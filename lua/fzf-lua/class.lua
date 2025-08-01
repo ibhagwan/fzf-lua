@@ -52,7 +52,7 @@ function Object:is(T)
 end
 
 function Object:__tostring()
-  return "Object"
+  return string.format("Object %p", self)
 end
 
 function Object:__call(...)
