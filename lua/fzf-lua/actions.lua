@@ -154,7 +154,9 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
       entry.line = lnum or entry.line
       -- "<none>" could be set by `autocmds`
       if entry.path == "<none>" then return end
-      local fullpath = entry.bufname or entry.uri and entry.uri:match("^%a+://(.*)") or entry.path
+      local fullpath = entry.bufname
+          or entry.uri and entry.uri:match("^[%a%-]+://(.*)")
+          or entry.path
       -- Something is not right, goto next entry
       if not fullpath then return end
       if not path.is_absolute(fullpath) then

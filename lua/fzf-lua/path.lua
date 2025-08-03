@@ -411,6 +411,14 @@ function M.entry_to_location(entry, opts)
   }
 end
 
+---Test for URI, note this include non-standard URIs, some LSPs like dotnet's
+---roslyn prepend entries with "roslyn-source-generated://" (#2218)
+---@param str string
+---@return boolean
+function M.is_uri(str)
+  return str:match("^[%a%-]+://") ~= nil
+end
+
 ---@param entry string
 ---@param opts fzf-lua.Config?
 ---@param force_uri boolean?
@@ -432,7 +440,7 @@ function M.entry_to_file(entry, opts, force_uri)
   -- Convert "~" to "$HOME"
   stripped = M.tilde_to_HOME(stripped)
   -- Prepend cwd unless entry is already a URI (e.g. nvim-jdtls "jdt://...")
-  local isURI = stripped:match("^%a+://")
+  local isURI = M.is_uri(stripped)
   local cwd = opts.cwd or opts._cwd
   if cwd and #cwd > 0 and not isURI and not M.is_absolute(stripped) then
     stripped = M.join({ cwd, stripped })
@@ -494,7 +502,7 @@ function M.entry_to_file(entry, opts, force_uri)
       file, line = stripped:match("([^:]+):(%d+)")
     end
   end
-  if opts.path_shorten and not stripped:match("^%a+://") then
+  if opts.path_shorten and not M.is_uri(stripped) then
     file = M.lengthen(file)
   end
   return {
