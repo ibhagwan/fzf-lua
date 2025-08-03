@@ -692,7 +692,7 @@ function FzfWin:new(o)
 end
 
 function FzfWin:get_winopts(win, opts)
-  if not win or not api.nvim_win_is_valid(win) then return end
+  if not win or not api.nvim_win_is_valid(win) then return {} end
   local ret = {}
   for opt, _ in pairs(opts) do
     if utils.nvim_has_option(opt) then
