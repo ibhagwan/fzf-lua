@@ -382,7 +382,12 @@ M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files,
     return {
       { "files",   desc = "Files" },
       { "buffers", desc = "Bufs", prefix = "$" },
-      doc_sym_supported and { "lsp_document_symbols", desc = "Symbols (buf)", prefix = "@" } or {
+      doc_sym_supported and {
+        "lsp_document_symbols",
+        desc = "Symbols (buf)",
+        prefix = "@",
+        opts = { no_autoclose = true }
+      } or {
         "btags",
         desc = "Tags (buf)",
         prefix = "@",
@@ -391,8 +396,13 @@ M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files,
           fn_transform = [[return require("fzf-lua.make_entry").tag]],
         }
       },
-      wks_sym_supported and { "lsp_workspace_symbols", desc = "Symbols (project)", prefix = "#" } or
+      wks_sym_supported and
       {
+        "lsp_workspace_symbols",
+        desc = "Symbols (project)",
+        prefix = "#",
+        opts = { no_autoclose = true }
+      } or {
         "tags",
         desc = "Tags (project)",
         prefix = "#",
