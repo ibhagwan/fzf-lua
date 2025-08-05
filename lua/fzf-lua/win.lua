@@ -988,12 +988,27 @@ function FzfWin:set_tmp_buffer(no_wipe)
   return self.fzf_bufnr
 end
 
-function FzfWin:set_style_minimal(winid)
-  if not tonumber(winid) or
-      not api.nvim_win_is_valid(winid)
-  then
-    return
+function FzfWin:save_style_minimal(winid)
+  if not tonumber(winid) or not api.nvim_win_is_valid(winid) then return end
+  local ret = {}
+  for _, o in ipairs({
+    "number",
+    "relativenumber",
+    "cursorline",
+    "cursorcolumn",
+    "spell",
+    "list",
+    "signcolumn",
+    "foldcolumn",
+    "colorcolumn",
+  }) do
+    ret[o] = vim.wo[winid][o]
   end
+  return ret
+end
+
+function FzfWin:set_style_minimal(winid)
+  if not tonumber(winid) or not api.nvim_win_is_valid(winid) then return end
   vim.wo[winid].number = false
   vim.wo[winid].relativenumber = false
   vim.wo[winid].cursorline = false
@@ -1047,14 +1062,15 @@ function FzfWin:create()
   self.cmdheight = vim.o.cmdheight
 
   if self.winopts.split then
+    -- Store the current window styling options (number, cursor, etc)
+    self.src_winid_style = self:save_style_minimal(self.src_winid)
     if type(self.winopts.split) == "function" then
-      local curwin = vim.api.nvim_get_current_win()
       self.winopts.split()
-      assert(curwin ~= vim.api.nvim_get_current_win(), "split function should return a new win")
     else
       vim.cmd(tostring(self.winopts.split))
     end
     local split_bufnr = vim.api.nvim_get_current_buf()
+    assert(self.src_bufnr ~= split_bufnr, "split function should create a new buffer")
     self.fzf_winid = vim.api.nvim_get_current_win()
     if tonumber(self.fzf_bufnr) and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
       -- Set to fzf bufnr set by `:unhide()`, wipe the new split buf
@@ -1126,7 +1142,16 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
     -- run in a pcall due to potential errors while closing the window
     -- Vim(lua):E5108: Error executing lua
     -- experienced while accessing 'vim.b[]' from my statusline code
-    pcall(vim.api.nvim_win_close, self.fzf_winid, true)
+    if self.src_winid == self.fzf_winid then
+      -- "split" reused the current win (e.g. "enew")
+      -- restore the original buffer and styling options
+      for k, v in pairs(self.src_winid_style or {}) do
+        vim.wo[self.fzf_winid][k] = v
+      end
+      utils.win_set_buf_noautocmd(self.fzf_winid, self.src_bufnr)
+    else
+      pcall(vim.api.nvim_win_close, self.fzf_winid, true)
+    end
   end
   if self.fzf_bufnr and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
     vim.api.nvim_buf_delete(self.fzf_bufnr, { force = true })
@@ -1137,9 +1162,10 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
   -- window may not always return to the correct source win
   -- depending on the user's split configuration (#397)
   if self.winopts and self.winopts.split
-      and self.src_winid and self.src_winid > 0
+      and tonumber(self.src_winid)
+      and vim.api.nvim_win_is_valid(self.src_winid)
       and self.src_winid ~= vim.api.nvim_get_current_win()
-      and vim.api.nvim_win_is_valid(self.src_winid) then
+  then
     vim.api.nvim_set_current_win(self.src_winid)
   end
   if self.winopts.split then
