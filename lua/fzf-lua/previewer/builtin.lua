@@ -1452,8 +1452,10 @@ function Previewer.marks:parse_entry(entry_str)
 
   -- nvim_buf_get_mark cannot get `'` mark correctly without curwin
   -- https://github.com/neovim/neovim/issues/29807
-  local pos = api.nvim_win_call(self.win.src_winid, function()
-    return vim.api.nvim_buf_get_mark(self.win.src_bufnr, mark)
+  local win = vim.api.nvim_win_is_valid(self.win.src_winid) and self.win.src_winid or 0
+  local buf = vim.api.nvim_buf_is_valid(self.win.src_bufnr) and self.win.src_bufnr or 0
+  local pos = api.nvim_win_call(win, function()
+    return vim.api.nvim_buf_get_mark(buf, mark)
   end)
   if pos and pos[1] > 0 then
     assert(pos[1] == tonumber(lnum))

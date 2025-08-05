@@ -254,6 +254,8 @@ M.marks = function(opts)
   local contents = function(cb)
     local win = utils.CTX().winid
     local buf = utils.CTX().bufnr
+    win = vim.api.nvim_win_is_valid(win) and win or 0
+    buf = vim.api.nvim_win_is_valid(buf) and buf or 0
     local marks = vim.api.nvim_win_call(win, function()
       return vim.api.nvim_buf_call(buf, function() return vim.fn.execute("marks") end)
     end)
