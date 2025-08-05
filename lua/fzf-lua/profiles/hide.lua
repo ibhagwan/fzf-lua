@@ -84,6 +84,10 @@ return {
         end
         return act
       end, opts.actions)
+      -- resize event was only added in fzf v0.46
+      if not FzfLua.utils.has(opts, "fzf", { 0, 46 }) then
+        return opts
+      end
       -- Hijack the resize event to reload buffer/tab list on unhide
       table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("resize:+transform:"
         .. shell.stringify_data(function(_, _, _)
