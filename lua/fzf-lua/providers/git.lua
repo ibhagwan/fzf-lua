@@ -219,9 +219,9 @@ M.stash = function(opts)
   opts.fn_transform = function(x)
     local stash, rest = x:match("([^:]+)(.*)")
     if stash then
-      stash = utils.ansi_codes.yellow(stash)
+      stash = FzfLua.utils.ansi_codes.yellow(stash)
       stash = stash:gsub("{%d+}", function(s)
-        return ("%s"):format(utils.ansi_codes.green(tostring(s)))
+        return ("%s"):format(FzfLua.utils.ansi_codes.green(tostring(s)))
       end)
     end
     return (not stash or not rest) and x or stash .. rest
