@@ -486,6 +486,8 @@ M.FzfLua = setmetatable({}, {
         child.expect_screenshot(screen_opts)
       end
 
+      if ci_opts.__no_abort then return end
+
       -- Feed the abort key and exit fzf
       child.type_keys(ci_opts.__abort_key or "<c-c>")
 

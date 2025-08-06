@@ -1245,6 +1245,15 @@ function FzfWin:was_hidden()
       and not vim.api.nvim_buf_is_valid(self._hidden_fzf_bufnr)
 end
 
+function FzfWin:SIGWINCH()
+  local bufnr = self._hidden_fzf_bufnr or self.fzf_bufnr
+  if not tonumber(bufnr) or not vim.api.nvim_buf_is_valid(bufnr) then return end
+  local pid = fn.jobpid(vim.bo[bufnr].channel)
+  if tonumber(pid) > 0 then
+    vim.tbl_map(function(_pid) libuv.process_kill(_pid, 28) end, api.nvim_get_proc_children(pid))
+  end
+end
+
 function FzfWin.unhide()
   local self = _self
   if not self or not self:hidden() then return end
@@ -1252,8 +1261,7 @@ function FzfWin.unhide()
   self._o._unhide_called = true
   -- Send SIGWINCH to to trigger resize in the fzf process
   -- We will use the trigger to reload necessary buffer lists
-  local pid = fn.jobpid(vim.bo[self._hidden_fzf_bufnr].channel)
-  vim.tbl_map(function(_pid) libuv.process_kill(_pid, 28) end, api.nvim_get_proc_children(pid))
+  self:SIGWINCH()
   vim.bo[self._hidden_fzf_bufnr].bufhidden = "wipe"
   self.fzf_bufnr = self._hidden_fzf_bufnr
   self._hidden_fzf_bufnr = nil
@@ -1439,6 +1447,10 @@ function FzfWin.toggle_preview()
   if self._fzf_toggle_prev_bind then
     -- Toggle the empty preview window (under the neovim preview buffer)
     utils.feed_keys_termcodes(self._fzf_toggle_prev_bind)
+    -- Trigger resize to cange the preview layout if needed
+    if utils.has(self._o, "fzf", { 0, 46 }) then
+      self:SIGWINCH()
+    end
     -- This is just a proxy to toggle the native fzf preview when treesitter
     -- is enabled, no need to redraw, stop here
     if not self.previewer_is_builtin then

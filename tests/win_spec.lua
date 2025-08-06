@@ -163,4 +163,84 @@ T["win"]["keymap"]["no error"] = function()
   end
 end
 
+T["win"]["previewer"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
+
+T["win"]["previewer"]["split flex layout resize"] = function()
+  -- Ignore terminal command line with process number
+  local screen_opts = { ignore_text = { 24, 28 }, normalize_paths = helpers.IS_WIN() }
+  helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], {
+    __no_abort = true,
+    __expect_lines = true,
+    __screen_opts = screen_opts,
+    winopts = {
+      split = "enew",
+      preview = {
+        -- default test screen size is 28,64
+        flip_columns = 64,
+      }
+    },
+    previewer = [[require('fzf-lua.test.previewer')]],
+    keymap = {
+      fzf = {
+        resize = function()
+          _G._fzf_resize_called = true
+        end
+      }
+    },
+    __after_open = function()
+      child.wait_until(function()
+        return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) == "foo"
+      end)
+    end,
+  })
+  -- increase size by 1, should flip to vertical preview
+  child.set_size(28, 65)
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_resize_called]]) == true
+  end)
+  if helpers.IS_WIN() then vim.uv.sleep(250) end
+  child.expect_screen_lines(screen_opts)
+  -- abort and wait for winopts.on_close
+  child.type_keys("<c-c>")
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+  end)
+end
+
+T["win"]["previewer"]["split flex hidden"] = function()
+  -- Ignore terminal command line with process number
+  local screen_opts = { ignore_text = { 24, 28 }, normalize_paths = helpers.IS_WIN() }
+  helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], {
+    __no_abort = true,
+    __expect_lines = true,
+    __screen_opts = screen_opts,
+    winopts = {
+      split = "enew",
+      preview = {
+        -- default test screen size is 28,64
+        flip_columns = 64,
+        -- start hidden
+        hidden = true
+      }
+    },
+    previewer = [[require('fzf-lua.test.previewer')]],
+    __after_open = function()
+      if helpers.IS_WIN() then vim.uv.sleep(250) end
+    end,
+  })
+  -- increase size by 1, should flip to vertical preview
+  child.set_size(28, 65)
+  exec_lua([[require("fzf-lua.win").toggle_preview()]])
+  child.wait_until(function()
+    return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) == "foo"
+  end)
+  if helpers.IS_WIN() then vim.uv.sleep(250) end
+  child.expect_screen_lines(screen_opts)
+  -- abort and wait for winopts.on_close
+  child.type_keys("<c-c>")
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+  end)
+end
+
 return T
