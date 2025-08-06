@@ -353,8 +353,27 @@ M.fzf = function(contents, opts)
     opts.fzf_opts["--preview-window"] = "hidden:right:0"
   end
 
+  -- setup layout for native previewers / split win background dummy preview
+  if opts.fzf_opts["--preview-window"] == nil then
+    opts.fzf_opts["--preview-window"] = M.preview_window(opts, fzf_win)
+  end
+
+  if utils.has(opts, "fzf", { 0, 46 })
+      and opts.winopts.preview.layout == "flex"
+      and tonumber(opts.winopts.preview.flip_columns) > 0
+      -- Only enable flex layout native rotate if native previewer size > 0
+      and not (opts.fzf_opts["--preview-window"] or ""):match(":0")
+  then
+    table.insert(opts._fzf_cli_args, "--bind="
+      .. libuv.shellescape("resize:+transform:" .. shell.stringify_data(function(args)
+        -- Only set the layout if preview isn't hidden
+        if not tonumber(args[1]) then return end
+        return string.format("change-preview-window(%s)", fzf_win:fzf_preview_layout_str())
+      end, opts, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")))
+  end
+
   local fzf_bufnr = fzf_win:create()
-  local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts, fzf_win),
+  local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     {
       fzf_bin = opts.fzf_bin,
       cwd = opts.cwd,
@@ -451,6 +470,9 @@ M.preview_window = function(o, fzf_win)
     end)()
   )
   if utils.has(o, "fzf", { 0, 31 })
+      -- fzf v0.45 added transform, v0.46 added resize event
+      -- which we use for changing the layout on resize
+      and not utils.has(o, "fzf", { 0, 46 })
       and o.winopts.preview.layout == "flex"
       and tonumber(o.winopts.preview.flip_columns) > 0
   then
@@ -472,6 +494,9 @@ M.preview_window = function(o, fzf_win)
   end
   if not layout then
     layout = string.format("%s:%s", prefix, fzf_win:fzf_preview_layout_str())
+  end
+  if o.preview_offset and #o.preview_offset > 0 then
+    layout = layout .. ":" .. o.preview_offset
   end
   return layout
 end
@@ -589,9 +614,8 @@ M.create_fzf_binds = function(opts)
 end
 
 ---@param opts table
----@param fzf_win fzf-lua.Win
 ---@return string[]
-M.build_fzf_cli = function(opts, fzf_win)
+M.build_fzf_cli = function(opts)
   -- below options can be specified directly in opts and will be
   -- prioritized: opts.<name> is prioritized over fzf_opts["--name"]
   for _, flag in ipairs({ "query", "prompt", "header", "preview" }) do
@@ -637,13 +661,6 @@ M.build_fzf_cli = function(opts, fzf_win)
     if expect_binds and #expect_binds > 0 then
       table.insert(opts.fzf_opts["--bind"], table.concat(expect_binds, ","))
     end
-  end
-  if opts.fzf_opts["--preview-window"] == nil then
-    opts.fzf_opts["--preview-window"] = M.preview_window(opts, fzf_win)
-  end
-  if opts.fzf_opts["--preview-window"] and opts.preview_offset and #opts.preview_offset > 0 then
-    opts.fzf_opts["--preview-window"] =
-        opts.fzf_opts["--preview-window"] .. ":" .. opts.preview_offset
   end
   -- build the cli args
   local cli_args = {}
