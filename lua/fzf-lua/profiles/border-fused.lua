@@ -1,10 +1,21 @@
 local _single  = { "┌", "─", "┐", "│", "┘", "─", "└", "│" }
 local _rounded = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" }
 local _border  = true and _rounded or _single
+local _preview_border
 return {
   { "default-title" }, -- base profile
   desc = "Single border around the UI",
   -- previewers = { bat = { args = "--color=always --style=default" } },
+  defaults = {
+    enrich = function(opts)
+      if not FzfLua.utils.has(opts, "fzf", { 0, 63 }) then
+        _preview_border = "border-line"
+      else
+        _preview_border = "border-sharp"
+      end
+      return opts
+    end
+  },
   winopts = {
     border  = function(_, m)
       assert(m.type == "nvim" and m.name == "fzf")
@@ -38,8 +49,7 @@ return {
       scrollbar = "border",
       border = function(_, m)
         if m.type == "fzf" then
-          -- Always return none, let `bat --style=default` to draw our border
-          return "single"
+          return _preview_border
         else
           assert(m.type == "nvim" and m.name == "prev" and type(m.layout) == "string")
           local b = vim.deepcopy(_border)
