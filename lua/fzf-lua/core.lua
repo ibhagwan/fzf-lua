@@ -356,6 +356,9 @@ M.fzf = function(contents, opts)
     opts.fzf_opts["--preview-window"] = "hidden:right:0"
   end
 
+  -- Create the window before we calculate the preview window layout
+  local fzf_bufnr = fzf_win:create()
+
   -- setup layout for native previewers / split win background dummy preview
   if opts.fzf_opts["--preview-window"] == nil then
     opts.fzf_opts["--preview-window"] = M.preview_window(opts, fzf_win)
@@ -375,7 +378,6 @@ M.fzf = function(contents, opts)
       end, opts, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")))
   end
 
-  local fzf_bufnr = fzf_win:create()
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
     {
       fzf_bin = opts.fzf_bin,

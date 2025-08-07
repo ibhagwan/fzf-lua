@@ -1158,7 +1158,7 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
       end
       utils.win_set_buf_noautocmd(self.fzf_winid, self.src_bufnr)
       -- also restore the original alternate buffer
-      if utils.__CTX().alt_bufnr > 0 then
+      if utils.__CTX() and utils.__CTX().alt_bufnr > 0 then
         vim.cmd("balt " .. vim.fn.bufname(utils.__CTX().alt_bufnr))
       end
     else
