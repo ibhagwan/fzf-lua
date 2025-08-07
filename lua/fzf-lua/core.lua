@@ -247,8 +247,10 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
   local wrapped = coroutine.wrap(function()
     _co = coroutine.running()
     if type(opts.cb_co) == "function" then opts.cb_co(_co) end
+    local selected, exit_code = M.fzf(cmd, opts)
+    -- If aborted (e.g. unhide process kill), do nothing
+    if not tonumber(exit_code) then return end
     -- Default fzf exit callback acts upon the selected items
-    local selected = M.fzf(cmd, opts)
     local fn_selected = opts.fn_selected or actions.act
     if not fn_selected then return end
     -- errors thrown here gets silenced possibly
@@ -272,16 +274,17 @@ end
 ---@param contents string?
 ---@param opts {}?
 ---@return string[]?
+---@return integer? exit_code
 M.fzf = function(contents, opts)
   -- Disable opening from the command-line window `:q`
   -- creates all kinds of issues, will fail on `nvim_win_close`
   if vim.fn.win_gettype() == "command" then
     utils.info("Unable to open from the command-line window. See `:help E11`.")
-    return
+    return nil, nil
   end
   -- normalize with globals if not already normalized
   opts = config.normalize_opts(opts or {}, {})
-  if not opts then return end
+  if not opts then return nil, nil end
   -- Store contents for unhide
   opts._contents = contents
   -- flag used to print the query on stdout line 1
@@ -391,7 +394,7 @@ M.fzf = function(contents, opts)
     libuv.process_kill(opts.__pid)
   end
   -- If a hidden process was killed by [re-]starting a new picker do nothing
-  if fzf_win:was_hidden() then return end
+  if fzf_win:was_hidden() then return nil, nil end
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
   if selected and #selected > 0 then
@@ -421,7 +424,7 @@ M.fzf = function(contents, opts)
       utils.clear_CTX()
     end
   end
-  return selected
+  return selected, exit_code
 end
 
 -- Best approximation of neovim border types to fzf border types
