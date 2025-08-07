@@ -190,7 +190,7 @@ function FzfWin:generate_layout(winopts)
         relative = self.winopts.relative or "editor",
         zindex = self.winopts.zindex,
         hide = self.winopts.hide,
-      }, { type = "nvim", name = "fzf", nwin = 1 })
+      }, { type = "nvim", name = "fzf", nwin = 1, opts = self._o })
     }
     return
   end
@@ -289,14 +289,16 @@ function FzfWin:generate_layout(winopts)
         relative = self.winopts.relative or "editor",
         zindex = self.winopts.zindex,
         hide = self.winopts.hide,
-      }), { type = "nvim", name = "fzf", nwin = nwin, layout = preview_pos }),
+      }),
+      { type = "nvim", name = "fzf", nwin = nwin, layout = preview_pos, opts = self._o }),
     preview = self:normalize_border(vim.tbl_extend("force", pwopts, {
-      style = "minimal",
-      zindex = self.winopts.zindex,
-      border = self._o.winopts.preview.border,
-      focusable = true,
-      hide = self.winopts.hide,
-    }), { type = "nvim", name = "prev", nwin = nwin, layout = preview_pos })
+        style = "minimal",
+        zindex = self.winopts.zindex,
+        border = self._o.winopts.preview.border,
+        focusable = true,
+        hide = self.winopts.hide,
+      }),
+      { type = "nvim", name = "prev", nwin = nwin, layout = preview_pos, opts = self._o })
   }
 end
 
@@ -1158,8 +1160,14 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
       end
       utils.win_set_buf_noautocmd(self.fzf_winid, self.src_bufnr)
       -- also restore the original alternate buffer
-      if utils.__CTX() and utils.__CTX().alt_bufnr > 0 then
-        vim.cmd("balt " .. vim.fn.bufname(utils.__CTX().alt_bufnr))
+      local alt_bname = (function()
+        local alt_bufnr = utils.__CTX() and utils.__CTX().alt_bufnr
+        if alt_bufnr and vim.api.nvim_buf_is_valid(alt_bufnr) then
+          return vim.fn.bufname(alt_bufnr)
+        end
+      end)()
+      if alt_bname and #alt_bname > 0 then
+        vim.cmd("balt " .. vim.fn.bufname(alt_bname))
       end
     else
       pcall(vim.api.nvim_win_close, self.fzf_winid, true)

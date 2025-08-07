@@ -469,7 +469,7 @@ M.preview_window = function(o, fzf_win)
         local preview_str = fzf_win:fzf_preview_layout_str()
         local preview_pos = preview_str:match("[^:]+") or "right"
         return translate_border(o.winopts.preview,
-          { type = "fzf", name = "prev", layout = preview_pos })
+          { type = "fzf", name = "prev", layout = preview_pos, opts = o })
       end)()
       return border and string.format(":%s", border) or ""
     end)()
