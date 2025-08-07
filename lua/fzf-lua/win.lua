@@ -1074,7 +1074,10 @@ function FzfWin:create()
     if tonumber(self.fzf_bufnr) and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
       -- Set to fzf bufnr set by `:unhide()`, wipe the new split buf
       utils.win_set_buf_noautocmd(self.fzf_winid, self.fzf_bufnr)
-      utils.nvim_buf_delete(split_bufnr, { force = true })
+      -- Do not delete src buffer if unhiding from splash screen buf 1
+      if self.src_bufnr ~= split_bufnr then
+        utils.nvim_buf_delete(split_bufnr, { force = true })
+      end
     elseif self.src_bufnr == split_bufnr then
       -- "enew" on splash screen doesn't create a new buf
       self.fzf_bufnr = self:set_tmp_buffer(true)
