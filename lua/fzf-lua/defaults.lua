@@ -709,6 +709,7 @@ M.defaults.loclist_stack        = {
 }
 
 M.defaults.buffers              = {
+  _type                 = "file",
   previewer             = M._default_previewer_fn,
   file_icons            = 1,
   color_icons           = true,
@@ -731,6 +732,7 @@ M.defaults.buffers              = {
 }
 
 M.defaults.tabs                 = {
+  _type          = "file",
   previewer      = M._default_previewer_fn,
   tab_title      = "Tab",
   tab_marker     = "<<",

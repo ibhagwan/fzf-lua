@@ -146,9 +146,8 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
       return path.tail(bname)
     else
       bname = make_entry.lcol({ filename = bname, lnum = buf.info.lnum }, opts):gsub(":$", "")
-      return make_entry.file(bname, vim.tbl_extend("force", opts,
-        -- No support for git_icons, file_icons are added later
-        { cwd = cwd or opts.cwd or uv.cwd(), file_icons = false, git_icons = false }))
+      return make_entry.file(bname,
+        vim.tbl_extend("force", opts, { cwd = cwd or opts.cwd or uv.cwd() }))
     end
   end)()
   if buf.flag == "%" then
@@ -161,15 +160,6 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
   local bufnrstr = string.format("%s%s%s", leftbr,
     utils.ansi_codes[opts.hls.buf_nr](tostring(buf.bufnr)), rightbr)
   local buficon = ""
-  local hl = ""
-  if opts.file_icons then
-    buficon, hl = devicons.get_devicon(buf.info.name,
-      -- shell-like icon for terminal buffers
-      utils.is_term_bufname(buf.info.name) and "sh" or nil)
-    if hl and opts.color_icons then
-      buficon = utils.ansi_from_rgb(hl, buficon)
-    end
-  end
   local max_bufnr_w = 3 + #tostring(max_bufnr) + utils.ansi_escseq_len(bufnrstr)
   local item_str = string.format("%s%s%s%s%s%s%s%s",
     prefix or "",
