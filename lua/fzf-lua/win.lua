@@ -1086,6 +1086,8 @@ function FzfWin:create()
     end
     -- match window options with 'nvim_open_win' style:minimal
     self:set_style_minimal(self.fzf_winid)
+    -- set buf as unlisted
+    vim.bo[self.fzf_bufnr].buflisted = false
   else
     -- draw the main window
     self:redraw_main()
