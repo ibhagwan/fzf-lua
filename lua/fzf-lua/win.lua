@@ -1069,25 +1069,26 @@ function FzfWin:create()
     else
       vim.cmd(tostring(self.winopts.split))
     end
+
     local split_bufnr = vim.api.nvim_get_current_buf()
     self.fzf_winid = vim.api.nvim_get_current_win()
+
     if tonumber(self.fzf_bufnr) and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
-      -- Set to fzf bufnr set by `:unhide()`, wipe the new split buf
+      -- set to fzf bufnr set by `:unhide()`
       utils.win_set_buf_noautocmd(self.fzf_winid, self.fzf_bufnr)
-      -- Do not delete src buffer if unhiding from splash screen buf 1
-      if self.src_bufnr ~= split_bufnr then
-        utils.nvim_buf_delete(split_bufnr, { force = true })
-      end
-    elseif self.src_bufnr == split_bufnr then
-      -- "enew" on splash screen doesn't create a new buf
-      self.fzf_bufnr = self:set_tmp_buffer(true)
     else
-      self.fzf_bufnr = split_bufnr
+      -- ensure split buffer is a scratch buffer
+      self.fzf_bufnr = self:set_tmp_buffer(true)
     end
+
+    -- since we're using our own scratch buf, if the
+    -- split command created a new buffer, delete it
+    if self.src_bufnr ~= split_bufnr then
+      utils.nvim_buf_delete(split_bufnr, { force = true })
+    end
+
     -- match window options with 'nvim_open_win' style:minimal
     self:set_style_minimal(self.fzf_winid)
-    -- set buf as unlisted
-    vim.bo[self.fzf_bufnr].buflisted = false
   else
     -- draw the main window
     self:redraw_main()
@@ -1156,6 +1157,10 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
         vim.wo[self.fzf_winid][k] = v
       end
       utils.win_set_buf_noautocmd(self.fzf_winid, self.src_bufnr)
+      -- also restore the original alternate buffer
+      if utils.__CTX().alt_bufnr > 0 then
+        vim.cmd("balt " .. vim.fn.bufname(utils.__CTX().alt_bufnr))
+      end
     else
       pcall(vim.api.nvim_win_close, self.fzf_winid, true)
     end
