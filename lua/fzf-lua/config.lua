@@ -494,7 +494,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   end
 
   -- Exclude file icons from the fuzzy matching (#1080)
-  if opts.file_icons
+  if (opts.file_icons or opts.git_icons)
       and opts._fzf_nth_devicons
       and not opts.fzf_opts["--delimiter"]
       -- Can't work due to : delimiter (#2112)
