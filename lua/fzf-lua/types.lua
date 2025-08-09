@@ -246,35 +246,35 @@ _G.FzfLua = require("fzf-lua")
 
 ---@class fzf-lua.config.TreesitterWinopts
 ---@field enabled boolean
----@field fzf_colors table<string, string>
+---@field fzf_colors? table<string, string>
 
 ---@class fzf-lua.config.PreviewWinopts
----@field default string
----@field border string
----@field wrap boolean
----@field hidden boolean
----@field vertical string
----@field horizontal string
----@field layout string
----@field flip_columns integer
----@field title boolean
----@field title_pos string
----@field scrollbar string
----@field scrolloff integer
----@field delay integer
----@field winopts fzf-lua.config.PreviewerWinopts
+---@field default? string
+---@field border? string
+---@field wrap? boolean
+---@field hidden? boolean
+---@field vertical? string
+---@field horizontal? string
+---@field layout? string
+---@field flip_columns? integer
+---@field title? boolean
+---@field title_pos? string
+---@field scrollbar? string
+---@field scrolloff? integer
+---@field delay? integer
+---@field winopts? fzf-lua.config.PreviewerWinopts
 
 ---@class fzf-lua.config.PreviewerWinopts
----@field number boolean
----@field relativenumber boolean
----@field cursorline boolean
----@field cursorlineopt string
----@field cursorcolumn boolean
----@field signcolumn string
----@field list boolean
----@field foldenable boolean
----@field foldmethod string
----@field scrolloff integer
+---@field number? boolean
+---@field relativenumber? boolean
+---@field cursorline? boolean
+---@field cursorlineopt? string
+---@field cursorcolumn? boolean
+---@field signcolumn? string
+---@field list? boolean
+---@field foldenable? boolean
+---@field foldmethod? string
+---@field scrolloff? integer
 
 ---@class fzf-lua.config.Keymap
 ---@field builtin table<string, string>
@@ -398,7 +398,6 @@ _G.FzfLua = require("fzf-lua")
 ---@field __resume_set function
 ---@field __resume_get function
 ---@field lgrep boolean grep or lgrep
-
 
 ---@class fzf-lua.config.Args: fzf-lua.config.Base
 ---@field files_only boolean
@@ -632,7 +631,6 @@ _G.FzfLua = require("fzf-lua")
 
 ---@class fzf-lua.config.TmuxBuffers: fzf-lua.config.Base
 ---@field cmd string
-
 
 ---@class fzf-lua.config.Tmux
 ---@field buffers fzf-lua.config.TmuxBuffers
