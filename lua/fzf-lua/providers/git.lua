@@ -62,7 +62,7 @@ local function git_cmd(opts)
 end
 
 local function git_preview(opts, file)
-  if not type(opts.preview) == "string" then return end
+  if type(opts.preview) ~= "string" then return end
   if file then
     opts.preview = opts.preview:gsub("[<{]file[}>]", file)
   end
