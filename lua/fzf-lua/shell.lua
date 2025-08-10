@@ -353,13 +353,15 @@ M.stringify = function(contents, opts, fzf_field_index)
         if type(data) == "table" then
           -- cb_write_lines was sent instead of cb_lines
           if fn_transform then
-            -- Iterate back to front so we can remove items safely
-            for i = #data, 1, -1 do
+            -- safely remove items while iterating
+            local i = 1
+            while i <= #data do
               local v = fn_transform(data[i], opts)
               if not v then
                 table.remove(data, i)
               else
                 data[i] = v
+                i = i + 1
               end
             end
           end
