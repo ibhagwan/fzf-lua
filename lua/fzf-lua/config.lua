@@ -63,7 +63,9 @@ M.setup_opts = {}
 M.globals = setmetatable({}, {
   __index = function(_, index)
     local function setup_opts()
-      return M._profile_opts or M.setup_opts
+      return M._profile_opts
+          and vim.tbl_deep_extend("keep", {}, M._profile_opts, M.setup_opts)
+          or M.setup_opts
     end
     local function setup_defaults()
       return M._profile_opts and (M._profile_opts.defaults or {}) or M.setup_opts.defaults or {}
