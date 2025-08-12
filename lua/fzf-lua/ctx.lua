@@ -16,6 +16,7 @@ local ctx
 ---@field cursor integer[]
 ---@field line string
 ---@field curtab_wins { [string]: boolean }
+---@field winopts { winhl: string, cursorline: boolean }
 ---@field bufmap? { [string]: boolean }
 ---@field buflist? integer[]
 
@@ -61,7 +62,11 @@ M.refresh = function(opts)
           ret[tostring(w)] = true
         end
         return ret
-      end)()
+      end)(),
+      winopts = {
+        winhl = vim.wo.winhl,
+        cursorline = vim.wo.cursorline,
+      },
     }
   end
   -- perhaps a min impact optimization but since only

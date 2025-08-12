@@ -42,7 +42,7 @@ end
 ---missing fields are injected later, not sure how to tell luals about it
 ---@diagnostic disable: missing-fields
 ---@type fzf-lua.config.Defaults
-M.defaults                      = {
+M.defaults                       = {
   nbsp          = utils.nbsp,
   winopts       = {
     height     = 0.85,
@@ -198,12 +198,9 @@ M.defaults                      = {
       _ctor = previewers.fzf.man_pages,
       cmd = function() return M._man_cmd_fn(true) end,
     },
-    help_tags = {
-      _ctor = previewers.builtin.help_tags,
-    },
-    help_native = {
-      _ctor = previewers.fzf.help_tags,
-    },
+    help_tags = { _ctor = previewers.builtin.help_tags },
+    help_native = { _ctor = previewers.fzf.help_tags },
+    swiper = { _ctor = previewers.swiper.default },
     builtin = {
       syntax            = true,
       syntax_delay      = 0,
@@ -335,7 +332,7 @@ M.defaults                      = {
   },
 }
 
-M.defaults.files                = {
+M.defaults.files                 = {
   previewer              = M._default_previewer_fn,
   cmd                    = nil, -- default: auto detect find|fd
   multiprocess           = 1,
@@ -364,7 +361,7 @@ M.defaults.files                = {
 }
 
 ---@diagnostic disable-next-line: assign-type-mismatch
-M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files, {
+M.defaults.global                = vim.tbl_deep_extend("force", M.defaults.files, {
   silent            = true,
   -- TODO: lsp_workspace_symbols locate, not working yet
   -- as opts.__locate_pos is inside the symbols picker opts
@@ -423,7 +420,7 @@ M.defaults.global               = vim.tbl_deep_extend("force", M.defaults.files,
 
 -- Must construct our opts table in stages
 -- so we can reference 'M.globals.files'
-M.defaults.git                  = {
+M.defaults.git                   = {
   files = {
     previewer         = M._default_previewer_fn,
     cmd               = "git ls-files --exclude-standard",
@@ -593,7 +590,7 @@ M.defaults.git                  = {
   },
 }
 
-M.defaults.grep                 = {
+M.defaults.grep                  = {
   previewer      = M._default_previewer_fn,
   input_prompt   = "Grep For> ",
   cmd            = nil, -- default: auto detect rg|grep
@@ -621,7 +618,7 @@ M.defaults.grep                 = {
 }
 
 ---@diagnostic disable-next-line: assign-type-mismatch
-M.defaults.grep_curbuf          = vim.tbl_deep_extend("force", M.defaults.grep, {
+M.defaults.grep_curbuf           = vim.tbl_deep_extend("force", M.defaults.grep, {
   rg_glob          = false, -- meaningless for single file rg
   exec_empty_query = true,  -- makes sense to display lines immediately
   fzf_opts         = {
@@ -631,7 +628,7 @@ M.defaults.grep_curbuf          = vim.tbl_deep_extend("force", M.defaults.grep, 
   },
 })
 
-M.defaults.args                 = {
+M.defaults.args                  = {
   previewer         = M._default_previewer_fn,
   files_only        = true,
   file_icons        = 1,
@@ -644,7 +641,7 @@ M.defaults.args                 = {
   _headers          = { "actions", "cwd" },
 }
 
-M.defaults.oldfiles             = {
+M.defaults.oldfiles              = {
   previewer         = M._default_previewer_fn,
   file_icons        = 1,
   color_icons       = true,
@@ -656,7 +653,7 @@ M.defaults.oldfiles             = {
   _headers          = { "cwd" },
 }
 
-M.defaults.quickfix             = {
+M.defaults.quickfix              = {
   previewer   = M._default_previewer_fn,
   separator   = "▏",
   file_icons  = 1,
@@ -675,14 +672,14 @@ M.defaults.quickfix             = {
   _headers    = { "actions", "cwd" },
 }
 
-M.defaults.quickfix_stack       = {
+M.defaults.quickfix_stack        = {
   marker    = ">",
   previewer = { _ctor = previewers.builtin.quickfix, },
   fzf_opts  = { ["--no-multi"] = true },
   actions   = { ["enter"] = actions.set_qflist, },
 }
 
-M.defaults.loclist              = {
+M.defaults.loclist               = {
   previewer   = M._default_previewer_fn,
   separator   = "▏",
   file_icons  = 1,
@@ -701,14 +698,14 @@ M.defaults.loclist              = {
   _headers    = { "actions", "cwd" },
 }
 
-M.defaults.loclist_stack        = {
+M.defaults.loclist_stack         = {
   marker    = ">",
   previewer = { _ctor = previewers.builtin.quickfix, },
   fzf_opts  = { ["--no-multi"] = true },
   actions   = { ["enter"] = actions.set_qflist, },
 }
 
-M.defaults.buffers              = {
+M.defaults.buffers               = {
   _type                 = "file",
   previewer             = M._default_previewer_fn,
   file_icons            = 1,
@@ -731,7 +728,7 @@ M.defaults.buffers              = {
   _resume_reload        = true,
 }
 
-M.defaults.tabs                 = {
+M.defaults.tabs                  = {
   _type          = "file",
   previewer      = M._default_previewer_fn,
   tab_title      = "Tab",
@@ -757,7 +754,7 @@ M.defaults.tabs                 = {
   _resume_reload = true,
 }
 
-M.defaults.lines                = {
+M.defaults.lines                 = {
   previewer        = M._default_previewer_fn,
   file_icons       = 1,
   color_icons      = true,
@@ -798,7 +795,7 @@ M.defaults.lines                = {
 }
 
 ---@diagnostic disable-next-line: assign-type-mismatch
-M.defaults.blines               = vim.tbl_deep_extend("force", M.defaults.lines, {
+M.defaults.blines                = vim.tbl_deep_extend("force", M.defaults.lines, {
   show_bufname    = false,
   show_unloaded   = true,
   show_unlisted   = true,
@@ -810,7 +807,7 @@ M.defaults.blines               = vim.tbl_deep_extend("force", M.defaults.lines,
   _resume_reload  = true,
 })
 
-M.defaults.treesitter           = {
+M.defaults.treesitter            = {
   previewer        = M._default_previewer_fn,
   file_icons       = false,
   color_icons      = false,
@@ -833,7 +830,7 @@ M.defaults.treesitter           = {
   },
 }
 
-M.defaults.spellcheck           = {
+M.defaults.spellcheck            = {
   previewer        = M._default_previewer_fn,
   file_icons       = false,
   color_icons      = false,
@@ -861,7 +858,7 @@ M.defaults.spellcheck           = {
   },
 }
 
-M.defaults.tags                 = {
+M.defaults.tags                  = {
   previewer     = { _ctor = previewers.builtin.tags },
   input_prompt  = "[tags] Grep For> ",
   ctags_file    = nil, -- auto-detect
@@ -883,7 +880,7 @@ M.defaults.tags                 = {
   formatter     = false,
 }
 
-M.defaults.btags                = {
+M.defaults.btags                 = {
   previewer     = { _ctor = previewers.builtin.tags },
   ctags_file    = nil, -- auto-detect
   rg_opts       = "--color=never --no-heading",
@@ -906,7 +903,7 @@ M.defaults.btags                = {
   formatter     = false,
 }
 
-M.defaults.colorschemes         = {
+M.defaults.colorschemes          = {
   live_preview = true,
   winopts      = { height = 0.55, width = 0.50, backdrop = false },
   fzf_opts     = { ["--no-multi"] = true },
@@ -914,14 +911,14 @@ M.defaults.colorschemes         = {
   _headers     = { "actions" },
 }
 
-M.defaults.highlights           = {
+M.defaults.highlights            = {
   fzf_opts   = { ["--no-multi"] = true },
   fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
   previewer  = { _ctor = previewers.builtin.highlights, },
   actions    = { ["enter"] = actions.hi }
 }
 
-M.defaults.awesome_colorschemes = {
+M.defaults.awesome_colorschemes  = {
   winopts      = { row = 0, col = 0.99, width = 0.50, backdrop = false },
   live_preview = true,
   max_threads  = 5,
@@ -944,7 +941,7 @@ M.defaults.awesome_colorschemes = {
   }
 }
 
-M.defaults.helptags             = {
+M.defaults.helptags              = {
   actions   = {
     ["enter"]  = actions.help,
     ["ctrl-s"] = actions.help,
@@ -962,7 +959,7 @@ M.defaults.helptags             = {
   },
 }
 
-M.defaults.manpages             = {
+M.defaults.manpages              = {
   cmd       = "man -k .",
   actions   = {
     ["enter"]  = actions.man,
@@ -974,7 +971,7 @@ M.defaults.manpages             = {
   previewer = "man",
 }
 
-M.defaults.lsp                  = {
+M.defaults.lsp                   = {
   previewer        = M._default_previewer_fn,
   file_icons       = 1,
   color_icons      = true,
@@ -991,7 +988,7 @@ M.defaults.lsp                  = {
   _headers         = { "actions", "regex_filter" },
 }
 
-M.defaults.lsp.symbols          = {
+M.defaults.lsp.symbols           = {
   previewer        = M._default_previewer_fn,
   locate           = false,
   file_icons       = 1,
@@ -1030,7 +1027,6 @@ M.defaults.lsp.symbols          = {
   symbol_fmt       = function(s, _) return "[" .. s .. "]" end,
   child_prefix     = true,
   async_or_timeout = true,
-  exec_empty_query = true,
   -- new formatting options with symbol name at the start
   fzf_opts         = {
     ["--delimiter"] = string.format("[:%s]", utils.nbsp),
@@ -1039,6 +1035,8 @@ M.defaults.lsp.symbols          = {
   },
   line_field_index = "{-2}", -- line field index
   field_index_expr = "{}",   -- entry field index
+  _actions         = function() return M.globals.actions.files end,
+  _uri             = true,
   _fmt             = {
     -- NOT NEEDED: we format at the source in `lsp.symbol_handler`
     -- to = function(s, _)
@@ -1057,14 +1055,36 @@ M.defaults.lsp.symbols          = {
       return string.format("%s %s", file, text)
     end
   },
-  _actions         = function() return M.globals.actions.files end,
+}
+
+M.defaults.lsp.document_symbols  = vim.tbl_deep_extend("force", {}, M.defaults.lsp.symbols, {
+  git_icons   = false,
+  file_icons  = false,
+  fzf_opts    = {
+    ["--tiebreak"]  = "begin",
+    ["--multi"]     = true,
+    ["--tabstop"]   = "4",
+    ["--delimiter"] = "[:]",
+    ["--with-nth"]  = "2..",
+  },
+  _fmt        = {
+    _from = function(s)
+      -- Remove [<bufnr>] so  entry_to_file can parse as URI
+      return s:gsub(".-" .. utils.nbsp, ""):gsub("\t\t", ": ")
+    end
+  },
+  _cached_hls = { "path_colnr", "buf_name", "buf_nr", "buf_linenr" },
+  _headers    = { "regex_filter" },
+})
+
+M.defaults.lsp.workspace_symbols = vim.tbl_deep_extend("force", {}, M.defaults.lsp.symbols, {
+  exec_empty_query = true,
   actions          = { ["ctrl-g"] = { actions.sym_lsym } },
   _cached_hls      = { "live_sym", "path_colnr", "path_linenr" },
   _headers         = { "actions", "cwd", "regex_filter" },
-  _uri             = true,
-}
+})
 
-M.defaults.lsp.finder           = {
+M.defaults.lsp.finder            = {
   previewer   = M._default_previewer_fn,
   file_icons  = 1,
   color_icons = true,
@@ -1100,7 +1120,7 @@ M.defaults.lsp.finder           = {
   _uri        = true,
 }
 
-M.defaults.lsp.code_actions     = {
+M.defaults.lsp.code_actions      = {
   async_or_timeout = 5000,
   previewer        = "codeaction",
   -- previewer        = "codeaction_native",
@@ -1111,7 +1131,7 @@ M.defaults.lsp.code_actions     = {
   actions          = {},
 }
 
-M.defaults.diagnostics          = {
+M.defaults.diagnostics           = {
   previewer      = M._default_previewer_fn,
   file_icons     = false,
   color_icons    = true,
@@ -1136,7 +1156,7 @@ M.defaults.diagnostics          = {
   -- },
 }
 
-M.defaults.builtin              = {
+M.defaults.builtin               = {
   winopts  = { height = 0.65, width = 0.50, preview = { hidden = true } },
   fzf_opts = { ["--no-multi"] = true },
   preview  = function(args)
@@ -1146,7 +1166,7 @@ M.defaults.builtin              = {
   actions  = { ["enter"] = actions.run_builtin },
 }
 
-M.defaults.profiles             = {
+M.defaults.profiles              = {
   previewer = M._default_previewer_fn,
   fzf_opts  = {
     ["--delimiter"] = "[:]",
@@ -1157,7 +1177,7 @@ M.defaults.profiles             = {
   actions   = { ["enter"] = actions.apply_profile },
 }
 
-M.defaults.marks                = {
+M.defaults.marks                 = {
   fzf_opts  = { ["--no-multi"] = true },
   actions   = {
     ["enter"] = actions.goto_mark,
@@ -1166,21 +1186,21 @@ M.defaults.marks                = {
   previewer = { _ctor = previewers.builtin.marks },
 }
 
-M.defaults.changes              = {
+M.defaults.changes               = {
   cmd       = "changes",
   h1        = "change",
   actions   = { ["enter"] = actions.goto_jump },
   previewer = { _ctor = previewers.builtin.jumps },
 }
 
-M.defaults.jumps                = {
+M.defaults.jumps                 = {
   cmd       = "jumps",
   fzf_opts  = { ["--no-multi"] = true },
   actions   = { ["enter"] = actions.goto_jump },
   previewer = { _ctor = previewers.builtin.jumps },
 }
 
-M.defaults.tagstack             = {
+M.defaults.tagstack              = {
   file_icons  = 1,
   color_icons = true,
   git_icons   = true,
@@ -1189,13 +1209,13 @@ M.defaults.tagstack             = {
   _actions    = function() return M.globals.actions.files end,
 }
 
-M.defaults.commands             = {
+M.defaults.commands              = {
   actions         = { ["enter"] = actions.ex_run },
   flatten         = {},
   include_builtin = true,
 }
 
-M.defaults.autocmds             = {
+M.defaults.autocmds              = {
   show_desc = true,
   previewer = { _ctor = previewers.builtin.autocmds },
   _actions  = function() return M.globals.actions.files end,
@@ -1206,7 +1226,7 @@ M.defaults.autocmds             = {
   },
 }
 
-M.defaults.command_history      = {
+M.defaults.command_history       = {
   fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   _treesitter = function(line) return "foo.vim", nil, line end,
   fzf_colors  = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
@@ -1217,7 +1237,7 @@ M.defaults.command_history      = {
   _headers    = { "actions" },
 }
 
-M.defaults.search_history       = {
+M.defaults.search_history        = {
   fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   _treesitter = function(line) return "", nil, line, "regex" end,
   fzf_colors  = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
@@ -1228,14 +1248,14 @@ M.defaults.search_history       = {
   _headers    = { "actions" },
 }
 
-M.defaults.registers            = {
+M.defaults.registers             = {
   multiline    = true,
   ignore_empty = true,
   actions      = { ["enter"] = actions.paste_register },
   fzf_opts     = { ["--no-multi"] = true },
 }
 
-M.defaults.keymaps              = {
+M.defaults.keymaps               = {
   previewer       = { _ctor = previewers.builtin.keymaps },
   winopts         = { preview = { layout = "vertical" } },
   fzf_opts        = { ["--tiebreak"] = "index", ["--no-multi"] = true },
@@ -1250,7 +1270,7 @@ M.defaults.keymaps              = {
   },
 }
 
-M.defaults.nvim_options         = {
+M.defaults.nvim_options          = {
   previewer    = { _ctor = previewers.builtin.nvim_options },
   separator    = "│",
   color_values = true,
@@ -1265,7 +1285,7 @@ M.defaults.nvim_options         = {
   },
 }
 
-M.defaults.spell_suggest        = {
+M.defaults.spell_suggest         = {
   winopts = {
     relative = "cursor",
     row      = 1,
@@ -1278,24 +1298,24 @@ M.defaults.spell_suggest        = {
   },
 }
 
-M.defaults.filetypes            = {
+M.defaults.filetypes             = {
   file_icons = false,
   actions    = { ["enter"] = actions.set_filetype },
 }
 
-M.defaults.packadd              = {
+M.defaults.packadd               = {
   actions = {
     ["enter"] = actions.packadd,
   },
 }
 
-M.defaults.menus                = {
+M.defaults.menus                 = {
   actions = {
     ["enter"] = actions.exec_menu,
   },
 }
 
-M.defaults.tmux                 = {
+M.defaults.tmux                  = {
   buffers = {
     cmd      = "tmux list-buffers",
     register = [["]],
@@ -1304,7 +1324,7 @@ M.defaults.tmux                 = {
   },
 }
 
-M.defaults.dap                  = {
+M.defaults.dap                   = {
   commands       = { fzf_opts = { ["--no-multi"] = true }, },
   configurations = { fzf_opts = { ["--no-multi"] = true }, },
   variables      = { fzf_opts = { ["--no-multi"] = true }, },
@@ -1325,7 +1345,7 @@ M.defaults.dap                  = {
   },
 }
 
-M.defaults.complete_path        = {
+M.defaults.complete_path         = {
   cmd               = nil, -- default: auto detect fd|rg|find
   file_icons        = false,
   git_icons         = false,
@@ -1338,7 +1358,7 @@ M.defaults.complete_path        = {
   actions           = { ["enter"] = actions.complete },
 }
 
-M.defaults.complete_file        = {
+M.defaults.complete_file         = {
   cmd               = nil, -- default: auto detect rg|fd|find
   multiprocess      = 1,
   _type             = "file",
@@ -1354,7 +1374,7 @@ M.defaults.complete_file        = {
   _fzf_nth_devicons = true,
 }
 
-M.defaults.zoxide               = {
+M.defaults.zoxide                = {
   multiprocess  = true,
   fn_transform  = [[return require("fzf-lua.make_entry").zoxide]],
   fn_preprocess = [[nil]],
@@ -1372,16 +1392,16 @@ M.defaults.zoxide               = {
   actions       = { enter = actions.cd }
 }
 
-M.defaults.complete_line        = { complete = true }
+M.defaults.complete_line         = { complete = true }
 
-M.defaults.file_icon_padding    = ""
+M.defaults.file_icon_padding     = ""
 
 -- No need to sset this, already defaults to `nvim_open_win`
 -- M.help_open_win              = vim.api.nvim_open_win
 
-M.defaults.dir_icon             = ""
+M.defaults.dir_icon              = ""
 
-M.defaults.__HLS                = {
+M.defaults.__HLS                 = {
   normal         = "FzfLuaNormal",
   border         = "FzfLuaBorder",
   title          = "FzfLuaTitle",

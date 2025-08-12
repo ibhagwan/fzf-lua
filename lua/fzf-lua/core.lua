@@ -228,6 +228,7 @@ M.fzf_resume = function(opts)
     return
   end
   opts = utils.tbl_deep_extend("force", config.__resume_data.opts, opts or {})
+  utils.set_info(opts.__INFO) -- restore original picker info
   assert(opts == config.__resume_data.opts)
   opts.cwd = opts.cwd and libuv.expand(opts.cwd) or nil
   M.fzf_wrap(config.__resume_data.contents, config.__resume_data.opts)
@@ -329,30 +330,9 @@ M.fzf = function(contents, opts)
   if previewer then
     -- Attach the previewer to the windows
     fzf_win:attach_previewer(previewer)
-    -- Set the preview command line
-    opts.preview = previewer:cmdline()
-    -- fzf 0.40 added 'zero' event for when there's no match
-    -- clears the preview when there are no matching entries
-    if utils.has(opts, "fzf", { 0, 40 }) and previewer.zero then
-      table.insert(opts._fzf_cli_args, "--bind="
-        .. libuv.shellescape("zero:+" .. previewer:zero()))
-    end
-    if type(previewer.preview_window) == "function" then
-      -- do we need to override the preview_window args?
-      -- this can happen with the builtin previewer
-      -- (1) when using a split we use the previewer as placeholder
-      -- (2) we use 'nohidden:right:0' to trigger preview function
-      --     calls without displaying the native fzf previewer split
-      opts.fzf_opts["--preview-window"] = previewer:preview_window()
-    end
-    -- provides preview offset when using native previewers
-    -- (bat/cat/etc) with providers that supply line numbers
-    -- (grep/quickfix/LSP)
-    if type(previewer.fzf_delimiter) == "function" then
-      opts.fzf_opts["--delimiter"] = previewer:fzf_delimiter()
-    end
-    if opts.preview_offset == nil and type(previewer._preview_offset) == "function" then
-      opts.preview_offset = previewer:_preview_offset()
+    -- Setup --preview/--preview-window/--bind=zero:... etc
+    if type(previewer.setup_opts) == "function" then
+      opts = previewer:setup_opts(opts)
     end
   elseif opts.preview and type(opts.preview) ~= "string" then
     opts.preview = require("fzf-lua.previewer").normalize_spec(opts.preview, opts)

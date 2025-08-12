@@ -64,6 +64,7 @@ return {
   packadd              = title("Packadd"),
   menus                = title("Menus"),
   tmux                 = title("Tmux Buffers"),
+  zoxide               = title("Zoxide"),
   dap                  = {
     commands       = title("DAP Commands"),
     configurations = title("DAP Configurations"),

@@ -24,6 +24,17 @@ function Previewer.base:new(o, opts)
   return self
 end
 
+---@param opts table
+---@return table
+function Previewer.base:setup_opts(opts)
+  -- Set the preview command line
+  opts.preview = self:cmdline()
+  opts.preview_offset = self:_preview_offset()
+  opts.fzf_opts["--preview-window"] = self:preview_window()
+  opts.fzf_opts["--delimiter"] = self:fzf_delimiter()
+  return opts
+end
+
 function Previewer.base:preview_window(_)
   return nil
 end

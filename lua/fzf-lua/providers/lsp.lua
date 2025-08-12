@@ -272,13 +272,25 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
             opts.__locate_pos = opts.__locate_count
           end
         end
-        local align = 48 + mbicon_align + utils.ansi_escseq_len(symbol)
-        -- TODO: string.format %-{n}s fails with align > ~100?
-        -- entry1 = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry1)
-        if align > #symbol then
-          symbol = symbol .. string.rep(" ", align - #symbol)
+        if opts.__sym_bufnr then
+          -- document_symbols
+          entry1 = string.format("[%s]%s%s:%s:%s\t\t%s",
+            utils.ansi_codes[opts.hls.buf_nr](tostring(opts.__sym_bufnr)),
+            utils.nbsp,
+            utils.ansi_codes[opts.hls.buf_name](opts.__sym_bufname),
+            utils.ansi_codes[opts.hls.buf_linenr](tostring(entry.lnum)),
+            utils.ansi_codes[opts.hls.path_colnr](tostring(entry.col)),
+            symbol)
+        else
+          -- workspace_symbols
+          local align = 48 + mbicon_align + utils.ansi_escseq_len(symbol)
+          -- TODO: string.format %-{n}s fails with align > ~100?
+          -- entry1 = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry1)
+          if align > #symbol then
+            symbol = symbol .. string.rep(" ", align - #symbol)
+          end
+          entry1 = symbol .. utils.nbsp .. entry1
         end
-        entry1 = symbol .. utils.nbsp .. entry1
         cb(entry1)
       end
     end
@@ -732,25 +744,12 @@ local function gen_sym2style_map(opts)
 end
 
 M.document_symbols = function(opts)
-  ---@type fzf-lua.config.LspSymbols
-  opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_document_symbols")
+  ---@type fzf-lua.config.LspDocumentSymbols
+  opts = normalize_lsp_opts(opts, "lsp.document_symbols")
   if not opts then return end
-  -- no support for sym_lsym
-  for k, fn in pairs(opts.actions or {}) do
-    if type(fn) == "table" and
-        (fn[1] == actions.sym_lsym or fn.fn == actions.sym_lsym) then
-      opts.actions[k] = nil
-    end
-  end
+  opts.__sym_bufnr = utils.CTX().bufnr
+  opts.__sym_bufname = utils.nvim_buf_get_name(opts.__sym_bufnr)
   opts = core.set_fzf_field_index(opts)
-  if not opts.fzf_opts or opts.fzf_opts["--with-nth"] == nil then
-    -- our delims are {nbsp,:} make sure entry has no icons
-    -- "{nbsp}file:line:col:" and hide the last 4 fields
-    opts.git_icons = false
-    opts.file_icons = false
-    opts.fzf_opts = opts.fzf_opts or {}
-    opts.fzf_opts["--with-nth"] = "..-4"
-  end
   if opts.symbol_style or opts.symbol_fmt then
     M._sym2style = nil
     gen_sym2style_map(opts)
@@ -765,7 +764,7 @@ end
 
 M.workspace_symbols = function(opts)
   ---@type fzf-lua.config.LspWorkspaceSymbols
-  opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
+  opts = normalize_lsp_opts(opts, "lsp.workspace_symbols")
   if not opts then return end
   opts.locate = false -- Makes no sense for workspace symbols
   opts.__ACT_TO = opts.__ACT_TO or M.live_workspace_symbols
@@ -791,7 +790,7 @@ end
 
 M.live_workspace_symbols = function(opts)
   ---@type fzf-lua.config.LspLiveWorkspaceSymbols
-  opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
+  opts = normalize_lsp_opts(opts, "lsp.workspace_symbols")
   if not opts then return end
 
   -- needed by 'actions.sym_lsym'
