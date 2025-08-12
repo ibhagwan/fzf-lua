@@ -211,6 +211,20 @@ function Previewer.base:new(o, opts)
   return self
 end
 
+---@param opts table
+---@return table
+function Previewer.base:setup_opts(opts)
+  -- Set the preview command line
+  opts.preview = self:cmdline()
+  opts.fzf_opts["--preview-window"] = self:preview_window()
+  -- fzf 0.40 added 'zero' event for when there's no match
+  -- clears the preview when there are no matching entries
+  if utils.has(opts, "fzf", { 0, 40 }) then
+    table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("zero:+" .. self:zero()))
+  end
+  return opts
+end
+
 ---@param do_not_clear_cache boolean?
 function Previewer.base:close(do_not_clear_cache)
   TSContext.deregister()

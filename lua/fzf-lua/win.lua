@@ -714,7 +714,7 @@ end
 function FzfWin:new(o)
   if not _self then
   elseif _self:was_hidden() or _self:hidden() then
-    _self:close()
+    _self:close(nil, nil, true) -- do not clear info
     _self = nil
   elseif not _self:hidden() then
     -- utils.warn("Please close fzf-lua before starting a new instance")
@@ -1209,7 +1209,8 @@ end
 
 ---@param fzf_bufnr? integer
 ---@param hide? boolean
-function FzfWin:close(fzf_bufnr, hide)
+---@param hidden? boolean
+function FzfWin:close(fzf_bufnr, hide, hidden)
   -- When a window is reused, (e.g. open any fzf-lua interface, press <C-\-n> and run
   -- ":FzfLua") `FzfWin:set_tmp_buffer()` will call `nvim_buf_delete` on the original
   -- fzf terminal buffer which will terminate the fzf process and trigger the call to
@@ -1223,6 +1224,14 @@ function FzfWin:close(fzf_bufnr, hide)
   self.close_help()
   self:close_backdrop()
   self:close_preview(hide)
+  -- Abort hidden fzf job?
+  if not hide and self._hidden_fzf_bufnr and self._hidden_fzf_bufnr ~= self.fzf_bufnr then
+    pcall(vim.api.nvim_buf_delete, self._hidden_fzf_bufnr, { force = true })
+  end
+  -- Clear treesitter buffer cache and deregister decoration callbacks
+  self:treesitter_detach(self._hidden_fzf_bufnr or self.fzf_bufnr)
+  -- If this is a hidden buffer closure nothing else to do
+  if hidden then return end
   if self.fzf_winid and vim.api.nvim_win_is_valid(self.fzf_winid) then
     -- run in a pcall due to potential errors while closing the window
     -- Vim(lua):E5108: Error executing lua
@@ -1249,11 +1258,6 @@ function FzfWin:close(fzf_bufnr, hide)
   if self.fzf_bufnr then
     pcall(vim.api.nvim_buf_delete, self.fzf_bufnr, { force = true })
   end
-  if not hide and self._hidden_fzf_bufnr and self._hidden_fzf_bufnr ~= self.fzf_bufnr then
-    pcall(vim.api.nvim_buf_delete, self._hidden_fzf_bufnr, { force = true })
-  end
-  -- Clear treesitter buffer cache and deregister decoration callbacks
-  self:treesitter_detach(self._hidden_fzf_bufnr or self.fzf_bufnr)
   -- when using `split = "belowright new"` closing the fzf
   -- window may not always return to the correct source win
   -- depending on the user's split configuration (#397)
@@ -1296,7 +1300,7 @@ function FzfWin:close(fzf_bufnr, hide)
   self.closing = nil
   self._reuse = nil
   _self = nil
-  utils.set_info({}) -- clear info
+  utils.set_info({})   -- clear info
 end
 
 function FzfWin.win_leave()

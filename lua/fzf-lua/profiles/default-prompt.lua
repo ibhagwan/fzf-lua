@@ -60,6 +60,7 @@ return {
   packadd              = prompt("Packadd"),
   menus                = prompt("Menus"),
   tmux                 = prompt("Tmux Buffers"),
+  zoxide               = prompt("Zoxide"),
   dap                  = {
     commands       = prompt("DAP Commands"),
     configurations = prompt("DAP Configurations"),

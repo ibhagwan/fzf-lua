@@ -3,8 +3,18 @@ error("Cannot require a meta file")
 
 _G.FzfLua = require("fzf-lua")
 
+---@class fzf-lua.previewer.SwiperBase
+---@field new function
+---@field setup_opts function
+---@field zero_cmd function?
+---@field result_cmd function?
+---@field preview_cmd function?
+---@field highlight_matches function?
+---@field win fzf-lua.Win
+
 ---@class fzf-lua.previewer.Fzf
 ---@field new function
+---@field setup_opts function
 ---@field zero function?
 ---@field cmdline function?
 ---@field fzf_delimiter function?
@@ -13,6 +23,8 @@ _G.FzfLua = require("fzf-lua")
 
 ---@class fzf-lua.previewer.Builtin
 ---@field type "builtin"
+---@field new function
+---@field setup_opts function
 ---@field opts table
 ---@field win fzf-lua.Win
 ---@field delay integer
@@ -532,6 +544,8 @@ _G.FzfLua = require("fzf-lua")
 
 ---@class fzf-lua.config.Lsp: fzf-lua.config.LspBase
 ---@field symbols fzf-lua.config.LspSymbols
+---@field document_symbols fzf-lua.config.LspDocumentSymbols
+---@field workspace_symbols fzf-lua.config.LspWorkspaceSymbols
 ---@field finder fzf-lua.config.LspFinder
 ---@field code_actions fzf-lua.config.LspCodeActions
 
@@ -546,7 +560,9 @@ _G.FzfLua = require("fzf-lua")
 ---@field line_field_index string
 ---@field field_index_expr string
 
----@class fzf-lua.config.DocumentSymbols: fzf-lua.config.LspSymbols
+---@class fzf-lua.config.LspDocumentSymbols: fzf-lua.config.LspSymbols
+---@field __sym_bufnr integer
+---@field __sym_bufname string
 
 ---@class fzf-lua.config.LspWorkspaceSymbols: fzf-lua.config.LspSymbols
 ---@field lsp_query string
@@ -786,7 +802,7 @@ _G.FzfLua = require("fzf-lua")
 ---@class fzf-lua.config.LspDeclarations.p: fzf-lua.config.Lsp, {}
 ---@class fzf-lua.config.LspDefinitions.p: fzf-lua.config.Lsp, {}
 ---@class fzf-lua.config.LspDocumentDiagnostics.p: fzf-lua.config.Diagnostics, {}
----@class fzf-lua.config.LspDocumentSymbols.p: fzf-lua.config.DocumentSymbols, {}
+---@class fzf-lua.config.LspDocumentSymbols.p: fzf-lua.config.LspDocumentSymbols, {}
 ---@class fzf-lua.config.LspFinder.p: fzf-lua.config.LspFinder, {}
 ---@class fzf-lua.config.LspImplementations.p: fzf-lua.config.Lsp, {}
 ---@class fzf-lua.config.LspIncomingCalls.p: fzf-lua.config.Lsp, {}
