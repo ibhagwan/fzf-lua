@@ -727,16 +727,9 @@ local function gen_sym2style_map(opts)
 end
 
 M.document_symbols = function(opts)
-  ---@type fzf-lua.config.LspSymbols
-  opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_document_symbols")
+  ---@type fzf-lua.config.LspDocumentSymbols
+  opts = normalize_lsp_opts(opts, "lsp.document_symbols")
   if not opts then return end
-  -- no support for sym_lsym
-  for k, fn in pairs(opts.actions or {}) do
-    if type(fn) == "table" and
-        (fn[1] == actions.sym_lsym or fn.fn == actions.sym_lsym) then
-      opts.actions[k] = nil
-    end
-  end
   opts = core.set_fzf_field_index(opts)
   if not opts.fzf_opts or opts.fzf_opts["--with-nth"] == nil then
     -- our delims are {nbsp,:} make sure entry has no icons
@@ -760,7 +753,7 @@ end
 
 M.workspace_symbols = function(opts)
   ---@type fzf-lua.config.LspWorkspaceSymbols
-  opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
+  opts = normalize_lsp_opts(opts, "lsp.workspace_symbols")
   if not opts then return end
   opts.locate = false -- Makes no sense for workspace symbols
   opts.__ACT_TO = opts.__ACT_TO or M.live_workspace_symbols
@@ -786,7 +779,7 @@ end
 
 M.live_workspace_symbols = function(opts)
   ---@type fzf-lua.config.LspLiveWorkspaceSymbols
-  opts = normalize_lsp_opts(opts, "lsp.symbols", "lsp_workspace_symbols")
+  opts = normalize_lsp_opts(opts, "lsp.workspace_symbols")
   if not opts then return end
 
   -- needed by 'actions.sym_lsym'
