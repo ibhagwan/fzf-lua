@@ -282,11 +282,8 @@ function M.normalize_opts(opts, globals, __resume_key)
     end
   end
 
-  -- Merge values from globals
-  for _, k in ipairs({
-    "winopts", "keymap", "fzf_opts", "fzf_colors", "fzf_tmux_opts", "hls"
-  }) do
-    local setup_val = M.globals[k]
+  local extend_opts = function(m, k)
+    local setup_val = m[k]
     if type(setup_val) == "function" then
       setup_val = setup_val(opts)
       if type(setup_val) == "table" then
@@ -312,6 +309,14 @@ function M.normalize_opts(opts, globals, __resume_key)
           opts[k], type(setup_val) == "table" and setup_val or {})
       end
     end
+  end
+
+  -- Merge values from globals
+  for _, k in ipairs({
+    "winopts", "keymap", "fzf_opts", "fzf_colors", "fzf_tmux_opts", "hls"
+  }) do
+    extend_opts(globals, k)
+    extend_opts(M.globals, k)
   end
 
   -- backward compat: no-value flags should be set to `true`, in the past these
@@ -661,7 +666,7 @@ function M.normalize_opts(opts, globals, __resume_key)
         opts.fzf_bin = fzf_plug
       end
     end
-    if not executable(opts.fzf_bin, utils.err,
+    if not executable(opts.fzf_bin, utils.error,
           "aborting. Please make sure 'fzf' is in installed.") then
       return nil
     end
