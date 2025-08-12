@@ -136,7 +136,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field color_icons boolean?
 ---@field _type "file"?
 ---@field git_icons boolean?
----@field _actions? fun():table
+---@field _actions? fun():fzf-lua.config.Actions
 ---@field silent boolean?
 ---@field _cached_hls string[]?
 ---@field previewer fun(...)|table|string?
@@ -148,6 +148,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field __CTX fzf-lua.Ctx?
 ---@field resume boolean?
 ---@field no_resume boolean?
+---@field profile string|table?
 ---set_headers
 ---@field _headers string[]?
 ---@field headers string[]?

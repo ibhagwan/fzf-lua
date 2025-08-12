@@ -144,21 +144,39 @@ local eval = function(v, ...)
   return v
 end
 
+
+---expand opts that were specified with a dot
+---@param opts table
+local normalize_tbl = function(opts)
+  -- convert keys only after full iteration or we will
+  -- miss keys due to messing with map ordering
+  local to_convert = {}
+  for k, _ in pairs(opts) do
+    if k:match("%.") then
+      table.insert(to_convert, k)
+    end
+  end
+  for _, k in ipairs(to_convert) do
+    utils.map_set(opts, k, opts[k])
+    opts[k] = nil
+  end
+end
+
 ---@param opts fzf-lua.config.Base|{}|fun():table?
 ---@param globals string|table?
 ---@param __resume_key string?
 ---@return fzf-lua.Config?
 function M.normalize_opts(opts, globals, __resume_key)
-  if not opts then opts = {} end
-
   -- opts can also be a function that returns an opts table
-  if type(opts) == "function" then
-    opts = opts() or {}
-  end
+  ---@type fzf-lua.config.Base|{}
+  opts = eval(opts) or {}
 
   if opts._normalized then
     return opts
   end
+
+  -- e.g. `:FzfLua files winopts.border=single`
+  normalize_tbl(opts)
 
   local profile = opts.profile or (function()
     if type(globals) == "string" then
@@ -169,23 +187,6 @@ function M.normalize_opts(opts, globals, __resume_key)
   if type(profile) == "table" or type(profile) == "string" then
     -- TODO: we should probably cache the profiles
     M._profile_opts = utils.load_profiles(profile, 1)
-  end
-
-  -- expand opts that were specified with a dot
-  -- e.g. `:FzfLua files winopts.border=single`
-  do
-    -- convert keys only after full iteration or we will
-    -- miss keys due to messing with map ordering
-    local to_convert = {}
-    for k, _ in pairs(opts) do
-      if k:match("%.") then
-        table.insert(to_convert, k)
-      end
-    end
-    for _, k in ipairs(to_convert) do
-      utils.map_set(opts, k, opts[k])
-      opts[k] = nil
-    end
   end
 
   -- save the user's original call params separately
@@ -209,7 +210,7 @@ function M.normalize_opts(opts, globals, __resume_key)
     -- merge with setup options "defaults" table
     globals = vim.tbl_deep_extend("keep", globals, M.setup_opts.defaults or {})
   end
-  ---@cast globals table
+  ---@cast globals fzf-lua.config.Base
 
   -- merge current opts with revious __call_opts on resume
   if opts.resume then
