@@ -239,12 +239,12 @@ M.stringify_mt = function(cmd, opts)
   else -- if opts.multiprocess then
     for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
       local v = opts[k]
-      if type(v) == "function" and utils.__HAS_NVIM_010 then
+      if type(v) == "function" then
         -- Attempt to convert function to its bytecode representation
-        -- NOTE: limited to neovim >= 0.10 due to vim.base64
+        -- TODO: can be replaced with vim.base64 after neovim >= 0.10
         v = string.format(
-          [[return loadstring(vim.base64.decode("%s"))]],
-          vim.base64.encode(string.dump(v, true)))
+          [[return loadstring(require("fzf-lua.lib.base64").decode("%s"))]],
+          require("fzf-lua.lib.base64").encode(string.dump(v, true)))
         -- Test the function once with nil value (imprefect?)
         -- to see if there's an issue with upvalue refs
         local f = loadstring(v)()

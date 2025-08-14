@@ -96,11 +96,15 @@ function TSInjector._attach_lang(buf, lang, regions)
 end
 
 ---@class fzf-lua.Win
----@field _previewer fzf-lua.previewer.Builtin|fzf-lua.previewer.BufferOrFile?
+---@field _previewer fzf-lua.previewer.Builtin|fzf-lua.previewer.Fzf?
 ---@field _preview_pos_force "up"|"down"
+---@field km_winid integer?
+---@field km_bufnr integer?
+---@field _hidden_save_size [integer, integer, integer]?
 local FzfWin = {}
 
 -- singleton instance used in win_leave
+---@type fzf-lua.Win?
 local _self = nil
 
 function FzfWin.__SELF()
@@ -1629,20 +1633,28 @@ function FzfWin.toggle_help()
     end
   end
 
+  ---TODO: we can always parse the action into table to avoid this duplicated logic
+  ---(e.g. profile/hide.lua, config.lua)
+  ---@param v fzf-lua.ActionSpec
+  ---@return string?
+  local get_desc = function(v)
+    if type(v) == "table" then
+      return v.desc or config.get_action_helpstr(v[1]) or config.get_action_helpstr(v.fn) or
+          tostring(v)
+    elseif v then
+      return config.get_action_helpstr(v) or tostring(v)
+    end
+  end
+
   -- action keymaps
   if self.actions then
     for k, v in pairs(self.actions) do
-      if k == "default" then k = "enter" end
-      if type(v) == "table" then
-        v = v.desc or config.get_action_helpstr(v[1]) or config.get_action_helpstr(v.fn) or v
-      elseif v then
-        v = config.get_action_helpstr(v) or v
-      end
-      if v then
-        -- skips 'v == false'
+      if v then -- skips 'v == false'
+        if k == "default" then k = "enter" end
+        local desc = get_desc(v)
         table.insert(keymaps,
           format_bind("action", k,
-            ("%s"):format(tostring(v)):gsub(" ", ""),
+            ("%s"):format(desc):gsub(" ", ""),
             opts.mode_width, opts.keybind_width, opts.name_width))
       end
     end
