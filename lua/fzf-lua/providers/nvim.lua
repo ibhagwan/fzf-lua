@@ -63,26 +63,25 @@ M.commands = function(opts)
     end
   end
 
-  opts.flatten = opts.flatten or {}
-  for k, _ in pairs(global_commands) do
-    table.insert(entries, utils.ansi_codes.blue(k))
+  local add_subcommand = function(k, ansi_color)
     local flattened = vim.is_callable(opts.flatten[k]) and opts.flatten[k](opts)
         or opts.flatten[k] and vim.fn.getcompletion(k .. " ", "cmdline")
         or {}
     vim.list_extend(entries,
-      vim.tbl_map(function(cmd) return utils.ansi_codes.blue(k .. " " .. cmd) end,
+      vim.tbl_map(function(cmd) return ansi_color(k .. " " .. cmd) end,
         flattened))
+  end
+
+  opts.flatten = opts.flatten or {}
+  for k, _ in pairs(global_commands) do
+    table.insert(entries, utils.ansi_codes.blue(k))
+    add_subcommand(k, utils.ansi_codes.blue)
   end
 
   for k, v in pairs(buf_commands) do
     if type(v) == "table" then
       table.insert(entries, utils.ansi_codes.green(k))
-      local flattened = vim.is_callable(opts.flatten[k]) and opts.flatten[k](opts)
-          or opts.flatten[k] and vim.fn.getcompletion(k .. " ", "cmdline")
-          or {}
-      vim.list_extend(entries,
-        vim.tbl_map(function(cmd) return utils.ansi_codes.green(k .. " " .. cmd) end,
-          flattened))
+      add_subcommand(k, utils.ansi_codes.green)
     end
   end
 

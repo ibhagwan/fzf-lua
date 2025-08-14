@@ -3,7 +3,7 @@ error("Cannot require a meta file")
 
 _G.FzfLua = require("fzf-lua")
 
----@class fzf-lua.previewer
+---@class fzf-lua.previewer.Fzf
 ---@field new function
 ---@field zero function?
 ---@field cmdline function?
@@ -37,13 +37,13 @@ _G.FzfLua = require("fzf-lua")
 ---@field cached_bufnrs { [string]: fzf-lua.previewer.CursorPos? }
 ---@field cached_buffers { [string]: fzf-lua.buffer_or_file.Bcache? }
 ---@field listed_buffers { [string]: boolean? }
+---@field clear_on_redraw boolean?
 ---
 ---@field orig_pos fzf-lua.previewer.CursorPos
 ---@alias fzf-lua.previewer.CursorPos (true|[integer, integer])
 
 ---@class fzf-lua.previewer.BufferOrFile
 ---@field match_id integer?
----@field clear_on_redraw boolean?
 
 ---@class fzf-lua.path.Entry
 ---@field stripped string
@@ -84,9 +84,10 @@ _G.FzfLua = require("fzf-lua")
 ---@alias fzf-lua.config.Actions { [string]: fzf-lua.config.Action }
 
 ---@class fzf-lua.ActionSpec
----@field fn function
+---@field [1] function?
+---@field fn function?
 ---@field exec_silent boolean?
----@field reload boolean|fun(opts: fzf-lua.Config):content
+---@field reload boolean|fun(opts: fzf-lua.Config):content?
 ---@field field_index string?
 ---@field desc string?
 ---@field prefix string?

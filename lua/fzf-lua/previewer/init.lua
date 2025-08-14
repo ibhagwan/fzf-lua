@@ -31,7 +31,7 @@ Previewer.builtin.codeaction = function() return require "fzf-lua.previewer.code
 ---Instantiate previewer from spec
 ---@param spec table
 ---@param opts table
----@return fzf-lua.previewer?
+---@return fzf-lua.previewer.Fzf|fzf-lua.previewer.Builtin?
 Previewer.new = function(spec, opts)
   if not spec then return end
   local previewer, preview_opts = nil, nil
