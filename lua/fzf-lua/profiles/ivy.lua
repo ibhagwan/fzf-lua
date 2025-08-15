@@ -132,8 +132,12 @@ local focused_win    = {
       end,
       on_close = function()
         vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-        vim.api.nvim_win_set_cursor(0, FzfLua.utils.__CTX().cursor)
-        FzfLua.utils.zz()
+        -- on hide + change picker ctx will be nil
+        local ctx = FzfLua.utils.__CTX()
+        if ctx then
+          vim.api.nvim_win_set_cursor(0, ctx.cursor)
+          FzfLua.utils.zz()
+        end
       end,
     }
   end,
