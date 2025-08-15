@@ -620,58 +620,69 @@ M.spellcheck = function(opts)
       -- wait for vim.schedule
       coroutine.yield()
 
-      local offset = 0
-      local start_line = opts.start_line or 1
-      local end_line = opts.end_line or #data
-      local lines = end_line - start_line + 1
+      vim.schedule(function()
+        -- :help vim.spell.check
+        --   The behaviour of this function is dependent on: 'spelllang',
+        --   'spellfile', 'spellcapcheck' and 'spelloptions' which can all be local to
+        --   the buffer. Consider calling this with |nvim_buf_call()|.
+        vim.api.nvim_buf_call(bufnr0, function()
+          local offset = 0
+          local start_line = opts.start_line or 1
+          local end_line = opts.end_line or #data
+          local lines = end_line - start_line + 1
 
-      if opts.start == "cursor" then
-        -- start display from current line and wrap from bottom
-        offset = utils.CTX().cursor[1] - start_line
-      end
-
-      for i = 1, lines do
-        local lnum = i + offset
-        if lnum > lines then
-          lnum = lnum % lines
-        end
-        lnum = lnum + start_line - 1
-
-        local line, from, to = data[lnum], 1, nil
-        repeat
-          local word_separator = opts.word_separator or "[%s%p]"
-          local function trim(s)
-            return s:gsub("^" .. word_separator .. "+", ""):gsub(word_separator .. "+$", "")
+          if opts.start == "cursor" then
+            -- start display from current line and wrap from bottom
+            offset = utils.CTX().cursor[1] - start_line
           end
-          from, to = string.find(line, "%w+", from)
-          local word = from and string.sub(line, from, to) or ""
-          local prefix = from and string.sub(line, from - 1, from - 1) or ""
-          local postfix = to and string.sub(line, to + 1, to + 1) or ""
-          local valid_word = word
-              and (#prefix == 0 or prefix:match("^" .. word_separator))
-              and (#postfix == 0 or postfix:match(word_separator .. "$"))
-          if valid_word then
-            local _, lead = word:find("^" .. word_separator .. "+")
-            local spell = vim.spell.check(trim(word))[1]
-            if spell then
-              cb(string.format("[%s]%s%s:%s:%s\t\t%s",
-                utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr0)),
-                utils.nbsp,
-                utils.ansi_codes[opts.hls.buf_name](bufname0),
-                utils.ansi_codes[opts.hls.buf_linenr](tostring(lnum)),
-                utils.ansi_codes[opts.hls.path_colnr](tostring(from + (lead or 0))),
-                trim(word)
-              ), function(err)
-                coroutine.resume(co)
-                if err then cb(nil) end
-              end)
-              coroutine.yield()
+
+          for i = 1, lines do
+            local lnum = i + offset
+            if lnum > lines then
+              lnum = lnum % lines
             end
+            lnum = lnum + start_line - 1
+
+            local line, from, to = data[lnum], 1, nil
+            repeat
+              local word_separator = opts.word_separator or "[%s%p]"
+              local function trim(s)
+                return s:gsub("^" .. word_separator .. "+", ""):gsub(word_separator .. "+$", "")
+              end
+              from, to = string.find(line, "%w+", from)
+              local word = from and string.sub(line, from, to) or ""
+              local prefix = from and string.sub(line, from - 1, from - 1) or ""
+              local postfix = to and string.sub(line, to + 1, to + 1) or ""
+              local valid_word = word
+                  and (#prefix == 0 or prefix:match("^" .. word_separator))
+                  and (#postfix == 0 or postfix:match(word_separator .. "$"))
+              if valid_word then
+                local _, lead = word:find("^" .. word_separator .. "+")
+                local spell = vim.spell.check(trim(word))[1]
+                if spell then
+                  cb(string.format("[%s]%s%s:%s:%s\t\t%s",
+                    utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr0)),
+                    utils.nbsp,
+                    utils.ansi_codes[opts.hls.buf_name](bufname0),
+                    utils.ansi_codes[opts.hls.buf_linenr](tostring(lnum)),
+                    utils.ansi_codes[opts.hls.path_colnr](tostring(from + (lead or 0))),
+                    trim(word)
+                  ), function(err)
+                    -- coroutine.resume(co)
+                    if err then cb(nil) end
+                  end)
+                  -- attempt to yield across C-call boundar
+                  -- coroutine.yield()
+                end
+              end
+              if from then from = to + 1 end
+            until not from
           end
-          if from then from = to + 1 end
-        until not from
-      end
-      cb(nil)
+          cb(nil)
+          coroutine.resume(co)
+        end)
+      end)
+      coroutine.yield()
     end)()
   end
 
