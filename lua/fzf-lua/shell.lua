@@ -217,7 +217,7 @@ M.stringify_mt = function(cmd, opts)
       -- [NOTE] No longer needed, we use RPC for icons
       -- ["_devicons_path"] = devicons.plugin_path(),
       -- ["_devicons_setup"] = config._devicons_setup,
-      ["_EOL"] = opts.multiline and "\0" or "\n",
+      ["_EOL"] = utils.map_get(opts, "fzf_opts.--read0") and "\0" or "\n",
       ["_debug"] = opts.debug,
     }) do
       t.g[k] = v
@@ -318,7 +318,7 @@ M.stringify = function(contents, opts, fzf_field_index)
     end)()
     local write_cb_count = 0
     local pipe_want_close = false
-    local EOL = opts.multiline and "\0" or "\n"
+    local EOL = utils.map_get(opts, "fzf_opts.--read0") and "\0" or "\n"
     local fn_transform = opts.fn_transform
     local fn_preprocess = opts.fn_preprocess
     local fn_postprocess = opts.fn_postprocess
