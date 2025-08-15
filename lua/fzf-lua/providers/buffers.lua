@@ -649,7 +649,7 @@ M.spellcheck = function(opts)
               local function trim(s)
                 return s:gsub("^" .. word_separator .. "+", ""):gsub(word_separator .. "+$", "")
               end
-              from, to = string.find(line, "%w+", from)
+              from, to = string.find(line, "[^%s^%p^%d^%c^%z]+", from)
               local word = from and string.sub(line, from, to) or ""
               local prefix = from and string.sub(line, from - 1, from - 1) or ""
               local postfix = to and string.sub(line, to + 1, to + 1) or ""
@@ -660,7 +660,7 @@ M.spellcheck = function(opts)
                 local _, lead = word:find("^" .. word_separator .. "+")
                 local spell = vim.spell.check(trim(word))[1]
                 if spell then
-                  cb(string.format("[%s]%s%s:%s:%s\t\t%s",
+                  cb(string.format("[%s]%s%s:%s:%-26s\t\t%s",
                     utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr0)),
                     utils.nbsp,
                     utils.ansi_codes[opts.hls.buf_name](bufname0),
