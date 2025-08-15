@@ -131,8 +131,7 @@ end
 
 
 local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
-  -- local hidden = buf.info.hidden == 1 and 'h' or 'a'
-  local hidden = ""
+  local hidden = buf.info.hidden == 1 and "h" or "a"
   local readonly = buf.readonly and "=" or " "
   local changed = buf.info.changed == 1 and "+" or " "
   local flags = hidden .. readonly .. changed
