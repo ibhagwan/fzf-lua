@@ -558,13 +558,18 @@ end
 
 -- see $VIMRUNTIME/lua/vim/buf.lua:pick_call_hierarchy_item()
 local function gen_lsp_contents_call_hierarchy(opts)
+  local timeout = 5000
+  if type(opts.async_or_timeout) == "number" then
+    timeout = opts.async_or_timeout
+  end
   local lsp_params = opts.lsp_params
       ---@diagnostic disable-next-line: missing-parameter
       or not utils.__HAS_NVIM_011 and vim.lsp.util.make_position_params(utils.CTX().winid)
       or function(client)
         return vim.lsp.util.make_position_params(utils.CTX().winid, client.offset_encoding)
       end
-  local res, err = vim.lsp.buf_request_sync(0, opts.lsp_handler.prep, lsp_params, 2000)
+  local res, err = vim.lsp.buf_request_sync(
+    utils.CTX().bufnr, opts.lsp_handler.prep, lsp_params, timeout)
   if err then
     utils.error(("Error executing '%s': %s"):format(opts.lsp_handler.prep, err))
   else
