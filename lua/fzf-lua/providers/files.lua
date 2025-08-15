@@ -10,7 +10,7 @@ local M = {}
 
 ---@param opts table
 ---@return string
-local get_files_cmd = function(opts)
+M.get_files_cmd = function(opts)
   if opts.raw_cmd and #opts.raw_cmd > 0 then
     return opts.raw_cmd
   end
@@ -83,7 +83,7 @@ M.files = function(opts)
         "^" .. utils.lua_regex_escape(curbuf) .. "$")
     end
   end
-  opts.cmd = get_files_cmd(opts)
+  opts.cmd = M.get_files_cmd(opts)
   if utils.__IS_WINDOWS and opts.cmd:match("^dir") and not opts.cwd then
     -- `dir` command returns absolute paths with ^M for EOL
     -- `make_entry.file` will strip the ^M
