@@ -93,7 +93,8 @@ M.ui_select = function(items, ui_opts, on_choice)
 
   -- deepcopy register opts so we don't poullute the original tbl ref (#2241)
   if type(opts) == "table" then
-    opts = vim.deepcopy(opts)
+    opts = utils.tbl_deep_clone(opts)
+    assert(opts) -- lint nil check
   end
 
   opts.fzf_opts = vim.tbl_extend("keep", opts.fzf_opts or {}, {
