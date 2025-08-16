@@ -392,8 +392,9 @@ M.fzf = function(contents, opts)
   -- NOTE: might be an overkill since we're using $FZF_DEFAULT_COMMAND
   -- to spawn the piped process and fzf is responsible for termination
   -- when the fzf process exists
-  if tonumber(opts.__pid) then
-    libuv.process_kill(opts.__pid)
+  if opts.PidObject then
+    libuv.process_kill(opts.PidObject:get())
+    opts.PidObject:set(nil)
   end
   -- If a hidden process was killed by [re-]starting a new picker do nothing
   if fzf_win:was_hidden() then return nil, nil end
