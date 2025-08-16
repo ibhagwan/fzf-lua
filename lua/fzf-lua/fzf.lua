@@ -152,6 +152,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     pty = true,
     env = {
       ["SHELL"] = shell_cmd[1],
+      -- Nullify "NVIM_LISTEN_ADDRESS", will cause issues if already in use (#2253)
+      ["NVIM_LISTEN_ADDRESS"] = "",
       ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
       ["SKIM_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
       ["FZF_LUA_SERVER"] = vim.g.fzf_lua_server,
