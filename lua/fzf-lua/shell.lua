@@ -489,7 +489,6 @@ end
 ---@param field_index string
 ---@return string
 M.stringify_data2 = function(fn, opts, field_index)
-  local field_index0 = field_index
   local did_override = false
   if not field_index:match("{q} {n}$") then
     field_index = field_index .. " {q} {n}"
@@ -506,7 +505,7 @@ M.stringify_data2 = function(fn, opts, field_index)
     -- fix side effect of "{q} {+}": {+} is forced expanded to ""
     -- only when field_index is empty (otherwise it can be complex/unpredictable)
     -- {n} used to determine if "zero-selected && zero-match", then patch: "" -> nil
-    if #field_index0 == 0 then
+    if field_index == "{+} {q} {n}" then
       -- When no item is matching (empty list or non-matching query)
       -- both {n} and {+} are expanded to "".
       -- NOTE1: older versions of fzf don't expand {n} to "" (without match)

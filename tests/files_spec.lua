@@ -87,7 +87,7 @@ T["files"]["previewer"]["builtin"] = new_set({ parametrize = { { "ci" }, { "buil
         -- Verify previewer "last_entry" was set
         child.type_keys("<c-j>")
         child.wait_until(function()
-          return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) ==
+          return exec_lua([[return FzfLua.utils.fzf_winobj()._previewer.last_entry]]) ==
               (icons and " LICENSE" or "LICENSE")
         end)
       end,
@@ -185,6 +185,18 @@ T["files"]["preview should work after chdir #1864"] = function()
       sleep(100)
     end
   })
+end
+
+T["files"]["nop on nothing match"] = function()
+  reload({ "hide" })
+  local ctx = exec_lua([[return FzfLua.utils.CTX()]])
+  for _, key in ipairs({ "<cr>", "<c-t>" }) do
+    exec_lua([[FzfLua.files { query = ("%s is nop on nothing match"):format(...) }]], { key })
+    child.wait_until(function() return exec_lua([[return _G._fzf_load_called]]) == true end)
+    child.type_keys(key)
+    child.wait_until(function() return exec_lua([[return _G._fzf_lua_on_create]]) == vim.NIL end)
+    eq(ctx, exec_lua([[return FzfLua.utils.CTX()]]))
+  end
 end
 
 return T
