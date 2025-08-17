@@ -374,7 +374,10 @@ M.fzf = function(contents, opts)
       .. libuv.shellescape("resize:+transform:" .. shell.stringify_data(function(args)
         -- Only set the layout if preview isn't hidden
         if not tonumber(args[1]) then return end
-        return string.format("change-preview-window(%s)", fzf_win:fzf_preview_layout_str())
+        -- NOTE: do not use local ref `fzf_win` as it my change on resume (#2255)
+        local winobj = utils.fzf_winobj()
+        if not winobj then return end
+        return string.format("change-preview-window(%s)", winobj:fzf_preview_layout_str())
       end, opts, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")))
   end
 
