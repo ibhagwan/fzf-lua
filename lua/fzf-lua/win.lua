@@ -100,7 +100,7 @@ end
 ---@field _preview_pos_force "up"|"down"
 ---@field km_winid integer?
 ---@field km_bufnr integer?
----@field _hidden_save_size [integer, integer, integer]?
+---@field _last_view [integer, integer, integer]?
 local FzfWin = {}
 
 -- singleton instance used in win_leave
@@ -206,7 +206,7 @@ function FzfWin:generate_layout(winopts)
     -- 'generate_layout' will then use the sign column available width
     -- to assure a perfect alignment of the builtin previewer window
     -- and the dummy native fzf previewer window border underneath it
-    local signcol_width = vim.wo[self.fzf_winid].signcolumn == "yes" and 1 or 0
+    local signcol_width = utils.wo[self.fzf_winid].signcolumn == "yes" and 1 or 0
     winopts = {
       row = wininfo.winrow,
       col = wininfo.wincol + signcol_width,
@@ -528,8 +528,7 @@ function FzfWin:reset_win_highlights(win)
       hl = string.format("%s%s:%s", hl and hl .. "," or "", h[1], h[2])
     end
   end
-  -- set win option is slow with bigfile
-  if vim.wo[win].winhighlight ~= hl then vim.wo[win].winhighlight = hl end
+  utils.wo[win].winhl = hl
 end
 
 ---@param exit_code integer
@@ -611,8 +610,8 @@ function FzfWin:set_backdrop()
     -- NOTE: backdrop shoulnd't be hidden with winopts.hide
     -- hide = self.winopts.hide,
   })
-  vim.wo[self.backdrop_win].winhighlight = "Normal:" .. self.hls.backdrop
-  vim.wo[self.backdrop_win].winblend = self.winopts.backdrop
+  utils.wo[self.backdrop_win].winhl = "Normal:" .. self.hls.backdrop
+  utils.wo[self.backdrop_win].winblend = self.winopts.backdrop
   vim.bo[self.backdrop_buf].buftype = "nofile"
   vim.bo[self.backdrop_buf].filetype = "fzflua_backdrop"
 end
@@ -697,35 +696,31 @@ function FzfWin:new(o)
   return self
 end
 
+---@param win integer
+---@param opts vim.wo|{}
+---@return vim.wo|{}
 function FzfWin:get_winopts(win, opts)
   if not win or not api.nvim_win_is_valid(win) then return {} end
   local ret = {}
   for opt, _ in pairs(opts) do
-    if utils.nvim_has_option(opt) then
-      ret[opt] = vim.wo[win][opt]
-    end
+    ret[opt] = utils.wo[win][opt]
   end
   return ret
 end
 
+---@param win integer
+---@param opts vim.wo|{}
+---@param ignore_events boolean?
 function FzfWin:set_winopts(win, opts, ignore_events)
   if not win or not api.nvim_win_is_valid(win) then return end
   -- NOTE: Do not trigger "OptionSet" as this will trigger treesitter-context's
   -- `update_single_context` which will in turn close our treesitter-context
-  local save_ei
-  if ignore_events then
-    save_ei = vim.o.eventignore
-    vim.o.eventignore = "all"
-  end
-  for opt, value in pairs(opts) do
-    -- set win option can be slow
-    if utils.nvim_has_option(opt) and vim.wo[win][opt] ~= value then
-      vim.wo[win][opt] = value
+  local ei = ignore_events and "all" or vim.o.eventignore
+  utils.eventignore(function()
+    for opt, value in pairs(opts) do
+      utils.wo[win][opt] = value
     end
-  end
-  if save_ei then
-    vim.o.eventignore = save_ei
-  end
+  end, ei)
 end
 
 ---@param previewer fzf-lua.previewer.Builtin
@@ -989,41 +984,35 @@ function FzfWin:set_tmp_buffer(no_wipe)
   -- since we have the cursorline workaround from
   -- issue #254, resume shows an ugly cursorline.
   -- remove it, nvim_win API is better than vim.wo?
-  -- vim.wo[self.fzf_winid].cursorline = false
-  vim.wo[self.fzf_winid].cursorline = false
+  utils.wo[self.fzf_winid].cursorline = false
   return self.fzf_bufnr
 end
 
 function FzfWin:save_style_minimal(winid)
-  if not tonumber(winid) or not api.nvim_win_is_valid(winid) then return end
-  local ret = {}
-  for _, o in ipairs({
-    "number",
-    "relativenumber",
-    "cursorline",
-    "cursorcolumn",
-    "spell",
-    "list",
-    "signcolumn",
-    "foldcolumn",
-    "colorcolumn",
-  }) do
-    ret[o] = vim.wo[winid][o]
-  end
-  return ret
+  return self:get_winopts(winid, {
+    number = true,
+    relativenumber = true,
+    cursorline = true,
+    cursorcolumn = true,
+    spell = true,
+    list = true,
+    signcolumn = true,
+    foldcolumn = true,
+    colorcolumn = true,
+  })
 end
 
 function FzfWin:set_style_minimal(winid)
   if not tonumber(winid) or not api.nvim_win_is_valid(winid) then return end
-  vim.wo[winid].number = false
-  vim.wo[winid].relativenumber = false
-  vim.wo[winid].cursorline = false
-  vim.wo[winid].cursorcolumn = false
-  vim.wo[winid].spell = false
-  vim.wo[winid].list = false
-  vim.wo[winid].signcolumn = "no"
-  vim.wo[winid].foldcolumn = "0"
-  vim.wo[winid].colorcolumn = ""
+  utils.wo[winid].number = false
+  utils.wo[winid].relativenumber = false
+  utils.wo[winid].cursorline = false
+  utils.wo[winid].cursorcolumn = false
+  utils.wo[winid].spell = false
+  utils.wo[winid].list = false
+  utils.wo[winid].signcolumn = "no"
+  utils.wo[winid].foldcolumn = "0"
+  utils.wo[winid].colorcolumn = ""
 end
 
 function FzfWin:create()
@@ -1112,7 +1101,7 @@ function FzfWin:create()
 
   -- potential workarond for `<C-c>` freezing neovim (#1091)
   -- https://github.com/neovim/neovim/issues/20726
-  vim.wo[self.fzf_winid].foldmethod = "manual"
+  utils.wo[self.fzf_winid].foldmethod = "manual"
 
   if type(self.winopts.on_create) == "function" then
     self.winopts.on_create({ winid = self.fzf_winid, bufnr = self.fzf_bufnr })
@@ -1159,9 +1148,7 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
     if self.src_winid == self.fzf_winid then
       -- "split" reused the current win (e.g. "enew")
       -- restore the original buffer and styling options
-      for k, v in pairs(self.src_winid_style or {}) do
-        vim.wo[self.fzf_winid][k] = v
-      end
+      self:set_winopts(self.fzf_winid, self.src_winid_style or {})
       utils.win_set_buf_noautocmd(self.fzf_winid, self.src_bufnr)
       -- also restore the original alternate buffer
       local alt_bname = (function()
@@ -1247,10 +1234,18 @@ function FzfWin.hide()
   if not self or self._o._is_fzf_tmux then return end
   self:detach_fzf_buf()
   self:close(nil, true)
-  -- save the current window size (VimResized won't emit when buffer hidden)
-  self._hidden_save_size = { vim.o.lines, vim.o.columns, vim.o.cmdheight }
+  self:save_size()
   -- Save self as `:close()` nullifies it
   _self = self
+end
+
+function FzfWin:save_size()
+  -- save the current window size (VimResized won't emit when buffer hidden)
+  self._last_view = { vim.o.lines, vim.o.columns, vim.o.cmdheight }
+end
+
+function FzfWin:resized()
+  return not vim.deep_equal(self._last_view, { vim.o.lines, vim.o.columns, vim.o.cmdheight })
 end
 
 function FzfWin:hidden()
@@ -1288,10 +1283,7 @@ function FzfWin.unhide()
   self.fzf_bufnr = self._hidden_fzf_bufnr
   self._hidden_fzf_bufnr = nil
   self:create()
-  if not vim.deep_equal(self._hidden_save_size, { vim.o.lines, vim.o.columns, vim.o.cmdheight }) then
-    self:redraw()
-  end
-  self._hidden_save_size = nil
+  if self:resized() then self:redraw() end
   vim.cmd("startinsert")
   return true
 end
@@ -1383,9 +1375,9 @@ function FzfWin:update_preview_scrollbar()
       empty.noautocmd = true
       self._sbuf1 = ensure_tmp_buf(self._sbuf1)
       self._swin1 = utils.nvim_open_win0(self._sbuf1, false, empty)
-      self:set_winopts(self._swin1, { eventignorewin = "WinResized" })
+      utils.wo[self._swin1].eventignorewin = "WinResized"
       local hl = self.hls.scrollfloat_e or "PmenuSbar"
-      vim.wo[self._swin1].winhighlight =
+      utils.wo[self._swin1].winhl =
           ("Normal:%s,NormalNC:%s,NormalFloat:%s,EndOfBuffer:%s"):format(hl, hl, hl, hl)
     end
   end
@@ -1395,9 +1387,9 @@ function FzfWin:update_preview_scrollbar()
     full.noautocmd = true
     self._sbuf2 = ensure_tmp_buf(self._sbuf2)
     self._swin2 = utils.nvim_open_win0(self._sbuf2, false, full)
-    self:set_winopts(self._swin2, { eventignorewin = "WinResized" })
+    utils.wo[self._swin2].eventignorewin = "WinResized"
     local hl = self.hls.scrollfloat_f or "PmenuThumb"
-    vim.wo[self._swin2].winhighlight =
+    utils.wo[self._swin2].winhl =
         ("Normal:%s,NormalNC:%s,NormalFloat:%s,EndOfBuffer:%s"):format(hl, hl, hl, hl)
   end
 end
@@ -1495,9 +1487,9 @@ end
 function FzfWin.toggle_preview_wrap()
   if not _self or not _self:validate_preview() then return end
   local self = _self
-  self.preview_wrap = not vim.wo[self.preview_winid].wrap
+  self.preview_wrap = not utils.wo[self.preview_winid].wrap
   if self and self:validate_preview() then
-    vim.wo[self.preview_winid].wrap = self.preview_wrap
+    utils.wo[self.preview_winid].wrap = self.preview_wrap
   end
 end
 
@@ -1552,10 +1544,7 @@ function FzfWin.preview_scroll(direction)
       and self._previewer
       and self._previewer.scroll then
     -- Do not trigger "ModeChanged"
-    local save_ei = vim.o.eventignore
-    vim.o.eventignore = "all"
-    self._previewer:scroll(direction)
-    vim.o.eventignore = save_ei
+    utils.eventignore(function() self._previewer:scroll(direction) end)
   end
 end
 
@@ -1727,21 +1716,13 @@ function FzfWin.toggle_help()
   vim.bo[self.km_bufnr].bufhidden = "wipe"
   self.km_winid = nvim_open_win(self.km_bufnr, false, winopts)
   vim.api.nvim_buf_set_name(self.km_bufnr, "_FzfLuaHelp")
-  vim.wo[self.km_winid].winhl =
+  utils.wo[self.km_winid].winhl =
       string.format("Normal:%s,FloatBorder:%s", opts.normal_hl, opts.border_hl)
-  vim.wo[self.km_winid].winblend = opts.winblend
-  vim.wo[self.km_winid].foldenable = false
-  vim.wo[self.km_winid].wrap = false
-  vim.wo[self.km_winid].spell = false
+  utils.wo[self.km_winid].winblend = opts.winblend
+  utils.wo[self.km_winid].foldenable = false
+  utils.wo[self.km_winid].wrap = false
+  utils.wo[self.km_winid].spell = false
   vim.bo[self.km_bufnr].filetype = "help"
-
-  vim.cmd(string.format(
-    "autocmd BufLeave <buffer> ++once lua %s",
-    table.concat({
-      string.format("pcall(vim.api.nvim_win_close, %s, true)", self.km_winid),
-      string.format("pcall(vim.api.nvim_buf_delete, %s, {force=true})", self.km_bufnr),
-    }, ";")
-  ))
 
   vim.api.nvim_buf_set_lines(self.km_bufnr, 0, -1, false, lines)
 end

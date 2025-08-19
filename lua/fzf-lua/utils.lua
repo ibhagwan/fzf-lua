@@ -15,7 +15,7 @@ M.__HAS_NVIM_0102 = vim.fn.has("nvim-0.10.2") == 1
 M.__HAS_NVIM_011 = vim.fn.has("nvim-0.11") == 1
 M.__IS_WINDOWS = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 -- `:help shellslash` (for more info see #1055)
-M.__WIN_HAS_SHELLSLASH = M.__IS_WINDOWS and vim.fn.exists("+shellslash")
+M.__WIN_HAS_SHELLSLASH = M.__IS_WINDOWS and vim.fn.exists("+shellslash") == 1
 
 function M.__FILE__() return debug.getinfo(2, "S").source end
 
@@ -131,10 +131,6 @@ function M.round(num, limit)
   local fraction = num - math.floor(num)
   if fraction > limit then return math.ceil(num) end
   return math.floor(num)
-end
-
-function M.nvim_has_option(option)
-  return vim.fn.exists("&" .. option) == 1
 end
 
 M._notify_header = "LineNr"
@@ -1153,16 +1149,8 @@ end
 
 ---@param func function
 ---@param scope string?
----@param win integer?
 ---@return ... any
-function M.eventignore(func, win, scope)
-  if win and vim.fn.exists("+eventignorewin") == 1 then
-    local save_ei = vim.wo[win][0].eventignorewin
-    vim.wo[win][0].eventignorewin = scope or "all"
-    local ret = { func() }
-    vim.wo[win][0].eventignorewin = save_ei
-    return unpack(ret)
-  end
+function M.eventignore(func, scope)
   local save_ei = vim.o.eventignore
   vim.o.eventignore = scope or "all"
   local ret = { func() }
@@ -1559,5 +1547,29 @@ function M.pid_object(key, opts)
 
   return Pid:new(key, opts)
 end
+
+-- modified version of vim.wo
+-- 1. always setlocal (to avoid potential pollute on win split)
+-- 2. nop on non-exist option
+-- 3. nop if unchange (set win option can be slow #2018)
+local function new_win_opt_accessor(winid)
+  return setmetatable({}, {
+    __index = function(_, k)
+      if type(k) == "number" then return new_win_opt_accessor(k) end
+      if vim.fn.exists("+" .. k) == 0 then return end
+      return vim.api.nvim_get_option_value(k, { scope = "local", win = winid or 0 })
+    end,
+    __newindex = function(_, k, v)
+      if vim.fn.exists("+" .. k) == 0
+          or vim.api.nvim_get_option_value(k, { scope = "local", win = winid or 0 }) == v then
+        return
+      end
+      vim.api.nvim_set_option_value(k, v, { scope = "local", win = winid or 0 })
+    end,
+  })
+end
+---@type {}|vim.wo
+M.wo = new_win_opt_accessor()
+
 
 return M

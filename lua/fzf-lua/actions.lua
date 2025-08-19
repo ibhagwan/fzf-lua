@@ -201,9 +201,7 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
           return
         end
       end
-      if will_replace_curbuf
-          and vim.fn.exists("&winfixbuf") == 1
-          and vim.wo.winfixbuf
+      if will_replace_curbuf and utils.wo.winfixbuf
       then
         utils.warn("'winfixbuf' is set for current window, will open in a split.")
         vimcmd = "split | " .. vimcmd
