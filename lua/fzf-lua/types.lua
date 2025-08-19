@@ -279,8 +279,8 @@ _G.FzfLua = require("fzf-lua")
 ---@field scrolloff? integer
 
 ---@class fzf-lua.config.Keymap
----@field builtin table<string, string>
----@field fzf table<string, string>
+---@field builtin? table<string, string>
+---@field fzf? table<string, string>
 
 ---@class fzf-lua.config.Previewer
 ---@field cmd string|fun():string?
