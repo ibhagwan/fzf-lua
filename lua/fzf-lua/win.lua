@@ -519,13 +519,16 @@ end
 function FzfWin:reset_win_highlights(win)
   -- derive the highlights from the window type
   local key = "main"
+  local hl
   if win == self.preview_winid then
     key = "prev"
+    hl = self._previewer:gen_winopts().winhl
   end
-  local hl
-  for _, h in ipairs(self.winopts.__winhls[key]) do
-    if h[2] then
-      hl = string.format("%s%s:%s", hl and hl .. "," or "", h[1], h[2])
+  if not hl then
+    for _, h in ipairs(self.winopts.__winhls[key]) do
+      if h[2] then
+        hl = string.format("%s%s:%s", hl and hl .. "," or "", h[1], h[2])
+      end
     end
   end
   utils.wo[win].winhl = hl
