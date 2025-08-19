@@ -107,9 +107,7 @@ function TSContext.update(winid, bufnr, opts)
           if win and api.nvim_win_is_valid(win) and api.nvim_win_get_config(win).zindex ~= zindex then
             api.nvim_win_set_config(win, { zindex = zindex })
             -- noautocmd don't ignore WinResized/WinScrolled
-            if fn.exists("+eventignorewin") == 1 and vim.wo[win][0].eventignorewin == "" then
-              vim.wo[win][0].eventignorewin = "WinResized"
-            end
+            utils.wo[win].eventignorewin = "WinResized"
           end
         end
         api.nvim_win_call(winid, function()
@@ -1053,11 +1051,11 @@ function Previewer.base:attach_snacks_image_inline()
   if not ft then return end
   _G._fzf_lua_snacks_langs = _G._fzf_lua_snacks_langs or simg.langs()
   if not vim.tbl_contains(_G._fzf_lua_snacks_langs, vim.treesitter.language.get_lang(ft)) then
-    vim.wo[preview_winid].winblend = self.winblend
+    utils.wo[preview_winid].winblend = self.winblend
     return
   end
 
-  vim.wo[preview_winid].winblend = 0 -- https://github.com/folke/snacks.nvim/pull/1615
+  utils.wo[preview_winid].winblend = 0 -- https://github.com/folke/snacks.nvim/pull/1615
   vim.b[bufnr].snacks_image_attached = simg.inline.new(bufnr)
   vim.defer_fn(function()
     self.win:update_preview_scrollbar()
@@ -1121,7 +1119,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
     -- nvim_buf_call has less side-effects than window switch
     -- doautocmd filetypedetect BufRead (vim.filetype.match + ftdetect) + do_modeline
     local ok, _ = pcall(api.nvim_buf_call, bufnr, function()
-      utils.eventignore(function() vim.cmd("filetype detect") end, preview_winid, "FileType")
+      utils.eventignore(function() vim.cmd("filetype detect") end, "FileType")
     end)
     if not ok then
       utils.warn(("':filetype detect' failed for '%s'"):format(entry.path or "<null>"))
@@ -1172,9 +1170,7 @@ function Previewer.base:maybe_set_cursorline(win, pos)
     vim.api.nvim_win_set_cursor(win, pos)
     cursorline = self.winopts.cursorline
   end
-  if cursorline ~= vim.wo[win].cursorline then
-    vim.wo[win].cursorline = cursorline
-  end
+  utils.wo[win].cursorline = cursorline
 end
 
 function Previewer.buffer_or_file:set_cursor_hl(entry)
@@ -1211,7 +1207,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
     local lnum, col = tonumber(entry.line), tonumber(entry.col) or 0
     if not lnum or lnum < 1 then
       -- set win option is slow with bigfile
-      if vim.wo.cursorline then vim.wo.cursorline = false end
+      utils.wo.cursorline = false
       self.orig_pos = { 1, 0 }
       api.nvim_win_set_cursor(self.win.preview_winid, cached_pos or self.orig_pos)
       return

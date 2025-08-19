@@ -89,4 +89,16 @@ describe("Testing utils module", function()
     collectgarbage("collect")
     assert.are.same(gc_called, true)
   end)
+
+  it("wo", function()
+    utils.wo.nonexist = "this is nop"
+    assert.are.same(nil, utils.wo.nonexist)
+    vim.wo[0][0].nu = true -- setlocal
+    vim.wo[0].rnu = true   -- setglobal
+    assert.are.same(vim.wo[0][0].nu, vim.wo.nu)
+    assert.are.same(vim.wo[0][0].rnu, vim.wo.rnu)
+    vim.cmd.new()
+    assert.are.same(vim.wo[0][0].nu, vim.wo.nu)
+    assert.are.same(vim.wo[0][0].rnu, vim.wo.rnu)
+  end)
 end)

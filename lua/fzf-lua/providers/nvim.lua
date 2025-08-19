@@ -529,7 +529,6 @@ M.nvim_options = function(opts)
 end
 
 M.spell_suggest = function(opts)
-  -- if not vim.wo.spell then return false end
   ---@type fzf-lua.config.SpellSuggest
   opts = config.normalize_opts(opts, "spell_suggest")
   if not opts then return end
