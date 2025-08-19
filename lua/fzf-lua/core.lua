@@ -395,7 +395,8 @@ M.fzf = function(contents, opts)
   -- NOTE: might be an overkill since we're using $FZF_DEFAULT_COMMAND
   -- to spawn the piped process and fzf is responsible for termination
   -- when the fzf process exists
-  if opts.PidObject then
+  -- NOTE: can be an empty table due to tbl_deep_clone (#2260)
+  if opts.PidObject and opts.PidObject.get then
     libuv.process_kill(opts.PidObject:get())
     opts.PidObject:set(nil)
   end
