@@ -188,7 +188,7 @@ function FzfWin:generate_layout(winopts)
   -- is "extend" we still reduce fzf main layout as if the previewer is displayed
   if not self.previewer_is_builtin
       or (self.preview_hidden
-        and (self._previewer.toggle_behavior ~= "extend" or self.fullscreen))
+        and (self.toggle_behavior ~= "extend" or self.fullscreen))
   then
     self.layout = {
       fzf = self:normalize_border({
@@ -291,7 +291,7 @@ function FzfWin:generate_layout(winopts)
       end
     end
   end
-  local nwin = self.preview_hidden and self._previewer.toggle_behavior == "extend" and 1 or 2
+  local nwin = self.preview_hidden and self.toggle_behavior == "extend" and 1 or 2
   self.layout = {
     fzf = self:normalize_border(
       vim.tbl_extend("force", { row = row, col = col, height = height, width = width }, {
@@ -680,6 +680,7 @@ function FzfWin:new(o)
   self.hls = o.hls
   self.actions = o.actions
   self.fullscreen = o.winopts.fullscreen
+  self.toggle_behavior = o.winopts.toggle_behavior
   self.winopts = self:normalize_winopts(self.fullscreen)
   self.preview_wrap = not not o.winopts.preview.wrap     -- force boolean
   self.preview_hidden = not not o.winopts.preview.hidden -- force boolean
@@ -754,6 +755,7 @@ function FzfWin:attach_previewer(previewer)
   end
   self._previewer = previewer
   self.previewer_is_builtin = previewer and previewer.type == "builtin"
+  self.toggle_behavior = previewer.toggle_behavior or self.toggle_behavior
 end
 
 function FzfWin:validate_preview()
