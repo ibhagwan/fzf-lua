@@ -92,7 +92,7 @@ function M.base:preview_cmd()
     vim.api.nvim_win_set_cursor(self.ctx_winid, { lnum, col or 0 })
     vim.wo[self.ctx_winid].cursorline = true
     vim.wo[self.ctx_winid].winhl = "CursorLine:" .. self.opts.hls.cursorline
-    self:highlight_matches()
+    vim.defer_fn(function() self:highlight_matches() end, 10)
     if col and col > 0 then
       vim.hl.range(self.ctx_bufnr, self.ns, self.opts.hls.cursor,
         { lnum - 1, col - 1 }, { lnum - 1, col }, {})
@@ -102,7 +102,7 @@ end
 
 function M.base:result_cmd()
   return string.format("execute-silent:%s", shell.stringify_data(function(_, _, _)
-    self:highlight_matches()
+    vim.defer_fn(function() self:highlight_matches() end, 10)
   end, self.opts, "{q}"))
 end
 
@@ -137,28 +137,28 @@ function M.base:highlight_matches()
       local buf_lnum = r - l_s + 2
       local lnum, _, col_valid_idx, col_off = self:parse_lnum_col(buf_lines[buf_lnum])
       if not lnum or lnum < 1 then return end
-      local state = {}
+      local state = { bytelen = 0 }
       for c = 1, max_columns do
         local ok, ret = pcall(vim.api.nvim__inspect_cell, 1, r, c)
         if not ok or not ret[1] then break end
         (function()
           local in_matched = ret[2] and (ret[2].reverse or ret[2].foreground == fg)
-          if in_matched and not state.in_matched then
+          if in_matched and not state.matchlen then
             if c < col_valid_idx then return end
-            state.start_col = math.max(c - col_valid_idx - col_off, 0)
-            state.text = { ret[1] }
-            state.in_matched = in_matched
+            state.start_col = math.max(state.bytelen - col_valid_idx - col_off, 0)
+            state.matchlen = ret[1]:len()
             return
           end
           if in_matched then
-            state.text[#state.text + 1] = ret[1]
+            state.matchlen = state.matchlen + ret[1]:len()
             return
           end
-          if state.in_matched then
-            hl(lnum - 1, state.start_col, lnum - 1, state.start_col + #state.text)
-            state.in_matched = nil
+          if state.matchlen then
+            hl(lnum - 1, state.start_col, lnum - 1, state.start_col + state.matchlen)
+            state.matchlen = nil
           end
         end)()
+        state.bytelen = state.bytelen + ret[1]:len()
       end
     end)()
   end
