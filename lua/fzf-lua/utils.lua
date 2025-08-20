@@ -1564,7 +1564,9 @@ local function new_win_opt_accessor(winid)
           or vim.api.nvim_get_option_value(k, { scope = "local", win = winid or 0 }) == v then
         return
       end
-      vim.api.nvim_set_option_value(k, v, { scope = "local", win = winid or 0 })
+      vim.wo[winid or 0][k] = v
+      -- TODO: causes issues with highlights
+      -- vim.api.nvim_set_option_value(k, v, { scope = "local", win = winid or 0 })
     end,
   })
 end
