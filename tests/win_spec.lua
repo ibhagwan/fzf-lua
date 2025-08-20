@@ -243,4 +243,38 @@ T["win"]["previewer"]["split flex hidden"] = function()
   end)
 end
 
+T["win"]["previewer"]["toggle_behavior=extend"] = new_set(
+  { parametrize = { { "enew" }, { nil }, } }, {
+    -- Ignore terminal command line with process number
+    function(split)
+      local screen_opts = { ignore_text = { 24, 28 }, normalize_paths = helpers.IS_WIN() }
+      helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], {
+        __no_abort = true,
+        __expect_lines = true,
+        __screen_opts = screen_opts,
+        winopts = {
+          toggle_behavior = "extend",
+          split = split,
+          preview = { hidden = true, delay = 0 },
+        },
+        previewer = [[require('fzf-lua.test.previewer')]],
+        __after_open = function()
+          if helpers.IS_WIN() then vim.uv.sleep(250) end
+        end,
+      })
+      child.wait_until(function() return child.api.nvim_get_mode().mode == "t" end)
+      exec_lua([[require("fzf-lua.win").toggle_preview()]])
+      child.wait_until(function()
+        return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) == "foo"
+      end)
+      if helpers.IS_WIN() then vim.uv.sleep(250) end
+      child.expect_screen_lines(screen_opts)
+      -- abort and wait for winopts.on_close
+      child.type_keys("<c-c>")
+      child.wait_until(function()
+        return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+      end)
+    end
+  })
+
 return T
