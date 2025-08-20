@@ -147,18 +147,27 @@ function FzfWin:setup_keybinds()
     ["hide"]              = { module = "win", fnc = "hide()" },
     ["toggle-help"]       = { module = "win", fnc = "toggle_help()" },
     ["toggle-fullscreen"] = { module = "win", fnc = "toggle_fullscreen()" },
+    ["toggle-preview"]    = { module = "win", fnc = "toggle_preview()" },
   }
   -- find the toggle_preview keybind, to be sent when using a split for the native
   -- pseudo fzf preview window or when using native and treesitter is enabled
   -- TODO: some unexpected behavior when user bind toggle-preview in FZF_DEFAULT_OPTS/FZF_DEFAULT_FILE_OPTS
   if self.winopts.split or not self.previewer_is_builtin then
+    -- sync toggle-preview
+    -- 1. always run the toggle-preview(), and self._fzf_toggle_prev_bind
+    for k, v in pairs(self.keymap.builtin) do
+      if v == "toggle-preview" then
+        self.keymap.fzf[utils.neovim_bind_to_fzf(k)] = v
+      end
+    end
     for k, v in pairs(self.keymap.fzf) do
       if v == "toggle-preview" then
         self._fzf_toggle_prev_bind = utils.fzf_bind_to_neovim(k)
-        keymap_tbl = vim.tbl_deep_extend("keep", keymap_tbl, {
-          ["toggle-preview"] = { module = "win", fnc = "toggle_preview()" },
-        })
+        self.keymap.builtin[self._fzf_toggle_prev_bind] = v
       end
+    end
+    if not self._fzf_toggle_prev_bind and not self._o.silent then
+      utils.warn("missing 'toggle-preview' in opts.keymap.fzf or opts.keymap.builtin")
     end
   end
   if self.previewer_is_builtin then
@@ -1482,6 +1491,8 @@ function FzfWin.toggle_preview()
   if self._fzf_toggle_prev_bind then
     -- Toggle the empty preview window (under the neovim preview buffer)
     utils.feed_keys_termcodes(self._fzf_toggle_prev_bind)
+    -- TODO: why this don't work
+    -- vim.api.nvim_chan_send(vim.bo.channel, vim.keycode(self._fzf_toggle_prev_bind))
     -- Trigger resize to cange the preview layout if needed
     self:SIGWINCH()
   end
