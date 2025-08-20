@@ -54,4 +54,28 @@ Previewer.new = function(spec, opts)
   return previewer
 end
 
+---@alias fzf-lua.preview.Spec function|{[1]: function?, fn: function?, field_index: string?}
+---convert preview action functions to strings using our shell wrapper
+---@param preview fzf-lua.preview.Spec
+---@param opts table
+---@return string?
+Previewer.normalize_spec = function(preview, opts)
+  if type(preview) == "function" then
+    return FzfLua.shell.stringify_data(preview, opts, "{}")
+  elseif type(preview) == "table" then
+    preview = vim.tbl_extend("keep", preview, {
+      fn = preview.fn or preview[1],
+      -- by default we use current item only "{}"
+      -- using "{+}" will send multiple selected items
+      field_index = "{}",
+    })
+    if preview.type == "cmd" then
+      return FzfLua.shell.stringify_cmd(preview.fn, opts, preview.field_index)
+    end
+    return FzfLua.shell.stringify_data(preview.fn, opts, preview.field_index)
+  else
+    return preview
+  end
+end
+
 return Previewer
