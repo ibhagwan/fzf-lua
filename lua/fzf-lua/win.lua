@@ -150,6 +150,7 @@ function FzfWin:setup_keybinds()
   }
   -- find the toggle_preview keybind, to be sent when using a split for the native
   -- pseudo fzf preview window or when using native and treesitter is enabled
+  -- TODO: some unexpected behavior when user bind toggle-preview in FZF_DEFAULT_OPTS/FZF_DEFAULT_FILE_OPTS
   if self.winopts.split or not self.previewer_is_builtin then
     for k, v in pairs(self.keymap.fzf) do
       if v == "toggle-preview" then
@@ -182,13 +183,20 @@ function FzfWin:setup_keybinds()
   end
 end
 
+-- check if previewer useable (not matter if it's hidden)
+function FzfWin:has_previewer()
+  return self._o.preview or self._previewer and true or false
+end
+
 function FzfWin:generate_layout(winopts)
   winopts = winopts or self.winopts
-  -- If previewer is hidden we use full fzf layout, when previewer toggle behavior
-  -- is "extend" we still reduce fzf main layout as if the previewer is displayed
-  if not self.previewer_is_builtin
-      or (self.preview_hidden
-        and (self.toggle_behavior ~= "extend" or self.fullscreen))
+  -- when to use full fzf layout
+  -- 1. no previewer (always)
+  -- 2. builtin previewer (hidden and not "extend")
+  -- 3. fzf previewer (not "extend" or not hidden)
+  if not self:has_previewer()
+      or (self.previewer_is_builtin and (self.preview_hidden and self.toggle_behavior ~= "extend"))
+      or (not self.previewer_is_builtin and (self.toggle_behavior ~= "extend" or not self.preview_hidden))
   then
     self.layout = {
       fzf = self:normalize_border({
@@ -1476,14 +1484,9 @@ function FzfWin.toggle_preview()
     utils.feed_keys_termcodes(self._fzf_toggle_prev_bind)
     -- Trigger resize to cange the preview layout if needed
     self:SIGWINCH()
-    -- This is just a proxy to toggle the native fzf preview when treesitter
-    -- is enabled, no need to redraw, stop here
-    if not self.previewer_is_builtin then
-      return
-    end
   end
-  if self.preview_hidden and self:validate_preview() then
-    self:close_preview(true)
+  if self.preview_hidden then
+    if self:validate_preview() then self:close_preview(true) end
     self:redraw_main()
   elseif not self.preview_hidden then
     self:redraw_main()
