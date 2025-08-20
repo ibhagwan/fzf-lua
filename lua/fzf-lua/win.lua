@@ -150,7 +150,7 @@ function FzfWin:setup_keybinds()
   }
   -- find the toggle_preview keybind, to be sent when using a split for the native
   -- pseudo fzf preview window or when using native and treesitter is enabled
-  if self.winopts.split or not self.previewer_is_builtin and self.winopts.treesitter then
+  if self.winopts.split or not self.previewer_is_builtin then
     for k, v in pairs(self.keymap.fzf) do
       if v == "toggle-preview" then
         self._fzf_toggle_prev_bind = utils.fzf_bind_to_neovim(k)
