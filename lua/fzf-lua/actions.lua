@@ -142,9 +142,8 @@ end
 ---@param _vimcmd string
 ---@param selected string[]
 ---@param opts fzf-lua.Config
----@param pcall_vimcmd boolean?
 ---@return string?
-M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
+M.vimcmd_entry = function(_vimcmd, selected, opts)
   for i, sel in ipairs(selected) do
     (function()
       -- Lua 5.1 goto compatiblity hack (function wrap)
@@ -164,45 +163,9 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
         -- technically we should never get to the `uv.cwd()` fallback
         fullpath = path.join({ opts.cwd or opts._cwd or uv.cwd(), fullpath })
       end
-      -- always open files relative to the current win/tab cwd (#1854)
-      local relpath = path.relative_to(fullpath, uv.cwd())
-      -- opts.__CTX isn't guaranteed by API users (#1414)
-      local CTX = opts.__CTX or utils.CTX()
-      local target_equals_current =
-          (entry.bufnr and entry.bufnr == CTX.bufnr or path.equals(fullpath, CTX.bname))
-          -- we open a new buffer on tabs so target is always different (#1785)
-          and not _vimcmd:match("^tabnew")
-      local vimcmd = (function()
-        -- Do not execute "edit" commands if we already have the same buffer/file open
-        -- or if we are dealing with a URI as it's open with `vim.lsp.util.show_document`
-        if _vimcmd == "<auto>" and (entry.uri or target_equals_current) then
-          return nil
-        end
-        -- Same buffer splits and URI entries only execute the split cmd
-        -- after a split we land in the same buffer, remove the piped edit
-        -- e.g. "vsplit | e" -> "vsplit" (#1677)
-        if _vimcmd:match("| <auto>") and (entry.uri or target_equals_current) then
-          return _vimcmd:gsub("| <auto>", "")
-        end
-        -- Replace "<auto>" based on entry being buffer or filename
-        return _vimcmd:gsub("<auto>", entry.bufnr and entry.bufname and "b" or "e")
-      end)()
-      -- ":b" and ":e" commands replace the current buffer
-      local will_replace_curbuf = vimcmd == "e" or vimcmd == "b"
-      if will_replace_curbuf
-          and not vim.o.hidden
-          and not vim.o.autowriteall
-          and utils.buffer_is_dirty(nil, false, true) then
-        -- when `:set nohidden`, confirm with the user when trying to switch
-        -- from a dirty buffer, abort if declined, save buffer if requested
-        if utils.save_dialog(nil) then
-          vimcmd = vimcmd .. "!"
-        else
-          return
-        end
-      end
-      if will_replace_curbuf and utils.wo.winfixbuf
-      then
+      -- <auto> (without prefix, formerly `:b|e`) replace the current buffer
+      local vimcmd, will_replace_curbuf = _vimcmd, _vimcmd == "<auto>"
+      if will_replace_curbuf and utils.wo.winfixbuf then
         utils.warn("'winfixbuf' is set for current window, will open in a split.")
         vimcmd = "split | " .. vimcmd
       end
@@ -213,29 +176,53 @@ M.vimcmd_entry = function(_vimcmd, selected, opts, pcall_vimcmd)
         vim.cmd("normal! m`")
       end
       if vimcmd then
-        -- Killing term buffers requires "!" (#1078)
-        if entry.terminal and vimcmd == "bd" then
-          vimcmd = vimcmd .. "!"
-        end
+        local cmd, is_buf_edit = vimcmd:gsub("|?%s-<auto>$", "")
+        -- Command could have been "<auto>", in which case do nothing
+        -- as we only have to load the buffer into the current window
+        if #cmd > 0 then vim.cmd(cmd) end
         -- URI entries only execute new buffers (new|vnew|tabnew)
-        if not entry.uri and not target_equals_current then
-          -- Force full paths when `autochdir=true` (#882)
-          vimcmd = string.format("%s %s", vimcmd, (function()
-            -- `:argdel|:argadd` uses only paths
-            -- argdel only accepts relative path (#1949)
-            if vimcmd:match("^arg") then return path.relative_to(entry.path, uv.cwd()) end
-            if entry.bufnr then return tostring(entry.bufnr) end
+        -- and later use `utils.jump_to_location` to load the buffer
+        if not entry.uri and is_buf_edit > 0 then
+          local bufnr = (function()
+            -- Is the requested buffer is already loaded by the (split) command?
+            local curbuf = vim.api.nvim_win_get_buf(0)
+            local curbname = vim.api.nvim_buf_get_name(curbuf)
+            if entry.bufnr == curbuf or path.equals(curbname, fullpath) then return end
+            -- Entry already contains bufnr
+            if entry.bufnr then return entry.bufnr end
+            -- Always open files relative to the current win/tab cwd (#1854)
             -- We normalize the path or Windows will fail with directories starting
             -- with special characters, for example "C:\app\(web)" will be translated
             -- by neovim to "c:\app(web)" (#1082)
-            return vim.fn.fnameescape(path.normalize(relpath))
-          end)())
-        end
-        if pcall_vimcmd ~= false then
-          local ok, err = pcall(function() vim.cmd(vimcmd) end)
-          if not ok then utils.error("':%s' failed: %s", vimcmd, err) end
-        else
-          vim.cmd(vimcmd)
+            local relpath = path.normalize(path.relative_to(fullpath, uv.cwd()))
+            local bufnr = vim.fn.bufadd(relpath)
+            if bufnr == 0 and not opts.silent then
+              utils.warn("Unable to add buffer %s", relpath)
+              return
+            else
+              vim.bo[bufnr].buflisted = true
+              return bufnr
+            end
+          end)()
+          if tonumber(bufnr) then
+            -- If current buffer is an unnamed empty buffer (e.g. "new"), wipe on switch
+            if will_replace_curbuf
+                and vim.bo.buftype == ""
+                and vim.bo.filetype == ""
+                and vim.api.nvim_buf_line_count(0) == 1
+                and vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == ""
+                and vim.api.nvim_buf_get_name(0) == ""
+            then
+              vim.bo.bufhidden = "wipe"
+            end
+            vim.fn.bufload(bufnr)
+            local ok, _ = pcall(vim.api.nvim_win_set_buf, 0, bufnr)
+            -- When `:set nohidden && set confirm`, neovim will invoke the save dialog
+            -- and confirm with the user when trying to switch from a dirty buffer, if
+            -- user cancelles the save dialog pcall will fail with:
+            -- Vim:E37: No write since last change (add ! to override)
+            if not ok then return end
+          end
         end
       end
       -- Reload actions from fzf's (buf/arg del, etc) window end here
@@ -468,18 +455,29 @@ M.buf_del = function(selected, opts)
   end
 end
 
+local function arg_exec(cmd, selected, opts)
+  for _, sel in ipairs(selected) do
+    (function()
+      local entry = path.entry_to_file(sel, opts)
+      local relpath = entry.bufname or entry.path
+      assert(relpath, "entry doesn't contain filepath")
+      if not relpath then return end
+      if path.is_absolute(relpath) then
+        relpath = path.relative_to(relpath, vim.uv.cwd())
+      end
+      vim.cmd(cmd .. " " .. relpath)
+    end)()
+  end
+end
+
 M.arg_add = function(selected, opts)
-  local vimcmd = "argadd"
-  M.vimcmd_entry(vimcmd, selected, opts)
+  arg_exec("argadd", selected, opts)
   ---@diagnostic disable-next-line: param-type-mismatch
   pcall(vim.cmd, "argdedupe")
 end
 
 M.arg_del = function(selected, opts)
-  local vimcmd = "argdel"
-  -- since we don't dedup argdel can fail if file is added
-  -- more than once into the arglist
-  M.vimcmd_entry(vimcmd, selected, opts, true)
+  arg_exec("argdel", selected, opts)
 end
 
 M.colorscheme = function(selected, opts)
