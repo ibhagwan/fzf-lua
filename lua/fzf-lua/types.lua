@@ -16,8 +16,8 @@ _G.FzfLua = require("fzf-lua")
 ---@field opts table
 ---@field win fzf-lua.Win
 ---@field delay integer
----@field title string?
----@field title_pos string?
+---@field title any
+---@field title_pos "center"|"left"|"right"
 ---@field title_fnamemodify fun(title: string, width: integer?): string
 ---@field render_markdown table?
 ---@field snacks_image table?
@@ -238,14 +238,20 @@ _G.FzfLua = require("fzf-lua")
 ---@field width number
 ---@field row number
 ---@field col number
----@field border string
+---@field border any
 ---@field zindex integer
+---@field relative string
+---@field hide boolean
+---@field split string|function
 ---@field backdrop number|boolean
 ---@field fullscreen boolean
----@field title_pos string
+---@field title any
+---@field title_pos "center"|"left"|"right"
 ---@field treesitter fzf-lua.config.TreesitterWinopts
 ---@field preview fzf-lua.config.PreviewWinopts
+---@field on_create fun(e: { winid: integer, bufnr: integer })
 ---@field on_close fun()
+---@field __winhls { main: [string, string][], prev: [string, string][] }
 
 ---@class fzf-lua.config.TreesitterWinopts
 ---@field enabled boolean
@@ -253,15 +259,15 @@ _G.FzfLua = require("fzf-lua")
 
 ---@class fzf-lua.config.PreviewWinopts
 ---@field default? string
----@field border? string
+---@field border? any
 ---@field wrap? boolean
 ---@field hidden? boolean
 ---@field vertical? string
 ---@field horizontal? string
 ---@field layout? string
 ---@field flip_columns? integer
----@field title? boolean
----@field title_pos? string
+---@field title? any
+---@field title_pos? "center"|"left"|"right"
 ---@field scrollbar? string
 ---@field scrolloff? integer
 ---@field delay? integer

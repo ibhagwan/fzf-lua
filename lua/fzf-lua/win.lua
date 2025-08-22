@@ -102,11 +102,14 @@ function TSInjector._attach_lang(buf, lang, regions)
   parser:set_included_regions(regions)
 end
 
+---@alias fzf-lua.win.previewPos "up"|"down"|"left"|"right"
+
 ---@class fzf-lua.Win
----@field _previewer fzf-lua.previewer.Builtin|fzf-lua.previewer.Fzf?
----@field _preview_pos_force "up"|"down"
+---@field winopts fzf-lua.config.Winopts|{}
 ---@field km_winid integer?
 ---@field km_bufnr integer?
+---@field _previewer fzf-lua.previewer.Builtin|fzf-lua.previewer.Fzf?
+---@field _preview_pos_force fzf-lua.win.previewPos
 ---@field _last_view [integer, integer, integer]?
 local FzfWin = {}
 
@@ -197,6 +200,7 @@ function FzfWin:has_previewer()
   return self._o.preview or self._previewer and true or false
 end
 
+---@param winopts fzf-lua.config.Winopts|{}?
 function FzfWin:generate_layout(winopts)
   winopts = winopts or self.winopts
   -- when to use full fzf layout
@@ -245,14 +249,14 @@ function FzfWin:generate_layout(winopts)
   local pwopts
   local row, col = winopts.row, winopts.col
   local height, width = winopts.height, winopts.width
+  ---@type fzf-lua.win.previewPos, integer (preview size in %)
   local preview_pos, preview_size = (function()
-    -- @return preview_pos:  preview position {left|right|up|down}
-    -- @return preview_size: preview size in %
-    local preview_str
+    local preview_str ---@type string
     if self._preview_pos_force then
       -- Get the correct layout string and size when set from `:toggle_preview_cw`
       preview_str = (self._preview_pos_force == "up" or self._preview_pos_force == "down")
           and winopts.preview.vertical or winopts.preview.horizontal
+      assert(preview_str)
       self._preview_pos = self._preview_pos_force
     else
       preview_str = self:fzf_preview_layout_str()
@@ -385,8 +389,9 @@ function FzfWin:fzf_preview_layout_str()
   return is_hsplit and self._o.winopts.preview.horizontal or self._o.winopts.preview.vertical
 end
 
----@param winopts table
----@param metadata { type: "nvim"|"fzf", name: string, nwin: integer }
+---@alias fzf-lua.win.borderMetadata { type: "nvim"|"fzf", name: "fzf"|"prev", nwin: integer, layout: fzf-lua.win.previewPos }
+---@param winopts fzf-lua.config.Winopts|{}
+---@param metadata fzf-lua.win.borderMetadata
 ---@return table winopts, number? scrolloff
 function FzfWin:normalize_border(winopts, metadata)
   local border = winopts.border
@@ -472,6 +477,8 @@ function FzfWin:normalize_border(winopts, metadata)
   return winopts, scrolloff
 end
 
+---@param fullscreen boolean?
+---@return fzf-lua.config.Winopts|{}
 function FzfWin:normalize_winopts(fullscreen)
   -- make a local copy of winopts so we don't pollute the user's options
   local winopts = utils.tbl_deep_clone(self._o.winopts) or {}

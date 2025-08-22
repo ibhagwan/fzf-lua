@@ -437,6 +437,9 @@ M.fzf = function(contents, opts)
 end
 
 -- Best approximation of neovim border types to fzf border types
+---@param winopts fzf-lua.config.Winopts|{}
+---@param metadata fzf-lua.win.borderMetadata
+---@return string|table
 local function translate_border(winopts, metadata)
   local neovim2fzf = {
     none       = "noborder",
