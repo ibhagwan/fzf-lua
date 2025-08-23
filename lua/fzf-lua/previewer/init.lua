@@ -27,6 +27,9 @@ Previewer.builtin.keymaps = function() return require "fzf-lua.previewer.builtin
 Previewer.builtin.nvim_options = function() return require "fzf-lua.previewer.builtin".nvim_options end
 Previewer.builtin.codeaction = function() return require "fzf-lua.previewer.codeaction".builtin end
 
+Previewer.swiper = {}
+Previewer.swiper.default = function() return require "fzf-lua.previewer.swiper".default end
+
 
 ---Instantiate previewer from spec
 ---@param spec table

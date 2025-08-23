@@ -175,6 +175,13 @@ function M.setup(opts, do_not_reset_defaults)
       vim.deprecate(oldk, newk, "Jan 2026", "FzfLua")
     end
   end
+  -- backward compat, merge lsp.symbols into lsp.{document|workspace}_synbols
+  if opts.lsp and opts.lsp.symbols then
+    opts.lsp.document_symbols = vim.tbl_deep_extend("keep",
+      opts.lsp.document_symbols or {}, opts.lsp.symbols)
+    opts.lsp.workspace_symbols = vim.tbl_deep_extend("keep",
+      opts.lsp.workspace_symbols or {}, opts.lsp.symbols)
+  end
   -- set custom &nbsp if caller requested
   if opts.nbsp then utils.nbsp = opts.nbsp end
   -- store the setup options
