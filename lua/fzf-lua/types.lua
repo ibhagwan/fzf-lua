@@ -242,7 +242,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field zindex integer
 ---@field relative string
 ---@field hide boolean
----@field split string|function
+---@field split string|function|false
 ---@field backdrop number|boolean
 ---@field fullscreen boolean
 ---@field title any
