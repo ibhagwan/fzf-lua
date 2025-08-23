@@ -217,17 +217,29 @@ function FzfWin:normalize_preview_layout()
   return self._preview_pos, self._preview_size
 end
 
----@param winopts fzf-lua.config.Winopts|{}?
-function FzfWin:generate_layout(winopts)
-  winopts = winopts or self.winopts
+---@return integer, { pos: fzf-lua.win.previewPos, size: integer }?
+function FzfWin:normalize_layout()
   -- when to use full fzf layout
   -- 1. no previewer (always)
   -- 2. builtin previewer (hidden and not "extend")
   -- 3. fzf previewer (not "extend" or not hidden)
   if not self:has_previewer()
       or (self.previewer_is_builtin and (self.preview_hidden and self.toggle_behavior ~= "extend"))
-      or (not self.previewer_is_builtin and (self.toggle_behavior ~= "extend" or not self.preview_hidden))
-  then
+      or (not self.previewer_is_builtin and (self.toggle_behavior ~= "extend" or not self.preview_hidden)) then
+    return 1, nil
+  end
+  -- has previewer, but when nwin=1, reduce fzf main layout as if the previewer is displayed
+  local nwin = self.preview_hidden and self.toggle_behavior == "extend" and 1 or 2
+  local ppos, psize = self:normalize_preview_layout()
+  return nwin, { pos = ppos, size = psize }
+end
+
+---@param winopts fzf-lua.config.Winopts|{}?
+function FzfWin:generate_layout(winopts)
+  winopts = winopts or self.winopts
+
+  local nwin, preview = self:normalize_layout()
+  if not preview then
     self.layout = {
       fzf = self:normalize_border({
         row = self.winopts.row,
@@ -266,7 +278,7 @@ function FzfWin:generate_layout(winopts)
   local pwopts
   local row, col = winopts.row, winopts.col
   local height, width = winopts.height, winopts.width
-  local preview_pos, preview_size = self:normalize_preview_layout()
+  local preview_pos, preview_size = preview.pos, preview.size
   if winopts.split then
     -- Custom "split"
     pwopts = { relative = "win", anchor = "NW", row = 0, col = 0 }
@@ -314,7 +326,6 @@ function FzfWin:generate_layout(winopts)
       end
     end
   end
-  local nwin = self.preview_hidden and self.toggle_behavior == "extend" and 1 or 2
   self.layout = {
     fzf = self:normalize_border(
       vim.tbl_extend("force", { row = row, col = col, height = height, width = width }, {
