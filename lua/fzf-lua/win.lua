@@ -200,6 +200,23 @@ function FzfWin:has_previewer()
   return self._o.preview or self._previewer and true or false
 end
 
+---@return fzf-lua.win.previewPos, integer (preview size in %)
+function FzfWin:normalize_preview_layout()
+  local preview_str ---@type string
+  if self._preview_pos_force then
+    -- Get the correct layout string and size when set from `:toggle_preview_cw`
+    preview_str = (self._preview_pos_force == "up" or self._preview_pos_force == "down")
+        and self.winopts.preview.vertical or self.winopts.preview.horizontal
+    assert(preview_str)
+    self._preview_pos = self._preview_pos_force
+  else
+    preview_str = self:fzf_preview_layout_str()
+    self._preview_pos = preview_str:match("[^:]+") or "right"
+  end
+  self._preview_size = tonumber(preview_str:match(":(%d+)%%")) or 50
+  return self._preview_pos, self._preview_size
+end
+
 ---@param winopts fzf-lua.config.Winopts|{}?
 function FzfWin:generate_layout(winopts)
   winopts = winopts or self.winopts
@@ -249,22 +266,7 @@ function FzfWin:generate_layout(winopts)
   local pwopts
   local row, col = winopts.row, winopts.col
   local height, width = winopts.height, winopts.width
-  ---@type fzf-lua.win.previewPos, integer (preview size in %)
-  local preview_pos, preview_size = (function()
-    local preview_str ---@type string
-    if self._preview_pos_force then
-      -- Get the correct layout string and size when set from `:toggle_preview_cw`
-      preview_str = (self._preview_pos_force == "up" or self._preview_pos_force == "down")
-          and winopts.preview.vertical or winopts.preview.horizontal
-      assert(preview_str)
-      self._preview_pos = self._preview_pos_force
-    else
-      preview_str = self:fzf_preview_layout_str()
-      self._preview_pos = preview_str:match("[^:]+") or "right"
-    end
-    self._preview_size = tonumber(preview_str:match(":(%d+)%%")) or 50
-    return self._preview_pos, self._preview_size
-  end)()
+  local preview_pos, preview_size = self:normalize_preview_layout()
   if winopts.split then
     -- Custom "split"
     pwopts = { relative = "win", anchor = "NW", row = 0, col = 0 }
