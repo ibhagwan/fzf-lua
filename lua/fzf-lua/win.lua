@@ -375,10 +375,10 @@ function FzfWin:columns(no_fullscreen)
   -- When called from `core.preview_window` we need to get the no-fullscreen columns
   -- in order to get an accurate alternate layout trigger that will also be consistent
   -- when starting with `winopts.fullscreen == true`
-  local winopts = no_fullscreen and self:normalize_winopts(false) or self.winopts
+  local winopts = no_fullscreen and self._o.winopts or self.winopts
   return self._o._is_fzf_tmux and self:tmux_columns()
       or winopts.split and vim.api.nvim_win_get_width(self.fzf_winid or 0)
-      or winopts.width
+      or self:normalize_size(winopts.width, vim.o.columns - 2)
 end
 
 function FzfWin:fzf_preview_layout_str()
@@ -477,6 +477,14 @@ function FzfWin:normalize_border(winopts, metadata)
   return winopts, scrolloff
 end
 
+---@param size number
+---@param max integer
+---@return integer
+function FzfWin:normalize_size(size, max)
+  size = math.min(size, max)
+  return size <= 1 and math.floor(max * size) or size
+end
+
 ---@param fullscreen boolean?
 ---@return fzf-lua.config.Winopts|{}
 function FzfWin:normalize_winopts(fullscreen)
@@ -514,14 +522,8 @@ function FzfWin:normalize_winopts(fullscreen)
   local ch = winopts.zindex >= 200 and 0 or vim.o.cmdheight
   local max_width = vim.o.columns - 2
   local max_height = vim.o.lines - ch - 2
-  winopts.width = math.min(max_width, winopts.width)
-  winopts.height = math.min(max_height, winopts.height)
-  if winopts.height <= 1 then
-    winopts.height = math.floor(max_height * winopts.height)
-  end
-  if winopts.width <= 1 then
-    winopts.width = math.floor(max_width * winopts.width)
-  end
+  winopts.width = self:normalize_size(winopts.width, max_width)
+  winopts.height = self:normalize_size(winopts.height, max_height)
   if winopts.relative == "cursor" then
     -- convert cursor relative to absolute ('editor'),
     -- this solves the preview positioning seamlessly
