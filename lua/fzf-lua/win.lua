@@ -513,10 +513,11 @@ function FzfWin:normalize_winopts()
   }
 
   local nwin, preview = self:normalize_layout()
-  local layout = preview and preview.pos or nil
+  local layout = (preview or {}).pos
+  if preview and self.previewer_is_builtin then nwin = 2 end
   local _, h, w = self:normalize_border(self._o.winopts.border,
     { type = "nvim", name = "fzf", layout = layout, nwin = nwin, opts = self._o })
-  if preview and (nwin == 2 or self.previewer_is_builtin) then
+  if preview and self.previewer_is_builtin then
     local _, ph, pw = self:normalize_border(self._o.winopts.preview.border,
       { type = "nvim", name = "prev", layout = layout, nwin = nwin, opts = self._o })
     if preview.pos == "up" or preview.pos == "down" then
