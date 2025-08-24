@@ -372,15 +372,14 @@ M.fzf = function(contents, opts)
       -- Only enable flex layout native rotate if native previewer size > 0
       and not (opts.fzf_opts["--preview-window"] or ""):match(":0")
   then
-    table.insert(opts._fzf_cli_args, "--bind="
-      .. libuv.shellescape("resize:+transform:" .. shell.stringify_data(function(args)
-        -- Only set the layout if preview isn't hidden
-        if not tonumber(args[1]) then return end
-        -- NOTE: do not use local ref `fzf_win` as it my change on resume (#2255)
-        local winobj = utils.fzf_winobj()
-        if not winobj then return end
-        return string.format("change-preview-window(%s)", winobj:fzf_preview_layout_str())
-      end, opts, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")))
+    win.on_SIGWINCH(opts, "any", function(args)
+      -- Only set the layout if preview isn't hidden
+      if not tonumber(args[1]) then return end
+      -- NOTE: do not use local ref `fzf_win` as it my change on resume (#2255)
+      local winobj = utils.fzf_winobj()
+      if not winobj then return end
+      return string.format("change-preview-window(%s)", winobj:fzf_preview_layout_str())
+    end, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")
   end
 
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),

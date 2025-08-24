@@ -157,6 +157,9 @@ function FzfWin:setup_keybinds()
   -- pseudo fzf preview window or when using native and treesitter is enabled
   -- TODO: some unexpected behavior when user bind toggle-preview in FZF_DEFAULT_OPTS/FZF_DEFAULT_FILE_OPTS
   if self.winopts.split or not self.previewer_is_builtin then
+    self.on_SIGWINCH(self._o, "toggle-preview", function()
+      return "toggle-preview"
+    end)
     -- sync toggle-preview
     -- 1. always run the toggle-preview(), and self._fzf_toggle_prev_bind
     for k, v in pairs(self.keymap.builtin) do
@@ -170,9 +173,7 @@ function FzfWin:setup_keybinds()
         self.keymap.builtin[self._fzf_toggle_prev_bind] = v
       end
     end
-    if not self._fzf_toggle_prev_bind and not self._o.silent then
-      utils.warn("missing 'toggle-preview' in opts.keymap.fzf or opts.keymap.builtin")
-    end
+    self._fzf_toggle_prev_bind = self._fzf_toggle_prev_bind or true
   end
   if self.previewer_is_builtin then
     -- These maps are only valid for the builtin previewer
@@ -1309,24 +1310,56 @@ function FzfWin:was_hidden()
       and not vim.api.nvim_buf_is_valid(self._hidden_fzf_bufnr)
 end
 
-function FzfWin:SIGWINCH()
+---SIGWINCH/on_SIGWINCH is nop if fzf < v0.46
+---@param opts table
+---@param scope string "any" means on any sigwinch
+---@param cb function
+---@param field_index? string
+---@return boolean?
+function FzfWin.on_SIGWINCH(opts, scope, cb, field_index)
+  if not utils.has(opts, "fzf", { 0, 46 }) then return end
+  opts.__sigwinch_handlers = opts.__sigwinch_handlers or {}
+  local s = opts.__sigwinch_handlers
+  if type(scope) == "string" then
+    -- if s[scope] then error("duplicated handler: " .. tostring(scope)) end
+    s[scope] = cb
+  end
+  table.insert(opts._fzf_cli_args, "--bind="
+    .. libuv.shellescape("resize:+transform:" .. FzfLua.shell.stringify_data(function(args)
+      if scope == "any" then return cb(args) end
+      if type(opts.__sigwinch_scope) == "table" then
+        for i, v in ipairs(opts.__sigwinch_scope) do
+          if v == scope then
+            table.remove(opts.__sigwinch_scope, i)
+            return cb(args)
+          end
+        end
+      end
+    end, opts, field_index)))
+  return true
+end
+
+---@param scope string[]?
+---@return boolean?
+function FzfWin:SIGWINCH(scope)
   if not utils.has(self._o, "fzf", { 0, 46 }) then return end
   local bufnr = self._hidden_fzf_bufnr or self.fzf_bufnr
   if not tonumber(bufnr) or not vim.api.nvim_buf_is_valid(bufnr) then return end
   local pid = fn.jobpid(vim.bo[bufnr].channel)
   if tonumber(pid) > 0 then
+    if scope then self._o.__sigwinch_scope = scope end
     vim.tbl_map(function(_pid) libuv.process_kill(_pid, 28) end, api.nvim_get_proc_children(pid))
   end
+  return true
 end
 
 function FzfWin.unhide()
   local self = _self
   if not self or not self:hidden() then return end
   self._o.__CTX = utils.CTX({ includeBuflist = true })
-  self._o._unhide_called = true
   -- Send SIGWINCH to to trigger resize in the fzf process
   -- We will use the trigger to reload necessary buffer lists
-  self:SIGWINCH()
+  self:SIGWINCH({ "win.unhide" })
   vim.bo[self._hidden_fzf_bufnr].bufhidden = "wipe"
   self.fzf_bufnr = self._hidden_fzf_bufnr
   self._hidden_fzf_bufnr = nil
@@ -1507,12 +1540,22 @@ function FzfWin.toggle_preview()
   local self = _self
   self.preview_hidden = not self.preview_hidden
   if self._fzf_toggle_prev_bind then
-    -- Toggle the empty preview window (under the neovim preview buffer)
-    utils.feed_keys_termcodes(self._fzf_toggle_prev_bind)
-    -- TODO: why this don't work
+    -- 1. Toggle the empty preview window (under the neovim preview buffer)
+    -- 2. Trigger resize to cange the preview layout if needed (toggle -> resize -> toggle)
+    local feedkey
+    if self.winopts.split and utils.__IS_WINDOWS then
+      self:SIGWINCH({})
+      feedkey = true
+    elseif not self:SIGWINCH({ "toggle-preview" }) then
+      feedkey = true
+    end
+    if feedkey and type(self._fzf_toggle_prev_bind) == "string" then
+      utils.feed_keys_termcodes(self._fzf_toggle_prev_bind)
+    elseif feedkey and not self._o.silent then
+      utils.warn("missing 'toggle-preview' in opts.keymap.fzf or opts.keymap.builtin")
+    end
+    -- TODO: this don't work with <a-x> or <fxx> (wrong keycode)
     -- vim.api.nvim_chan_send(vim.bo.channel, vim.keycode(self._fzf_toggle_prev_bind))
-    -- Trigger resize to cange the preview layout if needed
-    self:SIGWINCH()
   end
   if self.preview_hidden then
     if self:validate_preview() then self:close_preview(true) end
