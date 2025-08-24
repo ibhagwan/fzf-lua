@@ -22,6 +22,7 @@ local T = helpers.new_set_with_child(child, {
       child.o.shell = "/bin/sh"
       child.o.termguicolors = true
       child.o.background = "dark"
+      child.o.statusline = "fzf://"
       exec_lua([[M = { devicons = require("fzf-lua.devicons") }]])
     end,
   },
@@ -80,6 +81,7 @@ T["headless"]["file_icons"]["server"] = new_set({ parametrize = { { "devicons" }
     eq(#fzf_lua_server > 0, true)
     local new_child = helpers.new_child_neovim()
     new_child.start()
+    new_child.o.statusline = "fzf://"
     exec_term(new_child,
       { "./scripts/headless_fd.sh", "-x", "rg --files --sort=path", "-f", icons },
       { env = { ["FZF_LUA_SERVER"] = fzf_lua_server } })
