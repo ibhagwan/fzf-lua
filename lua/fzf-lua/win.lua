@@ -686,6 +686,9 @@ function FzfWin:new(o)
     _self:update_main_title(o.winopts.title)
     -- refersh treesitter settings as new picker might have it disabled
     _self._o.winopts.treesitter = o.winopts.treesitter
+    _self._o._fzf_cli_args = o._fzf_cli_args
+    o.winopts.preview.hidden = _self.preview_hidden
+    _self:attach_previewer(nil)
     return _self
   elseif _self:hidden() then
     -- Clear the hidden buffers
@@ -762,14 +765,16 @@ function FzfWin:set_winopts(win, opts, ignore_events)
   end, ei)
 end
 
----@param previewer fzf-lua.previewer.Builtin
+---@param previewer fzf-lua.previewer.Builtin? nil to "detach" previewer
 function FzfWin:attach_previewer(previewer)
-  previewer.win = self
-  previewer.delay = self.winopts.preview.delay or 100
-  previewer.title = self.winopts.preview.title
-  previewer.title_pos = self.winopts.preview.title_pos
-  previewer.winopts = self.winopts.preview.winopts
-  previewer.winblend = previewer.winblend or previewer.winopts.winblend or vim.o.winblend
+  if previewer then
+    previewer.win = self
+    previewer.delay = self.winopts.preview.delay or 100
+    previewer.title = self.winopts.preview.title
+    previewer.title_pos = self.winopts.preview.title_pos
+    previewer.winopts = self.winopts.preview.winopts
+    previewer.winblend = previewer.winblend or previewer.winopts.winblend or vim.o.winblend
+  end
   -- clear the previous previewer if existed
   if self._previewer and self._previewer.close then
     -- if we press ctrl-g too quickly 'previewer.preview_bufnr' will be nil
@@ -783,7 +788,7 @@ function FzfWin:attach_previewer(previewer)
   end
   self._previewer = previewer
   self.previewer_is_builtin = previewer and previewer.type == "builtin"
-  self.toggle_behavior = previewer.toggle_behavior or self.toggle_behavior
+  self.toggle_behavior = previewer and previewer.toggle_behavior or self.toggle_behavior
   self:normalize_winopts()
 end
 
@@ -1080,6 +1085,8 @@ function FzfWin:create()
         type(self.winopts.on_create) == "function" then
       self.winopts.on_create({ winid = self.fzf_winid, bufnr = self.fzf_bufnr })
     end
+    self.toggle_preview()
+    self.toggle_preview()
     -- not sure why but when using a split and reusing the window,
     -- fzf will not use all the available width until 'redraw' is
     -- called resulting in misaligned native and builtin previews
@@ -1338,8 +1345,8 @@ function FzfWin:SIGWINCH(scope)
   if not utils.has(self._o, "fzf", { 0, 46 }) then return end
   local bufnr = self._hidden_fzf_bufnr or self.fzf_bufnr
   if not tonumber(bufnr) or not vim.api.nvim_buf_is_valid(bufnr) then return end
-  local pid = fn.jobpid(vim.bo[bufnr].channel)
-  if tonumber(pid) > 0 then
+  local ok, pid = pcall(fn.jobpid, vim.bo[bufnr].channel)
+  if ok and tonumber(pid) > 0 then
     if scope then self._o.__sigwinch_scope = scope end
     vim.tbl_map(function(_pid) libuv.process_kill(_pid, 28) end, api.nvim_get_proc_children(pid))
   end
