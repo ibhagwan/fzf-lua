@@ -1774,17 +1774,19 @@ function FzfWin.toggle_help()
     end
   end
 
+  local zindex = self.winopts.zindex + 2
+  local ch = zindex >= 200 and 0 or vim.o.cmdheight
   local winopts = {
     relative = "editor",
     style = "minimal",
     width = vim.o.columns,
     height = height,
-    row = vim.o.lines - height - vim.o.cmdheight - 2,
+    row = vim.o.lines - height - ch - 1,
     col = 1,
     -- top border only
-    border = { " ", "─", " ", " ", " ", " ", " ", " " },
+    border = { "─", "─", "─", " ", " ", " ", " ", " " },
     -- topmost popup (+2 for float border empty/full)
-    zindex = self.winopts.zindex + 2,
+    zindex = zindex,
   }
 
   -- "border chars mustbe one cell" (#874)
