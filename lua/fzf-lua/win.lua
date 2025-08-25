@@ -692,7 +692,12 @@ function FzfWin:new(o)
     -- Update main win title, required for toggle action flags
     _self:update_main_title(o.winopts.title)
     -- refersh treesitter settings as new picker might have it disabled
-    _self._o.winopts.treesitter = o.winopts.treesitter
+    -- detach previewer and refresh signal handler
+    -- e.g. when switch from fzf previewer to builtin previewer
+    -- TODO: ci fail on windows?
+    _self._o = o
+    o.winopts.preview.hidden = _self.preview_hidden
+    _self:attach_previewer(nil)
     return _self
   elseif _self:hidden() then
     -- Clear the hidden buffers
@@ -769,14 +774,16 @@ function FzfWin:set_winopts(win, opts, ignore_events)
   end, ei)
 end
 
----@param previewer fzf-lua.previewer.Builtin
+---@param previewer fzf-lua.previewer.Builtin? nil to "detach" previewer
 function FzfWin:attach_previewer(previewer)
-  previewer.win = self
-  previewer.delay = self.winopts.preview.delay or 100
-  previewer.title = self.winopts.preview.title
-  previewer.title_pos = self.winopts.preview.title_pos
-  previewer.winopts = self.winopts.preview.winopts
-  previewer.winblend = previewer.winblend or previewer.winopts.winblend or vim.o.winblend
+  if previewer then
+    previewer.win = self
+    previewer.delay = self.winopts.preview.delay or 100
+    previewer.title = self.winopts.preview.title
+    previewer.title_pos = self.winopts.preview.title_pos
+    previewer.winopts = self.winopts.preview.winopts
+    previewer.winblend = previewer.winblend or previewer.winopts.winblend or vim.o.winblend
+  end
   -- clear the previous previewer if existed
   if self._previewer and self._previewer.close then
     -- if we press ctrl-g too quickly 'previewer.preview_bufnr' will be nil
@@ -790,7 +797,7 @@ function FzfWin:attach_previewer(previewer)
   end
   self._previewer = previewer
   self.previewer_is_builtin = previewer and previewer.type == "builtin"
-  self.toggle_behavior = previewer.toggle_behavior or self.toggle_behavior
+  self.toggle_behavior = previewer and previewer.toggle_behavior or self.toggle_behavior
   self:normalize_winopts()
 end
 
@@ -1087,6 +1094,9 @@ function FzfWin:create()
         type(self.winopts.on_create) == "function" then
       self.winopts.on_create({ winid = self.fzf_winid, bufnr = self.fzf_bufnr })
     end
+    -- redraw all window (e.g. when switch from fzf previewer to builtin previewer)
+    self:redraw_main()
+    self:redraw_preview()
     -- not sure why but when using a split and reusing the window,
     -- fzf will not use all the available width until 'redraw' is
     -- called resulting in misaligned native and builtin previews
@@ -1312,7 +1322,7 @@ end
 
 ---SIGWINCH/on_SIGWINCH is nop if fzf < v0.46
 ---@param opts table
----@param scope string "any" means on any sigwinch
+---@param scope string? nil means on any sigwinch
 ---@param cb function
 ---@param field_index? string
 ---@return boolean?
@@ -1321,33 +1331,31 @@ function FzfWin.on_SIGWINCH(opts, scope, cb, field_index)
   opts.__sigwinch_handlers = opts.__sigwinch_handlers or {}
   local s = opts.__sigwinch_handlers
   if type(scope) == "string" then
-    -- if s[scope] then error("duplicated handler: " .. tostring(scope)) end
+    if s[scope] then error("duplicated handler: " .. tostring(scope)) end
     s[scope] = cb
   end
   table.insert(opts._fzf_cli_args, "--bind="
     .. libuv.shellescape("resize:+transform:" .. FzfLua.shell.stringify_data(function(args)
-      if scope == "any" then return cb(args) end
-      if type(opts.__sigwinch_scope) == "table" then
-        for i, v in ipairs(opts.__sigwinch_scope) do
-          if v == scope then
-            table.remove(opts.__sigwinch_scope, i)
-            return cb(args)
-          end
-        end
+      if scope == nil then return cb(args) end
+      if (opts.__sigwinches or {})[scope] then
+        opts.__sigwinches[scope] = nil
+        if not next(opts.__sigwinches) then opts.__sigwinches = nil end
+        return cb(args)
       end
     end, opts, field_index)))
   return true
 end
 
----@param scope string[]?
+---@param scopes string[]?
 ---@return boolean?
-function FzfWin:SIGWINCH(scope)
-  if not utils.has(self._o, "fzf", { 0, 46 }) then return end
+function FzfWin:SIGWINCH(scopes)
+  -- avoid racing when multiple SIGWINCH trigger at the same time
+  if not utils.has(self._o, "fzf", { 0, 46 }) or self._o.__sigwinches then return end
   local bufnr = self._hidden_fzf_bufnr or self.fzf_bufnr
   if not tonumber(bufnr) or not vim.api.nvim_buf_is_valid(bufnr) then return end
-  local pid = fn.jobpid(vim.bo[bufnr].channel)
-  if tonumber(pid) > 0 then
-    if scope then self._o.__sigwinch_scope = scope end
+  local ok, pid = pcall(fn.jobpid, vim.bo[bufnr].channel)
+  if ok and tonumber(pid) > 0 then
+    self._o.__sigwinches = utils.list_to_map(scopes or {})
     vim.tbl_map(function(_pid) libuv.process_kill(_pid, 28) end, api.nvim_get_proc_children(pid))
   end
   return true
