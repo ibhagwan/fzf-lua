@@ -486,6 +486,17 @@ function M.tbl_get(T, ...)
   return M.map_get(T, keys)
 end
 
+---@generic T
+---@param list T[]
+---@return { [T]: boolean }
+function M.list_to_map(list)
+  local map = {}
+  for _, v in ipairs(list) do
+    map[v] = true
+  end
+  return map
+end
+
 -- Get map value from string key
 -- e.g. `map_get(m, "key.sub1.sub2")`
 --      `map_get(m, { "key", "sub1", "sub2" })`
