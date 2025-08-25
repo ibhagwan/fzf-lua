@@ -133,7 +133,10 @@ M.new_child_neovim = function()
       require("fzf-lua").setup(vim.tbl_deep_extend("keep", ..., {
         %s
         winopts = {
-          on_create = function() _G._fzf_lua_on_create = true end,
+          on_create = function(e)
+            _G._fzf_lua_on_create = true
+            vim.wo[e.winid].statusline='fzf://'
+          end,
           on_close = function()
             _G._fzf_lua_on_create = nil
             _G._fzf_postprocess_called = nil

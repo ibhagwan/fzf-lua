@@ -21,13 +21,6 @@ M.metatable = function(opts)
 
   table.sort(methods, function(a, b) return a < b end)
 
-  opts.preview = function(args)
-    local options_md = require("fzf-lua.cmd").options_md()
-    return type(options_md) == "table" and options_md[args[1]:lower()] or ""
-  end
-
-  opts.fzf_opts["--preview-window"] = "hidden:down:10"
-
   -- builtin is excluded from global resume
   -- as the behavior might confuse users (#267)
   opts.no_resume = true

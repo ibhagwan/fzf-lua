@@ -375,6 +375,9 @@ end
 -- deepcopy can fail with: "Cannot deepcopy object of type userdata" (#353)
 -- this can happen when copying items/on_choice params of vim.ui.select
 -- run in a pcall and fallback to our poor man's clone
+---@generic T: table
+---@param t T?
+---@return T?
 function M.deepcopy(t)
   local ok, res = pcall(vim.deepcopy, t)
   if ok then
@@ -384,6 +387,9 @@ function M.deepcopy(t)
   end
 end
 
+---@generic T: table
+---@param t T?
+---@return T?
 function M.tbl_deep_clone(t)
   if not t then return end
   local clone = {}

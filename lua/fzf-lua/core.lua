@@ -350,6 +350,8 @@ M.fzf = function(contents, opts)
     if opts.preview_offset == nil and type(previewer._preview_offset) == "function" then
       opts.preview_offset = previewer:_preview_offset()
     end
+  elseif opts.preview and type(opts.preview) ~= "string" then
+    opts.preview = require("fzf-lua.previewer").normalize_spec(opts.preview, opts)
   elseif not opts.preview and not opts.fzf_opts["--preview"] then
     -- no preview available, override in case $FZF_DEFAULT_OPTS
     -- contains a preview which will most likely fail
@@ -370,15 +372,14 @@ M.fzf = function(contents, opts)
       -- Only enable flex layout native rotate if native previewer size > 0
       and not (opts.fzf_opts["--preview-window"] or ""):match(":0")
   then
-    table.insert(opts._fzf_cli_args, "--bind="
-      .. libuv.shellescape("resize:+transform:" .. shell.stringify_data(function(args)
-        -- Only set the layout if preview isn't hidden
-        if not tonumber(args[1]) then return end
-        -- NOTE: do not use local ref `fzf_win` as it my change on resume (#2255)
-        local winobj = utils.fzf_winobj()
-        if not winobj then return end
-        return string.format("change-preview-window(%s)", winobj:fzf_preview_layout_str())
-      end, opts, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")))
+    win.on_SIGWINCH(opts, "any", function(args)
+      -- Only set the layout if preview isn't hidden
+      if not tonumber(args[1]) then return end
+      -- NOTE: do not use local ref `fzf_win` as it my change on resume (#2255)
+      local winobj = utils.fzf_winobj()
+      if not winobj then return end
+      return string.format("change-preview-window(%s)", winobj:fzf_preview_layout_str())
+    end, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")
   end
 
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
@@ -435,6 +436,9 @@ M.fzf = function(contents, opts)
 end
 
 -- Best approximation of neovim border types to fzf border types
+---@param winopts fzf-lua.config.Winopts|{}
+---@param metadata fzf-lua.win.borderMetadata
+---@return string|table
 local function translate_border(winopts, metadata)
   local neovim2fzf = {
     none       = "noborder",
@@ -631,29 +635,6 @@ M.build_fzf_cli = function(opts)
   for _, flag in ipairs({ "query", "prompt", "header", "preview" }) do
     if opts[flag] ~= nil then
       opts.fzf_opts["--" .. flag] = opts[flag]
-    end
-  end
-  -- convert preview action functions to strings using our shell wrapper
-  do
-    local preview_cmd
-    local preview_spec = opts.fzf_opts["--preview"]
-    if type(preview_spec) == "function" then
-      preview_cmd = shell.stringify_data(preview_spec, opts, "{}")
-    elseif type(preview_spec) == "table" then
-      preview_spec = vim.tbl_extend("keep", preview_spec, {
-        fn = preview_spec.fn or preview_spec[1],
-        -- by default we use current item only "{}"
-        -- using "{+}" will send multiple selected items
-        field_index = "{}",
-      })
-      if preview_spec.type == "cmd" then
-        preview_cmd = shell.stringify_cmd(preview_spec.fn, opts, preview_spec.field_index)
-      else
-        preview_cmd = shell.stringify_data(preview_spec.fn, opts, preview_spec.field_index)
-      end
-    end
-    if preview_cmd then
-      opts.fzf_opts["--preview"] = preview_cmd
     end
   end
   opts.fzf_opts["--bind"] = M.create_fzf_binds(opts)
