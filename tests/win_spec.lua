@@ -293,4 +293,39 @@ T["win"]["previewer"]["toggle_behavior=extend"] = new_set(
     end
   })
 
+T["win"]["reuse"] = new_set({
+  parametrize = {
+    { {} },
+    { { winopts = { split = "enew", } } },
+    { { winopts = { split = "botright new", preview = { layout = "horizontal" } } } },
+  }
+}, {
+  function(o)
+    -- Ignore terminal command line with process number
+    local screen_opts = { ignore_text = { 24 }, normalize_paths = helpers.IS_WIN() }
+    local opts = {
+      __no_abort = true,
+      __expect_lines = false,
+      __screen_opts = screen_opts,
+      winopts = {
+        toggle_behavior = "extend",
+        preview = { hidden = false, delay = 0 },
+      },
+      previewer = [[require('fzf-lua.test.previewer')]],
+      __after_open = function()
+        if helpers.IS_WIN() then vim.uv.sleep(250) end
+      end,
+    }
+    opts = vim.tbl_extend("force", opts, o)
+    helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], opts)
+    -- change to fzf preview
+    opts.previewer = nil
+    opts.preview = "echo resue windows, change from builtin to fzf preview"
+    opts.__expect_lines = true
+    exec_lua([[_G._fzf_lua_on_create = nil]])
+    exec_lua([[_G._fzf_load_called = nil]])
+    helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], opts)
+  end
+})
+
 return T
