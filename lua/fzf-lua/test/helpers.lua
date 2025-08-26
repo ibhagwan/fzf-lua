@@ -484,7 +484,7 @@ M.FzfLua = setmetatable({}, {
         -- Compare screen lines without "attrs" so we can test on
         -- stable, nightly and windows
         child.expect_screen_lines(screen_opts)
-      else
+      elseif ci_opts.__expect_lines == nil then
         -- Compare screenshots including attrs (highlights, etc)
         child.expect_screenshot(screen_opts)
       end

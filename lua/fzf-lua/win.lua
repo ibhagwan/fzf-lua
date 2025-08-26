@@ -793,7 +793,7 @@ function FzfWin:attach_previewer(previewer)
     if not self._previewer.preview_bufnr and self:validate_preview() then
       self._previewer.preview_bufnr = vim.api.nvim_win_get_buf(self.preview_winid)
     end
-    self._previewer:close()
+    self:close_preview()
   end
   self._previewer = previewer
   self.previewer_is_builtin = previewer and previewer.type == "builtin"
