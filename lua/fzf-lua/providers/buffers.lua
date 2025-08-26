@@ -73,7 +73,8 @@ local getbuf = function(buf)
     flag = (buf == utils.CTX().bufnr and "%")
         or (buf == utils.CTX().alt_bufnr and "#") or " ",
     info = utils.getbufinfo(buf),
-    readonly = vim.bo[buf].readonly
+    readonly = vim.bo[buf].readonly,
+    loaded = vim.api.nvim_buf_is_loaded(buf),
   }
 end
 
@@ -131,7 +132,7 @@ end
 
 
 local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
-  local hidden = buf.info.hidden == 1 and "h" or "a"
+  local hidden = buf.info.hidden == 1 and "h" or buf.loaded and "a" or " "
   local readonly = buf.readonly and "=" or " "
   local changed = buf.info.changed == 1 and "+" or " "
   local flags = hidden .. readonly .. changed
