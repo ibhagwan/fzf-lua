@@ -155,11 +155,11 @@ function FzfWin:setup_keybinds()
   }
   -- find the toggle_preview keybind, to be sent when using a split for the native
   -- pseudo fzf preview window or when using native and treesitter is enabled
-  -- TODO: some unexpected behavior when user bind toggle-preview in FZF_DEFAULT_OPTS/FZF_DEFAULT_FILE_OPTS
   if self.winopts.split or not self.previewer_is_builtin then
-    self.on_SIGWINCH(self._o, "toggle-preview", function()
-      return "toggle-preview"
-    end)
+    -- use signal when user bind toggle-preview in FZF_DEFAULT_OPTS/FZF_DEFAULT_FILE_OPTS
+    if not utils.__IS_WINDOWS then -- not sure why ci fail on windows
+      self.on_SIGWINCH(self._o, "toggle-preview", function() return "toggle-preview" end)
+    end
     -- sync toggle-preview
     -- 1. always run the toggle-preview(), and self._fzf_toggle_prev_bind
     for k, v in pairs(self.keymap.builtin) do
@@ -1331,7 +1331,8 @@ function FzfWin.on_SIGWINCH(opts, scope, cb, field_index)
   opts.__sigwinch_handlers = opts.__sigwinch_handlers or {}
   local s = opts.__sigwinch_handlers
   if type(scope) == "string" then
-    if s[scope] then error("duplicated handler: " .. tostring(scope)) end
+    if s[scope] then return end
+    -- if s[scope] then error("duplicated handler: " .. scope) end
     s[scope] = cb
   end
   table.insert(opts._fzf_cli_args, "--bind="
@@ -1551,7 +1552,7 @@ function FzfWin.toggle_preview()
     -- 1. Toggle the empty preview window (under the neovim preview buffer)
     -- 2. Trigger resize to cange the preview layout if needed (toggle -> resize -> toggle)
     local feedkey
-    if self.winopts.split and utils.__IS_WINDOWS then
+    if utils.__IS_WINDOWS then
       self:SIGWINCH({})
       feedkey = true
     elseif not self:SIGWINCH({ "toggle-preview" }) then
