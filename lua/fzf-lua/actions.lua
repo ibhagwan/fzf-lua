@@ -215,7 +215,9 @@ M.vimcmd_entry = function(_vimcmd, selected, opts)
             then
               vim.bo.bufhidden = "wipe"
             end
-            vim.fn.bufload(bufnr)
+            -- NOTE: nvim_win_set_buf will load the buffer if needed
+            -- calling bufload will mess up `BufReadPost` autocmds
+            -- vim.fn.bufload(bufnr)
             local ok, _ = pcall(vim.api.nvim_win_set_buf, 0, bufnr)
             -- When `:set nohidden && set confirm`, neovim will invoke the save dialog
             -- and confirm with the user when trying to switch from a dirty buffer, if
