@@ -474,9 +474,13 @@ function M.entry_to_file(entry, opts, force_uri)
     s[1] = s[1] .. ":" .. s[2]
     table.remove(s, 2)
   end
-  local file = s[1]
-  local line = s[2]
-  local col  = s[3]
+  local file, line, col
+  if isURI then
+    local loc = M.entry_to_location(stripped, opts)
+    file, line, col = loc.uri, loc.line, loc.col
+  else
+    file, line, col = s[1], s[2], s[3]
+  end
   -- if the filename contains ':' we will have the wrong filename.
   -- test for existence on the longest possible match on the file
   -- system so we can accept files that end with ':', for example:
