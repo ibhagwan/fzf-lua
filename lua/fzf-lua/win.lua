@@ -678,8 +678,8 @@ end
 ---@return fzf-lua.Win
 function FzfWin:new(o)
   if not _self then
-  elseif _self:was_hidden() then
-    TSInjector.clear_cache(_self._hidden_fzf_bufnr)
+  elseif _self:was_hidden() or _self:hidden() then
+    _self:close()
     _self = nil
   elseif not _self:hidden() then
     -- utils.warn("Please close fzf-lua before starting a new instance")
@@ -694,29 +694,16 @@ function FzfWin:new(o)
     -- refersh treesitter settings as new picker might have it disabled
     -- detach previewer and refresh signal handler
     -- e.g. when switch from fzf previewer to builtin previewer
-    -- TODO: ci fail on windows?
     _self._o = o
     o.winopts.preview.hidden = _self.preview_hidden
     _self:attach_previewer(nil)
     return _self
-  elseif _self:hidden() then
-    -- Clear the hidden buffers
-    vim.api.nvim_buf_delete(_self._hidden_fzf_bufnr, { force = true })
-    TSInjector.clear_cache(_self._hidden_fzf_bufnr)
-    _self = nil
   end
   o = o or {}
   self._o = o
-  self = utils.setmetatable__gc({}, {
-    __index = self,
-    __gc = function(s)
-      vim.schedule(function()
-        if s._previewer and s._previewer.clear_cached_buffers then
-          s._previewer:clear_cached_buffers()
-        end
-      end)
-    end
-  })
+  -- gc is unused now, only used to test _self is nullrified
+  self = utils.setmetatable({},
+    { __index = self, __gc = function() _G._fzf_lua_gc_called = true end })
   self.hls = o.hls
   self.actions = o.actions
   self.fullscreen = o.winopts.fullscreen
@@ -1185,7 +1172,9 @@ function FzfWin:close_preview(do_not_clear_cache)
   self.preview_winid = nil
 end
 
-function FzfWin:close(fzf_bufnr, do_not_clear_cache)
+---@param fzf_bufnr? integer
+---@param hide? boolean
+function FzfWin:close(fzf_bufnr, hide)
   -- When a window is reused, (e.g. open any fzf-lua interface, press <C-\-n> and run
   -- ":FzfLua") `FzfWin:set_tmp_buffer()` will call `nvim_buf_delete` on the original
   -- fzf terminal buffer which will terminate the fzf process and trigger the call to
@@ -1198,7 +1187,7 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
   self.closing = true
   self.close_help()
   self:close_backdrop()
-  self:close_preview(do_not_clear_cache)
+  self:close_preview(hide)
   if self.fzf_winid and vim.api.nvim_win_is_valid(self.fzf_winid) then
     -- run in a pcall due to potential errors while closing the window
     -- Vim(lua):E5108: Error executing lua
@@ -1222,8 +1211,11 @@ function FzfWin:close(fzf_bufnr, do_not_clear_cache)
       pcall(vim.api.nvim_win_close, self.fzf_winid, true)
     end
   end
-  if self.fzf_bufnr and vim.api.nvim_buf_is_valid(self.fzf_bufnr) then
-    vim.api.nvim_buf_delete(self.fzf_bufnr, { force = true })
+  if self.fzf_bufnr then
+    pcall(vim.api.nvim_buf_delete, self.fzf_bufnr, { force = true })
+  end
+  if not hide and self._hidden_fzf_bufnr and self._hidden_fzf_bufnr ~= self.fzf_bufnr then
+    pcall(vim.api.nvim_buf_delete, self._hidden_fzf_bufnr, { force = true })
   end
   -- Clear treesitter buffer cache and deregister decoration callbacks
   self:treesitter_detach(self._hidden_fzf_bufnr or self.fzf_bufnr)
@@ -1313,7 +1305,7 @@ function FzfWin:hidden()
 end
 
 -- True after a `:new()` call for a different picker, used in `core.fzf`
--- to avoid post processing an fzf process that was discarded
+-- to avoid post processing an fzf process that was discarded (e.g. kill by :%bw!)
 function FzfWin:was_hidden()
   return tonumber(self._hidden_fzf_bufnr)
       and tonumber(self._hidden_fzf_bufnr) > 0
@@ -1573,10 +1565,6 @@ function FzfWin.toggle_preview()
     self:redraw_main()
     self:redraw_preview()
   end
-  -- close_preview() calls FzfWin:close()
-  -- which will clear out our singleton so
-  -- we must save it again to call redraw
-  _self = self
 end
 
 function FzfWin.toggle_preview_wrap()

@@ -1450,11 +1450,17 @@ function M.create_user_command_callback(provider, arg, altmap)
   end
 end
 
--- setmetatable wrapper, also enable `__gc`
-function M.setmetatable__gc(t, mt)
-  local prox = newproxy(true)
-  getmetatable(prox).__gc = function() mt.__gc(t) end
-  t[prox] = true
+-- setmetatable wrapper support `__gc`
+---@generic T
+---@param t T
+---@param mt table
+---@return T
+function M.setmetatable(t, mt)
+  if mt.__gc then
+    local prox = newproxy(true)
+    getmetatable(prox).__gc = function() mt.__gc(t) end
+    t[prox] = true
+  end
   return setmetatable(t, mt)
 end
 

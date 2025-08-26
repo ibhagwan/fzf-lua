@@ -25,18 +25,7 @@ T["win"] = new_set()
 T["win"]["hide"] = new_set()
 
 T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
-  exec_lua([[
-    _G._gc_called = nil
-    FzfLua.utils.setmetatable__gc = function(t, mt)
-      local prox = newproxy(true)
-      getmetatable(prox).__gc = function()
-        _G._gc_called = true
-        mt.__gc(t)
-      end
-      t[prox] = true
-      return setmetatable(t, mt)
-    end
-  ]])
+  exec_lua([[_G._fzf_lua_gc_called = nil]])
   -- Reduce cache size to 20 so functions get evicted quicker
   -- otherwise opts refs that are stored in the funcs are never
   -- cleared preventing the win object's __gc from being called
@@ -59,7 +48,7 @@ T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
       return child.lua_get([[_G._fzf_load_called]]) == vim.NIL
     end)
     exec_lua([[collectgarbage('collect')]])
-    return child.lua_get([[_G._gc_called]]) == true
+    return child.lua_get([[_G._fzf_lua_gc_called]]) == true
   end)
   -- Restore original cache size
   exec_lua([[FzfLua.shell.cache_set_size(50)]])

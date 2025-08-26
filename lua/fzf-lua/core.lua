@@ -261,12 +261,15 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
     if err and err:match("Vim%(edit%):E325") then
       return
     end
-    utils.error("fn_selected threw an error: " .. debug.traceback(err, 1))
+    utils.error("fn_selected threw an error: " .. debug.traceback(_co, err, 1))
   end)
   -- Do not strt fzf, return the stringified contents and opts onlu
   -- used by the "combine" picker to merge inputs
   if opts._start ~= false then
-    wrapped()
+    local ok, err = pcall(wrapped)
+    if not ok and err then
+      error(debug.traceback(_co, err, 1))
+    end
   end
   return _co, cmd, opts
 end
