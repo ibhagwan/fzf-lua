@@ -618,6 +618,11 @@ function Previewer.buffer_or_file:parse_entry(entry_str)
   if entry.path then
     entry.fs_stat = uv.fs_stat(entry.path)
     entry.tick = vim.tbl_get(entry.fs_stat or {}, "mtime", "nsec")
+    if entry.path:find("^fugitive://") then
+      entry.do_not_cache = true
+      api.nvim_buf_call(entry.bufnr,
+        function() vim.cmd(("do fugitive BufReadCmd %s"):format(entry.path)) end)
+    end
   end
   return entry
 end
