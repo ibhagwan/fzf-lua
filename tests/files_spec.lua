@@ -109,7 +109,7 @@ T["files"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-at
     exec_lua("vim.opt.runtimepath:append(...)", { path })
     exec_lua(([[require("%s").setup({})]]):format(icons == "mini" and "mini.icons" or plugin))
     helpers.FzfLua.files(child, {
-      __expect_lines = not attrs,
+      __expect_lines = not attrs or nil,
       hidden = false,
       previewer = false,
       cwd_prompt = false,
