@@ -35,4 +35,29 @@ T["actions"]["ui don't freeze on error"] = function()
   child.expect_screen_lines(screen_opts)
 end
 
+T["actions"]["reload"] = new_set({
+  parametrize = { { "fzf_live" }, { "fzf_exec" } }
+}, {
+  function(api)
+    local screen_opts = { ignore_text = { 28 } }
+    helpers.FzfLua[api](child, api == "fzf_exec"
+      and [[function(cb) cb(_G._fzf_reload and 'reloaded' or 'unreloaded') cb(nil) end]]
+      or [[function() return { _G._fzf_reload and 'reloaded' or 'unreloaded' } end ]],
+      {
+        __no_abort = true,
+        __expect_lines = false,
+        __after_open = function()
+          if helpers.IS_WIN() then vim.uv.sleep(250) end
+        end,
+        actions = {
+          ["ctrl-a"] = { fn = function() _G._fzf_reload = true end, reload = true },
+        },
+      })
+    child.type_keys("<c-a>")
+    child.wait_until(function() return child.lua_get([[_G._fzf_reload]]) == true end)
+    if helpers.IS_WIN() then vim.uv.sleep(250) end
+    child.expect_screen_lines(screen_opts)
+  end
+})
+
 return T
