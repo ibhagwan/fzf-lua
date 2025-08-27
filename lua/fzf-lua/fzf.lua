@@ -45,7 +45,6 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end
 
   if not opts then opts = {} end
-  local cwd = opts.fzf_cwd or opts.cwd
   local cmd = { opts.fzf_bin or "fzf" }
   local outputtmpname = tempname()
 
@@ -66,11 +65,6 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end)()
 
   utils.tbl_join(cmd, fzf_cli_args or {})
-  if type(opts.fzf_cli_args) == "table" then
-    utils.tbl_join(cmd, opts.fzf_cli_args)
-  elseif type(opts.fzf_cli_args) == "string" then
-    utils.tbl_join(cmd, { opts.fzf_cli_args })
-  end
 
   local function get_EOL(flag)
     for _, f in ipairs(cmd) do
@@ -148,7 +142,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   local nvim_opt_shellslash = utils.__WIN_HAS_SHELLSLASH and vim.o.shellslash
   if nvim_opt_shellslash then vim.o.shellslash = false end
   jobstart(shell_cmd, {
-    cwd = cwd,
+    cwd = opts.cwd,
     pty = true,
     env = {
       ["SHELL"] = shell_cmd[1],
