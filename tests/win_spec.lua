@@ -274,7 +274,7 @@ T["win"]["previewer"]["toggle_behavior=extend"] = new_set(
       if o.preview then
         opts.previewer = nil
         -- "echo {}", windows: "foo", unix: foo
-        opts.__screen_opts.ignore_text = { 15 }
+        table.insert(opts.__screen_opts.ignore_text, 15)
       end
       opts = vim.tbl_extend("force", opts, o)
       helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], opts)
@@ -291,7 +291,7 @@ T["win"]["reuse"] = new_set({
 }, {
   function(o)
     -- Ignore terminal command line with process number
-    local screen_opts = { ignore_text = { 24 }, normalize_paths = helpers.IS_WIN() }
+    local screen_opts = { ignore_text = { 24, 28 }, normalize_paths = helpers.IS_WIN() }
     local opts = {
       __no_abort = true,
       __expect_lines = false,

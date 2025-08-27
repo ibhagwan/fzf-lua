@@ -169,6 +169,7 @@ end
 ---@return boolean
 M.can_transform = function(opts)
   return utils.has(opts, "fzf", { 0, 45 })
+      and opts.fn_reload -- currently only used for "live" picker
       and opts.rg_glob
       and not opts.multiprocess
       and not opts.fn_transform
@@ -177,12 +178,12 @@ M.can_transform = function(opts)
 end
 
 ---@param contents string|fun(query: string[]): string|string[]|function?
----@param opts? table
+---@param opts? fzf-lua.config.Base|{}
 ---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
+  opts.fn_reload = true
   opts = config.normalize_opts(opts or {}, {})
   if not opts then return end
-  opts.fn_reload = contents
   -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
   -- each keypress reloads fzf's input usually based on the typed query
   -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
@@ -201,7 +202,7 @@ M.fzf_live = function(contents, opts)
   if type(contents) == "function" and M.can_transform(opts) then
     local cmd = shell.stringify_data(contents, opts, fzf_field_index)
     M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
-    return M.fzf_wrap(utils.shell_nop(), opts, true)
+    return M.fzf_wrap(cmd, opts, true)
   end
   local cmd0 = contents ---@type string
   local func_contents = type(contents) == "function"
@@ -216,7 +217,7 @@ M.fzf_live = function(contents, opts)
       shell.stringify(func_contents, opts, fzf_field_index)
   cmd = mt and M.expand_query(cmd, fzf_field_index) or cmd
   M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
-  return M.fzf_wrap(utils.shell_nop(), opts, true)
+  return M.fzf_wrap(cmd, opts, true)
 end
 
 M.fzf_resume = function(opts)
@@ -1004,10 +1005,11 @@ M.convert_reload_actions = function(reload_cmd, opts)
       end
       local cmd = shell.stringify_data2(v.fn, opts, v.field_index or "{+}")
       opts.keymap.fzf[k] = {
-        string.format("%s%sexecute-silent(%s)+reload(%s)%s",
+        string.format("%s%sexecute-silent(%s)+%s(%s)%s",
           type(v.prefix) == "string" and v.prefix or "",
           unbind and (unbind .. "+") or "",
           cmd,
+          M.can_transform(opts) and "transform" or "reload", -- contents is not "cmd" but "reload:cmd"
           reload_cmd,
           type(v.postfix) == "string" and v.postfix or ""),
         desc = v.desc or config.get_action_helpstr(v.fn)
