@@ -1316,26 +1316,33 @@ end
 ---@param opts table
 ---@param scope string? nil means on any sigwinch
 ---@param cb function
----@param field_index? string
 ---@return boolean?
-function FzfWin.on_SIGWINCH(opts, scope, cb, field_index)
+function FzfWin.on_SIGWINCH(opts, scope, cb)
   if not utils.has(opts, "fzf", { 0, 46 }) then return end
-  opts.__sigwinch_handlers = opts.__sigwinch_handlers or {}
-  local s = opts.__sigwinch_handlers
+  local first = not opts.__sigwinch_on_scope
+  opts.__sigwinch_on_scope = opts.__sigwinch_on_scope or {}
+  opts.__sigwinch_on_any = opts.__sigwinch_on_any or {}
   if type(scope) == "string" then
+    local s = opts.__sigwinch_on_scope
     if s[scope] then return end
     -- if s[scope] then error("duplicated handler: " .. scope) end
     s[scope] = cb
+  else
+    local s = opts.__sigwinch_on_any
+    s[#s + 1] = cb
   end
+  if not first then return true end
   table.insert(opts._fzf_cli_args, "--bind="
     .. libuv.shellescape("resize:+transform:" .. FzfLua.shell.stringify_data(function(args)
-      if scope == nil then return cb(args) end
-      if (opts.__sigwinches or {})[scope] then
-        opts.__sigwinches[scope] = nil
-        if not next(opts.__sigwinches) then opts.__sigwinches = nil end
-        return cb(args)
-      end
-    end, opts, field_index)))
+      local scopes = opts.__sigwinches or {}
+      local acts = vim.tbl_map(function(k) return opts.__sigwinch_on_scope[k](args) end, scopes)
+      opts.__sigwinches = nil
+      acts = vim.tbl_filter(function(a) return a and #a > 0 end, acts)
+      local anys = vim.tbl_map(function(h) return h(args) end, opts.__sigwinch_on_any)
+      anys = vim.tbl_filter(function(a) return a and #a > 0 end, anys)
+      vim.list_extend(anys, acts)
+      return table.concat(anys, "+")
+    end, opts, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")))
   return true
 end
 
@@ -1348,7 +1355,7 @@ function FzfWin:SIGWINCH(scopes)
   if not tonumber(bufnr) or not vim.api.nvim_buf_is_valid(bufnr) then return end
   local ok, pid = pcall(fn.jobpid, vim.bo[bufnr].channel)
   if ok and tonumber(pid) > 0 then
-    self._o.__sigwinches = utils.list_to_map(scopes or {})
+    self._o.__sigwinches = scopes or {}
     vim.tbl_map(function(_pid) libuv.process_kill(_pid, 28) end, api.nvim_get_proc_children(pid))
   end
   return true

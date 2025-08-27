@@ -382,7 +382,7 @@ M.fzf = function(contents, opts)
       local winobj = utils.fzf_winobj()
       if not winobj then return end
       return string.format("change-preview-window(%s)", winobj:fzf_preview_layout_str())
-    end, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")
+    end)
   end
 
   local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
