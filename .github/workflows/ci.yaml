@@ -25,7 +25,9 @@ jobs:
               brew update && brew install fzf ripgrep fd gnu-getopt
               brew link --force gnu-getopt
           - os: windows-latest
-            install-deps: choco install fzf ripgrep fd
+            install-deps: |
+              scoop bucket add extras
+              scoop install fzf ripgrep fd
           - os: ubuntu-latest
             install-deps: |
               sudo apt-get update && sudo apt-get install -y ripgrep fd-find
@@ -39,6 +41,14 @@ jobs:
         with:
           neovim: true
           version: ${{ matrix.rev }}
+
+      - name: Install Scoop (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+          Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+          Join-Path (Resolve-Path ~).Path "scoop\shims" >> $Env:GITHUB_PATH
 
       - name: Install Dependencies
         shell: bash

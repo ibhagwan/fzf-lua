@@ -2,6 +2,7 @@ local helpers = require("fzf-lua.test.helpers")
 local assert = helpers.assert
 
 local libuv = require("fzf-lua.libuv")
+local eq = assert.are.equal
 
 describe("Testing libuv module", function()
   it("is_escaped (posix)", function()
@@ -142,5 +143,53 @@ describe("Testing libuv module", function()
     assert.are.same(libuv.unescape_fzf([[\\\\foo]], 0.52, true), [[\\\\foo]])
     assert.are.same(libuv.unescape_fzf([[foo\]], 0.52, true), [[foo\]])
     assert.are.same(libuv.unescape_fzf([[foo\\]], 0.52, true), [[foo\\]])
+  end)
+
+  it("field index", function()
+    helpers.SKIP_IF_WIN() -- skip on windows (cannot expand correctly, also segment fault)
+    local fzf = require("fzf-lua.fzf")
+    local selected, exit_code
+    coroutine.wrap(function()
+      selected, exit_code = fzf.raw_fzf(
+        helpers.IS_WIN() and "echo foo&& echo bar" or "echo foo\nbar",
+        {
+          "--sync",
+          "--query f",
+          -- no quote
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:{q}]]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:{}]]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:{+}]]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:{n}]]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:{+n}]]),
+          -- double quote
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:"{q}"]]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:"{}"]]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:"{+}"]]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:"{n}"]]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:"{+n}"]]),
+          -- single quote
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:'{q}']]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:'{}']]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:'{+}']]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:'{n}']]),
+          "--bind start:+transform:" .. libuv.shellescape([[echo print:'{+n}']]),
+          -- force expand on windows?
+          -- "--bind result:+transform:" .. libuv.shellescape([[echo print:{q} {} {+} {n} {+n}]]),
+          -- "--bind result:+select-all",
+          "--bind start:+accept",
+        }, { is_fzf_tmux = false })
+    end)()
+    -- usually new job channel is the last one
+    local chans = vim.api.nvim_list_chans()
+    local job = chans[#chans].id
+    eq({ 0 }, vim.fn.jobwait({ job }))
+    eq(0, exit_code)
+    assert.are.equal(selected, {
+      "f", "foo", "foo", "0", "0",
+      "'f'", "'foo'", "'foo'", "0", "0",
+      "f", "foo", "foo", "0", "0",
+      -- "f foo foo 0 0",
+      "foo",
+    })
   end)
 end)
