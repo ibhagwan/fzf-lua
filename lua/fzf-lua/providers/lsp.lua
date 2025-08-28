@@ -895,7 +895,7 @@ local function wrap_fn(key, fn)
     opts.lsp_handler.capability = opts.lsp_handler.server_capability
 
     -- check_capabilities will print the appropriate warning
-    if not check_capabilities(opts.lsp_handler) then
+    if not check_capabilities(opts.lsp_handler, opts.silent) then
       return
     end
 
