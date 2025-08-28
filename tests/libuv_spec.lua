@@ -147,6 +147,9 @@ describe("Testing libuv module", function()
 
   it("field index", function()
     helpers.SKIP_IF_WIN() -- skip on windows (cannot expand correctly, also segment fault)
+    local curwin = vim.api.nvim_get_current_win()
+    vim.cmd("botright new")
+    local splitwin = vim.api.nvim_get_current_win()
     local fzf = require("fzf-lua.fzf")
     local selected, exit_code
     coroutine.wrap(function()
@@ -191,5 +194,8 @@ describe("Testing libuv module", function()
       -- "f foo foo 0 0",
       "foo",
     })
+    vim.api.nvim_set_current_win(curwin)
+    vim.api.nvim_win_close(splitwin, true)
+    FzfLua.utils.send_ctrl_c()
   end)
 end)
