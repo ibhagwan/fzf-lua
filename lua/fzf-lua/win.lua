@@ -17,6 +17,9 @@ function TSInjector.setup()
 
   TSInjector._setup = true
   TSInjector._ns = TSInjector._ns or vim.api.nvim_create_namespace("fzf-lua.win.highlighter")
+  TSInjector._has_on_range = TSInjector._has_on_range == nil
+      and pcall(vim.api.nvim_set_decoration_provider, TSInjector._ns, { on_range = function() end })
+      or TSInjector._has_on_range
 
   local function wrap_ts_hl_callback(name)
     return function(_, win, buf, ...)
@@ -27,7 +30,9 @@ function TSInjector.setup()
       for _, hl in pairs(TSInjector.cache[buf] or {}) do
         if hl.enabled then
           vim.treesitter.highlighter.active[buf] = hl.highlighter
-          vim.treesitter.highlighter[name](_, win, buf, ...)
+          if vim.treesitter.highlighter[name] then
+            vim.treesitter.highlighter[name](_, win, buf, ...)
+          end
         end
       end
       vim.treesitter.highlighter.active[buf] = nil
@@ -37,6 +42,7 @@ function TSInjector.setup()
   vim.api.nvim_set_decoration_provider(TSInjector._ns, {
     on_win = wrap_ts_hl_callback("_on_win"),
     on_line = wrap_ts_hl_callback("_on_line"),
+    on_range = TSInjector._has_on_range and wrap_ts_hl_callback("_on_range") or nil,
   })
 
   return true
@@ -44,7 +50,8 @@ end
 
 function TSInjector.deregister()
   if not TSInjector._ns then return end
-  vim.api.nvim_set_decoration_provider(TSInjector._ns, { on_win = nil, on_line = nil })
+  vim.api.nvim_set_decoration_provider(TSInjector._ns,
+    { on_win = nil, on_line = nil, on_range = nil })
   TSInjector._setup = nil
 end
 
