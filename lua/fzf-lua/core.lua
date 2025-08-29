@@ -382,7 +382,7 @@ M.fzf = function(contents, opts)
       -- NOTE: do not use local ref `fzf_win` as it my change on resume (#2255)
       local winobj = utils.fzf_winobj()
       if not winobj then return end
-      return string.format("change-preview-window(%s)", winobj:fzf_preview_layout_str())
+      return string.format("change-preview-window(%s)", winobj:normalize_preview_layout().str)
     end)
   end
 

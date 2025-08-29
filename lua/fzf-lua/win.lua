@@ -103,7 +103,7 @@ function TSInjector._attach_lang(buf, lang, regions)
 end
 
 ---@alias fzf-lua.win.previewPos "up"|"down"|"left"|"right"
----@alias fzf-lua.win.previewLayout { pos: fzf-lua.win.previewPos, size: integer }
+---@alias fzf-lua.win.previewLayout { pos: fzf-lua.win.previewPos, size: integer, str: string }
 
 ---@class fzf-lua.Win
 ---@field winopts fzf-lua.config.Winopts|{}
@@ -123,10 +123,7 @@ function FzfWin.__SELF()
 end
 
 local _preview_keymaps = {
-  ["toggle-preview"]         = { module = "win", fnc = "toggle_preview()" },
   ["toggle-preview-wrap"]    = { module = "win", fnc = "toggle_preview_wrap()" },
-  ["toggle-preview-cw"]      = { module = "win", fnc = "toggle_preview_cw(1)" },
-  ["toggle-preview-ccw"]     = { module = "win", fnc = "toggle_preview_cw(-1)" },
   ["toggle-preview-ts-ctx"]  = { module = "win", fnc = "toggle_preview_ts_ctx()" },
   ["preview-ts-ctx-inc"]     = { module = "win", fnc = "preview_ts_ctx_inc_dec(1)" },
   ["preview-ts-ctx-dec"]     = { module = "win", fnc = "preview_ts_ctx_inc_dec(-1)" },
@@ -148,29 +145,61 @@ function FzfWin:setup_keybinds()
   self.keymap.fzf = type(self.keymap.fzf) == "table" and self.keymap.fzf or {}
   self.keymap.builtin = type(self.keymap.builtin) == "table" and self.keymap.builtin or {}
   local keymap_tbl = {
-    ["hide"]              = { module = "win", fnc = "hide()" },
-    ["toggle-help"]       = { module = "win", fnc = "toggle_help()" },
-    ["toggle-fullscreen"] = { module = "win", fnc = "toggle_fullscreen()" },
-    ["toggle-preview"]    = { module = "win", fnc = "toggle_preview()" },
+    ["hide"]               = { module = "win", fnc = "hide()" },
+    ["toggle-help"]        = { module = "win", fnc = "toggle_help()" },
+    ["toggle-fullscreen"]  = { module = "win", fnc = "toggle_fullscreen()" },
+    ["toggle-preview"]     = { module = "win", fnc = "toggle_preview()" },
+    ["toggle-preview-cw"]  = { module = "win", fnc = "toggle_preview_cw(1)" },
+    ["toggle-preview-ccw"] = { module = "win", fnc = "toggle_preview_cw(-1)" },
   }
+  -- use signal when user bind toggle-preview in FZF_DEFAULT_OPTS/FZF_DEFAULT_FILE_OPTS
+  local function on_SIGWINCH_toggle_preview()
+    if utils.__IS_WINDOWS then return end -- not sure why ci fail on windows
+    self.on_SIGWINCH(self._o, "toggle-preview", function(args)
+      -- hide if visible but do not toggle if hidden as we want to
+      -- make sure the right layout is set if user rotated the preview
+      if tonumber(args[1]) then
+        return "toggle-preview"
+      else
+        -- NOTE: always equals?
+        -- self = _self or self -- may differ with `... resume previewer=...`
+        return string.format("change-preview-window(%s)", self:normalize_preview_layout().str)
+      end
+    end)
+  end
+  local function on_SIGWINCH_toggle_preview_cw()
+    if utils.__IS_WINDOWS then return end -- not sure why ci fail on windows
+    self.on_SIGWINCH(self._o, "toggle-preview-cw", function(args)
+      -- only set the layout if preview isn't hidden
+      if not tonumber(args[1]) then return end
+      -- NOTE: always equals?
+      -- self = _self or self -- may differ with `... resume previewer=...`
+      return string.format("change-preview-window(%s)", self:normalize_preview_layout().str)
+    end)
+  end
   -- find the toggle_preview keybind, to be sent when using a split for the native
   -- pseudo fzf preview window or when using native and treesitter is enabled
   if self.winopts.split or not self.previewer_is_builtin then
-    -- use signal when user bind toggle-preview in FZF_DEFAULT_OPTS/FZF_DEFAULT_FILE_OPTS
-    if not utils.__IS_WINDOWS then -- not sure why ci fail on windows
-      self.on_SIGWINCH(self._o, "toggle-preview", function() return "toggle-preview" end)
-    end
     -- sync toggle-preview
     -- 1. always run the toggle-preview(), and self._fzf_toggle_prev_bind
     for k, v in pairs(self.keymap.builtin) do
       if v == "toggle-preview" then
+        on_SIGWINCH_toggle_preview()
         self.keymap.fzf[utils.neovim_bind_to_fzf(k)] = v
+      end
+      if type(v) == "string" and v:match("toggle%-preview%-c?cw") then
+        on_SIGWINCH_toggle_preview_cw()
       end
     end
     for k, v in pairs(self.keymap.fzf) do
       if v == "toggle-preview" then
+        on_SIGWINCH_toggle_preview()
         self._fzf_toggle_prev_bind = utils.fzf_bind_to_neovim(k)
         self.keymap.builtin[self._fzf_toggle_prev_bind] = v
+      end
+      if type(v) == "string" and v:match("toggle%-preview%-c?cw") then
+        on_SIGWINCH_toggle_preview_cw()
+        self.keymap.fzf[k] = nil -- invalid fzf bind, user set bind by mistake
       end
     end
     self._fzf_toggle_prev_bind = self._fzf_toggle_prev_bind or true
@@ -216,7 +245,11 @@ function FzfWin:normalize_preview_layout()
     self._preview_pos = preview_str:match("[^:]+") or "right"
   end
   self._preview_size = tonumber(preview_str:match(":(%d+)%%")) or 50
-  return { pos = self._preview_pos, size = self._preview_size }
+  return {
+    pos = self._preview_pos,
+    size = self._preview_size,
+    str = string.format("%s:%s%%", self._preview_pos, tostring(self._preview_size))
+  }
 end
 
 ---@return integer, fzf-lua.win.previewLayout?
@@ -1584,16 +1617,13 @@ function FzfWin.toggle_preview_wrap()
 end
 
 function FzfWin.toggle_preview_cw(direction)
-  if not _self
-      or _self.winopts.split
-      or not _self:validate_preview() then
-    return
-  end
+  if not _self then return end
   local self = _self
+  local curpos = self:normalize_preview_layout().pos
   local pos = { "up", "right", "down", "left" }
   local idx
   for i = 1, #pos do
-    if pos[i] == self._preview_pos then
+    if pos[i] == curpos then
       idx = i
       break
     end
@@ -1603,6 +1633,9 @@ function FzfWin.toggle_preview_cw(direction)
   if newidx < 1 then newidx = #pos end
   if newidx > #pos then newidx = 1 end
   self._preview_pos_force = pos[newidx]
+  if self.winopts.split or not self.previewer_is_builtin then
+    self:SIGWINCH({ "toggle-preview-cw" })
+  end
   self:redraw()
 end
 
