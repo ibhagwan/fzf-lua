@@ -177,6 +177,7 @@ function FzfWin:setup_keybinds()
       return string.format("change-preview-window(%s)", self:normalize_preview_layout().str)
     end)
   end
+  self._fzf_toggle_prev_bind = nil
   -- find the toggle_preview keybind, to be sent when using a split for the native
   -- pseudo fzf preview window or when using native and treesitter is enabled
   if self.winopts.split or not self.previewer_is_builtin then

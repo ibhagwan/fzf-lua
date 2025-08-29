@@ -33,6 +33,7 @@ T["actions"]["ui don't freeze on error"] = function()
   child.type_keys("ui should not freeze on content error")
   vim.uv.sleep(100 * (not helpers.IS_LINUX() and 5 or 1))
   child.expect_screen_lines(screen_opts)
+  child.v.errmsg = ""
 end
 
 T["actions"]["reload"] = new_set({

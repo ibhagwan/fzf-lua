@@ -197,6 +197,7 @@ T["win"]["previewer"]["split flex layout resize"] = function()
 end
 
 local toggle_preview = function(opts, screen_opts)
+  opts = opts or {}
   child.wait_until(function() return child.api.nvim_get_mode().mode == "t" end)
   exec_lua([[require("fzf-lua.win").toggle_preview()]])
   if helpers.IS_WIN() then
@@ -209,7 +210,7 @@ local toggle_preview = function(opts, screen_opts)
     --   return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) == "foo"
     -- end)
   end
-  child.expect_screen_lines(screen_opts)
+  if screen_opts then child.expect_screen_lines(screen_opts) end
   -- abort and wait for winopts.on_close
   child.type_keys("<c-c>")
   child.wait_until(function()
@@ -311,9 +312,18 @@ T["win"]["reuse"] = new_set({
     opts.previewer = nil
     opts.preview = "echo resue windows, change from builtin to fzf preview"
     opts.__expect_lines = true
+    opts.__no_abort = nil
     exec_lua([[_G._fzf_lua_on_create = nil]])
     exec_lua([[_G._fzf_load_called = nil]])
     helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], opts)
+
+    -- toggle_preview on hide profile
+    reload({ "hide" })
+    exec_lua([[
+      require('fzf-lua').fzf_exec({ 'a', 'b' },{ preview = "echo builtin" })
+      require('fzf-lua').fzf_exec({ 'b', 'c' }, { previewer = require('fzf-lua.test.previewer') })
+    ]])
+    toggle_preview()
   end
 })
 
