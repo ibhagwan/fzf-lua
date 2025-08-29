@@ -378,7 +378,10 @@ M.new_set_with_child = function(child, opts, setup_opts)
         if opts.hooks.post_case then
           opts.hooks.post_case()
         end
-        pcall(child.unload) -- job may already die
+        -- job may already die
+        if pcall(child.unload) then
+          MiniTest.expect.equality("", child.v.errmsg)
+        end
       end,
       post_once = function()
         if opts.hooks.post_once then
