@@ -100,8 +100,8 @@ M.defaults                      = {
       -- Only valid with the 'builtin' previewer
       ["<F3>"]       = "toggle-preview-wrap",
       ["<F4>"]       = "toggle-preview",
-      ["<F5>"]       = "toggle-preview-ccw",
-      ["<F6>"]       = "toggle-preview-cw",
+      ["<F5>"]       = "toggle-preview-cw",
+      ["<F6>"]       = "toggle-preview-behavior",
       ["<F7>"]       = "toggle-preview-ts-ctx",
       ["<F8>"]       = "preview-ts-ctx-dec",
       ["<F9>"]       = "preview-ts-ctx-inc",

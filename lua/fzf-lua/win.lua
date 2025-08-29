@@ -145,12 +145,13 @@ function FzfWin:setup_keybinds()
   self.keymap.fzf = type(self.keymap.fzf) == "table" and self.keymap.fzf or {}
   self.keymap.builtin = type(self.keymap.builtin) == "table" and self.keymap.builtin or {}
   local keymap_tbl = {
-    ["hide"]               = { module = "win", fnc = "hide()" },
-    ["toggle-help"]        = { module = "win", fnc = "toggle_help()" },
-    ["toggle-fullscreen"]  = { module = "win", fnc = "toggle_fullscreen()" },
-    ["toggle-preview"]     = { module = "win", fnc = "toggle_preview()" },
-    ["toggle-preview-cw"]  = { module = "win", fnc = "toggle_preview_cw(1)" },
-    ["toggle-preview-ccw"] = { module = "win", fnc = "toggle_preview_cw(-1)" },
+    ["hide"]                    = { module = "win", fnc = "hide()" },
+    ["toggle-help"]             = { module = "win", fnc = "toggle_help()" },
+    ["toggle-fullscreen"]       = { module = "win", fnc = "toggle_fullscreen()" },
+    ["toggle-preview"]          = { module = "win", fnc = "toggle_preview()" },
+    ["toggle-preview-cw"]       = { module = "win", fnc = "toggle_preview_cw(1)" },
+    ["toggle-preview-ccw"]      = { module = "win", fnc = "toggle_preview_cw(-1)" },
+    ["toggle-preview-behavior"] = { module = "win", fnc = "toggle_preview_behavior()" },
   }
   -- use signal when user bind toggle-preview in FZF_DEFAULT_OPTS/FZF_DEFAULT_FILE_OPTS
   local function on_SIGWINCH_toggle_preview()
@@ -1637,6 +1638,14 @@ function FzfWin.toggle_preview_cw(direction)
   if self.winopts.split or not self.previewer_is_builtin then
     self:SIGWINCH({ "toggle-preview-cw" })
   end
+  self:redraw()
+end
+
+function FzfWin.toggle_preview_behavior()
+  if not _self then return end
+  local self = _self
+  self.toggle_behavior = not self.toggle_behavior and "extend" or nil
+  utils.info("preview toggle behavior set to %s", self.toggle_behavior or "default")
   self:redraw()
 end
 

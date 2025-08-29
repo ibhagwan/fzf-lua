@@ -252,6 +252,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field preview fzf-lua.config.PreviewWinopts
 ---@field on_create fun(e: { winid: integer, bufnr: integer })
 ---@field on_close fun()
+---@field toggle_behavior string?
 ---@field __winhls { main: [string, string][], prev: [string, string][] }
 
 ---@class fzf-lua.config.TreesitterWinopts
