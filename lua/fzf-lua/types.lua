@@ -67,6 +67,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field no_syntax boolean?
 ---@field cached fzf-lua.buffer_or_file.Bcache?
 ---@field content string[]?
+---@field filetype string?
 
 ---@class fzf-lua.keymap.Entry
 ---@field vmap string?
