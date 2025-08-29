@@ -1067,11 +1067,33 @@ function Previewer.base:attach_snacks_image_inline()
   end, 500)
 end
 
+--- `:h filetype-detect`
+---@param bufnr integer
+---@param filepath string
+---@return string
+local filetype_detect = function(bufnr, filepath)
+  -- prepend the buffer number to the path and
+  -- set as buffer name, this makes sure 'filetype detect'
+  -- gets the right filetype which enables the syntax
+  local tempname = path.join({ tostring(bufnr), filepath })
+  pcall(api.nvim_buf_set_name, bufnr, tempname)
+  -- nvim_buf_call has less side-effects than window switch
+  -- doautocmd filetypedetect BufRead (vim.filetype.match + ftdetect) + do_modeline
+  local ok, _ = pcall(api.nvim_buf_call, bufnr, function()
+    utils.eventignore(function() vim.cmd("filetype detect") end, "FileType")
+  end)
+  if not ok then
+    utils.warn(("':filetype detect' failed for '%s'"):format(filepath))
+  end
+  return vim.bo[bufnr].filetype
+end
+
+---@param entry? fzf-lua.buffer_or_file.Entry
 function Previewer.buffer_or_file:do_syntax(entry)
-  if not self.preview_bufnr then return end
-  if not entry or not entry.path then return end
+  if not self.preview_bufnr or not entry or not entry.path then return end
   local bufnr = self.preview_bufnr
   local preview_winid = self.win.preview_winid
+  local filepath = entry.path ---@type string
   if not api.nvim_buf_is_valid(bufnr)
       or vim.bo[bufnr].filetype ~= ""
       or fn.bufwinid(bufnr) ~= preview_winid
@@ -1082,7 +1104,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
   -- assign a name for noname scratch buffer
   -- can be used by snacks.image to abspath e.g. [file.png]
   -- https://github.com/folke/snacks.nvim/pull/1618
-  vim.b[bufnr].bufpath = entry.path
+  vim.b[bufnr].bufpath = filepath
 
   -- do not enable for large files, treesitter still has perf issues:
   -- https://github.com/nvim-treesitter/nvim-treesitter/issues/556
@@ -1098,7 +1120,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
   end
   if syntax_limit_reached > 0 and self.opts.silent == false then
     utils.info(
-      "syntax disabled for '%s' (%s), consider increasing '%s(%d)'", entry.path,
+      "syntax disabled for '%s' (%s), consider increasing '%s(%d)'", filepath,
       syntax_limit_reached == 1 and ("%d lines"):format(lcount) or ("%db"):format(bytes),
       syntax_limit_reached == 1 and "syntax_limit_l" or "syntax_limit_b",
       syntax_limit_reached == 1 and self.syntax_limit_l or self.syntax_limit_b
@@ -1110,27 +1132,12 @@ function Previewer.buffer_or_file:do_syntax(entry)
   end
 
   -- filetype detect
-  ---@type string
-  local ft = (function()
-    local ft = entry.filetype or vim.filetype.match({ buf = bufnr, filename = entry.path })
-    if type(ft) == "string" then
-      return ft
-    end
-    -- prepend the buffer number to the path and
-    -- set as buffer name, this makes sure 'filetype detect'
-    -- gets the right filetype which enables the syntax
-    local tempname = path.join({ tostring(bufnr), entry.path })
-    pcall(api.nvim_buf_set_name, bufnr, tempname)
-    -- nvim_buf_call has less side-effects than window switch
-    -- doautocmd filetypedetect BufRead (vim.filetype.match + ftdetect) + do_modeline
-    local ok, _ = pcall(api.nvim_buf_call, bufnr, function()
-      utils.eventignore(function() vim.cmd("filetype detect") end, "FileType")
-    end)
-    if not ok then
-      utils.warn(("':filetype detect' failed for '%s'"):format(entry.path or "<null>"))
-    end
-    return vim.bo[bufnr].filetype
-  end)()
+  local did_filetype_detect
+  local ft = entry.filetype or vim.filetype.match({ buf = bufnr, filename = filepath })
+  if not ft then
+    ft = filetype_detect(bufnr, filepath)
+    did_filetype_detect = true
+  end
 
   if ft == "" then return end
 
@@ -1153,13 +1160,21 @@ function Previewer.buffer_or_file:do_syntax(entry)
     return true
   end)()
 
-  local ts_success = ts_enabled and ts_attach(bufnr, ft)
-  if not ts_success then
-    pcall(function() vim.bo[bufnr].syntax = ft end)
-    return
+  while true do
+    local ts_success = ts_enabled and ts_attach(bufnr, ft)
+    if ts_success then
+      self:update_render_markdown()
+      break
+    end
+    if did_filetype_detect then
+      vim.bo[bufnr].syntax = ft
+      break
+    end
+    -- sometimes vim.filetype.match get a poor filetype (e.g. ft=text)
+    -- this should be a fallback we should detect it again from ftdetect/modeline
+    ft = filetype_detect(bufnr, filepath)
+    did_filetype_detect = true
   end
-
-  self:update_render_markdown()
 end
 
 function Previewer.base:maybe_set_cursorline(win, pos)
