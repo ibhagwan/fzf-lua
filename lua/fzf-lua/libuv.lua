@@ -351,7 +351,8 @@ M.deserialize = function(str, b64)
   local res = loadstring(str)()
   if type(res) == "table" then return res --[[@as table]] end -- ./scripts/headless_fd.sh
   res = b64 ~= false and base64.decode(res) or res
-  local _, obj = serpent.load(res)
+  -- safe=false enable call function
+  local _, obj = serpent.load(res, { safe = false })
   assert(type(obj) == "table")
   return obj
 end

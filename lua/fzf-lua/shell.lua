@@ -527,8 +527,8 @@ M.wrap_spawn_stdio = function(opts)
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
     if type(opts[k]) == "function" then
-      opts[k] = M.check_upvalue(opts[k], "opts." .. k)
-      -- M.check_upvalue(opts[k], "opts." .. k)
+      -- opts[k] = M.check_upvalue(opts[k], "opts." .. k)
+      M.check_upvalue(opts[k], "opts." .. k)
     end
   end
   local cmd_str = ("%s -u NONE -l %s %s"):format(
