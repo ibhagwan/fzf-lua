@@ -1326,6 +1326,7 @@ end
 function M.neovim_bind_to_fzf(key)
   local conv_map = {
     ["a"] = "alt",
+    ["m"] = "alt",
     ["c"] = "ctrl",
     ["s"] = "shift",
   }
