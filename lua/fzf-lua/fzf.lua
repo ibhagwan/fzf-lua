@@ -199,6 +199,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   if not opts.is_fzf_tmux then
     vim.bo.filetype = "fzf"
 
+    local fzfwin = utils.fzf_winobj()
+    if fzfwin then fzfwin:update_statusline() end
+
     -- See note in "ModeChanged" above
     if vim.api.nvim_get_mode().mode == "t" then
       -- Called from another fzf-win most likely

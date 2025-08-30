@@ -1300,7 +1300,7 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   self.closing = nil
   self._reuse = nil
   _self = nil
-  utils.set_info({})   -- clear info
+  utils.set_info({}) -- clear info
 end
 
 function FzfWin.win_leave()
@@ -1520,6 +1520,28 @@ function FzfWin:update_preview_scrollbar()
     utils.wo[self._swin2].winhl =
         ("Normal:%s,NormalNC:%s,NormalFloat:%s,EndOfBuffer:%s"):format(hl, hl, hl, hl)
   end
+end
+
+function FzfWin:update_statusline()
+  if not self.winopts.split then return end
+  local parts = self.winopts.title or string.format(" %s ", FzfLua.get_info().cmd)
+  local statusline = { "%#fzf1# > %#fzf2#fzf-lua%#fzf3#" }
+  for _, t in ipairs(type(parts) == "table" and parts
+    or type(parts) == "string" and { parts }
+    or {}
+  ) do
+    local hl, str = (function()
+      if type(t) == "table" and t[2] then
+        return t[2], t[1]
+      elseif type(t) == "table" then
+        return "FzfLuaTitle", tostring(t[1])
+      else
+        return "FzfLuaTitle", tostring(t)
+      end
+    end)()
+    table.insert(statusline, string.format("%%#%s#%s%%#fzf3#", hl, str))
+  end
+  vim.wo[self.fzf_winid].statusline = table.concat(statusline, " ")
 end
 
 ---@param winid integer

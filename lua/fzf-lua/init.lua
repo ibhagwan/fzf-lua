@@ -141,6 +141,36 @@ function M.setup_highlights(override)
     vim.api.nvim_set_hl(0, hl_name, hl_def)
   end
 
+  -- courtesy of fzf.vim
+  do
+    local termguicolors = vim.o.termguicolors
+    vim.api.nvim_set_hl(0, "fzf1",
+      {
+        default = true,
+        ctermfg = termguicolors and 1 or 161,
+        ctermbg = termguicolors and 8 or 238,
+        fg = "#E12672",
+        bg = "#565656"
+      })
+    vim.api.nvim_set_hl(0, "fzf2",
+      {
+        default = true,
+        ctermfg = termguicolors and 2 or 151,
+        ctermbg = termguicolors and 8 or 238,
+        fg = "#BCDDBD",
+        bg =
+        "#565656"
+      })
+    vim.api.nvim_set_hl(0, "fzf3",
+      {
+        default = true,
+        ctermfg = termguicolors and 7 or 252,
+        ctermbg = termguicolors and 8 or 238,
+        fg = "#D9D9D9",
+        bg = "#565656"
+      })
+  end
+
   -- Init the colormap singleton
   utils.COLORMAP()
 end
