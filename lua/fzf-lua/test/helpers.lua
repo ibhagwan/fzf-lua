@@ -131,6 +131,7 @@ M.new_child_neovim = function()
   child.setup = function(config)
     local lua_cmd = ([[
       require("fzf-lua").setup(vim.tbl_deep_extend("keep", ..., {
+        { "default-title" },
         %s
         winopts = {
           on_create = function(e)
