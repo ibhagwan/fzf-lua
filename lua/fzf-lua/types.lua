@@ -94,14 +94,14 @@ _G.FzfLua = require("fzf-lua")
 ---@field invalid_pos boolean? position changed
 ---@field tick integer?
 
----@alias fzf-lua.config.Action fzf-lua.ActionSpec|function|function[]|false
+---@alias fzf-lua.config.Action fzf-lua.ActionSpec|fzf-lua.shell.data2|fzf-lua.shell.data2[]|false
 ---@alias fzf-lua.config.Actions { [string]: fzf-lua.config.Action }
 
 ---@class fzf-lua.ActionSpec
----@field [1] function?
----@field fn function?
+---@field [1] fzf-lua.shell.data2?
+---@field fn fzf-lua.shell.data2?
 ---@field exec_silent boolean?
----@field reload boolean|fun(opts: fzf-lua.Config):content?
+---@field reload boolean
 ---@field field_index string?
 ---@field desc string?
 ---@field prefix string?
@@ -145,8 +145,9 @@ _G.FzfLua = require("fzf-lua")
 ---...
 ---@field cwd string?
 ---@field multiprocess integer|boolean?
----@field fn_transform string?
----@field fn_preprocess string?
+---@field fn_transform string|function?
+---@field fn_preprocess string|function?
+---@field fn_postprocess string|function?
 ---@field file_icons boolean|integer?
 ---@field color_icons boolean?
 ---@field _type "file"?
@@ -183,6 +184,11 @@ _G.FzfLua = require("fzf-lua")
 ---@field _fmt table
 ---FzfWin:treesitter_attach
 ---@field _treesitter (fun(line:string):string,string?,string?,string?)|boolean?
+---stringify_mt
+---@field cmd? fzf-lua.content
+---@field argv_expr? boolean
+---@field debug? boolean|'v'|'verbose'
+---@field rg_glob? boolean
 
 ---mostly ai generated currently...
 ---@class fzf-lua.config.Defaults

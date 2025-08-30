@@ -351,7 +351,8 @@ M.deserialize = function(str, b64)
   local res = loadstring(str)()
   if type(res) == "table" then return res --[[@as table]] end -- ./scripts/headless_fd.sh
   res = b64 ~= false and base64.decode(res) or res
-  local _, obj = serpent.load(res)
+  -- safe=false enable call function
+  local _, obj = serpent.load(res, { safe = false })
   assert(type(obj) == "table")
   return obj
 end
@@ -367,6 +368,12 @@ M.load_fn = function(fn_str)
     fn_loaded = nil
   end
   return fn_loaded
+end
+
+local posix_exec = function(opts)
+  if type(opts.cmd) ~= "string" or _is_win or not pcall(require, "ffi") then return end
+  require("ffi").cdef([[int execl(const char *, const char *, ...);]])
+  require("ffi").C.execl("/bin/sh", "sh", "-c", opts.cmd, nil)
 end
 
 ---@param opts table
@@ -396,18 +403,16 @@ M.spawn_stdio = function(opts)
   -- err with "fzf-lua fatal: '_G._fzf_lua_server', '_G._devicons_path' both nil"
   pcall(require, "fzf-lua.make_entry")
 
-  local fn_transform_str = opts.fn_transform
-  local fn_preprocess_str = opts.fn_preprocess
-  local fn_postprocess_str = opts.fn_postprocess
-
-  local fn_transform = M.load_fn(opts.fn_transform)
-  local fn_preprocess = M.load_fn(opts.fn_preprocess)
-  local fn_postprocess = M.load_fn(opts.fn_postprocess)
+  -- still need load_fn from str val? now deserialize do all the thing automatically
+  -- or because we want to debugprint them, so we still make a string?
+  local fn_transform = M.load_fn(opts.fn_transform) or opts.fn_transform
+  local fn_preprocess = M.load_fn(opts.fn_preprocess) or opts.fn_preprocess
+  local fn_postprocess = M.load_fn(opts.fn_postprocess) or opts.fn_postprocess
 
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
 
-  if opts.cmd and opts.cmd:match("%-%-color[=%s]+never") then
+  if type(opts.cmd) == "string" and opts.cmd:match("%-%-color[=%s]+never") then
     -- perf: skip stripping ansi coloring in `make_file.entry`
     opts.no_ansi_colors = true
   end
@@ -417,13 +422,10 @@ M.spawn_stdio = function(opts)
       io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, vim.inspect(v)))
     end
   elseif opts.debug then
-    io.stdout:write("[DEBUG] [mt] " .. opts.cmd .. EOL)
+    io.stdout:write("[DEBUG] [mt] " .. tostring(opts.cmd) .. EOL)
   end
 
-  if not fn_transform and not fn_postprocess and not _is_win and opts.cmd and pcall(require, "ffi") then
-    require("ffi").cdef([[int execl(const char *, const char *, ...);]])
-    require("ffi").C.execl("/bin/sh", "sh", "-c", opts.cmd, nil) -- noreturn
-  end
+  if not fn_transform and not fn_postprocess then posix_exec(opts) end
 
   local stderr, stdout = nil, nil
 
@@ -524,6 +526,15 @@ M.spawn_stdio = function(opts)
           end
         end
       end
+
+  if type(opts.cmd) ~= "string" then
+    local f = fn_transform or function(x) return x end
+    local w = function(s) if s then io.stdout:write(f(s) .. EOL) else on_finish(0) end end
+    local wn = function(s) if s then return io.stdout:write(f(s)) else on_finish(0) end end
+    if type(opts.cmd) == "function" then opts.cmd(w, wn) end
+    for _, v in ipairs(opts.cmd) do w(v) end
+    on_finish(0)
+  end
 
   return M.spawn({
       cwd = opts.cwd,
