@@ -33,7 +33,7 @@
   },
   "mini.base16": {
     "disp_name": "Mini Base16",
-    "url": "echasnovski/mini.base16",
+    "url": "nvim-mini/mini.base16",
     "colorschemes": [
       { "name": "minischeme", "disp_name": "Mini Scheme" },
       { "name": "minicyan", "disp_name": "Mini Cyan" }

@@ -38,7 +38,7 @@ clean-screenshots:
 deps:
 	make clean
 	@mkdir -p deps
-	git clone --depth=1 --single-branch https://github.com/echasnovski/mini.nvim deps/mini.nvim
+	git clone --depth=1 --single-branch https://github.com/nvim-mini/mini.nvim deps/mini.nvim
 	git clone --depth=1 --single-branch https://github.com/nvim-tree/nvim-web-devicons deps/nvim-web-devicons
 	git clone --depth=1 --single-branch https://github.com/hrsh7th/nvim-cmp deps/nvim-cmp
 

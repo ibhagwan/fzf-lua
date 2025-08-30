@@ -45,7 +45,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim)
   -- optional for icon support
   dependencies = { "nvim-tree/nvim-web-devicons" },
   -- or if using mini.icons/mini.nvim
-  -- dependencies = { "echasnovski/mini.icons" },
+  -- dependencies = { "nvim-mini/mini.icons" },
   opts = {}
 }
 ```
@@ -59,7 +59,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 - [`fzf`](https://github.com/junegunn/fzf) version > `0.36`
   or [`skim`](https://github.com/skim-rs/skim) binary installed
 - [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons)
-  or [mini.icons](https://github.com/echasnovski/mini.icons)
+  or [mini.icons](https://github.com/nvim-mini/mini.icons)
   (optional)
 
 ### Optional dependencies
