@@ -1524,24 +1524,23 @@ end
 
 function FzfWin:update_statusline()
   if not self.winopts.split then return end
-  local parts = self.winopts.title or string.format(" %s ", FzfLua.get_info().cmd)
-  local statusline = { "%#fzf1# > %#fzf2#fzf-lua%#fzf3#" }
-  for _, t in ipairs(type(parts) == "table" and parts
-    or type(parts) == "string" and { parts }
-    or {}
-  ) do
+  local parts = self.winopts.title or string.format(" %s ", tostring(FzfLua.get_info().cmd))
+  parts = type(parts) == "table" and parts
+      or type(parts) == "string" and { parts }
+      or {}
+  for i, t in ipairs(parts) do
     local hl, str = (function()
-      if type(t) == "table" and t[2] then
-        return t[2], t[1]
-      elseif type(t) == "table" then
-        return "FzfLuaTitle", tostring(t[1])
+      if type(t) == "table" then
+        return t[2], (t[1] or self.hls.title)
       else
-        return "FzfLuaTitle", tostring(t)
+        return self.hls.title, tostring(t)
       end
     end)()
-    table.insert(statusline, string.format("%%#%s#%s%%#fzf3#", hl, str))
+    parts[i] = string.format("%%#%s#%s%%#fzf3#", hl, str)
   end
-  vim.wo[self.fzf_winid].statusline = table.concat(statusline, " ")
+  local picker = table.remove(parts, 1) or ""
+  vim.wo[self.fzf_winid].statusline = "%#fzf1# > %#fzf2#fzf-lua%#fzf3#"
+      .. string.format(" %s %s", picker, table.concat(parts, ""))
 end
 
 ---@param winid integer
