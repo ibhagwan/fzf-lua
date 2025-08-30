@@ -272,7 +272,7 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
             opts.__locate_pos = opts.__locate_count
           end
         end
-        if opts.__sym_bufnr then
+        if opts.__sym_bufnr and not opts.pickers then -- use old format on "global" picker
           -- document_symbols
           entry1 = string.format("[%s]%s%s:%s:%s\t\t%s",
             utils.ansi_codes[opts.hls.buf_nr](tostring(opts.__sym_bufnr)),
