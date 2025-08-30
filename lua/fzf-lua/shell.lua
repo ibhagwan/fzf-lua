@@ -163,6 +163,25 @@ function M.pipe_wrap_fn(fn, fzf_field_index, debug)
   return action_cmd, id
 end
 
+---@param v function
+---@param varname string
+---@return string
+M.check_upvalue = function(v, varname)
+  -- Attempt to convert function to its bytecode representation
+  -- TODO: can be replaced with vim.base64 after neovim >= 0.10
+  local str = string.format(
+    [[return loadstring(require("fzf-lua.lib.base64").decode("%s"))]],
+    require("fzf-lua.lib.base64").encode(string.dump(v, true)))
+  -- Test the function once with nil value (imprefect?)
+  -- to see if there's an issue with upvalue refs
+  local f = loadstring(str)()
+  local ok, err = pcall(f)
+  assert(
+    ok or (not err:match("attempt to index upvalue") and not err:match("attempt to call upvalue")),
+    string.format("multiprocess '%s' cannot have upvalue referecnces", varname))
+  return str
+end
+
 ---@param cmd string
 ---@param opts table
 ---@return string
@@ -237,25 +256,7 @@ M.stringify_mt = function(cmd, opts)
     opts.argv_expr = nil
     return opts.cmd
   else -- if opts.multiprocess then
-    for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
-      local v = opts[k]
-      if type(v) == "function" then
-        -- Attempt to convert function to its bytecode representation
-        -- TODO: can be replaced with vim.base64 after neovim >= 0.10
-        v = string.format(
-          [[return loadstring(require("fzf-lua.lib.base64").decode("%s"))]],
-          require("fzf-lua.lib.base64").encode(string.dump(v, true)))
-        -- Test the function once with nil value (imprefect?)
-        -- to see if there's an issue with upvalue refs
-        local f = loadstring(v)()
-        local ok, err = pcall(f)
-        assert(ok or not err:match("attempt to index upvalue"),
-          string.format("multiprocess '%s' cannot have upvalue referecnces", k))
-        opts[k] = v
-      end
-      assert(not v or type(v) == "string", "multiprocess requires lua string callbacks")
-    end
-    if opts.argv_expr then
+    if opts.argv_expr and type(opts.cmd) == "string" then
       -- Since the `rg` command will be wrapped inside the shell escaped
       -- '--headless .. --cmd', we won't be able to search single quotes
       -- as it will break the escape sequence. So we use a nifty trick:
@@ -524,6 +525,12 @@ end
 M.wrap_spawn_stdio = function(opts)
   local is_win = utils.__IS_WINDOWS
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
+  for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
+    if type(opts[k]) == "function" then
+      opts[k] = M.check_upvalue(opts[k], "opts." .. k)
+      -- M.check_upvalue(opts[k], "opts." .. k)
+    end
+  end
   local cmd_str = ("%s -u NONE -l %s %s"):format(
     libuv.shellescape(is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
     libuv.shellescape(vim.fn.fnamemodify(is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") ..
