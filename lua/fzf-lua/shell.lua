@@ -182,11 +182,11 @@ M.check_upvalue = function(v, varname)
   return str
 end
 
----@param cmd string
+---@param contents string|function
 ---@param opts table
 ---@return string
-M.stringify_mt = function(cmd, opts)
-  opts.cmd = cmd or opts.cmd
+M.stringify_mt = function(contents, opts)
+  opts.cmd = contents or opts.cmd
   ---@param o table<string, unknown>
   ---@return table
   local filter_opts = function(o)
@@ -254,7 +254,7 @@ M.stringify_mt = function(cmd, opts)
     -- command does not require any processing, we also reset `argv_expr`
     -- to keep `setup_fzf_interactive_flags::no_query_condi` in the command
     opts.argv_expr = nil
-    return opts.cmd
+    return type(opts.cmd) == "string" and opts.cmd or M.wrap_spawn_stdio(filter_opts(opts))
   else -- if opts.multiprocess then
     if opts.argv_expr and type(opts.cmd) == "string" then
       -- Since the `rg` command will be wrapped inside the shell escaped
@@ -297,8 +297,7 @@ M.stringify = function(contents, opts, fzf_field_index)
 
   -- Convert string callbacks to callback functions
   for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
-    local v = opts[k]
-    opts[k] = libuv.load_fn(opts[k]) or v
+    opts[k] = libuv.load_fn(opts[k]) or opts[k]
   end
 
   local cmd, id = M.pipe_wrap_fn(function(pipe, ...)
@@ -525,6 +524,7 @@ end
 M.wrap_spawn_stdio = function(opts)
   local is_win = utils.__IS_WINDOWS
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
+  -- TODO: should we check "cmd"?
   for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
     if type(opts[k]) == "function" then
       -- opts[k] = M.check_upvalue(opts[k], "opts." .. k)

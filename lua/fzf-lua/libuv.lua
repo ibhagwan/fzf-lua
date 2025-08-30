@@ -402,14 +402,16 @@ M.spawn_stdio = function(opts)
   -- err with "fzf-lua fatal: '_G._fzf_lua_server', '_G._devicons_path' both nil"
   pcall(require, "fzf-lua.make_entry")
 
-  local fn_transform = M.load_fn(opts.fn_transform)
-  local fn_preprocess = M.load_fn(opts.fn_preprocess)
-  local fn_postprocess = M.load_fn(opts.fn_postprocess)
+  -- still need load_fn from str val? now deserialize do all the thing automatically
+  -- or because we want to debugprint them, so we still make a string?
+  local fn_transform = M.load_fn(opts.fn_transform) or opts.fn_transform
+  local fn_preprocess = M.load_fn(opts.fn_preprocess) or opts.fn_preprocess
+  local fn_postprocess = M.load_fn(opts.fn_postprocess) or opts.fn_postprocess
 
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
 
-  if opts.cmd and opts.cmd:match("%-%-color[=%s]+never") then
+  if type(opts.cmd) == "string" and opts.cmd:match("%-%-color[=%s]+never") then
     -- perf: skip stripping ansi coloring in `make_file.entry`
     opts.no_ansi_colors = true
   end
@@ -419,10 +421,21 @@ M.spawn_stdio = function(opts)
       io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, tostring(v)))
     end
   elseif opts.debug then
-    io.stdout:write("[DEBUG] [mt] " .. opts.cmd .. EOL)
+    io.stdout:write("[DEBUG] [mt] " .. tostring(opts.cmd) .. EOL)
   end
 
-  if not fn_transform and not fn_postprocess and not _is_win and opts.cmd and pcall(require, "ffi") then
+  if type(opts.cmd) ~= "string" then
+    local w = function(s) if s then io.stdout:write(s .. EOL) else os.exit() end end
+    local wn = function(s) if s then return io.stdout:write(s) else os.exit() end end
+    if type(opts.cmd) == "function" then
+      opts.cmd(w, wn)
+    else
+      for _, i in ipairs(opts.cmd) do w(i) end
+    end
+    os.exit()
+  end
+
+  if opts.cmd and not fn_transform and not fn_postprocess and not _is_win and pcall(require, "ffi") then
     require("ffi").cdef([[int execl(const char *, const char *, ...);]])
     require("ffi").C.execl("/bin/sh", "sh", "-c", opts.cmd, nil) -- noreturn
   end
