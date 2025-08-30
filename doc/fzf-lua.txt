@@ -93,7 +93,7 @@ Using lazy.nvim <https://github.com/folke/lazy.nvim>
       -- optional for icon support
       dependencies = { "nvim-tree/nvim-web-devicons" },
       -- or if using mini.icons/mini.nvim
-      -- dependencies = { "echasnovski/mini.icons" },
+      -- dependencies = { "nvim-mini/mini.icons" },
       opts = {}
     }
 <
@@ -105,7 +105,7 @@ DEPENDENCIES                                            *fzf-lua-dependencies*
 - `fzf` <https://github.com/junegunn/fzf> version > `0.36` or `skim`
   <https://github.com/skim-rs/skim> binary installed
 - nvim-web-devicons <https://github.com/nvim-tree/nvim-web-devicons> or
-  mini.icons <https://github.com/echasnovski/mini.icons> (optional)
+  mini.icons <https://github.com/nvim-mini/mini.icons> (optional)
 
                                                                               
 OPTIONAL DEPENDENCIES                          *fzf-lua-optional-dependencies*
