@@ -254,7 +254,9 @@ M.stringify_mt = function(contents, opts)
     -- command does not require any processing, we also reset `argv_expr`
     -- to keep `setup_fzf_interactive_flags::no_query_condi` in the command
     opts.argv_expr = nil
-    return type(opts.cmd) == "string" and opts.cmd or M.wrap_spawn_stdio(filter_opts(opts))
+    return type(opts.cmd) == "string" and opts.cmd
+        or not opts.multiprocess and M.stringify(contents, opts)
+        or M.wrap_spawn_stdio(filter_opts(opts))
   else -- if opts.multiprocess then
     if opts.argv_expr and type(opts.cmd) == "string" then
       -- Since the `rg` command will be wrapped inside the shell escaped
