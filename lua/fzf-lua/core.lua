@@ -237,7 +237,7 @@ end
 ---@param cmd string?
 ---@param opts table
 ---@param convert_actions boolean?
----@return thread, string, table
+---@return thread?, string, table
 M.fzf_wrap = function(cmd, opts, convert_actions)
   opts = opts or {}
   M.set_header(opts)
@@ -245,34 +245,32 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
     opts = M.convert_reload_actions(cmd, opts)
     opts = M.convert_exec_silent_actions(opts)
   end
-  local _co
-  local wrapped = coroutine.wrap(function()
+  -- Do not strt fzf, return the stringified contents and opts onlu
+  -- used by the "combine" picker to merge inputs
+  if opts._start == false then return nil, cmd, opts end
+  local _co, fn_selected
+  coroutine.wrap(function()
     _co = coroutine.running()
-    if type(opts.cb_co) == "function" then opts.cb_co(_co) end
-    local selected, exit_code = M.fzf(cmd, opts)
-    -- If aborted (e.g. unhide process kill), do nothing
-    if not tonumber(exit_code) then return end
-    -- Default fzf exit callback acts upon the selected items
-    local fn_selected = opts.fn_selected or actions.act
-    if not fn_selected then return end
-    -- errors thrown here gets silenced possibly
-    -- due to a coroutine, so catch explicitly
-    local _, err = pcall(fn_selected, selected, opts)
+    -- xpcall to get full traceback https://www.lua.org/pil/8.5.html
+    local _, err = xpcall(function()
+      if type(opts.cb_co) == "function" then opts.cb_co(_co) end
+      local selected, exit_code = M.fzf(cmd, opts)
+      -- If aborted (e.g. unhide process kill), do nothing
+      if not tonumber(exit_code) then return end
+      -- Default fzf exit callback acts upon the selected items
+      fn_selected = opts.fn_selected or actions.act
+      if not fn_selected then return end
+      -- errors thrown here gets silenced possibly
+      -- due to a coroutine, so catch explicitly
+      fn_selected(selected, opts)
+    end, debug.traceback)
     -- ignore existing swap file error, the choices dialog will still be
     -- displayed to user to make a selection once fzf-lua exits (#1011)
     if err then
-      if err:match("Vim%(edit%):E325") then return end
-      utils.error("fn_selected threw an error: " .. debug.traceback(_co, err, 1))
+      if fn_selected and err:match("Vim%(edit%):E325") then return end
+      utils.error("fn_selected threw an error: " .. err)
     end
-  end)
-  -- Do not strt fzf, return the stringified contents and opts onlu
-  -- used by the "combine" picker to merge inputs
-  if opts._start ~= false then
-    local ok, err = pcall(wrapped)
-    if not ok and err then
-      error(debug.traceback(_co, err, 1))
-    end
-  end
+  end)()
   return _co, cmd, opts
 end
 
