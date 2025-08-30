@@ -155,8 +155,8 @@ M.fzf_exec = function(contents, opts)
   -- options are serialized as strings and the rest are read from the main instance
   -- config over RPC, if the command doesn't require any processing it will be piped
   -- directly to fzf using $FZF_DEFAULT_COMMAND
-  local mt = (opts.multiprocess ~= false and type(contents) == "string")
-  local cmd = mt and shell.stringify_mt(contents --[[@as string]], opts)
+  local mt = opts.multiprocess ~= false
+  local cmd = mt and shell.stringify_mt(contents, opts)
       or shell.stringify(contents, opts, nil)
   -- Contents sent to fzf can only be nil or a shell command (string)
   -- the API accepts both tables and functions which we "stringify"
@@ -212,7 +212,7 @@ M.fzf_live = function(contents, opts)
         query = libuv.shellescape(query)
         return M.expand_query(cmd0, query)
       end
-  local mt = (opts.multiprocess ~= false and type(contents) == "string")
+  local mt = opts.multiprocess ~= false
   local cmd = mt and shell.stringify_mt(contents, opts) or
       shell.stringify(func_contents, opts, fzf_field_index)
   cmd = mt and M.expand_query(cmd, fzf_field_index) or cmd

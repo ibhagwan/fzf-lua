@@ -163,11 +163,30 @@ function M.pipe_wrap_fn(fn, fzf_field_index, debug)
   return action_cmd, id
 end
 
----@param cmd string
+---@param v function
+---@param varname string
+---@return string
+M.check_upvalue = function(v, varname)
+  -- Attempt to convert function to its bytecode representation
+  -- TODO: can be replaced with vim.base64 after neovim >= 0.10
+  local str = string.format(
+    [[return loadstring(require("fzf-lua.lib.base64").decode("%s"))]],
+    require("fzf-lua.lib.base64").encode(string.dump(v, true)))
+  -- Test the function once with nil value (imprefect?)
+  -- to see if there's an issue with upvalue refs
+  local f = loadstring(str)()
+  local ok, err = pcall(f)
+  assert(
+    ok or (not err:match("attempt to index upvalue") and not err:match("attempt to call upvalue")),
+    string.format("multiprocess '%s' cannot have upvalue referecnces", varname))
+  return str
+end
+
+---@param contents string|function
 ---@param opts table
 ---@return string
-M.stringify_mt = function(cmd, opts)
-  opts.cmd = cmd or opts.cmd
+M.stringify_mt = function(contents, opts)
+  opts.cmd = contents or opts.cmd
   ---@param o table<string, unknown>
   ---@return table
   local filter_opts = function(o)
@@ -235,27 +254,11 @@ M.stringify_mt = function(cmd, opts)
     -- command does not require any processing, we also reset `argv_expr`
     -- to keep `setup_fzf_interactive_flags::no_query_condi` in the command
     opts.argv_expr = nil
-    return opts.cmd
+    return type(opts.cmd) == "string" and opts.cmd
+        or not opts.multiprocess and M.stringify(contents, opts)
+        or M.wrap_spawn_stdio(filter_opts(opts))
   else -- if opts.multiprocess then
-    for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
-      local v = opts[k]
-      if type(v) == "function" then
-        -- Attempt to convert function to its bytecode representation
-        -- TODO: can be replaced with vim.base64 after neovim >= 0.10
-        v = string.format(
-          [[return loadstring(require("fzf-lua.lib.base64").decode("%s"))]],
-          require("fzf-lua.lib.base64").encode(string.dump(v, true)))
-        -- Test the function once with nil value (imprefect?)
-        -- to see if there's an issue with upvalue refs
-        local f = loadstring(v)()
-        local ok, err = pcall(f)
-        assert(ok or not err:match("attempt to index upvalue"),
-          string.format("multiprocess '%s' cannot have upvalue referecnces", k))
-        opts[k] = v
-      end
-      assert(not v or type(v) == "string", "multiprocess requires lua string callbacks")
-    end
-    if opts.argv_expr then
+    if opts.argv_expr and type(opts.cmd) == "string" then
       -- Since the `rg` command will be wrapped inside the shell escaped
       -- '--headless .. --cmd', we won't be able to search single quotes
       -- as it will break the escape sequence. So we use a nifty trick:
@@ -296,8 +299,7 @@ M.stringify = function(contents, opts, fzf_field_index)
 
   -- Convert string callbacks to callback functions
   for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
-    local v = opts[k]
-    opts[k] = libuv.load_fn(opts[k]) or v
+    opts[k] = libuv.load_fn(opts[k]) or opts[k]
   end
 
   local cmd, id = M.pipe_wrap_fn(function(pipe, ...)
@@ -524,6 +526,13 @@ end
 M.wrap_spawn_stdio = function(opts)
   local is_win = utils.__IS_WINDOWS
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
+  -- TODO: should we check "cmd"?
+  for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
+    if type(opts[k]) == "function" then
+      -- opts[k] = M.check_upvalue(opts[k], "opts." .. k)
+      M.check_upvalue(opts[k], "opts." .. k)
+    end
+  end
   local cmd_str = ("%s -u NONE -l %s %s"):format(
     libuv.shellescape(is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
     libuv.shellescape(vim.fn.fnamemodify(is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") ..
