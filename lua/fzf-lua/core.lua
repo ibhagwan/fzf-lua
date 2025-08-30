@@ -105,6 +105,7 @@ local contents_from_arr = function(cont_arr)
         or t.contents)
     end
   elseif cont_type == "function" then
+    ---@type fzf-lua.fncContent
     contents = function(fzf_cb)
       coroutine.wrap(function()
         local co = coroutine.running()
@@ -137,11 +138,13 @@ local contents_from_arr = function(cont_arr)
   return contents
 end
 
----@alias content (string|number)[]|fun(fzf_cb: fun(entry?: string|number, cb?: function))|string|nil
+---@alias fzf-lua.fzfCb fun(entry?: string|number, cb?: function)
+---@alias fzf-lua.fncContent fun(wnl: fzf-lua.fzfCb, w: fzf-lua.fzfCb)
+---@alias fzf-lua.content fzf-lua.fncContent|(string|number)[]|string
 
 -- Main API, see:
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
----@param contents content
+---@param contents fzf-lua.content
 ---@param opts? fzf-lua.config.Base|{}
 ---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
@@ -151,17 +154,8 @@ M.fzf_exec = function(contents, opts)
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
   end
-  -- stringify_mt: the wrapped multiprocess command is independent, most of it's
-  -- options are serialized as strings and the rest are read from the main instance
-  -- config over RPC, if the command doesn't require any processing it will be piped
-  -- directly to fzf using $FZF_DEFAULT_COMMAND
-  local mt = (opts.multiprocess ~= false and type(contents) == "string")
-  local cmd = mt and shell.stringify_mt(contents --[[@as string]], opts)
+  local cmd = shell.stringify_mt(contents, opts)
       or shell.stringify(contents, opts, nil)
-  -- Contents sent to fzf can only be nil or a shell command (string)
-  -- the API accepts both tables and functions which we "stringify"
-  -- We also send string commands as stringify is also responsible
-  -- for multiprocess wrapping of shell commands with processing
   return M.fzf_wrap(cmd, opts, true)
 end
 
@@ -177,7 +171,18 @@ M.can_transform = function(opts)
       and not opts.fn_postprocess
 end
 
----@param contents string|fun(query: string[]): string|string[]|function?
+---@param contents string|fzf-lua.shell.data2
+---@return fzf-lua.shell.data2
+local cmd2fnc = function(contents)
+  return type(contents) == "function" and contents or function(args, _)
+    local query = args[1] or ""
+    query = (query:gsub("%%", "%%%%"))
+    query = libuv.shellescape(query)
+    return M.expand_query(contents, query)
+  end
+end
+
+---@param contents string|fzf-lua.shell.data2
 ---@param opts? fzf-lua.config.Base|{}
 ---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
@@ -188,8 +193,6 @@ M.fzf_live = function(contents, opts)
   -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
   -- each keypress reloads fzf's input usually based on the typed query
   -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
-  -- convert "reload" actions to fzf's `reload` binds
-  -- convert "exec_silent" actions to fzf's `execute-silent` binds
   if type(contents) == "string" then
     -- Signal to stringify_mt we are relocating <query>
     -- Signal to preprocess we are looking to replace {argvz}
@@ -200,23 +203,14 @@ M.fzf_live = function(contents, opts)
     end
   end
   local fzf_field_index = M.fzf_field_index(opts)
+  local cmd ---@type string
   if type(contents) == "function" and M.can_transform(opts) then
-    local cmd = shell.stringify_data(contents, opts, fzf_field_index)
-    M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
-    return M.fzf_wrap(cmd, opts, true)
+    cmd = shell.stringify_data(contents, opts, fzf_field_index)
+  else
+    local mtcmd = shell.stringify_mt(contents, opts)
+    cmd = mtcmd and M.expand_query(mtcmd, fzf_field_index)
+        or shell.stringify(cmd2fnc(contents), opts, fzf_field_index)
   end
-  local cmd0 = contents ---@type string
-  local func_contents = type(contents) == "function"
-      and contents or function(args)
-        local query = args[1] or ""
-        query = (query:gsub("%%", "%%%%"))
-        query = libuv.shellescape(query)
-        return M.expand_query(cmd0, query)
-      end
-  local mt = (opts.multiprocess ~= false and type(contents) == "string")
-  local cmd = mt and shell.stringify_mt(contents, opts) or
-      shell.stringify(func_contents, opts, fzf_field_index)
-  cmd = mt and M.expand_query(cmd, fzf_field_index) or cmd
   M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
   return M.fzf_wrap(cmd, opts, true)
 end
