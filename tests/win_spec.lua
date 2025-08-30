@@ -147,7 +147,10 @@ T["win"]["keymap"]["no error"] = function()
         return child.lua_get([[_G._fzf_load_called]]) == true
       end)
       child.type_keys(key)
-      if helpers.IS_WIN() then child.type_keys("<c-c>") end
+      child.type_keys("<c-c>")
+      child.wait_until(function()
+        return child.lua_get([[_G._fzf_load_called]]) == vim.NIL
+      end)
     end
   end
 end
