@@ -401,10 +401,6 @@ M.spawn_stdio = function(opts)
   -- err with "fzf-lua fatal: '_G._fzf_lua_server', '_G._devicons_path' both nil"
   pcall(require, "fzf-lua.make_entry")
 
-  local fn_transform_str = opts.fn_transform
-  local fn_preprocess_str = opts.fn_preprocess
-  local fn_postprocess_str = opts.fn_postprocess
-
   local fn_transform = M.load_fn(opts.fn_transform)
   local fn_preprocess = M.load_fn(opts.fn_preprocess)
   local fn_postprocess = M.load_fn(opts.fn_postprocess)
