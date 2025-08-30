@@ -917,9 +917,7 @@ function FzfWin:redraw_main()
     -- be an issue but for some reason this is affecting opening
     -- buffers in new splits and causes them to open with
     -- 'nocursorline', see discussion in #254
-    if vim.o.cursorline ~= cursorline then
-      vim.o.cursorline = cursorline
-    end
+    vim.o.cursorline = cursorline
   end
 end
 
@@ -1058,10 +1056,6 @@ function FzfWin:set_tmp_buffer(no_wipe)
   self:set_winleave_autocmd()
   -- automatically resize fzf window
   self:set_redraw_autocmd()
-  -- since we have the cursorline workaround from
-  -- issue #254, resume shows an ugly cursorline.
-  -- remove it, nvim_win API is better than vim.wo?
-  utils.wo[self.fzf_winid].cursorline = false
   return self.fzf_bufnr
 end
 
@@ -1076,6 +1070,7 @@ function FzfWin:save_style_minimal(winid)
     signcolumn = true,
     foldcolumn = true,
     colorcolumn = true,
+    winhl = true, -- for `winopts.split=enew`
   })
 end
 
@@ -1083,7 +1078,9 @@ function FzfWin:set_style_minimal(winid)
   if not tonumber(winid) or not api.nvim_win_is_valid(winid) then return end
   utils.wo[winid].number = false
   utils.wo[winid].relativenumber = false
-  utils.wo[winid].cursorline = false
+  -- TODO: causes issues with winopts.split=enew
+  -- why do we need this in a terminal window?
+  -- utils.wo[winid].cursorline = false
   utils.wo[winid].cursorcolumn = false
   utils.wo[winid].spell = false
   utils.wo[winid].list = false

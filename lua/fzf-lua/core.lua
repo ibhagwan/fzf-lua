@@ -260,10 +260,10 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
     local _, err = pcall(fn_selected, selected, opts)
     -- ignore existing swap file error, the choices dialog will still be
     -- displayed to user to make a selection once fzf-lua exits (#1011)
-    if err and err:match("Vim%(edit%):E325") then
-      return
+    if err then
+      if err:match("Vim%(edit%):E325") then return end
+      utils.error("fn_selected threw an error: " .. debug.traceback(_co, err, 1))
     end
-    utils.error("fn_selected threw an error: " .. debug.traceback(_co, err, 1))
   end)
   -- Do not strt fzf, return the stringified contents and opts onlu
   -- used by the "combine" picker to merge inputs
