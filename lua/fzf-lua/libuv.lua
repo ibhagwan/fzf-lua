@@ -370,10 +370,10 @@ M.load_fn = function(fn_str)
   return fn_loaded
 end
 
-local posix_exec = function(opts)
-  if type(opts.cmd) ~= "string" or _is_win or not pcall(require, "ffi") then return end
+local posix_exec = function(cmd)
+  if type(cmd) ~= "string" or _is_win or not pcall(require, "ffi") then return end
   require("ffi").cdef([[int execl(const char *, const char *, ...);]])
-  require("ffi").C.execl("/bin/sh", "sh", "-c", opts.cmd, nil)
+  require("ffi").C.execl("/bin/sh", "sh", "-c", cmd, nil)
 end
 
 ---@param opts table
@@ -412,7 +412,9 @@ M.spawn_stdio = function(opts)
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
 
-  if type(opts.cmd) == "string" and opts.cmd:match("%-%-color[=%s]+never") then
+  ---@type fzf-lua.content|fzf-lua.shell.data2
+  local cmd = opts.cmd
+  if type(cmd) == "string" and cmd:match("%-%-color[=%s]+never") then
     -- perf: skip stripping ansi coloring in `make_file.entry`
     opts.no_ansi_colors = true
   end
@@ -422,10 +424,10 @@ M.spawn_stdio = function(opts)
       io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, vim.inspect(v)))
     end
   elseif opts.debug then
-    io.stdout:write("[DEBUG] [mt] " .. tostring(opts.cmd) .. EOL)
+    io.stdout:write("[DEBUG] [mt] " .. tostring(cmd) .. EOL)
   end
 
-  if not fn_transform and not fn_postprocess then posix_exec(opts) end
+  if not fn_transform and not fn_postprocess then posix_exec(cmd) end
 
   local stderr, stdout = nil, nil
 
@@ -527,18 +529,25 @@ M.spawn_stdio = function(opts)
         end
       end
 
-  if type(opts.cmd) ~= "string" then
+  if type(cmd) ~= "string" then
     local f = fn_transform or function(x) return x end
     local w = function(s) if s then io.stdout:write(f(s) .. EOL) else on_finish(0) end end
     local wn = function(s) if s then return io.stdout:write(f(s)) else on_finish(0) end end
-    if type(opts.cmd) == "function" then opts.cmd(w, wn) end
-    for _, v in ipairs(opts.cmd) do w(v) end
-    on_finish(0)
+    if opts.fn_reload then ---@cast cmd fzf-lua.shell.data2
+      local items = vim.deepcopy(_G.arg)
+      items[0] = nil
+      table.remove(items, 1)
+      cmd = cmd(items, opts)
+    end ---@cast cmd fzf-lua.content
+    if type(cmd) == "function" then cmd(w, wn) end
+    if type(cmd) == "table" then for _, v in ipairs(cmd) do w(v) end end
+    if type(cmd) ~= "string" then on_finish(0) end
+    if not fn_transform and not fn_postprocess then posix_exec(cmd) end
   end
 
   return M.spawn({
       cwd = opts.cwd,
-      cmd = opts.cmd,
+      cmd = cmd,
       cb_finish = on_finish,
       cb_write = on_write,
       cb_err = on_err,
