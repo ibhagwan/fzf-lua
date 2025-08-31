@@ -288,14 +288,6 @@ M.live_grep = function(opts)
   opts = normalize_live_grep_opts(opts)
   if not opts then return end
 
-  -- when using glob parsing, we must use the external
-  -- headless instance for processing the query. This
-  -- prevents 'file|git_icons=false' from overriding
-  -- processing inside 'core.mt_cmd_wrapper'
-  if opts.rg_glob then
-    opts.multiprocess = opts.multiprocess and 1
-  end
-
   -- this will be replaced by the appropriate fzf
   -- FIELD INDEX EXPRESSION by 'fzf_exec'
   local cmd = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
