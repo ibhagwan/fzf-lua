@@ -281,12 +281,7 @@ M.stringify_mt = function(contents, opts)
         opts.fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]]
       end
     end
-    local spawn_cmd = M.wrap_spawn_stdio(filter_opts(opts))
-    if opts.argv_expr then
-      -- prefix the query with `--` so we can support `--fixed-strings` (#781)
-      spawn_cmd = string.format("%s -- %s", spawn_cmd, FzfLua.core.fzf_query_placeholder)
-    end
-    return spawn_cmd
+    return M.wrap_spawn_stdio(filter_opts(opts))
   end
 end
 
