@@ -116,8 +116,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end
 
   if opts.debug then
-    print("[Fzf-lua]: FZF_DEFAULT_COMMAND:", FZF_DEFAULT_COMMAND)
-    print("[Fzf-lua]: fzf cmd:", table.concat(cmd, " "))
+    utils.info("FZF_DEFAULT_COMMAND: %s", tostring(FZF_DEFAULT_COMMAND))
+    utils.info("fzf cmd: %s", table.concat(cmd, " "))
   end
 
   local co = coroutine.running()

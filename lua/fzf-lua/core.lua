@@ -370,7 +370,7 @@ M.fzf = function(contents, opts)
       pipe_cmd = opts.pipe_cmd,
       silent_fail = opts.silent_fail,
       is_fzf_tmux = opts._is_fzf_tmux,
-      debug = opts.debug == true or opts.debug == "verbose",
+      debug = opts.debug,
       RIPGREP_CONFIG_PATH = opts.RIPGREP_CONFIG_PATH,
     })
   -- kill fzf piped process PID

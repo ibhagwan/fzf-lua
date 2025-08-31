@@ -389,12 +389,7 @@ M.spawn_stdio = function(opts)
   end
 
   -- setup global vars
-  for k, v in pairs(opts.g or {}) do
-    _G[k] = v
-    if opts.debug == "v" or opts.debug == "verbose" then
-      io.stdout:write(string.format("[DEBUG] %s=%s" .. (k ~= "_EOL" and EOL or ""), k, v))
-    end
-  end
+  for k, v in pairs(opts.g or {}) do _G[k] = v end
 
   -- Requiring make_entry will create the pseudo `_G.FzfLua` global
   -- Must be called after global vars are created or devicons will
@@ -418,8 +413,8 @@ M.spawn_stdio = function(opts)
   end
 
   if opts.debug == "v" or opts.debug == "verbose" then
-    for k, v in pairs(opts) do
-      io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, tostring(v)))
+    for k, v in vim.spairs(opts) do
+      io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, vim.inspect(v)))
     end
   elseif opts.debug then
     io.stdout:write("[DEBUG] [mt] " .. opts.cmd .. EOL)
