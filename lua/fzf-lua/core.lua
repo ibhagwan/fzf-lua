@@ -194,10 +194,7 @@ M.fzf_live = function(contents, opts)
   -- each keypress reloads fzf's input usually based on the typed query
   -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
   if type(contents) == "string" then
-    -- Signal to stringify_mt we are relocating <query>
-    -- Signal to preprocess we are looking to replace {argvz}
     -- Append query placeholder if not found in command
-    opts.argv_expr = opts.multiprocess
     if not contents:match(M.fzf_query_placeholder) then
       contents = ("%s %s"):format(contents, M.fzf_query_placeholder)
     end
