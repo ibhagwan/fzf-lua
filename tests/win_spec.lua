@@ -132,10 +132,14 @@ end
 
 T["win"]["keymap"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
-T["win"]["keymap"]["no error"] = function()
-  local builtin = child.lua_get [[FzfLua.defaults.keymap.builtin]]
-  for _, event in ipairs({ "start", "load", "result" }) do
-    for key, actions in pairs(builtin) do
+T["win"]["keymap"]["no error"] = new_set({
+  parametrize = vim.iter(require("fzf-lua.defaults").defaults.keymap.builtin)
+      :map(function(key, action) return { key, action } end)
+      :totable()
+}, {
+  function(key, _action)
+    local builtin = child.lua_get [[FzfLua.defaults.keymap.builtin]]
+    for _, event in ipairs({ "start", "load", "result" }) do
       exec_lua([[
         FzfLua.files {
           query = "README.md",
@@ -152,8 +156,7 @@ T["win"]["keymap"]["no error"] = function()
         return child.lua_get([[_G._fzf_load_called]]) == vim.NIL
       end)
     end
-  end
-end
+  end })
 
 T["win"]["previewer"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
