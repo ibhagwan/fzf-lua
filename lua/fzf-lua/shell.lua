@@ -257,15 +257,13 @@ M.stringify_mt = function(contents, opts)
       and not opts.fn_preprocess
       and not opts.fn_postprocess
   then
-    -- command does not require any processing, we also reset `argv_expr`
-    -- to keep `setup_fzf_interactive_flags::no_query_condi` in the command
-    opts.argv_expr = nil
+    -- command does not require any processing
     return opts.cmd
     -- to use multiprocess for non-string contents, always set multiprocess=true
   elseif opts.multiprocess ~= true and type(opts.cmd) ~= "string" then
     return nil
   else
-    if opts.argv_expr then
+    if opts.fn_reload then
       -- Since the `rg` command will be wrapped inside the shell escaped
       -- '--headless .. --cmd', we won't be able to search single quotes
       -- as it will break the escape sequence. So we use a nifty trick:
@@ -274,12 +272,10 @@ M.stringify_mt = function(contents, opts)
       --   * preprocess then replace it with vim.fn.argv(1)
       -- NOTE: since we cannot guarantee the positional index
       -- of arguments (#291), we use the last argument instead
-      opts.cmd = opts.cmd:gsub(FzfLua.core.fzf_query_placeholder, "{argvz}")
-      -- NOTE: we add preprocess in config.normalize_opts but `opts.argv_expr`
-      -- isn't yet set at that point
-      if opts.fn_preprocess == nil then
-        opts.fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]]
-      end
+      opts.argv_expr = true
+      opts.fn_preprocess = opts.fn_preprocess == nil
+          and [[return require("fzf-lua.make_entry").preprocess]]
+          or opts.fn_preprocess
     end
     return M.wrap_spawn_stdio(filter_opts(opts))
   end
