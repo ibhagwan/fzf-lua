@@ -263,15 +263,12 @@ M.stringify_mt = function(contents, opts)
   elseif opts.multiprocess ~= true and type(opts.cmd) ~= "string" then
     return nil
   else
-    if opts.fn_reload then
+    if opts.fn_reload and type(opts.cmd) == "string" then
       -- Since the `rg` command will be wrapped inside the shell escaped
-      -- '--headless .. --cmd', we won't be able to search single quotes
-      -- as it will break the escape sequence. So we use a nifty trick:
-      --   * replace the placeholder with {argv1}
-      --   * re-add the placeholder at the end of the command
-      --   * preprocess then replace it with vim.fn.argv(1)
+      -- 'nvim -l ...', we won't be able to search single quotes
       -- NOTE: since we cannot guarantee the positional index
       -- of arguments (#291), we use the last argument instead
+      -- "<query>" is re-add in fzf_live
       opts.argv_expr = true
       opts.fn_preprocess = opts.fn_preprocess == nil
           and [[return require("fzf-lua.make_entry").preprocess]]

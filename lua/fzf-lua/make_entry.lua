@@ -195,18 +195,17 @@ M.preprocess = function(opts)
   end
 
   -- live_grep replace pattern with last argument
-  local argvz = "{argvz}"
-  if type(opts.cmd) == "string" and opts.cmd:match(argvz) then
+  local argvz = "<query>"
+  if opts.argv_expr and opts.cmd:match(argvz) then
     -- The NEQ condition on Windows turned out to be a real pain in the butt
     -- so I decided to move the empty query test into our cmd proxy wrapper
     -- For obvious reasons this cannot work with `live_grep_native` and thus
     -- the NEQ condition remains for the "native" version
-    if not opts.exec_empty_query then
+    local query = argv(nil, opts.debug)
+    if not opts.exec_empty_query and query == "" then
       -- query is always be the last argument
-      if argv(nil, opts.debug) == "" then
-        opts.cmd = utils.shell_nop()
-        return opts
-      end
+      opts.cmd = utils.shell_nop()
+      return opts
     end
 
     -- For custom command transformations (#1927)
@@ -216,12 +215,10 @@ M.preprocess = function(opts)
     -- did the caller request rg with glob support?
     -- manipulation needs to be done before the argv replacement
     if opts.fn_transform_cmd then
-      local query = argv(nil, opts.debug)
       local new_cmd, new_query = opts.fn_transform_cmd(query, opts.cmd:gsub(argvz, ""), opts)
       opts.cmd = new_cmd or opts.cmd
-      opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(new_query or query))
+      query = new_query or query
     elseif opts.rg_glob then
-      local query = argv(nil, opts.debug)
       local search_query, glob_args = M.glob_parse(query, opts)
       if glob_args then
         -- gsub doesn't like single % on rhs
@@ -230,19 +227,12 @@ M.preprocess = function(opts)
         -- insert glob args before `-- {argvz}` or `-e {argvz}` repositioned
         -- at the end of the command preceding the search query (#781, #794)
         opts.cmd = M.rg_insert_args(opts.cmd, glob_args, argvz)
-        opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(search_query))
+        query = search_query
       end
     end
-  end
-
-  -- nifty hack to avoid having to double escape quotations
-  -- see my comment inside 'live_grep' initial_command code
-  if opts.argv_expr and type(opts.cmd) == "string" then
-    opts.cmd = opts.cmd:gsub("{argv.*}",
-      function(x)
-        local idx = x:match("{argv(.*)}")
-        return libuv.shellescape(argv(idx, not opts.rg_glob and opts.debug))
-      end)
+    -- nifty hack to avoid having to double escape quotations
+    -- see my comment inside 'live_grep' initial_command code
+    opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(query))
   end
 
   if utils.__IS_WINDOWS and type(opts.cmd) == "string" and opts.cmd:match("!") then
