@@ -222,6 +222,7 @@ M.stringify_mt = function(contents, opts)
       "fn_transform",
       "fn_preprocess",
       "fn_postprocess",
+      "fn_reload", -- TODO: just a boolean, maybe rename it
       utils.__IS_WINDOWS and "__FZF_VERSION" or nil,
     }
     -- caller requested rg with glob support
