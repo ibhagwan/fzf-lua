@@ -177,17 +177,15 @@ M.vimcmd_entry = function(_vimcmd, selected, opts)
       end
       if vimcmd then
         local cmd, is_buf_edit = vimcmd:gsub("|?%s-<auto>$", "")
-        local res = vim.F.npcall(vim.api.nvim_parse_cmd, cmd, {}) or {}
-        local need_args = (res.nargs == "+" or res.nargs == "1") and (not res.args or #res.args == 0)
-        if need_args then
-          return vim.cmd[res.cmd](require("fzf-lua.path").entry_to_file(sel, opts).path)
-        end
-        -- Command could have been "<auto>", in which case do nothing
-        -- as we only have to load the buffer into the current window
-        if #cmd > 0 then vim.cmd(cmd) end
-        -- URI entries only execute new buffers (new|vnew|tabnew)
-        -- and later use `utils.jump_to_location` to load the buffer
-        if not entry.uri and is_buf_edit > 0 then
+        if is_buf_edit == 0 then
+          local relpath = path.normalize(path.relative_to(fullpath, uv.cwd()))
+          vim.cmd(("%s %s"):format(cmd, relpath))
+        elseif not entry.uri and is_buf_edit > 0 then
+          -- Command could have been "<auto>", in which case do nothing
+          -- as we only have to load the buffer into the current window
+          if #cmd > 0 then vim.cmd(cmd) end
+          -- URI entries only execute new buffers (new|vnew|tabnew)
+          -- and later use `utils.jump_to_location` to load the buffer
           local bufnr = (function()
             -- Is the requested buffer is already loaded by the (split) command?
             local curbuf = vim.api.nvim_win_get_buf(0)
