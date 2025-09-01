@@ -140,15 +140,13 @@ M.resume = function(_, _)
 end
 
 local edit_entry = function(entry, fullpath, will_replace_curbuf, opts)
-  -- URI entries only execute new buffers (new|vnew|tabnew)
-  -- and later use `utils.jump_to_location` to load the buffer
-  local bufnr = (function()
-    -- Is the requested buffer is already loaded by the (split) command?
-    local curbuf = vim.api.nvim_win_get_buf(0)
-    local curbname = vim.api.nvim_buf_get_name(curbuf)
-    if entry.bufnr == curbuf or path.equals(curbname, fullpath) then return end
-    -- Entry already contains bufnr
-    if entry.bufnr then return entry.bufnr end
+  local curbuf = vim.api.nvim_win_get_buf(0)
+  local curbname = vim.api.nvim_buf_get_name(curbuf)
+  if entry.bufnr == curbuf or path.equals(curbname, fullpath) then
+    -- requested buffer already loaded in the current window (split?)
+    return true
+  end
+  local bufnr = entry.bufnr or (function()
     -- Always open files relative to the current win/tab cwd (#1854)
     -- We normalize the path or Windows will fail with directories starting
     -- with special characters, for example "C:\app\(web)" will be translated
@@ -158,39 +156,40 @@ local edit_entry = function(entry, fullpath, will_replace_curbuf, opts)
     if bufnr == 0 and not opts.silent then
       utils.warn("Unable to add buffer %s", relpath)
       return
-    else
-      vim.bo[bufnr].buflisted = true
-      return bufnr
     end
+    vim.bo[bufnr].buflisted = true
+    return bufnr
   end)()
-  if tonumber(bufnr) then
-    -- If current buffer is an unnamed empty buffer (e.g. "new"), wipe on switch
-    if will_replace_curbuf
-        and vim.bo.buftype == ""
-        and vim.bo.filetype == ""
-        and vim.api.nvim_buf_line_count(0) == 1
-        and vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == ""
-        and vim.api.nvim_buf_get_name(0) == ""
-    then
-      vim.bo.bufhidden = "wipe"
-    end
-    -- NOTE: nvim_set_current_buf will load the buffer if needed
-    -- calling bufload will mess up `BufReadPost` autocmds
-    -- vim.fn.bufload(bufnr)
-    local ok, _ = pcall(vim.api.nvim_set_current_buf, bufnr)
-    -- When `:set nohidden && set confirm`, neovim will invoke the save dialog
-    -- and confirm with the user when trying to switch from a dirty buffer, if
-    -- user cancelles the save dialog pcall will fail with:
-    -- Vim:E37: No write since last change (add ! to override)
-    if not ok then return end
+  -- abort if we're unable to load the buffer
+  if not tonumber(bufnr) then return end
+  -- wipe unnamed empty buffers (e.g. "new") on switch
+  if will_replace_curbuf
+      and vim.bo.buftype == ""
+      and vim.bo.filetype == ""
+      and vim.api.nvim_buf_line_count(0) == 1
+      and vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == ""
+      and vim.api.nvim_buf_get_name(0) == ""
+  then
+    vim.bo.bufhidden = "wipe"
   end
+  -- NOTE: nvim_set_current_buf will load the buffer if needed
+  -- calling bufload will mess up `BufReadPost` autocmds
+  -- vim.fn.bufload(bufnr)
+  local ok, _ = pcall(vim.api.nvim_set_current_buf, bufnr)
+  -- When `:set nohidden && set confirm`, neovim will invoke the save dialog
+  -- and confirm with the user when trying to switch from a dirty buffer, if
+  -- user cancelles the save dialog pcall will fail with:
+  -- Vim:E37: No write since last change (add ! to override)
+  if not ok then return end
+  return true
 end
 
 ---@param vimcmd string
 ---@param selected string[]
 ---@param opts fzf-lua.Config
+---@param bufedit boolean?
 ---@return string?
-M.vimcmd_entry = function(vimcmd, selected, opts)
+M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
   for i, sel in ipairs(selected) do
     (function()
       -- Lua 5.1 goto compatiblity hack (function wrap)
@@ -210,25 +209,43 @@ M.vimcmd_entry = function(vimcmd, selected, opts)
         -- technically we should never get to the `uv.cwd()` fallback
         fullpath = path.join({ opts.cwd or opts._cwd or uv.cwd(), fullpath })
       end
-      local is_buf_edit = opts._is_buf_edit
       -- Can't be called from term window (for example, "reload" actions) due to
       -- nvim_exec2(): Vim(normal):Can't re-enter normal mode from terminal mode
       -- NOTE: we do not use `opts.__CTX.bufnr` as caller might be the fzf term
       if not utils.is_term_buffer(0) then
         vim.cmd("normal! m`")
       end
-      if not is_buf_edit then
-        local relpath = path.normalize(path.relative_to(fullpath, uv.cwd()))
-        vim.cmd(("%s %s"):format(vimcmd, relpath))
-      elseif not entry.uri then
-        -- <auto> (without prefix, formerly `:b|e`) replace the current buffer
-        local will_replace_curbuf = #vimcmd == 0
-        if will_replace_curbuf and utils.wo.winfixbuf then
-          utils.warn("'winfixbuf' is set for current window, will open in a split.")
-          vimcmd, will_replace_curbuf = "split", false
+      if bufedit then
+        local will_replace_curbuf = (function()
+          if #vimcmd > 0 then return false end
+          local curbuf = vim.api.nvim_win_get_buf(0)
+          local curbname = vim.api.nvim_buf_get_name(curbuf)
+          if entry.bufnr == curbuf or path.equals(curbname, fullpath) then
+            -- requested buffer already loaded in the current window (split?)
+            return false
+          end
+          return true
+        end)()
+        if will_replace_curbuf then
+          if utils.wo.winfixbuf then
+            utils.warn("'winfixbuf' is set for current window, will open in a split.")
+            vimcmd, will_replace_curbuf = "split", false
+          elseif not vim.o.hidden
+              and not vim.o.confirm
+              and utils.buffer_is_dirty(vim.api.nvim_get_current_buf(), true) then
+            return
+          end
         end
         if #vimcmd > 0 then vim.cmd(vimcmd) end
-        edit_entry(entry, fullpath, will_replace_curbuf, opts)
+        -- NOTE: URI entries only execute new buffers (new|vnew|tabnew)
+        -- and later use `utils.jump_to_location` to load the buffer
+        if not entry.uri and not edit_entry(entry, fullpath, will_replace_curbuf, opts) then
+          -- error loading buffer or save dialog cancelled
+          return
+        end
+      else
+        local relpath = path.normalize(path.relative_to(fullpath, uv.cwd()))
+        vim.cmd(("%s %s"):format(vimcmd, relpath))
       end
       -- Reload actions from fzf's (buf/arg del, etc) window end here
       if utils.is_term_buffer(0) and vim.bo.ft == "fzf" then
@@ -236,12 +253,10 @@ M.vimcmd_entry = function(vimcmd, selected, opts)
       end
       -- Java LSP entries, 'jdt://...' or LSP locations
       if entry.uri then
-        if utils.is_term_bufname(entry.uri) then
-          -- nvim_exec2(): Vim(normal):Can't re-enter normal mode from terminal mode
-          pcall(utils.jump_to_location, entry, "utf-16", opts.reuse_win)
-        else
-          utils.jump_to_location(entry --[[@as lsp.Location]], "utf-16", opts.reuse_win)
-        end
+        -- pcall for two failed cases
+        -- (1) nvim_exec2(): Vim(normal):Can't re-enter normal mode from terminal mode
+        -- (2) save dialog cancellation
+        pcall(utils.jump_to_location, entry, "utf-16", opts.reuse_win)
       elseif entry.ctag and entry.line == 0 then
         vim.api.nvim_win_set_cursor(0, { 1, 0 })
         vim.fn.search(entry.ctag, "W")
@@ -263,27 +278,23 @@ end
 
 -- file actions
 M.file_edit = function(selected, opts)
-  opts._is_buf_edit = true
-  M.vimcmd_entry("", selected, opts)
+  M.vimcmd_entry("", selected, opts, true)
 end
 
 M.file_split = function(selected, opts)
-  opts._is_buf_edit = true
-  M.vimcmd_entry("split", selected, opts)
+  M.vimcmd_entry("split", selected, opts, true)
 end
 
 M.file_vsplit = function(selected, opts)
-  M.vimcmd_entry("vsplit", selected, opts)
+  M.vimcmd_entry("vsplit", selected, opts, true)
 end
 
 M.file_tabedit = function(selected, opts)
   -- local vimcmd = "tab split | <auto>"
-  opts._is_buf_edit = true
-  M.vimcmd_entry("tabnew | setlocal bufhidden=wipe", selected, opts)
+  M.vimcmd_entry("tabnew | setlocal bufhidden=wipe", selected, opts, true)
 end
 
 M.file_open_in_background = function(selected, opts)
-  opts._is_buf_edit = true
   M.vimcmd_entry("badd", selected, opts)
 end
 
