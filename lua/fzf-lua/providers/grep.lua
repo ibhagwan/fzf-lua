@@ -133,21 +133,19 @@ M.live_grep = function(opts)
   opts = normalize_live_grep_opts(opts)
   if not opts then return end
 
-  -- this will be replaced by the appropriate fzf
-  -- FIELD INDEX EXPRESSION by 'fzf_exec'
-  local cmd = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
-  opts.cmd = opts.multiprocess and cmd or opts.cmd
+  -- register opts._cmd, toggle_ignore/title_flag
+  get_grep_cmd(opts, "", 2)
 
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd", "live" })
   opts = core.set_fzf_field_index(opts)
   ---@diagnostic disable-next-line: redefined-local
-  core.fzf_live(opts.cmd or function(s, opts)
+  core.fzf_live(function(s, opts)
     -- can be nil when called as fzf initial command
     local query = s[1] or ""
     opts.no_esc = nil
-    local cmd0 = get_grep_cmd(opts, query, true)
-    if not core.can_transform(opts) then return cmd0 end
+    local cmd0 = FzfLua.make_entry.get_grep_cmd(opts, query, true)
+    if opts.contents or not core.can_transform(opts) then return cmd0 end
     -- "reload:cmd"
     if not opts.exec_empty_query and #query == 0 then
       cmd0 = FzfLua.utils.shell_nop()
