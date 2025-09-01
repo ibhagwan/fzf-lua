@@ -185,7 +185,8 @@ _G.FzfLua = require("fzf-lua")
 ---FzfWin:treesitter_attach
 ---@field _treesitter (fun(line:string):string,string?,string?,string?)|boolean?
 ---stringify_mt
----@field cmd? fzf-lua.content
+---@field cmd? string
+---@field contents? fzf-lua.content
 ---@field argv_expr? boolean
 ---@field debug? boolean|'v'|'verbose'
 ---@field rg_glob? boolean
