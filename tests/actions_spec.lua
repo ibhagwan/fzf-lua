@@ -65,18 +65,43 @@ T["actions"]["reload"] = new_set({
 T["actions"]["vimcmd"] = new_set()
 
 T["actions"]["vimcmd"]["drop"] = function()
+  local ctx = function()
+    return {
+      buf = child.api.nvim_get_current_buf(),
+      win = child.api.nvim_get_current_win(),
+      tab = child.api.nvim_get_current_tabpage(),
+      name = vim.fs.basename(child.api.nvim_buf_get_name(0)),
+    }
+  end
   helpers.FzfLua.files(child, {
     __abort_key = "<c-a>",
     __expect_lines = false,
     __after_open = function()
       if helpers.IS_WIN() then vim.uv.sleep(250) end
     end,
-    query = "README.md$",
+    query = "LICENSE$",
     actions = {
       ["ctrl-a"] = function(...) require("fzf-lua.actions").vimcmd_entry("drop", ...) end,
     },
   })
-  eq("README.md", vim.fs.basename(child.api.nvim_buf_get_name(0)))
+  local _ctx = ctx()
+  eq({ "LICENSE", 1 }, { _ctx.name, child.fn.line(".") })
+
+  -- work with line number
+  vim.cmd.tabnew()
+  helpers.FzfLua.live_grep(child, {
+    __abort_key = "<c-a>",
+    __expect_lines = false,
+    __after_open = function()
+      if helpers.IS_WIN() then vim.uv.sleep(250) end
+    end,
+    no_esc = true,
+    search = [[Copyright \(c\) -- LICENSE]],
+    actions = {
+      ["ctrl-a"] = function(...) require("fzf-lua.actions").vimcmd_entry("drop", ...) end,
+    },
+  })
+  eq({ "LICENSE", 3 }, { _ctx.name, child.fn.line(".") })
 end
 
 return T
