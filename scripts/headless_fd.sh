@@ -144,6 +144,7 @@ nvim -u NONE -l ${BASEDIR}/../lua/fzf-lua/spawn.lua "return
     file_icons = [[${file_icons}]] == true or [[${file_icons}]],
     git_icons = ${git_icons},
     color_icons = ${color_icons},
+    contents = [[${cmd:-fd --color=never}]],
     cmd = [[${cmd:-fd --color=never}]],
     cwd = vim.fn.expand([[${cwd:-$BASEDIR}]]),
     fn_transform = [==[

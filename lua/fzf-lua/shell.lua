@@ -191,7 +191,6 @@ end
 ---@return string?
 M.stringify_mt = function(contents, opts)
   if opts.multiprocess == false then return end
-  opts.cmd = contents or opts.cmd
   ---@param o fzf-lua.config.Base|{}
   ---@return table
   local filter_opts = function(o)
@@ -223,6 +222,7 @@ M.stringify_mt = function(contents, opts)
       "fn_preprocess",
       "fn_postprocess",
       "fn_reload", -- TODO: just a boolean, maybe rename it
+      "contents",  -- different when opts.cmd is also used by e.g. get_grep_cmd
       utils.__IS_WINDOWS and "__FZF_VERSION" or nil,
     }
     -- caller requested rg with glob support
@@ -252,24 +252,26 @@ M.stringify_mt = function(contents, opts)
 
   -- `multiprocess=1` is "optional" if no opt which requires processing
   -- is present we return the command as is to be piped to fzf "natively"
-  if opts.multiprocess ~= true and type(opts.cmd) == "string"
+  if opts.multiprocess ~= true and type(contents) == "string"
       and not opts.fn_transform
       and not opts.fn_preprocess
       and not opts.fn_postprocess
   then
     -- command does not require any processing
-    return opts.cmd
+    return contents
     -- to use multiprocess for non-string contents, always set multiprocess=true
   elseif opts.multiprocess ~= true and type(opts.cmd) ~= "string" then
     return nil
   else
-    if opts.fn_reload and type(opts.cmd) == "string" then
+    opts.contents = contents
+    if opts.fn_reload and type(contents) == "string" then
       -- Since the `rg` command will be wrapped inside the shell escaped
       -- 'nvim -l ...', we won't be able to search single quotes
       -- NOTE: since we cannot guarantee the positional index
       -- of arguments (#291), we use the last argument instead
       -- "<query>" is re-add in fzf_live
       opts.argv_expr = true
+      opts.cmd = opts.cmd or contents
       opts.fn_preprocess = opts.fn_preprocess == nil
           and [[return require("fzf-lua.make_entry").preprocess]]
           or opts.fn_preprocess

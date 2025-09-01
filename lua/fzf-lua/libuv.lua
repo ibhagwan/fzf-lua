@@ -413,7 +413,7 @@ M.spawn_stdio = function(opts)
   if fn_preprocess then fn_preprocess(opts) end
 
   ---@type fzf-lua.content|fzf-lua.shell.data2
-  local cmd = opts.cmd
+  local cmd = opts.argv_expr and opts.cmd or opts.contents
   if type(cmd) == "string" and cmd:match("%-%-color[=%s]+never") then
     -- perf: skip stripping ansi coloring in `make_file.entry`
     opts.no_ansi_colors = true
@@ -426,8 +426,6 @@ M.spawn_stdio = function(opts)
   elseif opts.debug then
     io.stdout:write("[DEBUG] [mt] " .. tostring(cmd) .. EOL)
   end
-
-  if not fn_transform and not fn_postprocess then posix_exec(cmd) end
 
   local stderr, stdout = nil, nil
 
@@ -542,8 +540,9 @@ M.spawn_stdio = function(opts)
     if type(cmd) == "function" then cmd(w, wn) end
     if type(cmd) == "table" then for _, v in ipairs(cmd) do w(v) end end
     if type(cmd) ~= "string" then on_finish(0) end
-    if not fn_transform and not fn_postprocess then posix_exec(cmd) end
   end
+
+  if not fn_transform and not fn_postprocess then posix_exec(cmd) end
 
   return M.spawn({
       cwd = opts.cwd,
