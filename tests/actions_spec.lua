@@ -28,7 +28,9 @@ T["actions"]["ui don't freeze on error"] = function()
   vim.uv.sleep(100 * (not helpers.IS_LINUX() and 5 or 1))
   child.expect_screen_lines(screen_opts)
 
-  exec_lua([[FzfLua.fzf_exec(function(cb) cb(1) cb(2) error("eff") end)]])
+  exec_lua([[FzfLua.fzf_exec(function(cb) cb(1) cb(2) error("err") end, {
+      fzf_opts = { ['--no-info'] = true, ['--info'] = false },
+    })]])
   child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
   child.type_keys("ui should not freeze on content error")
   vim.uv.sleep(100 * (not helpers.IS_LINUX() and 5 or 1))
