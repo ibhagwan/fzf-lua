@@ -14,6 +14,33 @@ do
   if ok then config = module end
 end
 
+-- load config from our running instance
+local function load_config()
+  ---@diagnostic disable-next-line: undefined-field
+  if not _G._fzf_lua_server then return end
+  local res = nil
+  local ok, errmsg = pcall(function()
+    ---@diagnostic disable-next-line: undefined-field
+    local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
+    res = vim.rpcrequest(chan_id, "nvim_exec_lua", [[
+      return FzfLua.libuv.serialize(FzfLua.config)
+    ]], {})
+    res = libuv.deserialize(assert(res))
+    vim.fn.chanclose(chan_id)
+  end)
+  if not ok then
+    dump(res)
+    dump(errmsg)
+  end
+  return res
+end
+
+local opts2 = setmetatable({}, {
+  __index = function(_, k)
+    return utils.map_get(config, "__resume_data.opts." .. k)
+  end
+})
+
 local function load_config_section(s, datatype, optional)
   if not _G._fzf_lua_is_headless then
     local val = utils.map_get(config, s)
@@ -56,15 +83,15 @@ local function load_config_section(s, datatype, optional)
 end
 
 if _G._fzf_lua_is_headless then
-  local _config = { globals = { git = {}, files = {}, grep = {} } }
+  local _config = load_config() or {} ---@module 'fzf-lua.config'
+  _config.globals = { git = {}, files = {}, grep = {} }
   _config.globals.git.icons = load_config_section("globals.git.icons", "table") or {}
   _config.globals.files.git_status_cmd =
       load_config_section("globals.files.git_status_cmd", "table")
       or { "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" }
 
   -- prioritize `opts.rg_glob_fn` over globals
-  _config.globals.grep.rg_glob_fn =
-      load_config_section("__resume_data.opts.rg_glob_fn", "function", true) or
+  _config.globals.grep.rg_glob_fn = opts2.rg_glob_fn or
       load_config_section("globals.grep.rg_glob_fn", "function", true)
 
   _config.globals.nbsp = load_config_section("globals.nbsp", "string")
@@ -185,6 +212,7 @@ end
 ---@param no_esc boolean|number
 ---@return string?
 M.get_grep_cmd = function(opts, search_query, no_esc)
+  opts = _G._fzf_lua_is_headless and setmetatable(vim.deepcopy(opts), { __index = opts2 }) or opts
   if opts.raw_cmd and #opts.raw_cmd > 0 then
     return opts.raw_cmd
   end
@@ -325,8 +353,20 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
     search_query = libuv.shellescape(search_query)
   end
 
+  ---@param cmd string
+  ---@param fzf_field_index string
+  ---@return string
+  local expand_query = function(cmd, fzf_field_index)
+    if opts.contents and cmd:match("<query>") then
+      return (cmd:gsub("<query>", fzf_field_index))
+    else
+      return ("%s %s"):format(cmd, fzf_field_index)
+    end
+  end
+
   -- construct the final command
-  command = ("%s %s %s"):format(command, search_query, search_path)
+  command = expand_query(command, search_query)
+  command = ("%s %s"):format(command, search_path)
 
   -- piped command filter, used for filtering ctags
   if opts.filter and #opts.filter > 0 then
@@ -368,8 +408,7 @@ M.preprocess = function(opts)
     end
 
     -- For custom command transformations (#1927)
-    opts.fn_transform_cmd =
-        load_config_section("__resume_data.opts.fn_transform_cmd", "function", true)
+    opts.fn_transform_cmd = opts2.fn_transform_cmd
 
     -- did the caller request rg with glob support?
     -- manipulation needs to be done before the argv replacement
@@ -431,10 +470,10 @@ M.preprocess = function(opts)
   -- formatter `to` function
   if opts.formatter and not opts._fmt then
     opts._fmt = opts._fmt or {}
-    opts._fmt.to = load_config_section("__resume_data.opts._fmt.to", "function", true)
+    opts._fmt.to = opts2._fmt.to
     -- Attempt to load from string value `_to`
     if not opts._fmt.to then
-      local _to = load_config_section("__resume_data.opts._fmt._to", "string", true)
+      local _to = opts2._fmt._to
       if type(_to) == "string" then
         opts._fmt.to = loadstring(_to)()
       end
