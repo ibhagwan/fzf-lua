@@ -61,4 +61,22 @@ T["actions"]["reload"] = new_set({
   end
 })
 
+
+T["actions"]["vimcmd"] = new_set()
+
+T["actions"]["vimcmd"]["drop"] = function()
+  helpers.FzfLua.files(child, {
+    __abort_key = "<c-a>",
+    __expect_lines = false,
+    __after_open = function()
+      if helpers.IS_WIN() then vim.uv.sleep(250) end
+    end,
+    query = "README.md$",
+    actions = {
+      ["ctrl-a"] = function(...) require("fzf-lua.actions").vimcmd_entry("drop", ...) end,
+    },
+  })
+  eq("README.md", vim.fs.basename(child.api.nvim_buf_get_name(0)))
+end
+
 return T

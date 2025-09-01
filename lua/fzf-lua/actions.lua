@@ -177,6 +177,11 @@ M.vimcmd_entry = function(_vimcmd, selected, opts)
       end
       if vimcmd then
         local cmd, is_buf_edit = vimcmd:gsub("|?%s-<auto>$", "")
+        local res = vim.F.npcall(vim.api.nvim_parse_cmd, cmd, {}) or {}
+        local need_args = (res.nargs == "+" or res.nargs == "1") and (not res.args or #res.args == 0)
+        if need_args then
+          return vim.cmd[res.cmd](require("fzf-lua.path").entry_to_file(sel, opts).path)
+        end
         -- Command could have been "<auto>", in which case do nothing
         -- as we only have to load the buffer into the current window
         if #cmd > 0 then vim.cmd(cmd) end
