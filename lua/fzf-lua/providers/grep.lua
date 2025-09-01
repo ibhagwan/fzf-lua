@@ -296,7 +296,8 @@ M.live_grep = function(opts)
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd", "live" })
   opts = core.set_fzf_field_index(opts)
-  core.fzf_live(opts.cmd or function(s)
+  ---@diagnostic disable-next-line: redefined-local
+  core.fzf_live(opts.cmd or function(s, opts)
     -- can be nil when called as fzf initial command
     local query = s[1] or ""
     opts.no_esc = nil
