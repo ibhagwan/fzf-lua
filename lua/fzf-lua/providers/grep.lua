@@ -55,7 +55,7 @@ local get_grep_cmd = function(opts, search_query, no_esc)
   end
 
   if opts.fn_transform_cmd then
-    local new_cmd, new_query = opts.fn_transform_cmd(search_query, opts.cmd, opts)
+    local new_cmd, new_query = opts.fn_transform_cmd(search_query, command, opts)
     if new_cmd then
       opts.no_esc = true
       opts.search = new_query
@@ -291,7 +291,7 @@ M.live_grep = function(opts)
   -- this will be replaced by the appropriate fzf
   -- FIELD INDEX EXPRESSION by 'fzf_exec'
   local cmd = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
-  opts.cmd = opts.multiprocess and cmd
+  opts.cmd = opts.multiprocess and cmd or opts.cmd
 
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd", "live" })
