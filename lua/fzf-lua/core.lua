@@ -171,17 +171,29 @@ M.can_transform = function(opts)
       and not opts.fn_postprocess
 end
 
+-- Append query placeholder if not found in command
+local add_query_placeholder = function(cmd)
+  if type(cmd) ~= "string" or cmd:match(M.fzf_query_placeholder) then return cmd end
+  return ("%s %s"):format(cmd, M.fzf_query_placeholder)
+end
+
 ---@param contents string|fzf-lua.shell.data2
 ---@return fzf-lua.shell.data2
 local cmd2fnc = function(contents)
-  return type(contents) == "function" and contents or function(args, _)
+  if type(contents) == "function" then return contents end
+  -- Append query placeholder if not found in command
+  local cmd = add_query_placeholder(contents)
+  return function(args, _)
     local query = args[1] or ""
     query = (query:gsub("%%", "%%%%"))
     query = libuv.shellescape(query)
-    return M.expand_query(contents, query)
+    return M.expand_query(cmd, query)
   end
 end
 
+-- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
+-- each keypress reloads fzf's input usually based on the typed query
+-- utilizes fzf's 'change:reload' event or skim's "interactive" mode
 ---@param contents string|fzf-lua.shell.data2
 ---@param opts? fzf-lua.config.Base|{}
 ---@return thread?, string?, table?
@@ -190,20 +202,12 @@ M.fzf_live = function(contents, opts)
   opts.fn_reload = true
   opts = config.normalize_opts(opts, {})
   if not opts then return end
-  -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
-  -- each keypress reloads fzf's input usually based on the typed query
-  -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
-  if type(contents) == "string" then
-    -- Append query placeholder if not found in command
-    if not contents:match(M.fzf_query_placeholder) then
-      contents = ("%s %s"):format(contents, M.fzf_query_placeholder)
-    end
-  end
   local fzf_field_index = M.fzf_field_index(opts)
   local cmd ---@type string
   if type(contents) == "function" and M.can_transform(opts) then
     cmd = shell.stringify_data(contents, opts, fzf_field_index)
   else
+    contents = add_query_placeholder(contents)
     local mtcmd = shell.stringify_mt(contents, opts)
     cmd = mtcmd and M.expand_query(mtcmd, fzf_field_index)
         or shell.stringify(cmd2fnc(contents), opts, fzf_field_index)
