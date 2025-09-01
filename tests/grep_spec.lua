@@ -12,7 +12,7 @@ T["grep"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
 T["grep"]["search"] = new_set()
 
-T["grep"]["search"]["regex"] = new_set({ parametrize = { { false }, { true } } }, {
+T["grep"]["search"]["regex"] = new_set({ parametrize = { { false }, { true }, { 1 } } }, {
   function(multiprocess)
     local screen_opts = {
       -- Ignore prompt containing our search string (different on win)
