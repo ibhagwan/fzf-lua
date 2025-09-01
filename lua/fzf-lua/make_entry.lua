@@ -135,7 +135,9 @@ M.glob_parse = function(query, opts)
   local glob_args = ""
   local search_query, glob_str = query:match("(.*)" .. opts.glob_separator .. "(.*)")
   for _, s in ipairs(utils.strsplit(glob_str, "%s+")) do
-    glob_args = glob_args .. ("%s %s "):format(opts.glob_flag, libuv.shellescape(s))
+    if #s > 0 then
+      glob_args = glob_args .. ("%s %s "):format(opts.glob_flag, libuv.shellescape(s))
+    end
   end
   return search_query, glob_args
 end
@@ -156,7 +158,7 @@ M.rg_insert_args = function(cmd, args, relocate_pattern)
     -- if pattern was not specified search for `-e<SPACE>` or `-e<EOL>`
     if relocate_pattern and #relocate_pattern > 0 then
       table.insert(patterns, {
-        a[1] .. "%s-" .. relocate_pattern,
+        a[1] .. "%s-" .. relocate_pattern .. "%s*",
         a[2] .. " " .. relocate_pattern,
       })
     else
@@ -166,11 +168,12 @@ M.rg_insert_args = function(cmd, args, relocate_pattern)
   end
   -- if pattern was specified also search for `<pattern>` directly
   if relocate_pattern and #relocate_pattern > 0 then
-    table.insert(patterns, { relocate_pattern, relocate_pattern })
+    table.insert(patterns, { "%s+" .. relocate_pattern .. "%s*", relocate_pattern })
   end
   for _, a in ipairs(patterns) do
     if cmd:match(a[1]) then
-      return string.format("%s %s %s", cmd:gsub(a[1], " "), args, a[2])
+      cmd = cmd:gsub(a[1], " ")
+      return string.format("%s %s %s", cmd:gsub("%s+$", ""), args:gsub("%s+$", ""), a[2])
     end
   end
   -- cmd doesn't contain `-e` or `--` or <pattern>, concat args

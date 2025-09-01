@@ -7,8 +7,8 @@
 06|~      │  :: <ctrl-g> to Regex Search, Grep string: \(·· │      
 07|~      │  [DEBUG] [mt] rg --column --line-number --no-he │      
 08|~      │  ↳ ading --color=always --smart-case --max-colu │      
-09|~      │  ↳ mns=4096  --iglob 'tests/grep*'  -e '\(\~'\' │      
-10|~      │  ↳ '"\\/\$\?'\''`\*&&\|\|;\[]<>\)'              │      
+09|~      │  ↳ mns=4096 --iglob 'tests/grep*' -e '\(\~'\''" │      
+10|~      │  ↳ \\/\$\?'\''`\*&&\|\|;\[]<>\)'                │      
 11|~      │▌  tests/grep_spec.lua:32:21:      search = [== │      
 12|~      │▌ ↳ =[(~'"\/$?'`*&&||;[]<>) --tests/grep*]===],  │      
 13|~      │                                                 │      
