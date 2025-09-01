@@ -308,8 +308,8 @@ M.stringify = function(contents, opts, fzf_field_index)
     ---@type fzf-lua.content, table?
     ---@diagnostic disable-next-line: redefined-local
     local contents, env = (function()
-      local ret = (opts.fn_reload or opts.__stringify_cmd)
-          and contents(unpack(args))
+      local ret = opts.fn_reload and type(contents) == "function" and contents(unpack(args), opts)
+          or opts.__stringify_cmd and contents(unpack(args))
           or contents
       if opts.__stringify_cmd and type(ret) == "table" then
         return ret.cmd, (ret.env or opts.env)
