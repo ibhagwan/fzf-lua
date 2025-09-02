@@ -159,6 +159,12 @@ M.fzf_exec = function(contents, opts)
   return M.fzf_wrap(cmd, opts, true)
 end
 
+local nop = function(opts)
+  return not opts.fn_transform
+      and not opts.fn_preprocess
+      and not opts.fn_postprocess
+end
+
 ---@param opts table
 ---@return boolean
 M.can_transform = function(opts)
@@ -166,9 +172,7 @@ M.can_transform = function(opts)
       and opts.fn_reload -- currently only used for "live" picker
       and opts.rg_glob
       and not opts.multiprocess
-      and not opts.fn_transform
-      and not opts.fn_preprocess
-      and not opts.fn_postprocess
+      and nop(opts)
 end
 
 -- Append query placeholder if not found in command
@@ -210,6 +214,7 @@ M.fzf_live = function(contents, opts)
     contents = add_query_placeholder(contents)
     local mtcmd = shell.stringify_mt(contents, opts)
     cmd = mtcmd and M.expand_query(mtcmd, fzf_field_index)
+        or type(contents) == "string" and nop(opts) and M.expand_query(contents, fzf_field_index)
         or shell.stringify(cmd2fnc(contents), opts, fzf_field_index)
   end
   M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
