@@ -943,7 +943,7 @@ function M.normalize_opts(opts, globals, __resume_key)
     utils.warn("'line_query' requires fzf >= 0.59, ignoring.")
   elseif opts.line_query then
     utils.map_set(opts, "winopts.preview.winopts.cursorline", true)
-    table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("change:+transform:"
+    table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("start,change:+transform:"
       .. FzfLua.shell.stringify_data(function(q, _, _)
         local lnum = q[1]:match(":(%d+)$")
         local new_q, subs = q[1]:gsub(":%d*$", "")
