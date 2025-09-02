@@ -69,46 +69,73 @@ T["actions"]["reload"] = new_set({
 })
 
 
-T["actions"]["vimcmd"] = new_set()
-
-T["actions"]["vimcmd"]["drop"] = function()
-  local ctx = function()
-    return {
-      buf = child.api.nvim_get_current_buf(),
-      win = child.api.nvim_get_current_win(),
-      tab = child.api.nvim_get_current_tabpage(),
-      name = vim.fs.basename(child.api.nvim_buf_get_name(0)),
+T["actions"]["vimcmd"] = new_set({
+  parametrize = {
+    { "drop" },
+    { "file_edit" },
+    { "file_split" },
+    { "file_vsplit" },
+    { "file_tabedit" },
+    { "file_open_in_background" },
+  },
+}, {
+  function(action)
+    local ctx = function()
+      return {
+        buf = child.api.nvim_get_current_buf(),
+        win = child.api.nvim_get_current_win(),
+        tab = child.api.nvim_get_current_tabpage(),
+        name = vim.fs.basename(child.api.nvim_buf_get_name(0)),
+      }
+    end
+    local actions = {
+      ["ctrl-a"] = function(...)
+        require("fzf-lua.actions").vimcmd_entry("drop", ...)
+        return require("fzf-lua.actions")[action](...)
+      end,
     }
-  end
-  helpers.FzfLua.files(child, {
-    __abort_key = "<c-a>",
-    __expect_lines = false,
-    __after_open = function()
-      if helpers.IS_WIN() then vim.uv.sleep(250) end
-    end,
-    query = "LICENSE$",
-    actions = {
-      ["ctrl-a"] = function(...) require("fzf-lua.actions").vimcmd_entry("drop", ...) end,
-    },
-  })
-  local _ctx = ctx()
-  eq({ "LICENSE", 1 }, { _ctx.name, child.fn.line(".") })
 
-  -- work with line number
-  vim.cmd.tabnew()
-  helpers.FzfLua.live_grep(child, {
-    __abort_key = "<c-a>",
-    __expect_lines = false,
-    __after_open = function()
-      if helpers.IS_WIN() then vim.uv.sleep(250) end
-    end,
-    no_esc = true,
-    search = [[Copyright \(c\) -- LICENSE]],
-    actions = {
-      ["ctrl-a"] = function(...) require("fzf-lua.actions").vimcmd_entry("drop", ...) end,
-    },
-  })
-  eq({ "LICENSE", 3 }, { _ctx.name, child.fn.line(".") })
-end
+    helpers.FzfLua.files(child, {
+      __abort_key = "<c-a>",
+      __expect_lines = false,
+      __after_open = function()
+        if helpers.IS_WIN() then vim.uv.sleep(250) end
+      end,
+      query = "LICENSE$",
+      actions = actions,
+    })
+    local _ctx = ctx()
+    if action ~= "file_open_in_background" then
+      eq({ "LICENSE", 1 }, { _ctx.name, child.fn.line(".") })
+    end
+
+    -- work with line number
+    vim.cmd.tabnew()
+    -- ignore tabline
+    local screen_opts = {
+      -- windows / -> \
+      -- windows tabline is cmd.exe
+      ignore_text = helpers.IS_WIN() and { 1, 3, 4, 24 } or { 24 },
+      normalize_paths = helpers.IS_WIN(),
+    }
+    child.o.tabline = "%{%nvim_list_tabpages()->len()%} %{%expand('%:t')%}"
+    helpers.FzfLua.live_grep(child, {
+      __screen_opts = screen_opts,
+      __abort_key = "<c-a>",
+      __expect_lines = true,
+      __after_open = function()
+        if helpers.IS_WIN() then vim.uv.sleep(250) end
+      end,
+      no_esc = true,
+      search = [[Copyright \(c\) -- LICENSE]],
+      actions = actions,
+    })
+    if action == "drop" then eq(_ctx, ctx()) end
+    if action ~= "file_open_in_background" then
+      eq({ "LICENSE", 3 }, { _ctx.name, child.fn.line(".") })
+    end
+  end
+})
+
 
 return T
