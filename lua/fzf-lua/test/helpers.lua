@@ -126,6 +126,12 @@ M.new_child_neovim = function()
     child.bo.readonly = false
   end
 
+  local child_lua = child.lua
+  child.lua = function(code, arg)
+    if type(code) == "string" then return child_lua(code, arg) end
+    return require("fzf-lua.test.exec_lua").run(child, 2, code, arg)
+  end
+
   --- Setup fzf-lua
   ---@param config? table, config table
   child.setup = function(config)
