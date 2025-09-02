@@ -163,7 +163,7 @@ T["win"]["previewer"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil 
 T["win"]["previewer"]["split flex layout resize"] = function()
   -- Ignore terminal command line with process number
   local screen_opts = { ignore_text = { 24, 28 }, normalize_paths = helpers.IS_WIN() }
-  helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], {
+  helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, {
     __no_abort = true,
     __expect_lines = true,
     __screen_opts = screen_opts,
@@ -174,7 +174,7 @@ T["win"]["previewer"]["split flex layout resize"] = function()
         flip_columns = 64,
       }
     },
-    previewer = [[require('fzf-lua.test.previewer')]],
+    previewer = function() return require("fzf-lua.test.previewer") end,
     keymap = {
       fzf = {
         resize = function()
@@ -240,12 +240,12 @@ T["win"]["previewer"]["split flex hidden"] = function()
         hidden = true
       }
     },
-    previewer = [[require('fzf-lua.test.previewer')]],
+    previewer = function() return require("fzf-lua.test.previewer") end,
     __after_open = function()
       if helpers.IS_WIN() then vim.uv.sleep(250) end
     end,
   }
-  helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], opts)
+  helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
   -- increase size by 1, should flip to vertical preview
   child.set_size(28, 65)
   toggle_preview(opts, screen_opts)
@@ -273,7 +273,7 @@ T["win"]["previewer"]["toggle_behavior=extend"] = new_set(
           toggle_behavior = "extend",
           preview = { hidden = true, delay = 0 },
         },
-        previewer = [[require('fzf-lua.test.previewer')]],
+        previewer = function() return require("fzf-lua.test.previewer") end,
         __after_open = function()
           if helpers.IS_WIN() then vim.uv.sleep(250) end
         end,
@@ -284,7 +284,7 @@ T["win"]["previewer"]["toggle_behavior=extend"] = new_set(
         table.insert(opts.__screen_opts.ignore_text, 15)
       end
       opts = vim.tbl_extend("force", opts, o)
-      helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], opts)
+      helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
       toggle_preview(opts, screen_opts)
     end
   })
@@ -307,13 +307,13 @@ T["win"]["reuse"] = new_set({
         toggle_behavior = "extend",
         preview = { hidden = false, delay = 0 },
       },
-      previewer = [[require('fzf-lua.test.previewer')]],
+      previewer = function() return require("fzf-lua.test.previewer") end,
       __after_open = function()
         if helpers.IS_WIN() then vim.uv.sleep(250) end
       end,
     }
     opts = vim.tbl_extend("force", opts, o)
-    helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], opts)
+    helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
     -- change to fzf preview
     opts.previewer = nil
     opts.preview = "echo resue windows, change from builtin to fzf preview"
@@ -321,7 +321,7 @@ T["win"]["reuse"] = new_set({
     opts.__no_abort = nil
     exec_lua([[_G._fzf_lua_on_create = nil]])
     exec_lua([[_G._fzf_load_called = nil]])
-    helpers.FzfLua.fzf_exec(child, [==[{ "foo", "bar", "baz" }]==], opts)
+    helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
 
     -- toggle_preview on hide profile
     reload({ "hide" })

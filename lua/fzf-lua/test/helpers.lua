@@ -132,17 +132,32 @@ M.new_child_neovim = function()
     return require("fzf-lua.test.exec_lua").run(child, 2, code, arg)
   end
 
+  -- TODO: support "function" upvalue
+  child.FzfLua = setmetatable({}, {
+    __index = function(_, k)
+      return function(...)
+        child.lua(function(s)
+          local args = require("fzf-lua.test.exec_lua").deserialize(s) or {}
+          FzfLua[k](unpack(args))
+        end, { require("fzf-lua.test.exec_lua").serialize(...) })
+      end
+    end
+  })
+
   --- Setup fzf-lua
   ---@param config? table, config table
   child.setup = function(config)
-    local lua_cmd = ([[
+    -- using "FZF_DEFAULT_OPTS" hangs the command on the
+    -- child process and the loading indicator never stops
+    local defaults = M.IS_WIN() and { pipe_cmd = true } or nil
+    child.lua(function(...)
       require("fzf-lua").setup(vim.tbl_deep_extend("keep", ..., {
         { "default-title" },
-        %s
+        defaults = defaults,
         winopts = {
           on_create = function(e)
             _G._fzf_lua_on_create = true
-            vim.wo[e.winid].statusline='fzf://'
+            vim.wo[e.winid].statusline = "fzf://"
           end,
           on_close = function()
             _G._fzf_lua_on_create = nil
@@ -154,27 +169,23 @@ M.new_child_neovim = function()
         -- keymap = { fzf = { true, load = function() _G._fzf_load_called = true end } }
         fzf_cli_args = "--bind=" .. FzfLua.libuv.shellescape("load:+execute-silent:"
           .. FzfLua.shell.stringify_data(function(_, _, _)
-              _G._fzf_load_called = true
-            end, {}))
+            _G._fzf_load_called = true
+          end, {}))
       }))
-    ]])
-        -- using "FZF_DEFAULT_OPTS" hangs the command on the
-        -- child process and the loading indicator never stops
-        :format(M.IS_WIN() and "defaults = { pipe_cmd = true }," or "")
-    child.lua(lua_cmd, { config or {} })
+    end, { config or {} })
   end
 
   --- Unload fzf-lua and side effects
   child.unload = function()
     -- Unload Lua module
     child.lua([[_G.FzfLua = nil]])
-    child.lua([[
-      for k, v in pairs(package.loaded) do
+    child.lua(function()
+      for k, _ in pairs(package.loaded) do
         if k:match("^fzf%-lua") then
           package.loaded[k] = nil
         end
       end
-    ]])
+    end)
 
     -- Remove global vars
     for _, var in ipairs({ "server", "directory", "root" }) do
@@ -411,19 +422,17 @@ end
 M.FzfLua = setmetatable({}, {
   __index = function(_, api)
     return function(child, ...)
-      local serpent = require "fzf-lua.lib.serpent"
       local eq = M.expect.equality
-      local args = { ... }
-
       -- When using `fzf_exec` opts are at index[2], or otherwise at index[1]
       -- remove index[1] into "contents" so index[1] is always our "opts"
-      local contents = (api == "fzf_exec" or api == "fzf_live")
-          and (table.remove(args, 1) .. ",") or ""
+      local opts, ci_opts, contents
+      contents = (api == "fzf_exec" or api == "fzf_live") and (select(1, ...)) or nil
+      opts = (api == "fzf_exec" or api == "fzf_live") and (select(2, ...)) or (select(1, ...)) or {}
 
       -- Split "opts" and "ci_opts" which are double underscore prefixed
-      local opts, ci_opts = (function()
+      opts, ci_opts = (function()
         local o, ci_o = {}, {}
-        for k, v in pairs(args[1] or {}) do
+        for k, v in pairs(opts) do
           if k:match("^__") then
             ci_o[k] = v
           else
@@ -432,9 +441,6 @@ M.FzfLua = setmetatable({}, {
         end
         return o, ci_o
       end)()
-
-      -- Override args[1] with stripped opts (excluding ci_opts)
-      args[1] = opts
 
       -- Added addittional wait for `fn_postprocess` due to #1914, proved to be flakey
       -- on MacOs but I actually like it that we're testing `fn_postprocess` as well as
@@ -449,18 +455,14 @@ M.FzfLua = setmetatable({}, {
             or [[return function(_) _G._fzf_postprocess_called = true end]]
       end
 
-      -- Stringify supplied opts
-      local serlialized = serpent.block(args, { comment = false, sortkeys = false })
-
-      -- HACK: test previewer needs to be unquoted
-      serlialized = serlialized:gsub([[(")(require%(.-%))(")]], "%2")
-      -- print("c", contents, "o", serlialized)
-
       -- Verify postprocess var is nil before opening fzf-lua
       eq(child.lua_get([[_G._fzf_postprocess_called]]), vim.NIL)
 
-      -- Open fzf-lua with args, can open both fzf_exec and files, grep, etc
-      child.lua(string.format("FzfLua.%s(%sunpack(%s))", api, contents, serlialized))
+      if contents then
+        child.FzfLua[api](contents, opts)
+      else
+        child.FzfLua[api](opts)
+      end
 
       -- Verify `winopts.on_create` was called
       eq(child.lua_get([[_G._fzf_lua_on_create]]), true)
