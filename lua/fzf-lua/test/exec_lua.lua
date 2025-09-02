@@ -146,10 +146,15 @@ local function save_upvalues(v, t)
     local bytecode = string.dump(v)
     -- TODO: same body but with different upv, still have the same id...
     -- TODO: support function upv?
-    t[bytecode] = t[bytecode] or get_upvalues(v)
-    return
+    local upvalues = get_upvalues(v)
+    if not vim.tbl_isempty(upvalues) then
+      -- print("save", vim.fn.sha256(vim.base64.encode(bytecode)), vim.inspect(upvalues))
+      t[bytecode] = upvalues
+    end
   elseif type(v) == "table" then
-    for _, e in pairs(v) do save_upvalues(e, t) end
+    for _, e in pairs(v) do
+      save_upvalues(e, t)
+    end
   end
 end
 
@@ -158,13 +163,16 @@ local function load_upvalues(v, t)
   if type(v) == "function" then
     local bytecode = string.dump(v)
     local upvalues = t[bytecode]
-    t[bytecode] = nil
-    return function(...)
-      return unpack((M.handler(bytecode, upvalues, ...)))
+    -- this don't seem work for headless wrapper?
+    if upvalues then
+      -- print("load", vim.fn.sha256(vim.base64.encode(bytecode)), vim.inspect(upvalues))
+      return function(...)
+        return unpack((M.handler(bytecode, upvalues, ...)))
+      end
     end
   end
   if type(v) == "table" then
-    for k, e in ipairs(v) do
+    for k, e in pairs(v) do
       v[k] = load_upvalues(e, t)
     end
   end
@@ -176,9 +184,9 @@ end
 M.deserialize = function(s)
   local _, args = require("fzf-lua.lib.serpent").load(s, { safe = false })
   assert(type(args) == "table", "args should be table")
-  -- for i, v in ipairs(args) do
-  --   args[i] = load_upvalues(v, args)
-  -- end
+  for i, v in ipairs(args) do
+    args[i] = load_upvalues(v, args)
+  end
   return args
 end
 
@@ -186,9 +194,9 @@ end
 ---@return string
 M.serialize = function(...)
   local args = { ... }
-  -- for _, v in ipairs(args) do
-  --   save_upvalues(v, args)
-  -- end
+  for _, v in ipairs(args) do
+    save_upvalues(v, args)
+  end
   return require("fzf-lua.lib.serpent").block(args, { comment = false, sortkeys = false })
 end
 
