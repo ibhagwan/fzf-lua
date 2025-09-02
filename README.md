@@ -316,7 +316,7 @@ Fzf-Lua conveniently comes with a VS-Code like picker by default
 | ---------------------- | --------------------------------------------- |
 | `resume`               | resume last command/query                     |
 | `builtin`              | fzf-lua builtin commands                      |
-| `combine`              | combine different fzf-kua pickers             |
+| `combine`              | combine different fzf-lua pickers             |
 | `global`               | global picker for files,buffers and symbols   |
 | `profiles`             | fzf-lua configuration profiles                |
 | `helptags`             | help tags                                     |
