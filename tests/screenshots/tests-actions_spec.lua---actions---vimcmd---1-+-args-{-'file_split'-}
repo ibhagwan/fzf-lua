@@ -1,0 +1,29 @@
+--|---------|---------|---------|---------|---------|---------|----
+01|MIT License                                                     
+02|                                                                
+03|Copyrig╭───────────────────── Grep ──────────────────────╮      
+04|       │> Copyright \(c\) -- LICENSE             1/1 (0) │      
+05|Permiss│──────────────────────────────────────────────── │n obta
+06|ining a│  :: <ctrl-g> to Fuzzy Search                    │      
+07|of this│▌ LICENSE:3:1:Copyright (c) 2021 iBhagwan        │Softwa
+08|re"), t│                                                 │      
+09|in the │                                                 │itatio
+10|n the r│                                                 │      
+11|to use,│                                                 │se,@@@
+12|LICENSE│                                                 │   Top
+13|MIT Lic╰─────────────────────────────────────────────────╯      
+14|       ╭──────────────────── LICENSE ────────────────────╮      
+15|Copyrig│  1 MIT License                                         
+16|       │  2                                                     
+17|Permiss│  3 Copyright (c) 2021 iBhagwan                   n obta
+18|ining a│  4                                              │      
+19|of this│  5 Permission is hereby granted, free of charge,│Softwa
+20|re"), t│  6 of this software and associated documentation│      
+21|in the │  7 in the Software without restriction, includin│itatio
+22|n the r╰─────────────────────────────────────────────────╯      
+23|to use, copy, modify, merge, publish, distribute, sublicense,@@@
+24|LICENSE                                       1,1            Top
+25|                                                                
+26|                                                                
+27|                                                                
+28|-- TERMINAL --                                1,29          All 

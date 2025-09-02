@@ -177,6 +177,7 @@ M.new_child_neovim = function()
 
   --- Unload fzf-lua and side effects
   child.unload = function()
+    child.o.tabline = ""
     -- Unload Lua module
     child.lua([[_G.FzfLua = nil]])
     child.lua(function()
@@ -492,6 +493,8 @@ M.FzfLua = setmetatable({}, {
       local screen_opts = ci_opts.__screen_opts
           or { ignore_text = { 28 }, normalize_paths = M.IS_WIN() }
 
+      child.api.nvim__redraw({ valid = true, flush = true })
+      child.cmd("redraw")
       if ci_opts.__expect_lines then
         -- Compare screen lines without "attrs" so we can test on
         -- stable, nightly and windows
