@@ -194,9 +194,6 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
     (function()
       -- Lua 5.1 goto compatiblity hack (function wrap)
       local entry = path.entry_to_file(sel, opts, opts._uri)
-      -- if enabled, query can contain line no, e.g. "file:40"
-      local lnum = opts.line_query and tonumber(opts.last_query:match(":(%d+)$"))
-      entry.line = lnum or entry.line
       -- "<none>" could be set by `autocmds`
       if entry.path == "<none>" then return end
       local fullpath = entry.bufname
