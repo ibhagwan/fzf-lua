@@ -414,7 +414,7 @@ M.tabs = function(opts)
 
         local tab_cwd_tilde_base64 = base64.encode(tab_cwd_tilde)
         if not opts.current_tab_only then
-          cb(string.format("%s:%d:%d:0)%s%s  %s",
+          cb(string.format("%s\t%d\t%d\t0)%s%s  %s",
             tab_cwd_tilde_base64,
             tabnr,
             tabh,
@@ -427,7 +427,7 @@ M.tabs = function(opts)
           if tabh ~= utils.CTX().tabh or utils.CTX().curtab_wins[tostring(w)] then
             local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
             if b then
-              local prefix = string.format("%s:%d:%d:%d)%s%s%s",
+              local prefix = string.format("%s\t%d\t%d\t%d)%s%s%s",
                 tab_cwd_tilde_base64, tabnr, tabh, w, utils.nbsp, utils.nbsp, utils.nbsp)
               local bufinfo = populate_buffer_entries({}, { b }, w)[1]
               cb(gen_buffer_entry(opts, bufinfo, max_bufnr, tab_cwd, prefix))
