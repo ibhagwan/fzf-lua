@@ -434,7 +434,8 @@ function M.entry_to_file(entry, opts, force_uri)
     local idx = 1
     for i = 1, #parts - 1 do
       local s = parts[i]
-      if s:match(".-:%d+:") then
+      -- skip base64 prefix
+      if not s:match("^[A-Za-z0-9+/]+=*:%d+:%d+:%d+") and s:match(".-:%d+:") then
         break
       end
       idx = idx + #s + #utils.nbsp
