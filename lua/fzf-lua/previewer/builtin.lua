@@ -614,9 +614,6 @@ end
 function Previewer.buffer_or_file:parse_entry(entry_str)
   ---@type fzf-lua.buffer_or_file.Entry
   local entry = self:entry_to_file(entry_str)
-  -- if enabled, query can contain line no, e.g. "file:40"
-  local lnum = self.opts.line_query and tonumber(self.opts._last_query:match(":(%d+)$"))
-  entry.line = lnum or entry.line
   entry.buf_is_loaded = entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr)
   entry.buf_is_valid = entry.bufnr and api.nvim_buf_is_valid(entry.bufnr)
   if entry.buf_is_valid and entry.buf_is_loaded then

@@ -196,7 +196,6 @@ end
 
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   local entry = path.entry_to_file(entrystr, self.opts)
-  entry.line = self.opts.line_query and tonumber(self._last_query:match(":(%d+)$")) or entry.line
   -- make relative for bat's header display
   local filepath = path.relative_to(entry.bufname or entry.path or "", uv.cwd())
   if self.opts._ctag then
