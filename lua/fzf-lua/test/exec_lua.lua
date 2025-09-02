@@ -107,7 +107,7 @@ end
 function M.run(child, lvl, code, arg)
   local rv = child.lua(
     [[return { require('fzf-lua.test.exec_lua').handler(...) }]],
-    { string.dump(code), get_upvalues(code), unpack(arg) })
+    { string.dump(code), get_upvalues(code), unpack(arg or {}) })
 
   --- @type any[], table<string,any>, string[]
   local ret, upvalues, messages = unpack(rv)
@@ -136,6 +136,60 @@ function M.run(child, lvl, code, arg)
 
   ---@diagnostic disable-next-line: incomplete-signature-doc
   return unpack(ret, 2, table.maxn(ret))
+end
+
+local function save_upvalues(v, t)
+  if type(v) == "userdata" or type(v) == "thread" then
+    error("unsupported upvalue type: " .. type(v))
+  elseif type(v) == "function" then
+    -- hopefully serpent serialize/deserialize?? don't change the string.dump id
+    local bytecode = string.dump(v)
+    -- TODO: same body but with different upv, still have the same id...
+    -- TODO: support function upv?
+    t[bytecode] = t[bytecode] or get_upvalues(v)
+    return
+  elseif type(v) == "table" then
+    for _, e in pairs(v) do save_upvalues(e, t) end
+  end
+end
+
+-- TODO: upvalues
+local function load_upvalues(v, t)
+  if type(v) == "function" then
+    local bytecode = string.dump(v)
+    local upvalues = t[bytecode]
+    t[bytecode] = nil
+    return function(...)
+      return unpack((M.handler(bytecode, upvalues, ...)))
+    end
+  end
+  if type(v) == "table" then
+    for k, e in ipairs(v) do
+      v[k] = load_upvalues(e, t)
+    end
+  end
+  return v
+end
+
+---@param s string
+---@return table
+M.deserialize = function(s)
+  local _, args = require("fzf-lua.lib.serpent").load(s, { safe = false })
+  assert(type(args) == "table", "args should be table")
+  -- for i, v in ipairs(args) do
+  --   args[i] = load_upvalues(v, args)
+  -- end
+  return args
+end
+
+---@param ...any
+---@return string
+M.serialize = function(...)
+  local args = { ... }
+  -- for _, v in ipairs(args) do
+  --   save_upvalues(v, args)
+  -- end
+  return require("fzf-lua.lib.serpent").block(args, { comment = false, sortkeys = false })
 end
 
 return M

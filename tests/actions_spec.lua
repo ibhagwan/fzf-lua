@@ -44,8 +44,13 @@ T["actions"]["reload"] = new_set({
   function(api)
     local screen_opts = { ignore_text = { 28 } }
     helpers.FzfLua[api](child, api == "fzf_exec"
-      and [[function(cb) cb(_G._fzf_reload and 'reloaded' or 'unreloaded') cb(nil) end]]
-      or [[function() return { _G._fzf_reload and 'reloaded' or 'unreloaded' } end ]],
+      and function(cb)
+        cb(_G._fzf_reload and "reloaded" or "unreloaded")
+        cb(nil)
+      end
+      or function()
+        return { _G._fzf_reload and "reloaded" or "unreloaded" }
+      end,
       {
         __no_abort = true,
         __expect_lines = false,
