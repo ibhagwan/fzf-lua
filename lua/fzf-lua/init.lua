@@ -228,7 +228,6 @@ M.redraw = function()
 end
 
 local lazyloaded_modules = {
-  resume = { "fzf-lua.core", "fzf_resume" },
   files = { "fzf-lua.providers.files", "files" },
   args = { "fzf-lua.providers.files", "args" },
   grep = { "fzf-lua.providers.grep", "grep" },
@@ -331,15 +330,16 @@ local lazyloaded_modules = {
   complete_bline = { "fzf-lua.complete", "bline" },
   zoxide = { "fzf-lua.providers.files", "zoxide" },
   -- API shortcuts
-  fzf_exec = { "fzf-lua.core", "fzf_exec" },
-  fzf_live = { "fzf-lua.core", "fzf_live" },
-  fzf_wrap = { "fzf-lua.core", "fzf_wrap" },
+  resume = { "fzf-lua.core", "fzf_resume", false },
+  fzf_exec = { "fzf-lua.core", "fzf_exec", false },
+  fzf_live = { "fzf-lua.core", "fzf_live", false },
+  fzf_wrap = { "fzf-lua.core", "fzf_wrap", false },
 }
 
 for k, v in pairs(lazyloaded_modules) do
-  local v1, v2 = v[1], v[2] -- avoid reference v (table) in a function
+  local v1, v2, v3 = v[1], v[2], v[3] -- avoid reference v (table) in a function
   M[k] = function(...)
-    utils.set_info({ cmd = k, mod = v1, fnc = v2 })
+    if v3 ~= false then utils.set_info({ cmd = k, mod = v1, fnc = v2 }) end
     return require(v1)[v2](...)
   end
 end

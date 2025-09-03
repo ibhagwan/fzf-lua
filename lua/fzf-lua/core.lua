@@ -228,7 +228,6 @@ M.fzf_resume = function(opts)
     return
   end
   opts = utils.tbl_deep_extend("force", config.__resume_data.opts, opts or {})
-  utils.set_info(opts.__INFO) -- restore original picker info
   assert(opts == config.__resume_data.opts)
   opts.cwd = opts.cwd and libuv.expand(opts.cwd) or nil
   M.fzf_wrap(config.__resume_data.contents, config.__resume_data.opts)
