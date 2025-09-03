@@ -1297,7 +1297,6 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   self.closing = nil
   self._reuse = nil
   _self = nil
-  utils.set_info({}) -- clear info
 end
 
 function FzfWin.win_leave()

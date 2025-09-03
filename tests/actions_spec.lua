@@ -90,6 +90,7 @@ T["actions"]["vimcmd"] = new_set({
     end
     local actions = {
       ["ctrl-a"] = function(...)
+        _G._fzf_info = FzfLua.get_info()
         require("fzf-lua.actions").vimcmd_entry("drop", ...)
         return require("fzf-lua.actions")[action](...)
       end,
@@ -108,6 +109,7 @@ T["actions"]["vimcmd"] = new_set({
     if action ~= "file_open_in_background" then
       eq({ "LICENSE", 1 }, { _ctx.name, child.fn.line(".") })
     end
+    eq("files", exec_lua([[return _G._fzf_info.cmd]]))
 
     -- work with line number
     vim.cmd.tabnew()
@@ -134,6 +136,7 @@ T["actions"]["vimcmd"] = new_set({
     if action ~= "file_open_in_background" then
       eq({ "LICENSE", 3 }, { _ctx.name, child.fn.line(".") })
     end
+    eq("live_grep", exec_lua([[return _G._fzf_info.cmd]]))
   end
 })
 
