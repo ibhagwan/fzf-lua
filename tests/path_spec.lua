@@ -4,6 +4,7 @@ local assert = helpers.assert
 local fzf = require("fzf-lua")
 local path = fzf.path
 local utils = fzf.utils
+local eq = assert.are.equal
 
 describe("Testing path module", function()
   it("separator", function()
@@ -353,5 +354,112 @@ describe("Testing path module", function()
     assert.are.equal(path.shorten([[c:\foo\bar\baz]], 2), [[c:\fo\ba\baz]])
     assert.are.equal(path.shorten([[c:/foo\bar\baz]], 2), [[c:/fo/ba/baz]])
     utils.__IS_WINDOWS = nil
+  end)
+
+  describe("entry_to_file", function()
+    local fs_stat = vim.uv.fs_stat
+    before_each(function()
+      local t = {
+        ["/tmp/foo:bar.txt"] = true,
+        ["/tmp/test:foo:bar.txt"] = true,
+        ["C:\\Users\\foo:bar"] = true
+      }
+      -- assume these files exists, maybe we can create them
+      vim.uv.fs_stat = function(f)
+        if t[f] then return t[f] end
+        return fs_stat(f)
+      end
+    end)
+    after_each(function() vim.uv.fs_stat = fs_stat end)
+
+    -- actually this won't work as expected when a pathname is prefix of another
+    it("file with colons", function()
+      local e, p
+      p = "/tmp/foo:bar.txt"
+      eq(path.entry_to_file(p), { stripped = p, path = p, line = 0, col = 0 })
+      e = "/tmp/foo:bar.txt:42"
+      eq(path.entry_to_file(e), { stripped = e, path = p, line = 42, col = 0 })
+      e = "/tmp/foo:bar.txt:42:"
+      eq(path.entry_to_file(e), { stripped = e, path = p, line = 42, col = 0 })
+      e = "/tmp/foo:bar.txt:42:7"
+      eq(path.entry_to_file(e), { stripped = e, path = p, line = 42, col = 7 })
+      e = "/tmp/foo:bar.txt:42:7:"
+      eq(path.entry_to_file(e), { stripped = e, path = p, line = 42, col = 7 })
+
+      eq(path.entry_to_file("/tmp/test:foo:bar.txt:8:2"), {
+        stripped = "/tmp/test:foo:bar.txt:8:2",
+        path = "/tmp/test:foo:bar.txt",
+        line = 8,
+        col = 2,
+      })
+
+      utils.__IS_WINDOWS = true
+      eq(path.entry_to_file("C:\\Users\\foo:bar:12:3"), {
+        col = 3,
+        line = 12,
+        path = "C:\\Users\\foo:bar",
+        stripped = "C:\\Users\\foo:bar:12:3"
+      })
+      utils.__IS_WINDOWS = false
+    end)
+
+    it("tilde expansion", function()
+      helpers.SKIP_IF_WIN()
+      local home = os.getenv("HOME")
+      eq(path.entry_to_file("~/test.txt:1:2"), {
+        stripped = home .. "/test.txt:1:2",
+        path = home .. "/test.txt",
+        line = 1,
+        col = 2,
+      })
+    end)
+
+    it("buffer", function()
+      helpers.SKIP_IF_WIN()
+      local buf = vim.api.nvim_create_buf(false, true)
+      local bufname = "/tmp/test.txt"
+      vim.api.nvim_buf_set_name(buf, bufname)
+      local e = ("[%d]%s%s:42"):format(buf, utils.nbsp, bufname)
+      eq(path.entry_to_file(e), {
+        bufname = helpers.IS_MAC() and vim.fs.joinpath("/private", bufname) or bufname,
+        bufnr = buf,
+        col = 0,
+        line = 42,
+        path = bufname,
+        stripped = "/tmp/test.txt:42",
+        terminal = false
+      })
+    end)
+
+    it("man://", function()
+      -- must be loaded?
+      local buf = vim.api.nvim_create_buf(false, true)
+      local bufname = "man://ls(1)"
+      vim.api.nvim_buf_set_name(buf, bufname)
+      eq(true, path.is_uri(bufname))
+      -- local e = ("[%d]%s%s:42:7"):format(buf, utils.nbsp, bufname)
+      local e = ("[%d]%s%s:42:7:"):format(buf, utils.nbsp, bufname)
+      eq(path.entry_to_file(e), {
+        bufname = "man://ls(1)",
+        bufnr = buf,
+        col = 7,
+        line = 42,
+        path = "man://ls(1)",
+        stripped = "man://ls(1):42:7:",
+        terminal = false
+      })
+    end)
+
+    it("force_uri", function()
+      local r = {
+        col = 1,
+        line = 1,
+        range = { start = { character = 0, line = 0 } },
+        stripped = "file:///tmp/test.txt:5:6"
+      }
+      eq(path.entry_to_file("/tmp/test.txt:5:6", {}, true), r)
+      eq(path.entry_to_file("file:///tmp/test.txt:5:6", {}, false), r)
+      eq(path.entry_to_file("file:///tmp/test.txt:5:6", {}, true), r)
+    end)
   end)
 end)
