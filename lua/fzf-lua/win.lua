@@ -567,8 +567,8 @@ function FzfWin:normalize_winopts()
   local ch = winopts.zindex >= 200 and 0 or vim.o.cmdheight
   local max_width = vim.o.columns
   local max_height = vim.o.lines - ch
-  winopts.width = self:normalize_size(winopts.width, max_width)
-  winopts.height = self:normalize_size(winopts.height, max_height)
+  winopts.width = self:normalize_size(tonumber(winopts.width), max_width)
+  winopts.height = self:normalize_size(tonumber(winopts.height), max_height)
   if winopts.relative == "cursor" then
     -- convert cursor relative to absolute ('editor'),
     -- this solves the preview positioning seamlessly
@@ -582,8 +582,8 @@ function FzfWin:normalize_winopts()
   else
     -- make row close to the center of screen (include cmdheight)
     -- avoid breaking existing test
-    winopts.row = self:normalize_size(winopts.row, vim.o.lines - winopts.height)
-    winopts.col = self:normalize_size(winopts.col, max_width - winopts.width)
+    winopts.row = self:normalize_size(tonumber(winopts.row), vim.o.lines - winopts.height)
+    winopts.col = self:normalize_size(tonumber(winopts.col), max_width - winopts.width)
     winopts.row = math.min(winopts.row, max_height - winopts.height)
   end
   -- width/height can be used for text area
