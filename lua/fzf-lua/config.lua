@@ -942,13 +942,18 @@ function M.normalize_opts(opts, globals, __resume_key)
   if opts.line_query and not utils.has(opts, "fzf", { 0, 59 }) then
     utils.warn("'line_query' requires fzf >= 0.59, ignoring.")
   elseif opts.line_query then
+    opts.line_query = type(opts.line_query) == "function"
+        and opts.line_query or function(q)
+          if not q then return end
+          local lnum = q:match(":(%d+)$")
+          local new_q, subs = q:gsub(":%d*$", "")
+          return lnum, (subs > 0 and new_q or nil)
+        end
     utils.map_set(opts, "winopts.preview.winopts.cursorline", true)
     table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("start,change:+transform:"
       .. FzfLua.shell.stringify_data(function(q, _, _)
-        local lnum = q[1]:match(":(%d+)$")
-        local new_q, subs = q[1]:gsub(":%d*$", "")
-        -- No subs made, no ":" at end of string, do nothing
-        if subs == 0 then return end
+        local lnum, new_q = opts.line_query(q[1])
+        if not new_q then return end
         local trans = string.format("search(%s)", new_q)
         local win = FzfLua.win.__SELF()
         -- Do we need to change the offset in native fzf previewer (e.g. bat)?

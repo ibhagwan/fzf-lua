@@ -521,7 +521,7 @@ function M.entry_to_file(entry, opts, force_uri)
     terminal = terminal,
     path     = file,
     line     = tonumber(opts.line_query and
-      (opts._last_query or opts.last_query or ""):match(":(%d+)$") or line) or 0,
+      (opts.line_query(opts._last_query or opts.last_query)) or line) or 0,
     col      = tonumber(col) or 0,
     ctag     = opts._ctag and M.entry_to_ctag(stripped) or nil,
   }
