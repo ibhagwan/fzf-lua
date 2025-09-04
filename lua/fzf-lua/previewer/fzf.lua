@@ -300,7 +300,7 @@ function Previewer.bat_async:cmdline(o)
       line_range,
       libuv.shellescape(filepath))
     return cmd
-  end, self.opts, "{} {q}")
+  end, self.opts, o._is_zf and "{}" or "{} {q}")
   return act
 end
 

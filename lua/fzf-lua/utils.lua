@@ -1401,6 +1401,11 @@ function M.sk_version(opts)
   return M.parse_verstr(out), rc, out
 end
 
+function M.zf_version(opts)
+  local out, rc = M.io_system({ opts and opts.fzf_bin or "zk", "--version" })
+  return M.parse_verstr(out), rc, out
+end
+
 function M.git_version()
   local out = M.io_system({ "git", "--version" })
   return tonumber(out:match("(%d+.%d+)."))

@@ -386,7 +386,8 @@ M.fzf = function(contents, opts)
   if fzf_win:was_hidden() then return nil, nil end
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
-  if selected and #selected > 0 then
+  -- zf don't have --print-query option
+  if selected and #selected > 0 and not opts._is_zf then
     if not (opts._is_skim and opts.fn_reload) then
       -- reminder: this doesn't get called with 'live_grep' when using skim
       -- due to a bug where '--print-query --interactive' combo is broken:
@@ -650,6 +651,142 @@ M.build_fzf_cli = function(opts)
     -- NOTE: this doesn't happen with skim and will cause issues if
     -- "$SKIM_DEFAULT_OPTIONS" will contain `--height`
     opts.fzf_opts["--height"] = nil
+  end
+  do
+    -- Remove incompatible flags / values
+    --   (1) `true` flags are removed entirely (regardless of value)
+    --   (2) `string` flags are removed only if the values match
+    --   (3) `table` flags are removed if the value is contained
+    local bin, version, changelog = (function()
+      if opts.__SK_VERSION then
+        return "sk", opts.__SK_VERSION, {
+          ["0.15.5"] = { fzf_opts = { ["--tmux"] = true } },
+          ["0.53"] = { fzf_opts = { ["--inline-info"] = true } },
+          -- All fzf flags not existing in skim
+          ["all"] = {
+            fzf_opts = {
+              ["--scheme"]         = false,
+              ["--gap"]            = false,
+              ["--info"]           = false,
+              ["--border"]         = false,
+              ["--scrollbar"]      = false,
+              ["--no-scrollbar"]   = false,
+              ["--wrap"]           = true,
+              ["--wrap-sign"]      = true,
+              ["--highlight-line"] = false,
+            }
+          },
+        }
+      elseif opts.__ZF_VERSION then
+        return "zf", opts.__ZF_VERSION, {
+          ["all"] = {
+            fzf_opts = {
+              ["--ansi"]           = false,
+              ["--bind"]           = false,
+              ["--border"]         = false,
+              ["--color"]          = false,
+              ["--expect"]         = false,
+              ["--gap"]            = false,
+              ["--height"]         = false,
+              ["--highlight-line"] = false,
+              ["--history"]        = false,
+              ["--info"]           = false,
+              ["--layout"]         = false,
+              ["--multi"]          = false,
+              ["--no-scrollbar"]   = false,
+              ["--preview"]        = false, -- don't support {n},{q}
+              ["--preview-window"] = false,
+              ["--print-query"]    = false,
+              ["--prompt"]         = false,
+              ["--scheme"]         = false,
+              ["--scrollbar"]      = false,
+              ["--wrap"]           = false,
+              ["--wrap-sign"]      = false,
+              ["--header"]         = false,
+            }
+          },
+        }
+      else
+        return "fzf", opts.__FZF_VERSION, {
+          ["0.59"] = { fzf_opts = { ["--scheme"] = "path" } },
+          ["0.56"] = { fzf_opts = { ["--gap"] = true } },
+          ["0.54"] = {
+            fzf_opts = {
+              ["--wrap"]           = true,
+              ["--wrap-sign"]      = true,
+              ["--highlight-line"] = true,
+            }
+          },
+          ["0.53"] = { fzf_opts = { ["--tmux"] = true } },
+          ["0.52"] = { fzf_opts = { ["--highlight-line"] = true } },
+          ["0.42"] = {
+            fzf_opts = {
+              ["--info"] = { "right", "inline-right" },
+            }
+          },
+          ["0.39"] = { fzf_opts = { ["--track"] = true } },
+          ["0.36"] = {
+            fzf_opts = {
+              ["--listen"]       = true,
+              ["--scrollbar"]    = true,
+              ["--no-scrollbar"] = true,
+            }
+          },
+          ["0.35"] = {
+            fzf_opts = {
+              ["--border"]            = { "bold", "double" },
+              ["--border-label"]      = true,
+              ["--border-label-pos"]  = true,
+              ["--preview-label"]     = true,
+              ["--preview-label-pos"] = true,
+            }
+          },
+          ["0.33"] = { fzf_opts = { ["--scheme"] = true } },
+          ["0.30"] = { fzf_opts = { ["--ellipsis"] = true } },
+          ["0.28"] = {
+            fzf_opts = {
+              ["--header-first"] = true,
+              ["--scroll-off"]   = true,
+            }
+          },
+          ["0.27"] = { fzf_opts = { ["--border"] = "none" } },
+          -- All skim flags not existing in fzf
+          ["all"] = {
+            fzf_opts = {
+              ["--inline-info"] = false,
+            }
+          },
+        }
+      end
+    end)()
+    local function warn(flag, val, min_ver)
+      return utils.warn("Removed flag '%s%s', %s.",
+        flag, type(val) == "string" and "=" .. val or "",
+        not min_ver and string.format("not supported with %s", bin)
+        or string.format("only supported with %s v%s (has=%s)",
+          bin, utils.ver2str(min_ver), utils.ver2str(version))
+      )
+    end
+    for min_verstr, ver_data in pairs(changelog) do
+      for flag, non_compat_value in pairs(ver_data.fzf_opts) do
+        (function()
+          local min_ver = utils.parse_verstr(min_verstr)
+          local opt_value = opts.fzf_opts[flag]
+          if not opt_value then return end
+          non_compat_value = type(non_compat_value) == "string"
+              and { non_compat_value } or non_compat_value
+          if not min_ver or not utils.has(opts, bin, min_ver)
+              and (non_compat_value == true or type(non_compat_value) == "table"
+                and utils.tbl_contains(non_compat_value, opt_value))
+          then
+            if opts.compat_warn == true then
+              warn(flag, opt_value, min_ver)
+            end
+            opts.fzf_opts[flag] = nil
+          end
+        end)()
+      end
+    end
   end
   for k, t in pairs(opts.fzf_opts) do
     for _, v in ipairs(type(t) == "table" and t or { t }) do

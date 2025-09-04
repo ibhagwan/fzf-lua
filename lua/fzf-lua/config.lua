@@ -674,10 +674,11 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- are we using skim?
   opts._is_skim = opts.fzf_bin:match("sk$") ~= nil
+  opts._is_zf = path.tail(opts.fzf_bin) == "zf"
 
   -- enforce fzf minimum requirements
   vim.g.fzf_lua_fzf_version = nil
-  if not opts._is_skim then
+  if not opts._is_skim and not opts._is_zf then
     local FZF_VERSION, rc, err = utils.fzf_version(opts)
     opts.__FZF_VERSION = FZF_VERSION
     vim.g.fzf_lua_fzf_version = FZF_VERSION
@@ -689,11 +690,18 @@ function M.normalize_opts(opts, globals, __resume_key)
         utils.ver2str(opts.__FZF_VERSION))
       return nil
     end
-  else
+  elseif opts._is_skim then
     local SK_VERSION, rc, err = utils.sk_version(opts)
     opts.__SK_VERSION = SK_VERSION
     if not opts.__SK_VERSION then
       utils.error("'sk --version' failed with error %s: %s", rc, err)
+      return nil
+    end
+  elseif opts._is_zf then
+    local ZF_VERSION, rc, err = utils.sk_version(opts)
+    opts.__ZF_VERSION = ZF_VERSION
+    if not opts.__ZF_VERSION then
+      utils.error("'zf --version' failed with error %s: %s", rc, err)
       return nil
     end
   end
@@ -709,114 +717,6 @@ function M.normalize_opts(opts, globals, __resume_key)
   else
     -- If not possible (fzf v<0.53|skim), nullify the option
     opts.multiline = nil
-  end
-
-  do
-    -- Remove incompatible flags / values
-    --   (1) `true` flags are removed entirely (regardless of value)
-    --   (2) `string` flags are removed only if the values match
-    --   (3) `table` flags are removed if the value is contained
-    local bin, version, changelog = (function()
-      if opts.__SK_VERSION then
-        return "sk", opts.__SK_VERSION, {
-          ["0.15.5"] = { fzf_opts = { ["--tmux"] = true } },
-          ["0.53"] = { fzf_opts = { ["--inline-info"] = true } },
-          -- All fzf flags not existing in skim
-          ["all"] = {
-            fzf_opts = {
-              ["--scheme"]         = false,
-              ["--gap"]            = false,
-              ["--info"]           = false,
-              ["--border"]         = false,
-              ["--scrollbar"]      = false,
-              ["--no-scrollbar"]   = false,
-              ["--wrap"]           = true,
-              ["--wrap-sign"]      = true,
-              ["--highlight-line"] = false,
-            }
-          },
-        }
-      else
-        return "fzf", opts.__FZF_VERSION, {
-          ["0.59"] = { fzf_opts = { ["--scheme"] = "path" } },
-          ["0.56"] = { fzf_opts = { ["--gap"] = true } },
-          ["0.54"] = {
-            fzf_opts = {
-              ["--wrap"]           = true,
-              ["--wrap-sign"]      = true,
-              ["--highlight-line"] = true,
-            }
-          },
-          ["0.53"] = { fzf_opts = { ["--tmux"] = true } },
-          ["0.52"] = { fzf_opts = { ["--highlight-line"] = true } },
-          ["0.42"] = {
-            fzf_opts = {
-              ["--info"] = { "right", "inline-right" },
-            }
-          },
-          ["0.39"] = { fzf_opts = { ["--track"] = true } },
-          ["0.36"] = {
-            fzf_opts = {
-              ["--listen"]       = true,
-              ["--scrollbar"]    = true,
-              ["--no-scrollbar"] = true,
-            }
-          },
-          ["0.35"] = {
-            fzf_opts = {
-              ["--border"]            = { "bold", "double" },
-              ["--border-label"]      = true,
-              ["--border-label-pos"]  = true,
-              ["--preview-label"]     = true,
-              ["--preview-label-pos"] = true,
-            }
-          },
-          ["0.33"] = { fzf_opts = { ["--scheme"] = true } },
-          ["0.30"] = { fzf_opts = { ["--ellipsis"] = true } },
-          ["0.28"] = {
-            fzf_opts = {
-              ["--header-first"] = true,
-              ["--scroll-off"]   = true,
-            }
-          },
-          ["0.27"] = { fzf_opts = { ["--border"] = "none" } },
-          -- All skim flags not existing in fzf
-          ["all"] = {
-            fzf_opts = {
-              ["--inline-info"] = false,
-            }
-          },
-        }
-      end
-    end)()
-    local function warn(flag, val, min_ver)
-      return utils.warn("Removed flag '%s%s', %s.",
-        flag, type(val) == "string" and "=" .. val or "",
-        not min_ver and string.format("not supported with %s", bin)
-        or string.format("only supported with %s v%s (has=%s)",
-          bin, utils.ver2str(min_ver), utils.ver2str(version))
-      )
-    end
-    for min_verstr, ver_data in pairs(changelog) do
-      for flag, non_compat_value in pairs(ver_data.fzf_opts) do
-        (function()
-          local min_ver = utils.parse_verstr(min_verstr)
-          local opt_value = opts.fzf_opts[flag]
-          if not opt_value then return end
-          non_compat_value = type(non_compat_value) == "string"
-              and { non_compat_value } or non_compat_value
-          if not min_ver or not utils.has(opts, bin, min_ver)
-              and (non_compat_value == true or type(non_compat_value) == "table"
-                and utils.tbl_contains(non_compat_value, opt_value))
-          then
-            if opts.compat_warn == true then
-              warn(flag, opt_value, min_ver)
-            end
-            opts.fzf_opts[flag] = nil
-          end
-        end)()
-      end
-    end
   end
 
   -- Are we using fzf-tmux? if so get available columns

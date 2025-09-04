@@ -58,6 +58,7 @@ M.normalize_selected = function(selected, opts)
   -- and makes sure 'selected' contains only item(s) or {}
   -- so it can always be enumerated safely
   if not selected then return end
+  if opts._is_zf then return "enter", selected end
   local actions = opts.actions
   -- Backward compat, "default" action trumps "enter"
   if actions.default then actions.enter = actions.default end

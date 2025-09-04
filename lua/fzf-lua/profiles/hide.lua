@@ -36,6 +36,7 @@ return {
           -- We hide the window first which happens instantly
           -- and then send <Esc> directly to the term channel
           fzf.hide()
+          if opts._is_zf then return end
           vim.api.nvim_chan_send(vim.bo[e.bufnr].channel, "\x1b")
         end, { buffer = e.bufnr, nowait = true })
         -- Call the users' on_create?
