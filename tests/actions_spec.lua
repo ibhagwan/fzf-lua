@@ -91,7 +91,7 @@ T["actions"]["vimcmd"] = new_set({
     local actions = {
       ["ctrl-a"] = function(...)
         _G._fzf_info = FzfLua.get_info()
-        require("fzf-lua.actions").vimcmd_entry("drop", ...)
+        if action == "drop" then return require("fzf-lua.actions").vimcmd_entry("drop", ...) end
         return require("fzf-lua.actions")[action](...)
       end,
     }
