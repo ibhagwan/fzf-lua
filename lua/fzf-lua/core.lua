@@ -209,7 +209,8 @@ M.fzf_live = function(contents, opts)
   local fzf_field_index = M.fzf_field_index(opts)
   local cmd ---@type string
   if type(contents) == "function" and M.can_transform(opts) then
-    cmd = shell.stringify_data(contents, opts, fzf_field_index)
+    cmd = shell.stringify_data(
+      function(items) return contents(items, opts) end, opts, fzf_field_index)
   else
     contents = add_query_placeholder(contents)
     local mtcmd = shell.stringify_mt(contents, opts)
