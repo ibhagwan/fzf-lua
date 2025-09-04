@@ -372,8 +372,35 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
   if opts.filter and #opts.filter > 0 then
     command = ("%s | %s"):format(command, opts.filter)
   end
+  command = M.fix_windows_cmd(command)
 
   return command
+end
+
+
+M.fix_windows_cmd = function(cmd)
+  if not utils.__IS_WINDOWS or type(cmd) ~= "string" or not cmd:match("!") then
+    return cmd
+  end
+  -- https://ss64.com/nt/syntax-esc.html
+  -- This changes slightly if you are running with DelayedExpansion of variables:
+  -- if any part of the command line includes an '!' then CMD will escape a second
+  -- time, so ^^^^ will become ^
+  -- replace in sections, only double the relevant pipe sections with !
+  local escaped_cmd = {}
+  for _, str in ipairs(utils.strsplit(cmd, "%s+|")) do
+    if str:match("!") then
+      str = str:gsub('[%(%)%%!%^<>&|"]', function(x)
+        return "^" .. x
+      end)
+      -- make sure all ! are escaped at least twice
+      str = str:gsub("[^%^]%^!", function(x)
+        return x:sub(1, 1) .. "^" .. x:sub(2)
+      end)
+    end
+    table.insert(escaped_cmd, str)
+  end
+  return table.concat(escaped_cmd, " |")
 end
 
 M.preprocess = function(opts)
@@ -433,27 +460,7 @@ M.preprocess = function(opts)
     opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(query))
   end
 
-  if utils.__IS_WINDOWS and type(opts.cmd) == "string" and opts.cmd:match("!") then
-    -- https://ss64.com/nt/syntax-esc.html
-    -- This changes slightly if you are running with DelayedExpansion of variables:
-    -- if any part of the command line includes an '!' then CMD will escape a second
-    -- time, so ^^^^ will become ^
-    -- replace in sections, only double the relevant pipe sections with !
-    local escaped_cmd = {}
-    for _, str in ipairs(utils.strsplit(opts.cmd, "%s+|")) do
-      if str:match("!") then
-        str = str:gsub('[%(%)%%!%^<>&|"]', function(x)
-          return "^" .. x
-        end)
-        -- make sure all ! are escaped at least twice
-        str = str:gsub("[^%^]%^!", function(x)
-          return x:sub(1, 1) .. "^" .. x:sub(2)
-        end)
-      end
-      table.insert(escaped_cmd, str)
-    end
-    opts.cmd = table.concat(escaped_cmd, " |")
-  end
+  opts.cmd = M.fix_windows_cmd(opts.cmd)
 
   if opts.cwd_only and not opts.cwd then
     opts.cwd = uv.cwd()
