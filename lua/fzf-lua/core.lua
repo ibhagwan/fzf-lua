@@ -498,6 +498,10 @@ end
 
 -- Create fzf --color arguments from a table of vim highlight groups.
 M.create_fzf_colors = function(opts)
+  -- In case the user already set fzf_opts["--color"] (#1052)
+  if opts.fzf_opts and type(opts.fzf_opts["--color"]) == "string" then
+    table.insert(opts._fzf_cli_args, "--color=" .. opts.fzf_opts["--color"])
+  end
   if type(opts.fzf_colors) ~= "table" then return end
   local colors = opts.fzf_colors
 
@@ -514,11 +518,6 @@ M.create_fzf_colors = function(opts)
   end
 
   local tbl = {}
-
-  -- In case the user already set fzf_opts["--color"] (#1052)
-  if opts.fzf_colors and type(opts.fzf_colors["--color"]) == "string" then
-    table.insert(tbl, opts.fzf_opts["--color"])
-  end
 
   for flag, list in pairs(colors) do
     if type(list) == "table" then
