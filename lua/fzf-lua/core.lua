@@ -181,8 +181,9 @@ end
 ---@param opts? fzf-lua.config.Base|{}
 ---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
+  opts = opts or {}
   opts.fn_reload = true
-  opts = config.normalize_opts(opts or {}, {})
+  opts = config.normalize_opts(opts, {})
   if not opts then return end
   -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
   -- each keypress reloads fzf's input usually based on the typed query
