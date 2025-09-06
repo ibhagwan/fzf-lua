@@ -531,7 +531,7 @@ M.spawn_stdio = function(opts)
     local f = fn_transform or function(x) return x end
     local w = function(s) if s then io.stdout:write(f(s) .. EOL) else on_finish(0) end end
     local wn = function(s) if s then return io.stdout:write(f(s)) else on_finish(0) end end
-    if opts.fn_reload then ---@cast cmd fzf-lua.shell.data2
+    if opts.is_live then ---@cast cmd fzf-lua.shell.data2
       local items = vim.deepcopy(_G.arg)
       items[0] = nil
       table.remove(items, 1)

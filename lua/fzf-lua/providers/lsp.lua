@@ -233,7 +233,7 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
     if (not opts.current_buffer_only or utils.CTX().bname == entry.filename) and
         (not opts._regex_filter_fn or opts._regex_filter_fn(entry, utils.CTX())) then
       local mbicon_align = 0
-      if opts.fn_reload and type(opts.query) == "string" and #opts.query > 0 then
+      if opts.is_live and type(opts.query) == "string" and #opts.query > 0 then
         -- highlight exact matches with `live_workspace_symbols` (#1028)
         local sym, text = entry.text:match("^(.+%])(.*)$")
         local pattern = "[" .. utils.lua_regex_escape(
@@ -434,7 +434,7 @@ local function gen_lsp_contents(opts)
         end
       end
       if utils.tbl_isempty(results) then
-        if opts.fn_reload then
+        if opts.is_live then
           -- return an empty set or the results wouldn't be
           -- cleared on live_workspace_symbols (#468)
           opts.__contents = {}
@@ -485,8 +485,8 @@ local function gen_lsp_contents(opts)
           -- is returned, important for `live_workspace_symbols` when the user
           -- inputs a query that returns no results
           -- also used with `finder` to prevent the window from being closed
-          no_autoclose  = opts.no_autoclose or opts.fn_reload,
-          silent        = opts.silent or opts.fn_reload,
+          no_autoclose  = opts.no_autoclose or opts.is_live,
+          silent        = opts.silent or opts.is_live,
         }
 
         -- when used with 'live_workspace_symbols'
