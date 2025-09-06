@@ -14,6 +14,33 @@ do
   if ok then config = module end
 end
 
+-- load config from our running instance
+local function load_config()
+  ---@diagnostic disable-next-line: undefined-field
+  if not _G._fzf_lua_server then return end
+  local res = nil
+  local ok, errmsg = pcall(function()
+    ---@diagnostic disable-next-line: undefined-field
+    local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
+    res = vim.rpcrequest(chan_id, "nvim_exec_lua", [[
+      return FzfLua.libuv.serialize(FzfLua.config)
+    ]], {})
+    res = libuv.deserialize(assert(res))
+    vim.fn.chanclose(chan_id)
+  end)
+  if not ok then
+    dump(res)
+    dump(errmsg)
+  end
+  return res
+end
+
+local opts2 = setmetatable({}, {
+  __index = function(_, k)
+    return utils.map_get(config, "__resume_data.opts." .. k)
+  end
+})
+
 local function load_config_section(s, datatype, optional)
   if not _G._fzf_lua_is_headless then
     local val = utils.map_get(config, s)
@@ -56,15 +83,15 @@ local function load_config_section(s, datatype, optional)
 end
 
 if _G._fzf_lua_is_headless then
-  local _config = { globals = { git = {}, files = {}, grep = {} } }
+  local _config = load_config() or {} ---@module 'fzf-lua.config'
+  _config.globals = { git = {}, files = {}, grep = {} }
   _config.globals.git.icons = load_config_section("globals.git.icons", "table") or {}
   _config.globals.files.git_status_cmd =
       load_config_section("globals.files.git_status_cmd", "table")
       or { "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" }
 
   -- prioritize `opts.rg_glob_fn` over globals
-  _config.globals.grep.rg_glob_fn =
-      load_config_section("__resume_data.opts.rg_glob_fn", "function", true) or
+  _config.globals.grep.rg_glob_fn = opts2.rg_glob_fn or
       load_config_section("globals.grep.rg_glob_fn", "function", true)
 
   _config.globals.nbsp = load_config_section("globals.nbsp", "string")
@@ -135,7 +162,9 @@ M.glob_parse = function(query, opts)
   local glob_args = ""
   local search_query, glob_str = query:match("(.*)" .. opts.glob_separator .. "(.*)")
   for _, s in ipairs(utils.strsplit(glob_str, "%s+")) do
-    glob_args = glob_args .. ("%s %s "):format(opts.glob_flag, libuv.shellescape(s))
+    if #s > 0 then
+      glob_args = glob_args .. ("%s %s "):format(opts.glob_flag, libuv.shellescape(s))
+    end
   end
   return search_query, glob_args
 end
@@ -156,7 +185,7 @@ M.rg_insert_args = function(cmd, args, relocate_pattern)
     -- if pattern was not specified search for `-e<SPACE>` or `-e<EOL>`
     if relocate_pattern and #relocate_pattern > 0 then
       table.insert(patterns, {
-        a[1] .. "%s-" .. relocate_pattern,
+        a[1] .. "%s-" .. relocate_pattern .. "%s*",
         a[2] .. " " .. relocate_pattern,
       })
     else
@@ -166,15 +195,212 @@ M.rg_insert_args = function(cmd, args, relocate_pattern)
   end
   -- if pattern was specified also search for `<pattern>` directly
   if relocate_pattern and #relocate_pattern > 0 then
-    table.insert(patterns, { relocate_pattern, relocate_pattern })
+    table.insert(patterns, { "%s+" .. relocate_pattern .. "%s*", relocate_pattern })
   end
   for _, a in ipairs(patterns) do
     if cmd:match(a[1]) then
-      return string.format("%s %s %s", cmd:gsub(a[1], " "), args, a[2])
+      cmd = cmd:gsub(a[1], " ")
+      return string.format("%s %s %s", cmd:gsub("%s+$", ""), args:gsub("%s+$", ""), a[2])
     end
   end
   -- cmd doesn't contain `-e` or `--` or <pattern>, concat args
   return string.format("%s %s", cmd, args)
+end
+
+---@param opts table
+---@param search_query string
+---@param no_esc boolean|number
+---@return string?
+M.get_grep_cmd = function(opts, search_query, no_esc)
+  opts = _G._fzf_lua_is_headless and setmetatable(vim.deepcopy(opts), { __index = opts2 }) or opts
+  if opts.raw_cmd and #opts.raw_cmd > 0 then
+    return opts.raw_cmd
+  end
+  local command, is_rg, is_grep = nil, nil, nil
+  if opts.cmd and #opts.cmd > 0 then
+    command = opts.cmd
+  elseif vim.fn.executable("rg") == 1 then
+    is_rg = true
+    command = string.format("rg %s", opts.rg_opts)
+  elseif utils.__IS_WINDOWS then
+    utils.warn("Grep requires installing 'rg' on Windows.")
+    return nil
+  else
+    is_grep = true
+    command = string.format("grep %s", opts.grep_opts)
+  end
+  for k, v in pairs({
+    follow = opts.toggle_follow_flag or "-L",
+    hidden = opts.toggle_hidden_flag or "--hidden",
+    no_ignore = opts.toggle_ignore_flag or "--no-ignore",
+  }) do
+    (function()
+      -- Do nothing unless opt was set
+      if opts[k] == nil then return end
+      command = utils.toggle_cmd_flag(command, v, opts[k])
+    end)()
+  end
+
+  -- save a copy of the command for `actions.toggle_ignore`
+  -- TODO: both `get_grep_cmd` and `get_files_cmd` need to
+  -- be reworked into a table of arguments
+  opts._cmd = command
+
+  if opts.rg_glob and not command:match("^rg") then
+    if not tonumber(opts.rg_glob) and not opts.silent then
+      -- Do not display the error message if using the defaults (rg_glob=1)
+      utils.warn("'--glob|iglob' flags require 'rg', ignoring 'rg_glob' option.")
+    end
+    opts.rg_glob = false
+  end
+
+  if opts.fn_transform_cmd then
+    local new_cmd, new_query = opts.fn_transform_cmd(search_query, command, opts)
+    if new_cmd then
+      opts.no_esc = true
+      opts.search = new_query
+      return new_cmd
+    end
+  elseif opts.rg_glob then
+    local new_query, glob_args = M.glob_parse(search_query, opts)
+    if glob_args then
+      -- since the search string mixes both the query and
+      -- glob separators we cannot used unescaped strings
+      if not (no_esc or opts.no_esc) then
+        new_query = utils.rg_escape(new_query)
+        opts.no_esc = true
+        opts.search = ("%s%s"):format(new_query,
+          search_query:match(opts.glob_separator .. ".*"))
+      end
+      search_query = new_query
+      command = M.rg_insert_args(command, glob_args)
+    end
+  end
+
+  -- filename takes precedence over directory
+  -- filespec takes precedence over all and doesn't shellescape
+  -- this is so user can send a file populating command instead
+  local search_path = ""
+  local print_filename_flags = " --with-filename" .. (is_rg and " --no-heading" or "")
+  if opts.filespec and #opts.filespec > 0 then
+    search_path = opts.filespec
+  elseif opts.filename and #opts.filename > 0 then
+    search_path = libuv.shellescape(opts.filename)
+    command = M.rg_insert_args(command, print_filename_flags)
+  elseif opts.search_paths then
+    local search_paths = type(opts.search_paths) == "table"
+        -- NOTE: deepcopy to avoid recursive shellescapes with `actions.grep_lgrep`
+        and vim.deepcopy(opts.search_paths) or { tostring(opts.search_paths) }
+    -- Make paths relative, note this will not work well with resuming if changing
+    -- the cwd, this is by design for perf reasons as having to deal with full paths
+    -- will result in more code rouets taken in `make_entry.file`
+    for i, p in ipairs(search_paths) do
+      search_paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), uv.cwd()))
+    end
+    search_path = table.concat(search_paths, " ")
+    if is_grep then
+      -- grep requires adding `-r` to command as paths can be either file or directory
+      command = M.rg_insert_args(command, print_filename_flags .. " -r")
+    end
+  end
+
+  search_query = search_query or ""
+  if #search_query > 0 and not (no_esc or opts.no_esc) then
+    -- For UI consistency, replace the saved search query with the regex
+    opts.no_esc = true
+    opts.search = utils.rg_escape(search_query)
+    search_query = opts.search
+  end
+
+  if not opts._ctags_file then
+    -- Auto add `--line-number` for grep and `--line-number --column` for rg
+    -- NOTE: although rg's `--column` implies `--line-number` we still add
+    -- `--line-number` since we remove `--column` when search regex is empty
+    local bin = path.tail(command:match("[^%s]+"))
+    local bin2flags = {
+      grep = { { "--line-number", "-n" }, { "--recursive", "-r" } },
+      rg = { { "--line-number", "-n" }, { "--column" } }
+    }
+    for _, flags in ipairs(bin2flags[bin] or {}) do
+      local has_flag_group
+      for _, f in ipairs(flags) do
+        if command:match("^" .. utils.lua_regex_escape(f))
+            or command:match("%s+" .. utils.lua_regex_escape(f))
+        then
+          has_flag_group = true
+        end
+      end
+      if not has_flag_group then
+        if not opts.silent then
+          utils.info(
+            "Added missing '%s' flag to '%s'. Add 'silent=true' to hide this message.",
+            table.concat(flags, "|"), bin)
+        end
+        command = M.rg_insert_args(command, flags[1])
+      end
+    end
+  end
+
+  -- remove column numbers when search term is empty
+  if not opts.no_column_hide and #search_query == 0 then
+    command = command:gsub("%s%-%-column", "")
+  end
+
+  -- do not escape at all
+  if not (no_esc == 2 or opts.no_esc == 2) then
+    -- we need to use our own version of 'shellescape'
+    -- that doesn't escape '\' on fish shell (#340)
+    search_query = libuv.shellescape(search_query)
+  end
+
+  ---@param cmd string
+  ---@param fzf_field_index string
+  ---@return string
+  local expand_query = function(cmd, fzf_field_index)
+    if opts.contents and cmd:match("<query>") then
+      return (cmd:gsub("<query>", fzf_field_index))
+    else
+      return ("%s %s"):format(cmd, fzf_field_index)
+    end
+  end
+
+  -- construct the final command
+  command = expand_query(command, search_query)
+  command = ("%s %s"):format(command, search_path)
+
+  -- piped command filter, used for filtering ctags
+  if opts.filter and #opts.filter > 0 then
+    command = ("%s | %s"):format(command, opts.filter)
+  end
+  command = M.fix_windows_cmd(command)
+
+  return command
+end
+
+
+M.fix_windows_cmd = function(cmd)
+  if not utils.__IS_WINDOWS or type(cmd) ~= "string" or not cmd:match("!") then
+    return cmd
+  end
+  -- https://ss64.com/nt/syntax-esc.html
+  -- This changes slightly if you are running with DelayedExpansion of variables:
+  -- if any part of the command line includes an '!' then CMD will escape a second
+  -- time, so ^^^^ will become ^
+  -- replace in sections, only double the relevant pipe sections with !
+  local escaped_cmd = {}
+  for _, str in ipairs(utils.strsplit(cmd, "%s+|")) do
+    if str:match("!") then
+      str = str:gsub('[%(%)%%!%^<>&|"]', function(x)
+        return "^" .. x
+      end)
+      -- make sure all ! are escaped at least twice
+      str = str:gsub("[^%^]%^!", function(x)
+        return x:sub(1, 1) .. "^" .. x:sub(2)
+      end)
+    end
+    table.insert(escaped_cmd, str)
+  end
+  return table.concat(escaped_cmd, " |")
 end
 
 M.preprocess = function(opts)
@@ -195,33 +421,29 @@ M.preprocess = function(opts)
   end
 
   -- live_grep replace pattern with last argument
-  local argvz = "{argvz}"
-  if opts.cmd and opts.cmd:match(argvz) then
+  local argvz = "<query>"
+  if opts.argv_expr and opts.cmd:match(argvz) then
     -- The NEQ condition on Windows turned out to be a real pain in the butt
     -- so I decided to move the empty query test into our cmd proxy wrapper
     -- For obvious reasons this cannot work with `live_grep_native` and thus
     -- the NEQ condition remains for the "native" version
-    if not opts.exec_empty_query then
+    local query = argv(nil, opts.debug)
+    if not opts.exec_empty_query and query == "" then
       -- query is always be the last argument
-      if argv(nil, opts.debug) == "" then
-        opts.cmd = utils.shell_nop()
-        return opts
-      end
+      opts.cmd = utils.shell_nop()
+      return opts
     end
 
     -- For custom command transformations (#1927)
-    opts.fn_transform_cmd =
-        load_config_section("__resume_data.opts.fn_transform_cmd", "function", true)
+    opts.fn_transform_cmd = opts2.fn_transform_cmd
 
     -- did the caller request rg with glob support?
     -- manipulation needs to be done before the argv replacement
     if opts.fn_transform_cmd then
-      local query = argv(nil, opts.debug)
       local new_cmd, new_query = opts.fn_transform_cmd(query, opts.cmd:gsub(argvz, ""), opts)
       opts.cmd = new_cmd or opts.cmd
-      opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(new_query or query))
+      query = new_query or query
     elseif opts.rg_glob then
-      local query = argv(nil, opts.debug)
       local search_query, glob_args = M.glob_parse(query, opts)
       if glob_args then
         -- gsub doesn't like single % on rhs
@@ -230,42 +452,15 @@ M.preprocess = function(opts)
         -- insert glob args before `-- {argvz}` or `-e {argvz}` repositioned
         -- at the end of the command preceding the search query (#781, #794)
         opts.cmd = M.rg_insert_args(opts.cmd, glob_args, argvz)
-        opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(search_query))
+        query = search_query
       end
     end
+    -- nifty hack to avoid having to double escape quotations
+    -- see my comment inside 'live_grep' initial_command code
+    opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(query))
   end
 
-  -- nifty hack to avoid having to double escape quotations
-  -- see my comment inside 'live_grep' initial_command code
-  if opts.argv_expr and opts.cmd then
-    opts.cmd = opts.cmd:gsub("{argv.*}",
-      function(x)
-        local idx = x:match("{argv(.*)}")
-        return libuv.shellescape(argv(idx, not opts.rg_glob and opts.debug))
-      end)
-  end
-
-  if utils.__IS_WINDOWS and opts.cmd and opts.cmd:match("!") then
-    -- https://ss64.com/nt/syntax-esc.html
-    -- This changes slightly if you are running with DelayedExpansion of variables:
-    -- if any part of the command line includes an '!' then CMD will escape a second
-    -- time, so ^^^^ will become ^
-    -- replace in sections, only double the relevant pipe sections with !
-    local escaped_cmd = {}
-    for _, str in ipairs(utils.strsplit(opts.cmd, "%s+|")) do
-      if str:match("!") then
-        str = str:gsub('[%(%)%%!%^<>&|"]', function(x)
-          return "^" .. x
-        end)
-        -- make sure all ! are escaped at least twice
-        str = str:gsub("[^%^]%^!", function(x)
-          return x:sub(1, 1) .. "^" .. x:sub(2)
-        end)
-      end
-      table.insert(escaped_cmd, str)
-    end
-    opts.cmd = table.concat(escaped_cmd, " |")
-  end
+  opts.cmd = M.fix_windows_cmd(opts.cmd)
 
   if opts.cwd_only and not opts.cwd then
     opts.cwd = uv.cwd()
@@ -282,10 +477,10 @@ M.preprocess = function(opts)
   -- formatter `to` function
   if opts.formatter and not opts._fmt then
     opts._fmt = opts._fmt or {}
-    opts._fmt.to = load_config_section("__resume_data.opts._fmt.to", "function", true)
+    opts._fmt.to = opts2._fmt.to
     -- Attempt to load from string value `_to`
     if not opts._fmt.to then
-      local _to = load_config_section("__resume_data.opts._fmt._to", "string", true)
+      local _to = opts2._fmt._to
       if type(_to) == "string" then
         opts._fmt.to = loadstring(_to)()
       end

@@ -45,7 +45,7 @@ M.ACTION_DEFINITIONS = {
   },
   [actions.grep_lgrep]        = {
     function(o)
-      if o.fn_reload then
+      if o.is_live then
         return "Fuzzy Search"
       else
         return "Regex Search"
@@ -54,7 +54,7 @@ M.ACTION_DEFINITIONS = {
   },
   [actions.sym_lsym]          = {
     function(o)
-      if o.fn_reload then
+      if o.is_live then
         return "Fuzzy Search"
       else
         return "Live Query"
@@ -105,6 +105,7 @@ local contents_from_arr = function(cont_arr)
         or t.contents)
     end
   elseif cont_type == "function" then
+    ---@type fzf-lua.fncContent
     contents = function(fzf_cb)
       coroutine.wrap(function()
         local co = coroutine.running()
@@ -137,11 +138,13 @@ local contents_from_arr = function(cont_arr)
   return contents
 end
 
----@alias content (string|number)[]|fun(fzf_cb: fun(entry?: string|number, cb?: function))|string|nil
+---@alias fzf-lua.fzfCb fun(entry?: string|number, cb?: function)
+---@alias fzf-lua.fncContent fun(wnl: fzf-lua.fzfCb, w: fzf-lua.fzfCb)
+---@alias fzf-lua.content fzf-lua.fncContent|(string|number)[]|string
 
 -- Main API, see:
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
----@param contents content
+---@param contents fzf-lua.content
 ---@param opts? fzf-lua.config.Base|{}
 ---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
@@ -151,71 +154,70 @@ M.fzf_exec = function(contents, opts)
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
   end
-  -- stringify_mt: the wrapped multiprocess command is independent, most of it's
-  -- options are serialized as strings and the rest are read from the main instance
-  -- config over RPC, if the command doesn't require any processing it will be piped
-  -- directly to fzf using $FZF_DEFAULT_COMMAND
-  local mt = (opts.multiprocess ~= false and type(contents) == "string")
-  local cmd = mt and shell.stringify_mt(contents --[[@as string]], opts)
+  local cmd = shell.stringify_mt(contents, opts)
       or shell.stringify(contents, opts, nil)
-  -- Contents sent to fzf can only be nil or a shell command (string)
-  -- the API accepts both tables and functions which we "stringify"
-  -- We also send string commands as stringify is also responsible
-  -- for multiprocess wrapping of shell commands with processing
   return M.fzf_wrap(cmd, opts, true)
+end
+
+local nop = function(opts)
+  return not opts.fn_transform
+      and not opts.fn_preprocess
+      and not opts.fn_postprocess
 end
 
 ---@param opts table
 ---@return boolean
 M.can_transform = function(opts)
   return utils.has(opts, "fzf", { 0, 45 })
-      and opts.fn_reload -- currently only used for "live" picker
+      and opts.is_live -- currently only used for "live" picker
       and opts.rg_glob
       and not opts.multiprocess
-      and not opts.fn_transform
-      and not opts.fn_preprocess
-      and not opts.fn_postprocess
+      and nop(opts)
 end
 
----@param contents string|fun(query: string[]): string|string[]|function?
+-- Append query placeholder if not found in command
+local add_query_placeholder = function(cmd)
+  if type(cmd) ~= "string" or cmd:match(M.fzf_query_placeholder) then return cmd end
+  return ("%s %s"):format(cmd, M.fzf_query_placeholder)
+end
+
+---@param contents string|fzf-lua.shell.data2
+---@return fzf-lua.shell.data2
+local cmd2fnc = function(contents)
+  if type(contents) == "function" then return contents end
+  -- Append query placeholder if not found in command
+  local cmd = add_query_placeholder(contents)
+  return function(args, _)
+    local query = args[1] or ""
+    query = (query:gsub("%%", "%%%%"))
+    query = libuv.shellescape(query)
+    return M.expand_query(cmd, query)
+  end
+end
+
+-- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
+-- each keypress reloads fzf's input usually based on the typed query
+-- utilizes fzf's 'change:reload' event or skim's "interactive" mode
+---@param contents string|fzf-lua.shell.data2
 ---@param opts? fzf-lua.config.Base|{}
 ---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
-  opts.fn_reload = true
-  opts = config.normalize_opts(opts or {}, {})
+  opts = opts or {}
+  opts.is_live = true
+  opts = config.normalize_opts(opts, {})
   if not opts then return end
-  -- AKA "live": fzf acts as a selector only (fuzzy matching is disabled)
-  -- each keypress reloads fzf's input usually based on the typed query
-  -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
-  -- convert "reload" actions to fzf's `reload` binds
-  -- convert "exec_silent" actions to fzf's `execute-silent` binds
-  if type(contents) == "string" then
-    -- Signal to stringify_mt we are relocating <query>
-    -- Signal to preprocess we are looking to replace {argvz}
-    -- Append query placeholder if not found in command
-    opts.argv_expr = opts.multiprocess
-    if not contents:match(M.fzf_query_placeholder) then
-      contents = ("%s %s"):format(contents, M.fzf_query_placeholder)
-    end
-  end
   local fzf_field_index = M.fzf_field_index(opts)
+  local cmd ---@type string
   if type(contents) == "function" and M.can_transform(opts) then
-    local cmd = shell.stringify_data(contents, opts, fzf_field_index)
-    M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
-    return M.fzf_wrap(cmd, opts, true)
+    cmd = shell.stringify_data(
+      function(items) return contents(items, opts) end, opts, fzf_field_index)
+  else
+    contents = add_query_placeholder(contents)
+    local mtcmd = shell.stringify_mt(contents, opts)
+    cmd = mtcmd and M.expand_query(mtcmd, fzf_field_index)
+        or type(contents) == "string" and nop(opts) and M.expand_query(contents, fzf_field_index)
+        or shell.stringify(cmd2fnc(contents), opts, fzf_field_index)
   end
-  local cmd0 = contents ---@type string
-  local func_contents = type(contents) == "function"
-      and contents or function(args)
-        local query = args[1] or ""
-        query = (query:gsub("%%", "%%%%"))
-        query = libuv.shellescape(query)
-        return M.expand_query(cmd0, query)
-      end
-  local mt = (opts.multiprocess ~= false and type(contents) == "string")
-  local cmd = mt and shell.stringify_mt(contents, opts) or
-      shell.stringify(func_contents, opts, fzf_field_index)
-  cmd = mt and M.expand_query(cmd, fzf_field_index) or cmd
   M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
   return M.fzf_wrap(cmd, opts, true)
 end
@@ -387,7 +389,7 @@ M.fzf = function(contents, opts)
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
   if selected and #selected > 0 then
-    if not (opts._is_skim and opts.fn_reload) then
+    if not (opts._is_skim and opts.is_live) then
       -- reminder: this doesn't get called with 'live_grep' when using skim
       -- due to a bug where '--print-query --interactive' combo is broken:
       -- skim always prints an empty line where the typed query should be.
@@ -505,7 +507,7 @@ M.create_fzf_colors = function(opts)
   if type(opts.fzf_colors) ~= "table" then return end
   local colors = opts.fzf_colors
 
-  if opts.fn_reload then
+  if opts.is_live then
     colors.query = { "fg", opts.hls.live_prompt }
   end
 
