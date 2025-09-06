@@ -764,6 +764,7 @@ end
 
 M.set_header = function(opts)
   opts = opts or {}
+  opts._headers = opts._headers == nil and { "actions" } or opts._headers
   if opts.header ~= nil
       or opts.headers == false
       or type(opts._headers) ~= "table"
