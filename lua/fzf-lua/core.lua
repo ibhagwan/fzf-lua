@@ -45,7 +45,7 @@ M.ACTION_DEFINITIONS = {
   },
   [actions.grep_lgrep]        = {
     function(o)
-      if o.fn_reload then
+      if o.is_live then
         return "Fuzzy Search"
       else
         return "Regex Search"
@@ -54,7 +54,7 @@ M.ACTION_DEFINITIONS = {
   },
   [actions.sym_lsym]          = {
     function(o)
-      if o.fn_reload then
+      if o.is_live then
         return "Fuzzy Search"
       else
         return "Live Query"
@@ -169,7 +169,7 @@ end
 ---@return boolean
 M.can_transform = function(opts)
   return utils.has(opts, "fzf", { 0, 45 })
-      and opts.fn_reload -- currently only used for "live" picker
+      and opts.is_live -- currently only used for "live" picker
       and opts.rg_glob
       and not opts.multiprocess
       and nop(opts)
@@ -203,7 +203,7 @@ end
 ---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
   opts = opts or {}
-  opts.fn_reload = true
+  opts.is_live = true
   opts = config.normalize_opts(opts, {})
   if not opts then return end
   local fzf_field_index = M.fzf_field_index(opts)
@@ -389,7 +389,7 @@ M.fzf = function(contents, opts)
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
   if selected and #selected > 0 then
-    if not (opts._is_skim and opts.fn_reload) then
+    if not (opts._is_skim and opts.is_live) then
       -- reminder: this doesn't get called with 'live_grep' when using skim
       -- due to a bug where '--print-query --interactive' combo is broken:
       -- skim always prints an empty line where the typed query should be.
@@ -507,7 +507,7 @@ M.create_fzf_colors = function(opts)
   if type(opts.fzf_colors) ~= "table" then return end
   local colors = opts.fzf_colors
 
-  if opts.fn_reload then
+  if opts.is_live then
     colors.query = { "fg", opts.hls.live_prompt }
   end
 
