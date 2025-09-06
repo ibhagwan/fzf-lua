@@ -331,9 +331,9 @@ local lazyloaded_modules = {
   zoxide = { "fzf-lua.providers.files", "zoxide" },
   -- API shortcuts
   resume = { "fzf-lua.core", "fzf_resume", false },
-  fzf_exec = { "fzf-lua.core", "fzf_exec", false },
-  fzf_live = { "fzf-lua.core", "fzf_live", false },
   fzf_wrap = { "fzf-lua.core", "fzf_wrap", false },
+  fzf_exec = { "fzf-lua.core", "fzf_exec", true },
+  fzf_live = { "fzf-lua.core", "fzf_live", true },
 }
 
 for k, v in pairs(lazyloaded_modules) do
