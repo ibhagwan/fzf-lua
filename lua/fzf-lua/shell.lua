@@ -221,8 +221,8 @@ M.stringify_mt = function(contents, opts)
       "fn_transform",
       "fn_preprocess",
       "fn_postprocess",
-      "fn_reload", -- TODO: just a boolean, maybe rename it
-      "contents",  -- different when opts.cmd is also used by e.g. get_grep_cmd
+      "is_live",
+      "contents", -- different when opts.cmd is also used by e.g. get_grep_cmd
       utils.__IS_WINDOWS and "__FZF_VERSION" or nil,
     }
     -- caller requested rg with glob support
@@ -264,7 +264,7 @@ M.stringify_mt = function(contents, opts)
     return nil
   else
     opts.contents = contents
-    if opts.fn_reload and type(contents) == "string" then
+    if opts.is_live and type(contents) == "string" then
       -- Since the `rg` command will be wrapped inside the shell escaped
       -- 'nvim -l ...', we won't be able to search single quotes
       -- NOTE: since we cannot guarantee the positional index
@@ -308,7 +308,7 @@ M.stringify = function(contents, opts, fzf_field_index)
     ---@type fzf-lua.content, table?
     ---@diagnostic disable-next-line: redefined-local
     local contents, env = (function()
-      local ret = opts.fn_reload and type(contents) == "function" and contents(unpack(args), opts)
+      local ret = opts.is_live and type(contents) == "function" and contents(unpack(args), opts)
           or opts.__stringify_cmd and contents(unpack(args))
           or contents
       if opts.__stringify_cmd and type(ret) == "table" then

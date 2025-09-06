@@ -165,7 +165,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field resume boolean?
 ---@field no_resume boolean?
 ---@field profile string|table?
----@field fn_reload boolean? is "live" picker
+---@field is_live boolean? is "live" picker
 ---@field silent_fail boolean?
 ---set_headers
 ---@field _headers string[]?
