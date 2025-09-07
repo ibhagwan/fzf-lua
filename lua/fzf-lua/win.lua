@@ -334,7 +334,10 @@ function FzfWin:generate_layout()
       pwopts.col = col
       pwopts.width = width
       -- https://github.com/junegunn/fzf/blob/1afd14381079a35eac0a4c2a5cacb86e2a3f476b/src/terminal.go#L1820
-      pwopts.height = math.floor(height * preview_size / 100)
+      -- fzf's previewer border is draw inside preview window, so shrink builtin previewer if it have "top border"
+      -- to ensure the fzf list height is the same between fzf/builtin
+      local off = (self.previewer_is_builtin and ph > 0) and 1 or 0
+      pwopts.height = math.floor((height + off) * preview_size / 100) - off
       height = height - pwopts.height
       if preview_pos == "down" then
         -- next row
@@ -349,7 +352,8 @@ function FzfWin:generate_layout()
     else -- left|right
       pwopts.row = row
       pwopts.height = height
-      pwopts.width = math.floor(width * preview_size / 100)
+      local off = (self.previewer_is_builtin and pw > 0) and 1 or 0
+      pwopts.width = math.floor((width + off) * preview_size / 100) - off
       width = width - pwopts.width
       if preview_pos == "right" then
         -- next col

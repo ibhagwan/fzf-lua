@@ -11,15 +11,15 @@
 10|~      │  README-Win.md                                  │      
 11|~      │  README.md                                      │      
 12|~      │  autoload/fzf_lua.vim                           │      
-13|~      ╰─────────────────────────────────────────────────╯      
-14|~      ╭──────────────────── LICENSE ────────────────────╮      
-15|~      │  1 MIT License                                  │      
-16|~      │  2                                              │      
-17|~      │  3 Copyright (c) 2021 iBhagwan                  │      
-18|~      │  4                                              │      
-19|~      │  5 Permission is hereby granted, free of charge,│      
-20|~      │  6 of this software and associated documentation│      
-21|~      │  7 in the Software without restriction, includin│      
+13|~      │  autoload/health/fzf_lua.vim                    │      
+14|~      ╰─────────────────────────────────────────────────╯      
+15|~      ╭──────────────────── LICENSE ────────────────────╮      
+16|~      │  1 MIT License                                  │      
+17|~      │  2                                              │      
+18|~      │  3 Copyright (c) 2021 iBhagwan                  │      
+19|~      │  4                                              │      
+20|~      │  5 Permission is hereby granted, free of charge,│      
+21|~      │  6 of this software and associated documentation│      
 22|~      ╰─────────────────────────────────────────────────╯      
 23|~                                                               
 24|[No Name]                                     0,0-1          All

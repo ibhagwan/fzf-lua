@@ -11,15 +11,15 @@
 10|~      │  README.md                                      │      
 11|~      │  autoload/fzf_lua.vim                           │      
 12|~      │  autoload/health/fzf_lua.vim                    │      
-13|~      ╰─────────────────────────────────────────────────╯      
-14|~      ╭─────────────────── Makefile ────────────────────╮      
-15|~      │  1 nvim ?= nvim                                        
-16|~      │  2                                              │      
-17|~      │  3 #                                            │      
-18|~      │  4 # Run all tests or specic module tests       │      
-19|~      │  5 #                                            │      
-20|~      │  6 # Test both stable and nightly (assuming `nv`│      
-21|~      │  7 # `make test nvim=nv` or `make test nvim="nvi│      
+13|~      │  doc/fzf-lua-opts.txt                           │      
+14|~      ╰─────────────────────────────────────────────────╯      
+15|~      ╭─────────────────── Makefile ────────────────────╮      
+16|~      │  1 nvim ?= nvim                                        
+17|~      │  2                                              │      
+18|~      │  3 #                                            │      
+19|~      │  4 # Run all tests or specic module tests       │      
+20|~      │  5 #                                            │      
+21|~      │  6 # Test both stable and nightly (assuming `nv`│      
 22|~      ╰─────────────────────────────────────────────────╯      
 23|~                                                               
 24|[No Name]                                     0,0-1          All
