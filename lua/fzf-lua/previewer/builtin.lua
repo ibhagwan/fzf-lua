@@ -917,8 +917,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     end
     do
       local lines = nil
-      if entry.path:match("^%[DEBUG]") then
-        lines = { tostring(entry.path:gsub("^%[DEBUG]", "")) }
+      if entry.debug then
+        lines = { entry.debug }
       elseif entry.content then
         lines = entry.content
       else
@@ -1285,16 +1285,12 @@ function Previewer.buffer_or_file:update_title(entry)
   if not self.title then return end
   local filepath = entry.path
   if filepath then
-    if filepath:match("^%[DEBUG]") then
-      filepath = "[DEBUG]"
-    else
-      if self.opts.cwd then
-        filepath = path.relative_to(entry.path, self.opts.cwd)
-      end
-      filepath = path.HOME_to_tilde(filepath)
+    if self.opts.cwd then
+      filepath = path.relative_to(entry.path, self.opts.cwd)
     end
+    filepath = path.HOME_to_tilde(filepath)
   end
-  local title = filepath or entry.uri or entry.bufname
+  local title = entry.debug and "[DEBUG]" or filepath or entry.uri or entry.bufname
   -- was transform function defined?
   if self.title_fnamemodify then
     local wincfg = vim.api.nvim_win_get_config(self.win.preview_winid)
