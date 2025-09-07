@@ -260,7 +260,8 @@ T["win"]["previewer"]["toggle_behavior=extend"] = new_set(
       { { winopts = { split = "botright new", preview = { layout = "horizontal" } } } },
       { { preview = 'echo "{}"' } },
       { { profile = "border-fused" } },
-      { { profile = "borderless-full" } }
+      { { profile = "borderless-full" } },
+      { { winopts = { border = false } } },
     }
   }, {
     -- Ignore terminal command line with process number
