@@ -259,11 +259,13 @@ T["win"]["previewer"]["toggle_behavior=extend"] = new_set(
       { { winopts = { split = "enew", } } },
       { { winopts = { split = "botright new", preview = { layout = "horizontal" } } } },
       { { preview = 'echo "{}"' } },
-      { { profile = "border-fused" } }
+      { { profile = "border-fused" } },
+      { { profile = "borderless-full" } }
     }
   }, {
     -- Ignore terminal command line with process number
     function(o)
+      if o.profile == "borderless-full" then o.winopts = { preview = { layout = "horizontal" } } end
       local screen_opts = { ignore_text = { 24, 28 }, normalize_paths = helpers.IS_WIN() }
       local opts = {
         __no_abort = true,
