@@ -524,6 +524,7 @@ function M.entry_to_file(entry, opts, force_uri)
       (opts.line_query(opts._last_query or opts.last_query)) or line) or 0,
     col      = tonumber(col) or 0,
     ctag     = opts._ctag and M.entry_to_ctag(stripped) or nil,
+    debug    = opts.debug and entry:match("^%[DEBUG]") and entry or nil,
   }
 end
 

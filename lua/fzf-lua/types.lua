@@ -68,6 +68,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field ctag string?
 ---@field uri string?
 ---@field range { start: { line: integer, col: integer } }?
+---@field debug string? debug information
 
 ---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry, {}
 ---@field do_not_cache boolean?

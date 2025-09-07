@@ -212,8 +212,8 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
     end
   end
   local errcmd = nil
-  if filepath:match("^%[DEBUG]") then
-    errcmd = "echo " .. libuv.shellescape(tostring(filepath:gsub("^%[DEBUG]", "")))
+  if entry.debug then
+    errcmd = "echo " .. libuv.shellescape(entry.debug)
   else
     -- verify the file exists on disk and is accessible
     if #filepath == 0 or not uv.fs_stat(filepath) then
