@@ -200,6 +200,15 @@ T["api"]["fzf_live"]["rg"]["no error"] = new_set(
   }
 )
 
+T["api"]["fzf_live"]["exec_empty_query"] = function(multiprocess, query)
+  helpers.FzfLua.fzf_live(child, "echo <query>", {
+    __expect_lines = true,
+    multiprocess = multiprocess,
+    debug = 1,
+    query = query,
+  })
+end
+
 T["api"]["events"] = new_set(
   { parametrize = { { "fzf_exec" }, { "fzf_live" } } },
   {

@@ -566,8 +566,8 @@ M.spawn_stdio = function(opts)
     if type(cmd) == "function" then cmd(w, wn) end
     if type(cmd) == "table" then for _, v in ipairs(cmd) do w(v) end end
     if type(cmd) ~= "string" then on_finish(0) end
-    if opts.debug == "v" or opts.debug == "verbose" then
-      io.stdout:write(("[DEBUG] contents()=%s" .. EOL):format(cmd))
+    if opts.debug then
+      io.stdout:write(("[DEBUG] [mt] %s" .. EOL):format(cmd))
     end
   end
 
