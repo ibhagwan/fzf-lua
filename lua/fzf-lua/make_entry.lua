@@ -207,6 +207,27 @@ M.rg_insert_args = function(cmd, args, relocate_pattern)
   return string.format("%s %s", cmd, args)
 end
 
+
+---@param s string[]
+---@param opts table
+---@return string cmd
+M.lgrep = function(s, opts)
+  -- can be nil when called as fzf initial command
+  local query = s[1] or ""
+  opts.no_esc = nil
+  local cmd0 = FzfLua.make_entry.get_grep_cmd(opts, query, true)
+  if not opts.exec_empty_query and #query == 0 then
+    cmd0 = FzfLua.utils.shell_nop()
+  elseif opts.silent_fail ~= false then
+    cmd0 = cmd0 .. " || " .. FzfLua.utils.shell_nop()
+  end
+  if opts.contents or not FzfLua.core.can_transform(opts) then
+    return cmd0
+  else
+    return "reload:" .. cmd0
+  end
+end
+
 ---@param opts table
 ---@param search_query string
 ---@param no_esc boolean|number
