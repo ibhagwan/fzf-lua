@@ -218,7 +218,7 @@ M.fzf_live = function(contents, opts)
         or type(contents) == "string" and nop(opts) and M.expand_query(contents, fzf_field_index)
         or shell.stringify(cmd2fnc(contents), opts, fzf_field_index)
   end
-  M.setup_fzf_live_flags(cmd, fzf_field_index, opts)
+  M.setup_fzf_live_flags(cmd, opts)
   return M.fzf_wrap(cmd, opts, true)
 end
 
@@ -365,7 +365,9 @@ M.fzf = function(contents, opts)
     end)
   end
 
-  local selected, exit_code = fzf.raw_fzf(contents, M.build_fzf_cli(opts),
+  -- live command may contain field index {q}, cannot be used as FZF_DEFAULT_COMMAND
+  local selected, exit_code = fzf.raw_fzf(opts.is_live and utils.shell_nop() or contents,
+    M.build_fzf_cli(opts),
     {
       fzf_bin = opts.fzf_bin,
       cwd = opts.cwd,
@@ -1054,9 +1056,8 @@ M.convert_exec_silent_actions = function(opts)
 end
 
 ---@param command string
----@param fzf_field_index string
 ---@param opts table
-M.setup_fzf_live_flags = function(command, fzf_field_index, opts)
+M.setup_fzf_live_flags = function(command, opts)
   -- query cannot be 'nil'
   opts.query = opts.query or ""
 
@@ -1104,20 +1105,12 @@ M.setup_fzf_live_flags = function(command, fzf_field_index, opts)
       reload_command = reload_command .. " || " .. utils.shell_nop()
     end
     local query = opts.query and tostring(opts.query) or ""
-    if M.can_transform(opts) then
+    local action = M.can_transform(opts) and "transform" or "reload"
+    table.insert(opts._fzf_cli_args, "--bind="
+      .. libuv.shellescape(string.format("change:+%s:%s", action, reload_command)))
+    if utils.has(opts, "fzf", { 0, 35 }) and (opts.exec_empty_query or #query > 0) then
       table.insert(opts._fzf_cli_args, "--bind="
-        .. libuv.shellescape(string.format("change:+transform:%s", reload_command)))
-      if utils.has(opts, "fzf", { 0, 35 }) and (opts.exec_empty_query or #query > 0) then
-        table.insert(opts._fzf_cli_args, "--bind="
-          .. libuv.shellescape(string.format("start:+transform:%s", reload_command)))
-      end
-    else
-      table.insert(opts._fzf_cli_args, "--bind="
-        .. libuv.shellescape(string.format("change:+reload:%s", reload_command)))
-      if utils.has(opts, "fzf", { 0, 35 }) and (opts.exec_empty_query or #query > 0) then
-        table.insert(opts._fzf_cli_args, "--bind="
-          .. libuv.shellescape(string.format("start:+reload:%s", reload_command)))
-      end
+        .. libuv.shellescape(string.format("start:+%s:%s", action, reload_command)))
     end
   end
 end
