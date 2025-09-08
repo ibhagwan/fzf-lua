@@ -9,9 +9,9 @@ local T = helpers.new_set_with_child(child)
 
 T["api"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
-T["api"]["fzf_exec"] = new_set()
+T["api"]["fzf_exec"] = new_set({ parametrize = { { true }, { false }, { 1 } } })
 
-T["api"]["fzf_exec"]["table"] = function()
+T["api"]["fzf_exec"]["table"] = function(multiprocess)
   local contents = {}
   for i = 1, 100 do
     for j, s in ipairs({ "foo", "bar", "baz" }) do
@@ -19,11 +19,11 @@ T["api"]["fzf_exec"]["table"] = function()
     end
   end
   helpers.FzfLua.fzf_exec(child, contents,
-    { __expect_lines = true, __postprocess_wait = true })
+    { __expect_lines = true, __postprocess_wait = true, multiprocess = multiprocess })
 end
 
 T["api"]["fzf_exec"]["function"] = new_set({ parametrize = { { "sync" }, { "async" } } }, {
-  function(type)
+  function(multiprocess, type)
     if type == "sync" then
       helpers.FzfLua.fzf_exec(child, function(fzf_cb)
           for i = 1, 1000 do
@@ -48,7 +48,7 @@ T["api"]["fzf_exec"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
   end,
 })
 
-T["api"]["fzf_exec"]["rg"] = new_set({ parametrize = { { true }, { false }, { 1 } } }, {
+T["api"]["fzf_exec"]["rg"] = new_set({}, {
   function(multiprocess)
     helpers.FzfLua.fzf_exec(child,
       "rg --files -g !.git -g !tests/** --sort=path",
@@ -61,7 +61,7 @@ T["api"]["fzf_exec"]["rg"] = new_set({ parametrize = { { true }, { false }, { 1 
   end
 })
 
-T["api"]["fzf_exec"]["fn_transform"] = new_set({ parametrize = { { true }, { false } } })
+T["api"]["fzf_exec"]["fn_transform"] = new_set()
 
 T["api"]["fzf_exec"]["fn_transform"]["filter"] = new_set(
   { parametrize = { { 0 }, { 13 }, { 24 } } }, {
@@ -89,9 +89,9 @@ T["api"]["fzf_exec"]["fn_transform"]["filter"] = new_set(
   })
 
 
-T["api"]["fzf_live"] = new_set()
+T["api"]["fzf_live"] = new_set({ parametrize = { { true }, { false }, { 1 } } })
 
-T["api"]["fzf_live"]["table"] = function()
+T["api"]["fzf_live"]["table"] = function(multiprocess)
   helpers.FzfLua.fzf_live(child, function(args)
       local q = args[1]
       if not tonumber(q) then
@@ -109,11 +109,12 @@ T["api"]["fzf_live"]["table"] = function()
       __expect_lines = true,
       __postprocess_wait = true,
       query = 100,
+      multiprocess = multiprocess,
     })
 end
 
 T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "async" } } }, {
-  function(type)
+  function(multiprocess, type)
     if type == "sync" then
       helpers.FzfLua.fzf_live(child, function(args)
           local q = args[1]
@@ -134,6 +135,7 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
           __expect_lines = true,
           __postprocess_wait = true,
           query = 100,
+          multiprocess = multiprocess,
         })
     else
       helpers.FzfLua.fzf_live(child, function(args)
@@ -165,7 +167,7 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
 
 T["api"]["fzf_live"]["rg"] = new_set()
 
-T["api"]["fzf_live"]["rg"]["error"] = new_set({ parametrize = { { true }, { false }, { 1 } } }, {
+T["api"]["fzf_live"]["rg"]["error"] = new_set({}, {
   function(multiprocess)
     helpers.FzfLua.fzf_live(child, "rg --column --line-number --smart-case", {
       __expect_lines = true,
@@ -182,7 +184,7 @@ T["api"]["fzf_live"]["rg"]["error"] = new_set({ parametrize = { { true }, { fals
 T["api"]["fzf_live"]["rg"]["no error"] = new_set(
   { parametrize = { { "[" }, { [[table of cont]] } } },
   {
-    function(query)
+    function(multiprocess, query)
       helpers.FzfLua.fzf_live(child,
         string.format(
           "rg --column --line-number --smart-case --sort=path -g !tests/ -- <query> 2> %s",
@@ -190,7 +192,7 @@ T["api"]["fzf_live"]["rg"]["no error"] = new_set(
         ),
         {
           __expect_lines = true,
-          multiprocess = false,
+          multiprocess = multiprocess,
           debug = 1,
           query = query,
         })
