@@ -291,6 +291,7 @@ function Previewer.bat_async:cmdline(o)
   o = o or {}
   local act = shell.stringify_cmd(function(items, fzf_lines)
     self._last_query = items[2] or ""
+    if items[1] == "" then return utils.shell_nop() end
     local filepath, entry, errcmd = self:parse_entry_and_verify(items[1])
     local line_range = ""
     if entry.ctag then
