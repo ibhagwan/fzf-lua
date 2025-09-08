@@ -146,20 +146,22 @@ M.live_grep = function(opts)
 end
 
 M.live_grep_native = function(opts)
-  -- backward compatibility, by setting git|files icons to false
-  -- we force 'mt_cmd_wrapper' to pipe the command as is, so fzf
-  -- runs the command directly in the 'change:reload' event
-  opts = opts or {}
-  opts.git_icons = false
-  opts.file_icons = false
-  opts.file_ignore_patterns = false
-  opts.strip_cwd_prefix = false
-  opts.path_shorten = false
-  opts.formatter = false
-  opts.multiline = false
-  opts.rg_glob = false
+  opts = normalize_live_grep_opts(opts)
+  if not opts then return end
+
+  -- force no wrap shell.stringify_mt
   opts.multiprocess = 1
-  return M.live_grep(opts)
+  opts.fn_transform = false
+  opts.fn_preprocess = false
+  opts.fn_postprocess = false
+
+  -- register opts._cmd, toggle_ignore/title_flag
+  local cmd0 = get_grep_cmd(opts, "", 2)
+
+  -- search query in header line
+  opts = core.set_title_flags(opts, { "cmd", "live" })
+  opts = core.set_fzf_field_index(opts)
+  core.fzf_live(cmd0, opts)
 end
 
 M.live_grep_glob = function(opts)
