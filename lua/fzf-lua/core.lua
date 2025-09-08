@@ -1072,29 +1072,6 @@ M.setup_fzf_live_flags = function(command, fzf_field_index, opts)
   if type(opts.query_delay) == "number" then
     reload_command = string.format("sleep %.2f; %s", opts.query_delay / 1000, reload_command)
   end
-  -- See the note in `make_entry.preprocess`, the NEQ condition on Windows
-  -- along with fzf's lacking escape sequence causes the empty query condition
-  -- to fail on spaces, comma and semicolon (and perhaps other use cases),
-  -- moving the test to our cmd wrapper solves it for anything but "native"
-  local no_query_condi = (opts.exec_empty_query or opts.argv_expr) and ""
-      or string.format(
-        utils._if_win(
-        -- due to the reload command already being shellescaped and fzf's {q}
-        -- also escaping the query with ^"<query>"^ any spaces in the query
-        -- will fail the command, by adding caret escaping before fzf's
-        -- we fool CMD.exe to not terminate the quote and thus an empty query
-        -- will generate the expression ^^"^" which translates to ^""
-        -- our specialized libuv.shellescape will also double the escape
-        -- sequence if a "!" is found in our string as explained in:
-        -- https://ss64.com/nt/syntax-esc.html
-        -- TODO: open an upstream bug rgd ! as without the double escape
-        -- if an ! is found in the command (i.e. -g "rg ... -g !.git")
-        -- sending a caret will require doubling (i.e. sending ^^ for ^)
-          utils.has(opts, "fzf", { 0, 51 }) and [[IF %s NEQ ^"^" ]] or [[IF ^%s NEQ ^^"^" ]],
-          "[ -z %s ] || "),
-        -- {q} for fzf is automatically shell escaped
-        fzf_field_index
-      )
 
   if opts._is_skim then
     opts.prompt = opts.__prompt or opts.prompt or opts.fzf_opts["--prompt"]
@@ -1118,7 +1095,7 @@ M.setup_fzf_live_flags = function(command, fzf_field_index, opts)
     opts.query = nil
     -- setup as interactive
     table.insert(opts._fzf_cli_args, string.format("--interactive --cmd %s",
-      libuv.shellescape(no_query_condi .. reload_command)))
+      libuv.shellescape(reload_command)))
   else
     opts.fzf_opts["--disabled"] = true
     opts.fzf_opts["--query"] = opts.query
@@ -1135,10 +1112,10 @@ M.setup_fzf_live_flags = function(command, fzf_field_index, opts)
       end
     else
       table.insert(opts._fzf_cli_args, "--bind="
-        .. libuv.shellescape(string.format("change:+reload:%s%s", no_query_condi, reload_command)))
+        .. libuv.shellescape(string.format("change:+reload:%s", reload_command)))
       if utils.has(opts, "fzf", { 0, 35 }) then
         table.insert(opts._fzf_cli_args, "--bind="
-          .. libuv.shellescape(string.format("start:+reload:%s%s", no_query_condi, reload_command)))
+          .. libuv.shellescape(string.format("start:+reload:%s", reload_command)))
       end
     end
   end

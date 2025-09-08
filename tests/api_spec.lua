@@ -193,10 +193,6 @@ T["api"]["fzf_live"]["rg"]["no error"] = new_set(
           multiprocess = false,
           debug = 1,
           query = query,
-          -- Windows fails due to the spaced query term with the native
-          -- exec_empty_query shell condition, disable empty query to
-          -- remove the empty query condition from the shell command
-          exec_empty_query = true,
         })
     end
   }
