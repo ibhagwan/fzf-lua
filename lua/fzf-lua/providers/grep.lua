@@ -141,20 +141,7 @@ M.live_grep = function(opts)
   opts = core.set_fzf_field_index(opts)
   ---@diagnostic disable-next-line: redefined-local
   core.fzf_live(function(s, opts)
-    -- can be nil when called as fzf initial command
-    local query = s[1] or ""
-    opts.no_esc = nil
-    local cmd0 = FzfLua.make_entry.get_grep_cmd(opts, query, true)
-    if not opts.exec_empty_query and #query == 0 then
-      cmd0 = FzfLua.utils.shell_nop()
-    elseif opts.silent_fail ~= false then
-      cmd0 = cmd0 .. " || " .. FzfLua.utils.shell_nop()
-    end
-    if opts.contents or not core.can_transform(opts) then
-      return cmd0
-    else
-      return "reload:" .. cmd0
-    end
+    return FzfLua.make_entry.lgrep(s, opts)
   end, opts)
 end
 
