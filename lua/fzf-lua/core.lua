@@ -178,7 +178,7 @@ end
 -- Append query placeholder if not found in command
 local add_query_placeholder = function(cmd)
   if type(cmd) ~= "string" or cmd:match(M.fzf_query_placeholder) then return cmd end
-  return ("%s %s"):format(cmd, M.fzf_query_placeholder)
+  return ("%s %s"):format(((cmd):gsub("%s*$", "")), M.fzf_query_placeholder)
 end
 
 ---@param contents string|fzf-lua.shell.data2

@@ -409,11 +409,37 @@ M.spawn_stdio = function(opts)
   local fn_preprocess = M.load_fn(opts.fn_preprocess) or opts.fn_preprocess
   local fn_postprocess = M.load_fn(opts.fn_postprocess) or opts.fn_postprocess
 
+  local argv = function(i)
+    local idx = tonumber(i) or #_G.arg
+    local arg = _G.arg[idx]
+    if opts.debug == "v" or opts.debug == "verbose" then
+      io.stdout:write(("[DEBUG] raw_argv(%d) = %s" .. EOL):format(idx, arg))
+    end
+    -- TODO: maybe not needed anymore? since we're not using v:argv
+    if FzfLua.utils.__IS_WINDOWS then
+      arg = M.unescape_fzf(arg, FzfLua.utils.has(opts, "fzf", { 0, 52 }) and 0.52 or 0)
+    end
+    if opts.debug == "v" or opts.debug == "verbose" then
+      io.stdout:write(("[DEBUG] esc_argv(%d) = %s" .. EOL):format(idx, M.shellescape(arg)))
+    end
+    return arg
+  end
+
+  -- Since the `rg` command will be wrapped inside the shell escaped
+  -- 'nvim -l ...', we won't be able to search single quotes
+  -- NOTE: since we cannot guarantee the positional index
+  -- of arguments (#291), we use the last argument instead
+  local argv_expr = opts.is_live and type(opts.contents) == "string"
+  if argv_expr then
+    opts.cmd = opts.contents
+    FzfLua.make_entry.expand_query(opts, argv())
+  end
+
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
 
   ---@type fzf-lua.content|fzf-lua.shell.data2
-  local cmd = opts.argv_expr and opts.cmd or opts.contents
+  local cmd = argv_expr and opts.cmd or opts.contents
   if type(cmd) == "string" and cmd:match("%-%-color[=%s]+never") then
     -- perf: skip stripping ansi coloring in `make_file.entry`
     opts.no_ansi_colors = true
@@ -540,6 +566,9 @@ M.spawn_stdio = function(opts)
     if type(cmd) == "function" then cmd(w, wn) end
     if type(cmd) == "table" then for _, v in ipairs(cmd) do w(v) end end
     if type(cmd) ~= "string" then on_finish(0) end
+    if opts.debug == "v" or opts.debug == "verbose" then
+      io.stdout:write(("[DEBUG] contents()=%s" .. EOL):format(cmd))
+    end
   end
 
   if not fn_transform and not fn_postprocess then posix_exec(cmd) end
