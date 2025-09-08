@@ -30,6 +30,33 @@ local function tempname()
   return tmpname
 end
 
+local pty_spawn = function(cmd, opts)
+  ---@diagnostic disable-next-line: missing-fields, missing-parameter
+  uv.spawn(cmd[1], {
+    cwd = opts.cwd,
+    args = vim.list_slice(cmd, 2),
+    stdio = { uv.new_tty(0, true), uv.new_tty(1, false) },
+    env = (function()
+      -- uv.spawn will override all env when table provided?
+      -- steal from $VIMRUNTIME/lua/vim/_system.lua
+      local env = vim.fn.environ() --- @type table<string,string>
+      env["NVIM"] = vim.v.servername
+      env["NVIM_LISTEN_ADDRESS"] = nil
+      env = vim.tbl_extend("keep", opts.env or {}, env or {})
+      local renv = {} --- @type string[]
+      for k, v in pairs(env) do
+        renv[#renv + 1] = string.format("%s=%s", k, tostring(v))
+      end
+      return renv
+    end)(),
+  }, vim.schedule_wrap(function(rc)
+    opts.on_exit(nil, rc, nil)
+    if #vim.api.nvim_get_proc_children(uv.os_getpid()) == 0 then
+      vim.cmd.cquit { count = rc, bang = true }
+    end
+  end))
+end
+
 -- contents can be either a table with tostring()able items, or a function that
 -- can be called repeatedly for values. The latter can use coroutines for async
 -- behavior.
@@ -122,7 +149,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end
 
   local co = coroutine.running()
-  local jobstart = opts.is_fzf_tmux and vim.fn.jobstart or utils.termopen
+  local jobstart = _G._is_fzf_cli and pty_spawn or opts.is_fzf_tmux and vim.fn.jobstart or
+      utils.termopen
   local shell_cmd = utils.__IS_WINDOWS
       -- MSYS2 comes with "/usr/bin/cmd" that precedes "cmd.exe" (#1396)
       and { "cmd.exe", "/d", "/e:off", "/f:off", "/v:off", "/c" }
