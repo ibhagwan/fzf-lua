@@ -145,14 +145,16 @@ M.live_grep = function(opts)
     local query = s[1] or ""
     opts.no_esc = nil
     local cmd0 = FzfLua.make_entry.get_grep_cmd(opts, query, true)
-    if opts.contents or not core.can_transform(opts) then return cmd0 end
-    -- "reload:cmd"
     if not opts.exec_empty_query and #query == 0 then
       cmd0 = FzfLua.utils.shell_nop()
     elseif opts.silent_fail ~= false then
       cmd0 = cmd0 .. " || " .. FzfLua.utils.shell_nop()
     end
-    return "reload:" .. cmd0
+    if opts.contents or not core.can_transform(opts) then
+      return cmd0
+    else
+      return "reload:" .. cmd0
+    end
   end, opts)
 end
 
