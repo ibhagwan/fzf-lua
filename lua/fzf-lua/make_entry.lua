@@ -424,35 +424,21 @@ M.fix_windows_cmd = function(cmd)
   return table.concat(escaped_cmd, " |")
 end
 
-M.preprocess = function(opts)
-  local EOL = opts.multiline and "\0" or "\n"
-  local argv = function(i, debug)
-    local idx = tonumber(i) or #_G.arg
-    local arg = _G.arg[idx]
-    if debug == "v" or debug == "verbose" then
-      io.stdout:write(("[DEBUG] raw_argv(%d) = %s" .. EOL):format(idx, arg))
-    end
-    if utils.__IS_WINDOWS then
-      arg = libuv.unescape_fzf(arg, utils.has(opts, "fzf", { 0, 52 }) and 0.52 or 0)
-    end
-    if debug == "v" or debug == "verbose" then
-      io.stdout:write(("[DEBUG] esc_argv(%d) = %s" .. EOL):format(idx, libuv.shellescape(arg)))
-    end
-    return arg
-  end
-
+---@param opts table
+---@param query string
+---@return string
+M.expand_query = function(opts, query)
   -- live_grep replace pattern with last argument
   local argvz = "<query>"
-  if opts.argv_expr and opts.cmd:match(argvz) then
+  if opts.cmd:match(argvz) then
     -- The NEQ condition on Windows turned out to be a real pain in the butt
     -- so I decided to move the empty query test into our cmd proxy wrapper
     -- For obvious reasons this cannot work with `live_grep_native` and thus
     -- the NEQ condition remains for the "native" version
-    local query = argv(nil, opts.debug)
     if not opts.exec_empty_query and query == "" then
       -- query is always be the last argument
       opts.cmd = utils.shell_nop()
-      return opts
+      return opts.cmd
     end
 
     -- For custom command transformations (#1927)
@@ -480,7 +466,10 @@ M.preprocess = function(opts)
     -- see my comment inside 'live_grep' initial_command code
     opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(query))
   end
+  return opts.cmd
+end
 
+M.preprocess = function(opts)
   opts.cmd = M.fix_windows_cmd(opts.cmd)
 
   if opts.cwd_only and not opts.cwd then

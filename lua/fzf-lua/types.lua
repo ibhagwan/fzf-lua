@@ -187,7 +187,6 @@ _G.FzfLua = require("fzf-lua")
 ---stringify_mt
 ---@field cmd? string
 ---@field contents? fzf-lua.content
----@field argv_expr? boolean
 ---@field debug? boolean|'v'|'verbose'
 ---@field rg_glob? boolean
 

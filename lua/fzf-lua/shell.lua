@@ -199,7 +199,6 @@ M.stringify_mt = function(contents, opts)
       "profiler",
       "process1",
       "silent",
-      "argv_expr",
       "cmd",
       "cwd",
       "cwd_only",
@@ -264,18 +263,6 @@ M.stringify_mt = function(contents, opts)
     return nil
   else
     opts.contents = contents
-    if opts.is_live and type(contents) == "string" then
-      -- Since the `rg` command will be wrapped inside the shell escaped
-      -- 'nvim -l ...', we won't be able to search single quotes
-      -- NOTE: since we cannot guarantee the positional index
-      -- of arguments (#291), we use the last argument instead
-      -- "<query>" is re-add in fzf_live
-      opts.argv_expr = true
-      opts.cmd = opts.cmd or contents
-      opts.fn_preprocess = opts.fn_preprocess == nil
-          and [[return require("fzf-lua.make_entry").preprocess]]
-          or opts.fn_preprocess
-    end
     return M.wrap_spawn_stdio(filter_opts(opts))
   end
 end
