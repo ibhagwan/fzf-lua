@@ -134,7 +134,7 @@ M.live_grep = function(opts)
   if not opts then return end
 
   -- register opts._cmd, toggle_ignore/title_flag
-  get_grep_cmd(opts, "", 2)
+  get_grep_cmd(opts, core.fzf_query_placeholder, 2)
 
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd", "live" })
@@ -156,7 +156,7 @@ M.live_grep_native = function(opts)
   opts.fn_postprocess = false
 
   -- register opts._cmd, toggle_ignore/title_flag
-  local cmd0 = get_grep_cmd(opts, "", 2)
+  local cmd0 = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
 
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd", "live" })
