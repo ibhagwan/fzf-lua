@@ -145,9 +145,9 @@ _G.FzfLua = require("fzf-lua")
 ---...
 ---@field cwd string?
 ---@field multiprocess integer|boolean?
----@field fn_transform string|function?
----@field fn_preprocess string|function?
----@field fn_postprocess string|function?
+---@field fn_transform boolean|string|function?
+---@field fn_preprocess boolean|string|function?
+---@field fn_postprocess boolean|string|function?
 ---@field file_icons boolean|integer?
 ---@field color_icons boolean?
 ---@field _type "file"?

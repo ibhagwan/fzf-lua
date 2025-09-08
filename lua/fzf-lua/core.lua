@@ -1103,17 +1103,18 @@ M.setup_fzf_live_flags = function(command, fzf_field_index, opts)
     if opts.silent_fail ~= false then
       reload_command = reload_command .. " || " .. utils.shell_nop()
     end
+    local query = opts.query and tostring(opts.query) or ""
     if M.can_transform(opts) then
       table.insert(opts._fzf_cli_args, "--bind="
         .. libuv.shellescape(string.format("change:+transform:%s", reload_command)))
-      if utils.has(opts, "fzf", { 0, 35 }) then
+      if utils.has(opts, "fzf", { 0, 35 }) and (opts.exec_empty_query or #query > 0) then
         table.insert(opts._fzf_cli_args, "--bind="
           .. libuv.shellescape(string.format("start:+transform:%s", reload_command)))
       end
     else
       table.insert(opts._fzf_cli_args, "--bind="
         .. libuv.shellescape(string.format("change:+reload:%s", reload_command)))
-      if utils.has(opts, "fzf", { 0, 35 }) then
+      if utils.has(opts, "fzf", { 0, 35 }) and (opts.exec_empty_query or #query > 0) then
         table.insert(opts._fzf_cli_args, "--bind="
           .. libuv.shellescape(string.format("start:+reload:%s", reload_command)))
       end
