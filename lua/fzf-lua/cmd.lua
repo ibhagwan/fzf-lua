@@ -41,7 +41,7 @@ function M.options_md()
   if M._options_md ~= nil then return M._options_md end
   M._options_md = {}
   local filepath = path.join({ vim.g.fzf_lua_root, "OPTIONS.md" })
-  local lines = vim.split(utils.read_file(filepath), "\n")
+  local lines = utils.strsplit(utils.read_file(filepath), "\r?\n")
   local section
   for _, l in ipairs(lines or {}) do
     (function()
