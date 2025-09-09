@@ -948,8 +948,8 @@ function FzfWin:set_winleave_autocmd()
 end
 
 function FzfWin:treesitter_detach(buf)
-  TSInjector.clear_cache(buf)
   TSInjector.deregister()
+  TSInjector.clear_cache(buf)
 end
 
 function FzfWin:treesitter_attach()
@@ -962,6 +962,8 @@ function FzfWin:treesitter_attach()
   end
   vim.api.nvim_buf_attach(self.fzf_bufnr, false, {
     on_lines = function(_, bufnr)
+      -- Called after `:close` triggers an attach after clear_cache (#2322)
+      if self.closing then return end
       local lines = api.nvim_buf_get_lines(bufnr, 0, -1, false)
       local regions = {}
       local empty_regions = {}
