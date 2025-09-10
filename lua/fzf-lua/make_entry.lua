@@ -63,7 +63,7 @@ local function load_config_section(s, datatype, optional)
       ok, res = pcall(loadstring, res)
     end
     ---@diagnostic disable-next-line: undefined-field
-    if _G._debug == "v" or _G._debug == "verbose" then
+    if _G._debug == "v" or _G._debug == 2 then
       ---@diagnostic disable-next-line: undefined-field
       io.stdout:write(("[DEBUG] [load_config] %s = %s" .. (_G._EOL or "\n"))
         :format(s, not ok and errmsg or res))
