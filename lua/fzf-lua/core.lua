@@ -251,7 +251,7 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
   coroutine.wrap(function()
     _co = coroutine.running()
     -- xpcall to get full traceback https://www.lua.org/pil/8.5.html
-    local _, err = xpcall(function()
+    local _, err = (jit and xpcall or require("fzf-lua.lib.copcall").xpcall)(function()
       if type(opts.cb_co) == "function" then opts.cb_co(_co) end
       local selected, exit_code = M.fzf(cmd, opts)
       -- If aborted (e.g. unhide process kill), do nothing
