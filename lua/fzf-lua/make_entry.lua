@@ -35,12 +35,6 @@ local function load_config()
   return res
 end
 
-local opts2 = setmetatable({}, {
-  __index = function(_, k)
-    return utils.map_get(config, "__resume_data.opts." .. k)
-  end
-})
-
 local function load_config_section(s, datatype, optional)
   if not _G._fzf_lua_is_headless then
     local val = utils.map_get(config, s)
@@ -81,6 +75,16 @@ local function load_config_section(s, datatype, optional)
     end
   end
 end
+
+
+local opts2 = setmetatable({}, {
+  __index = function(_, k)
+    if k == "fn_transform_cmd" then
+      return load_config_section("__resume_data.opts.fn_transform_cmd", "function", true)
+    end
+    return utils.map_get(config, "__resume_data.opts." .. k)
+  end
+})
 
 if _G._fzf_lua_is_headless then
   local _config = load_config() or {} ---@module 'fzf-lua.config'
