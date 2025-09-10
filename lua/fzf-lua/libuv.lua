@@ -412,14 +412,14 @@ M.spawn_stdio = function(opts)
   local argv = function(i)
     local idx = tonumber(i) or #_G.arg
     local arg = _G.arg[idx]
-    if opts.debug == "v" or opts.debug == "verbose" then
+    if opts.debug == "v" or opts.debug == 2 then
       io.stdout:write(("[DEBUG] raw_argv(%d) = %s" .. EOL):format(idx, arg))
     end
     -- TODO: maybe not needed anymore? since we're not using v:argv
     if FzfLua.utils.__IS_WINDOWS then
       arg = M.unescape_fzf(arg, FzfLua.utils.has(opts, "fzf", { 0, 52 }) and 0.52 or 0)
     end
-    if opts.debug == "v" or opts.debug == "verbose" then
+    if opts.debug == "v" or opts.debug == 2 then
       io.stdout:write(("[DEBUG] esc_argv(%d) = %s" .. EOL):format(idx, M.shellescape(arg)))
     end
     return arg
@@ -445,7 +445,7 @@ M.spawn_stdio = function(opts)
     opts.no_ansi_colors = true
   end
 
-  if opts.debug == "v" or opts.debug == "verbose" then
+  if opts.debug == "v" or opts.debug == 2 then
     for k, v in vim.spairs(opts) do
       io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, vim.inspect(v)))
     end
