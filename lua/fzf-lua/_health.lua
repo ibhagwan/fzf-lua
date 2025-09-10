@@ -8,8 +8,8 @@ local error = vim.health.error or vim.health.report_error
 local uv = vim.uv or vim.loop
 
 function M.check()
-  local is_win = jit.os:find("Windows")
   local utils = require("fzf-lua.utils")
+  local is_win = M.__IS_WINDOWS
 
   local function have(tool, nowarn)
     if vim.fn.executable(tool) == 0 then
