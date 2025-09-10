@@ -18,7 +18,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        rev: [nightly, v0.11.3]
+        rev: [nightly, v0.11.3, puc-lua]
+        exclude:
+          - os: macos-latest
+            rev: puc-lua
+          - os: windows-latest
+            rev: puc-lua
         include:
           - os: macos-latest
             install-deps: |
@@ -38,9 +43,17 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: rhysd/action-setup-vim@v1
+        if: matrix.rev != 'puc-lua'
         with:
           neovim: true
           version: ${{ matrix.rev }}
+
+      - name: Install puc-lua neovim (nightly)
+        if: matrix.rev == 'puc-lua'
+        run: |
+          wget -O - https://github.com/phanen/neovim-releases/releases/download/nightly/nvim-linux-x86_64.tar.gz | tar zxfv -
+          sudo cp -r nvim-linux-x86_64/* /usr/local/
+          rm nvim-linux-x86_64/ -rf
 
       - name: Install Scoop (Windows)
         if: runner.os == 'Windows'
