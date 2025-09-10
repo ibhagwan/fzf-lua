@@ -1207,7 +1207,7 @@ end
 function Previewer.buffer_or_file:set_cursor_hl(entry)
   local mgrep, glob_args = require("fzf-lua.providers.grep"), nil
   local regex = self.opts.__ACT_TO == mgrep.grep and self.opts._last_query
-      or self.opts.__ACT_TO == mgrep.live_grep and self.opts.search or nil
+      or self.opts.__ACT_TO == mgrep.live_grep and self.opts._last_query or nil
   if regex and self.opts.fn_transform_cmd then
     local _, query = self.opts.fn_transform_cmd(regex, self.opts.cmd, self.opts)
     regex = query or regex
