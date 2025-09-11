@@ -109,8 +109,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   local args = _is_win and { "/d", "/e:off", "/f:off", "/v:on", "/c" } or { "-c" }
   if type(opts.cmd) == "table" then
     if _is_win then
-      ---@diagnostic disable-next-line: deprecated
-      table.move(opts.cmd, 1, #opts.cmd, #args + 1, args)
+      vim.list_extend(args, opts.cmd)
     else
       table.insert(args, table.concat(opts.cmd, " "))
     end
