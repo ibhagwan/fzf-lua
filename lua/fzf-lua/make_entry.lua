@@ -430,19 +430,20 @@ end
 
 ---@param opts table
 ---@param query string
+---@param cmd string
 ---@return string
-M.expand_query = function(opts, query)
+M.expand_query = function(opts, query, cmd)
   -- live_grep replace pattern with last argument
   local argvz = "<query>"
-  if opts.cmd:match(argvz) then
+  if cmd:match(argvz) then
     -- The NEQ condition on Windows turned out to be a real pain in the butt
     -- so I decided to move the empty query test into our cmd proxy wrapper
     -- For obvious reasons this cannot work with `live_grep_native` and thus
     -- the NEQ condition remains for the "native" version
     if not opts.exec_empty_query and query == "" then
       -- query is always be the last argument
-      opts.cmd = utils.shell_nop()
-      return opts.cmd
+      cmd = utils.shell_nop()
+      return cmd
     end
 
     -- For custom command transformations (#1927)
@@ -451,8 +452,8 @@ M.expand_query = function(opts, query)
     -- did the caller request rg with glob support?
     -- manipulation needs to be done before the argv replacement
     if opts.fn_transform_cmd then
-      local new_cmd, new_query = opts.fn_transform_cmd(query, opts.cmd:gsub(argvz, ""), opts)
-      opts.cmd = new_cmd or opts.cmd
+      local new_cmd, new_query = opts.fn_transform_cmd(query, cmd:gsub(argvz, ""), opts)
+      cmd = new_cmd or cmd
       query = new_query or query
     elseif opts.rg_glob then
       local search_query, glob_args = M.glob_parse(query, opts)
@@ -462,15 +463,15 @@ M.expand_query = function(opts, query)
         -- reset argvz so it doesn't get replaced again below
         -- insert glob args before `-- {argvz}` or `-e {argvz}` repositioned
         -- at the end of the command preceding the search query (#781, #794)
-        opts.cmd = M.rg_insert_args(opts.cmd, glob_args, argvz)
+        cmd = M.rg_insert_args(cmd, glob_args, argvz)
         query = search_query
       end
     end
     -- nifty hack to avoid having to double escape quotations
     -- see my comment inside 'live_grep' initial_command code
-    opts.cmd = opts.cmd:gsub(argvz, libuv.shellescape(query))
+    cmd = cmd:gsub(argvz, libuv.shellescape(query))
   end
-  return opts.cmd
+  return cmd
 end
 
 M.preprocess = function(opts)
