@@ -9,7 +9,7 @@ local uv = vim.uv or vim.loop
 
 function M.check()
   local utils = require("fzf-lua.utils")
-  local is_win = M.__IS_WINDOWS
+  local is_win = utils.__IS_WINDOWS
 
   local function have(tool, nowarn)
     if vim.fn.executable(tool) == 0 then
