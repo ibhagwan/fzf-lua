@@ -256,7 +256,7 @@ function FzfWin:normalize_preview_layout()
   }
 end
 
----@return integer, fzf-lua.win.previewLayout?
+---@return integer nwin, boolean preview
 function FzfWin:normalize_layout()
   -- when to use full fzf layout
   -- 1. no previewer (always)
@@ -265,11 +265,11 @@ function FzfWin:normalize_layout()
   if not self:has_previewer()
       or (self.previewer_is_builtin and (self.preview_hidden and self.toggle_behavior ~= "extend"))
       or (not self.previewer_is_builtin and (self.toggle_behavior ~= "extend" or not self.preview_hidden)) then
-    return 1, nil
+    return 1, false
   end
   -- has previewer, but when nwin=1, reduce fzf main layout as if the previewer is displayed
   local nwin = self.preview_hidden and self.toggle_behavior == "extend" and 1 or 2
-  return nwin, self:normalize_preview_layout()
+  return nwin, true
 end
 
 function FzfWin:generate_layout()
@@ -277,9 +277,9 @@ function FzfWin:generate_layout()
   local winopts = self.winopts
 
   local nwin, preview = self:normalize_layout()
-  local layout = preview and preview.pos or nil
+  local layout = self:normalize_preview_layout()
   local border, h, w = self:normalize_border(self._o.winopts.border,
-    { type = "nvim", name = "fzf", layout = layout, nwin = nwin, opts = self._o })
+    { type = "nvim", name = "fzf", layout = preview and layout.pos, nwin = nwin, opts = self._o })
   if not preview then
     self.layout = {
       fzf = {
@@ -310,9 +310,9 @@ function FzfWin:generate_layout()
   local pwopts
   local row, col = winopts.row, winopts.col
   local height, width = winopts.height, winopts.width
-  local preview_pos, preview_size = preview.pos, preview.size
+  local preview_pos, preview_size = layout.pos, layout.size
   local pborder, ph, pw = self:normalize_border(self._o.winopts.preview.border,
-    { type = "nvim", name = "prev", layout = layout, nwin = nwin, opts = self._o })
+    { type = "nvim", name = "prev", layout = preview and layout.pos, nwin = nwin, opts = self._o })
   if winopts.split then
     -- Custom "split"
     pwopts = { relative = "win", anchor = "NW", row = 0, col = 0 }
@@ -565,14 +565,14 @@ function FzfWin:normalize_winopts()
   }
 
   local nwin, preview = self:normalize_layout()
-  local layout = (preview or {}).pos
+  local preview_pos = preview and self:normalize_preview_layout().pos or nil
   if preview and self.previewer_is_builtin then nwin = 2 end
   local _, h, w = self:normalize_border(self._o.winopts.border,
-    { type = "nvim", name = "fzf", layout = layout, nwin = nwin, opts = self._o })
+    { type = "nvim", name = "fzf", layout = preview_pos, nwin = nwin, opts = self._o })
   if preview and self.previewer_is_builtin then
     local _, ph, pw = self:normalize_border(self._o.winopts.preview.border,
-      { type = "nvim", name = "prev", layout = layout, nwin = nwin, opts = self._o })
-    if preview.pos == "up" or preview.pos == "down" then
+      { type = "nvim", name = "prev", layout = preview_pos, nwin = nwin, opts = self._o })
+    if preview_pos == "up" or preview_pos == "down" then
       h, w = h + ph, math.max(w, pw)
     else -- left|right
       h, w = math.max(h, ph), w + pw
