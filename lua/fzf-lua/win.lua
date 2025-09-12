@@ -103,7 +103,7 @@ function TSInjector._attach_lang(buf, lang, regions)
 end
 
 ---@alias fzf-lua.win.previewPos "up"|"down"|"left"|"right"
----@alias fzf-lua.win.previewLayout { pos: fzf-lua.win.previewPos, size: integer, str: string }
+---@alias fzf-lua.win.previewLayout { pos: fzf-lua.win.previewPos, size: number, str: string }
 
 ---@class fzf-lua.Win
 ---@field winopts fzf-lua.config.Winopts|{}
@@ -235,22 +235,24 @@ end
 
 ---@return fzf-lua.win.previewLayout
 function FzfWin:normalize_preview_layout()
-  local preview_str ---@type string
+  local preview_str, pos ---@type string, fzf-lua.win.previewPos
   if self._preview_pos_force then
     -- Get the correct layout string and size when set from `:toggle_preview_cw`
     preview_str = (self._preview_pos_force == "up" or self._preview_pos_force == "down")
         and self.winopts.preview.vertical or self.winopts.preview.horizontal
     assert(preview_str)
-    self._preview_pos = self._preview_pos_force
+    pos = self._preview_pos_force
   else
     preview_str = self:fzf_preview_layout_str()
-    self._preview_pos = preview_str:match("[^:]+") or "right"
+    pos = preview_str:match("[^:]+") or "right"
   end
-  self._preview_size = tonumber(preview_str:match(":(%d+)%%")) or 50
+  local percent = tonumber(preview_str:match(":(%d+)%%"))
+  local abs = not percent and tonumber(preview_str:match(":(%d+)")) or nil
+  percent = percent or 50
   return {
-    pos = self._preview_pos,
-    size = self._preview_size,
-    str = string.format("%s:%s%%", self._preview_pos, tostring(self._preview_size))
+    pos = pos,
+    size = abs or (percent / 100),
+    str = string.format("%s:%s", pos, tostring(abs or percent) .. ((not abs) and "%" or ""))
   }
 end
 
@@ -316,13 +318,13 @@ function FzfWin:generate_layout()
     pwopts = { relative = "win", anchor = "NW", row = 0, col = 0 }
     if preview_pos == "down" or preview_pos == "up" then
       pwopts.width = width - pw
-      pwopts.height = math.floor(height * preview_size / 100) - ph
+      pwopts.height = self:normalize_size(preview_size, height) - ph
       if preview_pos == "down" then
         pwopts.row = height - pwopts.height - ph
       end
     else -- left|right
       pwopts.height = height - ph
-      pwopts.width = math.floor(width * preview_size / 100) - pw
+      pwopts.width = self:normalize_size(preview_size, width) - pw
       if preview_pos == "right" then
         pwopts.col = width - pwopts.width + pw
       end
@@ -337,7 +339,7 @@ function FzfWin:generate_layout()
       -- fzf's previewer border is draw inside preview window, so shrink builtin previewer if it have "top border"
       -- to ensure the fzf list height is the same between fzf/builtin
       local off = (self.previewer_is_builtin and ph > 0) and 1 or 0
-      pwopts.height = math.floor((height + off) * preview_size / 100) - off
+      pwopts.height = self:normalize_size(preview_size, (height + off)) - off
       height = height - pwopts.height
       if preview_pos == "down" then
         -- next row
@@ -353,7 +355,7 @@ function FzfWin:generate_layout()
       pwopts.row = row
       pwopts.height = height
       local off = (self.previewer_is_builtin and pw > 0) and 1 or 0
-      pwopts.width = math.floor((width + off) * preview_size / 100) - off
+      pwopts.width = self:normalize_size(preview_size, (width + off)) - off
       width = width - pwopts.width
       if preview_pos == "right" then
         -- next col
@@ -977,12 +979,11 @@ function FzfWin:treesitter_attach()
             and vim.api.nvim_win_is_valid(self.fzf_winid)
         then
           local win_width = vim.api.nvim_win_get_width(self.fzf_winid)
-          local layout = self:fzf_preview_layout_str()
-          local percent = layout:match("(%d+)%%") or 50
-          local prev_width = math.floor(win_width * percent / 100)
-          if layout:match("left") then
+          local layout = self:normalize_preview_layout()
+          local prev_width = self:normalize_size(layout.size, win_width)
+          if layout.pos == "left" then
             min = prev_width
-          elseif layout:match("right") then
+          elseif layout.pos == "right" then
             max = win_width - prev_width
           end
         end

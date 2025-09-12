@@ -482,8 +482,12 @@ M.preview_window = function(o, fzf_win)
     -- NOTE: sending `true` as first arg gets the no fullscreen width, otherwise we'll get
     -- incosstent behavior when starting fullscreen
     local columns = fzf_win:columns(true)
-    local fzf_prev_percent = tonumber(o.winopts.preview.horizontal:match(":(%d+)%%")) or 50
-    local fzf_main_width = math.ceil(columns * (100 - fzf_prev_percent) / 100)
+    local fzf_prev_percent = tonumber(o.winopts.preview.horizontal:match(":(%d+)%%"))
+    local fzf_prev_width = not fzf_prev_percent and
+        tonumber(o.winopts.preview.horizontal:match(":(%d+)")) or nil
+    fzf_prev_percent = fzf_prev_percent or 50
+    local fzf_main_width = fzf_prev_width and (columns - fzf_prev_width)
+        or math.ceil(columns * (100 - fzf_prev_percent) / 100)
     local horizontal_min_width = o.winopts.preview.flip_columns - fzf_main_width + 1
     if horizontal_min_width > 0 then
       layout = string.format("%s:%s,<%d(%s:%s)",

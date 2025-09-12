@@ -262,6 +262,8 @@ T["win"]["previewer"]["toggle_behavior=extend"] = new_set(
       { { profile = "border-fused" } },
       { { profile = "borderless-full" } },
       { { winopts = { border = false } } },
+      { { winopts = { preview = { vertical = "down:4" } } } },
+      { { preview = 'echo "{}"', winopts = { preview = { vertical = "down:4" } } } },
     }
   }, {
     -- Ignore terminal command line with process number
@@ -285,6 +287,9 @@ T["win"]["previewer"]["toggle_behavior=extend"] = new_set(
         opts.previewer = nil
         -- "echo {}", windows: "foo", unix: foo
         table.insert(opts.__screen_opts.ignore_text, 15)
+        if vim.tbl_get(o.winopts or {}, "preview", "vertical") == "down:4" then
+          table.insert(opts.__screen_opts.ignore_text, 17)
+        end
       end
       opts = vim.tbl_deep_extend("force", opts, o)
       helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
