@@ -286,7 +286,7 @@ T["win"]["previewer"]["toggle_behavior=extend"] = new_set(
         -- "echo {}", windows: "foo", unix: foo
         table.insert(opts.__screen_opts.ignore_text, 15)
       end
-      opts = vim.tbl_extend("force", opts, o)
+      opts = vim.tbl_deep_extend("force", opts, o)
       helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
       toggle_preview(opts, screen_opts)
     end
@@ -315,7 +315,7 @@ T["win"]["reuse"] = new_set({
         if helpers.IS_WIN() then vim.uv.sleep(250) end
       end,
     }
-    opts = vim.tbl_extend("force", opts, o)
+    opts = vim.tbl_deep_extend("force", opts, o)
     helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
     -- change to fzf preview
     opts.previewer = nil
