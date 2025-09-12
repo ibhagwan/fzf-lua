@@ -338,7 +338,9 @@ function FzfWin:generate_layout()
       -- https://github.com/junegunn/fzf/blob/1afd14381079a35eac0a4c2a5cacb86e2a3f476b/src/terminal.go#L1820
       -- fzf's previewer border is draw inside preview window, so shrink builtin previewer if it have "top border"
       -- to ensure the fzf list height is the same between fzf/builtin
-      local off = (self.previewer_is_builtin and ph > 0) and 1 or 0
+      local off = (preview_size < 1 and self.previewer_is_builtin and ph > 0) and 1
+          or (preview_size >= 1 and not self.previewer_is_builtin and ph > 0) and -ph
+          or 0
       pwopts.height = self:normalize_size(preview_size, (height + off)) - off
       height = height - pwopts.height
       if preview_pos == "down" then
@@ -354,7 +356,9 @@ function FzfWin:generate_layout()
     else -- left|right
       pwopts.row = row
       pwopts.height = height
-      local off = (self.previewer_is_builtin and pw > 0) and 1 or 0
+      local off = (preview_size < 1 and self.previewer_is_builtin and pw > 0) and 1
+          or (preview_size >= 1 and not self.previewer_is_builtin and pw > 0) and -pw
+          or 0
       pwopts.width = self:normalize_size(preview_size, (width + off)) - off
       width = width - pwopts.width
       if preview_pos == "right" then
