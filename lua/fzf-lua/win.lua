@@ -351,8 +351,10 @@ function FzfWin:generate_layout()
         row = pwopts.row + ph + pwopts.height
       end
       -- enlarge the height to align fzf with preview win
-      width = width + math.max(pw - w, 0)
-      pwopts.width = pwopts.width + math.max(w - pw, 0)
+      if self.previewer_is_builtin then
+        width = width + math.max(pw - w, 0)
+        pwopts.width = pwopts.width + math.max(w - pw, 0)
+      end
     else -- left|right
       pwopts.row = row
       pwopts.height = height
@@ -369,8 +371,10 @@ function FzfWin:generate_layout()
         col = pwopts.col + pw + pwopts.width
       end
       -- enlarge the height to align fzf with preview win
-      height = height + math.max(ph - h, 0)
-      pwopts.height = pwopts.height + math.max(h - ph, 0)
+      if self.previewer_is_builtin then
+        height = height + math.max(ph - h, 0)
+        pwopts.height = pwopts.height + math.max(h - ph, 0)
+      end
     end
   end
   self.layout = {

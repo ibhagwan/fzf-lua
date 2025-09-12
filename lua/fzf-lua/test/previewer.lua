@@ -1,14 +1,16 @@
 local fzf = require("fzf-lua")
 local builtin = require("fzf-lua.previewer.builtin")
-local M = builtin.base:extend()
+local M = {}
+M.builtin = builtin.base:extend()
+M.fzf = require("fzf-lua.previewer.fzf").base:extend()
 
-function M:new(o, opts, fzf_win)
-  M.super.new(self, o, opts, fzf_win)
-  setmetatable(self, M)
+function M.builtin:new(o, opts, fzf_win)
+  self.super.new(self, o, opts, fzf_win)
+  setmetatable(self, M.builtin)
   return self
 end
 
-function M:populate_preview_buf(entry_str)
+function M.builtin:populate_preview_buf(entry_str)
   local entry = fzf.path.entry_to_file(entry_str, self.opts)
   local fname = fzf.path.tail(entry.path)
   local buf = self:get_tmp_buffer()
@@ -17,6 +19,18 @@ function M:populate_preview_buf(entry_str)
   })
   self:set_preview_buf(buf)
   self.win:update_preview_title(fname)
+end
+
+function M.fzf:new(o, opts, fzf_win)
+  self.super.new(self, o, opts, fzf_win)
+  setmetatable(self, M.fzf)
+  return self
+end
+
+function M.fzf:cmdline(_)
+  return fzf.shell.stringify_data(function(items, _, _)
+    return items[1]
+  end, self.opts, self.opts.field_index_expr or "{}")
 end
 
 return M

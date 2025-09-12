@@ -24,6 +24,11 @@ if filter then
   filter_cases = function(case)
     local desc = vim.deepcopy(case.desc)
     table.remove(desc, 1)
+    -- https://github.com/echasnovski/mini.nvim/blob/200df25c9f62d8b803a7aec6127abfc0c6f536ef/lua/mini/test.lua#L1960
+    local args = vim.inspect(case.args, { newline = "", indent = "" })
+    desc[#desc + 1] = args
+    -- local ok, reg = pcall(vim.regex, filter)
+    -- return ok and reg:match_str(table.concat(desc, " "))
     return table.concat(desc, " "):match(filter)
   end
 end
