@@ -157,7 +157,7 @@ T["files"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find
         return _G._exec(x)
       end
     ]]):format(exclude))
-    helpers.FzfLua.files(child, vim.tbl_extend("keep", opts, {
+    helpers.FzfLua.files(child, vim.tbl_deep_extend("keep", opts, {
       __expect_lines = true,
       __screen_opts = screen_opts,
       debug = 1,
