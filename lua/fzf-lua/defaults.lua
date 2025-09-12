@@ -505,7 +505,7 @@ M.defaults.git                   = {
   },
   bcommits = {
     cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
-        .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {file}]],
+        .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" -- {file}]],
     preview       = "git show --color {1} -- {file}",
     preview_pager = M._preview_pager_fn,
     actions       = {
