@@ -174,7 +174,7 @@ T["win"]["previewer"]["split flex layout resize"] = function()
         flip_columns = 64,
       }
     },
-    previewer = function() return require("fzf-lua.test.previewer") end,
+    previewer = function() return require("fzf-lua.test.previewer").builtin end,
     keymap = {
       fzf = {
         resize = function()
@@ -240,7 +240,7 @@ T["win"]["previewer"]["split flex hidden"] = function()
         hidden = true
       }
     },
-    previewer = function() return require("fzf-lua.test.previewer") end,
+    previewer = function() return require("fzf-lua.test.previewer").builtin end,
     __after_open = function()
       if helpers.IS_WIN() then vim.uv.sleep(250) end
     end,
@@ -251,47 +251,45 @@ T["win"]["previewer"]["split flex hidden"] = function()
   toggle_preview(opts, screen_opts)
 end
 
-
-T["win"]["previewer"]["toggle_behavior=extend"] = new_set(
+-- E: toggle_behavior=extend, B: builtin previewer, F: "echo {}" preview
+T["win"]["toggle"] = new_set({ parametrize = { { "EB" }, { "EF" }, { "B" }, { "F" } } })
+T["win"]["toggle"][""] = new_set(
   {
     parametrize = {
       { {} },
       { { winopts = { split = "enew", } } },
       { { winopts = { split = "botright new", preview = { layout = "horizontal" } } } },
-      { { preview = 'echo "{}"' } },
       { { profile = "border-fused" } },
-      { { profile = "borderless-full" } },
+      { { profile = "borderless-full", winopts = { preview = { layout = "horizontal" } }, } },
       { { winopts = { border = false } } },
       { { winopts = { preview = { vertical = "down:4" } } } },
-      { { preview = 'echo "{}"', winopts = { preview = { vertical = "down:4" } } } },
+      { { winopts = { preview = { border = false } } } },
     }
   }, {
     -- Ignore terminal command line with process number
-    function(o)
-      if o.profile == "borderless-full" then o.winopts = { preview = { layout = "horizontal" } } end
+    function(a, o)
       local screen_opts = { ignore_text = { 24, 28 }, normalize_paths = helpers.IS_WIN() }
       local opts = {
         __no_abort = true,
         __expect_lines = true,
         __screen_opts = screen_opts,
-        winopts = {
-          toggle_behavior = "extend",
-          preview = { hidden = true, delay = 0 },
-        },
-        previewer = function() return require("fzf-lua.test.previewer") end,
+        winopts = { preview = { hidden = true, delay = 0 } },
         __after_open = function()
           if helpers.IS_WIN() then vim.uv.sleep(250) end
         end,
       }
-      if o.preview then
-        opts.previewer = nil
-        -- "echo {}", windows: "foo", unix: foo
-        table.insert(opts.__screen_opts.ignore_text, 15)
-        if vim.tbl_get(o.winopts or {}, "preview", "vertical") == "down:4" then
-          table.insert(opts.__screen_opts.ignore_text, 17)
-        end
-      end
       opts = vim.tbl_deep_extend("force", opts, o)
+      -- don't modify o directly, otherwise it will change screenshots name
+      if a:match("E") then
+        opts = vim.tbl_deep_extend("force", opts, { winopts = { toggle_behavior = "extend" } })
+      end
+      if a:match("B") then
+        opts.previewer = function() return require("fzf-lua.test.previewer").builtin end
+      elseif a:match("F") then
+        opts.previewer = function() return require("fzf-lua.test.previewer").fzf end
+      else
+        error("unreachable")
+      end
       helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
       toggle_preview(opts, screen_opts)
     end
@@ -315,7 +313,7 @@ T["win"]["reuse"] = new_set({
         toggle_behavior = "extend",
         preview = { hidden = false, delay = 0 },
       },
-      previewer = function() return require("fzf-lua.test.previewer") end,
+      previewer = function() return require("fzf-lua.test.previewer").builtin end,
       __after_open = function()
         if helpers.IS_WIN() then vim.uv.sleep(250) end
       end,
@@ -335,7 +333,7 @@ T["win"]["reuse"] = new_set({
     reload({ "hide" })
     exec_lua([[
       require('fzf-lua').fzf_exec({ 'a', 'b' },{ preview = "echo builtin" })
-      require('fzf-lua').fzf_exec({ 'b', 'c' }, { previewer = require('fzf-lua.test.previewer') })
+      require('fzf-lua').fzf_exec({ 'b', 'c' }, { previewer = require('fzf-lua.test.previewer').builtin })
     ]])
     toggle_preview()
   end
