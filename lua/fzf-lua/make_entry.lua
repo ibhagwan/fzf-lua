@@ -326,6 +326,8 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
     if is_grep then
       -- grep requires adding `-r` to command as paths can be either file or directory
       command = M.rg_insert_args(command, print_filename_flags .. " -r")
+    elseif #search_paths == 1 then
+      command = M.rg_insert_args(command, print_filename_flags)
     end
   end
 
