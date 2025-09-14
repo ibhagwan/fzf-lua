@@ -1348,7 +1348,8 @@ previewers = {
   },
   zoxide = {
     cmd          = "zoxide query --list --score",
-    git_root     = false, -- auto-detect git root
+    scope        = "global", -- cd action scope "local|win|tab"
+    git_root     = false,    -- auto-detect git root
     formatter    = "path.dirname_first",
     fzf_opts     = {
       ["--no-multi"]  = true,

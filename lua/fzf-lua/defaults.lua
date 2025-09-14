@@ -1380,6 +1380,7 @@ M.defaults.zoxide                = {
   fn_transform  = [[return require("fzf-lua.make_entry").zoxide]],
   fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]],
   cmd           = "zoxide query --list --score",
+  scope         = "global",
   git_root      = false,
   formatter     = "path.dirname_first",
   fzf_opts      = {

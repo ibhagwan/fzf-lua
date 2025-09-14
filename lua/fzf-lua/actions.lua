@@ -1176,7 +1176,9 @@ M.cd = function(selected, opts)
   local git_root = opts.git_root and path.git_root({ cwd = cwd }, true) or nil
   cwd = git_root or cwd
   if uv.fs_stat(cwd) then
-    vim.cmd("cd " .. cwd)
+    local cmd = (opts.scope == "local" or opts.scope == "win") and "lcd"
+        or opts.scope == "tab" and "tcd" or "cd"
+    vim.cmd(cmd .. " " .. cwd)
     utils.io_system({ "zoxide", "add", "--", cwd })
     utils.info(("cwd set to %s'%s'"):format(git_root and "git root " or "", cwd))
   else
