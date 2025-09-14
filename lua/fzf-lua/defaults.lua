@@ -605,7 +605,7 @@ M.defaults.grep                  = {
       .. "--extended-regexp -e"
       or "--binary-files=without-match --line-number --recursive --color=always "
       .. "--perl-regexp -e",
-  rg_opts        = "--column --line-number --no-heading --color=always --smart-case "
+  rg_opts        = "--trim --column --line-number --no-heading --color=always --smart-case "
       .. "--max-columns=4096 -e",
   rg_glob        = 1, -- do not display warning if using `grep`
   _actions       = function() return M.globals.actions.files end,
