@@ -1066,7 +1066,7 @@ M.defaults.lsp.document_symbols  = vim.tbl_deep_extend("force", {}, M.defaults.l
     ["--multi"]     = true,
     ["--tabstop"]   = "4",
     ["--delimiter"] = "[:]",
-    ["--with-nth"]  = "2..",
+    ["--with-nth"]  = utils.__IS_WINDOWS and "3.." or "2..",
   },
   _fmt        = {
     _from = function(s)
