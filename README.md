@@ -148,21 +148,6 @@ Alternatively, resuming work on a specific picker:
 :FzfLua files resume=true
 ```
 
-> [!TIP]
-> By default pressing esc or ctrl-c terminates the fzf process,
-> as such resume is not perfect and is limited to resuming the
-> picker/query and sometimes additional parameters such as regex
-> in grep, etc, for a more complete resume use the "hide" profile,
-> this will modify the esc bind to hide fzf-lua and keep the fzf
-> process running in the background allowing `:FzfLua resume` to
-> restore the picker state entirely, including cursor position
-> and selection. To configure hiding by default:
-> ```lua
-> require("fzf-lua").setup({
->   "hide",
->   -- your other settings here 
-> })
-> ```
 
 ### Combining Pickers
 
@@ -1444,6 +1429,20 @@ the first argument:
 ```lua
 :lua require"fzf-lua".setup({{"telescope","fzf-native"},winopts={fullscreen=true}})
 ```
+
+> [!TIP]
+> The default profile is a combination of border-fused+hide profiles,
+> without the "hide" profile pressing esc terminates the fzf process
+> which makes for an imperfect resume limited to resuming only the
+> picker/query (without cursor position, selection, etc), to restore
+> the default esc behavior combine any existing profile with "hide"
+> by using a table in `opts[1]`:
+> ```lua
+> require("fzf-lua").setup({
+>   { "fzf-native", "hide" },
+>   -- your other settings here
+> })
+> ```
 
 #### Coming from fzf.vim?
 
