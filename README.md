@@ -115,15 +115,16 @@ Fzf-lua aims to be as plug and play as possible with sane defaults, you can
 run any fzf-lua command like this:
 
 ```lua
-:lua require('fzf-lua').files()
--- or using the `FzfLua` vim command:
+:lua require("fzf-lua").files()
+-- once loaded we can use the global object
+:lua FzfLua.files()
+-- or the vim command:
 :FzfLua files
 ```
 
 or with arguments:
 
 ```lua
--- Once fzf-lua is loaded you can also use the lua global `_G.FzfLua`
 :lua FzfLua.files({ cwd = '~/.config' })
 -- or using the `FzfLua` vim command:
 :FzfLua files cwd=~/.config
@@ -412,7 +413,7 @@ Fzf-Lua conveniently comes with a VS-Code like picker by default
 > to see detailed usage notes and a comprehensive list of yet more(!) available options.
 
 ```lua
-require("fzf-lua").setup{
+require("fzf-lua").setup {
   -- MISC GLOBAL SETUP OPTIONS, SEE BELOW
   -- fzf_bin = ...,
   -- each of these options can also be passed as function that return options table
@@ -586,7 +587,6 @@ keymap = {
 <summary>actions</summary>
 
 ```lua
-local actions = require("fzf-lua").actions
 actions = {
     -- Below are the default actions, setting any value in these tables will override
     -- the defaults, to inherit from the defaults change [1] from `false` to `true`
@@ -598,15 +598,15 @@ actions = {
       -- `file_edit_or_qf` opens a single selection or sends multiple selection to quickfix
       -- replace `enter` with `file_edit` to open all files/bufs whether single or multiple
       -- replace `enter` with `file_switch_or_edit` to attempt a switch in current tab first
-      ["enter"]       = actions.file_edit_or_qf,
-      ["ctrl-s"]      = actions.file_split,
-      ["ctrl-v"]      = actions.file_vsplit,
-      ["ctrl-t"]      = actions.file_tabedit,
-      ["alt-q"]       = actions.file_sel_to_qf,
-      ["alt-Q"]       = actions.file_sel_to_ll,
-      ["alt-i"]       = actions.toggle_ignore,
-      ["alt-h"]       = actions.toggle_hidden,
-      ["alt-f"]       = actions.toggle_follow,
+      ["enter"]       = FzfLua.actions.file_edit_or_qf,
+      ["ctrl-s"]      = FzfLua.actions.file_split,
+      ["ctrl-v"]      = FzfLua.actions.file_vsplit,
+      ["ctrl-t"]      = FzfLua.actions.file_tabedit,
+      ["alt-q"]       = FzfLua.actions.file_sel_to_qf,
+      ["alt-Q"]       = FzfLua.actions.file_sel_to_ll,
+      ["alt-i"]       = FzfLua.actions.toggle_ignore,
+      ["alt-h"]       = FzfLua.actions.toggle_hidden,
+      ["alt-f"]       = FzfLua.actions.toggle_follow,
     },
   }
 ```
@@ -1070,7 +1070,7 @@ previewers = {
     cwd_only          = false,
     stat_file         = true,         -- verify files exist on disk
     -- can also be a lua function, for example:
-    -- stat_file = require("fzf-lua").utils.file_is_readable,
+    -- stat_file = FzfLua.utils.file_is_readable,
     -- stat_file = function() return true end,
     include_current_session = false,  -- include bufs from current session
   },
@@ -1300,13 +1300,13 @@ previewers = {
         -- by default display all LSP locations
         -- to customize, duplicate table and delete unwanted providers
         providers   = {
-            { "references",      prefix = require("fzf-lua").utils.ansi_codes.blue("ref ") },
-            { "definitions",     prefix = require("fzf-lua").utils.ansi_codes.green("def ") },
-            { "declarations",    prefix = require("fzf-lua").utils.ansi_codes.magenta("decl") },
-            { "typedefs",        prefix = require("fzf-lua").utils.ansi_codes.red("tdef") },
-            { "implementations", prefix = require("fzf-lua").utils.ansi_codes.green("impl") },
-            { "incoming_calls",  prefix = require("fzf-lua").utils.ansi_codes.cyan("in  ") },
-            { "outgoing_calls",  prefix = require("fzf-lua").utils.ansi_codes.yellow("out ") },
+            { "references",      prefix = FzfLua.utils.ansi_codes.blue("ref ") },
+            { "definitions",     prefix = FzfLua.utils.ansi_codes.green("def ") },
+            { "declarations",    prefix = FzfLua.utils.ansi_codes.magenta("decl") },
+            { "typedefs",        prefix = FzfLua.utils.ansi_codes.red("tdef") },
+            { "implementations", prefix = FzfLua.utils.ansi_codes.green("impl") },
+            { "incoming_calls",  prefix = FzfLua.utils.ansi_codes.cyan("in  ") },
+            { "outgoing_calls",  prefix = FzfLua.utils.ansi_codes.yellow("out ") },
         },
     }
   },
@@ -1399,13 +1399,13 @@ Using `files` with a different command and working directory:
 Using `live_grep` with `git grep`:
 
 ```lua
-:lua require'fzf-lua'.live_grep({ cmd = "git grep --line-number --column --color=always" })
+:lua FzfLua.live_grep({ cmd = "git grep --line-number --column --color=always" })
 ```
 
 `spell_suggest` with non-default window size relative to cursor:
 
 ```lua
-:lua require'fzf-lua'.spell_suggest({ winopts = { height=0.33, width=0.33, relative="cursor" } })
+:lua FzfLua.spell_suggest({ winopts = { height=0.33, width=0.33, relative="cursor" } })
 -- Or via the vimL command
 :FzfLua spell_suggest winopts={height=0.33,width=0.33,relative=cursor}
 :FzfLua spell_suggest winopts={height=0.33,width=0.33} winopts.relative=cursor
@@ -1495,7 +1495,7 @@ well as custom completion, for example, set path/completion using `<C-x><C-f>`:
 
 ```lua
 vim.keymap.set({ "n", "v", "i" }, "<C-x><C-f>",
-  function() require("fzf-lua").complete_path() end,
+  function() FzfLua.complete_path() end,
   { silent = true, desc = "Fuzzy complete path" })
 ```
 
@@ -1507,7 +1507,7 @@ Or with a custom command and preview:
 ```lua
 vim.keymap.set({ "i" }, "<C-x><C-f>",
   function()
-    require("fzf-lua").complete_file({
+    FzfLua.complete_file({
       cmd = "rg --files",
       winopts = { preview = { hidden = true } }
     })
@@ -1526,14 +1526,14 @@ Every fzf-lua function can be easily converted to a completion function by sendi
 > `p` to paste the selected entry.
 
 ```lua
-require("fzf-lua").fzf_exec({"foo", "bar"}, {complete = true})
+FzfLua.fzf_exec({"foo", "bar"}, {complete = true})
 ```
 
 Custom completion is possible using a custom completion callback, the example below
 will replace the text from the current cursor column with the selected entry:
 
 ```lua
-require("fzf-lua").fzf_exec({"foo", "bar"}, {
+FzfLua.fzf_exec({"foo", "bar"}, {
   -- @param selected: the selected entry or entries
   -- @param opts: fzf-lua caller/provider options
   -- @param line: originating buffer completed line
