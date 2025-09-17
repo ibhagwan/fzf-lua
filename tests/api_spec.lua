@@ -19,7 +19,7 @@ T["api"]["fzf_exec"]["table"] = function(multiprocess)
     end
   end
   helpers.FzfLua.fzf_exec(child, contents,
-    { __expect_lines = true, __postprocess_wait = true, multiprocess = multiprocess })
+    { __expect_lines = true, __postprocess_wait = true, multiprocess = multiprocess == true })
 end
 
 T["api"]["fzf_exec"]["function"] = new_set({ parametrize = { { "sync" }, { "async" } } }, {
@@ -109,7 +109,7 @@ T["api"]["fzf_live"]["table"] = function(multiprocess)
       __expect_lines = true,
       __postprocess_wait = true,
       query = 100,
-      multiprocess = multiprocess,
+      multiprocess = multiprocess == true,
     })
 end
 
@@ -135,7 +135,7 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
           __expect_lines = true,
           __postprocess_wait = true,
           query = 100,
-          multiprocess = multiprocess,
+          multiprocess = multiprocess == true,
         })
     else
       helpers.FzfLua.fzf_live(child, function(args)
