@@ -45,40 +45,26 @@ T["actions"]["reload"] = new_set({
     local screen_opts = { ignore_text = { 28 } }
     helpers.FzfLua[api](child, api == "fzf_exec"
       and function(cb)
-        local fzf_reload = _G._fzf_reload ---@type any
-        ---@diagnostic disable-next-line: undefined-field
-        if _G._fzf_lua_server then ---@diagnostic disable-next-line: undefined-field
-          local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
-          fzf_reload = vim.rpcrequest(chan_id, "nvim_exec_lua", [[return _G.__fzf_lua_server]], {})
-          vim.fn.chanclose(chan_id)
-        end
-        cb(fzf_reload and "reloaded" or "unreloaded")
+        cb(_G._fzf_reload and "reloaded" or "unreloaded")
         cb(nil)
       end
       or function()
-        local fzf_reload = _G._fzf_reload ---@type any
-        ---@diagnostic disable-next-line: undefined-field
-        if _G._fzf_lua_server then ---@diagnostic disable-next-line: undefined-field
-          local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
-          fzf_reload = vim.rpcrequest(chan_id, "nvim_exec_lua", [[return _G.__fzf_lua_server]], {})
-          vim.fn.chanclose(chan_id)
-        end
-        return { fzf_reload and "reloaded" or "unreloaded" }
+        return { _G._fzf_reload and "reloaded" or "unreloaded" }
       end,
       {
         __no_abort = true,
-        __expect_lines = true,
-        __screen_opts = screen_opts,
+        __expect_lines = false,
         __after_open = function()
           if helpers.IS_WIN() then vim.uv.sleep(250) end
-          child.type_keys("<c-a>")
-          if helpers.IS_WIN() then vim.uv.sleep(250) end
-          child.wait_until(function() return child.lua_get([[_G._fzf_reload]]) == true end)
         end,
         actions = {
           ["ctrl-a"] = { fn = function() _G._fzf_reload = true end, reload = true },
         },
       })
+    child.type_keys("<c-a>")
+    child.wait_until(function() return child.lua_get([[_G._fzf_reload]]) == true end)
+    if helpers.IS_WIN() then vim.uv.sleep(250) end
+    child.expect_screen_lines(screen_opts)
   end
 })
 
