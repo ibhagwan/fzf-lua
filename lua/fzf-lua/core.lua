@@ -1112,7 +1112,7 @@ M.setup_fzf_live_flags = function(command, opts)
     local action = M.can_transform(opts) and "transform" or "reload"
     table.insert(opts._fzf_cli_args, "--bind="
       .. libuv.shellescape(string.format("change:+%s:%s", action, reload_command)))
-    if utils.has(opts, "fzf", { 0, 35 }) and (opts.exec_empty_query or #query > 0) then
+    if opts.exec_empty_query or #query > 0 or type(opts.contents) == "function" then
       table.insert(opts._fzf_cli_args, "--bind="
         .. libuv.shellescape(string.format("start:+%s:%s", action, reload_command)))
     end
