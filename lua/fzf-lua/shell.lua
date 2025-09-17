@@ -259,7 +259,7 @@ M.stringify_mt = function(contents, opts)
     -- command does not require any processing
     return contents
     -- don't use mt for non-string contents unless explictly set truthy multiprocess
-  elseif not opts.multiprocess and type(opts.cmd) ~= "string" then
+  elseif opts.multiprocess ~= true and type(opts.cmd) ~= "string" then
     return nil
   else
     opts.contents = contents
