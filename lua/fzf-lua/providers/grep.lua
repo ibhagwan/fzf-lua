@@ -136,6 +136,9 @@ M.live_grep = function(opts)
   -- register opts._cmd, toggle_ignore/title_flag
   get_grep_cmd(opts, core.fzf_query_placeholder, 2)
 
+  -- since we're using function contents force multiprocess
+  opts.multiprocess = opts.multiprocess == 1 and true or opts.multiprocess
+
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd", "live" })
   opts = core.set_fzf_field_index(opts)

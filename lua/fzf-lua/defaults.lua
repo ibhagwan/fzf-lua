@@ -378,12 +378,12 @@ M.defaults.global                = vim.tbl_deep_extend("force", M.defaults.files
     end)
     return {
       { "files",   desc = "Files" },
-      { "buffers", desc = "Bufs", prefix = "$", opts = { multiprocess = false } },
+      { "buffers", desc = "Bufs", prefix = "$" },
       doc_sym_supported and {
         "lsp_document_symbols",
         desc = "Symbols (buf)",
         prefix = "@",
-        opts = { no_autoclose = true, multiprocess = false }
+        opts = { no_autoclose = true }
       } or {
         "btags",
         desc = "Tags (buf)",
@@ -398,7 +398,7 @@ M.defaults.global                = vim.tbl_deep_extend("force", M.defaults.files
         "lsp_workspace_symbols",
         desc = "Symbols (project)",
         prefix = "#",
-        opts = { no_autoclose = true, multiprocess = false }
+        opts = { no_autoclose = true }
       } or {
         "tags",
         desc = "Tags (project)",
