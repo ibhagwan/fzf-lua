@@ -258,8 +258,8 @@ M.stringify_mt = function(contents, opts)
   then
     -- command does not require any processing
     return contents
-    -- don't use mt for non-string contents unless explictly set truthy multiprocess
-  elseif not opts.multiprocess and type(opts.cmd) ~= "string" then
+    -- don't use mt for non-string contents unless multiprocess is explictly set to true
+  elseif opts.multiprocess ~= true and type(contents) ~= "string" then
     return nil
   else
     opts.contents = contents
@@ -518,7 +518,7 @@ M.wrap_spawn_stdio = function(opts)
   local is_win = utils.__IS_WINDOWS
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   -- TODO: should we check "cmd"?
-  for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
+  for _, k in ipairs({ "contents", "fn_transform", "fn_preprocess", "fn_postprocess" }) do
     if type(opts[k]) == "function" then
       -- opts[k] = M.check_upvalue(opts[k], "opts." .. k)
       M.check_upvalue(opts[k], "opts." .. k)
