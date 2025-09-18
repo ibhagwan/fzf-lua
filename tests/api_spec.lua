@@ -134,7 +134,11 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
         {
           __expect_lines = true,
           __postprocess_wait = true,
+          __after_open = function()
+            child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+          end,
           query = 100,
+          keymap = { fzf = { load = "pos(-1)" } },
           multiprocess = multiprocess == true,
         })
     else
@@ -159,7 +163,11 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
         {
           __expect_lines = true,
           __postprocess_wait = true,
+          __after_open = function()
+            child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+          end,
           query = 100,
+          keymap = { fzf = { load = "pos(-1)" } },
         })
     end
   end,
