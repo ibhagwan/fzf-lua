@@ -217,9 +217,16 @@ end
 ---@return string cmd
 M.lgrep = function(s, opts)
   -- can be nil when called as fzf initial command
-  local query = s[1] or ""
+  local query, no_esc = (function()
+    -- $FZF_QUERY sends query args as table (#2343)
+    if #s > 1 then
+      return table.concat(vim.tbl_map(function(x) return libuv.shellescape(x) end, s), " "), 2
+    else
+      return (s[1] or ""), true
+    end
+  end)()
   opts.no_esc = nil
-  local cmd0 = FzfLua.make_entry.get_grep_cmd(opts, query, true)
+  local cmd0 = FzfLua.make_entry.get_grep_cmd(opts, query, no_esc)
   if not opts.exec_empty_query and #query == 0 then
     cmd0 = FzfLua.utils.shell_nop()
   elseif opts.silent_fail ~= false then
