@@ -140,7 +140,7 @@ T["actions"]["vimcmd"] = new_set({
       __abort_key = "<c-a>",
       __expect_lines = true,
       __after_open = function()
-        if helpers.IS_WIN() then vim.uv.sleep(250) end
+        child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
       end,
       no_esc = true,
       search = [[Copyright \(c\) -- LICENSE]],
