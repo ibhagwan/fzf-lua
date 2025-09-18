@@ -134,37 +134,57 @@ M.live_grep = function(opts)
   if not opts then return end
 
   -- register opts._cmd, toggle_ignore/title_flag
-  get_grep_cmd(opts, core.fzf_query_placeholder, 2)
+  local cmd0 = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
 
-  -- since we're using function contents force multiprocess
-  opts.multiprocess = opts.multiprocess == 1 and true or opts.multiprocess
+  -- if multiprocess is optional (=1) and no prpocessing is required
+  -- use string contents (shell command), stringify_mt will use the
+  -- command as is without the neovim headless wrapper
+  local contents
+  if opts.multiprocess == 1
+      and not opts.fn_transform
+      and not opts.fn_preprocess
+      and not opts.fn_postprocess
+  then
+    contents = cmd0
+  else
+    -- since we're using function contents force multiprocess if optional
+    opts.multiprocess = opts.multiprocess == 1 and true or opts.multiprocess
+    contents = function(s, o)
+      return FzfLua.make_entry.lgrep(s, o)
+    end
+  end
 
   -- search query in header line
   opts = core.set_title_flags(opts, { "cmd", "live" })
   opts = core.set_fzf_field_index(opts)
-  ---@diagnostic disable-next-line: redefined-local
-  core.fzf_live(function(s, opts)
-    return FzfLua.make_entry.lgrep(s, opts)
-  end, opts)
+  core.fzf_live(contents, opts)
 end
 
 M.live_grep_native = function(opts)
+  -- set opts before normalize so they're saved in `__call_opts` for resume
+  -- nullifies fn_{pre|post|transform}, forces no wrap shell.stringify_mt
+  opts = vim.tbl_deep_extend("force", opts or {}, {
+    multiprocess = 1,
+    git_icons = false,
+    file_icons = false,
+    file_ignore_patterns = false,
+    strip_cwd_prefix = false,
+    path_shorten = false,
+    formatter = false,
+    multiline = false,
+    rg_glob = false,
+  })
+
   opts = normalize_live_grep_opts(opts)
   if not opts then return end
 
-  -- force no wrap shell.stringify_mt
-  opts.multiprocess = 1
-  opts.fn_transform = false
-  opts.fn_preprocess = false
-  opts.fn_postprocess = false
+  -- verify settings for shell command with multiprocess native fallback
+  assert(opts.multiprocess == 1
+    and not opts.fn_transform
+    and not opts.fn_preprocess
+    and not opts.fn_postprocess)
 
-  -- register opts._cmd, toggle_ignore/title_flag
-  local cmd0 = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
-
-  -- search query in header line
-  opts = core.set_title_flags(opts, { "cmd", "live" })
-  opts = core.set_fzf_field_index(opts)
-  core.fzf_live(cmd0, opts)
+  M.live_grep(opts)
 end
 
 M.live_grep_glob = function(opts)
