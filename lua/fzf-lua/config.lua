@@ -349,7 +349,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- for these as they only work for maps, ie. '{ key = value }'
   for _, k in ipairs({ "file_ignore_patterns" }) do
     for _, m in ipairs({ globals, M.globals }) do
-      if m[k] then
+      if m[k] and opts[k] ~= false then
         for _, item in ipairs(m[k]) do
           if not opts[k] then opts[k] = {} end
           table.insert(opts[k], item)
