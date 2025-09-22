@@ -550,6 +550,18 @@ M.defaults.git                   = {
     _headers   = { "actions", "cwd" },
     _multiline = false,
   },
+  worktrees = {
+    scope      = "global", -- cd action scope "local|win|tab"
+    cmd        = "git worktree list",
+    preview    = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
+        .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
+    actions    = {
+      ["enter"] = actions.git_worktree_cd,
+    },
+    fzf_opts   = { ["--no-multi"] = true },
+    _headers   = { "actions", "cwd" },
+    _multiline = false,
+  },
   tags = {
     cmd        = [[git for-each-ref --color --sort="-taggerdate" --format ]]
         .. [["%(color:yellow)%(refname:short)%(color:reset) ]]
@@ -1393,7 +1405,7 @@ M.defaults.zoxide                = {
     ["--nth"]       = "2..",
     ["--no-sort"]   = true, -- sort by score
   },
-  actions       = { enter = actions.cd }
+  actions       = { enter = actions.zoxide_cd }
 }
 
 M.defaults.complete_line         = { complete = true }

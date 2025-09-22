@@ -1059,6 +1059,7 @@ M._action_to_helpstr = {
   [actions.git_branch_add]       = "git-branch-add",
   [actions.git_branch_del]       = "git-branch-del",
   [actions.git_switch]           = "git-switch",
+  [actions.git_worktree_cd]      = "change-directory",
   [actions.git_checkout]         = "git-checkout",
   [actions.git_reset]            = "git-reset",
   [actions.git_stage]            = "git-stage",
@@ -1091,7 +1092,7 @@ M._action_to_helpstr = {
   [actions.cs_delete]            = "colorscheme-delete",
   [actions.cs_update]            = "colorscheme-update",
   [actions.toggle_bg]            = "toggle-background",
-  [actions.cd]                   = "change-directory",
+  [actions.zoxide_cd]            = "change-directory",
 }
 
 return M

@@ -254,18 +254,19 @@ Fzf-Lua conveniently comes with a VS-Code like picker by default
 
 ### Git
 
-| Command        | List                     |
-| -------------- | ------------------------ |
-| `git_files`    | `git ls-files`           |
-| `git_status`   | `git status`             |
-| `git_diff`     | `git diff {ref}`         |
-| `git_hunks`    | `git hunks {ref}`        |
-| `git_commits`  | git commit log (project) |
-| `git_bcommits` | git commit log (buffer)  |
-| `git_blame`    | git blame (buffer)       |
-| `git_branches` | git branches             |
-| `git_tags`     | git tags                 |
-| `git_stash`    | git stash                |
+| Command         | List                     |
+| --------------- | ------------------------ |
+| `git_files`     | `git ls-files`           |
+| `git_status`    | `git status`             |
+| `git_diff`      | `git diff {ref}`         |
+| `git_hunks`     | `git hunks {ref}`        |
+| `git_commits`   | git commit log (project) |
+| `git_bcommits`  | git commit log (buffer)  |
+| `git_blame`     | git blame (buffer)       |
+| `git_branches`  | git branches             |
+| `git_worktrees` | git worktrees            |
+| `git_tags`      | git tags                 |
+| `git_stash`     | git stash                |
 
 </details>
 <details>

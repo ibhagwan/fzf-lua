@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*         For Neovim >= 0.8.0        Last change: 2025 May 13
+*fzf-lua-opts.txt*        For Neovim >= 0.8.0        Last change: 2025 June 28
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -1352,6 +1352,12 @@ Git blame (buffer)
 git_branches                                       *fzf-lua-opts-git_branches*
 
 Git branches
+
+
+                                                                              
+git_worktrees                                     *fzf-lua-opts-git_worktrees*
+
+Git worktrees
 
 
                                                                               

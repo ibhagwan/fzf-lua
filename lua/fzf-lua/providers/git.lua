@@ -194,6 +194,21 @@ M.branches = function(opts)
   return git_cmd(opts)
 end
 
+M.worktrees = function(opts)
+  ---@type fzf-lua.config.GitWorktrees
+  opts = config.normalize_opts(opts, "git.worktrees")
+  if not opts then return end
+  if opts.preview then
+    local preview_cmd = opts.preview
+    opts.preview = shell.stringify_cmd(function(items)
+      local cwd = items[1]:match("^[^%s]+")
+      local cmd = path.git_cwd(preview_cmd, { cwd = cwd })
+      return cmd
+    end, opts, "{}")
+  end
+  return git_cmd(opts)
+end
+
 M.tags = function(opts)
   ---@type fzf-lua.config.GitTags
   opts = config.normalize_opts(opts, "git.tags")

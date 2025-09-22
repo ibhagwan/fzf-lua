@@ -994,6 +994,10 @@ Git blame (buffer)
 
 Git branches
 
+#### git_worktrees
+
+Git worktrees
+
 #### git_tags
 
 Git tags

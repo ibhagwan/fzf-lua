@@ -847,6 +847,26 @@ M.git_branch_del = function(selected, opts)
   end
 end
 
+M.git_worktree_cd = function(selected, opts)
+  if not selected[1] then return end
+  local cwd = selected[1]:match("^[^%s]+")
+  if not path.is_absolute(cwd) then
+    cwd = path.join({ uv.cwd(), cwd })
+  end
+  if cwd == vim.uv.cwd() then
+    utils.warn(("cwd already set to '%s'"):format(cwd))
+    return
+  end
+  if uv.fs_stat(cwd) then
+    local cmd = (opts.scope == "local" or opts.scope == "win") and "lcd"
+        or opts.scope == "tab" and "tcd" or "cd"
+    vim.cmd(cmd .. " " .. cwd)
+    utils.info(("cwd set to '%s'"):format(cwd))
+  else
+    utils.warn(("Unable to set cwd to '%s', directory is not accessible"):format(cwd))
+  end
+end
+
 local match_commit_hash = function(line, opts)
   if type(opts.fn_match_commit_hash) == "function" then
     return opts.fn_match_commit_hash(line, opts)
@@ -1167,7 +1187,7 @@ M.dap_bp_del = function(selected, opts)
   end
 end
 
-M.cd = function(selected, opts)
+M.zoxide_cd = function(selected, opts)
   if #selected == 0 then return end
   local cwd = selected[1]:match("[^\t]+$") or selected[1]
   if opts.cwd then
@@ -1175,6 +1195,10 @@ M.cd = function(selected, opts)
   end
   local git_root = opts.git_root and path.git_root({ cwd = cwd }, true) or nil
   cwd = git_root or cwd
+  if cwd == vim.uv.cwd() then
+    utils.warn(("cwd already set to '%s'"):format(cwd))
+    return
+  end
   if uv.fs_stat(cwd) then
     local cmd = (opts.scope == "local" or opts.scope == "win") and "lcd"
         or opts.scope == "tab" and "tcd" or "cd"

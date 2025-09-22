@@ -366,6 +366,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field bcommits  fzf-lua.config.GitBcommits
 ---@field blame     fzf-lua.config.GitBlame
 ---@field branches  fzf-lua.config.GitBranches
+---@field worktrees fzf-lua.config.GitWorktrees
 ---@field tags      fzf-lua.config.GitTags
 ---@field stash     fzf-lua.config.GitStash
 ---@field icons     table<string, {icon:string, color:string}>
@@ -404,6 +405,9 @@ _G.FzfLua = require("fzf-lua")
 ---@field remotes? string
 ---@field cmd_add? table
 ---@field cmd_del? table
+---@field _multiline? boolean
+
+---@class fzf-lua.config.GitWorktrees: fzf-lua.config.GitBase
 ---@field _multiline? boolean
 
 ---@class fzf-lua.config.GitTags: fzf-lua.config.GitBase
@@ -776,6 +780,7 @@ _G.FzfLua = require("fzf-lua")
 ---@class fzf-lua.config.GitBcommits.p: fzf-lua.config.GitBcommits, {}
 ---@class fzf-lua.config.GitBlame.p: fzf-lua.config.GitBlame, {}
 ---@class fzf-lua.config.GitBranches.p: fzf-lua.config.GitBranches, {}
+---@class fzf-lua.config.GitWorktrees.p: fzf-lua.config.GitWorktrees, {}
 ---@class fzf-lua.config.GitCommits.p: fzf-lua.config.GitCommits, {}
 ---@class fzf-lua.config.GitDiff.p: fzf-lua.config.GitDiff, {}
 ---@class fzf-lua.config.GitFiles.p: fzf-lua.config.GitFiles, {}
