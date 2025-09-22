@@ -1476,7 +1476,7 @@ end
 
 function Previewer.marks:parse_entry(entry_str)
   local bufnr = nil
-  local mark, lnum, col, filepath = entry_str:match("(.)%s+(%d+)%s+(%d+)%s+(.*)")
+  local mark, lnum, col, filepath = entry_str:match("([^ ])%s+(%d+)%s+(%d+)%s+(.*)")
   if not mark then return {} end
   -- try to acquire position from sending buffer
   -- if this succeeds (line>0) the mark is inside
@@ -1489,7 +1489,7 @@ function Previewer.marks:parse_entry(entry_str)
     return vim.api.nvim_buf_get_mark(buf, mark)
   end)
   if pos and pos[1] > 0 then
-    assert(pos[1] == tonumber(lnum))
+    assert(pos[1] == tonumber(lnum) or self.win.src_winid == self.win.fzf_winid)
     bufnr = self.win.src_bufnr
     filepath = api.nvim_buf_get_name(bufnr)
   end

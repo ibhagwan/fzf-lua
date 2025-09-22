@@ -1179,12 +1179,13 @@ M.defaults.profiles              = {
 }
 
 M.defaults.marks                 = {
-  fzf_opts  = { ["--no-multi"] = true },
-  actions   = {
+  fzf_opts    = { ["--no-multi"] = true },
+  actions     = {
     ["enter"] = actions.goto_mark,
     ["ctrl-x"] = { fn = actions.mark_del, reload = true }
   },
-  previewer = { _ctor = previewers.builtin.marks },
+  previewer   = { _ctor = previewers.builtin.marks },
+  _cached_hls = { "buf_nr", "path_linenr", "path_colnr" },
 }
 
 M.defaults.changes               = {

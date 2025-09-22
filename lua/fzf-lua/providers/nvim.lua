@@ -268,10 +268,10 @@ M.marks = function(opts)
         text = path.HOME_to_tilde(text)
       end
       if not pattern or string.match(mark, pattern) then
-        table.insert(entries, string.format(" %-15s %15s %15s %s",
-          utils.ansi_codes.yellow(mark),
-          utils.ansi_codes.blue(line),
-          utils.ansi_codes.green(col),
+        table.insert(entries, string.format("%s  %s  %s %s",
+          utils.ansi_codes[opts.hls.buf_nr](string.format("%4s", mark)),
+          utils.ansi_codes[opts.hls.path_linenr](string.format("%4s", tostring(line))),
+          utils.ansi_codes[opts.hls.path_colnr](string.format("%3s", tostring(col))),
           text))
       end
     end
