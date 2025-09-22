@@ -1489,7 +1489,6 @@ function Previewer.marks:parse_entry(entry_str)
     return vim.api.nvim_buf_get_mark(buf, mark)
   end)
   if pos and pos[1] > 0 then
-    assert(pos[1] == tonumber(lnum) or self.win.src_winid == self.win.fzf_winid)
     bufnr = self.win.src_bufnr
     filepath = api.nvim_buf_get_name(bufnr)
   end

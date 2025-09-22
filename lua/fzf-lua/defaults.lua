@@ -1179,6 +1179,7 @@ M.defaults.profiles              = {
 }
 
 M.defaults.marks                 = {
+  sort        = false,
   fzf_opts    = { ["--no-multi"] = true },
   actions     = {
     ["enter"] = actions.goto_mark,

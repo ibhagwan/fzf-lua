@@ -618,6 +618,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field load table
 
 ---@class fzf-lua.config.Marks: fzf-lua.config.Base
+---@field sort boolean sort mark list?
 ---@field marks string lua pattern to filter marks
 
 ---@class fzf-lua.config.Changes: fzf-lua.config.Jumps
