@@ -254,7 +254,7 @@ M.marks = function(opts)
     local buf = utils.CTX().bufnr
     local entries = {}
     local function add_mark(mark, line, col, text)
-      if opts.marks and string.match(mark, opts.marks) then return end
+      if opts.marks and not string.match(mark, opts.marks) then return end
       table.insert(entries, string.format("%s  %s  %s %s",
         utils.ansi_codes[opts.hls.buf_nr](string.format("%4s", mark)),
         utils.ansi_codes[opts.hls.path_linenr](string.format("%4s", tostring(line))),
