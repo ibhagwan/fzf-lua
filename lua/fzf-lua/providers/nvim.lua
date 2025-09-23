@@ -271,12 +271,17 @@ M.marks = function(opts)
 
     -- global marks
     for _, m in ipairs(vim.fn.getmarklist()) do
-      local mark, lnum, col, file = m.mark:sub(2, 2), m.pos[2], m.pos[3], m.file
+      local mark, bufnr, lnum, col, file = m.mark:sub(2, 2), m.pos[1], m.pos[2], m.pos[3], m.file
       file = path.relative_to(file, uv.cwd())
       if path.is_absolute(file) then
         file = path.HOME_to_tilde(file)
       end
-      add_mark(mark, lnum, col, file or "-invalid-")
+      if bufnr == utils.CTX().bufnr then
+        local text = vim.api.nvim_buf_get_lines(bufnr, lnum - 1, lnum, false)[1]
+        add_mark(mark, lnum, col, utils.ansi_from_hl("Directory", text or "-invalid-"))
+      else
+        add_mark(mark, lnum, col, file or "-invalid-")
+      end
     end
 
     if opts.sort then
