@@ -584,6 +584,21 @@ M.goto_mark = function(selected)
   -- vim.fn.feedkeys(string.format("'%s", mark))
 end
 
+M.goto_mark_tabedit = function(selected)
+  vim.cmd("tab split")
+  M.goto_mark(selected)
+end
+
+M.goto_mark_split = function(selected)
+  vim.cmd("split")
+  M.goto_mark(selected)
+end
+
+M.goto_mark_vsplit = function(selected)
+  vim.cmd("vsplit")
+  M.goto_mark(selected)
+end
+
 M.mark_del = function(selected)
   local win = utils.CTX().winid
   local buf = utils.CTX().bufnr
