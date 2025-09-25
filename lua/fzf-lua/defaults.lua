@@ -1195,6 +1195,9 @@ M.defaults.marks                 = {
   fzf_opts    = { ["--no-multi"] = true },
   actions     = {
     ["enter"] = actions.goto_mark,
+    ["ctrl-s"] = actions.goto_mark_split,
+    ["ctrl-v"] = actions.goto_mark_vsplit,
+    ["ctrl-t"] = actions.goto_mark_tabedit,
     ["ctrl-x"] = { fn = actions.mark_del, reload = true }
   },
   previewer   = { _ctor = previewers.builtin.marks },
