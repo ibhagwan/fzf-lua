@@ -136,6 +136,8 @@ M.diagnostics = function(opts)
     if opts.sort == 2 or opts.sort == "2" then
       -- ascending: hint, info, warn, error
       table.sort(diag_results, function(a, b) return a.severity > b.severity end)
+    elseif type(opts.sort) == "function" then
+      diag_results = opts.sort(diag_results, opts)
     else
       -- descending: error, warn, info, hint
       table.sort(diag_results, function(a, b) return a.severity < b.severity end)
