@@ -1226,7 +1226,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
     (function()
       -- Check both the cmd and glob_args in case the user has a custom
       -- `rg_glob_fn` which uses raw args (as the wiki example)
-      for _, s in ipairs({ self.opts.cmd, glob_args }) do
+      for _, s in ipairs({ self.opts.cmd or self.opts._cmd, glob_args }) do
         if s and (s:match("%-%-fixed%-strings") or s:match("%-F")) then
           regex = utils.rg_escape(regex)
           return
