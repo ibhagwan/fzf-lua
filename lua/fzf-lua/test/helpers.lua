@@ -149,7 +149,8 @@ M.new_child_neovim = function()
   child.setup = function(config)
     -- using "FZF_DEFAULT_OPTS" hangs the command on the
     -- child process and the loading indicator never stops
-    local defaults = M.IS_WIN() and { pipe_cmd = true } or nil
+    local defaults = { fzf_opts = { ["--gutter"] = " " } }
+    if M.IS_WIN() then defaults.pipe_cmd = true end
     child.lua(function(...)
       require("fzf-lua").setup(vim.tbl_deep_extend("keep", ..., {
         { "default-title" },
