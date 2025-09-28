@@ -133,7 +133,7 @@ M.live_grep = function(opts)
   opts = normalize_live_grep_opts(opts)
   if not opts then return end
 
-  -- register opts._cmd, toggle_ignore/title_flag
+  -- register opts._cmd, toggle_ignore/title_flag/--fixed-strings
   local cmd0 = get_grep_cmd(opts, core.fzf_query_placeholder, 2)
 
   -- if multiprocess is optional (=1) and no prpocessing is required
