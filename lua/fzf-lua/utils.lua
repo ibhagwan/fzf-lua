@@ -1470,7 +1470,11 @@ end
 ---@return boolean
 function M.has_ts_parser(lang)
   if M.__HAS_NVIM_011 then
-    return vim.treesitter.language.add(lang) and true or false
+    return vim.treesitter.language.add(lang)
+        -- ensure the language has a highlights parser or we get
+        -- no highlights for langugaes like json/jsonc/toml/etc
+        and #vim.treesitter.query.get_files(lang, "highlights") > 0
+        or false
   else
     return (pcall(vim.treesitter.language.add, lang))
   end
