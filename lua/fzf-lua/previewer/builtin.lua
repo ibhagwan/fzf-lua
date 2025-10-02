@@ -1001,9 +1001,14 @@ function Previewer.base:update_ts_context()
     TSContext.close(self.win.preview_winid)
     return
   end
-  local parser, err = vim.treesitter.get_parser(self.preview_bufnr, lang)
+  local parser, err = vim.treesitter.get_parser(self.preview_bufnr, lang, { error = false })
+  -- TODO: fix `has_ts_parser` regression from a953548 (#2366)
   -- should never fail since `utils.has_ts_parser` returned true
-  assert(parser, "'vim.treesitter.get_parser' err: " .. tostring(err))
+  -- assert(parser, "'vim.treesitter.get_parser' err: " .. tostring(err))
+  if not parser or err then
+    TSContext.close(self.win.preview_winid)
+    return
+  end
   local context_updated
   TSContext.zindex = self.win.winopts.zindex + 20
   for _, t in ipairs({ 0, 20, 50, 100 }) do
