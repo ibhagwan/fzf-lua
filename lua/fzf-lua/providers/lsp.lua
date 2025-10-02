@@ -365,6 +365,12 @@ local handlers = {
     prep = "textDocument/prepareCallHierarchy",
     handler = call_hierarchy_handler
   },
+  ["workspace_diagnostics"] = {
+    label = "Workspace Diagnostics",
+    server_capability = "workspaceDiagnosticProvider",
+    method = "workspace/diagnostic",
+    handler = location_handler
+  },
 }
 
 local function gen_lsp_contents(opts)
@@ -660,6 +666,19 @@ end
 
 M.outgoing_calls = function(opts)
   return fzf_lsp_locations(opts, gen_lsp_contents_call_hierarchy)
+end
+
+M.document_diagnostics = function(opts)
+  vim.deprecate(
+    [['lsp_document_diagnostics']],
+    [[':FzfLua diagnostics_document' or ':lua FzfLua.diagnostics_document()']],
+    "Jan 2026", "FzfLua"
+  )
+  return FzfLua.diagnostics_document(opts)
+end
+
+M.workspace_diagnostics = function(opts)
+  return fzf_lsp_locations(opts, gen_lsp_contents)
 end
 
 M.finder = function(opts)
