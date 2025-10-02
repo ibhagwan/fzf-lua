@@ -74,14 +74,14 @@ M.commands = function(opts)
 
   opts.flatten = opts.flatten or {}
   for k, _ in pairs(global_commands) do
-    table.insert(entries, utils.ansi_codes.blue(k))
-    add_subcommand(k, utils.ansi_codes.blue)
+    table.insert(entries, utils.ansi_codes[opts.hls.cmd_global](k))
+    add_subcommand(k, utils.ansi_codes.cmd_global)
   end
 
   for k, v in pairs(buf_commands) do
     if type(v) == "table" then
-      table.insert(entries, utils.ansi_codes.green(k))
-      add_subcommand(k, utils.ansi_codes.green)
+      table.insert(entries, utils.ansi_codes[opts.hls.cmd_buf](k))
+      add_subcommand(k, utils.ansi_codes[opts.hls.cmd_buf])
     end
   end
 
@@ -91,7 +91,7 @@ M.commands = function(opts)
   end
 
   for k, _ in pairs(builtin_commands) do
-    table.insert(entries, utils.ansi_codes.magenta(k))
+    table.insert(entries, utils.ansi_codes[opts.hls.cmd_ex](k))
   end
 
   opts.preview = function(args)

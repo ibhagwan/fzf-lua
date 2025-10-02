@@ -677,6 +677,24 @@ Type: `string`, Default: `FzfLuaLiveSym`
 
 Highlight group for the matched characters in `lsp_live_workspace_symbols`.
 
+#### globals.hls.cmd_global
+
+Type: `string`, Default: `FzfLuaCmdGlobal`
+
+Highlight group for global commands in `:FzfLua commands`, by default links to `Directory`.
+
+#### globals.hls.cmd_buf
+
+Type: `string`, Default: `FzfLuaCmdBuf`
+
+Highlight group for buffer commands in `:FzfLua commands`, by default links to `Added`.
+
+#### globals.hls.cmd_ex
+
+Type: `string`, Default: `FzfLuaCmdEx`
+
+Highlight group for ex commands in `:FzfLua commands`, by default links to `Statement`.
+
 #### globals.hls.fzf.normal
 
 Type: `string`, Default: `FzfLuaFzfNormal`

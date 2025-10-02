@@ -1231,6 +1231,7 @@ M.defaults.commands              = {
   actions         = { ["enter"] = actions.ex_run },
   flatten         = {},
   include_builtin = true,
+  _cached_hls     = { "cmd_ex", "cmd_buf", "cmd_global" },
 }
 
 M.defaults.autocmds              = {
@@ -1456,6 +1457,9 @@ M.defaults.__HLS                 = {
   file_part      = "FzfLuaFilePart",
   live_prompt    = "FzfLuaLivePrompt",
   live_sym       = "FzfLuaLiveSym",
+  cmd_ex         = "FzfLuaCmdEx",
+  cmd_buf        = "FzfLuaCmdBuf",
+  cmd_global     = "FzfLuaCmdGlobal",
   fzf            = {
     normal     = "FzfLuaFzfNormal",
     cursorline = "FzfLuaFzfCursorLine",

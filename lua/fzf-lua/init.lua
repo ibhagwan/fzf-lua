@@ -113,6 +113,10 @@ function M.setup_highlights(override)
       { default = default, fg = is_light and "CadetBlue4" or "LightSkyBlue1", bold = true } },
     { "FzfLuaTabMarker", "tab_marker", -- tabs only
       { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond", bold = true } },
+    -- commands
+    { "FzfLuaCmdEx",         "cmd_ex",         { default = default, link = "Statement" } },
+    { "FzfLuaCmdBuf",        "cmd_buf",        { default = default, link = "Added" } },
+    { "FzfLuaCmdGlobal",     "cmd_global",     { default = default, link = "Directory" } },
     -- highlight groups for `fzf_colors=true`
     { "FzfLuaFzfNormal",     "fzf.normal",     { default = default, link = "FzfLuaNormal" } },
     { "FzfLuaFzfCursorLine", "fzf.cursorline", { default = default, link = "FzfLuaCursorLine" } },

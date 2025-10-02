@@ -1619,6 +1619,9 @@ temporarily overridden by its corresponding `winopts` option:
 | FzfLuaFilePart          | @none            | `hls.file_part`      | Path formatters file hl group         |
 | FzfLuaLivePrompt        | \*PaleVioletRed1 | `hls.live_prompt`    | "live" queries prompt text            |
 | FzfLuaLiveSym           | \*PaleVioletRed1 | `hls.live_sym`       | LSP live symbols query match          |
+| FzfLuaCmdEx             | Statement        | `hls.cmd_ex`         | Ex commands in `commands`             |
+| FzfLuaCmdBuf            | Added            | `hls.cmd_buf`        | Buffer commands in `commands`         |
+| FzfLuaCmdGlobal         | Directory        | `hls.cmd_global`     | Global commands in `commands`         |
 | FzfLuaFzfNormal         | FzfLuaNormal     | `fzf.normal`         | fzf's `fg\|bg`                        |
 | FzfLuaFzfCursorLine     | FzfLuaCursorLine | `fzf.cursorline`     | fzf's `fg+\|bg+`                      |
 | FzfLuaFzfMatch          | Special          | `fzf.match`          | fzf's `hl+`                           |
