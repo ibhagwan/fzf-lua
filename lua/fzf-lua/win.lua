@@ -1029,7 +1029,7 @@ function FzfWin:treesitter_attach()
 
           local lang = vim.treesitter.language.get_lang(ft)
           if not lang then return end
-          local loaded = lang and utils.has_ts_parser(lang)
+          local loaded = lang and utils.has_ts_parser(lang, "highlights")
           if not loaded then return end
 
           -- NOTE: if the line contains unicode characters `#line > win_width`
