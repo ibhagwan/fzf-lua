@@ -7,6 +7,7 @@ function _G.dump(...)
 end
 
 local uv = vim.uv or vim.loop
+local memoize = vim.func and vim.func._memoize
 
 local M = {}
 
@@ -1467,17 +1468,20 @@ end
 
 --- Checks if treesitter parser for language is installed
 ---@param lang string
+---@param query_name string
 ---@return boolean
-function M.has_ts_parser(lang)
-  if M.__HAS_NVIM_011 then
-    return vim.treesitter.language.add(lang)
-        -- ensure the language has a highlights parser or we get
-        -- no highlights for langugaes like json/jsonc/toml/etc
-        and #vim.treesitter.query.get_files(lang, "highlights") > 0
-        or false
-  else
-    return (pcall(vim.treesitter.language.add, lang))
-  end
+function M.has_ts_parser(lang, query_name)
+  -- ensure the language has a highlights parser or we get
+  -- no highlights for langugaes like json/jsonc/toml/etc
+  return (M.__HAS_NVIM_011 and vim.treesitter.language.add(lang)
+        or (pcall(vim.treesitter.language.add, lang)))
+      and #vim.treesitter.query.get_files(lang, query_name) > 0 or false
+end
+
+-- query.get_files, which looks expensive recursively check modeline
+-- also call nvim_get_runtime_file -> shell scripts
+if memoize then
+  M.has_ts_parser = memoize("concat-2", M.has_ts_parser, false)
 end
 
 --- Wrapper around vim.lsp.jump_to_location which was deprecated in v0.11

@@ -146,11 +146,6 @@
       { "name": "carbonfox", "disp_name": "Carbonfox" }
     ]
   },
-  "embark-theme": {
-    "disp_name": "Embark",
-    "url": "embark-theme/vim",
-    "colorschemes": ["embark"]
-  },
   "github-nvim-theme": {
     "disp_name": "Github",
     "url": "projekt0n/github-nvim-theme",

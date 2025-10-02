@@ -966,7 +966,7 @@ local ts_attach = function(bufnr, ft)
   -- ts is already attach, see $VIMRUNTIME/lua/vim/treesitter/highlighter.lua
   if vim.b[bufnr].ts_highlight then return true end
   local lang = vim.treesitter.language.get_lang(ft)
-  local loaded = lang and utils.has_ts_parser(lang)
+  local loaded = lang and utils.has_ts_parser(lang, "highlights")
   if lang and loaded then
     local ok, err = pcall(vim.treesitter.start, bufnr, lang)
     if not ok then
@@ -997,7 +997,7 @@ function Previewer.base:update_ts_context()
   -- https://github.com/neovim/neovim/commit/45e606b1fddbfeee8fe28385b5371ca6f2fba71b
   -- For more info see #1922
   local lang = vim.treesitter.language.get_lang(ft)
-  if not utils.has_ts_parser(lang) then
+  if not utils.has_ts_parser(lang, "context") then
     TSContext.close(self.win.preview_winid)
     return
   end
