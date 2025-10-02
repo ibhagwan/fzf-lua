@@ -93,12 +93,17 @@ M.highlights = function(opts)
   if not opts then return end
 
   local contents = function(cb)
-    local highlights = vim.fn.getcompletion("", "highlight")
+    local _, hl_dir = utils.ansi_from_hl("Directory", "foo")
+    local highlights =
+        utils.strsplit(vim.api.nvim_exec2("highlight", { output = true }).output, "\n")
 
-    local function add_entry(hl, co)
-      -- translate the highlight using ansi escape sequences
-      local x = utils.ansi_from_hl(hl, hl)
-      cb(x, function(err)
+    local function add_entry(line, co)
+      local hl = line:match("^[^%s]+")
+      local xxx = utils.ansi_from_hl(hl, "xxx")
+      line = line:gsub("xxx", xxx)
+      line = line:gsub("links to", hl_dir .. "%0" .. utils.ansi_escseq.clear)
+      line = line:gsub("%s([^%s]+=)", hl_dir .. "%0" .. utils.ansi_escseq.clear)
+      cb(line, function(err)
         if co then coroutine.resume(co) end
         if err then
           -- error, close fzf pipe

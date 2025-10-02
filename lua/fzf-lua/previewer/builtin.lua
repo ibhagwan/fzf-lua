@@ -1597,67 +1597,39 @@ function Previewer.highlights:new(o, opts)
   return self
 end
 
-function Previewer.highlights:close()
-  -- Remove our scratch buffer from "listed" so it gets wiped
-  self.listed_buffers[tostring(self.tmpbuf)] = nil
-  Previewer.highlights.super.close(self)
-  self.tmpbuf = nil
-end
-
 function Previewer.highlights:populate_preview_buf(entry_str)
-  if not self.tmpbuf then
-    local output = vim.split(vim.fn.execute "highlight", "\n")
-    local hl_groups = {}
-    for _, v in ipairs(output) do
-      if v ~= "" then
-        if v:sub(1, 1) == " " then
-          local part_of_old = v:match "%s+(.*)"
-          hl_groups[#hl_groups] = hl_groups[#hl_groups] .. part_of_old
-        else
-          table.insert(hl_groups, v)
-        end
-      end
-    end
-
-    -- Get a scratch buffer that doesn't wipe on hide (vs `self:get_tmp_buffer`)
-    -- and mark it as "listed" so it doesn't get cleared on fzf's zero event
-    self.tmpbuf = api.nvim_create_buf(false, true)
-    self.listed_buffers[tostring(self.tmpbuf)] = true
-
-    pcall(vim.api.nvim_buf_clear_namespace, self.tmpbuf, self.ns_previewer, 0, -1)
-    vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, hl_groups)
-    for k, v in ipairs(hl_groups) do
-      local startPos = string.find(v, "xxx", 1, true) - 1
-      local endPos = startPos + 3
-      local hlgroup = string.match(v, "([^ ]*)%s+.*")
-      vim.api.nvim_buf_set_extmark(self.tmpbuf, self.ns_previewer, k - 1, startPos, {
-        end_line = k - 1,
-        end_col = endPos,
-        hl_group = hlgroup,
-        hl_mode = "combine",
-      })
-    end
-  end
-
   -- Preview buffer isn't set on init and after fzf's zero event
   if not self.preview_bufnr then
-    self:set_preview_buf(self.tmpbuf)
+    local buf = self:get_tmp_buffer()
+    vim.bo[buf].ft = "lua"
+    ts_attach(buf, "lua")
+    self:set_preview_buf(buf)
   end
 
-  local selected_hl = "^" .. utils.strip_ansi_coloring(entry_str) .. "\\>"
-  pcall(api.nvim_win_call, self.win.preview_winid, function()
-    -- start searching at line 1 in case we
-    -- didn't reload the buffer (same file)
-    api.nvim_win_set_cursor(0, { 1, 0 })
-    fn.clearmatches()
-    fn.search(selected_hl, "W")
-    if self.win.hls.search then
-      fn.matchadd(self.win.hls.search, selected_hl)
-    end
-    self.orig_pos = api.nvim_win_get_cursor(0)
-    utils.zz()
-  end)
+  local serpent = require "fzf-lua.lib.serpent"
+  local buf = self.preview_bufnr
+  local hl = entry_str:match("^[^%s]+")
+  local hlgroup = hl
+  local lines = {}
+  repeat
+    local hl_def = vim.api.nvim_get_hl(0, { name = hl, link = true })
+    local block = utils.strsplit(serpent.block(hl_def, { comment = false, sortkeys = false }), "\n")
+    block[1] = string.format("%s = %s", hl, block[1])
+    vim.tbl_map(function(l) table.insert(lines, l) end, block)
+    hl = hl_def.link
+  until not hl
+  table.insert(lines, [[]])
+  table.insert(lines, [["THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"]])
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  self.win:update_preview_title(hl)
   self.win:update_preview_scrollbar()
+  vim.api.nvim_win_call(self.win.preview_winid, function()
+    if self.match_id then
+      pcall(fn.matchdelete, self.match_id)
+      self.match_id = nil
+    end
+    self.match_id = fn.matchaddpos(hlgroup, { { #lines } }, self.ns_previewer)
+  end)
 end
 
 ---@class fzf-lua.previewer.Quickfix : fzf-lua.previewer.Builtin,{}
