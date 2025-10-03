@@ -577,6 +577,9 @@ M.file = function(x, opts)
   if opts.strip_cwd_prefix then
     filepath = path.strip_cwd_prefix(filepath)
   end
+  if opts.render_crlf then
+    filepath = path.render_crlf(filepath)
+  end
   -- make path relative
   if opts.cwd and #opts.cwd > 0 then
     filepath = path.relative_to(filepath, opts.cwd)

@@ -47,14 +47,24 @@ end
 
 ---@param opts {cwd: string, cmd: string|table, env: table?, cb_finish: function,
 ---cb_write: function?, cb_write_lines: function?, cb_err: function, cb_pid: function,
----fn_transform: function?, EOL: string?, process1: boolean?, profiler: boolean?,
----use_queue: boolean?}
+---fn_transform: function?, EOL: string?, EOL_data: string?, process1: boolean?,
+---profiler: boolean?, use_queue: boolean?}
 ---@param fn_transform function?
 ---@param fn_done function?
 ---@return uv.uv_process_t proc
 ---@return integer         pid
 M.spawn = function(opts, fn_transform, fn_done)
   local EOL = opts.EOL or "\n"
+  local EOL_data = type(opts.cmd) == "string"
+      -- fd -0|--print0
+      -- rg -0|--null
+      -- grep -Z|--null
+      -- find . -print0
+      and (opts.cmd:match("%s%-0")
+        or opts.cmd:match("%s%-?%-print0")  -- -print0|--print0
+        or opts.cmd:match("%s%-%-null")
+        or opts.cmd:match("%s%-Z"))
+      and "\0" or "\n"
   local output_pipe = assert(uv.new_pipe(false))
   local error_pipe = assert(uv.new_pipe(false))
   local write_cb_count, read_cb_count = 0, 0
@@ -176,7 +186,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     local ret = {}
     local start_idx = 1
     repeat
-      local nl_idx = data:find("\n", start_idx, true)
+      local nl_idx = data:find(EOL_data, start_idx, true)
       if nl_idx then
         local cr = data:byte(nl_idx - 1, nl_idx - 1) == 13 -- \r
         local line = data:sub(start_idx, nl_idx - (cr and 2 or 1))
@@ -378,8 +388,6 @@ end
 ---@param opts table
 ---@return uv.uv_process_t, integer
 M.spawn_stdio = function(opts)
-  local EOL = opts.multiline and "\0" or "\n"
-
   -- stdin/stdout are already buffered, not stderr. This means
   -- that every character is flushed immediately which caused
   -- rendering issues on Mac (#316, #287) and Linux (#414)
@@ -396,6 +404,9 @@ M.spawn_stdio = function(opts)
 
   -- setup global vars
   for k, v in pairs(opts.g or {}) do _G[k] = v end
+
+  ---@diagnostic disable-next-line: undefined-field
+  local EOL = _G._EOL or opts.multiline and "\0" or "\n"
 
   -- Requiring make_entry will create the pseudo `_G.FzfLua` global
   -- Must be called after global vars are created or devicons will

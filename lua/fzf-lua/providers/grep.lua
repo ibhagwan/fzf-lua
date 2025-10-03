@@ -169,6 +169,7 @@ M.live_grep_native = function(opts)
     file_icons = false,
     file_ignore_patterns = false,
     strip_cwd_prefix = false,
+    render_crlf = false,
     path_shorten = false,
     formatter = false,
     multiline = false,

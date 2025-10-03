@@ -214,6 +214,7 @@ M.stringify_mt = function(contents, opts)
       "color_icons",
       "path_shorten",
       "strip_cwd_prefix",
+      "render_crlf",
       "exec_empty_query",
       "file_ignore_patterns",
       "rg_glob",

@@ -711,6 +711,21 @@ function M.normalize_opts(opts, globals, __resume_key)
     opts.multiline = nil
   end
 
+  -- Support filenames with CRLF (#2367), idea borrowed from fzf v0.39 changelog:
+  -- carriage return and a line feed characters will be rendered as dim ␍ and ␊ respectively
+  if opts.render_crlf then
+    opts.fzf_opts["--read0"] = true
+    if opts.fd_opts then
+      -- adding "-0" to fd prepends entries with "./", since we cannot guarantee fd v8.3
+      -- we remove the prefix in `make_entry.file` (instead of adding "--strip-cwd-prefix")
+      opts.strip_cwd_prefix = true
+      opts.fd_opts = "-0 " .. opts.fd_opts
+    end
+    if opts.rg_opts then opts.rg_opts = "-0 " .. opts.rg_opts end
+    if opts.grep_opts then opts.grep_opts = "-Z " .. opts.grep_opts end
+    if opts.find_opts then opts.find_opts = "-print0 " .. opts.find_opts end
+  end
+
   do
     -- Remove incompatible flags / values
     --   (1) `true` flags are removed entirely (regardless of value)
@@ -908,6 +923,7 @@ function M.normalize_opts(opts, globals, __resume_key)
         or opts.file_icons
         or opts.file_ignore_patterns
         or opts.strip_cwd_prefix
+        or opts.render_crlf
         or opts.path_shorten
         or opts.formatter
         or opts.multiline

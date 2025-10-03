@@ -96,6 +96,12 @@ M.strip_cwd_prefix = function(path)
   end
 end
 
+---@param path string
+---@return string
+M.render_crlf = function(path)
+  return (path:gsub("\n", "␊"):gsub("\r", "␍"))
+end
+
 ---Get the basename|tail of the given path.
 ---@param path string
 ---@return string
@@ -426,6 +432,9 @@ function M.entry_to_file(entry, opts, force_uri)
   end
   -- Remove ANSI coloring and prefixed icons
   entry = utils.strip_ansi_coloring(entry)
+  if opts.render_crlf then
+    entry = entry:gsub("␊", "\n"):gsub("␍", "\r")
+  end
   local stripped, idx = (function()
     -- Returns the first viable path:line?:col? + rest of line
     -- stripping until the last occurrence of utils.nbsp may err
