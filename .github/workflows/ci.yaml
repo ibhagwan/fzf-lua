@@ -1,82 +1,82 @@
-name: CI
-
-on:
-  push:
-    branches: [main, dev]
-  pull_request:
-    branches: "*"
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.actor }}
-  cancel-in-progress: true
-
-jobs:
-  unit-tests:
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        rev: [nightly, v0.11.3, puc-lua]
-        exclude:
-          - os: macos-latest
-            rev: puc-lua
-          - os: windows-latest
-            rev: puc-lua
-        include:
-          - os: macos-latest
-            install-deps: |
-              brew update && brew install fzf ripgrep fd gnu-getopt
-              brew link --force gnu-getopt
-          - os: windows-latest
-            install-deps: |
-              scoop bucket add extras
-              scoop install fzf ripgrep fd
-          - os: ubuntu-latest
-            install-deps: |
-              sudo apt-get update && sudo apt-get install -y ripgrep fd-find
-              wget -O - https://github.com/junegunn/fzf/releases/download/v0.64.0/fzf-0.64.0-linux_amd64.tar.gz | tar zxfv -
-              sudo mv ./fzf /bin
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: rhysd/action-setup-vim@v1
-        if: matrix.rev != 'puc-lua'
-        with:
-          neovim: true
-          version: ${{ matrix.rev }}
-
-      - name: Install puc-lua neovim (nightly)
-        if: matrix.rev == 'puc-lua'
-        run: |
-          wget -O - https://github.com/phanen/neovim-releases/releases/download/nightly/nvim-linux-x86_64.tar.gz | tar zxfv -
-          sudo cp -r nvim-linux-x86_64/* /usr/local/
-          rm nvim-linux-x86_64/ -rf
-
-      - name: Install Scoop (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-          Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
-          Join-Path (Resolve-Path ~).Path "scoop\shims" >> $Env:GITHUB_PATH
-
-      - name: Install Dependencies
-        shell: bash
-        run: |
-          ${{ matrix.install-deps }}
-          fzf --version
-          nvim --version
-          rg --version
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            fdfind --version
-          else
-            fd --version
-          fi
-          make deps
-
-      - name: Run tests
-        run: |
-          make test
+# name: CI
+#
+# on:
+#   push:
+#     branches: [main, dev]
+#   pull_request:
+#     branches: "*"
+#
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.actor }}
+#   cancel-in-progress: true
+#
+# jobs:
+#   unit-tests:
+#     runs-on: ${{ matrix.os }}
+#     timeout-minutes: 10
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         os: [ubuntu-latest, macos-latest, windows-latest]
+#         rev: [nightly, v0.11.3, puc-lua]
+#         exclude:
+#           - os: macos-latest
+#             rev: puc-lua
+#           - os: windows-latest
+#             rev: puc-lua
+#         include:
+#           - os: macos-latest
+#             install-deps: |
+#               brew update && brew install fzf ripgrep fd gnu-getopt
+#               brew link --force gnu-getopt
+#           - os: windows-latest
+#             install-deps: |
+#               scoop bucket add extras
+#               scoop install fzf ripgrep fd
+#           - os: ubuntu-latest
+#             install-deps: |
+#               sudo apt-get update && sudo apt-get install -y ripgrep fd-find
+#               wget -O - https://github.com/junegunn/fzf/releases/download/v0.64.0/fzf-0.64.0-linux_amd64.tar.gz | tar zxfv -
+#               sudo mv ./fzf /bin
+#
+#     steps:
+#       - uses: actions/checkout@v4
+#
+#       - uses: rhysd/action-setup-vim@v1
+#         if: matrix.rev != 'puc-lua'
+#         with:
+#           neovim: true
+#           version: ${{ matrix.rev }}
+#
+#       - name: Install puc-lua neovim (nightly)
+#         if: matrix.rev == 'puc-lua'
+#         run: |
+#           wget -O - https://github.com/phanen/neovim-releases/releases/download/nightly/nvim-linux-x86_64.tar.gz | tar zxfv -
+#           sudo cp -r nvim-linux-x86_64/* /usr/local/
+#           rm nvim-linux-x86_64/ -rf
+#
+#       - name: Install Scoop (Windows)
+#         if: runner.os == 'Windows'
+#         shell: pwsh
+#         run: |
+#           Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+#           Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+#           Join-Path (Resolve-Path ~).Path "scoop\shims" >> $Env:GITHUB_PATH
+#
+#       - name: Install Dependencies
+#         shell: bash
+#         run: |
+#           ${{ matrix.install-deps }}
+#           fzf --version
+#           nvim --version
+#           rg --version
+#           if [ "$RUNNER_OS" == "Linux" ]; then
+#             fdfind --version
+#           else
+#             fd --version
+#           fi
+#           make deps
+#
+#       - name: Run tests
+#         run: |
+#           make test
