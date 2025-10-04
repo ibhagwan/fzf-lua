@@ -75,7 +75,7 @@ M.commands = function(opts)
   opts.flatten = opts.flatten or {}
   for k, _ in pairs(global_commands) do
     table.insert(entries, utils.ansi_codes[opts.hls.cmd_global](k))
-    add_subcommand(k, utils.ansi_codes.cmd_global)
+    add_subcommand(k, utils.ansi_codes[opts.hls.cmd_global])
   end
 
   for k, v in pairs(buf_commands) do
