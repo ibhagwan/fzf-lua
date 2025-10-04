@@ -1474,7 +1474,7 @@ function M.has_ts_parser(lang, query_name)
   -- ensure the language has a highlights parser or we get
   -- no highlights for langugaes like json/jsonc/toml/etc
   return (M.__HAS_NVIM_011 and vim.treesitter.language.add(lang)
-        or (pcall(vim.treesitter.language.add, lang)))
+        or (not M.__HAS_NVIM_011 and pcall(vim.treesitter.language.add, lang)))
       and #vim.treesitter.query.get_files(lang, query_name) > 0 or false
 end
 
