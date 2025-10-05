@@ -1072,6 +1072,7 @@ M._action_to_helpstr = {
   [actions.help]                 = "help-open",
   [actions.help_vert]            = "help-vertical",
   [actions.help_tab]             = "help-tab",
+  [actions.help_curwin]          = "help-open-curwin",
   [actions.man]                  = "man-open",
   [actions.man_vert]             = "man-vertical",
   [actions.man_tab]              = "man-tab",
