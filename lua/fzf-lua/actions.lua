@@ -758,6 +758,29 @@ M.help = function(selected, opts)
   vim.cmd("help " .. helptags(selected, opts)[1])
 end
 
+M.help_curwin = function(selected, opts)
+  if #selected == 0 then return end
+  local helpcmd
+  local is_shown = false
+  local current_win_number = 1
+  local last_win_number = vim.fn.winnr("$")
+  while current_win_number <= last_win_number do
+    local buffer = vim.api.nvim_win_get_buf(vim.fn.win_getid(current_win_number))
+    local type = vim.api.nvim_get_option_value("buftype", { buf = buffer })
+    if type == "help" then
+      is_shown = true
+      break
+    end
+    current_win_number = current_win_number + 1
+  end
+  if is_shown then
+    helpcmd = "help "
+  else
+    helpcmd = "enew | setlocal bufhidden=wipe | setlocal buftype=help | keepjumps help "
+  end
+  vim.cmd(helpcmd .. helptags(selected, opts)[1])
+end
+
 M.help_vert = function(selected, opts)
   if #selected == 0 then return end
   vim.cmd("vert help " .. helptags(selected, opts)[1])
