@@ -134,6 +134,8 @@ M.bcommits = function(opts)
     local _, sel = utils.get_visual_selection()
     if not sel then return end
     range = string.format("-L %d,%d:%s --no-patch", sel.start.line, sel["end"].line, file)
+    -- when range is specified remove "end of options" marker (#2375)
+    opts.cmd = opts.cmd:gsub("%s+%-%-%s-$", " "):gsub("%-%-%s+[<{]file[}>]", " {file}")
   end
   if opts.cmd:match("[<{]file") then
     opts.cmd = opts.cmd:gsub("[<{]file[}>]", range or file)
