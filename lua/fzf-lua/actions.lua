@@ -229,6 +229,7 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
             vimcmd, will_replace_curbuf = "split", false
           elseif not vim.o.hidden
               and not vim.o.confirm
+              and not vim.o.autowriteall
               and utils.buffer_is_dirty(vim.api.nvim_get_current_buf(), true) then
             return
           end
