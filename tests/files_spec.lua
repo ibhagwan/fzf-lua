@@ -110,6 +110,7 @@ T["files"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-at
     exec_lua(([[require("%s").setup({})]]):format(icons == "mini" and "mini.icons" or plugin))
     helpers.FzfLua.files(child, {
       __expect_lines = not attrs or nil,
+      fzf_opts = { ["--color"] = "gutter:reverse:bright-black" },
       hidden = false,
       previewer = false,
       cwd_prompt = false,
