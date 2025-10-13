@@ -230,7 +230,7 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
           elseif not vim.o.hidden
               and not vim.o.confirm
               and not vim.o.autowriteall
-              and utils.buffer_is_dirty(vim.api.nvim_get_current_buf(), true) then
+              and utils.buffer_is_dirty(vim.api.nvim_get_current_buf(), true, true) then
             return
           end
         end
