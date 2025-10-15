@@ -556,7 +556,9 @@ M.defaults.git                   = {
     preview    = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
         .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
     actions    = {
-      ["enter"] = actions.git_worktree_cd,
+      ["enter"]  = actions.git_worktree_cd,
+      ["ctrl-x"] = { fn = actions.git_worktree_del, reload = true },
+      ["ctrl-a"] = { fn = actions.git_worktree_add, field_index = "{q}", reload = true },
     },
     fzf_opts   = { ["--no-multi"] = true },
     _headers   = { "actions", "cwd" },
