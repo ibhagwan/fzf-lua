@@ -906,6 +906,51 @@ M.git_worktree_cd = function(selected, opts)
   end
 end
 
+M.git_worktree_add = function(selected, opts)
+  local branch = opts.last_query or selected[1]
+  if type(branch) ~= "string" or #branch == 0 then
+    utils.warn("Branch name cannot be empty, use prompt for input.")
+  else
+    local worktree_path = "../" .. branch
+
+    local check_cmd = path.git_cwd({ "git", "show-ref", "--verify", "--quiet", "refs/heads/" .. branch }, opts)
+    local _, check_rc = utils.io_systemlist(check_cmd)
+
+    local cmd_add
+    if check_rc == 0 then
+      cmd_add = path.git_cwd({ "git", "worktree", "add", worktree_path, branch }, opts)
+    else
+      cmd_add = path.git_cwd({ "git", "worktree", "add", worktree_path, "-b", branch }, opts)
+    end
+
+    local output, rc = utils.io_systemlist(cmd_add)
+    if rc ~= 0 then
+      utils.error(output and unpack(output) or "git worktree add failed")
+    else
+      utils.info("Created worktree '%s' at '%s'.", branch, worktree_path)
+    end
+  end
+end
+
+M.git_worktree_del = function(selected, opts)
+  if #selected == 0 then return end
+  local worktree_path = selected[1]:match("^[^%s]+")
+  local current_cwd = vim.uv.cwd()
+  if worktree_path == current_cwd or path.normalize(worktree_path) == path.normalize(current_cwd) then
+    utils.warn("Cannot delete current worktree '%s'", worktree_path)
+    return
+  end
+  if vim.fn.confirm("Delete worktree " .. worktree_path .. "?", "&Yes\n&No") == 1 then
+    local cmd_del = path.git_cwd({ "git", "worktree", "remove", worktree_path }, opts)
+    local output, rc = utils.io_systemlist(cmd_del)
+    if rc ~= 0 then
+      utils.error(unpack(output))
+    else
+      utils.info("Deleted worktree '%s'.", worktree_path)
+    end
+  end
+end
+
 local match_commit_hash = function(line, opts)
   if type(opts.fn_match_commit_hash) == "function" then
     return opts.fn_match_commit_hash(line, opts)
