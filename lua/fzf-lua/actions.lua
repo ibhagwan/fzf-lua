@@ -825,9 +825,12 @@ M.git_switch = function(selected, opts)
     cmd = path.git_cwd({ "git", "switch" }, opts)
   end
   -- remove anything past space
-  local branch = selected[1]:match("[^ ]+")
+  local marker, branch = selected[1]:match("%s-([%+%*]?)%s+([^ ]+)")
   -- do nothing for active branch
-  if branch:find("%*") ~= nil then return end
+  if marker == "*" then
+    utils.warn("already on bramch '%s'", branch)
+    return
+  end
   if branch:find("^remotes/") then
     if opts.remotes == "detach" then
       table.insert(cmd, "--detach")
@@ -837,6 +840,12 @@ M.git_switch = function(selected, opts)
   end
   table.insert(cmd, branch)
   local output, rc = utils.io_systemlist(cmd)
+  if marker == "+" then
+    assert(rc ~= 0) -- should err with worktree path
+    local worktree_path = output[1]:match([[([^']+)'$]])
+    utils.warn("'%s' is a worktree, changing directory to '%s'", branch, worktree_path)
+    return M.git_worktree_cd({ worktree_path }, opts)
+  end
   if rc ~= 0 then
     utils.error(unpack(output))
   else
@@ -911,10 +920,11 @@ M.git_worktree_add = function(selected, opts)
   if type(branch) ~= "string" or #branch == 0 then
     utils.warn("Branch name cannot be empty, use prompt for input.")
   else
-    local worktree_path = "../" .. branch
+    local worktree_path = path.join({ "..", branch })
 
-    local check_cmd = path.git_cwd({ "git", "show-ref", "--verify", "--quiet", "refs/heads/" .. branch }, opts)
-    local _, check_rc = utils.io_systemlist(check_cmd)
+    local cmd_branch_check = path.git_cwd(
+      { "git", "show-ref", "--verify", "--quiet", "refs/heads/" .. branch }, opts)
+    local _, check_rc = utils.io_systemlist(cmd_branch_check)
 
     local cmd_add
     if check_rc == 0 then
@@ -925,7 +935,7 @@ M.git_worktree_add = function(selected, opts)
 
     local output, rc = utils.io_systemlist(cmd_add)
     if rc ~= 0 then
-      utils.error(output and unpack(output) or "git worktree add failed")
+      utils.error("git worktree add failed, %s", output and output[#output] or "nil")
     else
       utils.info("Created worktree '%s' at '%s'.", branch, worktree_path)
     end
