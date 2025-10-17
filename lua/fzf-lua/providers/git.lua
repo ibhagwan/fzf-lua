@@ -184,12 +184,14 @@ M.branches = function(opts)
   if opts.preview then
     local preview = path.git_cwd(opts.preview, opts)
     opts.preview = shell.stringify_cmd(function(items)
-      -- all possible options:
+      -- The beginning of the selected line looks like the below,
+      -- but we only want the string containing the branch name,
+      -- so match the first sequence not including spaces:
       --   branch
       -- * branch
       --   remotes/origin/branch
       --   (HEAD detached at origin/branch)
-      local branch = items[1]:match("[^%s%*]*$"):gsub("%)$", "")
+      local branch = items[1]:match("^[%*+]*[%s]*[(]?([^%s)]+)")
       return (preview:gsub("{.*}", branch))
     end, opts, "{}")
   end
