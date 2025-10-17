@@ -536,7 +536,8 @@ M.defaults.git                   = {
     _treesitter   = function(line) return line:match("(%s+)(%d+)%)(.+)$") end,
   },
   branches = {
-    cmd        = "git branch --all --color",
+    cmd        = [[git branch --all --color -vv ]]
+        .. [[--sort=-'committerdate' --sort='refname:rstrip=-2' --sort=-'HEAD']],
     preview    = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
     remotes    = "local",
     actions    = {
