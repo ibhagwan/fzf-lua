@@ -536,7 +536,19 @@ M.defaults.git                   = {
     _treesitter   = function(line) return line:match("(%s+)(%d+)%)(.+)$") end,
   },
   branches = {
-    cmd        = "git branch --all --color",
+    cmd        = [[git branch --all --color ]]
+        -- Sort sensibly
+        .. [[--sort=-'committerdate' --sort='refname:rstrip=-2' --sort=-'HEAD' ]]
+        .. [[--format=']]
+        -- Active branch is green
+        .. [[%(if)%(HEAD)%(then)%(color:green)]]
+        -- Remote branches are red
+        .. [[%(else)%(if:equals=refs/remotes)%(refname:rstrip=-2)%(then)%(color:red)]]
+        .. [[%(end)%(end)]]
+        -- Fields shown
+        .. [[%(HEAD)|%(refname:short)%(color:default)|%(committerdate:relative)|%(objectname:short)]]
+        -- Display in a neat list
+        .. [[' | column -ts'|']],
     preview    = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
     remotes    = "local",
     actions    = {
