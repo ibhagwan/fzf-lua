@@ -140,7 +140,7 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
   local rightbr = "]"
   local bufname = (function()
     local bname = buf.info.name
-    if bname:match("^%[.*%]$") or path.is_uri(bname) then
+    if bname:match("^%[.*%]$") or (path.is_uri(bname) and not utils.is_term_bufname(bname)) then
       return bname
     elseif opts.filename_only then
       return path.tail(bname)
