@@ -530,7 +530,8 @@ end
 
 M.hi = function(selected)
   if #selected == 0 then return end
-  vim.cmd("hi " .. selected[1])
+  local hl = selected[1]:match("^[^%s]+")
+  vim.cmd("hi " .. hl)
   vim.cmd("echo")
 end
 
