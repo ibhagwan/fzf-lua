@@ -8,7 +8,12 @@ end
 return {
   { "default-title" }, -- base profile
   desc       = "match telescope default highlights|keybinds",
-  fzf_opts   = { ["--layout"] = "default", ["--marker"] = "+", ["--cycle"] = true },
+  fzf_opts   = {
+    ["--layout"] = "default",
+    ["--marker"] = "+",
+    ["--gutter"] = " ",
+    ["--cycle"] = true
+  },
   winopts    = {
     width   = 0.8,
     height  = 0.9,
