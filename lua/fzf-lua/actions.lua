@@ -879,7 +879,7 @@ M.git_branch_del = function(selected, opts)
   if #selected == 0 then return end
   local cmd_del_branch = path.git_cwd(opts.cmd_del, opts)
   local cmd_cur_branch = path.git_cwd({ "git", "rev-parse", "--abbrev-ref", "HEAD" }, opts)
-  local branch = selected[1]:match("[^%s%*]+")
+  local branch = selected[1]:match("^[%*+]*[%s]*[(]?([^%s)]+)")
   local cur_branch = utils.io_systemlist(cmd_cur_branch)[1]
   if branch == cur_branch then
     utils.warn("Cannot delete active branch '%s'", branch)
