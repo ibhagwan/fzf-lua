@@ -547,7 +547,7 @@ M.defaults.git                   = {
     },
     cmd_add    = { "git", "branch" },
     cmd_del    = { "git", "branch", "--delete" },
-    fzf_opts   = { ["--no-multi"] = true },
+    fzf_opts   = { ["--no-multi"] = true, ["--tiebreak"] = "begin" },
     _headers   = { "actions", "cwd" },
     _multiline = false,
   },
