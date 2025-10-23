@@ -129,10 +129,6 @@ end
 
 -- Dummy abort action for `esc|ctrl-c|ctrl-q`
 M.dummy_abort = function(_, o)
-  -- try to resume mode if `complete` is set
-  if o.complete and o.__CTX.mode == "i" then
-    vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
-  end
 end
 
 M.resume = function(_, _)
