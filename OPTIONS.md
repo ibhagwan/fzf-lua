@@ -1068,6 +1068,14 @@ LSP Incoming Calls
 
 LSP Outgoing Calls
 
+#### lsp_type_sub
+
+LSP Sub types
+
+#### lsp_type_super
+
+LSP Super types
+
 #### lsp_code_actions
 
 LSP Code Actions

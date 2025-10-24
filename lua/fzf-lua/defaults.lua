@@ -1119,6 +1119,8 @@ M.defaults.lsp.finder            = {
     implementations = true,
     incoming_calls  = true,
     outgoing_calls  = true,
+    type_sub        = true,
+    type_super      = true,
   },
   -- by default display all supported providers
   providers   = {
@@ -1129,6 +1131,8 @@ M.defaults.lsp.finder            = {
     { "references",      prefix = utils.ansi_codes.blue("ref ") },
     { "incoming_calls",  prefix = utils.ansi_codes.cyan("in  ") },
     { "outgoing_calls",  prefix = utils.ansi_codes.yellow("out ") },
+    { "type_sub",        prefix = utils.ansi_codes.cyan("sub ") },
+    { "type_super",      prefix = utils.ansi_codes.yellow("supr") },
   },
   fzf_opts    = { ["--multi"] = true },
   _treesitter = true,

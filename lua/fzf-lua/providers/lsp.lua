@@ -308,70 +308,71 @@ end
 local handlers = {
   ["code_actions"] = {
     label = "Code Actions",
-    server_capability = "codeActionProvider",
     method = "textDocument/codeAction",
   },
   ["references"] = {
     label = "References",
-    server_capability = "referencesProvider",
     method = "textDocument/references",
     handler = location_handler
   },
   ["definitions"] = {
     label = "Definitions",
-    server_capability = "definitionProvider",
     method = "textDocument/definition",
     handler = location_handler
   },
   ["declarations"] = {
     label = "Declarations",
-    server_capability = "declarationProvider",
     method = "textDocument/declaration",
     handler = location_handler
   },
   ["typedefs"] = {
     label = "Type Definitions",
-    server_capability = "typeDefinitionProvider",
     method = "textDocument/typeDefinition",
     handler = location_handler
   },
   ["implementations"] = {
     label = "Implementations",
-    server_capability = "implementationProvider",
     method = "textDocument/implementation",
     handler = location_handler
   },
   ["document_symbols"] = {
     label = "Document Symbols",
-    server_capability = "documentSymbolProvider",
     method = "textDocument/documentSymbol",
     handler = symbol_handler
   },
   ["workspace_symbols"] = {
     label = "Workspace Symbols",
-    server_capability = "workspaceSymbolProvider",
     method = "workspace/symbol",
     handler = symbol_handler
   },
   ["live_workspace_symbols"] = {
     label = "Workspace Symbols",
-    server_capability = "workspaceSymbolProvider",
     method = "workspace/symbol",
     handler = symbol_handler
   },
   ["incoming_calls"] = {
     label = "Incoming Calls",
-    server_capability = "callHierarchyProvider",
     method = "callHierarchy/incomingCalls",
     prep = "textDocument/prepareCallHierarchy",
     handler = call_hierarchy_handler
   },
   ["outgoing_calls"] = {
     label = "Outgoing Calls",
-    server_capability = "callHierarchyProvider",
     method = "callHierarchy/outgoingCalls",
     prep = "textDocument/prepareCallHierarchy",
     handler = call_hierarchy_handler
+  },
+  ["type_sub"] = {
+    label = "TypeHierarchy Sub",
+    method = "typeHierarchy/subtypes",
+    prep = "textDocument/prepareTypeHierarchy",
+    handler = location_handler
+  },
+  ["type_super"] = {
+    label = "TypeHierarchy Super",
+    method = "typeHierarchy/supertypes",
+    prep = "textDocument/prepareTypeHierarchy",
+    handler = location_handler
   },
 }
 
@@ -577,7 +578,7 @@ local function gen_lsp_contents(opts)
 end
 
 -- see $VIMRUNTIME/lua/vim/buf.lua:pick_call_hierarchy_item()
-local function gen_lsp_contents_call_hierarchy(opts)
+local function gen_lsp_contents_hierarchy(opts)
   local timeout = 5000
   if type(opts.async_or_timeout) == "number" then
     timeout = opts.async_or_timeout
@@ -663,11 +664,19 @@ M.implementations = function(opts)
 end
 
 M.incoming_calls = function(opts)
-  return fzf_lsp_locations(opts, gen_lsp_contents_call_hierarchy)
+  return fzf_lsp_locations(opts, gen_lsp_contents_hierarchy)
 end
 
 M.outgoing_calls = function(opts)
-  return fzf_lsp_locations(opts, gen_lsp_contents_call_hierarchy)
+  return fzf_lsp_locations(opts, gen_lsp_contents_hierarchy)
+end
+
+M.type_sub = function(opts)
+  return fzf_lsp_locations(opts, gen_lsp_contents_hierarchy)
+end
+
+M.type_super = function(opts)
+  return fzf_lsp_locations(opts, gen_lsp_contents_hierarchy)
 end
 
 M.finder = function(opts)
@@ -684,7 +693,6 @@ M.finder = function(opts)
       opts.silent = opts.silent == nil and true or opts.silent
       opts.no_autoclose = true
       opts.lsp_handler = handlers[method]
-      opts.lsp_handler.capability = opts.lsp_handler.server_capability
       opts.lsp_params = lsp_params -- reset previous calls params if existed
 
       -- returns nil for no client attached, false for unsupported capability
@@ -695,8 +703,12 @@ M.finder = function(opts)
         return
       elseif check then
         local _, c = (function()
-          if method == "incoming_calls" or method == "outgoing_calls" then
-            return gen_lsp_contents_call_hierarchy(opts)
+          if method == "incoming_calls"
+              or method == "outgoing_calls"
+              or method == "type_sub"
+              or method == "type_super"
+          then
+            return gen_lsp_contents_hierarchy(opts)
           else
             return gen_lsp_contents(opts)
           end
@@ -899,7 +911,6 @@ local function wrap_fn(key, fn)
   return function(opts)
     opts = opts or {}
     opts.lsp_handler = handlers[key]
-    opts.lsp_handler.capability = opts.lsp_handler.server_capability
 
     -- check_capabilities will print the appropriate warning
     if not check_capabilities(opts.lsp_handler, opts.silent) then

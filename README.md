@@ -286,6 +286,8 @@ Fzf-Lua conveniently comes with a VS-Code like picker by default
 | `lsp_live_workspace_symbols` | Workspace Symbols (live query)   |
 | `lsp_incoming_calls`         | Incoming Calls                   |
 | `lsp_outgoing_calls`         | Outgoing Calls                   |
+| `lsp_type_sub`               | Sub Types                        |
+| `lsp_type_super`             | Super Types                     |
 | `lsp_code_actions`           | Code Actions                     |
 | `lsp_finder`                 | All LSP locations, combined view |
 | `diagnostics_document`       | Document Diagnostics             |
@@ -1296,6 +1298,8 @@ previewers = {
             { "implementations", prefix = FzfLua.utils.ansi_codes.green("impl") },
             { "incoming_calls",  prefix = FzfLua.utils.ansi_codes.cyan("in  ") },
             { "outgoing_calls",  prefix = FzfLua.utils.ansi_codes.yellow("out ") },
+            { "type_sub",        prefix = FzfLua.utils.utils.ansi_codes.cyan("sub ") },
+            { "type_super",      prefix = FzfLua.utils.utils.ansi_codes.yellow("supr") },
         },
     }
   },

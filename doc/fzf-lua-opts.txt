@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*      For Neovim >= 0.8.0     Last change: 2025 September 22
+*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 October 02
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -1461,6 +1461,18 @@ LSP Incoming Calls
 lsp_outgoing_calls                           *fzf-lua-opts-lsp_outgoing_calls*
 
 LSP Outgoing Calls
+
+
+                                                                              
+lsp_type_sub                                       *fzf-lua-opts-lsp_type_sub*
+
+LSP Sub types
+
+
+                                                                              
+lsp_type_super                                   *fzf-lua-opts-lsp_type_super*
+
+LSP Super types
 
 
                                                                               
