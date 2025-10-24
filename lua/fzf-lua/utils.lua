@@ -891,7 +891,7 @@ function M.CTX(opts)
   return require("fzf-lua.ctx").refresh(opts)
 end
 
----@return fzf-lua.Ctx?
+---@return fzf-lua.Ctx|{}
 function M.__CTX()
   return require("fzf-lua.ctx").get()
 end
