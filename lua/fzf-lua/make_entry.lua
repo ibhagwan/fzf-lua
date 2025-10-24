@@ -580,20 +580,27 @@ M.file = function(x, opts)
   if opts.render_crlf then
     filepath = path.render_crlf(filepath)
   end
-  -- make path relative
-  if opts.cwd and #opts.cwd > 0 then
-    filepath = path.relative_to(filepath, opts.cwd)
+  if opts.absolute_path then
+    -- make path absolute
+    if not path.is_absolute(filepath) then
+      filepath = path.join({ opts.cwd or uv.cwd(), filepath })
+    end
+  else
+    -- make path relative
+    filepath = path.relative_to(filepath, opts.cwd or uv.cwd())
   end
   if path.is_absolute(filepath) then
     -- filter for cwd only
     if opts.cwd_only then
-      local cwd = opts.cwd or uv.cwd()
-      if not path.is_relative_to(filepath, cwd) then
+      if not path.is_relative_to(filepath, opts.cwd or uv.cwd()) then
         return nil
       end
     end
-    -- replace $HOME with ~
-    filepath = path.HOME_to_tilde(filepath)
+
+    if not opts.absolute_path then
+      -- replace $HOME with ~
+      filepath = path.HOME_to_tilde(filepath)
+    end
   end
   -- only check for ignored patterns after './' was
   -- stripped and path was transformed to relative
