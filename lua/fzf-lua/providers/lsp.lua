@@ -179,11 +179,15 @@ local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
 end
 
 -- Copied from vim.lsp.util.symbols_to_items, then added space prefix to child symbols.
-local function symbols_to_items(symbols, bufnr, child_prefix)
+local function symbols_to_items(opts, symbols, bufnr, child_prefix)
   ---@private
-  local function _symbols_to_items(_symbols, _items, _bufnr, prefix)
+  local function _symbols_to_items(_symbols, _items, _bufnr, prefix, parents)
+    parents = parents or {}
     for _, symbol in ipairs(_symbols) do
       local kind = vim.lsp.protocol.SymbolKind[symbol.kind] or "Unknown"
+      local name = opts.parent_postfix and not utils.tbl_isempty(parents)
+          and table.concat(parents, opts.parent_postfix) .. opts.parent_postfix .. symbol.name
+          or symbol.name
       if symbol.location then -- SymbolInformation type
         local range = symbol.location.range
         table.insert(_items, {
@@ -191,7 +195,7 @@ local function symbols_to_items(symbols, bufnr, child_prefix)
           lnum = range.start.line + 1,
           col = range.start.character + 1,
           kind = kind,
-          text = prefix .. "[" .. kind .. "] " .. symbol.name,
+          text = prefix .. "[" .. kind .. "] " .. name,
         })
       elseif symbol.selectionRange then -- DocumentSymbole type
         table.insert(_items, {
@@ -200,14 +204,18 @@ local function symbols_to_items(symbols, bufnr, child_prefix)
           lnum = symbol.selectionRange.start.line + 1,
           col = symbol.selectionRange.start.character + 1,
           kind = kind,
-          text = prefix .. "[" .. kind .. "] " .. symbol.name,
+          text = prefix .. "[" .. kind .. "] " .. name,
         })
         if symbol.children then
-          for _, v in ipairs(_symbols_to_items(symbol.children, _items, _bufnr, prefix .. child_prefix)) do
+          table.insert(parents, symbol.name)
+          for _, v in ipairs(
+            _symbols_to_items(symbol.children, _items, _bufnr, prefix .. child_prefix, parents))
+          do
             for _, s in ipairs(v) do
               table.insert(_items, s)
             end
           end
+          table.remove(parents)
         end
       end
     end
@@ -220,7 +228,7 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
   result = utils.tbl_islist(result) and result or { result }
   local items
   if opts.child_prefix then
-    items = symbols_to_items(result, utils.CTX().bufnr,
+    items = symbols_to_items(opts, result, utils.CTX().bufnr,
       opts.child_prefix == true and string.rep(" ", 2) or opts.child_prefix)
   else
     local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding

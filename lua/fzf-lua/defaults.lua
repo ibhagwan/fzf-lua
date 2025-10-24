@@ -1042,6 +1042,7 @@ M.defaults.lsp.symbols           = {
   symbol_hl        = function(s) return "@" .. s:lower() end,
   symbol_fmt       = function(s, _) return "[" .. s .. "]" end,
   child_prefix     = true,
+  parent_postfix   = false,
   async_or_timeout = true,
   -- new formatting options with symbol name at the start
   fzf_opts         = {

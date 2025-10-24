@@ -1266,6 +1266,8 @@ previewers = {
         symbol_fmt        = function(s, opts) return "[" .. s .. "]" end,
         -- prefix child symbols. set to any string or `false` to disable
         child_prefix      = true,
+        -- prepend parent to symbol, set to any string or `false` to disable
+        -- parent_postfix    = ".",
         fzf_opts          = { ["--tiebreak"] = "begin" },
     },
     code_actions = {
