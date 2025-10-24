@@ -1258,7 +1258,10 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
       -- "split" reused the current win (e.g. "enew")
       -- restore the original buffer and styling options
       self:set_winopts(self.fzf_winid, self.src_winid_style or {})
-      utils.win_set_buf_noautocmd(self.fzf_winid, self.src_bufnr)
+      -- buf may be invalid if we switched away from a scratch buffer
+      if vim.api.nvim_buf_is_valid(self.src_bufnr) then
+        utils.win_set_buf_noautocmd(self.fzf_winid, self.src_bufnr)
+      end
       -- also restore the original alternate buffer
       local alt_bname = (function()
         local alt_bufnr = utils.__CTX() and utils.__CTX().alt_bufnr
