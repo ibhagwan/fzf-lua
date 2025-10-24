@@ -2,8 +2,8 @@
 
 local M = {}
 
----@type fzf-lua.Ctx?
-local ctx
+---@type fzf-lua.Ctx|{}
+local ctx = {}
 
 ---@class fzf-lua.Ctx
 ---@field mode string
@@ -21,10 +21,10 @@ local ctx
 ---@field buflist? integer[]
 
 -- IMPORTANT: use the `__CTX` version that doesn't trigger a new context
----@return fzf-lua.Ctx?
+---@return fzf-lua.Ctx|{}
 M.get = function() return ctx end
 
-M.reset = function() ctx = nil end
+M.reset = function() ctx = {} end
 
 ---conditionally update the context if fzf-lua
 ---interface isn't open
