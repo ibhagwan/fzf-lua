@@ -213,6 +213,7 @@ M.stringify_mt = function(contents, opts)
       "file_icons",
       "color_icons",
       "path_shorten",
+      "absolute_path",
       "strip_cwd_prefix",
       "render_crlf",
       "exec_empty_query",
