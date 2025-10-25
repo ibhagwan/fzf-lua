@@ -50,7 +50,7 @@ return {
         -- `tbl_map` below preventing fzf history append on esc
         -- exec_silent = true,
       }
-      opts.actions = vim.tbl_map(function(act)
+      for k, act in pairs(opts.actions) do
         act = type(act) == "function" and { fn = act } or act
         act = type(act) == "table" and type(act[1]) == "function"
             and { fn = act[1], reuse = true } or act
@@ -60,6 +60,8 @@ return {
             and not act.reload
             and not act.noclose
             and not act.reuse
+            -- ignore `false` actions (#2407)
+            and not k:match("^_")
         then
           local fn = act.fn
           act.exec_silent = true
@@ -80,8 +82,8 @@ return {
             end
           end
         end
-        return act
-      end, opts.actions)
+        opts.actions[k] = act
+      end
       -- Hijack the resize event to reload buffer/tab list on unhide
       FzfLua.win.on_SIGWINCH(opts, "win.unhide", function()
         if type(opts._contents) == "string"
