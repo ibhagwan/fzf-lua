@@ -4,6 +4,7 @@ _G._is_fzf_cli = true
 local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
 local dir = fn.fnamemodify(fn.resolve(__FILE__), ":h:h:p")
 vim.opt.rtp:append(dir)
+vim.cmd.runtime("plugin/fzf-lua.lua")
 local path = require("fzf-lua.path")
 vim.opt.rtp:append(path.join({ dir, "deps", "nvim-web-devicons" }))
 vim.o.swapfile = false
@@ -77,8 +78,7 @@ _G.fzf_jobstart = function(cmd, opts)
     end))
 end
 
--- TODO: parse cli args
-(FzfLua[_G.arg[#_G.arg] or vim.v.argv[#vim.v.argv] or "files"] or FzfLua.files)()
+vim.cmd("FzfLua " .. table.concat(_G.arg, " "))
 
 while true do
   vim.wait(0)
