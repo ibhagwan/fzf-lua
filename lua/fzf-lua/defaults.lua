@@ -1326,24 +1326,38 @@ M.defaults.spell_suggest         = {
   },
 }
 
-M.defaults.filetypes             = {
+---@class fzf-lua.config.Serverlist : fzf-lua.config.Base
+M.defaults.serverlist            = {
+  screenshot = vim.fn.tempname(),
+  previewer = { _ctor = previewers.fzf.nvim_server },
+  _resume_reload = true, -- avoid list contain killed server unhide
+  keymap = { fzf = { resize = "refresh-preview" } },
+  actions = {
+    ["enter"] = actions.serverlist_connect,
+    ["ctrl-o"] = { fn = actions.serverlist_spawn, reload = true },
+    ["ctrl-x"] = { fn = actions.serverlist_kill, reload = true },
+  },
+}
+
+
+M.defaults.filetypes         = {
   file_icons = false,
   actions    = { ["enter"] = actions.set_filetype },
 }
 
-M.defaults.packadd               = {
+M.defaults.packadd           = {
   actions = {
     ["enter"] = actions.packadd,
   },
 }
 
-M.defaults.menus                 = {
+M.defaults.menus             = {
   actions = {
     ["enter"] = actions.exec_menu,
   },
 }
 
-M.defaults.tmux                  = {
+M.defaults.tmux              = {
   buffers = {
     cmd      = "tmux list-buffers",
     register = [["]],
@@ -1352,7 +1366,7 @@ M.defaults.tmux                  = {
   },
 }
 
-M.defaults.dap                   = {
+M.defaults.dap               = {
   commands       = { fzf_opts = { ["--no-multi"] = true }, },
   configurations = { fzf_opts = { ["--no-multi"] = true }, },
   variables      = { fzf_opts = { ["--no-multi"] = true }, },
@@ -1373,7 +1387,7 @@ M.defaults.dap                   = {
   },
 }
 
-M.defaults.complete_path         = {
+M.defaults.complete_path     = {
   cmd               = nil, -- default: auto detect fd|rg|find
   file_icons        = false,
   git_icons         = false,
@@ -1386,7 +1400,7 @@ M.defaults.complete_path         = {
   actions           = { ["enter"] = actions.complete },
 }
 
-M.defaults.complete_file         = {
+M.defaults.complete_file     = {
   cmd               = nil, -- default: auto detect rg|fd|find
   multiprocess      = 1,
   _type             = "file",
@@ -1402,7 +1416,7 @@ M.defaults.complete_file         = {
   _fzf_nth_devicons = true,
 }
 
-M.defaults.zoxide                = {
+M.defaults.zoxide            = {
   multiprocess  = true,
   fn_transform  = [[return require("fzf-lua.make_entry").zoxide]],
   fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]],
@@ -1425,14 +1439,14 @@ M.defaults.complete_line         = vim.tbl_deep_extend("force", M.defaults.bline
   complete = true,
 })
 
-M.defaults.file_icon_padding     = ""
+M.defaults.file_icon_padding = ""
 
 -- No need to sset this, already defaults to `nvim_open_win`
 -- M.help_open_win              = vim.api.nvim_open_win
 
-M.defaults.dir_icon              = ""
+M.defaults.dir_icon          = ""
 
-M.defaults.__HLS                 = {
+M.defaults.__HLS             = {
   normal         = "FzfLuaNormal",
   border         = "FzfLuaBorder",
   title          = "FzfLuaTitle",

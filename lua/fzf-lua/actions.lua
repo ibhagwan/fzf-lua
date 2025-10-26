@@ -1306,4 +1306,25 @@ M.zoxide_cd = function(selected, opts)
   end
 end
 
+
+local parse_entry    = function(e) return e and e:match("%((.-)%)") or nil end
+
+M.serverlist_kill    = function(sel)
+  vim.iter(sel):map(parse_entry):each(function(addr)
+    local ok, err = utils.rpcexec(addr, "nvim_exec2", "qa!", {})
+    assert(ok or err and err:match("Invalid channel"), err)
+  end)
+end
+
+M.serverlist_spawn   = function()
+  libuv.uv_spawn(
+    vim.fn.exepath("nvim"), { args = { "--headless" }, env = { NVIM = "" } })
+end
+
+M.serverlist_connect = function(sel)
+  local addr = parse_entry(sel[1])
+  if not addr then return end
+  vim.cmd.connect(addr)
+end
+
 return M

@@ -733,4 +733,52 @@ M.autocmds = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+M.serverlist = function(opts)
+  local function serverlist(listed)
+    local root = vim.fs.normalize(vim.fn.stdpath("run") .. "/..")
+    local socket_paths = vim.fs.find(function(name, _)
+      return name:match("nvim.*")
+    end, { path = root, type = "socket", limit = math.huge })
+
+    local found = {} ---@type string[]
+    for _, socket in ipairs(socket_paths) do
+      -- Don't list servers twice
+      if not vim.list_contains(listed, socket) then
+        local ok, chan = pcall(vim.fn.sockconnect, "pipe", socket, { rpc = true })
+        if ok and chan then
+          -- Check that the server is responding
+          if vim.fn.rpcrequest(chan, "nvim_get_chan_info", 0).id then
+            table.insert(found, socket)
+          end
+          vim.fn.chanclose(chan)
+        end
+      end
+    end
+    return found
+  end
+
+  opts = require("fzf-lua.config").normalize_opts(opts or {}, "serverlist")
+  local list = vim.fn.serverlist()
+  local f = function(cb)
+    vim
+        .iter(serverlist(list))
+        :filter(
+          function(p)
+            return not p:match("fzf%-lua") and not vim.tbl_contains(list, p)
+          end
+        )
+        :map(function(p)
+          ----@type boolean, string?
+          local ok, cwd = utils.rpcexec(p, "nvim_exec_lua", "return vim.uv.cwd()", {})
+          if not ok or not cwd then return end
+          cwd = FzfLua.path.normalize(cwd)
+          return ("%s (%s)"):format(cwd, p)
+        end)
+        :each(cb)
+    cb(nil)
+  end
+  require("fzf-lua").fzf_exec(function(cb)
+    vim.defer_fn(function() f(cb) end, 50) -- wait for spawn/remote_exec?
+  end, opts)
+end
 return M
