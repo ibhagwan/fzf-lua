@@ -11,6 +11,18 @@ return {
       enter = function(s, o)
         local entries = vim.tbl_map(
           function(e) return FzfLua.path.entry_to_file(e, o) end, s)
+        if ffi and #entries == 1 then
+          posix_exec(fn.exepath("nvim"), entries[1].path,
+            entries[1].line and ("+" .. entries[1].line) or nil,
+            entries[1].col and ("+norm! %s|"):format(entries[1].col) or nil)
+        elseif ffi and #entries > 1 then
+          local file = fn.tempname()
+          vim.fn.writefile(vim.tbl_map(function(e) -- Format: {filename}:{lnum}:{col}: {text}
+            local text = e.stripped:match(":%d+:%d?%d?%d?%d?:?(.*)$") or ""
+            return ("%s:%d:%d: %s"):format(e.path, e.line or 1, e.col or 1, text)
+          end, entries), file)
+          posix_exec(fn.exepath("nvim"), "-q", file)
+        end
         io.stdout:write(vim.json.encode(entries) .. "\n")
         quit()
       end,
