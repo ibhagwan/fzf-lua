@@ -1,6 +1,5 @@
 local api, uv, fn = vim.api, vim.uv or vim.loop, vim.fn
 assert(#api.nvim_list_uis() == 0)
-_G._is_fzf_cli = true
 local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
 local dir = fn.fnamemodify(fn.resolve(__FILE__), ":h:h:p")
 vim.opt.rtp:append(dir)
@@ -26,7 +25,11 @@ require("fzf-lua").setup({ "cli" })
 
 -- load user config
 local xdg = vim.env.XDG_CONFIG_HOME or path.join({ vim.env.HOME, ".config" })
-local config_paths = { path.join({ xdg, "fzf-lua.lua" }), path.join({ xdg, "fzf-lua", "init.lua" }) }
+local config_paths = {
+  path.join({ xdg, "fzf-lua.lua" }),
+  path.join({ xdg, "fzf-lua", "init.lua" }),
+  path.join({ xdg, "fzf-lua", "config.lua" }),
+}
 for _, config_path in ipairs(config_paths) do
   if uv.fs_stat(config_path) then
     dofile(config_path)
