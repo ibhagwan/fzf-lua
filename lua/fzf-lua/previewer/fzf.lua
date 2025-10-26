@@ -478,4 +478,65 @@ function Previewer.help_tags:cmdline(o)
   return act
 end
 
+Previewer.nvim_server = Previewer.cmd_async:extend()
+
+-- generate screenshot
+-- spawn a temporary tui for non-tui/headless client
+---@param screenshot string
+---@param addr string
+---@param lines integer
+---@param columns integer
+---@return integer? pid
+local function make_screenshot(screenshot, addr, lines, columns)
+  local closing = false
+  local ok, uis = utils.rpcexec(addr, "nvim_list_uis")
+  vim.fn.writefile({}, screenshot)
+  if not ok then
+    local winobj = FzfLua.utils.fzf_winobj()
+    if winobj then winobj:SIGWINCH({ "win.unhide" }) end
+    return
+  end
+  local has_tui = vim.iter(uis):find(function(info) return info.stdout_tty end)
+  if has_tui then
+    utils.rpcexec(addr, "nvim__screenshot", screenshot)
+    return
+  end
+  local jobstart = _G.fzf_pty_spawn or vim.fn.jobstart
+  local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
+  local chan = jobstart({ nvim_bin, "--server", addr, "--remote-ui" }, {
+    pty = true,
+    height = lines,
+    width = columns,
+    env = {
+      TERM = "xterm-256color",
+      VIMRUNTIME = vim.env.VIMRUNTIME,
+    },
+    on_stdout = function(chan)
+      if closing then return end
+      closing = true
+      vim.defer_fn(function() utils.rpcexec(addr, "nvim__screenshot", screenshot) end, 10)
+      if not _G.fzf_pty_spawn then vim.defer_fn(function() vim.fn.jobstop(chan) end, 20) end
+    end,
+  })
+  if not _G.fzf_pty_spawn then return vim.fn.jobpid(chan) end
+  return chan
+end
+
+function Previewer.nvim_server:cmdline(_)
+  local function parse_entry(e) return e and e:match("%((.-)%)") or nil end
+  return FzfLua.shell.stringify_cmd(function(items, lines, columns)
+    self._last_query = items[2] or ""
+    local addr = parse_entry(items[1])
+    if not addr then return "true" end
+    local screenshot = assert(self.opts.screenshot) ---@type string
+    local pid = make_screenshot(screenshot, addr, lines, columns)
+    local wait = pid
+        and vim.fn.executable("waitpid") == 1
+        and ("waitpid %s;"):format(pid)
+        or ("sleep %s;"):format(50 / 1000)
+    local pager = vim.fn.executable("tail") == 1 and "tail -n+2 %s" or "cat %s"
+    return wait .. pager:format(screenshot)
+  end, self.opts, "{} {q}")
+end
+
 return Previewer

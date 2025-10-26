@@ -440,7 +440,7 @@ function FzfWin:columns(no_fullscreen)
   -- when starting with `winopts.fullscreen == true`
   local winopts = no_fullscreen and self._o.winopts or self.winopts
   return self._o._is_fzf_tmux and self:tmux_columns()
-      or _G._is_fzf_cli and (uv.tty_get_winsize(uv.new_tty(0, true)))
+      or vim.is_callable(_G.fzf_tty_get_width) and _G.fzf_tty_get_width()
       or winopts.split and vim.api.nvim_win_get_width(self.fzf_winid or 0)
       or self:normalize_size(winopts.width, vim.o.columns)
 end

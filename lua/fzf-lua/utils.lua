@@ -1471,6 +1471,18 @@ function M.setmetatable(t, mt)
   return setmetatable(t, mt)
 end
 
+---@param addr string
+---@param method string
+---@param ...? any
+---@return boolean, ...
+function M.rpcexec(addr, method, ...)
+  local ok, chan = pcall(vim.fn.sockconnect, "pipe", addr, { rpc = true })
+  if not ok or chan == 0 then return ok end
+  local ret = { pcall(vim.rpcrequest, chan, method, ...) }
+  vim.fn.chanclose(chan)
+  return unpack(ret)
+end
+
 --- Checks if treesitter parser for language is installed
 ---@param lang string
 ---@param query_name string
