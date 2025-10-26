@@ -237,6 +237,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field autocmds fzf-lua.config.Autocmds
 ---@field command_history fzf-lua.config.CommandHistory
 ---@field search_history fzf-lua.config.SearchHistory
+---@field serverlist fzf-lua.config.Serverlist
 ---@field registers fzf-lua.config.Registers
 ---@field keymaps fzf-lua.config.Keymaps
 ---@field nvim_options fzf-lua.config.NvimOptions
@@ -839,6 +840,7 @@ _G.FzfLua = require("fzf-lua")
 ---@class fzf-lua.config.Registers.p: fzf-lua.config.Registers, {}
 -- -@class fzf-lua.config.Resume.p: fzf-lua.config.resume, {}
 ---@class fzf-lua.config.SearchHistory.p: fzf-lua.config.SearchHistory, {}
+---@class fzf-lua.config.Serverlist.p: fzf-lua.config.Serverlist, {}
 ---@class fzf-lua.config.SpellSuggest.p: fzf-lua.config.SpellSuggest, {}
 ---@class fzf-lua.config.Spellcheck.p: fzf-lua.config.Spellcheck, {}
 ---@class fzf-lua.config.Tabs.p: fzf-lua.config.Tabs, {}
