@@ -327,6 +327,7 @@ M.new_child_neovim = function()
   end
 
   local wait_timeout = (M.IS_LINUX() and 2000 or 5000)
+  wait_timeout = os.getenv("CI") and wait_timeout * 2 or wait_timeout
   --- waits until condition fn evals to true, checking every interval ms
   --- times out at timeout ms
   ---@param condition fun(): boolean
