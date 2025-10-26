@@ -1069,9 +1069,14 @@ function Previewer.base:attach_snacks_image_inline()
   if not simg
       or not self.snacks_image.enabled
       or not self.snacks_image.render_inline
-      or not simg.supports_terminal()
-      or not simg.terminal.env().placeholders
       or vim.b[bufnr].snacks_image_attached then
+    return
+  end
+  if not simg.terminal._terminal then -- detection must be done before terminal.env()
+    simg.terminal.detect(function() end)
+    return
+  end
+  if not simg.supports_terminal() or not simg.terminal.env().placeholders then
     return
   end
 
