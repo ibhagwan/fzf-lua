@@ -11,6 +11,22 @@ vim.o.showcmd = false
 
 require("fzf-lua").setup({ vim.env.TMUX and "fzf-tmux" or "fzf-native" })
 
+_G.fzf_jobstart = function(cmd, opts)
+  ---@diagnostic disable-next-line: missing-fields, missing-parameter
+  FzfLua.libuv.uv_spawn(cmd[1], {
+      cwd = opts.cwd,
+      args = vim.list_slice(cmd, 2),
+      stdio = { 0 },
+      env = opts.env,
+    },
+    vim.schedule_wrap(function(rc)
+      opts.on_exit(nil, rc, nil)
+      if not opts.no_quit and #vim.api.nvim_get_proc_children(uv.os_getpid()) == 0 then
+        vim.cmd.cquit { count = rc, bang = true }
+      end
+    end))
+end
+
 api.nvim_create_autocmd("Signal", {
   callback = function(ev)
     vim.tbl_map(function(pid)

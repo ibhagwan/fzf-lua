@@ -45,6 +45,25 @@ local function coroutinify(fn)
   end
 end
 
+-- fix environ for uv.spawn
+M.uv_spawn = function(cmd, opts, on_exit)
+  opts.env = (function()
+    -- uv.spawn will override all env when table provided?
+    -- steal from $VIMRUNTIME/lua/vim/_system.lua
+    local env = vim.fn.environ() --- @type table<string,string>
+    env["NVIM"] = vim.v.servername
+    env["NVIM_LISTEN_ADDRESS"] = nil
+    env = vim.tbl_extend("keep", opts.env or {}, env or {})
+    local renv = {} --- @type string[]
+    for k, v in pairs(env) do
+      renv[#renv + 1] = string.format("%s=%s", k, tostring(v))
+    end
+    return renv
+  end)()
+  return uv.spawn(cmd, opts, on_exit)
+end
+if false then M.uv_spawn = uv.spawn end
+
 ---@param opts {cwd: string, cmd: string|table, env: table?, cb_finish: function,
 ---cb_write: function?, cb_write_lines: function?, cb_err: function, cb_pid: function,
 ---fn_transform: function?, EOL: string?, EOL_data: string?, process1: boolean?,
@@ -61,7 +80,7 @@ M.spawn = function(opts, fn_transform, fn_done)
       -- grep -Z|--null
       -- find . -print0
       and (opts.cmd:match("%s%-0")
-        or opts.cmd:match("%s%-?%-print0")  -- -print0|--print0
+        or opts.cmd:match("%s%-?%-print0") -- -print0|--print0
         or opts.cmd:match("%s%-%-null")
         or opts.cmd:match("%s%-Z"))
       and "\0" or "\n"
@@ -128,24 +147,11 @@ M.spawn = function(opts, fn_transform, fn_done)
   end
 
   ---@diagnostic disable-next-line: missing-fields
-  handle, pid = uv.spawn(shell, {
+  handle, pid = M.uv_spawn(shell, {
     args = args,
     stdio = { nil, output_pipe, error_pipe },
     cwd = opts.cwd,
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    env = (function()
-      -- uv.spawn will override all env when table provided?
-      -- steal from $VIMRUNTIME/lua/vim/_system.lua
-      local env = vim.fn.environ() --- @type table<string,string>
-      env["NVIM"] = vim.v.servername
-      env["NVIM_LISTEN_ADDRESS"] = nil
-      env = vim.tbl_extend("keep", opts.env or {}, env or {})
-      local renv = {} --- @type string[]
-      for k, v in pairs(env) do
-        renv[#renv + 1] = string.format("%s=%s", k, tostring(v))
-      end
-      return renv
-    end)(),
+    env = opts.env,
     verbatim = _is_win,
   }, function(code, signal)
     if can_finish() or code ~= 0 then
