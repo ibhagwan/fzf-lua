@@ -14,8 +14,6 @@ if vim.v.servername and #vim.v.servername > 0 then
   pcall(fn.serverstop, vim.v.servername)
 end
 
-local quit = function() vim.cmd.quit() end
-
 api.nvim_create_autocmd("Signal", {
   callback = function(ev)
     vim.tbl_map(function(pid)
@@ -24,33 +22,7 @@ api.nvim_create_autocmd("Signal", {
   end
 })
 
-require("fzf-lua").setup({
-  vim.env.TMUX and "fzf-tmux" or "fzf-native",
-  defaults = {
-    fzf_opts = { ["--height"] = "50%" },
-    keymap = { fzf = { ["ctrl-q"] = "toggle-all" } },
-    actions = {
-      esc = quit,
-      ["ctrl-c"] = quit,
-      enter = function(s, o)
-        local entries = vim.tbl_map(
-          function(e) return FzfLua.path.entry_to_file(e, o) end, s)
-        io.stdout:write(vim.json.encode(entries) .. "\n")
-        quit()
-      end,
-      ["ctrl-x"] = function(_, o)
-        FzfLua.builtin(vim.tbl_deep_extend("force", o.__call_opts, {
-          actions = {
-            enter = function(s)
-              if not s[1] then quit() end
-              FzfLua[s[1]](o.__call_opts)
-            end
-          },
-        }))
-      end
-    },
-  }
-})
+require("fzf-lua").setup({ "cli" })
 
 -- load user config
 local xdg = vim.env.XDG_CONFIG_HOME or path.join({ vim.env.HOME, ".config" })
