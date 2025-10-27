@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 -- This file should only be loaded from the headless instance
 local uv = vim.uv or vim.loop
 assert(#vim.api.nvim_list_uis() == 0)

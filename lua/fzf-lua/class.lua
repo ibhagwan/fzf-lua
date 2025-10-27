@@ -15,6 +15,7 @@ Object.__index = Object
 
 ---@diagnostic disable-next-line: unused-vararg
 function Object:new(...)
+  local _ = self
 end
 
 function Object:extend()

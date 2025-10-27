@@ -87,7 +87,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   local output_pipe = assert(uv.new_pipe(false))
   local error_pipe = assert(uv.new_pipe(false))
   local write_cb_count, read_cb_count = 0, 0
-  local prev_line_content = nil
+  local prev_line_content ---@type string?
   local handle, pid
   local co = coroutine.running()
   local queue = require("fzf-lua.lib.queue").new()
@@ -247,7 +247,7 @@ M.spawn = function(opts, fn_transform, fn_done)
         -- should never get here, work_ctx is never initialized
         -- code remains as a solemn reminder to my efforts of making
         -- multiprocess=false a lag free experience
-        uv.queue_work(work_ctx, data, prev_line_content)
+        if prev_line_content then uv.queue_work(work_ctx, data, prev_line_content) end
         lines, prev_line_content = coroutine.yield()
       else
         lines, prev_line_content = split_lines(data, prev_line_content,
@@ -446,7 +446,7 @@ M.spawn_stdio = function(opts)
   -- NOTE: since we cannot guarantee the positional index
   -- of arguments (#291), we use the last argument instead
   if opts.is_live and type(opts.contents) == "string" then
-    opts.contents = FzfLua.make_entry.expand_query(opts, argv(), opts.contents)
+    opts.contents = FzfLua.make_entry.expand_query(opts, assert(argv()), opts.contents)
   end
 
   -- run the preprocessing fn
@@ -485,7 +485,7 @@ M.spawn_stdio = function(opts)
 
   local function pipe_open(pipename)
     if not pipename then return end
-    local fd = uv.fs_open(pipename, "w", -1)
+    local fd = assert(uv.fs_open(pipename, "w", -1))
     if type(fd) ~= "number" then
       exit(1, ("error opening '%s': %s" .. EOL):format(pipename, fd))
     end

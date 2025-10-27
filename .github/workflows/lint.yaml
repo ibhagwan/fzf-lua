@@ -8,13 +8,13 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: install neovim
+      - name: Install neovim
         uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
           version: v0.11.3
 
-      - name: install lua-language-server
+      - name: Install lua-language-server
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -25,7 +25,19 @@ jobs:
           export PATH="${PWD}/lua-language-server/bin:${PATH}"
           lua-language-server --version
 
-      - name: lint
+      - name: Install emmylua_check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd
+          gh release download -R EmmyLuaLs/emmylua-analyzer-rust -p emmylua_check-linux-x64.tar.gz -D emmylua_check
+          tar xzf emmylua_check/* -C emmylua_check
+          echo "${PWD}/emmylua_check/" >> $GITHUB_PATH
+          export PATH="${PWD}/emmylua_check/:${PATH}"
+          emmylua_check --version
+
+      - name: Lint
         run: |
           make deps
           make lint
+          make emmylua-check

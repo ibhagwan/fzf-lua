@@ -6,7 +6,6 @@ local actions = require "fzf-lua.actions"
 
 local api = vim.api
 local fn = vim.fn
-local uv = vim.uv or vim.loop
 
 local TSInjector = {}
 
@@ -535,6 +534,7 @@ end
 ---@param max integer
 ---@return integer
 function FzfWin:normalize_size(size, max)
+  local _ = self
   return size <= 1 and math.floor(max * size) or math.min(size, max)
 end
 
@@ -796,6 +796,7 @@ end
 ---@param opts vim.wo|{}
 ---@return vim.wo|{}
 function FzfWin:get_winopts(win, opts)
+  local _ = self
   if not win or not api.nvim_win_is_valid(win) then return {} end
   local ret = {}
   for opt, _ in pairs(opts) do
@@ -808,6 +809,7 @@ end
 ---@param opts vim.wo|{}
 ---@param ignore_events boolean?
 function FzfWin:set_winopts(win, opts, ignore_events)
+  local _ = self
   if not win or not api.nvim_win_is_valid(win) then return end
   -- NOTE: Do not trigger "OptionSet" as this will trigger treesitter-context's
   -- `update_single_context` which will in turn close our treesitter-context
@@ -961,6 +963,7 @@ function FzfWin:set_winleave_autocmd()
 end
 
 function FzfWin:treesitter_detach(buf)
+  local _ = self
   TSInjector.deregister()
   TSInjector.clear_cache(buf)
 end
@@ -1021,7 +1024,7 @@ function FzfWin:treesitter_attach()
               if string.byte(text, 1) == 32 then text = text:sub(2) end  -- remove leading SPACE
               -- IMPORTANT: use the `__CTX` version that doesn't trigger a new context
               local __CTX = utils.__CTX()
-              local b = tonumber(filepath:match("^%d+") or __CTX and __CTX.bufnr)
+              local b = tonumber(filepath:match("^%d+") or __CTX and __CTX.bufnr) ---@type integer
               return b and vim.api.nvim_buf_is_valid(b) and b or nil
             end
           end)()
@@ -1099,6 +1102,7 @@ function FzfWin:save_style_minimal(winid)
 end
 
 function FzfWin:set_style_minimal(winid)
+  local _ = self
   if not tonumber(winid) or not api.nvim_win_is_valid(winid) then return end
   utils.wo[winid].number = false
   utils.wo[winid].relativenumber = false
@@ -1423,7 +1427,7 @@ function FzfWin:SIGWINCH(scopes)
   local bufnr = self._hidden_fzf_bufnr or self.fzf_bufnr
   if not tonumber(bufnr) or not vim.api.nvim_buf_is_valid(bufnr) then return end
   local ok, pid = pcall(fn.jobpid, vim.bo[bufnr].channel)
-  if ok and tonumber(pid) > 0 then
+  if ok and tonumber(pid) > 0 then ---@cast pid integer
     self._o.__sigwinches = scopes or {}
     vim.tbl_map(function(_pid) libuv.process_kill(_pid, 28) end, api.nvim_get_proc_children(pid))
   end
@@ -1493,6 +1497,7 @@ function FzfWin:update_preview_scrollbar()
     topline = topline == 1 and topline or
         api.nvim_win_text_height(self.preview_winid, { end_row = topline - 1 }).all + 1
   end
+  assert(height, height)
   o.bar_height = math.min(height, math.ceil(height * height / o.line_count))
   o.bar_offset = math.min(height - o.bar_height, math.floor(height * topline / o.line_count))
 
@@ -1743,10 +1748,10 @@ function FzfWin.close_help()
 
   local self = _self
 
-  if vim.api.nvim_win_is_valid(self.km_winid) then
+  if self.km_winid and vim.api.nvim_win_is_valid(self.km_winid) then
     utils.nvim_win_close(self.km_winid, true)
   end
-  if vim.api.nvim_buf_is_valid(self.km_bufnr) then
+  if self.km_bufnr and vim.api.nvim_buf_is_valid(self.km_bufnr) then
     vim.api.nvim_buf_delete(self.km_bufnr, { force = true })
   end
   self.km_winid = nil

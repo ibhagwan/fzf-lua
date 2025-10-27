@@ -595,6 +595,16 @@ function M.map_flatten(m, prefix)
   return ret
 end
 
+--- @param x any
+--- @return integer?
+function M.tointeger(x)
+  local nx = tonumber(x)
+  if nx and nx == math.floor(nx) then
+    --- @cast nx integer
+    return nx
+  end
+end
+
 local function hex2rgb(hexcol)
   local r, g, b = hexcol:match("#(%x%x)(%x%x)(%x%x)")
   if not r or not g or not b then return end
@@ -649,7 +659,7 @@ end
   end
 }) ]]
 
-M.ansi_codes = {} ---@type table<string, fun(string: string):string>
+M.ansi_codes = {} ---@type table<string, fun(string: any):string>
 M.ansi_escseq = {
   -- the "\x1b" esc sequence causes issues
   -- with older Lua versions
@@ -673,7 +683,7 @@ M.ansi_escseq = {
 ---@param name string
 ---@param escseq string
 M.cache_ansi_escseq = function(name, escseq)
-  ---@param string string
+  ---@param string any
   ---@return string
   M.ansi_codes[name] = function(string)
     if string == nil or #string == 0 then return "" end

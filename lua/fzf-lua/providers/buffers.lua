@@ -304,21 +304,20 @@ M.buffer_lines = function(opts)
           then
             return
           end
-          local bicon, hl = "", nil
-          local bname = bnames[tostring(bufnr)]
-          assert(bname)
+          local icon, hl = "", nil
+          local name = bnames[tostring(bufnr)]
 
-          if #bname > len_bufnames + 1 then
-            bname = "…" .. bname:sub(#bname - len_bufnames + 2)
+          if #name > len_bufnames + 1 then
+            name = "…" .. name:sub(#name - len_bufnames + 2)
           end
 
           if opts.file_icons then
-            bicon, hl = devicons.get_devicon(bname)
+            icon, hl = devicons.get_devicon(name)
             if hl and opts.color_icons then
-              bicon = utils.ansi_from_rgb(hl, bicon)
+              icon = utils.ansi_from_rgb(hl, icon)
             end
           end
-          return bname, bicon and bicon .. utils.nbsp or nil
+          return name, icon and icon .. utils.nbsp or nil
         end)()
 
         local offset, start_line, end_line, lines = 0, 1, #data, #data
