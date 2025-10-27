@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local utils = require "fzf-lua.utils"
 local path = require "fzf-lua.path"
@@ -151,14 +152,14 @@ local edit_entry = function(entry, fullpath, will_replace_curbuf, opts)
     -- We normalize the path or Windows will fail with directories starting
     -- with special characters, for example "C:\app\(web)" will be translated
     -- by neovim to "c:\app(web)" (#1082)
-    local relpath = path.normalize(path.relative_to(fullpath, uv.cwd()))
-    local bufnr = vim.fn.bufadd(relpath)
-    if bufnr == 0 and not opts.silent then
+    local relpath = path.normalize(path.relative_to(fullpath, assert(uv.cwd())))
+    local bufnr0 = vim.fn.bufadd(relpath)
+    if bufnr0 == 0 and not opts.silent then
       utils.warn("Unable to add buffer %s", relpath)
       return
     end
-    vim.bo[bufnr].buflisted = true
-    return bufnr
+    vim.bo[bufnr0].buflisted = true
+    return bufnr0
   end)()
   -- abort if we're unable to load the buffer
   if not tonumber(bufnr) then return end

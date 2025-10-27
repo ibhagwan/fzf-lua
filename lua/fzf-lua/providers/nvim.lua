@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"

@@ -1,4 +1,5 @@
 -- context/info
+local utils = require("fzf-lua.utils")
 
 local M = {}
 
@@ -82,7 +83,7 @@ M.refresh = function(opts)
     end
   end
   -- custom bufnr from caller? (#1757)
-  local bufnr = tonumber(opts.buf) or tonumber(opts.bufnr)
+  local bufnr = utils.tointeger(opts.buf) or utils.tointeger(opts.bufnr)
   if bufnr then
     ctx.bufnr = bufnr
     ctx.bname = vim.api.nvim_buf_get_name(bufnr)

@@ -511,11 +511,11 @@ local function make_screenshot(screenshot, addr, lines, columns)
       TERM = "xterm-256color",
       VIMRUNTIME = vim.env.VIMRUNTIME,
     },
-    on_stdout = function(chan)
+    on_stdout = function(chan0)
       if closing then return end
       closing = true
       vim.defer_fn(function() utils.rpcexec(addr, "nvim__screenshot", screenshot) end, 10)
-      if not _G.fzf_pty_spawn then vim.defer_fn(function() vim.fn.jobstop(chan) end, 20) end
+      if not _G.fzf_pty_spawn then vim.defer_fn(function() vim.fn.jobstop(chan0) end, 20) end
     end,
   })
   if not _G.fzf_pty_spawn then return vim.fn.jobpid(chan) end
