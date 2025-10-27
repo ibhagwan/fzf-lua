@@ -5,6 +5,8 @@ local config = require "fzf-lua.config"
 
 local M = {}
 
+---@param opts fzf-lua.config.Helptags|{}?
+---@return thread?, string?, table?
 M.helptags = function(opts)
   ---@type fzf-lua.config.Helptags
   opts = config.normalize_opts(opts, "helptags")

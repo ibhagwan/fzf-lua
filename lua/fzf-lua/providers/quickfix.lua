@@ -60,10 +60,14 @@ local quickfix_run = function(opts, cfg)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Quickfix|{}?
+---@return thread?, string?, table?
 M.quickfix = function(opts)
   return quickfix_run(opts, "quickfix")
 end
 
+---@param opts fzf-lua.config.Loclist|{}?
+---@return thread?, string?, table?
 M.loclist = function(opts)
   opts = opts or {}
   opts.is_loclist = true
@@ -118,10 +122,14 @@ local qfstack_exec = function(opts, cfg)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.QuickfixStack|{}?
+---@return thread?, string?, table?
 M.quickfix_stack = function(opts)
   return qfstack_exec(opts, "quickfix_stack")
 end
 
+---@param opts fzf-lua.config.LoclistStack|{}?
+---@return thread?, string?, table?
 M.loclist_stack = function(opts)
   opts = opts or {}
   opts.is_loclist = true

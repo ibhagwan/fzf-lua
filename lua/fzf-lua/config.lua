@@ -162,13 +162,14 @@ local normalize_tbl = function(opts)
   end
 end
 
----@param opts fzf-lua.config.Base|{}|fun():table?
+---@generic T table
+---@param opts T|{}|fun():T?
 ---@param globals string|table?
 ---@param __resume_key string?
----@return fzf-lua.Config?
+---@return T
 function M.normalize_opts(opts, globals, __resume_key)
   -- opts can also be a function that returns an opts table
-  ---@type fzf-lua.config.Base|{}
+  ---@type fzf-lua.config.Resolved|{}
   opts = eval(opts) or {}
 
   if opts._normalized then
