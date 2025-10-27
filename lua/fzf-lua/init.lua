@@ -1,8 +1,14 @@
+local gen = _G.arg[0] == "lua/fzf-lua/init.lua"
+if gen then
+  vim.opt.rtp:append(vim.fn.fnamemodify(debug.getinfo(1, "S").source:gsub("^@", ""), ":h:h:h:p"))
+end
+
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
+---@class fzf-lua
 local M = {}
 
 do
@@ -183,6 +189,8 @@ end
 -- case the user decides not to call `setup()`
 M.setup_highlights()
 
+---@param opts? fzf-lua.profile|fzf-lua.Config
+---@param do_not_reset_defaults? boolean
 function M.setup(opts, do_not_reset_defaults)
   opts = type(opts) == "table" and opts or {}
   -- Defaults to picker info in win title if neovim version >= 0.9, prompt otherwise
@@ -389,6 +397,7 @@ local exported_modules = {
 }
 
 -- excluded from builtin / auto-complete
+---@private
 M._excluded_meta = {
   "setup",
   "redraw",
@@ -417,6 +426,7 @@ for _, m in ipairs(exported_modules) do
   M[m] = require("fzf-lua." .. m)
 end
 
+---@private
 M._excluded_metamap = {}
 for _, t in pairs({ M._excluded_meta, exported_modules }) do
   for _, m in ipairs(t) do
@@ -424,8 +434,9 @@ for _, t in pairs({ M._excluded_meta, exported_modules }) do
   end
 end
 
+---@param opts fzf-lua.config.Builtin
+---@return thread?, string?, table?
 M.builtin = function(opts)
-  ---@type fzf-lua.config.Builtin
   opts = config.normalize_opts(opts, "builtin")
   if not opts then return end
   opts.metatable = M
@@ -446,8 +457,14 @@ M.register_extension = function(name, fun, default_opts, override)
 end
 
 -- generate api typings
--- for _, v in vim.spairs(exported_modules) do print(([[M.%s = require("fzf-lua.%s")]]):format(v, v)) end
--- for k, v in vim.spairs(lazyloaded_modules) do print(([[M.%s = require(%q).%s]]):format(k, v[1], v[2])) end
+if gen then
+  for _, v in vim.spairs(exported_modules) do
+    io.stdout:write(([[M.%s = require("fzf-lua.%s")]] .. "\n"):format(v, v))
+  end
+  for k, v in vim.spairs(lazyloaded_modules) do
+    io.stdout:write(([[M.%s = require(%q).%s]] .. "\n"):format(k, v[1], v[2]))
+  end
+end
 lazyloaded_modules = nil
 exported_modules = nil
 do return M end
@@ -461,109 +478,111 @@ M.shell = require("fzf-lua.shell")
 M.config = require("fzf-lua.config")
 M.actions = require("fzf-lua.actions")
 M.make_entry = require("fzf-lua.make_entry")
-M.args = require("fzf-lua.providers.files").args ---@type fun(opts: fzf-lua.config.Args.p?): thread?, string?, table?
-M.autocmds = require("fzf-lua.providers.nvim").autocmds ---@type fun(opts: fzf-lua.config.Autocmds.p?): thread?, string?, table?
-M.awesome_colorschemes = require("fzf-lua.providers.colorschemes").awesome_colorschemes ---@type fun(opts: fzf-lua.config.AwesomeColorschemes.p?): thread?, string?, table?
-M.blines = require("fzf-lua.providers.buffers").blines ---@type fun(opts: fzf-lua.config.Blines.p?): thread?, string?, table?
-M.btags = require("fzf-lua.providers.tags").btags ---@type fun(opts: fzf-lua.config.Btags.p?): thread?, string?, table?
-M.buffers = require("fzf-lua.providers.buffers").buffers ---@type fun(opts: fzf-lua.config.Buffers.p?): thread?, string?, table?
-M.changes = require("fzf-lua.providers.nvim").changes ---@type fun(opts: fzf-lua.config.Changes.p?): thread?, string?, table?
-M.colorschemes = require("fzf-lua.providers.colorschemes").colorschemes ---@type fun(opts: fzf-lua.config.Colorschemes.p?): thread?, string?, table?
+M.args = require("fzf-lua.providers.files").args
+M.autocmds = require("fzf-lua.providers.nvim").autocmds
+M.awesome_colorschemes = require("fzf-lua.providers.colorschemes").awesome_colorschemes
+M.blines = require("fzf-lua.providers.buffers").blines
+M.btags = require("fzf-lua.providers.tags").btags
+M.buffers = require("fzf-lua.providers.buffers").buffers
+M.changes = require("fzf-lua.providers.nvim").changes
+M.colorschemes = require("fzf-lua.providers.colorschemes").colorschemes
 M.combine = require("fzf-lua.providers.meta").combine
-M.command_history = require("fzf-lua.providers.nvim").command_history ---@type fun(opts: fzf-lua.config.CommandHistory.p?): thread?, string?, table?
-M.commands = require("fzf-lua.providers.nvim").commands ---@type fun(opts: fzf-lua.config.Commands.p?): thread?, string?, table?
-M.complete_bline = require("fzf-lua.complete").bline ---@type fun(opts: fzf-lua.config.CompleteBline.p?): thread?, string?, table?
-M.complete_file = require("fzf-lua.complete").file ---@type fun(opts: fzf-lua.config.CompleteFile.p?): thread?, string?, table?
-M.complete_line = require("fzf-lua.complete").line ---@type fun(opts: fzf-lua.config.CompleteLine.p?): thread?, string?, table?
-M.complete_path = require("fzf-lua.complete").path ---@type fun(opts: fzf-lua.config.CompletePath.p?): thread?, string?, table?
-M.dap_breakpoints = require("fzf-lua.providers.dap").breakpoints ---@type fun(opts: fzf-lua.config.DapBreakpoints.p?): thread?, string?, table?
-M.dap_commands = require("fzf-lua.providers.dap").commands ---@type fun(opts: fzf-lua.config.DapCommands.p?): thread?, string?, table?
-M.dap_configurations = require("fzf-lua.providers.dap").configurations ---@type fun(opts: fzf-lua.config.DapConfigurations.p?): thread?, string?, table?
-M.dap_frames = require("fzf-lua.providers.dap").frames ---@type fun(opts: fzf-lua.config.DapFrames.p?): thread?, string?, table?
-M.dap_variables = require("fzf-lua.providers.dap").variables ---@type fun(opts: fzf-lua.config.DapVariables.p?): thread?, string?, table?
+M.command_history = require("fzf-lua.providers.nvim").command_history
+M.commands = require("fzf-lua.providers.nvim").commands
+M.complete_bline = require("fzf-lua.complete").bline
+M.complete_file = require("fzf-lua.complete").file
+M.complete_line = require("fzf-lua.complete").line
+M.complete_path = require("fzf-lua.complete").path
+M.dap_breakpoints = require("fzf-lua.providers.dap").breakpoints
+M.dap_commands = require("fzf-lua.providers.dap").commands
+M.dap_configurations = require("fzf-lua.providers.dap").configurations
+M.dap_frames = require("fzf-lua.providers.dap").frames
+M.dap_variables = require("fzf-lua.providers.dap").variables
 M.deregister_ui_select = require("fzf-lua.providers.ui_select").deregister
-M.diagnostics_document = require("fzf-lua.providers.diagnostic").diagnostics ---@type fun(opts: fzf-lua.config.DiagnosticsDocument.p?): thread?, string?, table?
-M.diagnostics_workspace = require("fzf-lua.providers.diagnostic").all ---@type fun(opts: fzf-lua.config.DiagnosticsWorkspace.p?): thread?, string?, table?
-M.files = require("fzf-lua.providers.files").files ---@type fun(opts: fzf-lua.config.Files.p?): thread?, string?, table?
-M.filetypes = require("fzf-lua.providers.nvim").filetypes ---@type fun(opts: fzf-lua.config.Filetypes.p?): thread?, string?, table?
+M.diagnostics_document = require("fzf-lua.providers.diagnostic").diagnostics
+M.diagnostics_workspace = require("fzf-lua.providers.diagnostic").all
+M.files = require("fzf-lua.providers.files").files
+M.filetypes = require("fzf-lua.providers.nvim").filetypes
 M.fzf_exec = require("fzf-lua.core").fzf_exec
 M.fzf_live = require("fzf-lua.core").fzf_live
 M.fzf_wrap = require("fzf-lua.core").fzf_wrap
-M.git_bcommits = require("fzf-lua.providers.git").bcommits ---@type fun(opts: fzf-lua.config.GitBcommits.p?): thread?, string?, table?
-M.git_blame = require("fzf-lua.providers.git").blame ---@type fun(opts: fzf-lua.config.GitBlame.p?): thread?, string?, table?
-M.git_branches = require("fzf-lua.providers.git").branches ---@type fun(opts: fzf-lua.config.GitBranches.p?): thread?, string?, table?
-M.git_worktrees = require("fzf-lua.providers.git").worktrees ---@type fun(opts: fzf-lua.config.GitWorktrees.p?): thread?, string?, table?
-M.git_commits = require("fzf-lua.providers.git").commits ---@type fun(opts: fzf-lua.config.GitCommits.p?): thread?, string?, table?
-M.git_diff = require("fzf-lua.providers.git").diff ---@type fun(opts: fzf-lua.config.GitDiff.p?): thread?, string?, table?
-M.git_files = require("fzf-lua.providers.git").files ---@type fun(opts: fzf-lua.config.GitFiles.p?): thread?, string?, table?
-M.git_hunks = require("fzf-lua.providers.git").hunks ---@type fun(opts: fzf-lua.config.GitHunks.p?): thread?, string?, table?
-M.git_stash = require("fzf-lua.providers.git").stash ---@type fun(opts: fzf-lua.config.GitStash.p?): thread?, string?, table?
-M.git_status = require("fzf-lua.providers.git").status ---@type fun(opts: fzf-lua.config.GitStatus.p?): thread?, string?, table?
-M.git_tags = require("fzf-lua.providers.git").tags ---@type fun(opts: fzf-lua.config.GitTags.p?): thread?, string?, table?
-M.global = require("fzf-lua.providers.meta").global ---@type fun(opts: fzf-lua.config.Global.p?): thread?, string?, table?
-M.grep = require("fzf-lua.providers.grep").grep ---@type fun(opts: fzf-lua.config.Grep.p?): thread?, string?, table?
-M.grep_cWORD = require("fzf-lua.providers.grep").grep_cWORD ---@type fun(opts: fzf-lua.config.GrepCWORD.p?): thread?, string?, table?
-M.grep_curbuf = require("fzf-lua.providers.grep").grep_curbuf ---@type fun(opts: fzf-lua.config.GrepCurbuf.p?): thread?, string?, table?
-M.grep_cword = require("fzf-lua.providers.grep").grep_cword ---@type fun(opts: fzf-lua.config.GrepCword.p?): thread?, string?, table?
-M.grep_last = require("fzf-lua.providers.grep").grep_last ---@type fun(opts: fzf-lua.config.GrepLast.p?): thread?, string?, table?
-M.grep_loclist = require("fzf-lua.providers.grep").grep_loclist ---@type fun(opts: fzf-lua.config.GrepLoclist.p?): thread?, string?, table?
-M.grep_project = require("fzf-lua.providers.grep").grep_project ---@type fun(opts: fzf-lua.config.GrepProject.p?): thread?, string?, table?
-M.grep_quickfix = require("fzf-lua.providers.grep").grep_quickfix ---@type fun(opts: fzf-lua.config.GrepQuickfix.p?): thread?, string?, table?
-M.grep_visual = require("fzf-lua.providers.grep").grep_visual ---@type fun(opts: fzf-lua.config.GrepVisual.p?): thread?, string?, table?
-M.help_tags = require("fzf-lua.providers.helptags").helptags ---@type fun(opts: fzf-lua.config.HelpTags.p?): thread?, string?, table?
-M.helptags = require("fzf-lua.providers.helptags").helptags ---@type fun(opts: fzf-lua.config.HelpTags.p?): thread?, string?, table?
-M.highlights = require("fzf-lua.providers.colorschemes").highlights ---@type fun(opts: fzf-lua.config.Highlights.p?): thread?, string?, table?
-M.jumps = require("fzf-lua.providers.nvim").jumps ---@type fun(opts: fzf-lua.config.Jumps.p?): thread?, string?, table?
-M.keymaps = require("fzf-lua.providers.nvim").keymaps ---@type fun(opts: fzf-lua.config.Keymaps.p?): thread?, string?, table?
-M.lgrep_curbuf = require("fzf-lua.providers.grep").lgrep_curbuf ---@type fun(opts: fzf-lua.config.LgrepCurbuf.p?): thread?, string?, table?
-M.lgrep_loclist = require("fzf-lua.providers.grep").lgrep_loclist ---@type fun(opts: fzf-lua.config.LgrepLoclist.p?): thread?, string?, table?
-M.lgrep_quickfix = require("fzf-lua.providers.grep").lgrep_quickfix ---@type fun(opts: fzf-lua.config.LgrepQuickfix.p?): thread?, string?, table?
-M.lines = require("fzf-lua.providers.buffers").lines ---@type fun(opts: fzf-lua.config.Lines.p?): thread?, string?, table?
-M.live_grep = require("fzf-lua.providers.grep").live_grep ---@type fun(opts: fzf-lua.config.LiveGrep.p?): thread?, string?, table?
-M.live_grep_glob = require("fzf-lua.providers.grep").live_grep_glob ---@type fun(opts: fzf-lua.config.LiveGrepGlob.p?): thread?, string?, table?
-M.live_grep_native = require("fzf-lua.providers.grep").live_grep_native ---@type fun(opts: fzf-lua.config.LiveGrepNative.p?): thread?, string?, table?
-M.live_grep_resume = require("fzf-lua.providers.grep").live_grep_resume ---@type fun(opts: fzf-lua.config.LiveGrepResume.p?): thread?, string?, table?
-M.loclist = require("fzf-lua.providers.quickfix").loclist ---@type fun(opts: fzf-lua.config.Loclist.p?): thread?, string?, table?
-M.loclist_stack = require("fzf-lua.providers.quickfix").loclist_stack ---@type fun(opts: fzf-lua.config.LoclistStack.p?): thread?, string?, table?
-M.lsp_code_actions = require("fzf-lua.providers.lsp").code_actions ---@type fun(opts: fzf-lua.config.LspCodeActions.p?): thread?, string?, table?
-M.lsp_declarations = require("fzf-lua.providers.lsp").declarations ---@type fun(opts: fzf-lua.config.LspDeclarations.p?): thread?, string?, table?
-M.lsp_definitions = require("fzf-lua.providers.lsp").definitions ---@type fun(opts: fzf-lua.config.LspDefinitions.p?): thread?, string?, table?
-M.lsp_document_diagnostics = require("fzf-lua.providers.diagnostic").diagnostics ---@type fun(opts: fzf-lua.config.LspDocumentDiagnostics.p?): thread?, string?, table?
-M.lsp_document_symbols = require("fzf-lua.providers.lsp").document_symbols ---@type fun(opts: fzf-lua.config.LspDocumentSymbols.p?): thread?, string?, table?
-M.lsp_finder = require("fzf-lua.providers.lsp").finder ---@type fun(opts: fzf-lua.config.LspFinder.p?): thread?, string?, table?
-M.lsp_implementations = require("fzf-lua.providers.lsp").implementations ---@type fun(opts: fzf-lua.config.LspImplementations.p?): thread?, string?, table?
-M.lsp_incoming_calls = require("fzf-lua.providers.lsp").incoming_calls ---@type fun(opts: fzf-lua.config.LspIncomingCalls.p?): thread?, string?, table?
-M.lsp_live_workspace_symbols = require("fzf-lua.providers.lsp").live_workspace_symbols ---@type fun(opts: fzf-lua.config.LspLiveWorkspaceSymbols.p?): thread?, string?, table?
-M.lsp_outgoing_calls = require("fzf-lua.providers.lsp").outgoing_calls ---@type fun(opts: fzf-lua.config.LspOutgoingCalls.p?): thread?, string?, table?
-M.lsp_references = require("fzf-lua.providers.lsp").references ---@type fun(opts: fzf-lua.config.LspReferences.p?): thread?, string?, table?
-M.lsp_typedefs = require("fzf-lua.providers.lsp").typedefs ---@type fun(opts: fzf-lua.config.LspTypedefs.p?): thread?, string?, table?
-M.lsp_workspace_diagnostics = require("fzf-lua.providers.diagnostic").all ---@type fun(opts: fzf-lua.config.LspWorkspaceDiagnostics.p?): thread?, string?, table?
-M.lsp_workspace_symbols = require("fzf-lua.providers.lsp").workspace_symbols ---@type fun(opts: fzf-lua.config.LspWorkspaceSymbols.p?): thread?, string?, table?
-M.man_pages = require("fzf-lua.providers.manpages").manpages ---@type fun(opts: fzf-lua.config.ManPages.p?): thread?, string?, table?
-M.manpages = require("fzf-lua.providers.manpages").manpages ---@type fun(opts: fzf-lua.config.ManPages.p?): thread?, string?, table?
-M.marks = require("fzf-lua.providers.nvim").marks ---@type fun(opts: fzf-lua.config.Marks.p?): thread?, string?, table?
-M.menus = require("fzf-lua.providers.nvim").menus ---@type fun(opts: fzf-lua.config.Menus.p?): thread?, string?, table?
-M.nvim_options = require("fzf-lua.providers.nvim").nvim_options ---@type fun(opts: fzf-lua.config.NvimOptions.p?): thread?, string?, table?
-M.oldfiles = require("fzf-lua.providers.oldfiles").oldfiles ---@type fun(opts: fzf-lua.config.Oldfiles.p?): thread?, string?, table?
-M.packadd = require("fzf-lua.providers.nvim").packadd ---@type fun(opts: fzf-lua.config.Packadd.p?): thread?, string?, table?
-M.profiles = require("fzf-lua.providers.meta").profiles ---@type fun(opts: fzf-lua.config.Profiles.p?): thread?, string?, table?
-M.quickfix = require("fzf-lua.providers.quickfix").quickfix ---@type fun(opts: fzf-lua.config.Quickfix.p?): thread?, string?, table?
-M.quickfix_stack = require("fzf-lua.providers.quickfix").quickfix_stack ---@type fun(opts: fzf-lua.config.QuickfixStack.p?): thread?, string?, table?
+M.git_bcommits = require("fzf-lua.providers.git").bcommits
+M.git_blame = require("fzf-lua.providers.git").blame
+M.git_branches = require("fzf-lua.providers.git").branches
+M.git_commits = require("fzf-lua.providers.git").commits
+M.git_diff = require("fzf-lua.providers.git").diff
+M.git_files = require("fzf-lua.providers.git").files
+M.git_hunks = require("fzf-lua.providers.git").hunks
+M.git_stash = require("fzf-lua.providers.git").stash
+M.git_status = require("fzf-lua.providers.git").status
+M.git_tags = require("fzf-lua.providers.git").tags
+M.git_worktrees = require("fzf-lua.providers.git").worktrees
+M.global = require("fzf-lua.providers.meta").global
+M.grep = require("fzf-lua.providers.grep").grep
+M.grep_cWORD = require("fzf-lua.providers.grep").grep_cWORD
+M.grep_curbuf = require("fzf-lua.providers.grep").grep_curbuf
+M.grep_cword = require("fzf-lua.providers.grep").grep_cword
+M.grep_last = require("fzf-lua.providers.grep").grep_last
+M.grep_loclist = require("fzf-lua.providers.grep").grep_loclist
+M.grep_project = require("fzf-lua.providers.grep").grep_project
+M.grep_quickfix = require("fzf-lua.providers.grep").grep_quickfix
+M.grep_visual = require("fzf-lua.providers.grep").grep_visual
+M.help_tags = require("fzf-lua.providers.helptags").helptags
+M.helptags = require("fzf-lua.providers.helptags").helptags
+M.highlights = require("fzf-lua.providers.colorschemes").highlights
+M.jumps = require("fzf-lua.providers.nvim").jumps
+M.keymaps = require("fzf-lua.providers.nvim").keymaps
+M.lgrep_curbuf = require("fzf-lua.providers.grep").lgrep_curbuf
+M.lgrep_loclist = require("fzf-lua.providers.grep").lgrep_loclist
+M.lgrep_quickfix = require("fzf-lua.providers.grep").lgrep_quickfix
+M.lines = require("fzf-lua.providers.buffers").lines
+M.live_grep = require("fzf-lua.providers.grep").live_grep
+M.live_grep_glob = require("fzf-lua.providers.grep").live_grep_glob
+M.live_grep_native = require("fzf-lua.providers.grep").live_grep_native
+M.live_grep_resume = require("fzf-lua.providers.grep").live_grep_resume
+M.loclist = require("fzf-lua.providers.quickfix").loclist
+M.loclist_stack = require("fzf-lua.providers.quickfix").loclist_stack
+M.lsp_code_actions = require("fzf-lua.providers.lsp").code_actions
+M.lsp_declarations = require("fzf-lua.providers.lsp").declarations
+M.lsp_definitions = require("fzf-lua.providers.lsp").definitions
+M.lsp_document_diagnostics = require("fzf-lua.providers.diagnostic").diagnostics
+M.lsp_document_symbols = require("fzf-lua.providers.lsp").document_symbols
+M.lsp_finder = require("fzf-lua.providers.lsp").finder
+M.lsp_implementations = require("fzf-lua.providers.lsp").implementations
+M.lsp_incoming_calls = require("fzf-lua.providers.lsp").incoming_calls
+M.lsp_live_workspace_symbols = require("fzf-lua.providers.lsp").live_workspace_symbols
+M.lsp_outgoing_calls = require("fzf-lua.providers.lsp").outgoing_calls
+M.lsp_references = require("fzf-lua.providers.lsp").references
+M.lsp_type_sub = require("fzf-lua.providers.lsp").type_sub
+M.lsp_type_super = require("fzf-lua.providers.lsp").type_super
+M.lsp_typedefs = require("fzf-lua.providers.lsp").typedefs
+M.lsp_workspace_diagnostics = require("fzf-lua.providers.diagnostic").all
+M.lsp_workspace_symbols = require("fzf-lua.providers.lsp").workspace_symbols
+M.man_pages = require("fzf-lua.providers.manpages").manpages
+M.manpages = require("fzf-lua.providers.manpages").manpages
+M.marks = require("fzf-lua.providers.nvim").marks
+M.menus = require("fzf-lua.providers.nvim").menus
+M.nvim_options = require("fzf-lua.providers.nvim").nvim_options
+M.oldfiles = require("fzf-lua.providers.oldfiles").oldfiles
+M.packadd = require("fzf-lua.providers.nvim").packadd
+M.profiles = require("fzf-lua.providers.meta").profiles
+M.quickfix = require("fzf-lua.providers.quickfix").quickfix
+M.quickfix_stack = require("fzf-lua.providers.quickfix").quickfix_stack
 M.register_ui_select = require("fzf-lua.providers.ui_select").register
-M.registers = require("fzf-lua.providers.nvim").registers ---@type fun(opts: fzf-lua.config.Registers.p?): thread?, string?, table?
+M.registers = require("fzf-lua.providers.nvim").registers
 M.resume = require("fzf-lua.core").fzf_resume
-M.search_history = require("fzf-lua.providers.nvim").search_history ---@type fun(opts: fzf-lua.config.SearchHistory.p?): thread?, string?, table?
-M.serverlist = require("fzf-lua.providers.nvim").serverlist ---@type fun(opts: fzf-lua.config.Serverlist.p?): thread?, string?, table?
-M.spell_suggest = require("fzf-lua.providers.nvim").spell_suggest ---@type fun(opts: fzf-lua.config.SpellSuggest.p?): thread?, string?, table?
-M.spellcheck = require("fzf-lua.providers.buffers").spellcheck ---@type fun(opts: fzf-lua.config.Spellcheck.p?): thread?, string?, table?
-M.tabs = require("fzf-lua.providers.buffers").tabs ---@type fun(opts: fzf-lua.config.Tabs.p?): thread?, string?, table?
-M.tags = require("fzf-lua.providers.tags").tags ---@type fun(opts: fzf-lua.config.Tags.p?): thread?, string?, table?
-M.tags_grep = require("fzf-lua.providers.tags").grep ---@type fun(opts: fzf-lua.config.TagsGrep.p?): thread?, string?, table?
-M.tags_grep_cWORD = require("fzf-lua.providers.tags").grep_cWORD ---@type fun(opts: fzf-lua.config.TagsGrepCWORD.p?): thread?, string?, table?
-M.tags_grep_cword = require("fzf-lua.providers.tags").grep_cword ---@type fun(opts: fzf-lua.config.TagsGrepCword.p?): thread?, string?, table?
-M.tags_grep_visual = require("fzf-lua.providers.tags").grep_visual ---@type fun(opts: fzf-lua.config.TagsGrepVisual.p?): thread?, string?, table?
-M.tags_live_grep = require("fzf-lua.providers.tags").live_grep ---@type fun(opts: fzf-lua.config.TagsLiveGrep.p?): thread?, string?, table?
-M.tagstack = require("fzf-lua.providers.nvim").tagstack ---@type fun(opts: fzf-lua.config.Tagstack.p?): thread?, string?, table?
-M.tmux_buffers = require("fzf-lua.providers.tmux").buffers ---@type fun(opts: fzf-lua.config.TmuxBuffers.p?): thread?, string?, table?
-M.treesitter = require("fzf-lua.providers.buffers").treesitter ---@type fun(opts: fzf-lua.config.Treesitter.p?): thread?, string?, table?
-M.zoxide = require("fzf-lua.providers.files").zoxide ---@type fun(opts: fzf-lua.config.Zoxide.p?): thread?, string?, table?
+M.search_history = require("fzf-lua.providers.nvim").search_history
+M.serverlist = require("fzf-lua.providers.nvim").serverlist
+M.spell_suggest = require("fzf-lua.providers.nvim").spell_suggest
+M.spellcheck = require("fzf-lua.providers.buffers").spellcheck
+M.tabs = require("fzf-lua.providers.buffers").tabs
+M.tags = require("fzf-lua.providers.tags").tags
+M.tags_grep = require("fzf-lua.providers.tags").grep
+M.tags_grep_cWORD = require("fzf-lua.providers.tags").grep_cWORD
+M.tags_grep_cword = require("fzf-lua.providers.tags").grep_cword
+M.tags_grep_visual = require("fzf-lua.providers.tags").grep_visual
+M.tags_live_grep = require("fzf-lua.providers.tags").live_grep
+M.tagstack = require("fzf-lua.providers.nvim").tagstack
+M.tmux_buffers = require("fzf-lua.providers.tmux").buffers
+M.treesitter = require("fzf-lua.providers.buffers").treesitter
+M.zoxide = require("fzf-lua.providers.files").zoxide

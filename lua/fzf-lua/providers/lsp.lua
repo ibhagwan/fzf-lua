@@ -6,6 +6,7 @@ local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 local make_entry = require "fzf-lua.make_entry"
 
+---@class fzf-lua.Lsp
 local M = {}
 
 local function check_capabilities(handler, silent)
@@ -305,6 +306,7 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
   end
 end
 
+---@class fzf-lua.LspHandler
 local handlers = {
   ["code_actions"] = {
     label = "Code Actions",
@@ -630,7 +632,6 @@ local normalize_lsp_opts = function(opts, cfg, __resume_key)
 end
 
 local function fzf_lsp_locations(opts, fn_contents)
-  ---@type fzf-lua.config.Lsp
   opts = normalize_lsp_opts(opts, "lsp")
   if not opts then return end
   opts = core.set_fzf_field_index(opts)
@@ -643,30 +644,44 @@ local function fzf_lsp_locations(opts, fn_contents)
 end
 
 -- define the functions for wrap_module_fncs
+---@param opts fzf-lua.config.Lsp|{}?
+---@return thread?, string?, table?
 M.references = function(opts)
   return fzf_lsp_locations(opts, gen_lsp_contents)
 end
 
+---@param opts fzf-lua.config.Lsp|{}?
+---@return thread?, string?, table?
 M.definitions = function(opts)
   return fzf_lsp_locations(opts, gen_lsp_contents)
 end
 
+---@param opts fzf-lua.config.Lsp|{}?
+---@return thread?, string?, table?
 M.declarations = function(opts)
   return fzf_lsp_locations(opts, gen_lsp_contents)
 end
 
+---@param opts fzf-lua.config.Lsp|{}?
+---@return thread?, string?, table?
 M.typedefs = function(opts)
   return fzf_lsp_locations(opts, gen_lsp_contents)
 end
 
+---@param opts fzf-lua.config.Lsp|{}?
+---@return thread?, string?, table?
 M.implementations = function(opts)
   return fzf_lsp_locations(opts, gen_lsp_contents)
 end
 
+---@param opts fzf-lua.config.Lsp|{}?
+---@return thread?, string?, table?
 M.incoming_calls = function(opts)
   return fzf_lsp_locations(opts, gen_lsp_contents_hierarchy)
 end
 
+---@param opts fzf-lua.config.Lsp|{}?
+---@return thread?, string?, table?
 M.outgoing_calls = function(opts)
   return fzf_lsp_locations(opts, gen_lsp_contents_hierarchy)
 end
@@ -679,6 +694,8 @@ M.type_super = function(opts)
   return fzf_lsp_locations(opts, gen_lsp_contents_hierarchy)
 end
 
+---@param opts fzf-lua.config.LspFinder|{}?
+---@return thread?, string?, table?
 M.finder = function(opts)
   ---@type fzf-lua.config.LspFinder
   opts = normalize_lsp_opts(opts, "lsp.finder")
@@ -763,6 +780,8 @@ local function gen_sym2style_map(opts)
   end
 end
 
+---@param opts fzf-lua.config.LspDocumentSymbols|{}?
+---@return thread?, string?, table?
 M.document_symbols = function(opts)
   ---@type fzf-lua.config.LspDocumentSymbols
   opts = normalize_lsp_opts(opts, "lsp.document_symbols")
@@ -782,6 +801,8 @@ M.document_symbols = function(opts)
   return core.fzf_exec(opts.__contents, opts)
 end
 
+---@param opts fzf-lua.config.LspWorkspaceSymbols|{}?
+---@return thread?, string?, table?
 M.workspace_symbols = function(opts)
   ---@type fzf-lua.config.LspWorkspaceSymbols
   opts = normalize_lsp_opts(opts, "lsp.workspace_symbols")
@@ -808,8 +829,10 @@ M.workspace_symbols = function(opts)
 end
 
 
+---@param opts fzf-lua.config.LspWorkspaceSymbols|{}?
+---@return thread?, string?, table?
 M.live_workspace_symbols = function(opts)
-  ---@type fzf-lua.config.LspLiveWorkspaceSymbols
+  ---@type fzf-lua.config.LspWorkspaceSymbols
   opts = normalize_lsp_opts(opts, "lsp.workspace_symbols")
   if not opts then return end
 
@@ -867,6 +890,8 @@ M.live_workspace_symbols = function(opts)
   end, opts)
 end
 
+---@param opts fzf-lua.config.LspCodeActions|{}?
+---@return thread?, string?, table?
 M.code_actions = function(opts)
   ---@type fzf-lua.config.LspCodeActions
   opts = normalize_lsp_opts(opts, "lsp.code_actions")
@@ -922,7 +947,8 @@ local function wrap_fn(key, fn)
   end
 end
 
-return setmetatable({}, {
+---@type fzf-lua.Lsp
+local _ = setmetatable({}, {
   __index = function(_, key)
     if handlers[key] then
       return wrap_fn(key, M[key])
@@ -931,3 +957,4 @@ return setmetatable({}, {
     end
   end
 })
+return _

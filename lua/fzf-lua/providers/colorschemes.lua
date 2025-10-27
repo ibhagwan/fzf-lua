@@ -19,6 +19,8 @@ end
 
 local M = {}
 
+---@param opts fzf-lua.config.Colorschemes|{}?
+---@return thread?, string?, table?
 M.colorschemes = function(opts)
   ---@type fzf-lua.config.Colorschemes
   opts = config.normalize_opts(opts, "colorschemes")
@@ -87,6 +89,8 @@ M.colorschemes = function(opts)
   return core.fzf_exec(colors, opts)
 end
 
+---@param opts fzf-lua.config.Highlights|{}?
+---@return thread?, string?, table?
 M.highlights = function(opts)
   ---@type fzf-lua.config.Highlights
   opts = config.normalize_opts(opts, "highlights")
@@ -369,6 +373,8 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
   end
 end
 
+---@param opts fzf-lua.config.AwesomeColorschemes|{}?
+---@return thread?, string?, table?
 M.awesome_colorschemes = function(opts)
   ---@type fzf-lua.config.AwesomeColorschemes
   opts = config.normalize_opts(opts, "awesome_colorschemes")

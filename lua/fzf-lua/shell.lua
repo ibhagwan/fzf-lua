@@ -187,11 +187,11 @@ end
 -- config over RPC, if the command doesn't require any processing it will be piped
 -- directly to fzf using $FZF_DEFAULT_COMMAND
 ---@param contents fzf-lua.content|fzf-lua.shell.data2
----@param opts fzf-lua.config.Base|{}
+---@param opts fzf-lua.config.Resolved|{}
 ---@return string?
 M.stringify_mt = function(contents, opts)
   if opts.multiprocess == false then return end
-  ---@param o fzf-lua.config.Base|{}
+  ---@param o fzf-lua.config.Resolved|{}
   ---@return table
   local filter_opts = function(o)
     local names = {
@@ -439,7 +439,7 @@ end
 ---@alias fzf-lua.shell.cmdSpec string|{ cmd: string|string[], env: table? }?
 ---@alias fzf-lua.shell.cmd fun(items: string[], fzf_lines: integer, fzf_columns: integer): fzf-lua.shell.cmdSpec
 ---@alias fzf-lua.shell.data fun(items: string[], fzf_lines: integer, fzf_columns: integer): fzf-lua.content?
----@alias fzf-lua.shell.data2 fun(items: string[], opts: table): fzf-lua.content?
+---@alias fzf-lua.shell.data2 fun(items: string[], opts: fzf-lua.config.Resolved): fzf-lua.content?
 
 ---@param fn fzf-lua.shell.cmd
 ---@param opts table
