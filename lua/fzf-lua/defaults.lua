@@ -280,7 +280,7 @@ M.defaults        = {
         from = function(s, _)
           s = s:gsub("\xc2\xa0     .*$", "") -- gsub v2 postfix
           local parts = utils.strsplit(s, utils.nbsp)
-          local last = parts[#parts]
+          local last = parts[#parts] ---@type string
           -- Lines from grep, lsp, tags are formatted <file>:<line>:<col>:<text>
           -- the pattern below makes sure tab doesn't come from the line text
           local filename, rest = last:match("^([^:]-)\t(.+)$")
@@ -675,7 +675,7 @@ M.defaults.grep                  = {
 }
 
 ---@diagnostic disable-next-line: assign-type-mismatch
----@class fzf-lua.config.GrepCurbuf: fzf-lua.config.Grep
+---@class fzf-lua.config.GrepCurbuf: fzf-lua.config.Grep,{}
 ---@field filename? string
 M.defaults.grep_curbuf           = vim.tbl_deep_extend("force", M.defaults.grep, {
   rg_glob          = false, -- meaningless for single file rg
@@ -1287,7 +1287,7 @@ M.defaults.lsp.code_actions      = {
 
 ---@class fzf-lua.config.Diagnostics: fzf-lua.config.Base
 ---@field signs? table
----@field severity_only? boolean
+---@field severity_only? vim.diagnostic.SeverityFilter
 ---@field severity_limit? "string"|1|2|3|4
 ---@field severity_bound? "string"|1|2|3|4
 ---@field namespace? integer
@@ -1496,7 +1496,7 @@ M.defaults.spell_suggest         = {
     height   = 0.40,
     width    = 0.30,
   },
-  actions = { ---@type fzf-lua.config.Actions
+  actions = {
     ["enter"] = actions.complete,
   },
 }
@@ -1507,7 +1507,7 @@ M.defaults.serverlist            = {
   previewer = { _ctor = previewers.fzf.nvim_server },
   _resume_reload = true, -- avoid list contain killed server unhide
   keymap = { fzf = { resize = "refresh-preview" } },
-  actions = { ---@type fzf-lua.config.Actions
+  actions = {
     ["enter"] = actions.serverlist_connect,
     ["ctrl-o"] = { fn = actions.serverlist_spawn, reload = true },
     ["ctrl-x"] = { fn = actions.serverlist_kill, reload = true },
@@ -1523,14 +1523,14 @@ M.defaults.filetypes         = {
 
 ---@class fzf-lua.config.Packadd : fzf-lua.config.Base
 M.defaults.packadd           = {
-  actions = { ---@type fzf-lua.config.Actions
+  actions = {
     ["enter"] = actions.packadd,
   },
 }
 
 ---@class fzf-lua.config.Menus : fzf-lua.config.Base
 M.defaults.menus             = {
-  actions = { ---@type fzf-lua.config.Actions
+  actions = {
     ["enter"] = actions.exec_menu,
   },
 }
