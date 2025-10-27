@@ -3,6 +3,7 @@ if gen then
   vim.opt.rtp:append(vim.fn.fnamemodify(debug.getinfo(1, "S").source:gsub("^@", ""), ":h:h:h:p"))
 end
 
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -21,8 +22,8 @@ do
   end
 
   local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
-  vim.g.fzf_lua_directory = path.normalize(path.parent(currFile))
-  vim.g.fzf_lua_root = path.parent(path.parent(vim.g.fzf_lua_directory))
+  vim.g.fzf_lua_directory = path.normalize(assert(path.parent(currFile)))
+  vim.g.fzf_lua_root = path.parent(assert(path.parent(vim.g.fzf_lua_directory)))
 
   -- Autoload scipts dynamically loaded on `vim.fn[fzf_lua#...]` call
   -- `vim.fn.exists("*fzf_lua#...")` will return 0 unless we manuall source
@@ -465,9 +466,7 @@ if gen then
     io.stdout:write(([[M.%s = require(%q).%s]] .. "\n"):format(k, v[1], v[2]))
   end
 end
-lazyloaded_modules = nil
-exported_modules = nil
-do return M end
+if true then return M end
 ---@format disable
 M.win = require("fzf-lua.win")
 M.core = require("fzf-lua.core")

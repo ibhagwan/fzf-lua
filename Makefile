@@ -41,10 +41,17 @@ deps:
 	git clone --depth=1 --single-branch https://github.com/nvim-mini/mini.nvim deps/mini.nvim
 	git clone --depth=1 --single-branch https://github.com/nvim-tree/nvim-web-devicons deps/nvim-web-devicons
 	git clone --depth=1 --single-branch https://github.com/hrsh7th/nvim-cmp deps/nvim-cmp
+	git clone --depth=1 --single-branch https://github.com/mfussenegger/nvim-dap.git deps/nvim-dap
 
 .PHONY: lint
 lint:
 	VIMRUNTIME="$$(nvim --clean --headless +'echo $$VIMRUNTIME' +q 2>&1)" lua-language-server --configpath=../.luarc.jsonc --check=.
+
+.PHONY: emmylua-check
+emmylua-check:
+	VIMRUNTIME="$$(nvim --clean --headless +'echo $$VIMRUNTIME' +q 2>&1)" \
+		emmylua_check . \
+			--ignore 'deps/**/*'
 
 gen:
 	2>/dev/null nvim --clean --headless -ni NONE  +'/@format disable/+1,$$d' +'read !nvim --clean -l lua/fzf-lua/init.lua' +wq lua/fzf-lua/init.lua
