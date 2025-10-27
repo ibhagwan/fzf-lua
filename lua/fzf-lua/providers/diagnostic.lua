@@ -31,6 +31,8 @@ local filter_diag_severity = function(opts, severity)
   end
 end
 
+---@param opts fzf-lua.config.Diagnostics|{}?
+---@return (thread|table)?, string?, table?
 M.diagnostics = function(opts)
   ---@type fzf-lua.config.Diagnostics
   opts = config.normalize_opts(opts, "diagnostics")
@@ -264,6 +266,8 @@ M.diagnostics = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Diagnostics|{}?
+---@return thread?, string?, table?
 M.all = function(opts)
   if not opts then opts = {} end
   opts.diag_all = true

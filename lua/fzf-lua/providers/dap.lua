@@ -22,6 +22,8 @@ local function dap()
   return true
 end
 
+---@param opts fzf-lua.config.DapCommands|{}?
+---@return thread?, string?, table?
 M.commands = function(opts)
   if not dap() then return end
 
@@ -45,6 +47,8 @@ M.commands = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.DapConfigurations|{}?
+---@return thread?, string?, table?
 M.configurations = function(opts)
   if not dap() then return end
 
@@ -79,6 +83,8 @@ M.configurations = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.DapBreakpoints|{}?
+---@return thread?, string?, table?
 M.breakpoints = function(opts)
   ---@type fzf-lua.config.DapBreakpoints
   opts = config.normalize_opts(opts, "dap.breakpoints")
@@ -121,6 +127,8 @@ M.breakpoints = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.DapVariables|{}?
+---@return thread?, string?, table?
 M.variables = function(opts)
   if not dap() then return end
 
@@ -153,6 +161,8 @@ M.variables = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.DapFrames|{}?
+---@return thread?, string?, table?
 M.frames = function(opts)
   if not dap() then return end
 

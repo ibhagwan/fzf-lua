@@ -7,6 +7,8 @@ local devicons = require "fzf-lua.devicons"
 
 local M = {}
 
+---@param opts fzf-lua.config.Commands|{}?
+---@return thread?, string?, table?
 M.commands = function(opts)
   ---@type fzf-lua.config.Commands
   opts = config.normalize_opts(opts, "commands")
@@ -136,6 +138,8 @@ local history = function(opts, str)
   core.fzf_exec(content, opts)
 end
 
+---@param opts fzf-lua.config.CommandHistory|{}?
+---@return thread?, string?, table?
 M.command_history = function(opts)
   ---@type fzf-lua.config.CommandHistory
   opts = config.normalize_opts(opts, "command_history")
@@ -143,6 +147,8 @@ M.command_history = function(opts)
   history(opts, ":")
 end
 
+---@param opts fzf-lua.config.SearchHistory|{}?
+---@return thread?, string?, table?
 M.search_history = function(opts)
   ---@type fzf-lua.config.SearchHistory
   opts = config.normalize_opts(opts, "search_history")
@@ -150,6 +156,8 @@ M.search_history = function(opts)
   history(opts, "/")
 end
 
+---@param opts fzf-lua.config.Changes|{}?
+---@return thread?, string?, table?
 M.changes = function(opts)
   ---@type fzf-lua.config.Changes
   opts = config.normalize_opts(opts, "changes")
@@ -157,6 +165,8 @@ M.changes = function(opts)
   return M.changes_or_jumps(opts)
 end
 
+---@param opts fzf-lua.config.Jumps|{}?
+---@return thread?, string?, table?
 M.jumps = function(opts)
   ---@type fzf-lua.config.Jumps
   opts = config.normalize_opts(opts, "jumps")
@@ -190,6 +200,8 @@ M.changes_or_jumps = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.Tagstack|{}?
+---@return thread?, string?, table?
 M.tagstack = function(opts)
   ---@type fzf-lua.config.Tagstack
   opts = config.normalize_opts(opts, "tagstack")
@@ -245,6 +257,8 @@ M.tagstack = function(opts)
 end
 
 
+---@param opts fzf-lua.config.Marks|{}?
+---@return thread?, string?, table?
 M.marks = function(opts)
   ---@type fzf-lua.config.Marks
   opts = config.normalize_opts(opts, "marks")
@@ -312,6 +326,8 @@ M.marks = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Registers|{}?
+---@return thread?, string?, table?
 M.registers = function(opts)
   ---@type fzf-lua.config.Registers
   opts = config.normalize_opts(opts, "registers")
@@ -387,6 +403,8 @@ M.registers = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.Keymaps|{}?
+---@return thread?, string?, table?
 M.keymaps = function(opts)
   ---@type fzf-lua.config.Keymaps
   opts = config.normalize_opts(opts, "keymaps")
@@ -476,6 +494,8 @@ M.keymaps = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.NvimOptions|{}?
+---@return thread?, string?, table?
 M.nvim_options = function(opts)
   ---@type fzf-lua.config.NvimOptions
   opts = config.normalize_opts(opts, "nvim_options")
@@ -553,6 +573,8 @@ M.nvim_options = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.SpellSuggest|{}?
+---@return thread?, string?, table?
 M.spell_suggest = function(opts)
   ---@type fzf-lua.config.SpellSuggest
   opts = config.normalize_opts(opts, "spell_suggest")
@@ -587,6 +609,8 @@ M.spell_suggest = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.Filetypes|{}?
+---@return thread?, string?, table?
 M.filetypes = function(opts)
   ---@type fzf-lua.config.Filetypes
   opts = config.normalize_opts(opts, "filetypes")
@@ -607,6 +631,8 @@ M.filetypes = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.Packadd|{}?
+---@return thread?, string?, table?
 M.packadd = function(opts)
   ---@type fzf-lua.config.Packadd
   opts = config.normalize_opts(opts, "packadd")
@@ -618,6 +644,8 @@ M.packadd = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.Menus|{}?
+---@return thread?, string?, table?
 M.menus = function(opts)
   ---@type fzf-lua.config.Menus
   opts = config.normalize_opts(opts, "menus")
@@ -651,6 +679,8 @@ M.menus = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.Autocmds|{}?
+---@return thread?, string?, table?
 M.autocmds = function(opts)
   ---@type fzf-lua.config.Autocmds
   opts = config.normalize_opts(opts, "autocmds")
@@ -733,6 +763,8 @@ M.autocmds = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Serverlist|{}?
+---@return thread?, string?, table?
 M.serverlist = function(opts)
   local function serverlist(listed)
     local root = vim.fs.normalize(vim.fn.stdpath("run") .. "/..")
