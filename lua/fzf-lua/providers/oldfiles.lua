@@ -6,6 +6,8 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+---@param opts fzf-lua.config.Oldfiles|{}?
+---@return thread?, string?, table?
 M.oldfiles = function(opts)
   ---@type fzf-lua.config.Oldfiles
   opts = config.normalize_opts(opts, "oldfiles")

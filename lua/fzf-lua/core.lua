@@ -151,6 +151,7 @@ end
 ---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
   assert(contents, "must supply contents")
+  ---@type fzf-lua.config.Resolved|{}
   opts = config.normalize_opts(opts or {}, {})
   if not opts then return end
   if type(contents) == "table" and type(contents[1]) == "table" then
@@ -206,6 +207,7 @@ end
 M.fzf_live = function(contents, opts)
   opts = opts or {}
   opts.is_live = true
+  ---@type fzf-lua.config.Resolved|{}
   opts = config.normalize_opts(opts, {})
   if not opts then return end
   local fzf_field_index = M.fzf_field_index(opts)
@@ -292,6 +294,7 @@ M.fzf = function(contents, opts)
     return nil, nil
   end
   -- normalize with globals if not already normalized
+  ---@type fzf-lua.config.Resolved|{}
   opts = config.normalize_opts(opts or {}, {})
   if not opts then return nil, nil end
   -- Store contents for unhide

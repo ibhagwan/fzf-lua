@@ -40,9 +40,8 @@ function M._man_cmd_fn(bat_pager)
 end
 
 ---missing fields are injected later, not sure how to tell luals about it
----@diagnostic disable: missing-fields
----@type fzf-lua.config.Defaults
-M.defaults                       = {
+---@type fzf-lua.config.Defaults|{}
+M.defaults        = {
   nbsp          = utils.nbsp,
   winopts       = {
     height     = 0.85,
@@ -332,12 +331,17 @@ M.defaults                       = {
   },
 }
 
-M.defaults.files                 = {
+---@class fzf-lua.config.Files: fzf-lua.config.Base
+---@field cmd? string -- default: auto detect find|fd
+---@field ignore_current_file? boolean
+---@field file_ignore_patterns? string[]
+---@field line_query? boolean|fun(query: string): lnum: string?, new_query: string?
+---@field raw_cmd? string
+M.defaults.files  = {
   previewer              = M._default_previewer_fn,
-  cmd                    = nil, -- default: auto detect find|fd
-  multiprocess           = 1,
+  multiprocess           = 1, ---@type integer|boolean
   _type                  = "file",
-  file_icons             = 1,
+  file_icons             = 1, ---@type integer|boolean
   color_icons            = true,
   git_icons              = false,
   cwd_prompt             = true,
@@ -360,8 +364,11 @@ M.defaults.files                 = {
   winopts                = { preview = { winopts = { cursorline = false } } },
 }
 
----@diagnostic disable-next-line: assign-type-mismatch
-M.defaults.global                = vim.tbl_deep_extend("force", M.defaults.files, {
+---@diagnostic disable-next-line: param-type-mismatch
+---@class fzf-lua.config.Global : fzf-lua.config.Files
+---@field pickers (fun():table)|table
+---@field __alt_opts? boolean
+M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
   silent            = true,
   -- TODO: lsp_workspace_symbols locate, not working yet
   -- as opts.__locate_pos is inside the symbols picker opts
@@ -418,15 +425,32 @@ M.defaults.global                = vim.tbl_deep_extend("force", M.defaults.files
   _fzf_nth_devicons = false,
 })
 
+
+---@class fzf-lua.config.GitBase: fzf-lua.config.Base
+---@field git_dir? string
+
+---@class fzf-lua.config.Git
+---@field files     fzf-lua.config.GitFiles
+---@field status    fzf-lua.config.GitStatus
+---@field diff      fzf-lua.config.GitDiff
+---@field hunks     fzf-lua.config.GitHunks
+---@field commits   fzf-lua.config.GitCommits
+---@field bcommits  fzf-lua.config.GitBcommits
+---@field blame     fzf-lua.config.GitBlame
+---@field branches  fzf-lua.config.GitBranches
+---@field worktrees fzf-lua.config.GitWorktrees
+---@field tags      fzf-lua.config.GitTags
+---@field stash     fzf-lua.config.GitStash
 -- Must construct our opts table in stages
 -- so we can reference 'M.globals.files'
 M.defaults.git                   = {
+  ---@class fzf-lua.config.GitFiles: fzf-lua.config.Base
   files = {
     previewer         = M._default_previewer_fn,
     cmd               = "git ls-files --exclude-standard",
-    multiprocess      = 1,
+    multiprocess      = 1, ---@type integer|boolean
     _type             = "file",
-    file_icons        = 1,
+    file_icons        = 1, ---@type integer|boolean
     color_icons       = true,
     git_icons         = true,
     fzf_opts          = { ["--multi"] = true, ["--scheme"] = "path" },
@@ -435,15 +459,16 @@ M.defaults.git                   = {
     _headers          = { "cwd" },
     winopts           = { preview = { winopts = { cursorline = false } } },
   },
+  ---@class fzf-lua.config.GitStatus: fzf-lua.config.Base
   status = {
     -- override `color.status=always`, technically not required
     -- since we now also call `utils.strip_ansi_coloring` (#706)
     cmd               = "git -c color.status=false --no-optional-locks status --porcelain=v1 -u",
     previewer         = "git_diff",
-    multiprocess      = true,
+    multiprocess      = true, ---@type integer|boolean
     fn_transform      = [[return require("fzf-lua.make_entry").git_status]],
     fn_preprocess     = [[return require("fzf-lua.make_entry").preprocess]],
-    file_icons        = 1,
+    file_icons        = 1, ---@type integer|boolean
     color_icons       = true,
     fzf_opts          = { ["--multi"] = true },
     _fzf_nth_devicons = true,
@@ -458,28 +483,30 @@ M.defaults.git                   = {
       -- ["ctrl-s"] = { actions.git_stage_unstage, actions.resume },
     },
   },
+  ---@class fzf-lua.config.GitDiff: fzf-lua.config.GitBase
   diff = {
     cmd               = "git --no-pager diff --name-only {ref}",
     ref               = "HEAD",
     preview           = "git diff {ref} {file}",
     preview_pager     = M._preview_pager_fn,
-    multiprocess      = 1,
+    multiprocess      = 1, ---@type integer|boolean
     _type             = "file",
-    file_icons        = 1,
+    file_icons        = 1, ---@type integer|boolean
     color_icons       = true,
     fzf_opts          = { ["--multi"] = true },
     _fzf_nth_devicons = true,
     _actions          = function() return M.globals.actions.files end,
     _headers          = { "cwd" },
   },
+  ---@class fzf-lua.config.GitHunks: fzf-lua.config.GitBase
   hunks = {
     previewer         = M._default_previewer_fn,
     cmd               = "git --no-pager diff --color=always {ref}",
     ref               = "HEAD",
-    multiprocess      = true,
+    multiprocess      = true, ---@type integer|boolean
     fn_transform      = [[return require("fzf-lua.make_entry").git_hunk]],
     fn_preprocess     = [[return require("fzf-lua.make_entry").preprocess]],
-    file_icons        = 1,
+    file_icons        = 1, ---@type integer|boolean
     color_icons       = true,
     fzf_opts          = {
       ["--multi"] = true,
@@ -490,6 +517,7 @@ M.defaults.git                   = {
     _actions          = function() return M.globals.actions.files end,
     _headers          = { "cwd" },
   },
+  ---@class fzf-lua.config.GitCommits: fzf-lua.config.GitBase
   commits = {
     cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
         .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
@@ -503,6 +531,7 @@ M.defaults.git                   = {
     _headers      = { "actions", "cwd" },
     _multiline    = false,
   },
+  ---@class fzf-lua.config.GitBcommits: fzf-lua.config.GitBase
   bcommits = {
     cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
         .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" -- {file}]],
@@ -519,6 +548,7 @@ M.defaults.git                   = {
     _headers      = { "actions", "cwd" },
     _multiline    = false,
   },
+  ---@class fzf-lua.config.GitBlame: fzf-lua.config.GitBase
   blame = {
     cmd           = [[git blame --color-lines {file}]],
     preview       = "git show --color {1} -- {file}",
@@ -535,6 +565,7 @@ M.defaults.git                   = {
     -- `winopts.treesitter==true` line match format
     _treesitter   = function(line) return line:match("(%s+)(%d+)%)(.+)$") end,
   },
+  ---@class fzf-lua.config.GitBranches: fzf-lua.config.GitBase
   branches = {
     cmd        = [[git branch --all --color -vv ]]
         .. [[--sort=-'committerdate' --sort='refname:rstrip=-2' --sort=-'HEAD']],
@@ -551,6 +582,7 @@ M.defaults.git                   = {
     _headers   = { "actions", "cwd" },
     _multiline = false,
   },
+  ---@class fzf-lua.config.GitWorktrees: fzf-lua.config.GitBase
   worktrees = {
     scope      = "global", -- cd action scope "local|win|tab"
     cmd        = "git worktree list",
@@ -565,6 +597,7 @@ M.defaults.git                   = {
     _headers   = { "actions", "cwd" },
     _multiline = false,
   },
+  ---@class fzf-lua.config.GitTags: fzf-lua.config.GitBase
   tags = {
     cmd        = [[git for-each-ref --color --sort="-taggerdate" --format ]]
         .. [["%(color:yellow)%(refname:short)%(color:reset) ]]
@@ -577,6 +610,7 @@ M.defaults.git                   = {
     _headers   = { "cwd" },
     _multiline = false,
   },
+  ---@class fzf-lua.config.GitStash: fzf-lua.config.GitBase
   stash = {
     cmd           = "git --no-pager stash list",
     preview       = "git --no-pager stash show --patch --color {1}",
@@ -605,13 +639,21 @@ M.defaults.git                   = {
   },
 }
 
+---@class fzf-lua.config.Grep: fzf-lua.config.Base
+---@field cmd? string default: auto detect rg|grep
+---@field rg_glob? boolean|integer
+---@field raw_cmd? string
+---@field search? string
+---@field no_esc? integer|boolean
+---@field lgrep? boolean grep or lgrep
+---@field __resume_set? function
+---@field __resume_get? function
 M.defaults.grep                  = {
   previewer      = M._default_previewer_fn,
   input_prompt   = "Grep For> ",
-  cmd            = nil, -- default: auto detect rg|grep
-  multiprocess   = 1,
+  multiprocess   = 1, ---@type integer|boolean
   _type          = "file",
-  file_icons     = 1,
+  file_icons     = 1, ---@type integer|boolean
   color_icons    = true,
   git_icons      = false,
   fzf_opts       = { ["--multi"] = true },
@@ -633,6 +675,8 @@ M.defaults.grep                  = {
 }
 
 ---@diagnostic disable-next-line: assign-type-mismatch
+---@class fzf-lua.config.GrepCurbuf: fzf-lua.config.Grep
+---@field filename? string
 M.defaults.grep_curbuf           = vim.tbl_deep_extend("force", M.defaults.grep, {
   rg_glob          = false, -- meaningless for single file rg
   exec_empty_query = true,  -- makes sense to display lines immediately
@@ -643,10 +687,11 @@ M.defaults.grep_curbuf           = vim.tbl_deep_extend("force", M.defaults.grep,
   },
 })
 
+---@class fzf-lua.config.Args: fzf-lua.config.Base
 M.defaults.args                  = {
   previewer         = M._default_previewer_fn,
   files_only        = true,
-  file_icons        = 1,
+  file_icons        = 1, ---@type integer|boolean
   color_icons       = true,
   git_icons         = false,
   fzf_opts          = { ["--multi"] = true, ["--scheme"] = "path" },
@@ -656,9 +701,12 @@ M.defaults.args                  = {
   _headers          = { "actions", "cwd" },
 }
 
+---@class fzf-lua.config.Oldfiles: fzf-lua.config.Base
+---@field stat_file? boolean
+---@field include_current_session? boolean
 M.defaults.oldfiles              = {
   previewer         = M._default_previewer_fn,
-  file_icons        = 1,
+  file_icons        = 1, ---@type integer|boolean
   color_icons       = true,
   git_icons         = false,
   stat_file         = true,
@@ -668,10 +716,13 @@ M.defaults.oldfiles              = {
   _headers          = { "cwd" },
 }
 
+---@class fzf-lua.config.Quickfix: fzf-lua.config.Base
+---@field separator string
+---@field valid_only boolean
 M.defaults.quickfix              = {
   previewer   = M._default_previewer_fn,
   separator   = "▏",
-  file_icons  = 1,
+  file_icons  = 1, ---@type integer|boolean
   color_icons = true,
   git_icons   = false,
   valid_only  = false,
@@ -687,6 +738,8 @@ M.defaults.quickfix              = {
   _headers    = { "actions", "cwd" },
 }
 
+---@class fzf-lua.config.QuickfixStack: fzf-lua.config.Base
+---@field marker string
 M.defaults.quickfix_stack        = {
   marker    = ">",
   previewer = { _ctor = previewers.builtin.quickfix, },
@@ -694,10 +747,12 @@ M.defaults.quickfix_stack        = {
   actions   = { ["enter"] = actions.set_qflist, },
 }
 
+---@class fzf-lua.config.Loclist : fzf-lua.config.Quickfix: fzf-lua.config.Base
+---@field is_loclist true
 M.defaults.loclist               = {
   previewer   = M._default_previewer_fn,
   separator   = "▏",
-  file_icons  = 1,
+  file_icons  = 1, ---@type integer|boolean
   color_icons = true,
   git_icons   = false,
   valid_only  = false,
@@ -713,6 +768,8 @@ M.defaults.loclist               = {
   _headers    = { "actions", "cwd" },
 }
 
+---@class fzf-lua.config.LoclistStack : fzf-lua.config.QuickfixStack: fzf-lua.config.Base
+---@field is_loclist true
 M.defaults.loclist_stack         = {
   marker    = ">",
   previewer = { _ctor = previewers.builtin.quickfix, },
@@ -720,10 +777,13 @@ M.defaults.loclist_stack         = {
   actions   = { ["enter"] = actions.set_qflist, },
 }
 
+---@class fzf-lua.config.Buffers: fzf-lua.config.BufferLines
+---@field filename_only? boolean
+---@field cwd? string
 M.defaults.buffers               = {
   _type                 = "file",
   previewer             = M._default_previewer_fn,
-  file_icons            = 1,
+  file_icons            = 1, ---@type integer|boolean
   color_icons           = true,
   sort_lastused         = true,
   show_unloaded         = true,
@@ -743,13 +803,17 @@ M.defaults.buffers               = {
   _resume_reload        = true,
 }
 
+---@class fzf-lua.config.Tabs: fzf-lua.config.BufferLines
+---@field filename_only? boolean
+---@field __locate_pos? integer
+---@field current_tab_only? boolean
 M.defaults.tabs                  = {
   _type          = "file",
   previewer      = M._default_previewer_fn,
   tab_title      = "Tab",
   tab_marker     = "<<",
   locate         = true,
-  file_icons     = 1,
+  file_icons     = 1, ---@type integer|boolean
   color_icons    = true,
   _actions       = function()
     return M.globals.actions.buffers or M.globals.actions.files
@@ -770,9 +834,10 @@ M.defaults.tabs                  = {
   _resume_reload = true,
 }
 
+---@class fzf-lua.config.Lines: fzf-lua.config.BufferLines
 M.defaults.lines                 = {
   previewer        = M._default_previewer_fn,
-  file_icons       = 1,
+  file_icons       = 1, ---@type integer|boolean
   color_icons      = true,
   show_bufname     = 120,
   show_unloaded    = true,
@@ -811,6 +876,7 @@ M.defaults.lines                 = {
 }
 
 ---@diagnostic disable-next-line: assign-type-mismatch
+---@class fzf-lua.config.Blines: fzf-lua.config.Lines
 M.defaults.blines                = vim.tbl_deep_extend("force", M.defaults.lines, {
   show_bufname    = false,
   show_unloaded   = true,
@@ -823,9 +889,11 @@ M.defaults.blines                = vim.tbl_deep_extend("force", M.defaults.lines
   _resume_reload  = true,
 })
 
+---@class fzf-lua.config.Treesitter: fzf-lua.config.Base
+---@field bufnr? integer
 M.defaults.treesitter            = {
   previewer        = M._default_previewer_fn,
-  file_icons       = false,
+  file_icons       = false, ---@type integer|boolean
   color_icons      = false,
   fzf_opts         = {
     ["--multi"]     = true,
@@ -846,6 +914,9 @@ M.defaults.treesitter            = {
   },
 }
 
+---@class fzf-lua.config.Spellcheck: fzf-lua.config.BufferLines
+---@field word_separator string
+---@field bufnr? integer
 M.defaults.spellcheck            = {
   previewer        = M._default_previewer_fn,
   file_icons       = false,
@@ -874,16 +945,20 @@ M.defaults.spellcheck            = {
   },
 }
 
+---@class fzf-lua.config.TagsBase: fzf-lua.config.Base
+---@field ctags_file? string auto-detect
+---@field cmd? string
+---@class fzf-lua.config.Tags: fzf-lua.config.TagsBase
+---@class fzf-lua.config.TagsGrep: fzf-lua.config.TagsBase,fzf-lua.config.Grep
 M.defaults.tags                  = {
   previewer     = { _ctor = previewers.builtin.tags },
   input_prompt  = "[tags] Grep For> ",
-  ctags_file    = nil, -- auto-detect
   rg_opts       = "--no-heading --color=always --smart-case",
   grep_opts     = "--color=auto --perl-regexp",
-  multiprocess  = true,
+  multiprocess  = true, ---@type integer|boolean
   fn_transform  = [[return require("fzf-lua.make_entry").tag]],
   fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]],
-  file_icons    = 1,
+  file_icons    = 1, ---@type integer|boolean
   git_icons     = false,
   color_icons   = true,
   fzf_opts      = {
@@ -896,15 +971,20 @@ M.defaults.tags                  = {
   formatter     = false,
 }
 
+---@class fzf-lua.config.Btags : fzf-lua.config.TagsBase
+---@field filename? string
+---@field _btags_cmd? string
+---@field ctags_bin? string
+---@field ctags_args? string
 M.defaults.btags                 = {
   previewer     = { _ctor = previewers.builtin.tags },
   ctags_file    = nil, -- auto-detect
   rg_opts       = "--color=never --no-heading",
   grep_opts     = "--color=never --perl-regexp",
-  multiprocess  = true,
+  multiprocess  = true, ---@type integer|boolean
   fn_transform  = [[return require("fzf-lua.make_entry").tag]],
   fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]],
-  file_icons    = false,
+  file_icons    = false, ---@type integer|boolean
   git_icons     = false,
   color_icons   = true,
   ctags_autogen = true,
@@ -919,6 +999,10 @@ M.defaults.btags                 = {
   formatter     = false,
 }
 
+---@class fzf-lua.config.Colorschemes: fzf-lua.config.Base
+---@field live_preview boolean
+---@field colors string[] overriden colorscheme list
+---@field ignore_patterns string[] lua patterns to filter colorschemes
 M.defaults.colorschemes          = {
   live_preview = true,
   winopts      = { height = 0.55, width = 0.50, backdrop = false },
@@ -927,6 +1011,7 @@ M.defaults.colorschemes          = {
   _headers     = { "actions" },
 }
 
+---@class fzf-lua.config.Highlights: fzf-lua.config.Base
 M.defaults.highlights            = {
   fzf_opts   = { ["--no-multi"] = true },
   fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
@@ -934,6 +1019,15 @@ M.defaults.highlights            = {
   actions    = { ["enter"] = actions.hi }
 }
 
+---@class fzf-lua.config.AwesomeColorschemes: fzf-lua.config.Base
+---@field live_preview boolean
+---@field max_threads integer
+---@field dbfile string
+---@field icons table
+---@field packpath fun():string
+---@field _adm table AsyncDownloadManager
+---@field dl_status integer
+---@field _apply_awesome_theme function
 M.defaults.awesome_colorschemes  = {
   winopts      = { row = 0, col = 0.99, width = 0.50, backdrop = false },
   live_preview = true,
@@ -957,6 +1051,8 @@ M.defaults.awesome_colorschemes  = {
   }
 }
 
+---@class fzf-lua.config.Helptags: fzf-lua.config.Base
+---@field fallback? boolean
 M.defaults.helptags              = {
   actions   = {
     ["enter"]  = actions.help,
@@ -975,6 +1071,8 @@ M.defaults.helptags              = {
   },
 }
 
+---@class fzf-lua.config.Manpages: fzf-lua.config.Base
+---@field cmd string
 M.defaults.manpages              = {
   cmd       = "man -k .",
   actions   = {
@@ -987,9 +1085,23 @@ M.defaults.manpages              = {
   previewer = "man",
 }
 
+---@class fzf-lua.config.LspBase: fzf-lua.config.Base
+---@field lsp_handler? fzf-lua.LspHandler
+---@field lsp_params? table|(fun(client: vim.lsp.Client, bufnr: integer): table?)
+---@field jump1? boolean
+---@field jump1_action? fzf-lua.config.Action
+---@field async_or_timeout? integer|boolean
+---@field reuse_win? boolean
+
+---@class fzf-lua.config.Lsp: fzf-lua.config.LspBase
+---@field symbols fzf-lua.config.LspSymbols
+---@field document_symbols fzf-lua.config.LspDocumentSymbols
+---@field workspace_symbols fzf-lua.config.LspWorkspaceSymbols
+---@field finder fzf-lua.config.LspFinder
+---@field code_actions fzf-lua.config.LspCodeActions
 M.defaults.lsp                   = {
   previewer        = M._default_previewer_fn,
-  file_icons       = 1,
+  file_icons       = 1, ---@type integer|boolean
   color_icons      = true,
   git_icons        = false,
   async_or_timeout = 5000,
@@ -1004,10 +1116,14 @@ M.defaults.lsp                   = {
   _headers         = { "actions", "regex_filter" },
 }
 
+---@class fzf-lua.config.LspSymbols: fzf-lua.config.LspBase
+---@field lsp_query? string
+---@field symbol_hl? fun(s:string):string
+---@field symbol_fmt? fun(s:string, ...):string
 M.defaults.lsp.symbols           = {
   previewer        = M._default_previewer_fn,
   locate           = false,
-  file_icons       = 1,
+  file_icons       = 1, ---@type integer|boolean
   color_icons      = true,
   git_icons        = false,
   symbol_style     = 1,
@@ -1074,9 +1190,12 @@ M.defaults.lsp.symbols           = {
   },
 }
 
+---@class fzf-lua.config.LspDocumentSymbols: fzf-lua.config.LspSymbols
+---@field __sym_bufnr? integer
+---@field __sym_bufname? string
 M.defaults.lsp.document_symbols  = vim.tbl_deep_extend("force", {}, M.defaults.lsp.symbols, {
   git_icons   = false,
-  file_icons  = false,
+  file_icons  = false, ---@type integer|boolean
   fzf_opts    = {
     ["--tiebreak"]  = "begin",
     ["--multi"]     = true,
@@ -1094,6 +1213,10 @@ M.defaults.lsp.document_symbols  = vim.tbl_deep_extend("force", {}, M.defaults.l
   _headers    = { "regex_filter" },
 })
 
+---@class fzf-lua.config.LspWorkspaceSymbols: fzf-lua.config.LspSymbols
+---@field _headers? string[]
+---@field __resume_set? function
+---@field __resume_get? function
 M.defaults.lsp.workspace_symbols = vim.tbl_deep_extend("force", {}, M.defaults.lsp.symbols, {
   exec_empty_query = true,
   actions          = { ["ctrl-g"] = { actions.sym_lsym } },
@@ -1101,9 +1224,15 @@ M.defaults.lsp.workspace_symbols = vim.tbl_deep_extend("force", {}, M.defaults.l
   _headers         = { "actions", "cwd", "regex_filter" },
 })
 
+---@class fzf-lua.config.LspFinder: fzf-lua.config.LspBase
+---@field async boolean
+---@field separator string
+---@field _providers table<string, boolean>
+---@field providers table
+---@field no_autoclose boolean
 M.defaults.lsp.finder            = {
   previewer   = M._default_previewer_fn,
-  file_icons  = 1,
+  file_icons  = 1, ---@type integer|boolean
   color_icons = true,
   git_icons   = false,
   async       = true,
@@ -1141,6 +1270,10 @@ M.defaults.lsp.finder            = {
   _uri        = true,
 }
 
+---@class fzf-lua.config.LspCodeActions: fzf-lua.config.LspBase
+---@field post_action_cb function
+---@field context lsp.CodeActionContext
+---@field filter fun(x: lsp.CodeAction|lsp.Command):boolean
 M.defaults.lsp.code_actions      = {
   async_or_timeout = 5000,
   previewer        = "codeaction",
@@ -1152,16 +1285,26 @@ M.defaults.lsp.code_actions      = {
   actions          = {},
 }
 
+---@class fzf-lua.config.Diagnostics: fzf-lua.config.Base
+---@field signs? table
+---@field severity_only? boolean
+---@field severity_limit? "string"|1|2|3|4
+---@field severity_bound? "string"|1|2|3|4
+---@field namespace? integer
+---@field diag_all? boolean
+---@field client_id? integer
+---@field sort? integer|boolean
+---@field icon_padding? boolean
 M.defaults.diagnostics           = {
   previewer      = M._default_previewer_fn,
-  file_icons     = false,
+  file_icons     = false, ---@type integer|boolean
   color_icons    = true,
   color_headings = true,
   git_icons      = false,
   diag_icons     = true,
   diag_source    = true,
   diag_code      = true,
-  multiline      = 2,
+  multiline      = 2, ---@type integer|boolean
   fzf_opts       = {
     ["--multi"] = true,
     ["--wrap"]  = true,
@@ -1177,6 +1320,9 @@ M.defaults.diagnostics           = {
   -- },
 }
 
+---@class fzf-lua.config.Builtin: fzf-lua.config.Base
+---@field metatable table
+---@field metatable_exclude table
 M.defaults.builtin               = {
   no_resume = true,
   winopts   = { height = 0.65, width = 0.50, preview = { hidden = true } },
@@ -1188,6 +1334,8 @@ M.defaults.builtin               = {
   actions   = { ["enter"] = actions.run_builtin },
 }
 
+---@class fzf-lua.config.Profiles: fzf-lua.config.Base
+---@field load table
 M.defaults.profiles              = {
   previewer = M._default_previewer_fn,
   fzf_opts  = {
@@ -1199,6 +1347,8 @@ M.defaults.profiles              = {
   actions   = { ["enter"] = actions.apply_profile },
 }
 
+---@class fzf-lua.config.Marks: fzf-lua.config.Base
+---@field marks? string lua pattern to filter marks
 M.defaults.marks                 = {
   sort        = false,
   fzf_opts    = { ["--no-multi"] = true },
@@ -1213,6 +1363,7 @@ M.defaults.marks                 = {
   _cached_hls = { "buf_nr", "path_linenr", "path_colnr" },
 }
 
+---@class fzf-lua.config.Changes: fzf-lua.config.Jumps
 M.defaults.changes               = {
   cmd       = "changes",
   h1        = "change",
@@ -1220,6 +1371,9 @@ M.defaults.changes               = {
   previewer = { _ctor = previewers.builtin.jumps },
 }
 
+---@class fzf-lua.config.Jumps: fzf-lua.config.Base
+---@field cmd string
+---@field h1 string
 M.defaults.jumps                 = {
   cmd       = "jumps",
   fzf_opts  = { ["--no-multi"] = true },
@@ -1227,8 +1381,9 @@ M.defaults.jumps                 = {
   previewer = { _ctor = previewers.builtin.jumps },
 }
 
+---@class fzf-lua.config.Tagstack: fzf-lua.config.Base
 M.defaults.tagstack              = {
-  file_icons  = 1,
+  file_icons  = 1, ---@type integer|boolean
   color_icons = true,
   git_icons   = true,
   fzf_opts    = { ["--multi"] = true },
@@ -1236,6 +1391,10 @@ M.defaults.tagstack              = {
   _actions    = function() return M.globals.actions.files end,
 }
 
+---@class fzf-lua.config.Commands: fzf-lua.config.Base
+---@field flatten? table<string, boolean>
+---@field include_builtin? boolean
+---@field sort_lastused? boolean
 M.defaults.commands              = {
   actions         = { ["enter"] = actions.ex_run },
   flatten         = {},
@@ -1243,6 +1402,8 @@ M.defaults.commands              = {
   _cached_hls     = { "cmd_ex", "cmd_buf", "cmd_global" },
 }
 
+---@class fzf-lua.config.Autocmds: fzf-lua.config.Base
+---@field show_desc boolean
 M.defaults.autocmds              = {
   show_desc = true,
   previewer = { _ctor = previewers.builtin.autocmds },
@@ -1254,6 +1415,7 @@ M.defaults.autocmds              = {
   },
 }
 
+---@class fzf-lua.config.CommandHistory: fzf-lua.config.Base
 M.defaults.command_history       = {
   fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   _treesitter = function(line) return "foo.vim", nil, line end,
@@ -1265,6 +1427,7 @@ M.defaults.command_history       = {
   _headers    = { "actions" },
 }
 
+---@class fzf-lua.config.SearchHistory : fzf-lua.config.CommandHistory
 M.defaults.search_history        = {
   fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   _treesitter = function(line) return "", nil, line, "regex" end,
@@ -1276,13 +1439,20 @@ M.defaults.search_history        = {
   _headers    = { "actions" },
 }
 
+---@class fzf-lua.config.Registers: fzf-lua.config.Base
+---@field filter string
 M.defaults.registers             = {
-  multiline    = true,
+  multiline    = true, ---@type integer|boolean
   ignore_empty = true,
   actions      = { ["enter"] = actions.paste_register },
   fzf_opts     = { ["--no-multi"] = true },
 }
 
+---@class fzf-lua.config.Keymaps: fzf-lua.config.Base
+---@field ignore_patterns string[]
+---@field show_desc boolean
+---@field show_details boolean
+---@field modes string[]
 M.defaults.keymaps               = {
   previewer       = { _ctor = previewers.builtin.keymaps },
   winopts         = { preview = { layout = "vertical" } },
@@ -1298,6 +1468,9 @@ M.defaults.keymaps               = {
   },
 }
 
+---@class fzf-lua.config.NvimOptions: fzf-lua.config.Base
+---@field separator string
+---@field color_values boolean
 M.defaults.nvim_options          = {
   previewer    = { _ctor = previewers.builtin.nvim_options },
   separator    = "│",
@@ -1313,6 +1486,8 @@ M.defaults.nvim_options          = {
   },
 }
 
+---@class fzf-lua.config.SpellSuggest: fzf-lua.config.Base
+---@field word_pattern? string
 M.defaults.spell_suggest         = {
   winopts = {
     relative = "cursor",
@@ -1321,7 +1496,7 @@ M.defaults.spell_suggest         = {
     height   = 0.40,
     width    = 0.30,
   },
-  actions = {
+  actions = { ---@type fzf-lua.config.Actions
     ["enter"] = actions.complete,
   },
 }
@@ -1332,7 +1507,7 @@ M.defaults.serverlist            = {
   previewer = { _ctor = previewers.fzf.nvim_server },
   _resume_reload = true, -- avoid list contain killed server unhide
   keymap = { fzf = { resize = "refresh-preview" } },
-  actions = {
+  actions = { ---@type fzf-lua.config.Actions
     ["enter"] = actions.serverlist_connect,
     ["ctrl-o"] = { fn = actions.serverlist_spawn, reload = true },
     ["ctrl-x"] = { fn = actions.serverlist_kill, reload = true },
@@ -1340,24 +1515,30 @@ M.defaults.serverlist            = {
 }
 
 
+---@class fzf-lua.config.Filetypes : fzf-lua.config.Base
 M.defaults.filetypes         = {
-  file_icons = false,
+  file_icons = false, ---@type integer|boolean
   actions    = { ["enter"] = actions.set_filetype },
 }
 
+---@class fzf-lua.config.Packadd : fzf-lua.config.Base
 M.defaults.packadd           = {
-  actions = {
+  actions = { ---@type fzf-lua.config.Actions
     ["enter"] = actions.packadd,
   },
 }
 
+---@class fzf-lua.config.Menus : fzf-lua.config.Base
 M.defaults.menus             = {
-  actions = {
+  actions = { ---@type fzf-lua.config.Actions
     ["enter"] = actions.exec_menu,
   },
 }
 
+---@class fzf-lua.config.Tmux
+---@field buffers fzf-lua.config.TmuxBuffers
 M.defaults.tmux              = {
+  ---@class fzf-lua.config.TmuxBuffers: fzf-lua.config.Base
   buffers = {
     cmd      = "tmux list-buffers",
     register = [["]],
@@ -1366,13 +1547,26 @@ M.defaults.tmux              = {
   },
 }
 
+---@class fzf-lua.config.DapBase: fzf-lua.config.Base
+---@field commands fzf-lua.config.DapCommands|{}
+---@field configurations fzf-lua.config.DapConfigurations|{}
+---@field variables fzf-lua.config.DapVariables|{}
+---@field frames fzf-lua.config.DapFrames|{}
+---@field breakpoints fzf-lua.config.DapBreakpoints|{}
+
+---@class fzf-lua.config.Dap
 M.defaults.dap               = {
+  ---@class fzf-lua.config.DapCommands: fzf-lua.config.DapBase
   commands       = { fzf_opts = { ["--no-multi"] = true }, },
+  ---@class fzf-lua.config.DapConfigurations: fzf-lua.config.DapBase
   configurations = { fzf_opts = { ["--no-multi"] = true }, },
+  ---@class fzf-lua.config.DapVariables: fzf-lua.config.DapBase
   variables      = { fzf_opts = { ["--no-multi"] = true }, },
+  ---@class fzf-lua.config.DapFrames: fzf-lua.config.DapBase
   frames         = { fzf_opts = { ["--no-multi"] = true }, },
+  ---@class fzf-lua.config.DapBreakpoints: fzf-lua.config.DapBase
   breakpoints    = {
-    file_icons  = 1,
+    file_icons  = 1, ---@type integer|boolean
     color_icons = true,
     git_icons   = false,
     previewer   = M._default_previewer_fn,
@@ -1387,27 +1581,29 @@ M.defaults.dap               = {
   },
 }
 
+---@class fzf-lua.config.CompletePath: fzf-lua.config.Base
+---@field cmd? string default: auto detect fd|rg|find
+---@field word_pattern? string
 M.defaults.complete_path     = {
-  cmd               = nil, -- default: auto detect fd|rg|find
-  file_icons        = false,
+  file_icons        = false, ---@type integer|boolean
   git_icons         = false,
   color_icons       = true,
-  multiprocess      = 1,
+  multiprocess      = 1, ---@type integer|boolean
   _type             = "file",
-  word_pattern      = nil,
   fzf_opts          = { ["--no-multi"] = true },
   _fzf_nth_devicons = true,
   actions           = { ["enter"] = actions.complete },
 }
 
+---@class fzf-lua.config.CompleteFile: fzf-lua.config.Base
+---@field cmd? string default: auto detect fd|rg|find
+---@field word_pattern? string
 M.defaults.complete_file     = {
-  cmd               = nil, -- default: auto detect rg|fd|find
-  multiprocess      = 1,
+  multiprocess      = 1, ---@type integer|boolean
   _type             = "file",
-  file_icons        = 1,
+  file_icons        = 1, ---@type integer|boolean
   color_icons       = true,
   git_icons         = false,
-  word_pattern      = nil,
   _actions          = function() return M.globals.actions.files end,
   actions           = { ["enter"] = actions.complete },
   previewer         = M._default_previewer_fn,
@@ -1416,8 +1612,9 @@ M.defaults.complete_file     = {
   _fzf_nth_devicons = true,
 }
 
+---@class fzf-lua.config.Zoxide: fzf-lua.config.Base
 M.defaults.zoxide            = {
-  multiprocess  = true,
+  multiprocess  = true, ---@type integer|boolean
   fn_transform  = [[return require("fzf-lua.make_entry").zoxide]],
   fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]],
   cmd           = "zoxide query --list --score",
@@ -1435,6 +1632,8 @@ M.defaults.zoxide            = {
   actions       = { enter = actions.zoxide_cd }
 }
 
+---@class fzf-lua.config.CompleteLine: fzf-lua.config.Lines
+---@field current_buffer_only? boolean
 M.defaults.complete_line         = vim.tbl_deep_extend("force", M.defaults.blines, {
   complete = true,
 })
@@ -1446,6 +1645,7 @@ M.defaults.file_icon_padding = ""
 
 M.defaults.dir_icon          = ""
 
+---@class fzf-lua.config.HLS
 M.defaults.__HLS             = {
   normal         = "FzfLuaNormal",
   border         = "FzfLuaBorder",

@@ -9,7 +9,23 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
----@param opts fzf-lua.Config
+---@class fzf-lua.config.BufferLines: fzf-lua.config.Base
+---@field current_tab_only? boolean
+---@field buffers? integer[]
+---@field show_unlisted? boolean
+---@field show_unloaded? boolean
+---@field ignore_current_buffer? boolean
+---@field no_term_buffers? boolean
+---@field filter? fun(...):boolean?
+---@field show_quickfix boolean?
+---@field current_buffer_only? boolean
+---@field start_line? integer
+---@field end_line? integer
+---@field start? "cursor"
+---@field show_bufname? boolean|integer
+---@field sort_lastused? boolean
+
+---@param opts fzf-lua.config.BufferLines|{}
 ---@param unfiltered integer[]|fun():integer[]
 ---@return integer[], table, integer
 local filter_buffers = function(opts, unfiltered)
@@ -98,7 +114,7 @@ local get_unixtime = function(buf)
   end
 end
 
----@param opts fzf-lua.Config
+---@param opts fzf-lua.config.BufferLines|{}
 ---@param bufnrs integer[]
 ---@param winid integer?
 ---@return table[]
@@ -173,6 +189,8 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
   return item_str
 end
 
+---@param opts fzf-lua.config.Buffers|{}?
+---@return thread?, string?, table?
 M.buffers = function(opts)
   ---@type fzf-lua.config.Buffers
   opts = config.normalize_opts(opts, "buffers")
@@ -200,6 +218,8 @@ M.buffers = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Lines|{}?
+---@return thread?, string?, table?
 M.lines = function(opts)
   ---@type fzf-lua.config.Lines
   opts = config.normalize_opts(opts, "lines")
@@ -207,6 +227,8 @@ M.lines = function(opts)
   return M.buffer_lines(opts)
 end
 
+---@param opts fzf-lua.config.Blines|{}?
+---@return thread?, string?, table?
 M.blines = function(opts)
   ---@type fzf-lua.config.Blines
   opts = config.normalize_opts(opts, "blines")
@@ -340,6 +362,8 @@ M.buffer_lines = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Tabs|{}?
+---@return thread?, string?, table?
 M.tabs = function(opts)
   ---@type fzf-lua.config.Tabs
   opts = config.normalize_opts(opts, "tabs")
@@ -445,6 +469,8 @@ M.tabs = function(opts)
 end
 
 
+---@param opts fzf-lua.config.Treesitter|{}?
+---@return thread?, string?, table?
 M.treesitter = function(opts)
   ---@type fzf-lua.config.Treesitter
   opts = config.normalize_opts(opts, "treesitter")
@@ -579,6 +605,8 @@ M.treesitter = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Spellcheck|{}?
+---@return thread?, string?, table?
 M.spellcheck = function(opts)
   ---@type fzf-lua.config.Spellcheck
   opts = config.normalize_opts(opts, "spellcheck")
