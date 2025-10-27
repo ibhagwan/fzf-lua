@@ -416,7 +416,7 @@ function M.is_uri(str)
 end
 
 ---@param entry string
----@param opts fzf-lua.Config?
+---@param opts fzf-lua.Config|{}?
 ---@param force_uri boolean?
 ---@return fzf-lua.path.Entry
 function M.entry_to_file(entry, opts, force_uri)
@@ -440,15 +440,15 @@ function M.entry_to_file(entry, opts, force_uri)
     -- stripping until the last occurrence of utils.nbsp may err
     -- if the line contents contains utils.nbsp (#2259)
     local parts = utils.strsplit(entry, utils.nbsp)
-    local idx = 1
+    local idx0 = 1
     for i = 1, #parts - 1 do
       local s = parts[i]
       if s:match(".-:%d+:") then
         break
       end
-      idx = idx + #s + #utils.nbsp
+      idx0 = idx0 + #s + #utils.nbsp
     end
-    return entry:sub(idx), idx
+    return entry:sub(idx0), idx0
   end)()
   -- Convert "~" to "$HOME"
   stripped = M.tilde_to_HOME(stripped)

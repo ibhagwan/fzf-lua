@@ -6,6 +6,7 @@ local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
 
 local _has_dap
+---@module "dap"?
 local _dap
 
 local M = {}
@@ -72,7 +73,7 @@ M.configurations = function(opts)
   opts.actions = {
     ["enter"] = function(selected, _)
       -- cannot run while in session
-      if _dap.session() then return end
+      if _dap.session() or not selected[1] then return end
       local idx = selected and tonumber(selected[1]:match("(%d+).")) or nil
       if idx and cfgs[idx] then
         _dap.run(cfgs[idx])
@@ -181,6 +182,11 @@ M.frames = function(opts)
     return
   end
 
+  if not session.threads[session.stopped_thread_id] or not session.threads[session.stopped_thread_id].frames then
+    utils.info("No frame")
+    return
+  end
+
   local frames = session.threads[session.stopped_thread_id].frames
 
   opts.previewer = {
@@ -234,7 +240,7 @@ M.frames = function(opts)
   opts.actions = {
     ["enter"] = function(selected, _)
       local sess = _dap.session()
-      if not sess or not sess.stopped_thread_id then return end
+      if not sess or not sess.stopped_thread_id or not selected[1] then return end
       local idx = selected and tonumber(selected[1]:match("(%d+).")) or nil
       if idx and frames[idx] then
         session:_frame_set(frames[idx])

@@ -509,7 +509,7 @@ function Previewer.base:preview_window(_)
   end
 end
 
----@param direction '"top"'|'"bottom"'|'"half-page-up"'|'"half-page-down"'|'"page-up"'|'"page-down"'|'"line-up"'|'"line-down"'|'"reset"'
+---@param direction "top"|"bottom"|"half-page-up"|"half-page-down"|"page-up"|"page-down"|"line-up"|"line-down"|"reset"
 function Previewer.base:scroll(direction)
   local preview_winid = self.win.preview_winid
   if not self.preview_bufnr or preview_winid < 0 or not direction then return end

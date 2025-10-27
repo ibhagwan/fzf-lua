@@ -12,7 +12,7 @@ local _, H = debug.getupvalue(MiniTest.expect.reference_screenshot, 1)
 ---@class MiniTestScreenshot
 
 --- copied over from mini.test
----@param t { text: string[], attr: string[] }
+---@param t { text?: string[], attr?: string[] }
 ---@param opts test.ScreenOpts?
 ---@return MiniTestScreenshot
 local function screenshot_new(t, opts)
@@ -64,7 +64,7 @@ end
 function M.from_lines(text_lines, opts)
   opts = opts or {}
   if opts and opts.normalize_paths then
-    text_lines = vim.tbl_map(function(x) return x:gsub([[\]], [[/]]) end, text_lines)
+    text_lines = vim.tbl_map(function(x) return (x:gsub([[\]], [[/]])) end, text_lines)
   end
   local f = function(x)
     return string_to_chars(x)

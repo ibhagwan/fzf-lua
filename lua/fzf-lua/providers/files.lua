@@ -16,16 +16,16 @@ M.get_files_cmd = function(opts)
   end
   local search_paths = (function()
     -- NOTE: deepcopy to avoid recursive shellescapes with `actions.toggle_ignore`
-    local search_paths = type(opts.search_paths) == "table" and vim.deepcopy(opts.search_paths)
+    local paths = type(opts.search_paths) == "table" and vim.deepcopy(opts.search_paths)
         or type(opts.search_paths) == "string" and { tostring(opts.search_paths) }
     -- Make paths relative, note this will not work well with resuming if changing
     -- the cwd, this is by design for perf reasons as having to deal with full paths
     -- will result in more code routes taken in `make_entry.file`
-    if type(search_paths) == "table" then
-      for i, p in ipairs(search_paths) do
-        search_paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), uv.cwd()))
+    if type(paths) == "table" then
+      for i, p in ipairs(paths) do
+        paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), uv.cwd()))
       end
-      return table.concat(search_paths, " ")
+      return table.concat(paths, " ")
     end
   end)()
   local command = nil

@@ -115,6 +115,7 @@ M.diagnostics = function(opts)
   opts.severity_limit = convert_diagnostic_type(opts.severity_limit)
   opts.severity_bound = convert_diagnostic_type(opts.severity_bound)
 
+  ---@type vim.diagnostic.GetOpts
   local diag_opts = { severity = {}, namespace = opts.namespace }
   if opts.severity_only ~= nil then
     if opts.severity_limit ~= nil or opts.severity_bound ~= nil then
@@ -211,6 +212,7 @@ M.diagnostics = function(opts)
 
               local entry = make_entry.lcol(diag_entry, opts)
               entry = make_entry.file(entry, opts)
+              if entry == nil then entry = "" end
               if not entry then
                 -- entry to be skipped (e.g. 'cwd_only')
                 coroutine.resume(co)
