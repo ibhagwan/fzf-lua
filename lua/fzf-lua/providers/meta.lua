@@ -7,6 +7,8 @@ local config = require "fzf-lua.config"
 
 local M = {}
 
+---@param opts fzf-lua.config.Builtin
+---@return thread?, string?, table?
 M.metatable = function(opts)
   if not opts then return end
 
@@ -47,6 +49,8 @@ local function ls(dir, fn)
   end
 end
 
+---@param opts fzf-lua.config.Profiles|{}?
+---@return thread?, string?, table?
 M.profiles = function(opts)
   ---@type fzf-lua.config.Profiles
   opts = config.normalize_opts(opts, "profiles")
@@ -145,6 +149,8 @@ M.combine = function(t)
   return core.fzf_wrap(contents, opts)
 end
 
+---@param opts fzf-lua.config.Global|{}?
+---@return thread?, string?, table?
 M.global = function(opts)
   ---@type fzf-lua.config.Global
   opts = config.normalize_opts(opts, "global")

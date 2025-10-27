@@ -70,6 +70,8 @@ M.get_files_cmd = function(opts)
   return command
 end
 
+---@param opts fzf-lua.config.Files|{}?
+---@return thread?, string?, table?
 M.files = function(opts)
   ---@type fzf-lua.config.Files
   opts = config.normalize_opts(opts, "files")
@@ -94,6 +96,8 @@ M.files = function(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
 
+---@param opts fzf-lua.config.Args|{}?
+---@return thread?, string?, table?
 M.args = function(opts)
   ---@type fzf-lua.config.Args
   opts = config.normalize_opts(opts, "args")
@@ -138,6 +142,8 @@ M.args = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Zoxide|{}?
+---@return thread?, string?, table?
 M.zoxide = function(opts)
   ---@type fzf-lua.config.Zoxide
   opts = config.normalize_opts(opts, "zoxide")

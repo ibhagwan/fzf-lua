@@ -174,6 +174,8 @@ local function tags(opts)
   end
 end
 
+---@param opts fzf-lua.config.Tags|{}?
+---@return thread?, string?, table?
 M.tags = function(opts)
   ---@type fzf-lua.config.Tags
   opts = config.normalize_opts(opts, "tags")
@@ -181,6 +183,8 @@ M.tags = function(opts)
   return tags(opts)
 end
 
+---@param opts fzf-lua.config.Btags|{}?
+---@return thread?, string?, table?
 M.btags = function(opts)
   ---@type fzf-lua.config.Btags
   opts = config.normalize_opts(opts, "btags")
@@ -204,6 +208,8 @@ M.btags = function(opts)
   return tags(opts)
 end
 
+---@param opts fzf-lua.config.TagsGrep|{}?
+---@return thread?, string?, table?
 M.grep = function(opts)
   ---@type fzf-lua.config.TagsGrep
   opts = config.normalize_opts(opts, "tags")
@@ -229,6 +235,8 @@ M.grep = function(opts)
   return M.tags(opts)
 end
 
+---@param opts fzf-lua.config.TagsGrep|{}?
+---@return thread?, string?, table?
 M.live_grep = function(opts)
   ---@type fzf-lua.config.TagsGrep
   opts = config.normalize_opts(opts, "tags")
@@ -237,6 +245,8 @@ M.live_grep = function(opts)
   return tags(opts)
 end
 
+---@param opts fzf-lua.config.TagsGrep|{}?
+---@return thread?, string?, table?
 M.grep_cword = function(opts)
   if not opts then opts = {} end
   opts.no_esc = true
@@ -252,6 +262,8 @@ M.grep_cWORD = function(opts)
   return M.grep(opts)
 end
 
+---@param opts fzf-lua.config.TagsGrep|{}?
+---@return thread?, string?, table?
 M.grep_visual = function(opts)
   if not opts then opts = {} end
   opts.search = utils.get_visual_selection()

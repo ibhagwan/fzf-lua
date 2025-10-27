@@ -26,6 +26,8 @@ M.manpage_sh_arg = function(apropos_line)
   return libuv.shellescape(section) .. " " .. libuv.shellescape(page)
 end
 
+---@param opts fzf-lua.config.Manpages|{}?
+---@return thread?, string?, table?
 M.manpages = function(opts)
   ---@type fzf-lua.config.Manpages
   opts = config.normalize_opts(opts, "manpages")

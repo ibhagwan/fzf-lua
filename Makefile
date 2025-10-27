@@ -46,6 +46,8 @@ deps:
 lint:
 	VIMRUNTIME="$$(nvim --clean --headless +'echo $$VIMRUNTIME' +q 2>&1)" lua-language-server --configpath=../.luarc.jsonc --check=.
 
+gen:
+	2>/dev/null nvim --clean --headless -ni NONE  +'/@format disable/+1,$$d' +'read !nvim --clean -l lua/fzf-lua/init.lua' +wq lua/fzf-lua/init.lua
 
 # clean up
 .PHONY: clean

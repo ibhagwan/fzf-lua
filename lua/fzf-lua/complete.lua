@@ -78,6 +78,8 @@ local set_cmp_opts_path = function(opts)
   return opts
 end
 
+---@param opts fzf-lua.config.CompletePath|{}?
+---@return thread?, string?, table?
 M.path = function(opts)
   ---@type fzf-lua.config.CompletePath
   opts = config.normalize_opts(opts, "complete_path")
@@ -97,6 +99,8 @@ M.path = function(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
 
+---@param opts fzf-lua.config.CompleteFile|{}?
+---@return thread?, string?, table?
 M.file = function(opts)
   ---@type fzf-lua.config.CompleteFile
   opts = config.normalize_opts(opts, "complete_file")
@@ -118,6 +122,8 @@ M.file = function(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
 
+---@param opts fzf-lua.config.CompleteLine|{}?
+---@return thread?, string?, table?
 M.line = function(opts)
   ---@type fzf-lua.config.CompleteLine
   opts = config.normalize_opts(opts, "complete_line")
@@ -134,8 +140,10 @@ M.line = function(opts)
   return require "fzf-lua.providers.buffers".lines(opts)
 end
 
+---@param opts fzf-lua.config.CompleteLine|{}?
+---@return thread?, string?, table?
 M.bline = function(opts)
-  ---@type fzf-lua.config.CompleteBline
+  ---@type fzf-lua.config.CompleteLine
   opts = opts or {}
   opts.current_buffer_only = true
   return M.line(opts)
