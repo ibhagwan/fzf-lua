@@ -266,4 +266,30 @@ T["api"]["events"] = new_set(
   }
 )
 
+T["api"]["resume"] = new_set({
+  parametrize = { { "fzf_exec" }, { "fzf_live" } },
+}, {
+  function(api)
+    helpers.FzfLua[api](child, "echo resume string content",
+      { __expect_lines = false, exec_empty_query = true, debug = 1 })
+    helpers.FzfLua.resume(child, { __expect_lines = true })
+
+    helpers.FzfLua[api](child, api == "fzf_exec"
+      and function(fzf_cb)
+        fzf_cb("resume function content")
+        fzf_cb(nil)
+      end or function(_)
+        return function(fzf_cb)
+          fzf_cb("resume function content")
+          fzf_cb(nil)
+        end
+      end, {
+        __expect_lines = false,
+        exec_empty_query = true,
+        debug = 1,
+      })
+    helpers.FzfLua.resume(child, { __expect_lines = true })
+  end,
+})
+
 return T
