@@ -1,3 +1,4 @@
+---@diagnostic disable: unused
 local Src = {}
 
 Src.new = function(_)

@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local api, uv, fn = vim.api, vim.uv or vim.loop, vim.fn
 ---@module 'ffi'?
 local ffi = vim.F.npcall(require, "ffi")
@@ -20,7 +21,7 @@ end)
 local function quit() vim.cmd.quit() end
 
 local function posix_exec(cmd, ...)
-  local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
+  local _is_win = fn.has("win32") == 1 or fn.has("win64") == 1
   if type(cmd) ~= "string" or _is_win or not ffi then return end
   ffi.C.execl(cmd, cmd, ...)
 end
@@ -30,17 +31,19 @@ local function parse_entry(e) return e and e:match("%((.-)%)") or nil end
 _G.fzf_tty_get_width = function()
   if not ffi then return (assert(uv.new_tty(0, false)):get_winsize()) end
   local TIOCGWINSZ = 0x5413
-  local ws = ffi.new("struct winsize[1]")
+  ---@diagnostic disable-next-line: assign-type-mismatch
+  local ws = ffi.new("struct winsize[1]") ---@type [{ ws_row: integer, ws_col: integer }]
   local ret = ffi.C.ioctl(0, TIOCGWINSZ, ws)
+  ---@diagnostic disable-next-line: undefined-field
   if ret == 0 then return ws[0].ws_col end
-  return nil
 end
 
 _G.fzf_pty_spawn = function(cmd, opts)
   local function openpty(rows, cols)
+    ---@diagnostic disable: assign-type-mismatch
     -- Lua doesn't have out-args so we create short arrays of numbers.
-    local amaster = ffi.new("int[1]")
-    local aslave = ffi.new("int[1]")
+    local amaster = ffi.new("int[1]") ---@type [integer]
+    local aslave = ffi.new("int[1]") ---@type [integer]
     ---@type { ws_row: integer, ws_col: integer }
     local winp = ffi.new("struct winsize")
     winp.ws_row = rows
@@ -109,7 +112,7 @@ return {
             entries[1].col and ("+norm! %s|"):format(entries[1].col) or nil)
         elseif ffi and #entries > 1 then
           local file = fn.tempname()
-          vim.fn.writefile(vim.tbl_map(function(e) -- Format: {filename}:{lnum}:{col}: {text}
+          fn.writefile(vim.tbl_map(function(e) -- Format: {filename}:{lnum}:{col}: {text}
             local text = e.stripped:match(":%d+:%d?%d?%d?%d?:?(.*)$") or ""
             return ("%s:%d:%d: %s"):format(e.path, e.line or 1, e.col or 1, text)
           end, entries), file)

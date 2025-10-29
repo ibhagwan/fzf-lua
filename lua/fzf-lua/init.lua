@@ -1,3 +1,4 @@
+---@diagnostic disable: duplicate-require
 local gen = _G.arg[0] == "lua/fzf-lua/init.lua"
 if gen then
   vim.opt.rtp:append(vim.fn.fnamemodify(debug.getinfo(1, "S").source:gsub("^@", ""), ":h:h:h:p"))
@@ -190,7 +191,7 @@ end
 -- case the user decides not to call `setup()`
 M.setup_highlights()
 
----@param opts? fzf-lua.profile|fzf-lua.Config
+---@param opts? fzf-lua.profile|fzf-lua.Config|{}
 ---@param do_not_reset_defaults? boolean
 function M.setup(opts, do_not_reset_defaults)
   opts = type(opts) == "table" and opts or {}
@@ -427,7 +428,6 @@ for _, m in ipairs(exported_modules) do
   M[m] = require("fzf-lua." .. m)
 end
 
----@private
 M._excluded_metamap = {}
 for _, t in pairs({ M._excluded_meta, exported_modules }) do
   for _, m in ipairs(t) do
@@ -435,7 +435,7 @@ for _, t in pairs({ M._excluded_meta, exported_modules }) do
   end
 end
 
----@param opts fzf-lua.config.Builtin
+---@param opts? fzf-lua.config.Builtin|{}
 ---@return thread?, string?, table?
 M.builtin = function(opts)
   opts = config.normalize_opts(opts, "builtin")

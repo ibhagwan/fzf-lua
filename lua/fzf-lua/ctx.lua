@@ -14,7 +14,7 @@ local ctx = {}
 ---@field alt_bufnr integer
 ---@field tabnr integer
 ---@field tabh integer
----@field cursor integer[]
+---@field cursor [integer, integer]
 ---@field line string
 ---@field curtab_wins { [string]: boolean }
 ---@field winopts { winhl: string, cursorline: boolean }
@@ -30,7 +30,7 @@ M.reset = function() ctx = {} end
 ---conditionally update the context if fzf-lua
 ---interface isn't open
 ---@param opts? { includeBuflist?: boolean, buf?: integer|string, bufnr?: integer|string }
----@return fzf-lua.Ctx
+---@return fzf-lua.Ctx|{}
 M.refresh = function(opts)
   opts = opts or {}
   -- save caller win/buf context, ignore when fzf

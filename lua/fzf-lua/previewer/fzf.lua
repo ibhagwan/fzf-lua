@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local shell = require "fzf-lua.shell"
@@ -11,6 +12,9 @@ local Previewer = {}
 Previewer.base = Object:extend()
 
 -- Previewer base object
+---@param o fzf-lua.config.Previewer
+---@param opts fzf-lua.config.Resolved
+---@return fzf-lua.previewer.Fzf
 function Previewer.base:new(o, opts)
   o = o or {}
   self.type = "cmd";
@@ -35,6 +39,12 @@ function Previewer.base:setup_opts(opts)
   return opts
 end
 
+---@diagnostic disable-next-line: unused
+function Previewer.base:cmdline(_)
+  return ""
+end
+
+---@diagnostic disable-next-line: unused
 function Previewer.base:preview_window(_)
   return nil
 end
@@ -57,6 +67,7 @@ function Previewer.base:_preview_offset(lnum)
   end
 end
 
+---@return string
 function Previewer.base:fzf_delimiter()
   -- set delimiter to ':'
   -- entry format is 'file:line:col: text'
@@ -85,6 +96,7 @@ function Previewer.cmd:new(o, opts)
   return self
 end
 
+---@diagnostic disable-next-line: unused
 function Previewer.cmd:format_cmd(cmd, args, action, extra_args)
   return string.format([[%s %s %s "$(%s)"]],
     cmd, args or "", extra_args or "", action)
@@ -188,11 +200,11 @@ local grep_tag = function(file, tag)
   table.insert(cmd, filepath)
   local out, rc = utils.io_system(cmd)
   if rc == 0 then
-    line = tonumber(out:match("[^:]+")) or 1
+    line = utils.tointeger(out:match("[^:]+")) or 1
   else
     utils.warn(("previewer: unable to find pattern '%s' in file '%s'"):format(pattern, file))
   end
-  return tonumber(line)
+  return line
 end
 
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
@@ -298,7 +310,7 @@ function Previewer.bat_async:cmdline(o)
       -- this is a ctag without line numbers, since we can't
       -- provide the preview file offset to fzf via the field
       -- index expression we use '--line-range' instead
-      local start_line = math.max(1, entry.line - fzf_lines / 2)
+      local start_line = utils.tointeger(math.max(1, entry.line - fzf_lines / 2))
       local end_line = start_line + fzf_lines - 1
       line_range = ("--line-range=%d:%d"):format(start_line, end_line)
     end
@@ -346,7 +358,7 @@ function Previewer.git_diff:cmdline(o)
   local act = shell.stringify_cmd(function(items, fzf_lines, fzf_columns)
     if not items or utils.tbl_isempty(items) then
       utils.warn("shell error while running preview action.")
-      return
+      return utils.shell_nop()
     end
     local is_deleted = items[1]:match(self.git_icons["D"] .. utils.nbsp) ~= nil
     local is_modified = items[1]:match("[" ..
@@ -371,7 +383,8 @@ function Previewer.git_diff:cmdline(o)
     elseif is_deleted then
       cmd = self.cmd_deleted
     elseif is_untracked then
-      local stat = uv.fs_stat(entry.path)
+      local stat = entry.path and uv.fs_stat(entry.path)
+      ---@diagnostic disable-next-line: undefined-field
       if stat and stat.type == "directory" then
         cmd = utils._if_win({ "dir" }, { "ls", "-la" })
       else
@@ -425,6 +438,7 @@ Previewer.man_pages = Previewer.base:extend()
 function Previewer.man_pages:new(o, opts)
   Previewer.man_pages.super.new(self, o, opts)
   self.cmd = o.cmd or "man -c %s | col -bx"
+  ---@diagnostic disable-next-line: assign-type-mismatch
   self.cmd = type(self.cmd) == "function" and self.cmd() or self.cmd
   return self
 end

@@ -1,4 +1,5 @@
----@diagnostic disable: undefined-field, param-type-mismatch
+---@diagnostic disable: undefined-field
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
@@ -15,6 +16,7 @@ local M = {}
 -- in case the plugin was lazy loaded
 local function dap()
   if _has_dap and _dap then return _dap end
+  ---@diagnostic disable-next-line: assign-type-mismatch
   _has_dap, _dap = pcall(require, "dap")
   if not _has_dap or not _dap then
     utils.info("DAP requires 'mfussenegger/nvim-dap'")
@@ -192,6 +194,7 @@ M.frames = function(opts)
   opts.previewer = {
     _ctor = function()
       local p = require("fzf-lua.previewer.builtin").buffer_or_file:extend()
+      ---@diagnostic disable-next-line: unused
       ---@param entry_str string
       ---@return fzf-lua.buffer_or_file.Entry
       function p:parse_entry(entry_str)
@@ -208,7 +211,7 @@ M.frames = function(opts)
           if fs_stat and fs_stat.type == "file" then
             return {
               path = path,
-              line = f.line,
+              line = utils.tointeger(f.line),
               -- col = f.column,
             }
           end
@@ -226,7 +229,7 @@ M.frames = function(opts)
           return {
             path = f.source.path,
             content = result and vim.split(result.content or "", "\n") or nil,
-            line = f.line,
+            line = utils.tointeger(f.line),
           }
         end
 
