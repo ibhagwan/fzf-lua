@@ -7,6 +7,7 @@ local actions = require "fzf-lua.actions"
 
 -- For AsyncDownloadManager
 local Object = require "fzf-lua.class"
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 
 local function get_current_colorscheme()
@@ -68,6 +69,7 @@ M.colorschemes = function(opts)
         live = sel[1]
         vim.cmd("colorscheme " .. sel[1])
       end
+      ---@diagnostic disable-next-line: param-type-mismatch
     end, opts, "{}")
   end
 
@@ -473,7 +475,7 @@ M.awesome_colorschemes = function(opts)
   if opts.live_preview then
     opts.fzf_opts["--preview-window"] = "nohidden:right:0"
     opts.preview = shell.stringify_data(function(sel)
-      if opts.live_preview and sel then
+      if opts.live_preview and sel and sel[1] then
         local dbkey, idx = sel[1]:match("^(.-):(%d+):")
         if opts._adm:downloaded(dbkey) then
           -- some colorschemes choose a different theme based on dark|light bg

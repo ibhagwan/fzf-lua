@@ -13,10 +13,9 @@ function M.base:new(o, opts)
   o = o or {}
   self.opts = opts;
   local ctx = utils.__CTX()
-  assert(ctx, "CTX shoud not be nil")
   self.ctx_winid = ctx.winid
   self.ctx_bufnr = ctx.bufnr
-  self.ctx_winopts = vim.deepcopy(ctx.winopts)
+  self.ctx_winopts = vim.deepcopy(ctx.winopts or {})
   assert(vim.api.nvim_buf_is_valid(self.ctx_bufnr), "origin buf is not valid")
   assert(vim.api.nvim_win_is_valid(self.ctx_winid), "origin win is not valid")
   assert(self.ctx_bufnr == vim.api.nvim_win_get_buf(self.ctx_winid), "win buf mismatch")
@@ -60,8 +59,7 @@ end
 ---@return integer? col_valid_idx
 ---@return integer? col_offset
 function M.base:parse_lnum_col(line, is_entry)
-  local off = 0
-  local prefix, lnum, col
+  local prefix, lnum, col, off
   if self.picker == "git_blame" then
     prefix, lnum = line:match("^(.-)(%d+)%)")
     off = 1 + (lnum and #tostring(lnum) or 0)
@@ -81,11 +79,12 @@ function M.base:parse_lnum_col(line, is_entry)
   elseif self.picker == "treesitter" or self.picker == "lsp_document_symbols" then
     prefix = line:gsub("%s+$", ""):match("(.*%s+).+$")
     lnum, col = line:match("^.-(%d+):(%d+)%s")
-    off = col and (1 - tonumber(col) - 1)
+    off = col and (1 - assert(tonumber(col)) - 1)
   end
   if lnum then
     -- use `vin.fn.strwidth` for proper adjustment of fzf's marker/pointer if unicode
-    return tonumber(lnum), tonumber(col), prefix and vim.fn.strwidth(prefix) or 0, off or 0
+    return utils.tointeger(lnum), utils.tointeger(col), prefix and vim.fn.strwidth(prefix) or 0,
+        off or 0
   end
 end
 

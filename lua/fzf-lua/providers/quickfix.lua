@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
@@ -36,8 +37,8 @@ local quickfix_run = function(opts, cfg)
       (function()
         if opts.valid_only and loc.valid ~= 1 then return end
         loc.text = loc.text:gsub("\r?\n", " ")
-        local entry = make_entry.lcol(loc, opts)
-        entry = make_entry.file(entry, opts)
+        local entry0 = make_entry.lcol(loc, opts)
+        local entry = make_entry.file(entry0, opts)
         if not entry then return end
         cb(string.format("[%s]%s%s",
             utils.ansi_codes.yellow(tostring(loc.bufnr)),

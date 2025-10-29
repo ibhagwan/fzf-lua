@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local api, uv, fn = vim.api, vim.uv or vim.loop, vim.fn
 assert(#api.nvim_list_uis() == 0)
 local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
@@ -17,7 +18,7 @@ api.nvim_create_autocmd("Signal", {
   callback = function(ev)
     vim.tbl_map(function(pid)
       FzfLua.libuv.process_kill(pid, ev.match)
-    end, api.nvim_get_proc_children(uv.os_getpid()))
+    end, api.nvim_get_proc_children(fn.getpid()))
   end
 })
 
@@ -47,7 +48,7 @@ _G.fzf_jobstart = function(cmd, opts)
     },
     vim.schedule_wrap(function(rc)
       opts.on_exit(nil, rc, nil)
-      if not opts.no_quit and #vim.api.nvim_get_proc_children(uv.os_getpid()) == 0 then
+      if not opts.no_quit and #api.nvim_get_proc_children(fn.getpid()) == 0 then
         vim.cmd.cquit { count = rc, bang = true }
       end
     end))

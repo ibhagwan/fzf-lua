@@ -152,7 +152,7 @@ local edit_entry = function(entry, fullpath, will_replace_curbuf, opts)
     -- We normalize the path or Windows will fail with directories starting
     -- with special characters, for example "C:\app\(web)" will be translated
     -- by neovim to "c:\app(web)" (#1082)
-    local relpath = path.normalize(path.relative_to(fullpath, assert(uv.cwd())))
+    local relpath = path.normalize(path.relative_to(fullpath, uv.cwd()))
     local bufnr0 = vim.fn.bufadd(relpath)
     if bufnr0 == 0 and not opts.silent then
       utils.warn("Unable to add buffer %s", relpath)
@@ -251,12 +251,13 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
         return
       end
       -- Java LSP entries, 'jdt://...' or LSP locations
-      if entry.uri then
+      if entry.uri and entry.range then
         -- pcall for two failed cases
         -- (1) nvim_exec2(): Vim(normal):Can't re-enter normal mode from terminal mode
         -- (2) save dialog cancellation
-        pcall(utils.jump_to_location, entry, "utf-16", opts.reuse_win)
-      elseif entry.ctag and entry.line == 0 then
+        pcall(utils.jump_to_location, { uri = entry.uri, range = entry.range }, "utf-16",
+          opts.reuse_win)
+      elseif entry.line == 0 and entry.ctag then
         vim.api.nvim_win_set_cursor(0, { 1, 0 })
         vim.fn.search(entry.ctag, "W")
       elseif not opts.no_action_set_cursor and entry.line > 0 or entry.col > 0 then
@@ -400,11 +401,11 @@ M.file_switch = function(selected, opts)
   if not selected[1] then return false end
   -- If called from `:FzfLua tabs` switch to requested tab/win
   local tabh, winid = selected[1]:match("(%d+)\t(%d+)%)")
+  tabh = utils.tointeger(tabh)
+  winid = utils.tointeger(winid)
   if tabh and winid then
-    vim.api.nvim_set_current_tabpage(tonumber(tabh))
-    if tonumber(winid) > 0 then
-      vim.api.nvim_set_current_win(tonumber(winid))
-    end
+    vim.api.nvim_set_current_tabpage(tabh)
+    vim.api.nvim_set_current_win(winid)
     return true
   end
   local entry = path.entry_to_file(selected[1], opts)
@@ -821,6 +822,7 @@ end
 M.git_switch = function(selected, opts)
   if not selected[1] then return end
   local cmd = path.git_cwd({ "git", "checkout" }, opts)
+  ---@cast cmd -string
   local git_ver = utils.git_version()
   -- git switch was added with git version 2.23
   if git_ver and git_ver >= 2.23 then
@@ -1135,10 +1137,8 @@ end
 
 M.git_goto_line = function(selected, _)
   if #selected == 0 then return end
-  local line = selected[1] and selected[1]:match("^.-(%d+)%)")
-  if tonumber(line) then
-    vim.api.nvim_win_set_cursor(0, { tonumber(line), 0 })
-  end
+  local line = utils.tointeger(selected[1]:match("^.-(%d+)%)"))
+  if line then vim.api.nvim_win_set_cursor(0, { line, 0 }) end
 end
 
 M.grep_lgrep = function(_, opts)
@@ -1235,6 +1235,8 @@ M.apply_profile = function(selected, opts)
   end
 end
 
+---@param selected string[]
+---@param opts fzf-lua.config.Resolved
 M.complete = function(selected, opts)
   if #selected == 0 then
     if opts.__CTX.mode == "i" then
