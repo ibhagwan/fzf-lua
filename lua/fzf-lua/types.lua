@@ -46,7 +46,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field key string?
 
 ---@class fzf-lua.buffer_or_file.Bcache
----@field bufnr? integer
+---@field bufnr integer
 ---@field min_winopts? boolean
 ---@field invalid? boolean buffer content changed
 ---@field invalid_pos? boolean position changed
