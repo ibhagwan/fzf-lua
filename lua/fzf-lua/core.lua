@@ -218,17 +218,24 @@ M.fzf_live = function(contents, opts)
   if not opts then return end
   local fzf_field_index = M.fzf_field_index(opts)
   local cmd ---@type string
-  if type(contents) == "function" and M.can_transform(opts) then
-    cmd = shell.stringify_data(
-      function(items) return contents(items, opts) end, opts, fzf_field_index)
+  local is_fnc = type(contents) == "function"
+  if is_fnc and M.can_transform(opts) then
+    cmd = shell.stringify_data(function(items) return contents(items, opts) end, opts,
+      fzf_field_index)
   else
     contents = add_query_placeholder(contents)
     local mtcmd = shell.stringify_mt(contents, opts)
-    cmd = mtcmd and M.expand_query(mtcmd, fzf_field_index)
-        or type(contents) == "string" and nop(opts) and M.expand_query(contents, fzf_field_index)
-        or shell.stringify(cmd2fnc(contents), opts, fzf_field_index)
+    if mtcmd then
+      cmd = M.expand_query(mtcmd, fzf_field_index)
+    elseif not is_fnc and nop(opts) then
+      cmd = M.expand_query(contents, fzf_field_index)
+    else
+      cmd = shell.stringify(cmd2fnc(contents), opts, fzf_field_index)
+      is_fnc = true
+    end
   end
-  M.setup_fzf_live_flags(cmd, opts)
+  -- function content require `--bind=start` to fix ctrl-c+resume
+  M.setup_fzf_live_flags(cmd, is_fnc, opts)
   return M.fzf_wrap(cmd, opts, true)
 end
 
@@ -1073,8 +1080,9 @@ M.convert_exec_silent_actions = function(opts)
 end
 
 ---@param command string
+---@param bind_start boolean
 ---@param opts table
-M.setup_fzf_live_flags = function(command, opts)
+M.setup_fzf_live_flags = function(command, bind_start, opts)
   -- query cannot be 'nil'
   opts.query = opts.query or ""
 
@@ -1121,11 +1129,10 @@ M.setup_fzf_live_flags = function(command, opts)
     if opts.silent_fail ~= false then
       reload_command = reload_command .. " || " .. utils.shell_nop()
     end
-    local query = opts.query and tostring(opts.query) or ""
     local action = M.can_transform(opts) and "transform" or "reload"
     table.insert(opts._fzf_cli_args, "--bind="
       .. libuv.shellescape(string.format("change:+%s:%s", action, reload_command)))
-    if opts.exec_empty_query or #query > 0 or type(opts.contents) == "function" then
+    if bind_start or opts.exec_empty_query or #opts.query > 0 then
       table.insert(opts._fzf_cli_args, "--bind="
         .. libuv.shellescape(string.format("start:+%s:%s", action, reload_command)))
     end
