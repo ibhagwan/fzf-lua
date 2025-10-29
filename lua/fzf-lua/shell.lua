@@ -265,10 +265,9 @@ M.stringify_mt = function(contents, opts)
     -- don't use mt for non-string contents unless multiprocess is explictly set to true
   elseif opts.multiprocess ~= true and type(contents) ~= "string" then
     return nil
-  else
-    opts.contents = contents
-    return M.wrap_spawn_stdio(filter_opts(opts))
   end
+  opts.contents = contents
+  return M.wrap_spawn_stdio(filter_opts(opts))
 end
 
 -- Contents sent to fzf can only be nil or a shell command (string)
