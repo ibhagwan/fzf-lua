@@ -25,13 +25,16 @@
       "unbalanced": "Opened",
       "unused": "Opened",
     },
-    "disable": ["different-requires"],
+    "disable": [
+      "different-requires",
+      "unknown-diag-code",
+      "unknown-cast-variable",
+    ],
     "unusedLocalExclude": ["_*"],
   },
   "workspace": {
     "library": [
       "$VIMRUNTIME",
-      "${3rd}/luv/library",
       // For "cmp_src.lua" type resolving
       "deps/mini.nvim",
       "deps/nvim-web-devicons",

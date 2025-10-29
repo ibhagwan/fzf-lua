@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
@@ -72,7 +73,7 @@ local filter_buffers = function(opts, unfiltered)
         if buf_valid and vim.api.nvim_get_option_value("ft", { buf = b }) == "qf" then
           excluded[b] = not opts.show_quickfix and true or nil
         end
-        if not excluded[b] and b > max_bufnr then
+        if not excluded[b] and b > max_bufnr then ---@diagnostic disable-next-line: assign-type-mismatch
           max_bufnr = b
         end
         return not excluded[b]
@@ -270,9 +271,8 @@ M.buffer_lines = function(opts)
       local bnames = {}
       local longest_bname = 0
       for _, b in ipairs(buffers) do
-        ---@type string
         local bname = utils.nvim_buf_get_name(b)
-        if not bname:match("^%[") then
+        if bname and not bname:match("^%[") then
           bname = path.shorten(vim.fn.fnamemodify(bname, ":~:."))
         end
         longest_bname = math.max(longest_bname, #bname)
@@ -327,10 +327,11 @@ M.buffer_lines = function(opts)
           lines = end_line - start_line + 1
           if opts.start == "cursor" then
             -- start display from current line and wrap from bottom (#822)
-            offset = utils.CTX().cursor[1] - start_line
+            offset = assert(utils.CTX().cursor[1]) - start_line
           end
         end
 
+        assert(opts.hls)
         for i = 1, lines do
           local lnum = i + offset
           if lnum > lines then
@@ -418,6 +419,7 @@ M.tabs = function(opts)
       return ret
     end)()
 
+    assert(opts.hls)
     for tabnr, tabh in ipairs(vim.api.nvim_list_tabpages()) do
       (function()
         if opts.current_tab_only and tabh ~= utils.CTX().tabh then return end
@@ -482,10 +484,10 @@ M.treesitter = function(opts)
   end
 
   -- Default to current buffer
-  local bufnr0 = tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
+  local bufnr0 = utils.tointeger(opts.bufnr) or vim.api.nvim_get_current_buf()
   local bufname0 = path.basename(vim.api.nvim_buf_get_name(bufnr0))
   if not bufname0 or #bufname0 == 0 then
-    bufname0 = utils.nvim_buf_get_name(bufnr0)
+    bufname0 = assert(utils.nvim_buf_get_name(bufnr0))
   end
 
   local ts = vim.treesitter
@@ -577,15 +579,16 @@ M.treesitter = function(opts)
             vim.schedule(function()
               -- Remove node prefix, e.g. `locals.definition.var`
               node.kind = node.kind and node.kind:gsub(".*%.", "")
-              local lnum, col, _, _ = vim.treesitter.get_node_range(node.node)
-              local node_text = vim.treesitter.get_node_text(node.node, bufnr0)
+              local lnum, col, _, _ = ts.get_node_range(node.node)
+              local node_text = ts.get_node_text(node.node, bufnr0)
               local node_kind = node.kind and utils.ansi_from_hl(kind2hl(node.kind), node.kind)
+              local hls = assert(opts.hls)
               local entry = string.format("[%s]%s%s:%s:%s\t\t[%s] %s",
-                utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr0)),
+                utils.ansi_codes[hls.buf_nr](tostring(bufnr0)),
                 utils.nbsp,
-                utils.ansi_codes[opts.hls.buf_name](bufname0),
-                utils.ansi_codes[opts.hls.buf_linenr](tostring(lnum + 1)),
-                utils.ansi_codes[opts.hls.path_colnr](tostring(col + 1)),
+                utils.ansi_codes[hls.buf_name](bufname0),
+                utils.ansi_codes[hls.buf_linenr](tostring(lnum + 1)),
+                utils.ansi_codes[hls.path_colnr](tostring(col + 1)),
                 node_kind or "",
                 node_text)
               cb(entry, function(err)
@@ -620,7 +623,7 @@ M.spellcheck = function(opts)
   local bufnr0 = tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
   local bufname0 = path.basename(vim.api.nvim_buf_get_name(bufnr0))
   if not bufname0 or #bufname0 == 0 then
-    bufname0 = utils.nvim_buf_get_name(bufnr0)
+    bufname0 = assert(utils.nvim_buf_get_name(bufnr0))
   end
 
   if utils.mode_is_visual() then
@@ -664,7 +667,7 @@ M.spellcheck = function(opts)
 
           if opts.start == "cursor" then
             -- start display from current line and wrap from bottom
-            offset = utils.CTX().cursor[1] - start_line
+            offset = assert(utils.CTX().cursor[1]) - start_line
           end
 
           for i = 1, lines do
@@ -674,6 +677,7 @@ M.spellcheck = function(opts)
             end
             lnum = lnum + start_line - 1
 
+            ---@type integer, integer?, integer?
             local line, from, to = data[lnum], 1, nil
             repeat
               local word_separator = opts.word_separator or "[%s%p]"
@@ -691,12 +695,13 @@ M.spellcheck = function(opts)
                 local _, lead = word:find("^" .. word_separator .. "+")
                 local spell = vim.spell.check(trim(word))[1]
                 if spell then
+                  local hls = assert(opts.hls)
                   cb(string.format("[%s]%s%s:%s:%-26s\t\t%s",
-                    utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr0)),
+                    utils.ansi_codes[hls.buf_nr](tostring(bufnr0)),
                     utils.nbsp,
-                    utils.ansi_codes[opts.hls.buf_name](bufname0),
-                    utils.ansi_codes[opts.hls.buf_linenr](tostring(lnum)),
-                    utils.ansi_codes[opts.hls.path_colnr](tostring(from + (lead or 0))),
+                    utils.ansi_codes[hls.buf_name](bufname0),
+                    utils.ansi_codes[hls.buf_linenr](tostring(lnum)),
+                    utils.ansi_codes[hls.path_colnr](tostring(from + (lead or 0))),
                     trim(word)
                   ), function(err)
                     -- coroutine.resume(co)

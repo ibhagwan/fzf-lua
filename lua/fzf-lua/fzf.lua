@@ -3,6 +3,7 @@
 -- does not close the pipe before all writes are complete
 -- option to not add '\n' on content function callbacks
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf.lua
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 
 local utils = require "fzf-lua.utils"
@@ -181,7 +182,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       ["RUST_LOG"] = "",
     },
     on_exit = function(_, rc, _)
-      local output = {}
+      local output = nil ---@type string[]?
       local f = io.open(outputtmpname)
       if f then
         output = vim.split(f:read("*a"), printEOL)
@@ -192,7 +193,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- Windows only, restore `shellslash` if was true before `jobstart`
       if nvim_opt_shellslash then vim.o.shellslash = nvim_opt_shellslash end
       vim.fn.delete(outputtmpname)
-      if #output == 0 then output = nil end
+      if output and #output == 0 then output = nil end
       coroutine.resume(co, output, rc)
     end
   })

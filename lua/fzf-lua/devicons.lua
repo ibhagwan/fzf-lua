@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -292,6 +293,7 @@ function FzfLuaServer:new()
   return self
 end
 
+---@diagnostic disable-next-line: unused
 function FzfLuaServer:path()
   ---@diagnostic disable-next-line: undefined-field
   return _G._fzf_lua_server or vim.g.fzf_lua_server

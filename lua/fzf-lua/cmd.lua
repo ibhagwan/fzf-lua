@@ -6,6 +6,8 @@ local serpent = require "fzf-lua.lib.serpent"
 
 local M = {}
 
+---@param cmd string
+---@param ...string
 function M.run_command(cmd, ...)
   local args = { ... }
   cmd = cmd or "builtin"

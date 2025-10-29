@@ -1,8 +1,8 @@
----@diagnostic disable: unused-local, unused-function
+---@diagnostic disable: unused-local, unused-function, unused
 local MiniTest = require("mini.test")
 local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
-local expect, eq = helpers.expect, helpers.expect.equality
+local eq = helpers.expect.equality
 local new_set = MiniTest.new_set
 local exec_lua = child.lua
 
@@ -133,7 +133,7 @@ end
 T["win"]["keymap"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
 T["win"]["keymap"]["no error"] = new_set({
-  parametrize = vim.iter(require("fzf-lua.defaults").defaults.keymap.builtin)
+  parametrize = vim.iter(assert(require("fzf-lua.defaults").defaults.keymap).builtin)
       :map(function(key, action) return { key, action } end)
       :totable()
 }, {

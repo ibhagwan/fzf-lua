@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1

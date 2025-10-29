@@ -53,6 +53,7 @@ function M.check()
   end
 
   local run = vim.fn.stdpath("run")
+  ---@cast run -string[]
   if not uv.fs_access(run, "rwx") then
     error(
       "Your 'run' directory is invalid `"

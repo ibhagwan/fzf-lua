@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
@@ -168,18 +169,18 @@ function M.is_relative_to(path, relative_to)
   relative_to = M.add_trailing(M.tilde_to_HOME(relative_to))
   local pidx, ridx = 1, 1
   repeat
-    local pbyte = string.byte(path, pidx)
-    local rbyte = string.byte(relative_to, ridx)
+    local pbyte = string_byte(path, pidx)
+    local rbyte = string_byte(relative_to, ridx)
     if M.byte_is_separator(pbyte) and M.byte_is_separator(rbyte) then
       -- both path and relative_to have a separator part
       -- which may differ in length if there are multiple
       -- separators, e.g. "/some/path" and "//some//path"
       repeat
         pidx = pidx + 1
-      until not M.byte_is_separator(string.byte(path, pidx))
+      until not M.byte_is_separator(string_byte(path, pidx))
       repeat
         ridx = ridx + 1
-      until not M.byte_is_separator(string.byte(relative_to, ridx))
+      until not M.byte_is_separator(string_byte(relative_to, ridx))
     elseif utils.__IS_WINDOWS and pbyte and rbyte
         -- case insensitive matching on windows
         and string.char(pbyte):lower() == string.char(rbyte):lower()
@@ -387,9 +388,9 @@ end
 ---@param opts table
 ---@return fzf-lua.path.Entry
 function M.entry_to_location(entry, opts)
-  local uri, line, col = entry:match("^(.*://.*):(%d+):(%d+):")
-  line = line and tonumber(line) > 0 and tonumber(line) or 1
-  col = col and tonumber(col) > 0 and tonumber(col) or 1
+  local uri, line0, col0 = entry:match("^(.*://.*):(%d+):(%d+):")
+  local line = utils.tointeger(line0) or 1
+  local col = utils.tointeger(col0) or 1
   if opts.path_shorten and uri:match("file://") then
     uri = "file://" .. M.lengthen(uri:sub(8))
   end
@@ -400,6 +401,10 @@ function M.entry_to_location(entry, opts)
     uri = uri,
     range = {
       start = {
+        line = line - 1,
+        character = col - 1,
+      },
+      ["end"] = {
         line = line - 1,
         character = col - 1,
       }
@@ -466,7 +471,8 @@ function M.entry_to_file(entry, opts, force_uri)
   end
   -- Entry metadata (before `utils.nbsp`) can contain `[bufnr]` which should
   -- be used instead of the file path, used in buffers, tabs, lines|blines
-  local bufnr = not opts._ctag and idx > 1 and entry:sub(1, idx):match("%[(%d+)%]") or nil
+  local bufnr0 = not opts._ctag and idx > 1 and entry:sub(1, idx):match("%[(%d+)%]") or nil
+  local bufnr = utils.tointeger(bufnr0)
   if isURI and not bufnr then
     -- LSP entries can appear as URIs, for example when using nvim-jdtls
     -- references inside ".jar" files will have a prefix of "jdt://..."
@@ -522,16 +528,17 @@ function M.entry_to_file(entry, opts, force_uri)
   if opts.path_shorten and not M.is_uri(stripped) then
     file = M.lengthen(file)
   end
+  ---@type fzf-lua.path.Entry
   return {
     stripped = stripped,
-    bufnr    = tonumber(bufnr),
-    bufname  = bufnr and vim.api.nvim_buf_is_valid(tonumber(bufnr))
-        and vim.api.nvim_buf_get_name(tonumber(bufnr)),
+    bufnr    = bufnr,
+    bufname  = bufnr and vim.api.nvim_buf_is_valid(bufnr)
+        and vim.api.nvim_buf_get_name(bufnr),
     terminal = terminal,
     path     = file,
-    line     = tonumber(opts.line_query and
+    line     = utils.tointeger(opts.line_query and
       (opts.line_query(opts._last_query or opts.last_query)) or line) or 0,
-    col      = tonumber(col) or 0,
+    col      = utils.tointeger(col) or 0,
     ctag     = opts._ctag and M.entry_to_ctag(stripped) or nil,
     debug    = opts.debug and entry:match("^%[DEBUG]") and entry or nil,
   }
@@ -564,6 +571,7 @@ function M.git_cwd(cmd, opts)
   elseif type(cmd) == "table" then
     local idx = 2
     cmd = utils.tbl_deep_clone(cmd)
+    ---@cast cmd -?
     for _, a in ipairs(git_args) do
       if o[a[1]] then
         o[a[1]] = a.noexpand and o[a[1]] or libuv.expand(o[a[1]])
@@ -624,13 +632,16 @@ end
 
 -- Minimal functionality so we can hijack during `vim.filetype.match`
 -- As of neovim 0.10 we only need to implement mode ":t"
+---@param fname string
+---@param mods string
+---@return string
 M._fnamemodify = function(fname, mods)
   if mods == ":t" then
     return M.tail(fname)
   end
   if mods == ":r" then
     local tail = M.tail(fname)
-    return tail and tail[1] ~= "." and (fname:gsub("%.[^.]*$", "")) or tail
+    return tail and tail:sub(1, 1) ~= "." and (fname:gsub("%.[^.]*$", "")) or tail
   end
   return fname
 end

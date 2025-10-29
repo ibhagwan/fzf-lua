@@ -1,5 +1,8 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local fzf = require("fzf-lua")
+
+---@type fzf-lua.Config|{}
 return {
   desc     = "hide interface instead of abort",
   keymap   = {
@@ -45,6 +48,7 @@ return {
           _on_create(e)
         end
       end
+      ---@diagnostic disable: assign-type-mismatch
       opts.actions["esc"] = {
         fn = fzf.actions.dummy_abort,
         desc = "hide",
@@ -70,7 +74,7 @@ return {
           act.desc = act.desc or fzf.config.get_action_helpstr(fn)
           act.fn = function(...)
             fzf.hide()
-            fn(...)
+            if fn then fn(...) end
             -- As the process never terminates fzf history is never written
             -- manually append to the fzf history file if needed
             local o = select(2, ...)

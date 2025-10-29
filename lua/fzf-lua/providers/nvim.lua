@@ -76,6 +76,7 @@ M.commands = function(opts)
   end
 
   opts.flatten = opts.flatten or {}
+  assert(opts.hls)
   for k, _ in pairs(global_commands) do
     table.insert(entries, utils.ansi_codes[opts.hls.cmd_global](k))
     add_subcommand(k, utils.ansi_codes[opts.hls.cmd_global])
@@ -94,6 +95,7 @@ M.commands = function(opts)
   end
 
   for k, _ in pairs(builtin_commands) do
+    ---@diagnostic disable-next-line: undefined-field
     table.insert(entries, utils.ansi_codes[opts.hls.cmd_ex](k))
   end
 
@@ -265,6 +267,7 @@ M.marks = function(opts)
   opts = config.normalize_opts(opts, "marks")
   if not opts then return end
 
+  assert(opts.hls)
   local contents = function(cb)
     local buf = utils.CTX().bufnr
     local entries = {}
