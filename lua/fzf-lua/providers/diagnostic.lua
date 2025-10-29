@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
@@ -210,8 +211,8 @@ M.diagnostics = function(opts)
                 diag_entry.filename = utils.ansi_from_hl(sign_def.texthl, diag_entry.filename)
               end
 
-              local entry = make_entry.lcol(diag_entry, opts)
-              entry = make_entry.file(entry, opts)
+              local entry0 = make_entry.lcol(diag_entry, opts)
+              local entry = make_entry.file(entry0, opts)
               if entry == nil then entry = "" end
               if not entry then
                 -- entry to be skipped (e.g. 'cwd_only')
@@ -269,7 +270,7 @@ M.diagnostics = function(opts)
 end
 
 ---@param opts fzf-lua.config.Diagnostics|{}?
----@return thread?, string?, table?
+---@return (thread|table)?, string?, table?
 M.all = function(opts)
   if not opts then opts = {} end
   opts.diag_all = true

@@ -12,32 +12,14 @@
     "disable": [
       "unnecessary-if",
       "param-type-not-match",
-      "type-not-found",
-      "preferred-local-alias",
       "need-check-nil",
-      "undefined-field",
-      "assign-type-mismatch",
-      "inject-field",
-      "redundant-return-value",
-      "unnecessary-assert",
-      "return-type-mismatch",
-      "generic-constraint-mismatch",
       "await-in-sync",
-      "redundant-parameter",
-      "missing-fields",
-      "missing-return-value",
-      "cast-type-mismatch",
-      "missing-parameter",
-      "access-invisible",
-      "global-in-non-module",
-      "duplicate-require",
-      "unused"
+      "global-in-non-module"
     ]
   },
   "workspace": {
     "library": [
       "$VIMRUNTIME",
-      "${3rd}/luv/library",
       "deps/mini.nvim",
       "deps/nvim-web-devicons",
       "deps/nvim-cmp",

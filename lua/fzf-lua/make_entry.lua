@@ -1,5 +1,6 @@
 local M = {}
 
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -18,20 +19,10 @@ end
 local function load_config()
   ---@diagnostic disable-next-line: undefined-field
   if not _G._fzf_lua_server then return end
-  local res = nil
-  local ok, errmsg = pcall(function()
-    ---@diagnostic disable-next-line: undefined-field
-    local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
-    res = vim.rpcrequest(chan_id, "nvim_exec_lua", [[
-      return FzfLua.libuv.serialize(FzfLua.config)
-    ]], {})
-    res = libuv.deserialize(assert(res))
-    vim.fn.chanclose(chan_id)
-  end)
-  if not ok then
-    dump(res)
-    dump(errmsg)
-  end
+  local ok, res = utils.rpcexec(_G._fzf_lua_server, "nvim_exec_lua",
+    [[return FzfLua.libuv.serialize(FzfLua.config)]], {})
+  if not ok then error(res) end
+  res = libuv.deserialize(res)
   return res
 end
 
@@ -42,7 +33,6 @@ local function load_config_section(s, datatype, optional)
     ---@diagnostic disable-next-line: undefined-field
   elseif _G._fzf_lua_server then
     -- load config from our running instance
-    local res = nil
     local is_bytecode = false
     local exec_str, exec_opts = nil, nil
     if datatype == "function" then
@@ -165,6 +155,8 @@ M.glob_parse = function(query, opts)
   end
   local glob_args = ""
   local search_query, glob_str = query:match("(.*)" .. opts.glob_separator .. "(.*)")
+  search_query = search_query or ""
+  glob_str = glob_str or ""
   for _, s in ipairs(utils.strsplit(glob_str, "%s+")) do
     if #s > 0 then
       glob_args = glob_args .. ("%s %s "):format(opts.glob_flag, libuv.shellescape(s))
@@ -468,7 +460,7 @@ M.expand_query = function(opts, query, cmd)
       local search_query, glob_args = M.glob_parse(query, opts)
       if glob_args then
         -- gsub doesn't like single % on rhs
-        search_query = search_query:gsub("%%", "%%%%")
+        search_query = utils.lua_escape(search_query)
         -- reset argvz so it doesn't get replaced again below
         -- insert glob args before `-- {argvz}` or `-e {argvz}` repositioned
         -- at the end of the command preceding the search query (#781, #794)
@@ -657,7 +649,7 @@ M.file = function(x, opts)
     ret[#ret + 1] = file_is_ansi > 0
         -- filename is ansi escape colored, replace the inner string (#819)
         -- escape `%` in path, since `string.gsub` also use it in target (#1443)
-        and file_part:gsub(utils.lua_regex_escape(stripped_filepath), (filepath:gsub("%%", "%%%%")))
+        and file_part:gsub(utils.lua_regex_escape(stripped_filepath), utils.lua_escape(filepath))
         or filepath
   end
   -- multiline is only enabled with grep-like output PATH:LINE:COL:
@@ -732,8 +724,10 @@ M.git_status = function(x, opts)
   local f1, f2 = x:sub(4):gsub([["]], ""), nil
   -- renames separate files with '->'
   if f1:match("%s%->%s") then
+    ---@diagnostic disable-next-line: assign-type-mismatch
     f1, f2 = f1:match("(.*)%s%->%s(.*)")
   end
+  ---@diagnostic disable-next-line: assign-type-mismatch
   f1 = f1 and M.file(f1, opts)
   -- accommodate 'file_ignore_patterns'
   if not f1 then return end

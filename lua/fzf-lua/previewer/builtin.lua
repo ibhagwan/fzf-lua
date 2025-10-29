@@ -4,6 +4,7 @@ local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local Object = require "fzf-lua.class"
 
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local api = vim.api
 local fn = vim.fn
@@ -74,10 +75,12 @@ function TSContext.toggle(winid, bufnr)
 end
 
 function TSContext.inc_dec_maxlines(num, winid, bufnr)
-  if not TSContext._setup or not tonumber(num) then return end
+  if not TSContext._setup then return end
+  local n = tonumber(num)
+  if not n then return end
   local config = require("treesitter-context.config")
   local max_lines = config.max_lines or 0
-  config.max_lines = math.max(0, max_lines + tonumber(num))
+  config.max_lines = math.max(0, max_lines + n)
   utils.info("treesitter-context `max_lines` set to %d.", config.max_lines)
   if TSContext.is_attached(winid) then
     for _, t in ipairs({ 0, 20 }) do
@@ -93,7 +96,7 @@ end
 function TSContext.update(winid, bufnr, opts)
   opts = opts or {}
   if not TSContext.setup(opts) then return end
-  assert(not vim.api.nvim_win_is_valid(winid) or bufnr == vim.api.nvim_win_get_buf(winid))
+  assert(not api.nvim_win_is_valid(winid) or bufnr == api.nvim_win_get_buf(winid))
   local render = require("treesitter-context.render")
   local context_ranges, context_lines = require("treesitter-context.context").get(winid)
   if not context_ranges or #context_ranges == 0 then
@@ -101,7 +104,7 @@ function TSContext.update(winid, bufnr, opts)
   else
     assert(context_lines)
     local function open()
-      if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_win_is_valid(winid) then
+      if api.nvim_buf_is_valid(bufnr) and api.nvim_win_is_valid(winid) then
         -- ensure context win is above
         local fix = function(win, zindex)
           if win and api.nvim_win_is_valid(win) and api.nvim_win_get_config(win).zindex ~= zindex then
@@ -139,6 +142,37 @@ end
 local Previewer = {}
 
 ---@class fzf-lua.previewer.Builtin : fzf-lua.Object,{}
+---@field last_entry? string
+---@field type "builtin"
+---@field new function
+---@field setup_opts function
+---@field opts table
+---@field win fzf-lua.Win
+---@field delay integer
+---@field title any
+---@field title_pos "center"|"left"|"right"
+---@field title_fnamemodify fun(title: string, width: integer?): string
+---@field render_markdown table?
+---@field snacks_image table?
+---@field winopts fzf-lua.config.Winopts|{}?
+---@field syntax boolean
+---@field syntax_delay integer
+---@field syntax_limit_b integer
+---@field syntax_limit_l integer
+---@field limit_b integer
+---@field _ts_limit_b_per_line integer
+---@field treesitter table
+---@field toggle_behavior "default"|"extend"
+---@field winopts_orig table
+---@field winblend integer
+---@field extensions { [string]: string[]? }
+---@field ueberzug_scaler "crop"|"distort"|"contain"|"fit_contain"|"cover"|"forced_cover"
+---@field cached_bufnrs { [string]: [integer, integer]|true? }
+---@field cached_buffers { [string]: fzf-lua.buffer_or_file.Bcache? }
+---@field listed_buffers { [string]: boolean? }
+---@field clear_on_redraw boolean?
+---@field timers? table<string, uv.uv_timer_t?>
+---@field orig_pos? [integer, integer]
 Previewer.base = Object:extend()
 
 ---@param o table
@@ -201,11 +235,11 @@ function Previewer.base:new(o, opts)
   self.listed_buffers = (function()
     local map = {}
     vim.tbl_map(function(b)
-      if vim.fn.buflisted(b) == 1 then
+      if fn.buflisted(b) == 1 then
         -- Save key as string or this gets treated as an array
         map[tostring(b)] = true
       end
-    end, vim.api.nvim_list_bufs())
+    end, api.nvim_list_bufs())
     return map
   end)()
   return self
@@ -261,6 +295,8 @@ function Previewer.base:preview_is_terminal()
   return utils.getwininfo(self.win.preview_winid).terminal == 1
 end
 
+---@diagnostic disable-next-line: unused
+---@return integer
 function Previewer.base:get_tmp_buffer()
   local tmp_buf = api.nvim_create_buf(false, true)
   vim.bo[tmp_buf].modeline = true
@@ -279,7 +315,7 @@ function Previewer.base:safe_buf_delete(bufnr, del_cached)
   if self.listed_buffers[tostring(bufnr)] then
     -- print("safe_buf_delete LISTED", bufnr)
     return
-  elseif not vim.api.nvim_buf_is_valid(bufnr) then
+  elseif not api.nvim_buf_is_valid(bufnr) then
     -- print("safe_buf_delete INVALID", bufnr)
     return
   elseif not del_cached and self.cached_bufnrs[tostring(bufnr)] then
@@ -288,11 +324,11 @@ function Previewer.base:safe_buf_delete(bufnr, del_cached)
   end
   -- print("safe_buf_delete DELETE", bufnr)
   -- delete buffer marks
-  vim.api.nvim_buf_call(bufnr, function()
+  api.nvim_buf_call(bufnr, function()
     vim.cmd([[delm \"]])
   end)
   -- delete the buffer
-  vim.api.nvim_buf_delete(bufnr, { force = true })
+  api.nvim_buf_delete(bufnr, { force = true })
 end
 
 ---@param newbuf integer
@@ -300,7 +336,7 @@ end
 function Previewer.base:set_preview_buf(newbuf, min_winopts)
   if not self.win or not self.win:validate_preview() then return end
   -- Set the preview window to the new buffer
-  local curbuf = vim.api.nvim_win_get_buf(self.win.preview_winid)
+  local curbuf = api.nvim_win_get_buf(self.win.preview_winid)
   if curbuf == newbuf then return end
   -- Something went terribly wrong
   assert(curbuf ~= newbuf)
@@ -308,7 +344,7 @@ function Previewer.base:set_preview_buf(newbuf, min_winopts)
   -- to make gc work, don't reference `win._previewer` in a callback
   local winid = self.win.fzf_winid
   vim.keymap.set("", "i", function()
-    vim.api.nvim_set_current_win(winid)
+    api.nvim_set_current_win(winid)
     vim.cmd("startinsert")
   end, { buffer = newbuf })
   self.preview_bufnr = newbuf
@@ -325,17 +361,12 @@ function Previewer.base:set_preview_buf(newbuf, min_winopts)
   self:safe_buf_delete(curbuf)
 end
 
----@param bufnr integer?
----@param key string?
+---@param bufnr integer
+---@param key string
 ---@param min_winopts boolean?
----@return table? cached
+---@return fzf-lua.buffer_or_file.Bcache?
 function Previewer.base:cache_buffer(bufnr, key, min_winopts)
   if not key then return end
-  if not bufnr then
-    -- can happen with slow loading buffers such as image previews
-    -- with viu while spamming f5/f6 to rotate the preview window
-    return
-  end
   local cached = self.cached_buffers[key]
   if cached then
     if cached.bufnr == bufnr then
@@ -364,7 +395,7 @@ function Previewer.base:clear_cached_buffers()
 end
 
 ---@param newbuf boolean?
----@return integer
+---@return integer?
 function Previewer.base:clear_preview_buf(newbuf)
   local retbuf = nil
   if ((self.win and self.win._reuse) or newbuf)
@@ -403,9 +434,28 @@ function Previewer.base:display_last_entry()
   self:display_entry(self.last_entry)
 end
 
+---@diagnostic disable-next-line: unused
 function Previewer.base:should_clear_preview(_) end -- for lint
 
+---@diagnostic disable-next-line: unused
 function Previewer.base:populate_preview_buf(_) end -- for lint
+
+---@param name string
+---@param delay integer
+---@param func function
+function Previewer.base:debounce(name, delay, func)
+  self.timers = self.timers or {}
+  local timer = self.timers[name]
+  if tonumber(delay) > 0 then
+    if timer and type(timer.is_closing) == "function" and not timer:is_closing() then
+      timer:stop()
+      timer:close()
+    end
+    self.timers[name] = vim.defer_fn(func, delay)
+  else
+    func()
+  end
+end
 
 ---@param entry_str string?
 function Previewer.base:display_entry(entry_str)
@@ -435,22 +485,9 @@ function Previewer.base:display_entry(entry_str)
   end
 
   -- debounce preview entries
-  if tonumber(self.delay) > 0 then
-    if not self._entry_count then
-      self._entry_count = 1
-    else
-      self._entry_count = self._entry_count + 1
-    end
-    local entry_count = self._entry_count
-    vim.defer_fn(function()
-      -- only display if entry hasn't changed
-      if self._entry_count == entry_count then
-        populate_preview_buf(entry_str)
-      end
-    end, self.delay)
-  else
+  self:debounce("preview", self.delay, function()
     populate_preview_buf(entry_str)
-  end
+  end)
 end
 
 function Previewer.base:cmdline(_)
@@ -482,7 +519,7 @@ function Previewer.base:zero(_)
   -- currently awaiting an upstream fix:
   -- https://github.com/junegunn/fzf/issues/3516
   --
-  self._zero_lock = self._zero_lock or path.normalize(vim.fn.tempname())
+  self._zero_lock = self._zero_lock or path.normalize(fn.tempname())
   local act = string.format("execute-silent(mkdir %s && %s)",
     libuv.shellescape(self._zero_lock),
     shell.stringify_data(function(_, _, _)
@@ -495,7 +532,7 @@ function Previewer.base:zero(_)
           self.win:update_preview_title("")
         end
         self.last_entry = nil
-        vim.fn.delete(self._zero_lock, "d")
+        fn.delete(self._zero_lock, "d")
       end, self.delay)
     end, self.opts, ""))
   return act
@@ -532,7 +569,7 @@ function Previewer.base:scroll(direction)
   if not input then return end
 
   if direction == "reset" then
-    pcall(vim.api.nvim_win_call, preview_winid, function()
+    pcall(api.nvim_win_call, preview_winid, function()
       -- for some reason 'nvim_win_set_cursor'
       -- only moves forward, so set to (1,0) first
       api.nvim_win_set_cursor(0, { 1, 0 })
@@ -542,10 +579,11 @@ function Previewer.base:scroll(direction)
       utils.zz()
     end)
   else
-    pcall(vim.api.nvim_win_call, preview_winid, function()
+    pcall(api.nvim_win_call, preview_winid, function()
       vim.cmd([[norm! ]] .. input)
       -- `zb` at bottom?
       local wi = utils.getwininfo(preview_winid)
+      ---@cast wi -?
       if wi.height > (wi.botline - wi.topline) then
         api.nvim_win_set_cursor(0, { wi.botline, 1 })
         vim.cmd("norm! zvzb")
@@ -562,7 +600,7 @@ function Previewer.base:scroll(direction)
     if direction == "reset" then
       self.cached_bufnrs[tostring(self.preview_bufnr)] = true
     else
-      self.cached_bufnrs[tostring(self.preview_bufnr)] = vim.api.nvim_win_get_cursor(preview_winid)
+      self.cached_bufnrs[tostring(self.preview_bufnr)] = api.nvim_win_get_cursor(preview_winid)
     end
   end
   self.win:update_preview_scrollbar()
@@ -604,15 +642,15 @@ function Previewer.buffer_or_file:close(do_not_clear_cache)
 end
 
 ---@param entry_str string
----@return fzf-lua.path.Entry
+---@return fzf-lua.path.Entry|{}
 function Previewer.buffer_or_file:entry_to_file(entry_str)
   return path.entry_to_file(entry_str, self.opts)
 end
 
 ---@param entry_str string
----@return fzf-lua.buffer_or_file.Entry
+---@return fzf-lua.buffer_or_file.Entry|{}
 function Previewer.buffer_or_file:parse_entry(entry_str)
-  ---@type fzf-lua.buffer_or_file.Entry
+  ---@type fzf-lua.buffer_or_file.Entry|{}
   local entry = self:entry_to_file(entry_str)
   entry.buf_is_loaded = entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr)
   entry.buf_is_valid = entry.bufnr and api.nvim_buf_is_valid(entry.bufnr)
@@ -624,7 +662,7 @@ function Previewer.buffer_or_file:parse_entry(entry_str)
   -- or when starting nvim with an arglist, fix entry.path since it contains
   -- filename only
   if entry.buf_is_valid then
-    entry.path = path.relative_to(vim.api.nvim_buf_get_name(entry.bufnr), uv.cwd())
+    entry.path = path.relative_to(api.nvim_buf_get_name(entry.bufnr), uv.cwd())
   end
   if entry.path then
     entry.fs_stat = uv.fs_stat(entry.path)
@@ -638,11 +676,13 @@ function Previewer.buffer_or_file:parse_entry(entry_str)
   return entry
 end
 
+---@diagnostic disable-next-line: unused
+---@return boolean
 function Previewer.buffer_or_file:should_clear_preview(_)
   return false
 end
 
----@param entry fzf-lua.buffer_or_file.Entry
+---@param entry fzf-lua.buffer_or_file.Entry|{}
 ---@return boolean
 function Previewer.buffer_or_file:should_load_buffer(entry)
   -- we don't have a previous entry to compare to or `do_not_cache` is set meaning
@@ -659,11 +699,11 @@ end
 function Previewer.buffer_or_file:start_ueberzug()
   if self._ueberzug_fifo then return self._ueberzug_fifo end
   self._ueberzug_fifo = path.join({
-    vim.fn.fnamemodify(vim.fn.tempname(), ":h"),
-    string.format("fzf-lua-%d-ueberzug", vim.fn.getpid())
+    fn.fnamemodify(fn.tempname(), ":h"),
+    string.format("fzf-lua-%d-ueberzug", fn.getpid())
   })
   utils.io_system({ "mkfifo", self._ueberzug_fifo })
-  self._ueberzug_job = vim.fn.jobstart({ "sh", "-c",
+  self._ueberzug_job = fn.jobstart({ "sh", "-c",
     string.format(
       "tail -f %s | ueberzug layer --parser json",
       libuv.shellescape(self._ueberzug_fifo))
@@ -682,23 +722,23 @@ function Previewer.buffer_or_file:start_ueberzug()
       end
       -- populate the preview buffer with the error message
       if self.preview_bufnr and self.preview_bufnr > 0 and
-          vim.api.nvim_buf_is_valid(self.preview_bufnr) then
-        local lines = vim.api.nvim_buf_get_lines(self.preview_bufnr, 0, -1, false)
+          api.nvim_buf_is_valid(self.preview_bufnr) then
+        local lines = api.nvim_buf_get_lines(self.preview_bufnr, 0, -1, false)
         for _, l in ipairs(data or {}) do
           table.insert(lines, l)
         end
-        vim.api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
+        api.nvim_buf_set_lines(self.preview_bufnr, 0, -1, false, lines)
       end
     end
   }
   )
-  self._ueberzug_pid = vim.fn.jobpid(self._ueberzug_job)
+  self._ueberzug_pid = fn.jobpid(self._ueberzug_job)
   return self._ueberzug_fifo
 end
 
 function Previewer.buffer_or_file:stop_ueberzug()
   if self._ueberzug_job then
-    vim.fn.jobstop(self._ueberzug_job)
+    fn.jobstop(self._ueberzug_job)
     if type(uv.os_getpriority(self._ueberzug_pid)) == "number" then
       uv.kill(self._ueberzug_pid, 9)
     end
@@ -706,7 +746,7 @@ function Previewer.buffer_or_file:stop_ueberzug()
     self._ueberzug_pid = nil
   end
   if self._ueberzug_fifo and uv.fs_stat(self._ueberzug_fifo) then
-    vim.fn.delete(self._ueberzug_fifo)
+    fn.delete(self._ueberzug_fifo)
     self._ueberzug_fifo = nil
   end
 end
@@ -714,7 +754,7 @@ end
 function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
   if not cmd then return end
   cmd = type(cmd) == "table" and utils.deepcopy(cmd) or { cmd }
-  if not cmd[1] or vim.fn.executable(cmd[1]) ~= 1 then
+  if not cmd[1] or fn.executable(cmd[1]) ~= 1 then
     return false
   end
   -- no caching: preview buf must be reattached for
@@ -732,8 +772,8 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
   if cmd[1]:match("ueberzug") then
     local fifo = self:start_ueberzug()
     if not fifo then return end
-    local wincfg = vim.api.nvim_win_get_config(self.win.preview_winid)
-    local winpos = vim.api.nvim_win_get_position(self.win.preview_winid)
+    local wincfg = api.nvim_win_get_config(self.win.preview_winid)
+    local winpos = api.nvim_win_get_position(self.win.preview_winid)
     local params = {
       action     = "add",
       identifier = "preview",
@@ -746,10 +786,10 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
           path.join({ self.opts.cwd or uv.cwd(), entry.path }),
     }
     local json = vim.json.encode(params)
-    -- both 'fs_open|write|close' and 'vim.fn.system' work.
+    -- both 'fs_open|write|close' and 'fn.system' work.
     -- We prefer the libuv method as it doesn't rely on the shell
     -- cmd = { "sh", "-c", ("echo '%s' > %s"):format(json, self._ueberzug_fifo) }
-    -- vim.fn.system(cmd)
+    -- fn.system(cmd)
     local fd = uv.fs_open(self._ueberzug_fifo, "a", -1)
     if fd then
       uv.fs_write(fd, json .. "\n", nil, function(_)
@@ -771,7 +811,7 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
     end
     -- must be modifiable or 'termopen' fails
     vim.bo[tmpbuf].modifiable = true
-    vim.api.nvim_buf_call(tmpbuf, function()
+    api.nvim_buf_call(tmpbuf, function()
       self._job_id = utils.termopen(cmd, {
         cwd = self.opts.cwd,
         on_exit = function()
@@ -790,13 +830,13 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
   return true
 end
 
+---@diagnostic disable-next-line: unused
 ---@param entry fzf-lua.buffer_or_file.Entry
 ---@return string
 function Previewer.buffer_or_file:key_from_entry(entry)
-  assert(entry)
-  return entry.bufnr and string.format("bufnr:%d", entry.bufnr)
-      or entry.uri
-      or entry.path
+  return assert(entry.bufnr and string.format("bufnr:%d", entry.bufnr)
+    or entry.uri
+    or entry.path)
 end
 
 ---@param entry fzf-lua.buffer_or_file.Entry
@@ -804,10 +844,10 @@ end
 function Previewer.buffer_or_file:get_bcache(entry)
   if entry.do_not_cache then return end
   local key = self:key_from_entry(entry)
-  assert(type(key) == "string" and #key > 0)
+  assert(#key > 0)
   local cached = self.cached_buffers[key]
   assert(not cached or self.cached_bufnrs[tostring(cached.bufnr)])
-  assert(not cached or vim.api.nvim_buf_is_valid(cached.bufnr))
+  assert(not cached or api.nvim_buf_is_valid(cached.bufnr))
   if not cached then return end
   if not cached.tick then -- in case cache don't have "tick"
     assert(cached.tick == entry.tick)
@@ -855,7 +895,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   -- kill previously running terminal jobs
   -- when using external commands extension map
   if self._job_id and self._job_id > 0 then
-    vim.fn.jobstop(self._job_id)
+    fn.jobstop(self._job_id)
     self._job_id = nil
   end
   if entry.buf_is_loaded or (entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr)) then
@@ -863,19 +903,19 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- this changes the buffer's 'getbufinfo[1].lastused'
     -- which messes up our `buffers()` sort
     entry.filetype = vim.bo[entry.bufnr].filetype
-    local lines = vim.api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
+    local lines = api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
     local tmpbuf = invalid_cached and invalid_cached.bufnr or self:get_tmp_buffer()
-    vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+    api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
     -- terminal buffers use minimal window style (2nd arg)
     self:set_preview_buf(tmpbuf, entry.terminal)
     self:preview_buf_post(entry, entry.terminal)
   elseif entry.uri then
     -- LSP 'jdt://' entries, see issue #195
     -- https://github.com/ibhagwan/fzf-lua/issues/195
-    vim.api.nvim_win_call(self.win.preview_winid, function()
+    api.nvim_win_call(self.win.preview_winid, function()
       local ok, res = pcall(utils.jump_to_location, entry, "utf-16", false)
       if ok then
-        self.preview_bufnr = vim.api.nvim_get_current_buf()
+        self.preview_bufnr = api.nvim_get_current_buf()
       else
         -- in case of an error display the stacktrace in the preview buffer
         local lines = type(res) == "string" and utils.strsplit(res, "\n") or { "null" }
@@ -884,7 +924,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
             utils.__HAS_NVIM_011 and "show_document" or "jump_to_location", entry.uri))
         table.insert(lines, 2, "")
         local tmpbuf = invalid_cached and invalid_cached.bufnr or self:get_tmp_buffer()
-        vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+        api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
         self:set_preview_buf(tmpbuf)
       end
     end)
@@ -937,7 +977,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
         end
       end
       if lines then
-        pcall(vim.api.nvim_buf_set_lines, tmpbuf, 0, -1, false, lines)
+        pcall(api.nvim_buf_set_lines, tmpbuf, 0, -1, false, lines)
         -- swap preview buffer with new one
         self:set_preview_buf(tmpbuf)
         self:preview_buf_post(entry)
@@ -953,7 +993,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       if data:sub(#data, #data) == "\n" or data:sub(#data - 1, #data) == "\r\n" then
         table.remove(lines)
       end
-      vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+      api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
       -- swap preview buffer with new one
       self:set_preview_buf(tmpbuf)
       self:preview_buf_post(entry)
@@ -962,6 +1002,9 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
 end
 
 -- Attach ts highlighter, neovim >= v0.9
+---@param bufnr integer
+---@param ft string
+---@return boolean?
 local ts_attach = function(bufnr, ft)
   -- ts is already attach, see $VIMRUNTIME/lua/vim/treesitter/highlighter.lua
   if vim.b[bufnr].ts_highlight then return true end
@@ -1001,7 +1044,7 @@ function Previewer.base:update_ts_context()
     TSContext.close(self.win.preview_winid)
     return
   end
-  local parser, err = vim.treesitter.get_parser(self.preview_bufnr, lang, { error = false })
+  local parser, err = vim.treesitter.get_parser(bufnr, lang, { error = false })
   -- TODO: fix `has_ts_parser` regression from a953548 (#2366)
   -- should never fail since `utils.has_ts_parser` returned true
   -- assert(parser, "'vim.treesitter.get_parser' err: " .. tostring(err))
@@ -1013,15 +1056,15 @@ function Previewer.base:update_ts_context()
   TSContext.zindex = self.win.winopts.zindex + 20
   for _, t in ipairs({ 0, 20, 50, 100 }) do
     vim.defer_fn(function()
-      if context_updated
-          or not tonumber(self.preview_bufnr)
-          or not vim.api.nvim_buf_is_valid(self.preview_bufnr)
+      if context_updated ---@diagnostic disable-next-line: preferred-local-alias
+          or bufnr ~= self.preview_bufnr
+          or not api.nvim_buf_is_valid(bufnr)
       then
         return
       end
       if parser:is_valid(true) then
         context_updated = true
-        TSContext.update(self.win.preview_winid, self.preview_bufnr, vim.tbl_extend("force",
+        TSContext.update(self.win.preview_winid, bufnr, vim.tbl_extend("force",
           type(self.treesitter.context) == "table" and self.treesitter.context or {}, {
             -- `multiwindow` must be set regardless of user options
             multiwindow = true,
@@ -1033,7 +1076,7 @@ end
 
 function Previewer.base:update_render_markdown()
   local bufnr = self.preview_bufnr
-  local ft = vim.b[bufnr] and vim.b[bufnr]._ft
+  local ft = bufnr and vim.b[bufnr] and vim.b[bufnr]._ft or nil
   if not ft
       or not self.render_markdown.enabled
       or not self.render_markdown.filetypes[ft]
@@ -1118,7 +1161,7 @@ local filetype_detect = function(bufnr, filepath)
   return vim.bo[bufnr].filetype
 end
 
----@param entry? fzf-lua.buffer_or_file.Entry
+---@param entry? fzf-lua.buffer_or_file.Entry|{}
 function Previewer.buffer_or_file:do_syntax(entry)
   if not self.preview_bufnr or not entry or not entry.path then return end
   local bufnr = self.preview_bufnr
@@ -1216,13 +1259,14 @@ function Previewer.base:maybe_set_cursorline(win, pos)
       and pos[1] <= wininfo.botline
   then
     -- reset cursor pos even when it's already there, no bigggie
-    -- local curpos = vim.api.nvim_win_get_cursor(win)
-    vim.api.nvim_win_set_cursor(win, pos)
-    cursorline = self.winopts.cursorline
+    -- local curpos = api.nvim_win_get_cursor(win)
+    api.nvim_win_set_cursor(win, pos)
+    cursorline = self.winopts.cursorline or false
   end
-  utils.wo[win].cursorline = cursorline
+  utils.wo[win].cursorline = cursorline and true or false
 end
 
+---@param entry fzf-lua.buffer_or_file.Entry
 function Previewer.buffer_or_file:set_cursor_hl(entry)
   local mgrep, glob_args = require("fzf-lua.providers.grep"), nil
   local regex = self.opts.__ACT_TO == mgrep.grep and self.opts._last_query
@@ -1251,10 +1295,10 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   regex = regex and #regex > 0 and utils.regex_to_magic(regex)
       or entry.ctag and utils.ctag_to_magic(entry.ctag)
 
-  pcall(vim.api.nvim_win_call, self.win.preview_winid, function()
+  pcall(api.nvim_win_call, self.win.preview_winid, function()
     local cached_pos = self.cached_bufnrs[tostring(self.preview_bufnr)]
     if type(cached_pos) ~= "table" then cached_pos = nil end
-    local lnum, col = tonumber(entry.line), tonumber(entry.col) or 0
+    local lnum, col = entry.line, entry.col or 0
     if not lnum or lnum < 1 then
       -- set win option is slow with bigfile
       utils.wo.cursorline = false
@@ -1287,12 +1331,14 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
           regex, reg)
       end
       if regex_start > 0 then
+        ---@diagnostic disable-next-line: assign-type-mismatch
         self.match_id = fn.matchaddpos(self.win.hls.search, { { lnum, regex_start, regex_end } }, 11)
       end
     end
 
     -- Fallback to cursor hl, only if column exists
     if regex_start <= 0 and self.win.hls.cursor and col > 0 then
+      ---@diagnostic disable-next-line: assign-type-mismatch
       self.match_id = fn.matchaddpos(self.win.hls.cursor, { { lnum, math.max(1, col) } }, 11)
     end
 
@@ -1312,7 +1358,7 @@ function Previewer.buffer_or_file:update_title(entry)
   local title = entry.debug and "[DEBUG]" or filepath or entry.uri or entry.bufname
   -- was transform function defined?
   if self.title_fnamemodify then
-    local wincfg = vim.api.nvim_win_get_config(self.win.preview_winid)
+    local wincfg = api.nvim_win_get_config(self.win.preview_winid)
     title = self.title_fnamemodify(title, wincfg and wincfg.width)
   end
   if entry.bufnr then
@@ -1339,16 +1385,7 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
 
     -- syntax highlighting
     if self.syntax then
-      if self.syntax_delay > 0 then
-        local syntax_bufnr = self.preview_bufnr
-        vim.defer_fn(function()
-          if self.preview_bufnr == syntax_bufnr then
-            syntax()
-          end
-        end, self.syntax_delay)
-      else
-        syntax()
-      end
+      self:debounce("syntax", self.syntax_delay, syntax)
     end
   end
 
@@ -1367,8 +1404,7 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
 
   -- Should we cache the current preview buffer?
   -- we cache only named buffers with valid path/uri
-  if not entry.do_not_cache then
-    ---@type fzf-lua.buffer_or_file.Bcache
+  if not entry.do_not_cache and self.preview_bufnr then
     local cached = self:cache_buffer(self.preview_bufnr, self:key_from_entry(entry), min_winopts)
     cached.tick = entry.tick
   end
@@ -1383,6 +1419,7 @@ function Previewer.help_tags:new(o, opts)
   return self
 end
 
+---@diagnostic disable-next-line: unused
 function Previewer.help_tags:parse_entry(entry_str)
   local tag = entry_str:match("^[^%s]+")
   if not tag then
@@ -1418,6 +1455,10 @@ function Previewer.help_tags:gen_winopts()
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
+---@class fzf-lua.help_tags.Entry: fzf-lua.buffer_or_file.Entry
+---@field hregex? string
+
+---@param entry fzf-lua.help_tags.Entry
 function Previewer.help_tags:set_cursor_hl(entry)
   pcall(api.nvim_win_call, self.win.preview_winid, function()
     -- start searching at line 1 in case we
@@ -1437,6 +1478,8 @@ end
 ---@field super fzf-lua.previewer.Builtin,{}
 Previewer.man_pages = Previewer.base:extend()
 
+---@diagnostic disable-next-line: unused
+---@return boolean
 function Previewer.man_pages:should_clear_preview(_)
   return false
 end
@@ -1458,6 +1501,7 @@ function Previewer.man_pages:new(o, opts)
   return self
 end
 
+---@diagnostic disable-next-line: unused
 function Previewer.man_pages:parse_entry(entry_str)
   return require("fzf-lua.providers.manpages").manpage_sh_arg(entry_str)
 end
@@ -1469,8 +1513,8 @@ function Previewer.man_pages:populate_preview_buf(entry_str)
   if type(cmd) == "string" then cmd = { "sh", "-c", cmd } end
   local output, _ = utils.io_systemlist(cmd)
   local tmpbuf = self:get_tmp_buffer()
-  -- vim.api.nvim_buf_set_option(tmpbuf, 'modifiable', true)
-  vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, output)
+  -- api.nvim_buf_set_option(tmpbuf, 'modifiable', true)
+  api.nvim_buf_set_lines(tmpbuf, 0, -1, false, output)
   vim.bo[tmpbuf].filetype = self.filetype
   self:set_preview_buf(tmpbuf)
   self.win:update_preview_scrollbar()
@@ -1494,10 +1538,10 @@ function Previewer.marks:parse_entry(entry_str)
 
   -- nvim_buf_get_mark cannot get `'` mark correctly without curwin
   -- https://github.com/neovim/neovim/issues/29807
-  local win = vim.api.nvim_win_is_valid(self.win.src_winid) and self.win.src_winid or 0
-  local buf = vim.api.nvim_buf_is_valid(self.win.src_bufnr) and self.win.src_bufnr or 0
+  local win = api.nvim_win_is_valid(self.win.src_winid) and self.win.src_winid or 0
+  local buf = api.nvim_buf_is_valid(self.win.src_bufnr) and self.win.src_bufnr or 0
   local pos = api.nvim_win_call(win, function()
-    return vim.api.nvim_buf_get_mark(buf, mark)
+    return api.nvim_buf_get_mark(buf, mark)
   end)
   if pos and pos[1] > 0 then
     bufnr = self.win.src_bufnr
@@ -1541,7 +1585,7 @@ function Previewer.jumps:parse_entry(entry_str)
       -- file is not accessible,
       -- text is a string from current buffer
       bufnr = self.win.src_bufnr
-      filepath = vim.api.nvim_buf_get_name(self.win.src_bufnr)
+      filepath = api.nvim_buf_get_name(self.win.src_bufnr)
     end
   end
   return {
@@ -1561,12 +1605,13 @@ function Previewer.tags:new(o, opts)
   return self
 end
 
+---@param entry fzf-lua.buffer_or_file.Entry
 function Previewer.tags:set_cursor_hl(entry)
   if tonumber(entry.line) and entry.line > 0 then
     Previewer.buffer_or_file.set_cursor_hl(self, entry)
     return
   end
-  -- pcall(vim.fn.clearmatches, self.win.preview_winid)
+  -- pcall(fn.clearmatches, self.win.preview_winid)
   pcall(api.nvim_win_call, self.win.preview_winid, function()
     -- start searching at line 1 in case we
     -- didn't reload the buffer (same file)
@@ -1585,6 +1630,8 @@ end
 ---@field super fzf-lua.previewer.Builtin,{}
 Previewer.highlights = Previewer.base:extend()
 
+---@diagnostic disable-next-line: unused
+---@return boolean
 function Previewer.highlights:should_clear_preview(_)
   return false
 end
@@ -1599,7 +1646,7 @@ end
 
 function Previewer.highlights:new(o, opts)
   Previewer.highlights.super.new(self, o, opts)
-  self.ns_previewer = vim.api.nvim_create_namespace("fzf-lua.previewer.hl")
+  self.ns_previewer = api.nvim_create_namespace("fzf-lua.previewer.hl")
   return self
 end
 
@@ -1618,7 +1665,7 @@ function Previewer.highlights:populate_preview_buf(entry_str)
   local hlgroup = hl
   local lines = {}
   repeat
-    local hl_def = vim.api.nvim_get_hl(0, { name = hl, link = true })
+    local hl_def = api.nvim_get_hl(0, { name = hl, link = true })
     local block = utils.strsplit(serpent.block(hl_def, { comment = false, sortkeys = false }), "\n")
     block[1] = string.format("%s = %s", hl, block[1])
     vim.tbl_map(function(l) table.insert(lines, l) end, block)
@@ -1626,10 +1673,10 @@ function Previewer.highlights:populate_preview_buf(entry_str)
   until not hl
   table.insert(lines, [[]])
   table.insert(lines, [["THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"]])
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   self.win:update_preview_title(hl)
   self.win:update_preview_scrollbar()
-  vim.api.nvim_win_call(self.win.preview_winid, function()
+  api.nvim_win_call(self.win.preview_winid, function()
     if self.match_id then
       pcall(fn.matchdelete, self.match_id)
       self.match_id = nil
@@ -1642,6 +1689,8 @@ end
 ---@field super fzf-lua.previewer.Builtin,{}
 Previewer.quickfix = Previewer.base:extend()
 
+---@diagnostic disable-next-line: unused
+---@return boolean
 function Previewer.quickfix:should_clear_preview(_)
   return true
 end
@@ -1671,8 +1720,8 @@ function Previewer.quickfix:populate_preview_buf(entry_str)
   end
 
   local qf_list = self.opts._is_loclist
-      and vim.fn.getloclist(self.win.src_winid, { all = "", nr = tonumber(nr) })
-      or vim.fn.getqflist({ all = "", nr = tonumber(nr) })
+      and fn.getloclist(self.win.src_winid, { all = "", nr = tonumber(nr) })
+      or fn.getqflist({ all = "", nr = tonumber(nr) })
   if utils.tbl_isempty(qf_list) or utils.tbl_isempty(qf_list.items) then
     return
   end
@@ -1681,11 +1730,11 @@ function Previewer.quickfix:populate_preview_buf(entry_str)
   for _, e in ipairs(qf_list.items) do
     table.insert(lines, string.format("%s|%d col %d|%s",
       path.HOME_to_tilde(path.relative_to(
-        vim.api.nvim_buf_get_name(e.bufnr), uv.cwd())),
+        api.nvim_buf_get_name(e.bufnr), uv.cwd())),
       e.lnum, e.col, e.text))
   end
   self.tmpbuf = self:get_tmp_buffer()
-  vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, lines)
+  api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, lines)
   vim.bo[self.tmpbuf].filetype = "qf"
   self:set_preview_buf(self.tmpbuf)
   self.win:update_preview_title(string.format(" %s: %s ", nr, qf_list.title))
@@ -1701,6 +1750,7 @@ function Previewer.autocmds:new(o, opts)
   return self
 end
 
+---@return fzf-lua.config.Winopts|{}?
 function Previewer.autocmds:gen_winopts()
   if not self._is_vimL_command then
     return self.winopts
@@ -1725,7 +1775,7 @@ function Previewer.autocmds:populate_preview_buf(entry_str)
     local viml = entry_str:match("[^│]+$")
     local lines = vim.split(viml, "\n")
     local tmpbuf = self:get_tmp_buffer()
-    vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+    api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
     vim.bo[tmpbuf].filetype = "vim"
     self:set_preview_buf(tmpbuf)
     self:preview_buf_post(entry)
@@ -1757,9 +1807,10 @@ function Previewer.keymaps:populate_preview_buf(entry_str)
     -- so we display the vimL code instead
     local lines = utils.strsplit(entry.vmap:match("[^%s]+$"), "\n")
     local tmpbuf = self:get_tmp_buffer()
-    vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+    api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
     vim.bo[tmpbuf].filetype = "vim"
     self:set_preview_buf(tmpbuf)
+    ---@diagnostic disable-next-line: assign-type-mismatch
     local title_fnamemodify = self.title_fnamemodify
     self.title_fnamemodify = nil
     -- hack entry.uri for title display
@@ -1776,8 +1827,8 @@ Previewer.nvim_options = Previewer.base:extend()
 
 function Previewer.nvim_options:new(o, opts)
   Previewer.nvim_options.super.new(self, o, opts)
-  local paths = vim.fn.globpath(vim.o.rtp, "doc/options.txt", false, true)
-  self.lines = vim.fn.readfile(paths[1])
+  local paths = fn.globpath(vim.o.rtp, "doc/options.txt", false, true)
+  self.lines = fn.readfile(paths[1])
   return self
 end
 
@@ -1842,12 +1893,12 @@ function Previewer.nvim_options:populate_preview_buf(entry_str)
   }
 
   local tmpbuf = self:get_tmp_buffer()
-  vim.api.nvim_set_option_value("filetype", "help", { buf = tmpbuf })
+  api.nvim_set_option_value("filetype", "help", { buf = tmpbuf })
 
   -- get_help_text might be slow. pcall to prevent errors when scrolling the list too quickly
   pcall(function()
     local lines = vim.list_extend(header, self:get_help_text(entry.name) or {})
-    vim.api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+    api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
     self:set_preview_buf(tmpbuf)
   end)
 

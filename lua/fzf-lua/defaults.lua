@@ -152,6 +152,8 @@ M.defaults        = {
     ["--highlight-line"] = true,
   },
   fzf_tmux_opts = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
+  ---@class fzf-lua.config.Previewers
+  ---@field [string] fzf-lua.config.Previewer
   previewers    = {
     cat = {
       cmd   = "cat",
@@ -280,7 +282,8 @@ M.defaults        = {
         from = function(s, _)
           s = s:gsub("\xc2\xa0     .*$", "") -- gsub v2 postfix
           local parts = utils.strsplit(s, utils.nbsp)
-          local last = parts[#parts] ---@type string
+          local last = parts[#parts]
+          ---@cast last -?
           -- Lines from grep, lsp, tags are formatted <file>:<line>:<col>:<text>
           -- the pattern below makes sure tab doesn't come from the line text
           local filename, rest = last:match("^([^:]-)\t(.+)$")
@@ -428,6 +431,7 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
 
 ---@class fzf-lua.config.GitBase: fzf-lua.config.Base
 ---@field git_dir? string
+---@field cmd string
 
 ---@class fzf-lua.config.Git
 ---@field files     fzf-lua.config.GitFiles
@@ -861,11 +865,12 @@ M.defaults.lines                 = {
     to   = false,
     from = function(s, _)
       -- restore the format to something that `path.entry_to_file` can handle
-      local bufnr, lnum, text = s:match("%[(%d+)%].-(%d+) (.+)$")
+      local bufnr0, lnum, text = s:match("%[(%d+)%].-(%d+) (.+)$")
+      local bufnr = tonumber(bufnr0)
       if not bufnr then return "" end
       return string.format("[%s]%s%s:%s:%s",
         bufnr, utils.nbsp,
-        path.tail(vim.api.nvim_buf_get_name(tonumber(bufnr))),
+        path.tail(vim.api.nvim_buf_get_name(bufnr)),
         lnum, text)
     end
   },
@@ -1041,6 +1046,7 @@ M.defaults.awesome_colorschemes  = {
   dbfile       = "data/colorschemes.json",
   icons        = { utils.ansi_codes.blue("󰇚"), utils.ansi_codes.yellow(""), " " },
   packpath     = function()
+    ---@diagnostic disable-next-line: assign-type-mismatch
     return path.join({ vim.fn.stdpath("cache"), "fzf-lua" })
   end,
   actions      = {
@@ -1288,8 +1294,8 @@ M.defaults.lsp.code_actions      = {
 ---@class fzf-lua.config.Diagnostics: fzf-lua.config.Base
 ---@field signs? table
 ---@field severity_only? vim.diagnostic.SeverityFilter
----@field severity_limit? "string"|1|2|3|4
----@field severity_bound? "string"|1|2|3|4
+---@field severity_limit? vim.diagnostic.Severity|1|2|3|4
+---@field severity_bound? vim.diagnostic.Severity|1|2|3|4
 ---@field namespace? integer
 ---@field diag_all? boolean
 ---@field client_id? integer
@@ -1634,7 +1640,8 @@ M.defaults.zoxide            = {
 
 ---@class fzf-lua.config.CompleteLine: fzf-lua.config.Lines
 ---@field current_buffer_only? boolean
-M.defaults.complete_line         = vim.tbl_deep_extend("force", M.defaults.blines, {
+---@field complete? (fun(s: string[], _o: fzf-lua.config.Resolved, l: string, c: integer):string?, integer?)|boolean
+M.defaults.complete_line     = vim.tbl_deep_extend("force", M.defaults.blines, {
   complete = true,
 })
 

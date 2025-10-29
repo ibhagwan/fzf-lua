@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
@@ -35,7 +36,7 @@ M.oldfiles = function(opts)
 
   if opts.include_current_session then
     for _, buffer in ipairs(vim.split(vim.fn.execute(":buffers! t"), "\n")) do
-      local bufnr = tonumber(buffer:match("%s*(%d+)")) ---@type integer
+      local bufnr = tonumber(buffer:match("%s*(%d+)"))
       if bufnr then
         local file = vim.api.nvim_buf_get_name(bufnr)
         local fs_stat = stat_fn(file)

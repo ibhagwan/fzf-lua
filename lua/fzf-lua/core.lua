@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local fzf = require "fzf-lua.fzf"
 local path = require "fzf-lua.path"
@@ -91,13 +92,14 @@ M.ACTION_DEFINITIONS = {
 
 -- converts contents array sent to `fzf_exec` into a single contents
 -- argument with an optional prefix, currently used to combine LSP providers
+---@param cont_arr table
+---@return fzf-lua.content
 local contents_from_arr = function(cont_arr)
   -- must have at least one contents item in index 1
   assert(cont_arr[1].contents)
   local cont_type = type(cont_arr[1].contents)
-  local contents
   if cont_type == "table" then
-    contents = {}
+    local contents = {}
     for _, t in ipairs(cont_arr) do
       assert(type(t.contents) == cont_type, "Unable to combine contents of different types")
       contents = utils.tbl_join(contents, t.prefix and
@@ -106,9 +108,11 @@ local contents_from_arr = function(cont_arr)
         end, t.contents)
         or t.contents)
     end
-  elseif cont_type == "function" then
+    return contents
+  end
+  if cont_type == "function" then
     ---@type fzf-lua.fncContent
-    contents = function(fzf_cb)
+    return function(fzf_cb)
       coroutine.wrap(function()
         local co = coroutine.running()
         for _, t in ipairs(cont_arr) do
@@ -134,14 +138,12 @@ local contents_from_arr = function(cont_arr)
         fzf_cb()
       end)()
     end
-  elseif cont_type == "string" then
-    assert(false, "Not yet supported")
   end
-  return contents
+  error("Not yet supported" .. cont_type)
 end
 
 ---@alias fzf-lua.fzfCb fun(entry?: string|number, cb?: function)
----@alias fzf-lua.fncContent fun(wnl: fzf-lua.fzfCb, w: fzf-lua.fzfCb)
+---@alias fzf-lua.fncContent fun(wnl: fzf-lua.fzfCb, w: fzf-lua.fzfCb, ...)
 ---@alias fzf-lua.content fzf-lua.fncContent|(string|number)[]|string
 
 -- Main API, see:
@@ -150,8 +152,9 @@ end
 ---@param opts? fzf-lua.config.Base|{}
 ---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
-  assert(contents, "must supply contents")
-  ---@type fzf-lua.config.Resolved|{}
+  if not contents then error("must supply contents") end
+  ---@type fzf-lua.config.Resolved
+  ---@diagnostic disable-next-line: assign-type-mismatch
   opts = config.normalize_opts(opts or {}, {})
   if not opts then return end
   if type(contents) == "table" and type(contents[1]) == "table" then
@@ -195,8 +198,7 @@ local cmd2fnc = function(contents)
   local cmd = add_query_placeholder(contents)
   return function(args, _)
     local query = args[1] or ""
-    query = (query:gsub("%%", "%%%%"))
-    query = libuv.shellescape(query)
+    query = libuv.shellescape(utils.lua_escape(query))
     return M.expand_query(cmd, query)
   end
 end
@@ -205,12 +207,13 @@ end
 -- each keypress reloads fzf's input usually based on the typed query
 -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
 ---@param contents string|fzf-lua.shell.data2
----@param opts? fzf-lua.config.Base|{}
+---@param opts? fzf-lua.config.Resolved
 ---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
   opts = opts or {}
   opts.is_live = true
-  ---@type fzf-lua.config.Resolved|{}
+  ---@diagnostic disable-next-line: assign-type-mismatch
+  ---@type fzf-lua.config.Resolved
   opts = config.normalize_opts(opts, {})
   if not opts then return end
   local fzf_field_index = M.fzf_field_index(opts)
@@ -242,11 +245,11 @@ M.fzf_resume = function(opts)
   -- resume a picker when using "hide" and no_resume=true (#2425)
   local query = utils.map_get(opts, opts.is_live and "__call_opts.search" or "__call_opts.query")
   if query and #query > 0 then opts.query = query end
-  M.fzf_wrap(config.__resume_data.contents, config.__resume_data.opts)
+  M.fzf_wrap(assert(config.__resume_data.contents), config.__resume_data.opts)
 end
 
----@param cmd string?
----@param opts table
+---@param cmd string
+---@param opts? fzf-lua.config.Resolved|{}
 ---@param convert_actions boolean?
 ---@return thread?, string, table
 M.fzf_wrap = function(cmd, opts, convert_actions)
@@ -286,7 +289,7 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
 end
 
 ---@param contents string?
----@param opts {}?
+---@param opts? fzf-lua.config.Resolved
 ---@return string[]?
 ---@return integer? exit_code
 M.fzf = function(contents, opts)
@@ -297,7 +300,7 @@ M.fzf = function(contents, opts)
     return nil, nil
   end
   -- normalize with globals if not already normalized
-  ---@type fzf-lua.config.Resolved|{}
+  ---@type fzf-lua.config.Resolved
   opts = config.normalize_opts(opts or {}, {})
   if not opts then return nil, nil end
   -- Store contents for unhide
@@ -334,14 +337,14 @@ M.fzf = function(contents, opts)
   opts.__INFO = FzfLua.get_info()
 
   -- setup the fzf window and preview layout
-  local fzf_win = win:new(opts)
+  local fzf_win = win.new(opts)
   -- instantiate the previewer
   local previewer = require("fzf-lua.previewer").new(opts.previewer, opts)
   if previewer then
     -- Attach the previewer to the windows
     fzf_win:attach_previewer(previewer)
     -- Setup --preview/--preview-window/--bind=zero:... etc
-    if type(previewer.setup_opts) == "function" then
+    if type(previewer.setup_opts) == "function" then ---@diagnostic disable-next-line: assign-type-mismatch
       opts = previewer:setup_opts(opts)
     end
   elseif opts.preview and type(opts.preview) ~= "string" then
@@ -432,9 +435,9 @@ M.fzf = function(contents, opts)
 end
 
 -- Best approximation of neovim border types to fzf border types
----@param winopts fzf-lua.config.Winopts|{}
+---@param winopts fzf-lua.config.PreviewOpts
 ---@param metadata fzf-lua.win.borderMetadata
----@return string|table
+---@return string|table?
 local function translate_border(winopts, metadata)
   local neovim2fzf = {
     none       = "noborder",
@@ -461,7 +464,7 @@ local function translate_border(winopts, metadata)
   return border
 end
 
----@param o table
+---@param o fzf-lua.config.Resolved
 ---@param fzf_win fzf-lua.Win
 ---@return string
 M.preview_window = function(o, fzf_win)
@@ -506,9 +509,7 @@ M.preview_window = function(o, fzf_win)
         prefix, o.winopts.preview.vertical)
     end
   end
-  if not layout then
-    layout = string.format("%s:%s", prefix, fzf_win:fzf_preview_layout_str())
-  end
+  layout = layout or string.format("%s:%s", prefix, fzf_win:fzf_preview_layout_str())
   if o.preview_offset and #o.preview_offset > 0 then
     layout = layout .. ":" .. o.preview_offset
   end
@@ -748,9 +749,9 @@ M.set_title_flags = function(opts, titles)
   if not cmd then return opts end
   local flags = {}
   local patterns = {
-    { { utils.lua_regex_escape(opts.toggle_hidden_flag) or "%-%-hidden" },     "h" },
-    { { utils.lua_regex_escape(opts.toggle_ignore_flag) or "%-%-no%-ignore" }, "i" },
-    { { utils.lua_regex_escape(opts.toggle_follow_flag) or "%-L" },            "f" },
+    { { opts.toggle_hidden_flag and utils.lua_regex_escape(opts.toggle_hidden_flag) or "%-%-hidden" },     "h" },
+    { { opts.toggle_ignore_flag and utils.lua_regex_escape(opts.toggle_ignore_flag) or "%-%-no%-ignore" }, "i" },
+    { { opts.toggle_follow_flag and utils.lua_regex_escape(opts.toggle_follow_flag) or "%-L" },            "f" },
   }
   for _, def in ipairs(patterns) do
     for _, p in ipairs(def[1]) do
@@ -880,6 +881,7 @@ M.set_header = function(opts)
             local def, to = nil, type(v) == "table" and v.header or nil
             if not to and type(action) == "function" and defs[action] then
               def = defs[action]
+              ---@diagnostic disable-next-line: undefined-field
               to = def[1]
             end
             if to then
@@ -907,7 +909,7 @@ M.set_header = function(opts)
   }
   -- override header text with the user's settings
   for _, h in ipairs(opts._headers) do
-    assert(definitions[h])
+    if not definitions[h] then error("no header def:" .. h) end
     local hdr_text = opts[definitions[h].hdr_txt_opt]
     if hdr_text then
       definitions[h].hdr_txt_str = hdr_text
@@ -916,7 +918,7 @@ M.set_header = function(opts)
   -- build the header string
   local hdr_str
   for _, h in ipairs(opts._headers) do
-    assert(definitions[h])
+    if not definitions[h] then error("no header def:" .. h) end
     local def = definitions[h]
     local txt = def.val(opts)
     if def and txt then
@@ -1133,7 +1135,7 @@ end
 -- query placeholder for "live" queries
 M.fzf_query_placeholder = "<query>"
 
----@param opts { field_index?: boolean, _is_skim?: boolean }
+---@param opts { field_index?: string, _is_skim?: boolean }
 ---@return string
 M.fzf_field_index = function(opts)
   -- fzf already adds single quotes around the placeholder when expanding.

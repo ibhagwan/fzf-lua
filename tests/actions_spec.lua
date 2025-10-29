@@ -1,8 +1,8 @@
----@diagnostic disable: unused-local, unused-function
+---@diagnostic disable: unused-local, unused-function, unused
 local MiniTest = require("mini.test")
 local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
-local expect, eq = helpers.expect, helpers.expect.equality
+local eq = helpers.expect.equality
 local new_set = MiniTest.new_set
 
 ---@format disable-next

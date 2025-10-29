@@ -1,4 +1,5 @@
----@diagnostic disable: codestyle-check
+---@diagnostic disable
+---@format disable
 -- https://gist.github.com/subsoap/05c02690956499a84708365337eb0a99
 -- https://github.com/Stepets/utf8.lua
 -- $Id: utf8.lua 179 2009-04-03 18:10:03Z pasta $

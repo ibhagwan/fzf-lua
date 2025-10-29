@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
@@ -7,7 +8,7 @@ local config = require "fzf-lua.config"
 
 local M = {}
 
----@param opts fzf-lua.config.Builtin
+---@param opts fzf-lua.config.Builtin|{}
 ---@return thread?, string?, table?
 M.metatable = function(opts)
   if not opts then return end
@@ -262,6 +263,7 @@ M.global = function(opts)
     end, opts, "{q}")
   end
 
+  opts._fzf_cli_args = opts._fzf_cli_args or {}
   -- Insert at the start of the args table so `line_query` callback is first
   table.insert(opts._fzf_cli_args, 1, "--bind="
     .. libuv.shellescape("start:+transform:" .. transform_picker(true)))

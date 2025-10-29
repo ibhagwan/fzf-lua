@@ -167,7 +167,8 @@ local function preview_action_tuple(self, idx, callback)
       -- runtime/lua/lsp/buf.lua:on_user_choice
       and (function()
         ---@var choice {action: lsp.Command|lsp.CodeAction, ctx: lsp.HandlerContext}
-        local ms = require("vim.lsp.protocol").Methods
+        ---@diagnostic disable-next-line: deprecated
+        local ms = vim.lsp.protocol.Methods or require("vim.lsp.protocol").Methods
         local choice = self.opts._items[idx]
         local bufnr = assert(choice.ctx.bufnr, "Must have buffer number")
         local reg = client.dynamic_capabilities:get(ms.textDocument_codeAction, { bufnr = bufnr })

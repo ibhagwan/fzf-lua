@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -60,6 +61,7 @@ end
 
 -- proxy table (with logic) for accessing the global config
 M.setup_opts = {}
+---@type fzf-lua.Config|{}
 M.globals = setmetatable({}, {
   __index = function(_, index)
     local function setup_opts()
@@ -88,7 +90,8 @@ M.globals = setmetatable({}, {
         if type(setup_value) == "function" then setup_value = setup_value() end
         ret[k] = setup_value and type(setup_value[k]) == "table"
             and vim.tbl_deep_extend("keep",
-              utils.map_tolower(utils.tbl_deep_clone(setup_value[k]), exclude_case_sensitive_alt),
+              utils.map_tolower(utils.tbl_deep_clone(setup_value[k]), exclude_case_sensitive_alt) or
+              {},
               setup_value[k][1] == true and
               utils.map_tolower(fzflua_default[k], exclude_case_sensitive_alt) or {})
             or utils.map_tolower(utils.tbl_deep_clone(fzflua_default[k]), exclude_case_sensitive_alt)
@@ -127,7 +130,7 @@ M.globals = setmetatable({}, {
     return ret
   end,
   __newindex = function(_, index, _)
-    assert(false, string.format("modifying globals directly isn't allowed [index: %s]", index))
+    error(string.format("modifying globals directly isn't allowed [index: %s]", index))
   end
 })
 
@@ -164,12 +167,12 @@ end
 
 ---@generic T table
 ---@param opts T|{}|fun():T?
----@param globals string|table?
+---@param globals string|(fzf-lua.Config|{})?
 ---@param __resume_key string?
 ---@return T
 function M.normalize_opts(opts, globals, __resume_key)
   -- opts can also be a function that returns an opts table
-  ---@type fzf-lua.config.Resolved|{}
+  ---@type fzf-lua.config.Resolved
   opts = eval(opts) or {}
 
   if opts._normalized then
@@ -207,6 +210,7 @@ function M.normalize_opts(opts, globals, __resume_key)
     globals = M.globals[globals]
     assert(type(globals) == "table")
   else
+    assert(globals)
     -- backward compat: globals sent directly as table
     -- merge with setup options "defaults" table
     globals = vim.tbl_deep_extend("keep", globals, M.setup_opts.defaults or {})
@@ -252,7 +256,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- normalize all binds as lowercase or we can have duplicate keys (#654)
   ---@param m {fzf: table<string, unknown>, builtin: table<string, unknown>}
   ---@param exclude_patterns string
-  ---@return {fzf: table<string, unknown>, builtin: table<string, unknown>}?
+  ---@return {fzf?: table<string, unknown>, builtin?: table<string, unknown>}?
   local keymap_tolower = function(m, exclude_patterns)
     return m and {
       fzf = utils.map_tolower(m.fzf, exclude_patterns),
@@ -267,6 +271,7 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- inherit from globals.actions?
   if type(globals._actions) == "function" then
+    ---@diagnostic disable-next-line: assign-type-mismatch
     globals.actions = vim.tbl_deep_extend("keep", globals.actions or {}, globals._actions())
   end
 
@@ -463,6 +468,7 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- Setup completion options
   if opts.complete then
+    ---@diagnostic disable-next-line: assign-type-mismatch
     opts.actions = opts.actions or {}
     opts.actions.enter = actions.complete
     opts.actions["ctrl-c"] = function() end
@@ -1005,6 +1011,7 @@ M.bytecode = function(s, datatype)
   local keys = utils.strsplit(s, "%.")
   local iter = M
   for i = 1, #keys do
+    ---@diagnostic disable-next-line: assign-type-mismatch
     iter = iter[keys[i]]
     if not iter then break end
     if i == #keys and type(iter) == datatype then

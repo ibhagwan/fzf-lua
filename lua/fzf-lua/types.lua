@@ -12,63 +12,21 @@ _G.FzfLua = require("fzf-lua")
 ---@field highlight_matches function?
 ---@field win fzf-lua.Win
 
----@class fzf-lua.previewer.Fzf
----@field new function
----@field setup_opts function
----@field zero function?
----@field cmdline function?
----@field fzf_delimiter function?
----@field preview_window function?
----@field _preview_offset function?
-
----@class fzf-lua.previewer.Builtin
----@field type "builtin"
----@field new function
----@field setup_opts function
----@field opts table
----@field win fzf-lua.Win
----@field delay integer
----@field title any
----@field title_pos "center"|"left"|"right"
----@field title_fnamemodify fun(title: string, width: integer?): string
----@field render_markdown table?
----@field snacks_image table?
----@field winopts table?
----@field syntax boolean
----@field syntax_delay integer
----@field syntax_limit_b integer
----@field syntax_limit_l integer
----@field limit_b integer
----@field _ts_limit_b_per_line integer
----@field treesitter table
----@field toggle_behavior "default"|"extend"
----@field winopts_orig table
----@field winblend integer
----@field extensions { [string]: string[]? }
----@field ueberzug_scaler "crop"|"distort"|"contain"|"fit_contain"|"cover"|"forced_cover"
----@field cached_bufnrs { [string]: fzf-lua.previewer.CursorPos? }
----@field cached_buffers { [string]: fzf-lua.buffer_or_file.Bcache? }
----@field listed_buffers { [string]: boolean? }
----@field clear_on_redraw boolean?
----
----@field orig_pos fzf-lua.previewer.CursorPos
----@alias fzf-lua.previewer.CursorPos (true|[integer, integer])
-
 ---@class fzf-lua.previewer.BufferOrFile
----@field match_id integer?
+---@field match_id? integer
 
 ---@class fzf-lua.path.Entry
----@field stripped string
----@field bufnr integer?
----@field bufname string?
----@field terminal boolean?
----@field path string?
----@field line integer
----@field col integer
----@field ctag string?
----@field uri string?
----@field range { start: { line: integer, col: integer } }?
----@field debug string? debug information
+---@field stripped? string
+---@field bufnr? integer
+---@field line? integer
+---@field col? integer
+---@field bufname? string
+---@field terminal? boolean
+---@field path? string
+---@field ctag? string
+---@field uri? string
+---@field range? lsp.Range
+---@field debug? string debug information
 
 ---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry, {}
 ---@field do_not_cache boolean?
@@ -88,43 +46,44 @@ _G.FzfLua = require("fzf-lua")
 ---@field key string?
 
 ---@class fzf-lua.buffer_or_file.Bcache
----@field bufnr integer
----@field min_winopts boolean?
----@field invalid boolean? buffer content changed
----@field invalid_pos boolean? position changed
----@field tick integer?
+---@field bufnr? integer
+---@field min_winopts? boolean
+---@field invalid? boolean buffer content changed
+---@field invalid_pos? boolean position changed
+---@field tick? integer
 
 ---@alias fzf-lua.config.Action fzf-lua.ActionSpec|fzf-lua.shell.data2|fzf-lua.shell.data2[]|false
----@alias fzf-lua.config.Actions { [1]: fzf-lua, [string]: fzf-lua.config.Action }
+---@alias fzf-lua.config.Actions { [1]?: boolean, [string]: fzf-lua.config.Action }
 
 ---@class fzf-lua.ActionSpec
 ---@field [1] fzf-lua.shell.data2?
----@field fn fzf-lua.shell.data2?
----@field exec_silent boolean?
----@field reload boolean
----@field field_index string?
----@field desc string?
----@field prefix string?
----@field postfix string?
----@field reuse boolean?
----@field noclose boolean?
----@field _ignore boolean?
+---@field fn? fzf-lua.shell.data2?
+---@field exec_silent? boolean
+---@field reload? boolean
+---@field field_index? string
+---@field desc? string
+---@field prefix? string
+---@field postfix? string
+---@field reuse? boolean
+---@field noclose? boolean
+---@field _ignore? boolean
 
 ---@alias fzf-lua.profile "border-fused"|"borderless-full"|"borderless"|"cli"|"default-prompt"|"default-title"|"default"|"fzf-native"|"fzf-tmux"|"fzf-vim"|"hide"|"ivy"|"max-perf"|"skim"|"telescope"
 
 ---@class fzf-lua.Config: fzf-lua.config.Defaults,{}
 ---@field [1]? fzf-lua.profile|fzf-lua.profile[]
+---@field [2]? boolean|integer
 ---@field defaults fzf-lua.config.Defaults|{}
 
 ---@class fzf-lua.config.Defaults: fzf-lua.config.Base,{}
 ---@field nbsp string
----@field winopts fzf-lua.config.Winopts|{}
----@field keymap fzf-lua.config.Keymap|{}
----@field actions table<string, fzf-lua.config.Actions>|{}
+---@field winopts fzf-lua.config.Winopts
+---@field keymap fzf-lua.config.Keymap
+---@field actions table<string, fzf-lua.config.Actions>
 ---@field fzf_bin string?
 ---@field fzf_opts table<string, any>
 ---@field fzf_tmux_opts table<string, any>
----@field previewers table<string, fzf-lua.config.Previewer|{}>
+---@field previewers fzf-lua.config.Previewers
 ---@field formatters table<string, any>
 ---@field files fzf-lua.config.Files
 ---@field global fzf-lua.config.Global
@@ -181,32 +140,11 @@ _G.FzfLua = require("fzf-lua")
 ---@field __HLS fzf-lua.config.HLS
 ---@field [string] any
 
----@class fzf-lua.config.Winopts
----@field height number
----@field width number
----@field row number
----@field col number
----@field border any
----@field zindex integer
----@field relative string
----@field hide boolean
----@field split string|function|false
----@field backdrop number|boolean
----@field fullscreen boolean
----@field title any
----@field title_pos "center"|"left"|"right"
----@field treesitter fzf-lua.config.TreesitterWinopts
----@field preview fzf-lua.config.PreviewWinopts
----@field on_create fun(e: { winid: integer, bufnr: integer })
----@field on_close fun()
----@field toggle_behavior string?
----@field __winhls { main: [string, string][], prev: [string, string][] }
-
 ---@class fzf-lua.config.TreesitterWinopts
 ---@field enabled boolean
 ---@field fzf_colors? table<string, string>
 
----@class fzf-lua.config.PreviewWinopts
+---@class fzf-lua.config.PreviewOpts
 ---@field default? string
 ---@field border? any
 ---@field wrap? boolean
@@ -233,46 +171,67 @@ _G.FzfLua = require("fzf-lua")
 ---@field foldenable? boolean
 ---@field foldmethod? string
 ---@field scrolloff? integer
+---@field winblend? integer
 
 ---@class fzf-lua.config.Keymap
 ---@field builtin? table<string, string>
 ---@field fzf? table<string, string>
 
----@class fzf-lua.config.Previewer
----@field cmd? string|fun():string
----@field args? string
----@field _ctor? fun(...)
----@field pager? fun(...)
----@field cmd_deleted? string
----@field cmd_modified? string
----@field cmd_untracked? string
----@field _fn_git_icons? fun():any
----@field syntax? boolean
----@field syntax_delay? integer
----@field syntax_limit_l? integer
----@field syntax_limit_b? integer
----@field limit_b? integer
----@field treesitter? table
----@field ueberzug_scaler? string
----@field title_fnamemodify? fun(s:string):string
----@field render_markdown? table
----@field snacks_image? table
----@field diff_opts? table
+---@class fzf-lua.SpawnStdioOpts
+---@field debug? boolean
+---@field profiler? boolean
+---@field process1? boolean
+---@field silent? boolean|integer
+---@field cmd? string|string[]
+---@field cwd? string
+---@field cwd_only? boolean
+---@field stdout? boolean
+---@field stderr? boolean
+---@field stderr_to_stdout? boolean
+---@field formatter? fun(line:string):string|nil
+---@field multiline? boolean
+---@field git_dir? string
+---@field git_worktree? string
+---@field git_icons? boolean
+---@field file_icons? boolean
+---@field color_icons? boolean
+---@field path_shorten? boolean
+---@field absolute_path? boolean
+---@field strip_cwd_prefix? boolean
+---@field render_crlf? boolean
+---@field exec_empty_query? boolean
+---@field file_ignore_patterns? string[]
+---@field rg_glob? boolean
+---@field fn_transform? string|fun(line:string, opts: fzf-lua.SpawnStdioOpts):string|nil
+---@field fn_preprocess? string|fun(opts: fzf-lua.SpawnStdioOpts):string[]|nil
+---@field fn_postprocess? string|fun(opts: fzf-lua.SpawnStdioOpts):string[]|nil
+---@field is_live? boolean
+---@field contents? fzf-lua.content|fzf-lua.shell.data2
+---@field __FZF_VERSION? string
+---@field glob_flag? string
+---@field glob_separator? string
+---@field g? fzf-lua.SpawnStdioOpts.g
+---@field no_ansi_colors? boolean
+
+---@class fzf-lua.SpawnStdioOpts.g
+---@field _fzf_lua_server? string
+---@field _EOL? string
+---@field _debug? boolean
 
 ---a basic config can be used by fzf_exec?
 ---generated from the result of `:=FzfLua.config.normalize_opts({}, {})`
 ---@class fzf-lua.config.Base
 ---@field cwd_prompt? boolean
 ---@field dir_icon? string
----@field enrich? function
+---@field enrich? fun(opts: fzf-lua.config.Resolved):fzf-lua.config.Resolved|{}
 ---@field fzf_bin? string
----@field fzf_colors? table<string, string>
+---@field fzf_colors? { [1]?: boolean, [string]: string? }
 ---@field fzf_opts? table<string, any>
 ---@field fzf_tmux_opts? table<string, any>
----@field hls? table<string, any>
----@field winopts? fzf-lua.config.Winopts|(fun(opts: fzf-lua.Config):fzf-lua.config.Winopts)|{}
----@field keymap? fzf-lua.config.Keymap|(fun(opts: fzf-lua.Config):fzf-lua.config.Keymap)|{}
----@field actions? fzf-lua.config.Actions|(fun(opts: fzf-lua.Config):fzf-lua.config.Actions)|{}
+---@field hls? fzf-lua.config.HLS
+---@field winopts? fzf-lua.config.Winopts|(fun(opts: fzf-lua.Config):fzf-lua.config.Winopts)
+---@field keymap? fzf-lua.config.Keymap|(fun(opts: fzf-lua.Config):fzf-lua.config.Keymap)
+---@field actions? fzf-lua.config.Actions|(fun(opts: fzf-lua.Config):fzf-lua.config.Actions)
 ---@field no_header? boolean
 ---@field no_header_i? boolean
 ---@field prompt? string
@@ -284,10 +243,10 @@ _G.FzfLua = require("fzf-lua")
 ---@field file_icons? boolean|integer
 ---@field color_icons? boolean
 ---@field git_icons? boolean
----@field silent? boolean
+---@field silent? boolean|integer
 ---@field previewer? fun(...)|table|string
 ---@field preview? string|function|table
----@field complete? (fun(_, _, _ ,_):_, _)|boolean
+---@field complete? (fun(s: string[], _o: fzf-lua.config.Resolved, l: string, c: integer):string?, integer?)|boolean
 ---@field header string
 ---@field query? string
 ---@field resume? boolean
@@ -300,39 +259,60 @@ _G.FzfLua = require("fzf-lua")
 ---@field cwd_prompt_shorten_val integer?
 ---@field header_prefix? string
 ---@field header_separator? string
----@field fn_selected string
+---@field fn_selected function
 ---@field cb_co fun(co: thread)
 ---@field cwd_only boolean
 ---@field cmd? string
 ---@field debug? boolean|'v'|'verbose'
+---@field preview_offset? string
 ---@field _fzf_cli_args? string[]
 ---@field __INFO? fzf-lua.Info
----@field __CTX? fzf-lua.Ctx
+---@field __CTX? fzf-lua.Ctx|{}
 ---@field _normalized? boolean
 ---@field __call_fn? function
 ---@field __call_opts? table
 ---@field is_live? boolean is "live" picker
 ---@field contents? fzf-lua.content|fzf-lua.shell.data2
----@field _actions? fun():fzf-lua.config.Actions
+---@field _actions? fun():fzf-lua.config.Actions?
 ---@field __ACT_TO? function
 ---@field _start? boolean
 ---@field _is_skim? boolean
----@field _treesitter (fun(line:string):string,string?,string?,string?)|boolean?
+---@field _treesitter? (fun(line: string):string?,string?,string?,string?)|boolean?
+---@field help_open_win? fun(buf: integer, enter: boolean, config: vim.api.keyset.win_config): integer
+---@field autoclose? boolean
+---@field line_field_index? string
+---@field field_index_expr? string
+---@field _ctag? string
+---@field preview_pager? string
 
 ---@class fzf-lua.config.Resolved: fzf-lua.config.Base
 ---@field PidObject? table
 ---@field _headers? string[]
----@field _fmt table
+---@field _fmt? table
 ---@field pipe_cmd? string
 ---@field RIPGREP_CONFIG_PATH? string
 ---@field _ctx? fzf-lua.Ctx
 ---@field __FZF_VERSION? number[]
 ---@field __resume_key? function|string
 ---@field _cwd? string
----@field _type "file"?
+---@field _type? "file"?
 ---@field _cached_hls? string[]
 ---@field _multiline? boolean
 ---@field __resume_set? function
 ---@field __resume_get? function
 ---@field _contents? string
 ---@field _is_fzf_tmux? boolean
+---@field _is_skim? boolean
+---@field __stringified? boolean
+---@field __stringify_cmd? boolean
+---@field __sigwinches? string[]
+---@field __sigwinch_on_scope table<string, function>
+---@field __sigwinch_on_any function[]
+---
+---@field process1? boolean
+---@field profiler? boolean
+---@field use_queue? boolean
+---@field throttle? boolean
+---@field env? boolean
+---@field winopts? fzf-lua.config.Winopts
+---@field _resume_reload? boolean
