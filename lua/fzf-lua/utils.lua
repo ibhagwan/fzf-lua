@@ -488,7 +488,7 @@ end
 
 ---@generic T
 ---@param list T[]
----@return { [T]: boolean }
+---@return table<T, boolean>
 function M.list_to_map(list)
   local map = {}
   for _, v in ipairs(list) do
