@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
@@ -64,10 +65,24 @@ M.uv_spawn = function(cmd, opts, on_exit)
 end
 if false then M.uv_spawn = uv.spawn end
 
----@param opts {cwd: string, cmd: string|table, env: table?, cb_finish: function,
----cb_write: function?, cb_write_lines: function?, cb_err: function, cb_pid: function,
----fn_transform: function?, EOL: string?, EOL_data: string?, process1: boolean?,
----profiler: boolean?, use_queue: boolean?}
+
+---@class fzf-lua.SpawnOpts
+---@field cwd? string
+---@field cmd string|table
+---@field env? table
+---@field cb_finish fun(code: integer, sig: integer, from: string, pid: integer)
+---@field cb_write? fun(data: string, cb: fun(err: any): nil): nil
+---@field cb_write_lines? fun(lines: string[])
+---@field cb_err fun(data: string)
+---@field cb_pid? fun(pid: integer)
+---@field fn_transform? fun()
+---@field EOL? string
+---@field EOL_data? string
+---@field process1? boolean
+---@field profiler? boolean
+---@field use_queue? boolean
+
+---@param opts fzf-lua.SpawnOpts
 ---@param fn_transform function?
 ---@param fn_done function?
 ---@return uv.uv_process_t proc
@@ -88,7 +103,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   local error_pipe = assert(uv.new_pipe(false))
   local write_cb_count, read_cb_count = 0, 0
   local prev_line_content ---@type string?
-  local handle, pid
+  local handle, pid ---@type uv.uv_process_t, integer
   local co = coroutine.running()
   local queue = require("fzf-lua.lib.queue").new()
   local work_ctx
@@ -98,6 +113,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   opts.use_queue = not _G._fzf_lua_is_headless and opts.use_queue
 
   -- cb_write_lines trumps cb_write
+  ---@diagnostic disable-next-line: assign-type-mismatch
   if opts.cb_write_lines then opts.cb_write = opts.cb_write_lines end
 
   local can_finish = function()
@@ -391,7 +407,7 @@ local posix_exec = function(cmd)
   require("ffi").C.execl("/bin/sh", "sh", "-c", cmd, nil)
 end
 
----@param opts table
+---@param opts fzf-lua.SpawnStdioOpts
 ---@return uv.uv_process_t, integer
 M.spawn_stdio = function(opts)
   -- stdin/stdout are already buffered, not stderr. This means
@@ -452,9 +468,9 @@ M.spawn_stdio = function(opts)
   -- run the preprocessing fn
   if fn_preprocess then fn_preprocess(opts) end
 
-  ---@type fzf-lua.content|fzf-lua.shell.data2
-  local cmd = opts.contents
-  if type(cmd) == "string" and cmd:match("%-%-color[=%s]+never") then
+  ---@type fzf-lua.content|fzf-lua.shell.data2?
+  local content = opts.contents
+  if type(content) == "string" and content:match("%-%-color[=%s]+never") then
     -- perf: skip stripping ansi coloring in `make_file.entry`
     opts.no_ansi_colors = true
   end
@@ -464,7 +480,7 @@ M.spawn_stdio = function(opts)
       io.stdout:write(string.format("[DEBUG] %s=%s" .. EOL, k, vim.inspect(v)))
     end
   elseif opts.debug then
-    io.stdout:write("[DEBUG] [mt] " .. tostring(cmd) .. EOL)
+    io.stdout:write("[DEBUG] [mt] " .. tostring(content) .. EOL)
   end
 
   local stderr, stdout = nil, nil
@@ -522,70 +538,77 @@ M.spawn_stdio = function(opts)
     stdout = pipe_open(opts.stdout)
   end
 
-  local on_finish = opts.on_finish or
-      function(code)
-        pipe_close(stdout)
-        pipe_close(stderr)
-        if fn_postprocess then
-          vim.schedule(function()
-            fn_postprocess(opts)
-            exit(code)
-          end)
-        else
-          exit(code)
-        end
-      end
-
-  local on_write = opts.on_write or
-      function(data, cb)
-        if stdout then
-          pipe_write(stdout, data, cb)
-        else
-          -- on success: rc=true, err=nil
-          -- on failure: rc=nil, err="Broken pipe"
-          -- cb with an err ends the process
-          local rc, err = io.stdout:write(data)
-          if not rc then
-            stderr_write(("io.stdout:write error: %s" .. EOL):format(err))
-            cb(err or true)
-          else
-            cb(nil)
-          end
-        end
-      end
-
-  local on_err = opts.on_err or
-      function(data)
-        if stderr then
-          pipe_write(stderr, data)
-        elseif opts.stderr ~= false then
-          if opts.stderr_to_stdout then
-            io.stdout:write(data)
-          else
-            io.stderr:write(data)
-          end
-        end
-      end
-
-  if type(cmd) ~= "string" then
-    local f = fn_transform or function(x) return x end
-    local w = function(s) if s then io.stdout:write(f(s) .. EOL) else on_finish(0) end end
-    local wn = function(s) if s then return io.stdout:write(f(s)) else on_finish(0) end end
-    if opts.is_live then ---@cast cmd fzf-lua.shell.data2
-      local items = vim.deepcopy(_G.arg)
-      items[0] = nil
-      table.remove(items, 1)
-      cmd = cmd(items, opts)
-    end ---@cast cmd fzf-lua.content
-    if type(cmd) == "function" then cmd(w, wn) end
-    if type(cmd) == "table" then for _, v in ipairs(cmd) do w(v) end end
-    if type(cmd) ~= "string" then on_finish(0) end
-    if opts.debug then
-      io.stdout:write(("[DEBUG] [mt] %s" .. EOL):format(cmd))
+  local on_finish = function(code)
+    pipe_close(stdout)
+    pipe_close(stderr)
+    if fn_postprocess then
+      vim.schedule(function()
+        fn_postprocess(opts)
+        exit(code)
+      end)
+    else
+      exit(code)
     end
   end
 
-  if not fn_transform and not fn_postprocess then posix_exec(cmd) end
+  local on_write = function(data, cb)
+    if stdout then
+      pipe_write(stdout, data, cb)
+    else
+      -- on success: rc=true, err=nil
+      -- on failure: rc=nil, err="Broken pipe"
+      -- cb with an err ends the process
+      local rc, err = io.stdout:write(data)
+      if not rc then
+        stderr_write(("io.stdout:write error: %s" .. EOL):format(err))
+        cb(err or true)
+      else
+        cb(nil)
+      end
+    end
+  end
+
+  local on_err = function(data)
+    if stderr then
+      pipe_write(stderr, data)
+    elseif opts.stderr ~= false then
+      if opts.stderr_to_stdout then
+        io.stdout:write(data)
+      else
+        io.stderr:write(data)
+      end
+    end
+  end
+
+  local args = function()
+    local items = vim.deepcopy(_G.arg)
+    items[0] = nil
+    table.remove(items, 1)
+    return items
+  end
+
+  local cmd ---@type string
+  if type(content) == "string" then
+    cmd = content
+  else
+    local f = fn_transform or function(x) return x end
+    local w = function(s) if s then io.stdout:write(f(s) .. EOL) else on_finish(0) end end
+    local wn = function(s) if s then return io.stdout:write(f(s)) else on_finish(0) end end
+    if opts.is_live then ---@cast content fzf-lua.shell.data2
+      local res = content(args(), opts)
+      if not res then on_finish(0) end ---@cast res-?
+      content = res
+    end
+    if type(content) == "function" then content(w, wn) end
+    if type(content) == "table" then for _, v in ipairs(content) do w(v) end end
+    if type(content) ~= "string" then on_finish(0) end ---@cast content string
+    cmd = content
+    if opts.debug then
+      io.stdout:write(("[DEBUG] [mt] %s" .. EOL):format(content))
+    end
+  end
+
+  if not fn_transform and not fn_postprocess then posix_exec(content) end
 
   return M.spawn({
       cwd = opts.cwd,

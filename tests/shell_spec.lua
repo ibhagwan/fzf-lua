@@ -12,6 +12,7 @@ describe("Testing shell module", function()
 
     err(shell.check_upvalue, (function()
       local upvalue
+      ---@diagnostic disable-next-line: undefined-field
       return function() return upvalue.index end
     end)(), "index upvalue")
 

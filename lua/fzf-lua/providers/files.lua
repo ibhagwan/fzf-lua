@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
@@ -120,9 +121,10 @@ M.args = function(opts)
       for i = 0, argc - 1 do
         vim.schedule(function()
           local s = vim.fn.argv(i)
+          ---@cast s string
           local st = uv.fs_stat(s)
           if opts.files_only == false or st and st.type == "file" then
-            s = make_entry.file(s, opts)
+            s = assert(make_entry.file(s, opts))
             cb(s, function()
               coroutine.resume(co)
             end)

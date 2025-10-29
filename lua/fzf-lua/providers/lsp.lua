@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
@@ -144,8 +145,8 @@ local function location_handler(opts, cb, _, result, ctx, _)
     if opts.current_buffer_only and not path.equals(utils.CTX().bname, item.filename) then
       return false
     end
-    local entry = make_entry.lcol(item, opts)
-    entry = make_entry.file(entry, opts)
+    local entry0 = make_entry.lcol(item, opts)
+    local entry = make_entry.file(entry0, opts)
     if not entry then
       -- Filtered by cwd / file_ignore_patterns, etc
       return false
@@ -167,13 +168,13 @@ local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
       local location = {
         uri = call_hierarchy_item.uri,
         range = range,
-        filename = assert(vim.uri_to_fname(call_hierarchy_item.uri)),
+        filename = vim.uri_to_fname(call_hierarchy_item.uri),
         text = call_hierarchy_item.name,
         lnum = range.start.line + 1,
         col = range.start.character + 1,
       }
-      local entry = make_entry.lcol(location, opts)
-      entry = make_entry.file(entry, opts)
+      local entry0 = make_entry.lcol(location, opts)
+      local entry = make_entry.file(entry0, opts)
       if entry then cb(entry, { result = location, encoding = encoding }) end
     end
   end
@@ -419,10 +420,7 @@ local function gen_lsp_contents(opts)
 
   if not opts.async then
     -- SYNC
-    local timeout = 5000
-    if type(opts.async_or_timeout) == "number" then
-      timeout = opts.async_or_timeout
-    end
+    local timeout = utils.tointeger(opts.async_or_timeout) or 5000
     local lsp_results, err = vim.lsp.buf_request_sync(utils.CTX().bufnr,
       lsp_handler.method, lsp_params, timeout)
     if err then
@@ -581,10 +579,7 @@ end
 
 -- see $VIMRUNTIME/lua/vim/buf.lua:pick_call_hierarchy_item()
 local function gen_lsp_contents_hierarchy(opts)
-  local timeout = 5000
-  if type(opts.async_or_timeout) == "number" then
-    timeout = opts.async_or_timeout
-  end
+  local timeout = utils.tointeger(opts.async_or_timeout) or 5000
   local lsp_params = opts.lsp_params
       ---@diagnostic disable-next-line: missing-parameter
       or not utils.__HAS_NVIM_011 and vim.lsp.util.make_position_params(utils.CTX().winid)
