@@ -224,7 +224,7 @@ M.lgrep = function(s, opts)
   elseif opts.silent_fail ~= false then
     cmd0 = cmd0 .. " || " .. FzfLua.utils.shell_nop()
   end
-  if opts.contents or not FzfLua.core.can_transform(opts) then
+  if _G._fzf_lua_is_headless or not FzfLua.core.can_transform(opts) then
     return cmd0
   else
     return "reload:" .. cmd0
@@ -383,7 +383,7 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
   ---@param fzf_field_index string
   ---@return string
   local expand_query = function(cmd, fzf_field_index)
-    if opts.contents and cmd:match("<query>") then
+    if _G._fzf_lua_is_headless and cmd:match("<query>") then
       return (cmd:gsub("<query>", fzf_field_index))
     else
       return ("%s %s"):format(cmd, fzf_field_index)
