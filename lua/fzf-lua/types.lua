@@ -47,7 +47,6 @@ _G.FzfLua = require("fzf-lua")
 ---@field bufnr integer
 ---@field min_winopts? boolean
 ---@field invalid? boolean buffer content changed
----@field invalid_pos? boolean position changed
 ---@field tick? integer
 
 ---@alias fzf-lua.config.Action fzf-lua.ActionSpec|fzf-lua.shell.data2|fzf-lua.shell.data2[]|false
