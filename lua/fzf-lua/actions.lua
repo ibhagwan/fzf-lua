@@ -856,7 +856,7 @@ M.git_branch_add = function(selected, opts)
   -- so the prompt input will be found in `selected[1]`
   -- previous fzf versions (or skim) restart the process instead
   -- so the prompt input will be found in `opts.last_query`
-  local branch = opts.last_query or selected[1]
+  local branch = selected[1] or opts.last_query
   if type(branch) ~= "string" or #branch == 0 then
     utils.warn("Branch name cannot be empty, use prompt for input.")
   else
@@ -913,7 +913,8 @@ M.git_worktree_cd = function(selected, opts)
 end
 
 M.git_worktree_add = function(selected, opts)
-  local branch = opts.last_query or selected[1]
+  local branch = selected[1] or opts.last_query
+  branch = branch:match("[^%*%+%s]+")
   if type(branch) ~= "string" or #branch == 0 then
     utils.warn("Branch name cannot be empty, use prompt for input.")
   else
