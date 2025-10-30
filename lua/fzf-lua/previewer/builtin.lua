@@ -169,7 +169,7 @@ local Previewer = {}
 ---@field winblend integer
 ---@field extensions { [string]: string[]? }
 ---@field ueberzug_scaler "crop"|"distort"|"contain"|"fit_contain"|"cover"|"forced_cover"
----@field cached_bufnrs table<integer, [integer, integer]|true?>
+---@field cached_bufnrs table<integer, [integer, integer]|true?> items are cached_pos
 ---@field cached_buffers table<string, fzf-lua.buffer_or_file.Bcache?>
 ---@field listed_buffers table<integer, boolean?>
 ---@field clear_on_redraw boolean?
@@ -827,18 +827,20 @@ end
 ---@param entry fzf-lua.buffer_or_file.Entry
 ---@return string
 function Previewer.buffer_or_file:key_from_entry(entry)
-  return assert(entry.bufnr and string.format("bufnr:%d", entry.bufnr)
+  return (assert(entry.bufnr and string.format("bufnr:%d", entry.bufnr)
     or entry.uri
-    or entry.path)
+    or entry.path, "Invalid entry for caching"))
 end
 
+---get and check if cached is update-to-date to be reuse
 ---@param entry fzf-lua.buffer_or_file.Entry
 ---@return fzf-lua.buffer_or_file.Bcache?
-function Previewer.buffer_or_file:get_bcache(entry)
+function Previewer.buffer_or_file:check_bcache(entry)
   if entry.do_not_cache then return end
   local key = self:key_from_entry(entry)
   local cached = self.cached_buffers[key]
   if not cached then return end
+  entry.cached = cached
   assert(self.cached_bufnrs[cached.bufnr])
   assert(api.nvim_buf_is_valid(cached.bufnr))
   if not cached.tick then -- in case cache don't have "tick"
@@ -859,20 +861,17 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   self:stop_ueberzug()
   local entry = self:parse_entry(entry_str)
   if utils.tbl_isempty(entry) then return end
-  local cached = self:get_bcache(entry)
-  entry.cached = cached
+  local cached = self:check_bcache(entry)
   if cached and not cached.invalid and not self:should_load_buffer(entry) then
     assert(cached.bufnr == self.preview_bufnr)
     -- same file/buffer as previous entry no need to reload content
     -- only call post to set cursor location
-    if type(self.cached_bufnrs[self.preview_bufnr]) == "table" then
-      cached.invalid_pos = ((tonumber(entry.line) and entry.line > 0 and entry.line ~= self.orig_pos[1])
-        or (tonumber(entry.col) and entry.col > 0 and entry.col - 1 ~= self.orig_pos[2]))
-      if cached.invalid_pos then
-        -- entry is within the same buffer but line|col has changed
-        -- clear cached buffer position so we scroll to entry's line|col
-        self.cached_bufnrs[self.preview_bufnr] = true
-      end
+    if type(self.cached_bufnrs[self.preview_bufnr]) == "table"
+        and ((entry.line and entry.line > 0 and entry.line ~= self.orig_pos[1])
+          or (entry.col and entry.col > 0 and entry.col - 1 ~= self.orig_pos[2])) then
+      -- entry is within the same buffer but line|col has changed
+      -- clear cached buffer position so we scroll to entry's line|col
+      self.cached_bufnrs[self.preview_bufnr] = true
     end
     self:preview_buf_post(entry)
     return
@@ -882,7 +881,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     self:preview_buf_post(entry, cached.min_winopts)
     return
   end
-  local invalid_cached = cached -- cached must be invalid now if exists
+  local reuse_buf = (cached or {}).bufnr -- cached must be invalid now if exists
   self.clear_on_redraw = false
   -- kill previously running terminal jobs
   -- when using external commands extension map
@@ -896,7 +895,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     -- which messes up our `buffers()` sort
     entry.filetype = vim.bo[entry.bufnr].filetype
     local lines = api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
-    local tmpbuf = invalid_cached and invalid_cached.bufnr or self:get_tmp_buffer()
+    local tmpbuf = reuse_buf or self:get_tmp_buffer()
     api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
     -- terminal buffers use minimal window style (2nd arg)
     self:set_preview_buf(tmpbuf, entry.terminal)
@@ -915,7 +914,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
           string.format("lsp.util.%s failed for '%s':",
             utils.__HAS_NVIM_011 and "show_document" or "jump_to_location", entry.uri))
         table.insert(lines, 2, "")
-        local tmpbuf = invalid_cached and invalid_cached.bufnr or self:get_tmp_buffer()
+        local tmpbuf = reuse_buf or self:get_tmp_buffer()
         api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
         self:set_preview_buf(tmpbuf)
       end
@@ -924,7 +923,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   else
     assert(entry.path)
     -- not found in cache, attempt to load
-    local tmpbuf = invalid_cached and invalid_cached.bufnr or self:get_tmp_buffer()
+    local tmpbuf = reuse_buf or self:get_tmp_buffer()
     if self.extensions and not utils.tbl_isempty(self.extensions) then
       local ext = path.extension(entry.path)
       local cmd = ext and self.extensions[ext:lower()]
@@ -1287,21 +1286,23 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   regex = regex and #regex > 0 and utils.regex_to_magic(regex)
       or entry.ctag and utils.ctag_to_magic(entry.ctag)
 
-  pcall(api.nvim_win_call, self.win.preview_winid, function()
-    local cached_pos = self.cached_bufnrs[self.preview_bufnr]
+  ---@diagnostic disable-next-line: unnecessary-assert
+  local buf, win, hls = assert(self.preview_bufnr, self.win.preview_winid, self.win.hls)
+  pcall(api.nvim_win_call, win, function()
+    local cached_pos = self.cached_bufnrs[buf]
     if type(cached_pos) ~= "table" then cached_pos = nil end
     local lnum, col = entry.line, entry.col or 0
     if not lnum or lnum < 1 then
       -- set win option is slow with bigfile
       utils.wo.cursorline = false
       self.orig_pos = { 1, 0 }
-      api.nvim_win_set_cursor(self.win.preview_winid, cached_pos or self.orig_pos)
+      api.nvim_win_set_cursor(win, cached_pos or self.orig_pos)
       return
     end
 
     self.orig_pos = { lnum, math.max(0, col - 1) }
-    api.nvim_win_set_cursor(self.win.preview_winid, cached_pos or self.orig_pos)
-    self:maybe_set_cursorline(self.win.preview_winid, self.orig_pos)
+    api.nvim_win_set_cursor(win, cached_pos or self.orig_pos)
+    self:maybe_set_cursorline(win, self.orig_pos)
     -- fn.clearmatches() is slow for bigfile
     if self.match_id then
       pcall(fn.matchdelete, self.match_id)
@@ -1310,11 +1311,11 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
 
     -- If regex is available (grep/lgrep), match on current line
     local regex_start, regex_end = 0, nil
-    if regex and self.win.hls.search then
+    if regex and hls.search then
       -- vim.regex is always magic, see `:help vim.regex`
       local ok, reg = pcall(vim.regex, regex)
       if ok then
-        regex_start, regex_end = reg:match_line(self.preview_bufnr, lnum - 1, math.max(1, col) - 1)
+        regex_start, regex_end = reg:match_line(buf, lnum - 1, math.max(1, col) - 1)
         regex_end = tonumber(regex_end) and regex_end - regex_start
         regex_start = tonumber(regex_start) and regex_start + math.max(1, col) or 0
       elseif self.opts.silent ~= true then
@@ -1324,14 +1325,14 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       end
       if regex_start > 0 then
         ---@diagnostic disable-next-line: assign-type-mismatch
-        self.match_id = fn.matchaddpos(self.win.hls.search, { { lnum, regex_start, regex_end } }, 11)
+        self.match_id = fn.matchaddpos(hls.search, { { lnum, regex_start, regex_end } }, 11)
       end
     end
 
     -- Fallback to cursor hl, only if column exists
-    if regex_start <= 0 and self.win.hls.cursor and col > 0 then
+    if regex_start <= 0 and hls.cursor and col > 0 then
       ---@diagnostic disable-next-line: assign-type-mismatch
-      self.match_id = fn.matchaddpos(self.win.hls.cursor, { { lnum, math.max(1, col) } }, 11)
+      self.match_id = fn.matchaddpos(hls.cursor, { { lnum, math.max(1, col) } }, 11)
     end
 
     utils.zz()
