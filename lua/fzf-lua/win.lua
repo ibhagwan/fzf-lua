@@ -1244,6 +1244,11 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   self:close_preview(hide)
   -- Abort hidden fzf job?
   if not hide and self._hidden_fzf_bufnr and self._hidden_fzf_bufnr ~= self.fzf_bufnr then
+    -- kill the term process and it's children
+    -- avoids lingering cohost.exe on Windows (#2413)
+    if utils.__IS_WINDOWS then
+      vim.api.nvim_chan_send(vim.bo[self._hidden_fzf_bufnr].channel, vim.keycode("<c-c>"))
+    end
     pcall(vim.api.nvim_buf_delete, self._hidden_fzf_bufnr, { force = true })
   end
   -- Clear treesitter buffer cache and deregister decoration callbacks
