@@ -8,6 +8,7 @@ local new_set = MiniTest.new_set
 local exec_lua = child.lua
 
 -- Setup mini.icons locally
+---@diagnostic disable-next-line: param-type-mismatch
 local _mini_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim")
 if not vim.uv.fs_stat(_mini_path) then
   _mini_path = vim.fs.joinpath("deps", "mini.nvim")

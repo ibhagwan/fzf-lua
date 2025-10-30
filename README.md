@@ -48,7 +48,9 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim)
   -- dependencies = { "nvim-mini/mini.icons" },
   ---@module "fzf-lua"
   ---@type fzf-lua.Config|{}
+  ---@diagnostics disable: missing-fields
   opts = {}
+  ---@diagnostics enable: missing-fields
 }
 ```
 

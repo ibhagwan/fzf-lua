@@ -1,5 +1,3 @@
----@diagnostic disable-next-line: deprecated
-local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -90,7 +88,7 @@ local regex_filter_fn = function(regex_filter)
 end
 
 local function location_handler(opts, cb, _, result, ctx, _)
-  local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
+  local encoding = assert(vim.lsp.get_client_by_id(ctx.client_id)).offset_encoding
   result = utils.tbl_islist(result) and result or { result }
   -- HACK: make sure target URI is valid for buggy LSPs (#1317)
   for i, x in ipairs(result) do
@@ -115,7 +113,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
   end
   if opts.ignore_current_line then
     local uri = vim.uri_from_bufnr(utils.CTX().bufnr)
-    local cursor_line = utils.CTX().cursor[1] - 1
+    local cursor_line = assert(utils.CTX().cursor[1]) - 1
     result = vim.tbl_filter(function(l)
       if (l.uri
             and l.uri == uri
@@ -160,7 +158,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
 end
 
 local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
-  local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
+  local encoding = assert(vim.lsp.get_client_by_id(ctx.client_id)).offset_encoding
   for _, call_hierarchy_call in pairs(result) do
     --- "from" for incoming calls and "to" for outgoing calls
     local call_hierarchy_item = call_hierarchy_call.from or call_hierarchy_call.to
@@ -233,7 +231,7 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
     items = symbols_to_items(opts, result, utils.CTX().bufnr,
       opts.child_prefix == true and string.rep(" ", 2) or opts.child_prefix)
   else
-    local encoding = vim.lsp.get_client_by_id(ctx.client_id).offset_encoding
+    local encoding = assert(vim.lsp.get_client_by_id(ctx.client_id)).offset_encoding
     items = vim.lsp.util.symbols_to_items(result, utils.CTX().bufnr, encoding)
   end
   if opts.regex_filter and opts._regex_filter_fn == nil then
@@ -434,6 +432,7 @@ local function gen_lsp_contents(opts)
         if x and jump1 == nil then jump1 = { result = x.result, encoding = x.encoding } end
         table.insert(results, text)
       end
+      ---@diagnostic disable-next-line: param-type-mismatch
       for client_id, response in pairs(lsp_results) do
         if response.result then
           local context = { client_id = client_id }
@@ -591,6 +590,7 @@ local function gen_lsp_contents_hierarchy(opts)
   if err then
     utils.error(("Error executing '%s': %s"):format(opts.lsp_handler.prep, err))
   else
+    ---@diagnostic disable-next-line: param-type-mismatch
     local _, response = next(res)
     if not response or not response.result or not response.result[1] then
       if not opts.silent then
@@ -618,7 +618,7 @@ local normalize_lsp_opts = function(opts, cfg, __resume_key)
 
   -- required for relative paths presentation
   if not opts.cwd or #opts.cwd == 0 then
-    opts.cwd = uv.cwd()
+    opts.cwd = utils.cwd()
   elseif opts.cwd_only == nil then
     opts.cwd_only = true
   end

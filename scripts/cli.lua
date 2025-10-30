@@ -39,7 +39,6 @@ for _, config_path in ipairs(config_paths) do
 end
 
 _G.fzf_jobstart = function(cmd, opts)
-  ---@diagnostic disable-next-line: missing-fields, missing-parameter
   FzfLua.libuv.uv_spawn(cmd[1], {
       cwd = opts.cwd,
       args = vim.list_slice(cmd, 2),

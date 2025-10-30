@@ -181,6 +181,7 @@ M.ui_select = function(items, ui_opts, on_choice)
     -- multiple keybinds trigger, sending `--expect` to fzf
     local previewer = _OPTS_ONCE.previewer
     _OPTS_ONCE.previewer = nil -- can't copy the previewer object
+    ---@diagnostic disable-next-line: param-type-mismatch
     opts = vim.tbl_deep_extend(opts_merge_strategy, _OPTS_ONCE, opts)
     opts.actions = vim.tbl_deep_extend("force", opts.actions or {},
       { ["enter"] = opts.actions.enter })

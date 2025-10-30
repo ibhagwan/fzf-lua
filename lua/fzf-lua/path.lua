@@ -270,6 +270,9 @@ function M.HOME_to_tilde(path)
   return path
 end
 
+---@param str string
+---@param start_idx integer
+---@return integer?
 local function find_next_separator(str, start_idx)
   local SEPARATOR_BYTES = utils._if_win(
     { M.fslash_byte, M.bslash_byte }, { M.fslash_byte })
@@ -282,6 +285,9 @@ local function find_next_separator(str, start_idx)
   end
 end
 
+---@param s string
+---@param i? integer
+---@return integer?
 local function utf8_char_len(s, i)
   -- Get byte count of unicode character (RFC 3629)
   local c = string_byte(s, i or 1)
@@ -298,6 +304,10 @@ local function utf8_char_len(s, i)
   end
 end
 
+---@param s string
+---@param from integer
+---@param to? integer
+---@return string
 local function utf8_sub(s, from, to)
   local ret = ""
   -- NOTE: this function is called from shorten right after finding the next
@@ -311,7 +321,7 @@ local function utf8_sub(s, from, to)
   local byte_i, utf8_i = from, from
   -- Concat utf8 chars until "to" or end of string
   while byte_i <= #s and (not to or utf8_i <= to) do
-    local c_len = utf8_char_len(s, byte_i)
+    local c_len = utf8_char_len(s, byte_i) ---@cast c_len-?
     local c = string_sub(s, byte_i, byte_i + c_len - 1)
     ret = ret .. c
     byte_i = byte_i + c_len
@@ -335,7 +345,7 @@ function M.shorten(path, max_len, sep)
   repeat
     local i = find_next_separator(path, start_idx)
     local end_idx = i and start_idx + math.min(i - start_idx, max_len) - 1 or nil
-    local part = utf8_sub(path, start_idx, end_idx)
+    local part = utf8_sub(path, start_idx, end_idx) ---@cast i-?
     if end_idx and part == "." and i - start_idx > 1 then
       part = utf8_sub(path, start_idx, end_idx + 1)
     end
@@ -391,7 +401,7 @@ function M.entry_to_location(entry, opts)
   local uri, line0, col0 = entry:match("^(.*://.*):(%d+):(%d+):")
   local line = utils.tointeger(line0) or 1
   local col = utils.tointeger(col0) or 1
-  if opts.path_shorten and uri:match("file://") then
+  if opts.path_shorten and uri and uri:match("file://") then
     uri = "file://" .. M.lengthen(uri:sub(8))
   end
   return {
@@ -447,7 +457,7 @@ function M.entry_to_file(entry, opts, force_uri)
     local parts = utils.strsplit(entry, utils.nbsp)
     local idx0 = 1
     for i = 1, #parts - 1 do
-      local s = parts[i]
+      local s = parts[i] ---@cast s string
       if s:match(".-:%d+:") then
         break
       end
@@ -544,9 +554,8 @@ function M.entry_to_file(entry, opts, force_uri)
   }
 end
 
----@param cmd string|string[]
----@param opts table
----@return string|string[]
+---@overload fun(cmd: string, opts: table): string
+---@overload fun(cmd: string[], opts: table): string[]
 function M.git_cwd(cmd, opts)
   local git_args = {
     { "cwd",          "-C" },
@@ -599,7 +608,7 @@ function M.git_root(opts, noerr)
 end
 
 ---@param str string
----@param opts fzf-lua.Config
+---@param opts fzf-lua.config.Resolved
 ---@return fzf-lua.path.Entry|fzf-lua.keymap.Entry
 function M.keymap_to_entry(str, opts)
   local valid_modes = {
@@ -613,7 +622,7 @@ function M.keymap_to_entry(str, opts)
   if not mode or not keymap then return {} end
   mode, keymap = vim.trim(mode), vim.trim(keymap)
   mode = valid_modes[mode] and mode or "" -- only valid modes
-  local out
+  local out ---@type string[]
   local vmap, cmd = nil, string.format("verbose %smap %s", mode, keymap)
   -- Run in the context of the originating buffer or keympas might return
   -- "No mapping found"

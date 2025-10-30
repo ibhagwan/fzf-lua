@@ -39,17 +39,14 @@ Previewer.swiper.default = function() return require "fzf-lua.previewer.swiper".
 ---@field cmd? string
 ---@field args? string
 ---@field preview_offset? string
----@field cmd_deleted? string
----@field cmd_modified? string
----@field cmd_untracked? string
 ---@field theme? string
 ---@field pager? string|function
----@field _fn_git_icons? table[]|fun():table
+---@field _fn_git_icons? table[]|fun():table?
 ---builtin
 ---@field title_fnamemodify? function
 
 ---Instantiate previewer from spec
----@param spec table
+---@param spec? fzf-lua.config.Previewer|string
 ---@param opts table
 ---@return fzf-lua.previewer.Fzf|fzf-lua.previewer.Builtin?
 Previewer.new = function(spec, opts)
