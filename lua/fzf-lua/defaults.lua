@@ -1,3 +1,4 @@
+---@diagnostic disable: missing-fields
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
@@ -40,7 +41,7 @@ function M._man_cmd_fn(bat_pager)
 end
 
 ---missing fields are injected later, not sure how to tell luals about it
----@type fzf-lua.config.Defaults|{}
+---@class fzf-lua.config.Defaults
 M.defaults        = {
   nbsp          = utils.nbsp,
   winopts       = {
@@ -153,6 +154,8 @@ M.defaults        = {
   },
   fzf_tmux_opts = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
   ---@class fzf-lua.config.Previewers
+  ---@field builtin fzf-lua.config.BuiltinPreviewer
+  ---@field git_diff fzf-lua.config.GitDiffPreviewer
   ---@field [string] fzf-lua.config.Previewer
   previewers    = {
     cat = {
@@ -179,6 +182,7 @@ M.defaults        = {
       args  = nil,
       _ctor = previewers.fzf.head,
     },
+    ---@class fzf-lua.config.GitDiffPreviewer: fzf-lua.config.Previewer
     git_diff = {
       pager         = M._preview_pager_fn,
       cmd_deleted   = "git diff --color HEAD --",
@@ -202,6 +206,7 @@ M.defaults        = {
     help_tags = { _ctor = previewers.builtin.help_tags },
     help_native = { _ctor = previewers.fzf.help_tags },
     swiper = { _ctor = previewers.swiper.default },
+    ---@class fzf-lua.config.BuiltinPreviewer: fzf-lua.config.Previewer
     builtin = {
       syntax            = true,
       syntax_delay      = 0,
@@ -221,6 +226,7 @@ M.defaults        = {
       snacks_image      = { enabled = true, render_inline = true },
       _ctor             = previewers.builtin.buffer_or_file,
     },
+    ---@class fzf-lua.config.CodeActionPreviewer: fzf-lua.config.Previewer
     codeaction = {
       _ctor     = previewers.builtin.codeaction,
       diff_opts = { ctxlen = 3 },
@@ -445,6 +451,7 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
 ---@field worktrees fzf-lua.config.GitWorktrees
 ---@field tags      fzf-lua.config.GitTags
 ---@field stash     fzf-lua.config.GitStash
+---@field icons     table<string, fzf-lua.git.icons>
 -- Must construct our opts table in stages
 -- so we can reference 'M.globals.files'
 M.defaults.git                   = {
@@ -632,6 +639,7 @@ M.defaults.git                   = {
     },
     _headers      = { "actions", "cwd", "search" },
   },
+  ---@class fzf-lua.git.icons
   icons = {
     ["M"] = { icon = "M", color = "yellow" },
     ["D"] = { icon = "D", color = "red" },
@@ -646,6 +654,7 @@ M.defaults.git                   = {
 ---@class fzf-lua.config.Grep: fzf-lua.config.Base
 ---@field cmd? string default: auto detect rg|grep
 ---@field rg_glob? boolean|integer
+---@field rg_glob_fn? fun(query: string, opts: table): string, string
 ---@field raw_cmd? string
 ---@field search? string
 ---@field no_esc? integer|boolean
@@ -678,7 +687,7 @@ M.defaults.grep                  = {
   _headers       = { "actions", "cwd" },
 }
 
----@diagnostic disable-next-line: assign-type-mismatch
+---@diagnostic disable-next-line: param-type-mismatch
 ---@class fzf-lua.config.GrepCurbuf: fzf-lua.config.Grep,{}
 ---@field filename? string
 M.defaults.grep_curbuf           = vim.tbl_deep_extend("force", M.defaults.grep, {
@@ -867,7 +876,7 @@ M.defaults.lines                 = {
       -- restore the format to something that `path.entry_to_file` can handle
       local bufnr0, lnum, text = s:match("%[(%d+)%].-(%d+) (.+)$")
       local bufnr = tonumber(bufnr0)
-      if not bufnr then return "" end
+      if not bufnr then return "" end ---@cast bufnr integer
       return string.format("[%s]%s%s:%s:%s",
         bufnr, utils.nbsp,
         path.tail(vim.api.nvim_buf_get_name(bufnr)),
@@ -880,7 +889,7 @@ M.defaults.lines                 = {
   _ctx             = { includeBuflist = true },
 }
 
----@diagnostic disable-next-line: assign-type-mismatch
+---@diagnostic disable-next-line: param-type-mismatch
 ---@class fzf-lua.config.Blines: fzf-lua.config.Lines
 M.defaults.blines                = vim.tbl_deep_extend("force", M.defaults.lines, {
   show_bufname    = false,
@@ -1030,7 +1039,7 @@ M.defaults.highlights            = {
 ---@field dbfile string
 ---@field icons table
 ---@field packpath fun():string
----@field _adm table AsyncDownloadManager
+---@field _adm fzf-lua.AsyncDownloadManager
 ---@field dl_status integer
 ---@field _apply_awesome_theme function
 M.defaults.awesome_colorschemes  = {
@@ -1280,6 +1289,8 @@ M.defaults.lsp.finder            = {
 ---@field post_action_cb function
 ---@field context lsp.CodeActionContext
 ---@field filter fun(x: lsp.CodeAction|lsp.Command):boolean
+---@field _ui_select? { kind: string }
+---@field _items any[]
 M.defaults.lsp.code_actions      = {
   async_or_timeout = 5000,
   previewer        = "codeaction",
@@ -1398,9 +1409,9 @@ M.defaults.tagstack              = {
 }
 
 ---@class fzf-lua.config.Commands: fzf-lua.config.Base
----@field flatten? table<string, boolean>
----@field include_builtin? boolean
----@field sort_lastused? boolean
+---@field flatten table<string, boolean>
+---@field include_builtin boolean
+---@field sort_lastused boolean
 M.defaults.commands              = {
   actions         = { ["enter"] = actions.ex_run },
   flatten         = {},
@@ -1543,6 +1554,7 @@ M.defaults.menus             = {
 
 ---@class fzf-lua.config.Tmux
 ---@field buffers fzf-lua.config.TmuxBuffers
+---@field cmd string
 M.defaults.tmux              = {
   ---@class fzf-lua.config.TmuxBuffers: fzf-lua.config.Base
   buffers = {
@@ -1554,11 +1566,11 @@ M.defaults.tmux              = {
 }
 
 ---@class fzf-lua.config.DapBase: fzf-lua.config.Base
----@field commands fzf-lua.config.DapCommands|{}
----@field configurations fzf-lua.config.DapConfigurations|{}
----@field variables fzf-lua.config.DapVariables|{}
----@field frames fzf-lua.config.DapFrames|{}
----@field breakpoints fzf-lua.config.DapBreakpoints|{}
+---@field commands fzf-lua.config.DapCommands
+---@field configurations fzf-lua.config.DapConfigurations
+---@field variables fzf-lua.config.DapVariables
+---@field frames fzf-lua.config.DapFrames
+---@field breakpoints fzf-lua.config.DapBreakpoints
 
 ---@class fzf-lua.config.Dap
 M.defaults.dap               = {
@@ -1588,7 +1600,7 @@ M.defaults.dap               = {
 }
 
 ---@class fzf-lua.config.CompletePath: fzf-lua.config.Base
----@field cmd? string default: auto detect fd|rg|find
+---@field cmd string default: auto detect fd|rg|find
 ---@field word_pattern? string
 M.defaults.complete_path     = {
   file_icons        = false, ---@type integer|boolean
@@ -1602,7 +1614,7 @@ M.defaults.complete_path     = {
 }
 
 ---@class fzf-lua.config.CompleteFile: fzf-lua.config.Base
----@field cmd? string default: auto detect fd|rg|find
+---@field cmd string default: auto detect fd|rg|find
 ---@field word_pattern? string
 M.defaults.complete_file     = {
   multiprocess      = 1, ---@type integer|boolean
@@ -1653,6 +1665,7 @@ M.defaults.file_icon_padding = ""
 M.defaults.dir_icon          = ""
 
 ---@class fzf-lua.config.HLS
+---@field fzf fzf-lua.config.fzfHLS
 M.defaults.__HLS             = {
   normal         = "FzfLuaNormal",
   border         = "FzfLuaBorder",
@@ -1671,7 +1684,7 @@ M.defaults.__HLS             = {
   scrollborder_e = "FzfLuaScrollBorderEmpty",
   scrollborder_f = "FzfLuaScrollBorderFull",
   scrollfloat_e  = "FzfLuaScrollFloatEmpty",
-  scrollfloat_f  = "FzfLuaScrollFloatFull",
+  scrollfloat_f  = "FzfLuaScrollFloatFull", ---@type string|false
   header_bind    = "FzfLuaHeaderBind",
   header_text    = "FzfLuaHeaderText",
   path_colnr     = "FzfLuaPathColNr",
@@ -1692,6 +1705,7 @@ M.defaults.__HLS             = {
   cmd_ex         = "FzfLuaCmdEx",
   cmd_buf        = "FzfLuaCmdBuf",
   cmd_global     = "FzfLuaCmdGlobal",
+  ---@class fzf-lua.config.fzfHLS
   fzf            = {
     normal     = "FzfLuaFzfNormal",
     cursorline = "FzfLuaFzfCursorLine",

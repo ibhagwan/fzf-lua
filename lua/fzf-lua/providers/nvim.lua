@@ -76,7 +76,6 @@ M.commands = function(opts)
   end
 
   opts.flatten = opts.flatten or {}
-  assert(opts.hls)
   for k, _ in pairs(global_commands) do
     table.insert(entries, utils.ansi_codes[opts.hls.cmd_global](k))
     add_subcommand(k, utils.ansi_codes[opts.hls.cmd_global])
@@ -182,7 +181,8 @@ M.changes_or_jumps = function(opts)
 
   local entries = {}
   for i = #jumps - 1, 3, -1 do
-    local jump, line, col, text = jumps[i]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
+    local entry = jumps[i] ---@cast entry -?
+    local jump, line, col, text = entry:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
     table.insert(entries, string.format(" %16s %15s %15s %s",
       utils.ansi_codes.yellow(jump),
       utils.ansi_codes.blue(line),
@@ -203,6 +203,17 @@ M.changes_or_jumps = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+
+---@class fzf-lua.TagStackItem
+---@field bufnr integer
+---@field from [integer, integer, integer] # {line, col, ...}
+---@field matchnr integer
+---@field tagname string
+---@field filename? string
+---@field lnum? integer
+---@field col? integer
+---@field text? string
+
 ---@param opts fzf-lua.config.Tagstack|{}?
 ---@return thread?, string?, table?
 M.tagstack = function(opts)
@@ -210,6 +221,7 @@ M.tagstack = function(opts)
   opts = config.normalize_opts(opts, "tagstack")
   if not opts then return end
 
+  ---@type fzf-lua.TagStackItem[]
   local tagstack = vim.fn.gettagstack().items
 
   local tags = {}
@@ -233,7 +245,7 @@ M.tagstack = function(opts)
 
   local entries = {}
   for i, tag in ipairs(tags) do
-    local bufname = path.HOME_to_tilde(path.relative_to(tag.filename, uv.cwd()))
+    local bufname = path.HOME_to_tilde(path.relative_to(tag.filename, utils.cwd()))
     local buficon, hl
     if opts.file_icons then
       buficon, hl = devicons.get_devicon(bufname)
@@ -267,7 +279,6 @@ M.marks = function(opts)
   opts = config.normalize_opts(opts, "marks")
   if not opts then return end
 
-  assert(opts.hls)
   local contents = function(cb)
     local buf = utils.CTX().bufnr
     local entries = {}
@@ -290,7 +301,7 @@ M.marks = function(opts)
     -- global marks
     for _, m in ipairs(vim.fn.getmarklist()) do
       local mark, bufnr, lnum, col, file = m.mark:sub(2, 2), m.pos[1], m.pos[2], m.pos[3], m.file
-      file = path.relative_to(file, uv.cwd())
+      file = path.relative_to(file, utils.cwd())
       if path.is_absolute(file) then
         file = path.HOME_to_tilde(file)
       end
@@ -587,7 +598,7 @@ M.spell_suggest = function(opts)
   local match = opts.word_pattern or "[^%s\"'%(%)%.%%%+%-%*%?%[%]%^%$:#,]*"
   local line = vim.api.nvim_get_current_line()
   local col = vim.api.nvim_win_get_cursor(0)[2] + 1
-  local before = col > 1 and line:sub(1, col - 1):reverse():match(match):reverse() or ""
+  local before = col > 1 and assert(line:sub(1, col - 1):reverse():match(match)):reverse() or ""
   local after = line:sub(col):match(match) or ""
   -- special case when the cursor is on the left surrounding char
   if #before == 0 and #after == 0 and #line > col then
@@ -781,7 +792,7 @@ M.serverlist = function(opts)
       -- Don't list servers twice
       if not vim.list_contains(listed, socket) then
         local ok, chan = pcall(vim.fn.sockconnect, "pipe", socket, { rpc = true })
-        if ok and chan then
+        if ok and chan then ---@cast chan integer
           -- Check that the server is responding
           if vim.fn.rpcrequest(chan, "nvim_get_chan_info", 0).id then
             table.insert(found, socket)
@@ -804,7 +815,7 @@ M.serverlist = function(opts)
           end
         )
         :map(function(p)
-          ----@type boolean, string?
+          ---@type boolean, string?
           local ok, cwd = utils.rpcexec(p, "nvim_exec_lua", "return vim.uv.cwd()", {})
           if not ok or not cwd then return end
           cwd = FzfLua.path.normalize(cwd)

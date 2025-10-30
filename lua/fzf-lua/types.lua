@@ -3,40 +3,29 @@ error("Cannot require a meta file")
 
 _G.FzfLua = require("fzf-lua")
 
----@class fzf-lua.previewer.SwiperBase
----@field new function
----@field setup_opts function
----@field zero_cmd function?
----@field result_cmd function?
----@field preview_cmd function?
----@field highlight_matches function?
----@field win fzf-lua.Win
-
----@class fzf-lua.previewer.BufferOrFile
----@field match_id? integer
 
 ---@class fzf-lua.path.Entry
 ---@field stripped? string
+---@field path? string
 ---@field bufnr? integer
 ---@field line? integer
 ---@field col? integer
 ---@field bufname? string
 ---@field terminal? boolean
----@field path? string
 ---@field ctag? string
 ---@field uri? string
 ---@field range? lsp.Range
 ---@field debug? string debug information
 
----@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry, {}
----@field do_not_cache boolean?
----@field no_scrollbar boolean?
----@field tick integer?
----@field fs_stat uv.fs_stat.result?
----@field no_syntax boolean?
----@field cached fzf-lua.buffer_or_file.Bcache?
----@field content string[]?
----@field filetype string?
+---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry,{}
+---@field do_not_cache? boolean
+---@field no_scrollbar? boolean
+---@field tick? integer
+---@field fs_stat? uv.fs_stat.result
+---@field no_syntax? boolean
+---@field cached? fzf-lua.buffer_or_file.Bcache
+---@field content? string[]
+---@field filetype? string
 
 ---@class fzf-lua.keymap.Entry
 ---@field vmap string?
@@ -155,7 +144,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field scrollbar? string
 ---@field scrolloff? integer
 ---@field delay? integer
----@field winopts? fzf-lua.config.PreviewerWinopts
+---@field winopts fzf-lua.config.PreviewerWinopts
 
 ---@class fzf-lua.config.PreviewerWinopts
 ---@field number? boolean
@@ -220,15 +209,15 @@ _G.FzfLua = require("fzf-lua")
 ---@class fzf-lua.config.Base
 ---@field cwd_prompt? boolean
 ---@field dir_icon? string
----@field enrich? fun(opts: fzf-lua.config.Resolved):fzf-lua.config.Resolved|{}
+---@field enrich? fun(opts: fzf-lua.config.Resolved|{}):fzf-lua.config.Resolved|{}
 ---@field fzf_bin? string
 ---@field fzf_colors? { [1]?: boolean, [string]: string? }
 ---@field fzf_opts? table<string, any>
----@field fzf_tmux_opts? table<string, any>
----@field hls? fzf-lua.config.HLS
----@field winopts? fzf-lua.config.Winopts|(fun(opts: fzf-lua.Config):fzf-lua.config.Winopts)
----@field keymap? fzf-lua.config.Keymap|(fun(opts: fzf-lua.Config):fzf-lua.config.Keymap)
----@field actions? fzf-lua.config.Actions|(fun(opts: fzf-lua.Config):fzf-lua.config.Actions)
+---@field fzf_tmux_opts table<string, any>
+---@field hls fzf-lua.config.HLS
+---@field winopts? fzf-lua.config.Winopts|(fun(opts: fzf-lua.config.Resolved):fzf-lua.config.Winopts)
+---@field keymap? fzf-lua.config.Keymap|(fun(opts: fzf-lua.config.Resolved):fzf-lua.config.Keymap)
+---@field actions? fzf-lua.config.Actions|(fun(opts: fzf-lua.config.Resolved):fzf-lua.config.Actions)
 ---@field no_header? boolean
 ---@field no_header_i? boolean
 ---@field prompt? string
@@ -241,7 +230,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field color_icons? boolean
 ---@field git_icons? boolean
 ---@field silent? boolean|integer
----@field previewer? fun(...)|table|string
+---@field previewer? fzf-lua.config.Previewer|string
 ---@field preview? string|function|table
 ---@field complete? (fun(s: string[], _o: fzf-lua.config.Resolved, l: string, c: integer):string?, integer?)|boolean
 ---@field header string
@@ -260,14 +249,14 @@ _G.FzfLua = require("fzf-lua")
 ---@field cb_co fun(co: thread)
 ---@field cwd_only boolean
 ---@field cmd? string
----@field debug? boolean|'v'|'verbose'
+---@field debug? boolean|integer|'v'|'verbose'
 ---@field preview_offset? string
 ---@field _fzf_cli_args? string[]
----@field __INFO? fzf-lua.Info
----@field __CTX? fzf-lua.Ctx|{}
+---@field __INFO fzf-lua.Info
+---@field __CTX fzf-lua.Ctx
 ---@field _normalized? boolean
----@field __call_fn? function
----@field __call_opts? table
+---@field __call_fn function
+---@field __call_opts table
 ---@field is_live? boolean is "live" picker
 ---@field contents? fzf-lua.content|fzf-lua.shell.data2
 ---@field _actions? fun():fzf-lua.config.Actions?
@@ -281,6 +270,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field field_index_expr? string
 ---@field _ctag? string
 ---@field preview_pager? string
+---@field toggle_flag? string
 
 ---@class fzf-lua.config.Resolved: fzf-lua.config.Base
 ---@field PidObject? table
@@ -305,11 +295,15 @@ _G.FzfLua = require("fzf-lua")
 ---@field __sigwinches? string[]
 ---@field __sigwinch_on_scope table<string, function>
 ---@field __sigwinch_on_any function[]
----
 ---@field process1? boolean
 ---@field profiler? boolean
 ---@field use_queue? boolean
 ---@field throttle? boolean
 ---@field env? boolean
----@field winopts? fzf-lua.config.Winopts
+---@field winopts fzf-lua.config.WinoptsResolved
+---@field actions fzf-lua.config.Actions
+---@field keymap fzf-lua.config.Keymap
+---@field fzf_opts table<string, any>
 ---@field _resume_reload? boolean
+---@field _fzf_cli_args string[]
+---@field _uri? boolean

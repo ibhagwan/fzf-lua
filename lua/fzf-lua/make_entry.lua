@@ -6,7 +6,7 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local devicons = require "fzf-lua.devicons"
-local config
+local config ---@module 'fzf-lua.config'
 
 -- attempt to load the current config
 -- should fail if we're running headless
@@ -21,7 +21,7 @@ local function load_config()
   if not _G._fzf_lua_server then return end
   local ok, res = utils.rpcexec(_G._fzf_lua_server, "nvim_exec_lua",
     [[return FzfLua.libuv.serialize(FzfLua.config)]], {})
-  if not ok then error(res) end
+  if not ok then error(res) end ---@cast res string
   res = libuv.deserialize(res)
   return res
 end
@@ -78,6 +78,7 @@ local opts2 = setmetatable({}, {
 
 if _G._fzf_lua_is_headless then
   local _config = load_config() or {} ---@module 'fzf-lua.config'
+  ---@diagnostic disable-next-line: missing-fields
   _config.globals = { git = {}, files = {}, grep = {} }
   _config.globals.git.icons = load_config_section("globals.git.icons", "table") or {}
   _config.globals.files.git_status_cmd =
@@ -103,20 +104,21 @@ if _G._fzf_lua_is_headless then
     devicons = devicons,
   }
 end
+assert(config.globals, "missing gloabals in fzf-lua config")
 
 M.get_diff_files = function(opts)
   local diff_files = {}
-  local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd
+  local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd ---@cast cmd string[]
   if not cmd then return {} end
   local start = uv.hrtime()
-  local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts))
+  local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts)) ---@cast status string[]
   local seconds = (uv.hrtime() - start) / 1e9
   if seconds >= 0.5 and opts.silent ~= true then
     local exec_str = string.format([[require"fzf-lua".utils.warn(]] ..
       [["'git status' took %.2f seconds, consider using `git_icons=false` in this repository or use `silent=true` to supress this message.")]]
       , seconds)
     if not _G._fzf_lua_is_headless then
-      loadstring(exec_str)()
+      assert(loadstring(exec_str))()
     else
       ---@diagnostic disable-next-line: undefined-field
       local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
@@ -125,8 +127,7 @@ M.get_diff_files = function(opts)
     end
   end
   if ok and err == 0 then
-    for i = 1, #status do
-      local line = status[i]
+    for _, line in ipairs(status) do
       local icon = line:match("[MUDARCT?]+")
       local file = line:match("[^ ]*$")
       if icon and file then
@@ -232,8 +233,8 @@ M.lgrep = function(s, opts)
 end
 
 ---@param opts table
----@param search_query string
----@param no_esc boolean|number
+---@param search_query? string
+---@param no_esc? boolean|number
 ---@return string?
 M.get_grep_cmd = function(opts, search_query, no_esc)
   opts = _G._fzf_lua_is_headless and setmetatable(vim.deepcopy(opts), { __index = opts2 }) or opts
@@ -286,6 +287,7 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
       return new_cmd
     end
   elseif opts.rg_glob then
+    search_query = search_query or ""
     local new_query, glob_args = M.glob_parse(search_query, opts)
     if glob_args then
       -- since the search string mixes both the query and
@@ -319,7 +321,7 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
     -- the cwd, this is by design for perf reasons as having to deal with full paths
     -- will result in more code rouets taken in `make_entry.file`
     for i, p in ipairs(search_paths) do
-      search_paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), uv.cwd()))
+      search_paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), utils.cwd()))
     end
     search_path = table.concat(search_paths, " ")
     if is_grep then
@@ -479,7 +481,7 @@ M.preprocess = function(opts)
   opts.cmd = M.fix_windows_cmd(opts.cmd)
 
   if opts.cwd_only and not opts.cwd then
-    opts.cwd = uv.cwd()
+    opts.cwd = utils.cwd()
   end
 
   if opts.file_icons then
@@ -498,7 +500,7 @@ M.preprocess = function(opts)
     if not opts._fmt.to then
       local _to = opts2._fmt._to
       if type(_to) == "string" then
-        opts._fmt.to = loadstring(_to)()
+        opts._fmt.to = assert(loadstring(_to))()
       end
     end
   end
@@ -564,6 +566,7 @@ M.file = function(x, opts)
       return utils.strip_ansi_coloring(file_part)
     end
   end)()
+  ---@cast stripped_filepath-?
   local filepath = stripped_filepath
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
   -- the './' prefix, will not work with '--color=always'
@@ -577,16 +580,16 @@ M.file = function(x, opts)
   if opts.absolute_path then
     -- make path absolute
     if not path.is_absolute(filepath) then
-      filepath = path.join({ opts.cwd or uv.cwd(), filepath })
+      filepath = path.join({ opts.cwd or utils.cwd(), filepath })
     end
   else
     -- make path relative
-    filepath = path.relative_to(filepath, opts.cwd or uv.cwd())
+    filepath = path.relative_to(filepath, opts.cwd or utils.cwd())
   end
   if path.is_absolute(filepath) then
     -- filter for cwd only
     if opts.cwd_only then
-      if not path.is_relative_to(filepath, opts.cwd or uv.cwd()) then
+      if not path.is_relative_to(filepath, opts.cwd or utils.cwd()) then
         return nil
       end
     end

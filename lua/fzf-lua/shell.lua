@@ -122,13 +122,13 @@ end
 
 ---@param fn function
 ---@param fzf_field_index string
----@param debug boolean|integer
+---@param debug? boolean|integer|"v"|"verbose"
 ---@return string, integer
 function M.pipe_wrap_fn(fn, fzf_field_index, debug)
   fzf_field_index = fzf_field_index or "{+}"
 
   local receiving_function = function(pipe_path, ...)
-    local pipe = uv.new_pipe(false)
+    local pipe = assert(uv.new_pipe(false))
     local args = { ... }
     -- unescape double backslashes on windows
     if utils.__IS_WINDOWS and type(args[1]) == "table" then
@@ -176,8 +176,8 @@ M.check_upvalue = function(v, varname)
     require("fzf-lua.lib.base64").encode(string.dump(v, true)))
   -- Test the function once with nil value (imprefect?)
   -- to see if there's an issue with upvalue refs
-  local f = loadstring(str)()
-  local ok, err = pcall(f)
+  local f = assert(loadstring(str))()
+  local ok, err = pcall(f) ---@cast err string
   assert(
     ok or (not err:match("attempt to index upvalue") and not err:match("attempt to call upvalue")),
     string.format("multiprocess '%s' cannot have upvalue referecnces", varname))
@@ -524,9 +524,10 @@ M.wrap_spawn_stdio = function(opts)
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   -- TODO: should we check "cmd"?
   for _, k in ipairs({ "contents", "fn_transform", "fn_preprocess", "fn_postprocess" }) do
-    if type(opts[k]) == "function" then
+    local v = opts[k]
+    if type(v) == "function" then ---@cast v function
       -- opts[k] = M.check_upvalue(opts[k], "opts." .. k)
-      M.check_upvalue(opts[k], "opts." .. k)
+      M.check_upvalue(v, "opts." .. k)
     end
   end
   local cmd_str = ("%s -u NONE -l %s %s"):format(

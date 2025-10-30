@@ -24,7 +24,7 @@ M.get_files_cmd = function(opts)
     -- will result in more code routes taken in `make_entry.file`
     if type(paths) == "table" then
       for i, p in ipairs(paths) do
-        paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), uv.cwd()))
+        paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), utils.cwd()))
       end
       return table.concat(paths, " ")
     end
@@ -80,7 +80,7 @@ M.files = function(opts)
   if opts.ignore_current_file then
     local curbuf = vim.api.nvim_buf_get_name(0)
     if #curbuf > 0 then
-      curbuf = path.relative_to(curbuf, opts.cwd or uv.cwd())
+      curbuf = path.relative_to(curbuf, opts.cwd or utils.cwd())
       opts.file_ignore_patterns = opts.file_ignore_patterns or {}
       table.insert(opts.file_ignore_patterns,
         "^" .. utils.lua_regex_escape(curbuf) .. "$")
@@ -91,7 +91,7 @@ M.files = function(opts)
     -- `dir` command returns absolute paths with ^M for EOL
     -- `make_entry.file` will strip the ^M
     -- set `opts.cwd` for relative path display
-    opts.cwd = uv.cwd()
+    opts.cwd = utils.cwd()
   end
   opts = core.set_title_flags(opts, { "cmd" })
   return core.fzf_exec(opts.cmd, opts)
