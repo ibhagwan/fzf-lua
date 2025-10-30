@@ -933,12 +933,6 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       end
     end
     if self:attach_snacks_image_buf(tmpbuf, entry) then
-      -- Similar settings as `populate_terminal_cmd`
-      entry.do_not_cache = true
-      entry.no_scrollbar = true
-      self.clear_on_redraw = true
-      -- 2nd arg `true`: minimal style window
-      self:set_preview_buf(tmpbuf, true)
       self:preview_buf_post(entry)
       return
     end
@@ -1089,6 +1083,12 @@ function Previewer.base:attach_snacks_image_buf(buf, entry)
     return false
   end
   simg.buf.attach(buf, { src = entry.path })
+  -- Similar settings as `populate_terminal_cmd`
+  entry.do_not_cache = not utils.map_get(simg.terminal, "_env.placeholders")
+  entry.no_scrollbar = true
+  self.clear_on_redraw = true
+  -- 2nd arg `true`: minimal style window
+  self:set_preview_buf(buf, true)
   return true
 end
 
@@ -1103,7 +1103,7 @@ function Previewer.base:attach_snacks_image_inline()
       or vim.b[bufnr].snacks_image_attached then
     return
   end
-  if not simg.terminal._terminal then -- detection must be done before terminal.env()
+  if not simg.terminal._terminal and simg.terminal.detect then -- detection must be done before terminal.env()
     simg.terminal.detect(function() end)
     return
   end
