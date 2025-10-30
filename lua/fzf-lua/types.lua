@@ -31,8 +31,6 @@ _G.FzfLua = require("fzf-lua")
 ---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry, {}
 ---@field do_not_cache boolean?
 ---@field no_scrollbar boolean?
----@field buf_is_valid boolean?
----@field buf_is_loaded boolean?
 ---@field tick integer?
 ---@field fs_stat uv.fs_stat.result?
 ---@field no_syntax boolean?
