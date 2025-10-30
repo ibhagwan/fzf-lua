@@ -11,8 +11,6 @@
     "enable": true,
     "disable": [
       "unnecessary-if",
-      "param-type-not-match",
-      "need-check-nil",
       "await-in-sync",
       "global-in-non-module"
     ]

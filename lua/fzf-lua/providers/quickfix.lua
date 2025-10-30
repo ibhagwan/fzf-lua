@@ -1,5 +1,4 @@
 ---@diagnostic disable-next-line: deprecated
-local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
@@ -11,7 +10,7 @@ local quickfix_run = function(opts, cfg)
   opts = config.normalize_opts(opts, cfg)
   if not opts then return end
 
-  if not opts.cwd then opts.cwd = uv.cwd() end
+  opts.cwd = opts.cwd or utils.cwd()
 
   local function getlist()
     if opts.__locations then return nil end

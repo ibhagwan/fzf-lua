@@ -46,7 +46,7 @@ local function ls(dir, fn)
     -- HACK: type is not always returned due to a bug in luv,
     -- so fecth it with fs_stat instead when needed.
     -- see https://github.com/folke/lazy.nvim/issues/306
-    fn(fname, name, t or uv.fs_stat(fname).type)
+    fn(fname, name, t or (uv.fs_stat(fname) or {}).type)
   end
 end
 
@@ -100,10 +100,10 @@ end
 M.combine = function(t)
   t = t or {}
 
-  local pickers = type(t.pickers) == "table" and t.pickers
-      or type(t.pickers) == "string" and utils.strsplit(t.pickers, "[,;]")
-      or nil
+  local pickers = (type(t.pickers) == "table" and t.pickers
+    or type(t.pickers) == "string" and utils.strsplit(t.pickers, "[,;]"))
 
+  assert(pickers)
   local opts = t
   t.pickers = nil
 
@@ -153,6 +153,7 @@ end
 ---@param opts fzf-lua.config.Global|{}?
 ---@return thread?, string?, table?
 M.global = function(opts)
+  -- -@type fzf-lua.config.GlobalStrict
   ---@type fzf-lua.config.Global
   opts = config.normalize_opts(opts, "global")
   if not opts then return end
@@ -263,6 +264,7 @@ M.global = function(opts)
         cur_sub = new_sub
         cur_picker = new_picker
       end
+      if not q or not cur_sub then return end
       return reload .. string.format("search(%s)", q:sub(cur_sub))
     end, opts, "{q}")
   end

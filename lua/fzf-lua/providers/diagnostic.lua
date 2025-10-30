@@ -1,5 +1,4 @@
----@diagnostic disable-next-line: deprecated
-local uv = vim.uv or vim.loop
+---@diagnostic disable: need-check-nil, param-type-mismatch
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
@@ -41,7 +40,7 @@ M.diagnostics = function(opts)
 
   -- required for relative paths presentation
   if not opts.cwd or #opts.cwd == 0 then
-    opts.cwd = uv.cwd()
+    opts.cwd = utils.cwd()
   else
     opts.cwd_only = true
   end
@@ -81,7 +80,6 @@ M.diagnostics = function(opts)
       if type(sign_confs) ~= "table" or utils.tbl_isempty(sign_confs) then sign_confs = nil end
       signs0[v.severity].text =
           (not opts.diag_icons or not sign_confs or not sign_confs.text or not sign_confs.text[level])
-          ---@diagnostic disable-next-line: need-check-nil
           and v.default or vim.trim(sign_confs.text[level])
       signs0[v.severity].texthl = v.name
     else
