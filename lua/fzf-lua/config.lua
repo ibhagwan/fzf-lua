@@ -6,6 +6,9 @@ local libuv = require "fzf-lua.libuv"
 local actions = require "fzf-lua.actions"
 local devicons = require "fzf-lua.devicons"
 
+---@class fzf-lua.config
+---@field globals fzf-lua.config.Defaults
+---@field __HLS_STATE { colorscheme: string, bg: string }
 local M = {}
 
 -- set this so that make_entry won't get nil err when setting remotely
@@ -60,8 +63,10 @@ function M.resume_opts(opts)
 end
 
 -- proxy table (with logic) for accessing the global config
-M.setup_opts = {}
 ---@type fzf-lua.Config|{}
+M.setup_opts = {}
+
+---@type fzf-lua.config.Defaults
 M.globals = setmetatable({}, {
   __index = function(_, index)
     local function setup_opts()
@@ -166,11 +171,11 @@ local normalize_tbl = function(opts)
 end
 
 ---@generic T table
----@param opts T|{}|fun():T?
+---@param opts T?|{}|(fun():T?)
 ---@param globals string|(fzf-lua.Config|{})?
 ---@param __resume_key string?
 ---@return T
-function M.normalize_opts(opts, globals, __resume_key)
+function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
   -- opts can also be a function that returns an opts table
   ---@type fzf-lua.config.Resolved
   opts = eval(opts) or {}
@@ -624,7 +629,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- other user scenarios which need to use `opts._cwd`, for
   -- exmaple, using the "hide" profile and resuming fzf-lua
   -- from another tab after a `:tcd <dir>` (#1854)
-  opts._cwd = uv.cwd()
+  opts._cwd = utils.cwd()
 
   if opts.cwd and #opts.cwd > 0 then
     -- NOTE: on Windows, `expand` will replace all backslashes with forward slashes
@@ -640,7 +645,7 @@ function M.normalize_opts(opts, globals, __resume_key)
         -- relative paths in cwd are inaccessible when using multiprocess
         -- as the external process have no awareness of our current working
         -- directory so we must convert to full path (#375)
-        opts.cwd = path.join({ uv.cwd(), opts.cwd })
+        opts.cwd = path.join({ utils.cwd(), opts.cwd })
       elseif utils.__IS_WINDOWS and opts.cwd:sub(2) == ":" then
         -- TODO: upstream bug? on Windows: starting jobs with `cwd = C:` (without separator)
         -- ignores the cwd argument and starts the job in the current working directory
@@ -1005,16 +1010,15 @@ function M.normalize_opts(opts, globals, __resume_key)
   opts._normalized = true
 
   return opts
-end
+end ---@diagnostic enable
 
-M.bytecode = function(s, datatype)
+M.bytecode = function(s, _)
   local keys = utils.strsplit(s, "%.")
   local iter = M
   for i = 1, #keys do
-    ---@diagnostic disable-next-line: assign-type-mismatch
     iter = iter[keys[i]]
     if not iter then break end
-    if i == #keys and type(iter) == datatype then
+    if i == #keys and type(iter) == "function" then
       -- string.dump (function [, strip])
       -- Returns a string containing a binary representation (a binary chunk) of the given
       -- function, so that a later load on this string returns a copy of the function (but

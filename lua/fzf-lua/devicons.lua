@@ -52,6 +52,7 @@ function NvimWebDevicons:load(do_not_lazy_load)
   then
     self._package_loaded, self._package = pcall(require, self._package_name)
     if self._package_loaded then
+      ---@diagnostic disable-next-line: param-type-mismatch
       self._package_path = path.parent(path.parent(path.normalize(
         debug.getinfo(self._package.setup, "S").source:gsub("^@", ""))))
     end
@@ -108,7 +109,7 @@ function NvimWebDevicons:load_icons(opts)
     -- something is wrong with devicons
     utils.error("devicons.get_icons() is nil or empty!")
     return
-  end
+  end ---@cast all_devicons table
   local icons = {
     by_filename = self._package.get_icons_by_filename(),
     by_extension = self._package.get_icons_by_extension(),
@@ -186,6 +187,7 @@ function MiniIcons:load(do_not_lazy_load)
   then
     self._package_loaded, self._package = pcall(require, self._package_name)
     if self._package_loaded then
+      ---@diagnostic disable-next-line: param-type-mismatch
       self._package_path = path.parent(path.parent(path.parent(path.normalize(
         debug.getinfo(self._package.setup, "S").source:gsub("^@", "")))))
     end

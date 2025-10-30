@@ -6,9 +6,20 @@ local shell = require "fzf-lua.shell"
 
 local M = {}
 
----@class fzf-lua.previewer.SwiperBase: fzf-lua.Object,{}
+---@class fzf-lua.previewer.SwiperBase: fzf-lua.Object, {}
+---@field opts table
+---@field ctx_winid integer
+---@field ctx_bufnr integer
+---@field ctx_winopts table
+---@field ns integer
+---@field picker string
+---@field win fzf-lua.Win
 M.base = Object:extend()
 
+---@diagnostic disable: param-type-not-match
+---@param o fzf-lua.config.Previewer
+---@param opts fzf-lua.config.Resolved
+---@return fzf-lua.previewer.SwiperBase?
 function M.base:new(o, opts)
   o = o or {}
   self.opts = opts;
@@ -79,7 +90,7 @@ function M.base:parse_lnum_col(line, is_entry)
   elseif self.picker == "treesitter" or self.picker == "lsp_document_symbols" then
     prefix = line:gsub("%s+$", ""):match("(.*%s+).+$")
     lnum, col = line:match("^.-(%d+):(%d+)%s")
-    off = col and (1 - assert(tonumber(col)) - 1)
+    off = col and (1 - assert(utils.tointeger(col)) - 1) or nil
   end
   if lnum then
     -- use `vin.fn.strwidth` for proper adjustment of fzf's marker/pointer if unicode
@@ -92,7 +103,7 @@ function M.base:preview_cmd()
   return shell.stringify_data(function(items, _, _)
     ---@type string?, string?, string?
     local entry, _, idx = unpack(items, 1, 3)
-    if not tonumber(idx) then return end
+    if not entry or not tonumber(idx) then return end
     local lnum, col = self:parse_lnum_col(entry, true)
     if not lnum or lnum < 1 then return end
     vim.api.nvim_win_set_cursor(self.ctx_winid, { lnum, col or 0 })
@@ -129,8 +140,9 @@ function M.base:highlight_matches()
     local hldef = vim.api.nvim_get_hl(0, { link = false, name = hlgroup })
     return hldef and hldef.fg
   end)()
-  local fzf_win = utils.fzf_winobj().fzf_winid
-  local fzf_buf = utils.fzf_winobj().fzf_bufnr
+  local win = assert(utils.fzf_winobj())
+  local fzf_win = win.fzf_winid
+  local fzf_buf = win.fzf_bufnr
   if not vim.api.nvim_win_is_valid(fzf_win) or not vim.api.nvim_buf_is_valid(fzf_buf) then
     return
   end
@@ -144,7 +156,9 @@ function M.base:highlight_matches()
   for r = l_s, l_e do
     (function()
       local buf_lnum = r - l_s + 2
-      local lnum, _, col_valid_idx, col_off = self:parse_lnum_col(buf_lines[buf_lnum])
+      local lnum, _, col_valid_idx, col_off = self:parse_lnum_col(assert(buf_lines[buf_lnum]))
+      assert(col_valid_idx)
+      assert(col_off)
       if not lnum or lnum < 1 then return end
       local state = { bytelen = 0 }
       for c = 1, max_columns do
@@ -178,8 +192,10 @@ function M.base:close()
   -- on hide + change picker ctx will be nil
   local ctx = utils.__CTX()
   if not ctx then return end
+  assert(ctx.winopts)
   vim.wo[ctx.winid].winhl = ctx.winopts.winhl
   vim.wo[ctx.winid].cursorline = ctx.winopts.cursorline
+  ---@diagnostic disable-next-line: param-type-not-match
   vim.api.nvim_win_set_cursor(ctx.winid, ctx.cursor)
   utils.zz()
 end

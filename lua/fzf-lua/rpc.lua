@@ -16,7 +16,7 @@ end
 
 local function new_pipe()
   local tmp = _is_win and windows_pipename() or vim.fn.tempname()
-  local socket = uv.new_pipe(false)
+  local socket = assert(uv.new_pipe(false))
   uv.pipe_bind(socket, tmp)
   return socket, tmp
 end

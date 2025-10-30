@@ -1,3 +1,4 @@
+---@diagnostic disable: param-type-mismatch
 -- Add current directory to 'runtimepath' to be able to use 'lua' files
 vim.opt.runtimepath:append(vim.uv.cwd())
 
