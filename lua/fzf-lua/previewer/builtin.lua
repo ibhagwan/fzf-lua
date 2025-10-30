@@ -682,11 +682,7 @@ function Previewer.buffer_or_file:should_load_buffer(entry)
   -- it's a terminal command (chafa, viu, ueberzug) which requires a reload
   -- return 'true' so the buffer will be loaded in ::populate_preview_buf
   if not self.loaded_entry or self.loaded_entry.do_not_cache then return true end
-  if (entry.bufnr and entry.bufnr == self.loaded_entry.bufnr) or
-      (not entry.bufnr and entry.path and entry.path == self.loaded_entry.path) then
-    return false
-  end
-  return true
+  return self.loaded_entry.cached ~= entry.cached
 end
 
 function Previewer.buffer_or_file:start_ueberzug()
