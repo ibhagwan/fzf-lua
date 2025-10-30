@@ -1055,7 +1055,7 @@ end
 function Previewer.base:attach_snacks_image_buf(buf, entry)
   ---@diagnostic disable-next-line: undefined-field
   local simg = self.snacks_image.enabled and (_G.Snacks or {}).image
-  if not simg or not simg.supports(entry.path) then
+  if not simg or not simg.config.enabled or not simg.supports(entry.path) then
     return false
   end
   simg.buf.attach(buf, { src = entry.path })
@@ -1067,6 +1067,7 @@ function Previewer.base:attach_snacks_image_inline()
   local simg = (_G.Snacks or {}).image
   local bufnr, preview_winid = self.preview_bufnr, self.win.preview_winid
   if not simg
+      or not simg.config.enabled
       or not self.snacks_image.enabled
       or not self.snacks_image.render_inline
       or vim.b[bufnr].snacks_image_attached then
