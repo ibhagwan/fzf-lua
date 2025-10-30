@@ -1,3 +1,4 @@
+---@diagnostic disable: param-type-mismatch
 local fzf = require("fzf-lua")
 local builtin = require("fzf-lua.previewer.builtin")
 local M = {}

@@ -111,7 +111,7 @@ T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
   -- can :wqa when there're hide job #1817
   pcall(child.cmd, [[wqa]])
   -- child.is_running() didn't work as expected
-  eq(vim.fn.jobwait({ child.job.id }, 1000)[1], 0)
+  eq(vim.fn.jobwait({ assert(child.job).id }, 1000)[1], 0)
 end
 
 T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()
@@ -133,7 +133,7 @@ end
 T["win"]["keymap"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
 T["win"]["keymap"]["no error"] = new_set({
-  parametrize = vim.iter(assert(require("fzf-lua.defaults").defaults.keymap).builtin)
+  parametrize = vim.iter(require("fzf-lua.defaults").defaults.keymap.builtin)
       :map(function(key, action) return { key, action } end)
       :totable()
 }, {

@@ -98,9 +98,8 @@ M.diff = function(opts)
     utils.warn("Invalid git ref %s", opts.ref)
     return
   end
-  for _, k in ipairs({ "cmd", "preview" }) do
-    opts[k] = opts[k]:gsub("[<{]ref[}>]", opts.ref)
-  end
+  opts.cmd = opts.cmd:gsub("[<{]ref[}>]", opts.ref)
+  opts.preview = opts.preview:gsub("[<{]ref[}>]", opts.ref)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   opts.preview = git_preview(opts, "{-1}")
@@ -205,7 +204,8 @@ M.branches = function(opts)
       -- * branch
       --   remotes/origin/branch
       --   (HEAD detached at origin/branch)
-      local branch = items[1]:match("^[%*+]*[%s]*[(]?([^%s)]+)")
+      if not items[1] then return utils.shell_nop() end
+      local branch = assert(items[1]:match("^[%*+]*[%s]*[(]?([^%s)]+)"))
       return (preview:gsub("{.*}", branch))
     end, opts, "{}")
   end
@@ -221,6 +221,7 @@ M.worktrees = function(opts)
   if opts.preview then
     local preview_cmd = opts.preview
     opts.preview = shell.stringify_cmd(function(items)
+      if not items[1] then return utils.shell_nop() end
       local cwd = items[1]:match("^[^%s]+")
       local cmd = path.git_cwd(preview_cmd, { cwd = cwd })
       return cmd

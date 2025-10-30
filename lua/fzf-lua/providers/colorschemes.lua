@@ -69,7 +69,6 @@ M.colorschemes = function(opts)
         live = sel[1]
         vim.cmd("colorscheme " .. sel[1])
       end
-      ---@diagnostic disable-next-line: param-type-mismatch
     end, opts, "{}")
   end
 
@@ -155,8 +154,20 @@ M.highlights = function(opts)
 end
 
 
+---@class fzf-lua.AsyncDownloadManager.Job
+---@field plugin string
+---@field args table
+
+---@class fzf-lua.AsyncDownloadManager
+---@field path string Path to the download directory
+---@field dl_status number Download status code
+---@field max_threads number Maximum number of concurrent threads
+---@field job_ids table<integer, fzf-lua.AsyncDownloadManager.Job>
+---@field job_stack fzf-lua.AsyncDownloadManager.Job[] Stack of jobs
 local AsyncDownloadManager = Object:extend()
 
+---@param opts table
+---@return fzf-lua.AsyncDownloadManager|nil
 function AsyncDownloadManager:new(opts)
   self.path = opts.path
   self.dl_status = tonumber(opts.dl_status)
@@ -182,14 +193,15 @@ end
 
 function AsyncDownloadManager:destruct()
   for id, _ in pairs(self.job_ids) do
-    vim.fn.jobstop(tonumber(id))
+    vim.fn.jobstop(id)
   end
 end
 
+---@param co thread?
 function AsyncDownloadManager:jobwait_all(co)
   local jobs = {}
   for id, _ in pairs(self.job_ids) do
-    table.insert(jobs, tonumber(id))
+    table.insert(jobs, id)
   end
   if #jobs > 0 then
     vim.fn.jobwait(jobs)
@@ -197,6 +209,8 @@ function AsyncDownloadManager:jobwait_all(co)
   end
 end
 
+---@param db table<string, table>
+---@return boolean
 function AsyncDownloadManager:load_db(db)
   -- store db ref and update package params
   self.db = db
@@ -244,6 +258,8 @@ function AsyncDownloadManager:load_db(db)
   return true
 end
 
+---@param plugin string
+---@return boolean?
 function AsyncDownloadManager:downloaded(plugin)
   local info = plugin and self.db[plugin]
   if not info then return end
@@ -251,15 +267,21 @@ function AsyncDownloadManager:downloaded(plugin)
   return stat and stat.type == "directory"
 end
 
+---@param plugin string
+---@return integer|boolean?
 function AsyncDownloadManager:downloading(plugin)
   local info = plugin and self.db[plugin]
   return info and info.job_id
 end
 
+---@param plugin string
+---@return table
 function AsyncDownloadManager:get(plugin)
   return plugin and self.db[plugin] or nil
 end
 
+---@param plugin string
+---@param fn fun(...)
 function AsyncDownloadManager:set_once_on_exit(plugin, fn)
   if not plugin or not self.db[plugin] then return end
   self.db[plugin].on_exit = function(...)
@@ -268,12 +290,14 @@ function AsyncDownloadManager:set_once_on_exit(plugin, fn)
   end
 end
 
+---@param plugin string
 function AsyncDownloadManager:jobwait(plugin)
   local info = plugin and self.db[plugin]
   if not info or not info.job_id then return end
   vim.fn.jobwait({ info.job_id })
 end
 
+---@param plugin string?
 function AsyncDownloadManager:delete(plugin)
   if not plugin or not self.db[plugin] then return end
   if self:downloaded(plugin) then
@@ -281,6 +305,8 @@ function AsyncDownloadManager:delete(plugin)
   end
 end
 
+---@param plugin string
+---@param job_args table
 function AsyncDownloadManager:queue(plugin, job_args)
   if utils.tbl_count(self.job_ids) < self.max_threads then
     self:jobstart(plugin, job_args)
@@ -298,12 +324,14 @@ function AsyncDownloadManager:dequeue()
   end
 end
 
+---@param plugin string
+---@param job_args table
 function AsyncDownloadManager:jobstart(plugin, job_args)
   if not plugin then return end
   local info = plugin and self.db[plugin]
   local msg = string.format("%s %s (%s)",
     job_args[1][2] == "clone" and "Cloning" or "Updating", info.disp_name, info.dir)
-  local job_id
+  local job_id ---@type integer
   job_args[2] = vim.tbl_extend("keep", job_args[2] or {},
     {
       on_exit = function(_, rc, _)
@@ -312,7 +340,7 @@ function AsyncDownloadManager:jobstart(plugin, job_args)
           -- this calls `coroutine.resume` and resumes fzf's reload input stream
           info.on_exit(_, rc, _)
         end
-        self.job_ids[tostring(job_id)] = nil
+        self.job_ids[job_id] = nil
         self.db[plugin].job_id = nil
         -- dequeue the next job
         self:dequeue()
@@ -326,11 +354,13 @@ function AsyncDownloadManager:jobstart(plugin, job_args)
   else
     -- job started successfully
     utils.info("%s [path:%s] [job_id:%d]...", msg, path.HOME_to_tilde(assert(info.path)), job_id)
-    self.job_ids[tostring(job_id)] = { plugin = plugin, args = job_args }
+    self.job_ids[job_id] = { plugin = plugin, args = job_args }
     self.db[plugin].job_id = job_id
   end
 end
 
+---@param plugin string
+---@return nil
 function AsyncDownloadManager:update(plugin)
   local info = plugin and self.db[plugin]
   if not info then return end
@@ -365,7 +395,7 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
   end
   if cs.vim then
     ok, out = pcall(vim.api.nvim_exec2, cs.vim, { output = true })
-  elseif cs.lua then
+  elseif cs.lua then ---@diagnostic disable-next-line: need-check-nil
     ok, out = pcall(function() loadstring(cs.lua)() end)
   else
     ok, out = pcall(function() vim.cmd("colorscheme " .. cs.name) end)
@@ -400,7 +430,7 @@ M.awesome_colorschemes = function(opts)
   if not ok then
     utils.error(string.format("Json decode failed: %s", json_db))
     return
-  end
+  end ---@cast json_db table
 
   -- save a ref for action
   opts._apply_awesome_theme = M.apply_awesome_theme
@@ -476,7 +506,7 @@ M.awesome_colorschemes = function(opts)
     opts.fzf_opts["--preview-window"] = "nohidden:right:0"
     opts.preview = shell.stringify_data(function(sel)
       if opts.live_preview and sel and sel[1] then
-        local dbkey, idx = sel[1]:match("^(.-):(%d+):")
+        local dbkey, idx = assert(sel[1]:match("^(.-):(%d+):"))
         if opts._adm:downloaded(dbkey) then
           -- some colorschemes choose a different theme based on dark|light bg
           -- restore to the original background when interface was opened

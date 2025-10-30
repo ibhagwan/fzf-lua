@@ -26,7 +26,7 @@ local function coroutine_callback(fn)
     if coroutine.status(co) == "suspended" then
       coroutine.resume(co, ...)
     else
-      local pid = unpack({ ... })
+      local pid = unpack({ ... }) ---@cast pid integer
       M.process_kill(pid)
     end
   end
@@ -71,7 +71,7 @@ if false then M.uv_spawn = uv.spawn end
 ---@field cmd string|table
 ---@field env? table
 ---@field cb_finish fun(code: integer, sig: integer, from: string, pid: integer)
----@field cb_write? fun(data: string, cb: fun(err: any): nil): nil
+---@field cb_write fun(data: string, cb: fun(err: any): nil): nil
 ---@field cb_write_lines? fun(lines: string[])
 ---@field cb_err fun(data: string)
 ---@field cb_pid? fun(pid: integer)
@@ -162,7 +162,6 @@ M.spawn = function(opts, fn_transform, fn_done)
     table.insert(args, tostring(opts.cmd))
   end
 
-  ---@diagnostic disable-next-line: missing-fields
   handle, pid = M.uv_spawn(shell, {
     args = args,
     stdio = { nil, output_pipe, error_pipe },
@@ -379,7 +378,7 @@ end
 ---@param b64? boolean
 ---@return table
 M.deserialize = function(str, b64)
-  local res = loadstring(str)()
+  local res = assert(loadstring(str))()
   if type(res) == "table" then return res --[[@as table]] end -- ./scripts/headless_fd.sh
   res = b64 ~= false and base64.decode(res) or res
   -- safe=false enable call function
@@ -388,7 +387,7 @@ M.deserialize = function(str, b64)
   return obj
 end
 
----@param fn_str string
+---@param fn_str any
 ---@return function?
 M.load_fn = function(fn_str)
   if type(fn_str) ~= "string" then return end
@@ -794,7 +793,7 @@ M.unescape_fzf = function(s, fzf_version, is_win)
   local ret = s:gsub("\\+[^\\]", function(x)
     local bslash_num = #x:match([[\+]])
     return string.rep([[\]],
-      bslash_num == 1 and bslash_num or bslash_num / 2) .. x:sub(-1)
+      bslash_num == 1 and bslash_num or math.floor(bslash_num / 2)) .. x:sub(-1)
   end)
   return ret
 end

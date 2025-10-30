@@ -1,6 +1,3 @@
----@diagnostic disable: undefined-field
----@diagnostic disable-next-line: deprecated
-local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
@@ -102,7 +99,7 @@ M.breakpoints = function(opts)
   end
 
   -- display relative paths by default
-  if opts.cwd == nil then opts.cwd = uv.cwd() end
+  if opts.cwd == nil then opts.cwd = utils.cwd() end
 
   local contents = function(cb)
     coroutine.wrap(function()
@@ -142,6 +139,10 @@ M.variables = function(opts)
   local session = _dap.session()
   if not session then
     utils.info("No active DAP session.")
+    return
+  end
+  if not session.current_frame then
+    utils.info("No current frame.")
     return
   end
 
@@ -206,11 +207,11 @@ M.frames = function(opts)
           return {}
         end
         if f.source.path then
-          local path = f.source.path
-          local fs_stat = vim.uv.fs_stat(path)
+          local path0 = f.source.path
+          local fs_stat = vim.uv.fs_stat(path0)
           if fs_stat and fs_stat.type == "file" then
             return {
-              path = path,
+              path = path0,
               line = utils.tointeger(f.line),
               -- col = f.column,
             }

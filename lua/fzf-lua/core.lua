@@ -1,5 +1,3 @@
----@diagnostic disable-next-line: deprecated
-local uv = vim.uv or vim.loop
 local fzf = require "fzf-lua.fzf"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -11,6 +9,8 @@ local shell = require "fzf-lua.shell"
 
 local M = {}
 
+---@class fzf-lua.action_defs
+---@field [function] table
 M.ACTION_DEFINITIONS = {
   -- list of supported actions with labels to be displayed in the headers
   -- no pos implies an append to header array
@@ -154,7 +154,6 @@ end
 M.fzf_exec = function(contents, opts)
   if not contents then error("must supply contents") end
   ---@type fzf-lua.config.Resolved
-  ---@diagnostic disable-next-line: assign-type-mismatch
   opts = config.normalize_opts(opts or {}, {})
   if not opts then return end
   if type(contents) == "table" and type(contents[1]) == "table" then
@@ -210,10 +209,9 @@ end
 ---@param opts? fzf-lua.config.Resolved
 ---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
+  ---@type fzf-lua.config.Resolved
   opts = opts or {}
   opts.is_live = true
-  ---@diagnostic disable-next-line: assign-type-mismatch
-  ---@type fzf-lua.config.Resolved
   opts = config.normalize_opts(opts, {})
   if not opts then return end
   local fzf_field_index = M.fzf_field_index(opts)
@@ -227,7 +225,7 @@ M.fzf_live = function(contents, opts)
     local mtcmd = shell.stringify_mt(contents, opts)
     if mtcmd then
       cmd = M.expand_query(mtcmd, fzf_field_index)
-    elseif not is_fnc and nop(opts) then
+    elseif type(contents) == "string" and nop(opts) then
       cmd = M.expand_query(contents, fzf_field_index)
     else
       cmd = shell.stringify(cmd2fnc(contents), opts, fzf_field_index)
@@ -277,7 +275,7 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
       if type(opts.cb_co) == "function" then opts.cb_co(_co) end
       local selected, exit_code = M.fzf(cmd, opts)
       -- If aborted (e.g. unhide process kill), do nothing
-      if not tonumber(exit_code) then return end
+      if not exit_code or not selected then return end
       -- Default fzf exit callback acts upon the selected items
       fn_selected = opts.fn_selected or actions.act
       if not fn_selected then return end
@@ -296,7 +294,7 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
 end
 
 ---@param contents string?
----@param opts? fzf-lua.config.Resolved
+---@param opts? fzf-lua.config.Resolved|{}
 ---@return string[]?
 ---@return integer? exit_code
 M.fzf = function(contents, opts)
@@ -351,7 +349,7 @@ M.fzf = function(contents, opts)
     -- Attach the previewer to the windows
     fzf_win:attach_previewer(previewer)
     -- Setup --preview/--preview-window/--bind=zero:... etc
-    if type(previewer.setup_opts) == "function" then ---@diagnostic disable-next-line: assign-type-mismatch
+    if type(previewer.setup_opts) == "function" then
       opts = previewer:setup_opts(opts)
     end
   elseif opts.preview and type(opts.preview) ~= "string" then
@@ -471,19 +469,20 @@ local function translate_border(winopts, metadata)
   return border
 end
 
----@param o fzf-lua.config.Resolved
+---@param o fzf-lua.config.Resolved|{}
 ---@param fzf_win fzf-lua.Win
 ---@return string
 M.preview_window = function(o, fzf_win)
   local layout
+  local preview = assert(o.winopts and o.winopts.preview)
   local prefix = string.format("%s:%s%s",
-    o.winopts.preview.hidden and "hidden" or "nohidden",
-    o.winopts.preview.wrap and "wrap" or "nowrap",
+    preview.hidden and "hidden" or "nohidden",
+    preview.wrap and "wrap" or "nowrap",
     (function()
       local border = (function()
         local preview_str = fzf_win:fzf_preview_layout_str()
         local preview_pos = preview_str:match("[^:]+") or "right"
-        return translate_border(o.winopts.preview,
+        return translate_border(preview,
           { type = "fzf", name = "prev", layout = preview_pos, opts = o })
       end)()
       return border and string.format(":%s", border) or ""
@@ -493,8 +492,9 @@ M.preview_window = function(o, fzf_win)
       -- fzf v0.45 added transform, v0.46 added resize event
       -- which we use for changing the layout on resize
       and not utils.has(o, "fzf", { 0, 46 })
-      and o.winopts.preview.layout == "flex"
-      and tonumber(o.winopts.preview.flip_columns) > 0
+      and preview.layout == "flex"
+      and preview.flip_columns
+      and preview.flip_columns > 0
   then
     -- Fzf's alternate layout calculates the available preview width in a horizontal split
     -- (left/right), for the "<%d" condition to trigger the width should be test against a
@@ -503,17 +503,18 @@ M.preview_window = function(o, fzf_win)
     -- NOTE: sending `true` as first arg gets the no fullscreen width, otherwise we'll get
     -- incosstent behavior when starting fullscreen
     local columns = fzf_win:columns(true)
-    local fzf_prev_percent = tonumber(o.winopts.preview.horizontal:match(":(%d+)%%"))
+    local hor = assert(preview.horizontal)
+    local fzf_prev_percent = tonumber(hor:match(":(%d+)%%"))
     local fzf_prev_width = not fzf_prev_percent and
-        tonumber(o.winopts.preview.horizontal:match(":(%d+)")) or nil
+        tonumber(hor:match(":(%d+)")) or nil
     fzf_prev_percent = fzf_prev_percent or 50
     local fzf_main_width = fzf_prev_width and (columns - fzf_prev_width)
         or math.ceil(columns * (100 - fzf_prev_percent) / 100)
-    local horizontal_min_width = o.winopts.preview.flip_columns - fzf_main_width + 1
+    local horizontal_min_width = preview.flip_columns - fzf_main_width + 1
     if horizontal_min_width > 0 then
       layout = string.format("%s:%s,<%d(%s:%s)",
-        prefix, o.winopts.preview.horizontal, horizontal_min_width,
-        prefix, o.winopts.preview.vertical)
+        prefix, hor, horizontal_min_width,
+        prefix, preview.vertical)
     end
   end
   layout = layout or string.format("%s:%s", prefix, fzf_win:fzf_preview_layout_str())
@@ -802,17 +803,17 @@ M.set_header = function(opts)
   ---@param cwd string
   ---@return string
   local function normalize_cwd(cwd)
-    if path.is_absolute(cwd) and not path.equals(cwd, uv.cwd()) then
+    if path.is_absolute(cwd) and not path.equals(cwd, utils.cwd()) then
       -- since we're always converting cwd to full path
       -- try to convert it back to relative for display
-      cwd = path.relative_to(cwd, uv.cwd())
+      cwd = path.relative_to(cwd, utils.cwd())
     end
     -- make our home dir path look pretty
     return path.HOME_to_tilde(cwd)
   end
 
   if opts.cwd_prompt then
-    opts.prompt = normalize_cwd(opts.cwd or uv.cwd())
+    opts.prompt = normalize_cwd(opts.cwd or utils.cwd())
     if tonumber(opts.cwd_prompt_shorten_len) and
         #opts.prompt >= tonumber(opts.cwd_prompt_shorten_len) then
       opts.prompt = path.shorten(opts.prompt, tonumber(opts.cwd_prompt_shorten_val) or 1)
@@ -833,10 +834,10 @@ M.set_header = function(opts)
         if opts.cwd_header == false or
             opts.cwd_prompt and opts.cwd_header == nil or
             opts.cwd_header == nil and
-            (not opts.cwd or path.equals(opts.cwd, uv.cwd())) then
+            (not opts.cwd or path.equals(opts.cwd, utils.cwd())) then
           return
         end
-        return normalize_cwd(opts.cwd or uv.cwd())
+        return normalize_cwd(opts.cwd or utils.cwd())
       end
     },
     search = {
@@ -888,7 +889,6 @@ M.set_header = function(opts)
             local def, to = nil, type(v) == "table" and v.header or nil
             if not to and type(action) == "function" and defs[action] then
               def = defs[action]
-              ---@diagnostic disable-next-line: undefined-field
               to = def[1]
             end
             if to then

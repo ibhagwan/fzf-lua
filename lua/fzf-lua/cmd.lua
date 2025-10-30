@@ -1,7 +1,7 @@
 local builtin = require "fzf-lua"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
-local defaults = require "fzf-lua.defaults".defaults
+local defaults = require "fzf-lua.defaults".defaults ---@type table
 local serpent = require "fzf-lua.lib.serpent"
 
 local M = {}
@@ -104,7 +104,7 @@ function M._candidates(line, cmp_items)
     local commands = utils.tbl_flatten({ builtin_list })
     table.sort(commands)
 
-    commands = vim.tbl_filter(function(val)
+    commands = vim.tbl_filter(function(val) ---@diagnostic disable-next-line: param-type-mismatch
       return vim.startswith(val, l[2])
     end, commands)
 
@@ -175,7 +175,7 @@ function M._candidates(line, cmp_items)
 
   table.sort(opts)
 
-  opts = vim.tbl_filter(function(val)
+  opts = vim.tbl_filter(function(val) ---@diagnostic disable-next-line: param-type-mismatch
     return vim.startswith(val, l[#l])
   end, opts)
 

@@ -604,6 +604,11 @@ function M.tointeger(x)
   end
 end
 
+---@return string
+function M.cwd()
+  return (assert(uv.cwd()))
+end
+
 local function hex2rgb(hexcol)
   local r, g, b = hexcol:match("#(%x%x)(%x%x)(%x%x)")
   if not r or not g or not b then return end
@@ -891,12 +896,13 @@ function M.fzf_exit()
   require("fzf-lua").win.win_leave()
 end
 
+---@return fzf-lua.Win?
 function M.fzf_winobj()
   return require("fzf-lua").win.__SELF()
 end
 
 ---@param opts? { includeBuflist?: boolean, buf?: integer|string, bufnr?: integer|string }
----@return fzf-lua.Ctx|{}
+---@return fzf-lua.Ctx
 function M.CTX(opts)
   return require("fzf-lua.ctx").refresh(opts)
 end
@@ -936,7 +942,7 @@ end
 
 ---@param fname string
 ---@param name string|nil
----@param silent boolean|integer
+---@param silent? boolean|integer
 ---@return table?
 function M.load_profile_fname(fname, name, silent)
   local profile = name or vim.fn.fnamemodify(fname, ":t:r") or "<unknown>"
@@ -1015,7 +1021,7 @@ function M.is_term_buffer(bufnr)
   bufnr = bufnr == 0 and vim.api.nvim_get_current_buf() or bufnr
   local winid = vim.fn.bufwinid(bufnr)
   if tonumber(winid) > 0 and vim.api.nvim_win_is_valid(winid) then
-    return M.getwininfo(winid).terminal == 1
+    return M.getwininfo(winid) --[[@cast -?]].terminal == 1
   end
   local bufname = vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_get_name(bufnr)
   return M.is_term_bufname(bufname)
@@ -1041,8 +1047,10 @@ function M.buffer_is_dirty(bufnr, warn, only_if_last_buffer)
   return false
 end
 
+---@param bufnr integer
+---@return boolean
 function M.save_dialog(bufnr)
-  bufnr = tonumber(bufnr) or vim.api.nvim_get_current_buf()
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
   local info = bufnr and M.getbufinfo(bufnr)
   if not info.name or #info.name == 0 then
     -- unnamed buffers can't be saved
@@ -1085,7 +1093,7 @@ function M.buf_is_qf(bufnr, bufinfo)
   if bufinfo and bufinfo.variables and
       bufinfo.variables.current_syntax == "qf" and
       not M.tbl_isempty(bufinfo.windows) then
-    local window = bufinfo.windows[1]
+    local window = bufinfo.windows --[[@cast -?]][1]
     ---@cast window integer
     return M.win_is_qf(window)
   end
@@ -1143,6 +1151,9 @@ function M.nvim_buf_get_name(bufnr, bufinfo)
 end
 
 -- correctly handle virtual text, conceal lines
+---@param win integer
+---@param buf integer
+---@return integer
 function M.line_count(win, buf)
   if vim.api.nvim_win_text_height then
     return vim.api.nvim_win_text_height(win, {}).all

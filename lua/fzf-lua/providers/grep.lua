@@ -1,3 +1,4 @@
+---@diagnostic disable: param-type-mismatch
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
@@ -135,6 +136,7 @@ end
 ---@param opts fzf-lua.config.Grep|{}?
 ---@return thread?, string?, table?
 M.live_grep = function(opts)
+  ---@type fzf-lua.config.Grep
   opts = normalize_live_grep_opts(opts)
   if not opts then return end
 
@@ -245,7 +247,7 @@ end
 ---@param opts fzf-lua.config.Grep|{}?
 ---@return thread?, string?, table?
 M.grep_cword = function(opts)
-  if not opts then opts = {} end
+  opts = opts or {}
   opts.no_esc = true
   -- match whole words only (#968)
   opts.search = [[\b]] .. utils.rg_escape(vim.fn.expand("<cword>")) .. [[\b]]
@@ -263,7 +265,7 @@ end
 ---@param opts fzf-lua.config.Grep|{}?
 ---@return thread?, string?, table?
 M.grep_visual = function(opts)
-  if not opts then opts = {} end
+  opts = opts or {}
   opts.search = utils.get_visual_selection()
   return M.grep(opts)
 end
@@ -271,8 +273,8 @@ end
 ---@param opts fzf-lua.config.Grep|{}?
 ---@return thread?, string?, table?
 M.grep_project = function(opts)
-  if not opts then opts = {} end
-  if not opts.search then opts.search = "" end
+  opts = opts or {}
+  opts.search = opts.search or ""
   -- by default, do not include filename in search
   opts.fzf_opts = opts.fzf_opts or {}
   if opts.fzf_opts["--delimiter"] == nil then
@@ -300,7 +302,7 @@ M.grep_curbuf = function(opts, lgrep)
     utils.info("Rg current buffer requires file on disk")
     return
   else
-    opts.filename = path.relative_to(opts.filename, uv.cwd())
+    opts.filename = path.relative_to(opts.filename, utils.cwd())
   end
 
   -- Persist call options so we don't revert to global grep on `grep_lgrep`

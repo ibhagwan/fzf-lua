@@ -1,5 +1,3 @@
----@diagnostic disable-next-line: deprecated
-local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -62,7 +60,7 @@ local filter_buffers = function(opts, unfiltered)
           excluded[b] = true
         elseif opts.no_term_buffers and utils.is_term_buffer(b) then
           excluded[b] = true
-        elseif opts.cwd_only and not path.is_relative_to(vim.api.nvim_buf_get_name(b), uv.cwd()) then
+        elseif opts.cwd_only and not path.is_relative_to(vim.api.nvim_buf_get_name(b), utils.cwd()) then
           excluded[b] = true
         elseif opts.cwd and not path.is_relative_to(vim.api.nvim_buf_get_name(b), opts.cwd) then
           excluded[b] = true
@@ -73,7 +71,7 @@ local filter_buffers = function(opts, unfiltered)
         if buf_valid and vim.api.nvim_get_option_value("ft", { buf = b }) == "qf" then
           excluded[b] = not opts.show_quickfix and true or nil
         end
-        if not excluded[b] and b > max_bufnr then ---@diagnostic disable-next-line: assign-type-mismatch
+        if not excluded[b] and b > max_bufnr then
           max_bufnr = b
         end
         return not excluded[b]
@@ -164,7 +162,7 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
     else
       bname = make_entry.lcol({ filename = bname, lnum = buf.info.lnum }, opts):gsub(":$", "")
       return make_entry.file(bname,
-        vim.tbl_extend("force", opts, { cwd = cwd or opts.cwd or uv.cwd() }))
+        vim.tbl_extend("force", opts, { cwd = cwd or opts.cwd or utils.cwd() }))
     end
   end)()
   if buf.flag == "%" then
@@ -198,7 +196,8 @@ M.buffers = function(opts)
   if not opts then return end
 
   local contents = function(cb)
-    local filtered, _, max_bufnr = filter_buffers(opts, utils.CTX().buflist)
+    local buflist = assert(utils.CTX().buflist)
+    local filtered, _, max_bufnr = filter_buffers(opts, buflist)
 
     if next(filtered) then
       local buffers = populate_buffer_entries(opts, filtered)
@@ -260,7 +259,7 @@ M.buffer_lines = function(opts)
       local co = coroutine.running()
 
       local buffers = filter_buffers(opts,
-        opts.current_buffer_only and { utils.CTX().bufnr } or utils.CTX().buflist)
+        opts.current_buffer_only and { utils.CTX().bufnr } or utils.CTX().buflist or {})
 
       if opts.sort_lastused and utils.tbl_count(buffers) > 1 then
         table.sort(buffers, function(a, b)
@@ -331,7 +330,6 @@ M.buffer_lines = function(opts)
           end
         end
 
-        assert(opts.hls)
         for i = 1, lines do
           local lnum = i + offset
           if lnum > lines then
@@ -419,7 +417,6 @@ M.tabs = function(opts)
       return ret
     end)()
 
-    assert(opts.hls)
     for tabnr, tabh in ipairs(vim.api.nvim_list_tabpages()) do
       (function()
         if opts.current_tab_only and tabh ~= utils.CTX().tabh then return end
@@ -429,7 +426,7 @@ M.tabs = function(opts)
         local title, fn_title_hl = opt_hl(tabnr, "tab_title",
           function(s)
             return string.format("%s%s#%d%s", s, utils.nbsp, tabnr,
-              (uv.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde)))
+              (utils.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde)))
           end,
           utils.ansi_codes[opts.hls.tab_title])
 
@@ -582,7 +579,7 @@ M.treesitter = function(opts)
               local lnum, col, _, _ = ts.get_node_range(node.node)
               local node_text = ts.get_node_text(node.node, bufnr0)
               local node_kind = node.kind and utils.ansi_from_hl(kind2hl(node.kind), node.kind)
-              local hls = assert(opts.hls)
+              local hls = opts.hls
               local entry = string.format("[%s]%s%s:%s:%s\t\t[%s] %s",
                 utils.ansi_codes[hls.buf_nr](tostring(bufnr0)),
                 utils.nbsp,
@@ -620,7 +617,7 @@ M.spellcheck = function(opts)
   end
 
   -- Default to current buffer
-  local bufnr0 = tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
+  local bufnr0 = utils.tointeger(opts.bufnr) or vim.api.nvim_get_current_buf()
   local bufname0 = path.basename(vim.api.nvim_buf_get_name(bufnr0))
   if not bufname0 or #bufname0 == 0 then
     bufname0 = assert(utils.nvim_buf_get_name(bufnr0))
@@ -695,13 +692,13 @@ M.spellcheck = function(opts)
                 local _, lead = word:find("^" .. word_separator .. "+")
                 local spell = vim.spell.check(trim(word))[1]
                 if spell then
-                  local hls = assert(opts.hls)
+                  local hls = opts.hls
                   cb(string.format("[%s]%s%s:%s:%-26s\t\t%s",
                     utils.ansi_codes[hls.buf_nr](tostring(bufnr0)),
                     utils.nbsp,
                     utils.ansi_codes[hls.buf_name](bufname0),
                     utils.ansi_codes[hls.buf_linenr](tostring(lnum)),
-                    utils.ansi_codes[hls.path_colnr](tostring(from + (lead or 0))),
+                    utils.ansi_codes[hls.path_colnr](tostring(assert(from) + (lead or 0))),
                     trim(word)
                   ), function(err)
                     -- coroutine.resume(co)
@@ -711,7 +708,7 @@ M.spellcheck = function(opts)
                   -- coroutine.yield()
                 end
               end
-              if from then from = to + 1 end
+              if from then from = assert(to) + 1 end
             until not from
           end
           cb(nil)

@@ -30,7 +30,7 @@ M.reset = function() ctx = {} end
 ---conditionally update the context if fzf-lua
 ---interface isn't open
 ---@param opts? { includeBuflist?: boolean, buf?: integer|string, bufnr?: integer|string }
----@return fzf-lua.Ctx|{}
+---@return fzf-lua.Ctx
 M.refresh = function(opts)
   opts = opts or {}
   -- save caller win/buf context, ignore when fzf
@@ -83,11 +83,12 @@ M.refresh = function(opts)
     end
   end
   -- custom bufnr from caller? (#1757)
-  local bufnr = utils.tointeger(opts.buf) or utils.tointeger(opts.bufnr)
+  local bufnr = utils.tointeger(opts.buf or opts.bufnr)
   if bufnr then
     ctx.bufnr = bufnr
     ctx.bname = vim.api.nvim_buf_get_name(bufnr)
   end
+  ---@diagnostic disable-next-line: return-type-mismatch
   return ctx
 end
 
