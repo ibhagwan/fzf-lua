@@ -634,36 +634,37 @@ function Previewer.buffer_or_file:close(do_not_clear_cache)
 end
 
 ---@param entry_str string
----@return fzf-lua.path.Entry|{}
+---@return fzf-lua.path.Entry
 function Previewer.buffer_or_file:entry_to_file(entry_str)
   return path.entry_to_file(entry_str, self.opts)
 end
 
 ---@param entry_str string
----@return fzf-lua.buffer_or_file.Entry|{}
+---@return fzf-lua.buffer_or_file.Entry
 function Previewer.buffer_or_file:parse_entry(entry_str)
-  ---@type fzf-lua.buffer_or_file.Entry|{}
+  ---@type fzf-lua.buffer_or_file.Entry
   local entry = self:entry_to_file(entry_str)
-  entry.buf_is_loaded = entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr)
-  entry.buf_is_valid = entry.bufnr and api.nvim_buf_is_valid(entry.bufnr)
-  if entry.buf_is_valid and entry.buf_is_loaded then
+  local loaded = entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr)
+  if loaded then
     entry.tick = vim.b[entry.bufnr].changedtick
     return entry
   end
   -- buffer is not loaded, can happen when calling "lines" with `set nohidden`
   -- or when starting nvim with an arglist, fix entry.path since it contains
   -- filename only
-  if entry.buf_is_valid then
+  local valid = entry.bufnr and api.nvim_buf_is_valid(entry.bufnr)
+  if valid then
     entry.path = path.relative_to(api.nvim_buf_get_name(entry.bufnr), uv.cwd())
   end
   if entry.path then
-    entry.fs_stat = uv.fs_stat(entry.path)
-    entry.tick = vim.tbl_get(entry.fs_stat or {}, "mtime", "nsec")
     if entry.path:find("^fugitive://") then
       entry.do_not_cache = true
       api.nvim_buf_call(entry.bufnr,
         function() vim.cmd(("do fugitive BufReadCmd %s"):format(entry.path)) end)
+      return entry
     end
+    entry.fs_stat = uv.fs_stat(entry.path)
+    entry.tick = vim.tbl_get(entry.fs_stat or {}, "mtime", "nsec")
   end
   return entry
 end
@@ -889,7 +890,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     fn.jobstop(self._job_id)
     self._job_id = nil
   end
-  if entry.buf_is_loaded or (entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr)) then
+  if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
     -- WE NO LONGER REUSE THE CURRENT BUFFER
     -- this changes the buffer's 'getbufinfo[1].lastused'
     -- which messes up our `buffers()` sort
@@ -1550,8 +1551,8 @@ function Previewer.marks:parse_entry(entry_str)
   return {
     bufnr = bufnr,
     path  = filepath,
-    line  = tonumber(lnum) or 1,
-    col   = tonumber(col) or 1,
+    line  = utils.tointeger(lnum) or 1,
+    col   = utils.tointeger(col) or 1,
   }
 end
 
@@ -1582,8 +1583,8 @@ function Previewer.jumps:parse_entry(entry_str)
   return {
     bufnr = bufnr,
     path  = filepath,
-    line  = tonumber(lnum) or 1,
-    col   = tonumber(col) + 1 or 1,
+    line  = utils.tointeger(lnum) or 1,
+    col   = utils.tointeger(col) + 1 or 1,
   }
 end
 
