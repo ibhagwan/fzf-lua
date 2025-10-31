@@ -124,8 +124,8 @@ local function diff_workspace_edit(workspace_edit, offset_encoding, diff_opts)
   return diff
 end
 
----@param err { code: integer, message: string }?
----@param tuple [integer, lsp.CodeAction]
+---@param err? { code: integer, message: string }?
+---@param tuple? [integer, lsp.CodeAction]
 ---@param diff_opts vim.text.diff.Opts
 ---@return string[]
 local function diff_tuple(err, tuple, diff_opts)
@@ -133,7 +133,7 @@ local function diff_tuple(err, tuple, diff_opts)
     return {
       string.format('"codeAction/resolve" failed with error %d: %s', err.code, err.message)
     }
-  end
+  end ---@cast tuple [integer, lsp.CodeAction]
   local action = tuple[2]
   if action.edit then
     local client = assert(utils.lsp_get_clients({ id = tuple[1] })[1])
