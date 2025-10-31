@@ -16,14 +16,13 @@ local M = {}
 ---@field win fzf-lua.Win
 M.base = Object:extend()
 
----@diagnostic disable: param-type-not-match
 ---@param o fzf-lua.config.Previewer
 ---@param opts fzf-lua.config.Resolved
 ---@return fzf-lua.previewer.SwiperBase?
 function M.base:new(o, opts)
   o = o or {}
   self.opts = opts;
-  local ctx = utils.__CTX()
+  local ctx = opts.__CTX
   self.ctx_winid = ctx.winid
   self.ctx_bufnr = ctx.bufnr
   self.ctx_winopts = vim.deepcopy(ctx.winopts or {})
@@ -157,8 +156,6 @@ function M.base:highlight_matches()
     (function()
       local buf_lnum = r - l_s + 2
       local lnum, _, col_valid_idx, col_off = self:parse_lnum_col(assert(buf_lines[buf_lnum]))
-      assert(col_valid_idx)
-      assert(col_off)
       if not lnum or lnum < 1 then return end
       local state = { bytelen = 0 }
       for c = 1, max_columns do
@@ -167,6 +164,7 @@ function M.base:highlight_matches()
         (function()
           local in_match = ret[2] and (ret[2].reverse or ret[2].foreground == fg)
           if in_match and not state.matchlen then
+            assert(col_valid_idx and col_off)
             if c < col_valid_idx then return end
             state.start_col = math.max(state.bytelen - col_valid_idx - col_off, 0)
             state.matchlen = ret[1]:len()
@@ -192,10 +190,8 @@ function M.base:close()
   -- on hide + change picker ctx will be nil
   local ctx = utils.__CTX()
   if not ctx then return end
-  assert(ctx.winopts)
   vim.wo[ctx.winid].winhl = ctx.winopts.winhl
   vim.wo[ctx.winid].cursorline = ctx.winopts.cursorline
-  ---@diagnostic disable-next-line: param-type-not-match
   vim.api.nvim_win_set_cursor(ctx.winid, ctx.cursor)
   utils.zz()
 end

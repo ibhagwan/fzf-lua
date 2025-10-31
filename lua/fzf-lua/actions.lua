@@ -348,7 +348,7 @@ local sel_to_qf = function(selected, opts, is_loclist)
   else
     -- Set the quickfix title to last query and
     -- append a new list to end of the stack (#635)
-    vim.fn.setqflist({}, " ", { ---@diagnostic disable-next-line: assign-type-mismatch
+    vim.fn.setqflist({}, " ", {
       nr = "$",
       items = qf_list,
       title = title,

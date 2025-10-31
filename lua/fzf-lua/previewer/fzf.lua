@@ -13,7 +13,7 @@ Previewer.base = Object:extend()
 
 -- Previewer base object
 ---@param o fzf-lua.config.Previewer
----@param opts fzf-lua.config.Resolved
+---@param opts fzf-lua.config.Resolved|{}
 ---@return fzf-lua.previewer.Fzf
 function Previewer.base:new(o, opts)
   o = o or {}
