@@ -326,7 +326,7 @@ M.buffer_lines = function(opts)
           lines = end_line - start_line + 1
           if opts.start == "cursor" then
             -- start display from current line and wrap from bottom (#822)
-            offset = assert(utils.CTX().cursor[1]) - start_line
+            offset = utils.CTX().cursor[1] - start_line
           end
         end
 
@@ -664,7 +664,7 @@ M.spellcheck = function(opts)
 
           if opts.start == "cursor" then
             -- start display from current line and wrap from bottom
-            offset = assert(utils.CTX().cursor[1]) - start_line
+            offset = utils.CTX().cursor[1] - start_line
           end
 
           for i = 1, lines do

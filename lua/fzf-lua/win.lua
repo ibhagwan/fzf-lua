@@ -1344,7 +1344,7 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
       end
       -- also restore the original alternate buffer
       local alt_bname = (function()
-        local alt_bufnr = utils.__CTX() and utils.__CTX().alt_bufnr
+        local alt_bufnr = (utils.__CTX() or {}).alt_bufnr
         if alt_bufnr and api.nvim_buf_is_valid(alt_bufnr) then
           return fn.bufname(alt_bufnr)
         end
@@ -1396,7 +1396,8 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
     self.hls_on_close = nil
   end
   -- Restore insert/normal-terminal mode (#2054)
-  if utils.__CTX().mode == "nt" then
+  local ctx = utils.__CTX() or {}
+  if ctx.mode == "nt" then
     utils.feed_keys_termcodes([[<C-\><C-n>]])
   end
   if self.winopts and type(self.winopts.on_close) == "function" then
