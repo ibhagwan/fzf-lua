@@ -270,8 +270,12 @@ T["api"]["resume"] = new_set({
   parametrize = { { "fzf_exec" }, { "fzf_live" } },
 }, {
   function(api)
-    helpers.FzfLua[api](child, "echo resume string content",
-      { __expect_lines = false, exec_empty_query = true, debug = 1 })
+    helpers.FzfLua[api](child, "echo resume string content", {
+      field_index = helpers.IS_WIN() and "" or nil,
+      __expect_lines = false,
+      exec_empty_query = true,
+      debug = 1,
+    })
     helpers.FzfLua.resume(child, { __expect_lines = true })
 
     helpers.FzfLua[api](child, api == "fzf_exec"
