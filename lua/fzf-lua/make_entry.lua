@@ -472,7 +472,7 @@ M.expand_query = function(opts, query, cmd)
     end
     -- nifty hack to avoid having to double escape quotations
     -- see my comment inside 'live_grep' initial_command code
-    cmd = cmd:gsub(argvz, libuv.shellescape(query))
+    cmd = cmd:gsub(argvz, #query > 0 and libuv.shellescape(query) or "")
   end
   return cmd
 end
