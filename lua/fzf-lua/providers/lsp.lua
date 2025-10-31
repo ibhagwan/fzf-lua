@@ -113,7 +113,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
   end
   if opts.ignore_current_line then
     local uri = vim.uri_from_bufnr(utils.CTX().bufnr)
-    local cursor_line = assert(utils.CTX().cursor[1]) - 1
+    local cursor_line = utils.CTX().cursor[1] - 1
     result = vim.tbl_filter(function(l)
       if (l.uri
             and l.uri == uri
