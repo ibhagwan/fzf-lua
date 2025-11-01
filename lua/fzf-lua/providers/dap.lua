@@ -1,11 +1,10 @@
----@diagnostic disable: undefined-field, param-type-mismatch
-local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local make_entry = require "fzf-lua.make_entry"
 
 local _has_dap
+---@module "dap"?
 local _dap
 
 local M = {}
@@ -14,6 +13,7 @@ local M = {}
 -- in case the plugin was lazy loaded
 local function dap()
   if _has_dap and _dap then return _dap end
+  ---@diagnostic disable-next-line: assign-type-mismatch
   _has_dap, _dap = pcall(require, "dap")
   if not _has_dap or not _dap then
     utils.info("DAP requires 'mfussenegger/nvim-dap'")
@@ -22,6 +22,8 @@ local function dap()
   return true
 end
 
+---@param opts fzf-lua.config.DapCommands|{}?
+---@return thread?, string?, table?
 M.commands = function(opts)
   if not dap() then return end
 
@@ -45,6 +47,8 @@ M.commands = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.DapConfigurations|{}?
+---@return thread?, string?, table?
 M.configurations = function(opts)
   if not dap() then return end
 
@@ -68,7 +72,7 @@ M.configurations = function(opts)
   opts.actions = {
     ["enter"] = function(selected, _)
       -- cannot run while in session
-      if _dap.session() then return end
+      if _dap.session() or not selected[1] then return end
       local idx = selected and tonumber(selected[1]:match("(%d+).")) or nil
       if idx and cfgs[idx] then
         _dap.run(cfgs[idx])
@@ -79,6 +83,8 @@ M.configurations = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.DapBreakpoints|{}?
+---@return thread?, string?, table?
 M.breakpoints = function(opts)
   ---@type fzf-lua.config.DapBreakpoints
   opts = config.normalize_opts(opts, "dap.breakpoints")
@@ -93,7 +99,7 @@ M.breakpoints = function(opts)
   end
 
   -- display relative paths by default
-  if opts.cwd == nil then opts.cwd = uv.cwd() end
+  if opts.cwd == nil then opts.cwd = utils.cwd() end
 
   local contents = function(cb)
     coroutine.wrap(function()
@@ -121,6 +127,8 @@ M.breakpoints = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.DapVariables|{}?
+---@return thread?, string?, table?
 M.variables = function(opts)
   if not dap() then return end
 
@@ -131,6 +139,10 @@ M.variables = function(opts)
   local session = _dap.session()
   if not session then
     utils.info("No active DAP session.")
+    return
+  end
+  if not session.current_frame then
+    utils.info("No current frame.")
     return
   end
 
@@ -153,6 +165,8 @@ M.variables = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
+---@param opts fzf-lua.config.DapFrames|{}?
+---@return thread?, string?, table?
 M.frames = function(opts)
   if not dap() then return end
 
@@ -171,11 +185,17 @@ M.frames = function(opts)
     return
   end
 
+  if not session.threads[session.stopped_thread_id] or not session.threads[session.stopped_thread_id].frames then
+    utils.info("No frame")
+    return
+  end
+
   local frames = session.threads[session.stopped_thread_id].frames
 
   opts.previewer = {
     _ctor = function()
       local p = require("fzf-lua.previewer.builtin").buffer_or_file:extend()
+      ---@diagnostic disable-next-line: unused
       ---@param entry_str string
       ---@return fzf-lua.buffer_or_file.Entry
       function p:parse_entry(entry_str)
@@ -187,12 +207,12 @@ M.frames = function(opts)
           return {}
         end
         if f.source.path then
-          local path = f.source.path
-          local fs_stat = vim.uv.fs_stat(path)
+          local path0 = f.source.path
+          local fs_stat = vim.uv.fs_stat(path0)
           if fs_stat and fs_stat.type == "file" then
             return {
-              path = path,
-              line = f.line,
+              path = path0,
+              line = utils.tointeger(f.line),
               -- col = f.column,
             }
           end
@@ -210,7 +230,7 @@ M.frames = function(opts)
           return {
             path = f.source.path,
             content = result and vim.split(result.content or "", "\n") or nil,
-            line = f.line,
+            line = utils.tointeger(f.line),
           }
         end
 
@@ -224,7 +244,7 @@ M.frames = function(opts)
   opts.actions = {
     ["enter"] = function(selected, _)
       local sess = _dap.session()
-      if not sess or not sess.stopped_thread_id then return end
+      if not sess or not sess.stopped_thread_id or not selected[1] then return end
       local idx = selected and tonumber(selected[1]:match("(%d+).")) or nil
       if idx and frames[idx] then
         session:_frame_set(frames[idx])

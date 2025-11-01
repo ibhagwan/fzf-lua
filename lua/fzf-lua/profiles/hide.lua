@@ -1,5 +1,8 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local fzf = require("fzf-lua")
+
+---@type fzf-lua.Config|{}
 return {
   desc     = "hide interface instead of abort",
   keymap   = {
@@ -18,6 +21,8 @@ return {
         return opts
       end
       opts.actions = opts.actions or {}
+      assert(opts.keymap)
+      assert(opts.keymap.builtin)
       if fzf.utils.has(opts, "sk") then
         -- `execute-silent` actions are bugged with skim
         -- Set esc to hide since we aren't using the custom callback
@@ -43,6 +48,7 @@ return {
           _on_create(e)
         end
       end
+      ---@diagnostic disable: assign-type-mismatch
       opts.actions["esc"] = {
         fn = fzf.actions.dummy_abort,
         desc = "hide",
@@ -68,7 +74,7 @@ return {
           act.desc = act.desc or fzf.config.get_action_helpstr(fn)
           act.fn = function(...)
             fzf.hide()
-            fn(...)
+            if fn then fn(...) end
             -- As the process never terminates fzf history is never written
             -- manually append to the fzf history file if needed
             local o = select(2, ...)
@@ -88,6 +94,7 @@ return {
       FzfLua.win.on_SIGWINCH(opts, "win.unhide", function()
         if type(opts._contents) == "string"
             and (opts._resume_reload == true
+              ---@diagnostic disable-next-line: need-check-nil
               or type(opts._resume_reload) == "function" and opts._resume_reload(opts))
         then
           return string.format("reload:%s", opts._contents)

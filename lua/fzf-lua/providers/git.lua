@@ -21,6 +21,8 @@ local function set_git_cwd_args(opts)
   return opts
 end
 
+---@param opts fzf-lua.config.GitFiles|{}?
+---@return thread?, string?, table?
 M.files = function(opts)
   ---@type fzf-lua.config.GitFiles
   opts = config.normalize_opts(opts, "git.files")
@@ -30,6 +32,8 @@ M.files = function(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
 
+---@param opts fzf-lua.config.GitStatus|{}?
+---@return thread?, string?, table?
 M.status = function(opts)
   ---@type fzf-lua.config.GitStatus
   opts = config.normalize_opts(opts, "git.status")
@@ -82,6 +86,8 @@ local function git_preview(opts, file)
   return opts.preview
 end
 
+---@param opts fzf-lua.config.GitDiff|{}?
+---@return thread?, string?, table?
 M.diff = function(opts)
   ---@type fzf-lua.config.GitDiff
   opts = config.normalize_opts(opts, "git.diff")
@@ -92,15 +98,16 @@ M.diff = function(opts)
     utils.warn("Invalid git ref %s", opts.ref)
     return
   end
-  for _, k in ipairs({ "cmd", "preview" }) do
-    opts[k] = opts[k]:gsub("[<{]ref[}>]", opts.ref)
-  end
+  opts.cmd = opts.cmd:gsub("[<{]ref[}>]", opts.ref)
+  opts.preview = opts.preview:gsub("[<{]ref[}>]", opts.ref)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   opts.preview = git_preview(opts, "{-1}")
   return core.fzf_exec(opts.cmd, opts)
 end
 
+---@param opts fzf-lua.config.GitCommits|{}?
+---@return thread?, string?, table?
 M.commits = function(opts)
   ---@type fzf-lua.config.GitCommits
   opts = config.normalize_opts(opts, "git.commits")
@@ -109,6 +116,8 @@ M.commits = function(opts)
   return git_cmd(opts)
 end
 
+---@param opts fzf-lua.config.GitBcommits|{}?
+---@return thread?, string?, table?
 M.bcommits = function(opts)
   ---@type fzf-lua.config.GitBcommits
   opts = config.normalize_opts(opts, "git.bcommits")
@@ -146,6 +155,8 @@ M.bcommits = function(opts)
   return git_cmd(opts)
 end
 
+---@param opts fzf-lua.config.GitBlame|{}?
+---@return thread?, string?, table?
 M.blame = function(opts)
   ---@type fzf-lua.config.GitBlame
   opts = config.normalize_opts(opts, "git.blame")
@@ -177,6 +188,8 @@ M.blame = function(opts)
   return git_cmd(opts)
 end
 
+---@param opts fzf-lua.config.GitBranches|{}?
+---@return thread?, string?, table?
 M.branches = function(opts)
   ---@type fzf-lua.config.GitBranches
   opts = config.normalize_opts(opts, "git.branches")
@@ -191,13 +204,16 @@ M.branches = function(opts)
       -- * branch
       --   remotes/origin/branch
       --   (HEAD detached at origin/branch)
-      local branch = items[1]:match("^[%*+]*[%s]*[(]?([^%s)]+)")
+      if not items[1] then return utils.shell_nop() end
+      local branch = assert(items[1]:match("^[%*+]*[%s]*[(]?([^%s)]+)"))
       return (preview:gsub("{.*}", branch))
     end, opts, "{}")
   end
   return git_cmd(opts)
 end
 
+---@param opts fzf-lua.config.GitWorktrees|{}?
+---@return thread?, string?, table?
 M.worktrees = function(opts)
   ---@type fzf-lua.config.GitWorktrees
   opts = config.normalize_opts(opts, "git.worktrees")
@@ -205,6 +221,7 @@ M.worktrees = function(opts)
   if opts.preview then
     local preview_cmd = opts.preview
     opts.preview = shell.stringify_cmd(function(items)
+      if not items[1] then return utils.shell_nop() end
       local cwd = items[1]:match("^[^%s]+")
       local cmd = path.git_cwd(preview_cmd, { cwd = cwd })
       return cmd
@@ -213,6 +230,8 @@ M.worktrees = function(opts)
   return git_cmd(opts)
 end
 
+---@param opts fzf-lua.config.GitTags|{}?
+---@return thread?, string?, table?
 M.tags = function(opts)
   ---@type fzf-lua.config.GitTags
   opts = config.normalize_opts(opts, "git.tags")
@@ -220,6 +239,8 @@ M.tags = function(opts)
   return git_cmd(opts)
 end
 
+---@param opts fzf-lua.config.GitStash|{}?
+---@return thread?, string?, table?
 M.stash = function(opts)
   ---@type fzf-lua.config.GitStash
   opts = config.normalize_opts(opts, "git.stash")
@@ -249,6 +270,8 @@ M.stash = function(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
 
+---@param opts fzf-lua.config.GitHunks|{}?
+---@return thread?, string?, table?
 M.hunks = function(opts)
   ---@type fzf-lua.config.GitHunks
   opts = config.normalize_opts(opts, "git.hunks")

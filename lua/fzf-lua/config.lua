@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -5,6 +6,9 @@ local libuv = require "fzf-lua.libuv"
 local actions = require "fzf-lua.actions"
 local devicons = require "fzf-lua.devicons"
 
+---@class fzf-lua.config
+---@field globals fzf-lua.config.Defaults
+---@field __HLS_STATE { colorscheme: string, bg: string }
 local M = {}
 
 -- set this so that make_entry won't get nil err when setting remotely
@@ -59,7 +63,11 @@ function M.resume_opts(opts)
 end
 
 -- proxy table (with logic) for accessing the global config
+
+
+---@type fzf-lua.Config|{}
 M.setup_opts = {}
+---@type fzf-lua.config.Defaults
 M.globals = setmetatable({}, {
   __index = function(_, index)
     local function setup_opts()
@@ -88,7 +96,8 @@ M.globals = setmetatable({}, {
         if type(setup_value) == "function" then setup_value = setup_value() end
         ret[k] = setup_value and type(setup_value[k]) == "table"
             and vim.tbl_deep_extend("keep",
-              utils.map_tolower(utils.tbl_deep_clone(setup_value[k]), exclude_case_sensitive_alt),
+              utils.map_tolower(utils.tbl_deep_clone(setup_value[k]), exclude_case_sensitive_alt) or
+              {},
               setup_value[k][1] == true and
               utils.map_tolower(fzflua_default[k], exclude_case_sensitive_alt) or {})
             or utils.map_tolower(utils.tbl_deep_clone(fzflua_default[k]), exclude_case_sensitive_alt)
@@ -127,7 +136,7 @@ M.globals = setmetatable({}, {
     return ret
   end,
   __newindex = function(_, index, _)
-    assert(false, string.format("modifying globals directly isn't allowed [index: %s]", index))
+    error(string.format("modifying globals directly isn't allowed [index: %s]", index))
   end
 })
 
@@ -162,13 +171,14 @@ local normalize_tbl = function(opts)
   end
 end
 
----@param opts fzf-lua.config.Base|{}|fun():table?
----@param globals string|table?
+---@generic T table
+---@param opts T?|{}|(fun():T?)
+---@param globals string|(fzf-lua.Config|{})?
 ---@param __resume_key string?
----@return fzf-lua.Config?
-function M.normalize_opts(opts, globals, __resume_key)
+---@return T
+function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
   -- opts can also be a function that returns an opts table
-  ---@type fzf-lua.config.Base|{}
+  ---@type fzf-lua.config.Resolved
   opts = eval(opts) or {}
 
   if opts._normalized then
@@ -206,6 +216,7 @@ function M.normalize_opts(opts, globals, __resume_key)
     globals = M.globals[globals]
     assert(type(globals) == "table")
   else
+    assert(globals)
     -- backward compat: globals sent directly as table
     -- merge with setup options "defaults" table
     globals = vim.tbl_deep_extend("keep", globals, M.setup_opts.defaults or {})
@@ -251,7 +262,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- normalize all binds as lowercase or we can have duplicate keys (#654)
   ---@param m {fzf: table<string, unknown>, builtin: table<string, unknown>}
   ---@param exclude_patterns string
-  ---@return {fzf: table<string, unknown>, builtin: table<string, unknown>}?
+  ---@return {fzf?: table<string, unknown>, builtin?: table<string, unknown>}?
   local keymap_tolower = function(m, exclude_patterns)
     return m and {
       fzf = utils.map_tolower(m.fzf, exclude_patterns),
@@ -266,7 +277,8 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- inherit from globals.actions?
   if type(globals._actions) == "function" then
-    globals.actions = vim.tbl_deep_extend("keep", globals.actions or {}, globals._actions())
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    globals.actions = vim.tbl_extend("keep", globals.actions or {}, globals._actions())
   end
 
   -- merge with provider defaults from globals (defaults + setup options)
@@ -456,12 +468,15 @@ function M.normalize_opts(opts, globals, __resume_key)
 
   -- Backward compat, "default" action is "enter"
   if opts.actions then
+    ---@diagnostic disable-next-line: undefined-field, inject-field
     opts.actions.enter = opts.actions.default or opts.actions.enter
+    ---@diagnostic disable-next-line: inject-field
     opts.actions.default = nil
   end
 
   -- Setup completion options
   if opts.complete then
+    ---@diagnostic disable-next-line: assign-type-mismatch
     opts.actions = opts.actions or {}
     opts.actions.enter = actions.complete
     opts.actions["ctrl-c"] = function() end
@@ -617,7 +632,7 @@ function M.normalize_opts(opts, globals, __resume_key)
   -- other user scenarios which need to use `opts._cwd`, for
   -- exmaple, using the "hide" profile and resuming fzf-lua
   -- from another tab after a `:tcd <dir>` (#1854)
-  opts._cwd = uv.cwd()
+  opts._cwd = utils.cwd()
 
   if opts.cwd and #opts.cwd > 0 then
     -- NOTE: on Windows, `expand` will replace all backslashes with forward slashes
@@ -633,7 +648,7 @@ function M.normalize_opts(opts, globals, __resume_key)
         -- relative paths in cwd are inaccessible when using multiprocess
         -- as the external process have no awareness of our current working
         -- directory so we must convert to full path (#375)
-        opts.cwd = path.join({ uv.cwd(), opts.cwd })
+        opts.cwd = path.join({ utils.cwd(), opts.cwd })
       elseif utils.__IS_WINDOWS and opts.cwd:sub(2) == ":" then
         -- TODO: upstream bug? on Windows: starting jobs with `cwd = C:` (without separator)
         -- ignores the cwd argument and starts the job in the current working directory
@@ -998,15 +1013,15 @@ function M.normalize_opts(opts, globals, __resume_key)
   opts._normalized = true
 
   return opts
-end
+end ---@diagnostic enable
 
-M.bytecode = function(s, datatype)
+M.bytecode = function(s, _)
   local keys = utils.strsplit(s, "%.")
   local iter = M
   for i = 1, #keys do
     iter = iter[keys[i]]
     if not iter then break end
-    if i == #keys and type(iter) == datatype then
+    if i == #keys and type(iter) == "function" then
       -- string.dump (function [, strip])
       -- Returns a string containing a binary representation (a binary chunk) of the given
       -- function, so that a later load on this string returns a copy of the function (but

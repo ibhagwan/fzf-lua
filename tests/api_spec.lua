@@ -1,8 +1,8 @@
----@diagnostic disable: unused-local, unused-function
+---@diagnostic disable: unused-local, unused-function, unused
 local MiniTest = require("mini.test")
 local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
-local expect, eq = helpers.expect, helpers.expect.equality
+local eq = helpers.expect.equality
 local new_set = MiniTest.new_set
 
 local T = helpers.new_set_with_child(child)
@@ -265,5 +265,35 @@ T["api"]["events"] = new_set(
     end
   }
 )
+
+T["api"]["resume"] = new_set({
+  parametrize = { { "fzf_exec" }, { "fzf_live" } },
+}, {
+  function(api)
+    helpers.FzfLua[api](child, "echo resume string content", {
+      field_index = helpers.IS_WIN() and "" or nil,
+      __expect_lines = false,
+      exec_empty_query = true,
+      debug = 1,
+    })
+    helpers.FzfLua.resume(child, { __expect_lines = true })
+
+    helpers.FzfLua[api](child, api == "fzf_exec"
+      and function(fzf_cb)
+        fzf_cb("resume function content")
+        fzf_cb(nil)
+      end or function(_)
+        return function(fzf_cb)
+          fzf_cb("resume function content")
+          fzf_cb(nil)
+        end
+      end, {
+        __expect_lines = false,
+        exec_empty_query = true,
+        debug = 1,
+      })
+    helpers.FzfLua.resume(child, { __expect_lines = true })
+  end,
+})
 
 return T
