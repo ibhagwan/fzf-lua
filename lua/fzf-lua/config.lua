@@ -276,8 +276,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
 
   -- inherit from globals.actions?
   if type(globals._actions) == "function" then
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    globals.actions = vim.tbl_deep_extend("keep", globals.actions or {}, globals._actions())
+    globals.actions = vim.tbl_extend("keep", globals.actions or {}, globals._actions())
   end
 
   -- merge with provider defaults from globals (defaults + setup options)
