@@ -90,7 +90,7 @@ M.globals = setmetatable({}, {
       -- normalize all binds as lowercase to prevent duplicate keys (#654)
       local ret = {}
       -- exclude case-sensitive alt-binds from being lowercased
-      local exclude_case_sensitive_alt = "^alt%-%a$"
+      local exclude_case_sensitive_alt = { "^alt%-%a$" }
       for _, k in ipairs(keys) do
         if type(setup_value) == "function" then setup_value = setup_value() end
         ret[k] = setup_value and type(setup_value[k]) == "table"
@@ -259,16 +259,16 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
   convert_bool_opts()
 
   -- normalize all binds as lowercase or we can have duplicate keys (#654)
-  ---@param m {fzf: table<string, unknown>, builtin: table<string, unknown>}
-  ---@param exclude_patterns string
-  ---@return {fzf?: table<string, unknown>, builtin?: table<string, unknown>}?
+  ---@param m fzf-lua.config.Keymap?
+  ---@param exclude_patterns string[]
+  ---@return fzf-lua.config.Keymap?
   local keymap_tolower = function(m, exclude_patterns)
     return m and {
       fzf = utils.map_tolower(m.fzf, exclude_patterns),
       builtin = utils.map_tolower(m.builtin, exclude_patterns),
     } or nil
   end
-  local exclude_case_sensitive_alt = "^alt%-%a$"
+  local exclude_case_sensitive_alt = { "^alt%-%a$" }
   opts.keymap = keymap_tolower(eval(opts.keymap, opts), exclude_case_sensitive_alt)
   opts.actions = utils.map_tolower(eval(opts.actions, opts), exclude_case_sensitive_alt)
   globals.keymap = keymap_tolower(eval(globals.keymap, opts), exclude_case_sensitive_alt)
