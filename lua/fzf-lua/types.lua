@@ -1,8 +1,8 @@
 ---@meta
 error("Cannot require a meta file")
 
+---@class fzf-lua
 _G.FzfLua = require("fzf-lua")
-
 
 ---@class fzf-lua.path.Entry
 ---@field stripped? string
@@ -307,3 +307,142 @@ _G.FzfLua = require("fzf-lua")
 ---@field _resume_reload? boolean
 ---@field _fzf_cli_args string[]
 ---@field _uri? boolean
+
+---GENERATED from `make gen`
+
+FzfLua.win = require("fzf-lua.win")
+FzfLua.core = require("fzf-lua.core")
+FzfLua.path = require("fzf-lua.path")
+FzfLua.utils = require("fzf-lua.utils")
+FzfLua.libuv = require("fzf-lua.libuv")
+FzfLua.shell = require("fzf-lua.shell")
+FzfLua.config = require("fzf-lua.config")
+FzfLua.actions = require("fzf-lua.actions")
+FzfLua.make_entry = require("fzf-lua.make_entry")
+
+FzfLua.args = require("fzf-lua.providers.files").args
+FzfLua.autocmds = require("fzf-lua.providers.nvim").autocmds
+FzfLua.awesome_colorschemes = require("fzf-lua.providers.colorschemes").awesome_colorschemes
+FzfLua.blines = require("fzf-lua.providers.buffers").blines
+FzfLua.btags = require("fzf-lua.providers.tags").btags
+FzfLua.buffers = require("fzf-lua.providers.buffers").buffers
+FzfLua.changes = require("fzf-lua.providers.nvim").changes
+FzfLua.colorschemes = require("fzf-lua.providers.colorschemes").colorschemes
+FzfLua.combine = require("fzf-lua.providers.meta").combine
+FzfLua.command_history = require("fzf-lua.providers.nvim").command_history
+FzfLua.commands = require("fzf-lua.providers.nvim").commands
+FzfLua.complete_bline = require("fzf-lua.complete").bline
+FzfLua.complete_file = require("fzf-lua.complete").file
+FzfLua.complete_line = require("fzf-lua.complete").line
+FzfLua.complete_path = require("fzf-lua.complete").path
+FzfLua.dap_breakpoints = require("fzf-lua.providers.dap").breakpoints
+FzfLua.dap_commands = require("fzf-lua.providers.dap").commands
+FzfLua.dap_configurations = require("fzf-lua.providers.dap").configurations
+FzfLua.dap_frames = require("fzf-lua.providers.dap").frames
+FzfLua.dap_variables = require("fzf-lua.providers.dap").variables
+FzfLua.deregister_ui_select = require("fzf-lua.providers.ui_select").deregister
+FzfLua.diagnostics_document = require("fzf-lua.providers.diagnostic").diagnostics
+FzfLua.diagnostics_workspace = require("fzf-lua.providers.diagnostic").all
+FzfLua.files = require("fzf-lua.providers.files").files
+FzfLua.filetypes = require("fzf-lua.providers.nvim").filetypes
+FzfLua.fzf_exec = require("fzf-lua.core").fzf_exec
+FzfLua.fzf_live = require("fzf-lua.core").fzf_live
+FzfLua.fzf_wrap = require("fzf-lua.core").fzf_wrap
+FzfLua.git_bcommits = require("fzf-lua.providers.git").bcommits
+FzfLua.git_blame = require("fzf-lua.providers.git").blame
+FzfLua.git_branches = require("fzf-lua.providers.git").branches
+FzfLua.git_commits = require("fzf-lua.providers.git").commits
+FzfLua.git_diff = require("fzf-lua.providers.git").diff
+FzfLua.git_files = require("fzf-lua.providers.git").files
+FzfLua.git_hunks = require("fzf-lua.providers.git").hunks
+FzfLua.git_stash = require("fzf-lua.providers.git").stash
+FzfLua.git_status = require("fzf-lua.providers.git").status
+FzfLua.git_tags = require("fzf-lua.providers.git").tags
+FzfLua.git_worktrees = require("fzf-lua.providers.git").worktrees
+FzfLua.global = require("fzf-lua.providers.meta").global
+FzfLua.grep = require("fzf-lua.providers.grep").grep
+FzfLua.grep_cWORD = require("fzf-lua.providers.grep").grep_cWORD
+FzfLua.grep_curbuf = require("fzf-lua.providers.grep").grep_curbuf
+FzfLua.grep_cword = require("fzf-lua.providers.grep").grep_cword
+FzfLua.grep_last = require("fzf-lua.providers.grep").grep_last
+FzfLua.grep_loclist = require("fzf-lua.providers.grep").grep_loclist
+FzfLua.grep_project = require("fzf-lua.providers.grep").grep_project
+FzfLua.grep_quickfix = require("fzf-lua.providers.grep").grep_quickfix
+FzfLua.grep_visual = require("fzf-lua.providers.grep").grep_visual
+FzfLua.help_tags = require("fzf-lua.providers.helptags").helptags
+FzfLua.helptags = require("fzf-lua.providers.helptags").helptags
+FzfLua.highlights = require("fzf-lua.providers.colorschemes").highlights
+FzfLua.jumps = require("fzf-lua.providers.nvim").jumps
+FzfLua.keymaps = require("fzf-lua.providers.nvim").keymaps
+FzfLua.lgrep_curbuf = require("fzf-lua.providers.grep").lgrep_curbuf
+FzfLua.lgrep_loclist = require("fzf-lua.providers.grep").lgrep_loclist
+FzfLua.lgrep_quickfix = require("fzf-lua.providers.grep").lgrep_quickfix
+FzfLua.lines = require("fzf-lua.providers.buffers").lines
+FzfLua.live_grep = require("fzf-lua.providers.grep").live_grep
+FzfLua.live_grep_glob = require("fzf-lua.providers.grep").live_grep_glob
+FzfLua.live_grep_native = require("fzf-lua.providers.grep").live_grep_native
+FzfLua.live_grep_resume = require("fzf-lua.providers.grep").live_grep_resume
+FzfLua.loclist = require("fzf-lua.providers.quickfix").loclist
+FzfLua.loclist_stack = require("fzf-lua.providers.quickfix").loclist_stack
+FzfLua.lsp_code_actions = require("fzf-lua.providers.lsp").code_actions
+FzfLua.lsp_declarations = require("fzf-lua.providers.lsp").declarations
+FzfLua.lsp_definitions = require("fzf-lua.providers.lsp").definitions
+FzfLua.lsp_document_diagnostics = require("fzf-lua.providers.diagnostic").diagnostics
+FzfLua.lsp_document_symbols = require("fzf-lua.providers.lsp").document_symbols
+FzfLua.lsp_finder = require("fzf-lua.providers.lsp").finder
+FzfLua.lsp_implementations = require("fzf-lua.providers.lsp").implementations
+FzfLua.lsp_incoming_calls = require("fzf-lua.providers.lsp").incoming_calls
+FzfLua.lsp_live_workspace_symbols = require("fzf-lua.providers.lsp").live_workspace_symbols
+FzfLua.lsp_outgoing_calls = require("fzf-lua.providers.lsp").outgoing_calls
+FzfLua.lsp_references = require("fzf-lua.providers.lsp").references
+FzfLua.lsp_type_sub = require("fzf-lua.providers.lsp").type_sub
+FzfLua.lsp_type_super = require("fzf-lua.providers.lsp").type_super
+FzfLua.lsp_typedefs = require("fzf-lua.providers.lsp").typedefs
+FzfLua.lsp_workspace_diagnostics = require("fzf-lua.providers.diagnostic").all
+FzfLua.lsp_workspace_symbols = require("fzf-lua.providers.lsp").workspace_symbols
+FzfLua.man_pages = require("fzf-lua.providers.manpages").manpages
+FzfLua.manpages = require("fzf-lua.providers.manpages").manpages
+FzfLua.marks = require("fzf-lua.providers.nvim").marks
+FzfLua.menus = require("fzf-lua.providers.nvim").menus
+FzfLua.nvim_options = require("fzf-lua.providers.nvim").nvim_options
+FzfLua.oldfiles = require("fzf-lua.providers.oldfiles").oldfiles
+FzfLua.packadd = require("fzf-lua.providers.nvim").packadd
+FzfLua.profiles = require("fzf-lua.providers.meta").profiles
+FzfLua.quickfix = require("fzf-lua.providers.quickfix").quickfix
+FzfLua.quickfix_stack = require("fzf-lua.providers.quickfix").quickfix_stack
+FzfLua.register_ui_select = require("fzf-lua.providers.ui_select").register
+FzfLua.registers = require("fzf-lua.providers.nvim").registers
+FzfLua.resume = require("fzf-lua.core").fzf_resume
+FzfLua.search_history = require("fzf-lua.providers.nvim").search_history
+FzfLua.serverlist = require("fzf-lua.providers.nvim").serverlist
+FzfLua.spell_suggest = require("fzf-lua.providers.nvim").spell_suggest
+FzfLua.spellcheck = require("fzf-lua.providers.buffers").spellcheck
+FzfLua.tabs = require("fzf-lua.providers.buffers").tabs
+FzfLua.tags = require("fzf-lua.providers.tags").tags
+FzfLua.tags_grep = require("fzf-lua.providers.tags").grep
+FzfLua.tags_grep_cWORD = require("fzf-lua.providers.tags").grep_cWORD
+FzfLua.tags_grep_cword = require("fzf-lua.providers.tags").grep_cword
+FzfLua.tags_grep_visual = require("fzf-lua.providers.tags").grep_visual
+FzfLua.tags_live_grep = require("fzf-lua.providers.tags").live_grep
+FzfLua.tagstack = require("fzf-lua.providers.nvim").tagstack
+FzfLua.tmux_buffers = require("fzf-lua.providers.tmux").buffers
+FzfLua.treesitter = require("fzf-lua.providers.buffers").treesitter
+FzfLua.zoxide = require("fzf-lua.providers.files").zoxide
+
+---@class fzf-lua.win.api: fzf-lua.Win
+---@field set_autoclose fun(autoclose: vim.NIL), any
+---@field autoclose fun(): any
+---@field win_leave fun(): nil
+---@field hide fun(): nil
+---@field unhide fun(): true?
+---@field toggle_fullscreen fun(): nil
+---@field focus_preview fun(): nil
+---@field toggle_preview fun(): nil
+---@field toggle_preview_wrap fun(): nil
+---@field toggle_preview_cw fun(direction: integer), nil
+---@field toggle_preview_behavior fun(): nil
+---@field toggle_preview_ts_ctx fun(): nil
+---@field preview_ts_ctx_inc_dec fun(num: integer), nil
+---@field preview_scroll fun(direction: fzf-lua.win.direction), nil
+---@field close_help fun(): nil
+---@field toggle_help fun(): nil
