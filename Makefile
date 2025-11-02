@@ -54,7 +54,7 @@ emmylua-check:
 			--ignore 'deps/**/*'
 
 gen:
-	2>/dev/null nvim --clean --headless -ni NONE  +'/@format disable/+1,$$d' +'read !nvim --clean -l lua/fzf-lua/init.lua' +wq lua/fzf-lua/init.lua
+	nvim --clean -l lua/fzf-lua/init.lua
 
 # clean up
 .PHONY: clean
