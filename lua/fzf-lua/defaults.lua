@@ -40,8 +40,70 @@ function M._man_cmd_fn(bat_pager)
   return string.format("%s %%s 2>/dev/null | %s", cmd, pager)
 end
 
+---@class fzf-lua.config.TreesitterWinopts
+---@field enabled boolean Enable treesitter highlighting in fzf main window.
+---@field fzf_colors? table<string, string> Treesitter fzf color overrides.
+
+---@class fzf-lua.config.Winopts: vim.api.keyset.win_config
+---Height of the fzf-lua float
+---between 0-1 will represent percentage of `vim.o.lines` (1: max height)
+---if >= 1 will use fixed number of lines.
+---@field height? number
+---Width of the fzf-lua float
+---between 0-1 will represent percentage of `vim.o.columns` (1: max width)
+---if >= 1 will use fixed number of columns.
+---@field width? number
+---Screen row where to place the fzf-lua float window
+---between 0-1 will represent percentage of `vim.o.lines` (0: top, 1: bottom)
+---if >= 1 will attempt to place the float in the exact screen line.
+---@field row? number
+---Screen column where to place the fzf-lua float window
+---between 0-1 will represent percentage of `vim.o.columns` (0: leftmost, 1: rightmost)
+---if >= 1 will attempt to place the float in the exact screen column.
+---@field col? number
+---@field preview fzf-lua.config.PreviewOpts Preview window configuration.
+---@field split? string|function|false Neovim split command to use for fzf-lua interface, e.g `belowright new`.
+---@field backdrop? number|boolean Backdrop opacity, 0-100, or false to disable (requires Neovim >= 0.10).
+---@field fullscreen? boolean Open fzf-lua in fullscreen.
+---@field treesitter? fzf-lua.config.TreesitterWinopts Use treesitter highlighting in fzf's main window.
+---@field on_create? fun(e: { winid?: integer, bufnr?: integer }) Callback after the creation of the fzf-lua main terminal window.
+---@field on_close? fun() Callback after closing the fzf-lua window.
+---@field toggle_behavior? string Toggle behavior for fzf-lua window.
+---@field winblend? boolean Enable window transparency.
+---@field winhl? boolean Enable window highlight groups.
+---@field cursorline? boolean Highlight the current line in main window.
+---@field __winhls? { main: [string, string?][], prev: [string, string?][] } Internal window highlight mappings.
+
+---@class fzf-lua.config.PreviewOpts
+---@field default? string Default previewer for file pickers, possible values `builtin|bat|cat|head`.
+---@field border? any Preview border for native fzf previewers, set to `noborder` to hide.
+---@field wrap? boolean Line wrap in both native fzf and the builtin previewer.
+---@field hidden? boolean Preview startup visibility in both native fzf and the builtin previewer.
+---@field vertical? string Vertical preview layout, mapped to fzf's `--preview-window` flag.
+---@field horizontal? string Horizontal preview layout, mapped to fzf's `--preview-window` flag.
+---@field layout? string Preview layout, possible values are `horizontal|vertical|flex`.
+---@field flip_columns? integer Auto-detect the preview layout based on available width.
+---@field title? any Show preview title.
+---@field title_pos? "center"|"left"|"right" Preview title position.
+---@field scrollbar? string Preview window scrollbar (`border|float`).
+---@field scrolloff? integer Preview window scrolloff.
+---@field delay? integer Debounce time (milliseconds) for displaying the preview buffer in the builtin previewer.
+---@field winopts fzf-lua.config.PreviewerWinopts Window options for the builtin previewer.
+
 ---missing fields are injected later, not sure how to tell luals about it
----@class fzf-lua.config.Defaults
+---@class fzf-lua.config.Defaults: fzf-lua.config.Base,{}
+---@field nbsp string Special invisible unicode character used as text delimiter.
+---@field winopts fzf-lua.config.Winopts Window options.
+---@field keymap fzf-lua.config.Keymap Keymaps for builtin and fzf commands.
+---@field actions table<string, fzf-lua.config.Actions> Actions to execute on selected items.
+---@field fzf_bin string? Path to fzf binary.
+---@field previewers fzf-lua.config.Previewers Previewer configurations.
+---@field formatters table<string, any> Entry formatters.
+---@field zoxide fzf-lua.config.Zoxide Zoxide integration configuration.
+---@field file_icon_padding string Padding after file icons.
+---@field dir_icon string Directory icon to display in front of directory entries.
+---@field __HLS fzf-lua.config.HLS Highlight group configuration.
+---@field [string] any
 M.defaults        = {
   nbsp          = utils.nbsp,
   winopts       = {
@@ -74,6 +136,18 @@ M.defaults        = {
       -- default preview delay, fzf native previewers has a 100ms delay:
       -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
       delay        = 20,
+      ---@class fzf-lua.config.PreviewerWinopts
+      ---@field number boolean Show line numbers in preview.
+      ---@field relativenumber boolean Show relative line numbers in preview.
+      ---@field cursorline boolean Highlight current line in preview.
+      ---@field cursorlineopt string Cursorline option for preview.
+      ---@field cursorcolumn boolean Highlight current column in preview.
+      ---@field signcolumn string Sign column option for preview.
+      ---@field list boolean Show invisible characters in preview.
+      ---@field foldenable boolean Enable code folding in preview.
+      ---@field foldmethod string Fold method for preview.
+      ---@field scrolloff integer Scrolloff option for preview.
+      ---@field winblend integer Window transparency for preview.
       winopts      = {
         number         = true,
         relativenumber = false,
@@ -92,6 +166,9 @@ M.defaults        = {
     --   utils.keymap_set("t", "<A-Esc>", actions.hide, { nowait = true, buffer = e.bufnr })
     -- end,
   },
+  ---@class fzf-lua.config.Keymap
+  ---@field builtin? table<string, string> Keybinds for builtin (Neovim) commands.
+  ---@field fzf? table<string, string> Keybinds for fzf commands.
   keymap        = {
     builtin = {
       ["<M-Esc>"]    = "hide",
@@ -143,7 +220,8 @@ M.defaults        = {
       ["alt-f"]  = { fn = actions.toggle_follow, reuse = true, header = false },
     },
   },
-  fzf_bin       = nil,
+  fzf_bin       = nil, ---@type string? Path to fzf binary.
+  ---Fzf command-line options passed to fzf binary.
   fzf_opts      = {
     ["--ansi"]           = true,
     ["--info"]           = "inline-right",
@@ -152,6 +230,7 @@ M.defaults        = {
     ["--border"]         = "none",
     ["--highlight-line"] = true,
   },
+  ---Options passed to fzf-tmux wrapper.
   fzf_tmux_opts = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
   ---@class fzf-lua.config.Previewers
   ---@field builtin fzf-lua.config.BuiltinPreviewer
@@ -659,6 +738,7 @@ M.defaults.git                   = {
 ---@field search? string
 ---@field no_esc? integer|boolean
 ---@field lgrep? boolean grep or lgrep
+---@field search_paths? string[]
 ---@field __resume_set? function
 ---@field __resume_get? function
 M.defaults.grep                  = {
@@ -703,7 +783,7 @@ M.defaults.grep_curbuf           = vim.tbl_deep_extend("force", M.defaults.grep,
 ---@class fzf-lua.config.Args: fzf-lua.config.Base
 M.defaults.args                  = {
   previewer         = M._default_previewer_fn,
-  files_only        = true,
+  files_only        = true, -- Exclude non-file entries (directories).
   file_icons        = 1, ---@type integer|boolean
   color_icons       = true,
   git_icons         = false,
@@ -1014,7 +1094,6 @@ M.defaults.btags                 = {
 }
 
 ---@class fzf-lua.config.Colorschemes: fzf-lua.config.Base
----@field live_preview boolean
 ---@field colors string[] overriden colorscheme list
 ---@field ignore_patterns string[] lua patterns to filter colorschemes
 M.defaults.colorschemes          = {
@@ -1034,11 +1113,7 @@ M.defaults.highlights            = {
 }
 
 ---@class fzf-lua.config.AwesomeColorschemes: fzf-lua.config.Base
----@field live_preview boolean
----@field max_threads integer
----@field dbfile string
----@field icons table
----@field packpath fun():string
+---@field icons [string, string, string]
 ---@field _adm fzf-lua.AsyncDownloadManager
 ---@field dl_status integer
 ---@field _apply_awesome_theme function
@@ -1352,7 +1427,7 @@ M.defaults.builtin               = {
 }
 
 ---@class fzf-lua.config.Profiles: fzf-lua.config.Base
----@field load table
+---@field load fzf-lua.profile
 M.defaults.profiles              = {
   previewer = M._default_previewer_fn,
   fzf_opts  = {
@@ -1420,9 +1495,8 @@ M.defaults.commands              = {
 }
 
 ---@class fzf-lua.config.Autocmds: fzf-lua.config.Base
----@field show_desc boolean
 M.defaults.autocmds              = {
-  show_desc = true,
+  show_desc = true, -- show desc field in fzf list
   previewer = { _ctor = previewers.builtin.autocmds },
   _actions  = function() return M.globals.actions.files end,
   fzf_opts  = {
@@ -1457,7 +1531,7 @@ M.defaults.search_history        = {
 }
 
 ---@class fzf-lua.config.Registers: fzf-lua.config.Base
----@field filter string
+---@field filter string|function (ls: "ls")
 M.defaults.registers             = {
   multiline    = true, ---@type integer|boolean
   ignore_empty = true,
@@ -1504,6 +1578,7 @@ M.defaults.nvim_options          = {
 }
 
 ---@class fzf-lua.config.SpellSuggest: fzf-lua.config.Base
+---The pattern used to match the word under the cursor. Text around the cursor position that matches will be used as the initial query and replaced by a chosen completion. The default matches anything but spaces and single/double quotes.
 ---@field word_pattern? string
 M.defaults.spell_suggest         = {
   winopts = {
@@ -1519,8 +1594,9 @@ M.defaults.spell_suggest         = {
 }
 
 ---@class fzf-lua.config.Serverlist : fzf-lua.config.Base
+---@field _screenshot string
 M.defaults.serverlist            = {
-  screenshot = vim.fn.tempname(),
+  _screenshot = vim.fn.tempname(),
   previewer = { _ctor = previewers.fzf.nvim_server },
   _resume_reload = true, -- avoid list contain killed server unhide
   keymap = { fzf = { resize = "refresh-preview" } },
