@@ -539,18 +539,14 @@ function M.map_set(m, k, v)
   return m
 end
 
----@param m table<string, unknown>?
----@param exclude_patterns string|string[]?
----@return table<string, unknown>?
+---@param m table?
+---@param exclude_patterns string[]?
+---@return table?
 function M.map_tolower(m, exclude_patterns)
+  if not m then return end
   -- We use "exclude_patterns" to filter "alt-{a|A}"
   -- as it's a valid and different fzf bind
-  exclude_patterns = type(exclude_patterns) == "table" and exclude_patterns
-      or type(exclude_patterns) == "string" and { exclude_patterns }
-      or {}
-  if not m then
-    return
-  end
+  exclude_patterns = exclude_patterns or {}
   local ret = {}
   for k, v in pairs(m) do
     local lower_k = (function()
@@ -1441,18 +1437,6 @@ end
 function M.git_version()
   local out = M.io_system({ "git", "--version" })
   return tonumber(out:match("(%d+.%d+)."))
-end
-
-function M.find_version()
-  local out, rc = M.io_systemlist({ "find", "--version" })
-  return rc == 0 and out[1] and tonumber(out[1]:match("(%d+.%d+)")) or nil
-end
-
----@return string
-function M.windows_pipename()
-  local tmpname = vim.fn.tempname()
-  tmpname = string.gsub(tmpname, "\\", "")
-  return ([[\\.\pipe\%s]]):format(tmpname)
 end
 
 function M.create_user_command_callback(provider, arg, altmap)
