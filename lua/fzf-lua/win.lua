@@ -730,14 +730,12 @@ function FzfWin:_set_autoclose(autoclose)
   return self._autoclose
 end
 
-function FzfWin.set_autoclose(autoclose)
-  if not _self then return nil end
-  return _self:_set_autoclose(autoclose)
+function FzfWin:set_autoclose(autoclose)
+  return self:_set_autoclose(autoclose)
 end
 
-function FzfWin.autoclose()
-  if not _self then return nil end
-  return _self._autoclose
+function FzfWin:autoclose()
+  return self._autoclose
 end
 
 function FzfWin:set_backdrop()
@@ -1029,7 +1027,7 @@ function FzfWin:set_redraw_autocmd()
 end
 
 function FzfWin:set_winleave_autocmd()
-  self:_on("WinClosed", self.win_leave)
+  self:_on("WinClosed", function() self:win_leave() end)
 end
 
 function FzfWin:treesitter_detach(buf)
@@ -1316,7 +1314,7 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   --
   -- prevents race condition with 'win_leave'
   self.closing = true
-  self.close_help()
+  self:close_help()
   self:close_backdrop()
   self:close_preview(hide)
   -- Abort hidden fzf job?
@@ -1408,9 +1406,8 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   _self = nil
 end
 
-function FzfWin.win_leave()
-  local self = _self
-  if not self or self.closing then return end
+function FzfWin:win_leave()
+  if self.closing then return end
   self:close()
 end
 
@@ -1420,9 +1417,8 @@ function FzfWin:detach_fzf_buf()
   self:set_tmp_buffer(true)
 end
 
-function FzfWin.hide()
-  local self = _self
-  if not self or self:hidden() then return end
+function FzfWin:hide()
+  if self:hidden() then return end
   -- Note: we should never get here with a tmux profile as neovim binds (default: <A-Esc>)
   -- do not apply to tmux, validate anyways in case called directly using the API
   if not self or self._o._is_fzf_tmux then return end
@@ -1502,9 +1498,8 @@ function FzfWin:SIGWINCH(scopes)
   return true
 end
 
-function FzfWin.unhide()
-  local self = _self
-  if not self or not self:hidden() then return end
+function FzfWin:unhide()
+  if not self:hidden() then return end
   self._o.__CTX = utils.CTX({ includeBuflist = true })
   -- Send SIGWINCH to to trigger resize in the fzf process
   -- We will use the trigger to reload necessary buffer lists
@@ -1694,22 +1689,16 @@ function FzfWin:update_preview_title(title)
 end
 
 -- keybind methods below
-function FzfWin.toggle_fullscreen()
-  if not _self or _self.winopts.split then return end
-  local self = _self
+function FzfWin:toggle_fullscreen()
   self.fullscreen = not self.fullscreen
   self:redraw()
 end
 
-function FzfWin.focus_preview()
-  if not _self then return end
-  local self = _self
+function FzfWin:focus_preview()
   api.nvim_set_current_win(self.preview_winid)
 end
 
-function FzfWin.toggle_preview()
-  if not _self then return end
-  local self = _self
+function FzfWin:toggle_preview()
   self.preview_hidden = not self.preview_hidden
   if self._fzf_toggle_prev_bind then
     -- 1. Toggle the empty preview window (under the neovim preview buffer)
@@ -1738,21 +1727,18 @@ function FzfWin.toggle_preview()
   end
 end
 
-function FzfWin.toggle_preview_wrap()
-  if not _self or not _self:validate_preview() then return end
-  local self = _self
+function FzfWin:toggle_preview_wrap()
   self.preview_wrap = not utils.wo[self.preview_winid].wrap
   if self and self:validate_preview() then
     utils.wo[self.preview_winid].wrap = self.preview_wrap
   end
 end
 
-function FzfWin.toggle_preview_cw(direction)
-  if not _self then return end
-  local self = _self
+---@param direction integer
+function FzfWin:toggle_preview_cw(direction)
   local curpos = self:normalize_preview_layout().pos
   local pos = { "up", "right", "down", "left" }
-  local idx
+  local idx ---@type integer
   for i = 1, #pos do
     if pos[i] == curpos then
       idx = i
@@ -1770,17 +1756,13 @@ function FzfWin.toggle_preview_cw(direction)
   self:redraw()
 end
 
-function FzfWin.toggle_preview_behavior()
-  if not _self then return end
-  local self = _self
+function FzfWin:toggle_preview_behavior()
   self.toggle_behavior = not self.toggle_behavior and "extend" or nil
   utils.info("preview toggle behavior set to %s", self.toggle_behavior or "default")
   self:redraw()
 end
 
-function FzfWin.toggle_preview_ts_ctx()
-  if not _self then return end
-  local self = _self
+function FzfWin:toggle_preview_ts_ctx()
   if self:validate_preview()
       and self._previewer
       and self._previewer.ts_ctx_toggle then
@@ -1788,9 +1770,8 @@ function FzfWin.toggle_preview_ts_ctx()
   end
 end
 
-function FzfWin.preview_ts_ctx_inc_dec(num)
-  if not _self then return end
-  local self = _self
+---@param num integer
+function FzfWin:preview_ts_ctx_inc_dec(num)
   if self:validate_preview()
       and self._previewer
       and self._previewer.ts_ctx_inc_dec_maxlines then
@@ -1798,10 +1779,9 @@ function FzfWin.preview_ts_ctx_inc_dec(num)
   end
 end
 
----@param direction "top"|"bottom"|"half-page-up"|"half-page-down"|"page-up"|"page-down"|"line-up"|"line-down"|"reset"
-function FzfWin.preview_scroll(direction)
-  if not _self then return end
-  local self = _self
+---@alias fzf-lua.win.direction "top"|"bottom"|"half-page-up"|"half-page-down"|"page-up"|"page-down"|"line-up"|"line-down"|"reset"
+---@param direction fzf-lua.win.direction
+function FzfWin:preview_scroll(direction)
   if self:validate_preview()
       and self._previewer
       and self._previewer.scroll then
@@ -1810,12 +1790,10 @@ function FzfWin.preview_scroll(direction)
   end
 end
 
-function FzfWin.close_help()
-  if not _self or not _self.km_winid then
+function FzfWin:close_help()
+  if not self.km_winid then
     return
   end
-
-  local self = _self
 
   if self.km_winid and api.nvim_win_is_valid(self.km_winid) then
     utils.nvim_win_close(self.km_winid, true)
@@ -1827,14 +1805,11 @@ function FzfWin.close_help()
   self.km_bufnr = nil
 end
 
-function FzfWin.toggle_help()
-  if not _self then return end
-  local self = _self
-
+function FzfWin:toggle_help()
   if self.km_winid then
     -- help window is already open
     -- close and dispose resources
-    self.close_help()
+    self:close_help()
     return
   end
 
@@ -1992,4 +1967,15 @@ function FzfWin.toggle_help()
   api.nvim_buf_set_lines(self.km_bufnr, 0, -1, false, lines)
 end
 
-return FzfWin
+---@type fzf-lua.win.api: fzf-lua.Win
+local M = setmetatable({}, {
+  __index = function(m, k)
+    rawset(m, k, FzfLua._exported_wapi[k] and function(...)
+      if not _self then return end
+      return _self[k](_self, ...)
+    end or FzfWin[k])
+    return rawget(m, k)
+  end,
+})
+
+return M
