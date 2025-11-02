@@ -2,14 +2,14 @@
 01| cli.lua                                                        
 02| devicons.lua                                                   
 03| fzf-lua-scm-1.rockspec                                         
-04| headless_fd.sh                                                 
-05| init.lua                                                       
-06| make_cli.lua                                                   
-07| mini.sh                                                        
-08| minimal_init.lua                                               
-09|                                                                
-10|[Process exited 0]                                              
-11|                                                                
+04| gen_options.lua                                                
+05| headless_fd.sh                                                 
+06| init.lua                                                       
+07| make_cli.lua                                                   
+08| mini.sh                                                        
+09| minimal_init.lua                                               
+10|                                                                
+11|[Process exited 0]                                              
 12|                                                                
 13|                                                                
 14|                                                                
