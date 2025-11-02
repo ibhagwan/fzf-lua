@@ -551,7 +551,7 @@ function Previewer.nvim_server:cmdline(_)
     self._last_query = items[2] or ""
     local addr = parse_entry(items[1])
     if not addr then return "true" end
-    local screenshot = assert(self.opts.screenshot) ---@type string
+    local screenshot = assert(self.opts._screenshot) ---@type string
     local pid = make_screenshot(screenshot, addr, lines, columns)
     local wait = pid
         and vim.fn.executable("waitpid") == 1
