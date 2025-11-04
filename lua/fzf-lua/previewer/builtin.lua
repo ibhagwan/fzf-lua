@@ -191,7 +191,7 @@ function Previewer.base:new(o, opts)
 
   o = o or {}
   self.type = "builtin"
-  self.opts = opts;
+  self.opts = opts
   self.title_fnamemodify = o.title_fnamemodify
   self.render_markdown = type(o.render_markdown) == "table" and o.render_markdown or {}
   self.render_markdown.filetypes =
@@ -1259,10 +1259,11 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   local mgrep, glob_args = require("fzf-lua.providers.grep"), nil
   local regex = self.opts.__ACT_TO == mgrep.grep and self.opts._last_query
       or self.opts.__ACT_TO == mgrep.live_grep and self.opts.search or nil
+  local opts = self.opts.__ACT_TO == mgrep.live_grep and self.opts.__call_opts or self.opts
   if regex and self.opts.fn_transform_cmd then
     local _, query = self.opts.fn_transform_cmd(regex, self.opts.cmd, self.opts)
     regex = query or regex
-  elseif regex and self.opts.rg_glob and self.opts.glob_separator then
+  elseif regex and (opts.rg_glob or self.opts.rg_glob) and self.opts.glob_separator then
     regex, glob_args = require("fzf-lua.make_entry").glob_parse(regex, self.opts)
   end
   if regex then
