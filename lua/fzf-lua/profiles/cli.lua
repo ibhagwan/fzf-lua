@@ -101,6 +101,7 @@ return {
   fzf_opts = { ["--height"] = "50%" },
   actions = {
     files = {
+      true,
       ["esc"] = quit,
       ["ctrl-c"] = quit,
       ["enter"] = function(s, o)
