@@ -195,6 +195,14 @@ local grep_tag = function(file, tag)
 end
 
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
+  -- Handle empty or invalid entries (common on Windows with live_grep)
+  if not entrystr or #entrystr == 0 or entrystr == "." or entrystr == ".." then
+    local errmsg = entrystr and #entrystr > 0
+        and string.format("'%s': Invalid entry", entrystr)
+        or "No entry selected"
+    return "", {}, "echo " .. libuv.shellescape(errmsg)
+  end
+  
   local entry = path.entry_to_file(entrystr, self.opts)
   -- make relative for bat's header display
   local filepath = path.relative_to(entry.bufname or entry.path or "", uv.cwd())
