@@ -1318,8 +1318,6 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   -- Restore insert/normal-terminal mode (#2054)
   if utils.__CTX().mode == "nt" then
     utils.feed_keys_termcodes([[<C-\><C-n>]])
-  elseif utils.__CTX().mode == "i" then
-    vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
   end
   if self.winopts and type(self.winopts.on_close) == "function" then
     self.winopts.on_close()
