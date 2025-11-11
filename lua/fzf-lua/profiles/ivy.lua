@@ -48,6 +48,8 @@ local M = {
   },
 }
 
+M.builtin = { winopts = { width = 1, height = 1 } }
+
 local swiper = {
   previewer = "swiper",
   winopts = function()
