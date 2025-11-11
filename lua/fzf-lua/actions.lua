@@ -133,6 +133,9 @@ M.dummy_abort = function(_, o)
   if o.complete and o.__CTX.mode == "i" then
     vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
   end
+  if o.__CTX.mode == "nt" and o.__CTX.cursor then
+    vim.api.nvim_win_set_cursor(0, { o.__CTX.cursor[1], o.__CTX.cursor[2] })
+  end
 end
 
 M.resume = function(_, _)
@@ -261,10 +264,12 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
       elseif not opts.no_action_set_cursor and entry.line > 0 or entry.col > 0 then
         -- Make sure we have valid line/column
         -- e.g. qf lists from files (no line/col), dap_breakpoints
-        pcall(vim.api.nvim_win_set_cursor, 0, {
-          math.max(1, entry.line),
-          math.max(1, entry.col) - 1
-        })
+        vim.defer_fn(function()
+          pcall(vim.api.nvim_win_set_cursor, 0, {
+            math.max(1, entry.line),
+            math.max(1, entry.col) - 1
+          })
+        end, 100)
       end
       -- Only "zz" after the last entry is loaded into the origin buffer
       if i == #selected and not opts.no_action_zz and not utils.is_term_buffer(0) then
