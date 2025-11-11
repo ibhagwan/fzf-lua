@@ -1236,7 +1236,10 @@ M.defaults.tagstack              = {
 }
 
 M.defaults.commands              = {
-  actions         = { ["enter"] = actions.ex_run },
+  actions         = {
+    ["enter"]  = actions.ex_run,
+    ["ctrl-s"] = actions.ex_run_nested,
+  },
   flatten         = {},
   include_builtin = true,
   _cached_hls     = { "cmd_ex", "cmd_buf", "cmd_global" },

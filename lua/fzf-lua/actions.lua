@@ -552,6 +552,40 @@ M.ex_run_cr = function(selected)
   vim.fn.histadd("cmd", cmd)
 end
 
+M.ex_run_nested = function(selected, opts)
+  if #selected == 0 then return end
+
+  local utils = require("fzf-lua.utils")
+  local core = require("fzf-lua.core")
+  local config = require("fzf-lua.config")
+
+  local cmd = utils.strip_ansi_coloring(selected[1])
+  cmd = cmd:match("^:?(.-)%s*$") or cmd
+
+  local completions = vim.fn.getcompletion(cmd .. " ", "cmdline")
+
+  if #completions > 0 then
+    local nested_opts = config.normalize_opts({
+      prompt = cmd .. " > ",
+      actions = {
+        ["default"] = M.ex_run,
+        ["ctrl-s"] = M.ex_run_nested,
+      },
+      winopts = opts and opts.winopts or nil,
+    }, "commands")
+
+    local entries = vim.tbl_map(function(c)
+      return cmd .. " " .. c
+    end, completions)
+
+    core.fzf_exec(entries, nested_opts)
+  else
+    vim.cmd("stopinsert")
+    vim.cmd(cmd)
+    vim.fn.histadd("cmd", cmd)
+  end
+end
+
 M.exec_menu = function(selected)
   if #selected == 0 then return end
   local cmd = selected[1]
