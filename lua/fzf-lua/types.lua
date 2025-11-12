@@ -21,7 +21,6 @@ _G.FzfLua = require("fzf-lua")
 ---@field do_not_cache? boolean
 ---@field no_scrollbar? boolean
 ---@field tick? integer
----@field fs_stat? uv.fs_stat.result
 ---@field no_syntax? boolean
 ---@field cached? fzf-lua.buffer_or_file.Bcache
 ---@field content? string[]
