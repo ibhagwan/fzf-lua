@@ -664,8 +664,7 @@ function Previewer.buffer_or_file:parse_entry(entry_str)
         function() vim.cmd(("do fugitive BufReadCmd %s"):format(entry.path)) end)
       return entry
     end
-    entry.fs_stat = uv.fs_stat(entry.path)
-    entry.tick = vim.tbl_get(entry.fs_stat or {}, "mtime", "nsec")
+    entry.tick = vim.tbl_get(uv.fs_stat(entry.path) or {}, "mtime", "nsec")
   end
   return entry
 end
@@ -1022,7 +1021,7 @@ function Previewer.base:update_ts_context()
   -- https://github.com/neovim/neovim/commit/45e606b1fddbfeee8fe28385b5371ca6f2fba71b
   -- For more info see #1922
   local lang = vim.treesitter.language.get_lang(ft)
-  if not utils.has_ts_parser(lang, "context") then
+  if not lang or not utils.has_ts_parser(lang, "context") then
     TSContext.close(self.win.preview_winid)
     return
   end
