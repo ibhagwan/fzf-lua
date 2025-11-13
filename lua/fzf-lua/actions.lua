@@ -478,7 +478,7 @@ local function arg_exec(cmd, selected, opts)
       if path.is_absolute(relpath) then
         relpath = path.relative_to(relpath, vim.uv.cwd())
       end
-      vim.cmd(cmd .. " " .. relpath)
+      vim.cmd(cmd .. " " .. string.gsub(relpath, " ", [[\ ]]))
     end)()
   end
 end
