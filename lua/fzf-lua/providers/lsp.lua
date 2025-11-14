@@ -892,12 +892,6 @@ M.code_actions = function(opts)
   opts = normalize_lsp_opts(opts, "lsp.code_actions")
   if not opts then return end
 
-  -- code actions uses `vim.ui.select`, requires neovim >= 0.6
-  if vim.fn.has("nvim-0.6") ~= 1 then
-    utils.info("LSP code actions requires neovim >= 0.6")
-    return
-  end
-
   local ui_select = require "fzf-lua.providers.ui_select"
   local registered = ui_select.is_registered()
 
