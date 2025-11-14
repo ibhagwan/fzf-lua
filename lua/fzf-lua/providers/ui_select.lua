@@ -156,6 +156,16 @@ M.ui_select = function(items, ui_opts, on_choice)
   -- ui.select is code actions
   -- inherit from defaults if not triggered by lsp_code_actions
   local opts_merge_strategy = "keep"
+
+  -- fix error when vim.lsp.buf.code_action() called but didn't triggers vim.ui.select
+  -- _OPTS_ONCE also means pending deregister
+  -- since we only use it to custom codeaction preview now
+  if _OPTS_ONCE and ui_opts.kind ~= "codeaction" then
+    M.deregister({}, true, true)
+    _OPTS_ONCE = nil
+    return vim.ui.select(items, ui_opts, on_choice)
+  end
+
   if not _OPTS_ONCE and ui_opts.kind == "codeaction" then
     ---@type fzf-lua.config.LspCodeActions
     _OPTS_ONCE = config.normalize_opts({}, "lsp.code_actions")
