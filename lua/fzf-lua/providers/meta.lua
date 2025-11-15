@@ -21,10 +21,6 @@ M.metatable = function(opts)
 
   table.sort(methods, function(a, b) return a < b end)
 
-  -- builtin is excluded from global resume
-  -- as the behavior might confuse users (#267)
-  opts.no_resume = true
-
   return core.fzf_exec(methods, opts)
 end
 

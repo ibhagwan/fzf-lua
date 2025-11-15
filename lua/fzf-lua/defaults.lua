@@ -1178,13 +1178,14 @@ M.defaults.diagnostics           = {
 }
 
 M.defaults.builtin               = {
-  winopts  = { height = 0.65, width = 0.50, preview = { hidden = true } },
-  fzf_opts = { ["--no-multi"] = true },
-  preview  = function(args)
+  no_resume = true,
+  winopts   = { height = 0.65, width = 0.50, preview = { hidden = true } },
+  fzf_opts  = { ["--no-multi"] = true },
+  preview   = function(args)
     local options_md = require("fzf-lua.cmd").options_md()
     return type(options_md) == "table" and options_md[args[1]:lower()] or ""
   end,
-  actions  = { ["enter"] = actions.run_builtin },
+  actions   = { ["enter"] = actions.run_builtin },
 }
 
 M.defaults.profiles              = {
