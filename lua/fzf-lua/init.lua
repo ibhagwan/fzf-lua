@@ -411,6 +411,7 @@ M._excluded_meta = {
   "defaults",
   "_excluded_meta",
   "_excluded_metamap",
+  "_exported_wapi",
   "get_info",
   "set_info",
   "get_last_query",
