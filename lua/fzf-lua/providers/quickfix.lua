@@ -1,4 +1,4 @@
-local uv = vim.uv or vim.loop
+---@diagnostic disable-next-line: deprecated
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
@@ -10,7 +10,7 @@ local quickfix_run = function(opts, cfg)
   opts = config.normalize_opts(opts, cfg)
   if not opts then return end
 
-  if not opts.cwd then opts.cwd = uv.cwd() end
+  opts.cwd = opts.cwd or utils.cwd()
 
   local function getlist()
     if opts.__locations then return nil end
@@ -36,8 +36,8 @@ local quickfix_run = function(opts, cfg)
       (function()
         if opts.valid_only and loc.valid ~= 1 then return end
         loc.text = loc.text:gsub("\r?\n", " ")
-        local entry = make_entry.lcol(loc, opts)
-        entry = make_entry.file(entry, opts)
+        local entry0 = make_entry.lcol(loc, opts)
+        local entry = make_entry.file(entry0, opts)
         if not entry then return end
         cb(string.format("[%s]%s%s",
             utils.ansi_codes.yellow(tostring(loc.bufnr)),
@@ -60,10 +60,14 @@ local quickfix_run = function(opts, cfg)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Quickfix|{}?
+---@return thread?, string?, table?
 M.quickfix = function(opts)
   return quickfix_run(opts, "quickfix")
 end
 
+---@param opts fzf-lua.config.Loclist|{}?
+---@return thread?, string?, table?
 M.loclist = function(opts)
   opts = opts or {}
   opts.is_loclist = true
@@ -118,10 +122,14 @@ local qfstack_exec = function(opts, cfg)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.QuickfixStack|{}?
+---@return thread?, string?, table?
 M.quickfix_stack = function(opts)
   return qfstack_exec(opts, "quickfix_stack")
 end
 
+---@param opts fzf-lua.config.LoclistStack|{}?
+---@return thread?, string?, table?
 M.loclist_stack = function(opts)
   opts = opts or {}
   opts.is_loclist = true

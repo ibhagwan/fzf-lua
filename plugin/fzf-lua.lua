@@ -7,6 +7,7 @@ if vim.fn.has("nvim-0.9") ~= 1 then
 end
 
 vim.api.nvim_create_user_command("FzfLua", function(opts)
+  ---@diagnostic disable-next-line: param-type-mismatch
   require("fzf-lua.cmd").run_command(unpack(opts.fargs))
 end, {
   nargs = "*",

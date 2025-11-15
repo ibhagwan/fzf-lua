@@ -1,8 +1,8 @@
----@diagnostic disable: unused-local, unused-function
+---@diagnostic disable: unused-local, unused-function, unused
 local MiniTest = require("mini.test")
 local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
-local expect, eq = helpers.expect, helpers.expect.equality
+local eq = helpers.expect.equality
 local new_set = MiniTest.new_set
 local exec_lua = child.lua
 
@@ -20,7 +20,7 @@ T["grep"]["search"]["regex"] = new_set({ parametrize = { { false }, { true }, { 
       ignore_text = helpers.IS_WIN() and { 4, 6, 9, 10, 12, 18, 28 } or { 28 },
       normalize_paths = helpers.IS_WIN()
     }
-    local path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "nvim-web-devicons")
+    local path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "nvim-web-devicons") ---@diagnostic disable-line: param-type-mismatch
     if not vim.uv.fs_stat(path) then
       path = vim.fs.joinpath("deps", "nvim-web-devicons")
     end

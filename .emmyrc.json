@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/EmmyLuaLs/emmylua-analyzer-rust/refs/heads/main/crates/emmylua_code_analysis/resources/schema.json",
+  "runtime": {
+    "version": "LuaJIT",
+    "requirePattern": [
+      "lua/?.lua",
+      "lua/?/init.lua"
+    ]
+  },
+  "diagnostics": {
+    "enable": true,
+    "disable": [
+      "unnecessary-if",
+      "await-in-sync",
+      "global-in-non-module"
+    ]
+  },
+  "workspace": {
+    "library": [
+      "$VIMRUNTIME",
+      "deps/mini.nvim",
+      "deps/nvim-web-devicons",
+      "deps/nvim-cmp",
+      "deps/nvim-dap",
+      "$XDG_DATA_HOME/nvim/lazy/mini.nvim",
+      "$XDG_DATA_HOME/nvim/lazy/nvim-web-devicons",
+      "$XDG_DATA_HOME/nvim/lazy/nvim-cmp",
+      "$XDG_DATA_HOME/nvim/lazy/nvim-dap"
+    ],
+    "preloadFileSize": 1000
+  },
+  "hint": {
+    "enable": true
+  }
+}

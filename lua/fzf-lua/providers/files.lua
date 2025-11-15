@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
@@ -16,16 +17,16 @@ M.get_files_cmd = function(opts)
   end
   local search_paths = (function()
     -- NOTE: deepcopy to avoid recursive shellescapes with `actions.toggle_ignore`
-    local search_paths = type(opts.search_paths) == "table" and vim.deepcopy(opts.search_paths)
+    local paths = type(opts.search_paths) == "table" and vim.deepcopy(opts.search_paths)
         or type(opts.search_paths) == "string" and { tostring(opts.search_paths) }
     -- Make paths relative, note this will not work well with resuming if changing
     -- the cwd, this is by design for perf reasons as having to deal with full paths
     -- will result in more code routes taken in `make_entry.file`
-    if type(search_paths) == "table" then
-      for i, p in ipairs(search_paths) do
-        search_paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), uv.cwd()))
+    if type(paths) == "table" then
+      for i, p in ipairs(paths) do
+        paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), utils.cwd()))
       end
-      return table.concat(search_paths, " ")
+      return table.concat(paths, " ")
     end
   end)()
   local command = nil
@@ -70,6 +71,8 @@ M.get_files_cmd = function(opts)
   return command
 end
 
+---@param opts fzf-lua.config.Files|{}?
+---@return thread?, string?, table?
 M.files = function(opts)
   ---@type fzf-lua.config.Files
   opts = config.normalize_opts(opts, "files")
@@ -77,7 +80,7 @@ M.files = function(opts)
   if opts.ignore_current_file then
     local curbuf = vim.api.nvim_buf_get_name(0)
     if #curbuf > 0 then
-      curbuf = path.relative_to(curbuf, opts.cwd or uv.cwd())
+      curbuf = path.relative_to(curbuf, opts.cwd or utils.cwd())
       opts.file_ignore_patterns = opts.file_ignore_patterns or {}
       table.insert(opts.file_ignore_patterns,
         "^" .. utils.lua_regex_escape(curbuf) .. "$")
@@ -88,12 +91,14 @@ M.files = function(opts)
     -- `dir` command returns absolute paths with ^M for EOL
     -- `make_entry.file` will strip the ^M
     -- set `opts.cwd` for relative path display
-    opts.cwd = uv.cwd()
+    opts.cwd = utils.cwd()
   end
   opts = core.set_title_flags(opts, { "cmd" })
   return core.fzf_exec(opts.cmd, opts)
 end
 
+---@param opts fzf-lua.config.Args|{}?
+---@return thread?, string?, table?
 M.args = function(opts)
   ---@type fzf-lua.config.Args
   opts = config.normalize_opts(opts, "args")
@@ -116,9 +121,10 @@ M.args = function(opts)
       for i = 0, argc - 1 do
         vim.schedule(function()
           local s = vim.fn.argv(i)
+          ---@cast s string
           local st = uv.fs_stat(s)
           if opts.files_only == false or st and st.type == "file" then
-            s = make_entry.file(s, opts)
+            s = assert(make_entry.file(s, opts))
             cb(s, function()
               coroutine.resume(co)
             end)
@@ -138,6 +144,8 @@ M.args = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Zoxide|{}?
+---@return thread?, string?, table?
 M.zoxide = function(opts)
   ---@type fzf-lua.config.Zoxide
   opts = config.normalize_opts(opts, "zoxide")

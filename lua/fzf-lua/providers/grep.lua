@@ -1,3 +1,5 @@
+---@diagnostic disable: param-type-mismatch
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local core = require "fzf-lua.core"
@@ -9,6 +11,8 @@ local M = {}
 
 local get_grep_cmd = make_entry.get_grep_cmd
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.grep = function(opts)
   ---@type fzf-lua.config.Grep
   opts = config.normalize_opts(opts, "grep")
@@ -129,7 +133,10 @@ local function normalize_live_grep_opts(opts)
   return opts
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.live_grep = function(opts)
+  ---@type fzf-lua.config.Grep
   opts = normalize_live_grep_opts(opts)
   if not opts then return end
 
@@ -160,6 +167,8 @@ M.live_grep = function(opts)
   core.fzf_live(contents, opts)
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.live_grep_native = function(opts)
   -- set opts before normalize so they're saved in `__call_opts` for resume
   -- nullifies fn_{pre|post|transform}, forces no wrap shell.stringify_mt
@@ -188,6 +197,8 @@ M.live_grep_native = function(opts)
   M.live_grep(opts)
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.live_grep_glob = function(opts)
   vim.deprecate(
     [['live_grep_glob']],
@@ -207,6 +218,8 @@ M.live_grep_glob = function(opts)
 end
 
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.live_grep_resume = function(opts)
   vim.deprecate(
     [['live_grep_resume']],
@@ -218,6 +231,8 @@ M.live_grep_resume = function(opts)
   return M.live_grep(opts)
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.grep_last = function(opts)
   vim.deprecate(
     [['grep_last']],
@@ -229,8 +244,10 @@ M.grep_last = function(opts)
   return M.grep(opts)
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.grep_cword = function(opts)
-  if not opts then opts = {} end
+  opts = opts or {}
   opts.no_esc = true
   -- match whole words only (#968)
   opts.search = [[\b]] .. utils.rg_escape(vim.fn.expand("<cword>")) .. [[\b]]
@@ -245,15 +262,19 @@ M.grep_cWORD = function(opts)
   return M.grep(opts)
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.grep_visual = function(opts)
-  if not opts then opts = {} end
+  opts = opts or {}
   opts.search = utils.get_visual_selection()
   return M.grep(opts)
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.grep_project = function(opts)
-  if not opts then opts = {} end
-  if not opts.search then opts.search = "" end
+  opts = opts or {}
+  opts.search = opts.search or ""
   -- by default, do not include filename in search
   opts.fzf_opts = opts.fzf_opts or {}
   if opts.fzf_opts["--delimiter"] == nil then
@@ -265,6 +286,9 @@ M.grep_project = function(opts)
   return M.grep(opts)
 end
 
+---@param opts fzf-lua.config.GrepCurbuf|{}?
+---@param lgrep boolean?
+---@return thread?, string?, table?
 M.grep_curbuf = function(opts, lgrep)
   -- call `normalize_opts` here as we want to store all previous
   -- options in the resume data store under the key "bgrep"
@@ -278,7 +302,7 @@ M.grep_curbuf = function(opts, lgrep)
     utils.info("Rg current buffer requires file on disk")
     return
   else
-    opts.filename = path.relative_to(opts.filename, uv.cwd())
+    opts.filename = path.relative_to(opts.filename, utils.cwd())
   end
 
   -- Persist call options so we don't revert to global grep on `grep_lgrep`
@@ -294,6 +318,8 @@ M.grep_curbuf = function(opts, lgrep)
   end
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.lgrep_curbuf = function(opts)
   -- 2nd arg implies `opts.lgrep=true`
   return M.grep_curbuf(opts, true)
@@ -323,7 +349,6 @@ local grep_list = function(opts, lgrep, loclist)
     return
   end
   opts.exec_empty_query = opts.exec_empty_query == nil and true
-  ---@type fzf-lua.config.Grep
   opts = config.normalize_opts(opts, "grep")
   if not opts then return end
   if lgrep then
@@ -334,18 +359,26 @@ local grep_list = function(opts, lgrep, loclist)
   end
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.grep_quickfix = function(opts)
   return grep_list(opts, false, false)
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.lgrep_quickfix = function(opts)
   return grep_list(opts, true, false)
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.grep_loclist = function(opts)
   return grep_list(opts, false, true)
 end
 
+---@param opts fzf-lua.config.Grep|{}?
+---@return thread?, string?, table?
 M.lgrep_loclist = function(opts)
   return grep_list(opts, true, true)
 end
