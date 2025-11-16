@@ -892,6 +892,7 @@ function M.fzf_exit()
   require("fzf-lua").win.win_leave()
 end
 
+---@return fzf-lua.Win?
 function M.fzf_winobj()
   return require("fzf-lua").win.__SELF()
 end
