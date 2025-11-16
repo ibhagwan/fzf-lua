@@ -1133,7 +1133,7 @@ function M.line_count(win, buf)
   end
 end
 
-function M.zz()
+local function _zz()
   -- skip for terminal buffers
   if M.is_term_buffer() then return end
   local lnum1 = vim.api.nvim_win_get_cursor(0)[1]
@@ -1155,6 +1155,10 @@ function M.zz()
   end
 end
 
+function M.zz()
+  M.eventignore(_zz, "ModeChanged")
+end
+
 ---@param context vim.context.mods
 ---@param func function
 ---@return ... any
@@ -1171,9 +1175,10 @@ end
 function M.eventignore(func, scope)
   local save_ei = vim.o.eventignore
   vim.o.eventignore = scope or "all"
-  local ret = { func() }
+  local ret = { pcall(func) }
   vim.o.eventignore = save_ei
-  return unpack(ret)
+  if not ret[1] then error(ret[2]) end
+  return select(2, unpack(ret))
 end
 
 -- Set buffer for window without an autocmd
