@@ -1421,7 +1421,9 @@ M.defaults.zoxide                = {
   actions       = { enter = actions.zoxide_cd }
 }
 
-M.defaults.complete_line         = { complete = true }
+M.defaults.complete_line         = vim.tbl_deep_extend("force", M.defaults.blines, {
+  complete = true,
+})
 
 M.defaults.file_icon_padding     = ""
 
