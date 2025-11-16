@@ -121,7 +121,8 @@ function Previewer.bat:cmdline(o)
   o.action = o.action or self:action(o)
   local extra_args = ""
   if self.theme then
-    extra_args = string.format([[ --theme="%s"]], self.theme)
+    extra_args = string.format([[ --theme="%s"]],
+      type(self.theme) == "function" and tostring(self.theme()) or tostring(self.theme))
   end
   if self.opts.line_field_index then
     extra_args = extra_args .. string.format(" --highlight-line=%s", self.opts.line_field_index)
@@ -202,7 +203,7 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
         or "No entry selected"
     return "", {}, "echo " .. libuv.shellescape(errmsg)
   end
-  
+
   local entry = path.entry_to_file(entrystr, self.opts)
   -- make relative for bat's header display
   local filepath = path.relative_to(entry.bufname or entry.path or "", uv.cwd())
@@ -302,7 +303,8 @@ function Previewer.bat_async:cmdline(o)
     end
     local cmd = errcmd or ("%s %s %s %s %s %s"):format(
       self.cmd, self.args,
-      self.theme and string.format([[--theme="%s"]], self.theme) or "",
+      self.theme and string.format([[--theme="%s"]],
+        type(self.theme) == "function" and tostring(self.theme()) or tostring(self.theme)) or "",
       tonumber(entry.line) and tonumber(entry.line) > 0
       and string.format("--highlight-line=%d", entry.line) or "",
       line_range,
