@@ -1032,7 +1032,7 @@ function Previewer.base:update_ts_context()
 end
 
 function Previewer.base:update_render_markdown()
-  local bufnr, winid = self.preview_bufnr, self.win.preview_winid
+  local bufnr = self.preview_bufnr
   local ft = vim.b[bufnr] and vim.b[bufnr]._ft
   if not ft
       or not self.render_markdown.enabled
@@ -1041,7 +1041,7 @@ function Previewer.base:update_render_markdown()
     return
   end
   if package.loaded["render-markdown"] then
-    require("render-markdown.core.ui").update(bufnr, winid, "FzfLua", true)
+    require("render-markdown").render({ buf = bufnr, event = "FzfLua" })
   elseif package.loaded["markview"] then
     --- Render strictly to save performance.
     ---
