@@ -829,7 +829,7 @@ M.git_switch = function(selected, opts)
   local marker, branch = selected[1]:match("%s-([%+%*]?)%s+([^ ]+)")
   -- do nothing for active branch
   if marker == "*" then
-    utils.warn("already on bramch '%s'", branch)
+    utils.warn("already on branch '%s'", branch)
     return
   end
   if branch:find("^remotes/") then
