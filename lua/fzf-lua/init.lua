@@ -15,8 +15,8 @@ do
   end
 
   local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
-  vim.g.fzf_lua_directory = path.normalize(path.parent(currFile))
-  vim.g.fzf_lua_root = path.parent(path.parent(vim.g.fzf_lua_directory))
+  vim.g.fzf_lua_directory = vim.fn.fnameescape(path.normalize(path.parent(currFile)))
+  vim.g.fzf_lua_root = vim.fn.fnameescape(path.parent(path.parent(vim.g.fzf_lua_directory)))
 
   -- Autoload scipts dynamically loaded on `vim.fn[fzf_lua#...]` call
   -- `vim.fn.exists("*fzf_lua#...")` will return 0 unless we manuall source
