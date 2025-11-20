@@ -358,8 +358,23 @@ M.registers = function(opts)
     local _, contents = pcall(vim.fn.getreg, r)
     contents = register_escape_special(contents, opts.multiline and 2 or 1)
     if (contents and #contents > 0) or not opts.ignore_empty then
-      table.insert(entries, string.format("[%s] %s",
-        utils.ansi_codes.yellow(r), contents))
+      local regtype = vim.fn.getregtype(r)
+      local function convert_regtype(t)
+        local first = string.sub(t, 1, 1)
+        if first == "v" then
+          return "c"
+        elseif first == "V" then
+          return "l"
+        elseif first == "\22" then
+          return "b" .. string.sub(t, 2)
+        else
+          return t
+        end
+      end
+
+      local reg_fmt = require("fzf-lua.utils").ansi_codes.yellow(r)
+      local regtype_fmt = require("fzf-lua.utils").ansi_codes.blue(convert_regtype(regtype))
+      entries[#entries + 1] = string.format("[%s] [%s] %s", reg_fmt, regtype_fmt, contents)
     end
   end
 
