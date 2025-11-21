@@ -244,7 +244,6 @@ M.tagstack = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
-
 M.marks = function(opts)
   ---@type fzf-lua.config.Marks
   opts = config.normalize_opts(opts, "marks")
@@ -731,6 +730,61 @@ M.autocmds = function(opts)
 
   opts.fzf_opts["--header-lines"] = "1"
   return core.fzf_exec(contents, opts)
+end
+
+M.foldmarkers = function(opts)
+  ---@type fzf-lua.config.Foldmarkers
+  opts = config.normalize_opts(opts, "foldmarkers")
+  if not opts then return end
+
+  local entries = {}
+
+  local marker = vim.api.nvim_get_option_value("foldmarker", { scope = "local" }) or "{{{,}}}"
+  local open, close = marker:match("^([^,]+),(.+)$")
+  open = open or "{{{"
+  close = close or "}}}"
+
+  local popen = vim.pesc(open)
+  local pclose = vim.pesc(close)
+
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+
+  for i, line in ipairs(lines) do
+    if line:find(popen) or line:find(pclose) then
+      local display = line:gsub("^%W+", "")
+      table.insert(entries, string.format("%d: %s", i, display))
+    end
+  end
+
+  opts.preview = function(args)
+    local valid = args and args[1]
+    if not valid then return end
+
+    local lnum = tonumber(args[1]:match("^(%d+):"))
+    if not lnum then
+      return ""
+    end
+
+    lines = vim.api.nvim_buf_get_lines(utils.CTX().bufnr, 0, -1, false)
+    local start = math.max(lnum - 5, 1)
+    local finish = math.min(lnum + 5, #lines)
+    local width = tostring(finish):len()
+    local chunk = {}
+
+    for i = start, finish do
+      local num = string.format("%" .. width .. "d", i)
+
+      if i == lnum then
+        table.insert(chunk, string.format("→ %s │ %s", num, lines[i]))
+      else
+        table.insert(chunk, string.format("   %s │ %s", num, lines[i]))
+      end
+    end
+
+    return table.concat(chunk, "\n")
+  end
+
+  return core.fzf_exec(entries, opts)
 end
 
 return M

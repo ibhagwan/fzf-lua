@@ -740,6 +740,24 @@ M.packadd = function(selected)
   end
 end
 
+M.foldmarkers = function(selected, opts)
+  local valid = selected and selected[1]
+  if not valid then
+    return
+  end
+
+  local lnum = tonumber(valid:match("^(%d+):"))
+  if not lnum then
+    return
+  end
+
+  vim.api.nvim_win_set_cursor(0, { lnum, 0 })
+
+  if type(opts.on_jump) == "function" then
+    pcall(opts.on_jump)
+  end
+end
+
 local function helptags(s, opts)
   return vim.tbl_map(function(x)
     local entry = path.entry_to_file(x, opts)

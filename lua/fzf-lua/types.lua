@@ -243,6 +243,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field spell_suggest fzf-lua.config.SpellSuggest
 ---@field filetypes fzf-lua.config.Filetypes
 ---@field packadd fzf-lua.config.Packadd
+---@field foldmarkers fzf-lua.config.Foldmarkers
 ---@field menus fzf-lua.config.Menus
 ---@field tmux fzf-lua.config.Tmux
 ---@field dap fzf-lua.config.Dap
@@ -667,6 +668,8 @@ _G.FzfLua = require("fzf-lua")
 
 ---@class fzf-lua.config.Packadd: fzf-lua.config.Base
 
+---@class fzf-lua.config.Foldmarkers: fzf-lua.config.Base
+
 ---@class fzf-lua.config.Menus: fzf-lua.config.Base
 
 ---@class fzf-lua.config.TmuxBuffers: fzf-lua.config.Base
@@ -832,6 +835,7 @@ _G.FzfLua = require("fzf-lua")
 ---@class fzf-lua.config.NvimOptions.p: fzf-lua.config.NvimOptions, {}
 ---@class fzf-lua.config.Oldfiles.p: fzf-lua.config.Oldfiles, {}
 ---@class fzf-lua.config.Packadd.p: fzf-lua.config.Packadd, {}
+---@class fzf-lua.config.Foldmarkers.p: fzf-lua.config.Foldmarkers, {}
 ---@class fzf-lua.config.Profiles.p: fzf-lua.config.Profiles, {}
 ---@class fzf-lua.config.Quickfix.p: fzf-lua.config.Quickfix, {}
 ---@class fzf-lua.config.QuickfixStack.p: fzf-lua.config.QuickfixStack, {}

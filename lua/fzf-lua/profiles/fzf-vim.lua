@@ -34,6 +34,7 @@ local function setup_commands(no_override, prefix)
     ["Maps"] = utils.create_user_command_callback("keymaps", "query"),
     ["Helptags"] = utils.create_user_command_callback("help_tags", "query"),
     ["Filetypes"] = utils.create_user_command_callback("filetypes", "query"),
+    ["Foldmarkers"] = utils.create_user_command_callback("Foldmarkers", "query"),
   }
 
   for cmd, cb in pairs(cmds) do

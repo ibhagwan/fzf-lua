@@ -367,6 +367,7 @@ MISC                                                            *fzf-lua-misc*
 | `spellcheck`           | misspelled words in buffer                    |
 | `spell_suggest`        | spelling suggestions                          |
 | `packadd`              | :packadd <package>                            |
+| `foldmarkers`          | :foldmarker                                   |
 
 
                                                                               

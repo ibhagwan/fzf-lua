@@ -59,6 +59,7 @@ return {
   spell_suggest        = prompt("Spell Suggestions"),
   filetypes            = prompt("Filetypes"),
   packadd              = prompt("Packadd"),
+  foldmarkers          = prompt("Foldmarkers"),
   menus                = prompt("Menus"),
   tmux                 = prompt("Tmux Buffers"),
   zoxide               = prompt("Zoxide"),

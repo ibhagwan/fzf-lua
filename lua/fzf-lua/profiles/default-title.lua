@@ -63,6 +63,7 @@ return {
   spell_suggest        = title("Spell Suggestions"),
   filetypes            = title("Filetypes"),
   packadd              = title("Packadd"),
+  foldmarkers          = title("Foldmarkers"),
   menus                = title("Menus"),
   tmux                 = title("Tmux Buffers"),
   zoxide               = title("Zoxide"),
