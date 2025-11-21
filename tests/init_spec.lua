@@ -2,7 +2,7 @@
 local MiniTest = require("mini.test")
 local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
-local expect, eq = helpers.expect, helpers.expect.equality
+local expect, eq, no_err = helpers.expect, helpers.expect.equality, helpers.expect.no_error
 local new_set = MiniTest.new_set
 
 local T = helpers.new_set_with_child(child, nil, { winopts = { col = 0, row = 1 } })
@@ -15,6 +15,13 @@ T["setup"]["setup global vars"] = function()
   eq(child.lua_get([[type(vim.g.fzf_lua_server)]]), "string")
   eq(child.lua_get([[type(vim.g.fzf_lua_directory)]]), "string")
 
+  -- CMD accept fnames
+  local fzf_lua_root = child.lua_get([[vim.g.fzf_lua_root]])
+  local fzf_lua_directory = child.lua_get([[vim.g.fzf_lua_directory]])
+  
+  eq(fzf_lua_root, vim.fn.fnameescape(fzf_lua_root))
+  eq(fzf_lua_directory, vim.fn.fnameescape(fzf_lua_directory))
+  
   -- Test our custom setup call
   eq(child.lua_get([[type(_G.FzfLua.config.globals.winopts.on_create)]]), "function")
   eq(child.lua_get([[type(_G.FzfLua.config.globals.winopts.on_close)]]), "function")
