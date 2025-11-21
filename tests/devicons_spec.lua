@@ -3,10 +3,11 @@ local MiniTest = require("mini.test")
 local helpers = require("fzf-lua.test.helpers")
 local assert = helpers.assert
 local child = helpers.new_child_neovim()
-local expect, eq = helpers.expect, helpers.expect.equality
+local eq = helpers.expect.equality
 local new_set = MiniTest.new_set
 local exec_lua = child.lua
 
+---@diagnostic disable-next-line: param-type-mismatch
 local _devicons_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "nvim-web-devicons")
 if not vim.uv.fs_stat(_devicons_path) then
   _devicons_path = vim.fs.joinpath("deps", "nvim-web-devicons")
@@ -96,6 +97,7 @@ T["setup"]["headless RPC, vim.g.fzf_lua_server"] = function()
   eq(#fzf_lua_server > 0, true)
   local headless_child = helpers.new_child_neovim()
   headless_child.init()
+  ---@diagnostic disable-next-line: preferred-local-alias
   headless_child.lua(string.format([==[
     _G._fzf_lua_is_headless = true
     _G._devicons_path = nil

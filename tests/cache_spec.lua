@@ -5,6 +5,7 @@ local fzf = require("fzf-lua")
 local LRU = fzf.shell.LRU
 
 describe("Testing cache module", function()
+  ---@type fzf-lua.lru
   local cache
   local cached_fun = function(id) return function() return "CACHED" .. tostring(id) end end
 
@@ -103,11 +104,11 @@ describe("Testing cache module", function()
   it("size set: err", function()
     local ok, err = pcall(cache.set_size, cache, 10)
     assert.is.False(ok)
-    assert.is.True(err:match("cannot be smaller than current length") ~= nil)
+    assert.is.True(err and err:match("cannot be smaller than current length") ~= nil)
   end)
 
   it("size set: ok", function()
-    cache:set_size(50)  -- should not err, same size
+    cache:set_size(50) -- should not err, same size
     cache:set_size(51)
     local id, evicted_id = cache:set(cached_fun(52))
     assert.is.same(id, 52)
@@ -118,5 +119,4 @@ describe("Testing cache module", function()
     assert.is.same(cache.mru[4], 1)
     assert.is.same(cache.mru[51], 3)
   end)
-
 end)

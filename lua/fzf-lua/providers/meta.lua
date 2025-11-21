@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
@@ -7,6 +8,8 @@ local config = require "fzf-lua.config"
 
 local M = {}
 
+---@param opts fzf-lua.config.Builtin|{}
+---@return thread?, string?, table?
 M.metatable = function(opts)
   if not opts then return end
 
@@ -39,10 +42,12 @@ local function ls(dir, fn)
     -- HACK: type is not always returned due to a bug in luv,
     -- so fecth it with fs_stat instead when needed.
     -- see https://github.com/folke/lazy.nvim/issues/306
-    fn(fname, name, t or uv.fs_stat(fname).type)
+    fn(fname, name, t or (uv.fs_stat(fname) or {}).type)
   end
 end
 
+---@param opts fzf-lua.config.Profiles|{}?
+---@return thread?, string?, table?
 M.profiles = function(opts)
   ---@type fzf-lua.config.Profiles
   opts = config.normalize_opts(opts, "profiles")
@@ -91,10 +96,10 @@ end
 M.combine = function(t)
   t = t or {}
 
-  local pickers = type(t.pickers) == "table" and t.pickers
-      or type(t.pickers) == "string" and utils.strsplit(t.pickers, "[,;]")
-      or nil
+  local pickers = (type(t.pickers) == "table" and t.pickers
+    or type(t.pickers) == "string" and utils.strsplit(t.pickers, "[,;]"))
 
+  assert(pickers)
   local opts = t
   t.pickers = nil
 
@@ -141,7 +146,10 @@ M.combine = function(t)
   return core.fzf_wrap(contents, opts)
 end
 
+---@param opts fzf-lua.config.Global|{}?
+---@return thread?, string?, table?
 M.global = function(opts)
+  -- -@type fzf-lua.config.GlobalStrict
   ---@type fzf-lua.config.Global
   opts = config.normalize_opts(opts, "global")
   if not opts then return end
@@ -252,10 +260,12 @@ M.global = function(opts)
         cur_sub = new_sub
         cur_picker = new_picker
       end
+      if not q or not cur_sub then return end
       return reload .. string.format("search(%s)", q:sub(cur_sub))
     end, opts, "{q}")
   end
 
+  opts._fzf_cli_args = opts._fzf_cli_args or {}
   -- Insert at the start of the args table so `line_query` callback is first
   table.insert(opts._fzf_cli_args, 1, "--bind="
     .. libuv.shellescape("start:+transform:" .. transform_picker(true)))

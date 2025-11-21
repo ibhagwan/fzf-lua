@@ -1,8 +1,8 @@
----@diagnostic disable: unused-local, unused-function
+---@diagnostic disable: unused-local, unused-function, unused
 local MiniTest = require("mini.test")
 local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
-local expect, eq = helpers.expect, helpers.expect.equality
+local eq = helpers.expect.equality
 local new_set = MiniTest.new_set
 local exec_lua = child.lua
 
@@ -61,6 +61,7 @@ T["files"]["previewer"] = new_set({ parametrize = { { false }, { true } } })
 T["files"]["previewer"]["builtin"] = new_set({ parametrize = { { "ci" }, { "builtin" } } }, {
   function(icons, previewer)
     if icons then
+      ---@diagnostic disable-next-line: param-type-mismatch
       local path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim")
       if not vim.uv.fs_stat(path) then
         path = vim.fs.joinpath("deps", "mini.nvim")
@@ -102,6 +103,7 @@ T["files"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-at
     attrs = attrs == "+attrs" and true or false
     if attrs then helpers.SKIP_IF_WIN() end
     local plugin = icons == "mini" and "mini.nvim" or "nvim-web-devicons"
+    ---@diagnostic disable-next-line: param-type-mismatch
     local path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", plugin)
     if not vim.uv.fs_stat(path) then
       path = vim.fs.joinpath("deps", plugin)

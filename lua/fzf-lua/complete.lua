@@ -1,4 +1,4 @@
-local uv = vim.uv or vim.loop
+---@diagnostic disable-next-line: deprecated
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -27,14 +27,14 @@ local function find_toplevel_cwd(maybe_cwd, postfix, orig_cwd)
     local disp_cwd, cwd = maybe_cwd, libuv.expand(maybe_cwd)
     -- returned cwd must be full path
     if path.has_cwd_prefix(cwd) then
-      cwd = uv.cwd() .. (#cwd > 1 and cwd:sub(2) or "")
+      cwd = utils.cwd() .. (#cwd > 1 and cwd:sub(2) or "")
       -- inject "./" only if original path started with it
       -- otherwise ignore the "." retval from fnamemodify
       if #orig_cwd > 0 and orig_cwd:sub(1, 1) ~= "." then
         disp_cwd = nil
       end
     elseif not path.is_absolute(cwd) then
-      cwd = path.join({ uv.cwd(), cwd })
+      cwd = path.join({ utils.cwd(), cwd })
     end
     return disp_cwd, cwd, postfix
   end
@@ -51,7 +51,7 @@ local set_cmp_opts_path = function(opts)
   local match = opts.word_pattern or "[^%s\"']*"
   local line = vim.api.nvim_get_current_line()
   local col = vim.api.nvim_win_get_cursor(0)[2] + 1
-  local before = col > 1 and line:sub(1, col - 1):reverse():match(match):reverse() or ""
+  local before = col > 1 and assert(line:sub(1, col - 1):reverse():match(match)):reverse() or ""
   local after = line:sub(col):match(match) or ""
   -- special case when the cursor is on the left surrounding char
   if #before == 0 and #after == 0 and #line > col then
@@ -61,13 +61,14 @@ local set_cmp_opts_path = function(opts)
   local cwd
   opts._cwd, cwd, opts.query = find_toplevel_cwd(before .. after, nil, nil)
   opts.prompt = path.add_trailing(opts._cwd or ".")
-  opts.cwd = cwd or opts.cwd or uv.cwd()
+  opts.cwd = cwd or opts.cwd or utils.cwd()
   -- completion function rebuilds the line with the full path
   opts.complete = function(selected, o, l, _)
     -- query fuzzy matching is empty
     if #selected == 0 then return end
     local replace_at = col - #before
-    local relpath = path.relative_to(path.entry_to_file(selected[1], o).path, opts.cwd)
+    local path0 = assert(path.entry_to_file(selected[1], o).path)
+    local relpath = path.relative_to(path0, opts.cwd)
     local before_path = replace_at > 1 and l:sub(1, replace_at - 1) or ""
     local rest_of_line = #l >= (col + #after) and l:sub(col + #after) or ""
     local resolved_path = opts._cwd and path.join({ opts._cwd, relpath }) or relpath
@@ -78,6 +79,8 @@ local set_cmp_opts_path = function(opts)
   return opts
 end
 
+---@param opts fzf-lua.config.CompletePath|{}?
+---@return thread?, string?, table?
 M.path = function(opts)
   ---@type fzf-lua.config.CompletePath
   opts = config.normalize_opts(opts, "complete_path")
@@ -97,6 +100,8 @@ M.path = function(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
 
+---@param opts fzf-lua.config.CompleteFile|{}?
+---@return thread?, string?, table?
 M.file = function(opts)
   ---@type fzf-lua.config.CompleteFile
   opts = config.normalize_opts(opts, "complete_file")
@@ -115,9 +120,12 @@ M.file = function(opts)
     end
   end)()
   opts = set_cmp_opts_path(opts)
+  ---@diagnostic disable-next-line: param-type-mismatch
   return core.fzf_exec(opts.cmd, opts)
 end
 
+---@param opts fzf-lua.config.CompleteLine|{}?
+---@return thread?, string?, table?
 M.line = function(opts)
   ---@type fzf-lua.config.CompleteLine
   opts = config.normalize_opts(opts, "complete_line")
@@ -128,14 +136,17 @@ M.line = function(opts)
     return vim.trim(line:sub(1, col))
   end)()
   opts.complete = function(selected, _, _, _)
+    if not selected[1] then return end
     local newline = selected[1]:match(" (.-)$")
     return newline, #newline
   end
   return require "fzf-lua.providers.buffers".lines(opts)
 end
 
+---@param opts fzf-lua.config.CompleteLine|{}?
+---@return thread?, string?, table?
 M.bline = function(opts)
-  ---@type fzf-lua.config.CompleteBline
+  ---@type fzf-lua.config.CompleteLine
   opts = opts or {}
   opts.current_buffer_only = true
   return M.line(opts)

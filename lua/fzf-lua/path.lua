@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
@@ -168,18 +169,18 @@ function M.is_relative_to(path, relative_to)
   relative_to = M.add_trailing(M.tilde_to_HOME(relative_to))
   local pidx, ridx = 1, 1
   repeat
-    local pbyte = string.byte(path, pidx)
-    local rbyte = string.byte(relative_to, ridx)
+    local pbyte = string_byte(path, pidx)
+    local rbyte = string_byte(relative_to, ridx)
     if M.byte_is_separator(pbyte) and M.byte_is_separator(rbyte) then
       -- both path and relative_to have a separator part
       -- which may differ in length if there are multiple
       -- separators, e.g. "/some/path" and "//some//path"
       repeat
         pidx = pidx + 1
-      until not M.byte_is_separator(string.byte(path, pidx))
+      until not M.byte_is_separator(string_byte(path, pidx))
       repeat
         ridx = ridx + 1
-      until not M.byte_is_separator(string.byte(relative_to, ridx))
+      until not M.byte_is_separator(string_byte(relative_to, ridx))
     elseif utils.__IS_WINDOWS and pbyte and rbyte
         -- case insensitive matching on windows
         and string.char(pbyte):lower() == string.char(rbyte):lower()
@@ -269,6 +270,9 @@ function M.HOME_to_tilde(path)
   return path
 end
 
+---@param str string
+---@param start_idx integer
+---@return integer?
 local function find_next_separator(str, start_idx)
   local SEPARATOR_BYTES = utils._if_win(
     { M.fslash_byte, M.bslash_byte }, { M.fslash_byte })
@@ -281,6 +285,9 @@ local function find_next_separator(str, start_idx)
   end
 end
 
+---@param s string
+---@param i? integer
+---@return integer?
 local function utf8_char_len(s, i)
   -- Get byte count of unicode character (RFC 3629)
   local c = string_byte(s, i or 1)
@@ -297,6 +304,10 @@ local function utf8_char_len(s, i)
   end
 end
 
+---@param s string
+---@param from integer
+---@param to? integer
+---@return string
 local function utf8_sub(s, from, to)
   local ret = ""
   -- NOTE: this function is called from shorten right after finding the next
@@ -310,7 +321,7 @@ local function utf8_sub(s, from, to)
   local byte_i, utf8_i = from, from
   -- Concat utf8 chars until "to" or end of string
   while byte_i <= #s and (not to or utf8_i <= to) do
-    local c_len = utf8_char_len(s, byte_i)
+    local c_len = utf8_char_len(s, byte_i) ---@cast c_len-?
     local c = string_sub(s, byte_i, byte_i + c_len - 1)
     ret = ret .. c
     byte_i = byte_i + c_len
@@ -334,7 +345,7 @@ function M.shorten(path, max_len, sep)
   repeat
     local i = find_next_separator(path, start_idx)
     local end_idx = i and start_idx + math.min(i - start_idx, max_len) - 1 or nil
-    local part = utf8_sub(path, start_idx, end_idx)
+    local part = utf8_sub(path, start_idx, end_idx) ---@cast i-?
     if end_idx and part == "." and i - start_idx > 1 then
       part = utf8_sub(path, start_idx, end_idx + 1)
     end
@@ -387,10 +398,10 @@ end
 ---@param opts table
 ---@return fzf-lua.path.Entry
 function M.entry_to_location(entry, opts)
-  local uri, line, col = entry:match("^(.*://.*):(%d+):(%d+):")
-  line = line and tonumber(line) > 0 and tonumber(line) or 1
-  col = col and tonumber(col) > 0 and tonumber(col) or 1
-  if opts.path_shorten and uri:match("file://") then
+  local uri, line0, col0 = entry:match("^(.*://.*):(%d+):(%d+):")
+  local line = utils.tointeger(line0) or 1
+  local col = utils.tointeger(col0) or 1
+  if opts.path_shorten and uri and uri:match("file://") then
     uri = "file://" .. M.lengthen(uri:sub(8))
   end
   return {
@@ -400,6 +411,10 @@ function M.entry_to_location(entry, opts)
     uri = uri,
     range = {
       start = {
+        line = line - 1,
+        character = col - 1,
+      },
+      ["end"] = {
         line = line - 1,
         character = col - 1,
       }
@@ -416,7 +431,7 @@ function M.is_uri(str)
 end
 
 ---@param entry string
----@param opts fzf-lua.Config?
+---@param opts fzf-lua.Config|{}?
 ---@param force_uri boolean?
 ---@return fzf-lua.path.Entry
 function M.entry_to_file(entry, opts, force_uri)
@@ -440,15 +455,15 @@ function M.entry_to_file(entry, opts, force_uri)
     -- stripping until the last occurrence of utils.nbsp may err
     -- if the line contents contains utils.nbsp (#2259)
     local parts = utils.strsplit(entry, utils.nbsp)
-    local idx = 1
+    local idx0 = 1
     for i = 1, #parts - 1 do
-      local s = parts[i]
+      local s = parts[i] ---@cast s string
       if s:match(".-:%d+:") then
         break
       end
-      idx = idx + #s + #utils.nbsp
+      idx0 = idx0 + #s + #utils.nbsp
     end
-    return entry:sub(idx), idx
+    return entry:sub(idx0), idx0
   end)()
   -- Convert "~" to "$HOME"
   stripped = M.tilde_to_HOME(stripped)
@@ -466,7 +481,8 @@ function M.entry_to_file(entry, opts, force_uri)
   end
   -- Entry metadata (before `utils.nbsp`) can contain `[bufnr]` which should
   -- be used instead of the file path, used in buffers, tabs, lines|blines
-  local bufnr = not opts._ctag and idx > 1 and entry:sub(1, idx):match("%[(%d+)%]") or nil
+  local bufnr0 = not opts._ctag and idx > 1 and entry:sub(1, idx):match("%[(%d+)%]") or nil
+  local bufnr = utils.tointeger(bufnr0)
   if isURI and not bufnr then
     -- LSP entries can appear as URIs, for example when using nvim-jdtls
     -- references inside ".jar" files will have a prefix of "jdt://..."
@@ -522,24 +538,24 @@ function M.entry_to_file(entry, opts, force_uri)
   if opts.path_shorten and not M.is_uri(stripped) then
     file = M.lengthen(file)
   end
+  ---@type fzf-lua.path.Entry
   return {
     stripped = stripped,
-    bufnr    = tonumber(bufnr),
-    bufname  = bufnr and vim.api.nvim_buf_is_valid(tonumber(bufnr))
-        and vim.api.nvim_buf_get_name(tonumber(bufnr)),
+    bufnr    = bufnr,
+    bufname  = bufnr and vim.api.nvim_buf_is_valid(bufnr)
+        and vim.api.nvim_buf_get_name(bufnr),
     terminal = terminal,
     path     = file,
-    line     = tonumber(opts.line_query and
+    line     = utils.tointeger(opts.line_query and
       (opts.line_query(opts._last_query or opts.last_query)) or line) or 0,
-    col      = tonumber(col) or 0,
+    col      = utils.tointeger(col) or 0,
     ctag     = opts._ctag and M.entry_to_ctag(stripped) or nil,
     debug    = opts.debug and entry:match("^%[DEBUG]") and entry or nil,
   }
 end
 
----@param cmd string|string[]
----@param opts table
----@return string|string[]
+---@overload fun(cmd: string, opts: table): string
+---@overload fun(cmd: string[], opts: table): string[]
 function M.git_cwd(cmd, opts)
   local git_args = {
     { "cwd",          "-C" },
@@ -564,6 +580,7 @@ function M.git_cwd(cmd, opts)
   elseif type(cmd) == "table" then
     local idx = 2
     cmd = utils.tbl_deep_clone(cmd)
+    ---@cast cmd -?
     for _, a in ipairs(git_args) do
       if o[a[1]] then
         o[a[1]] = a.noexpand and o[a[1]] or libuv.expand(o[a[1]])
@@ -591,7 +608,7 @@ function M.git_root(opts, noerr)
 end
 
 ---@param str string
----@param opts fzf-lua.Config
+---@param opts fzf-lua.config.Resolved
 ---@return fzf-lua.path.Entry|fzf-lua.keymap.Entry
 function M.keymap_to_entry(str, opts)
   local valid_modes = {
@@ -605,7 +622,7 @@ function M.keymap_to_entry(str, opts)
   if not mode or not keymap then return {} end
   mode, keymap = vim.trim(mode), vim.trim(keymap)
   mode = valid_modes[mode] and mode or "" -- only valid modes
-  local out
+  local out ---@type string[]
   local vmap, cmd = nil, string.format("verbose %smap %s", mode, keymap)
   -- Run in the context of the originating buffer or keympas might return
   -- "No mapping found"
@@ -624,13 +641,16 @@ end
 
 -- Minimal functionality so we can hijack during `vim.filetype.match`
 -- As of neovim 0.10 we only need to implement mode ":t"
+---@param fname string
+---@param mods string
+---@return string
 M._fnamemodify = function(fname, mods)
   if mods == ":t" then
     return M.tail(fname)
   end
   if mods == ":r" then
     local tail = M.tail(fname)
-    return tail and tail[1] ~= "." and (fname:gsub("%.[^.]*$", "")) or tail
+    return tail and tail:sub(1, 1) ~= "." and (fname:gsub("%.[^.]*$", "")) or tail
   end
   return fname
 end

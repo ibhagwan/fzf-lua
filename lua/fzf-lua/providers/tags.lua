@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -25,7 +26,7 @@ local function get_tags_cmd(opts)
     -- tags use relative paths, by now we should
     -- have the correct cwd from `get_ctags_cwd`
     query = libuv.shellescape(
-      utils.rg_escape(path.relative_to(opts.filename, opts.cwd or uv.cwd())))
+      utils.rg_escape(path.relative_to(opts.filename, opts.cwd or utils.cwd())))
   elseif opts.search and #opts.search > 0 then
     filter = ([[%s -v "^!"]]):format(bin)
     query = libuv.shellescape(opts.no_esc and opts.search or
@@ -83,7 +84,7 @@ local function tags(opts)
   -- tags file should always resolve to an absolute path, already "expanded" by
   -- `get_ctags_file` we take care of the case where `opts.ctags_file = "tags"`
   if not path.is_absolute(opts._ctags_file) then
-    opts._ctags_file = path.join({ opts.cwd or uv.cwd(), opts.ctags_file })
+    opts._ctags_file = path.join({ opts.cwd or utils.cwd(), opts.ctags_file })
   end
 
   if not opts.ctags_autogen and not uv.fs_stat(opts._ctags_file) then
@@ -174,6 +175,8 @@ local function tags(opts)
   end
 end
 
+---@param opts fzf-lua.config.Tags|{}?
+---@return thread?, string?, table?
 M.tags = function(opts)
   ---@type fzf-lua.config.Tags
   opts = config.normalize_opts(opts, "tags")
@@ -181,6 +184,8 @@ M.tags = function(opts)
   return tags(opts)
 end
 
+---@param opts fzf-lua.config.Btags|{}?
+---@return thread?, string?, table?
 M.btags = function(opts)
   ---@type fzf-lua.config.Btags
   opts = config.normalize_opts(opts, "btags")
@@ -204,6 +209,8 @@ M.btags = function(opts)
   return tags(opts)
 end
 
+---@param opts fzf-lua.config.TagsGrep|{}?
+---@return thread?, string?, table?
 M.grep = function(opts)
   ---@type fzf-lua.config.TagsGrep
   opts = config.normalize_opts(opts, "tags")
@@ -229,6 +236,8 @@ M.grep = function(opts)
   return M.tags(opts)
 end
 
+---@param opts fzf-lua.config.TagsGrep|{}?
+---@return thread?, string?, table?
 M.live_grep = function(opts)
   ---@type fzf-lua.config.TagsGrep
   opts = config.normalize_opts(opts, "tags")
@@ -237,6 +246,8 @@ M.live_grep = function(opts)
   return tags(opts)
 end
 
+---@param opts fzf-lua.config.TagsGrep|{}?
+---@return thread?, string?, table?
 M.grep_cword = function(opts)
   if not opts then opts = {} end
   opts.no_esc = true
@@ -252,6 +263,8 @@ M.grep_cWORD = function(opts)
   return M.grep(opts)
 end
 
+---@param opts fzf-lua.config.TagsGrep|{}?
+---@return thread?, string?, table?
 M.grep_visual = function(opts)
   if not opts then opts = {} end
   opts.search = utils.get_visual_selection()
