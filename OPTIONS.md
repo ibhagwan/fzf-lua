@@ -1215,6 +1215,27 @@ Setup/Reset fzf-lua highlight groups.
 
 Setup `fzf.vim` user commands mapped to their fzf-lua equivalents (e.g. `:Files`, `:Rg`, etc).
 
+#### foldmarkers
+
+Search `:foldmarker`
+
+##### foldmarkers.on_jump
+
+Type: `function`, Default: `nil`
+
+Defines a custom callback function to be invoked after jumping to the selected
+foldmaker's line. For example, the following configuration:
+
+```lua
+require("fzf-lua").setup({
+  foldmarkers = {
+    on_jump = function()
+      vim.cmd("normal! zz")
+    end,
+  }
+})
+```
+can be used to center the jumped line on the screen.
 
 ---
 

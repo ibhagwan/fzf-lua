@@ -329,6 +329,7 @@ Fzf-Lua conveniently comes with a VS-Code like picker by default
 | `spellcheck`           | misspelled words in buffer                    |
 | `spell_suggest`        | spelling suggestions                          |
 | `packadd`              | :packadd <package>                            |
+| `foldmarkers`          | :foldmarker                                   |
 
 </details>
 <details>

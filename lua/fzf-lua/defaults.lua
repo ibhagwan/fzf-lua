@@ -1337,6 +1337,12 @@ M.defaults.packadd               = {
   },
 }
 
+M.defaults.foldmarkers                  = {
+  actions = {
+    ["enter"] = actions.foldmarkers,
+  },
+}
+
 M.defaults.menus                 = {
   actions = {
     ["enter"] = actions.exec_menu,
