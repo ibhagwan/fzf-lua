@@ -9,7 +9,7 @@ do
   local function source_vimL(path_parts)
     local vimL_file = path.join(path_parts)
     if uv.fs_stat(vimL_file) then
-      vim.cmd("source " .. vimL_file)
+      vim.cmd("source " .. vim.fn.fnameescape(vimL_file))
       -- print(string.format("loaded '%s'", vimL_file))
     end
   end
