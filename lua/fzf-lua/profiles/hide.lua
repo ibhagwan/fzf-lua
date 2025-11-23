@@ -14,7 +14,7 @@ return {
   defaults = {
     enrich = function(opts)
       -- Do not hide if resume is disabled (#2425)
-      if opts.no_resume then return opts end
+      if opts.no_resume or opts.no_hide then return opts end
       if opts._is_fzf_tmux then
         fzf.utils.warn("'hide' profile cannot work with tmux, ignoring.")
         return opts
