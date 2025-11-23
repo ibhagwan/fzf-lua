@@ -315,6 +315,27 @@ M.defaults        = {
       diff_opts = { ctxlen = 3 },
       pager     = M._preview_pager_fn,
     },
+    ---@class fzf-lua.config.UndotreePreviewer: fzf-lua.config.Previewer
+    undotree = {
+      _ctor     = previewers.builtin.undotree,
+      diff_opts = { ctxlen = 5 },
+      show_buf  = false,
+    },
+    undotree_native = {
+      _ctor     = previewers.fzf.undotree,
+      diff_opts = { ctxlen = 5 },
+      pager     = M._preview_pager_fn,
+    },
+    -- convenient aliaes
+    undo = {
+      _ctor     = previewers.builtin.undotree,
+      diff_opts = { ctxlen = 5 },
+    },
+    undo_native = {
+      _ctor     = previewers.fzf.undotree,
+      diff_opts = { ctxlen = 5 },
+      pager     = M._preview_pager_fn,
+    },
   },
   formatters    = {
     path = {
@@ -1504,6 +1525,18 @@ M.defaults.autocmds              = {
     ["--with-nth"]  = "2..",
     ["--no-multi"]  = true,
   },
+}
+
+---@class fzf-lua.config.Undotree: fzf-lua.config.Base
+---@field __locate_pos? integer
+M.defaults.undotree              = {
+  previewer      = "undotree",
+  locate         = true,
+  fzf_opts       = { ["--no-multi"] = true },
+  actions        = { ["enter"] = actions.undo },
+  _cached_hls    = { "buf_linenr", "buf_name", "path_linenr", "dir_part" },
+  _resume_reload = true,
+  keymap         = { builtin = { ["<F8>"] = "toggle-preview-undo" } },
 }
 
 ---@class fzf-lua.config.CommandHistory: fzf-lua.config.Base

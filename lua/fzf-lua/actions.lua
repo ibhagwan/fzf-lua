@@ -1327,17 +1327,23 @@ M.zoxide_cd = function(selected, opts)
   end
 end
 
+M.undo = function(selected, _opts)
+  if not selected[1] then return end
+  local seq = selected[1]:match("%d+")
+  vim.cmd.undo({ seq, mods = { silent = true } })
+  utils.info("Undo jump to %s.", seq == "0" and "origin" or "change #" .. tostring(seq))
+end
 
-local parse_entry    = function(e) return e and e:match("%((.-)%)") or nil end
+local parse_entry = function(e) return e and e:match("%((.-)%)") or nil end
 
-M.serverlist_kill    = function(sel)
+M.serverlist_kill = function(sel)
   vim.iter(sel):map(parse_entry):each(function(addr)
     local ok, err = utils.rpcexec(addr, "nvim_exec2", "qa!", {})
     assert(ok or tostring(err):match("Invalid channel"), err)
   end)
 end
 
-M.serverlist_spawn   = function()
+M.serverlist_spawn = function()
   libuv.uv_spawn(
     vim.fn.exepath("nvim"), { args = { "--headless" }, env = { NVIM = "" } })
 end

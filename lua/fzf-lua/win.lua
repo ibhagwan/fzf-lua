@@ -155,6 +155,7 @@ end
 local _preview_keymaps = {
   ["toggle-preview-wrap"]    = { module = "win", fnc = "toggle_preview_wrap()" },
   ["toggle-preview-ts-ctx"]  = { module = "win", fnc = "toggle_preview_ts_ctx()" },
+  ["toggle-preview-undo"]    = { module = "win", fnc = "toggle_preview_undo_diff()" },
   ["preview-ts-ctx-inc"]     = { module = "win", fnc = "preview_ts_ctx_inc_dec(1)" },
   ["preview-ts-ctx-dec"]     = { module = "win", fnc = "preview_ts_ctx_inc_dec(-1)" },
   ["preview-up"]             = { module = "win", fnc = "preview_scroll('line-up')" },
@@ -1749,6 +1750,16 @@ function FzfWin:toggle_preview_ts_ctx()
       and self._previewer
       and self._previewer.ts_ctx_toggle then
     self._previewer:ts_ctx_toggle()
+  end
+end
+
+function FzfWin:toggle_preview_undo_diff()
+  if self:validate_preview()
+      and self._previewer
+      ---@diagnostic disable-next-line: undefined-field
+      and self._previewer.toggle_undo_diff then
+    ---@diagnostic disable-next-line: undefined-field
+    self._previewer:toggle_undo_diff()
   end
 end
 

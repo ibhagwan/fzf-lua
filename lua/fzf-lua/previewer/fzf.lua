@@ -9,6 +9,7 @@ local Object = require "fzf-lua.class"
 local Previewer = {}
 
 ---@class fzf-lua.previewer.Fzf: fzf-lua.Object,{}
+---@field close function
 Previewer.base = Object:extend()
 
 -- Previewer base object
@@ -37,6 +38,10 @@ function Previewer.base:setup_opts(opts)
   opts.fzf_opts["--preview-window"] = self:preview_window()
   opts.fzf_opts["--delimiter"] = self:fzf_delimiter()
   return opts
+end
+
+---@diagnostic disable-next-line: unused
+function Previewer.base:close()
 end
 
 ---@diagnostic disable-next-line: unused
