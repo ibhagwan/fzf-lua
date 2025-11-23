@@ -1260,7 +1260,10 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
       self:set_winopts(self.fzf_winid, self.src_winid_style or {})
       -- buf may be invalid if we switched away from a scratch buffer
       if vim.api.nvim_buf_is_valid(self.src_bufnr) then
-        utils.win_set_buf_noautocmd(self.fzf_winid, self.src_bufnr)
+        -- TODO: why does ignoring events cause the cursor to move to the wrong position?
+        -- repro steps: open diag + select and item, open code actions and abort
+        -- utils.win_set_buf_noautocmd(self.fzf_winid, self.src_bufnr)
+        vim.api.nvim_win_set_buf(self.fzf_winid, self.src_bufnr)
       end
       -- also restore the original alternate buffer
       local alt_bname = (function()
