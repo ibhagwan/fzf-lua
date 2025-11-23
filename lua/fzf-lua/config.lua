@@ -1061,6 +1061,7 @@ M._action_to_helpstr = {
   -- [actions.buf_switch_or_edit]  = "buffer-switch-or-edit",
   [actions.buf_del]              = "buffer-delete",
   [actions.run_builtin]          = "run-builtin",
+  [actions.undo]                 = "undo-jump",
   [actions.ex_run]               = "edit-cmd",
   [actions.ex_run_cr]            = "exec-cmd",
   [actions.exec_menu]            = "exec-menu",

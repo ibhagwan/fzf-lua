@@ -10,6 +10,7 @@ Previewer.fzf.git_diff = function() return require "fzf-lua.previewer.fzf".git_d
 Previewer.fzf.man_pages = function() return require "fzf-lua.previewer.fzf".man_pages end
 Previewer.fzf.help_tags = function() return require "fzf-lua.previewer.fzf".help_tags end
 Previewer.fzf.codeaction = function() return require "fzf-lua.previewer.codeaction".native end
+Previewer.fzf.undotree = function() return require "fzf-lua.providers.undotree".native end
 Previewer.fzf.nvim_server = function() return require "fzf-lua.previewer.fzf".nvim_server end
 
 Previewer.builtin = {}
@@ -27,6 +28,7 @@ Previewer.builtin.autocmds = function() return require "fzf-lua.previewer.builti
 Previewer.builtin.keymaps = function() return require "fzf-lua.previewer.builtin".keymaps end
 Previewer.builtin.nvim_options = function() return require "fzf-lua.previewer.builtin".nvim_options end
 Previewer.builtin.codeaction = function() return require "fzf-lua.previewer.codeaction".builtin end
+Previewer.builtin.undotree = function() return require "fzf-lua.providers.undotree".builtin end
 
 Previewer.swiper = {}
 Previewer.swiper.default = function() return require "fzf-lua.previewer.swiper".default end

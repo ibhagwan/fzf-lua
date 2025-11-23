@@ -279,6 +279,7 @@ local lazyloaded_modules = {
   git_worktrees = { "fzf-lua.providers.git", "worktrees" },
   git_tags = { "fzf-lua.providers.git", "tags" },
   oldfiles = { "fzf-lua.providers.oldfiles", "oldfiles" },
+  undotree = { "fzf-lua.providers.undotree", "undotree" },
   quickfix = { "fzf-lua.providers.quickfix", "quickfix" },
   quickfix_stack = { "fzf-lua.providers.quickfix", "quickfix_stack" },
   loclist = { "fzf-lua.providers.quickfix", "loclist" },
@@ -439,6 +440,7 @@ end
 M._exported_wapi = {
   toggle_preview_wrap = true,
   toggle_preview_ts_ctx = true,
+  toggle_preview_undo_diff = true,
   preview_ts_ctx_inc_dec = true,
   preview_scroll = true,
   focus_preview = true,

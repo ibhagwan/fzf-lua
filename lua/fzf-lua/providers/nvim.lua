@@ -828,4 +828,5 @@ M.serverlist = function(opts)
     vim.defer_fn(function() f(cb) end, 50) -- wait for spawn/remote_exec?
   end, opts)
 end
+
 return M

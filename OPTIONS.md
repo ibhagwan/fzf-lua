@@ -1179,6 +1179,10 @@ Search `:tags`
 
 Neovim's autocmds
 
+#### undotree
+
+History undo tree
+
 #### keymaps
 
 Neovims key mappings

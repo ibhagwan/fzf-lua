@@ -326,7 +326,8 @@ end
 
 ---@param newbuf integer
 ---@param min_winopts boolean?
-function Previewer.base:set_preview_buf(newbuf, min_winopts)
+---@param no_wipe boolean?
+function Previewer.base:set_preview_buf(newbuf, min_winopts, no_wipe)
   if not self.win or not self.win:validate_preview() then return end
   -- Set the preview window to the new buffer
   local curbuf = api.nvim_win_get_buf(self.win.preview_winid)
@@ -349,9 +350,11 @@ function Previewer.base:set_preview_buf(newbuf, min_winopts)
     -- sets the style defined by `winopts.preview.winopts`
     self:set_style_winopts()
   end
-  -- although the buffer has 'bufhidden:wipe' it sometimes doesn't
-  -- get wiped when pressing `ctrl-g` too quickly
-  self:safe_buf_delete(curbuf)
+  if not no_wipe then
+    -- although the buffer has 'bufhidden:wipe' it sometimes doesn't
+    -- get wiped when pressing `ctrl-g` too quickly
+    self:safe_buf_delete(curbuf)
+  end
 end
 
 ---@param bufnr integer
