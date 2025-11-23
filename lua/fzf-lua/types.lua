@@ -133,6 +133,7 @@ _G.FzfLua = require("fzf-lua")
 ---@field query? string
 ---@field resume? boolean
 ---@field no_resume? boolean
+---@field no_hide? boolean
 ---@field profile? string|table
 ---@field silent_fail? boolean
 ---@field rg_glob? boolean|integer

@@ -199,7 +199,6 @@ M.ui_select = function(items, ui_opts, on_choice)
 
   -- disable hide profile unless specifically requested
   -- casues issues with abort as on_choice(nil) won't be called (#2439)
-  ---@diagnostic disable: inject-field
   opts.no_hide = opts.no_hide == nil and true or opts.no_hide
 
   return core.fzf_exec(entries, opts)
