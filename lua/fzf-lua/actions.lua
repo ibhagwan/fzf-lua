@@ -848,9 +848,9 @@ M.git_switch = function(selected, opts)
     return M.git_worktree_cd({ worktree_path }, opts)
   end
   if rc ~= 0 then
-    utils.error(unpack(output))
+    utils.error(table.concat(output, "\n"))
   else
-    utils.info(unpack(output))
+    utils.info(table.concat(output, "\n"))
     vim.cmd("checktime")
   end
 end
@@ -868,7 +868,7 @@ M.git_branch_add = function(selected, opts)
     table.insert(cmd_add_branch, branch)
     local output, rc = utils.io_systemlist(cmd_add_branch)
     if rc ~= 0 then
-      utils.error(unpack(output))
+      utils.error(table.concat(output, "\n"))
     else
       utils.info("Created branch '%s'.", branch)
     end
@@ -889,9 +889,9 @@ M.git_branch_del = function(selected, opts)
     table.insert(cmd_del_branch, branch)
     local output, rc = utils.io_systemlist(cmd_del_branch)
     if rc ~= 0 then
-      utils.error(unpack(output))
+      utils.error(table.concat(output, "\n"))
     else
-      utils.info(unpack(output))
+      utils.info(table.concat(output, "\n"))
     end
   end
 end
@@ -956,7 +956,7 @@ M.git_worktree_del = function(selected, opts)
     local cmd_del = path.git_cwd({ "git", "worktree", "remove", worktree_path }, opts)
     local output, rc = utils.io_systemlist(cmd_del)
     if rc ~= 0 then
-      utils.error(unpack(output))
+      utils.error(table.concat(output, "\n"))
     else
       utils.info("Deleted worktree '%s'.", worktree_path)
     end
@@ -1004,9 +1004,9 @@ M.git_checkout = function(selected, opts)
     table.insert(cmd_checkout, commit_hash)
     local output, rc = utils.io_systemlist(cmd_checkout)
     if rc ~= 0 then
-      utils.error(unpack(output))
+      utils.error(table.concat(output, "\n"))
     else
-      utils.info(unpack(output))
+      utils.info(table.concat(output, "\n"))
       vim.cmd("checktime")
     end
   end
@@ -1020,7 +1020,7 @@ local git_exec = function(selected, opts, cmd, silent)
     table.insert(_cmd, file)
     local output, rc = utils.io_systemlist(_cmd)
     if rc ~= 0 and not silent then
-      utils.error(unpack(output) or string.format("exit code %d", rc))
+      utils.error(table.concat(output, "\n") or string.format("exit code %d", rc))
     end
     success = rc == 0
   end

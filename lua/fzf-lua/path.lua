@@ -584,7 +584,7 @@ function M.git_root(opts, noerr)
   local cmd = M.git_cwd({ "git", "rev-parse", "--show-toplevel" }, opts)
   local output, err = utils.io_systemlist(cmd)
   if err ~= 0 then
-    if not noerr then utils.info(unpack(output)) end
+    if not noerr then utils.info(table.concat(output, "\n")) end
     return nil
   end
   return output[1]
