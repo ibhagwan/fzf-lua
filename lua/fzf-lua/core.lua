@@ -234,6 +234,9 @@ M.fzf_resume = function(opts)
   opts = utils.tbl_deep_extend("force", config.__resume_data.opts, opts or {})
   assert(opts == config.__resume_data.opts)
   opts.cwd = opts.cwd and libuv.expand(opts.cwd) or nil
+  -- resume a picker when using "hide" and no_resume=true (#2425)
+  local query = utils.map_get(opts, opts.is_live and "__call_opts.search" or "__call_opts.query")
+  if query and #query > 0 then opts.query = query end
   M.fzf_wrap(config.__resume_data.contents, config.__resume_data.opts)
 end
 
