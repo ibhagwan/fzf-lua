@@ -41,6 +41,7 @@ function TSInjector.setup()
 
   vim.api.nvim_set_decoration_provider(TSInjector._ns, {
     on_win = wrap_ts_hl_callback("_on_win"),
+    on_start = wrap_ts_hl_callback("_on_start"),
     on_line = wrap_ts_hl_callback("_on_line"),
     on_range = TSInjector._has_on_range and wrap_ts_hl_callback("_on_range") or nil,
   })
