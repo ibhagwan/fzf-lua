@@ -159,7 +159,9 @@ M.new_child_neovim = function()
         winopts = {
           on_create = function(e)
             _G._fzf_lua_on_create = true
-            vim.wo[e.winid].statusline = "fzf://"
+            if vim.api.nvim_win_get_config(e.winid).relative == "" then
+              vim.wo[e.winid].statusline = "fzf://"
+            end
           end,
           on_close = function()
             _G._fzf_lua_on_create = nil
