@@ -79,11 +79,11 @@ return {
             if fn then fn(...) end
             -- As the process never terminates fzf history is never written
             -- manually append to the fzf history file if needed
-            local o = select(2, ...)
-            if histfile and type(o.last_query) == "string" and #o.last_query > 0 then
+            local q = FzfLua.get_last_query()
+            if histfile and type(q) == "string" and #q > 0 then
               local fd = uv.fs_open(histfile, "a", -1)
               if fd then
-                uv.fs_write(fd, o.last_query .. "\n", nil, function(_)
+                uv.fs_write(fd, q .. "\n", nil, function(_)
                   uv.fs_close(fd)
                 end)
               end
