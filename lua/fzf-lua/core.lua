@@ -1,4 +1,3 @@
-local uv = vim.uv or vim.loop
 local fzf = require "fzf-lua.fzf"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -10,6 +9,8 @@ local shell = require "fzf-lua.shell"
 
 local M = {}
 
+---@class fzf-lua.action_defs
+---@field [function] table
 M.ACTION_DEFINITIONS = {
   -- list of supported actions with labels to be displayed in the headers
   -- no pos implies an append to header array
@@ -91,13 +92,14 @@ M.ACTION_DEFINITIONS = {
 
 -- converts contents array sent to `fzf_exec` into a single contents
 -- argument with an optional prefix, currently used to combine LSP providers
+---@param cont_arr table
+---@return fzf-lua.content
 local contents_from_arr = function(cont_arr)
   -- must have at least one contents item in index 1
   assert(cont_arr[1].contents)
   local cont_type = type(cont_arr[1].contents)
-  local contents
   if cont_type == "table" then
-    contents = {}
+    local contents = {}
     for _, t in ipairs(cont_arr) do
       assert(type(t.contents) == cont_type, "Unable to combine contents of different types")
       contents = utils.tbl_join(contents, t.prefix and
@@ -106,9 +108,11 @@ local contents_from_arr = function(cont_arr)
         end, t.contents)
         or t.contents)
     end
-  elseif cont_type == "function" then
+    return contents
+  end
+  if cont_type == "function" then
     ---@type fzf-lua.fncContent
-    contents = function(fzf_cb)
+    return function(fzf_cb)
       coroutine.wrap(function()
         local co = coroutine.running()
         for _, t in ipairs(cont_arr) do
@@ -134,14 +138,12 @@ local contents_from_arr = function(cont_arr)
         fzf_cb()
       end)()
     end
-  elseif cont_type == "string" then
-    assert(false, "Not yet supported")
   end
-  return contents
+  error("Not yet supported" .. cont_type)
 end
 
 ---@alias fzf-lua.fzfCb fun(entry?: string|number, cb?: function)
----@alias fzf-lua.fncContent fun(wnl: fzf-lua.fzfCb, w: fzf-lua.fzfCb)
+---@alias fzf-lua.fncContent fun(wnl: fzf-lua.fzfCb, w: fzf-lua.fzfCb, ...)
 ---@alias fzf-lua.content fzf-lua.fncContent|(string|number)[]|string
 
 -- Main API, see:
@@ -150,7 +152,8 @@ end
 ---@param opts? fzf-lua.config.Base|{}
 ---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
-  assert(contents, "must supply contents")
+  if not contents then error("must supply contents") end
+  ---@type fzf-lua.config.Resolved
   opts = config.normalize_opts(opts or {}, {})
   if not opts then return end
   if type(contents) == "table" and type(contents[1]) == "table" then
@@ -178,6 +181,9 @@ M.can_transform = function(opts)
 end
 
 -- Append query placeholder if not found in command
+---@generic T
+---@param cmd T
+---@return T
 local add_query_placeholder = function(cmd)
   if type(cmd) ~= "string" or cmd:match(M.fzf_query_placeholder) then return cmd end
   return ("%s %s"):format(((cmd):gsub("%s*$", "")), M.fzf_query_placeholder)
@@ -191,8 +197,7 @@ local cmd2fnc = function(contents)
   local cmd = add_query_placeholder(contents)
   return function(args, _)
     local query = args[1] or ""
-    query = (query:gsub("%%", "%%%%"))
-    query = libuv.shellescape(query)
+    query = libuv.shellescape(utils.lua_escape(query))
     return M.expand_query(cmd, query)
   end
 end
@@ -201,26 +206,34 @@ end
 -- each keypress reloads fzf's input usually based on the typed query
 -- utilizes fzf's 'change:reload' event or skim's "interactive" mode
 ---@param contents string|fzf-lua.shell.data2
----@param opts? fzf-lua.config.Base|{}
+---@param opts? fzf-lua.config.Resolved
 ---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
+  ---@type fzf-lua.config.Resolved
   opts = opts or {}
   opts.is_live = true
   opts = config.normalize_opts(opts, {})
   if not opts then return end
   local fzf_field_index = M.fzf_field_index(opts)
   local cmd ---@type string
-  if type(contents) == "function" and M.can_transform(opts) then
-    cmd = shell.stringify_data(
-      function(items) return contents(items, opts) end, opts, fzf_field_index)
+  local is_fnc = type(contents) == "function"
+  if is_fnc and M.can_transform(opts) then
+    cmd = shell.stringify_data(function(items) return contents(items, opts) end, opts,
+      fzf_field_index)
   else
     contents = add_query_placeholder(contents)
     local mtcmd = shell.stringify_mt(contents, opts)
-    cmd = mtcmd and M.expand_query(mtcmd, fzf_field_index)
-        or type(contents) == "string" and nop(opts) and M.expand_query(contents, fzf_field_index)
-        or shell.stringify(cmd2fnc(contents), opts, fzf_field_index)
+    if mtcmd then
+      cmd = M.expand_query(mtcmd, fzf_field_index)
+    elseif type(contents) == "string" and nop(opts) then
+      cmd = M.expand_query(contents, fzf_field_index)
+    else
+      cmd = shell.stringify(cmd2fnc(contents), opts, fzf_field_index)
+      is_fnc = true
+    end
   end
-  M.setup_fzf_live_flags(cmd, opts)
+  -- function content require `--bind=start` to fix ctrl-c+resume
+  M.setup_fzf_live_flags(cmd, is_fnc, opts)
   return M.fzf_wrap(cmd, opts, true)
 end
 
@@ -237,11 +250,11 @@ M.fzf_resume = function(opts)
   -- resume a picker when using "hide" and no_resume=true (#2425)
   local query = utils.map_get(opts, opts.is_live and "__call_opts.search" or "__call_opts.query")
   if query and #query > 0 then opts.query = query end
-  M.fzf_wrap(config.__resume_data.contents, config.__resume_data.opts)
+  M.fzf_wrap(assert(config.__resume_data.contents), config.__resume_data.opts)
 end
 
----@param cmd string?
----@param opts table
+---@param cmd string
+---@param opts? fzf-lua.config.Resolved|{}
 ---@param convert_actions boolean?
 ---@return thread?, string, table
 M.fzf_wrap = function(cmd, opts, convert_actions)
@@ -258,11 +271,13 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
   coroutine.wrap(function()
     _co = coroutine.running()
     -- xpcall to get full traceback https://www.lua.org/pil/8.5.html
-    local _, err = (jit and xpcall or require("fzf-lua.lib.copcall").xpcall)(function()
+    local xpcall = jit and xpcall or
+        (utils.__HAS_NVIM_010 and require("coxpcall") or require("fzf-lua.lib.copcall")).xpcall
+    local _, err = xpcall(function()
       if type(opts.cb_co) == "function" then opts.cb_co(_co) end
       local selected, exit_code = M.fzf(cmd, opts)
       -- If aborted (e.g. unhide process kill), do nothing
-      if not tonumber(exit_code) then return end
+      if not exit_code or not selected then return end
       -- Default fzf exit callback acts upon the selected items
       fn_selected = opts.fn_selected or actions.act
       if not fn_selected then return end
@@ -281,7 +296,7 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
 end
 
 ---@param contents string?
----@param opts {}?
+---@param opts? fzf-lua.config.Resolved|{}
 ---@return string[]?
 ---@return integer? exit_code
 M.fzf = function(contents, opts)
@@ -292,6 +307,7 @@ M.fzf = function(contents, opts)
     return nil, nil
   end
   -- normalize with globals if not already normalized
+  ---@type fzf-lua.config.Resolved
   opts = config.normalize_opts(opts or {}, {})
   if not opts then return nil, nil end
   -- Store contents for unhide
@@ -328,7 +344,7 @@ M.fzf = function(contents, opts)
   opts.__INFO = FzfLua.get_info()
 
   -- setup the fzf window and preview layout
-  local fzf_win = win:new(opts)
+  local fzf_win = win.new(opts)
   -- instantiate the previewer
   local previewer = require("fzf-lua.previewer").new(opts.previewer, opts)
   if previewer then
@@ -426,9 +442,9 @@ M.fzf = function(contents, opts)
 end
 
 -- Best approximation of neovim border types to fzf border types
----@param winopts fzf-lua.config.Winopts|{}
+---@param winopts fzf-lua.config.PreviewOpts
 ---@param metadata fzf-lua.win.borderMetadata
----@return string|table
+---@return string|table?
 local function translate_border(winopts, metadata)
   local neovim2fzf = {
     none       = "noborder",
@@ -455,19 +471,20 @@ local function translate_border(winopts, metadata)
   return border
 end
 
----@param o table
+---@param o fzf-lua.config.Resolved|{}
 ---@param fzf_win fzf-lua.Win
 ---@return string
 M.preview_window = function(o, fzf_win)
   local layout
+  local preview = assert(o.winopts and o.winopts.preview)
   local prefix = string.format("%s:%s%s",
-    o.winopts.preview.hidden and "hidden" or "nohidden",
-    o.winopts.preview.wrap and "wrap" or "nowrap",
+    preview.hidden and "hidden" or "nohidden",
+    preview.wrap and "wrap" or "nowrap",
     (function()
       local border = (function()
         local preview_str = fzf_win:fzf_preview_layout_str()
         local preview_pos = preview_str:match("[^:]+") or "right"
-        return translate_border(o.winopts.preview,
+        return translate_border(preview,
           { type = "fzf", name = "prev", layout = preview_pos, opts = o })
       end)()
       return border and string.format(":%s", border) or ""
@@ -477,8 +494,9 @@ M.preview_window = function(o, fzf_win)
       -- fzf v0.45 added transform, v0.46 added resize event
       -- which we use for changing the layout on resize
       and not utils.has(o, "fzf", { 0, 46 })
-      and o.winopts.preview.layout == "flex"
-      and tonumber(o.winopts.preview.flip_columns) > 0
+      and preview.layout == "flex"
+      and preview.flip_columns
+      and preview.flip_columns > 0
   then
     -- Fzf's alternate layout calculates the available preview width in a horizontal split
     -- (left/right), for the "<%d" condition to trigger the width should be test against a
@@ -487,22 +505,21 @@ M.preview_window = function(o, fzf_win)
     -- NOTE: sending `true` as first arg gets the no fullscreen width, otherwise we'll get
     -- incosstent behavior when starting fullscreen
     local columns = fzf_win:columns(true)
-    local fzf_prev_percent = tonumber(o.winopts.preview.horizontal:match(":(%d+)%%"))
+    local hor = assert(preview.horizontal)
+    local fzf_prev_percent = tonumber(hor:match(":(%d+)%%"))
     local fzf_prev_width = not fzf_prev_percent and
-        tonumber(o.winopts.preview.horizontal:match(":(%d+)")) or nil
+        tonumber(hor:match(":(%d+)")) or nil
     fzf_prev_percent = fzf_prev_percent or 50
     local fzf_main_width = fzf_prev_width and (columns - fzf_prev_width)
         or math.ceil(columns * (100 - fzf_prev_percent) / 100)
-    local horizontal_min_width = o.winopts.preview.flip_columns - fzf_main_width + 1
+    local horizontal_min_width = preview.flip_columns - fzf_main_width + 1
     if horizontal_min_width > 0 then
       layout = string.format("%s:%s,<%d(%s:%s)",
-        prefix, o.winopts.preview.horizontal, horizontal_min_width,
-        prefix, o.winopts.preview.vertical)
+        prefix, hor, horizontal_min_width,
+        prefix, preview.vertical)
     end
   end
-  if not layout then
-    layout = string.format("%s:%s", prefix, fzf_win:fzf_preview_layout_str())
-  end
+  layout = layout or string.format("%s:%s", prefix, fzf_win:fzf_preview_layout_str())
   if o.preview_offset and #o.preview_offset > 0 then
     layout = layout .. ":" .. o.preview_offset
   end
@@ -742,9 +759,9 @@ M.set_title_flags = function(opts, titles)
   if not cmd then return opts end
   local flags = {}
   local patterns = {
-    { { utils.lua_regex_escape(opts.toggle_hidden_flag) or "%-%-hidden" },     "h" },
-    { { utils.lua_regex_escape(opts.toggle_ignore_flag) or "%-%-no%-ignore" }, "i" },
-    { { utils.lua_regex_escape(opts.toggle_follow_flag) or "%-L" },            "f" },
+    { { opts.toggle_hidden_flag and utils.lua_regex_escape(opts.toggle_hidden_flag) or "%-%-hidden" },     "h" },
+    { { opts.toggle_ignore_flag and utils.lua_regex_escape(opts.toggle_ignore_flag) or "%-%-no%-ignore" }, "i" },
+    { { opts.toggle_follow_flag and utils.lua_regex_escape(opts.toggle_follow_flag) or "%-L" },            "f" },
   }
   for _, def in ipairs(patterns) do
     for _, p in ipairs(def[1]) do
@@ -788,17 +805,17 @@ M.set_header = function(opts)
   ---@param cwd string
   ---@return string
   local function normalize_cwd(cwd)
-    if path.is_absolute(cwd) and not path.equals(cwd, uv.cwd()) then
+    if path.is_absolute(cwd) and not path.equals(cwd, utils.cwd()) then
       -- since we're always converting cwd to full path
       -- try to convert it back to relative for display
-      cwd = path.relative_to(cwd, uv.cwd())
+      cwd = path.relative_to(cwd, utils.cwd())
     end
     -- make our home dir path look pretty
     return path.HOME_to_tilde(cwd)
   end
 
   if opts.cwd_prompt then
-    opts.prompt = normalize_cwd(opts.cwd or uv.cwd())
+    opts.prompt = normalize_cwd(opts.cwd or utils.cwd())
     if tonumber(opts.cwd_prompt_shorten_len) and
         #opts.prompt >= tonumber(opts.cwd_prompt_shorten_len) then
       opts.prompt = path.shorten(opts.prompt, tonumber(opts.cwd_prompt_shorten_val) or 1)
@@ -819,10 +836,10 @@ M.set_header = function(opts)
         if opts.cwd_header == false or
             opts.cwd_prompt and opts.cwd_header == nil or
             opts.cwd_header == nil and
-            (not opts.cwd or path.equals(opts.cwd, uv.cwd())) then
+            (not opts.cwd or path.equals(opts.cwd, utils.cwd())) then
           return
         end
-        return normalize_cwd(opts.cwd or uv.cwd())
+        return normalize_cwd(opts.cwd or utils.cwd())
       end
     },
     search = {
@@ -901,7 +918,7 @@ M.set_header = function(opts)
   }
   -- override header text with the user's settings
   for _, h in ipairs(opts._headers) do
-    assert(definitions[h])
+    if not definitions[h] then error("no header def:" .. h) end
     local hdr_text = opts[definitions[h].hdr_txt_opt]
     if hdr_text then
       definitions[h].hdr_txt_str = hdr_text
@@ -910,7 +927,7 @@ M.set_header = function(opts)
   -- build the header string
   local hdr_str
   for _, h in ipairs(opts._headers) do
-    assert(definitions[h])
+    if not definitions[h] then error("no header def:" .. h) end
     local def = definitions[h]
     local txt = def.val(opts)
     if def and txt then
@@ -1065,8 +1082,9 @@ M.convert_exec_silent_actions = function(opts)
 end
 
 ---@param command string
+---@param bind_start boolean
 ---@param opts table
-M.setup_fzf_live_flags = function(command, opts)
+M.setup_fzf_live_flags = function(command, bind_start, opts)
   -- query cannot be 'nil'
   opts.query = opts.query or ""
 
@@ -1113,11 +1131,10 @@ M.setup_fzf_live_flags = function(command, opts)
     if opts.silent_fail ~= false then
       reload_command = reload_command .. " || " .. utils.shell_nop()
     end
-    local query = opts.query and tostring(opts.query) or ""
     local action = M.can_transform(opts) and "transform" or "reload"
     table.insert(opts._fzf_cli_args, "--bind="
       .. libuv.shellescape(string.format("change:+%s:%s", action, reload_command)))
-    if opts.exec_empty_query or #query > 0 or type(opts.contents) == "function" then
+    if bind_start or opts.exec_empty_query or #opts.query > 0 then
       table.insert(opts._fzf_cli_args, "--bind="
         .. libuv.shellescape(string.format("start:+%s:%s", action, reload_command)))
     end
@@ -1127,7 +1144,7 @@ end
 -- query placeholder for "live" queries
 M.fzf_query_placeholder = "<query>"
 
----@param opts { field_index?: boolean, _is_skim?: boolean }
+---@param opts { field_index?: string, _is_skim?: boolean }
 ---@return string
 M.fzf_field_index = function(opts)
   -- fzf already adds single quotes around the placeholder when expanding.

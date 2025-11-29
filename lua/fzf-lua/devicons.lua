@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -51,6 +52,7 @@ function NvimWebDevicons:load(do_not_lazy_load)
   then
     self._package_loaded, self._package = pcall(require, self._package_name)
     if self._package_loaded then
+      ---@diagnostic disable-next-line: param-type-mismatch
       self._package_path = path.parent(path.parent(path.normalize(
         debug.getinfo(self._package.setup, "S").source:gsub("^@", ""))))
     end
@@ -83,6 +85,7 @@ function NvimWebDevicons:load_icons(opts)
   then
     return true
   end
+  assert(self._state)
 
   -- save the current background & termguicolors
   self._state.bg = vim.o.bg
@@ -107,7 +110,7 @@ function NvimWebDevicons:load_icons(opts)
     -- something is wrong with devicons
     utils.error("devicons.get_icons() is nil or empty!")
     return
-  end
+  end ---@cast all_devicons table
   local icons = {
     by_filename = self._package.get_icons_by_filename(),
     by_extension = self._package.get_icons_by_extension(),
@@ -185,6 +188,7 @@ function MiniIcons:load(do_not_lazy_load)
   then
     self._package_loaded, self._package = pcall(require, self._package_name)
     if self._package_loaded then
+      ---@diagnostic disable-next-line: param-type-mismatch
       self._package_path = path.parent(path.parent(path.parent(path.normalize(
         debug.getinfo(self._package.setup, "S").source:gsub("^@", "")))))
     end
@@ -292,6 +296,7 @@ function FzfLuaServer:new()
   return self
 end
 
+---@diagnostic disable-next-line: unused
 function FzfLuaServer:path()
   ---@diagnostic disable-next-line: undefined-field
   return _G._fzf_lua_server or vim.g.fzf_lua_server

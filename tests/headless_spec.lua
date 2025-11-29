@@ -2,15 +2,17 @@
 local MiniTest = require("mini.test")
 local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
-local expect, eq = helpers.expect, helpers.expect.equality
+local eq = helpers.expect.equality
 local new_set = MiniTest.new_set
 local exec_lua = child.lua
 
+---@diagnostic disable-next-line: param-type-mismatch
 local _mini_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim")
 if not vim.uv.fs_stat(_mini_path) then
   _mini_path = vim.fs.joinpath("deps", "mini.nvim")
 end
 
+---@diagnostic disable-next-line: param-type-mismatch
 local _devicons_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "nvim-web-devicons")
 if not vim.uv.fs_stat(_devicons_path) then
   _devicons_path = vim.fs.joinpath("deps", "nvim-web-devicons")

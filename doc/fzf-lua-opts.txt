@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 October 02
+*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 October 24
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -1623,6 +1623,12 @@ Search `:tags`
 autocmds                                               *fzf-lua-opts-autocmds*
 
 Neovim's autocmds
+
+
+                                                                              
+undo                                                       *fzf-lua-opts-undo*
+
+History undo tree
 
 
                                                                               

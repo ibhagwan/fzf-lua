@@ -1,11 +1,12 @@
 local M = {}
 
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local devicons = require "fzf-lua.devicons"
-local config
+local config ---@module 'fzf-lua.config'
 
 -- attempt to load the current config
 -- should fail if we're running headless
@@ -18,20 +19,10 @@ end
 local function load_config()
   ---@diagnostic disable-next-line: undefined-field
   if not _G._fzf_lua_server then return end
-  local res = nil
-  local ok, errmsg = pcall(function()
-    ---@diagnostic disable-next-line: undefined-field
-    local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
-    res = vim.rpcrequest(chan_id, "nvim_exec_lua", [[
-      return FzfLua.libuv.serialize(FzfLua.config)
-    ]], {})
-    res = libuv.deserialize(assert(res))
-    vim.fn.chanclose(chan_id)
-  end)
-  if not ok then
-    dump(res)
-    dump(errmsg)
-  end
+  local ok, res = utils.rpcexec(_G._fzf_lua_server, "nvim_exec_lua",
+    [[return FzfLua.libuv.serialize(FzfLua.config)]], {})
+  if not ok then error(res) end ---@cast res string
+  res = libuv.deserialize(res)
   return res
 end
 
@@ -42,7 +33,6 @@ local function load_config_section(s, datatype, optional)
     ---@diagnostic disable-next-line: undefined-field
   elseif _G._fzf_lua_server then
     -- load config from our running instance
-    local res = nil
     local is_bytecode = false
     local exec_str, exec_opts = nil, nil
     if datatype == "function" then
@@ -88,6 +78,7 @@ local opts2 = setmetatable({}, {
 
 if _G._fzf_lua_is_headless then
   local _config = load_config() or {} ---@module 'fzf-lua.config'
+  ---@diagnostic disable-next-line: missing-fields
   _config.globals = { git = {}, files = {}, grep = {} }
   _config.globals.git.icons = load_config_section("globals.git.icons", "table") or {}
   _config.globals.files.git_status_cmd =
@@ -113,20 +104,23 @@ if _G._fzf_lua_is_headless then
     devicons = devicons,
   }
 end
+assert(config.globals, "missing gloabals in fzf-lua config")
 
+---@param opts table
+---@return table<string, [string, true?]>
 M.get_diff_files = function(opts)
   local diff_files = {}
-  local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd
+  local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd ---@cast cmd string[]
   if not cmd then return {} end
   local start = uv.hrtime()
-  local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts))
+  local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts)) ---@cast status string[]
   local seconds = (uv.hrtime() - start) / 1e9
   if seconds >= 0.5 and opts.silent ~= true then
     local exec_str = string.format([[require"fzf-lua".utils.warn(]] ..
       [["'git status' took %.2f seconds, consider using `git_icons=false` in this repository or use `silent=true` to supress this message.")]]
       , seconds)
     if not _G._fzf_lua_is_headless then
-      loadstring(exec_str)()
+      assert(loadstring(exec_str))()
     else
       ---@diagnostic disable-next-line: undefined-field
       local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
@@ -135,8 +129,7 @@ M.get_diff_files = function(opts)
     end
   end
   if ok and err == 0 then
-    for i = 1, #status do
-      local line = status[i]
+    for _, line in ipairs(status) do
       local icon = line:match("[MUDARCT?]+")
       local file = line:match("[^ ]*$")
       if icon and file then
@@ -165,6 +158,8 @@ M.glob_parse = function(query, opts)
   end
   local glob_args = ""
   local search_query, glob_str = query:match("(.*)" .. opts.glob_separator .. "(.*)")
+  search_query = search_query or ""
+  glob_str = glob_str or ""
   for _, s in ipairs(utils.strsplit(glob_str, "%s+")) do
     if #s > 0 then
       glob_args = glob_args .. ("%s %s "):format(opts.glob_flag, libuv.shellescape(s))
@@ -232,7 +227,7 @@ M.lgrep = function(s, opts)
   elseif opts.silent_fail ~= false then
     cmd0 = cmd0 .. " || " .. FzfLua.utils.shell_nop()
   end
-  if opts.contents or not FzfLua.core.can_transform(opts) then
+  if _G._fzf_lua_is_headless or not FzfLua.core.can_transform(opts) then
     return cmd0
   else
     return "reload:" .. cmd0
@@ -240,8 +235,8 @@ M.lgrep = function(s, opts)
 end
 
 ---@param opts table
----@param search_query string
----@param no_esc boolean|number
+---@param search_query? string
+---@param no_esc? boolean|number
 ---@return string?
 M.get_grep_cmd = function(opts, search_query, no_esc)
   opts = _G._fzf_lua_is_headless and setmetatable(vim.deepcopy(opts), { __index = opts2 }) or opts
@@ -294,6 +289,7 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
       return new_cmd
     end
   elseif opts.rg_glob then
+    search_query = search_query or ""
     local new_query, glob_args = M.glob_parse(search_query, opts)
     if glob_args then
       -- since the search string mixes both the query and
@@ -327,7 +323,7 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
     -- the cwd, this is by design for perf reasons as having to deal with full paths
     -- will result in more code rouets taken in `make_entry.file`
     for i, p in ipairs(search_paths) do
-      search_paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), uv.cwd()))
+      search_paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), utils.cwd()))
     end
     search_path = table.concat(search_paths, " ")
     if is_grep then
@@ -391,7 +387,7 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
   ---@param fzf_field_index string
   ---@return string
   local expand_query = function(cmd, fzf_field_index)
-    if opts.contents and cmd:match("<query>") then
+    if _G._fzf_lua_is_headless and cmd:match("<query>") then
       return (cmd:gsub("<query>", fzf_field_index))
     else
       return ("%s %s"):format(cmd, fzf_field_index)
@@ -468,7 +464,7 @@ M.expand_query = function(opts, query, cmd)
       local search_query, glob_args = M.glob_parse(query, opts)
       if glob_args then
         -- gsub doesn't like single % on rhs
-        search_query = search_query:gsub("%%", "%%%%")
+        search_query = utils.lua_escape(search_query)
         -- reset argvz so it doesn't get replaced again below
         -- insert glob args before `-- {argvz}` or `-e {argvz}` repositioned
         -- at the end of the command preceding the search query (#781, #794)
@@ -478,7 +474,7 @@ M.expand_query = function(opts, query, cmd)
     end
     -- nifty hack to avoid having to double escape quotations
     -- see my comment inside 'live_grep' initial_command code
-    cmd = cmd:gsub(argvz, libuv.shellescape(query))
+    cmd = cmd:gsub(argvz, #query > 0 and libuv.shellescape(query) or "")
   end
   return cmd
 end
@@ -487,7 +483,7 @@ M.preprocess = function(opts)
   opts.cmd = M.fix_windows_cmd(opts.cmd)
 
   if opts.cwd_only and not opts.cwd then
-    opts.cwd = uv.cwd()
+    opts.cwd = utils.cwd()
   end
 
   if opts.file_icons then
@@ -506,7 +502,7 @@ M.preprocess = function(opts)
     if not opts._fmt.to then
       local _to = opts2._fmt._to
       if type(_to) == "string" then
-        opts._fmt.to = loadstring(_to)()
+        opts._fmt.to = assert(loadstring(_to))()
       end
     end
   end
@@ -520,8 +516,10 @@ M.postprocess = function(opts)
   end
 end
 
+---@param entry table
+---@param opts table
+---@return string
 M.lcol = function(entry, opts)
-  if not entry then return nil end
   local hl_colnr = utils.tbl_contains(opts._cached_hls or {}, "path_colnr")
       and opts.hls.path_colnr or "blue"
   local hl_linenr = utils.tbl_contains(opts._cached_hls or {}, "path_linenr")
@@ -570,6 +568,7 @@ M.file = function(x, opts)
       return utils.strip_ansi_coloring(file_part)
     end
   end)()
+  ---@cast stripped_filepath-?
   local filepath = stripped_filepath
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
   -- the './' prefix, will not work with '--color=always'
@@ -583,16 +582,16 @@ M.file = function(x, opts)
   if opts.absolute_path then
     -- make path absolute
     if not path.is_absolute(filepath) then
-      filepath = path.join({ opts.cwd or uv.cwd(), filepath })
+      filepath = path.join({ opts.cwd or utils.cwd(), filepath })
     end
   else
     -- make path relative
-    filepath = path.relative_to(filepath, opts.cwd or uv.cwd())
+    filepath = path.relative_to(filepath, opts.cwd or utils.cwd())
   end
   if path.is_absolute(filepath) then
     -- filter for cwd only
     if opts.cwd_only then
-      if not path.is_relative_to(filepath, opts.cwd or uv.cwd()) then
+      if not path.is_relative_to(filepath, opts.cwd or utils.cwd()) then
         return nil
       end
     end
@@ -622,6 +621,7 @@ M.file = function(x, opts)
       utils.__IS_WINDOWS and opts.cwd and path.separator(opts.cwd))
   end
   if opts.git_icons then
+    ---@type [string, true?]
     local diff_info = opts.diff_files
         and opts.diff_files[utils._if_win(path.normalize(origpath), origpath)]
     local indicators = diff_info and diff_info[1] or " "
@@ -655,7 +655,7 @@ M.file = function(x, opts)
     ret[#ret + 1] = file_is_ansi > 0
         -- filename is ansi escape colored, replace the inner string (#819)
         -- escape `%` in path, since `string.gsub` also use it in target (#1443)
-        and file_part:gsub(utils.lua_regex_escape(stripped_filepath), (filepath:gsub("%%", "%%%%")))
+        and file_part:gsub(utils.lua_regex_escape(stripped_filepath), utils.lua_escape(filepath))
         or filepath
   end
   -- multiline is only enabled with grep-like output PATH:LINE:COL:
@@ -730,8 +730,10 @@ M.git_status = function(x, opts)
   local f1, f2 = x:sub(4):gsub([["]], ""), nil
   -- renames separate files with '->'
   if f1:match("%s%->%s") then
+    ---@diagnostic disable-next-line: assign-type-mismatch
     f1, f2 = f1:match("(.*)%s%->%s(.*)")
   end
+  ---@diagnostic disable-next-line: assign-type-mismatch
   f1 = f1 and M.file(f1, opts)
   -- accommodate 'file_ignore_patterns'
   if not f1 then return end

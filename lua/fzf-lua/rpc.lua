@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
@@ -15,7 +16,7 @@ end
 
 local function new_pipe()
   local tmp = _is_win and windows_pipename() or vim.fn.tempname()
-  local socket = uv.new_pipe(false)
+  local socket = assert(uv.new_pipe(false))
   uv.pipe_bind(socket, tmp)
   return socket, tmp
 end

@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
@@ -6,6 +7,8 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
+---@param opts fzf-lua.config.Oldfiles|{}?
+---@return thread?, string?, table?
 M.oldfiles = function(opts)
   ---@type fzf-lua.config.Oldfiles
   opts = config.normalize_opts(opts, "oldfiles")
@@ -33,7 +36,7 @@ M.oldfiles = function(opts)
 
   if opts.include_current_session then
     for _, buffer in ipairs(vim.split(vim.fn.execute(":buffers! t"), "\n")) do
-      local bufnr = tonumber(buffer:match("%s*(%d+)"))
+      local bufnr = utils.tointeger(buffer:match("%s*(%d+)"))
       if bufnr then
         local file = vim.api.nvim_buf_get_name(bufnr)
         local fs_stat = stat_fn(file)
@@ -83,7 +86,7 @@ M.oldfiles = function(opts)
   end
 
   -- for 'file_ignore_patterns' to work on relative paths
-  opts.cwd = opts.cwd or uv.cwd()
+  opts.cwd = opts.cwd or utils.cwd()
   return core.fzf_exec(contents, opts)
 end
 

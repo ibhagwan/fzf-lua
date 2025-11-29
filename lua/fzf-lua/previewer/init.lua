@@ -10,6 +10,8 @@ Previewer.fzf.git_diff = function() return require "fzf-lua.previewer.fzf".git_d
 Previewer.fzf.man_pages = function() return require "fzf-lua.previewer.fzf".man_pages end
 Previewer.fzf.help_tags = function() return require "fzf-lua.previewer.fzf".help_tags end
 Previewer.fzf.codeaction = function() return require "fzf-lua.previewer.codeaction".native end
+Previewer.fzf.undotree = function() return require "fzf-lua.providers.undotree".native end
+Previewer.fzf.nvim_server = function() return require "fzf-lua.previewer.fzf".nvim_server end
 
 Previewer.builtin = {}
 Previewer.builtin.buffer_or_file = function()
@@ -26,13 +28,27 @@ Previewer.builtin.autocmds = function() return require "fzf-lua.previewer.builti
 Previewer.builtin.keymaps = function() return require "fzf-lua.previewer.builtin".keymaps end
 Previewer.builtin.nvim_options = function() return require "fzf-lua.previewer.builtin".nvim_options end
 Previewer.builtin.codeaction = function() return require "fzf-lua.previewer.codeaction".builtin end
+Previewer.builtin.undotree = function() return require "fzf-lua.providers.undotree".builtin end
 
 Previewer.swiper = {}
 Previewer.swiper.default = function() return require "fzf-lua.previewer.swiper".default end
 
 
+---@class fzf-lua.config.Previewer
+---@field new? fun(opts: fzf-lua.config.Previewer, opt: fzf-lua.config.Previewer, o: fzf-lua.config.Resolved)
+---@field _new? function(opt: fzf-lua.config.Previewer, o: fzf-lua.config.Resolved)
+---@field _ctor? function(opt: fzf-lua.config.Previewer, o: fzf-lua.config.Resolved)
+---@field cmd? string
+---@field args? string
+---@field preview_offset? string
+---@field theme? string
+---@field pager? string|function
+---@field _fn_git_icons? table[]|fun():table?
+---builtin
+---@field title_fnamemodify? function
+
 ---Instantiate previewer from spec
----@param spec table
+---@param spec? fzf-lua.config.Previewer|string
 ---@param opts table
 ---@return fzf-lua.previewer.Fzf|fzf-lua.previewer.Builtin?
 Previewer.new = function(spec, opts)
@@ -57,14 +73,14 @@ Previewer.new = function(spec, opts)
   return previewer
 end
 
----@alias fzf-lua.preview.Spec function|{[1]: function?, fn: function?, field_index: string?}
+---@alias fzf-lua.preview.Spec function|{[1]: function?, fn: function?, field_index: string?}|string
 ---convert preview action functions to strings using our shell wrapper
 ---@param preview fzf-lua.preview.Spec
 ---@param opts table
 ---@return string?
 Previewer.normalize_spec = function(preview, opts)
   if type(preview) == "function" then
-    return FzfLua.shell.stringify_data(preview, opts, "{}")
+    return (FzfLua.shell.stringify_data(preview, opts, "{}"))
   elseif type(preview) == "table" then
     preview = vim.tbl_extend("keep", preview, {
       fn = preview.fn or preview[1],
@@ -73,9 +89,9 @@ Previewer.normalize_spec = function(preview, opts)
       field_index = "{}",
     })
     if preview.type == "cmd" then
-      return FzfLua.shell.stringify_cmd(preview.fn, opts, preview.field_index)
+      return (FzfLua.shell.stringify_cmd(preview.fn, opts, preview.field_index))
     end
-    return FzfLua.shell.stringify_data(preview.fn, opts, preview.field_index)
+    return (FzfLua.shell.stringify_data(preview.fn, opts, preview.field_index))
   else
     return preview
   end

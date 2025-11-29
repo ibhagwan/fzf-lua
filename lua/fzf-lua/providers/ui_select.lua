@@ -94,7 +94,6 @@ M.ui_select = function(items, ui_opts, on_choice)
   -- deepcopy register opts so we don't poullute the original tbl ref (#2241)
   if type(opts) == "table" then
     opts = utils.tbl_deep_clone(opts)
-    assert(opts) -- lint nil check
   end
 
   opts.fzf_opts = vim.tbl_extend("keep", opts.fzf_opts or {}, {
@@ -155,6 +154,7 @@ M.ui_select = function(items, ui_opts, on_choice)
 
   -- ui.select is code actions
   -- inherit from defaults if not triggered by lsp_code_actions
+  ---@type 'error'|'keep'|'force'
   local opts_merge_strategy = "keep"
 
   -- fix error when vim.lsp.buf.code_action() called but didn't triggers vim.ui.select
@@ -181,6 +181,7 @@ M.ui_select = function(items, ui_opts, on_choice)
     -- multiple keybinds trigger, sending `--expect` to fzf
     local previewer = _OPTS_ONCE.previewer
     _OPTS_ONCE.previewer = nil -- can't copy the previewer object
+    ---@diagnostic disable-next-line: param-type-mismatch
     opts = vim.tbl_deep_extend(opts_merge_strategy, _OPTS_ONCE, opts)
     opts.actions = vim.tbl_deep_extend("force", opts.actions or {},
       { ["enter"] = opts.actions.enter })
@@ -198,7 +199,6 @@ M.ui_select = function(items, ui_opts, on_choice)
 
   -- disable hide profile unless specifically requested
   -- casues issues with abort as on_choice(nil) won't be called (#2439)
-  ---@diagnostic disable: inject-field
   opts.no_hide = opts.no_hide == nil and true or opts.no_hide
 
   return core.fzf_exec(entries, opts)

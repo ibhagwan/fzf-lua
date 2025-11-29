@@ -1,8 +1,8 @@
----@diagnostic disable: unused-local, unused-function
+---@diagnostic disable: unused-local, unused-function, unused
 local MiniTest = require("mini.test")
 local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
-local expect, eq = helpers.expect, helpers.expect.equality
+local eq = helpers.expect.equality
 local new_set = MiniTest.new_set
 local exec_lua = child.lua
 
@@ -111,7 +111,7 @@ T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
   -- can :wqa when there're hide job #1817
   pcall(child.cmd, [[wqa]])
   -- child.is_running() didn't work as expected
-  eq(vim.fn.jobwait({ child.job.id }, 1000)[1], 0)
+  eq(vim.fn.jobwait({ assert(child.job).id }, 1000)[1], 0)
 end
 
 T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()

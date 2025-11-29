@@ -1,4 +1,3 @@
-local uv = vim.uv or vim.loop
 local core = require "fzf-lua.core"
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
@@ -9,7 +8,23 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
----@param opts fzf-lua.Config
+---@class fzf-lua.config.BufferLines: fzf-lua.config.Base
+---@field current_tab_only? boolean
+---@field buffers? integer[]
+---@field show_unlisted? boolean
+---@field show_unloaded? boolean
+---@field ignore_current_buffer? boolean
+---@field no_term_buffers? boolean
+---@field filter? fun(...):boolean?
+---@field show_quickfix boolean?
+---@field current_buffer_only? boolean
+---@field start_line? integer
+---@field end_line? integer
+---@field start? "cursor"
+---@field show_bufname? boolean|integer
+---@field sort_lastused? boolean
+
+---@param opts fzf-lua.config.BufferLines|{}
 ---@param unfiltered integer[]|fun():integer[]
 ---@return integer[], table, integer
 local filter_buffers = function(opts, unfiltered)
@@ -45,7 +60,7 @@ local filter_buffers = function(opts, unfiltered)
           excluded[b] = true
         elseif opts.no_term_buffers and utils.is_term_buffer(b) then
           excluded[b] = true
-        elseif opts.cwd_only and not path.is_relative_to(vim.api.nvim_buf_get_name(b), uv.cwd()) then
+        elseif opts.cwd_only and not path.is_relative_to(vim.api.nvim_buf_get_name(b), utils.cwd()) then
           excluded[b] = true
         elseif opts.cwd and not path.is_relative_to(vim.api.nvim_buf_get_name(b), opts.cwd) then
           excluded[b] = true
@@ -98,7 +113,7 @@ local get_unixtime = function(buf)
   end
 end
 
----@param opts fzf-lua.Config
+---@param opts fzf-lua.config.BufferLines|{}
 ---@param bufnrs integer[]
 ---@param winid integer?
 ---@return table[]
@@ -147,7 +162,7 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
     else
       bname = make_entry.lcol({ filename = bname, lnum = buf.info.lnum }, opts):gsub(":$", "")
       return make_entry.file(bname,
-        vim.tbl_extend("force", opts, { cwd = cwd or opts.cwd or uv.cwd() }))
+        vim.tbl_extend("force", opts, { cwd = cwd or opts.cwd or utils.cwd() }))
     end
   end)()
   if buf.flag == "%" then
@@ -173,13 +188,16 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
   return item_str
 end
 
+---@param opts fzf-lua.config.Buffers|{}?
+---@return thread?, string?, table?
 M.buffers = function(opts)
   ---@type fzf-lua.config.Buffers
   opts = config.normalize_opts(opts, "buffers")
   if not opts then return end
 
   local contents = function(cb)
-    local filtered, _, max_bufnr = filter_buffers(opts, utils.CTX().buflist)
+    local buflist = assert(utils.CTX().buflist)
+    local filtered, _, max_bufnr = filter_buffers(opts, buflist)
 
     if next(filtered) then
       local buffers = populate_buffer_entries(opts, filtered)
@@ -200,6 +218,8 @@ M.buffers = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Lines|{}?
+---@return thread?, string?, table?
 M.lines = function(opts)
   ---@type fzf-lua.config.Lines
   opts = config.normalize_opts(opts, "lines")
@@ -207,6 +227,8 @@ M.lines = function(opts)
   return M.buffer_lines(opts)
 end
 
+---@param opts fzf-lua.config.Blines|{}?
+---@return thread?, string?, table?
 M.blines = function(opts)
   ---@type fzf-lua.config.Blines
   opts = config.normalize_opts(opts, "blines")
@@ -237,7 +259,7 @@ M.buffer_lines = function(opts)
       local co = coroutine.running()
 
       local buffers = filter_buffers(opts,
-        opts.current_buffer_only and { utils.CTX().bufnr } or utils.CTX().buflist)
+        opts.current_buffer_only and { utils.CTX().bufnr } or utils.CTX().buflist or {})
 
       if opts.sort_lastused and utils.tbl_count(buffers) > 1 then
         table.sort(buffers, function(a, b)
@@ -245,12 +267,11 @@ M.buffer_lines = function(opts)
         end)
       end
 
-      local bnames = {}
+      local bnames = {} ---@type table<string, string>
       local longest_bname = 0
       for _, b in ipairs(buffers) do
-        ---@type string
         local bname = utils.nvim_buf_get_name(b)
-        if not bname:match("^%[") then
+        if bname and not bname:match("^%[") then
           bname = path.shorten(vim.fn.fnamemodify(bname, ":~:."))
         end
         longest_bname = math.max(longest_bname, #bname)
@@ -282,21 +303,20 @@ M.buffer_lines = function(opts)
           then
             return
           end
-          local bicon, hl = "", nil
-          local bname = bnames[tostring(bufnr)]
-          assert(bname)
+          local icon, hl = "", nil
+          local name = bnames[tostring(bufnr)]
 
-          if #bname > len_bufnames + 1 then
-            bname = "…" .. bname:sub(#bname - len_bufnames + 2)
+          if #name > len_bufnames + 1 then
+            name = "…" .. name:sub(#name - len_bufnames + 2)
           end
 
           if opts.file_icons then
-            bicon, hl = devicons.get_devicon(bname)
+            icon, hl = devicons.get_devicon(name)
             if hl and opts.color_icons then
-              bicon = utils.ansi_from_rgb(hl, bicon)
+              icon = utils.ansi_from_rgb(hl, icon)
             end
           end
-          return bname, bicon and bicon .. utils.nbsp or nil
+          return name, icon and icon .. utils.nbsp or nil
         end)()
 
         local offset, start_line, end_line, lines = 0, 1, #data, #data
@@ -340,6 +360,8 @@ M.buffer_lines = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Tabs|{}?
+---@return thread?, string?, table?
 M.tabs = function(opts)
   ---@type fzf-lua.config.Tabs
   opts = config.normalize_opts(opts, "tabs")
@@ -404,7 +426,7 @@ M.tabs = function(opts)
         local title, fn_title_hl = opt_hl(tabnr, "tab_title",
           function(s)
             return string.format("%s%s#%d%s", s, utils.nbsp, tabnr,
-              (uv.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde)))
+              (utils.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde)))
           end,
           utils.ansi_codes[opts.hls.tab_title])
 
@@ -445,6 +467,8 @@ M.tabs = function(opts)
 end
 
 
+---@param opts fzf-lua.config.Treesitter|{}?
+---@return thread?, string?, table?
 M.treesitter = function(opts)
   ---@type fzf-lua.config.Treesitter
   opts = config.normalize_opts(opts, "treesitter")
@@ -457,10 +481,10 @@ M.treesitter = function(opts)
   end
 
   -- Default to current buffer
-  local bufnr0 = tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
+  local bufnr0 = utils.tointeger(opts.bufnr) or vim.api.nvim_get_current_buf()
   local bufname0 = path.basename(vim.api.nvim_buf_get_name(bufnr0))
   if not bufname0 or #bufname0 == 0 then
-    bufname0 = utils.nvim_buf_get_name(bufnr0)
+    bufname0 = assert(utils.nvim_buf_get_name(bufnr0))
   end
 
   local ts = vim.treesitter
@@ -478,7 +502,7 @@ M.treesitter = function(opts)
 
   local parser = ts.get_parser(bufnr0)
   if not parser then return end
-  parser:parse()
+  parser:parse(true)
   local root = parser:trees()[1]:root()
   if not root then return end
 
@@ -496,13 +520,14 @@ M.treesitter = function(opts)
       local kind = query.captures[id]
 
       local scope = "local" ---@type string
+      ---@diagnostic disable-next-line: param-type-mismatch
       for k, v in pairs(metadata) do
-        if type(k) == "string" and vim.endswith(k, "local.scope") then
+        if k and vim.endswith(k, "local.scope") and type(v) == "string" then
           scope = v
         end
       end
 
-      if node and vim.startswith(kind, "local.definition") then
+      if node and kind and vim.startswith(kind, "local.definition") then
         table.insert(definitions, { kind = kind, node = node, scope = scope })
       end
 
@@ -552,15 +577,16 @@ M.treesitter = function(opts)
             vim.schedule(function()
               -- Remove node prefix, e.g. `locals.definition.var`
               node.kind = node.kind and node.kind:gsub(".*%.", "")
-              local lnum, col, _, _ = vim.treesitter.get_node_range(node.node)
-              local node_text = vim.treesitter.get_node_text(node.node, bufnr0)
+              local lnum, col, _, _ = ts.get_node_range(node.node)
+              local node_text = ts.get_node_text(node.node, bufnr0)
               local node_kind = node.kind and utils.ansi_from_hl(kind2hl(node.kind), node.kind)
+              local hls = opts.hls
               local entry = string.format("[%s]%s%s:%s:%s\t\t[%s] %s",
-                utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr0)),
+                utils.ansi_codes[hls.buf_nr](tostring(bufnr0)),
                 utils.nbsp,
-                utils.ansi_codes[opts.hls.buf_name](bufname0),
-                utils.ansi_codes[opts.hls.buf_linenr](tostring(lnum + 1)),
-                utils.ansi_codes[opts.hls.path_colnr](tostring(col + 1)),
+                utils.ansi_codes[hls.buf_name](bufname0),
+                utils.ansi_codes[hls.buf_linenr](tostring(lnum + 1)),
+                utils.ansi_codes[hls.path_colnr](tostring(col + 1)),
                 node_kind or "",
                 node_text)
               cb(entry, function(err)
@@ -579,6 +605,8 @@ M.treesitter = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Spellcheck|{}?
+---@return thread?, string?, table?
 M.spellcheck = function(opts)
   ---@type fzf-lua.config.Spellcheck
   opts = config.normalize_opts(opts, "spellcheck")
@@ -590,10 +618,10 @@ M.spellcheck = function(opts)
   end
 
   -- Default to current buffer
-  local bufnr0 = tonumber(opts.bufnr) or vim.api.nvim_get_current_buf()
+  local bufnr0 = utils.tointeger(opts.bufnr) or vim.api.nvim_get_current_buf()
   local bufname0 = path.basename(vim.api.nvim_buf_get_name(bufnr0))
   if not bufname0 or #bufname0 == 0 then
-    bufname0 = utils.nvim_buf_get_name(bufnr0)
+    bufname0 = assert(utils.nvim_buf_get_name(bufnr0))
   end
 
   if utils.mode_is_visual() then
@@ -647,6 +675,7 @@ M.spellcheck = function(opts)
             end
             lnum = lnum + start_line - 1
 
+            ---@type integer, integer?, integer?
             local line, from, to = data[lnum], 1, nil
             repeat
               local word_separator = opts.word_separator or "[%s%p]"
@@ -664,12 +693,13 @@ M.spellcheck = function(opts)
                 local _, lead = word:find("^" .. word_separator .. "+")
                 local spell = vim.spell.check(trim(word))[1]
                 if spell then
+                  local hls = opts.hls
                   cb(string.format("[%s]%s%s:%s:%-26s\t\t%s",
-                    utils.ansi_codes[opts.hls.buf_nr](tostring(bufnr0)),
+                    utils.ansi_codes[hls.buf_nr](tostring(bufnr0)),
                     utils.nbsp,
-                    utils.ansi_codes[opts.hls.buf_name](bufname0),
-                    utils.ansi_codes[opts.hls.buf_linenr](tostring(lnum)),
-                    utils.ansi_codes[opts.hls.path_colnr](tostring(from + (lead or 0))),
+                    utils.ansi_codes[hls.buf_name](bufname0),
+                    utils.ansi_codes[hls.buf_linenr](tostring(lnum)),
+                    utils.ansi_codes[hls.path_colnr](tostring(assert(from) + (lead or 0))),
                     trim(word)
                   ), function(err)
                     -- coroutine.resume(co)
@@ -679,7 +709,7 @@ M.spellcheck = function(opts)
                   -- coroutine.yield()
                 end
               end
-              if from then from = to + 1 end
+              if from then from = assert(to) + 1 end
             until not from
           end
           cb(nil)

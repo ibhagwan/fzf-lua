@@ -44,7 +44,7 @@ local os_detect = {
 for k, v in pairs(os_detect) do
   M["IS_" .. k] = function()
     local var = "_IS_" .. k
-    if M[var] == nil then
+    if M[var] == nil then ---@diagnostic disable-next-line: assign-type-mismatch
       M[var] = v.fn()
     end
     return M[var]
@@ -109,6 +109,7 @@ M.expect.equality_partial_tbl = MiniTest.new_expectation(
 
 -- Monkey-patch `MiniTest.new_child_neovim` with helpful wrappers
 M.new_child_neovim = function()
+  ---@class fzf-lua.test.chlid: MiniTest.child
   local child = MiniTest.new_child_neovim()
 
   local prevent_hanging = function(method)
@@ -158,7 +159,9 @@ M.new_child_neovim = function()
         winopts = {
           on_create = function(e)
             _G._fzf_lua_on_create = true
-            vim.wo[e.winid].statusline = "fzf://"
+            if vim.api.nvim_win_get_config(e.winid).relative == "" then
+              vim.wo[e.winid].statusline = "fzf://"
+            end
           end,
           on_close = function()
             _G._fzf_lua_on_create = nil

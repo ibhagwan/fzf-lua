@@ -9,7 +9,7 @@ local M = {}
 --- E.g. mandoc: "vsnprintf, vsprintf(3P, 3p) - format output of a stdarg argument list" -> "vsnprintf", "3P"
 --- E.g. man-db: "vsnprintf (3p)              - format output of a stdarg argument list" -> "vsnprintf", "3p"
 --- @param apropos_line string a selected output line from `man -k`
---- @return string page, string and section
+--- @return string?, string?
 local function parse_apropos(apropos_line)
   return apropos_line:match("^([^, (]+)[^(]*%(([^), ]*)")
 end
@@ -23,9 +23,12 @@ end
 --- @return string arg with shellescape
 M.manpage_sh_arg = function(apropos_line)
   local page, section = parse_apropos(apropos_line)
+  assert(section and page)
   return libuv.shellescape(section) .. " " .. libuv.shellescape(page)
 end
 
+---@param opts fzf-lua.config.Manpages|{}?
+---@return thread?, string?, table?
 M.manpages = function(opts)
   ---@type fzf-lua.config.Manpages
   opts = config.normalize_opts(opts, "manpages")

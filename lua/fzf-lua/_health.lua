@@ -18,7 +18,7 @@ function M.check()
       end
     else
       local version = vim.fn.system(tool .. " --version") or ""
-      version = vim.trim(vim.split(version, "\n")[1])
+      version = vim.trim(assert(vim.split(version, "\n")[1]))
       local is_ok = vim.v.shell_error == 0
       (is_ok and ok or error)("'" .. tool .. "' `" .. version .. "`")
       return true
@@ -53,6 +53,7 @@ function M.check()
   end
 
   local run = vim.fn.stdpath("run")
+  ---@cast run -string[]
   if not uv.fs_access(run, "rwx") then
     error(
       "Your 'run' directory is invalid `"

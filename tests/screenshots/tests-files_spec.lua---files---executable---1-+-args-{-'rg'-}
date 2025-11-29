@@ -2,24 +2,24 @@
 01|                                                                
 02|~                                                               
 03|~      ╭─────────────────── Files  h ────────────────────╮      
-04|~      │>                                      99/99 (0) │      
+04|~      │>                                    104/104 (0) │      
 05|~      │──────────────────────────────────────────────── │      
 06|~      │▌ [DEBUG] [mt] rg --hidden --files -g "!.git" ··││      
 07|~      │  .editorconfig                                 ││      
-08|~      │  .github/ISSUE_TEMPLATE/bug.yaml                │      
-09|~      │  .github/ISSUE_TEMPLATE/config.yml              │      
-10|~      │  .github/ISSUE_TEMPLATE/feature.yaml            │      
-11|~      │  .github/workflows/ci.yaml                      │      
-12|~      │  .github/workflows/lint.yaml                    │      
-13|~      │  .github/workflows/luarocks-release.yaml        │      
-14|~      │  .github/workflows/sync_remote.yaml             │      
-15|~      │  .github/workflows/vimdoc.yaml                  │      
-16|~      │  .gitignore                                     │      
-17|~      │  .luarc.jsonc                                   │      
-18|~      │  .stylua.toml                                   │      
-19|~      │  LICENSE                                        │      
-20|~      │  Makefile                                       │      
-21|~      │  OPTIONS.md                                     │      
+08|~      │  .emmyrc.json                                   │      
+09|~      │  .github/ISSUE_TEMPLATE/bug.yaml                │      
+10|~      │  .github/ISSUE_TEMPLATE/config.yml              │      
+11|~      │  .github/ISSUE_TEMPLATE/feature.yaml            │      
+12|~      │  .github/workflows/ci.yaml                      │      
+13|~      │  .github/workflows/lint.yaml                    │      
+14|~      │  .github/workflows/luarocks-release.yaml        │      
+15|~      │  .github/workflows/sync_remote.yaml             │      
+16|~      │  .github/workflows/vimdoc.yaml                  │      
+17|~      │  .gitignore                                     │      
+18|~      │  .luarc.jsonc                                   │      
+19|~      │  .stylua.toml                                   │      
+20|~      │  LICENSE                                        │      
+21|~      │  Makefile                                       │      
 22|~      ╰─────────────────────────────────────────────────╯      
 23|~                                                               
 24|[No Name]                                     0,0-1          All

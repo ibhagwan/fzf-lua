@@ -1,4 +1,4 @@
-local uv = vim.uv or vim.loop
+---@diagnostic disable: need-check-nil, param-type-mismatch
 local core = require "fzf-lua.core"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
@@ -11,8 +11,7 @@ local convert_diagnostic_type = function(severity)
   -- convert from string to int
   if type(severity) == "string" and not tonumber(severity) then
     -- make sure that e.g. error is uppercased to Error
-    return vim.diagnostic and vim.diagnostic.severity[severity:upper()] or
-        vim.lsp.protocol.DiagnosticSeverity[severity:gsub("^%l", string.upper)]
+    return vim.diagnostic.severity[severity:upper()]
   else
     -- otherwise keep original value, incl. nil
     return tonumber(severity)
@@ -31,6 +30,8 @@ local filter_diag_severity = function(opts, severity)
   end
 end
 
+---@param opts fzf-lua.config.Diagnostics|{}?
+---@return (thread|table)?, string?, table?
 M.diagnostics = function(opts)
   ---@type fzf-lua.config.Diagnostics
   opts = config.normalize_opts(opts, "diagnostics")
@@ -38,60 +39,50 @@ M.diagnostics = function(opts)
 
   -- required for relative paths presentation
   if not opts.cwd or #opts.cwd == 0 then
-    opts.cwd = uv.cwd()
+    opts.cwd = utils.cwd()
   else
     opts.cwd_only = true
   end
 
-  if not vim.diagnostic then
-    ---@diagnostic disable-next-line: deprecated
-    local lsp_clients = vim.lsp.buf_get_clients(0)
-    if utils.tbl_isempty(lsp_clients) then
-      utils.info("LSP: no client attached")
-      return
-    end
-  end
-
   -- configure signs and highlights
-  local signs = vim.diagnostic and {
+  local signs = {
     ["Error"] = { severity = 1, default = "E", name = "DiagnosticSignError" },
     ["Warn"]  = { severity = 2, default = "W", name = "DiagnosticSignWarn" },
     ["Info"]  = { severity = 3, default = "I", name = "DiagnosticSignInfo" },
     ["Hint"]  = { severity = 4, default = "H", name = "DiagnosticSignHint" },
-  } or {
-    -- At one point or another, we'll drop support for the old LSP diag
-    ["Error"] = { severity = 1, default = "E", name = "LspDiagnosticsSignError" },
-    ["Warn"]  = { severity = 2, default = "W", name = "LspDiagnosticsSignWarning" },
-    ["Info"]  = { severity = 3, default = "I", name = "LspDiagnosticsSignInformation" },
-    ["Hint"]  = { severity = 4, default = "H", name = "LspDiagnosticsSignHint" },
   }
 
+
+  ---@class fzf-lua.DiagnosticSign
+  ---@field text string
+  ---@field texthl string|nil
+
+  ---@type table<integer, fzf-lua.DiagnosticSign>
   local signs0 = {}
   for k, v in pairs(signs) do
-    signs0[v.severity] = {}
-
+    local text, texthl
     -- from vim.diagnostic
     if utils.__HAS_NVIM_010 then
       local sign_confs = type(opts.diag_icons) == "table" and { text = opts.diag_icons }
           or vim.diagnostic.config().signs
       local level = vim.diagnostic.severity[k:upper()]
       if type(sign_confs) ~= "table" or utils.tbl_isempty(sign_confs) then sign_confs = nil end
-      signs0[v.severity].text =
+      text =
           (not opts.diag_icons or not sign_confs or not sign_confs.text or not sign_confs.text[level])
-          ---@diagnostic disable-next-line: need-check-nil
           and v.default or vim.trim(sign_confs.text[level])
-      signs0[v.severity].texthl = v.name
+      texthl = v.name
     else
       ---@type vim.fn.sign_getdefined.ret.item[]?
       local sign_def = vim.fn.sign_getdefined(v.name)
       -- can be empty when config set to (#480):
       -- vim.diagnostic.config({ signs = false })
       if utils.tbl_isempty(sign_def) then sign_def = nil end
-      signs0[v.severity].text =
+      text =
           (not opts.diag_icons or not sign_def or not sign_def[1].text) ---@diagnostic disable-next-line: need-check-nil
           and v.default or vim.trim(sign_def[1].text)
-      signs0[v.severity].texthl = sign_def and sign_def[1].texthl or nil
+      texthl = sign_def and sign_def[1].texthl or nil
     end
+    signs0[v.severity] = { text = text, texthl = texthl }
 
     -- from user config
     if opts.signs and opts.signs[k] and opts.signs[k].text then
@@ -113,6 +104,7 @@ M.diagnostics = function(opts)
   opts.severity_limit = convert_diagnostic_type(opts.severity_limit)
   opts.severity_bound = convert_diagnostic_type(opts.severity_bound)
 
+  ---@type vim.diagnostic.GetOpts
   local diag_opts = { severity = {}, namespace = opts.namespace }
   if opts.severity_only ~= nil then
     if opts.severity_limit ~= nil or opts.severity_bound ~= nil then
@@ -127,10 +119,7 @@ M.diagnostics = function(opts)
   end
 
   local curbuf = vim.api.nvim_get_current_buf()
-  local diag_results = vim.diagnostic and
-      vim.diagnostic.get(not opts.diag_all and curbuf or nil, diag_opts) or
-      opts.diag_all and vim.lsp.diagnostic.get_all() or
-      { [curbuf] = vim.lsp.diagnostic.get(curbuf, opts.client_id) }
+  local diag_results = vim.diagnostic.get(not opts.diag_all and curbuf or nil, diag_opts)
 
   if opts.sort then
     if opts.sort == 2 or opts.sort == "2" then
@@ -144,39 +133,34 @@ M.diagnostics = function(opts)
     end
   end
 
-  local has_diags = false
-  if vim.diagnostic then
-    -- format: { <diag array> }
-    has_diags = not utils.tbl_isempty(diag_results)
-  else
-    -- format: { [bufnr] = <diag array>, ... }
-    for _, diags in pairs(diag_results) do
-      if #diags > 0 then has_diags = true end
-    end
-  end
+  -- format: { <diag array> }
+  local has_diags = not utils.tbl_isempty(diag_results)
   if not has_diags then
     utils.info("No %s found", "diagnostics")
     return
   end
 
-  local preprocess_diag = function(diag, bufnr)
-    bufnr = bufnr or diag.bufnr
+  ---@class fzf-lua.BufferDiag
+  ---@field bufnr integer
+  ---@field filename string
+  ---@field lnum integer
+  ---@field col integer
+  ---@field text string
+  ---@field type integer
+
+  ---@param diag vim.Diagnostic
+  ---@return fzf-lua.BufferDiag?
+  local preprocess_diag = function(diag)
+    local bufnr = diag.bufnr
     if not vim.api.nvim_buf_is_valid(bufnr) then
       return nil
     end
     local filename = vim.api.nvim_buf_get_name(bufnr)
-    -- pre vim.diagnostic (vim.lsp.diagnostic)
-    -- has 'start|finish' instead of 'end_col|end_lnum'
-    local start = diag.range and diag.range["start"]
-    -- local finish = diag.range and diag.range['end']
-    local row = diag.lnum or start.line
-    local col = diag.col or start.character
-
     local buffer_diag = {
       bufnr = bufnr,
       filename = filename,
-      lnum = row + 1,
-      col = col + 1,
+      lnum = diag.lnum + 1,
+      col = diag.col + 1,
       text = vim.trim(opts.multiline and diag.message or diag.message:match("^[^\n]+")),
       type = diag.severity or 1
     }
@@ -187,7 +171,8 @@ M.diagnostics = function(opts)
     coroutine.wrap(function()
       local co = coroutine.running()
 
-      local function process_diagnostics(diags, bufnr)
+      ---@param diags vim.Diagnostic[]
+      local function process_diagnostics(diags)
         for _, diag in ipairs(diags) do
           -- workspace diagnostics may include
           -- empty tables for unused buffers
@@ -195,7 +180,7 @@ M.diagnostics = function(opts)
             -- wrap with 'vim.schedule' or calls to vim.{fn|api} fail:
             -- E5560: vimL function must not be called in a lua loop callback
             vim.schedule(function()
-              local diag_entry = preprocess_diag(diag, bufnr)
+              local diag_entry = preprocess_diag(diag)
               if diag_entry == nil then
                 coroutine.resume(co)
                 return
@@ -207,8 +192,9 @@ M.diagnostics = function(opts)
                 diag_entry.filename = utils.ansi_from_hl(sign_def.texthl, diag_entry.filename)
               end
 
-              local entry = make_entry.lcol(diag_entry, opts)
-              entry = make_entry.file(entry, opts)
+              local entry0 = make_entry.lcol(diag_entry, opts)
+              local entry = make_entry.file(entry0, opts)
+              if entry == nil then entry = "" end
               if not entry then
                 -- entry to be skipped (e.g. 'cwd_only')
                 coroutine.resume(co)
@@ -247,13 +233,7 @@ M.diagnostics = function(opts)
         end
       end
 
-      if vim.diagnostic then
-        process_diagnostics(diag_results)
-      else
-        for bufnr, diags in pairs(diag_results) do
-          process_diagnostics(diags, bufnr)
-        end
-      end
+      process_diagnostics(diag_results)
       -- close the pipe to fzf, this
       -- removes the loading indicator
       fzf_cb(nil)
@@ -264,6 +244,8 @@ M.diagnostics = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---@param opts fzf-lua.config.Diagnostics|{}?
+---@return (thread|table)?, string?, table?
 M.all = function(opts)
   if not opts then opts = {} end
   opts.diag_all = true
