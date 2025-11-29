@@ -14,14 +14,6 @@ if vim.v.servername and #vim.v.servername > 0 then
   pcall(fn.serverstop, vim.v.servername)
 end
 
-api.nvim_create_autocmd("Signal", {
-  callback = function(ev)
-    vim.tbl_map(function(pid)
-      FzfLua.libuv.process_kill(pid, ev.match)
-    end, api.nvim_get_proc_children(fn.getpid()))
-  end
-})
-
 require("fzf-lua").setup({ "cli" })
 
 -- load user config
