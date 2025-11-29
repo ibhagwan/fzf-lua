@@ -143,7 +143,8 @@ M._notify_header = "LineNr"
 function M.notify(lvl, ...)
   -- Message can be specified directly as table with highlights, i.e. { "foo", "Error" }
   -- or as a vararg of strings/numbers to be sent to string.format
-  local msg = type(select(1, ...)) == "table" and select(1, ...) or string.format(...)
+  local arg1 = (...)
+  local msg = type(arg1) == "table" and arg1 or string.format(...)
 
   local header_hl, chunks = (function()
     local hl = (function()
@@ -1440,12 +1441,16 @@ function M.git_version()
 end
 
 function M.create_user_command_callback(provider, arg, altmap)
+  ---@param o vim.api.keyset.create_user_command.command_args
+  ---@return table
   local function fzflua_opts(o)
     local ret = {}
     -- fzf.vim's bang version of the commands opens fullscreen
     if o.bang then ret.winopts = { fullscreen = true } end
     return ret
   end
+
+  ---@param o vim.api.keyset.create_user_command.command_args
   return function(o)
     local fzf_lua = require("fzf-lua")
     local prov = provider
@@ -1458,6 +1463,7 @@ function M.create_user_command_callback(provider, arg, altmap)
         -- "GFiles?", "History:" and "History/"
         if farg:sub(1, 1) == c then
           prov = p
+          ---@diagnostic disable-next-line: assign-type-mismatch
           -- we still allow using args with alt
           -- providers by removing the "?:/" prefix
           farg = #farg > 1 and vim.trim(farg:sub(2))

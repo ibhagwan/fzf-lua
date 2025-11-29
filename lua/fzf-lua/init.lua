@@ -54,7 +54,7 @@ do
     group = vim.api.nvim_create_augroup("FzfLuaNvimQuit", { clear = true }),
     callback = function()
       local win = utils.fzf_winobj()
-      if win and win:hidden() then
+      if win and win:hidden() then ---@diagnostic disable-next-line: param-type-mismatch
         vim.api.nvim_buf_delete(win._hidden_fzf_bufnr, { force = true })
       end
     end,
@@ -227,7 +227,7 @@ function M.setup(opts, do_not_reset_defaults)
       opts.lsp.workspace_symbols or {}, opts.lsp.symbols)
   end
   -- set custom &nbsp if caller requested
-  if opts.nbsp then utils.nbsp = opts.nbsp end
+  if type(opts.nbsp) == "string" then utils.nbsp = opts.nbsp end
   -- store the setup options
   config.setup_opts = opts
   -- setup highlights

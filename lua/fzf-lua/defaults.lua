@@ -551,7 +551,7 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
 ---@field worktrees fzf-lua.config.GitWorktrees
 ---@field tags      fzf-lua.config.GitTags
 ---@field stash     fzf-lua.config.GitStash
----@field icons     table<string, fzf-lua.git.icons>
+---@field icons     fzf-lua.git.icons
 -- Must construct our opts table in stages
 -- so we can reference 'M.globals.files'
 M.defaults.git                   = {
@@ -1301,6 +1301,7 @@ M.defaults.lsp.symbols           = {
   },
 }
 
+---@diagnostic disable-next-line: assign-type-mismatch
 ---@class fzf-lua.config.LspDocumentSymbols: fzf-lua.config.LspSymbols
 ---@field __sym_bufnr? integer
 ---@field __sym_bufname? string
@@ -1324,6 +1325,7 @@ M.defaults.lsp.document_symbols  = vim.tbl_deep_extend("force", {}, M.defaults.l
   _headers    = { "regex_filter" },
 })
 
+---@diagnostic disable-next-line: assign-type-mismatch
 ---@class fzf-lua.config.LspWorkspaceSymbols: fzf-lua.config.LspSymbols
 ---@field _headers? string[]
 ---@field __resume_set? function

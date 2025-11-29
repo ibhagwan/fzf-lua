@@ -47,9 +47,16 @@ local function check_capabilities(handler, silent)
   end
 end
 
-local function location_to_entry(location, enc)
-  local item = vim.lsp.util.locations_to_items({ location }, enc)[1]
-  return ("%s:%d:%d:"):format(item.filename, item.lnum, item.col)
+
+---@param locations lsp.Location[]|lsp.LocationLink[]
+---@param enc? 'utf-8'|'utf-16'|'utf-32'
+---@return string[]
+local function locations_to_entries(locations, enc)
+  local items = vim.lsp.util.locations_to_items(locations, enc)
+  local item2entry = function(item)
+    return ("%s:%d:%d:"):format(item.filename, item.lnum, item.col)
+  end
+  return vim.tbl_map(item2entry, items)
 end
 
 local jump_to_location = function(opts, result, enc)
@@ -59,8 +66,8 @@ local jump_to_location = function(opts, result, enc)
 
   local action = opts.jump1_action
   if action then
-    local entry = location_to_entry(result, enc)
-    return opts.jump1_action({ entry }, opts)
+    local entries = locations_to_entries({ result }, enc)
+    return opts.jump1_action(entries, opts)
   end
 
   return utils.jump_to_location(result, enc, opts.reuse_win)
@@ -136,6 +143,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
   -- here to accurately determine `jump1` (#980)
   result = vim.tbl_filter(function(x)
     local item = vim.lsp.util.locations_to_items({ x }, encoding)[1]
+    assert(item and item.filename)
     if (opts.cwd_only and not path.is_relative_to(item.filename, opts.cwd)) or
         (opts._regex_filter_fn and not opts._regex_filter_fn(item, utils.CTX())) then
       return false

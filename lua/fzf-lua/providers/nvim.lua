@@ -824,7 +824,7 @@ M.serverlist = function(opts)
         :each(cb)
     cb(nil)
   end
-  require("fzf-lua").fzf_exec(function(cb)
+  core.fzf_exec(function(cb)
     vim.defer_fn(function() f(cb) end, 50) -- wait for spawn/remote_exec?
   end, opts)
 end

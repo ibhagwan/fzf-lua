@@ -93,6 +93,15 @@ M.profiles = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+local function gen_def(n, o)
+  local _, contents, opts = FzfLua[n](o)
+  return {
+    name = n,
+    opts = opts,
+    contents = contents,
+  }
+end
+
 M.combine = function(t)
   t = t or {}
 
@@ -110,19 +119,10 @@ M.combine = function(t)
   local opts_copy = vim.deepcopy(opts)
   for i, name in ipairs(pickers) do
     if FzfLua[name] then
-      local def
-      local function gen_def(n, o)
-        local wrapped = { FzfLua[n](o) }
-        return {
-          name = n,
-          opts = wrapped[3],
-          contents = wrapped[2],
-        }
-      end
       -- Default picker opts set the tone for this picker options
       -- this way convert reload / exec_silent actions will use a consistent
       -- opts ref in the callbacks so we can later modify internal values
-      def = gen_def(name, i == 1 and opts or opts_copy)
+      local def = gen_def(name, i == 1 and opts or opts_copy)
       if i == 1 then
         -- Override opts with the modified return opts and remove start suppression
         opts = def.opts
@@ -171,14 +171,6 @@ M.global = function(opts)
     local name = t[1]
     if FzfLua[name] then
       local def
-      local function gen_def(n, o)
-        local wrapped = { FzfLua[n](o) }
-        return {
-          name = n,
-          opts = wrapped[3],
-          contents = wrapped[2],
-        }
-      end
       if not t.prefix then
         -- Default picker opts set the tone for this picker options
         -- this way convert reload / exec_silent actions will use a consistent

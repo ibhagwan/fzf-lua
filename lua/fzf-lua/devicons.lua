@@ -85,6 +85,7 @@ function NvimWebDevicons:load_icons(opts)
   then
     return true
   end
+  assert(self._state)
 
   -- save the current background & termguicolors
   self._state.bg = vim.o.bg

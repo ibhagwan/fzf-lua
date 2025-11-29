@@ -267,7 +267,7 @@ M.buffer_lines = function(opts)
         end)
       end
 
-      local bnames = {}
+      local bnames = {} ---@type table<string, string>
       local longest_bname = 0
       for _, b in ipairs(buffers) do
         local bname = utils.nvim_buf_get_name(b)
@@ -502,7 +502,7 @@ M.treesitter = function(opts)
 
   local parser = ts.get_parser(bufnr0)
   if not parser then return end
-  parser:parse()
+  parser:parse(true)
   local root = parser:trees()[1]:root()
   if not root then return end
 
@@ -520,13 +520,14 @@ M.treesitter = function(opts)
       local kind = query.captures[id]
 
       local scope = "local" ---@type string
+      ---@diagnostic disable-next-line: param-type-mismatch
       for k, v in pairs(metadata) do
-        if type(k) == "string" and vim.endswith(k, "local.scope") then
+        if k and vim.endswith(k, "local.scope") and type(v) == "string" then
           scope = v
         end
       end
 
-      if node and vim.startswith(kind, "local.definition") then
+      if node and kind and vim.startswith(kind, "local.definition") then
         table.insert(definitions, { kind = kind, node = node, scope = scope })
       end
 

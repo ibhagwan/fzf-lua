@@ -106,6 +106,8 @@ if _G._fzf_lua_is_headless then
 end
 assert(config.globals, "missing gloabals in fzf-lua config")
 
+---@param opts table
+---@return table<string, [string, true?]>
 M.get_diff_files = function(opts)
   local diff_files = {}
   local cmd = opts.git_status_cmd or config.globals.files.git_status_cmd ---@cast cmd string[]
@@ -619,6 +621,7 @@ M.file = function(x, opts)
       utils.__IS_WINDOWS and opts.cwd and path.separator(opts.cwd))
   end
   if opts.git_icons then
+    ---@type [string, true?]
     local diff_info = opts.diff_files
         and opts.diff_files[utils._if_win(path.normalize(origpath), origpath)]
     local indicators = diff_info and diff_info[1] or " "

@@ -299,8 +299,8 @@ function Previewer.base:get_tmp_buffer()
   return tmp_buf
 end
 
----@param bufnr integer
----@param del_cached boolean?
+---@param bufnr? integer
+---@param del_cached? boolean
 function Previewer.base:safe_buf_delete(bufnr, del_cached)
   -- can be nil after closing preview with <F4>
   if not bufnr then return end
@@ -605,7 +605,7 @@ end
 
 function Previewer.base:ts_ctx_toggle()
   local bufnr, winid = self.preview_bufnr, self.win.preview_winid
-  if winid < 0 or not api.nvim_win_is_valid(winid) then return end
+  if not bufnr or winid < 0 or not api.nvim_win_is_valid(winid) then return end
   if self.treesitter.context then
     self.treesitter._context = self.treesitter.context
     self.treesitter.context = nil
@@ -1040,8 +1040,10 @@ function Previewer.base:update_ts_context()
   TSContext.zindex = self.win.winopts.zindex + 20
   for _, t in ipairs({ 0, 20, 50, 100 }) do
     vim.defer_fn(function()
-      if context_updated ---@diagnostic disable-next-line: preferred-local-alias
-          or bufnr ~= self.preview_bufnr
+      local new_bufnr = self.preview_bufnr
+      if context_updated
+          or bufnr ~= new_bufnr
+          or not bufnr
           or not api.nvim_buf_is_valid(bufnr)
       then
         return
@@ -1100,6 +1102,7 @@ function Previewer.base:attach_snacks_image_inline()
   local simg = (_G.Snacks or {}).image
   local bufnr, preview_winid = self.preview_bufnr, self.win.preview_winid
   if not simg
+      or not bufnr
       or not simg.config.enabled
       or not self.snacks_image.enabled
       or not self.snacks_image.render_inline
@@ -1656,6 +1659,7 @@ function Previewer.highlights:populate_preview_buf(entry_str)
 
   local serpent = require "fzf-lua.lib.serpent"
   local buf = self.preview_bufnr
+  if not buf then return end
   local hl = entry_str:match("^[^%s]+")
   local hlgroup = hl
   local lines = {}
