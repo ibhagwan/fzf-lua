@@ -160,7 +160,7 @@ local normalize_tbl = function(opts)
   -- miss keys due to messing with map ordering
   local to_convert = {}
   for k, _ in pairs(opts) do
-    if k:match("%.") then
+    if type(k) == "string" and k:match("%.") then
       table.insert(to_convert, k)
     end
   end
@@ -187,7 +187,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
   -- e.g. `:FzfLua files winopts.border=single`
   normalize_tbl(opts)
 
-  local profile = opts.profile or (function()
+  local profile = opts.profile or opts[1] or (function()
     if type(globals) == "string" then
       local picker_opts = M.globals[globals]
       return picker_opts.profile or picker_opts[1]
