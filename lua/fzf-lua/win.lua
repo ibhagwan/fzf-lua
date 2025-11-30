@@ -1603,7 +1603,15 @@ function FzfWin:update_preview_scrollbar()
 end
 
 function FzfWin:update_statusline()
-  if not self.winopts.split then return end
+  if not self.winopts.split then
+    -- NOTE: 0.12 added float win local statusline, we nullify the statusline here and
+    -- not after `nvim_open_win` in case the user also has fzf.vim installed which sets
+    -- the statusline on WinEnter
+    if utils.__HAS_NVIM_012 and #vim.api.nvim_win_get_config(self.fzf_winid).relative > 0 then
+      vim.wo[self.fzf_winid].statusline = ""
+    end
+    return
+  end
   local parts = self.winopts.title or string.format(" %s ", tostring(FzfLua.get_info().cmd))
   parts = type(parts) == "table" and parts
       or type(parts) == "string" and { parts }
