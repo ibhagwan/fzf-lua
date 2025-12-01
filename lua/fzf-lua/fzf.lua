@@ -123,8 +123,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end
 
   local co = coroutine.running()
-  local jobstart = _G.fzf_jobstart or opts.is_fzf_tmux and vim.fn.jobstart or
-      utils.termopen
+  local jobstart = _G.fzf_jobstart or opts.is_fzf_tmux and vim.fn.jobstart or utils.termopen
   local shell_cmd = utils.__IS_WINDOWS
       -- MSYS2 comes with "/usr/bin/cmd" that precedes "cmd.exe" (#1396)
       and { "cmd.exe", "/d", "/e:off", "/f:off", "/v:off", "/c" }

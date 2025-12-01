@@ -95,10 +95,18 @@ _G.fzf_pty_spawn = function(cmd, opts)
   return pid
 end
 
+local HAS_TMUX = os.getenv("TMUX")
+
 return {
-  { os.getenv("TMUX") and "fzf-tmux" or "fzf-native", },
+  -- always use fzf-tmux profile for fzf native border labels
+  -- nullify "--tmux" in `fzf_opts` if tmux isn't detected
+  { "fzf-tmux" },
   desc = "run in shell cmdline",
-  fzf_opts = { ["--height"] = "50%" },
+  fzf_opts = {
+    ["--height"] = "50%",
+    ["--border"] = HAS_TMUX and "rounded" or "top",
+    ["--tmux"] = (function() return not HAS_TMUX and false or nil end)(),
+  },
   actions = {
     files = {
       true,
@@ -107,6 +115,10 @@ return {
       ["enter"] = function(s, o)
         local entries = vim.tbl_map(
           function(e) return FzfLua.path.entry_to_file(e, o) end, s)
+        entries = vim.tbl_map(function(e)
+          e.path = FzfLua.path.relative_to(e.path, vim.uv.cwd())
+          return e
+        end, entries)
         if ffi and #entries == 1 then
           posix_exec(fn.exepath("nvim"), entries[1].path,
             entries[1].line and ("+" .. entries[1].line) or nil,

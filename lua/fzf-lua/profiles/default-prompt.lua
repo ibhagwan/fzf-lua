@@ -26,6 +26,7 @@ return {
   },
   args                 = prompt("Args"),
   oldfiles             = prompt("Oldfiles"),
+  undotree             = prompt("Undotree"),
   quickfix             = prompt("Quickfix"),
   quickfix_stack       = prompt("Quickfix Stack"),
   loclist              = prompt("Location"),
