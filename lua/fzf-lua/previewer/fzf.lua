@@ -349,7 +349,7 @@ function Previewer.git_diff:new(o, opts)
   self.cmd_modified = path.git_cwd(o.cmd_modified, opts)
   self.cmd_untracked = path.git_cwd(o.cmd_untracked, opts)
   local pager = opts.preview_pager == nil and o.pager or opts.preview_pager
-  if type(pager) == "function" then pager = assert(pager()) end
+  if type(pager) == "function" then pager = pager() end
   local cmd = pager and pager:match("[^%s]+") or nil
   if cmd and vim.fn.executable(cmd) == 1 then
     -- style 2: as we are unable to use %var% within a "cmd /c" without !var! expansion
