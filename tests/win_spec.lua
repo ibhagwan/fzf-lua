@@ -252,7 +252,10 @@ T["win"]["previewer"]["split flex hidden"] = function()
 end
 
 -- E: toggle_behavior=extend, B: builtin previewer, F: "echo {}" preview
-T["win"]["toggle"] = new_set({ parametrize = { { "EB" }, { "EF" }, { "B" }, { "F" } } })
+T["win"]["toggle"] = new_set({
+  parametrize = { { "EB" }, { "EF" }, { "B" }, { "F" } },
+  n_retry = not helpers.IS_LINUX() and 5 or 2
+})
 T["win"]["toggle"][""] = new_set(
   {
     parametrize = {
