@@ -205,6 +205,10 @@ M.branches = function(opts)
       --   remotes/origin/branch
       --   (HEAD detached at origin/branch)
       if not items[1] then return utils.shell_nop() end
+      -- git bisect detached preview (#2441)
+      if items[1]:match("%(no branch, bisect") then
+        items[1] = items[1]:gsub("%(no.-%)", " ")
+      end
       local branch = assert(items[1]:match("^[%*+]*[%s]*[(]?([^%s)]+)"))
       return (preview:gsub("{.*}", branch))
     end, opts, "{}")
