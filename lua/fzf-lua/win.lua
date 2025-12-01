@@ -171,7 +171,6 @@ local _preview_keymaps = {
 }
 
 function FzfWin:setup_keybinds()
-  if not self:validate() then return end
   self.keymap = type(self.keymap) == "table" and self.keymap or {}
   self.keymap.fzf = type(self.keymap.fzf) == "table" and self.keymap.fzf or {}
   self.keymap.builtin = type(self.keymap.builtin) == "table" and self.keymap.builtin or {}
@@ -209,10 +208,25 @@ function FzfWin:setup_keybinds()
       return string.format("change-preview-window(%s)", self:normalize_preview_layout().str)
     end)
   end
-  self._fzf_toggle_prev_bind = nil
   -- find the toggle_preview keybind, to be sent when using a split for the native
   -- pseudo fzf preview window or when using native and treesitter is enabled
-  if self.winopts.split or not self.previewer_is_builtin then
+  self._fzf_toggle_prev_bind = nil
+  -- use fzf-native binds in fzf-tmux or cli (shell) profile
+  if self._o._is_fzf_tmux or _G.fzf_jobstart then
+    for k, v in pairs(self.keymap.builtin) do
+      if type(v) == "string" and v:match("toggle%-preview%-c?cw") then
+        k = utils.neovim_bind_to_fzf(k)
+        self.keymap.fzf[k] = "transform:" .. FzfLua.shell.stringify_data(function(args, _, _)
+          -- only set the layout if preview isn't hidden
+          if not tonumber(args[1]) then return end
+          assert(keymap_tbl[v])
+          assert(loadstring(string.format([[require("fzf-lua.%s").%s]],
+            keymap_tbl[v].module, keymap_tbl[v].fnc)))()
+          return string.format("change-preview-window(%s)", self:normalize_preview_layout().str)
+        end, {}, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")
+      end
+    end
+  elseif self.winopts.split or not self.previewer_is_builtin then
     -- sync toggle-preview
     -- 1. always run the toggle-preview(), and self._fzf_toggle_prev_bind
     for k, v in pairs(self.keymap.builtin) do
@@ -1169,9 +1183,12 @@ function FzfWin:set_style_minimal(winid)
 end
 
 function FzfWin:create()
+  -- Generate border-label from window title
+  self:update_fzf_border_label()
   -- When using fzf-tmux we don't need to create windows
   -- as tmux popups will be used instead
   if self._o._is_fzf_tmux then
+    self:setup_keybinds()
     self:set_backdrop()
     return
   end
@@ -1629,6 +1646,27 @@ function FzfWin:update_statusline()
   local picker = table.remove(parts, 1) or ""
   vim.wo[self.fzf_winid].statusline = "%#fzf1# > %#fzf2#fzf-lua%#fzf3#"
       .. string.format(" %s %s", picker, table.concat(parts, ""))
+end
+
+function FzfWin:update_fzf_border_label()
+  if not self._o.fzf_opts["--border"] or self._o.fzf_opts["--border-label"] == false then
+    return
+  end
+  local parts = self.winopts.title or string.format(" %s ", tostring(FzfLua.get_info().cmd))
+  parts = type(parts) == "table" and parts
+      or type(parts) == "string" and { parts }
+      or {}
+  for i, t in ipairs(parts) do
+    local hl, str = (function()
+      if type(t) == "table" then
+        return t[2], (t[1] or self.hls.title)
+      else
+        return self.hls.title, tostring(t)
+      end
+    end)()
+    parts[i] = utils.ansi_from_hl(hl, str)
+  end
+  self._o.fzf_opts["--border-label"] = table.concat(parts, " ")
 end
 
 ---@param winid integer

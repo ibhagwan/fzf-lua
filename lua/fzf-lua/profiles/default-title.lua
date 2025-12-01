@@ -30,6 +30,7 @@ return {
   },
   args                 = title("Args"),
   oldfiles             = title("Oldfiles"),
+  undotree             = title("Undotree"),
   quickfix             = title("Quickfix List"),
   quickfix_stack       = title("Quickfix List Stack"),
   loclist              = title("Location List"),
