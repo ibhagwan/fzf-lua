@@ -22,7 +22,7 @@ local function load_config()
   local ok, res = utils.rpcexec(_G._fzf_lua_server, "nvim_exec_lua",
     [[return FzfLua.libuv.serialize(FzfLua.config)]], {})
   if not ok then error(res) end ---@cast res string
-  res = libuv.deserialize(res)
+  res = libuv.deserialize(res --[[@as string]])
   return res
 end
 

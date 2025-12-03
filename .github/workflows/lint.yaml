@@ -5,6 +5,11 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
+      - name: Install libbfd
+        run: |
+          sudo apt-get update && sudo apt-get install -y binutils
+          sudo ln -s /usr/lib/x86_64-linux-gnu/libbfd-2.42-system.so /usr/lib/x86_64-linux-gnu/libbfd-2.38-system.so
+
       - name: checkout
         uses: actions/checkout@v4
 

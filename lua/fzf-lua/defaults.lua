@@ -1761,7 +1761,7 @@ M.defaults.zoxide            = {
   actions       = { enter = actions.zoxide_cd }
 }
 
----@class fzf-lua.config.CompleteLine: fzf-lua.config.Lines
+---@class fzf-lua.config.CompleteLine: fzf-lua.config.Blines
 ---@field current_buffer_only? boolean
 ---@field complete? (fun(s: string[], _o: fzf-lua.config.Resolved, l: string, c: integer):string?, integer?)|boolean
 M.defaults.complete_line     = vim.tbl_deep_extend("force", M.defaults.blines, {

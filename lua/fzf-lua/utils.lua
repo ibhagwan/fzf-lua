@@ -610,6 +610,7 @@ end
 local function hex2rgb(hexcol)
   local r, g, b = hexcol:match("#(%x%x)(%x%x)(%x%x)")
   if not r or not g or not b then return end
+  ---@diagnostic disable: param-type-mismatch
   r, g, b = tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
   return r, g, b
 end
