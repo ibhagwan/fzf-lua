@@ -61,7 +61,7 @@ end
 ---between 0-1 will represent percentage of `vim.o.columns` (0: leftmost, 1: rightmost)
 ---if >= 1 will attempt to place the float in the exact screen column.
 ---@field col? number
----@field preview fzf-lua.config.PreviewOpts Preview window configuration.
+---@field preview? fzf-lua.config.PreviewOpts Preview window configuration.
 ---@field split? string|function|false Neovim split command to use for fzf-lua interface, e.g `belowright new`.
 ---@field backdrop? number|boolean Backdrop opacity, 0-100, or false to disable (requires Neovim >= 0.10).
 ---@field fullscreen? boolean Open fzf-lua in fullscreen.
