@@ -5,7 +5,8 @@ return {
     preview = {
       default = "bat",
       border = function(_, m)
-        assert(m.type == "fzf")
+        -- NOTE: will err on `FzfLua ... winopts.toggle_behavior=extend`
+        -- assert(m.type == "fzf")
         if FzfLua.utils.has(m.opts, "fzf", { 0, 63 }) then
           return "border-line"
         else
