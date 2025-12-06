@@ -234,7 +234,7 @@ local function unload_undo_buf()
 end
 
 --- @param buf integer buffer id
---- @param seq integer
+--- @param seq number
 --- @param diff_opts? vim.text.diff.Opts
 --- @return string[], integer
 local function undo_diff(buf, seq, diff_opts)
@@ -250,7 +250,7 @@ local function undo_diff(buf, seq, diff_opts)
   utils.eventignore(function()
     vim.api.nvim_buf_call(info.tmp_buf, function()
       -- state after the undo
-      vim.cmd("noautocmd silent undo " .. seq)
+      vim.cmd("noautocmd silent undo " .. tostring(seq))
       after = vim.api.nvim_buf_get_lines(0, 0, -1, false)
       -- state before the undo
       vim.cmd("noautocmd silent undo")
@@ -312,16 +312,15 @@ function M.builtin:close()
   M.builtin.super.close(self)
 end
 
-
 function M.builtin:toggle_undo_diff()
   self.show_buf = not self.show_buf
   self.win:redraw_preview()
 end
 
 function M.builtin:populate_preview_buf(entry_str)
-  local seq = assert(entry_str:match("%d+"))
+  local seq = assert(tonumber(entry_str:match("%d+")))
   local lines, buf = undo_diff(self.buf, seq, self.diff_opts)
-  if tonumber(seq) > 0 and not self.show_buf then
+  if seq > 0 and not self.show_buf then
     if not self.diff_buf or not vim.api.nvim_buf_is_valid(self.diff_buf) then
       self.diff_buf = self:get_tmp_buffer()
       self.diff_buf = vim.api.nvim_create_buf(false, true)
@@ -333,6 +332,11 @@ function M.builtin:populate_preview_buf(entry_str)
     vim.api.nvim_buf_set_lines(self.diff_buf, 0, -1, false, lines)
     self:set_preview_buf(self.diff_buf, nil, true)
   else
+    utils.eventignore(function()
+      vim.api.nvim_buf_call(buf, function()
+        vim.cmd("noautocmd silent undo " .. tostring(seq))
+      end)
+    end)
     vim.bo[buf].ft = vim.bo[self.buf].ft
     self:set_preview_buf(buf, nil, true)
   end
