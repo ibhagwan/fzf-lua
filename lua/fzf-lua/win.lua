@@ -776,6 +776,7 @@ function FzfWin:set_backdrop()
     -- NOTE: backdrop shoulnd't be hidden with winopts.hide
     -- hide = self.winopts.hide,
   })
+  utils.wo[self.backdrop_win].eventignorewin = "FileType"
   utils.wo[self.backdrop_win].winhl = "Normal:" .. self.hls.backdrop
   utils.wo[self.backdrop_win].winblend = utils.tointeger(self.winopts.backdrop)
   vim.bo[self.backdrop_buf].buftype = "nofile"
