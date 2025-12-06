@@ -1330,7 +1330,7 @@ end
 M.undo = function(selected, _opts)
   if not selected[1] then return end
   local seq = selected[1]:match("%d+")
-  vim.cmd.undo({ seq, mods = { silent = true } })
+  vim.cmd("silent undo " .. tostring(seq))
   utils.info("Undo jump to %s.", seq == "0" and "origin" or "change #" .. tostring(seq))
 end
 
