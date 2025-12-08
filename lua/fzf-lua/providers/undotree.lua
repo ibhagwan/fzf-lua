@@ -203,7 +203,7 @@ local function load_undo_buf(buf)
   end
   info.buf = buf
   info.changedtick = changedtick
-  info.tmp_file = path.join({ vim.fn.stdpath("cache") --[[@as string]], "fzf-lua-undo" })
+  info.tmp_file = path.join({ path.parent(utils.tempname()), "fzf-lua-undo" })
   info.tmp_undo = info.tmp_file .. ".undo"
   info.tmp_buf = vim.fn.bufadd(info.tmp_file)
   vim.bo[info.tmp_buf].swapfile = false
