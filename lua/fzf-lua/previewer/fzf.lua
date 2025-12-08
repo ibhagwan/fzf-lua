@@ -526,7 +526,12 @@ local function make_screenshot(screenshot, addr, lines, columns)
   end
   local has_tui = vim.iter(uis):find(function(info) return info.stdout_tty end)
   if has_tui then
-    utils.rpcexec(addr, "nvim__screenshot", screenshot)
+    utils.rpcexec(addr, "nvim_exec_lua", [[
+      local lines, columns, screenshot = ...
+      return vim._with({ go = { lines = lines, columns = columns } }, function()
+        api.nvim__screenshot(screenshot)
+      end)
+    ]], { lines, columns, screenshot })
     return
   end
   local jobstart = _G.fzf_pty_spawn or vim.fn.jobstart
