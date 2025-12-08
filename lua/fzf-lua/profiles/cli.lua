@@ -31,7 +31,12 @@ end
 local function posix_exec(cmd, ...)
   local _is_win = fn.has("win32") == 1 or fn.has("win64") == 1
   if type(cmd) ~= "string" or _is_win or not ffi then return end
-  ffi.C.execl(cmd, cmd, ...)
+  local args = { ... }
+  -- NOTE: must add NULL to mark end of the vararg
+  table.insert(args, string.byte("\0"))
+  ffi.C.execl(cmd, cmd, unpack(args))
+  -- if `execl` succeeds we should never get here
+  assert(false, string.format([[execl("%s",...) failed with error %d]], cmd, ffi.errno()))
 end
 
 _G.fzf_tty_get_width = function()
