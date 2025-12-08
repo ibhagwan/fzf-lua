@@ -112,9 +112,10 @@ end
 --- @param cb function
 --- @param tree vim.undotree.tree
 --- @param nodes integer[]?
+--- @param reverse boolean
 --- @param parents integer[]?
 --- @param prefix string?
-local function draw_tree(opts, cb, tree, nodes, parents, prefix)
+local function draw_tree(opts, cb, tree, nodes, reverse, parents, prefix)
   if not nodes or #nodes == 0 then return end
   local is_root = nodes[1] == 0
   prefix = prefix or ""
@@ -128,13 +129,14 @@ local function draw_tree(opts, cb, tree, nodes, parents, prefix)
     -- TODO: IMHO the latter (flattened single) is nicer
     -- local is_single = #parents == 1 and #nodes == 1
     local is_single = #nodes == 1
+    local leaf = reverse and "┌" or "└"
     local node = utils.ansi_codes[opts.hls.dir_part](
-          prefix .. ((is_root or is_single) and "" or is_last and "└── " or "├── "))
+          prefix .. ((is_root or is_single) and "" or is_last and leaf .. "── " or "├── "))
         .. utils.ansi_codes[opts.hls.buf_name](tostring(n))
     -- local w = 64 + string.len(node) - vim.fn.strwidth(node)
     cb(n, string.format("%s\t\t%s", node,
       utils.ansi_codes[opts.hls.path_linenr](reltime(v.time))))
-    draw_tree(opts, cb, tree, v.child, nodes,
+    draw_tree(opts, cb, tree, v.child, reverse, nodes,
       prefix .. ((is_root or is_single) and "" or is_last and "    " or "│   "))
   end
 end
@@ -165,7 +167,8 @@ M.undotree = function(opts)
         coroutine.yield()
       end
 
-      draw_tree(opts, add_entry, tree, { 0 })
+      local reverse = utils.map_get(opts, "fzf_opts.--layout") == "default"
+      draw_tree(opts, add_entry, tree, { 0 }, reverse)
 
       cb(nil) -- EOF
     end)()
