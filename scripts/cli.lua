@@ -50,5 +50,5 @@ local cmd = "FzfLua " .. table.concat(_G.arg, " ")
 assert(pcall(vim.cmd, cmd), "wrong cmd: " .. cmd)
 
 while true do
-  vim.wait(0)
+  vim.wait(100)
 end
