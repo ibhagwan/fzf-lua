@@ -519,13 +519,17 @@ local function make_screenshot(screenshot, addr, lines, columns)
   local closing = false
   local ok, uis = utils.rpcexec(addr, "nvim_list_uis")
   vim.fn.writefile({}, screenshot)
-  if not ok then
+  if not ok then -- instance seems died, signal to reload the list
     local winobj = FzfLua.utils.fzf_winobj()
     if winobj then winobj:SIGWINCH({ "win.unhide" }) end
     return
   end
   local has_tui = vim.iter(uis):find(function(info) return info.stdout_tty end)
   if has_tui then
+    if vim.env.NVIM == addr then -- parent instance
+      utils.rpcexec(addr, "nvim__screenshot", screenshot)
+      return
+    end
     utils.rpcexec(addr, "nvim_exec_lua", [[
       local lines, columns, screenshot = ...
       return vim._with({ go = { lines = lines, columns = columns } }, function()
