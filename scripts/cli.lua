@@ -63,9 +63,7 @@ _G.fzf_jobstart = function(cmd, opts)
     end))
 end
 
-local cmd = "FzfLua " .. table.concat(_G.arg, " ")
----@diagnostic disable-next-line: param-type-mismatch
-assert(pcall(vim.cmd, cmd), "wrong cmd: " .. cmd)
+require("fzf-lua.cmd").run_command(unpack(_G.arg))
 
 while true do
   vim.wait(100)
