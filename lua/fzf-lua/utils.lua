@@ -185,7 +185,12 @@ function M.notify(lvl, ...)
       verbose = false,
       err = M.__HAS_NVIM_011 and lvl == vim.log.levels.ERROR and true or nil,
     }
-    vim.api.nvim_echo(chunks, true, echo_opts)
+    if _G.fzf_jobstart and #vim.api.nvim_list_uis() == 0 then
+      local output = vim.tbl_map(function(chunk) return chunk[1] end, chunks)
+      error(table.concat(output, ""))
+    else
+      vim.api.nvim_echo(chunks, true, echo_opts)
+    end
   end
   if vim.in_fast_event() then
     vim.schedule(nvim_echo)
