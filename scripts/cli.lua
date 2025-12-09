@@ -6,7 +6,25 @@ local dir = fn.fnamemodify(fn.resolve(__FILE__), ":h:h:p")
 vim.opt.rtp:append(dir)
 vim.cmd.runtime("plugin/fzf-lua.lua")
 local path = require("fzf-lua.path")
-vim.opt.rtp:append(path.join({ dir, "deps", "nvim-web-devicons" }))
+-- append icon plugin to rtp, only the first found is loaded
+local data = fn.stdpath("data") --[[@as string]]
+for _, plug in ipairs({ "nvim-web-devicons", "mini.nvim" }) do
+  local found
+  for _, parts in ipairs({
+    { data, "site", "pack", plug, "opt" },
+    { data, "site", "pack", plug, "start" },
+    { data, "lazy", plug },
+    { dir,  "deps", plug }
+  }) do
+    if not found then
+      local ppath = path.join(parts)
+      if uv.fs_stat(ppath) then
+        found = true
+        vim.opt.rtp:append(ppath)
+      end
+    end
+  end
+end
 vim.o.swapfile = false
 vim.o.showmode = false
 vim.o.showcmd = false
