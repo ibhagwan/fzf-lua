@@ -380,7 +380,7 @@ function M.native:cmdline(o)
     return table.concat(lines, "\r\n")
   end, self.opts, "{}")
   if self.pager then
-    act = act .. " | " .. self.pager
+    act = act .. " | " .. utils._if_win_normalize_vars(self.pager)
   end
   return act
 end
