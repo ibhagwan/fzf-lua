@@ -252,14 +252,13 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
       if opts.is_live and type(opts.query) == "string" and #opts.query > 0 then
         -- highlight exact matches with `live_workspace_symbols` (#1028)
         local sym, text = entry.text:match("^(.+%])(.*)$")
-        local pattern = "[" .. utils.lua_regex_escape(
-          opts.query:gsub("%a", function(x)
-            return string.upper(x) .. string.lower(x)
-          end)
-        ) .. "]+"
-        entry.text = sym .. text:gsub(pattern, function(x)
-          return utils.ansi_codes[opts.hls.live_sym](x)
-        end)
+        local s, e = text:lower():find(opts.query:lower(), 1, true)
+        if s and e then
+          text = text:sub(1, s - 1)
+              .. utils.ansi_codes[opts.hls.live_sym](text:sub(s, e))
+              .. text:sub(e + 1)
+        end
+        entry.text = sym .. text
       end
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
