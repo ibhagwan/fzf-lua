@@ -290,7 +290,7 @@ function M.native:new(o, opts)
   M.native.super.new(self, o, opts)
   setmetatable(self, M.native)
   local pager = opts.preview_pager == nil and o.pager or opts.preview_pager
-  if type(pager) == "function" then pager = assert(pager()) end
+  if type(pager) == "function" then pager = pager() end
   local cmd = pager and pager:match("[^%s]+") or nil
   if cmd and vim.fn.executable(cmd) == 1 then self.pager = pager end
   self.diff_opts = o.diff_opts
@@ -312,7 +312,7 @@ function M.native:cmdline(o)
     return table.concat(lines, "\r\n")
   end, self.opts, "{}")
   if self.pager then
-    act = act .. " | " .. self.pager
+    act = act .. " | " .. utils._if_win_normalize_vars(self.pager)
   end
   return act
 end

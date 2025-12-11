@@ -359,7 +359,7 @@ function M.native:new(o, opts)
   setmetatable(self, M.native)
   self.buf = utils.CTX().bufnr
   local pager = opts.preview_pager == nil and o.pager or opts.preview_pager
-  if type(pager) == "function" then pager = assert(pager()) end
+  if type(pager) == "function" then pager = pager() end
   local cmd = pager and pager:match("[^%s]+") or nil
   if cmd and vim.fn.executable(cmd) == 1 then self.pager = pager end
   self.diff_opts = o.diff_opts
