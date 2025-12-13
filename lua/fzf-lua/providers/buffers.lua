@@ -129,6 +129,14 @@ local populate_buffer_entries = function(opts, bufnrs, winid)
       buf.info.name = utils.nvim_buf_get_name(buf.bufnr, buf.info)
     end
 
+    -- Use vim.b.term_title where possible (#2456)
+    if utils.is_term_bufname(buf.info.name) then
+      local term_title = vim.b[bufnr].term_title
+      if term_title ~= buf.info.name then
+        buf.info.name = "term://" .. term_title:gsub("^term://", "")
+      end
+    end
+
     -- get the correct lnum for tabbed buffers
     if winid then
       buf.info.lnum = vim.api.nvim_win_get_cursor(winid)[1]
