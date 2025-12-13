@@ -597,9 +597,10 @@ M.defaults.git                   = {
   },
   ---@class fzf-lua.config.GitDiff: fzf-lua.config.GitBase
   diff = {
-    cmd               = "git --no-pager diff --name-only {ref}",
+    cmd               = "git --no-pager diff --name-only {compare_against} {ref}",
     ref               = "HEAD",
-    preview           = "git diff {ref} {file}",
+    compare_against   = "",
+    preview           = "git diff {compare_against} {ref} {file}",
     preview_pager     = M._preview_pager_fn,
     multiprocess      = 1, ---@type integer|boolean
     _type             = "file",
