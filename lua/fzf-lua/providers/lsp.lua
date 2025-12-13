@@ -232,6 +232,56 @@ local function symbols_to_items(opts, symbols, bufnr, child_prefix)
   return _symbols_to_items(symbols, {}, bufnr or 0, "")
 end
 
+---@param text string
+---@param query string
+---@param hl_func fun(s: string): string
+---@return string
+local function fuzzy_highlight(text, query, hl_func)
+  if not query or #query == 0 then
+    return text
+  end
+
+  local s, e
+  if query:find("%u") then -- exact match
+    s, e = text:find(query, 1, true)
+  end
+  if not s then -- case-insensitive match
+    s, e = text:lower():find(query:lower(), 1, true)
+  end
+  if s and e then
+    return text:sub(1, s - 1)
+        .. hl_func(text:sub(s, e))
+        .. text:sub(e + 1)
+  end
+
+  -- fuzzy match: highlight only matched chars
+  local text_lower = text:lower()
+  local query_lower = query:lower()
+  local match_indices = {}
+  local ti, qi = 1, 1
+  while ti <= #text and qi <= #query do
+    if text_lower:sub(ti, ti) == query_lower:sub(qi, qi) then
+      match_indices[#match_indices + 1] = ti
+      qi = qi + 1
+    end
+    ti = ti + 1
+  end
+  if #match_indices ~= #query then
+    return text
+  end
+  local buf = {}
+  local mi = 1
+  for i = 1, #text do
+    if mi <= #match_indices and i == match_indices[mi] then
+      buf[#buf + 1] = hl_func(text:sub(i, i))
+      mi = mi + 1
+    else
+      buf[#buf + 1] = text:sub(i, i)
+    end
+  end
+  return table.concat(buf)
+end
+
 local function symbol_handler(opts, cb, _, result, ctx, _)
   result = utils.tbl_islist(result) and result or { result }
   local items
@@ -250,15 +300,9 @@ local function symbol_handler(opts, cb, _, result, ctx, _)
         (not opts._regex_filter_fn or opts._regex_filter_fn(entry, utils.CTX())) then
       local mbicon_align = 0
       if opts.is_live and type(opts.query) == "string" and #opts.query > 0 then
-        -- highlight exact matches with `live_workspace_symbols` (#1028)
+        -- highlight exact or fuzzy matches with `live_workspace_symbols` (#1028)
         local sym, text = entry.text:match("^(.+%])(.*)$")
-        local s, e = text:lower():find(opts.query:lower(), 1, true)
-        if s and e then
-          text = text:sub(1, s - 1)
-              .. utils.ansi_codes[opts.hls.live_sym](text:sub(s, e))
-              .. text:sub(e + 1)
-        end
-        entry.text = sym .. text
+        entry.text = sym .. fuzzy_highlight(text, opts.query, utils.ansi_codes[opts.hls.live_sym])
       end
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
