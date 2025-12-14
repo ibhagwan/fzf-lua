@@ -116,7 +116,7 @@ local history = function(opts, str)
   local dr              = opts.reverse_list and 1 or -1
   local bulk            = 500
   local from, to, delta = dr, dr * histnr, dr * bulk
-  local content         = coroutine.wrap(function(cb)
+  local content         = function(cb)
     local co = coroutine.running()
     for i = from, to, delta do
       vim.schedule(function()
@@ -136,8 +136,8 @@ local history = function(opts, str)
       coroutine.yield()
     end
     cb(nil)
-  end)
-  core.fzf_exec(content, opts)
+  end
+  core.fzf_exec(function(cb) coroutine.wrap(content)(cb) end, opts)
 end
 
 ---@param opts fzf-lua.config.CommandHistory|{}?
