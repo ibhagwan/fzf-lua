@@ -60,10 +60,6 @@ local function locations_to_entries(locations, enc)
 end
 
 local jump_to_location = function(opts, result, enc)
-  -- exits the fzf window when use with async
-  -- safe to call even if the interface is closed
-  utils.fzf_exit()
-
   local action = opts.jump1_action
   if action then
     local entries = locations_to_entries({ result }, enc)
