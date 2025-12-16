@@ -1325,6 +1325,9 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   self:close_preview(hide)
   -- Abort hidden fzf job?
   if not hide and self._hidden_fzf_bufnr and self._hidden_fzf_bufnr ~= self.fzf_bufnr then
+    vim.fn.jobstop(vim.bo[self._hidden_fzf_bufnr].channel)
+    -- local ok, pid = pcall(fn.jobpid, vim.bo[self._hidden_fzf_bufnr].channel)
+    -- print(ok, pid, ok and vim.uv.os_getpriority(pid))
     pcall(api.nvim_buf_delete, self._hidden_fzf_bufnr, { force = true })
   end
   -- Clear treesitter buffer cache and deregister decoration callbacks
