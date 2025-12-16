@@ -1312,6 +1312,11 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   if fzf_bufnr and fzf_bufnr ~= self.fzf_bufnr then
     return
   end
+  -- we restore normal mode before exiting fzf due toma neovim bug? whereas
+  -- switching from a term win to another term win preserves terminal mode
+  -- even if the target window was in normal terminal mode (#2054 #2419)
+  local ctx = utils.__CTX() or {}
+  if ctx.mode == "nt" then vim.cmd "stopinsert" end
   --
   -- prevents race condition with 'win_leave'
   self.closing = true
@@ -1393,11 +1398,6 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
     -- use `vim.o.hlsearch` as `vim.cmd("hls")` is invalid
     vim.o.hlsearch = true
     self.hls_on_close = nil
-  end
-  -- Restore insert/normal-terminal mode (#2054)
-  local ctx = utils.__CTX() or {}
-  if ctx.mode == "nt" then
-    utils.feed_keys_termcodes([[<C-\><C-n>]])
   end
   if self.winopts and type(self.winopts.on_close) == "function" then
     self.winopts.on_close()
