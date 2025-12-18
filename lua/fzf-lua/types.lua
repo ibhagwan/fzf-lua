@@ -324,6 +324,7 @@ FzfLua.tags_live_grep = require("fzf-lua.providers.tags").live_grep
 FzfLua.tagstack = require("fzf-lua.providers.nvim").tagstack
 FzfLua.tmux_buffers = require("fzf-lua.providers.tmux").buffers
 FzfLua.treesitter = require("fzf-lua.providers.buffers").treesitter
+FzfLua.undotree = require("fzf-lua.providers.undotree").undotree
 FzfLua.zoxide = require("fzf-lua.providers.files").zoxide
 
 ---@class fzf-lua.win.api: fzf-lua.Win
