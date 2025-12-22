@@ -131,8 +131,8 @@ local populate_buffer_entries = function(opts, bufnrs, winid)
 
     -- Use vim.b.term_title where possible (#2456)
     if utils.is_term_bufname(buf.info.name) then
-      local term_title = vim.b[bufnr].term_title
-      if term_title ~= buf.info.name then
+      local term_title = vim.b[bufnr].term_title ---@type string?
+      if term_title and term_title ~= buf.info.name then
         buf.info.name = "term://" .. term_title:gsub("^term://", "")
       end
     end
