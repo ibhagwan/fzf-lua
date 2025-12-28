@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.9.0        Last change: 2025 November 29
+*fzf-lua.txt*         For Neovim >= 0.9.0        Last change: 2025 December 28
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -96,9 +96,9 @@ Using lazy.nvim <https://github.com/folke/lazy.nvim>
       -- dependencies = { "nvim-mini/mini.icons" },
       ---@module "fzf-lua"
       ---@type fzf-lua.Config|{}
-      ---@diagnostics disable: missing-fields
+      ---@diagnostic disable: missing-fields
       opts = {}
-      ---@diagnostics enable: missing-fields
+      ---@diagnostic enable: missing-fields
     }
 <
 
