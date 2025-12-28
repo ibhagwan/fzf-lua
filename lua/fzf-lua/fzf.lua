@@ -3,8 +3,6 @@
 -- does not close the pipe before all writes are complete
 -- option to not add '\n' on content function callbacks
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf.lua
----@diagnostic disable-next-line: deprecated
-local uv = vim.uv or vim.loop
 
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"

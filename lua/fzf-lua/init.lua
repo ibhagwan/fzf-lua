@@ -54,7 +54,7 @@ do
     group = vim.api.nvim_create_augroup("FzfLuaNvimQuit", { clear = true }),
     callback = function()
       local win = utils.fzf_winobj()
-      if win and win:hidden() then ---@diagnostic disable-next-line: param-type-mismatch
+      if win and win:hidden() then ---@cast win._hidden_fzf_bufnr -?
         vim.api.nvim_buf_delete(win._hidden_fzf_bufnr, { force = true })
       end
     end,
