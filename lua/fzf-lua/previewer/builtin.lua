@@ -601,6 +601,33 @@ function Previewer.base:scroll(direction)
   self.win:update_preview_scrollbar()
   self:update_render_markdown()
   self:update_ts_context()
+  self:copy_extmarks()
+end
+
+-- https://github.com/kevinhwang91/nvim-bqf/blob/b51a37fcd808edafd52511458467c8c9a701ea8d/lua/bqf/preview/extmark.lua#L20
+function Previewer.base:copy_extmarks()
+  -- copy extmarks from source window to preview window
+  if not self.win or not self.win:validate_preview() or not self.loaded_entry or not self.loaded_entry.bufnr then return end
+  self.ns_extmarks = self.ns_extmarks or api.nvim_create_namespace("fzf-lua.preview.extmarks")
+  local src_bufnr = self.loaded_entry.bufnr
+  local dst_bufnr = self.preview_bufnr
+  local ns = self.ns_extmarks
+  local wi = utils.getwininfo(self.win.preview_winid) ---@cast wi -?
+  local topline = wi.topline
+  local botline = wi.botline
+  for _, n in pairs(api.nvim_get_namespaces()) do
+    local extmarks = api.nvim_buf_get_extmarks(src_bufnr, n, { topline - 1, 0 },
+      { botline - 1, -1 },
+      { details = true })
+    for _, m in ipairs(extmarks) do
+      local _, row, col, details = unpack(m) ---@cast details -?
+      local endRow, endCol = details.end_row, details.end_col
+      local hlGroup = details.hl_group
+      local priority = details.priority
+      pcall(api.nvim_buf_set_extmark, dst_bufnr, ns, row, col,
+        { end_row = endRow, end_col = endCol, hl_group = hlGroup, priority = priority })
+    end
+  end
 end
 
 function Previewer.base:ts_ctx_toggle()
