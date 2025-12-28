@@ -23,7 +23,7 @@ local function quit() vim.cmd.quit() end
 local function parse_entries(s, o)
   return vim.tbl_map(function(e)
     e = FzfLua.path.entry_to_file(e --[[@as string]], o)
-    e.path = FzfLua.path.relative_to(assert(e.path), vim.uv.cwd())
+    e.path = FzfLua.path.relative_to(assert(e.path), FzfLua.utils.cwd())
     return e
   end, s)
 end
@@ -36,7 +36,7 @@ local function posix_exec(cmd, ...)
   table.insert(args, string.byte("\0"))
   ffi.C.execl(cmd, cmd, unpack(args))
   -- if `execl` succeeds we should never get here
-  assert(false, string.format([[execl("%s",...) failed with error %d]], cmd, ffi.errno()))
+  error(string.format([[execl("%s",...) failed with error %d]], cmd, ffi.errno()))
 end
 
 _G.fzf_tty_get_width = function()

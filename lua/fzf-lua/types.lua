@@ -2,7 +2,7 @@
 error("Cannot require a meta file")
 
 ---@class fzf-lua
-_G.FzfLua = require("fzf-lua")
+local FzfLua = require("fzf-lua")
 
 ---@class fzf-lua.path.Entry
 ---@field stripped? string
@@ -23,8 +23,8 @@ _G.FzfLua = require("fzf-lua")
 ---@field tick? integer
 ---@field no_syntax? boolean
 ---@field cached? fzf-lua.buffer_or_file.Bcache
----@field content? string[]
 ---@field filetype? string
+---@field content? string
 
 ---@class fzf-lua.keymap.Entry
 ---@field vmap string?
