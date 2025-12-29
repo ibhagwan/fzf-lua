@@ -116,21 +116,21 @@ local FzfLua = require("fzf-lua")
 ---@field actions? fzf-lua.config.Actions|(fun(opts: fzf-lua.config.Resolved):fzf-lua.config.Actions)
 ---@field no_header? boolean
 ---@field no_header_i? boolean
----@field prompt? string
----@field cwd? string
+---@field prompt? string Fzf prompt, passed to fzf as `--prompt` flag.
+---@field cwd? string Sets the current working directory.
 ---@field multiprocess? integer|boolean
 ---@field fn_transform? boolean|string|function
 ---@field fn_preprocess? boolean|string|function
 ---@field fn_postprocess? boolean|string|function
----@field file_icons? boolean|integer
----@field color_icons? boolean
----@field git_icons? boolean
+---@field file_icons? boolean|integer If available, display file icons. Set to `true` will attempt to use "nvim-web-devicons" and fallback to "mini.icons", other possible values are `devicons` or `mini` which force loading a specific icons plugin.
+---@field color_icons? boolean Add coloring of file|git icons.
+---@field git_icons? boolean If inside a git-repo add git status indicator icons e.g. `M` for modified files.
 ---@field silent? boolean|integer
----@field previewer? fzf-lua.config.Previewer|string
+---@field previewer? fzf-lua.config.Previewer|string Previewer override, set to `false` to disable the previewer. By default files pickers use the "builtin" previewer, possible values for file pickers `bat|cat|head`.
 ---@field preview? string|function|table
 ---@field complete? (fun(s: string[], _o: fzf-lua.config.Resolved, l: string, c: integer):string?, integer?)|boolean
----@field header string
----@field query? string
+---@field header string Header line, set to any string to display a header line, set to `false` to disable fzf-lua interactive headers (e.g. "ctrl-g to disable .gitignore", etc), passed to fzf as `--header` flag.
+---@field query? string Initial query (prompt text), passed to fzf as `--query` flag.
 ---@field resume? boolean
 ---@field no_resume? boolean
 ---@field no_hide? boolean
@@ -147,6 +147,7 @@ local FzfLua = require("fzf-lua")
 ---@field debug? boolean|integer|'v'|'verbose'
 ---@field preview_offset? string
 ---@field render_crlf? boolean
+---@field formatter? string Custom path formatter, can be defined under `setup.formatters`, fzf-lua comes with a builtin vscode-like formatter, displaying the filename first followed by the folder.
 ---@field _fzf_cli_args? string[]
 ---@field __INFO fzf-lua.Info
 ---@field __CTX fzf-lua.Ctx

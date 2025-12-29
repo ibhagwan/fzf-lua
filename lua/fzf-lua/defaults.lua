@@ -46,27 +46,19 @@ end
 ---@field fzf_colors? table<string, string> Treesitter fzf color overrides.
 
 ---@class fzf-lua.config.Winopts: vim.api.keyset.win_config
----Height of the fzf-lua float
----between 0-1 will represent percentage of `vim.o.lines` (1: max height)
----if >= 1 will use fixed number of lines.
----@field height? number
----Width of the fzf-lua float
----between 0-1 will represent percentage of `vim.o.columns` (1: max width)
----if >= 1 will use fixed number of columns.
----@field width? number
----Screen row where to place the fzf-lua float window
----between 0-1 will represent percentage of `vim.o.lines` (0: top, 1: bottom)
----if >= 1 will attempt to place the float in the exact screen line.
----@field row? number
----Screen column where to place the fzf-lua float window
----between 0-1 will represent percentage of `vim.o.columns` (0: leftmost, 1: rightmost)
----if >= 1 will attempt to place the float in the exact screen column.
----@field col? number
+---@field height? number Height of the fzf-lua float, between 0-1 will represent percentage of `vim.o.lines` (1: max height), if >= 1 will use fixed number of lines.
+---@field width? number Width of the fzf-lua float, between 0-1 will represent percentage of `vim.o.columns` (1: max width), if >= 1 will use fixed number of columns.
+---@field row? number Screen row where to place the fzf-lua float window, between 0-1 will represent percentage of `vim.o.lines` (0: top, 1: bottom), if >= 1 will attempt to place the float in the exact screen line.
+---@field col? number Screen column where to place the fzf-lua float window, between 0-1 will represent percentage of `vim.o.columns` (0: leftmost, 1: rightmost), if >= 1 will attempt to place the float in the exact screen column.
+---@field border? string|table Border of the fzf-lua float, possible values are `none|single|double|rounded|thicc|thiccc|thicccc` or a custom border character array passed as is to `nvim_open_win`.
+---@field title? string Controls title display in the fzf window, set by the calling picker.
+---@field title_pos? string Controls title display in the fzf window, possible values are `left|right|center`.
+---@field title_flags? boolean Set to `false` to disable fzf window title flags (hidden, ignore, etc).
 ---@field preview? fzf-lua.config.PreviewOpts Preview window configuration.
 ---@field split? string|function|false Neovim split command to use for fzf-lua interface, e.g `belowright new`.
----@field backdrop? number|boolean Backdrop opacity, 0-100, or false to disable (requires Neovim >= 0.10).
----@field fullscreen? boolean Open fzf-lua in fullscreen.
----@field treesitter? fzf-lua.config.TreesitterWinopts Use treesitter highlighting in fzf's main window.
+---@field backdrop? number|boolean Backdrop opacity value, 0 for fully opaque, 100 for fully transparent (i.e. disabled).
+---@field fullscreen? boolean Use fullscreen for the fzf-lua floating window.
+---@field treesitter? fzf-lua.config.TreesitterWinopts|boolean Use treesitter highlighting in fzf's main window. NOTE: Only works for file-like entries where treesitter parser exists and is loaded for the filetype.
 ---@field on_create? fun(e: { winid?: integer, bufnr?: integer }) Callback after the creation of the fzf-lua main terminal window.
 ---@field on_close? fun() Callback after closing the fzf-lua window.
 ---@field toggle_behavior? string Toggle behavior for fzf-lua window.
@@ -138,16 +130,16 @@ M.defaults        = {
       -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
       delay        = 20,
       ---@class fzf-lua.config.PreviewerWinopts
-      ---@field number boolean Show line numbers in preview.
-      ---@field relativenumber boolean Show relative line numbers in preview.
-      ---@field cursorline boolean Highlight current line in preview.
-      ---@field cursorlineopt string Cursorline option for preview.
-      ---@field cursorcolumn boolean Highlight current column in preview.
-      ---@field signcolumn string Sign column option for preview.
-      ---@field list boolean Show invisible characters in preview.
-      ---@field foldenable boolean Enable code folding in preview.
-      ---@field foldmethod string Fold method for preview.
-      ---@field scrolloff integer Scrolloff option for preview.
+      ---@field number boolean Builtin previewer buffer local option, see `:help 'number'`.
+      ---@field relativenumber boolean Builtin previewer buffer local option, see `:help 'relativenumber'`.
+      ---@field cursorline boolean Builtin previewer buffer local option, see `:help 'cursorline'`.
+      ---@field cursorlineopt string Builtin previewer buffer local option, see `:help 'cursorlineopt'`.
+      ---@field cursorcolumn boolean Builtin previewer buffer local option, see `:help 'cursorcolumn'`.
+      ---@field signcolumn string Builtin previewer buffer local option, see `:help 'signcolumn'`.
+      ---@field list boolean Builtin previewer buffer local option, see `:help 'list'`.
+      ---@field foldenable boolean Builtin previewer buffer local option, see `:help 'foldenable'`.
+      ---@field foldmethod string Builtin previewer buffer local option, see `:help 'foldmethod'`.
+      ---@field scrolloff integer Builtin previewer buffer local option, see `:help 'scrolloff'`.
       ---@field winblend integer Window transparency for preview.
       winopts      = {
         number         = true,
@@ -1784,6 +1776,44 @@ M.defaults.file_icon_padding = ""
 M.defaults.dir_icon          = ""
 
 ---@class fzf-lua.config.HLS
+---@field normal string Main fzf (terminal) window normal (text/bg) highlight group.
+---@field border string Main fzf (terminal) window border highlight group.
+---@field title string Main fzf (terminal) window title highlight group.
+---@field title_flags string Main fzf (terminal) window title flags highlight group (hidden, etc).
+---@field backdrop string Backdrop color, black by default, used to darken the background color when opening the UI.
+---@field help_normal string Help window (F1) normal (text/bg) highlight group.
+---@field help_border string Help window (F1) border highlight group.
+---@field preview_normal string Builtin previewer window normal (text/bg) highlight group.
+---@field preview_border string Builtin previewer window border highlight group.
+---@field preview_title string Builtin previewer window title highlight group.
+---@field cursor string Builtin previewer window `Cursor` highlight group.
+---@field cursorline string Builtin previewer window `CursorLine` highlight group.
+---@field cursorlinenr string Builtin previewer window `CursorLineNr` highlight group.
+---@field search string Builtin previewer window search matches highlight group.
+---@field scrollborder_e string Builtin previewer window `border` scrollbar empty highlight group.
+---@field scrollborder_f string Builtin previewer window `border` scrollbar full highlight group.
+---@field scrollfloat_e string Builtin previewer window `float` scrollbar empty highlight group.
+---@field scrollfloat_f string|false Builtin previewer window `float` scrollbar full highlight group.
+---@field header_bind string Interactive headers keybind highlight group, e.g. `<ctrl-g> to Disable .gitignore`.
+---@field header_text string Interactive headers description highlight group, e.g. `<ctrl-g> to Disable .gitignore`.
+---@field path_colnr string Highlight group for the column part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `quickfix`, `lsp`, `diagnostics`, etc.
+---@field path_linenr string Highlight group for the line part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `quickfix`, `lsp`, `diagnostics`, etc.
+---@field buf_name string Highlight group for buffer name (filepath) in `lines`.
+---@field buf_id string Highlight group for buffer id (number) in `lines`.
+---@field buf_nr string Highlight group for buffer number in `buffers`, `tabs`.
+---@field buf_linenr string Highlight group for buffer line number in `lines`, `blines` and `treesitter`.
+---@field buf_flag_cur string Highlight group for the current buffer flag in `buffers`, `tabs`.
+---@field buf_flag_alt string Highlight group for the alternate buffer flag in `buffers`, `tabs`.
+---@field tab_title string Highlight group for the tab title in `tabs`.
+---@field tab_marker string Highlight group for the current tab marker in `tabs`.
+---@field dir_icon string Highlight group for the directory icon in paths that end with a separator, usually used in path completion, e.g. `complete_path`.
+---@field dir_part string Highlight group for the directory part when using `path.dirname_first` or `path.filename_first` formatters.
+---@field file_part string Highlight group for the file part when using `path.dirname_first` or `path.filename_first` formatters.
+---@field live_prompt string Highlight group for the prompt text in "live" pickers.
+---@field live_sym string Highlight group for the matched characters in `lsp_live_workspace_symbols`.
+---@field cmd_global string Highlight group for global commands in `:FzfLua commands`, by default links to `Directory`.
+---@field cmd_buf string Highlight group for buffer commands in `:FzfLua commands`, by default links to `Added`.
+---@field cmd_ex string Highlight group for ex commands in `:FzfLua commands`, by default links to `Statement`.
 ---@field fzf fzf-lua.config.fzfHLS
 M.defaults.__HLS             = {
   normal         = "FzfLuaNormal",
@@ -1825,6 +1855,20 @@ M.defaults.__HLS             = {
   cmd_buf        = "FzfLuaCmdBuf",
   cmd_global     = "FzfLuaCmdGlobal",
   ---@class fzf-lua.config.fzfHLS
+  ---@field normal string Highlight group for fzf's `fg` and `bg`, by default links to `FzfLuaNormal`.
+  ---@field cursorline string Highlight group for fzf's `fg+` and `bg+`, by default links to `FzfLuaCursorLine`.
+  ---@field match string Highlight group for fzf's `hl+`, by default links to `Special`.
+  ---@field border string Highlight group for fzf's `border`, by default links to `FzfLuaBorder`.
+  ---@field scrollbar string Highlight group for fzf's `scrollbar`, by default links to `FzfLuaFzfBorder`.
+  ---@field separator string Highlight group for fzf's `separator`, by default links to `FzfLuaFzfBorder`.
+  ---@field gutter string Highlight group for fzf's `gutter`, by default links to `FzfLuaFzfBorder`. NOTE: `bg` property of the highlight group will be used.
+  ---@field header string Highlight group for fzf's `header`, by default links to `FzfLuaTitle`.
+  ---@field info string Highlight group for fzf's `info`, by default links to `NonText`.
+  ---@field pointer string Highlight group for fzf's `pointer`, by default links to `Special`.
+  ---@field marker string Highlight group for fzf's `marker`, by default links to `FzfLuaFzfPointer`.
+  ---@field spinner string Highlight group for fzf's `spinner`, by default links to `FzfLuaFzfPointer`.
+  ---@field prompt string Highlight group for fzf's `prompt`, by default links to `Special`.
+  ---@field query string Highlight group for fzf's `query`, by default links to `FzfLuaNormal` and sets text to `regular` (non-bold).
   fzf            = {
     normal     = "FzfLuaFzfNormal",
     cursorline = "FzfLuaFzfCursorLine",
