@@ -148,6 +148,7 @@ end
 ---@param opts table
 ---@return string search_query
 ---@return string? glob_args
+---@return string[]? globs
 M.glob_parse = function(query, opts)
   if not query or not query:find(opts.glob_separator) then
     return query, nil
@@ -158,14 +159,13 @@ M.glob_parse = function(query, opts)
   end
   local glob_args = ""
   local search_query, glob_str = query:match("(.*)" .. opts.glob_separator .. "(.*)")
-  search_query = search_query or ""
-  glob_str = glob_str or ""
-  for _, s in ipairs(utils.strsplit(glob_str, "%s+")) do
+  local globs = vim.split(glob_str or "", "%s+", { trimempty = true })
+  for _, s in ipairs(globs) do
     if #s > 0 then
       glob_args = glob_args .. ("%s %s "):format(opts.glob_flag, libuv.shellescape(s))
     end
   end
-  return search_query, glob_args
+  return search_query or "", glob_args, globs
 end
 
 -- reposition args before ` -e <pattern>` or ` -- <pattern>`
@@ -234,6 +234,22 @@ M.lgrep = function(s, opts)
   end
 end
 
+---@param paths string[]
+---@param globs? string[]
+---@return string[]
+local glob_filter = function(paths, globs)
+  -- globpath() is very slow
+  local matchers
+  if not globs or not vim.regex then return paths end
+  local pats = vim.tbl_map(vim.F.nil_wrap(vim.fn.glob2regpat), globs)
+  matchers = vim.tbl_map(vim.F.nil_wrap(vim.regex), pats)
+  -- matchers = vim.tbl_map(vim.F.nil_wrap(vim.glob.to_lpeg), globs)
+  if #matchers == 0 then return paths end
+  return vim.tbl_filter(function(p)
+    return vim.iter(matchers):all(function(m) return m:match_str(p) end)
+  end, paths)
+end
+
 ---@param opts table
 ---@param search_query? string
 ---@param no_esc? boolean|number
@@ -281,6 +297,7 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
     opts.rg_glob = false
   end
 
+  local globs
   if opts.fn_transform_cmd then
     local new_cmd, new_query = opts.fn_transform_cmd(search_query, command, opts)
     if new_cmd then
@@ -290,7 +307,8 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
     end
   elseif opts.rg_glob then
     search_query = search_query or ""
-    local new_query, glob_args = M.glob_parse(search_query, opts)
+    local new_query, glob_args
+    new_query, glob_args, globs = M.glob_parse(search_query, opts)
     if glob_args then
       -- since the search string mixes both the query and
       -- glob separators we cannot used unescaped strings
@@ -323,14 +341,18 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
     -- the cwd, this is by design for perf reasons as having to deal with full paths
     -- will result in more code rouets taken in `make_entry.file`
     for i, p in ipairs(search_paths) do
-      search_paths[i] = libuv.shellescape(path.relative_to(path.normalize(p), utils.cwd()))
+      search_paths[i] = path.relative_to(path.normalize(p), utils.cwd())
     end
-    search_path = table.concat(search_paths, " ")
+    search_paths = glob_filter(search_paths, globs)
+    search_path = table.concat(vim.tbl_map(libuv.shellescape, search_paths), " ")
     if is_grep then
       -- grep requires adding `-r` to command as paths can be either file or directory
       command = M.rg_insert_args(command, print_filename_flags .. " -r")
     elseif #search_paths == 1 then
       command = M.rg_insert_args(command, print_filename_flags)
+    end
+    if #search_paths == 0 then -- avoid grep search current directory
+      command = M.rg_insert_args(command, "--max-depth=0")
     end
   end
 
