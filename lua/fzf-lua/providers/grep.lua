@@ -63,6 +63,7 @@ local function normalize_live_grep_opts(opts)
   -- disable treesitter as it collides with cmd regex highlighting
   opts = opts or {}
   opts._treesitter = false
+  if opts.winopts then opts.winopts.treesitter = nil end
 
   ---@type fzf-lua.config.Grep
   opts = config.normalize_opts(opts, "grep")
