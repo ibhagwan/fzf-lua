@@ -588,6 +588,31 @@ M.search_cr = function(selected, opts)
   utils.feed_keys_termcodes("<CR>")
 end
 
+---@param kind ":"|"/"
+---@param selected string[]
+---@param opts fzf-lua.config.CommandHistory|{}
+local hist_del = function(kind, selected, opts)
+  if not vim.iter then return end
+  local iter = opts.reverse_list and vim.iter(selected) or vim.iter(selected):rev()
+  iter:each(function(e)
+    local idx = assert(utils.tointeger(opts.reverse_list and e or -e - 1))
+    local entry = vim.fn.histget(":", idx) -- get before deleted
+    local res = vim.fn.histdel(kind, idx)
+    local info = res == 1 and "deleted" or "fail to delete"
+    local notify = res == 1 and utils.info or utils.warn
+    notify("%s: %s", info, entry)
+  end)
+  vim.cmd("wshada!")
+end
+
+M.ex_del = function(...)
+  hist_del(":", ...)
+end
+
+M.search_del = function(...)
+  hist_del("/", ...)
+end
+
 M.goto_mark = function(selected)
   if not selected[1] then return end
   local mark = selected[1]
