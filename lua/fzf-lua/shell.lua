@@ -180,7 +180,7 @@ M.check_upvalue = function(v, varname)
   local ok, err = pcall(f) ---@cast err string
   assert(
     ok or (not err:match("attempt to index upvalue") and not err:match("attempt to call upvalue")),
-    string.format("multiprocess '%s' cannot have upvalue referecnces", varname))
+    string.format("multiprocess '%s' cannot have upvalue references", varname))
   return str
 end
 
