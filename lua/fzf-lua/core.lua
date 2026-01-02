@@ -86,8 +86,10 @@ M.ACTION_DEFINITIONS = {
   [actions.git_worktree_del]  = { "delete worktree" },
   [actions.ex_run]            = { "edit" },
   [actions.ex_run_cr]         = { "execute" },
+  [actions.ex_del]            = { "delete" },
   [actions.search]            = { "edit" },
   [actions.search_cr]         = { "search" },
+  [actions.search_del]        = { "delete" },
 }
 
 -- converts contents array sent to `fzf_exec` into a single contents

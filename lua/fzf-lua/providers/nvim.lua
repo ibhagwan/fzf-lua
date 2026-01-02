@@ -109,7 +109,7 @@ M.commands = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
----@param opts table
+---@param opts fzf-lua.config.CommandHistory
 ---@param str ":"|"/"
 local history = function(opts, str)
   local histnr          = vim.fn.histnr(str)

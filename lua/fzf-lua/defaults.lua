@@ -1544,25 +1544,31 @@ M.defaults.undotree              = {
 }
 
 ---@class fzf-lua.config.CommandHistory: fzf-lua.config.Base
+---@field reverse_list? boolean
 M.defaults.command_history       = {
   fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
+  render_crlf = true,
   _treesitter = function(line) return "foo.vim", nil, line end,
   fzf_colors  = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
   actions     = {
     ["enter"]  = actions.ex_run_cr,
     ["ctrl-e"] = actions.ex_run,
+    ["ctrl-x"]  = { fn = actions.ex_del, field_index = "{+n}", reload = true }
   },
   _headers    = { "actions" },
 }
 
 ---@class fzf-lua.config.SearchHistory : fzf-lua.config.CommandHistory
+---@field reverse_search? boolean
 M.defaults.search_history        = {
   fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
+  render_crlf = true,
   _treesitter = function(line) return "", nil, line, "regex" end,
   fzf_colors  = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
   actions     = {
     ["enter"]  = actions.search_cr,
     ["ctrl-e"] = actions.search,
+    ["ctrl-x"]  = { fn = actions.search_del, field_index = "{+n}", reload = true }
   },
   _headers    = { "actions" },
 }

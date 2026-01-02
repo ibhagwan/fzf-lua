@@ -146,6 +146,7 @@ local FzfLua = require("fzf-lua")
 ---@field cmd? string
 ---@field debug? boolean|integer|'v'|'verbose'
 ---@field preview_offset? string
+---@field render_crlf? boolean
 ---@field _fzf_cli_args? string[]
 ---@field __INFO fzf-lua.Info
 ---@field __CTX fzf-lua.Ctx
