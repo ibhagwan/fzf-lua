@@ -137,6 +137,14 @@ Example, opening a floating help window at the top of screen with single border:
     })
 ```
 
+#### setup.ui_select
+
+Type: `boolean|table|function`, Default: `false`
+
+Register fzf-lua as the UI interface for `vim.ui.select` during `setup`.
+
+When set to a table or function, the value is passed to `register_ui_select`.
+
 ---
 
 ## Global Options

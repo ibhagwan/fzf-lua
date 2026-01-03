@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2025 October 24
+*fzf-lua-opts.txt*       For Neovim >= 0.8.0      Last change: 2026 January 03
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -174,6 +174,16 @@ border:
           end,
         })
 <
+
+                                                                              
+setup.ui_select                                 *fzf-lua-opts-setup.ui_select*
+
+Type: `boolean|table|function`, Default: `false`
+
+Register fzf-lua as the UI interface for `vim.ui.select` during `setup`.
+
+When set to a table or function, the value is passed to `register_ui_select`.
+
 
 ------------------------------------------------------------------------------
 GLOBAL OPTIONS                                   *fzf-lua-opts-global-options*
@@ -1626,7 +1636,7 @@ Neovim's autocmds
 
 
                                                                               
-undo                                                       *fzf-lua-opts-undo*
+undotree                                               *fzf-lua-opts-undotree*
 
 History undo tree
 

@@ -232,6 +232,12 @@ function M.setup(opts, do_not_reset_defaults)
   config.setup_opts = opts
   -- setup highlights
   M.setup_highlights()
+  -- opt-in register ui.select via setup
+  if opts.ui_select then
+    M.register_ui_select((type(opts.ui_select) == "table" or type(opts.ui_select) == "function")
+      and opts.ui_select or nil,
+      true) -- silent
+  end
 end
 
 M.redraw = function()
