@@ -175,6 +175,15 @@ border:
         })
 <
 
+                                                                              
+setup.register_ui_select               *fzf-lua-opts-setup.register_ui_select*
+
+Type: `boolean|table|function`, Default: `false`
+
+Register fzf-lua as the UI interface for `vim.ui.select` during `setup`.
+
+When set to a table or function, the value is passed to `register_ui_select`.
+
 ------------------------------------------------------------------------------
 GLOBAL OPTIONS                                   *fzf-lua-opts-global-options*
 
