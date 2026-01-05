@@ -1161,42 +1161,40 @@ end
 
 --- `:h filetype-detect`
 ---@param bufnr integer
----@param filepath string
----@return string
+---@param filepath? string
+---@return string?
 local filetype_detect = function(bufnr, filepath)
   -- prepend the buffer number to the path and
   -- set as buffer name, this makes sure 'filetype detect'
   -- gets the right filetype which enables the syntax
-  local tempname = path.join({ tostring(bufnr), filepath })
-  pcall(api.nvim_buf_set_name, bufnr, tempname)
+  if filepath then
+    local tempname = path.join({ tostring(bufnr), filepath })
+    pcall(api.nvim_buf_set_name, bufnr, tempname)
+  end
   -- nvim_buf_call has less side-effects than window switch
   -- doautocmd filetypedetect BufRead (vim.filetype.match + ftdetect) + do_modeline
   local ok, _ = pcall(api.nvim_buf_call, bufnr, function()
     utils.eventignore(function() vim.cmd("filetype detect") end, "FileType")
   end)
   if not ok then
-    utils.warn(("':filetype detect' failed for '%s'"):format(filepath))
+    utils.warn(("':filetype detect' failed for '%s'"):format(tostring(filepath)))
   end
-  return vim.bo[bufnr].filetype
+  local ft = vim.bo[bufnr].filetype
+  return ft ~= "" and ft or nil
 end
 
 ---@param entry? fzf-lua.buffer_or_file.Entry
 function Previewer.buffer_or_file:do_syntax(entry)
-  if not self.preview_bufnr or not entry or not entry.path then return end
+  if not self.preview_bufnr or not entry then return end
   local bufnr = self.preview_bufnr
   local preview_winid = self.win.preview_winid
-  local filepath = entry.path ---@type string
+  local filepath = entry.path ---@type string?
   if not api.nvim_buf_is_valid(bufnr)
       or vim.bo[bufnr].filetype ~= ""
       or fn.bufwinid(bufnr) ~= preview_winid
   then
     return
   end
-
-  -- assign a name for noname scratch buffer
-  -- can be used by snacks.image to abspath e.g. [file.png]
-  -- https://github.com/folke/snacks.nvim/pull/1618
-  vim.b[bufnr].bufpath = filepath
 
   -- do not enable for large files, treesitter still has perf issues:
   -- https://github.com/nvim-treesitter/nvim-treesitter/issues/556
@@ -1225,13 +1223,13 @@ function Previewer.buffer_or_file:do_syntax(entry)
 
   -- filetype detect
   local did_filetype_detect
-  local ft = entry.filetype or vim.filetype.match({ buf = bufnr, filename = filepath })
+  local ft = entry.filetype or
+      vim.filetype.match({ buf = bufnr, filename = filepath, contents = entry.content })
   if not ft then
     ft = filetype_detect(bufnr, filepath)
+    if not ft then return end
     did_filetype_detect = true
   end
-
-  if ft == "" then return end
 
   -- Use buf local var as setting ft might have unintended consequences
   -- used in `update_render_markdown`, `attach_snacks_image`
@@ -1264,7 +1262,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
     end
     -- sometimes vim.filetype.match get a poor filetype (e.g. ft=text)
     -- this should be a fallback we should detect it again from ftdetect/modeline
-    ft = filetype_detect(bufnr, filepath)
+    ft = filetype_detect(bufnr, filepath) or ft
     did_filetype_detect = true
   end
 end
