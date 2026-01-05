@@ -24,7 +24,7 @@ local FzfLua = require("fzf-lua")
 ---@field no_syntax? boolean
 ---@field cached? fzf-lua.buffer_or_file.Bcache
 ---@field filetype? string
----@field content? string
+---@field content? string[]
 
 ---@class fzf-lua.keymap.Entry
 ---@field vmap string?
