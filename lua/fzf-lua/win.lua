@@ -349,7 +349,7 @@ function FzfWin:generate_layout()
   end
 
   if self.previewer_is_builtin and winopts.split then
-    local wininfo = assert(utils.getwininfo(self.fzf_winid))
+    local wininfo = api.nvim_win_get_config(self.fzf_winid)
     -- no signcolumn/number/relativenumber (in set_style_minimal)
     ---@diagnostic disable-next-line: missing-fields
     winopts = {
@@ -1552,10 +1552,10 @@ function FzfWin:update_preview_scrollbar()
   end
 
   local buf = api.nvim_win_get_buf(self.preview_winid)
-  local wininfo = assert(utils.getwininfo(self.preview_winid))
   local line_count = utils.line_count(self.preview_winid, buf)
 
-  local topline, height = wininfo.topline, wininfo.height
+  local topline, height = fn.line("w0", self.preview_winid),
+      api.nvim_win_get_height(self.preview_winid)
   if api.nvim_win_text_height then
     topline = topline == 1 and topline or
         api.nvim_win_text_height(self.preview_winid, { end_row = topline - 1 }).all + 1
@@ -1584,7 +1584,7 @@ function FzfWin:update_preview_scrollbar()
     height = height,
     zindex = self.winopts.zindex + 1,
     row = 0,
-    col = wininfo.width + scrolloff,
+    col = api.nvim_win_get_width(self.preview_winid) + scrolloff,
     border = "none",
     hide = self.winopts.hide,
   }

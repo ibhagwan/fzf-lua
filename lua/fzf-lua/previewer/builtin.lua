@@ -284,11 +284,6 @@ function Previewer.base:set_style_winopts()
   self.win:set_winopts(self.win.preview_winid, self:gen_winopts(), true)
 end
 
-function Previewer.base:preview_is_terminal()
-  if not self.win or not self.win:validate_preview() then return end
-  return (utils.getwininfo(self.win.preview_winid) or {}).terminal == 1
-end
-
 ---@diagnostic disable-next-line: unused
 ---@return integer
 function Previewer.base:get_tmp_buffer()
@@ -577,10 +572,11 @@ function Previewer.base:scroll(direction)
     pcall(api.nvim_win_call, preview_winid, function()
       vim.cmd([[norm! ]] .. input)
       -- `zb` at bottom?
-      local wi = utils.getwininfo(preview_winid)
-      ---@cast wi -?
-      if wi.height > (wi.botline - wi.topline) then
-        api.nvim_win_set_cursor(0, { wi.botline, 1 })
+      local height = api.nvim_win_get_height(preview_winid)
+      local topline = fn.line("w0")
+      local botline = fn.line("w$")
+      if height > (botline - topline) then
+        api.nvim_win_set_cursor(0, { botline, 1 })
         vim.cmd("norm! zvzb")
       end
     end)
@@ -612,9 +608,9 @@ function Previewer.base:copy_extmarks()
   local src_bufnr = self.loaded_entry.bufnr
   local dst_bufnr = self.preview_bufnr
   local ns = self.ns_extmarks
-  local wi = utils.getwininfo(self.win.preview_winid) ---@cast wi -?
-  local topline = wi.topline
-  local botline = wi.botline
+  local win = self.win.preview_winid
+  local topline = fn.line("w0", win)
+  local botline = fn.line("w$", win)
   for _, n in pairs(api.nvim_get_namespaces()) do
     local extmarks = api.nvim_buf_get_extmarks(src_bufnr, n, { topline - 1, 0 },
       { botline - 1, -1 },
@@ -1269,12 +1265,8 @@ end
 
 function Previewer.base:maybe_set_cursorline(win, pos)
   if not pos then return end
-  local wininfo = utils.getwininfo(win)
   local cursorline = false
-  if wininfo
-      and pos[1] >= wininfo.topline
-      and pos[1] <= wininfo.botline
-  then
+  if pos[1] >= fn.line("w0", win) and pos[1] <= fn.line("w$", win) then
     -- reset cursor pos even when it's already there, no bigggie
     -- local curpos = api.nvim_win_get_cursor(win)
     api.nvim_win_set_cursor(win, pos)
@@ -1385,7 +1377,7 @@ end
 ---@param min_winopts boolean?
 function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
   if not self.win or not self.win:validate_preview() then return end
-  if not self:preview_is_terminal() then
+  if not utils.is_term_buffer(self.preview_bufnr) then
     -- set cursor highlights for line|col or tag
     self:set_cursor_hl(entry)
 

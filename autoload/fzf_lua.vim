@@ -16,13 +16,3 @@ function! fzf_lua#getbufinfo(bufnr) abort
   endif
   return info[0]
 endfunction
-
-" Similar to fzf_lua#getbufinfo, but for getwininfo.
-function! fzf_lua#getwininfo(winid) abort
-  let info = getwininfo(a:winid)
-  if empty(info)
-    return []
-  endif
-  unlet! info[0].variables
-  return info[0]
-endfunction
