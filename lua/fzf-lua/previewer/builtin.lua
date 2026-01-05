@@ -851,11 +851,9 @@ end
 
 ---@diagnostic disable-next-line: unused
 ---@param entry fzf-lua.buffer_or_file.Entry
----@return string
+---@return string?
 function Previewer.buffer_or_file:key_from_entry(entry)
-  return (assert(entry.bufnr and string.format("bufnr:%d", entry.bufnr)
-    or entry.uri
-    or entry.path, "Invalid entry for caching"))
+  return (entry.bufnr and string.format("bufnr:%d", entry.bufnr) or entry.uri or entry.path) or nil
 end
 
 ---get and check if cached is update-to-date to be reuse
@@ -864,6 +862,7 @@ end
 function Previewer.buffer_or_file:check_bcache(entry)
   if entry.do_not_cache then return end
   local key = self:key_from_entry(entry)
+  if not key then return end
   local cached = self.cached_buffers[key]
   if not cached then return end
   entry.cached = cached
@@ -1369,14 +1368,10 @@ end
 
 function Previewer.buffer_or_file:update_title(entry)
   if not self.title then return end
-  local filepath = entry.path
-  if filepath then
-    if self.opts.cwd then
-      filepath = path.relative_to(entry.path, self.opts.cwd)
-    end
-    filepath = path.HOME_to_tilde(filepath)
-  end
-  local title = entry.debug and "[DEBUG]" or filepath or entry.uri or entry.bufname
+  local filepath, cwd = entry.path, self.opts.cwd
+  local title = entry.debug and "[DEBUG]"
+      or filepath and (cwd and path.relative_to(filepath, cwd) or filepath)
+      or entry.uri or entry.bufname or ""
   -- was transform function defined?
   if self.title_fnamemodify then
     local wincfg = api.nvim_win_get_config(self.win.preview_winid)
@@ -1426,7 +1421,9 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
   -- Should we cache the current preview buffer?
   -- we cache only named buffers with valid path/uri
   if not entry.do_not_cache and self.preview_bufnr then
-    local cached = self:cache_buffer(self.preview_bufnr, self:key_from_entry(entry), min_winopts)
+    local key = self:key_from_entry(entry)
+    if not key then return end
+    local cached = self:cache_buffer(self.preview_bufnr, key, min_winopts)
     cached.tick = entry.tick
   end
 end
