@@ -1021,14 +1021,7 @@ end
 ---@param bufnr integer
 ---@return boolean
 function M.is_term_buffer(bufnr)
-  -- convert bufnr=0 to current buf so we can call 'bufwinid'
-  bufnr = bufnr == 0 and vim.api.nvim_get_current_buf() or bufnr
-  local winid = vim.fn.bufwinid(bufnr)
-  if tonumber(winid) > 0 and vim.api.nvim_win_is_valid(winid) then
-    return M.getwininfo(winid) --[[@cast -?]].terminal == 1
-  end
-  local bufname = vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_get_name(bufnr)
-  return M.is_term_bufname(bufname)
+  return vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].buftype == "terminal"
 end
 
 ---@param bufnr integer
@@ -1079,18 +1072,14 @@ end
 --   1 for qf list
 --   2 for loc list
 ---@param winid integer
----@param wininfo (vim.fn.getwininfo.ret.item|vim.fn.getwininfo.ret.item[]|false|table)?
 ---@return 1|2|false
-function M.win_is_qf(winid, wininfo)
-  wininfo = wininfo or (vim.api.nvim_win_is_valid(winid) and M.getwininfo(winid))
-  if wininfo and wininfo.quickfix == 1 then
-    return wininfo.loclist == 1 and 2 or 1
-  end
-  return false
+function M.win_is_qf(winid)
+  local winty = vim.api.nvim_win_is_valid(winid) and vim.fn.win_gettype(winid) or nil
+  return winty == "quickfix" and 1 or winty == "loclist" and 2 or false
 end
 
 ---@param bufnr integer
----@param bufinfo (vim.fn.getwininfo.ret.item|vim.fn.getwininfo.ret.item[]|false|table)?
+---@param bufinfo (vim.fn.getbufinfo.ret.item|vim.fn.getbufinfo.ret.item[]|false|table)?
 ---@return 1|2|false
 function M.buf_is_qf(bufnr, bufinfo)
   bufinfo = bufinfo or (vim.api.nvim_buf_is_valid(bufnr) and M.getbufinfo(bufnr))
@@ -1285,16 +1274,6 @@ function M.getbufinfo(bufnr)
     return vim.fn["fzf_lua#getbufinfo"](bufnr)
   else
     return vim.fn.getbufinfo(bufnr)[1] or {}
-  end
-end
-
----@param winid? integer
----@return vim.fn.getwininfo.ret.item?
-function M.getwininfo(winid)
-  if M.__HAS_AUTOLOAD_FNS then
-    return vim.fn["fzf_lua#getwininfo"](winid)
-  else
-    return vim.fn.getwininfo(winid)[1]
   end
 end
 
