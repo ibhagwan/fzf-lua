@@ -1334,7 +1334,12 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       -- vim.regex is always magic, see `:help vim.regex`
       local ok, reg = pcall(vim.regex, regex)
       if ok then
-        regex_start, regex_end = reg:match_line(buf, lnum - 1, math.max(1, col) - 1)
+        if regex ~= regex:lower() then
+          regex_start, regex_end = reg:match_line(buf, lnum - 1, math.max(1, col) - 1)
+        else
+          local line = api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1] or ""
+          regex_start, regex_end = reg:match_str(line:sub(col):lower())
+        end
         regex_end = tonumber(regex_end) and regex_end - regex_start
         regex_start = tonumber(regex_start) and regex_start + math.max(1, col) or 0
       elseif self.opts.silent ~= true then
