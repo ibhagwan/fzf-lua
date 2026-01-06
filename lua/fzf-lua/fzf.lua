@@ -183,7 +183,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     if fzfwin then fzfwin:update_statusline() end
 
     -- See note in "ModeChanged" above
-    if vim.api.nvim_get_mode().mode == "t" then
+
+    if not utils.__HAS_NVIM_012 and vim.api.nvim_get_mode().mode == "t" then
       -- Called from another fzf-win most likely
       utils.feed_keys_termcodes("i")
     else
