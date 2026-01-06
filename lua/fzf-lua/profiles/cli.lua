@@ -147,7 +147,8 @@ return {
             local text = e.stripped:match(":%d+:%d?%d?%d?%d?:?(.*)$") or ""
             return ("%s:%d:%d: %s"):format(e.path, e.line or 1, e.col or 1, text)
           end, entries), file)
-          posix_exec(fn.exepath("nvim"), "-q", file)
+          posix_exec(fn.exepath("nvim"), "--cmd",
+            ("set nohidden | cfile %s | set hidden&"):format(file))
         end
         quit()
       end,
