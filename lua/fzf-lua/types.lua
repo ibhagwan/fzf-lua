@@ -8,8 +8,8 @@ local FzfLua = require("fzf-lua")
 ---@field stripped? string
 ---@field path? string
 ---@field bufnr? integer
----@field line? integer
----@field col? integer
+---@field line? integer 1-based
+---@field col? integer 1-based
 ---@field bufname? string
 ---@field terminal? boolean
 ---@field ctag? string
@@ -25,6 +25,8 @@ local FzfLua = require("fzf-lua")
 ---@field cached? fzf-lua.buffer_or_file.Bcache
 ---@field filetype? string
 ---@field content? string[]
+---@field end_line? integer 1-based
+---@field end_col? integer 1-based
 
 ---@class fzf-lua.keymap.Entry
 ---@field vmap string?

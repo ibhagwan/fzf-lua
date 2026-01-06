@@ -434,14 +434,14 @@ function Previewer.base:populate_preview_buf(_) end -- for lint
 ---@param delay integer
 ---@param func function
 function Previewer.base:debounce(name, delay, func)
-  self.timers = self.timers or {}
+  self.timers = self.timers or {} ---@type table<string, uv.uv_timer_t?>
   local timer = self.timers[name]
   if tonumber(delay) > 0 then
-    if timer and type(timer.is_closing) == "function" and not timer:is_closing() then
+    if timer and not timer:is_closing() then
       timer:stop()
       timer:close()
     end
-    self.timers[name] = vim.defer_fn(func, delay)
+    self.timers[name] = vim.defer_fn(func, delay) ---@as uv.uv_timer_t
   else
     func()
   end
@@ -1319,42 +1319,48 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       return
     end
 
-    self.orig_pos = { lnum, math.max(0, col - 1) }
+    self.orig_pos = { lnum, math.max(1, col) - 1 }
     api.nvim_win_set_cursor(win, cached_pos or self.orig_pos)
     self:maybe_set_cursorline(win, self.orig_pos)
-    -- fn.clearmatches() is slow for bigfile
-    if self.match_id then
-      pcall(fn.matchdelete, self.match_id)
-      self.match_id = nil
-    end
+
+    self.ns_previewer = self.ns_previewer or api.nvim_create_namespace("fzf-lua.preview.hl")
+    api.nvim_buf_clear_namespace(buf, self.ns_previewer, 0, -1)
+    local extmark
 
     -- If regex is available (grep/lgrep), match on current line
-    local regex_start, regex_end = 0, nil
     if regex and hls.search then
+      local regex_start, regex_end
       -- vim.regex is always magic, see `:help vim.regex`
-      local ok, reg = pcall(vim.regex, regex)
-      if ok then
+      ---@diagnostic disable-next-line: param-type-mismatch
+      local reg = vim.F.npcall(vim.regex, regex)
+      if reg then
         if regex ~= regex:lower() then
           regex_start, regex_end = reg:match_line(buf, lnum - 1, math.max(1, col) - 1)
         else
           local line = api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1] or ""
           regex_start, regex_end = reg:match_str(line:sub(col):lower())
         end
-        regex_end = tonumber(regex_end) and regex_end - regex_start
-        regex_start = tonumber(regex_start) and regex_start + math.max(1, col) or 0
       elseif self.opts.silent ~= true then
         utils.warn(
           [[Unable to init vim.regex with "%s", %s. . Add 'silent=true' to hide this message.]],
           regex, reg)
       end
-      if regex_start > 0 then
-        self.match_id = fn.matchaddpos(hls.search, { { lnum, regex_start, regex_end } }, 11) ---@as integer
+      if regex_start and regex_end then
+        regex_end = regex_end - regex_start
+        regex_start = regex_start + math.max(1, col)
+        extmark = api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, regex_start - 1, {
+          end_line = lnum - 1,
+          end_col = regex_start - 1 + regex_end,
+          hl_group = hls.search,
+        })
       end
     end
 
     -- Fallback to cursor hl, only if column exists
-    if regex_start <= 0 and hls.cursor and col > 0 then
-      self.match_id = fn.matchaddpos(hls.cursor, { { lnum, math.max(1, col) } }, 11) ---@as integer
+    if not extmark and hls.cursor and col > 0 then
+      local end_lnum, end_col = entry.end_line or lnum, entry.end_col or col + 1
+      api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, math.max(1, col) - 1,
+        { end_line = end_lnum - 1, end_col = math.max(1, end_col) - 1, hl_group = hls.cursor })
     end
 
     utils.zz()
