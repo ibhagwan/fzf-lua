@@ -47,6 +47,11 @@ local function coroutinify(fn)
 end
 
 -- fix environ for uv.spawn
+---@param cmd string
+---@param opts uv.spawn.options
+---@param on_exit fun(code: integer, signal: integer)
+---@return uv.uv_process_t handle
+---@return integer pid
 M.uv_spawn = function(cmd, opts, on_exit)
   opts.env = (function()
     -- uv.spawn will override all env when table provided?
@@ -60,10 +65,9 @@ M.uv_spawn = function(cmd, opts, on_exit)
       renv[#renv + 1] = string.format("%s=%s", k, tostring(v))
     end
     return renv
-  end)()
-  return uv.spawn(cmd, opts, on_exit)
+  end)() ---@diagnostic disable-next-line: unnecessary-assert, return-type-mismatch
+  return assert(uv.spawn(cmd, opts, on_exit))
 end
-if false then M.uv_spawn = uv.spawn end
 
 
 ---@class fzf-lua.SpawnOpts
