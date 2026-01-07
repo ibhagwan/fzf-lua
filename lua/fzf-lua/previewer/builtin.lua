@@ -1310,7 +1310,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   pcall(api.nvim_win_call, win, function()
     local cached_pos = self.cached_bufnrs[buf]
     if type(cached_pos) ~= "table" then cached_pos = nil end
-    local lnum, col = entry.line, entry.col or 0
+    local lnum, col = entry.line, math.max(1, entry.col or 1)
     if not lnum or lnum < 1 then
       -- set win option is slow with bigfile
       utils.wo.cursorline = false
@@ -1319,7 +1319,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       return
     end
 
-    self.orig_pos = { lnum, math.max(1, col) - 1 }
+    self.orig_pos = { lnum, col - 1 }
     api.nvim_win_set_cursor(win, cached_pos or self.orig_pos)
     self:maybe_set_cursorline(win, self.orig_pos)
 
@@ -1335,7 +1335,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       local reg = vim.F.npcall(vim.regex, regex)
       if reg then
         if regex ~= regex:lower() then
-          regex_start, regex_end = reg:match_line(buf, lnum - 1, math.max(1, col) - 1)
+          regex_start, regex_end = reg:match_line(buf, lnum - 1, col - 1)
         else
           local line = api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1] or ""
           regex_start, regex_end = reg:match_str(line:sub(col):lower())
@@ -1346,20 +1346,15 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
           regex, reg)
       end
       if regex_start and regex_end then
-        regex_end = regex_end - regex_start
-        regex_start = regex_start + math.max(1, col)
-        extmark = api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, regex_start - 1, {
-          end_line = lnum - 1,
-          end_col = regex_start - 1 + regex_end,
-          hl_group = hls.search,
-        })
+        extmark = api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, regex_start + col - 1,
+          { end_line = lnum - 1, end_col = regex_end + col - 1, hl_group = hls.search })
       end
     end
 
     -- Fallback to cursor hl, only if column exists
-    if not extmark and hls.cursor and col > 0 then
+    if not extmark and hls.cursor and entry.col then
       local end_lnum, end_col = entry.end_line or lnum, entry.end_col or col + 1
-      api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, math.max(1, col) - 1,
+      api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, col - 1,
         { end_line = end_lnum - 1, end_col = math.max(1, end_col) - 1, hl_group = hls.cursor })
     end
 
