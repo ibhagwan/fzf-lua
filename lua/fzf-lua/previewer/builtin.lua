@@ -437,11 +437,15 @@ function Previewer.base:debounce(name, delay, func)
   self.timers = self.timers or {} ---@type table<string, uv.uv_timer_t?>
   local timer = self.timers[name]
   if tonumber(delay) > 0 then
-    if timer and not timer:is_closing() then
-      timer:stop()
-      timer:close()
+    if not timer or timer:is_closing() then
+      timer = assert(uv.new_timer())
+      self.timers[name] = timer
     end
-    self.timers[name] = vim.defer_fn(func, delay) ---@as uv.uv_timer_t
+    timer:start(delay, 0, function()
+      timer:close()
+      self.timers[name] = nil
+      vim.schedule(func)
+    end)
   else
     func()
   end
