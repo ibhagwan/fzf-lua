@@ -1629,24 +1629,24 @@ function M.pid_object(key, opts)
 end
 
 -- modified version of vim.wo
--- 1. always setlocal (to avoid potential pollute on win split)
--- 2. nop on non-exist option
--- 3. nop if unchange (set win option can be slow #2018)
-local function new_win_opt_accessor(winid)
+-- 1. no error on non-exist option
+-- 2. nop if unchange (set win option can be slow #2018)
+local function new_win_opt_accessor(winid, bufnr)
   return setmetatable({}, {
     __index = function(_, k)
-      if type(k) == "number" then return new_win_opt_accessor(k) end
+      if bufnr == nil and type(k) == "number" then
+        if winid == nil then return new_win_opt_accessor(k) end
+        return new_win_opt_accessor(winid, k)
+      end
       if vim.fn.exists("+" .. k) == 0 then return end
-      return vim.api.nvim_get_option_value(k, { scope = "local", win = winid or 0 })
+      return vim.api.nvim_get_option_value(k, { scope = bufnr and "local" or nil, win = winid or 0 })
     end,
     __newindex = function(_, k, v)
-      if vim.fn.exists("+" .. k) == 0
-          or vim.api.nvim_get_option_value(k, { scope = "local", win = winid or 0 }) == v then
-        return
-      end
-      vim.wo[winid or 0][k] = v
+      if vim.fn.exists("+" .. k) == 0 then return end
       -- TODO: causes issues with highlights
-      -- vim.api.nvim_set_option_value(k, v, { scope = "local", win = winid or 0 })
+      local scope = bufnr and "local" or nil
+      if vim.api.nvim_get_option_value(k, { scope = scope, win = winid or 0 }) == v then return end
+      vim.api.nvim_set_option_value(k, v, { scope = scope, win = winid or 0 })
     end,
   })
 end

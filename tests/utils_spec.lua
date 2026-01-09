@@ -95,6 +95,7 @@ describe("Testing utils module", function()
   it("wo", function()
     utils.wo.nonexist = "this is nop"
     eq(nil, utils.wo.nonexist)
+
     vim.wo[0][0].nu = true -- setlocal
     vim.wo[0].rnu = true   -- setglobal
     eq(vim.wo[0][0].nu, vim.wo.nu)
@@ -102,6 +103,15 @@ describe("Testing utils module", function()
     vim.cmd.new()
     eq(vim.wo[0][0].nu, vim.wo.nu)
     eq(vim.wo[0][0].rnu, vim.wo.rnu)
+
+    -- same behavior
+    utils.wo[0][0].nu = true -- setlocal
+    utils.wo[0].rnu = true   -- setglobal
+    eq(utils.wo[0][0].nu, utils.wo.nu)
+    eq(utils.wo[0][0].rnu, utils.wo.rnu)
+    vim.cmd.new()
+    eq(utils.wo[0][0].nu, utils.wo.nu)
+    eq(utils.wo[0][0].rnu, utils.wo.rnu)
   end)
 
   it("strsplit", function()
