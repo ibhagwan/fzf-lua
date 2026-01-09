@@ -894,7 +894,6 @@ function FzfWin:attach_previewer(previewer)
     previewer.title = self.winopts.preview.title
     previewer.title_pos = self.winopts.preview.title_pos
     previewer.winopts = self.winopts.preview.winopts
-    previewer.winblend = previewer.winblend or previewer.winopts.winblend or vim.o.winblend
   end
   -- clear the previous previewer if existed
   if self._previewer and self._previewer.close then

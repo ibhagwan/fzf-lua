@@ -166,7 +166,6 @@ local Previewer = {}
 ---@field treesitter table
 ---@field toggle_behavior "default"|"extend"
 ---@field winopts_orig table
----@field winblend integer
 ---@field extensions { [string]: string[]? }
 ---@field ueberzug_scaler "crop"|"distort"|"contain"|"fit_contain"|"cover"|"forced_cover"
 ---@field cached_bufnrs table<integer, [integer, integer]|true?> items are cached_pos
@@ -1107,6 +1106,9 @@ function Previewer.base:update_render_markdown()
   end
 end
 
+---@param buf integer
+---@param entry fzf-lua.buffer_or_file.Entry
+---@return boolean success
 function Previewer.base:attach_snacks_image_buf(buf, entry)
   ---@diagnostic disable-next-line: undefined-field
   local simg = self.snacks_image.enabled and (_G.Snacks or {}).image
@@ -1114,6 +1116,7 @@ function Previewer.base:attach_snacks_image_buf(buf, entry)
     return false
   end
   simg.buf.attach(buf, { src = entry.path })
+  vim.b[buf].snacks_image_attached = true
   -- Similar settings as `populate_terminal_cmd`
   entry.do_not_cache = not utils.map_get(simg.terminal, "_env.placeholders")
   entry.no_scrollbar = true
@@ -1126,7 +1129,7 @@ end
 function Previewer.base:attach_snacks_image_inline()
   ---@diagnostic disable-next-line: undefined-field
   local simg = (_G.Snacks or {}).image
-  local bufnr, preview_winid = self.preview_bufnr, self.win.preview_winid
+  local bufnr = self.preview_bufnr
   if not simg
       or not bufnr
       or not simg.config.enabled
@@ -1143,16 +1146,12 @@ function Previewer.base:attach_snacks_image_inline()
     return
   end
 
-  -- restore default winblend when on unsupport ft
   local ft = vim.b[bufnr]._ft
   if not ft then return end
-  _G._fzf_lua_snacks_langs = _G._fzf_lua_snacks_langs or simg.langs()
-  if not vim.tbl_contains(_G._fzf_lua_snacks_langs, vim.treesitter.language.get_lang(ft)) then
-    utils.wo[preview_winid].winblend = self.winblend
+  local lang = vim.treesitter.language.get_lang(ft)
+  if not lang or not utils.has_ts_parser(lang, "images") then
     return
   end
-
-  utils.wo[preview_winid].winblend = 0 -- https://github.com/folke/snacks.nvim/pull/1615
   vim.b[bufnr].snacks_image_attached = simg.inline.new(bufnr)
   vim.defer_fn(function()
     self.win:update_preview_scrollbar()
@@ -1185,7 +1184,7 @@ end
 
 ---@param entry? fzf-lua.buffer_or_file.Entry
 function Previewer.buffer_or_file:do_syntax(entry)
-  if not self.preview_bufnr or not entry then return end
+  if not self.preview_bufnr or not entry or entry.cached then return end -- vim.bo[buf]._ft
   local bufnr = self.preview_bufnr
   local preview_winid = self.win.preview_winid
   local filepath = entry.path ---@type string?
@@ -1392,17 +1391,20 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
     self:set_cursor_hl(entry)
 
     local syntax = function()
-      if not entry.cached then -- vim.bo[buf]._ft
+      if self.syntax then
         self:do_syntax(entry)
+        self:update_ts_context()
         self:attach_snacks_image_inline()
       end
-      self:update_ts_context()
+      -- for attach_snacks_image_{inline,buf}
+      -- https://github.com/folke/snacks.nvim/pull/1615
+      if vim.b[self.preview_bufnr].snacks_image_attached then
+        utils.wo[self.win.preview_winid][0].winblend = 0
+      end
     end
 
     -- syntax highlighting
-    if self.syntax then
-      self:debounce("syntax", self.syntax_delay, syntax)
-    end
+    self:debounce("syntax", self.syntax_delay, syntax)
   end
 
   self:update_title(entry)
