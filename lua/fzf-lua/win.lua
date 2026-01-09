@@ -696,7 +696,7 @@ function FzfWin:reset_win_highlights(win)
       end
     end
   end
-  utils.wo[win].winhl = hl
+  (key == "prev" and utils.wo[win] or utils.wo[win][0]).winhl = hl
 end
 
 ---@param exit_code integer
@@ -873,15 +873,17 @@ end
 ---@param win integer
 ---@param opts vim.wo|{}
 ---@param ignore_events boolean?
-function FzfWin:set_winopts(win, opts, ignore_events)
+---@param global boolean?
+function FzfWin:set_winopts(win, opts, ignore_events, global)
   local _ = self
   if not win or not api.nvim_win_is_valid(win) then return end
   -- NOTE: Do not trigger "OptionSet" as this will trigger treesitter-context's
   -- `update_single_context` which will in turn close our treesitter-context
   local ei = ignore_events and "all" or vim.o.eventignore
+  local wo = global ~= false and utils.wo[win] or utils.wo[win][0]
   utils.eventignore(function()
     for opt, value in pairs(opts) do
-      utils.wo[win][opt] = value
+      wo[opt] = value
     end
   end, ei)
 end
@@ -1166,20 +1168,22 @@ function FzfWin:save_style_minimal(winid)
   })
 end
 
-function FzfWin:set_style_minimal(winid)
+---@param winid integer
+---@param global boolean If true, 'wo' can be inherited by other windows/buffers
+function FzfWin:set_style_minimal(winid, global)
   local _ = self
   if not tonumber(winid) or not api.nvim_win_is_valid(winid) then return end
-  utils.wo[winid].number = false
-  utils.wo[winid].relativenumber = false
-  -- TODO: causes issues with winopts.split=enew
-  -- why do we need this in a terminal window?
-  -- utils.wo[winid].cursorline = false
-  utils.wo[winid].cursorcolumn = false
-  utils.wo[winid].spell = false
-  utils.wo[winid].list = false
-  utils.wo[winid].signcolumn = "no"
-  utils.wo[winid].foldcolumn = "0"
-  utils.wo[winid].colorcolumn = ""
+  self:set_winopts(winid, {
+    number = false,
+    relativenumber = false,
+    cursorline = false,
+    cursorcolumn = false,
+    spell = false,
+    list = false,
+    signcolumn = "no",
+    foldcolumn = "0",
+    colorcolumn = "",
+  }, false, global)
 end
 
 function FzfWin:create()
@@ -1256,7 +1260,7 @@ function FzfWin:create()
     end
 
     -- match window options with 'nvim_open_win' style:minimal
-    self:set_style_minimal(self.fzf_winid)
+    self:set_style_minimal(self.fzf_winid, false)
   else
     -- draw the main window
     self:redraw_main()
@@ -1274,7 +1278,7 @@ function FzfWin:create()
 
   -- potential workarond for `<C-c>` freezing neovim (#1091)
   -- https://github.com/neovim/neovim/issues/20726
-  utils.wo[self.fzf_winid].foldmethod = "manual"
+  utils.wo[self.fzf_winid][0].foldmethod = "manual"
 
   if type(self.winopts.on_create) == "function" then
     self.winopts.on_create({ winid = self.fzf_winid, bufnr = self.fzf_bufnr })
@@ -1337,7 +1341,7 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
     if self.src_winid == self.fzf_winid then
       -- "split" reused the current win (e.g. "enew")
       -- restore the original buffer and styling options
-      self:set_winopts(self.fzf_winid, self.src_winid_style or {})
+      self:set_winopts(self.fzf_winid, self.src_winid_style or {}, false)
       -- buf may be invalid if we switched away from a scratch buffer
       if api.nvim_buf_is_valid(self.src_bufnr) then
         -- TODO: why does ignoring events cause the cursor to move to the wrong position?
