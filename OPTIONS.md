@@ -166,11 +166,47 @@ Using Lua:
 :lua require("fzf-lua").files({ ["winopts.row"] = 1 })
 ```
 
+#### globals.prompt
+
+Type: `string`, Default: `nil`
+
+Fzf prompt, passed to fzf as `--prompt` flag.
+
 #### globals.cwd
 
 Type: `string`, Default: `nil`
 
 Sets the current working directory.
+
+#### globals.file_icons
+
+Type: `boolean|integer`, Default: `nil`
+
+If available, display file icons. Set to `true` will attempt to use "nvim-web-devicons" and fallback to "mini.icons", other possible values are `devicons` or `mini` which force loading a specific icons plugin.
+
+#### globals.color_icons
+
+Type: `boolean`, Default: `nil`
+
+Add coloring of file|git icons.
+
+#### globals.git_icons
+
+Type: `boolean`, Default: `nil`
+
+If inside a git-repo add git status indicator icons e.g. `M` for modified files.
+
+#### globals.previewer
+
+Type: `fzf-lua.config.Previewer|string`, Default: `nil`
+
+Previewer override, set to `false` to disable the previewer. By default files pickers use the "builtin" previewer, possible values for file pickers `bat|cat|head`.
+
+#### globals.header
+
+Type: `string`, Default: `nil`
+
+Header line, set to any string to display a header line, set to `false` to disable fzf-lua interactive headers (e.g. "ctrl-g to disable .gitignore", etc), passed to fzf as `--header` flag.
 
 #### globals.query
 
@@ -178,75 +214,11 @@ Type: `string`, Default: `nil`
 
 Initial query (prompt text), passed to fzf as `--query` flag.
 
-#### globals.prompt
-
-Type: `string`, Default: `nil`
-
-Fzf prompt, passed to fzf as `--prompt` flag.
-
-#### globals.header
-
-Type: `string|false`, Default: `nil`
-
-Header line, set to any string to display a header line, set to `false` to disable fzf-lua
-interactive headers (e.g. "ctrl-g to disable .gitignore", etc), passed to fzf as `--header` flag.
-
-#### globals.previewer
-
-Type: `string`, Default: `nil`
-
-Previewer override, set to `false` to disable the previewer.
-
-By default files pickers use the "builtin" previewer, possible values for file pickers `bat|cat|head`.
-
-Other overrides include:
-```lua
-:FzfLua helptags previewer=help_native
-:FzfLua manpages previewer=man_native
-```
-
 #### globals.formatter
 
 Type: `string`, Default: `nil`
 
 Custom path formatter, can be defined under `setup.formatters`, fzf-lua comes with a builtin vscode-like formatter, displaying the filename first followed by the folder.
-
-Try it out with:
-```lua
-:FzfLua files formatter=path.filename_first
-:FzfLua live_grep formatter=path.filename_first
-```
-
-Or via `setup` for permanency:
-```lua
-require("fzf-lua").setup({ files = { formatter = "path.filename_first" } })
-```
-
-#### globals.file_icons
-
-Type: `boolean|string`, Default: `true`
-
-If available, display file icons.
-
-Set to `true` will attempt to use "nvim-web-devicons" and fallback to "mini.icons", other possible
-values are `devicons` or `mini` which force loading a specific icons plugin, for example:
-
-```lua
-:FzfLua files file_icons=mini
-:lua require("fzf-lua").files({ file_icons = "devicons"  })
-```
-
-#### globals.git_icons
-
-Type: `boolean`, Default: `true`
-
-If inside a git-repo add git status indicator icons e.g. `M` for modified files.
-
-#### globals.color_icons
-
-Type: `boolean`, Default: `true`
-
-Add coloring of file|git icons.
 
 #### globals.winopts.split
 
@@ -254,11 +226,17 @@ Type: `string`, Default: `nil`
 
 Neovim split command to use for fzf-lua interface, e.g `belowright new`.
 
-#### globals.winopts.col
+#### globals.winopts.height
 
-Type: `number`, Default: `0.55`
+Type: `number`, Default: `0.85`
 
-Screen column where to place the fzf-lua float window, between 0-1 will represent percentage of `vim.o.columns` (0: leftmost, 1: rightmost), if >= 1 will attempt to place the float in the exact screen column.
+Height of the fzf-lua float, between 0-1 will represent percentage of `vim.o.lines` (1: max height), if >= 1 will use fixed number of lines.
+
+#### globals.winopts.width
+
+Type: `number`, Default: `0.8`
+
+Width of the fzf-lua float, between 0-1 will represent percentage of `vim.o.columns` (1: max width), if >= 1 will use fixed number of columns.
 
 #### globals.winopts.row
 
@@ -266,36 +244,17 @@ Type: `number`, Default: `0.35`
 
 Screen row where to place the fzf-lua float window, between 0-1 will represent percentage of `vim.o.lines` (0: top, 1: bottom), if >= 1 will attempt to place the float in the exact screen line.
 
-#### globals.winopts.width
+#### globals.winopts.col
 
-Type: `number`, Default: `0.80`
+Type: `number`, Default: `0.55`
 
-Width of the fzf-lua float, between 0-1 will represent percentage of `vim.o.columns` (1: max width), if >= 1 will use fixed number of columns.
-
-#### globals.winopts.height
-
-Type: `number`, Default: `0.85`
-
-Height of the fzf-lua float, between 0-1 will represent percentage of `vim.o.lines` (1: max height), if >= 1 will use fixed number of lines.
+Screen column where to place the fzf-lua float window, between 0-1 will represent percentage of `vim.o.columns` (0: leftmost, 1: rightmost), if >= 1 will attempt to place the float in the exact screen column.
 
 #### globals.winopts.border
 
 Type: `string|table`, Default: `rounded`
 
-Border of the fzf-lua float, possible values are `none|single|double|rounded|thicc|thiccc|thicccc`
-or a custom border character array passed as is to `nvim_open_win`.
-
-#### globals.winopts.backdrop
-
-Type: `boolean|number`, Default: `60`
-
-Backdrop opacity value, 0 for fully opaque, 100 for fully transparent (i.e. disabled).
-
-#### globals.winopts.fullscreen
-
-Type: `boolean`, Default: `false`
-
-Use fullscreen for the fzf-load floating window.
+Border of the fzf-lua float, possible values are `none|single|double|rounded|thicc|thiccc|thicccc` or a custom border character array passed as is to `nvim_open_win`.
 
 #### globals.winopts.title
 
@@ -315,104 +274,119 @@ Type: `boolean`, Default: `nil`
 
 Set to `false` to disable fzf window title flags (hidden, ignore, etc).
 
-#### globals.winopts.treesitter
+#### globals.winopts.backdrop
+
+Type: `number|boolean`, Default: `60`
+
+Backdrop opacity value, 0 for fully opaque, 100 for fully transparent (i.e. disabled).
+
+#### globals.winopts.fullscreen
 
 Type: `boolean`, Default: `false`
 
-Use treesitter highlighting in fzf's main window.
+Use fullscreen for the fzf-lua floating window.
 
-> **NOTE**: Only works for file-like entires where treesitter parser exists and is loaded
-> for the filetype.
+#### globals.winopts.treesitter
 
-#### globals.winopts.on_create
+Type: `fzf-lua.config.TreesitterWinopts|boolean`, Default: `{enabled = true,fzf_colors = {hl = "-1:reverse",["hl+"] =...`
 
-Type: `function`, Default: `nil`
+Use treesitter highlighting in fzf's main window. NOTE: Only works for file-like entries where treesitter parser exists and is loaded for the filetype.
 
-Callback after the creation of the fzf-lua main terminal window.
+#### globals.winopts.toggle_behavior
 
-#### globals.winopts.preview.delay
+Type: `string`, Default: `nil`
 
-Type: `number`, Default: `20`
+Toggle behavior for fzf-lua window.
 
-Debounce time (milliseconds) for displaying the preview buffer in the builtin previewer.
+#### globals.winopts.winblend
+
+Type: `boolean`, Default: `nil`
+
+Enable window transparency.
+
+#### globals.winopts.winhl
+
+Type: `boolean`, Default: `nil`
+
+Enable window highlight groups.
+
+#### globals.winopts.cursorline
+
+Type: `boolean`, Default: `nil`
+
+Highlight the current line in main window.
+
+#### globals.winopts.preview.border
+
+Type: `any`, Default: `rounded`
+
+Preview border for native fzf previewers, set to `noborder` to hide.
 
 #### globals.winopts.preview.wrap
 
 Type: `boolean`, Default: `false`
 
-Line wrap in both native fzf and the builtin previewer, mapped to fzf's `--preview-window:[no]wrap` flag.
+Line wrap in both native fzf and the builtin previewer.
 
 #### globals.winopts.preview.hidden
 
 Type: `boolean`, Default: `false`
 
-Preview startup visibility in both native fzf and the builtin previewer, mapped to fzf's `--preview-window:[no]hidden` flag.
-
-> **NOTE**: this is different than setting `previewer=false` which disables the previewer
-> altogether with no toggle ability.
-
-#### globals.winopts.preview.border
-
-Type: `string`, Default: `border`
-
-Preview border for native fzf previewers (i.e. `bat`, `git_status`), set to `noborder` to hide the preview border, consult `man fzf` for all available options.
-
-#### globals.winopts.preview.layout
-
-Type: `string`, Default: `flex`
-
-Preview layout, possible values are `horizontal|vertical|flex`, when set to `flex` fzf window
-width is tested against `winopts.preview.flip_columns`, when <= `vertical` is used, otherwise
-`horizontal`.
-
-#### globals.winopts.preview.flip_columns
-
-Type: `number`, Default: `100`
-
-Auto-detect the preview layout based on available width, see above note in `winopts.preview.layout`.
-
-#### globals.winopts.preview.horizontal
-
-Type: `string`, Default: `right:60%`
-
-Horizontal preview layout, mapped to fzf's `--preview-window:...` flag.
-
-<sub><sup>*Requires `winopts.preview.layout={horizontal|flex}`</sup></sub>
+Preview startup visibility in both native fzf and the builtin previewer.
 
 #### globals.winopts.preview.vertical
 
 Type: `string`, Default: `down:45%`
 
-Vertical preview layout, mapped to fzf's `--preview-window:...` flag.
+Vertical preview layout, mapped to fzf's `--preview-window` flag.
 
-<sub><sup>*Requires `winopts.preview.layout={vertical|flex}`</sup></sub>
+#### globals.winopts.preview.horizontal
+
+Type: `string`, Default: `right:60%`
+
+Horizontal preview layout, mapped to fzf's `--preview-window` flag.
+
+#### globals.winopts.preview.layout
+
+Type: `string`, Default: `flex`
+
+Preview layout, possible values are `horizontal|vertical|flex`.
+
+#### globals.winopts.preview.flip_columns
+
+Type: `integer`, Default: `100`
+
+Auto-detect the preview layout based on available width.
 
 #### globals.winopts.preview.title
 
-Type: `boolean`, Default: `true`
+Type: `any`, Default: `true`
 
-Controls title display in the builtin previewer.
+Show preview title.
 
 #### globals.winopts.preview.title_pos
 
-Type: `string`, Default: `center`
+Type: `"center"|"left"|"right"`, Default: `center`
 
-Controls title display in the builtin previewer, possible values are `left|right|center`.
+Preview title position.
 
 #### globals.winopts.preview.scrollbar
 
-Type: `string|boolean`, Default: `float`
+Type: `string`, Default: `border`
 
-Scrollbar style in the builtin previewer, set to `false` to disable, possible values are
-`float|border`.
+Preview window scrollbar (`border|float`).
 
 #### globals.winopts.preview.scrolloff
 
-Type: `number`, Default: `-1`
+Type: `integer`, Default: `-1`
 
-Float style scrollbar offset from the right edge of the preview window.
+Preview window scrolloff.
 
-<sub><sup>*Requires `winopts.preview.scrollbar=float`</sup></sub>
+#### globals.winopts.preview.delay
+
+Type: `integer`, Default: `20`
+
+Debounce time (milliseconds) for displaying the preview buffer in the builtin previewer.
 
 #### globals.winopts.preview.winopts.number
 
@@ -432,17 +406,17 @@ Type: `boolean`, Default: `true`
 
 Builtin previewer buffer local option, see `:help 'cursorline'`.
 
-#### globals.winopts.preview.winopts.cursorcolumn
-
-Type: `boolean`, Default: `false`
-
-Builtin previewer buffer local option, see `:help 'cursorcolumn'`.
-
 #### globals.winopts.preview.winopts.cursorlineopt
 
 Type: `string`, Default: `both`
 
 Builtin previewer buffer local option, see `:help 'cursorlineopt'`.
+
+#### globals.winopts.preview.winopts.cursorcolumn
+
+Type: `boolean`, Default: `false`
+
+Builtin previewer buffer local option, see `:help 'cursorcolumn'`.
 
 #### globals.winopts.preview.winopts.signcolumn
 
@@ -470,9 +444,15 @@ Builtin previewer buffer local option, see `:help 'foldmethod'`.
 
 #### globals.winopts.preview.winopts.scrolloff
 
-Type: `number`, Default: `1`
+Type: `integer`, Default: `0`
 
 Builtin previewer buffer local option, see `:help 'scrolloff'`.
+
+#### globals.winopts.preview.winopts.winblend
+
+Type: `integer`, Default: `nil`
+
+Window transparency for preview.
 
 #### globals.hls.normal
 
@@ -494,7 +474,7 @@ Main fzf (terminal) window title highlight group.
 
 #### globals.hls.title_flags
 
-Type: `string`, Default: `CursorLine`
+Type: `string`, Default: `FzfLuaTitleFlags`
 
 Main fzf (terminal) window title flags highlight group (hidden, etc).
 
@@ -503,6 +483,18 @@ Main fzf (terminal) window title flags highlight group (hidden, etc).
 Type: `string`, Default: `FzfLuaBackdrop`
 
 Backdrop color, black by default, used to darken the background color when opening the UI.
+
+#### globals.hls.help_normal
+
+Type: `string`, Default: `FzfLuaHelpNormal`
+
+Help window (F1) normal (text/bg) highlight group.
+
+#### globals.hls.help_border
+
+Type: `string`, Default: `FzfLuaHelpBorder`
+
+Help window (F1) border highlight group.
 
 #### globals.hls.preview_normal
 
@@ -566,21 +558,9 @@ Builtin previewer window `float` scrollbar empty highlight group.
 
 #### globals.hls.scrollfloat_f
 
-Type: `string`, Default: `FzfLuaScrollFloatFull`
+Type: `string|false`, Default: `FzfLuaScrollFloatFull`
 
 Builtin previewer window `float` scrollbar full highlight group.
-
-#### globals.hls.help_normal
-
-Type: `string`, Default: `FzfLuaHelpNormal`
-
-Help window (F1) normal (text/bg) highlight group.
-
-#### globals.hls.help_border
-
-Type: `string`, Default: `FzfLuaHelpBorder`
-
-Help window (F1) border highlight group.
 
 #### globals.hls.header_bind
 
@@ -594,17 +574,17 @@ Type: `string`, Default: `FzfLuaHeaderText`
 
 Interactive headers description highlight group, e.g. `<ctrl-g> to Disable .gitignore`.
 
-#### globals.hls.path_linenr
-
-Type: `string`, Default: `FzfLuaPathLineNr`
-
-Highlight group for the line part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `quickfix`, `lsp`, `diagnostics`, etc.
-
 #### globals.hls.path_colnr
 
 Type: `string`, Default: `FzfLuaPathColNr`
 
 Highlight group for the column part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `quickfix`, `lsp`, `diagnostics`, etc.
+
+#### globals.hls.path_linenr
+
+Type: `string`, Default: `FzfLuaPathLineNr`
+
+Highlight group for the line part of paths, e.g. `file:<line>:<col>:`, used in pickers such as `buffers`, `quickfix`, `lsp`, `diagnostics`, etc.
 
 #### globals.hls.buf_name
 
@@ -658,8 +638,7 @@ Highlight group for the current tab marker in `tabs`.
 
 Type: `string`, Default: `FzfLuaDirIcon`
 
-Highlight group for the directory icon in paths that end with a separator, usually used in path
-completion, e.g. `complete_path`.
+Highlight group for the directory icon in paths that end with a separator, usually used in path completion, e.g. `complete_path`.
 
 #### globals.hls.dir_part
 
@@ -671,7 +650,7 @@ Highlight group for the directory part when using `path.dirname_first` or `path.
 
 Type: `string`, Default: `FzfLuaFilePart`
 
-Highlight group for the directory part when using `path.dirname_first` or `path.filename_first` formatters.
+Highlight group for the file part when using `path.dirname_first` or `path.filename_first` formatters.
 
 #### globals.hls.live_prompt
 
@@ -731,7 +710,7 @@ Highlight group for fzf's `border`, by default links to `FzfLuaBorder`.
 
 Type: `string`, Default: `FzfLuaFzfScrollbar`
 
-Highlight group for fzf's `border`, by default links to `FzfLuaFzfBorder`.
+Highlight group for fzf's `scrollbar`, by default links to `FzfLuaFzfBorder`.
 
 #### globals.hls.fzf.separator
 
@@ -743,9 +722,7 @@ Highlight group for fzf's `separator`, by default links to `FzfLuaFzfBorder`.
 
 Type: `string`, Default: `FzfLuaFzfGutter`
 
-Highlight group for fzf's `gutter`, by default links to `FzfLuaFzfBorder`.
-
-> **NOTE**: `bg` property of the highlight group will be used.
+Highlight group for fzf's `gutter`, by default links to `FzfLuaFzfBorder`. NOTE: `bg` property of the highlight group will be used.
 
 #### globals.hls.fzf.header
 
@@ -787,8 +764,7 @@ Highlight group for fzf's `prompt`, by default links to `Special`.
 
 Type: `string`, Default: `FzfLuaFzfQuery`
 
-Highlight group for fzf's `query`, by default links to `FzfLuaNormal` and
-sets text to `regular` (non-bold).
+Highlight group for fzf's `query`, by default links to `FzfLuaNormal` and sets text to `regular` (non-bold).
 
 ---
 
