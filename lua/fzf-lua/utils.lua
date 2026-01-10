@@ -539,6 +539,7 @@ function M.map_set(m, k, v)
     if i == #keys then
       map[key] = v
     else
+      if type(map[key]) == "function" then break end
       map[key] = type(map[key]) == "table" and map[key] or {}
       map = map[key]
     end
