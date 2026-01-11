@@ -786,7 +786,7 @@ M.defaults.grep                  = {
   -- live_grep_glob options
   glob_flag      = "--iglob", -- for case sensitive globs use '--glob'
   glob_separator = "%s%-%-",  -- query separator pattern (lua): ' --'
-  _treesitter    = true,
+  _treesitter    = 1,         -- auto disable in live grep
   _headers       = { "actions", "cwd" },
 }
 

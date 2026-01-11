@@ -60,14 +60,13 @@ M.grep = function(opts)
 end
 
 local function normalize_live_grep_opts(opts)
-  -- disable treesitter as it collides with cmd regex highlighting
-  opts = opts or {}
-  opts._treesitter = false
-  utils.map_set(opts, "winopts.treesitter", nil)
-
   ---@type fzf-lua.config.Grep
   opts = config.normalize_opts(opts, "grep")
   if not opts then return end
+
+  -- auto disable treesitter as it collides with cmd regex highlighting
+  -- ignore if forced with `_treesitter = true` (#2511)
+  if opts._treesitter == 1 then opts = utils.map_set(opts, "winopts.treesitter", false) end
 
   -- we need this for `actions.grep_lgrep`
   opts.__ACT_TO = opts.__ACT_TO or M.grep
