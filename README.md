@@ -201,6 +201,7 @@ Fzf-Lua conveniently comes with a VS-Code like picker by default
 | `buffers`        | open buffers                      |
 | `files`          | `find` or `fd` on a path          |
 | `oldfiles`       | opened files history              |
+| `history`        | opened buffers/files history      |
 | `quickfix`       | quickfix list                     |
 | `quickfix_stack` | quickfix stack                    |
 | `loclist`        | location list                     |
@@ -1067,6 +1068,7 @@ previewers = {
     -- stat_file = FzfLua.utils.file_is_readable,
     -- stat_file = function() return true end,
     include_current_session = false,  -- include bufs from current session
+    ignore_current_buffer   = true,   -- exclude current buf from session
   },
   buffers = {
     prompt            = 'Buffers❯ ',

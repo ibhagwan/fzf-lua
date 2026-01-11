@@ -8,10 +8,11 @@ local make_entry = require "fzf-lua.make_entry"
 local M = {}
 
 ---@param opts fzf-lua.config.Oldfiles|{}?
+---@param globals string|(fzf-lua.Config|{})?
 ---@return thread?, string?, table?
-M.oldfiles = function(opts)
+M.oldfiles = function(opts, globals)
   ---@type fzf-lua.config.Oldfiles
-  opts = config.normalize_opts(opts, "oldfiles")
+  opts = config.normalize_opts(opts, globals or "oldfiles")
   if not opts then return end
 
   -- cwd implies we want `cwd_only=true`
@@ -19,10 +20,10 @@ M.oldfiles = function(opts)
     opts.cwd_only = true
   end
 
-  local current_buffer = vim.api.nvim_get_current_buf()
-  local current_file = vim.api.nvim_buf_get_name(current_buffer)
-  local sess_tbl = {}
-  local sess_map = {}
+  -- current buffer as a header line
+  if opts.include_current_session and not opts.ignore_current_buffer then
+    utils.map_set(opts, "fzf_opts.--header-lines", 1)
+  end
 
   local stat_fn = not opts.stat_file and function(_) return true end
       or type(opts.stat_file) == "function" and opts.stat_file
@@ -34,23 +35,30 @@ M.oldfiles = function(opts)
           and utils.file_is_readable(file))
       end
 
-  if opts.include_current_session then
-    for _, buffer in ipairs(vim.split(vim.fn.execute(":buffers! t"), "\n")) do
-      local bufnr = utils.tointeger(buffer:match("%s*(%d+)"))
-      if bufnr then
-        local file = vim.api.nvim_buf_get_name(bufnr)
-        local fs_stat = stat_fn(file)
-        if #file > 0 and fs_stat and bufnr ~= current_buffer then
-          sess_map[file] = true
-          table.insert(sess_tbl, file)
+  local contents = function(cb)
+    local curr_buf = utils.CTX().bufnr
+    local curr_file = vim.api.nvim_buf_get_name(curr_buf)
+    local sess_tbl = {}
+    local sess_map = {}
+
+    if opts.include_current_session then
+      for _, buffer in ipairs(vim.split(vim.fn.execute(":buffers! t"), "\n")) do
+        local bufnr = utils.tointeger(buffer:match("%s*(%d+)"))
+        if bufnr then
+          local file = vim.api.nvim_buf_get_name(bufnr)
+          local fs_stat = stat_fn(file)
+          if #file > 0 and fs_stat and (not opts.ignore_current_buffer or bufnr ~= curr_buf)
+          then
+            sess_map[file] = true
+            table.insert(sess_tbl, { file = file, curbuf = bufnr == curr_buf })
+          end
         end
       end
     end
-  end
 
-  local contents = function(cb)
-    local function add_entry(x, co)
-      x = make_entry.file(x, opts)
+    local function add_entry(x, co, force)
+      x = make_entry.file(x,
+        force and vim.tbl_deep_extend("force", {}, opts, { cwd_only = false }) or opts)
       if not x then return end
       cb(x, function(err)
         coroutine.resume(co)
@@ -67,14 +75,15 @@ M.oldfiles = function(opts)
     coroutine.wrap(function()
       local co = coroutine.running()
 
-      for _, file in ipairs(sess_tbl) do
-        add_entry(file, co)
+      for _, e in ipairs(sess_tbl) do
+        -- 3rd arg forces addition of current buffer with cwd_only
+        add_entry(e.file, co, e.curbuf)
       end
 
       -- local start = os.time(); for _ = 1,10000,1 do
       for _, file in ipairs(vim.v.oldfiles) do
         local fs_stat = stat_fn(file)
-        if fs_stat and file ~= current_file and not sess_map[file] then
+        if fs_stat and file ~= curr_file and not sess_map[file] then
           add_entry(file, co)
         end
       end
@@ -88,6 +97,12 @@ M.oldfiles = function(opts)
   -- for 'file_ignore_patterns' to work on relative paths
   opts.cwd = opts.cwd or utils.cwd()
   return core.fzf_exec(contents, opts)
+end
+
+---@param opts fzf-lua.config.History|{}?
+---@return thread?, string?, table?
+M.history = function(opts)
+  return M.oldfiles(opts, "history")
 end
 
 return M
