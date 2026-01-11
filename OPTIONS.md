@@ -808,6 +808,10 @@ Open buffers in tabs
 
 File history (output of `:oldfiles`)
 
+#### history
+
+Combined current buffer + file history (output of `:oldfiles`)
+
 #### quickfix
 
 Quickfix list (output of `:copen`)
