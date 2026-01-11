@@ -285,6 +285,7 @@ local lazyloaded_modules = {
   git_worktrees = { "fzf-lua.providers.git", "worktrees" },
   git_tags = { "fzf-lua.providers.git", "tags" },
   oldfiles = { "fzf-lua.providers.oldfiles", "oldfiles" },
+  history = { "fzf-lua.providers.oldfiles", "history" },
   undotree = { "fzf-lua.providers.undotree", "undotree" },
   quickfix = { "fzf-lua.providers.quickfix", "quickfix" },
   quickfix_stack = { "fzf-lua.providers.quickfix", "quickfix_stack" },

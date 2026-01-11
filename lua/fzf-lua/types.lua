@@ -204,7 +204,7 @@ local FzfLua = require("fzf-lua")
 ---@field actions fzf-lua.config.Actions
 ---@field keymap fzf-lua.config.Keymap
 ---@field fzf_opts table<string, any>
----@field _resume_reload? boolean
+---@field _resume_reload? boolean|function
 ---@field _fzf_cli_args string[]
 ---@field _uri? boolean
 
@@ -306,6 +306,7 @@ FzfLua.marks = require("fzf-lua.providers.nvim").marks
 FzfLua.menus = require("fzf-lua.providers.nvim").menus
 FzfLua.nvim_options = require("fzf-lua.providers.nvim").nvim_options
 FzfLua.oldfiles = require("fzf-lua.providers.oldfiles").oldfiles
+FzfLua.history = require("fzf-lua.providers.oldfiles").history
 FzfLua.packadd = require("fzf-lua.providers.nvim").packadd
 FzfLua.profiles = require("fzf-lua.providers.meta").profiles
 FzfLua.quickfix = require("fzf-lua.providers.quickfix").quickfix

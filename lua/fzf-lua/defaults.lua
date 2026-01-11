@@ -820,17 +820,27 @@ M.defaults.args                  = {
 ---@class fzf-lua.config.Oldfiles: fzf-lua.config.Base
 ---@field stat_file? boolean
 ---@field include_current_session? boolean
+---@field ignore_current_buffer? boolean
 M.defaults.oldfiles              = {
-  previewer         = M._default_previewer_fn,
-  file_icons        = 1, ---@type integer|boolean
-  color_icons       = true,
-  git_icons         = false,
-  stat_file         = true,
-  fzf_opts          = { ["--tiebreak"] = "index", ["--multi"] = true },
-  _fzf_nth_devicons = true,
-  _actions          = function() return M.globals.actions.files end,
-  _headers          = { "cwd" },
+  previewer               = M._default_previewer_fn,
+  file_icons              = 1, ---@type integer|boolean
+  color_icons             = true,
+  git_icons               = false,
+  stat_file               = true,
+  include_current_session = false,
+  ignore_current_buffer   = true,
+  fzf_opts                = { ["--tiebreak"] = "index", ["--multi"] = true },
+  _fzf_nth_devicons       = true,
+  _actions                = function() return M.globals.actions.files end,
+  _headers                = { "cwd" },
+  _resume_reload          = true,
 }
+
+---@class fzf-lua.config.History: fzf-lua.config.Oldfiles
+M.defaults.history               = vim.tbl_deep_extend("force", {}, M.defaults.oldfiles, {
+  include_current_session = true,
+  ignore_current_buffer   = false,
+})
 
 ---@class fzf-lua.config.Quickfix: fzf-lua.config.Base
 ---@field separator string
@@ -1553,7 +1563,7 @@ M.defaults.command_history       = {
   actions     = {
     ["enter"]  = actions.ex_run_cr,
     ["ctrl-e"] = actions.ex_run,
-    ["ctrl-x"]  = { fn = actions.ex_del, field_index = "{+n}", reload = true }
+    ["ctrl-x"] = { fn = actions.ex_del, field_index = "{+n}", reload = true }
   },
   _headers    = { "actions" },
 }
@@ -1568,7 +1578,7 @@ M.defaults.search_history        = {
   actions     = {
     ["enter"]  = actions.search_cr,
     ["ctrl-e"] = actions.search,
-    ["ctrl-x"]  = { fn = actions.search_del, field_index = "{+n}", reload = true }
+    ["ctrl-x"] = { fn = actions.search_del, field_index = "{+n}", reload = true }
   },
   _headers    = { "actions" },
 }

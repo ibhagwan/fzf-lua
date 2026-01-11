@@ -1085,6 +1085,12 @@ File history (output of `:oldfiles`)
 
 
                                                                               
+history                                                 *fzf-lua-opts-history*
+
+Combined current buffer + file history (output of `:oldfiles`)
+
+
+                                                                              
 quickfix                                               *fzf-lua-opts-quickfix*
 
 Quickfix list (output of `:copen`)
