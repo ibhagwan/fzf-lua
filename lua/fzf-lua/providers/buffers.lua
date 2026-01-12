@@ -113,6 +113,15 @@ local get_unixtime = function(buf)
   end
 end
 
+--- @return integer[] # Sorted list of buffer ids
+M.list_bufs_sorted = function()
+  local bufs = vim.api.nvim_list_bufs()
+  table.sort(bufs, function(a, b)
+    return get_unixtime(getbuf(a)) > get_unixtime(getbuf(b))
+  end)
+  return bufs
+end
+
 ---@param opts fzf-lua.config.BufferLines|{}
 ---@param bufnrs integer[]
 ---@param winid integer?

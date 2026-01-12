@@ -32,14 +32,11 @@ M.oldfiles = function(opts, globals)
 
   local sorted_named_buffers = function()
     local bufnrs = {}
-    for i, buffer in ipairs(vim.split(vim.fn.execute(":buffers! t"), "\n")) do
-      if i > 1 then -- line[1] == "\n"
-        local bufnr = assert(utils.tointeger(buffer:match("%s*(%d+)")))
-        local file = vim.api.nvim_buf_get_name(bufnr)
-        local fs_stat = #file > 0 and stat_fn(file)
-        if fs_stat then
-          table.insert(bufnrs, { bufnr = bufnr, file = file, curbuf = bufnr == utils.CTX().bufnr })
-        end
+    for _, bufnr in ipairs(require("fzf-lua.providers.buffers").list_bufs_sorted()) do
+      local file = vim.api.nvim_buf_get_name(bufnr)
+      local fs_stat = #file > 0 and stat_fn(file)
+      if fs_stat then
+        table.insert(bufnrs, { bufnr = bufnr, file = file, curbuf = bufnr == utils.CTX().bufnr })
       end
     end
     return bufnrs
