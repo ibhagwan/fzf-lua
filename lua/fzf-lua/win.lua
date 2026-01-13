@@ -349,7 +349,8 @@ function FzfWin:generate_layout()
   end
 
   if self.previewer_is_builtin and winopts.split then
-    local wininfo = api.nvim_win_get_config(self.fzf_winid)
+    local wininfo = utils.__HAS_NVIM_010 and api.nvim_win_get_config(self.fzf_winid) or
+        assert(fn.getwininfo(self.fzf_winid)[1])
     -- no signcolumn/number/relativenumber (in set_style_minimal)
     ---@diagnostic disable-next-line: missing-fields
     winopts = {
