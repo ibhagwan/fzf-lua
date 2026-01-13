@@ -447,55 +447,20 @@ M.fzf = function(contents, opts)
   return selected, exit_code
 end
 
--- Best approximation of neovim border types to fzf border types
----@param winopts fzf-lua.config.PreviewOpts
----@param metadata fzf-lua.win.borderMetadata
----@return string|table?
-local function translate_border(winopts, metadata)
-  local neovim2fzf = {
-    none       = "noborder",
-    single     = "border-sharp",
-    double     = "border-double",
-    rounded    = "border-rounded",
-    solid      = "noborder",
-    empty      = "border-block",
-    shadow     = "border-thinblock",
-    bold       = "border-bold",
-    block      = "border-block",
-    solidblock = "border-block",
-    thicc      = "border-bold",
-    thiccc     = "border-block",
-    thicccc    = "border-block",
-  }
-  local border = winopts.border
-  if not border then border = "none" end
-  if border == true then border = "border" end
-  if type(border) == "function" then
-    border = border(winopts, metadata)
-  end
-  border = type(border) == "string" and (neovim2fzf[border] or border) or nil
-  return border
-end
-
----@param o fzf-lua.config.Resolved|{}
+---@param o fzf-lua.config.Resolved
 ---@param fzf_win fzf-lua.Win
 ---@return string
 M.preview_window = function(o, fzf_win)
   local layout
-  local preview = assert(o.winopts and o.winopts.preview)
+  local preview = o.winopts.preview
+  local preview_str = fzf_win:fzf_preview_layout_str()
+  local preview_pos = preview_str:match("[^:]+") or "right"
+  local border = require("fzf-lua.win.border").fzf(preview.border,
+    { type = "fzf", name = "prev", layout = preview_pos, opts = o })
   local prefix = string.format("%s:%s%s",
     preview.hidden and "hidden" or "nohidden",
     preview.wrap and "wrap" or "nowrap",
-    (function()
-      local border = (function()
-        local preview_str = fzf_win:fzf_preview_layout_str()
-        local preview_pos = preview_str:match("[^:]+") or "right"
-        return translate_border(preview,
-          { type = "fzf", name = "prev", layout = preview_pos, opts = o })
-      end)()
-      return border and string.format(":%s", border) or ""
-    end)()
-  )
+    border and string.format(":%s", border) or "")
   -- https://github.com/skim-rs/skim/issues/964
   if preview.pty and utils.has(o, "sk") then prefix = "pty:" .. prefix end
   if utils.has(o, "fzf", { 0, 31 })
@@ -527,7 +492,7 @@ M.preview_window = function(o, fzf_win)
         prefix, preview.vertical)
     end
   end
-  layout = layout or string.format("%s:%s", prefix, fzf_win:fzf_preview_layout_str())
+  layout = layout or string.format("%s:%s", prefix, preview_str)
   if o.preview_offset and #o.preview_offset > 0 then
     layout = layout .. ":" .. o.preview_offset
   end
