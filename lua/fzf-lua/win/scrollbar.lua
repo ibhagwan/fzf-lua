@@ -105,13 +105,15 @@ end
 ---@return nil
 function M.update(target_win, hls, winopts)
   local preview = winopts.preview
-  local kind = preview.scrollbar or "float"
+  local kind = preview.scrollbar
 
-  if kind == "none" then
+  if kind == false or kind == "none" then
     return M.close()
   elseif kind == "border" then -- Backward compat since removal of "border" scrollbar
     border_compat(hls)
   end
+
+  kind = kind or "float"
 
   local dims = calculate_dimensions(target_win)
   if not dims or dims.height >= dims.line_count then return M.close() end

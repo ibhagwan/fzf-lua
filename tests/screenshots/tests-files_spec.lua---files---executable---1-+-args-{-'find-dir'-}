@@ -4,7 +4,7 @@
 03|~      ╭───────────────────── Files ─────────────────────╮      
 04|~      │>                                    104/104 (0) │      
 05|~      │──────────────────────────────────────────────── │      
-06|~      │▌ [DEBUG] [mt] find . -type f \! -path '*/.git··││      
+06|~      │▌ [DEBUG] [mt] find . -type f ! -path '*/.git/··││      
 07|~      │  .editorconfig                                 ││      
 08|~      │  .emmyrc.json                                   │      
 09|~      │  .github/ISSUE_TEMPLATE/bug.yaml                │      
