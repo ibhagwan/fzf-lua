@@ -59,7 +59,7 @@ end
 ---Controls title display in the fzf window, set by the calling picker.
 ---@field title? string
 ---Controls title display in the fzf window, possible values are `left|right|center`.
----@field title_pos? string
+---@field title_pos? "center"|"left"|"right"
 ---Set to `false` to disable fzf window title flags (hidden, ignore, etc).
 ---@field title_flags? boolean
 ---Preview window configuration.
