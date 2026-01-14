@@ -14,7 +14,7 @@ local fn = vim.fn
 ---@field row integer
 ---@field col integer
 ---@field zindex integer
----@field __winhls { main: [string, string][], prev: [string, string][] }
+---@field preview fzf-lua.config.PreviewOpts
 
 ---@class fzf-lua.Win
 ---@field winopts fzf-lua.config.WinoptsResolved
@@ -429,23 +429,6 @@ function FzfWin:normalize_winopts()
     winopts.height = 1
   end
 
-  winopts.__winhls = {
-    main = {
-      { "Normal",       self.hls.normal },
-      { "NormalFloat",  self.hls.normal },
-      { "FloatBorder",  self.hls.border },
-      { "CursorLine",   self.hls.cursorline },
-      { "CursorLineNr", self.hls.cursorlinenr },
-    },
-    prev = {
-      { "Normal",       self.hls.preview_normal },
-      { "NormalFloat",  self.hls.preview_normal },
-      { "FloatBorder",  self.hls.preview_border },
-      { "CursorLine",   self.hls.cursorline },
-      { "CursorLineNr", self.hls.cursorlinenr },
-    },
-  }
-
   local nwin, preview = self:normalize_layout()
   local preview_pos = preview and self:normalize_preview_layout().pos or nil
   if preview and self.previewer_is_builtin then nwin = 2 end
@@ -491,25 +474,30 @@ function FzfWin:normalize_winopts()
   return winopts
 end
 
+---@param winhls table<string, string|false>|string
+---@return string
+local function make_winhl(winhls)
+  if type(winhls) == "string" then return winhls end
+  local winhl = {}
+  for k, h in pairs(winhls) do
+    if h then winhl[#winhl + 1] = ("%s:%s"):format(k, h) end
+  end
+  return table.concat(winhl, ",")
+end
+
 ---@param win integer
-function FzfWin:reset_win_highlights(win)
+---@param pwinhl? table<string, string|false>|string preview winhl
+function FzfWin:reset_winhl(win, pwinhl)
   -- derive the highlights from the window type
-  local key = "main"
-  local hl
-  if self._previewer
-      and self._previewer.gen_winopts
-      and win == self.preview_winid then
-    key = "prev"
-    hl = self._previewer:gen_winopts().winhl
-  end
-  if not hl then
-    for _, h in ipairs(self.winopts.__winhls[key]) do
-      if h[2] then
-        hl = string.format("%s%s:%s", hl and hl .. "," or "", h[1], h[2])
-      end
-    end
-  end
-  (key == "prev" and utils.wo[win] or utils.wo[win][0]).winhl = hl
+  local hls = self.hls
+  local winhls = pwinhl or {
+    Normal = hls.normal,
+    NormalFloat = hls.normal,
+    FloatBorder = hls.border,
+    CursorLine = hls.cursorline,
+    CursorLineNr = hls.cursorlinenr,
+  }
+  (pwinhl and utils.wo[win] or utils.wo[win][0]).winhl = make_winhl(winhls)
 end
 
 ---@param exit_code integer
@@ -638,7 +626,6 @@ end
 ---@param previewer fzf-lua.previewer.Builtin|fzf-lua.previewer.Fzf? nil to "detach" previewer
 function FzfWin:attach_previewer(previewer)
   if previewer then
-    assert(self.winopts.preview)
     previewer.win = self
     previewer.delay = self.winopts.preview.delay or 100
     previewer.title = self.winopts.preview.title
@@ -695,7 +682,7 @@ function FzfWin:redraw_preview()
     -- Add win local var for the preview|border windows
     api.nvim_win_set_var(self.preview_winid, "fzf_lua_preview", true)
   end
-  self:reset_win_highlights(self.preview_winid)
+  previewer:reset_winhl(self.preview_winid)
   previewer:display_last_entry()
   previewer:update_ts_context()
 end
@@ -932,7 +919,7 @@ function FzfWin:create()
   -- Use treesitter to highlight results on the main fzf window
   self:treesitter_attach()
 
-  self:reset_win_highlights(self.fzf_winid)
+  self:reset_winhl(self.fzf_winid)
 
   -- potential workarond for `<C-c>` freezing neovim (#1091)
   -- https://github.com/neovim/neovim/issues/20726
@@ -1029,7 +1016,7 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   -- when using `split = "belowright new"` closing the fzf
   -- window may not always return to the correct source win
   -- depending on the user's split configuration (#397)
-  if self.winopts and self.winopts.split
+  if self.winopts.split
       and self.src_winid
       and api.nvim_win_is_valid(self.src_winid)
       and self.src_winid ~= api.nvim_get_current_win()
@@ -1062,7 +1049,7 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
     vim.o.hlsearch = true
     self.hls_on_close = nil
   end
-  if self.winopts and type(self.winopts.on_close) == "function" then
+  if type(self.winopts.on_close) == "function" then
     self.winopts.on_close()
   end
   self.closing = nil
@@ -1330,10 +1317,9 @@ function FzfWin:toggle_preview()
 end
 
 function FzfWin:toggle_preview_wrap()
+  if not self:validate_preview() then return end
   self.preview_wrap = not utils.wo[self.preview_winid].wrap
-  if self and self:validate_preview() then
-    utils.wo[self.preview_winid].wrap = self.preview_wrap
-  end
+  utils.wo[self.preview_winid].wrap = self.preview_wrap
 end
 
 ---@param direction integer

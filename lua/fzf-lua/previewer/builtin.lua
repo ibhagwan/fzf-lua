@@ -283,6 +283,19 @@ function Previewer.base:set_style_winopts()
   self.win:set_winopts(self.win.preview_winid, self:gen_winopts(), true)
 end
 
+---@param win integer
+function Previewer.base:reset_winhl(win)
+  local hls = self.win.hls
+  local winopts = self:gen_winopts()
+  self.win:reset_winhl(win, winopts.winhl or winopts.winhighlight or {
+    Normal = hls.preview_normal,
+    NormalFloat = hls.preview_normal,
+    FloatBorder = hls.preview_border,
+    CursorLine = hls.cursorline,
+    CursorLineNr = hls.cursorlinenr,
+  })
+end
+
 ---@diagnostic disable-next-line: unused
 ---@return integer
 function Previewer.base:get_tmp_buffer()
@@ -474,7 +487,7 @@ function Previewer.base:display_entry(entry_str)
     if self:populate_preview_buf(entry_str_) == false then return end
 
     -- reset the preview window highlights
-    self.win:reset_win_highlights(self.win.preview_winid)
+    self:reset_winhl(self.win.preview_winid)
   end
 
   -- debounce preview entries
