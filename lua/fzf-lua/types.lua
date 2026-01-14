@@ -16,6 +16,7 @@ local FzfLua = require("fzf-lua")
 ---@field uri? string
 ---@field range? lsp.Range
 ---@field title? string
+---@field hlgroup? any
 ---@field debug? string debug information
 
 ---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry,{}

@@ -1349,16 +1349,22 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
           regex, reg)
       end
       if regex_start and regex_end then
-        extmark = api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, regex_start + col - 1,
-          { end_line = lnum - 1, end_col = regex_end + col - 1, hl_group = hls.search })
+        extmark = api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, regex_start + col - 1, {
+          end_line = lnum - 1,
+          end_col = regex_end + col - 1,
+          hl_group = entry.hlgroup or hls.search
+        })
       end
     end
 
     -- Fallback to cursor hl, only if column exists
     if not extmark and hls.cursor and entry.col then
       local end_lnum, end_col = entry.end_line or lnum, entry.end_col or col + 1
-      api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, col - 1,
-        { end_line = end_lnum - 1, end_col = math.max(1, end_col) - 1, hl_group = hls.cursor })
+      api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, col - 1, {
+        end_line = end_lnum - 1,
+        end_col = math.max(1, end_col) - 1,
+        hl_group = entry.hlgroup or hls.cursor,
+      })
     end
 
     utils.zz()
@@ -1437,11 +1443,6 @@ end
 ---@field super fzf-lua.previewer.BufferOrFile
 Previewer.help_tags = Previewer.buffer_or_file:extend()
 
-function Previewer.help_tags:new(o, opts)
-  Previewer.help_tags.super.new(self, o, opts)
-  return self
-end
-
 ---@diagnostic disable-next-line: unused
 function Previewer.help_tags:parse_entry(entry_str)
   local tag = entry_str:match("^[^%s]+")
@@ -1498,9 +1499,9 @@ function Previewer.help_tags:set_cursor_hl(entry)
   end)
 end
 
----@class fzf-lua.previewer.ManPages : fzf-lua.previewer.Builtin,{}
----@field super fzf-lua.previewer.Builtin,{}
-Previewer.man_pages = Previewer.base:extend()
+---@class fzf-lua.previewer.ManPages : fzf-lua.previewer.BufferOrFile,{}
+---@field super fzf-lua.previewer.BufferOrFile,{}
+Previewer.man_pages = Previewer.buffer_or_file:extend()
 
 ---@diagnostic disable-next-line: unused
 ---@return boolean
@@ -1520,7 +1521,6 @@ end
 
 function Previewer.man_pages:new(o, opts)
   Previewer.man_pages.super.new(self, o, opts)
-  self.filetype = "man"
   self.cmd = o.cmd or "man -c %s | col -bx"
   self.cmd = type(self.cmd) == "function" and self.cmd() or self.cmd
   return self
@@ -1528,31 +1528,16 @@ end
 
 ---@diagnostic disable-next-line: unused
 function Previewer.man_pages:parse_entry(entry_str)
-  return require("fzf-lua.providers.manpages").manpage_sh_arg(entry_str)
-end
-
-function Previewer.man_pages:populate_preview_buf(entry_str)
-  local entry = self:parse_entry(entry_str)
-  ---@type string|string[]
-  local cmd = self.cmd:format(entry)
+  local entry = require("fzf-lua.providers.manpages").manpage_sh_arg(entry_str)
+  local cmd = self.cmd:format(entry) ---@type string|string[]
   if type(cmd) == "string" then cmd = { "sh", "-c", cmd } end
   local output, _ = utils.io_systemlist(cmd)
-  local tmpbuf = self:get_tmp_buffer()
-  -- api.nvim_buf_set_option(tmpbuf, 'modifiable', true)
-  api.nvim_buf_set_lines(tmpbuf, 0, -1, false, output)
-  vim.bo[tmpbuf].filetype = self.filetype
-  self:set_preview_buf(tmpbuf)
-  self.win:update_preview_scrollbar()
+  return { filetype = "man", content = output }
 end
 
 ---@class fzf-lua.previewer.Marks : fzf-lua.previewer.BufferOrFile,{}
 ---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.marks = Previewer.buffer_or_file:extend()
-
-function Previewer.marks:new(o, opts)
-  Previewer.marks.super.new(self, o, opts)
-  return self
-end
 
 function Previewer.marks:parse_entry(entry_str)
   local bufnr = nil
@@ -1593,11 +1578,6 @@ end
 ---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.jumps = Previewer.buffer_or_file:extend()
 
-function Previewer.jumps:new(o, opts)
-  Previewer.jumps.super.new(self, o, opts)
-  return self
-end
-
 function Previewer.jumps:parse_entry(entry_str)
   local bufnr = nil
   local _, lnum, col0, filepath = entry_str:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
@@ -1626,11 +1606,6 @@ end
 ---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.tags = Previewer.buffer_or_file:extend()
 
-function Previewer.tags:new(o, opts)
-  Previewer.tags.super.new(self, o, opts)
-  return self
-end
-
 ---@param entry fzf-lua.buffer_or_file.Entry
 function Previewer.tags:set_cursor_hl(entry)
   if tonumber(entry.line) and entry.line > 0 then
@@ -1653,9 +1628,9 @@ function Previewer.tags:set_cursor_hl(entry)
   end)
 end
 
----@class fzf-lua.previewer.Hightlights : fzf-lua.previewer.Builtin,{}
+---@class fzf-lua.previewer.Hightlights : fzf-lua.previewer.BufferOrFile,{}
 ---@field super fzf-lua.previewer.Builtin,{}
-Previewer.highlights = Previewer.base:extend()
+Previewer.highlights = Previewer.buffer_or_file:extend()
 
 ---@diagnostic disable-next-line: unused
 ---@return boolean
@@ -1671,24 +1646,9 @@ function Previewer.highlights:gen_winopts()
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
-function Previewer.highlights:new(o, opts)
-  Previewer.highlights.super.new(self, o, opts)
-  self.ns_previewer = api.nvim_create_namespace("fzf-lua.previewer.hl")
-  return self
-end
-
-function Previewer.highlights:populate_preview_buf(entry_str)
-  -- Preview buffer isn't set on init and after fzf's zero event
-  if not self.preview_bufnr then
-    local buf = self:get_tmp_buffer()
-    vim.bo[buf].ft = "lua"
-    ts_attach(buf, "lua")
-    self:set_preview_buf(buf)
-  end
-
+---@diagnostic disable-next-line: unused
+function Previewer.highlights:parse_entry(entry_str)
   local serpent = require "fzf-lua.lib.serpent"
-  local buf = self.preview_bufnr
-  if not buf then return end
   local hl = entry_str:match("^[^%s]+")
   local hlgroup = hl
   local lines = {}
@@ -1701,21 +1661,20 @@ function Previewer.highlights:populate_preview_buf(entry_str)
   until not hl
   table.insert(lines, [[]])
   table.insert(lines, [["THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"]])
-  api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  self.win:update_preview_title(hl)
-  self.win:update_preview_scrollbar()
-  api.nvim_win_call(self.win.preview_winid, function()
-    if self.match_id then
-      pcall(fn.matchdelete, self.match_id)
-      self.match_id = nil
-    end
-    self.match_id = fn.matchaddpos(hlgroup, { { #lines } }, self.ns_previewer)
-  end)
+  return {
+    filetype = "lua",
+    title = hl,
+    content = lines,
+    line = #lines,
+    col = 1,
+    end_col = 1 + #lines[#lines],
+    hlgroup = hlgroup
+  }
 end
 
----@class fzf-lua.previewer.Quickfix : fzf-lua.previewer.Builtin,{}
+---@class fzf-lua.previewer.Quickfix : fzf-lua.previewer.BufferOrFile,{}
 ---@field super fzf-lua.previewer.Builtin,{}
-Previewer.quickfix = Previewer.base:extend()
+Previewer.quickfix = Previewer.buffer_or_file:extend()
 
 ---@diagnostic disable-next-line: unused
 ---@return boolean
@@ -1732,28 +1691,13 @@ function Previewer.quickfix:gen_winopts()
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
-function Previewer.quickfix:new(o, opts)
-  Previewer.quickfix.super.new(self, o, opts)
-  return self
-end
-
-function Previewer.quickfix:close()
-  Previewer.quickfix.super.close(self)
-end
-
-function Previewer.quickfix:populate_preview_buf(entry_str)
+function Previewer.quickfix:parse_entry(entry_str)
   local nr = entry_str:match("[(%d+)]")
-  if not nr or tonumber(nr) <= 0 then
-    return
-  end
-
-  local qf_list = self.opts.is_loclist
-      and fn.getloclist(self.win.src_winid, { all = "", nr = tonumber(nr) })
+  if not nr or tonumber(nr) <= 0 then return {} end
+  local qf_list = self.opts.is_loclist and
+      fn.getloclist(self.win.src_winid, { all = "", nr = tonumber(nr) })
       or fn.getqflist({ all = "", nr = tonumber(nr) })
-  if utils.tbl_isempty(qf_list) or utils.tbl_isempty(qf_list.items) then
-    return
-  end
-
+  if utils.tbl_isempty(qf_list) or utils.tbl_isempty(qf_list.items) then return {} end
   local lines = {}
   for _, e in ipairs(qf_list.items) do
     table.insert(lines, string.format("%s|%d col %d|%s",
@@ -1761,22 +1705,16 @@ function Previewer.quickfix:populate_preview_buf(entry_str)
         api.nvim_buf_get_name(e.bufnr), utils.cwd())),
       e.lnum, e.col, e.text))
   end
-  self.tmpbuf = self:get_tmp_buffer()
-  api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, lines)
-  vim.bo[self.tmpbuf].filetype = "qf"
-  self:set_preview_buf(self.tmpbuf)
-  self.win:update_preview_title(string.format(" %s: %s ", nr, qf_list.title))
-  self.win:update_preview_scrollbar()
+  return {
+    title = string.format(" %s: %s ", nr, qf_list.title),
+    filetype = "qf",
+    content = lines,
+  }
 end
 
 ---@class fzf-lua.previewer.Autocmds : fzf-lua.previewer.BufferOrFile,{}
 ---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.autocmds = Previewer.buffer_or_file:extend()
-
-function Previewer.autocmds:new(o, opts)
-  Previewer.autocmds.super.new(self, o, opts)
-  return self
-end
 
 function Previewer.autocmds:gen_winopts()
   if not self._is_vimL_command then
@@ -1791,62 +1729,34 @@ function Previewer.autocmds:gen_winopts()
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
-function Previewer.autocmds:populate_preview_buf(entry_str)
-  if not self.win or not self.win:validate_preview() then return end
-  local entry = self:parse_entry(entry_str)
-  if utils.tbl_isempty(entry) then return end
-  self._is_vimL_command = false
-  if entry.path == "<none>" then
-    self._is_vimL_command = true
-    entry.path = entry_str:match("[^:|]+│")
-    local viml = assert(entry_str:match("[^│]+$"))
-    local lines = vim.split(viml, "\n")
-    local tmpbuf = self:get_tmp_buffer()
-    api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
-    vim.bo[tmpbuf].filetype = "vim"
-    self:set_preview_buf(tmpbuf)
-    self:preview_buf_post(entry)
-  else
-    self.super.populate_preview_buf(self, entry_str)
+function Previewer.autocmds:parse_entry(entry_str)
+  local entry = self.super:parse_entry(entry_str)
+  if not entry.path or entry.path:sub(-6) ~= "<none>" then
+    self._is_vimL_command = false
+    return entry
   end
+  self._is_vimL_command = true
+  return {
+    path = entry_str:match("[^:|]+│"),
+    filetype = "vim",
+    content = vim.split(assert(entry_str:match("[^│]+$")), "\n")
+  }
 end
 
 ---@class fzf-lua.previewer.Keymaps : fzf-lua.previewer.BufferOrFile,{}
 ---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.keymaps = Previewer.buffer_or_file:extend()
 
-function Previewer.autocmds:keymaps(o, opts)
-  Previewer.autocmds.super.new(self, o, opts)
-  return self
-end
-
 ---@param entry_str string
----@return fzf-lua.path.Entry|fzf-lua.keymap.Entry
+---@return fzf-lua.buffer_or_file.Entry
 function Previewer.keymaps:parse_entry(entry_str)
-  return path.keymap_to_entry(entry_str, self.opts)
-end
-
-function Previewer.keymaps:populate_preview_buf(entry_str)
-  if not self.win or not self.win:validate_preview() then return end
-  local entry = self:parse_entry(entry_str)
-  if entry.vmap then
-    -- keymap is vimL, there is no source file info
-    -- so we display the vimL code instead
-    local vmap = assert(entry.vmap:match("[^%s]+$"))
-    local lines = utils.strsplit(vmap, "\n")
-    local tmpbuf = self:get_tmp_buffer()
-    api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
-    vim.bo[tmpbuf].filetype = "vim"
-    self:set_preview_buf(tmpbuf)
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    local title_fnamemodify = self.title_fnamemodify
-    self.title_fnamemodify = nil
-    -- hack entry.uri for title display
-    self:preview_buf_post({ uri = string.format("%s:%s", entry.mode, entry.key) })
-    self.title_fnamemodify = title_fnamemodify
-    return
-  end
-  Previewer.autocmds.super.populate_preview_buf(self, entry_str)
+  local entry = path.keymap_to_entry(entry_str, self.opts)
+  if not entry.vmap then return entry end
+  return {
+    filetype = "vim",
+    title = string.format("%s:%s", entry.mode, entry.key),
+    content = utils.strsplit(assert(entry.vmap:match("[^%s]+$")), "\n"),
+  }
 end
 
 ---@class fzf-lua.previewer.NvimOptions : fzf-lua.previewer.BufferOrFile,{}
