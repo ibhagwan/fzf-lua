@@ -948,8 +948,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   else
     -- not found in cache, attempt to load
     local tmpbuf = reuse_buf or self:get_tmp_buffer()
-    if self.extensions and not utils.tbl_isempty(self.extensions) then
-      local ext = path.extension(assert(entry.path))
+    if entry.path and self.extensions and not utils.tbl_isempty(self.extensions) then
+      local ext = path.extension(entry.path)
       local cmd = ext and self.extensions[ext:lower()]
       if cmd and self:populate_terminal_cmd(tmpbuf, cmd, entry) then
         -- will return 'false' when cmd isn't executable.
@@ -1365,8 +1365,11 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   end)
 end
 
+---@param entry fzf-lua.buffer_or_file.Entry
+---@return nil
 function Previewer.buffer_or_file:update_title(entry)
   if not self.title then return end
+  if entry.title then return self.win:update_preview_title(entry.title) end
   local filepath, cwd = entry.path, self.opts.cwd
   local title = entry.debug and "[DEBUG]"
       or filepath and (cwd and path.relative_to(filepath, cwd) or filepath)
@@ -1846,9 +1849,9 @@ function Previewer.keymaps:populate_preview_buf(entry_str)
   Previewer.autocmds.super.populate_preview_buf(self, entry_str)
 end
 
----@class fzf-lua.previewer.NvimOptions : fzf-lua.previewer.Builtin,{}
----@field super fzf-lua.previewer.Builtin,{}
-Previewer.nvim_options = Previewer.base:extend()
+---@class fzf-lua.previewer.NvimOptions : fzf-lua.previewer.BufferOrFile,{}
+---@field super fzf-lua.previewer.BufferOrFile,{}
+Previewer.nvim_options = Previewer.buffer_or_file:extend()
 
 function Previewer.nvim_options:new(o, opts)
   Previewer.nvim_options.super.new(self, o, opts)
@@ -1863,6 +1866,7 @@ function Previewer.nvim_options:gen_winopts()
     number = false,
     relativenumber = false,
     cursorline = false,
+    conceallevel = 3,
   }
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
@@ -1903,32 +1907,12 @@ function Previewer.nvim_options:parse_entry(entry_str)
   local parts = vim.split(entry_str, self.opts.separator) ---@cast parts [string, string]
   local option = vim.trim(parts[1])
   local value = vim.trim(parts[2])
-  return { name = option, value = value }
-end
-
-function Previewer.nvim_options:populate_preview_buf(entry_str)
-  if not self.win or not self.win:validate_preview() then return end
-  local entry = self:parse_entry(entry_str)
-  if utils.tbl_isempty(entry) then return end
-
-  local header = {
-    "Value: " .. entry.value,
-    "",
-    "",
-  }
-
-  local tmpbuf = self:get_tmp_buffer()
-  api.nvim_set_option_value("filetype", "help", { buf = tmpbuf })
-
-  -- get_help_text might be slow. pcall to prevent errors when scrolling the list too quickly
-  pcall(function()
-    local lines = vim.list_extend(header, self:get_help_text(entry.name) or {})
-    api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
-    self:set_preview_buf(tmpbuf)
-  end)
-
-  self.win:update_preview_title(string.format(" %s ", entry.name))
-  self.win:update_preview_scrollbar()
+  local content = { "Value: " .. value, "", "" }
+  vim.list_extend(content, self:get_help_text(option) or {})
+  local info = vim.inspect(api.nvim_get_option_info2(option, {}))
+  vim.list_extend(content, { "*info* >lua" })
+  vim.list_extend(content, vim.tbl_map(function(s) return "  " .. s end, vim.split(info, "\n")))
+  return { title = string.format(" %s ", option), filetype = "help", content = content }
 end
 
 return Previewer
