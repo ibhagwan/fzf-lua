@@ -109,8 +109,8 @@ function TSContext.update(winid, bufnr, opts)
       if api.nvim_buf_is_valid(bufnr) and api.nvim_win_is_valid(winid) then
         -- ensure context win is above
         local fix = function(win, zindex)
-          if win and api.nvim_win_is_valid(win) and api.nvim_win_get_config(win).zindex ~= zindex then
-            api.nvim_win_set_config(win, { zindex = zindex })
+          if win and api.nvim_win_is_valid(win) then
+            utils.win_set_config(win, { zindex = zindex })
             -- noautocmd don't ignore WinResized/WinScrolled
             utils.wo[win].eventignorewin = "WinResized"
           end
