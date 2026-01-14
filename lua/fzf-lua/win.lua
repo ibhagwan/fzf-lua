@@ -669,11 +669,7 @@ function FzfWin:redraw_preview()
   assert(type(self.layout.preview) == "table")
 
   if self:validate_preview() then
-    -- since `nvim_win_set_config` removes all styling, save backup
-    -- of the current options and restore after the call (#813)
-    local style = self:get_winopts(self.preview_winid, previewer:gen_winopts())
-    api.nvim_win_set_config(self.preview_winid, self.layout.preview)
-    self:set_winopts(self.preview_winid, style)
+    utils.win_set_config(self.preview_winid, self.layout.preview)
   else
     local tmp_buf = previewer:get_tmp_buffer()
     -- No autocmds, can only be sent with 'nvim_open_win'
@@ -703,22 +699,24 @@ function FzfWin:redraw()
   end
 end
 
+---@param title any
+---@param hl? string|false hl will also be used as fallback, if title part don't have hl
+---@return [string, string][]
+local function make_title(title, hl)
+  if type(title) == "string" then return { { title, type(hl) == "string" and hl or "FloatTitle" } } end
+  return type(title) ~= "table" and { { "", hl or "FloatTitle" } }
+      or vim.tbl_map(function(p) return { p[1], p[2] or hl or "FloatTitle" } end, title)
+end
+
 function FzfWin:redraw_main()
   if self.winopts.split then return end
 
   self:generate_layout()
 
-  local winopts = vim.tbl_extend("keep", (function()
-    if type(self.winopts.title) ~= "string" and type(self.winopts.title) ~= "table" then
-      return {}
-    end
-    return {
-      title = type(self.winopts.title) == "string" and type(self.hls.title) == "string"
-          and { { self.winopts.title, self.hls.title } }
-          or self.winopts.title,
-      title_pos = self.winopts.title_pos,
-    }
-  end)(), self.layout.fzf)
+  local winopts = vim.tbl_extend("keep", {
+    title = make_title(self.winopts.title, self.hls.title),
+    title_pos = self.winopts.title_pos,
+  }, self.layout.fzf)
 
   if self:validate() then
     if self._previewer
@@ -728,7 +726,7 @@ function FzfWin:redraw_main()
       self._previewer:clear_preview_buf(true)
       self._previewer:clear_cached_buffers()
     end
-    api.nvim_win_set_config(self.fzf_winid, winopts)
+    utils.win_set_config(self.fzf_winid, winopts)
   else
     -- save 'cursorline' setting prior to opening the popup
     local cursorline = vim.o.cursorline
@@ -1184,21 +1182,9 @@ function FzfWin:update_statusline()
     end
     return
   end
-  ---@type string|table
-  local parts = self.winopts.title or string.format(" %s ", tostring(FzfLua.get_info().cmd))
-  parts = type(parts) == "table" and parts
-      or type(parts) == "string" and { parts }
-      or {}
-  for i, t in ipairs(parts) do
-    local hl, str = (function()
-      if type(t) == "table" then
-        return t[2], (t[1] or self.hls.title)
-      else
-        return self.hls.title, tostring(t)
-      end
-    end)()
-    parts[i] = string.format("%%#%s#%s%%#fzf3#", hl, str)
-  end
+  local titlestr = self.winopts.title or (" %s "):format(tostring(FzfLua.get_info().cmd))
+  local title = make_title(titlestr, self.hls.title)
+  local parts = vim.tbl_map(function(p) return ("%%#%s#%s%%#fzf3#"):format(p[2], p[1]) end, title)
   local picker = table.remove(parts, 1) or ""
   vim.wo[self.fzf_winid].statusline = "%#fzf1# > %#fzf2#fzf-lua%#fzf3#"
       .. string.format(" %s %s", picker, table.concat(parts, ""))
@@ -1211,70 +1197,35 @@ function FzfWin:update_fzf_border_label()
   then
     return
   end
-  ---@type string|table
-  local parts = self.winopts.title or string.format(" %s ", tostring(FzfLua.get_info().cmd))
-  parts = type(parts) == "table" and parts
-      or type(parts) == "string" and { parts }
-      or {}
-  for i, t in ipairs(parts) do
-    local hl, str = (function()
-      if type(t) == "table" then
-        return t[2], (t[1] or self.hls.title)
-      else
-        return self.hls.title, tostring(t)
-      end
-    end)()
-    parts[i] = utils.ansi_from_hl(hl, str)
-  end
+  local titlestr = self.winopts.title or (" %s "):format(tostring(FzfLua.get_info().cmd))
+  local title = make_title(titlestr, self.hls.title)
+  local parts = vim.tbl_map(function(p) return (utils.ansi_from_hl(p[2], p[1])) end, title)
   self._o.fzf_opts["--border-label"] = table.concat(parts, " ")
-end
-
----@param winid integer
----@param winopts table
----@param o table
-function FzfWin.update_win_title(winid, winopts, o)
-  if type(o.title) ~= "string" and type(o.title) ~= "table" then
-    return
-  end
-  utils.fast_win_set_config(winid,
-    -- NOTE: although we can set the title without winopts we add these
-    -- so we don't fail with "title requires border to be set" on wins
-    -- without top border
-    vim.tbl_extend("force", winopts, {
-      title = type(o.hl) == "string" and type(o.title) == "string"
-          and { { o.title, o.hl } } or o.title,
-      title_pos = o.title_pos,
-    }))
 end
 
 function FzfWin:update_main_title(title)
   -- Can be called from fzf-tmux on ctrl-g
-  if not self.layout or self.winopts.split then return end
+  if not self:validate() or self.winopts.split then return end
   self.winopts.title = title
   self._o.winopts.title = title
-  self.update_win_title(self.fzf_winid, self.layout.fzf, {
-    title = title,
+  -- NOTE: <0.11 fail without top border: "title requires border to be set"
+  utils.win_set_config(self.fzf_winid, {
+    title = make_title(title, self.hls.title),
     title_pos = self.winopts.title_pos,
-    hl = self.hls.title,
+    border = not utils.__HAS_NVIM_011
+        and (api.nvim_win_get_config(self.fzf_winid).border or "none") or nil,
   })
 end
 
 function FzfWin:update_preview_title(title)
-  if type(title) ~= "string" and type(title) ~= "table" or not self.layout.preview
-      or not self._previewer then
-    return
-  end
-  assert(self._previewer.gen_winopts)
-  -- since `nvim_win_set_config` removes all styling, save backup
-  -- of the current options and restore after the call (#813)
-  local style = self:get_winopts(self.preview_winid, self._previewer:gen_winopts())
-  self.update_win_title(self.preview_winid, self.layout.preview, {
-    title = title,
+  if not self:validate_preview() or not self._previewer then return end
+  -- NOTE: <0.11 fail without top border: "title requires border to be set"
+  utils.win_set_config(self.preview_winid, {
+    title = make_title(title, self.hls.preview_title),
     title_pos = self.winopts.preview.title_pos,
-    hl = self.hls.preview_title,
+    border = not utils.__HAS_NVIM_011
+        and (api.nvim_win_get_config(self.preview_winid).border or "none") or nil,
   })
-  -- NOTE: `true` to ignore events for TSContext.update after selection change
-  self:set_winopts(self.preview_winid, style, true)
 end
 
 -- keybind methods below
