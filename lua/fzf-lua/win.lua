@@ -1634,6 +1634,7 @@ function FzfWin:update_statusline()
     end
     return
   end
+  ---@type string|table
   local parts = self.winopts.title or string.format(" %s ", tostring(FzfLua.get_info().cmd))
   parts = type(parts) == "table" and parts
       or type(parts) == "string" and { parts }
@@ -1657,6 +1658,7 @@ function FzfWin:update_fzf_border_label()
   if not self._o.fzf_opts["--border"] or self._o.fzf_opts["--border-label"] == false then
     return
   end
+  ---@type string|table
   local parts = self.winopts.title or string.format(" %s ", tostring(FzfLua.get_info().cmd))
   parts = type(parts) == "table" and parts
       or type(parts) == "string" and { parts }

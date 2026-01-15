@@ -1051,8 +1051,6 @@ previewers = {
       -- uncomment to enable '.gitignore' toggle for grep
       -- ["ctrl-r"]   = { actions.toggle_ignore }
     },
-    no_header             = false,    -- hide grep|cwd header?
-    no_header_i           = false,    -- hide interactive header?
   },
   args = {
     prompt            = 'Args❯ ',
@@ -1141,8 +1139,6 @@ previewers = {
       -- this action toggles between 'grep' and 'live_grep'
       ["ctrl-g"]          = { actions.grep_lgrep }
     },
-    no_header             = false,    -- hide grep|cwd header?
-    no_header_i           = false,    -- hide interactive header?
   },
   btags = {
     prompt                = 'BTags❯ ',
