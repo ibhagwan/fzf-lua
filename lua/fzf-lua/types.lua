@@ -108,35 +108,59 @@ local FzfLua = require("fzf-lua")
 ---@class fzf-lua.config.Base
 ---@field dir_icon? string
 ---@field enrich? fun(opts: fzf-lua.config.Resolved|{}):fzf-lua.config.Resolved|{}
+---Path to fzf binary. By default uses fzf found in `$PATH`.
 ---@field fzf_bin? string
+---Fzf `--color` flag configuration passed to the fzf binary, set `[1]=true` to inherit terminal colorscheme, consult `man fzf` for all available options.
 ---@field fzf_colors? { [1]?: boolean, [string]: string? }
+---Fzf command-line options passed to fzf binary as key-value pairs, consult `man fzf` for all available options. For example `fzf_opts = { ["--layout"] = "reverse-list" }`.
 ---@field fzf_opts? table<string, any>
+---Options passed to the fzf-tmux wrapper, e.g. `{ ["-p"] = "80%,80%" }`.
 ---@field fzf_tmux_opts table<string, any>
+---Highlight groups configuration, consult `:FzfLua profiles` and select `default` for the default values.
 ---@field hls fzf-lua.config.HLS
 ---@field winopts? fzf-lua.config.Winopts|(fun(opts: fzf-lua.config.Resolved):fzf-lua.config.Winopts)
 ---@field keymap? fzf-lua.config.Keymap|(fun(opts: fzf-lua.config.Resolved):fzf-lua.config.Keymap)
 ---@field actions? fzf-lua.config.Actions|(fun(opts: fzf-lua.config.Resolved):fzf-lua.config.Actions)
----@field no_header? boolean
+---Disable interactive action headers.
 ---@field no_header_i? boolean
+---Fzf prompt, passed to fzf as `--prompt` flag.
 ---@field prompt? string
+---Sets the current working directory.
 ---@field cwd? string
+---Use the multiprocess shell wrapper for async file generation, improves performance for large file sets.
 ---@field multiprocess? integer|boolean
+---Transform function for each entry, can be a function or a string that returns a function.
 ---@field fn_transform? boolean|string|function
+---Preprocess function called before command execution.
 ---@field fn_preprocess? boolean|string|function
+---Postprocess function called after command execution.
 ---@field fn_postprocess? boolean|string|function
----@field file_icons? boolean|integer
+---If available, display file icons. Set to `true` will attempt to use "nvim-web-devicons" and fallback to "mini.icons", other possible values are `devicons` or `mini` which force loading a specific icons plugin, for example: `:FzfLua files file_icons=mini` or `:lua require("fzf-lua").files({ file_icons = "devicons" })`.
+---@field file_icons? boolean|integer|string
+---Add coloring of file|git icons.
 ---@field color_icons? boolean
+---If inside a git-repo add git status indicator icons e.g. `M` for modified files.
 ---@field git_icons? boolean
+---Do not display any messages or warnings.
 ---@field silent? boolean|integer
----@field previewer? fzf-lua.config.Previewer|string
+---Previewer override, set to `false` to disable the previewer. By default files pickers use the "builtin" previewer, possible values for file pickers `bat|cat|head`. Other overrides include: `:FzfLua helptags previewer=help_native` or `:FzfLua manpages previewer=man_native`.
+---@field previewer? fzf-lua.config.Previewer|string|false
+---Fzf native preview command, can be a string, function or table.
 ---@field preview? string|function|table
 ---@field complete? (fun(s: string[], _o: fzf-lua.config.Resolved, l: string, c: integer):string?, integer?)|boolean
----@field header string
+---Header line, set to any string to display a header line, set to `false` to disable fzf-lua interactive headers (e.g. "ctrl-g to disable .gitignore", etc), passed to fzf as `--header` flag.
+---@field header? string|false
+---Initial query (prompt text), passed to fzf as `--query` flag.
 ---@field query? string
+---Resume last search for the picker, recall last query, selected items, etc.
 ---@field resume? boolean
+---Disable resuming for the current picker.
 ---@field no_resume? boolean
+---Disable "hide" profile for the picker, process will be terminated on abort/accept.
 ---@field no_hide? boolean
+---Apply a profile on top of the current configuration, can be a string or table.
 ---@field profile? string|table
+---Do not display an error message when the provider command fails.
 ---@field silent_fail? boolean
 ---@field rg_glob? boolean|integer
 ---@field headers? string[]
@@ -144,18 +168,24 @@ local FzfLua = require("fzf-lua")
 ---@field header_separator? string
 ---@field fn_selected function
 ---@field cb_co fun(co: thread)
+---Limit results to files in the current working directory only.
 ---@field cwd_only boolean
 ---@field cmd? string
+---Enable debug mode (output debug prints).
 ---@field debug? boolean|integer|'v'|'verbose'
+---Preview offset expression passed to fzf `--preview-window`, consult `man fzf` for more info.
 ---@field preview_offset? string
+---Enable rendering CRLF (`\r\n`) in entries.
 ---@field render_crlf? boolean
+---Custom path formatter, can be defined under `setup.formatters`, fzf-lua comes with a builtin vscode-like formatter, displaying the filename first followed by the folder. Try it out with `:FzfLua files formatter=path.filename_first` or `:FzfLua live_grep formatter=path.filename_first`. For permanency: `require("fzf-lua").setup({ files = { formatter = "path.filename_first" } })`.
+---@field formatter? string
 ---@field _fzf_cli_args? string[]
 ---@field __INFO fzf-lua.Info
 ---@field __CTX fzf-lua.Ctx
 ---@field _normalized? boolean
 ---@field __call_fn function
 ---@field __call_opts table
----@field is_live? boolean is "live" picker
+---@field is_live? boolean
 ---@field contents? fzf-lua.content|fzf-lua.shell.data2
 ---@field _actions? fun():fzf-lua.config.Actions?
 ---@field __ACT_TO? function
@@ -163,10 +193,12 @@ local FzfLua = require("fzf-lua")
 ---@field _is_skim? boolean
 ---@field _treesitter? (fun(line: string):string?,string?,string?,string?)|boolean?
 ---@field help_open_win? fun(buf: integer, enter: boolean, config: vim.api.keyset.win_config): integer
+---Auto close fzf-lua interface when a terminal is opened, set to `false` to keep the interface open.
 ---@field autoclose? boolean
 ---@field line_field_index? string
 ---@field field_index_expr? string
 ---@field _ctag? string
+---Pager command for shell preview commands (e.g. `delta`).
 ---@field preview_pager? string
 ---@field toggle_flag? string
 ---@field _fzf_nth_devicons? boolean
