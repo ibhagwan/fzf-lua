@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.9.0         Last change: 2026 January 11
+*fzf-lua.txt*         For Neovim >= 0.9.0         Last change: 2026 January 17
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -1026,8 +1026,6 @@ CUSTOMIZATION                                          *fzf-lua-customization*
           -- uncomment to enable '.gitignore' toggle for grep
           -- ["ctrl-r"]   = { actions.toggle_ignore }
         },
-        no_header             = false,    -- hide grep|cwd header?
-        no_header_i           = false,    -- hide interactive header?
       },
       args = {
         prompt            = 'Args❯ ',
@@ -1116,8 +1114,6 @@ CUSTOMIZATION                                          *fzf-lua-customization*
           -- this action toggles between 'grep' and 'live_grep'
           ["ctrl-g"]          = { actions.grep_lgrep }
         },
-        no_header             = false,    -- hide grep|cwd header?
-        no_header_i           = false,    -- hide interactive header?
       },
       btags = {
         prompt                = 'BTags❯ ',
