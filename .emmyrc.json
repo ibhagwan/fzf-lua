@@ -12,10 +12,12 @@
     "disable": [
       "unnecessary-if",
       "await-in-sync",
-      "global-in-non-module"
+      "global-in-non-module",
+      "invert-if"
     ]
   },
   "workspace": {
+    "ignoreDir": [ "deps/fzf-lua" ],
     "library": [
       "$VIMRUNTIME",
       "deps/mini.nvim",
