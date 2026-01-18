@@ -114,175 +114,162 @@ end
 
 ---@class fzf-lua.PathShortener
 ---@field _ns integer?
----@field _attached table<integer, boolean>
+---@field _wins table<integer, { bufnr: integer, shorten_len: integer }>
 local PathShortener = {}
 
-PathShortener._attached = {}
+PathShortener._wins = {}
 
 -- Hoist constant byte values for performance
 local DOT_BYTE = path.dot_byte
 
 function PathShortener.setup()
-  PathShortener._ns = PathShortener._ns or api.nvim_create_namespace("fzf-lua.win.path_shorten")
-end
+  if PathShortener._ns then return end
+  PathShortener._ns = api.nvim_create_namespace("fzf-lua.win.path_shorten")
 
-function PathShortener.clear(buf)
-  if not buf or not PathShortener._ns then return end
-  PathShortener._attached[buf] = nil
-  if api.nvim_buf_is_valid(buf) then
-    api.nvim_buf_clear_namespace(buf, PathShortener._ns, 0, -1)
-  end
-end
-
----Apply path shortening using extmarks with conceal
----@param buf integer buffer number
----@param lines string[] buffer lines
----@param shorten_len integer number of characters to keep (default 1)
----@param start_lnum integer? 0-indexed starting line number for incremental updates
-function PathShortener.apply(buf, lines, shorten_len, start_lnum)
-  if not buf or not api.nvim_buf_is_valid(buf) then return end
-  if not PathShortener._ns then PathShortener.setup() end
-  shorten_len = shorten_len and tonumber(shorten_len) or 1
-  if shorten_len < 1 then shorten_len = 1 end
-
-  -- Clear extmarks for the affected range only (incremental) or all (full refresh)
-  if start_lnum then
-    api.nvim_buf_clear_namespace(buf, PathShortener._ns, start_lnum, start_lnum + #lines)
-  else
-    api.nvim_buf_clear_namespace(buf, PathShortener._ns, 0, -1)
-  end
-
-  for idx, line in ipairs(lines) do
-    -- Calculate 0-indexed line number: for incremental updates use start_lnum offset
-    local lnum0 = (start_lnum or 0) + idx - 1
-
-    -- Only process non-empty lines
-    if #line > 0 then
-      -- Find the path portion of the line
-      -- Lines may have prefixes like icons separated by nbsp (U+2002)
-      -- Format: [fzf_pointer] [git_icon nbsp] [file_icon nbsp] path[:line:col:text]
-      -- When file_icons=false, there's no nbsp separator before the path
-      -- The fzf terminal also adds pointer/marker prefix (e.g., "> " or "  ")
-      local path_start = 1
-      local last_nbsp = line:find(utils.nbsp, 1, true)
-      if last_nbsp then
-        -- Find the last nbsp (there may be multiple with git_icons + file_icons)
-        repeat
-          path_start = last_nbsp + #utils.nbsp
-          last_nbsp = line:find(utils.nbsp, path_start, true)
-        until not last_nbsp
-      else
-        -- No nbsp means no icons - skip fzf's pointer/marker prefix
-        -- Paths start with: alphanumeric, `/`, `~`, `.`, or drive letter (Windows)
-        -- Skip leading whitespace and pointer characters until we hit a path char
-        local first_path_char = line:find("[%w/~%.]")
-        if first_path_char then
-          path_start = first_path_char
-        end
+  -- Register decoration provider with ephemeral extmarks
+  api.nvim_set_decoration_provider(PathShortener._ns, {
+    on_win = function(_, winid, bufnr, _topline, _botline)
+      -- Only process registered fzf windows
+      local win_data = PathShortener._wins[winid]
+      if not win_data or win_data.bufnr ~= bufnr then
+        return false
       end
-
-      -- Find where the path ends (at first colon after path_start, if any)
-      -- But be careful with Windows paths like C:\...
-      local path_end = #line
-      local colon_search_start = path_start
-      -- On Windows, skip the drive letter colon (e.g., C:)
-      -- Check if char at path_start+1 is colon AND char at path_start+2 is a path separator
-      if string.byte(line, path_start + 1) == path.colon_byte
-          and path.byte_is_separator(string.byte(line, path_start + 2)) then
-        colon_search_start = path_start + 2
-      end
-      local colon_pos = line:find(":", colon_search_start)
-      if colon_pos then
-        path_end = colon_pos - 1
-      end
-
-      -- Now process the path portion for shortening
-      -- We need to conceal directory components, keeping only `shorten_len` chars
-      local path_portion = line:sub(path_start, path_end)
-
-      -- Use path.find_next_separator to iterate through directory components
-      local prev_sep = 0
-      local sep_pos = path.find_next_separator(path_portion, 1)
-      while sep_pos do
-        local component_start = prev_sep + 1
-        local component = path_portion:sub(component_start, sep_pos - 1)
-        local component_len = #component
-
-        -- Count UTF-8 characters using path.utf8_char_len
-        local component_charlen = 0
-        local byte_i = 1
-        while byte_i <= component_len do
-          local c_len = path.utf8_char_len(component, byte_i) or 1
-          component_charlen = component_charlen + 1
-          byte_i = byte_i + c_len
-        end
-
-        -- Only conceal if the component has more characters than shorten_len
-        if component_charlen > shorten_len then
-          -- Handle special case: component starts with '.' (hidden files/dirs)
-          local keep_chars = shorten_len
-          if string.byte(component, 1) == DOT_BYTE and component_charlen > shorten_len + 1 then
-            -- Keep the dot plus shorten_len characters
-            keep_chars = shorten_len + 1
-          end
-
-          -- Bounds check to prevent errors
-          keep_chars = math.min(keep_chars, component_charlen)
-
-          -- Convert character count to byte offset using path.utf8_char_len
-          local keep_bytes = 0
-          local char_count = 0
-          byte_i = 1
-          while byte_i <= component_len and char_count < keep_chars do
-            local c_len = path.utf8_char_len(component, byte_i) or 1
-            keep_bytes = keep_bytes + c_len
-            char_count = char_count + 1
-            byte_i = byte_i + c_len
-          end
-
-          -- Calculate 0-indexed byte positions in the full line for extmark
-          -- path_start is 1-indexed, component_start is 1-indexed within path_portion
-          local line_offset = path_start - 1 + component_start - 1
-          local conceal_start = line_offset + keep_bytes
-          local conceal_end = line_offset + component_len -- end of component (before separator)
-
-          if conceal_end > conceal_start then
-            pcall(api.nvim_buf_set_extmark, buf, PathShortener._ns, lnum0, conceal_start, {
-              end_col = conceal_end,
-              conceal = "",
-            })
-          end
-        end
-        prev_sep = sep_pos
-        sep_pos = path.find_next_separator(path_portion, sep_pos + 1)
-      end
-    end
-  end
-end
-
----Attach path shortening to buffer with on_lines callback
----@param buf integer buffer number
----@param shorten_len integer|boolean number of characters to keep
----@param closing_ref fun(): boolean function to check if window is closing
-function PathShortener.attach(buf, shorten_len, closing_ref)
-  if not buf or PathShortener._attached[buf] then return end
-  PathShortener.setup()
-  PathShortener._attached[buf] = true
-
-  shorten_len = (shorten_len == true) and 1 or tonumber(shorten_len) or 1
-
-  api.nvim_buf_attach(buf, false, {
-    on_lines = function(_, bufnr, _, firstline, _, new_lastline)
-      if closing_ref() then
-        PathShortener._attached[bufnr] = nil -- Clean up on detach
-        return true
-      end
-      if not PathShortener._attached[bufnr] then return true end -- Detach
-      -- Only fetch and process the changed lines (incremental update)
-      local lines = api.nvim_buf_get_lines(bufnr, firstline, new_lastline, false)
-      PathShortener.apply(bufnr, lines, shorten_len, firstline)
-    end
+      return true -- Continue to on_line callbacks
+    end,
+    on_line = function(_, winid, bufnr, row)
+      local win_data = PathShortener._wins[winid]
+      if not win_data then return end
+      PathShortener._apply_line(bufnr, row, win_data.shorten_len)
+    end,
   })
+end
+
+---Apply path shortening to a single line using ephemeral extmarks
+---@param buf integer buffer number
+---@param row integer 0-indexed line number
+---@param shorten_len integer number of characters to keep
+function PathShortener._apply_line(buf, row, shorten_len)
+  local lines = api.nvim_buf_get_lines(buf, row, row + 1, false)
+  local line = lines[1]
+  if not line or #line == 0 then return end
+
+  -- Find the path portion of the line
+  -- Lines may have prefixes like icons separated by nbsp (U+2002)
+  -- Format: [fzf_pointer] [git_icon nbsp] [file_icon nbsp] path[:line:col:text]
+  -- When file_icons=false, there's no nbsp separator before the path
+  -- The fzf terminal also adds pointer/marker prefix (e.g., "> " or "  ")
+  local path_start = 1
+  local last_nbsp = line:find(utils.nbsp, 1, true)
+  if last_nbsp then
+    -- Find the last nbsp (there may be multiple with git_icons + file_icons)
+    repeat
+      path_start = last_nbsp + #utils.nbsp
+      last_nbsp = line:find(utils.nbsp, path_start, true)
+    until not last_nbsp
+  else
+    -- No nbsp means no icons - skip fzf's pointer/marker prefix
+    -- Paths start with: alphanumeric, `/`, `~`, `.`, or drive letter (Windows)
+    -- Skip leading whitespace and pointer characters until we hit a path char
+    local first_path_char = line:find("[%w/~%.]")
+    if first_path_char then
+      path_start = first_path_char
+    end
+  end
+
+  -- Find where the path ends (at first colon after path_start, if any)
+  -- But be careful with Windows paths like C:\...
+  local path_end = #line
+  local colon_search_start = path_start
+  -- On Windows, skip the drive letter colon (e.g., C:)
+  -- Check if char at path_start+1 is colon AND char at path_start+2 is a path separator
+  if string.byte(line, path_start + 1) == path.colon_byte
+      and path.byte_is_separator(string.byte(line, path_start + 2)) then
+    colon_search_start = path_start + 2
+  end
+  local colon_pos = line:find(":", colon_search_start)
+  if colon_pos then
+    path_end = colon_pos - 1
+  end
+
+  -- Now process the path portion for shortening
+  -- We need to conceal directory components, keeping only `shorten_len` chars
+  local path_portion = line:sub(path_start, path_end)
+
+  -- Use path.find_next_separator to iterate through directory components
+  local prev_sep = 0
+  local sep_pos = path.find_next_separator(path_portion, 1)
+  while sep_pos do
+    local component_start = prev_sep + 1
+    local component = path_portion:sub(component_start, sep_pos - 1)
+    local component_len = #component
+
+    -- Count UTF-8 characters using path.utf8_char_len
+    local component_charlen = 0
+    local byte_i = 1
+    while byte_i <= component_len do
+      local c_len = path.utf8_char_len(component, byte_i) or 1
+      component_charlen = component_charlen + 1
+      byte_i = byte_i + c_len
+    end
+
+    -- Only conceal if the component has more characters than shorten_len
+    if component_charlen > shorten_len then
+      -- Handle special case: component starts with '.' (hidden files/dirs)
+      local keep_chars = shorten_len
+      if string.byte(component, 1) == DOT_BYTE and component_charlen > shorten_len + 1 then
+        -- Keep the dot plus shorten_len characters
+        keep_chars = shorten_len + 1
+      end
+
+      -- Bounds check to prevent errors
+      keep_chars = math.min(keep_chars, component_charlen)
+
+      -- Convert character count to byte offset using path.utf8_char_len
+      local keep_bytes = 0
+      local char_count = 0
+      byte_i = 1
+      while byte_i <= component_len and char_count < keep_chars do
+        local c_len = path.utf8_char_len(component, byte_i) or 1
+        keep_bytes = keep_bytes + c_len
+        char_count = char_count + 1
+        byte_i = byte_i + c_len
+      end
+
+      -- Calculate 0-indexed byte positions in the full line for extmark
+      -- path_start is 1-indexed, component_start is 1-indexed within path_portion
+      local line_offset = path_start - 1 + component_start - 1
+      local conceal_start = line_offset + keep_bytes
+      local conceal_end = line_offset + component_len -- end of component (before separator)
+
+      if conceal_end > conceal_start then
+        pcall(api.nvim_buf_set_extmark, buf, PathShortener._ns, row, conceal_start, {
+          end_col = conceal_end,
+          conceal = "",
+          ephemeral = true,
+        })
+      end
+    end
+    prev_sep = sep_pos
+    sep_pos = path.find_next_separator(path_portion, sep_pos + 1)
+  end
+end
+
+---Register a window for path shortening
+---@param winid integer window ID
+---@param bufnr integer buffer number
+---@param shorten_len integer|boolean number of characters to keep
+function PathShortener.attach(winid, bufnr, shorten_len)
+  if not winid or not bufnr then return end
+  PathShortener.setup()
+  shorten_len = (shorten_len == true) and 1 or tonumber(shorten_len) or 1
+  PathShortener._wins[winid] = { bufnr = bufnr, shorten_len = shorten_len }
+end
+
+---Unregister a window from path shortening
+---@param winid integer window ID
+function PathShortener.detach(winid)
+  if not winid then return end
+  PathShortener._wins[winid] = nil
 end
 
 ---@alias fzf-lua.win.previewPos "up"|"down"|"left"|"right"
@@ -1301,8 +1288,8 @@ function FzfWin:treesitter_attach()
   })
 end
 
-function FzfWin:path_shorten_detach(buf)
-  PathShortener.clear(buf)
+function FzfWin:path_shorten_detach()
+  PathShortener.detach(self.fzf_winid)
   -- Reset conceallevel when path shortening is disabled (e.g., on window reuse)
   if api.nvim_win_is_valid(self.fzf_winid) then
     vim.wo[self.fzf_winid].conceallevel = 0
@@ -1318,7 +1305,7 @@ function FzfWin:path_shorten_attach()
     vim.wo[self.fzf_winid].conceallevel = 2
     vim.wo[self.fzf_winid].concealcursor = "nvic"
   end
-  PathShortener.attach(self.fzf_bufnr, path_shorten, function() return self.closing end)
+  PathShortener.attach(self.fzf_winid, self.fzf_bufnr, path_shorten)
 end
 
 function FzfWin:set_tmp_buffer(no_wipe)
@@ -1339,7 +1326,10 @@ function FzfWin:set_tmp_buffer(no_wipe)
   if not no_wipe then
     utils.nvim_buf_delete(detached, { force = true })
     TSInjector.clear_cache(detached)
-    PathShortener.clear(detached)
+    -- Re-attach path shortening to the new buffer if needed
+    if self._o.winopts.path_shorten then
+      PathShortener.attach(self.fzf_winid, self.fzf_bufnr, self._o.winopts.path_shorten)
+    end
   end
   -- in case buffer exists prematurely
   self:set_winleave_autocmd()
@@ -1407,7 +1397,7 @@ function FzfWin:create()
     if self._o.winopts.path_shorten then
       self:path_shorten_attach()
     else
-      self:path_shorten_detach(self.fzf_bufnr)
+      self:path_shorten_detach()
     end
     -- also recall the user's 'on_create' (#394)
     if self.winopts.on_create and
@@ -1535,8 +1525,8 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   end
   -- Clear treesitter buffer cache and deregister decoration callbacks
   self:treesitter_detach(self._hidden_fzf_bufnr or self.fzf_bufnr)
-  -- Clear path shortening extmarks and detach callback
-  PathShortener.clear(self._hidden_fzf_bufnr or self.fzf_bufnr)
+  -- Detach path shortening decoration provider
+  PathShortener.detach(self.fzf_winid)
   -- If this is a hidden buffer closure nothing else to do
   if hidden then return end
   if self.fzf_winid and api.nvim_win_is_valid(self.fzf_winid) then
