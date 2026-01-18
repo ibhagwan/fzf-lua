@@ -38,10 +38,20 @@ clean-screenshots:
 deps:
 	make clean
 	@mkdir -p deps
+	make deps/fzf-lua
 	git clone --depth=1 --single-branch https://github.com/nvim-mini/mini.nvim deps/mini.nvim
 	git clone --depth=1 --single-branch https://github.com/nvim-tree/nvim-web-devicons deps/nvim-web-devicons
 	git clone --depth=1 --single-branch https://github.com/hrsh7th/nvim-cmp deps/nvim-cmp
 	git clone --depth=1 --single-branch https://github.com/mfussenegger/nvim-dap.git deps/nvim-dap
+
+
+# Target to clone the repository and checkout the specific SHA
+SHA=abe5ecafebb4e24feb162384d5f492431036e791
+.PHONY: deps/fzf-lua
+deps/fzf-lua:
+	@mkdir -p deps
+	git clone .git $@
+	(cd $@ && git checkout $(SHA))
 
 .PHONY: lint
 lint:

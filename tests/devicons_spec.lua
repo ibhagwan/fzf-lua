@@ -10,7 +10,7 @@ local exec_lua = child.lua
 ---@diagnostic disable-next-line: param-type-mismatch
 local _devicons_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "nvim-web-devicons")
 if not vim.uv.fs_stat(_devicons_path) then
-  _devicons_path = vim.fs.joinpath("deps", "nvim-web-devicons")
+  _devicons_path = vim.fs.abspath(vim.fs.joinpath("deps", "nvim-web-devicons"))
 end
 
 vim.opt.runtimepath:append(_devicons_path)
