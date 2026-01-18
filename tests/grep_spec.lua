@@ -22,7 +22,7 @@ T["grep"]["search"]["regex"] = new_set({ parametrize = { { false }, { true }, { 
     }
     local path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "nvim-web-devicons") ---@diagnostic disable-line: param-type-mismatch
     if not vim.uv.fs_stat(path) then
-      path = vim.fs.joinpath("deps", "nvim-web-devicons")
+      path = vim.fs.abspath(vim.fs.joinpath("deps", "nvim-web-devicons"))
     end
     exec_lua("vim.opt.runtimepath:append(...)", { path })
     exec_lua([[require("nvim-web-devicons").setup({})]])
