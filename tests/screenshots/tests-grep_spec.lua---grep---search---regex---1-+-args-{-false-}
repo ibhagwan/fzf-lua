@@ -16,7 +16,7 @@
 15|~      ╭───────────────── grep_spec.lua ─────────────────╮      
 16|~      │ 30       __expect_lines = true,                 │      
 17|~      │ 31       __screen_opts = screen_opts,           │      
-18|~      │ 32       search = [===[(~'"\/$?'`*&&||;[]<>) --t│      
+18|~      │ 32       search = [===[(~'"\/$?'`*&&||;[]<>) -- │      
 19|~      │ 33       debug = 1,                             │      
 20|~      │ 34       silent = true,                         │      
 21|~      │ 35       hidden = false,                        │      
