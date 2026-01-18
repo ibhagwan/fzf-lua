@@ -207,7 +207,7 @@ M.reference_screenshot = function(screenshot, path, opts)
   local subject = "screenshot equality to reference at " .. vim.inspect(path)
   local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause, tostring(reference),
     tostring(screenshot))
-  H.error_expect(subject, context)
+  H.error_with_emphasis(subject, context)
 end
 
 -- modified version (no attr, trim trailing whitespace)
@@ -233,7 +233,7 @@ M.compare = function(reference, screenshot, opts)
   local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause,
     ruler .. tostring(reference),
     ruler .. tostring(screenshot))
-  H.error_expect(subject, context)
+  H.error_with_emphasis(subject, context)
 end
 
 return M
