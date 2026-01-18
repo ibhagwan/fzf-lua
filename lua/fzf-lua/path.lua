@@ -273,7 +273,7 @@ end
 ---@param str string
 ---@param start_idx integer
 ---@return integer?
-local function find_next_separator(str, start_idx)
+function M.find_next_separator(str, start_idx)
   local SEPARATOR_BYTES = utils._if_win(
     { M.fslash_byte, M.bslash_byte }, { M.fslash_byte })
   for i = start_idx or 1, #str do
@@ -288,7 +288,7 @@ end
 ---@param s string
 ---@param i? integer
 ---@return integer?
-local function utf8_char_len(s, i)
+function M.utf8_char_len(s, i)
   -- Get byte count of unicode character (RFC 3629)
   local c = string_byte(s, i or 1)
   if not c then
@@ -321,7 +321,7 @@ local function utf8_sub(s, from, to)
   local byte_i, utf8_i = from, from
   -- Concat utf8 chars until "to" or end of string
   while byte_i <= #s and (not to or utf8_i <= to) do
-    local c_len = utf8_char_len(s, byte_i) ---@cast c_len-?
+    local c_len = M.utf8_char_len(s, byte_i) ---@cast c_len-?
     local c = string_sub(s, byte_i, byte_i + c_len - 1)
     ret = ret .. c
     byte_i = byte_i + c_len
@@ -343,7 +343,7 @@ function M.shorten(path, max_len, sep)
     start_idx = 4
   end
   repeat
-    local i = find_next_separator(path, start_idx)
+    local i = M.find_next_separator(path, start_idx)
     local end_idx = i and start_idx + math.min(i - start_idx, max_len) - 1 or nil
     local part = utf8_sub(path, start_idx, end_idx) ---@cast i-?
     if end_idx and part == "." and i - start_idx > 1 then
