@@ -546,7 +546,7 @@ function M.entry_to_file(entry, opts, force_uri)
         and vim.api.nvim_buf_get_name(bufnr),
     terminal = terminal,
     path     = file,
-    line     = utils.tointeger(opts.line_query and
+    line     = utils.tointeger(type(opts.line_query) == "function" and
       (opts.line_query(opts._last_query or opts.last_query)) or line) or 0,
     col      = utils.tointeger(col) or 0,
     ctag     = opts._ctag and M.entry_to_ctag(stripped) or nil,
