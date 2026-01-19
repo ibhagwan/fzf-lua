@@ -139,7 +139,9 @@ function M.pipe_wrap_fn(fn, fzf_field_index, debug)
     utils.get_info().selected = args[1] and args[1][1] or nil
     uv.pipe_connect(pipe, pipe_path, function(err)
       if err then
-        error(string.format("pipe_connect(%s) failed with error: %s", pipe_path, err))
+        ---@diagnostic disable-next-line: undefined-field
+        err = uv.translate_sys_error(uv.errno[err])
+        utils.warn(string.format("pipe_connect(%s) failed with error: %s", pipe_path, err))
       else
         vim.schedule(function()
           fn(pipe, unpack(args))
