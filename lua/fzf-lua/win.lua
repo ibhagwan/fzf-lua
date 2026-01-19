@@ -19,20 +19,20 @@ local fn = vim.fn
 ---@class fzf-lua.Win
 ---@field winopts fzf-lua.config.WinoptsResolved
 ---@field actions fzf-lua.config.Actions|{}
----@field layout fzf-lua.WinLayout
+---@field hls fzf-lua.config.HLS
 ---@field fzf_bufnr integer
 ---@field fzf_winid integer
 ---@field preview_hidden? boolean
 ---@field preview_wrap? boolean
 ---@field fullscreen? boolean
----@field hls fzf-lua.config.HLS
+---@field layout? fzf-lua.WinLayout
 ---@field tsinjector? fzf-lua.TSInjector
 ---@field previewer? fun(...)|table|string
 ---@field _hidden_fzf_bufnr? integer
 ---@field toggle_behavior? "extend"|"default"
 ---@field _previewer? fzf-lua.previewer.Builtin|fzf-lua.previewer.Fzf
 ---@field _preview_pos_force? fzf-lua.win.previewPos
----@field _last_view? [integer, integer, integer]?
+---@field last_view? [integer, integer, integer]?
 ---@field _o fzf-lua.config.Resolved
 local FzfWin = {}
 
@@ -212,6 +212,7 @@ end
 ---@field fzf vim.api.keyset.win_config
 ---@field preview? vim.api.keyset.win_config
 
+---@return fzf-lua.WinLayout
 function FzfWin:generate_layout()
   local winopts = self:normalize_winopts()
   local nwin, preview = self:normalize_layout()
@@ -224,7 +225,7 @@ function FzfWin:generate_layout()
     opts = self._o
   })
   if not preview then
-    self.layout = {
+    return {
       fzf = {
         row = winopts.row,
         col = winopts.col,
@@ -237,7 +238,6 @@ function FzfWin:generate_layout()
         hide = winopts.hide,
       }
     }
-    return
   end
 
   if self.previewer_is_builtin and winopts.split then
@@ -324,7 +324,7 @@ function FzfWin:generate_layout()
       end
     end
   end
-  self.layout = {
+  return {
     fzf = vim.tbl_extend("force", { row = row, col = col, height = height, width = width }, {
       style = "minimal",
       border = border,
@@ -519,17 +519,13 @@ function FzfWin:check_exit_status(exit_code, fzf_bufnr)
   end
 end
 
-function FzfWin:_set_autoclose(autoclose)
+function FzfWin:set_autoclose(autoclose)
   if autoclose ~= nil then
     self._autoclose = autoclose
   else
     self._autoclose = true
   end
   return self._autoclose
-end
-
-function FzfWin:set_autoclose(autoclose)
-  return self:_set_autoclose(autoclose)
 end
 
 function FzfWin:autoclose()
@@ -586,7 +582,7 @@ function FzfWin.new(o)
   self.preview_hidden = not not o.winopts.preview.hidden -- force boolean
   self.keymap = o.keymap
   self.previewer = o.previewer
-  self:_set_autoclose(o.autoclose)
+  self:set_autoclose(o.autoclose)
   self.winopts = self:normalize_winopts()
   _self = self
   return self
@@ -665,16 +661,16 @@ function FzfWin:redraw_preview()
   self:close_preview_scrollbar()
 
   -- Generate the preview layout
-  self:generate_layout()
-  assert(type(self.layout.preview) == "table")
+  self.layout = self:generate_layout()
+  local preview = assert(self.layout.preview)
 
   if self:validate_preview() then
-    utils.win_set_config(self.preview_winid, self.layout.preview)
+    utils.win_set_config(self.preview_winid, preview)
   else
     local tmp_buf = previewer:get_tmp_buffer()
     -- No autocmds, can only be sent with 'nvim_open_win'
     self.preview_winid = api.nvim_open_win(tmp_buf, false,
-      vim.tbl_extend("force", self.layout.preview, { noautocmd = true }))
+      vim.tbl_extend("force", preview, { noautocmd = true }))
     -- Add win local var for the preview|border windows
     api.nvim_win_set_var(self.preview_winid, "fzf_lua_preview", true)
   end
@@ -711,7 +707,7 @@ end
 function FzfWin:redraw_main()
   if self.winopts.split then return end
 
-  self:generate_layout()
+  self.layout = self:generate_layout()
 
   local winopts = vim.tbl_extend("keep", {
     title = make_title(self.winopts.title, self.hls.title),
@@ -746,7 +742,7 @@ function FzfWin:redraw_main()
   end
 end
 
-function FzfWin:_on(e, callback, global)
+function FzfWin:on(e, callback, global)
   api.nvim_create_autocmd(e, {
     group = api.nvim_create_augroup("FzfLua" .. e, { clear = true }),
     buffer = global ~= true and self.fzf_bufnr or nil,
@@ -754,15 +750,15 @@ function FzfWin:_on(e, callback, global)
   })
 end
 
-function FzfWin:set_redraw_autocmd()
-  self:_on("VimResized", function() self:redraw() end)
-end
-
-function FzfWin:set_winleave_autocmd()
-  self:_on("WinClosed", function() self:close() end)
+function FzfWin:setup_autocmds()
+  -- automatically resize fzf window
+  self:on("VimResized", function() self:redraw() end)
+  -- verify the preview is closed, this can happen
+  -- when running async LSP with 'jump1'
+  self:on("WinClosed", function() self:close() end)
   -- Workaround for using `:wqa` with "hide"
   -- https://github.com/neovim/neovim/issues/14061
-  self:_on("ExitPre", function() self:close() end, true)
+  self:on("ExitPre", function() self:close() end, true)
 end
 
 function FzfWin:treesitter_attach()
@@ -791,9 +787,7 @@ function FzfWin:set_tmp_buffer(no_wipe)
     if self.tsinjector then self.tsinjector.clear_cache(detached) end
   end
   -- in case buffer exists prematurely
-  self:set_winleave_autocmd()
-  -- automatically resize fzf window
-  self:set_redraw_autocmd()
+  self:setup_autocmds()
   return self.fzf_bufnr
 end
 
@@ -855,8 +849,7 @@ function FzfWin:create()
       self.tsinjector.detach(self.fzf_bufnr)
     end
     -- also recall the user's 'on_create' (#394)
-    if self.winopts.on_create and
-        type(self.winopts.on_create) == "function" then
+    if type(self.winopts.on_create) == "function" then
       self.winopts.on_create({ winid = self.fzf_winid, bufnr = self.fzf_bufnr })
     end
     -- redraw all window (e.g. when switch from fzf previewer to builtin previewer)
@@ -912,11 +905,7 @@ function FzfWin:create()
     self:redraw_main()
   end
 
-  -- verify the preview is closed, this can happen
-  -- when running async LSP with 'jump1'
-  self:set_winleave_autocmd()
-  -- automatically resize fzf window
-  self:set_redraw_autocmd()
+  self:setup_autocmds()
   -- Use treesitter to highlight results on the main fzf window
   self:treesitter_attach()
 
@@ -1051,7 +1040,7 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   end
   self.closing = nil
   self._reuse = nil
-  _self = nil
+  if not hide then _self = nil end
 end
 
 function FzfWin:detach_fzf_buf()
@@ -1060,25 +1049,17 @@ function FzfWin:detach_fzf_buf()
   self:set_tmp_buffer(true)
 end
 
+local winview = function()
+  return { vim.o.lines, vim.o.columns, vim.o.cmdheight }
+end
+
 function FzfWin:hide()
-  if self:hidden() then return end
   -- Note: we should never get here with a tmux profile as neovim binds (default: <A-Esc>)
   -- do not apply to tmux, validate anyways in case called directly using the API
-  if not self or self._o._is_fzf_tmux then return end
+  if self:hidden() or self._o._is_fzf_tmux then return end
   self:detach_fzf_buf()
   self:close(nil, true)
-  self:save_size()
-  -- Save self as `:close()` nullifies it
-  _self = self
-end
-
-function FzfWin:save_size()
-  -- save the current window size (VimResized won't emit when buffer hidden)
-  self._last_view = { vim.o.lines, vim.o.columns, vim.o.cmdheight }
-end
-
-function FzfWin:resized()
-  return not vim.deep_equal(self._last_view, { vim.o.lines, vim.o.columns, vim.o.cmdheight })
+  self.last_view = winview() -- VimResized won't emit on hidden buffer
 end
 
 function FzfWin:hidden()
@@ -1151,7 +1132,7 @@ function FzfWin:unhide()
   self.fzf_bufnr = self._hidden_fzf_bufnr
   self._hidden_fzf_bufnr = nil
   self:create()
-  if self:resized() then self:redraw() end
+  if not vim.deep_equal(self.last_view, winview()) then self:redraw() end
   vim.cmd("startinsert")
   return true
 end
