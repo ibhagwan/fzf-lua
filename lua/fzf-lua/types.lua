@@ -311,6 +311,7 @@ FzfLua.grep_visual = require("fzf-lua.providers.grep").grep_visual
 FzfLua.help_tags = require("fzf-lua.providers.helptags").helptags
 FzfLua.helptags = require("fzf-lua.providers.helptags").helptags
 FzfLua.highlights = require("fzf-lua.providers.colorschemes").highlights
+FzfLua.history = require("fzf-lua.providers.oldfiles").history
 FzfLua.jumps = require("fzf-lua.providers.nvim").jumps
 FzfLua.keymaps = require("fzf-lua.providers.nvim").keymaps
 FzfLua.lgrep_curbuf = require("fzf-lua.providers.grep").lgrep_curbuf
@@ -345,7 +346,6 @@ FzfLua.marks = require("fzf-lua.providers.nvim").marks
 FzfLua.menus = require("fzf-lua.providers.nvim").menus
 FzfLua.nvim_options = require("fzf-lua.providers.nvim").nvim_options
 FzfLua.oldfiles = require("fzf-lua.providers.oldfiles").oldfiles
-FzfLua.history = require("fzf-lua.providers.oldfiles").history
 FzfLua.packadd = require("fzf-lua.providers.nvim").packadd
 FzfLua.profiles = require("fzf-lua.providers.meta").profiles
 FzfLua.quickfix = require("fzf-lua.providers.quickfix").quickfix
@@ -371,20 +371,20 @@ FzfLua.undotree = require("fzf-lua.providers.undotree").undotree
 FzfLua.zoxide = require("fzf-lua.providers.files").zoxide
 
 ---@class fzf-lua.win.api: fzf-lua.Win
----@field set_autoclose fun(autoclose: vim.NIL), any
+---@field set_autoclose fun(autoclose: vim.NIL): any
 ---@field autoclose fun(): any
----@field win_leave fun(): nil
+---@field close fun(fzf_bufnr: integer?, hide: boolean?, hidden: boolean?): nil
 ---@field hide fun(): nil
 ---@field unhide fun(): true?
 ---@field toggle_fullscreen fun(): nil
 ---@field focus_preview fun(): nil
 ---@field toggle_preview fun(): nil
 ---@field toggle_preview_wrap fun(): nil
----@field toggle_preview_cw fun(direction: integer), nil
+---@field toggle_preview_cw fun(direction: integer): nil
 ---@field toggle_preview_behavior fun(): nil
 ---@field toggle_preview_ts_ctx fun(): nil
 ---@field toggle_preview_undo_diff fun(): nil
----@field preview_ts_ctx_inc_dec fun(num: integer), nil
----@field preview_scroll fun(direction: fzf-lua.win.direction), nil
+---@field preview_ts_ctx_inc_dec fun(num: integer): nil
+---@field preview_scroll fun(direction: fzf-lua.win.direction): nil
 ---@field close_help fun(): nil
 ---@field toggle_help fun(): nil
