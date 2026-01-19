@@ -24,7 +24,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd
-          gh release download -R sumneko/lua-language-server -p '*-linux-x64.tar.gz' -D lua-language-server
+          gh release download 3.16.4 -R sumneko/lua-language-server -p '*-linux-x64.tar.gz' -D lua-language-server
           tar xzf lua-language-server/* -C lua-language-server
           echo "${PWD}/lua-language-server/bin" >> $GITHUB_PATH
           export PATH="${PWD}/lua-language-server/bin:${PATH}"
