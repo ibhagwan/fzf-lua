@@ -36,7 +36,7 @@ local fn = vim.fn
 ---@field _o fzf-lua.config.Resolved
 local FzfWin = {}
 
--- singleton instance used in win_leave
+-- singleton instance used by "_exported_wapi"
 ---@type fzf-lua.Win?
 local _self = nil
 
@@ -746,10 +746,10 @@ function FzfWin:redraw_main()
   end
 end
 
-function FzfWin:_on(e, callback)
+function FzfWin:_on(e, callback, global)
   api.nvim_create_autocmd(e, {
     group = api.nvim_create_augroup("FzfLua" .. e, { clear = true }),
-    buffer = self.fzf_bufnr,
+    buffer = global ~= true and self.fzf_bufnr or nil,
     callback = callback,
   })
 end
@@ -759,7 +759,10 @@ function FzfWin:set_redraw_autocmd()
 end
 
 function FzfWin:set_winleave_autocmd()
-  self:_on("WinClosed", function() self:win_leave() end)
+  self:_on("WinClosed", function() self:close() end)
+  -- Workaround for using `:wqa` with "hide"
+  -- https://github.com/neovim/neovim/issues/14061
+  self:_on("ExitPre", function() self:close() end, true)
 end
 
 function FzfWin:treesitter_attach()
@@ -872,11 +875,11 @@ function FzfWin:create()
   -- save sending bufnr/winid
   self.src_bufnr = api.nvim_get_current_buf()
   self.src_winid = api.nvim_get_current_win()
-  -- save current window layout cmd
-  self.winrestcmd = fn.winrestcmd()
-  self.cmdheight = vim.o.cmdheight
 
   if self.winopts.split then
+    -- save current window layout cmd
+    self.winrestcmd = fn.winrestcmd()
+    self.cmdheight = vim.o.cmdheight
     -- Store the current window styling options (number, cursor, etc)
     self.src_winid_style = self:save_style_minimal(self.src_winid)
     if type(self.winopts.split) == "function" then
@@ -955,17 +958,13 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   -- ":FzfLua") `FzfWin:set_tmp_buffer()` will call `nvim_buf_delete` on the original
   -- fzf terminal buffer which will terminate the fzf process and trigger the call to
   -- `fzf_win:close()` within `core.fzf()`. We need to avoid the close in this case.
-  if fzf_bufnr and fzf_bufnr ~= self.fzf_bufnr then
-    return
-  end
+  if self.closing or (fzf_bufnr and fzf_bufnr ~= self.fzf_bufnr) then return end
+  self.closing = true -- prevents race condition
   -- we restore normal mode before exiting fzf due toma neovim bug? whereas
   -- switching from a term win to another term win preserves terminal mode
   -- even if the target window was in normal terminal mode (#2054 #2419)
   local ctx = utils.__CTX() or {}
   if ctx.mode == "nt" then vim.cmd "stopinsert" end
-  --
-  -- prevents race condition with 'win_leave'
-  self.closing = true
   self:close_help()
   self:close_backdrop()
   self:close_preview(hide)
@@ -1053,11 +1052,6 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   self.closing = nil
   self._reuse = nil
   _self = nil
-end
-
-function FzfWin:win_leave()
-  if self.closing then return end
-  self:close()
 end
 
 function FzfWin:detach_fzf_buf()
@@ -1352,7 +1346,7 @@ function FzfWin:toggle_help()
     self._o.help_open_win)
 end
 
----@type fzf-lua.win.api: fzf-lua.Win
+---@type fzf-lua.win.api
 local M = setmetatable({}, {
   __index = function(m, k)
     rawset(m, k, FzfLua._exported_wapi[k] and function(...)
