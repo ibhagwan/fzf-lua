@@ -22,6 +22,7 @@
 --- @field name string
 --- @field description string?
 --- @field typ string
+--- @field is_async boolean?
 
 --- @alias EmmyDocTypeMember EmmyDocTypeField | EmmyDocFn
 

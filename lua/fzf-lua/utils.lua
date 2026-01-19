@@ -899,7 +899,7 @@ function M.fzf_exit()
   -- in "sync" mode we also need to make sure __CTX is cleared or we'll
   -- have the wrong cursor coordinates (#928)
   M.clear_CTX()
-  require("fzf-lua").win.win_leave()
+  require("fzf-lua").win.close()
 end
 
 ---@return fzf-lua.Win?
