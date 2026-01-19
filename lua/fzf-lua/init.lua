@@ -226,13 +226,6 @@ function M.setup(opts, do_not_reset_defaults)
   end
 end
 
-M.redraw = function()
-  local winobj = require "fzf-lua".win.__SELF()
-  if winobj then
-    winobj:redraw()
-  end
-end
-
 local lazyloaded_modules = {
   files = { "fzf-lua.providers.files", "files" },
   args = { "fzf-lua.providers.files", "args" },
@@ -368,12 +361,16 @@ M.setup_fzfvim_cmds = function(...)
   return require("fzf-lua.profiles.fzf-vim").fn_load(...)
 end
 
-function M.hide()
+M.hide = function()
   return FzfLua.win.hide()
 end
 
-function M.unhide()
+M.unhide = function()
   return FzfLua.win.unhide()
+end
+
+M.redraw = function()
+  return FzfLua.win.redraw()
 end
 
 -- export the defaults module and deref
@@ -448,6 +445,7 @@ M._exported_wapi = {
   close_help = true,
   set_autoclose = true,
   autoclose = true,
+  redraw = true,
 }
 
 ---@param opts? fzf-lua.config.Builtin|{}
