@@ -1,8 +1,7 @@
 ---@diagnostic disable: duplicate-require
 local gen = _G.arg[0] == "lua/fzf-lua/init.lua"
-if gen then
-  vim.opt.rtp:append(vim.fn.fnamemodify(debug.getinfo(1, "S").source:gsub("^@", ""), ":h:h:h:p"))
-end
+local currFile = assert(debug.getinfo(1, "S")).source:gsub("^@", "")
+if gen then vim.opt.rtp:append(vim.fn.fnamemodify(currFile, ":h:h:h:p")) end
 
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
@@ -22,7 +21,6 @@ do
     end
   end
 
-  local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
   vim.g.fzf_lua_directory = path.normalize(assert(path.parent(currFile)))
   vim.g.fzf_lua_root = path.parent(assert(path.parent(vim.g.fzf_lua_directory)))
 
@@ -47,18 +45,6 @@ do
         srv, vim.fn.stdpath("run")))
     end
   end
-
-  -- Workaround for using `:wqa` with "hide"
-  -- https://github.com/neovim/neovim/issues/14061
-  vim.api.nvim_create_autocmd("ExitPre", {
-    group = vim.api.nvim_create_augroup("FzfLuaNvimQuit", { clear = true }),
-    callback = function()
-      local win = utils.fzf_winobj()
-      if win and win:hidden() then ---@cast win._hidden_fzf_bufnr -?
-        vim.api.nvim_buf_delete(win._hidden_fzf_bufnr, { force = true })
-      end
-    end,
-  })
 
   -- Setup global var
   _G.FzfLua = M
@@ -458,7 +444,7 @@ M._exported_wapi = {
   toggle_preview = true,
   toggle_preview_cw = true,
   toggle_preview_behavior = true,
-  win_leave = true,
+  close = true,
   close_help = true,
   set_autoclose = true,
   autoclose = true,
@@ -487,66 +473,6 @@ M.register_extension = function(name, fun, default_opts, override)
 end
 
 if not gen then return M end
-local buf = {}
-local w = function(s) buf[#buf + 1] = s end
-local mark = vim.pesc("---GENERATED from `make gen`")
-for line in io.lines("lua/fzf-lua/types.lua") do
-  w(line .. "\n")
-  if line:match(mark) then
-    break
-  end
-end
--- generate api typings
-w("\n")
-for _, v in vim.spairs(exported_modules) do
-  w(([[FzfLua.%s = require("fzf-lua.%s")]] .. "\n"):format(v, v))
-end
-w("\n")
-for k, v in vim.spairs(lazyloaded_modules) do
-  w(([[FzfLua.%s = require(%q).%s]] .. "\n"):format(k, v[1], v[2]))
-end
-w("\n")
-
-local obj = vim.system({ "sh", "-c", [[
-  emmylua_doc_cli lua/fzf-lua/ --output-format json --output stdout | jq '.types[] | select(.name == "fzf-lua.Win")'
-]] }):wait()
-local res = vim.json.decode(obj.stdout or "")
-
-w("---@class fzf-lua.win.api: fzf-lua.Win\n")
-vim.iter(res.members):each(function(m)
-  if not M._exported_wapi[m.name] then
-    return
-  end
-  -- vim.print(m)
-  local ty = {}
-  ty[#ty + 1] = "---@field "
-  ty[#ty + 1] = m.name
-  ty[#ty + 1] = " "
-  if m.is_async then ty[#ty + 1] = "async" end
-  ty[#ty + 1] = "fun("
-
-  local first = true
-  vim.iter(m.params):each(function(p)
-    if first then
-      first = false
-    else
-      ty[#ty + 1] = ", "
-    end
-    ty[#ty + 1] = ("%s: %s"):format(p.name, p.typ)
-  end)
-  if ty[#ty + 1] == ", " then ty[#ty] = "" end
-
-  ty[#ty + 1] = ")"
-  vim.iter(m.returns):each(function(r)
-    if first then
-      first = false
-      ty[#ty + 1] = ": "
-    else
-      ty[#ty + 1] = ", "
-    end
-    ty[#ty + 1] = r.typ
-  end)
-  ty[#ty + 1] = "\n"
-  w(table.concat(ty, ""))
-end)
-assert(io.open("lua/fzf-lua/types.lua", "w")):write(table.concat(buf, ""))
+local script = vim.fs.joinpath(vim.fn.fnamemodify(currFile, ":h:h:h:p"), "scripts/gen_types.lua")
+local content = assert(io.open(script, "r")):read("*a")
+assert(loadstring(content))(exported_modules, lazyloaded_modules, M._exported_wapi)
