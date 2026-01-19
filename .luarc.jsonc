@@ -30,8 +30,6 @@
       "unknown-diag-code",
       "unknown-cast-variable",
       "luadoc-miss-local-name",
-      // disable as buggy since 3.17.0
-      "need-check-nil",
     ],
     "unusedLocalExclude": ["_*"],
   },
