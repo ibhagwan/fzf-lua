@@ -906,6 +906,7 @@ function FzfWin:create()
   end
 
   self:setup_autocmds()
+  self:setup_keybinds()
   -- Use treesitter to highlight results on the main fzf window
   self:treesitter_attach()
 
@@ -921,9 +922,6 @@ function FzfWin:create()
 
   -- create or redraw the preview win
   self:redraw_preview()
-
-  -- setup the keybinds
-  self:setup_keybinds()
 
   return self.fzf_bufnr
 end
