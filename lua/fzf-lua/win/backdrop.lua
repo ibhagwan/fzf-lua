@@ -7,6 +7,7 @@ local M = {}
 ---@param backdrop any
 ---@param zindex integer
 ---@param hls fzf-lua.config.HLS
+---@return function? close
 function M.open(backdrop, zindex, hls)
   -- Called from redraw?
   if M.win then
@@ -48,6 +49,7 @@ function M.open(backdrop, zindex, hls)
   local bo = vim.bo[M.buf]
   bo.buftype = "nofile"
   bo.filetype = "fzflua_backdrop"
+  return function() M.close() end
 end
 
 function M.close()
