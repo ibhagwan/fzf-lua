@@ -246,7 +246,9 @@ local glob_filter = function(paths, globs)
   -- matchers = vim.tbl_map(vim.F.nil_wrap(vim.glob.to_lpeg), globs)
   if #matchers == 0 then return paths end
   return vim.tbl_filter(function(p)
-    return vim.iter(matchers):all(function(m) return m:match_str(p) end)
+    local stat = vim.uv.fs_stat(p) -- "--iglob" can filter directory correctly
+    return (stat and stat.type == "directory") or
+        vim.iter(matchers):all(function(m) return m:match_str(p) end)
   end, paths)
 end
 
@@ -343,7 +345,7 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
     for i, p in ipairs(search_paths) do
       search_paths[i] = path.relative_to(path.normalize(p), utils.cwd())
     end
-    search_paths = glob_filter(search_paths, globs)
+    search_paths = opts.rg_glob and glob_filter(search_paths, globs) or search_paths
     search_path = table.concat(vim.tbl_map(libuv.shellescape, search_paths), " ")
     if is_grep then
       -- grep requires adding `-r` to command as paths can be either file or directory
