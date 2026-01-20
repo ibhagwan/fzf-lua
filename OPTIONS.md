@@ -1429,6 +1429,12 @@ Type: `string`, Default: `nil`
 
 Initial search string.
 
+##### grep.regex
+
+Type: `string`, Default: `nil`
+
+Initial search pattern.
+
 ##### grep.no_esc
 
 Type: `integer|boolean`, Default: `nil`

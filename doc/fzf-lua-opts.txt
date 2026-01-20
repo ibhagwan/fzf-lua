@@ -1925,6 +1925,13 @@ Type: `string`, Default: `nil`
 Initial search string.
 
 
+grep.regex                                           *fzf-lua-opts-grep.regex*
+
+Type: `string`, Default: `nil`
+
+Initial search pattern.
+
+
 grep.no_esc                                         *fzf-lua-opts-grep.no_esc*
 
 Type: `integer|boolean`, Default: `nil`
