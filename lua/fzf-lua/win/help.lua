@@ -170,6 +170,7 @@ function M.toggle(keymap, actions, hls, zindex, preview_keymaps, preview_mode, h
   wo.spell = false
 
   api.nvim_buf_set_lines(M.buf, 0, -1, false, lines)
+  return function() M.close() end
 end
 
 function M.close()

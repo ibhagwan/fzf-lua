@@ -32,7 +32,8 @@ local fn = vim.fn
 ---@field toggle_behavior? "extend"|"default"
 ---@field _previewer? fzf-lua.previewer.Builtin|fzf-lua.previewer.Fzf
 ---@field _preview_pos_force? fzf-lua.win.previewPos
----@field last_view? [integer, integer, integer]?
+---@field last_view? [integer, integer, integer]
+---@field on_closes table<any, function>
 ---@field _o fzf-lua.config.Resolved
 local FzfWin = {}
 
@@ -535,13 +536,8 @@ end
 function FzfWin:set_backdrop()
   -- No backdrop for split, only floats / tmux
   if self.winopts.split then return end
-  require("fzf-lua.win.backdrop").open(
-    self.winopts.backdrop, self.winopts.zindex - 2, self.hls)
-end
-
----@diagnostic disable-next-line: unused
-function FzfWin:close_backdrop()
-  require("fzf-lua.win.backdrop").close()
+  self.on_closes.backdrop = require("fzf-lua.win.backdrop").open(self.winopts.backdrop,
+    self.winopts.zindex - 2, self.hls)
 end
 
 ---@param o fzf-lua.config.Resolved
@@ -584,6 +580,7 @@ function FzfWin.new(o)
   self.previewer = o.previewer
   self:set_autoclose(o.autoclose)
   self.winopts = self:normalize_winopts()
+  self.on_closes = {}
   _self = self
   return self
 end
@@ -677,6 +674,7 @@ function FzfWin:redraw_preview()
   previewer:reset_winhl(self.preview_winid)
   previewer:display_last_entry()
   previewer:update_ts_context()
+  self.on_closes.preview = function(hide) self:close_preview(hide) end
 end
 
 function FzfWin:validate()
@@ -724,21 +722,22 @@ function FzfWin:redraw_main()
     end
     utils.win_set_config(self.fzf_winid, winopts)
   else
-    -- save 'cursorline' setting prior to opening the popup
-    local cursorline = vim.o.cursorline
     self.fzf_bufnr = self.fzf_bufnr or api.nvim_create_buf(false, true)
-    self.fzf_winid = utils.nvim_open_win(self.fzf_bufnr, true, winopts)
-    -- disable search highlights as they interfere with fzf's highlights
-    if vim.o.hlsearch and vim.v.hlsearch == 1 then
-      self.hls_on_close = true
-      vim.cmd("nohls")
-    end
+    -- save 'cursorline' setting prior to opening the popup
     -- `:help nvim_open_win`
     -- 'minimal' sets 'nocursorline', normally this shouldn't
     -- be an issue but for some reason this is affecting opening
     -- buffers in new splits and causes them to open with
     -- 'nocursorline', see discussion in #254
+    local cursorline = vim.o.cursorline
+    self.fzf_winid = utils.nvim_open_win(self.fzf_bufnr, true, winopts)
     vim.o.cursorline = cursorline
+    -- disable search highlights as they interfere with fzf's highlights
+    if vim.o.hlsearch and vim.v.hlsearch == 1 then
+      vim.cmd("nohls")
+      -- use `vim.o.hlsearch` as `vim.cmd("hls")` is invalid
+      self.on_closes.hlsearch = function() vim.o.hlsearch = true end
+    end
   end
 end
 
@@ -764,7 +763,7 @@ end
 function FzfWin:treesitter_attach()
   if not self._o.winopts.treesitter then return end
   self.tsinjector = require("fzf-lua.win.tsinjector")
-  self.tsinjector.attach(self, self.fzf_bufnr, self._o._treesitter)
+  self.on_closes.tsinjector = self.tsinjector.attach(self, self.fzf_bufnr, self._o._treesitter)
 end
 
 function FzfWin:set_tmp_buffer(no_wipe)
@@ -871,8 +870,28 @@ function FzfWin:create()
 
   if self.winopts.split then
     -- save current window layout cmd
-    self.winrestcmd = fn.winrestcmd()
-    self.cmdheight = vim.o.cmdheight
+    local winrestcmd = fn.winrestcmd()
+    local cmdheight = vim.o.cmdheight
+    self.on_closes.winrest = function()
+      -- when using `split = "belowright new"` closing the fzf
+      -- window may not always return to the correct source win
+      -- depending on the user's split configuration (#397)
+      if self.src_winid and api.nvim_win_is_valid(self.src_winid)
+          and self.src_winid ~= api.nvim_get_current_win() then
+        api.nvim_set_current_win(self.src_winid)
+      end
+      -- remove all windows from the restore cmd that have been closed in the meantime
+      -- if we're not doing this the result might be all over the place
+      local winnrs = vim.tbl_map(api.nvim_win_get_number, api.nvim_tabpage_list_wins(0))
+      local parts = vim.split(winrestcmd, "|")
+      local cmd = vim.tbl_map(function(cmd_part)
+        local winnr = tonumber(cmd_part:match("(.)resize"))
+        return utils.tbl_contains(winnrs, winnr) and cmd_part or ""
+      end, parts)
+      vim.cmd(table.concat(cmd, "|"))
+      -- Also restore cmdheight, will be wrong if vim resized (#1462)
+      vim.o.cmdheight = cmdheight
+    end
     -- Store the current window styling options (number, cursor, etc)
     self.src_winid_style = self:save_style_minimal(self.src_winid)
     if type(self.winopts.split) == "function" then
@@ -952,16 +971,9 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   -- even if the target window was in normal terminal mode (#2054 #2419)
   local ctx = utils.__CTX() or {}
   if ctx.mode == "nt" then vim.cmd "stopinsert" end
-  self:close_help()
-  self:close_backdrop()
-  self:close_preview(hide)
   -- Abort hidden fzf job?
   if not hide and self._hidden_fzf_bufnr and self._hidden_fzf_bufnr ~= self.fzf_bufnr then
     pcall(api.nvim_buf_delete, self._hidden_fzf_bufnr, { force = true })
-  end
-  -- Clear treesitter buffer cache and deregister decoration callbacks
-  if self.tsinjector then
-    self.tsinjector.detach(self._hidden_fzf_bufnr or self.fzf_bufnr)
   end
   -- If this is a hidden buffer closure nothing else to do
   if hidden then return end
@@ -997,41 +1009,9 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   if self.fzf_bufnr then
     pcall(api.nvim_buf_delete, self.fzf_bufnr, { force = true })
   end
-  -- when using `split = "belowright new"` closing the fzf
-  -- window may not always return to the correct source win
-  -- depending on the user's split configuration (#397)
-  if self.winopts.split
-      and self.src_winid
-      and api.nvim_win_is_valid(self.src_winid)
-      and self.src_winid ~= api.nvim_get_current_win()
-  then
-    api.nvim_set_current_win(self.src_winid)
-  end
-  if self.winopts.split then
-    -- remove all windows from the restore cmd that have been closed in the meantime
-    -- if we're not doing this the result might be all over the place
-    local winnrs = vim.tbl_map(function(win)
-      return api.nvim_win_get_number(win) .. ""
-    end, api.nvim_tabpage_list_wins(0))
-
-    local cmd = {}
-    for cmd_part in string.gmatch(self.winrestcmd, "[^|]+") do
-      local winnr = cmd_part:match("(.)resize")
-      if utils.tbl_contains(winnrs, winnr) then
-        table.insert(cmd, cmd_part)
-      end
-    end
-
-    vim.cmd(table.concat(cmd, "|"))
-
-    -- Also restore cmdheight, will be wrong if vim resized (#1462)
-    vim.o.cmdheight = self.cmdheight
-  end
-  if self.hls_on_close then
-    -- restore search highlighting if we disabled it
-    -- use `vim.o.hlsearch` as `vim.cmd("hls")` is invalid
-    vim.o.hlsearch = true
-    self.hls_on_close = nil
+  for k, _ in pairs(self.on_closes) do
+    self.on_closes[k](hide)
+    self.on_closes[k] = nil
   end
   if type(self.winopts.on_close) == "function" then
     self.winopts.on_close()
@@ -1142,7 +1122,8 @@ end
 
 function FzfWin:update_preview_scrollbar()
   if not self:validate_preview() then return end
-  require("fzf-lua.win.scrollbar").update(self.preview_winid, self.hls, self.winopts)
+  self.on_closes.scrollbar = require("fzf-lua.win.scrollbar").update(self.preview_winid, self.hls,
+    self.winopts)
 end
 
 function FzfWin:update_statusline()
@@ -1312,17 +1293,11 @@ function FzfWin:preview_scroll(direction)
   end
 end
 
----@diagnostic disable-next-line: unused
-function FzfWin:close_help()
-  require("fzf-lua.win.help").close()
-end
-
 function FzfWin:toggle_help()
   local zindex = self.winopts.zindex + 2
   local mode = self.previewer_is_builtin and "builtin" or "fzf"
-  local help = require("fzf-lua.win.help")
-  help.toggle(self.keymap, self.actions, self.hls, zindex, _preview_keymaps, mode,
-    self._o.help_open_win)
+  self.on_closes.help = require("fzf-lua.win.help").toggle(self.keymap, self.actions, self.hls,
+    zindex, _preview_keymaps, mode, self._o.help_open_win)
 end
 
 ---@type fzf-lua.win.api
