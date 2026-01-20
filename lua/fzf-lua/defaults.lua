@@ -849,6 +849,8 @@ M.defaults.git                   = {
 ---@field raw_cmd? string
 ---Initial search string.
 ---@field search? string
+---Initial search pattern.
+---@field regex? string
 ---Disable escaping of special characters in the search query, set to `2` to disable escaping and regex mode.
 ---@field no_esc? integer|boolean
 ---Enable live grep mode (search-as-you-type).

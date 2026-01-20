@@ -21,6 +21,13 @@ M.grep = function(opts)
   -- we need this for `actions.grep_lgrep`
   opts.__ACT_TO = opts.__ACT_TO or M.live_grep
 
+  -- regex as alias to search+no_esc
+  if opts.regex then
+    opts.search = opts.regex
+    opts.no_esc = true
+    opts.regex = nil
+  end
+
   if not opts.search and not opts.raw_cmd then
     -- resume implies no input prompt
     if opts.resume then
@@ -63,6 +70,13 @@ local function normalize_live_grep_opts(opts)
   ---@type fzf-lua.config.Grep
   opts = config.normalize_opts(opts, "grep")
   if not opts then return end
+
+  -- regex as alias to search+no_esc
+  if opts.regex then
+    opts.search = opts.regex
+    opts.no_esc = true
+    opts.regex = nil
+  end
 
   -- auto disable treesitter as it collides with cmd regex highlighting
   -- ignore if forced with `_treesitter = true` (#2511)
