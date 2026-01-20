@@ -30,7 +30,7 @@ function TSInjector.setup()
       and pcall(api.nvim_set_decoration_provider, TSInjector._ns, { on_range = function() end })
       or TSInjector._has_on_range
 
-  local function wrap_ts_hl_callback(name)
+  local function wrap_ts_hl_callback(name, cb)
     return function(_, win, buf, ...)
       -- print(name, buf, win, TSInjector.cache[buf])
       if not TSInjector.cache[buf] then
@@ -40,6 +40,7 @@ function TSInjector.setup()
         if hl.enabled then
           vim.treesitter.highlighter.active[buf] = hl.highlighter
           if vim.treesitter.highlighter[name] then
+            if cb then cb(hl.highlighter, buf, ...) end
             vim.treesitter.highlighter[name](_, win, buf, ...)
           end
         end
@@ -48,13 +49,27 @@ function TSInjector.setup()
     end
   end
 
+  local on_range = wrap_ts_hl_callback("_on_range")
+  local on_line = TSInjector._has_on_range and function(_, win, buf, row)
+    return on_range(_, win, buf, row, 0, row + 1, 0)
+  end or wrap_ts_hl_callback("_on_line")
+
+  local on_win_pre = utils.__HAS_NVIM_012 and function(h, buf, topline, botline)
+    if h.parsing then return end
+    h.parsing = nil == h.tree:parse({ topline, botline + 1 }, function(_, trees)
+      if trees and h.parsing then
+        h.parsing = false
+        api.nvim__redraw({ buf = buf, valid = false, flush = false })
+      end
+    end)
+  end or nil
+
   api.nvim_set_decoration_provider(TSInjector._ns, {
     -- NOTE: unsure why we need "on_start"
     -- causes issue with mixed lang regions (#2526)
     -- on_start = wrap_ts_hl_callback("_on_start"),
-    on_win = wrap_ts_hl_callback("_on_win"),
-    on_line = wrap_ts_hl_callback("_on_line"),
-    on_range = TSInjector._has_on_range and wrap_ts_hl_callback("_on_range") or nil,
+    on_win = wrap_ts_hl_callback("_on_win", on_win_pre),
+    on_line = on_line,
   })
 
   return true
