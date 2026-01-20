@@ -102,7 +102,7 @@ end
 ---@param target_win integer
 ---@param hls fzf-lua.config.HLS
 ---@param winopts fzf-lua.config.WinoptsResolved
----@return nil
+---@return function? close
 function M.update(target_win, hls, winopts)
   local preview = winopts.preview
   local kind = preview.scrollbar
@@ -152,6 +152,7 @@ function M.update(target_win, hls, winopts)
 
   local thumb_hl = hls.scrollfloat_f or "PmenuThumb"
   M.ensure_window("_thumb_buf", "_thumb_win", thumb_opts, thumb_hl)
+  return function() M.close() end
 end
 
 function M.close()

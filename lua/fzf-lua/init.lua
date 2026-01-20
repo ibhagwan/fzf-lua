@@ -442,7 +442,6 @@ M._exported_wapi = {
   toggle_preview_cw = true,
   toggle_preview_behavior = true,
   close = true,
-  close_help = true,
   set_autoclose = true,
   autoclose = true,
   redraw = true,

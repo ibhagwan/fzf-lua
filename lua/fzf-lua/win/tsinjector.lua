@@ -129,6 +129,7 @@ end
 ---@param self fzf-lua.Win
 ---@param buf integer
 ---@param line_parser (fun(line: string):string?,string?,string?,string?)|boolean?
+---@return function detach
 function M.attach(self, buf, line_parser)
   -- local utf8 = require("fzf-lua.lib.utf8")
   local function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
@@ -219,6 +220,7 @@ function M.attach(self, buf, line_parser)
       attach(bufnr, regions)
     end
   })
+  return function() M.detach(buf) end
 end
 
 return M
