@@ -387,5 +387,4 @@ FzfLua.zoxide = require("fzf-lua.providers.files").zoxide
 ---@field toggle_preview_undo_diff fun(): nil
 ---@field preview_ts_ctx_inc_dec fun(num: integer): nil
 ---@field preview_scroll fun(direction: fzf-lua.win.direction): nil
----@field close_help fun(): nil
 ---@field toggle_help fun(): nil
