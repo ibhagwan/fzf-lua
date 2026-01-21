@@ -1179,7 +1179,9 @@ function FzfWin:set_style_minimal(winid, global)
   self:set_winopts(winid, {
     number = false,
     relativenumber = false,
-    cursorline = false,
+    -- BUG(upstream): causes issues with winopts.split=enew
+    -- https://github.com/neovim/neovim/issues/37484
+    -- cursorline = false,
     cursorcolumn = false,
     spell = false,
     list = false,
