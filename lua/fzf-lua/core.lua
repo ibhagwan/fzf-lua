@@ -1039,7 +1039,7 @@ end
 ---@return table
 M.convert_exec_silent_actions = function(opts)
   -- `execute-silent` actions are bugged with skim (can't use quotes)
-  if utils.has(opts, "sk") then
+  if utils.has(opts, "sk") and not utils.has(opts, "sk", { 1, 5, 3 }) then
     return opts
   end
   for k, v in pairs(opts.actions) do
@@ -1151,7 +1151,10 @@ M.fzf_query_placeholder = "<query>"
 M.fzf_field_index = function(opts)
   -- fzf already adds single quotes around the placeholder when expanding.
   -- for skim we surround it with double quotes or single quote searches fail
-  return opts and opts.field_index or opts._is_skim and [["{}"]] or "{q}"
+  -- skim >= v1.5.3 already escapes the field index
+  return opts and opts.field_index
+      or utils.has(opts, "sk") and not utils.has(opts, "sk", { 1, 5, 3 }) and [["{}"]]
+      or "{q}"
 end
 
 ---@param cmd string

@@ -745,6 +745,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     local bin, version, changelog = (function()
       if opts.__SK_VERSION then
         return "sk", opts.__SK_VERSION, {
+          ["1.5.3"] = { fzf_opts = { ["--algo"] = "frizbee" } },
           ["0.15.5"] = { fzf_opts = { ["--tmux"] = true } },
           ["0.53"] = { fzf_opts = { ["--inline-info"] = true } },
           -- All fzf flags not existing in skim
@@ -811,6 +812,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
           -- All skim flags not existing in fzf
           ["all"] = {
             fzf_opts = {
+              ["--algo"] = false,
               ["--inline-info"] = false,
             }
           },

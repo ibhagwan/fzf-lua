@@ -25,7 +25,7 @@ return {
       opts.actions = opts.actions or {}
       assert(opts.keymap)
       assert(opts.keymap.builtin)
-      if fzf.utils.has(opts, "sk") then
+      if fzf.utils.has(opts, "sk") and not fzf.utils.has(opts, "sk", { 1, 5, 3 }) then
         -- `execute-silent` actions are bugged with skim
         -- Set esc to hide since we aren't using the custom callback
         opts.actions["esc"] = false
