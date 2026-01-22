@@ -265,6 +265,8 @@ M.defaults        = {
     ["--layout"]         = "reverse",
     ["--border"]         = "none",
     ["--highlight-line"] = true,
+    -- typo-resistant algo with skim >= v1.5.3
+    ["--algo"]           = "frizbee",
   },
   ---Options passed to fzf-tmux wrapper.
   fzf_tmux_opts = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
