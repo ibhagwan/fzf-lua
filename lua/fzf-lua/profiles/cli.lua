@@ -15,6 +15,9 @@ pcall(function()
     int execl(const char *, const char *, ...);
     int close(int fd);
     int openpty(int *amaster, int *aslave, char *name, void *termp, const struct winsize *winp);
+    int fork(void);
+    int isatty(int fd);
+    int fileno(void *stream);
   ]]
 end)
 
@@ -28,9 +31,32 @@ local function parse_entries(s, o)
   end, s)
 end
 
+local function isatty(file)
+  if not ffi then return false end
+  local fd = ffi.C.fileno(file)
+  return ffi.C.isatty(fd) ~= 0
+end
+
+local function fork(cmd, ...)
+  if not ffi then return false end
+  local pid = ffi.C.fork()
+  if pid < 0 then return end -- fork failed
+  if pid > 0 then return end -- parent process, do nothing
+  -- pid == 0, child process, build the shell command
+  -- tiny delay to let parent (fzf-lua) exit
+  -- then exec nvim conneced to /dev/tty
+  local shell_cmd = string.format(
+    "sleep 0.05; %s %s </dev/tty >/dev/tty 2>/dev/tty", cmd,
+    table.concat(vim.tbl_map(function(x) return FzfLua.libuv.shellescape(x) end, { ... }), " ")
+  )
+  os.execute(shell_cmd)
+  os.exit(0)
+end
+
 local function posix_exec(cmd, ...)
   local _is_win = fn.has("win32") == 1 or fn.has("win64") == 1
   if type(cmd) ~= "string" or _is_win or not ffi then return end
+  if not isatty(io.stdout) then return fork(cmd, ...) end
   local args = { ... }
   -- NOTE: must add NULL to mark end of the vararg
   table.insert(args, string.byte("\0"))
@@ -142,13 +168,20 @@ return {
             entries[1].line and ("+" .. entries[1].line) or nil,
             entries[1].col and ("+norm! %s|"):format(entries[1].col) or nil)
         elseif ffi and #entries > 1 then
-          local file = fn.tempname()
-          fn.writefile(vim.tbl_map(function(e) -- Format: {filename}:{lnum}:{col}: {text}
+          local qf_items = {}
+          for _, e in ipairs(entries) do
             local text = e.stripped:match(":%d+:%d?%d?%d?%d?:?(.*)$") or ""
-            return ("%s:%d:%d: %s"):format(e.path, e.line or 1, e.col or 1, text)
-          end, entries), file)
-          posix_exec(fn.exepath("nvim"), "--cmd",
-            ("set nohidden | cfile %s | set hidden&"):format(file))
+            table.insert(qf_items, {
+              filename = e.path,
+              lnum = math.max(1, e.line or 1),
+              col = math.max(1, e.col or 1),
+              text = text,
+            })
+          end
+          local qf_str = vim.inspect(qf_items):gsub("\n%s*", " ")
+          posix_exec(fn.exepath("nvim"), "-c", string.format(
+            "lua vim.o.hidden=false; vim.fn.setqflist(%s); vim.cmd('cfirst | set hidden&')",
+            qf_str))
         end
         quit()
       end,
