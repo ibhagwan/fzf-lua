@@ -302,8 +302,8 @@ inherit terminal colorscheme, consult `man fzf` for all available options.
                                                                               
 globals.fzf_opts                               *fzf-lua-opts-globals.fzf_opts*
 
-Type: `table<string,any>`, Default: `{ ["--ansi"] = true, ["--border"] =
-"none", ["--height"] ...`
+Type: `table<string,any>`, Default: `{ ["--algo"] = "frizbee", ["--ansi"] =
+true, ["--border"]...`
 
 Fzf command-line options passed to fzf binary as key-value pairs, consult `man
 fzf` for all available options. For example `fzf_opts = { ["--layout"] =
