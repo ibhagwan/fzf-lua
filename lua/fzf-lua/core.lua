@@ -414,7 +414,7 @@ M.fzf = function(contents, opts)
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
   if selected and #selected > 0 then
-    if not (opts._is_skim and opts.is_live) then
+    if not (utils.has(opts, "sk") and opts.is_live) then
       -- reminder: this doesn't get called with 'live_grep' when using skim
       -- due to a bug where '--print-query --interactive' combo is broken:
       -- skim always prints an empty line where the typed query should be.
@@ -1103,7 +1103,7 @@ M.setup_fzf_live_flags = function(command, bind_start, opts)
     reload_command = string.format("sleep %.2f; %s", opts.query_delay / 1000, reload_command)
   end
 
-  if opts._is_skim then
+  if utils.has(opts, "sk") then
     opts.prompt = opts.__prompt or opts.prompt or opts.fzf_opts["--prompt"]
     if opts.prompt then
       opts.fzf_opts["--prompt"] = opts.prompt:match("[^%*]+")
@@ -1146,7 +1146,7 @@ end
 -- query placeholder for "live" queries
 M.fzf_query_placeholder = "<query>"
 
----@param opts { field_index?: string, _is_skim?: boolean }
+---@param opts { field_index?: string }
 ---@return string
 M.fzf_field_index = function(opts)
   -- fzf already adds single quotes around the placeholder when expanding.

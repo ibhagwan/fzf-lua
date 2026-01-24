@@ -52,7 +52,7 @@ M.expect = function(actions, opts)
       elseif k ~= "enter" then
         -- Skim does not support case sensitive alt-shift binds
         -- which are supported with fzf since version 0.25
-        if not opts._is_skim or not k:match("^alt%-%u") then
+        if not utils.has(opts, "sk") or not k:match("^alt%-%u") then
           table.insert(expect, k)
         end
       end

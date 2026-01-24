@@ -192,7 +192,6 @@ local FzfLua = require("fzf-lua")
 ---@field _actions? fun():fzf-lua.config.Actions?
 ---@field __ACT_TO? function
 ---@field _start? boolean
----@field _is_skim? boolean
 ---@field _treesitter? (fun(line: string):string?,string?,string?,string?)|boolean?
 ---@field help_open_win? fun(buf: integer, enter: boolean, config: vim.api.keyset.win_config): integer
 ---Auto close fzf-lua interface when a terminal is opened, set to `false` to keep the interface open.
@@ -223,7 +222,6 @@ local FzfLua = require("fzf-lua")
 ---@field __resume_get? function
 ---@field _contents? string
 ---@field _is_fzf_tmux? boolean
----@field _is_skim? boolean
 ---@field __stringified? boolean
 ---@field __stringify_cmd? boolean
 ---@field __sigwinches? string[]

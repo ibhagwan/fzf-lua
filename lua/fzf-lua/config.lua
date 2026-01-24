@@ -227,6 +227,58 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     opts = M.resume_opts(opts)
   end
 
+  local executable = function(binary, fncerr, strerr)
+    if binary and vim.fn.executable(binary) ~= 1 then
+      fncerr(("'%s' is not a valid executable, %s"):format(binary, strerr))
+      return false
+    end
+    return true
+  end
+
+  -- Validate the fzf binary & version dependency
+  opts.fzf_bin = opts.fzf_bin or M.globals.fzf_bin
+  opts.fzf_bin = opts.fzf_bin and libuv.expand(opts.fzf_bin) or nil
+  if not opts.fzf_bin or
+      not executable(opts.fzf_bin, utils.warn, "fallback to 'fzf'.") then
+    -- default|fallback to fzf
+    opts.fzf_bin = "fzf"
+    -- try fzf plugin if fzf is not installed globally
+    if vim.fn.executable(opts.fzf_bin) ~= 1 then
+      local ok, fzf_plug = pcall(vim.api.nvim_call_function, "fzf#exec", {})
+      if ok and fzf_plug then
+        opts.fzf_bin = fzf_plug
+      end
+    end
+    if not executable(opts.fzf_bin, utils.error,
+          "aborting. Please make sure 'fzf' is in installed.") then
+      return nil
+    end
+  end
+
+  -- enforce fzf minimum requirements
+  vim.g.fzf_lua_fzf_version = nil
+  if opts.fzf_bin:match("sk$") then
+    local SK_VERSION, rc, err = utils.sk_version(opts)
+    opts.__SK_VERSION = SK_VERSION
+    if not opts.__SK_VERSION then
+      utils.error("'sk --version' failed with error %s: %s", rc, err)
+      return nil
+    end
+  else
+    local FZF_VERSION, rc, err = utils.fzf_version(opts)
+    opts.__FZF_VERSION = FZF_VERSION
+    vim.g.fzf_lua_fzf_version = FZF_VERSION
+    if not opts.__FZF_VERSION then
+      utils.error("'fzf --version' failed with error %s: %s", rc, err)
+      return nil
+    elseif not utils.has(opts, "fzf", { 0, 36 }) then
+      utils.error("fzf version %s is lower than minimum (0.36), aborting.",
+        utils.ver2str(opts.__FZF_VERSION))
+      return nil
+    end
+  end
+
+
   local function convert_bool_opts()
     -- Enforce conversion of boolean options that are tables with `enabled`
     -- property, i.e. `winopts.treesitter = true` will be converted to
@@ -655,59 +707,6 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
 
   -- test for valid git_repo
   opts.git_icons = opts.git_icons and path.is_git_repo(opts, true)
-
-  local executable = function(binary, fncerr, strerr)
-    if binary and vim.fn.executable(binary) ~= 1 then
-      fncerr(("'%s' is not a valid executable, %s"):format(binary, strerr))
-      return false
-    end
-    return true
-  end
-
-  opts.fzf_bin = opts.fzf_bin or M.globals.fzf_bin
-  opts.fzf_bin = opts.fzf_bin and libuv.expand(opts.fzf_bin) or nil
-  if not opts.fzf_bin or
-      not executable(opts.fzf_bin, utils.warn, "fallback to 'fzf'.") then
-    -- default|fallback to fzf
-    opts.fzf_bin = "fzf"
-    -- try fzf plugin if fzf is not installed globally
-    if vim.fn.executable(opts.fzf_bin) ~= 1 then
-      local ok, fzf_plug = pcall(vim.api.nvim_call_function, "fzf#exec", {})
-      if ok and fzf_plug then
-        opts.fzf_bin = fzf_plug
-      end
-    end
-    if not executable(opts.fzf_bin, utils.error,
-          "aborting. Please make sure 'fzf' is in installed.") then
-      return nil
-    end
-  end
-
-  -- are we using skim?
-  opts._is_skim = opts.fzf_bin:match("sk$") ~= nil
-
-  -- enforce fzf minimum requirements
-  vim.g.fzf_lua_fzf_version = nil
-  if not opts._is_skim then
-    local FZF_VERSION, rc, err = utils.fzf_version(opts)
-    opts.__FZF_VERSION = FZF_VERSION
-    vim.g.fzf_lua_fzf_version = FZF_VERSION
-    if not opts.__FZF_VERSION then
-      utils.error("'fzf --version' failed with error %s: %s", rc, err)
-      return nil
-    elseif not utils.has(opts, "fzf", { 0, 36 }) then
-      utils.error("fzf version %s is lower than minimum (0.36), aborting.",
-        utils.ver2str(opts.__FZF_VERSION))
-      return nil
-    end
-  else
-    local SK_VERSION, rc, err = utils.sk_version(opts)
-    opts.__SK_VERSION = SK_VERSION
-    if not opts.__SK_VERSION then
-      utils.error("'sk --version' failed with error %s: %s", rc, err)
-      return nil
-    end
-  end
 
   if utils.has(opts, "fzf", { 0, 53 })
       -- `_multiline` is used to override `multiline` inherited from `defaults = {}`
