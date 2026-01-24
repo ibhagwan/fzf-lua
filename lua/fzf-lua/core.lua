@@ -414,10 +414,13 @@ M.fzf = function(contents, opts)
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
   if selected and #selected > 0 then
-    if not (utils.has(opts, "sk") and opts.is_live) then
-      -- reminder: this doesn't get called with 'live_grep' when using skim
-      -- due to a bug where '--print-query --interactive' combo is broken:
-      -- skim always prints an empty line where the typed query should be.
+    -- NOTE: this doesn't get called with 'live_grep' when using skim <v1
+    -- due to a bug where '--print-query --interactive' combo is broken:
+    -- skim always prints an empty line where the typed query should be.
+    if not (opts.is_live
+          and utils.has(opts, "sk")
+          and not utils.has(opts, "sk", { 1, 5, 3 }))
+    then
       config.resume_set("query", selected[1], opts)
     end
     table.remove(selected, 1)
