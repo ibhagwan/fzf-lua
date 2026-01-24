@@ -466,21 +466,22 @@ function Previewer.base:display_entry(entry_str)
     self.preview_bufnr = self:clear_preview_buf(true)
   end
 
+  ---@async
   local populate_preview_buf = function(entry_str_)
     if not self.win or not self.win:validate_preview() then return end
 
     -- specialized previewer populate function
     ---@cast self fzf-lua.previewer.BufferOrFile base class def don't make sense here
-    self:populate_preview_buf(entry_str_)
+    if self:populate_preview_buf(entry_str_) == false then return end
 
     -- reset the preview window highlights
     self.win:reset_win_highlights(self.win.preview_winid)
   end
 
   -- debounce preview entries
-  self:debounce("preview", self.delay, function()
+  self:debounce("preview", self.delay, coroutine.wrap(function()
     populate_preview_buf(entry_str)
-  end)
+  end))
 end
 
 function Previewer.base:cmdline(_)
@@ -669,9 +670,11 @@ function Previewer.buffer_or_file:entry_to_file(entry_str)
   return path.entry_to_file(entry_str, self.opts)
 end
 
+---async result can be return by "_cb(res)"
 ---@param entry_str string
+---@param _cb? function
 ---@return fzf-lua.buffer_or_file.Entry
-function Previewer.buffer_or_file:parse_entry(entry_str)
+function Previewer.buffer_or_file:parse_entry(entry_str, _cb)
   ---@type fzf-lua.buffer_or_file.Entry
   local entry = self:entry_to_file(entry_str)
   local buf = entry.bufnr
@@ -878,12 +881,19 @@ function Previewer.buffer_or_file:check_bcache(entry)
   return cached
 end
 
+---@async
 ---@param entry_str string
+---@return false? no preview
 function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
   -- stop ueberzug shell job
   self:stop_ueberzug()
-  local entry = self:parse_entry(entry_str)
+  local co = coroutine.running()
+  -- schedule can avoid "cannot resume running coroutine"
+  local entry = self:parse_entry(entry_str,
+    vim.schedule_wrap(function(res) assert(coroutine.resume(co, res)) end))
+  entry = entry or coroutine.yield()
+  if not self.win:validate_preview() then return false end
   if utils.tbl_isempty(entry) then return end
   local cached = self:check_bcache(entry)
   if cached and not cached.invalid and not self:should_load_buffer(entry) then
