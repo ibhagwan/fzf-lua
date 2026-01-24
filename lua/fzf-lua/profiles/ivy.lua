@@ -1,5 +1,5 @@
 local M = {
-  { "default-title" }, -- base profile
+  { "default" }, -- base profile
   desc = "UI at the bottom of the screen",
   winopts = {
     row       = 1,

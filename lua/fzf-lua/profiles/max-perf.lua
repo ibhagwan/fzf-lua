@@ -1,5 +1,5 @@
 return {
-  { "default-title" }, -- base profile
+  { "default" }, -- base profile
   desc = "fzf-native with no git|files icons",
   winopts = { preview = { default = "bat" }, treesitter = false },
   manpages = { previewer = "man_native" },

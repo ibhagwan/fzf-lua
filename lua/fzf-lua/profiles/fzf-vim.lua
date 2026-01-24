@@ -46,7 +46,7 @@ local function setup_commands(no_override, prefix)
 end
 
 return {
-  { "default-prompt" }, -- base profile
+  { "default-prompt", "hide" }, -- base profile
   fn_load = setup_commands,
   desc = "fzf.vim defaults",
   winopts = {

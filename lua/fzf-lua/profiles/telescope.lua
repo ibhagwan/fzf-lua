@@ -6,7 +6,7 @@ local function hl_validate(hl)
 end
 
 return {
-  { "default-title" }, -- base profile
+  { "default" }, -- base profile
   desc       = "match telescope default highlights|keybinds",
   fzf_opts   = {
     ["--layout"] = "default",

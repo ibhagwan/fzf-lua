@@ -759,6 +759,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
               ["--wrap"]           = true,
               ["--wrap-sign"]      = true,
               ["--highlight-line"] = false,
+              ["--gutter"] = false,
             }
           },
         }
