@@ -1117,15 +1117,19 @@ M.setup_fzf_live_flags = function(command, bind_start, opts)
       opts.__prompt = opts.prompt
       opts.prompt = nil
     end
-    -- since we surrounded the skim placeholder with quotes
-    -- we need to escape them in the initial query
-    opts.fzf_opts["--cmd-query"] = utils.sk_escape(opts.query)
+    opts.fzf_opts["--cmd-query"] = utils.has(opts, "sk", { 1, 5, 3 }) and opts.query
+        -- NOTE: skim <v1, since we surrounded the skim placeholder
+        -- with quotes we need to escape them in the initial query
+        or utils.sk_escape(opts.query)
     -- '--query' was set by 'resume()', skim has the option to switch back and
     -- forth between interactive command and fuzzy matching (using 'ctrl-q')
     -- setting both '--query' and '--cmd-query' will use <query> to fuzzy match
     -- on top of our result set, double filtering our results (undesirable)
     opts.fzf_opts["--query"] = nil
     opts.query = nil
+    -- flag swap "histoey" <-> "cmd-history"
+    opts.fzf_opts["--cmd-history"] = opts.fzf_opts["--history"]
+    opts.fzf_opts["--history"] = nil
     -- setup as interactive
     table.insert(opts._fzf_cli_args, string.format("--interactive --cmd %s",
       libuv.shellescape(reload_command)))
