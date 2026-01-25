@@ -62,6 +62,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   table.insert(cmd, libuv.shellescape(outputtmpname))
 
   if not opts.is_fzf_tmux then
+    utils.eventignore(function() vim.bo.filetype = "fzf" end)
+
     -- A pesky bug I fixed upstream and was merged in 0.11/0.10.2:
     -- <C-c> in term buffers was making neovim freeze, as a workaround in older
     -- versions (not perfect could still hang) we map <C-c> to <Esc> locally
