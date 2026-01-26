@@ -46,7 +46,9 @@ M.grep = function(opts)
     end
   end
 
-  if utils.has(opts, "fzf") and not opts.prompt and opts.search and #opts.search > 0 then
+  if (utils.has(opts, "fzf") or utils.has(opts, "sk", { 1, 8, 1 }))
+      and not opts.prompt and opts.search and #opts.search > 0
+  then
     opts.prompt = utils.ansi_from_hl(opts.hls.live_prompt, opts.search) .. " > "
   end
 
