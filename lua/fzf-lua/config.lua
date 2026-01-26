@@ -744,6 +744,13 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     local bin, version, changelog = (function()
       if opts.__SK_VERSION then
         return "sk", opts.__SK_VERSION, {
+          -- All fzf flags values not support by skim
+          ["99.9.9"] = {
+            fzf_opts = {
+              ["--border"] = { "none" },
+              ["--info"]   = { "inline-right" },
+            }
+          },
           ["1.5.3"] = {
             fzf_opts = {
               ["--border"] = { "plain", "rounded", "double", "thick", "light-double-dashed",
@@ -772,8 +779,6 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
               ["--highlight-line"] = false,
               ["--gutter"]         = false,
               ["--border-label"]   = false,
-              ["--border"]         = { "none" },
-              ["--info"]           = { "inline-right" },
             }
           },
         }
