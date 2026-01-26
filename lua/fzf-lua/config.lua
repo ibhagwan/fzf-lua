@@ -744,22 +744,36 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     local bin, version, changelog = (function()
       if opts.__SK_VERSION then
         return "sk", opts.__SK_VERSION, {
-          ["1.5.3"] = { fzf_opts = { ["--algo"] = "frizbee" } },
+          ["1.5.3"] = {
+            fzf_opts = {
+              ["--border"] = { "plain", "rounded", "double", "thick", "light-double-dashed",
+                "heavy-double-dashed", "light-triple-dashed", "heavy-triple-dashed",
+                "light-quadruple-dashed", "heavy-quadruple-dashed", "quadrant-inside",
+                "quadrant-outside" },
+              ["--algo"]   = "frizbee"
+            }
+          },
           ["0.15.5"] = { fzf_opts = { ["--tmux"] = true } },
-          ["0.53"] = { fzf_opts = { ["--inline-info"] = true } },
+          ["0.53"] = {
+            fzf_opts = {
+              ["--inline-info"] = true,
+              ["--algo"]        = { "skim_v1", "skim_v2" },
+            }
+          },
           -- All fzf flags not existing in skim
           ["all"] = {
             fzf_opts = {
               ["--scheme"]         = false,
               ["--gap"]            = false,
-              ["--info"]           = false,
-              ["--border"]         = false,
               ["--scrollbar"]      = false,
               ["--no-scrollbar"]   = false,
               ["--wrap"]           = true,
               ["--wrap-sign"]      = true,
               ["--highlight-line"] = false,
-              ["--gutter"] = false,
+              ["--gutter"]         = false,
+              ["--border-label"]   = false,
+              ["--border"]         = { "none" },
+              ["--info"]           = { "inline-right" },
             }
           },
         }

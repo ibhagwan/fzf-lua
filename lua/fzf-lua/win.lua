@@ -1674,7 +1674,10 @@ function FzfWin:update_statusline()
 end
 
 function FzfWin:update_fzf_border_label()
-  if not self._o.fzf_opts["--border"] or self._o.fzf_opts["--border-label"] == false then
+  if not utils.has(self._o, "fzf", { 0, 35 })
+      or not self._o.fzf_opts["--border"]
+      or self._o.fzf_opts["--border-label"] == false
+  then
     return
   end
   ---@type string|table
