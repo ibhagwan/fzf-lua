@@ -150,29 +150,28 @@ M.resume = function(_, _)
   require("fzf-lua").resume()
 end
 
-local edit_entry = function(entry, fullpath, will_replace_curbuf, opts)
+---requested buffer already loaded in the current window (split?)
+---@param buf? integer
+---@param fullpath string
+---@return boolean
+local buf_edited = function(buf, fullpath)
   local curbuf = vim.api.nvim_win_get_buf(0)
-  local curbname = vim.api.nvim_buf_get_name(curbuf)
-  if entry.bufnr == curbuf or path.equals(curbname, fullpath) then
-    -- requested buffer already loaded in the current window (split?)
-    return true
-  end
-  local bufnr = entry.bufnr or (function()
-    -- Always open files relative to the current win/tab cwd (#1854)
-    -- We normalize the path or Windows will fail with directories starting
-    -- with special characters, for example "C:\app\(web)" will be translated
-    -- by neovim to "c:\app(web)" (#1082)
-    local relpath = path.normalize(path.relative_to(fullpath, utils.cwd()))
-    local bufnr0 = vim.fn.bufadd(relpath)
-    if bufnr0 == 0 and not opts.silent then
-      utils.warn("Unable to add buffer %s", relpath)
-      return
-    end
-    vim.bo[bufnr0].buflisted = true
-    return bufnr0
-  end)()
-  -- abort if we're unable to load the buffer
-  if not tonumber(bufnr) then return end
+  return buf == curbuf or path.equals(fullpath, vim.api.nvim_buf_get_name(curbuf))
+end
+
+---@param relpath string
+---@return integer?
+local load_buf = function(relpath)
+  local bufnr = vim.fn.bufadd(relpath)
+  if bufnr == 0 then return end
+  vim.bo[bufnr].buflisted = true
+  return bufnr
+end
+
+---@param bufnr integer
+---@param will_replace_curbuf boolean
+---@return boolean? success
+local set_buf = function(bufnr, will_replace_curbuf)
   -- wipe unnamed empty buffers (e.g. "new") on switch
   if will_replace_curbuf
       and vim.bo.buftype == ""
@@ -223,17 +222,13 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
       if not utils.is_term_buffer(0) then
         vim.cmd("normal! m`")
       end
+      -- Always open files relative to the current win/tab cwd (#1854)
+      -- We normalize the path or Windows will fail with directories starting
+      -- with special characters, for example "C:\app\(web)" will be translated
+      -- by neovim to "c:\app(web)" (#1082)
+      local relpath = path.normalize(path.relative_to(fullpath, utils.cwd()))
       if bufedit then
-        local will_replace_curbuf = (function()
-          if #vimcmd > 0 then return false end
-          local curbuf = vim.api.nvim_win_get_buf(0)
-          local curbname = vim.api.nvim_buf_get_name(curbuf)
-          if entry.bufnr == curbuf or path.equals(curbname, fullpath) then
-            -- requested buffer already loaded in the current window (split?)
-            return false
-          end
-          return true
-        end)()
+        local will_replace_curbuf = #vimcmd == 0 and not buf_edited(entry.bufnr, fullpath)
         if will_replace_curbuf then
           if utils.wo.winfixbuf then
             utils.warn("'winfixbuf' is set for current window, will open in a split.")
@@ -242,18 +237,23 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
               and not vim.o.confirm
               and not vim.o.autowriteall
               and utils.buffer_is_dirty(vim.api.nvim_get_current_buf(), true, true) then
+            if not opts.silent then utils.warn("cannot replace modified buffer") end
             return
           end
         end
         if #vimcmd > 0 then vim.cmd(vimcmd) end
         -- NOTE: URI entries only execute new buffers (new|vnew|tabnew)
         -- and later use `utils.jump_to_location` to load the buffer
-        if not entry.uri and not edit_entry(entry, fullpath, will_replace_curbuf, opts) then
+        if not entry.uri and not buf_edited(entry.bufnr, fullpath) then
           -- error loading buffer or save dialog cancelled
-          return
+          local bufnr = entry.bufnr or load_buf(relpath)
+          if not bufnr then
+            if not opts.silent then utils.warn("Unable to add buffer %s", fullpath) end
+            return
+          end
+          if not set_buf(bufnr, will_replace_curbuf) then return end
         end
       else
-        local relpath = path.normalize(path.relative_to(fullpath, utils.cwd()))
         vim.cmd(("%s %s"):format(vimcmd, relpath))
       end
       -- Reload actions from fzf's (buf/arg del, etc) window end here
