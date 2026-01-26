@@ -229,7 +229,7 @@ Fzf `--color` flag configuration passed to the fzf binary, set `[1]=true` to inh
 
 #### globals.fzf_opts
 
-Type: `table<string,any>`, Default: `{ ["--algo"] = "frizbee", ["--ansi"] = true, ["--border"]...`
+Type: `table<string,any>`, Default: `{ ["--ansi"] = true, ["--border"] = "none", ["--height"] ...`
 
 Fzf command-line options passed to fzf binary as key-value pairs, consult `man fzf` for all available options. For example `fzf_opts = { ["--layout"] = "reverse-list" }`.
 
