@@ -74,7 +74,7 @@ local function git_preview(opts, file)
   -- directory up the path that is a Git repo. git_diff() passes file
   -- paths relative to the Git repo root so to ensure the previewer
   -- can interpret the paths correctly, it must use the repo root as cwd.
-  opts.cwd = path.git_root({ cwd = opts.cwd })
+  opts.cwd = path.git_root(opts)
   opts.preview = path.git_cwd(opts.preview, opts)
   if type(opts.preview_pager) == "function" then
     opts.preview_pager = opts.preview_pager()
