@@ -1364,7 +1364,10 @@ local parse_entry = function(e) return e and e:match("%((.-)%)") or nil end
 M.serverlist_kill = function(sel)
   vim.iter(sel):map(parse_entry):each(function(addr)
     local ok, err = utils.rpcexec(addr, "nvim_exec2", "qa!", {})
-    assert(ok or tostring(err):match("Invalid channel"), err)
+    assert(ok
+      or tostring(err):match("Invalid channel")
+      or tostring(err):match("ch %d+ was closed by the peer"),
+      err)
   end)
 end
 
