@@ -898,7 +898,7 @@ function M.fzf_exit()
   -- in "sync" mode we also need to make sure __CTX is cleared or we'll
   -- have the wrong cursor coordinates (#928)
   M.clear_CTX()
-  require("fzf-lua").win.win_leave()
+  require("fzf-lua").win.close()
 end
 
 ---@return fzf-lua.Win?
@@ -1148,18 +1148,6 @@ function M.nvim_buf_get_name(bufnr, bufinfo)
   return bufname
 end
 
--- correctly handle virtual text, conceal lines
----@param win integer
----@param buf integer
----@return integer
-function M.line_count(win, buf)
-  if vim.api.nvim_win_text_height then
-    return vim.api.nvim_win_text_height(win, {}).all
-  else
-    return vim.api.nvim_buf_line_count(buf)
-  end
-end
-
 local function _zz()
   -- skip for terminal buffers
   if M.is_term_buffer(0) then return end
@@ -1243,7 +1231,7 @@ end
 
 ---@param winid integer
 ---@param opts vim.api.keyset.win_config Map defining the window configuration,
-function M.fast_win_set_config(winid, opts)
+function M.win_set_config(winid, opts)
   -- win_set_config can be slow even later with `opts={}`
   -- win->w_config is reused, but style="minimal" always reset win option (slow for bigfile)
   -- https://github.com/neovim/neovim/blob/08c484f2ca4b58e9eda07e194e9d096565db7144/src/nvim/api/win_config.c#L406
@@ -1251,7 +1239,7 @@ function M.fast_win_set_config(winid, opts)
   local old_opts = vim.api.nvim_win_get_config(winid)
   -- nvim_win_get_config don't return style="minimal"
   -- opts.style is mainly for nvim_open_win only (we don't use it here)
-  opts.style = nil
+  opts.style = not M.__HAS_NVIM_010 and "" or nil
   for k, v in pairs(opts) do
     if not vim.deep_equal(old_opts[k], v) then
       vim.api.nvim_win_set_config(winid, opts)
