@@ -1373,7 +1373,7 @@ end
 
 M.serverlist_spawn = function()
   libuv.uv_spawn(
-    vim.fn.exepath("nvim"), { args = { "--headless" }, env = { NVIM = "" } })
+    vim.fn.exepath("nvim"), { args = { "--headless" }, env = { NVIM = "" }, detached = true })
 end
 
 M.serverlist_connect = function(sel)
