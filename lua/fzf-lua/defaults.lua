@@ -1939,8 +1939,8 @@ M.defaults.serverlist            = {
   keymap = { fzf = { resize = "refresh-preview" } },
   actions = {
     ["enter"] = actions.serverlist_connect,
-    ["ctrl-o"] = { fn = actions.serverlist_spawn, reload = true },
-    ["ctrl-x"] = { fn = actions.serverlist_kill, reload = true },
+    ["ctrl-o"] = { fn = actions.serverlist_spawn, reload = true, header = "spawn" },
+    ["ctrl-x"] = { fn = actions.serverlist_kill, reload = true, header = "kill" },
   },
 }
 
