@@ -72,6 +72,8 @@ end
 ---@field fullscreen? boolean
 ---Use treesitter highlighting in fzf's main window. NOTE: Only works for file-like entries where treesitter parser exists and is loaded for the filetype.
 ---@field treesitter? fzf-lua.config.TreesitterWinopts|boolean
+---Use extmarks with conceal to visually shorten paths while keeping full paths for actions/preview. Set to `true` for 1 char, or a number for custom length. NOTE: Unlike the picker `path_shorten` option, this doesn't modify the actual entry text, making it compatible with `combine()`. NOTE: This option has no effect when using `fzf-tmux` as the fzf window runs in a tmux popup outside of Neovim where extmarks are not available.
+---@field path_shorten? boolean|integer
 ---Callback after the creation of the fzf-lua main terminal window.
 ---@field on_create? fun(e: { winid?: integer, bufnr?: integer })
 ---Callback after closing the fzf-lua window.
