@@ -1025,7 +1025,7 @@ function M.is_term_buffer(bufnr)
   return vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].buftype == "terminal"
 end
 
----@param bufnr integer
+---@param bufnr? integer
 ---@param warn? boolean
 ---@param only_if_last_buffer? boolean
 ---@return boolean
@@ -1508,7 +1508,8 @@ function M.rpcexec(addr, method, ...)
   ---@cast chan integer
   local ret = { pcall(vim.rpcrequest, chan, method, ...) }
   vim.fn.chanclose(chan)
-  return unpack(ret)
+  local tonil = function(v) if v == vim.NIL then return nil else return v end end
+  return unpack(vim.tbl_map(tonil, ret))
 end
 
 --- Checks if treesitter parser for language is installed
