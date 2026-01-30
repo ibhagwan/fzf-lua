@@ -15,6 +15,7 @@ local M = {}
 M.__HAS_NVIM_010 = vim.fn.has("nvim-0.10") == 1
 M.__HAS_NVIM_0102 = vim.fn.has("nvim-0.10.2") == 1
 M.__HAS_NVIM_011 = vim.fn.has("nvim-0.11") == 1
+M.__HAS_NVIM_0116 = vim.fn.has("nvim-0.11.6") == 1
 M.__HAS_NVIM_012 = vim.fn.has("nvim-0.12") == 1
 M.__IS_WINDOWS = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 -- `:help shellslash` (for more info see #1055)

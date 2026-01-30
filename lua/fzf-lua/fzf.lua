@@ -185,8 +185,11 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     if fzfwin then fzfwin:update_statusline() end
 
     -- See note in "ModeChanged" above
-
-    if not utils.__HAS_NVIM_012 and vim.api.nvim_get_mode().mode == "t" then
+    -- NOTE: feedkeys hack not required since
+    -- https://github.com/neovim/neovim/commit/3621af9b970c80d2a6ff36569d7495391599c334
+    if not (utils.__HAS_NVIM_012 or utils.__HAS_NVIM_0116)
+        and vim.api.nvim_get_mode().mode == "t"
+    then
       -- Called from another fzf-win most likely
       utils.feed_keys_termcodes("i")
     else
