@@ -479,7 +479,9 @@ M.get_devicon = function(filepath, extensionOverride)
 
   if path.ends_with_separator(filepath) then
     -- path is directory
-    return STATE.dir_icon.icon, validate_hl(STATE.dir_icon.color)
+    return
+        STATE.dir_icon.icon .. (type(STATE.icon_padding) == "string" and STATE.icon_padding or ""),
+        validate_hl(STATE.dir_icon.color)
   end
 
   local icon, color
