@@ -881,6 +881,35 @@ function Previewer.buffer_or_file:check_bcache(entry)
   return cached
 end
 
+---@alias fzf-lua.line (string|[string,string])[]
+---@param content (string|fzf-lua.line)[]
+---@return string[], table
+local parse_rich = function(content)
+  local lines, extmarks = {}, {}
+  for i, line in ipairs(content) do
+    -- If the line is a string, just add it directly.
+    -- Otherwise, it's a table of parts (rich text line)
+    if type(line) == "string" then
+      lines[#lines + 1] = line
+    else
+      local parts = {}
+      local col = 0
+      for _, part in ipairs(line) do
+        local norm_part = type(part) == "string" and { part } or part
+        local text, hl = norm_part[1] or "", norm_part[2]
+        parts[#parts + 1] = text
+        local end_col = col + #text
+        if hl then
+          extmarks[#extmarks + 1] = { row = i - 1, col = col, end_col = end_col, hl_group = hl }
+        end
+        col = end_col
+      end
+      lines[#lines + 1] = table.concat(parts, "")
+    end
+  end
+  return lines, extmarks
+end
+
 ---@async
 ---@param entry_str string
 ---@return false? no preview
@@ -975,9 +1004,10 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
       return
     end
     do
-      local lines = nil
+      ---@type (fzf-lua.line|string)[]
+      local lines
       if entry.debug then
-        lines = { entry.debug }
+        lines = { { { entry.debug, "Error" } } }
       elseif entry.content then
         lines = entry.content
       else
@@ -996,7 +1026,17 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
         end
       end
       if lines then
-        pcall(api.nvim_buf_set_lines, tmpbuf, 0, -1, false, lines)
+        local textlines, extmarks = parse_rich(lines)
+        extmarks = entry.extmarks or extmarks
+        pcall(api.nvim_buf_set_lines, tmpbuf, 0, -1, false, textlines)
+        if extmarks and #extmarks > 0 then
+          local setmark = vim.F.nil_wrap(api.nvim_buf_set_extmark)
+          local ns = api.nvim_create_namespace("fzf-lua.preview.hl")
+          for _, extmark in ipairs(extmarks) do
+            setmark(tmpbuf, ns, extmark.row, extmark.col,
+              { end_col = extmark.end_col, hl_group = extmark.hl_group })
+          end
+        end
         -- swap preview buffer with new one
         self:set_preview_buf(tmpbuf)
         self:preview_buf_post(entry)
@@ -1232,8 +1272,11 @@ function Previewer.buffer_or_file:do_syntax(entry)
 
   -- filetype detect
   local did_filetype_detect
-  local ft = entry.filetype or
-      vim.filetype.match({ buf = bufnr, filename = filepath, contents = entry.content })
+  local ft = entry.filetype or vim.filetype.match({
+    buf = bufnr,
+    filename = filepath,
+    contents = entry.content and parse_rich(entry.content) or nil
+  })
   if not ft then
     ft = filetype_detect(bufnr, filepath)
     if not ft then return end
@@ -1670,15 +1713,11 @@ function Previewer.highlights:parse_entry(entry_str)
     hl = hl_def.link
   until not hl
   table.insert(lines, [[]])
-  table.insert(lines, [["THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"]])
+  table.insert(lines, { { [["THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"]], hlgroup } })
   return {
     filetype = "lua",
     title = hl,
     content = lines,
-    line = #lines,
-    col = 1,
-    end_col = 1 + #lines[#lines],
-    hlgroup = hlgroup
   }
 end
 

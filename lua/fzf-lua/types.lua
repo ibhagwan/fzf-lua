@@ -18,6 +18,7 @@ local FzfLua = require("fzf-lua")
 ---@field title? string
 ---@field hlgroup? any
 ---@field debug? string debug information
+---@field extmarks? table
 
 ---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry,{}
 ---@field do_not_cache? boolean
@@ -26,7 +27,7 @@ local FzfLua = require("fzf-lua")
 ---@field no_syntax? boolean
 ---@field cached? fzf-lua.buffer_or_file.Bcache
 ---@field filetype? string
----@field content? string[]
+---@field content? (string|fzf-lua.line)[]
 ---@field end_line? integer 1-based
 ---@field end_col? integer 1-based
 
