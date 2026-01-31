@@ -41,7 +41,7 @@ M.get_files_cmd = function(opts)
   elseif vim.fn.executable("rg") == 1 then
     command = string.format("rg %s%s", opts.rg_opts,
       search_paths and string.format(" %s", search_paths) or "")
-  elseif utils.__IS_WINDOWS then
+  elseif utils.__IS_WINDOWS and not os.getenv("CI") then
     command = "dir " .. opts.dir_opts
   else
     command = string.format("find %s %s",
