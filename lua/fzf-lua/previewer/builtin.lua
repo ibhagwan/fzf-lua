@@ -1271,7 +1271,7 @@ function Previewer.buffer_or_file:do_syntax(entry)
   end
 
   -- filetype detect
-  local did_filetype_detect
+  local did_filetype_detect = entry.filetype and true or false
   local ft = entry.filetype or vim.filetype.match({
     buf = bufnr,
     filename = filepath,
@@ -1303,20 +1303,14 @@ function Previewer.buffer_or_file:do_syntax(entry)
   end)()
 
   while true do
-    local ts_success = ts_enabled and ts_attach(bufnr, ft)
-    if ts_success then
-      self:update_render_markdown()
-      break
-    end
-    if did_filetype_detect then
-      vim.bo[bufnr].syntax = ft
-      break
-    end
+    if ts_enabled and ts_attach(bufnr, ft) then return end
+    if did_filetype_detect then break end
     -- sometimes vim.filetype.match get a poor filetype (e.g. ft=text)
     -- this should be a fallback we should detect it again from ftdetect/modeline
     ft = filetype_detect(bufnr, filepath) or ft
     did_filetype_detect = true
   end
+  vim.bo[bufnr].syntax = ft
 end
 
 function Previewer.base:maybe_set_cursorline(win, pos)
@@ -1455,6 +1449,7 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
     local syntax = function()
       if self.syntax then
         self:do_syntax(entry)
+        self:update_render_markdown()
         self:update_ts_context()
         self:attach_snacks_image_inline()
       end
