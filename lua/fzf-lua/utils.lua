@@ -1223,6 +1223,9 @@ function M.nvim_win_close(win, opts)
 end
 
 -- Close a buffer without triggering an autocmd
+---@param bufnr integer
+---@param opts vim.api.keyset.buf_delete
+---@return any
 function M.nvim_buf_delete(bufnr, opts)
   return M.eventignore(function()
     if not vim.api.nvim_buf_is_valid(bufnr) then return end

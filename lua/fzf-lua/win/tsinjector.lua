@@ -78,9 +78,8 @@ function M.deregister()
   M._setup = nil
 end
 
+---@param buf integer
 function M.clear_cache(buf)
-  -- If called from fzf-tmux buf will be `nil` (#1556)
-  if not buf then return end
   M.cache[buf] = nil
   -- If called from `FzfWin.hide` cache will not be empty
   assert(utils.tbl_isempty(M.cache))
@@ -120,10 +119,10 @@ function M._attach_lang(buf, lang, regions)
   parser:set_included_regions(regions)
 end
 
----@param buf integer
+---@param buf? integer
 function M.detach(buf)
   M.deregister()
-  M.clear_cache(buf)
+  if buf then M.clear_cache(buf) end
 end
 
 ---@param self fzf-lua.Win
