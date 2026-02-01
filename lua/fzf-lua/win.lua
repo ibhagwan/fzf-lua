@@ -544,8 +544,8 @@ end
 ---@return fzf-lua.Win
 function FzfWin.new(o)
   if not _self then
-  elseif _self:was_hidden() or _self:hidden() then
-    _self:close(nil, nil, true) -- do not clear info
+  elseif _self._hidden_fzf_bufnr then
+    _self:close_buf(_self._hidden_fzf_bufnr)
     _self = nil
   elseif not _self:hidden() then
     -- utils.warn("Please close fzf-lua before starting a new instance")
@@ -769,27 +769,25 @@ function FzfWin:treesitter_attach()
   self.on_closes.tsinjector = self.tsinjector.attach(self, self.fzf_bufnr, self._o._treesitter)
 end
 
-function FzfWin:set_tmp_buffer(no_wipe)
-  if not self:validate() then return end
-  -- Store the [would be] detached buffer number
+---@param buf integer
+function FzfWin:close_buf(buf)
+  utils.nvim_buf_delete(buf, { force = true })
+  if self.tsinjector then self.tsinjector.clear_cache(buf) end
+end
+
+function FzfWin:set_tmp_buffer()
   local detached = self.fzf_bufnr
+  -- detach the buffer, and kill it after win_set_buf (#1850)
+  -- If called from fzf-tmux/split fzf_bufnr will be `nil` (#1556)
+  if detached then vim.bo[detached].bufhidden = "hide" end
   -- replace the attached buffer with a new temp buffer, setting `self.fzf_bufnr`
   -- makes sure the call to `fzf_win:close` (which is triggered by the buf del)
   -- won't trigger a close due to mismatched buffers condition on `self:close`
   self.fzf_bufnr = api.nvim_create_buf(false, true)
-  -- `hidden` must be set to true or the detached buffer will be deleted (#1850)
-  local old_hidden = vim.o.hidden
-  vim.o.hidden = true
   utils.win_set_buf_noautocmd(self.fzf_winid, self.fzf_bufnr)
-  vim.o.hidden = old_hidden
   -- close the previous fzf term buffer without triggering autocmds
   -- this also kills the previous fzf process if its still running
-  if not no_wipe then
-    utils.nvim_buf_delete(detached, { force = true })
-    if self.tsinjector then self.tsinjector.clear_cache(detached) end
-  end
-  -- in case buffer exists prematurely
-  self:setup_autocmds()
+  if detached then self:close_buf(detached) end
   return self.fzf_bufnr
 end
 
@@ -829,6 +827,7 @@ function FzfWin:set_style_minimal(winid, global)
 end
 
 function FzfWin:create()
+  self._hidden_fzf_bufnr = nil
   -- Generate border-label from window title
   self:update_fzf_border_label()
   -- When using fzf-tmux we don't need to create windows
@@ -840,9 +839,11 @@ function FzfWin:create()
   end
 
   if self._reuse then
+    self._reuse = nil
     -- we can't reuse the fzf term buffer
     -- create a new tmp buffer for the fzf win
-    self:set_tmp_buffer()
+    self.fzf_bufnr = self:set_tmp_buffer()
+    self:setup_autocmds()
     self:setup_keybinds()
     -- attach/detach treesitter (e.g. `grep_lgrep`)
     if self._o.winopts.treesitter then
@@ -911,7 +912,7 @@ function FzfWin:create()
       utils.win_set_buf_noautocmd(self.fzf_winid, self.fzf_bufnr)
     else
       -- ensure split buffer is a scratch buffer
-      self.fzf_bufnr = self:set_tmp_buffer(true)
+      self.fzf_bufnr = self:set_tmp_buffer()
     end
 
     -- since we're using our own scratch buf, if the
@@ -972,8 +973,7 @@ end
 
 ---@param fzf_bufnr? integer
 ---@param hide? boolean
----@param hidden? boolean
-function FzfWin:close(fzf_bufnr, hide, hidden)
+function FzfWin:close(fzf_bufnr, hide)
   -- When a window is reused, (e.g. open any fzf-lua interface, press <C-\-n> and run
   -- ":FzfLua") `FzfWin:set_tmp_buffer()` will call `nvim_buf_delete` on the original
   -- fzf terminal buffer which will terminate the fzf process and trigger the call to
@@ -985,12 +985,6 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
   -- even if the target window was in normal terminal mode (#2054 #2419)
   local ctx = utils.__CTX() or {}
   if ctx.mode == "nt" then vim.cmd "stopinsert" end
-  -- Abort hidden fzf job?
-  if not hide and self._hidden_fzf_bufnr and self._hidden_fzf_bufnr ~= self.fzf_bufnr then
-    pcall(api.nvim_buf_delete, self._hidden_fzf_bufnr, { force = true })
-  end
-  -- If this is a hidden buffer closure nothing else to do
-  if hidden then return end
   if self.fzf_winid and api.nvim_win_is_valid(self.fzf_winid) then
     -- run in a pcall due to potential errors while closing the window
     -- Vim(lua):E5108: Error executing lua
@@ -1012,9 +1006,7 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
       pcall(api.nvim_win_close, self.fzf_winid, true)
     end
   end
-  if self.fzf_bufnr then
-    pcall(api.nvim_buf_delete, self.fzf_bufnr, { force = true })
-  end
+  if not hide then self:close_buf(self.fzf_bufnr) end
   for k, _ in pairs(self.on_closes) do
     self.on_closes[k](hide)
     self.on_closes[k] = nil
@@ -1023,14 +1015,7 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
     self.winopts.on_close()
   end
   self.closing = nil
-  self._reuse = nil
   if not hide then _self = nil end
-end
-
-function FzfWin:detach_fzf_buf()
-  self._hidden_fzf_bufnr = self.fzf_bufnr
-  vim.bo[self._hidden_fzf_bufnr].bufhidden = ""
-  self:set_tmp_buffer(true)
 end
 
 local winview = function()
@@ -1041,9 +1026,10 @@ function FzfWin:hide()
   -- Note: we should never get here with a tmux profile as neovim binds (default: <A-Esc>)
   -- do not apply to tmux, validate anyways in case called directly using the API
   if self:hidden() or self._o._is_fzf_tmux then return end
-  self:detach_fzf_buf()
+  vim.bo[self.fzf_bufnr].bufhidden = "hide"
   self:close(nil, true)
   self.last_view = winview() -- VimResized won't emit on hidden buffer
+  self._hidden_fzf_bufnr = self.fzf_bufnr
 end
 
 function FzfWin:hidden()
@@ -1096,7 +1082,7 @@ end
 function FzfWin:SIGWINCH(scopes)
   -- avoid racing when multiple SIGWINCH trigger at the same time
   if not utils.has(self._o, "fzf", { 0, 46 }) or self._o.__sigwinches then return end
-  local bufnr = self._hidden_fzf_bufnr or self.fzf_bufnr
+  local bufnr = self.fzf_bufnr
   if not bufnr or not api.nvim_buf_is_valid(bufnr) then return end
   local ok, pid = pcall(fn.jobpid, vim.bo[bufnr].channel)
   if ok and pid > 0 then ---@cast pid integer
@@ -1112,9 +1098,6 @@ function FzfWin:unhide()
   -- Send SIGWINCH to to trigger resize in the fzf process
   -- We will use the trigger to reload necessary buffer lists
   self:SIGWINCH({ "win.unhide" })
-  vim.bo[self._hidden_fzf_bufnr].bufhidden = "wipe"
-  self.fzf_bufnr = self._hidden_fzf_bufnr
-  self._hidden_fzf_bufnr = nil
   self:create()
   if not vim.deep_equal(self.last_view, winview()) then self:redraw() end
   vim.cmd("startinsert")
