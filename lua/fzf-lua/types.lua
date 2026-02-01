@@ -374,7 +374,7 @@ FzfLua.zoxide = require("fzf-lua.providers.files").zoxide
 ---@field set_autoclose fun(autoclose: vim.NIL): any
 ---@field autoclose fun(): any
 ---@field redraw fun(): nil
----@field close fun(fzf_bufnr: integer?, hide: boolean?, hidden: boolean?): nil
+---@field close fun(fzf_bufnr: integer?, hide: boolean?): nil
 ---@field hide fun(): nil
 ---@field unhide fun(): true?
 ---@field toggle_fullscreen fun(): nil

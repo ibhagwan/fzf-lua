@@ -130,6 +130,17 @@ T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()
   eq("README.md", vim.fs.basename(child.lua_get([[vim.api.nvim_buf_get_name(0)]])))
 end
 
+T["win"]["hide"]["nohidden"] = function()
+  reload({ "hide" })
+  exec_lua([[vim.o.hidden = false]])
+  helpers.FzfLua.files(child, {
+    __abort_key = "<esc>",
+    __expect_lines = false,
+    __after_open = function() if helpers.IS_WIN() then vim.uv.sleep(250) end end,
+    query = "LICENSE$",
+  })
+end
+
 T["win"]["keymap"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
 T["win"]["keymap"]["no error"] = new_set({
