@@ -731,7 +731,10 @@ function FzfWin:redraw_main()
     -- 'nocursorline', see discussion in #254
     local cursorline = vim.o.cursorline
     self.fzf_winid = utils.nvim_open_win(self.fzf_bufnr, true, winopts)
-    vim.o.cursorline = cursorline
+    ---@diagnostic disable-next-line: preferred-local-alias
+    if not utils.__HAS_NVIM_0116 and vim.o.cursorline ~= cursorline then
+      vim.o.cursorline = cursorline
+    end
     -- disable search highlights as they interfere with fzf's highlights
     if vim.o.hlsearch and vim.v.hlsearch == 1 then
       vim.cmd("nohls")
