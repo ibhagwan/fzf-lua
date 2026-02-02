@@ -521,12 +521,7 @@ function FzfWin:check_exit_status(exit_code, fzf_bufnr)
 end
 
 function FzfWin:set_autoclose(autoclose)
-  if autoclose ~= nil then
-    self._autoclose = autoclose
-  else
-    self._autoclose = true
-  end
-  return self._autoclose
+  self._autoclose = autoclose
 end
 
 function FzfWin:autoclose()
@@ -578,7 +573,7 @@ function FzfWin.new(o)
   self.preview_hidden = not not o.winopts.preview.hidden -- force boolean
   self.keymap = o.keymap
   self.previewer = o.previewer
-  self:set_autoclose(o.autoclose)
+  self:set_autoclose(vim.F.if_nil(o.autoclose, true))
   self.winopts = self:normalize_winopts()
   self.on_closes = {}
   _self = self
