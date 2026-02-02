@@ -92,18 +92,6 @@ return {
         end
         opts.actions[k] = act
       end
-      -- Hijack the resize event to reload buffer/tab list on unhide
-      FzfLua.win.on_SIGWINCH(opts, "win.unhide", function()
-        local reload = type(opts._contents) == "string"
-            and (opts._resume_reload == true
-              ---@diagnostic disable-next-line: need-check-nil
-              or type(opts._resume_reload) == "function" and opts._resume_reload(opts))
-        if reload then
-          return string.format("%sreload:%s",
-            type(reload) == "string" and reload .. "+" or "",
-            opts._contents)
-        end
-      end)
       return opts
     end,
   },

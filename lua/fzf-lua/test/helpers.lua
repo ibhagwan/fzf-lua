@@ -122,6 +122,10 @@ M.new_child_neovim = function()
   child.init = function()
     child.restart({ "-u", "scripts/minimal_init.lua" })
     child.cmd("cd deps/fzf-lua")
+
+    -- fix flaky hit enter prompt on windows
+    child.lua([[(vim.F.npcall(require, 'vim._core.ui2') or require('vim._extui')).enable({})]])
+
     -- Change initial buffer to be readonly. This not only increases execution
     -- speed, but more closely resembles manually opened Neovim.
     child.bo.readonly = false
