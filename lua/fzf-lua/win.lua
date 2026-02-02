@@ -1091,8 +1091,8 @@ function FzfWin:unhide()
   self._o.__CTX = utils.CTX({ includeBuflist = true })
   -- Send SIGWINCH to to trigger resize in the fzf process
   -- We will use the trigger to reload necessary buffer lists
-  self:SIGWINCH({ "win.unhide" })
   self:create()
+  self:SIGWINCH({ "win.unhide" })
   if not vim.deep_equal(self.last_view, winview()) then self:redraw() end
   vim.cmd("startinsert")
   return true
