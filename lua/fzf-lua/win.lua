@@ -763,8 +763,13 @@ function FzfWin:setup_autocmds()
   self:on("ExitPre", function() self:close() end, true)
 end
 
+-- attach/detach treesitter (e.g. `grep_lgrep`)
+-- Use treesitter to highlight results on the main fzf window
 function FzfWin:treesitter_attach()
-  if not self._o.winopts.treesitter then return end
+  if not self._o.winopts.treesitter then
+    if self.tsinjector then self.tsinjector.detach(self.fzf_bufnr) end
+    return
+  end
   self.tsinjector = require("fzf-lua.win.tsinjector")
   self.on_closes.tsinjector = self.tsinjector.attach(self, self.fzf_bufnr, self._o._treesitter)
 end
@@ -845,12 +850,7 @@ function FzfWin:create()
     self.fzf_bufnr = self:set_tmp_buffer()
     self:setup_autocmds()
     self:setup_keybinds()
-    -- attach/detach treesitter (e.g. `grep_lgrep`)
-    if self._o.winopts.treesitter then
-      self:treesitter_attach()
-    elseif self.tsinjector then
-      self.tsinjector.detach(self.fzf_bufnr)
-    end
+    self:treesitter_attach()
     -- also recall the user's 'on_create' (#394)
     if type(self.winopts.on_create) == "function" then
       self.winopts.on_create({ winid = self.fzf_winid, bufnr = self.fzf_bufnr })
@@ -930,7 +930,6 @@ function FzfWin:create()
 
   self:setup_autocmds()
   self:setup_keybinds()
-  -- Use treesitter to highlight results on the main fzf window
   self:treesitter_attach()
 
   self:reset_winhl(self.fzf_winid)
