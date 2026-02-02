@@ -408,7 +408,8 @@ M.new_set_with_child = function(child, opts, setup_opts)
         end
         -- job may already die
         if pcall(child.unload) then
-          MiniTest.expect.equality("", child.v.errmsg)
+          local errmsg = child.v.errmsg
+          assert(errmsg == "", errmsg)
         end
       end,
       post_once = function()
