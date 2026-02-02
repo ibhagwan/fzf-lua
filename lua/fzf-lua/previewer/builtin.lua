@@ -691,9 +691,11 @@ function Previewer.buffer_or_file:parse_entry(entry_str, _cb)
   end
   if entry.path then
     if entry.path:find("^fugitive://") and buf and api.nvim_buf_is_valid(buf) then
-      entry.do_not_cache = true
-      api.nvim_buf_call(buf,
-        function() vim.cmd(("do fugitive BufReadCmd %s"):format(entry.path)) end)
+      if fn.exists("#fugitive#BufReadCmd") == 1 then
+        api.nvim_buf_call(buf, function()
+          api.nvim_exec_autocmds("BufReadCmd", { group = "fugitive", pattern = entry.path })
+        end)
+      end
       return entry
     end
     entry.tick = vim.tbl_get(uv.fs_stat(entry.path) or {}, "mtime", "nsec")
@@ -855,6 +857,7 @@ end
 ---@param entry fzf-lua.buffer_or_file.Entry
 ---@return string?
 function Previewer.buffer_or_file:key_from_entry(entry)
+  if entry.do_not_cache then return nil end
   return (entry.bufnr and string.format("bufnr:%d", entry.bufnr) or entry.uri or entry.path) or nil
 end
 
@@ -862,7 +865,6 @@ end
 ---@param entry fzf-lua.buffer_or_file.Entry
 ---@return fzf-lua.buffer_or_file.Bcache?
 function Previewer.buffer_or_file:check_bcache(entry)
-  if entry.do_not_cache then return end
   local key = self:key_from_entry(entry)
   if not key then return end
   local cached = self.cached_buffers[key]
@@ -870,10 +872,6 @@ function Previewer.buffer_or_file:check_bcache(entry)
   entry.cached = cached
   assert(self.cached_bufnrs[cached.bufnr])
   assert(api.nvim_buf_is_valid(cached.bufnr))
-  if not cached.tick then -- in case cache don't have "tick"
-    assert(cached.tick == entry.tick)
-    return cached
-  end
   if entry.tick ~= cached.tick then
     cached.invalid = true
     cached.tick = entry.tick
@@ -1479,12 +1477,10 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
 
   -- Should we cache the current preview buffer?
   -- we cache only named buffers with valid path/uri
-  if not entry.do_not_cache and self.preview_bufnr then
-    local key = self:key_from_entry(entry)
-    if not key then return end
-    local cached = self:cache_buffer(self.preview_bufnr, key, min_winopts)
-    cached.tick = entry.tick
-  end
+  local key = self:key_from_entry(entry)
+  if not key then return end
+  local cached = self:cache_buffer(self.preview_bufnr, key, min_winopts)
+  cached.tick = entry.tick
 end
 
 ---@class fzf-lua.previewer.HelpTags : fzf-lua.previewer.BufferOrFile,{}
