@@ -959,6 +959,17 @@ function FzfWin:close_preview(do_not_clear_cache)
   self.preview_winid = nil
 end
 
+---@param buf? integer
+local restore_altbuf = function(buf)
+  if buf and api.nvim_buf_is_valid(buf) then
+    fn.setreg("#", buf)
+  else -- no alt buf or deleted alt buf
+    local tmpbuf = api.nvim_create_buf(false, true)
+    fn.setreg("#", tmpbuf)
+    api.nvim_buf_delete(tmpbuf, { force = true })
+  end
+end
+
 ---@param fzf_bufnr? integer
 ---@param hide? boolean
 ---@param hidden? boolean
@@ -996,15 +1007,7 @@ function FzfWin:close(fzf_bufnr, hide, hidden)
         api.nvim_win_set_buf(self.fzf_winid, self.src_bufnr)
       end
       -- also restore the original alternate buffer
-      local alt_bname = (function()
-        local alt_bufnr = (utils.__CTX() or {}).alt_bufnr
-        if alt_bufnr and api.nvim_buf_is_valid(alt_bufnr) then
-          return fn.bufname(alt_bufnr)
-        end
-      end)()
-      if alt_bname and #alt_bname > 0 then
-        vim.cmd("balt " .. fn.bufname(alt_bname))
-      end
+      restore_altbuf(ctx.alt_bufnr)
     else
       pcall(api.nvim_win_close, self.fzf_winid, true)
     end
