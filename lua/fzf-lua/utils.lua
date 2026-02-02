@@ -1208,7 +1208,7 @@ function M.nvim_open_win(bufnr, enter, config)
 end
 
 function M.nvim_open_win0(bufnr, enter, config)
-  local winid = M.CTX().winid
+  local winid = (M.__CTX() or {}).winid
   if not winid or not vim.api.nvim_win_is_valid(winid) then
     return vim.api.nvim_open_win(bufnr, enter, config)
   end
