@@ -180,14 +180,7 @@ Previewer.base = Object:extend()
 ---@param opts table
 ---@return fzf-lua.previewer.Builtin
 function Previewer.base:new(o, opts)
-  local function default(var, def)
-    if var ~= nil then
-      return var
-    else
-      return def
-    end
-  end
-
+  local default = vim.F.if_nil
   o = o or {}
   self.type = "builtin"
   self.opts = opts

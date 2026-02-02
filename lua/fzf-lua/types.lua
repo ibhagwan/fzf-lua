@@ -371,7 +371,7 @@ FzfLua.undotree = require("fzf-lua.providers.undotree").undotree
 FzfLua.zoxide = require("fzf-lua.providers.files").zoxide
 
 ---@class fzf-lua.win.api: fzf-lua.Win
----@field set_autoclose fun(autoclose: vim.NIL): any
+---@field set_autoclose fun(autoclose: vim.NIL): nil
 ---@field autoclose fun(): any
 ---@field redraw fun(): nil
 ---@field close fun(fzf_bufnr: integer?, hide: boolean?): nil
