@@ -919,8 +919,9 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   -- schedule can avoid "cannot resume running coroutine"
   local entry = self:parse_entry(entry_str,
     vim.schedule_wrap(function(res) assert(coroutine.resume(co, res)) end))
+  self._last_entry = entry_str
   entry = entry or coroutine.yield()
-  if not self.win:validate_preview() then return false end
+  if entry_str ~= self._last_entry or not self.win:validate_preview() then return false end
   if utils.tbl_isempty(entry) then return end
   local cached = self:check_bcache(entry)
   if cached and not cached.invalid and not self:should_load_buffer(entry) then
