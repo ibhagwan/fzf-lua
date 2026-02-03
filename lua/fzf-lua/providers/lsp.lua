@@ -485,7 +485,8 @@ local function gen_lsp_contents(opts)
           local context = { client_id = client_id }
           lsp_handler.handler(opts, cb, lsp_handler.method, response.result, context, nil)
         elseif response.error then
-          utils.error("Error executing '%s': %s", lsp_handler.method, response.error.message)
+          local name = assert(vim.lsp.get_client_by_id(client_id)).name
+          utils.warn("%s[%s]: %s", tostring(name), lsp_handler.method, response.error.message)
         end
       end
       if utils.tbl_isempty(results) then
