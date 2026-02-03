@@ -96,8 +96,9 @@ end
 ---@field mod string?
 ---@field fnc string?
 ---@field selected string?
+---@field query string? last typed query (even no result selected/shown)
 ---@field winobj fzf-lua.Win?
----@field last_query string?
+---@field last_query string? last query used to select entry (read only)
 
 ---@type fzf-lua.Info
 local info = {}

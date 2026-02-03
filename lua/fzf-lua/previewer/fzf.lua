@@ -256,7 +256,7 @@ end
 function Previewer.cmd_async:cmdline(o)
   o = o or {}
   local act = shell.stringify_cmd(function(items)
-    self._last_query = items[2] or ""
+    FzfLua.get_info().query = items[2] or ""
     local filepath, _, errcmd = self:parse_entry_and_verify(items[1])
     if not filepath then return utils.shell_nop() end
     local cmd = errcmd or ("%s %s %s"):format(
@@ -310,7 +310,7 @@ end
 function Previewer.bat_async:cmdline(o)
   o = o or {}
   local act = shell.stringify_cmd(function(items, fzf_lines)
-    self._last_query = items[2] or ""
+    FzfLua.get_info().query = items[2] or ""
     if items[1] == "" then return utils.shell_nop() end
     local filepath, entry, errcmd = self:parse_entry_and_verify(items[1])
     if not filepath or not entry then return utils.shell_nop() end
@@ -561,7 +561,7 @@ end
 function Previewer.nvim_server:cmdline(_)
   local function parse_entry(e) return e and e:match("%((.-)%)") or nil end
   return FzfLua.shell.stringify_cmd(function(items, lines, columns)
-    self._last_query = items[2] or ""
+    FzfLua.get_info().query = items[2] or ""
     local addr = parse_entry(items[1])
     if not addr then return "true" end
     local screenshot = assert(self.opts._screenshot) ---@type string

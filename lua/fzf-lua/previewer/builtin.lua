@@ -494,7 +494,7 @@ function Previewer.base:cmdline(_)
     -- upvalue incase previewer was detached/re-attached (global picker)
     self = self.win._previewer or self ---@type fzf-lua.previewer.Builtin
     -- on windows, query may not be expanded to a string: #1887
-    self.opts._last_query = query or ""
+    FzfLua.get_info().query = query or ""
     self:display_entry(entry)
     -- save last entry even if we don't display
     self.last_entry = entry
@@ -1326,7 +1326,7 @@ end
 ---@param entry fzf-lua.buffer_or_file.Entry
 function Previewer.buffer_or_file:set_cursor_hl(entry)
   local mgrep, glob_args = require("fzf-lua.providers.grep"), nil
-  local regex = self.opts.__ACT_TO == mgrep.grep and self.opts._last_query
+  local regex = self.opts.__ACT_TO == mgrep.grep and FzfLua.get_info().query
       or self.opts.__ACT_TO == mgrep.live_grep and self.opts.search or nil
   local opts = self.opts.__ACT_TO == mgrep.live_grep and self.opts.__call_opts or self.opts
   if regex and self.opts.fn_transform_cmd then

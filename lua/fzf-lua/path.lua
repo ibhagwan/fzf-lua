@@ -547,7 +547,7 @@ function M.entry_to_file(entry, opts, force_uri)
     terminal = terminal,
     path     = file,
     line     = utils.tointeger(type(opts.line_query) == "function" and
-      (opts.line_query(opts._last_query or opts.last_query)) or line) or 0,
+      (opts.line_query(FzfLua.get_info().query)) or line) or 0,
     col      = utils.tointeger(col) or 0,
     ctag     = opts._ctag and M.entry_to_ctag(stripped) or nil,
     debug    = opts.debug and entry:match("^%[DEBUG]") and entry or nil,
