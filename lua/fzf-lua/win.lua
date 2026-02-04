@@ -1038,35 +1038,24 @@ end
 
 ---SIGWINCH/on_SIGWINCH is nop if fzf < v0.46
 ---@param opts fzf-lua.config.Resolved|{}
----@param scope string? nil means on any sigwinch
+---@param event string|integer array part always emit, non-array part only emit on given events
 ---@param cb function
 ---@return boolean?
-function FzfWin.on_SIGWINCH(opts, scope, cb)
+function FzfWin.on_SIGWINCH(opts, event, cb)
   if not utils.has(opts, "fzf", { 0, 46 }) then return end
-  local first = not opts.__sigwinch_on_scope
-  opts.__sigwinch_on_scope = opts.__sigwinch_on_scope or {}
-  opts.__sigwinch_on_any = opts.__sigwinch_on_any or {}
-  if type(scope) == "string" then
-    local s = opts.__sigwinch_on_scope
-    if s[scope] then return end
-    -- if s[scope] then error("duplicated handler: " .. scope) end
-    s[scope] = cb
-  else
-    local s = opts.__sigwinch_on_any
-    s[#s + 1] = cb
-  end
-  if not first then return true end
+  local created = opts.__sigwinch_cb and true or false
+  opts.__sigwinch_cb = opts.__sigwinch_cb or {}
+  opts.__sigwinch_cb[event] = cb -- override duplicate keys
+  if created then return true end
   opts._fzf_cli_args = opts._fzf_cli_args or {}
   table.insert(opts._fzf_cli_args, "--bind="
     .. libuv.shellescape("resize:+transform:" .. FzfLua.shell.stringify_data(function(args)
-      local scopes = opts.__sigwinches or {}
-      local acts = vim.tbl_map(function(k) return opts.__sigwinch_on_scope[k](args) end, scopes)
+      local events = vim.tbl_keys(vim.list_slice(opts.__sigwinch_cb))
+      vim.list_extend(events, opts.__sigwinches or {})
       opts.__sigwinches = nil
+      local acts = vim.tbl_map(function(k) return opts.__sigwinch_cb[k](args) end, events)
       acts = vim.tbl_filter(function(a) return a and #a > 0 end, acts)
-      local anys = vim.tbl_map(function(h) return h(args) end, opts.__sigwinch_on_any)
-      anys = vim.tbl_filter(function(a) return a and #a > 0 end, anys)
-      vim.list_extend(anys, acts)
-      return table.concat(anys, "+")
+      return table.concat(acts, "+")
     end, opts, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")))
   return true
 end

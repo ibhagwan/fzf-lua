@@ -379,7 +379,7 @@ M.fzf = function(contents, opts)
       -- Only enable flex layout native rotate if native previewer size > 0
       and not (opts.fzf_opts["--preview-window"] or ""):match(":0")
   then
-    win.on_SIGWINCH(opts, nil, function(args)
+    win.on_SIGWINCH(opts, 1, function(args)
       -- Only set the layout if preview isn't hidden
       if not tonumber(args[1]) then return end
       -- NOTE: do not use local ref `fzf_win` as it my change on resume (#2255)
