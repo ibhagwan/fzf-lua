@@ -232,8 +232,7 @@ local FzfLua = require("fzf-lua")
 ---@field __stringified? boolean
 ---@field __stringify_cmd? boolean
 ---@field __sigwinches? string[]
----@field __sigwinch_on_scope table<string, function>
----@field __sigwinch_on_any function[]
+---@field __sigwinch_cb table<string, function>
 ---@field process1? boolean
 ---@field profiler? boolean
 ---@field use_queue? boolean
