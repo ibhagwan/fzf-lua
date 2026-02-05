@@ -615,17 +615,15 @@ function Previewer.base:copy_extmarks()
   local win = self.win.preview_winid
   local topline = fn.line("w0", win)
   local botline = fn.line("w$", win)
+  api.nvim_buf_clear_namespace(dst_bufnr, ns, topline, botline)
   for _, n in pairs(api.nvim_get_namespaces()) do
     local extmarks = api.nvim_buf_get_extmarks(src_bufnr, n, { topline - 1, 0 },
       { botline - 1, -1 },
       { details = true })
     for _, m in ipairs(extmarks) do
       local _, row, col, details = unpack(m) ---@cast details -?
-      local endRow, endCol = details.end_row, details.end_col
-      local hlGroup = details.hl_group
-      local priority = details.priority
-      pcall(api.nvim_buf_set_extmark, dst_bufnr, ns, row, col,
-        { end_row = endRow, end_col = endCol, hl_group = hlGroup, priority = priority })
+      details.ns_id = nil
+      pcall(api.nvim_buf_set_extmark, dst_bufnr, ns, row, col, details)
     end
   end
 end
@@ -688,16 +686,17 @@ function Previewer.buffer_or_file:parse_entry(entry_str, _cb)
   -- filename only
   if buf and api.nvim_buf_is_valid(buf) then
     entry.path = path.relative_to(api.nvim_buf_get_name(buf), utils.cwd())
-  end
-  if entry.path then
-    if entry.path:find("^fugitive://") and buf and api.nvim_buf_is_valid(buf) then
-      if fn.exists("#fugitive#BufReadCmd") == 1 then
-        api.nvim_buf_call(buf, function()
-          api.nvim_exec_autocmds("BufReadCmd", { group = "fugitive", pattern = entry.path })
-        end)
-      end
+    if entry.path:find("^fugitive://") then
+      api.nvim_buf_call(buf, function()
+        api.nvim_exec_autocmds("BufReadCmd", {
+          group = fn.exists("#fugitive#BufReadCmd") == 1 and "fugitive" or nil,
+          pattern = entry.path
+        })
+      end)
       return entry
     end
+  end
+  if entry.path then
     entry.tick = vim.tbl_get(uv.fs_stat(entry.path) or {}, "mtime", "nsec")
   end
   return entry
@@ -1451,6 +1450,7 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
         self:update_render_markdown()
         self:update_ts_context()
         self:attach_snacks_image_inline()
+        vim.schedule(function() self:copy_extmarks() end)
       end
       -- for attach_snacks_image_{inline,buf}
       -- https://github.com/folke/snacks.nvim/pull/1615
