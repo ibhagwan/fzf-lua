@@ -528,11 +528,18 @@ function M.entry_to_file(entry, opts, force_uri)
       end
     end
   end
+  local bufname
   local terminal
   if bufnr then
     terminal = utils.is_term_buffer(bufnr)
     if terminal then
       file, line = stripped:match("([^:]+):(%d+)")
+    end
+  elseif file and #file > 0 then -- get bufnr from give path
+    local buf = vim.fn.bufnr(file)
+    if buf ~= -1 and vim.api.nvim_buf_get_name(buf) == file then
+      bufnr = buf
+      bufname = file
     end
   end
   if opts.path_shorten and not M.is_uri(stripped) then
@@ -542,8 +549,8 @@ function M.entry_to_file(entry, opts, force_uri)
   return {
     stripped = stripped,
     bufnr    = bufnr,
-    bufname  = bufnr and vim.api.nvim_buf_is_valid(bufnr)
-        and vim.api.nvim_buf_get_name(bufnr),
+    bufname  = bufname or (bufnr and vim.api.nvim_buf_is_valid(bufnr)
+      and vim.api.nvim_buf_get_name(bufnr) or nil),
     terminal = terminal,
     path     = file,
     line     = utils.tointeger(type(opts.line_query) == "function" and
