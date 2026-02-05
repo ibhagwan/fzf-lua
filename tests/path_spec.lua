@@ -464,5 +464,22 @@ describe("Testing path module", function()
       eq(path.entry_to_file("file:///tmp/test.txt:5:6", {}, false), r)
       eq(path.entry_to_file("file:///tmp/test.txt:5:6", {}, true), r)
     end)
+
+    it("parse loaded path", function()
+      helpers.SKIP_IF_MAC()
+      if helpers.IS_WIN() then helpers.SKIP_IF_NOT_NIGHTLY() end
+      local r = {}
+      vim.cmd [[bwipe]]
+      vim.cmd.edit("/tmp/foo:bar.txt")
+      local bufname = "/tmp/foo:bar.txt"
+      eq(path.entry_to_file("/tmp/foo:bar.txt", r), {
+        col = 0,
+        line = 0,
+        stripped = bufname,
+        path = bufname,
+        bufnr = vim.fn.bufnr(),
+        bufname = helpers.IS_MAC() and vim.fs.joinpath("/private", bufname) or bufname,
+      })
+    end)
   end)
 end)
