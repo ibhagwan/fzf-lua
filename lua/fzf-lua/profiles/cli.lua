@@ -164,9 +164,11 @@ return {
       ["ctrl-q"] = function(s, o)
         local entries = parse_entries(s, o)
         if ffi and #entries == 1 then
+          local lnum = entries[1].line > 0 and entries[1].line or nil
+          local col = entries[1].col > 0 and entries[1].col or nil
           posix_exec(fn.exepath("nvim"), entries[1].path,
-            entries[1].line and ("+" .. entries[1].line) or nil,
-            entries[1].col and ("+norm! %s|"):format(entries[1].col) or nil)
+            lnum and ("+" .. entries[1].line) or nil,
+            col and ("+norm! %s|"):format(col) or nil)
         elseif ffi and #entries > 1 then
           local qf_items = {}
           for _, e in ipairs(entries) do
