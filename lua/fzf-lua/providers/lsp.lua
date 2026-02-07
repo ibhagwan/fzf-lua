@@ -484,9 +484,17 @@ local function gen_lsp_contents(opts)
         if response.result then
           local context = { client_id = client_id }
           lsp_handler.handler(opts, cb, lsp_handler.method, response.result, context, nil)
-        elseif response.error then
-          local name = assert(vim.lsp.get_client_by_id(client_id)).name
-          utils.warn("%s[%s]: %s", tostring(name), lsp_handler.method, response.error.message)
+        elseif response.error and opts.silent ~= true then
+          -- HACK: since `client:supports_method()` always returns true for off-spec methods
+          -- we need to test for the "prep" method to validate the error, for example stylua
+          -- will return `true` for the first and `false` for the second call (see #2547):
+          -- :=(vim.lsp.get_clients({bufnr=0,name="stylua"})[1]):supports_method("callHierarchy/incomingCalls")
+          -- :=(vim.lsp.get_clients({bufnr=0,name="stylua"})[1]):supports_method("textDocument/prepareCallHierarchy")
+          local client = assert(vim.lsp.get_client_by_id(client_id))
+          if not lsp_handler.prep or client:supports_method(lsp_handler.prep) then
+            utils.warn("%s[%s]: %s",
+              tostring(client.name), lsp_handler.method, response.error.message)
+          end
         end
       end
       if utils.tbl_isempty(results) then
@@ -536,7 +544,12 @@ local function gen_lsp_contents(opts)
         -- so we can determine if all callbacks were completed (#468)
         local async_opts = {
           num_callbacks = 0,
-          num_clients   = check_capabilities(lsp_handler, opts.silent),
+          -- NOTE: since off-spec handlers (e.g. incomingCalls) always returns true it also always
+          -- gets called (and errs) on async mode so even though the prepare method returns `false`
+          -- we should take into account multiple callbacks, some of which will err (#2547)
+          num_clients   = lsp_handler.prep
+              and #utils.lsp_get_clients({ bufnr = utils.CTX().bufnr })
+              or check_capabilities(lsp_handler, opts.silent),
           -- signals the handler to not print a warning when empty result set
           -- is returned, important for `live_workspace_symbols` when the user
           -- inputs a query that returns no results
@@ -559,8 +572,12 @@ local function gen_lsp_contents(opts)
               async_opts.num_callbacks = async_opts.num_callbacks + 1
               -- did all clients send back their responses?
               local done = async_opts.num_callbacks == async_opts.num_clients
-              if err and not async_opts.silent then
-                utils.error("Error executing '%s': %s", lsp_handler.method, err)
+              if err and async_opts.silent ~= true then
+                -- NOTE: detailed notes in the "HACK" notes in "sync" error handling
+                local client = assert(vim.lsp.get_client_by_id(context.client_id))
+                if not lsp_handler.prep or client:supports_method(lsp_handler.prep) then
+                  utils.warn("%s[%s]: %s", tostring(client.name), lsp_handler.method, err)
+                end
               end
               coroutine.resume(co, done, err, result, context, lspcfg)
             end)
