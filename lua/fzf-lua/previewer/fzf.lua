@@ -45,6 +45,7 @@ function Previewer.base:close()
 end
 
 ---@diagnostic disable-next-line: unused
+---@return fzf-lua.preview.spec
 function Previewer.base:cmdline(_)
   return ""
 end

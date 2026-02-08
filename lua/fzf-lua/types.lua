@@ -20,7 +20,12 @@ local FzfLua = require("fzf-lua")
 ---@field debug? string debug information
 ---@field extmarks? table
 
----@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry,{}
+---@class fzf-lua.cmd.Entry
+---@field cmd string[] cmd used to generated content
+---@field cmd_stream? boolean stream process cmd content
+---@field cmd_opts? vim.SystemOpts vim.system opts for cmd
+
+---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry, fzf-lua.cmd.Entry,{}
 ---@field do_not_cache? boolean
 ---@field no_scrollbar? boolean
 ---@field tick? integer
@@ -30,6 +35,7 @@ local FzfLua = require("fzf-lua")
 ---@field content? (string|fzf-lua.line)[]
 ---@field end_line? integer 1-based
 ---@field end_col? integer 1-based
+---@field open_term? boolean open_term for content (cmd always open_term)
 
 ---@class fzf-lua.keymap.Entry
 ---@field vmap string?

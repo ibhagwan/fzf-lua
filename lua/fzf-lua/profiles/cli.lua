@@ -158,6 +158,7 @@ return {
     }
   },
   serverlist = {
+    previewer = { _ctor = require("fzf-lua.previewer").fzf.nvim_server },
     actions = {
       ["enter"] = function(s)
         assert(s[1])
