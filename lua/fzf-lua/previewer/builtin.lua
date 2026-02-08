@@ -337,12 +337,11 @@ function Previewer.base:set_preview_buf(newbuf, min_winopts, no_wipe)
   end, { buffer = newbuf })
   self.preview_bufnr = newbuf
   -- set preview window options
+  -- sets the style defined by `winopts.preview.winopts`
+  self:set_style_winopts()
   if min_winopts then
     -- removes 'number', 'signcolumn', 'cursorline', etc
     self.win:set_style_minimal(self.win.preview_winid, true)
-  else
-    -- sets the style defined by `winopts.preview.winopts`
-    self:set_style_winopts()
   end
   if not no_wipe then
     -- although the buffer has 'bufhidden:wipe' it sometimes doesn't
