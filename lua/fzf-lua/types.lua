@@ -19,6 +19,7 @@ local FzfLua = require("fzf-lua")
 ---@field hlgroup? any
 ---@field debug? string debug information
 ---@field extmarks? table
+---@field cmd? string[] cmd used to generated content
 
 ---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry,{}
 ---@field do_not_cache? boolean
