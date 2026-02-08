@@ -36,11 +36,13 @@ jobs:
           - os: ubuntu-latest
             install-deps: |
               sudo apt-get update && sudo apt-get install -y ripgrep fd-find
-              wget -O - https://github.com/junegunn/fzf/releases/download/v0.66.1/fzf-0.66.1-linux_amd64.tar.gz | tar zxfv -
+              wget -O - https://github.com/junegunn/fzf/releases/download/v0.67.0/fzf-0.67.0-linux_amd64.tar.gz | tar zxfv -
               sudo mv ./fzf /bin
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # full clone to test on pinned sha
 
       - uses: rhysd/action-setup-vim@v1
         if: matrix.rev != 'puc-lua'

@@ -379,7 +379,7 @@ M.fzf = function(contents, opts)
       -- Only enable flex layout native rotate if native previewer size > 0
       and not (opts.fzf_opts["--preview-window"] or ""):match(":0")
   then
-    win.on_SIGWINCH(opts, nil, function(args)
+    win.on_SIGWINCH(opts, 1, function(args)
       -- Only set the layout if preview isn't hidden
       if not tonumber(args[1]) then return end
       -- NOTE: do not use local ref `fzf_win` as it my change on resume (#2255)
@@ -388,6 +388,19 @@ M.fzf = function(contents, opts)
       return string.format("change-preview-window(%s)", winobj:normalize_preview_layout().str)
     end)
   end
+
+  -- Hijack the resize event to reload buffer/tab list on unhide
+  win.on_SIGWINCH(opts, "win.unhide", function()
+    local reload = type(opts._contents) == "string"
+        and (opts._resume_reload == true
+          ---@diagnostic disable-next-line: need-check-nil
+          or type(opts._resume_reload) == "function" and opts._resume_reload(opts))
+    if reload then
+      return string.format("%sreload:%s",
+        type(reload) == "string" and reload .. "+" or "",
+        opts._contents)
+    end
+  end)
 
   -- live command may contain field index {q}, cannot be used as FZF_DEFAULT_COMMAND
   local selected, exit_code = fzf.raw_fzf(opts.is_live and utils.shell_nop() or contents,
@@ -447,55 +460,20 @@ M.fzf = function(contents, opts)
   return selected, exit_code
 end
 
--- Best approximation of neovim border types to fzf border types
----@param winopts fzf-lua.config.PreviewOpts
----@param metadata fzf-lua.win.borderMetadata
----@return string|table?
-local function translate_border(winopts, metadata)
-  local neovim2fzf = {
-    none       = "noborder",
-    single     = "border-sharp",
-    double     = "border-double",
-    rounded    = "border-rounded",
-    solid      = "noborder",
-    empty      = "border-block",
-    shadow     = "border-thinblock",
-    bold       = "border-bold",
-    block      = "border-block",
-    solidblock = "border-block",
-    thicc      = "border-bold",
-    thiccc     = "border-block",
-    thicccc    = "border-block",
-  }
-  local border = winopts.border
-  if not border then border = "none" end
-  if border == true then border = "border" end
-  if type(border) == "function" then
-    border = border(winopts, metadata)
-  end
-  border = type(border) == "string" and (neovim2fzf[border] or border) or nil
-  return border
-end
-
----@param o fzf-lua.config.Resolved|{}
+---@param o fzf-lua.config.Resolved
 ---@param fzf_win fzf-lua.Win
 ---@return string
 M.preview_window = function(o, fzf_win)
   local layout
-  local preview = assert(o.winopts and o.winopts.preview)
+  local preview = o.winopts.preview
+  local preview_str = fzf_win:fzf_preview_layout_str()
+  local preview_pos = preview_str:match("[^:]+") or "right"
+  local border = require("fzf-lua.win.border").fzf(preview.border,
+    { type = "fzf", name = "prev", layout = preview_pos, opts = o })
   local prefix = string.format("%s:%s%s",
     preview.hidden and "hidden" or "nohidden",
     preview.wrap and "wrap" or "nowrap",
-    (function()
-      local border = (function()
-        local preview_str = fzf_win:fzf_preview_layout_str()
-        local preview_pos = preview_str:match("[^:]+") or "right"
-        return translate_border(preview,
-          { type = "fzf", name = "prev", layout = preview_pos, opts = o })
-      end)()
-      return border and string.format(":%s", border) or ""
-    end)()
-  )
+    border and string.format(":%s", border) or "")
   if utils.has(o, "fzf", { 0, 31 })
       -- fzf v0.45 added transform, v0.46 added resize event
       -- which we use for changing the layout on resize
@@ -525,7 +503,7 @@ M.preview_window = function(o, fzf_win)
         prefix, preview.vertical)
     end
   end
-  layout = layout or string.format("%s:%s", prefix, fzf_win:fzf_preview_layout_str())
+  layout = layout or string.format("%s:%s", prefix, preview_str)
   if o.preview_offset and #o.preview_offset > 0 then
     layout = layout .. ":" .. o.preview_offset
   end

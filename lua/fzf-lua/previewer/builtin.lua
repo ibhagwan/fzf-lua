@@ -109,8 +109,8 @@ function TSContext.update(winid, bufnr, opts)
       if api.nvim_buf_is_valid(bufnr) and api.nvim_win_is_valid(winid) then
         -- ensure context win is above
         local fix = function(win, zindex)
-          if win and api.nvim_win_is_valid(win) and api.nvim_win_get_config(win).zindex ~= zindex then
-            api.nvim_win_set_config(win, { zindex = zindex })
+          if win and api.nvim_win_is_valid(win) then
+            utils.win_set_config(win, { zindex = zindex })
             -- noautocmd don't ignore WinResized/WinScrolled
             utils.wo[win].eventignorewin = "WinResized"
           end
@@ -180,14 +180,7 @@ Previewer.base = Object:extend()
 ---@param opts table
 ---@return fzf-lua.previewer.Builtin
 function Previewer.base:new(o, opts)
-  local function default(var, def)
-    if var ~= nil then
-      return var
-    else
-      return def
-    end
-  end
-
+  local default = vim.F.if_nil
   o = o or {}
   self.type = "builtin"
   self.opts = opts
@@ -281,6 +274,19 @@ end
 function Previewer.base:set_style_winopts()
   -- NOTE: `true` to ignore events for initial TSContext.update
   self.win:set_winopts(self.win.preview_winid, self:gen_winopts(), true)
+end
+
+---@param win integer
+function Previewer.base:reset_winhl(win)
+  local hls = self.win.hls
+  local winopts = self:gen_winopts()
+  self.win:reset_winhl(win, winopts.winhl or winopts.winhighlight or {
+    Normal = hls.preview_normal,
+    NormalFloat = hls.preview_normal,
+    FloatBorder = hls.preview_border,
+    CursorLine = hls.cursorline,
+    CursorLineNr = hls.cursorlinenr,
+  })
 end
 
 ---@diagnostic disable-next-line: unused
@@ -475,7 +481,7 @@ function Previewer.base:display_entry(entry_str)
     if self:populate_preview_buf(entry_str_) == false then return end
 
     -- reset the preview window highlights
-    self.win:reset_win_highlights(self.win.preview_winid)
+    self:reset_winhl(self.win.preview_winid)
   end
 
   -- debounce preview entries
