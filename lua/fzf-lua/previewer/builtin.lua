@@ -1008,6 +1008,27 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
         lines = { { { entry.debug, "Error" } } }
       elseif entry.content then
         lines = entry.content
+      elseif entry.cmd and vim.system then
+        co = coroutine.running()
+        local stream = true
+        local chan = stream and api.nvim_open_term(tmpbuf, {}) or nil
+        vim.system(entry.cmd, {
+          stdout = stream and vim.schedule_wrap(function(err, data)
+            if err then error(err) end
+            if not data then return end
+            if entry_str ~= self._last_entry or not self.win:validate_preview() then return end
+            api.nvim_chan_send(chan, data)
+          end) or nil,
+        }, not stream and vim.schedule_wrap(function(obj)
+          lines = {}
+          -- coroutine.resume(co)
+          -- lines = vim.split(obj.stdout or "", "\r?\n")
+          -- api.nvim_buf_set_lines(tmpbuf, 0, -1, false, vim.split(obj.stdout or "", "\r?\n"))
+          chan = api.nvim_open_term(tmpbuf, {})
+          api.nvim_chan_send(chan, obj.stdout)
+        end) or nil)
+        -- if not stream then coroutine.yield() end
+        if entry_str ~= self._last_entry or not self.win:validate_preview() then return false end
       else
         -- make sure the file is readable (or bad entry.path)
         local fs_stat = entry.path and uv.fs_stat(entry.path)
@@ -1035,8 +1056,10 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
               { end_col = extmark.end_col, hl_group = extmark.hl_group })
           end
         end
+      end
+      if lines or entry.cmd then
         -- swap preview buffer with new one
-        self:set_preview_buf(tmpbuf)
+        self:set_preview_buf(tmpbuf, entry.cmd and true or false)
         self:preview_buf_post(entry)
         return
       end
@@ -1864,6 +1887,33 @@ function Previewer.nvim_options:parse_entry(entry_str)
   vim.list_extend(content, { "*info* >lua" })
   vim.list_extend(content, vim.tbl_map(function(s) return "  " .. s end, vim.split(info, "\n")))
   return { title = string.format(" %s ", option), filetype = "help", content = content }
+end
+
+Previewer.nvim_server = Previewer.buffer_or_file:extend()
+
+function Previewer.nvim_server:parse_entry(entry_str)
+  local function parse_entry(e) return e and e:match("%((.-)%)") or nil end
+  local addr = parse_entry(entry_str)
+  if not addr then return "true" end
+  local screenshot = assert(self.opts._screenshot) ---@type string
+  local pid, err = require("fzf-lua.previewer.fzf")._make_screenshot(
+    screenshot,
+    addr,
+    self.win.layout.preview.height,
+    self.win.layout.preview.width
+  )
+  if err then
+    return "echo " .. FzfLua.libuv.shellescape(string.format(
+      "make_screenshot failed with error: %s", tostring(err)))
+  end
+  local wait = tonumber(pid)
+      and fn.executable("waitpid") == 1
+      and ("waitpid %s;"):format(pid)
+      or ("sleep %s;"):format(50 / 1000)
+  local pager = fn.executable("tail") == 1 and "tail -n+2 %s" or "cat %s"
+  return {
+    cmd = { "sh", "-c", wait .. pager:format(screenshot) }
+  }
 end
 
 return Previewer

@@ -556,6 +556,8 @@ local function make_screenshot(screenshot, addr, lines, columns)
   return vim.fn.jobpid(chan)
 end
 
+Previewer._make_screenshot = make_screenshot
+
 function Previewer.nvim_server:cmdline(_)
   local function parse_entry(e) return e and e:match("%((.-)%)") or nil end
   return FzfLua.shell.stringify_cmd(function(items, lines, columns)

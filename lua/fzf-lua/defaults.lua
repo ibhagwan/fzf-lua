@@ -1934,7 +1934,10 @@ M.defaults.spell_suggest         = {
 ---@field _screenshot string
 M.defaults.serverlist            = {
   _screenshot = vim.fn.tempname(),
-  previewer = { _ctor = previewers.fzf.nvim_server },
+  previewer = {
+    -- _ctor = previewers.fzf.nvim_server,
+    _ctor = previewers.builtin.nvim_server,
+  },
   _resume_reload = true, -- avoid list contain killed server unhide
   keymap = { fzf = { resize = "refresh-preview" } },
   actions = {

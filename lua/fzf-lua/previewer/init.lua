@@ -29,6 +29,7 @@ Previewer.builtin.keymaps = function() return require "fzf-lua.previewer.builtin
 Previewer.builtin.nvim_options = function() return require "fzf-lua.previewer.builtin".nvim_options end
 Previewer.builtin.codeaction = function() return require "fzf-lua.previewer.codeaction".builtin end
 Previewer.builtin.undotree = function() return require "fzf-lua.providers.undotree".builtin end
+Previewer.builtin.nvim_server = function() return require "fzf-lua.previewer.builtin".nvim_server end
 
 Previewer.swiper = {}
 Previewer.swiper.default = function() return require "fzf-lua.previewer.swiper".default end
