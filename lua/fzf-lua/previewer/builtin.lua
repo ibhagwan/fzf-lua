@@ -906,6 +906,47 @@ local parse_rich = function(content)
   return lines, extmarks
 end
 
+---@param buf integer
+---@param entry fzf-lua.cmd.Entry
+---@param opts table
+local start_cmd = function(buf, entry, opts)
+  local chan ---@type integer?
+  local obj ---@type vim.SystemObj?
+  local close = function(err)
+    if chan then
+      pcall(fn.chanclose, chan)
+      chan = nil
+    end
+    if obj and not obj:is_closing() then
+      obj:kill(vim.uv.constants.SIGTERM)
+      obj = nil
+    end
+    if err then error(err) end
+  end
+  local try_send = function(data)
+    if not opts.cancel() and chan and pcall(api.nvim_chan_send, chan, data) then
+      return opts.on_send(data)
+    end
+  end
+  local stdout, on_exit
+  if entry.cmd_stream ~= false then
+    chan = api.nvim_open_term(buf, {})
+    stdout = vim.schedule_wrap(function(err, data)
+      if err then close(err) end
+      if data then try_send(data) end
+    end)
+  else
+    on_exit = vim.schedule_wrap(function(obj0)
+      if not api.nvim_buf_is_valid(buf) then return end
+      chan = api.nvim_open_term(buf, {})
+      try_send(vim.trim(obj0.stderr or "") ~= "" and obj0.stderr or obj0.stdout or "")
+    end)
+  end
+  local sopts = entry.cmd_opts or {}
+  sopts = vim.tbl_deep_extend("force", sopts, { stdout = stdout, stderr = stdout })
+  obj = vim.system(entry.cmd, sopts, on_exit)
+end
+
 ---@async
 ---@param entry_str string
 ---@return false? no preview
@@ -1007,6 +1048,17 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
         lines = { { { entry.debug, "Error" } } }
       elseif entry.content then
         lines = entry.content
+      elseif entry.cmd then
+        local opened = false
+        return start_cmd(tmpbuf, entry, {
+          cancel = function() return entry_str ~= self._last_entry end,
+          on_send = function()
+            if opened then return end
+            opened = true
+            self:set_preview_buf(tmpbuf, true)
+            self:preview_buf_post(entry)
+          end,
+        })
       else
         -- make sure the file is readable (or bad entry.path)
         local fs_stat = entry.path and uv.fs_stat(entry.path)
@@ -1034,6 +1086,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
               { end_col = extmark.end_col, hl_group = extmark.hl_group })
           end
         end
+        if entry.open_term then api.nvim_open_term(tmpbuf, {}) end
         -- swap preview buffer with new one
         self:set_preview_buf(tmpbuf)
         self:preview_buf_post(entry)
@@ -1863,6 +1916,36 @@ function Previewer.nvim_options:parse_entry(entry_str)
   vim.list_extend(content, { "*info* >lua" })
   vim.list_extend(content, vim.tbl_map(function(s) return "  " .. s end, vim.split(info, "\n")))
   return { title = string.format(" %s ", option), filetype = "help", content = content }
+end
+
+---@class fzf-lua.previewer.VTerm : fzf-lua.previewer.BufferOrFile,{}
+---@field super fzf-lua.previewer.BufferOrFile,{}
+Previewer.vterm = Previewer.buffer_or_file:extend()
+
+---@param o table
+---@param opts table
+---@param previewer fzf-lua.previewer.Fzf
+---@return fzf-lua.previewer.VTerm
+function Previewer.vterm:new(o, opts, previewer)
+  Previewer.vterm.super.new(self, o, opts)
+  self.previewer = previewer
+  return self
+end
+
+function Previewer.vterm:parse_entry(entry_str)
+  local spec = self.previewer:cmdline() ---@type fzf-lua.preview.spec
+  assert(type(spec) == "table" and spec.fn, "invalid vterm previewer spec")
+  local preview = assert(self.win.layout.preview)
+  -- usually `{} {q}` is used as most common field index
+  local res = spec.fn({ entry_str, FzfLua.get_info().query }, preview.height, preview.width)
+  if spec.type == "cmd" then
+    local cmdspec = type(res) == "table" and res or { cmd = { "sh", "-c", res }, env = nil }
+    local cmd = type(cmdspec.cmd) == "table" and cmdspec.cmd or { "sh", "-c", cmdspec.cmd }
+    return { cmd = cmd, cmd_opts = { env = cmdspec.env } }
+  else
+    assert(type(res) == "table", res)
+    return { content = res, open_term = true }
+  end
 end
 
 return Previewer

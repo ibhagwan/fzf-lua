@@ -44,6 +44,7 @@ Previewer.swiper.default = function() return require "fzf-lua.previewer.swiper".
 ---@field theme? string
 ---@field pager? string|function
 ---@field _fn_git_icons? table[]|fun():table?
+---@field vterm? boolean use builtin terminal buffer (nvim_open_term) for preview
 ---builtin
 ---@field title_fnamemodify? function
 
@@ -70,12 +71,28 @@ Previewer.new = function(spec, opts)
   elseif preview_opts and type(preview_opts._ctor) == "function" then
     previewer = preview_opts._ctor()(preview_opts, opts)
   end
+  if preview_opts and preview_opts.vterm then ---@cast previewer fzf-lua.previewer.Fzf
+    return require("fzf-lua.previewer.builtin").vterm:new(preview_opts, opts, previewer)
+  end
   return previewer
 end
 
----@alias fzf-lua.preview.spec function|{[1]: function?, fn: function?, field_index: string?}|string
+---@alias fzf-lua.preview.spec string|function|fzf-lua.PreviewCmdSpec|fzf-lua.PreviewDataSpec
+
+---@class fzf-lua.PreviewCmdSpec
+---@field [1] fzf-lua.shell.cmd?
+---@field fn fzf-lua.shell.cmd?
+---@field field_index string?
+---@field type 'cmd'
+
+---@class fzf-lua.PreviewDataSpec
+---@field [1] fzf-lua.shell.data?
+---@field fn fzf-lua.shell.data?
+---@field field_index string?
+---@field type 'data'
+
 ---convert preview action functions to strings using our shell wrapper
----@param preview fzf-lua.preview.Spec
+---@param preview fzf-lua.preview.spec
 ---@param opts table
 ---@return string?
 Previewer.normalize_spec = function(preview, opts)
