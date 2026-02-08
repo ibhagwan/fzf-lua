@@ -779,6 +779,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
               ["--highlight-line"] = false,
               ["--gutter"]         = false,
               ["--border-label"]   = false,
+              ["--ellipsis"]       = true,
             }
           },
         }
