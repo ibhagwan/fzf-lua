@@ -155,5 +155,19 @@ T["actions"]["vimcmd"] = new_set({
   end
 })
 
+T["actions"]["buflisted #2561"] = function()
+  child.cmd("edit LICENSE")
+  child.bo.buflisted = false
+  child.cmd("enew")
+  helpers.FzfLua.files(child, {
+    __abort_key = "<cr>",
+    __expect_lines = false,
+    __after_open = function()
+      if helpers.IS_WIN() then vim.uv.sleep(250) end
+    end,
+    query = "LICENSE$",
+  })
+  eq(true, child.bo.buflisted)
+end
 
 return T
