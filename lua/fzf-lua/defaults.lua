@@ -1055,7 +1055,12 @@ M.defaults.buffers               = {
   no_action_set_cursor  = true,
   cwd_only              = false,
   cwd                   = nil,
-  fzf_opts              = { ["--tiebreak"] = "index", ["--multi"] = true },
+  fzf_opts              = {
+    ["--tiebreak"] = "index",
+    ["--multi"] = true,
+    ["--delimiter"] = ":",
+    ["--nth"] = "..-2",
+  },
   _actions              = function()
     return M.globals.actions.buffers or M.globals.actions.files
   end,
