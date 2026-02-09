@@ -538,8 +538,7 @@ local function make_screenshot(screenshot, addr, lines, columns)
     ]], { lines, columns, screenshot })
   end
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
-  local jobstart = _G.fzf_pty_spawn or vim.fn.jobstart
-  local chan = jobstart({ nvim_bin, "--server", addr, "--remote-ui" }, {
+  local chan = vim.fn.jobstart({ nvim_bin, "--server", addr, "--remote-ui" }, {
     pty = true,
     height = lines,
     width = columns,
@@ -551,10 +550,10 @@ local function make_screenshot(screenshot, addr, lines, columns)
       if closing then return end
       closing = true
       vim.defer_fn(function() utils.rpcexec(addr, "nvim__screenshot", screenshot) end, 10)
-      if not _G.fzf_pty_spawn then vim.defer_fn(function() vim.fn.jobstop(chan0) end, 20) end
+      vim.defer_fn(function() vim.fn.jobstop(chan0) end, 20)
     end,
   })
-  return chan
+  return vim.fn.jobpid(chan)
 end
 
 function Previewer.nvim_server:cmdline(_)
