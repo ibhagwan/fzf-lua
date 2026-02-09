@@ -164,7 +164,6 @@ end
 local load_buf = function(relpath)
   local bufnr = vim.fn.bufadd(relpath)
   if bufnr == 0 then return end
-  vim.bo[bufnr].buflisted = true
   return bufnr
 end
 
@@ -191,6 +190,7 @@ local set_buf = function(bufnr, will_replace_curbuf)
   -- user cancelles the save dialog pcall will fail with:
   -- Vim:E37: No write since last change (add ! to override)
   if not ok then return end
+  vim.bo[bufnr].buflisted = true
   return true
 end
 
