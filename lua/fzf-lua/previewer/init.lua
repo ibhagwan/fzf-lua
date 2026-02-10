@@ -73,7 +73,7 @@ Previewer.new = function(spec, opts)
   return previewer
 end
 
----@alias fzf-lua.preview.Spec function|{[1]: function?, fn: function?, field_index: string?}|string
+---@alias fzf-lua.preview.spec function|{[1]: function?, fn: function?, field_index: string?}|string
 ---convert preview action functions to strings using our shell wrapper
 ---@param preview fzf-lua.preview.Spec
 ---@param opts table
