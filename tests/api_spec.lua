@@ -109,6 +109,7 @@ T["api"]["fzf_live"]["table"] = function(multiprocess)
       __expect_lines = true,
       __postprocess_wait = true,
       query = 100,
+      keymap = { fzf = { load = "pos(-1)" } },
       multiprocess = multiprocess == true,
     })
 end
