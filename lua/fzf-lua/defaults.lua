@@ -1936,11 +1936,11 @@ M.defaults.serverlist            = {
   _screenshot = vim.fn.tempname(),
   previewer = { _ctor = previewers.fzf.nvim_server },
   _resume_reload = true, -- avoid list contain killed server unhide
-  keymap = { fzf = { resize = "refresh-preview" } },
   actions = {
     ["enter"] = actions.serverlist_connect,
     ["ctrl-o"] = { fn = actions.serverlist_spawn, reload = true, header = "spawn" },
     ["ctrl-x"] = { fn = actions.serverlist_kill, reload = true, header = "kill" },
+    ["ctrl-r"] = { fn = function() end, reload = true, header = "reload" },
   },
 }
 
