@@ -744,11 +744,13 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     local bin, version, changelog = (function()
       if opts.__SK_VERSION then
         return "sk", opts.__SK_VERSION, {
-          -- All fzf flags values not support by skim
+          -- All fzf flags values not support by skim (https://github.com/skim-rs/skim/issues/628)
           ["99.9.9"] = {
             fzf_opts = {
-              ["--border"] = { "none" },
-              ["--info"]   = { "inline-right" },
+              ["--border"]           = { "none" },
+              ["--info"]             = { "inline-right" },
+              ["--border-label-pos"] = true,
+              ["--info-command"]     = true,
             }
           },
           ["1.5.3"] = {

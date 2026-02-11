@@ -807,6 +807,9 @@ M.serverlist = function(opts)
     end)
     cb(nil)
   end
+  if utils.has(opts, "sk", "3.0.0") then
+    opts = vim.tbl_deep_extend("force", opts, { winopts = { preview = { pty = true } } })
+  end
   core.fzf_exec(function(cb)
     vim.defer_fn(function() f(cb) end, 50) -- wait for spawn/remote_exec?
   end, opts)

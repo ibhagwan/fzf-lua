@@ -52,7 +52,7 @@ _G.fzf_jobstart = function(cmd, opts)
   FzfLua.libuv.uv_spawn(cmd[1], {
       cwd = opts.cwd,
       args = vim.list_slice(cmd, 2),
-      stdio = { 0 },
+      stdio = { 0, 1, 2 }, -- sk require stderr
       env = opts.env,
     },
     vim.schedule_wrap(function(rc)

@@ -115,6 +115,8 @@ end
 ---Debounce time (milliseconds) for displaying the preview buffer in the builtin previewer.
 ---@field delay? integer
 ---@field winopts fzf-lua.config.PreviewerWinopts Window options for the builtin previewer.
+---(skim only option), allow preview process run in pty
+---@field pty? boolean
 
 ---missing fields are injected later, not sure how to tell luals about it
 ---@class fzf-lua.config.Defaults: fzf-lua.config.Base,{}
