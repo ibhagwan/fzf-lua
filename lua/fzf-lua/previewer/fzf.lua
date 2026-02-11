@@ -532,7 +532,7 @@ local function make_screenshot(screenshot, addr, lines, columns)
     end
     return utils.rpcexec(addr, "nvim_exec_lua", [[
       local lines, columns, screenshot = ...
-      return vim._with({ go = { lines = lines, columns = columns } }, function()
+      return vim._with({ o = { lines = lines, columns = columns } }, function()
         vim.api.nvim__screenshot(screenshot)
       end)
     ]], { lines, columns, screenshot })

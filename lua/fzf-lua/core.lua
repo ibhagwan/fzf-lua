@@ -496,6 +496,8 @@ M.preview_window = function(o, fzf_win)
       return border and string.format(":%s", border) or ""
     end)()
   )
+  -- https://github.com/skim-rs/skim/issues/964
+  if preview.pty and utils.has(o, "sk") then prefix = "pty:" .. prefix end
   if utils.has(o, "fzf", { 0, 31 })
       -- fzf v0.45 added transform, v0.46 added resize event
       -- which we use for changing the layout on resize
