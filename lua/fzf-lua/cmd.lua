@@ -6,19 +6,9 @@ local serpent = require "fzf-lua.lib.serpent"
 
 local M = {}
 
----@param cmd string
----@param ...string
-function M.run_command(cmd, ...)
+function M.parse_args_to_opts(...)
   local args = { ... }
-  cmd = cmd or "builtin"
-
-  if not builtin[cmd] then
-    utils.error("invalid command '%s'", cmd)
-    return
-  end
-
   local opts = {}
-
   for _, arg in ipairs(args) do
     local key = arg:match("^[^=]+")
     local val = arg:match("=") and arg:match("=(.*)$")
@@ -33,7 +23,18 @@ function M.run_command(cmd, ...)
       end
     end
   end
+  return opts
+end
 
+---@param cmd string
+---@param ...string
+function M.run_command(cmd, ...)
+  cmd = cmd or "builtin"
+  if not builtin[cmd] then
+    utils.error("invalid command '%s'", cmd)
+    return
+  end
+  local opts = M.parse_args_to_opts(...)
   builtin[cmd](opts)
 end
 
