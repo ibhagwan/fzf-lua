@@ -561,17 +561,7 @@ function Previewer.base:scroll(direction)
 
   if not input then return end
 
-  if direction == "reset" then
-    pcall(api.nvim_win_call, preview_winid, function()
-      -- for some reason 'nvim_win_set_cursor'
-      -- only moves forward, so set to (1,0) first
-      api.nvim_win_set_cursor(0, { 1, 0 })
-      if self.orig_pos then
-        api.nvim_win_set_cursor(0, self.orig_pos)
-      end
-      utils.zz()
-    end)
-  else
+  local scroll = function()
     pcall(api.nvim_win_call, preview_winid, function()
       vim.cmd([[norm! ]] .. input)
       -- `zb` at bottom?
@@ -583,6 +573,28 @@ function Previewer.base:scroll(direction)
         vim.cmd("norm! zvzb")
       end
     end)
+  end
+
+  if direction == "reset" then
+    pcall(api.nvim_win_call, preview_winid, function()
+      -- for some reason 'nvim_win_set_cursor'
+      -- only moves forward, so set to (1,0) first
+      api.nvim_win_set_cursor(0, { 1, 0 })
+      if self.orig_pos then
+        api.nvim_win_set_cursor(0, self.orig_pos)
+      end
+      utils.zz()
+    end)
+  else
+    if utils.is_term_buffer(self.preview_bufnr) and api.nvim_get_mode().mode == "t" then
+      vim.cmd.stopinsert()
+      vim.schedule(function()
+        scroll()
+        vim.cmd.startinsert()
+      end)
+    else
+      scroll()
+    end
   end
 
   -- 'cursorline' is effectively our match highlight. Once the
