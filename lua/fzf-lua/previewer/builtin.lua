@@ -947,13 +947,16 @@ local start_cmd = function(buf, entry, opts)
       if err then close(err) end
       if data then try_send(data) end
     end)
-  else
-    on_exit = vim.schedule_wrap(function(obj0)
-      if not api.nvim_buf_is_valid(buf) then return end
+  end
+  on_exit = vim.schedule_wrap(function(obj0)
+    if not api.nvim_buf_is_valid(buf) then return end
+    if entry.cmd_stream ~= false then
+      opts.on_exit()
+    else
       chan = api.nvim_open_term(buf, {})
       try_send(vim.trim(obj0.stderr or "") ~= "" and obj0.stderr or obj0.stdout or "")
-    end)
-  end
+    end
+  end)
   local sopts = entry.cmd_opts or {}
   sopts = vim.tbl_deep_extend("force", sopts, { stdout = stdout, stderr = stdout })
   obj = vim.system(entry.cmd, sopts, on_exit)
@@ -1068,6 +1071,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
             if opened then return end
             opened = true
             self:set_preview_buf(tmpbuf, true)
+          end,
+          on_exit = function()
             self:preview_buf_post(entry)
           end,
         })
@@ -1504,10 +1509,11 @@ end
 ---@param min_winopts boolean?
 function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
   if not self.win or not self.win:validate_preview() then return end
-  if not utils.is_term_buffer(self.preview_bufnr) then
-    -- set cursor highlights for line|col or tag
-    self:set_cursor_hl(entry)
 
+  -- set cursor highlights for line|col or tag
+  self:set_cursor_hl(entry)
+
+  if not utils.is_term_buffer(self.preview_bufnr) then
     local syntax = function()
       if self.syntax then
         self:do_syntax(entry)
@@ -1945,6 +1951,7 @@ function Previewer.vterm:new(o, opts, previewer)
 end
 
 function Previewer.vterm:parse_entry(entry_str)
+  local entry = Previewer.vterm.super.parse_entry(self, entry_str)
   local spec = self.previewer:cmdline() ---@type fzf-lua.preview.spec
   assert(type(spec) == "table" and spec.fn, "invalid vterm previewer spec")
   local preview = assert(self.win.layout.preview)
@@ -1953,10 +1960,10 @@ function Previewer.vterm:parse_entry(entry_str)
   if spec.type == "cmd" then
     local cmdspec = type(res) == "table" and res or { cmd = { "sh", "-c", res }, env = nil }
     local cmd = type(cmdspec.cmd) == "table" and cmdspec.cmd or { "sh", "-c", cmdspec.cmd }
-    return { cmd = cmd, cmd_opts = { env = cmdspec.env } }
+    return { cmd = cmd, cmd_opts = { env = cmdspec.env }, line = entry.line, col = entry.col }
   else
     assert(type(res) == "table", res)
-    return { content = res, open_term = true }
+    return { content = res, open_term = true, line = entry.line, col = entry.col }
   end
 end
 
