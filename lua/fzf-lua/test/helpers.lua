@@ -121,6 +121,10 @@ M.new_child_neovim = function()
 
   child.init = function()
     child.restart({ "-u", "scripts/minimal_init.lua" })
+    child.cmd("cd deps/fzf-lua")
+
+    -- fix flaky hit enter prompt on windows
+    child.lua([[(vim.F.npcall(require, 'vim._core.ui2') or require('vim._extui')).enable({})]])
 
     -- Change initial buffer to be readonly. This not only increases execution
     -- speed, but more closely resembles manually opened Neovim.
@@ -373,6 +377,10 @@ M.new_child_neovim = function()
   return child
 end
 
+---@param child fzf-lua.test.chlid
+---@param opts? table
+---@param setup_opts? table
+---@return table
 M.new_set_with_child = function(child, opts, setup_opts)
   opts = opts or {}
   opts.hooks = opts.hooks or {}
@@ -404,7 +412,8 @@ M.new_set_with_child = function(child, opts, setup_opts)
         end
         -- job may already die
         if pcall(child.unload) then
-          MiniTest.expect.equality("", child.v.errmsg)
+          local errmsg = child.v.errmsg
+          assert(errmsg == "", errmsg)
         end
       end,
       post_once = function()
