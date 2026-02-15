@@ -12,6 +12,7 @@ Previewer.fzf.help_tags = function() return require "fzf-lua.previewer.fzf".help
 Previewer.fzf.codeaction = function() return require "fzf-lua.previewer.codeaction".native end
 Previewer.fzf.undotree = function() return require "fzf-lua.providers.undotree".native end
 Previewer.fzf.nvim_server = function() return require "fzf-lua.previewer.fzf".nvim_server end
+Previewer.fzf.none = function() return require "fzf-lua.previewer.fzf".none end
 
 Previewer.builtin = {}
 Previewer.builtin.buffer_or_file = function()

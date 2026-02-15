@@ -21,7 +21,7 @@ function M.scratch_buf(lines, lang)
   return buf
 end
 
----@class fzf-lua.Extmarks
+---@class fzf-lua.Extmark
 ---@field col integer
 ---@field end_col integer
 ---@field priority? integer
@@ -36,7 +36,7 @@ end
 ---@field extmarks? boolean
 
 ---@param opts fzf-lua.hl.Opts
----@return table<integer, fzf-lua.Extmarks[]>
+---@return table<integer, fzf-lua.Extmark[]>
 function M.get_hl(opts)
   opts = opts or {}
   assert(opts.buf or opts.code, "buf or code is required")
@@ -130,7 +130,7 @@ end
 
 ---modify lines inplace
 ---@param lines string[]
----@param marks table<integer, fzf-lua.Extmarks[]> each line is sorted extmarks
+---@param marks table<integer, fzf-lua.Extmark[]> each line is sorted extmarks
 ---@return string[]
 M.ansi_from_marks = function(lines, marks)
   for lnum, extmarks in pairs(marks) do

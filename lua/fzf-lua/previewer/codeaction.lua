@@ -140,13 +140,18 @@ local function diff_tuple(err, tuple, diff_opts)
     return diff_workspace_edit(action.edit, client.offset_encoding, diff_opts)
   else
     local command = type(action.command) == "table" and action.command or action
-    return {
+    local lines = vim.split(vim.json.encode(action), "\n")
+    local ft = "json"
+    local marks = require("fzf-lua.utils.hl").ansi({ code = lines, ft = ft })
+    local res = {
       string.format(
         "Code action preview is only available for document/workspace edits (%s).",
         command and type(command.command) == "string"
         and string.format("command:%s", command.command)
-        or string.format("kind:%s", action.kind))
+        or string.format("kind:%s", action.kind)),
     }
+    vim.list_extend(res, marks)
+    return res
   end
 end
 

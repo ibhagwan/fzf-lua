@@ -579,4 +579,18 @@ function Previewer.nvim_server:cmdline(_)
   return { fn = act, type = "cmd", field_index = "{} {q}" }
 end
 
+Previewer.none = Previewer.cmd_async:extend()
+
+function Previewer.none:cmdline(_)
+  local act = function(items, _, _)
+    local entry = path.entry_to_file(items[1], self.opts)
+    local ft = vim.filetype.match({ filename = entry.path or "", buf = entry.bufnr })
+    local lines
+    -- TODO: valid buf is loaded
+    if not entry.bufnr then lines = vim.fn.readfile(entry.path or "") end
+    return require("fzf-lua.utils.hl").ansi({ code = lines, buf = entry.bufnr, ft = ft, extmarks = false })
+  end
+  return { fn = act, type = "data", field_index = "{} {q}" }
+end
+
 return Previewer
