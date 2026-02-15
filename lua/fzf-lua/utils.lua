@@ -767,6 +767,9 @@ function M.ansi_from_rgb(rgb, s)
   return s
 end
 
+---@param hl? string
+---@param s string
+---@return string, string?, (fun(string: any):string)?
 function M.ansi_from_hl(hl, s)
   if not hl or #hl == 0 or vim.fn.hlexists(hl) ~= 1 then
     return s, nil
