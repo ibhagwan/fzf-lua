@@ -582,6 +582,37 @@ end
 Previewer.none = Previewer.cmd_async:extend()
 
 function Previewer.none:cmdline(_)
+  if false then
+    local act = function(cb)
+      local entry = FzfLua.path.entry_to_file(_G.arg[2] or "", {})
+      local ft = vim.filetype.match({ filename = entry.path or "", buf = entry.bufnr })
+      local lines
+      -- TODO: valid buf is loaded
+      if not entry.bufnr then lines = vim.fn.readfile(entry.path or "") end
+      for _, line in ipairs(require("fzf-lua.utils.hl").ansi({ code = lines, ft = ft, extmarks = false })) do
+        cb(line)
+      end
+      cb(nil)
+    end
+    return shell.stringify_mt(act, { multiprocess = true }) .. " {}"
+  end
+  if false then
+    -- TODO: pass color map/colorschme rtp?
+    local f = function(items, _, _)
+      local entry = path.entry_to_file(items[1], self.opts)
+      return shell.stringify_mt(function(cb)
+        local filepath = _G.arg[2]
+        local ft = vim.filetype.match({ filename = filepath or "", })
+        local lines = vim.fn.readfile(filepath or "")
+        for _, line in ipairs(require("fzf-lua.utils.hl").ansi({ code = lines, ft = ft, extmarks = false })) do
+          cb(line)
+        end
+        cb(nil)
+        -- return act()
+      end, { multiprocess = true }) .. " " .. entry.path
+    end
+    return { fn = f, type = "cmd", field_index = "{} {q}" }
+  end
   local act = function(items, _, _)
     local entry = path.entry_to_file(items[1], self.opts)
     local ft = vim.filetype.match({ filename = entry.path or "", buf = entry.bufnr })
@@ -590,6 +621,7 @@ function Previewer.none:cmdline(_)
     if not entry.bufnr then lines = vim.fn.readfile(entry.path or "") end
     return require("fzf-lua.utils.hl").ansi({ code = lines, buf = entry.bufnr, ft = ft, extmarks = false })
   end
+
   return { fn = act, type = "data", field_index = "{} {q}" }
 end
 
