@@ -569,6 +569,9 @@ function FzfWin:normalize_border(border, metadata)
     ["border-horizontal"] = { "─", "─", "─", "", "─", "─", "─", "" },
     ["border-top"]        = { "─", "─", "─", "", "", "", "", "" },
     ["border-bottom"]     = { "", "", "", "", "─", "─", "─", "" },
+    ["border-line"]       = function()
+      return require("fzf-lua.profiles.border-fused").winopts.preview.border(self, metadata)
+    end,
   }
   if type(border) == "string" then
     if not valid_borders[border] then
@@ -578,6 +581,7 @@ function FzfWin:normalize_border(border, metadata)
       border = "rounded"
     else
       border = valid_borders[border]
+      border = type(border) == "function" and border() or border
     end
   elseif type(border) ~= "table" then
     if not self._o.silent then
