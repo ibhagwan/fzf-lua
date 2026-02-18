@@ -212,7 +212,7 @@ M.ui_select = function(items, ui_opts, on_choice)
   -- casues issues with abort as on_choice(nil) won't be called (#2439)
   opts.no_hide = opts.no_hide == nil and true or opts.no_hide
 
-  return core.fzf_exec(entries, opts)
+  core.fzf_exec(entries, opts)
 end
 
 return M
