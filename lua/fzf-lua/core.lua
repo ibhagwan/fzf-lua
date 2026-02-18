@@ -960,9 +960,8 @@ M.convert_reload_actions = function(reload_cmd, opts)
   local fallback ---@type boolean?
   -- Does not work with fzf version < 0.36, fzf fails with
   -- "error 2: bind action not specified:" (#735)
-  -- Not yet supported with skim
-  if not utils.has(opts, "fzf", { 0, 36 })
-      or utils.has(opts, "sk")
+  -- skim require 0.12+ https://github.com/skim-rs/skim/pull/604
+  if (not utils.has(opts, "fzf", { 0, 36 }) and not utils.has(opts, "sk", { 0, 12, 0 }))
       or not reload_cmd then
     fallback = true
   end
