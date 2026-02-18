@@ -39,6 +39,17 @@ M.manpages = function(opts)
     return
   end
 
+  if vim.fn.executable("man") ~= 1 then
+    utils.warn("'man' executable not found.")
+    return
+  end
+
+  local out = vim.fn.system(opts.cmd)
+  if vim.v.shell_error ~= 0 or vim.trim(out) == "" then
+    utils.warn("'man -k' returned no results, try running 'sudo mandb' to populate the cache.")
+    return
+  end
+
   opts.fn_transform = function(x)
     -- split by first occurrence of ' - ' (spaced hyphen)
     local man, desc = x:match("^(.-) %- (.*)$")
