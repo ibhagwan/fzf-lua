@@ -466,19 +466,19 @@ describe("Testing path module", function()
     end)
 
     it("parse loaded path", function()
-      helpers.SKIP_IF_MAC()
-      if helpers.IS_WIN() then helpers.SKIP_IF_NOT_NIGHTLY() end
+      helpers.SKIP_IF_WIN()
       local r = {}
       vim.cmd [[bwipe]]
-      vim.cmd.edit("/tmp/foo:bar.txt")
-      local bufname = "/tmp/foo:bar.txt"
-      eq(path.entry_to_file("/tmp/foo:bar.txt", r), {
+      local name = "/tmp/foo:bar.txt"
+      vim.cmd.edit(name)
+      vim.cmd([[sil write]])
+      eq(path.entry_to_file(name, r), {
         col = 0,
         line = 0,
-        stripped = bufname,
-        path = bufname,
+        stripped = name,
+        path = name,
         bufnr = vim.fn.bufnr(),
-        bufname = helpers.IS_MAC() and vim.fs.joinpath("/private", bufname) or bufname,
+        bufname = name,
       })
     end)
   end)
