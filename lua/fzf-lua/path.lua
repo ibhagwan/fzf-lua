@@ -537,7 +537,7 @@ function M.entry_to_file(entry, opts, force_uri)
     end
   elseif file and #file > 0 then -- get bufnr from give path
     local buf = vim.fn.bufnr(file)
-    if buf ~= -1 and vim.api.nvim_buf_get_name(buf) == file then
+    if buf ~= -1 and vim.api.nvim_buf_get_name(buf) == (uv.fs_realpath(file) or file) then
       bufnr = buf
       bufname = file
     end
