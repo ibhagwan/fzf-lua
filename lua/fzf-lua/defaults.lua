@@ -1180,6 +1180,7 @@ M.defaults.blines                = vim.tbl_deep_extend("force", M.defaults.lines
 ---@class fzf-lua.config.Treesitter: fzf-lua.config.Base
 ---Buffer number to search, default: current buffer.
 ---@field bufnr? integer
+---@field node_filter? function
 M.defaults.treesitter            = {
   previewer        = M._default_previewer_fn,
   file_icons       = false, ---@type integer|boolean

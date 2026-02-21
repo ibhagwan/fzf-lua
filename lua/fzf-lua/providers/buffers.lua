@@ -592,10 +592,10 @@ M.treesitter = function(opts)
       for _, definition in ipairs(get(bufnr0)) do
         local nodes = get_local_nodes(definition)
         for _, node in ipairs(nodes) do
-          if node.node then
+          node.kind = node.kind and node.kind:gsub(".*%.", "")
+          if node.node and (not opts.node_filter or opts.node_filter(node, node.kind)) then
             vim.schedule(function()
               -- Remove node prefix, e.g. `locals.definition.var`
-              node.kind = node.kind and node.kind:gsub(".*%.", "")
               local lnum, col, _, _ = ts.get_node_range(node.node)
               local node_text = ts.get_node_text(node.node, bufnr0)
               local node_kind = node.kind and utils.ansi_from_hl(kind2hl(node.kind), node.kind)
