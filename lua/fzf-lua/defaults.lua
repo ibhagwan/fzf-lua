@@ -277,6 +277,9 @@ M.defaults        = {
   ---@field git_diff fzf-lua.config.GitDiffPreviewer
   ---@field [string] fzf-lua.config.Previewer
   previewers    = {
+    none = {
+      _ctor = previewers.fzf.none,
+    },
     cat = {
       cmd   = "cat",
       args  = "-n",

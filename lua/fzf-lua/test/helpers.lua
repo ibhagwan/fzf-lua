@@ -121,7 +121,7 @@ M.new_child_neovim = function()
 
   child.init = function()
     child.restart({ "-u", "scripts/minimal_init.lua" })
-
+    child.cmd("cd deps/fzf-lua")
     -- Change initial buffer to be readonly. This not only increases execution
     -- speed, but more closely resembles manually opened Neovim.
     child.bo.readonly = false
@@ -373,6 +373,10 @@ M.new_child_neovim = function()
   return child
 end
 
+---@param child fzf-lua.test.chlid
+---@param opts? table
+---@param setup_opts? table
+---@return table
 M.new_set_with_child = function(child, opts, setup_opts)
   opts = opts or {}
   opts.hooks = opts.hooks or {}

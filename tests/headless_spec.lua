@@ -9,13 +9,13 @@ local exec_lua = child.lua
 ---@diagnostic disable-next-line: param-type-mismatch
 local _mini_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim")
 if not vim.uv.fs_stat(_mini_path) then
-  _mini_path = vim.fs.joinpath("deps", "mini.nvim")
+  _mini_path = vim.fs.abspath(vim.fs.joinpath("deps", "mini.nvim"))
 end
 
 ---@diagnostic disable-next-line: param-type-mismatch
 local _devicons_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "nvim-web-devicons")
 if not vim.uv.fs_stat(_devicons_path) then
-  _devicons_path = vim.fs.joinpath("deps", "nvim-web-devicons")
+  _devicons_path = vim.fs.abspath(vim.fs.joinpath("deps", "nvim-web-devicons"))
 end
 
 local T = helpers.new_set_with_child(child, {
@@ -60,8 +60,12 @@ T["headless"]["file_icons"]["devicons - manual"] = new_set({ parametrize = { { f
     function(icons)
       helpers.SKIP_IF_WIN()
       -- helpers.SKIP_IF_NOT_LINUX()
-      exec_term(child,
-        { "./scripts/headless_fd.sh", "-x", "rg --files --sort=path", "-f", tostring(icons) })
+      exec_term(child, {
+        vim.fs.abspath("./scripts/headless_fd.sh"),
+        "-c", vim.fs.joinpath(child.loop.cwd(), "scripts"),
+        "-x", "rg --files --sort=path",
+        "-f", tostring(icons),
+      })
       child.expect_screenshot({ ignore_text = { 24 }, ignore_attr = { 25 } })
     end,
   })
@@ -84,8 +88,12 @@ T["headless"]["file_icons"]["server"] = new_set({ parametrize = { { "devicons" }
     local new_child = helpers.new_child_neovim()
     new_child.start()
     new_child.o.statusline = "fzf://"
-    exec_term(new_child,
-      { "./scripts/headless_fd.sh", "-x", "rg --files --sort=path", "-f", icons },
+    exec_term(new_child, {
+        vim.fs.abspath("./scripts/headless_fd.sh"),
+        "-c", vim.fs.joinpath(child.loop.cwd(), "scripts"),
+        "-x", "rg --files --sort=path",
+        "-f", icons,
+      },
       { env = { ["FZF_LUA_SERVER"] = fzf_lua_server } })
     -- Ignore script path and attr the next line
     new_child.expect_screenshot({ ignore_text = { 23 }, ignore_attr = { 24 } })
