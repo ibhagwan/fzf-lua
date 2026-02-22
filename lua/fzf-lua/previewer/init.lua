@@ -99,16 +99,13 @@ Previewer.normalize_spec = function(preview, opts)
   if type(preview) == "function" then
     return (FzfLua.shell.stringify_data(preview, opts, "{}"))
   elseif type(preview) == "table" then
-    preview = vim.tbl_extend("keep", preview, {
-      fn = preview.fn or preview[1],
-      -- by default we use current item only "{}"
-      -- using "{+}" will send multiple selected items
-      field_index = "{}",
-    })
-    if preview.type == "cmd" then
-      return (FzfLua.shell.stringify_cmd(preview.fn, opts, preview.field_index))
-    end
-    return (FzfLua.shell.stringify_data(preview.fn, opts, preview.field_index))
+    local func = assert(preview.fn or preview[1])
+    -- by default we use current item only "{}"
+    -- using "{+}" will send multiple selected items
+    local field_index = preview.field_index or "{}"
+    local stringify = preview.type == "cmd" and FzfLua.shell.stringify_cmd
+        or FzfLua.shell.stringify_data
+    return (stringify(func, opts, field_index))
   else
     return preview
   end
