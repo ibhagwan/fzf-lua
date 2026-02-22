@@ -530,7 +530,7 @@ function Previewer.base:zero(_)
           TSContext.close(self.win.preview_winid)
           self.win:update_preview_title("")
         end
-        self.last_entry = nil
+        if self.loaded_entry then self.last_entry = nil end
         fn.delete(self._zero_lock, "d")
       end, self.delay)
     end, self.opts, ""))
