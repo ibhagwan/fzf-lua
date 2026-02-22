@@ -1621,6 +1621,9 @@ function M.lsp_get_clients(opts)
   end, clients)
 end
 
+---@param key string
+---@param opts table
+---@return fzf-lua.PidObject
 function M.pid_object(key, opts)
   local Pid = {}
 

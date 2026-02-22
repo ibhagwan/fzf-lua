@@ -58,28 +58,25 @@ server_listen(server_socket, server_socket_path)
 -- local thread = uv.new_thread(server_listen, server_socket, server_socket_path)
 -- io.stdout:write(string.format("thread %s\n", tostring(thread)))
 
+---@class fzf-lua.rpc.Ctx
+---@field function_id string An identifier for the RPC function to be executed.
+---@field pipe_path string The path to the Unix domain socket for RPC communication.
+---@field selection? string[] The selected item(s) (expanded from field expression).
+---@field env table<string, string> Environment variables inherited by the RPC process.
+
+---@param opts table
 local rpc_nvim_exec_lua = function(opts)
+  ---@type fzf-lua.rpc.Ctx
+  local ctx = {
+    function_id = opts.fnc_id,
+    pipe_path = server_socket_path,
+    selection = opts.selection,
+    env = vim.uv.os_environ(),
+  }
   local success, errmsg = pcall(function()
-    -- for skim compatibility
-    local preview_lines = vim.env.FZF_PREVIEW_LINES or vim.env.LINES
-    local preview_cols = vim.env.FZF_PREVIEW_COLUMNS or vim.env.COLUMNS
     local chan_id = vim.fn.sockconnect("pipe", opts.fzf_lua_server, { rpc = true })
-    vim.rpcrequest(chan_id, "nvim_exec_lua", [[
-      local luaargs = {...}
-      local function_id = luaargs[1]
-      local server_socket_path = luaargs[2]
-      local fzf_selection = luaargs[3]
-      local fzf_lines = luaargs[4]
-      local fzf_columns = luaargs[5]
-      local usr_func = require"fzf-lua.shell".get_func(function_id)
-      return usr_func(server_socket_path, fzf_selection, fzf_lines, fzf_columns)
-    ]], {
-      opts.fnc_id,
-      server_socket_path,
-      opts.fzf_selection,
-      tonumber(preview_lines),
-      tonumber(preview_cols),
-    })
+    vim.rpcrequest(chan_id, "nvim_exec_lua",
+      [[return require"fzf-lua.shell".get_func((...).function_id)(...)]], { ctx })
     vim.fn.chanclose(chan_id)
   end)
 
@@ -106,7 +103,7 @@ end
 
 local args = vim.deepcopy(_G.arg)
 args[0] = nil -- remove filename
-local opts = {
+rpc_nvim_exec_lua({
   fnc_id = tonumber(table.remove(args, 1)),
   debug = (function()
     local ret = table.remove(args, 1)
@@ -120,7 +117,6 @@ local opts = {
       return tonumber(ret) or tostring(ret)
     end
   end)(),
-  fzf_selection = args,
+  selection = args,
   fzf_lua_server = vim.env.FZF_LUA_SERVER or vim.env.SKIM_FZF_LUA_SERVER or vim.env.NVIM,
-}
-rpc_nvim_exec_lua(opts)
+})

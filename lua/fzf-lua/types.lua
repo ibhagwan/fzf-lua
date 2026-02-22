@@ -21,7 +21,7 @@ local FzfLua = require("fzf-lua")
 ---@field extmarks? table
 
 ---@class fzf-lua.cmd.Entry
----@field cmd string[] cmd used to generated content
+---@field cmd? string[] cmd used to generated content
 ---@field cmd_stream? boolean stream process cmd content
 ---@field cmd_opts? vim.SystemOpts vim.system opts for cmd
 
@@ -111,6 +111,11 @@ local FzfLua = require("fzf-lua")
 ---@field _fzf_lua_server? string
 ---@field _EOL? string
 ---@field _debug? boolean
+
+---@class fzf-lua.PidObject
+---@field new fun(self: fzf-lua.PidObject, _, _): fzf-lua.PidObject
+---@field get fun(self: fzf-lua.PidObject): integer
+---@field set fun(self: fzf-lua.PidObject, pid: integer?)
 
 ---a basic config can be used by fzf_exec?
 ---generated from the result of `:=FzfLua.config.normalize_opts({}, {})`
@@ -213,7 +218,7 @@ local FzfLua = require("fzf-lua")
 ---@field _headers? boolean
 
 ---@class fzf-lua.config.Resolved: fzf-lua.config.Base
----@field PidObject? table
+---@field PidObject? fzf-lua.PidObject
 ---@field _headers? string[]
 ---@field _fmt? table
 ---@field pipe_cmd? string
