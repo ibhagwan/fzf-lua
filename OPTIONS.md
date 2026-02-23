@@ -547,7 +547,7 @@ Set to `false` to disable fzf window title flags (hidden, ignore, etc).
 
 #### globals.winopts.title_pos
 
-Type: `string`, Default: `"center"`
+Type: `string[]`, Default: `("center"|"left"|"right")`
 
 Controls title display in the fzf window, possible values are `left|right|center`.
 
