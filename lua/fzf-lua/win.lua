@@ -1000,7 +1000,9 @@ function FzfWin:close(fzf_bufnr, hide)
       pcall(api.nvim_win_close, self.fzf_winid, true)
     end
   end
-  if not hide then self:close_buf(self.fzf_bufnr) end
+  if not hide and self.fzf_bufnr then
+    self:close_buf(self.fzf_bufnr)
+  end
   for k, _ in pairs(self.on_closes) do
     self.on_closes[k](hide)
     self.on_closes[k] = nil
