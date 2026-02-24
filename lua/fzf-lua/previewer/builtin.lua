@@ -998,7 +998,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     self:preview_buf_post(entry)
     return
   end
-  if cached and not cached.invalid and cached.bufnr then
+  if cached and not cached.invalid then
     self:set_preview_buf(cached.bufnr, cached.min_winopts)
     self:preview_buf_post(entry, cached.min_winopts)
     return
@@ -1308,9 +1308,9 @@ local filetype_detect = function(bufnr, filepath)
   return ft ~= "" and ft or nil
 end
 
----@param entry? fzf-lua.buffer_or_file.Entry
+---@param entry fzf-lua.buffer_or_file.Entry
 function Previewer.buffer_or_file:do_syntax(entry)
-  if not self.preview_bufnr or not entry or entry.cached then return end -- vim.bo[buf]._ft
+  if not self.preview_bufnr or entry.cached then return end -- vim.bo[buf]._ft
   local bufnr = self.preview_bufnr
   local preview_winid = self.win.preview_winid
   local filepath = entry.path ---@type string?
