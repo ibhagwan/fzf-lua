@@ -3,143 +3,12 @@ local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local Object = require "fzf-lua.class"
+local TSContext = require "fzf-lua.previewer.tscontext"
 
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local api = vim.api
 local fn = vim.fn
-
-
----@class fzf-lua.TSContext
----@field private _winids table<integer, integer>
-local TSContext = {}
-
----@param opts TSContext.UserConfig
----@return boolean
-function TSContext.setup(opts)
-  if TSContext._setup then return true end
-  if not package.loaded["treesitter-context"] then
-    return false
-  end
-  -- Our temp nvim-treesitter-context config
-  TSContext._setup_opts = {}
-  for k, v in pairs(opts) do
-    TSContext._setup_opts[k] = { v }
-  end
-  local config = require("treesitter-context.config")
-  TSContext._config = utils.tbl_deep_clone(config)
-  for k, v in pairs(TSContext._setup_opts) do
-    v[2] = config[k]
-    config[k] = v[1]
-  end
-  TSContext._winids = {}
-  TSContext._setup = true
-  return true
-end
-
-function TSContext.deregister()
-  if not TSContext._setup then return end
-  for winid, _ in pairs(TSContext._winids) do
-    TSContext.close(winid)
-  end
-  local config = require("treesitter-context.config")
-  for k, v in pairs(TSContext._setup_opts) do
-    config[k] = v[2]
-  end
-  TSContext._config = nil
-  TSContext._winids = nil
-  TSContext._setup = nil
-end
-
----@param winid integer
----@return boolean?
-function TSContext.is_attached(winid)
-  if not TSContext._setup then return false end
-  return TSContext._winids[winid] and true or false
-end
-
----@param winid integer
-function TSContext.close(winid)
-  if not TSContext._setup then return end
-  require("treesitter-context.render").close(winid)
-  TSContext._winids[winid] = nil
-end
-
----@param winid integer
----@param bufnr integer
-function TSContext.toggle(winid, bufnr)
-  if not TSContext._setup then return end
-  if TSContext.is_attached(winid) then
-    TSContext.close(winid)
-  else
-    TSContext.update(winid, bufnr)
-  end
-end
-
-function TSContext.inc_dec_maxlines(num, winid, bufnr)
-  if not TSContext._setup then return end
-  local n = tonumber(num)
-  if not n then return end
-  local config = require("treesitter-context.config")
-  local max_lines = config.max_lines or 0
-  config.max_lines = math.max(0, max_lines + n)
-  utils.info("treesitter-context `max_lines` set to %d.", config.max_lines)
-  if TSContext.is_attached(winid) then
-    for _, t in ipairs({ 0, 20 }) do
-      vim.defer_fn(function() TSContext.update(winid, bufnr) end, t)
-    end
-  end
-end
-
----@alias TSContext.UserConfig table
----@param winid integer
----@param bufnr integer
----@param opts? TSContext.UserConfig
-function TSContext.update(winid, bufnr, opts)
-  opts = opts or {}
-  if not TSContext.setup(opts) then return end
-  assert(not api.nvim_win_is_valid(winid) or bufnr == api.nvim_win_get_buf(winid))
-  local render = require("treesitter-context.render")
-  local context_ranges, context_lines = require("treesitter-context.context").get(winid)
-  if not context_ranges or #context_ranges == 0 then
-    TSContext.close(winid)
-  else
-    assert(context_lines)
-    local function open()
-      if api.nvim_buf_is_valid(bufnr) and api.nvim_win_is_valid(winid) then
-        -- ensure context win is above
-        local fix = function(win, zindex)
-          if win and api.nvim_win_is_valid(win) then
-            utils.win_set_config(win, { zindex = zindex })
-            -- noautocmd don't ignore WinResized/WinScrolled
-            utils.wo[win].eventignorewin = "WinResized"
-          end
-        end
-        api.nvim_win_call(winid, function()
-          render.open(winid, context_ranges, context_lines)
-          TSContext.window_contexts = TSContext.window_contexts or
-              utils.upvfind(render.open, "window_contexts")
-          if not TSContext.window_contexts then return end
-          local window_context = TSContext.window_contexts[winid]
-          if not window_context then return end
-          fix(window_context.context_winid, TSContext.zindex)
-          fix(window_context.gutter_winid, TSContext.zindex)
-        end)
-        TSContext._winids[winid] = bufnr
-      end
-    end
-    -- NOTE: no longer required since adding `eventignore` to `FzfWin:set_winopts`
-    -- if TSContext.is_attached(winid) == bufnr then
-    open()
-    -- else
-    --   -- HACK: but the entire nvim-treesitter-context is essentially a hack
-    --   -- https://github.com/ibhagwan/fzf-lua/issues/1552#issuecomment-2525456813
-    --   for _, t in ipairs({ 0, 20 }) do
-    --     vim.defer_fn(function() open() end, t)
-    --   end
-    -- end
-  end
-end
 
 local Previewer = {}
 
@@ -1187,50 +1056,12 @@ function Previewer.base:update_ts_context()
   then
     return
   end
-  local ft = vim.b[bufnr] and vim.b[bufnr]._ft
-  if not ft then
-    TSContext.close(self.win.preview_winid)
-    return
+  local cancel = function()
+    local new_bufnr = self.preview_bufnr
+    return bufnr ~= new_bufnr or not api.nvim_buf_is_valid(bufnr)
   end
-  -- HACK: since TS async parsing commit we cannot guarantee the TSContext ranges as these will
-  -- return empty unless parsing is complete and we have no access to the `on_parse` event
-  -- https://github.com/neovim/neovim/commit/45e606b1fddbfeee8fe28385b5371ca6f2fba71b
-  -- For more info see #1922
-  local lang = vim.treesitter.language.get_lang(ft)
-  if not lang or not utils.has_ts_parser(lang, "context") then
-    TSContext.close(self.win.preview_winid)
-    return
-  end
-  local parser, err = vim.treesitter.get_parser(bufnr, lang, { error = false })
-  -- TODO: fix `has_ts_parser` regression from a953548 (#2366)
-  -- should never fail since `utils.has_ts_parser` returned true
-  -- assert(parser, "'vim.treesitter.get_parser' err: " .. tostring(err))
-  if not parser or err then
-    TSContext.close(self.win.preview_winid)
-    return
-  end
-  local context_updated
-  TSContext.zindex = self.win.winopts.zindex + 20
-  for _, t in ipairs({ 0, 20, 50, 100 }) do
-    vim.defer_fn(function()
-      local new_bufnr = self.preview_bufnr
-      if context_updated
-          or bufnr ~= new_bufnr
-          or not bufnr
-          or not api.nvim_buf_is_valid(bufnr)
-      then
-        return
-      end
-      if parser:is_valid(true) then
-        context_updated = true
-        TSContext.update(self.win.preview_winid, bufnr, vim.tbl_extend("force",
-          type(self.treesitter.context) == "table" and self.treesitter.context or {}, {
-            -- `multiwindow` must be set regardless of user options
-            multiwindow = true,
-          }))
-      end
-    end, t)
-  end
+  TSContext.schedule_update(self.win.preview_winid, bufnr, self.win.winopts.zindex + 20, cancel,
+    self.treesitter.context)
 end
 
 function Previewer.base:update_render_markdown()
