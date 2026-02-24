@@ -356,29 +356,6 @@ function Previewer.base:set_preview_buf(newbuf, min_winopts, no_wipe)
   end
 end
 
----@param bufnr integer
----@param key string
----@param min_winopts boolean?
----@return fzf-lua.buffer_or_file.Bcache
-function Previewer.base:cache_buffer(bufnr, key, min_winopts)
-  local cached = self.cached_buffers[key]
-  if cached then
-    if cached.bufnr == bufnr then
-      -- already cached, nothing to do
-      return cached
-    else
-      -- new cached buffer for key, wipe current cached buf
-      self.cached_bufnrs[cached.bufnr] = nil
-      self:safe_buf_delete(cached.bufnr)
-    end
-  end
-  self.cached_bufnrs[bufnr] = true
-  self.cached_buffers[key] = { bufnr = bufnr, min_winopts = min_winopts }
-  -- remove buffer auto-delete since it's now cached
-  vim.bo[bufnr].bufhidden = "hide"
-  return self.cached_buffers[key]
-end
-
 function Previewer.base:clear_cached_buffers()
   -- clear the buffer cache
   for _, c in pairs(self.cached_buffers) do
@@ -893,6 +870,30 @@ function Previewer.buffer_or_file:check_bcache(entry)
     cached.tick = entry.tick
   end
   return cached
+end
+
+---cache the bufnr for the entry, evict previous cache if exists
+---@param bufnr integer
+---@param entry fzf-lua.buffer_or_file.Entry
+---@param min_winopts boolean?
+function Previewer.buffer_or_file:cache_buffer(bufnr, entry, min_winopts)
+  local key = key_from_entry(entry)
+  if not key then return end
+  local cached = self.cached_buffers[key]
+  if cached then
+    if cached.bufnr == bufnr then
+      -- already cached, nothing to do
+      return cached
+    else
+      -- new cached buffer for key, wipe current cached buf
+      self.cached_bufnrs[cached.bufnr] = nil
+      self:safe_buf_delete(cached.bufnr)
+    end
+  end
+  self.cached_bufnrs[bufnr] = true -- reset scroll position
+  self.cached_buffers[key] = { bufnr = bufnr, min_winopts = min_winopts, tick = entry.tick }
+  -- remove buffer auto-delete since it's now cached
+  vim.bo[bufnr].bufhidden = "hide"
 end
 
 ---@alias fzf-lua.line (string|[string,string])[]
@@ -1557,10 +1558,7 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
 
   -- Should we cache the current preview buffer?
   -- we cache only named buffers with valid path/uri
-  local key = key_from_entry(entry)
-  if not key then return end
-  local cached = self:cache_buffer(self.preview_bufnr, key, min_winopts)
-  cached.tick = entry.tick
+  self:cache_buffer(self.preview_bufnr, entry, min_winopts)
 end
 
 ---@class fzf-lua.previewer.HelpTags : fzf-lua.previewer.BufferOrFile,{}
