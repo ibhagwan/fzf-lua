@@ -872,7 +872,7 @@ end
 ---@diagnostic disable-next-line: unused
 ---@param entry fzf-lua.buffer_or_file.Entry
 ---@return string?
-function Previewer.buffer_or_file:key_from_entry(entry)
+local key_from_entry = function(entry)
   if entry.do_not_cache then return nil end
   return (entry.bufnr and string.format("bufnr:%d", entry.bufnr) or entry.uri or entry.path) or nil
 end
@@ -881,7 +881,7 @@ end
 ---@param entry fzf-lua.buffer_or_file.Entry
 ---@return fzf-lua.buffer_or_file.Bcache?
 function Previewer.buffer_or_file:check_bcache(entry)
-  local key = self:key_from_entry(entry)
+  local key = key_from_entry(entry)
   if not key then return end
   local cached = self.cached_buffers[key]
   if not cached then return end
@@ -1557,7 +1557,7 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
 
   -- Should we cache the current preview buffer?
   -- we cache only named buffers with valid path/uri
-  local key = self:key_from_entry(entry)
+  local key = key_from_entry(entry)
   if not key then return end
   local cached = self:cache_buffer(self.preview_bufnr, key, min_winopts)
   cached.tick = entry.tick
