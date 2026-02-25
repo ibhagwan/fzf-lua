@@ -1018,6 +1018,9 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     entry.filetype = vim.bo[entry.bufnr].filetype
     local lines = api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
     local tmpbuf = reuse_buf or self:get_tmp_buffer()
+    vim.bo[tmpbuf].expandtab = vim.bo[entry.bufnr].expandtab
+    vim.bo[tmpbuf].shiftwidth = vim.bo[entry.bufnr].shiftwidth
+    vim.bo[tmpbuf].tabstop = vim.bo[entry.bufnr].tabstop
     api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
     -- terminal buffers use minimal window style (2nd arg)
     self:set_preview_buf(tmpbuf, entry.terminal)
