@@ -14,7 +14,7 @@ function M.open(backdrop, zindex, hls)
     if api.nvim_win_is_valid(M.win) then
       api.nvim_win_set_config(M.win, { width = vim.o.columns, height = vim.o.lines })
     end
-    return
+    return function() M.close() end
   end
 
   -- Validate backdrop hlgroup and opacity
@@ -53,7 +53,6 @@ function M.open(backdrop, zindex, hls)
 end
 
 function M.close()
-  if not M.win or not M.buf then return end
   if M.win and api.nvim_win_is_valid(M.win) then api.nvim_win_close(M.win, true) end
   if M.buf and api.nvim_buf_is_valid(M.buf) then api.nvim_buf_delete(M.buf, { force = true }) end
   M.buf = nil
