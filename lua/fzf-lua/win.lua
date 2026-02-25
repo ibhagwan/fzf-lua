@@ -866,12 +866,10 @@ function FzfWin:redraw_main()
   }, self.layout.fzf)
 
   if self:validate() then
-    if self._previewer
-        and self._previewer.clear_on_redraw
-        and self._previewer.clear_preview_buf
-        and self._previewer.clear_cached_buffers then
-      self._previewer:clear_preview_buf(true)
-      self._previewer:clear_cached_buffers()
+    local prev = self._previewer
+    if prev and prev.clear_on_redraw then
+      if prev.clear_preview_buf then prev:clear_preview_buf(true) end
+      if prev.bcache then prev.bcache:clear() end
     end
     utils.win_set_config(self.fzf_winid, winopts)
   else
