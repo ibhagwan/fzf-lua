@@ -571,16 +571,6 @@ function Previewer.buffer_or_file:should_clear_preview(_)
   return false
 end
 
----@param entry fzf-lua.buffer_or_file.Entry|{}
----@return boolean
-function Previewer.buffer_or_file:should_load_buffer(entry)
-  -- we don't have a previous entry to compare to or `do_not_cache` is set meaning
-  -- it's a terminal command (chafa, viu, ueberzug) which requires a reload
-  -- return 'true' so the buffer will be loaded in ::populate_preview_buf
-  if not self.loaded_entry or self.loaded_entry.do_not_cache then return true end
-  return self.loaded_entry.cached ~= entry.cached
-end
-
 function Previewer.buffer_or_file:start_ueberzug()
   if self._ueberzug_fifo then return self._ueberzug_fifo end
   self._ueberzug_fifo = path.join({
@@ -854,10 +844,9 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if entry_str ~= self._last_entry or not self.win:validate_preview() then return false end
   if utils.tbl_isempty(entry) then return end
   local cached = self:check_bcache(entry)
-  if cached and not cached.invalid and not self:should_load_buffer(entry) then
-    assert(cached.bufnr == self.preview_bufnr)
-    -- same file/buffer as previous entry no need to reload content
-    -- only call post to set cursor location
+
+  -- same file/buffer as previous entry no need to change preview buf
+  if cached and not cached.invalid and cached.bufnr == self.preview_bufnr then
     if type(self.cached_bufnrs[self.preview_bufnr]) == "table"
         and ((entry.line and entry.line > 0 and entry.line ~= self.orig_pos[1])
           or (entry.col and entry.col > 0 and entry.col - 1 ~= self.orig_pos[2])) then
