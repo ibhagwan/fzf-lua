@@ -630,8 +630,13 @@ function Previewer.base:copy_extmarks()
   local dst_bufnr = self.preview_bufnr
   local ns = self.ns_extmarks
   local win = self.win.preview_winid
-  local topline = fn.line("w0", win)
+  local winview = api.nvim_win_call(win, fn.winsaveview)
+  local topline = winview.topline
   local botline = fn.line("w$", win)
+  local src_winid = fn.bufwinid(src_bufnr)
+  local src_leftcol = src_winid ~= -1 and api.nvim_win_call(src_winid, fn.winsaveview).leftcol or nil
+  -- virt_text is related to screen https://github.com/neovim/neovim/issues/14050
+  local no_virt_text = winview.leftcol ~= src_leftcol
   api.nvim_buf_clear_namespace(dst_bufnr, ns, topline, botline)
   for _, n in pairs(api.nvim_get_namespaces()) do
     local extmarks = api.nvim_buf_get_extmarks(src_bufnr, n, { topline - 1, 0 },
@@ -640,6 +645,7 @@ function Previewer.base:copy_extmarks()
     for _, m in ipairs(extmarks) do
       local _, row, col, details = unpack(m) ---@cast details -?
       details.ns_id = nil
+      if no_virt_text and details.virt_text then details.virt_text = nil end
       pcall(api.nvim_buf_set_extmark, dst_bufnr, ns, row, col, details)
     end
   end
