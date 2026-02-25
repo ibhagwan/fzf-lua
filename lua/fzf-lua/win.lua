@@ -708,13 +708,9 @@ function FzfWin:redraw_main()
   }, self.layout.fzf)
 
   if self:validate() then
-    if self._previewer
-        and self._previewer.clear_on_redraw
-        and self._previewer.clear_preview_buf
-        and self._previewer.clear_cached_buffers then
-      self._previewer:clear_preview_buf(true)
-      self._previewer:clear_cached_buffers()
-    end
+    local prev = self._previewer
+    if prev and prev.clear_preview_buf then prev:clear_preview_buf(true) end
+    if prev and prev.bcache then prev.bcache:clear() end
     utils.win_set_config(self.fzf_winid, winopts)
   else
     self.fzf_bufnr = self.fzf_bufnr or api.nvim_create_buf(false, true)
