@@ -71,7 +71,7 @@ local rpc_nvim_exec_lua = function(opts)
     function_id = opts.fnc_id,
     pipe_path = server_socket_path,
     selection = opts.selection,
-    env = vim.uv.os_environ(),
+    env = uv.os_environ(),
   }
   local success, errmsg = pcall(function()
     local chan_id = vim.fn.sockconnect("pipe", opts.fzf_lua_server, { rpc = true })

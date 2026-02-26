@@ -669,7 +669,11 @@ function FzfWin:redraw_preview()
   previewer:reset_winhl(self.preview_winid)
   previewer:display_last_entry()
   previewer:update_ts_context()
-  self.on_closes.preview = function(hide) self:close_preview(hide) end
+  local release = previewer:copy_extmarks()
+  self.on_closes.preview = function(hide)
+    if release then release() end
+    self:close_preview(hide)
+  end
 end
 
 function FzfWin:validate()
