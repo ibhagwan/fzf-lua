@@ -636,11 +636,16 @@ local copy_extmarks = function(src_buf, buf, win, topline, botline, ns)
   api.nvim_buf_clear_namespace(buf, ns, topline, botline)
   local extmarks = api.nvim_buf_get_extmarks(src_buf, -1, { topline, 0 }, { botline, -1 },
     { details = true })
+  local namespaces = api.nvim_get_namespaces()
+  local ignore = {}
+  if namespaces["snacks.image"] then ignore[namespaces["snacks.image"]] = true end
   for _, m in ipairs(extmarks) do
     local _, row, col, details = unpack(m) ---@cast details -?
-    details.ns_id = nil
-    if no_virt_text and details.virt_text then details.virt_text = nil end
-    pcall(api.nvim_buf_set_extmark, buf, ns, row, col, details)
+    if not ignore[details.ns_id] then
+      details.ns_id = nil
+      if no_virt_text and details.virt_text then details.virt_text = nil end
+      pcall(api.nvim_buf_set_extmark, buf, ns, row, col, details)
+    end
   end
 end
 
