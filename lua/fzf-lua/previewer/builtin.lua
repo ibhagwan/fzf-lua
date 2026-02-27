@@ -656,7 +656,7 @@ function Previewer.base:copy_extmarks()
     on_win = function(_, win, buf, topline, botline)
       if win ~= self.win.preview_winid then return end
       local src_buf = self.loaded_entry and self.loaded_entry.bufnr
-      if not src_buf then return end
+      if not src_buf or not api.nvim_buf_is_valid(src_buf) then return end
       copy_extmarks(src_buf, buf, win, topline, botline, self.ns_extmarks)
       return false
     end,
