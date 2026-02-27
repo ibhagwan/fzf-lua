@@ -850,6 +850,7 @@ function FzfWin:create()
     self:setup_autocmds()
     self:setup_keybinds()
     self:treesitter_attach()
+    self:reset_winhl(self.fzf_winid)
     -- also recall the user's 'on_create' (#394)
     if type(self.winopts.on_create) == "function" then
       self.winopts.on_create({ winid = self.fzf_winid, bufnr = self.fzf_bufnr })
@@ -930,7 +931,6 @@ function FzfWin:create()
   self:setup_autocmds()
   self:setup_keybinds()
   self:treesitter_attach()
-
   self:reset_winhl(self.fzf_winid)
 
   -- potential workarond for `<C-c>` freezing neovim (#1091)

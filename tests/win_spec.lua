@@ -355,4 +355,20 @@ T["win"]["reuse"] = new_set({
   end
 })
 
+T["win"]["highlight"] = new_set()
+
+T["win"]["highlight"]["unchange when reuse win #2588"] = function()
+  helpers.SKIP_IF_WIN() -- windows attr looks different
+  local opts = {
+    __no_abort = true,
+    __after_open = function() if helpers.IS_WIN() then vim.uv.sleep(250) end end,
+    cwd_prompt = false,
+  }
+  helpers.FzfLua.files(child, opts)
+  -- pretend we closed the window to make helpers won't wait for new open
+  exec_lua([[_G._fzf_lua_on_create = nil]])
+  exec_lua([[_G._fzf_load_called = nil]])
+  helpers.FzfLua.files(child, opts)
+end
+
 return T
