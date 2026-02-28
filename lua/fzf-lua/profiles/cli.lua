@@ -133,8 +133,9 @@ return {
             local text = e.stripped:match(":%d+:%d?%d?%d?%d?:?(.*)$") or ""
             table.insert(qf_items, {
               filename = e.path,
-              lnum = math.max(1, e.line or 1),
-              col = math.max(1, e.col or 1),
+              lnum = e.line or 0,
+              col = e.col or 0,
+              valid = 1,
               text = text,
             })
           end
