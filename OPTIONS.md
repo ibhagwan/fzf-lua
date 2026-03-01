@@ -377,6 +377,12 @@ Type: `number`, Default: `0.85`
 
 Height of the fzf-lua float, between 0-1 will represent percentage of `vim.o.lines` (1: max height), if >= 1 will use fixed number of lines.
 
+#### globals.winopts.path_shorten
+
+Type: `boolean|integer`, Default: `nil`
+
+Use extmarks with conceal to visually shorten paths while keeping full paths for actions/preview. Set to `true` for 1 char, or a number for custom length. NOTE: Unlike the picker `path_shorten` option, this doesn't modify the actual entry text, making it compatible with `combine()`. NOTE: This option has no effect when using `fzf-tmux` as the fzf window runs in a tmux popup outside of Neovim where extmarks are not available.
+
 #### globals.winopts.preview.border
 
 Type: `any`, Default: `"rounded"`
