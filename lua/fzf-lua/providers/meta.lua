@@ -190,6 +190,13 @@ M.global = function(opts)
           or opts_copy)
         pickers[name] = def
       end
+      -- HACK: inherit fzf_opts from the normalized picker opts so we have
+      -- with-nth for the transform (e.g. for blines)
+      -- TODO: we can probably inerit all opts but I'm not sure what would be
+      -- the effects of that, this entire picker needs refactoring
+      local picker_opts = config.normalize_opts(t.opts, name:gsub("^lsp_", "lsp."))
+      if not utils.map_get(def, "opts.fzf_opts") then utils.map_set(def, "opts.fzf_opts", {}) end
+      def.opts.fzf_opts = vim.tbl_deep_extend("force", def.opts.fzf_opts, picker_opts.fzf_opts)
       -- Instantiate the previewer, opts isn't guaranteed if the picker
       -- isn't avilable, e.g. `tags` when not tags file exists
       if def.opts and def.opts.previewer then
@@ -249,6 +256,14 @@ M.global = function(opts)
           win:redraw_preview()
         end
         reload = string.format("reload(%s)+", new_picker.contents)
+        -- fzf >= 0.69 supports `change-with-nth` to dynamically change `--with-nth`
+        -- dynamically update `--with-nth` per-picker (fzf >= 0.69)
+        -- e.g. blines uses `--with-nth=4..` to hide buffer numbers
+        if utils.has(opts, "fzf", { 0, 69 }) then
+          -- `false|nil` defaults to all fields (..)
+          local with_nth = utils.map_get(new_picker, "opts.fzf_opts.--with-nth")
+          reload = reload .. string.format("change-with-nth(%s)+", with_nth or "..")
+        end
         cur_sub = new_sub
         cur_picker = new_picker
       end
