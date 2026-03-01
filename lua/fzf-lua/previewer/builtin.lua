@@ -3,143 +3,12 @@ local shell = require "fzf-lua.shell"
 local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 local Object = require "fzf-lua.class"
+local TSContext = require "fzf-lua.previewer.tscontext"
 
 ---@diagnostic disable-next-line: deprecated
 local uv = vim.uv or vim.loop
 local api = vim.api
 local fn = vim.fn
-
-
----@class fzf-lua.TSContext
----@field private _winids table<integer, integer>
-local TSContext = {}
-
----@param opts TSContext.UserConfig
----@return boolean
-function TSContext.setup(opts)
-  if TSContext._setup then return true end
-  if not package.loaded["treesitter-context"] then
-    return false
-  end
-  -- Our temp nvim-treesitter-context config
-  TSContext._setup_opts = {}
-  for k, v in pairs(opts) do
-    TSContext._setup_opts[k] = { v }
-  end
-  local config = require("treesitter-context.config")
-  TSContext._config = utils.tbl_deep_clone(config)
-  for k, v in pairs(TSContext._setup_opts) do
-    v[2] = config[k]
-    config[k] = v[1]
-  end
-  TSContext._winids = {}
-  TSContext._setup = true
-  return true
-end
-
-function TSContext.deregister()
-  if not TSContext._setup then return end
-  for winid, _ in pairs(TSContext._winids) do
-    TSContext.close(winid)
-  end
-  local config = require("treesitter-context.config")
-  for k, v in pairs(TSContext._setup_opts) do
-    config[k] = v[2]
-  end
-  TSContext._config = nil
-  TSContext._winids = nil
-  TSContext._setup = nil
-end
-
----@param winid integer
----@return boolean?
-function TSContext.is_attached(winid)
-  if not TSContext._setup then return false end
-  return TSContext._winids[winid] and true or false
-end
-
----@param winid integer
-function TSContext.close(winid)
-  if not TSContext._setup then return end
-  require("treesitter-context.render").close(winid)
-  TSContext._winids[winid] = nil
-end
-
----@param winid integer
----@param bufnr integer
-function TSContext.toggle(winid, bufnr)
-  if not TSContext._setup then return end
-  if TSContext.is_attached(winid) then
-    TSContext.close(winid)
-  else
-    TSContext.update(winid, bufnr)
-  end
-end
-
-function TSContext.inc_dec_maxlines(num, winid, bufnr)
-  if not TSContext._setup then return end
-  local n = tonumber(num)
-  if not n then return end
-  local config = require("treesitter-context.config")
-  local max_lines = config.max_lines or 0
-  config.max_lines = math.max(0, max_lines + n)
-  utils.info("treesitter-context `max_lines` set to %d.", config.max_lines)
-  if TSContext.is_attached(winid) then
-    for _, t in ipairs({ 0, 20 }) do
-      vim.defer_fn(function() TSContext.update(winid, bufnr) end, t)
-    end
-  end
-end
-
----@alias TSContext.UserConfig table
----@param winid integer
----@param bufnr integer
----@param opts? TSContext.UserConfig
-function TSContext.update(winid, bufnr, opts)
-  opts = opts or {}
-  if not TSContext.setup(opts) then return end
-  assert(not api.nvim_win_is_valid(winid) or bufnr == api.nvim_win_get_buf(winid))
-  local render = require("treesitter-context.render")
-  local context_ranges, context_lines = require("treesitter-context.context").get(winid)
-  if not context_ranges or #context_ranges == 0 then
-    TSContext.close(winid)
-  else
-    assert(context_lines)
-    local function open()
-      if api.nvim_buf_is_valid(bufnr) and api.nvim_win_is_valid(winid) then
-        -- ensure context win is above
-        local fix = function(win, zindex)
-          if win and api.nvim_win_is_valid(win) then
-            utils.win_set_config(win, { zindex = zindex })
-            -- noautocmd don't ignore WinResized/WinScrolled
-            utils.wo[win].eventignorewin = "WinResized"
-          end
-        end
-        api.nvim_win_call(winid, function()
-          render.open(winid, context_ranges, context_lines)
-          TSContext.window_contexts = TSContext.window_contexts or
-              utils.upvfind(render.open, "window_contexts")
-          if not TSContext.window_contexts then return end
-          local window_context = TSContext.window_contexts[winid]
-          if not window_context then return end
-          fix(window_context.context_winid, TSContext.zindex)
-          fix(window_context.gutter_winid, TSContext.zindex)
-        end)
-        TSContext._winids[winid] = bufnr
-      end
-    end
-    -- NOTE: no longer required since adding `eventignore` to `FzfWin:set_winopts`
-    -- if TSContext.is_attached(winid) == bufnr then
-    open()
-    -- else
-    --   -- HACK: but the entire nvim-treesitter-context is essentially a hack
-    --   -- https://github.com/ibhagwan/fzf-lua/issues/1552#issuecomment-2525456813
-    --   for _, t in ipairs({ 0, 20 }) do
-    --     vim.defer_fn(function() open() end, t)
-    --   end
-    -- end
-  end
-end
 
 local Previewer = {}
 
@@ -168,8 +37,7 @@ local Previewer = {}
 ---@field winopts_orig table
 ---@field extensions { [string]: string[]? }
 ---@field ueberzug_scaler "crop"|"distort"|"contain"|"fit_contain"|"cover"|"forced_cover"
----@field cached_bufnrs table<integer, [integer, integer]|true?> items are cached_pos
----@field cached_buffers table<string, fzf-lua.buffer_or_file.Bcache?>
+---@field bcache fzf-lua.Bcache
 ---@field listed_buffers table<integer, boolean?>
 ---@field clear_on_redraw boolean?
 ---@field timers? table<string, uv.uv_timer_t?>
@@ -219,9 +87,9 @@ function Previewer.base:new(o, opts)
     utils.warn(("Invalid ueberzug image scaler '%s', option will be omitted.")
       :format(o.ueberzug_scaler))
   end
-  -- cached buffers
-  self.cached_bufnrs = {}
-  self.cached_buffers = {}
+  self.bcache = require("fzf-lua.previewer.bcache").new(function(buf)
+    self:safe_buf_delete(buf, true)
+  end)
   -- store currently listed buffers, this helps us determine which buffers
   -- navigated with 'vim.lsp.util.show_document' we can safely unload
   -- since show_document reuses buffers and I couldn't find a better way
@@ -250,9 +118,7 @@ function Previewer.base:close(do_not_clear_cache)
   TSContext.deregister()
   self:restore_winopts()
   self:clear_preview_buf()
-  if not do_not_clear_cache then
-    self:clear_cached_buffers()
-  end
+  if not do_not_clear_cache and self.bcache then self.bcache:clear() end
   self.winopts_orig = {}
 end
 
@@ -311,7 +177,7 @@ function Previewer.base:safe_buf_delete(bufnr, del_cached)
   elseif not api.nvim_buf_is_valid(bufnr) then
     -- print("safe_buf_delete INVALID", bufnr)
     return
-  elseif not del_cached and self.cached_bufnrs[bufnr] then
+  elseif not del_cached and self.bcache:get_pos(bufnr) then
     -- print("safe_buf_delete CACHED", bufnr)
     return
   end
@@ -354,38 +220,6 @@ function Previewer.base:set_preview_buf(newbuf, min_winopts, no_wipe)
     -- get wiped when pressing `ctrl-g` too quickly
     self:safe_buf_delete(curbuf)
   end
-end
-
----@param bufnr integer
----@param key string
----@param min_winopts boolean?
----@return fzf-lua.buffer_or_file.Bcache
-function Previewer.base:cache_buffer(bufnr, key, min_winopts)
-  local cached = self.cached_buffers[key]
-  if cached then
-    if cached.bufnr == bufnr then
-      -- already cached, nothing to do
-      return cached
-    else
-      -- new cached buffer for key, wipe current cached buf
-      self.cached_bufnrs[cached.bufnr] = nil
-      self:safe_buf_delete(cached.bufnr)
-    end
-  end
-  self.cached_bufnrs[bufnr] = true
-  self.cached_buffers[key] = { bufnr = bufnr, min_winopts = min_winopts }
-  -- remove buffer auto-delete since it's now cached
-  vim.bo[bufnr].bufhidden = "hide"
-  return self.cached_buffers[key]
-end
-
-function Previewer.base:clear_cached_buffers()
-  -- clear the buffer cache
-  for _, c in pairs(self.cached_buffers) do
-    self:safe_buf_delete(c.bufnr, true)
-  end
-  self.cached_bufnrs = {}
-  self.cached_buffers = {}
 end
 
 ---@param newbuf boolean?
@@ -608,13 +442,8 @@ function Previewer.base:scroll(direction)
   -- Conditionally toggle 'cursorline' based on cursor position
   self:maybe_set_cursorline(preview_winid, self.orig_pos)
   -- HACK: Hijack cached bufnr value as last scroll position
-  if self.cached_bufnrs[self.preview_bufnr] then
-    if direction == "reset" then
-      self.cached_bufnrs[self.preview_bufnr] = true
-    else
-      self.cached_bufnrs[self.preview_bufnr] = api.nvim_win_get_cursor(preview_winid)
-    end
-  end
+  self.bcache:update_pos(self.preview_bufnr,
+    direction == "reset" or api.nvim_win_get_cursor(preview_winid))
   self.win:update_preview_scrollbar()
   self:update_render_markdown()
   self:update_ts_context()
@@ -744,16 +573,6 @@ end
 ---@return boolean
 function Previewer.buffer_or_file:should_clear_preview(_)
   return false
-end
-
----@param entry fzf-lua.buffer_or_file.Entry|{}
----@return boolean
-function Previewer.buffer_or_file:should_load_buffer(entry)
-  -- we don't have a previous entry to compare to or `do_not_cache` is set meaning
-  -- it's a terminal command (chafa, viu, ueberzug) which requires a reload
-  -- return 'true' so the buffer will be loaded in ::populate_preview_buf
-  if not self.loaded_entry or self.loaded_entry.do_not_cache then return true end
-  return self.loaded_entry.cached ~= entry.cached
 end
 
 function Previewer.buffer_or_file:start_ueberzug()
@@ -890,32 +709,6 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
   return true
 end
 
----@diagnostic disable-next-line: unused
----@param entry fzf-lua.buffer_or_file.Entry
----@return string?
-function Previewer.buffer_or_file:key_from_entry(entry)
-  if entry.do_not_cache then return nil end
-  return (entry.bufnr and string.format("bufnr:%d", entry.bufnr) or entry.uri or entry.path) or nil
-end
-
----get and check if cached is update-to-date to be reuse
----@param entry fzf-lua.buffer_or_file.Entry
----@return fzf-lua.buffer_or_file.Bcache?
-function Previewer.buffer_or_file:check_bcache(entry)
-  local key = self:key_from_entry(entry)
-  if not key then return end
-  local cached = self.cached_buffers[key]
-  if not cached then return end
-  entry.cached = cached
-  assert(self.cached_bufnrs[cached.bufnr])
-  assert(api.nvim_buf_is_valid(cached.bufnr))
-  if entry.tick ~= cached.tick then
-    cached.invalid = true
-    cached.tick = entry.tick
-  end
-  return cached
-end
-
 ---@alias fzf-lua.line (string|[string,string])[]
 ---@param content (string|fzf-lua.line)[]
 ---@return string[], table
@@ -1004,27 +797,28 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   entry = entry or coroutine.yield()
   if entry_str ~= self._last_entry or not self.win:validate_preview() then return false end
   if utils.tbl_isempty(entry) then return end
-  local cached = self:check_bcache(entry)
-  if cached and not cached.invalid and not self:should_load_buffer(entry) then
-    assert(cached.bufnr == self.preview_bufnr)
-    -- same file/buffer as previous entry no need to reload content
-    -- only call post to set cursor location
-    if type(self.cached_bufnrs[self.preview_bufnr]) == "table"
-        and ((entry.line and entry.line > 0 and entry.line ~= self.orig_pos[1])
-          or (entry.col and entry.col > 0 and entry.col - 1 ~= self.orig_pos[2])) then
-      -- entry is within the same buffer but line|col has changed
-      -- clear cached buffer position so we scroll to entry's line|col
-      self.cached_bufnrs[self.preview_bufnr] = true
+
+  -- check if cached is update-to-date to be reuse
+  local cached, stale = self.bcache:check(entry)
+  entry.cached = cached
+
+  -- same file/buffer as previous entry no need to change preview buf
+  -- (e.g. only lnum changed, or unhide/resume)
+  if cached and not stale and cached.bufnr == self.preview_bufnr then
+    local line = entry.line and entry.line > 0 and entry.line or nil
+    local col = entry.col and entry.col > 0 and entry.col - 1 or nil
+    if not vim.deep_equal({ line, col }, self.orig_pos) then
+      self.bcache:reset_pos(self.preview_bufnr)
     end
-    self:preview_buf_post(entry)
+    self:preview_buf_post(entry, cached.min_winopts)
     return
   end
-  if cached and not cached.invalid and cached.bufnr then
+  if cached and not stale then
     self:set_preview_buf(cached.bufnr, cached.min_winopts)
     self:preview_buf_post(entry, cached.min_winopts)
     return
   end
-  local reuse_buf = (cached or {}).bufnr -- cached must be invalid now if exists
+  local reuse_buf = (cached or {}).bufnr -- cached must be stale now if exists
   self.clear_on_redraw = false
   -- kill previously running terminal jobs
   -- when using external commands extension map
@@ -1329,9 +1123,9 @@ local filetype_detect = function(bufnr, filepath)
   return ft ~= "" and ft or nil
 end
 
----@param entry? fzf-lua.buffer_or_file.Entry
+---@param entry fzf-lua.buffer_or_file.Entry
 function Previewer.buffer_or_file:do_syntax(entry)
-  if not self.preview_bufnr or not entry or entry.cached then return end -- vim.bo[buf]._ft
+  if not self.preview_bufnr or entry.cached then return end -- vim.bo[buf]._ft
   local bufnr = self.preview_bufnr
   local preview_winid = self.win.preview_winid
   local filepath = entry.path ---@type string?
@@ -1455,7 +1249,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   ---@diagnostic disable-next-line: unnecessary-assert
   local buf, win, hls = assert(self.preview_bufnr, self.win.preview_winid, self.win.hls)
   pcall(api.nvim_win_call, win, function()
-    local cached_pos = self.cached_bufnrs[buf]
+    local cached_pos = self.bcache:get_pos(buf)
     if type(cached_pos) ~= "table" then cached_pos = nil end
     local lnum, col = entry.line, math.max(1, entry.col or 1)
     if not lnum or lnum < 1 then
@@ -1577,10 +1371,7 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
 
   -- Should we cache the current preview buffer?
   -- we cache only named buffers with valid path/uri
-  local key = self:key_from_entry(entry)
-  if not key then return end
-  local cached = self:cache_buffer(self.preview_bufnr, key, min_winopts)
-  cached.tick = entry.tick
+  self.bcache:set(entry, self.preview_bufnr, min_winopts)
 end
 
 ---@class fzf-lua.previewer.HelpTags : fzf-lua.previewer.BufferOrFile,{}
