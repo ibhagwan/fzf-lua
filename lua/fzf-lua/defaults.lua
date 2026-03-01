@@ -557,6 +557,7 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
     end)
     return {
       { "files",   desc = "Files" },
+      -- { "blines",  desc = "blines", prefix = "/" },
       { "buffers", desc = "Bufs", prefix = "$" },
       doc_sym_supported and {
         "lsp_document_symbols",
@@ -591,10 +592,11 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
       },
     }
   end,
-  fzf_opts          = { ["--nth"] = false, ["--with-nth"] = false },
+  fzf_opts          = { ["--delimiter"] = "[\t]", ["--with-nth"] = ".." },
   winopts           = { preview = { winopts = { cursorline = true } } },
   _ctx              = { includeBuflist = true }, -- we include a buffer picker
   _fzf_nth_devicons = false,
+  _treesitter       = true,
 })
 
 
