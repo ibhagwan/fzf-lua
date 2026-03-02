@@ -194,7 +194,8 @@ M.global = function(opts)
       -- with-nth for the transform (e.g. for blines)
       -- TODO: we can probably inerit all opts but I'm not sure what would be
       -- the effects of that, this entire picker needs refactoring
-      local picker_opts = config.normalize_opts(t.opts, name:gsub("^lsp_", "lsp."))
+      local picker_opts = config.normalize_opts(t.opts,
+        name:gsub("^lsp_", "lsp."):gsub("^git_", "git."):gsub("^dap_", "dap."))
       if not utils.map_get(def, "opts.fzf_opts") then utils.map_set(def, "opts.fzf_opts", {}) end
       def.opts.fzf_opts = vim.tbl_deep_extend("force", def.opts.fzf_opts, picker_opts.fzf_opts)
       -- Instantiate the previewer, opts isn't guaranteed if the picker
