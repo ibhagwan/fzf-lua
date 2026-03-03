@@ -10,15 +10,6 @@ local exec_lua = child.lua
 ---@diagnostic disable-next-line: param-type-mismatch
 local _nonicons_path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "nonicons.nvim")
 if not vim.uv.fs_stat(_nonicons_path) then
-  local site = vim.fs.joinpath(vim.fn.stdpath("data"), "site")
-  for _, p in ipairs(vim.fn.globpath(site, "pack/*/opt/nonicons.nvim", false, true)) do
-    if vim.uv.fs_stat(p) then
-      _nonicons_path = vim.fn.resolve(p)
-      break
-    end
-  end
-end
-if not vim.uv.fs_stat(_nonicons_path) then
   _nonicons_path = vim.fs.abspath(vim.fs.joinpath("deps", "nonicons.nvim"))
 end
 
