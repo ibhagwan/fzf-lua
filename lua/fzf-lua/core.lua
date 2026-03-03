@@ -384,7 +384,7 @@ M.fzf = function(contents, opts)
       if not tonumber(args[1]) then return end
       -- NOTE: do not use local ref `fzf_win` as it my change on resume (#2255)
       local winobj = utils.fzf_winobj()
-      if not winobj then return end
+      if not winobj or winobj.closing then return end
       return string.format("change-preview-window(%s)", winobj:normalize_preview_layout().str)
     end)
   end
