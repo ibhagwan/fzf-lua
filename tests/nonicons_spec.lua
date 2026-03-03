@@ -53,7 +53,7 @@ local function validate_nonicons(headless_child)
   local icons = state.icons
   assert.is.True(utils.tbl_count(icons.by_filename) > 0)
   assert.is.True(utils.tbl_count(icons.by_ext) > 0)
-  assert.is.True(utils.tbl_count(icons.by_filetype) > 0)
+  assert.are.equal(icons.by_filetype, nil)
   local ext_count = 0
   local ext_2part_count = 0
   for ext, _ in pairs(resolve.ext_map) do
@@ -66,7 +66,6 @@ local function validate_nonicons(headless_child)
   assert.are.equal(utils.tbl_count(icons.by_ext), ext_count)
   assert.are.equal(utils.tbl_count(icons.by_ext_2part), ext_2part_count)
   assert.are.equal(utils.tbl_count(icons.by_filename), utils.tbl_count(resolve.filename_map))
-  assert.are.equal(utils.tbl_count(icons.by_filetype), utils.tbl_count(resolve.ft_map))
 end
 
 local T = helpers.new_set_with_child(child, {

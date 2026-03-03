@@ -324,29 +324,23 @@ function Nonicons:load_icons(opts)
   local resolve = require("nonicons.resolve")
   local colors = require("nonicons.colors")
 
-  local function icon_info(icon_name)
-    local code = mapping[icon_name]
-    if not code then return end
+  local function make_icon(icon_name)
     local color_entry = colors[icon_name]
     return {
-      icon = vim.fn.nr2char(code),
+      icon = vim.fn.nr2char(mapping[icon_name]),
       color = color_entry
           and (vim.o.termguicolors and color_entry[1] or tostring(color_entry[2]))
           or nil,
     }
   end
 
-  local default_info = icon_info("file") or { icon = "", color = nil }
-  local dir_info = icon_info("file-directory") or { icon = "", color = nil }
-
   self._state = {
     icon_padding = type(opts.icon_padding) == "string" and opts.icon_padding or nil,
-    dir_icon = vim.tbl_extend("force", dir_info, opts.dir_icon or {}),
-    default_icon = vim.tbl_extend("force", default_info, opts.default_icon or {}),
+    dir_icon = vim.tbl_extend("force", make_icon("file-directory"), opts.dir_icon or {}),
+    default_icon = vim.tbl_extend("force", make_icon("file"), opts.default_icon or {}),
     termguicolors = vim.o.termguicolors,
     icons = {
       by_filename = {},
-      by_filetype = {},
       by_ext = {},
       by_ext_2part = {},
       ext_has_2part = {},
@@ -354,29 +348,17 @@ function Nonicons:load_icons(opts)
   }
 
   for ext, icon_name in pairs(resolve.ext_map) do
-    local info = icon_info(icon_name)
-    if info then
-      if ext:match(".+%.") then
-        self._state.icons.by_ext_2part[ext] = info
-        self._state.icons.ext_has_2part[path.extension(ext)] = true
-      else
-        self._state.icons.by_ext[ext] = info
-      end
+    local info = make_icon(icon_name)
+    if ext:match(".+%.") then
+      self._state.icons.by_ext_2part[ext] = info
+      self._state.icons.ext_has_2part[path.extension(ext)] = true
+    else
+      self._state.icons.by_ext[ext] = info
     end
   end
 
   for filename, icon_name in pairs(resolve.filename_map) do
-    local info = icon_info(icon_name)
-    if info then
-      self._state.icons.by_filename[filename] = info
-    end
-  end
-
-  for ft, icon_name in pairs(resolve.ft_map) do
-    local info = icon_info(icon_name)
-    if info then
-      self._state.icons.by_filetype[ft] = info
-    end
+    self._state.icons.by_filename[filename] = make_icon(icon_name)
   end
 
   return true
