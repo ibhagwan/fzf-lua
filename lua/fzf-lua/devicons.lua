@@ -289,6 +289,104 @@ function MiniIcons:icon_by_ft(ft)
   return self._package.get("filetype", ft)
 end
 
+local Nonicons = DevIconsBase:extend()
+
+function Nonicons:new()
+  self._name = "nonicons"
+  self._package_name = "nonicons"
+  return self
+end
+
+function Nonicons:load(do_not_lazy_load)
+  if not self._package_loaded
+      and (not do_not_lazy_load or package.loaded[self._package_name])
+  then
+    self._package_loaded, self._package = pcall(require, self._package_name)
+    if self._package_loaded then
+      ---@diagnostic disable-next-line: param-type-mismatch
+      self._package_path = path.parent(path.parent(path.normalize(
+        debug.getinfo(self._package.get, "S").source:gsub("^@", ""))))
+    end
+  end
+  return self._package_loaded
+end
+
+function Nonicons:load_icons(opts)
+  if not self:loaded() then return end
+
+  if self._state and self._state.icons
+      and self._state.termguicolors == vim.o.termguicolors
+  then
+    return true
+  end
+
+  local mapping = require("nonicons.mapping")
+  local resolve = require("nonicons.resolve")
+  local colors = require("nonicons.colors")
+
+  local function icon_info(icon_name)
+    local code = mapping[icon_name]
+    if not code then return end
+    local color_entry = colors[icon_name]
+    return {
+      icon = vim.fn.nr2char(code),
+      color = color_entry
+          and (vim.o.termguicolors and color_entry[1] or tostring(color_entry[2]))
+          or nil,
+    }
+  end
+
+  local default_info = icon_info("file") or { icon = "", color = nil }
+  local dir_info = icon_info("file-directory") or { icon = "", color = nil }
+
+  self._state = {
+    icon_padding = type(opts.icon_padding) == "string" and opts.icon_padding or nil,
+    dir_icon = vim.tbl_extend("force", dir_info, opts.dir_icon or {}),
+    default_icon = vim.tbl_extend("force", default_info, opts.default_icon or {}),
+    termguicolors = vim.o.termguicolors,
+    icons = {
+      by_filename = {},
+      by_filetype = {},
+      by_ext = {},
+      by_ext_2part = {},
+      ext_has_2part = {},
+    },
+  }
+
+  for ext, icon_name in pairs(resolve.ext_map) do
+    local info = icon_info(icon_name)
+    if info then
+      if ext:match(".+%.") then
+        self._state.icons.by_ext_2part[ext] = info
+        self._state.icons.ext_has_2part[path.extension(ext)] = true
+      else
+        self._state.icons.by_ext[ext] = info
+      end
+    end
+  end
+
+  for filename, icon_name in pairs(resolve.filename_map) do
+    local info = icon_info(icon_name)
+    if info then
+      self._state.icons.by_filename[filename] = info
+    end
+  end
+
+  for ft, icon_name in pairs(resolve.ft_map) do
+    local info = icon_info(icon_name)
+    if info then
+      self._state.icons.by_filetype[ft] = info
+    end
+  end
+
+  return true
+end
+
+function Nonicons:icon_by_ft(ft)
+  if not self:loaded() then return end
+  return self._package.get_icon_by_filetype(ft)
+end
+
 local FzfLuaServer = DevIconsBase:extend()
 
 function FzfLuaServer:new()
@@ -348,11 +446,19 @@ local M = {}
 
 M.__SRV = FzfLuaServer:new()
 M.__MINI = MiniIcons:new()
+M.__NONICONS = Nonicons:new()
 M.__DEVICONS = NvimWebDevicons:new()
+
+local PROVIDERS = {
+  srv = M.__SRV,
+  mini = M.__MINI,
+  nonicons = M.__NONICONS,
+  devicons = M.__DEVICONS,
+}
 
 -- Load an icons provider and sets the module local var `M.PLUGIN`
 -- "auto" prefers nvim-web-devicons, "srv" RPC-queries main instance
----@param provider nil|boolean|string|"auto"|"devicons"|"mini"|"srv"
+---@param provider nil|boolean|string|"auto"|"devicons"|"mini"|"nonicons"|"srv"
 ---@param do_not_lazy_load boolean?
 ---@return boolean success
 M.plugin_load = function(provider, do_not_lazy_load)
@@ -360,9 +466,7 @@ M.plugin_load = function(provider, do_not_lazy_load)
   if provider == nil and M.PLUGIN and M.PLUGIN:loaded() then
     return true
   end
-  M.PLUGIN = provider == "srv" and M.__SRV
-      or provider == "mini" and M.__MINI
-      or provider == "devicons" and M.__DEVICONS
+  M.PLUGIN = PROVIDERS[provider]
       or (function()
         if _G._fzf_lua_is_headless then
           -- headless instance, fzf-lua server exists, attempt
@@ -434,24 +538,12 @@ end
 ---@param plugin_name string?
 ---@return table STATE
 M.state = function(plugin_name)
-  if plugin_name == "mini" then
-    return M.__MINI:state()
-  elseif plugin_name == "devicons" then
-    return M.__DEVICONS:state()
-  else
-    return M.PLUGIN:state()
-  end
+  return (PROVIDERS[plugin_name] or M.PLUGIN):state()
 end
 
 -- NOTE: this gets called when on "make_entry.postprocess" when `file_icons="mini"`
 M.set_state = function(plugin_name, state)
-  if plugin_name == "mini" then
-    return M.__MINI:set_state(state)
-  elseif plugin_name == "devicons" then
-    return M.__DEVICONS:set_state(state)
-  else
-    return M.PLUGIN:set_state(state)
-  end
+  return (PROVIDERS[plugin_name] or M.PLUGIN):set_state(state)
 end
 
 -- For testing
