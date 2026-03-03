@@ -1,3 +1,7 @@
+local NVIM_BIN = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
+local NVIM_RUNTIME = os.getenv("FZF_LUA_NVIM_RUNTIME") or os.getenv("VIMRUNTIME")
+if NVIM_RUNTIME then vim.env.VIMRUNTIME = NVIM_RUNTIME end
+
 ---@diagnostic disable-next-line: deprecated
 local api, uv, fn = vim.api, vim.uv or vim.loop, vim.fn
 ---@module 'ffi'?
@@ -124,7 +128,7 @@ return {
         if ffi and #entries == 1 then
           local lnum = entries[1].line > 0 and entries[1].line or nil
           local col = entries[1].col > 0 and entries[1].col or nil
-          posix_exec(fn.exepath("nvim"), entries[1].path,
+          posix_exec(NVIM_BIN, entries[1].path,
             lnum and ("+" .. entries[1].line) or nil,
             col and ("+norm! %s|"):format(col) or nil)
         elseif ffi and #entries > 1 then
@@ -140,7 +144,7 @@ return {
             })
           end
           local qf_str = vim.inspect(qf_items):gsub("\n%s*", " ")
-          posix_exec(fn.exepath("nvim"), "-c", string.format(
+          posix_exec(NVIM_BIN, "-c", string.format(
             "lua vim.o.hidden=false; vim.fn.setqflist(%s); vim.cmd('cfirst | set hidden&')",
             qf_str))
         end
@@ -173,7 +177,7 @@ return {
           vim.uv.kill(pid, vim.uv.constants.SIGTERM)
         end
         enable_stdio_inheritance()
-        posix_exec(fn.exepath("nvim"), "--remote-ui", "--server", remote)
+        posix_exec(NVIM_BIN, "--remote-ui", "--server", remote)
       end
     }
   }
