@@ -932,8 +932,9 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
       -- don't display the warning unless the user specifically set
       -- file_icons to `true` or `mini|devicons`
       if not tonumber(opts.file_icons) then
+        local display_names = { mini = "mini.icons", nonicons = "nonicons" }
         utils.warn("error loading '%s', disabling 'file_icons'.",
-          opts.file_icons == "mini" and "mini.icons" or "nvim-web-devicons")
+          display_names[opts.file_icons] or "nvim-web-devicons")
       end
       opts.file_icons = nil
     end
