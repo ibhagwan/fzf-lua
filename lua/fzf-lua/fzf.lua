@@ -179,10 +179,10 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
 
   -- fzf-tmux spawns outside neovim, don't set filetype/insert mode
   if not opts.is_fzf_tmux then
-    vim.bo.filetype = "fzf"
-
     local fzfwin = utils.fzf_winobj()
     if fzfwin then fzfwin:update_statusline() end
+
+    vim.bo.filetype = "fzf"
 
     -- See note in "ModeChanged" above
     -- NOTE: feedkeys hack not required since
