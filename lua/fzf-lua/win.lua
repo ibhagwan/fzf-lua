@@ -782,6 +782,10 @@ function FzfWin:attach_previewer(previewer)
     end
     self:close_preview()
   end
+  -- This makes sure previewer.base:close is always called on :close
+  --   (1) Used by swiper/ivy/custom previewers
+  --   (2) Overwritten (extended) in builtin previewer (in :redraw_preview)
+  self.on_closes.preview = function(hide) self:close_preview(hide) end
   self._previewer = previewer
   self.previewer_is_builtin = previewer and previewer.type == "builtin"
   self.toggle_behavior = previewer and previewer.toggle_behavior or self.toggle_behavior
