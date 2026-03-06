@@ -780,8 +780,12 @@ function FzfWin:attach_previewer(previewer)
     if not self._previewer.preview_bufnr and self:validate_preview() then
       self._previewer.preview_bufnr = api.nvim_win_get_buf(self.preview_winid)
     end
-    self:close_preview()
+    if self.on_closes.preview then self.on_closes.preview() end
   end
+  -- This makes sure previewer.base:close is always called on :close
+  --   (1) Used by swiper/ivy/custom previewers
+  --   (2) Overwritten (extended) in builtin previewer (in :redraw_preview)
+  self.on_closes.preview = function(hide) self:close_preview(hide) end
   self._previewer = previewer
   self.previewer_is_builtin = previewer and previewer.type == "builtin"
   self.toggle_behavior = previewer and previewer.toggle_behavior or self.toggle_behavior
