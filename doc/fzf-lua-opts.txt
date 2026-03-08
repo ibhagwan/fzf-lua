@@ -1725,7 +1725,7 @@ Lua patterns of files to ignore.
 
 files.line_query                               *fzf-lua-opts-files.line_query*
 
-Type: `boolean|fun(query: string) -> multi<...>`, Default: `nil`
+Type: `boolean|fun(query: string) -> (string?,string?)`, Default: `nil`
 
 Parse the query for a line number suffix, e.g. `file.lua:10` will open
 `file.lua` at line 10.
