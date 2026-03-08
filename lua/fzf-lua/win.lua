@@ -612,13 +612,12 @@ function FzfWin:normalize_winopts()
     winopts.row = math.floor((winopts.row or 0) + screenpos.row - 1)
     winopts.col = math.floor((winopts.col or 0) + screenpos.col - 1)
     winopts.relative = nil
-  else
-    -- make row close to the center of screen (include cmdheight)
-    -- avoid breaking existing test
-    winopts.row = self:normalize_size(assert(tonumber(winopts.row)), vim.o.lines - winopts.height)
-    winopts.col = self:normalize_size(assert(tonumber(winopts.col)), max_width - winopts.width)
-    winopts.row = math.min(winopts.row, max_height - winopts.height)
   end
+  -- make row close to the center of screen (include cmdheight)
+  -- avoid breaking existing test
+  winopts.row = self:normalize_size(assert(tonumber(winopts.row)), vim.o.lines - winopts.height)
+  winopts.col = self:normalize_size(assert(tonumber(winopts.col)), max_width - winopts.width)
+  winopts.row = math.min(winopts.row, max_height - winopts.height)
   -- width/height can be used for text area
   winopts.width = math.max(1, winopts.width - w)
   winopts.height = math.max(1, winopts.height - h)

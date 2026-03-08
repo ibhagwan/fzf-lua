@@ -310,6 +310,34 @@ T["win"]["toggle"][""] = new_set(
     end
   })
 
+T["win"]["relative=cursor"] = function()
+  -- Ignore terminal command line with process number
+  local screen_opts = { ignore_text = { 24, 28 }, normalize_paths = helpers.IS_WIN() }
+  local opts = {
+    __expect_lines = true,
+    __screen_opts = screen_opts,
+    winopts = {
+      relative = "cursor",
+      preview = { layout = "horizontal", horizontal = "left:50%" }
+    },
+    previewer = function() return require("fzf-lua.test.previewer").builtin end,
+    __after_open = function()
+      child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+      if helpers.IS_WIN() then vim.uv.sleep(250) end
+    end,
+  }
+  helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
+  child.cmd([[enew]])
+  set_lines({ ("a"):rep(child.o.columns) })
+  type_keys("g$")
+  -- pretend we closed the window to make helpers won't wait for new open
+  exec_lua([[_G._fzf_lua_on_create = nil]])
+  exec_lua([[_G._fzf_load_called = nil]])
+  helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
+  child.cmd([[bwipe!]])
+end
+
+
 T["win"]["reuse"] = new_set({
   parametrize = {
     { {} },
