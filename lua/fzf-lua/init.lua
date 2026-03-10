@@ -264,6 +264,7 @@ local lazyloaded_modules = {
   git_worktrees = { "fzf-lua.providers.git", "worktrees" },
   git_tags = { "fzf-lua.providers.git", "tags" },
   jj_files = { "fzf-lua.providers.jj", "files" },
+  vcs_files = { "fzf-lua.providers.files", "vcs_files" },
   oldfiles = { "fzf-lua.providers.oldfiles", "oldfiles" },
   history = { "fzf-lua.providers.oldfiles", "history" },
   undotree = { "fzf-lua.providers.undotree", "undotree" },
