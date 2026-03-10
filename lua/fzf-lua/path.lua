@@ -636,10 +636,9 @@ function M.jj_root(opts, noerr)
     end
     if not found then return nil end
   end
-  local cmd = { "jj", "root", "--ignore-working-copy" }
-  if opts and opts.cwd then
-    cmd = { "jj", "-R", opts.cwd, "root", "--ignore-working-copy" }
-  end
+  local cmd = (opts and opts.cwd)
+      and { "jj", "-R", opts.cwd, "root", "--ignore-working-copy" }
+      or { "jj", "root", "--ignore-working-copy" }
   local output, err = utils.io_systemlist(cmd)
   if err ~= 0 then
     if not noerr then utils.info(table.concat(output, "\n")) end
