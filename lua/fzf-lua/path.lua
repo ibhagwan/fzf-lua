@@ -614,6 +614,40 @@ function M.git_root(opts, noerr)
   return output[1]
 end
 
+function M.is_jj_repo(opts, noerr)
+  return not not M.jj_root(opts, noerr)
+end
+
+function M.jj_root(opts, noerr)
+  -- Fast check: walk up looking for .jj directory to avoid spawning
+  -- a process when not in a jj workspace
+  local cwd = opts and opts.cwd or uv.cwd()
+  if cwd then
+    local found = false
+    local dir = cwd
+    while dir and #dir > 0 do
+      if uv.fs_stat(dir .. "/.jj") then
+        found = true
+        break
+      end
+      local parent = M.parent(dir, true)
+      if not parent or parent == dir then break end
+      dir = parent
+    end
+    if not found then return nil end
+  end
+  local cmd = { "jj", "root", "--ignore-working-copy" }
+  if opts and opts.cwd then
+    cmd = { "jj", "-R", opts.cwd, "root", "--ignore-working-copy" }
+  end
+  local output, err = utils.io_systemlist(cmd)
+  if err ~= 0 then
+    if not noerr then utils.info(table.concat(output, "\n")) end
+    return nil
+  end
+  return output[1]
+end
+
 ---@param str string
 ---@param opts fzf-lua.config.Resolved
 ---@return fzf-lua.path.Entry|fzf-lua.keymap.Entry
