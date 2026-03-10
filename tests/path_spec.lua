@@ -586,4 +586,67 @@ describe("Testing path module", function()
       assert.is.True(path.is_jj_repo({ cwd = "/jj/workspace" }, true))
     end)
   end)
+
+  describe("vcs_files", function()
+    local files_provider = require("fzf-lua.providers.files")
+    local jj_provider = require("fzf-lua.providers.jj")
+    local git_provider = require("fzf-lua.providers.git")
+
+    local orig_is_jj_repo = path.is_jj_repo
+    local orig_is_git_repo = path.is_git_repo
+    local orig_jj_files = jj_provider.files
+    local orig_git_files = git_provider.files
+    local orig_files = files_provider.files
+
+    after_each(function()
+      path.is_jj_repo = orig_is_jj_repo
+      path.is_git_repo = orig_is_git_repo
+      jj_provider.files = orig_jj_files
+      git_provider.files = orig_git_files
+      files_provider.files = orig_files
+    end)
+
+    it("delegates to jj.files when in a jj repo", function()
+      local called = nil
+      path.is_jj_repo = function() return true end
+      path.is_git_repo = function() return true end -- should not matter
+      jj_provider.files = function() called = "jj" end
+      git_provider.files = function() called = "git" end
+      files_provider.files = function() called = "files" end
+      files_provider.vcs_files({})
+      eq(called, "jj")
+    end)
+
+    it("delegates to git.files when in git repo but not jj", function()
+      local called = nil
+      path.is_jj_repo = function() return false end
+      path.is_git_repo = function() return true end
+      jj_provider.files = function() called = "jj" end
+      git_provider.files = function() called = "git" end
+      files_provider.files = function() called = "files" end
+      files_provider.vcs_files({})
+      eq(called, "git")
+    end)
+
+    it("delegates to files when not in any vcs repo", function()
+      local called = nil
+      path.is_jj_repo = function() return false end
+      path.is_git_repo = function() return false end
+      jj_provider.files = function() called = "jj" end
+      git_provider.files = function() called = "git" end
+      files_provider.files = function() called = "files" end
+      files_provider.vcs_files({})
+      eq(called, "files")
+    end)
+
+    it("prefers jj over git in colocated repos", function()
+      local called = nil
+      path.is_jj_repo = function() return true end
+      path.is_git_repo = function() return true end
+      jj_provider.files = function() called = "jj" end
+      git_provider.files = function() called = "git" end
+      files_provider.vcs_files({})
+      eq(called, "jj")
+    end)
+  end)
 end)
