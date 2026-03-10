@@ -177,13 +177,35 @@ end
 ---@param opts table|{}?
 ---@return thread?, string?, table?
 M.vcs_files = function(opts)
+  -- Detect VCS type and normalize with the appropriate defaults
+  local defaults_key
   if path.is_jj_repo(opts, true) then
-    return require("fzf-lua.providers.jj").files(opts)
+    defaults_key = "jj.files"
   elseif path.is_git_repo(opts, true) then
-    return require("fzf-lua.providers.git").files(opts)
-  else
+    defaults_key = "git.files"
+  end
+  if not defaults_key then
     return M.files(opts)
   end
+  opts = config.normalize_opts(opts, defaults_key)
+  if not opts then return end
+  -- Set cwd to VCS root
+  if defaults_key == "jj.files" then
+    local jj_root = path.jj_root(opts)
+    if not opts.cwd or not jj_root then
+      opts.cwd = jj_root
+    end
+  else
+    local git_root = path.git_root(opts)
+    if not opts.cwd or not git_root then
+      opts.cwd = git_root
+    end
+    if opts.git_dir or opts.git_worktree then
+      opts.cmd = path.git_cwd(opts.cmd, opts)
+    end
+  end
+  if not opts.cwd then return end
+  return core.fzf_exec(opts.cmd, opts)
 end
 
 return M
