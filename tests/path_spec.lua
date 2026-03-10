@@ -482,4 +482,108 @@ describe("Testing path module", function()
       })
     end)
   end)
+
+  describe("jj_root", function()
+    local fs_stat = vim.uv.fs_stat
+    local io_systemlist = utils.io_systemlist
+
+    after_each(function()
+      vim.uv.fs_stat = fs_stat
+      utils.io_systemlist = io_systemlist
+    end)
+
+    it("returns nil when no .jj directory exists", function()
+      vim.uv.fs_stat = function(_) return nil end
+      eq(path.jj_root({ cwd = "/some/path/without/jj" }, true), nil)
+    end)
+
+    it("returns nil when .jj exists but jj command fails", function()
+      vim.uv.fs_stat = function(p)
+        if p == "/some/project/.jj" then return { type = "directory" } end
+        return nil
+      end
+      utils.io_systemlist = function(_)
+        return { "error: not a jj repo" }, 1
+      end
+      eq(path.jj_root({ cwd = "/some/project" }, true), nil)
+    end)
+
+    it("returns root when .jj exists and jj command succeeds", function()
+      vim.uv.fs_stat = function(p)
+        if p == "/some/project/.jj" then return { type = "directory" } end
+        return nil
+      end
+      utils.io_systemlist = function(_)
+        return { "/some/project" }, 0
+      end
+      eq(path.jj_root({ cwd = "/some/project" }, true), "/some/project")
+    end)
+
+    it("walks up to find .jj in parent directory", function()
+      vim.uv.fs_stat = function(p)
+        if p == "/some/project/.jj" then return { type = "directory" } end
+        return nil
+      end
+      utils.io_systemlist = function(_)
+        return { "/some/project" }, 0
+      end
+      eq(path.jj_root({ cwd = "/some/project/deep/subdir" }, true), "/some/project")
+    end)
+
+    it("passes -R flag when opts.cwd is set", function()
+      local captured_cmd
+      vim.uv.fs_stat = function(p)
+        if p == "/workspace/.jj" then return { type = "directory" } end
+        return nil
+      end
+      utils.io_systemlist = function(cmd)
+        captured_cmd = cmd
+        return { "/workspace" }, 0
+      end
+      path.jj_root({ cwd = "/workspace" }, true)
+      assert.is.same(captured_cmd, { "jj", "-R", "/workspace", "root", "--ignore-working-copy" })
+    end)
+
+    it("omits -R flag when no opts.cwd", function()
+      -- When opts.cwd is nil, we use uv.cwd() for the walk-up but
+      -- don't pass -R to the jj command
+      local real_cwd = vim.uv.cwd()
+      vim.uv.fs_stat = function(p)
+        if p == real_cwd .. "/.jj" then return { type = "directory" } end
+        -- Walk up parents
+        return nil
+      end
+      utils.io_systemlist = function(cmd)
+        assert.is.same(cmd, { "jj", "root", "--ignore-working-copy" })
+        return { real_cwd }, 0
+      end
+      path.jj_root({}, true)
+    end)
+  end)
+
+  describe("is_jj_repo", function()
+    local fs_stat = vim.uv.fs_stat
+    local io_systemlist = utils.io_systemlist
+
+    after_each(function()
+      vim.uv.fs_stat = fs_stat
+      utils.io_systemlist = io_systemlist
+    end)
+
+    it("returns false when not in a jj repo", function()
+      vim.uv.fs_stat = function(_) return nil end
+      assert.is.False(path.is_jj_repo({ cwd = "/not/a/jj/repo" }, true))
+    end)
+
+    it("returns true when in a jj repo", function()
+      vim.uv.fs_stat = function(p)
+        if p == "/jj/workspace/.jj" then return { type = "directory" } end
+        return nil
+      end
+      utils.io_systemlist = function(_)
+        return { "/jj/workspace" }, 0
+      end
+      assert.is.True(path.is_jj_repo({ cwd = "/jj/workspace" }, true))
+    end)
+  end)
 end)
