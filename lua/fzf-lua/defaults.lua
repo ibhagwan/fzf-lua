@@ -894,6 +894,24 @@ M.defaults.git                   = {
   },
 }
 
+M.defaults.jj                    = {
+  ---Jujutsu tracked files.
+  files = {
+    previewer         = M._default_previewer_fn,
+    cmd               = "jj file list --ignore-working-copy",
+    multiprocess      = 1, ---@type integer|boolean
+    _type             = "file",
+    file_icons        = 1, ---@type integer|boolean
+    color_icons       = true,
+    git_icons         = false,
+    fzf_opts          = { ["--multi"] = true, ["--scheme"] = "path" },
+    _fzf_nth_devicons = true,
+    _actions          = function() return M.globals.actions.files end,
+    _headers          = { "cwd" },
+    winopts           = { preview = { winopts = { cursorline = false } } },
+  },
+}
+
 ---Grep using `rg`, `grep` or other grep commands.
 ---@class fzf-lua.config.Grep: fzf-lua.config.Base
 ---Shell command used to execute grep, default: auto detect `rg|grep`.
