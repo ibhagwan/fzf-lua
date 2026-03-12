@@ -628,6 +628,7 @@ function M.jj_root(opts, noerr)
   -- Fast check: walk up looking for .jj directory to avoid spawning
   -- a process when not in a jj workspace
   local cwd = opts and opts.cwd or uv.cwd()
+  local root_dir
   if cwd then
     local found = false
     local dir = cwd
@@ -644,9 +645,10 @@ function M.jj_root(opts, noerr)
       if not noerr then utils.info("not inside a jj workspace") end
       return nil
     end
+    root_dir = dir
   end
   local cmd = (opts and opts.cwd)
-      and { "jj", "-R", opts.cwd, "root", "--ignore-working-copy" }
+      and { "jj", "-R", root_dir, "root", "--ignore-working-copy" }
       or { "jj", "root", "--ignore-working-copy" }
   local output, err = utils.io_systemlist(cmd)
   if err ~= 0 then

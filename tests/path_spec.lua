@@ -649,5 +649,16 @@ describe("Testing path module", function()
       files_provider.vcs_files({})
       eq(called, "jj")
     end)
+
+    it("handles nil opts without error", function()
+      local called = nil
+      path.is_jj_repo = function() return false end
+      path.is_git_repo = function() return false end
+      jj_provider.files = function() called = "jj" end
+      git_provider.files = function() called = "git" end
+      files_provider.files = function() called = "files" end
+      files_provider.vcs_files()
+      eq(called, "files")
+    end)
   end)
 end)
