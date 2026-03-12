@@ -74,6 +74,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim)
   using fzf's native previewer
 - [delta](https://github.com/dandavison/delta) - syntax highlighted git pager
   for git status previews
+- [jj](https://github.com/jj-vcs/jj) - for Jujutsu commands (`jj_files`, `vcs_files`)
 - [nvim-dap](https://github.com/mfussenegger/nvim-dap) - for Debug Adapter
   Protocol (DAP) support
 - [nvim-treesitter-context](https://github.com/nvim-treesitter/nvim-treesitter-context) - for
