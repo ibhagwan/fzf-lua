@@ -211,6 +211,7 @@ Fzf-Lua conveniently comes with a VS-Code like picker by default
 | `treesitter`     | current buffer treesitter symbols |
 | `tabs`           | open tabs                         |
 | `args`           | argument list                     |
+| `vcs_files`      | `jj`/`git` files or `find`/`fd`   |
 
 </details>
 <details>
@@ -272,6 +273,16 @@ Fzf-Lua conveniently comes with a VS-Code like picker by default
 | `git_worktrees` | git worktrees            |
 | `git_tags`      | git tags                 |
 | `git_stash`     | git stash                |
+
+</details>
+<details>
+<summary>Jujutsu</summary>
+
+### Jujutsu
+
+| Command    | List                   |
+| ---------- | ---------------------- |
+| `jj_files` | `jj file list` tracked files |
 
 </details>
 <details>
@@ -823,9 +834,9 @@ previewers = {
     -- otherwise auto-detect prioritizes `fd`:`rg`:`find`
     -- default options are controlled by 'fd|rg|find|_opts'
     -- cmd            = "rg --files",
-    find_opts         = [[-type f \! -path '*/.git/*']],
-    rg_opts           = [[--color=never --hidden --files -g "!.git"]],
-    fd_opts           = [[--color=never --hidden --type f --type l --exclude .git]],
+    find_opts         = [[\( -name .git -o -name .jj \) -prune -o -type f -print]],
+    rg_opts           = [[--color=never --hidden --files -g "!.git" -g "!.jj"]],
+    fd_opts           = [[--color=never --hidden --type f --type l --exclude .git --exclude .jj]],
     dir_opts          = [[/s/b/a:-d]],
     -- by default, cwd appears in the header only if {opts} contain a cwd
     -- parameter to a different folder than the current working directory

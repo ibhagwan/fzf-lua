@@ -617,10 +617,16 @@ function M.git_root(opts, noerr)
   return output[1]
 end
 
+---@param opts? table
+---@param noerr? boolean
+---@return boolean
 function M.is_jj_repo(opts, noerr)
   return not not M.jj_root(opts, noerr)
 end
 
+---@param opts? table
+---@param noerr? boolean
+---@return string?
 function M.jj_root(opts, noerr)
   -- Fast check: walk up looking for .jj directory to avoid spawning
   -- a process when not in a jj workspace
@@ -637,7 +643,10 @@ function M.jj_root(opts, noerr)
       if not parent or parent == dir then break end
       dir = parent
     end
-    if not found then return nil end
+    if not found then
+      if not noerr then utils.info("not inside a jj workspace") end
+      return nil
+    end
   end
   local cmd = (opts and opts.cwd)
       and { "jj", "-R", opts.cwd, "root", "--ignore-working-copy" }
