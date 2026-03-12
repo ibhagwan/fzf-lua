@@ -130,6 +130,10 @@ OPTIONAL DEPENDENCIES                          *fzf-lua-optional-dependencies*
   <https://github.com/MeanderingProgrammer/render-markdown.nvim> or
   markview.nvim <https://github.com/OXY2DEV/markview.nvim> - for rendering
   markdown files in the previewer
+- jj <https://github.com/jj-vcs/jj> - for `jj_files` and `vcs_files` in
+  Jujutsu repositories; these commands are no-ops when the `jj` executable
+  is not found on PATH (install via `cargo install jj-cli` or see
+  https://jj-vcs.github.io/jj/latest/install-and-setup)
 Below are a few optional dependencies for viewing media files (which you need
 to configure in `previewer.builtin.extensions`):
 
