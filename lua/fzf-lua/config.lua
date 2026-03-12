@@ -733,7 +733,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     end
     if opts.rg_opts then opts.rg_opts = "-0 " .. opts.rg_opts end
     if opts.grep_opts then opts.grep_opts = "-Z " .. opts.grep_opts end
-    if opts.find_opts then opts.find_opts = "-print0 " .. opts.find_opts end
+    if opts.find_opts then opts.find_opts = opts.find_opts .. " -print0" end
   end
 
   do

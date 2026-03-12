@@ -631,6 +631,13 @@ function M.jj_root(opts, noerr)
   -- Fast check: walk up looking for .jj directory to avoid spawning
   -- a process when not in a jj workspace
   local cwd = opts and opts.cwd or uv.cwd()
+  -- Normalize cwd: expand ~ and resolve relative paths to absolute
+  if cwd then
+    cwd = libuv.expand(cwd)
+    if not M.is_absolute(cwd) then
+      cwd = M.join({ uv.cwd(), cwd })
+    end
+  end
   local root_dir
   if cwd then
     local found = false
