@@ -45,13 +45,19 @@ local exec_term = function(c, cmd, args)
   eq(tonumber(id) > 0, true)
   c.lua(string.format("vim.fn.jobwait({%s})", tostring(id)))
   c.wait_until(function()
-    local lines = c.get_lines()
-    for i = #lines, 1, -1 do
-      if lines[i] == "" then
-        table.remove(lines, i)
+    if FzfLua.utils.__HAS_NVIM_012 then
+      -- https://github.com/neovim/neovim/pull/37987
+      local exitcode = c.lua_get("vim.api.nvim_get_chan_info(vim.bo.channel).exitcode")
+      return tonumber(exitcode) == 0
+    else
+      local lines = c.get_lines()
+      for i = #lines, 1, -1 do
+        if lines[i] == "" then
+          table.remove(lines, i)
+        end
       end
+      return lines[#lines] == "[Process exited 0]"
     end
-    return lines[#lines] == "[Process exited 0]"
   end)
 end
 
