@@ -130,9 +130,10 @@ OPTIONAL DEPENDENCIES                          *fzf-lua-optional-dependencies*
   <https://github.com/MeanderingProgrammer/render-markdown.nvim> or
   markview.nvim <https://github.com/OXY2DEV/markview.nvim> - for rendering
   markdown files in the previewer
-- jj <https://github.com/jj-vcs/jj> - for `jj_files` and `vcs_files` in
-  Jujutsu repositories; these commands are no-ops when the `jj` executable
-  is not found on PATH (install via `cargo install jj-cli` or see
+- jj <https://github.com/jj-vcs/jj> - for Jujutsu repository support;
+  `jj_files` is a no-op when the `jj` executable is not found on PATH,
+  while `vcs_files` falls back to `git_files` or the generic `files`
+  picker (install via `cargo install jj-cli` or see
   https://jj-vcs.github.io/jj/latest/install-and-setup)
 Below are a few optional dependencies for viewing media files (which you need
 to configure in `previewer.builtin.extensions`):
@@ -812,9 +813,9 @@ CUSTOMIZATION                                          *fzf-lua-customization*
         -- otherwise auto-detect prioritizes `fd`:`rg`:`find`
         -- default options are controlled by 'fd|rg|find|_opts'
         -- cmd            = "rg --files",
-        find_opts         = [[\( -name .git -o -name .jj \) -prune -o -type f -print]],
-        rg_opts           = [[--color=never --hidden --files -g "!.git" -g "!.jj"]],
-        fd_opts           = [[--color=never --hidden --type f --type l --exclude .git --exclude .jj]],
+        find_opts         = [[\( -name .git -o -name .jj \) -prune -o -type f]],
+        rg_opts           = [[--color=never --files -g "!.git" -g "!.jj"]],
+        fd_opts           = [[--color=never --type f --type l --exclude .git --exclude .jj]],
         dir_opts          = [[/s/b/a:-d]],
         -- by default, cwd appears in the header only if {opts} contain a cwd
         -- parameter to a different folder than the current working directory
