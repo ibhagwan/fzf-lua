@@ -587,6 +587,7 @@ describe("Testing path module", function()
     end)
   end)
 
+  ---@diagnostic disable: duplicate-set-field
   describe("vcs_files", function()
     local files_provider = require("fzf-lua.providers.files")
     local jj_provider = require("fzf-lua.providers.jj")

@@ -522,7 +522,7 @@ M.defaults.files  = {
   _fzf_nth_devicons      = true,
   git_status_cmd         = {
     "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" },
-  find_opts              = [[-type f \! -path '*/.git/*' \! -path '*/.jj/*']],
+  find_opts              = [[\( -name .git -o -name .jj \) -prune -o -type f -print]],
   rg_opts                = [[--color=never --files -g "!.git" -g "!.jj"]],
   fd_opts                = [[--color=never --type f --type l --exclude .git --exclude .jj]],
   dir_opts               = [[/s/b/a:-d]],

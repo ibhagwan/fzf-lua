@@ -177,6 +177,7 @@ end
 ---@param opts table|{}?
 ---@return thread?, string?, table?
 M.vcs_files = function(opts)
+  opts = opts or {}
   if path.is_jj_repo(opts, true) then
     return require("fzf-lua.providers.jj").files(opts)
   elseif path.is_git_repo(opts, true) then
