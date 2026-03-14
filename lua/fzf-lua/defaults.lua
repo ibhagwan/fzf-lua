@@ -687,7 +687,9 @@ M.defaults.git                   = {
     _headers          = { "cwd", "actions" },
     actions           = {
       ["ctrl-q"] = {
-        fn = function() FzfLua.git_commits() end,
+        fn = function(_, _o)
+          FzfLua.git_commits(vim.deepcopy(_o.__call_opts))
+        end,
         reuse = true,
         header = "git commits"
       },
