@@ -563,6 +563,9 @@ end
 
 ---@overload fun(cmd: string, opts: table): string
 ---@overload fun(cmd: string[], opts: table): string[]
+---@param cmd string|string[]
+---@param opts table
+---@return string|string[]
 function M.git_cwd(cmd, opts)
   local git_args = {
     { "cwd",          "-C" },

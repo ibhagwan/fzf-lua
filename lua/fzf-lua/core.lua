@@ -836,6 +836,22 @@ M.set_header = function(opts)
         return opts.search and #opts.search > 0 and opts.search
       end,
     },
+    ref = {
+      hdr_txt_opt = "ref_header_txt",
+      hdr_txt_str = "ref: ",
+      hdr_txt_col = opts.hls.header_text,
+      val = function()
+        return opts.ref and #opts.ref > 0 and opts.ref
+      end,
+    },
+    ref1 = {
+      hdr_txt_opt = "ref1_header_txt",
+      hdr_txt_str = "ref1: ",
+      hdr_txt_col = opts.hls.header_text,
+      val = function()
+        return opts.ref1 and #opts.ref1 > 0 and opts.ref1
+      end,
+    },
     lsp_query = {
       hdr_txt_opt = "lsp_query_header_txt",
       hdr_txt_str = "Query: ",

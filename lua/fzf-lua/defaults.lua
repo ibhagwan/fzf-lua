@@ -666,15 +666,16 @@ M.defaults.git                   = {
   },
   ---Git diff (changed files vs a git ref).
   ---@class fzf-lua.config.GitDiff: fzf-lua.config.GitBase
-  ---Git reference to compare against.
-  ---@field ref? string
+  ---Git reference(s) to compare against.
+  ---@field ref? string|string[]
   ---Git reference used as the base for the comparison.
-  ---@field compare_against? string
+  -- `compare_against` was renamed to `ref1`
+  ---@field ref1? string
   diff = {
-    cmd               = "git --no-pager diff --name-only {compare_against} {ref}",
-    ref               = "HEAD",
-    compare_against   = "",
-    preview           = "git diff {compare_against} {ref} {file}",
+    cmd               = "git --no-pager diff --name-only {ref1} {ref}",
+    ref               = nil,
+    ref1              = nil,
+    preview           = "git diff {ref1} {ref} {file}",
     preview_pager     = M._preview_pager_fn,
     multiprocess      = 1, ---@type integer|boolean
     _type             = "file",
@@ -683,7 +684,14 @@ M.defaults.git                   = {
     fzf_opts          = { ["--multi"] = true },
     _fzf_nth_devicons = true,
     _actions          = function() return M.globals.actions.files end,
-    _headers          = { "cwd" },
+    _headers          = { "cwd", "actions" },
+    actions           = {
+      ["ctrl-q"] = {
+        fn = function() FzfLua.git_commits() end,
+        reuse = true,
+        header = "git commits"
+      },
+    },
   },
   ---Git diff hunks (changed lines).
   ---@class fzf-lua.config.GitHunks: fzf-lua.config.GitBase
@@ -717,6 +725,17 @@ M.defaults.git                   = {
     actions       = {
       ["enter"]  = actions.git_checkout,
       ["ctrl-y"] = { fn = actions.git_yank_commit, exec_silent = true },
+      ["ctrl-d"] = {
+        fn = function(s, _o)
+          if not s[1] then return FzfLua.utils.fzf_exit() end
+          local o = vim.deepcopy(_o.__call_opts)
+          o.ref = s[1]:match("[^ ]+")
+          o.ref1 = o.ref .. "~"
+          FzfLua.git_diff(o)
+        end,
+        reuse = true,
+        header = "git diff"
+      },
     },
     fzf_opts      = { ["--no-multi"] = true },
     _headers      = { "actions", "cwd" },
@@ -816,6 +835,7 @@ M.defaults.git                   = {
   },
   ---Git stashes.
   ---@class fzf-lua.config.GitStash: fzf-lua.config.GitBase
+  ---@field search? string
   stash = {
     cmd           = "git --no-pager stash list",
     preview       = "git --no-pager stash show --patch --color {1}",

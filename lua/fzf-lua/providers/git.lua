@@ -91,39 +91,61 @@ local function git_preview(opts, file)
   return opts.preview
 end
 
+---@param opts fzf-lua.config.GitBase|{}?
+---@param ref string
+---@return boolean
+local git_validate_ref = function(opts, ref)
+  local cmd = path.git_cwd({ "git", "rev-parse", "--verify", ref }, opts --[[@as table]])
+  local _, exit_code = utils.io_systemlist(cmd --[[@as string[] ]])
+  if exit_code ~= 0 then
+    utils.warn("Invalid git ref %s", ref)
+    return false
+  end
+  return true
+end
+
 ---@param opts fzf-lua.config.GitDiff|{}?
 ---@return thread?, string?, table?
 M.diff = function(opts)
   ---@type fzf-lua.config.GitDiff
   opts = config.normalize_opts(opts, "git.diff")
   if not opts then return end
-  -- Ensure that ref is a commit hash in this git repository.
-  local validation_ref = path.git_cwd({ "git", "rev-parse", "--verify", opts.ref }, opts)
-  local _, exit_status_code_ref = utils.io_systemlist(validation_ref)
-  if exit_status_code_ref ~= 0 then
-    utils.warn("Invalid git ref %s", opts.ref)
-    return
+  -- Backward compat `compare_against` -> `ref1`
+  ---@diagnostic disable-next-line: undefined-field
+  opts.ref1 = opts.compare_against or opts.ref1
+  -- Convinience: ref as string array
+  if type(opts.ref) == "table" then
+    opts.ref, opts.ref1 = opts.ref[1], (opts.ref[2] or opts.ref1)
   end
-  -- If compare_against is given, ensure that it is a commit hash in this git repository.
-  if type(opts.compare_against) == "string" and #opts.compare_against > 0 then
-    local validation_comp = path.git_cwd({ "git", "rev-parse", "--verify", opts.compare_against },
-      opts)
-    local _, exit_code_status_comp = utils.io_systemlist(validation_comp)
-    if exit_code_status_comp ~= 0 then
-      utils.warn("Invalid git ref %s", opts.compare_against)
+  -- Ensure supplied refs are valid in this git repository.
+  for _, r in ipairs({ "ref", "ref1" }) do
+    if type(opts[r]) == "string" and #opts[r] > 0 and not git_validate_ref(opts, opts[r]) then
       return
     end
-  else
-    -- Default to diffing against ref and its direct parent commit.
-    opts.compare_against = opts.ref .. "^"
   end
-  opts.cmd = opts.cmd:gsub("[<{]ref[}>]", opts.ref)
-  opts.cmd = opts.cmd:gsub("[<{]compare_against[}>]", opts.compare_against)
-  opts.preview = opts.preview:gsub("[<{]ref[}>]", opts.ref)
-  opts.preview = opts.preview:gsub("[<{]compare_against[}>]", opts.compare_against)
+  -- If no ref was supplied default to last commit, otherwise compare against the index
+  if not opts.ref and not opts.ref1 then
+    local cmd = path.git_cwd(
+      { "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" },
+      opts --[[@as table]])
+    local out, exit_code = utils.io_systemlist(cmd --[[@as string[] ]])
+    if exit_code == 0 and #out == 0 then
+      opts.ref = "HEAD^"
+    else
+      opts.ref = "HEAD"
+    end
+  end
+  opts.cmd = opts.cmd:gsub("[<{]ref[}>]", opts.ref or "")
+  opts.cmd = opts.cmd:gsub("[<{]ref1[}>]", opts.ref1 or "")
+  opts.preview = opts.preview:gsub("[<{]ref[}>]", opts.ref or "")
+  opts.preview = opts.preview:gsub("[<{]ref1[}>]", opts.ref1 or "")
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   opts.preview = git_preview(opts, "{-1}")
+  if type(opts._headers) == "table" then
+    table.insert(opts._headers, "ref")
+    table.insert(opts._headers, "ref1")
+  end
   return core.fzf_exec(opts.cmd, opts)
 end
 
@@ -301,13 +323,10 @@ M.hunks = function(opts)
   ---@type fzf-lua.config.GitHunks
   opts = config.normalize_opts(opts, "git.hunks")
   if not opts then return end
-  local cmd = path.git_cwd({ "git", "rev-parse", "--verify", opts.ref }, opts)
-  local _, err = utils.io_systemlist(cmd)
-  if err ~= 0 then
-    utils.warn("Invalid git ref %s", opts.ref)
+  if type(opts.ref) == "string" and #opts.ref > 0 and not git_validate_ref(opts, opts.ref) then
     return
   end
-  opts.cmd = opts.cmd:gsub("[<{]ref[}>]", opts.ref)
+  opts.cmd = opts.cmd:gsub("[<{]ref[}>]", opts.ref or "")
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
 
