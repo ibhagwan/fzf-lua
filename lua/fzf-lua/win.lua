@@ -7,11 +7,14 @@ local api = vim.api
 local fn = vim.fn
 
 ---@class fzf-lua.PathShortener
----@field _ns integer?
----@field _wins table<integer, { bufnr: integer, shorten_len: integer }>
+---@field _ns integer? namespace for ephemeral conceal extmarks
+---@field _ns_padding integer? namespace for persistent inline VT padding
+---@field _wins table<integer, fzf-lua.PathShortener.WinData>
+---@field _bufs table<integer, boolean> buffers with active on_lines attachment
 local PathShortener = {}
 
 PathShortener._wins = {}
+PathShortener._bufs = {}
 
 -- Hoist constant byte values for performance
 local DOT_BYTE = path.dot_byte
@@ -19,8 +22,12 @@ local DOT_BYTE = path.dot_byte
 function PathShortener.setup()
   if PathShortener._ns then return end
   PathShortener._ns = api.nvim_create_namespace("fzf-lua.win.path_shorten")
+  PathShortener._ns_padding = api.nvim_create_namespace("fzf-lua.win.path_shorten.padding")
 
-  -- Register decoration provider with ephemeral extmarks
+  -- Register decoration provider with ephemeral conceal extmarks.
+  -- Conceal preserves all terminal highlights (fzf match highlighting,
+  -- cursor line bg, formatter ANSI colors) unlike overlay VT which
+  -- replaces the underlying terminal cell content entirely.
   api.nvim_set_decoration_provider(PathShortener._ns, {
     on_win = function(_, winid, bufnr, _topline, _botline)
       -- Only process registered fzf windows
@@ -33,25 +40,24 @@ function PathShortener.setup()
     on_line = function(_, winid, bufnr, row)
       local win_data = PathShortener._wins[winid]
       if not win_data then return end
-      PathShortener._apply_line(bufnr, row, win_data.shorten_len)
+      PathShortener._apply_conceal(bufnr, row, win_data.shorten_len)
     end,
   })
 end
 
----Apply path shortening to a single line using ephemeral extmarks
----@param buf integer buffer number
----@param row integer 0-indexed line number
----@param shorten_len integer number of characters to keep
-function PathShortener._apply_line(buf, row, shorten_len)
-  local lines = api.nvim_buf_get_lines(buf, row, row + 1, false)
-  local line = lines[1]
-  if not line or #line == 0 then return end
+---Parse a terminal buffer line and return conceal/padding information.
+---Identifies directory components in the path that can be shortened and
+---calculates both the conceal byte ranges and the total display width
+---that will be lost to concealing (for compensating inline VT padding).
+---@param line string the terminal buffer line text
+---@param shorten_len integer number of characters to keep per component
+---@return table? result with conceal_ranges, total_concealed_width, padding_col
+function PathShortener._parse_line(line, shorten_len)
+  if #line == 0 then return nil end
 
   -- Find the path portion of the line
   -- Lines may have prefixes like icons separated by nbsp (U+2002)
   -- Format: [fzf_pointer] [git_icon nbsp] [file_icon nbsp] path[:line:col:text]
-  -- When file_icons=false, there's no nbsp separator before the path
-  -- The fzf terminal also adds pointer/marker prefix (e.g., "> " or " ")
   local path_start = 1
   local last_nbsp = line:find(utils.nbsp, 1, true)
   if last_nbsp then
@@ -61,13 +67,20 @@ function PathShortener._apply_line(buf, row, shorten_len)
       last_nbsp = line:find(utils.nbsp, path_start, true)
     until not last_nbsp
   else
-    -- No nbsp means no icons - skip fzf's pointer/marker prefix
-    -- Paths start with: alphanumeric, `/`, `~`, `.`, or drive letter (Windows)
+    -- No nbsp: either file_icons=false entry or a non-entry line (prompt/header)
+    -- Filter out fzf's prompt/info line which contains the match counter
+    if line:find("%d+/%d+") then return nil end
     -- Skip leading whitespace and pointer characters until we hit a path char
     local first_path_char = line:find("[%w/~%.]")
-    if first_path_char then
-      path_start = first_path_char
-    end
+    if not first_path_char then return nil end
+    path_start = first_path_char
+    -- Reject lines where space appears before the first path separator
+    -- This filters out header lines like "cwd: /path/to/dir"
+    local sub = line:sub(path_start)
+    local first_sep = path.find_next_separator(sub, 1)
+    if not first_sep then return nil end
+    local first_space = sub:find(" ")
+    if first_space and first_space < first_sep then return nil end
   end
 
   -- Find where the path ends (at first colon after path_start, if any)
@@ -75,7 +88,6 @@ function PathShortener._apply_line(buf, row, shorten_len)
   local path_end = #line
   local colon_search_start = path_start
   -- On Windows, skip the drive letter colon (e.g., C:)
-  -- Check if char at path_start+1 is colon AND char at path_start+2 is a path separator
   if string.byte(line, path_start + 1) == path.colon_byte
       and path.byte_is_separator(string.byte(line, path_start + 2)) then
     colon_search_start = path_start + 2
@@ -85,56 +97,129 @@ function PathShortener._apply_line(buf, row, shorten_len)
     path_end = colon_pos - 1
   end
 
-  -- Now process the path portion for shortening
-  -- We need to conceal directory components, keeping only `shorten_len` chars
   local path_portion = line:sub(path_start, path_end)
 
-  -- Use path.find_next_separator to iterate through directory components
+  -- Iterate directory components and calculate conceal ranges
+  local conceal_ranges = {}
+  local total_concealed_width = 0
   local prev_sep = 0
   local sep_pos = path.find_next_separator(path_portion, 1)
+
   while sep_pos do
     local component_start = prev_sep + 1
     local component = path_portion:sub(component_start, sep_pos - 1)
+
+    -- Stop processing if component contains whitespace - this means we've
+    -- passed the actual path into fzf UI text (e.g., trailing spaces before border)
+    if component:find("%s") then
+      break
+    end
+
     local component_len = #component
 
     -- Count UTF-8 characters using vim.str_utfindex
-    -- Use "utf-32" to count code points (actual characters), not bytes.
-    -- "utf-8" would give byte positions, "utf-16" gives UTF-16 code units.
     local _, component_charlen = vim.str_utfindex(component, "utf-32")
-    component_charlen = component_charlen or component_len -- fallback to byte length
+    component_charlen = component_charlen or component_len
 
-    -- Only conceal if the component has more characters than shorten_len
     if component_charlen > shorten_len then
       -- Handle special case: component starts with '.' (hidden files/dirs)
       local keep_chars = shorten_len
       if string.byte(component, 1) == DOT_BYTE and component_charlen > shorten_len + 1 then
-        -- Keep the dot plus shorten_len characters
         keep_chars = shorten_len + 1
       end
-
-      -- Bounds check to prevent errors
       keep_chars = math.min(keep_chars, component_charlen)
 
-      -- Convert character count to byte offset using vim.str_byteindex
       local keep_bytes = vim.str_byteindex(component, "utf-32", keep_chars, false)
-      keep_bytes = keep_bytes or keep_chars -- fallback to character count (ASCII approximation)
+      keep_bytes = keep_bytes or keep_chars
 
       -- Calculate 0-indexed byte positions in the full line for extmark
-      -- path_start is 1-indexed, component_start is 1-indexed within path_portion
       local line_offset = path_start - 1 + component_start - 1
       local conceal_start = line_offset + keep_bytes
-      local conceal_end = line_offset + component_len -- end of component (before separator)
+      local conceal_end = line_offset + component_len
 
       if conceal_end > conceal_start then
-        pcall(api.nvim_buf_set_extmark, buf, PathShortener._ns, row, conceal_start, {
-          end_col = conceal_end,
-          conceal = "",
-          ephemeral = true,
+        conceal_ranges[#conceal_ranges + 1] = { conceal_start, conceal_end }
+        local concealed_text = component:sub(keep_bytes + 1)
+        total_concealed_width = total_concealed_width + fn.strdisplaywidth(concealed_text)
+      end
+    end
+
+    prev_sep = sep_pos
+    sep_pos = path.find_next_separator(path_portion, sep_pos + 1)
+  end
+
+  if #conceal_ranges == 0 then return nil end
+
+  -- Determine padding placement for inline VT that compensates concealed width.
+  -- Search for fzf's border/scrollbar character │ (U+2502) in the line.
+  -- For native fzf previewer (bat), this is the border between list and preview panes.
+  -- For builtin previewer, this is the scrollbar at the end of some lines.
+  -- Place padding right before the border to push it back to its original
+  -- display column, compensating for the concealed width.
+  local padding_col
+  local border_char = "\xe2\x94\x82" -- │ U+2502 BOX DRAWINGS LIGHT VERTICAL
+  local border_pos = line:find(border_char, path_start, true)
+  if border_pos then
+    padding_col = border_pos - 1 -- 0-indexed, right before │
+  else
+    padding_col = #line -- 0-indexed, after last byte
+  end
+
+  return {
+    conceal_ranges = conceal_ranges,
+    total_concealed_width = total_concealed_width,
+    padding_col = padding_col,
+  }
+end
+
+---Apply ephemeral conceal extmarks for a single line (called from decoration provider).
+---Concealing preserves all terminal highlights on non-concealed characters.
+---@param buf integer buffer number
+---@param row integer 0-indexed line number
+---@param shorten_len integer number of characters to keep
+function PathShortener._apply_conceal(buf, row, shorten_len)
+  local lines = api.nvim_buf_get_lines(buf, row, row + 1, false)
+  local line = lines[1]
+  if not line or #line == 0 then return end
+
+  local result = PathShortener._parse_line(line, shorten_len)
+  if not result then return end
+
+  for _, range in ipairs(result.conceal_ranges) do
+    pcall(api.nvim_buf_set_extmark, buf, PathShortener._ns, row, range[1], {
+      end_col = range[2],
+      conceal = "",
+      ephemeral = true,
+    })
+  end
+end
+
+---Update non-ephemeral inline VT padding for changed lines.
+---Called from nvim_buf_attach on_lines callback (outside rendering phase),
+---which is safe for setting non-ephemeral extmarks. Ephemeral inline VT
+---does not render in terminal buffers, so we must use non-ephemeral.
+---The padding compensates for the display width lost to concealing,
+---preventing fzf's scrollbar and preview border from shifting left.
+---@param buf integer buffer number
+---@param firstline integer first changed line (0-indexed)
+---@param new_lastline integer end of changed range (0-indexed, exclusive)
+---@param shorten_len integer number of characters to keep
+function PathShortener._update_padding(buf, firstline, new_lastline, shorten_len)
+  -- Clear existing padding extmarks in the changed range
+  pcall(api.nvim_buf_clear_namespace, buf, PathShortener._ns_padding, firstline, new_lastline)
+
+  local lines = api.nvim_buf_get_lines(buf, firstline, new_lastline, false)
+  for i, line in ipairs(lines) do
+    if line and #line > 0 then
+      local result = PathShortener._parse_line(line, shorten_len)
+      if result and result.total_concealed_width > 0 then
+        local row = firstline + i - 1
+        pcall(api.nvim_buf_set_extmark, buf, PathShortener._ns_padding, row, result.padding_col, {
+          virt_text = { { string.rep(" ", result.total_concealed_width) } },
+          virt_text_pos = "inline",
         })
       end
     end
-    prev_sep = sep_pos
-    sep_pos = path.find_next_separator(path_portion, sep_pos + 1)
   end
 end
 
@@ -146,14 +231,55 @@ function PathShortener.attach(winid, bufnr, shorten_len)
   if not winid or not bufnr then return end
   PathShortener.setup()
   shorten_len = (shorten_len == true) and 1 or tonumber(shorten_len) or 1
-  PathShortener._wins[winid] = { bufnr = bufnr, shorten_len = shorten_len }
+  PathShortener._wins[winid] = {
+    bufnr = bufnr,
+    shorten_len = shorten_len,
+  }
+
+  -- Attach to buffer for content changes (to manage non-ephemeral padding extmarks).
+  -- on_lines fires outside the rendering phase, making it safe to set
+  -- non-ephemeral extmarks without causing infinite redraw loops.
+  if not PathShortener._bufs[bufnr] then
+    PathShortener._bufs[bufnr] = true
+    api.nvim_buf_attach(bufnr, false, {
+      on_lines = function(_, buf, _, firstline, _lastline, new_lastline)
+        -- Find shorten_len for this buffer
+        local sl
+        for _, wd in pairs(PathShortener._wins) do
+          if wd.bufnr == buf then
+            sl = wd.shorten_len
+            break
+          end
+        end
+        if not sl then
+          PathShortener._bufs[buf] = nil
+          return true -- detach
+        end
+        -- Defer padding update to the next event loop tick.
+        -- Setting non-ephemeral extmarks directly within on_lines during
+        -- terminal I/O can cause the terminal grid to miscalculate line
+        -- widths, breaking the floating window layout. vim.schedule moves
+        -- the extmark update out of the terminal I/O handler.
+        vim.schedule(function()
+          if not api.nvim_buf_is_valid(buf) then return end
+          PathShortener._update_padding(buf, firstline, new_lastline, sl)
+        end)
+      end,
+    })
+  end
 end
 
 ---Unregister a window from path shortening
 ---@param winid integer window ID
 function PathShortener.detach(winid)
   if not winid then return end
+  local win_data = PathShortener._wins[winid]
   PathShortener._wins[winid] = nil
+  -- Clear padding extmarks and mark buffer for detach
+  if win_data and win_data.bufnr then
+    pcall(api.nvim_buf_clear_namespace, win_data.bufnr, PathShortener._ns_padding, 0, -1)
+    PathShortener._bufs[win_data.bufnr] = nil
+  end
 end
 
 ---@alias fzf-lua.win.previewPos "up"|"down"|"left"|"right"
