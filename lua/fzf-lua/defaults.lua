@@ -668,9 +668,11 @@ M.defaults.git                   = {
   ---@class fzf-lua.config.GitDiff: fzf-lua.config.GitBase
   ---Git reference(s) to compare against.
   ---@field ref? string|string[]
-  ---Git reference used as the base for the comparison.
   -- `compare_against` was renamed to `ref1`
+  ---Git reference used as the base for the comparison.
   ---@field ref1? string
+  ---Fzf cursor start position for ctrl-q git_commits
+  ---@field _pos? number
   diff = {
     cmd               = "git --no-pager diff --name-only {ref1} {ref}",
     ref               = nil,
@@ -688,7 +690,13 @@ M.defaults.git                   = {
     actions           = {
       ["ctrl-q"] = {
         fn = function(_, _o)
-          FzfLua.git_commits(vim.deepcopy(_o.__call_opts))
+          local o = vim.deepcopy(_o.__call_opts)
+          if o._pos then
+            o._fzf_cli_args = o._fzf_cli_args or {}
+            table.insert(o._fzf_cli_args, "--bind="
+              .. FzfLua.libuv.shellescape(string.format("load:+pos(%d)", o._pos)))
+          end
+          FzfLua.git_commits(o)
         end,
         reuse = true,
         header = "git commits"
@@ -733,10 +741,12 @@ M.defaults.git                   = {
           local o = vim.deepcopy(_o.__call_opts)
           o.ref = s[1]:match("[^ ]+")
           o.ref1 = o.ref .. "~"
+          o._pos = tonumber(s[2])
           FzfLua.git_diff(o)
         end,
-        reuse = true,
-        header = "git diff"
+        header = "git diff",
+        exec_silent = true,
+        field_index = "{} $FZF_POS",
       },
     },
     fzf_opts      = { ["--no-multi"] = true },
