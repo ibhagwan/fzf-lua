@@ -522,9 +522,9 @@ M.defaults.files  = {
   _fzf_nth_devicons      = true,
   git_status_cmd         = {
     "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" },
-  find_opts              = [[-type f \! -path '*/.git/*']],
-  rg_opts                = [[--color=never --files -g "!.git"]],
-  fd_opts                = [[--color=never --type f --type l --exclude .git]],
+  find_opts              = [[\( -name .git -o -name .jj \) -prune -o -type f]],
+  rg_opts                = [[--color=never --files -g "!.git" -g "!.jj"]],
+  fd_opts                = [[--color=never --type f --type l --exclude .git --exclude .jj]],
   dir_opts               = [[/s/b/a:-d]],
   hidden                 = true,
   toggle_ignore_flag     = "--no-ignore",
@@ -875,6 +875,14 @@ M.defaults.git                   = {
     ["T"] = { icon = "T", color = "magenta" },
     ["?"] = { icon = "?", color = "magenta" },
   },
+}
+
+M.defaults.jj                    = {
+  ---Jujutsu tracked files.
+  files = vim.tbl_deep_extend("force", M.defaults.git.files, {
+    cmd               = "jj file list --ignore-working-copy",
+    git_icons         = false,
+  }),
 }
 
 ---Grep using `rg`, `grep` or other grep commands.

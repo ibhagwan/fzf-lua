@@ -60,9 +60,23 @@ M.get_files_cmd = function(opts)
       if command:match("^find") then
         if k == "no_ignore" then return end
         if k == "hidden" then
-          is_find = true
-          toggle = not opts[k]
-          v = [[\! -path '*/.*']]
+          -- For find, hidden=true means no filter (show hidden),
+          -- hidden=false means add the exclusion filter
+          local filter = [[ \! -path '*/.*']]
+          if opts[k] then
+            -- Remove the hidden filter if present
+            command = command:gsub(utils.lua_regex_escape(filter), "")
+          elseif not command:match(utils.lua_regex_escape(filter)) then
+            -- Insert hidden filter before -print0 (if present) so the
+            -- predicate is evaluated before the print action
+            local pos = command:find(" %-print0")
+            if pos then
+              command = command:sub(1, pos - 1) .. filter .. command:sub(pos)
+            else
+              command = command .. filter
+            end
+          end
+          return
         end
       end
       command = utils.toggle_cmd_flag(command, v, toggle, is_find)
@@ -170,6 +184,21 @@ M.zoxide = function(opts)
   end)()
 
   return core.fzf_exec(opts.cmd, opts)
+end
+
+---VCS-aware file picker: uses jj_files in jj repos, git_files in git repos,
+---falls back to the regular files picker otherwise.
+---@param opts table|{}?
+---@return thread?, string?, table?
+M.vcs_files = function(opts)
+  opts = opts or {}
+  if path.is_jj_repo(opts, true) then
+    return require("fzf-lua.providers.jj").files(opts)
+  elseif path.is_git_repo(opts, true) then
+    return require("fzf-lua.providers.git").files(opts)
+  else
+    return M.files(opts)
+  end
 end
 
 return M
