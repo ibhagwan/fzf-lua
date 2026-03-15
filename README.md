@@ -835,7 +835,7 @@ previewers = {
     -- otherwise auto-detect prioritizes `fd`:`rg`:`find`
     -- default options are controlled by 'fd|rg|find|_opts'
     -- cmd            = "rg --files",
-    find_opts         = [[\( -name .git -o -name .jj \) -prune -o -type f -print]],
+    find_opts         = [[-type f \! -path '*/.git/*' \! -path '*/.jj/*']],
     rg_opts           = [[--color=never --hidden --files -g "!.git" -g "!.jj"]],
     fd_opts           = [[--color=never --hidden --type f --type l --exclude .git --exclude .jj]],
     dir_opts          = [[/s/b/a:-d]],
