@@ -665,5 +665,76 @@ describe("Testing path module", function()
       files_provider.vcs_files()
       eq(called, "files")
     end)
+
+    it("sets cwd_header_txt to 'cwd (jj): ' in a jj repo", function()
+      local received_opts
+      path.is_jj_repo = function() return true end
+      path.is_git_repo = function() return false end
+      jj_provider.files = function(opts) received_opts = opts end
+      files_provider.vcs_files({})
+      eq(received_opts.cwd_header_txt, "cwd (jj): ")
+    end)
+
+    it("sets cwd_header_txt to 'cwd (git): ' in a git repo", function()
+      local received_opts
+      path.is_jj_repo = function() return false end
+      path.is_git_repo = function() return true end
+      git_provider.files = function(opts) received_opts = opts end
+      files_provider.vcs_files({})
+      eq(received_opts.cwd_header_txt, "cwd (git): ")
+    end)
+
+    it("does not set cwd_header_txt when falling back to files", function()
+      local received_opts
+      path.is_jj_repo = function() return false end
+      path.is_git_repo = function() return false end
+      files_provider.files = function(opts) received_opts = opts end
+      files_provider.vcs_files({})
+      eq(received_opts.cwd_header_txt, nil)
+    end)
+  end)
+
+  describe("git_files quiet failure", function()
+    local orig_git_root = path.git_root
+
+    after_each(function()
+      path.git_root = orig_git_root
+    end)
+
+    it("shows info message and returns nil when not in a git repo", function()
+      local info_msg = nil
+      local orig_info = utils.info
+      utils.info = function(msg) info_msg = msg end
+      -- path.git_root calls utils.info when noerr is falsy
+      path.git_root = function(opts, noerr)
+        if not noerr then
+          utils.info("not a git repository")
+        end
+        return nil
+      end
+      local git_provider = require("fzf-lua.providers.git")
+      local config = require("fzf-lua.config")
+      local orig_normalize = config.normalize_opts
+      config.normalize_opts = function(opts) return opts or {} end
+      local result = git_provider.files({})
+      config.normalize_opts = orig_normalize
+      utils.info = orig_info
+      eq(info_msg, "not a git repository")
+      eq(result, nil)
+    end)
+  end)
+
+  describe("_headers configuration", function()
+    local defaults = require("fzf-lua.defaults").defaults
+
+    it("git.files has cwd in _headers", function()
+      assert.is.True(defaults.git.files._headers ~= nil)
+      assert.is.True(vim.tbl_contains(defaults.git.files._headers, "cwd"))
+    end)
+
+    it("jj.files has cwd in _headers", function()
+      assert.is.True(defaults.jj.files._headers ~= nil)
+      assert.is.True(vim.tbl_contains(defaults.jj.files._headers, "cwd"))
+    end)
   end)
 end)

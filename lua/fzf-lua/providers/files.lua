@@ -179,8 +179,10 @@ end
 M.vcs_files = function(opts)
   opts = opts or {}
   if path.is_jj_repo(opts, true) then
+    opts.cwd_header_txt = "cwd (jj): "
     return require("fzf-lua.providers.jj").files(opts)
   elseif path.is_git_repo(opts, true) then
+    opts.cwd_header_txt = "cwd (git): "
     return require("fzf-lua.providers.git").files(opts)
   else
     return M.files(opts)
