@@ -1856,8 +1856,8 @@ git_diff.ref1                                     *fzf-lua-opts-git_diff.ref1*
 
 Type: `string`, Default: `nil`
 
-Git reference used as the base for the comparison. `compare_against` was
-renamed to `ref1`
+`compare_against` was renamed to `ref1` Git reference used as the base for the
+comparison.
 
 
                                                                               

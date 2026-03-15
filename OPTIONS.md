@@ -1375,8 +1375,8 @@ Git reference(s) to compare against.
 
 Type: `string`, Default: `nil`
 
-Git reference used as the base for the comparison.
 `compare_against` was renamed to `ref1`
+Git reference used as the base for the comparison.
 
 #### git_files
 
