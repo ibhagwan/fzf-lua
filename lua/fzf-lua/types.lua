@@ -30,23 +30,18 @@ local FzfLua = require("fzf-lua")
 ---@field no_scrollbar? boolean
 ---@field tick? integer
 ---@field no_syntax? boolean
----@field cached? fzf-lua.buffer_or_file.Bcache
+---@field cached? fzf-lua.BcacheEntry
 ---@field filetype? string
 ---@field content? (string|fzf-lua.line)[]
 ---@field end_line? integer 1-based
 ---@field end_col? integer 1-based
 ---@field open_term? boolean open_term for content (cmd always open_term)
+---@field cache_key? any unique cache key for entry (to reuse preview buffer)
 
 ---@class fzf-lua.keymap.Entry
 ---@field vmap string?
 ---@field mode string?
 ---@field key string?
-
----@class fzf-lua.buffer_or_file.Bcache
----@field bufnr integer
----@field min_winopts? boolean
----@field invalid? boolean buffer content changed
----@field tick? integer
 
 ---@alias fzf-lua.config.Action fzf-lua.ActionSpec|fzf-lua.shell.data2|fzf-lua.shell.data2[]|false
 ---@alias fzf-lua.config.Actions { [1]?: boolean, [string]: fzf-lua.config.Action }
