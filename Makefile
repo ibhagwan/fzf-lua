@@ -43,6 +43,7 @@ deps:
 	git clone --depth=1 --single-branch https://github.com/nvim-tree/nvim-web-devicons deps/nvim-web-devicons
 	git clone --depth=1 --single-branch https://github.com/hrsh7th/nvim-cmp deps/nvim-cmp
 	git clone --depth=1 --single-branch https://github.com/mfussenegger/nvim-dap.git deps/nvim-dap
+	git clone --depth=1 --single-branch https://github.com/barrettruth/nonicons.nvim deps/nonicons.nvim
 
 
 # Target to clone the repository and checkout the specific SHA
