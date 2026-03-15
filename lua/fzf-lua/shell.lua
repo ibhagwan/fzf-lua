@@ -528,6 +528,14 @@ end
 M.wrap_spawn_stdio = function(opts)
   local is_win = utils.__IS_WINDOWS
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
+  local nvim_runtime = (function()
+    local rt = os.getenv("FZF_LUA_NVIM_RUNTIME")
+    if not rt then return "" end
+    return string.format(
+      is_win and [[set VIMRUNTIME=%s& ]] or "VIMRUNTIME=%s ",
+      is_win and vim.fs.normalize(rt) or libuv.shellescape(rt)
+    )
+  end)()
   -- TODO: should we check "cmd"?
   for _, k in ipairs({ "contents", "fn_transform", "fn_preprocess", "fn_postprocess" }) do
     local v = opts[k]
@@ -536,7 +544,8 @@ M.wrap_spawn_stdio = function(opts)
       M.check_upvalue(v, "opts." .. k)
     end
   end
-  local cmd_str = ("%s -u NONE -l %s %s"):format(
+  local cmd_str = ("%s%s -u NONE -l %s %s"):format(
+    nvim_runtime,
     libuv.shellescape(is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
     libuv.shellescape(vim.fn.fnamemodify(is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") ..
       "/spawn.lua"),
