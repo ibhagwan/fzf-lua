@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*        For Neovim >= 0.9.0       Last change: 2026 March 14
+*fzf-lua-opts.txt*        For Neovim >= 0.9.0       Last change: 2026 March 15
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
