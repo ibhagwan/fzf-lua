@@ -661,31 +661,40 @@ describe("Testing path module", function()
       eq(called, "files")
     end)
 
-    it("sets cwd_header_txt to 'cwd (jj): ' in a jj repo", function()
+    it("sets winopts.title to 'VCS Files (jj)' in a jj repo", function()
       local received_opts
       path.is_jj_repo = function() return true end
       path.is_git_repo = function() return false end
       jj_provider.files = function(opts) received_opts = opts end
       files_provider.vcs_files({})
-      eq(received_opts.cwd_header_txt, "cwd (jj): ")
+      eq(received_opts.winopts.title, " VCS Files (jj) ")
     end)
 
-    it("sets cwd_header_txt to 'cwd (git): ' in a git repo", function()
+    it("sets winopts.title to 'VCS Files (git)' in a git repo", function()
       local received_opts
       path.is_jj_repo = function() return false end
       path.is_git_repo = function() return true end
       git_provider.files = function(opts) received_opts = opts end
       files_provider.vcs_files({})
-      eq(received_opts.cwd_header_txt, "cwd (git): ")
+      eq(received_opts.winopts.title, " VCS Files (git) ")
     end)
 
-    it("does not set cwd_header_txt when falling back to files", function()
+    it("does not set winopts.title when falling back to files", function()
       local received_opts
       path.is_jj_repo = function() return false end
       path.is_git_repo = function() return false end
       files_provider.files = function(opts) received_opts = opts end
       files_provider.vcs_files({})
-      eq(received_opts.cwd_header_txt, nil)
+      eq(received_opts.winopts, nil)
+    end)
+
+    it("does not override user-supplied winopts.title", function()
+      local received_opts
+      path.is_jj_repo = function() return true end
+      path.is_git_repo = function() return false end
+      jj_provider.files = function(opts) received_opts = opts end
+      files_provider.vcs_files({ winopts = { title = " My Title " } })
+      eq(received_opts.winopts.title, " My Title ")
     end)
   end)
 
