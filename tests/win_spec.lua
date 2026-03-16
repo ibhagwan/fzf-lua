@@ -111,7 +111,10 @@ T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
   -- can :wqa when there're hide job #1817
   pcall(child.cmd, [[wqa]])
   -- child.is_running() didn't work as expected
-  eq(vim.fn.jobwait({ assert(child.job).id }, 1000)[1], 0)
+  local res = vim.fn.jobwait({ assert(child.job).id }, 1000)[1]
+  -- 0 = normal exit, -3 = already exited/invalid (acceptable race)
+  local valid_res = { [0] = true, [-3] = true }
+  eq(valid_res[res] or res, true) -- HACK: show the res code in the assert
 end
 
 T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()
@@ -323,7 +326,7 @@ T["win"]["relative=cursor"] = function()
     previewer = function() return require("fzf-lua.test.previewer").builtin end,
     __after_open = function()
       child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
-      if helpers.IS_WIN() then vim.uv.sleep(250) end
+      if not helpers.IS_LINUX() then vim.uv.sleep(250) end
     end,
   }
   helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)

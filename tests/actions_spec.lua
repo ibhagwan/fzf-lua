@@ -102,6 +102,9 @@ T["actions"]["vimcmd"] = new_set({
   },
 }, {
   function(action)
+    -- store mini.test float so we can return to it when
+    -- testing in main instance
+    local win = vim.api.nvim_get_current_win()
     local ctx = function()
       return {
         buf = child.api.nvim_get_current_buf(),
@@ -149,6 +152,12 @@ T["actions"]["vimcmd"] = new_set({
       __expect_lines = true,
       __after_open = function()
         child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+        -- Wait for previewer to load the LICENSE file entry and title to render
+        child.wait_until(function()
+          local entry = child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]])
+          return entry and entry:match("LICENSE") ~= nil
+        end)
+        vim.uv.sleep(100)  -- Allow async title update to render
         if helpers.IS_WIN() then vim.uv.sleep(250) end
       end,
       no_esc = true,
@@ -160,6 +169,9 @@ T["actions"]["vimcmd"] = new_set({
       eq({ "LICENSE", 3 }, { _ctx.name, child.fn.line(".") })
     end
     eq("live_grep", exec_lua([[return _G._fzf_info.cmd]]))
+    -- close tab and return to mini.test float
+    vim.api.nvim_buf_delete(0, { force = true })
+    vim.api.nvim_set_current_win(win)
   end
 })
 
