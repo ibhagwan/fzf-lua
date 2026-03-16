@@ -429,6 +429,7 @@ describe("Testing path module", function()
         stripped = "/tmp/test.txt:42",
         terminal = false
       })
+      vim.api.nvim_buf_delete(buf, { force = true })
     end)
 
     it("man://", function()
@@ -448,6 +449,7 @@ describe("Testing path module", function()
         stripped = "man://ls(1):42:7:",
         terminal = false
       })
+      vim.api.nvim_buf_delete(buf, { force = true })
     end)
 
     it("force_uri", function()
@@ -467,8 +469,9 @@ describe("Testing path module", function()
 
     it("parse loaded path", function()
       helpers.SKIP_IF_WIN()
+      local win = vim.api.nvim_get_current_win()
       local r = {}
-      vim.cmd [[bwipe]]
+      vim.cmd.new()
       local name = "/tmp/foo:bar.txt"
       vim.cmd.edit(name)
       vim.cmd([[sil write]])
@@ -480,6 +483,8 @@ describe("Testing path module", function()
         bufnr = vim.fn.bufnr(),
         bufname = name,
       })
+      vim.api.nvim_buf_delete(0, { force = true })
+      vim.api.nvim_set_current_win(win)
     end)
   end)
 end)
