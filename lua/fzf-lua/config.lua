@@ -983,6 +983,12 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     opts.fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]]
   end
 
+  -- set by git_{commits|diff|hunks} actions
+  if opts["__pos_" .. utils.get_info().cmd] then
+    opts.locate = opts.locate == nil and true or opts.locate
+    opts.__locate_pos = opts.__locate_pos or opts["__pos_" .. utils.get_info().cmd]
+  end
+
   if opts.locate and utils.has(opts, "fzf", { 0, 36 }) then
     table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("load:+transform:"
       .. FzfLua.shell.stringify_data(function(_, _, _)
