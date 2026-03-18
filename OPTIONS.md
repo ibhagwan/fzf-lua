@@ -1375,7 +1375,6 @@ Git reference(s) to compare against.
 
 Type: `string`, Default: `nil`
 
-`compare_against` was renamed to `ref1`
 Git reference used as the base for the comparison.
 
 #### git_files
@@ -1386,11 +1385,23 @@ Git tracked files.
 
 Git diff hunks (changed lines).
 
+##### git_hunks.file
+
+Type: `string`, Default: `nil`
+
+Git file to diff
+
 ##### git_hunks.ref
 
-Type: `string`, Default: `"HEAD"`
+Type: `string|string[]`, Default: `nil`
 
-Git reference to compare against.
+Git reference(s) to compare against.
+
+##### git_hunks.ref1
+
+Type: `string`, Default: `nil`
+
+Git reference used as the base for the comparison.
 
 #### git_stash
 
