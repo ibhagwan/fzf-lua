@@ -984,7 +984,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
   end
 
   -- set by git_{commits|diff|hunks} actions
-  if opts["__pos_" .. utils.get_info().cmd] then
+  if utils.get_info().cmd and opts["__pos_" .. utils.get_info().cmd] then
     opts.locate = opts.locate == nil and true or opts.locate
     opts.__locate_pos = opts.__locate_pos or opts["__pos_" .. utils.get_info().cmd]
   end
