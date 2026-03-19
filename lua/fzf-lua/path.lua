@@ -625,37 +625,8 @@ end
 ---@param noerr? boolean
 ---@return string?
 function M.jj_root(opts, noerr)
-  -- Fast check: walk up looking for .jj directory to avoid spawning
-  -- a process when not in a jj workspace
-  local cwd = opts and opts.cwd or uv.cwd()
-  -- Normalize cwd: expand ~ and resolve relative paths to absolute
-  if cwd then
-    cwd = libuv.expand(cwd)
-    if not M.is_absolute(cwd) then
-      cwd = M.join({ uv.cwd(), cwd })
-    end
-  end
-  local root_dir
-  if cwd then
-    local found = false
-    local dir = cwd
-    while dir and #dir > 0 do
-      if uv.fs_stat(dir .. "/.jj") then
-        found = true
-        break
-      end
-      local parent = M.parent(dir, true)
-      if not parent or parent == dir then break end
-      dir = parent
-    end
-    if not found then
-      if not noerr then utils.info("not inside a jj workspace") end
-      return nil
-    end
-    root_dir = dir
-  end
   local cmd = (opts and opts.cwd)
-      and { "jj", "-R", root_dir, "root", "--ignore-working-copy" }
+      and { "jj", "-R", opts.cwd, "root", "--ignore-working-copy" }
       or { "jj", "root", "--ignore-working-copy" }
   local output, err = utils.io_systemlist(cmd)
   if err ~= 0 then
