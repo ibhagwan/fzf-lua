@@ -1279,7 +1279,11 @@ end
 ---@return integer exit_code (0: success)
 function M.io_systemlist(cmd)
   if vim.system ~= nil then -- nvim 0.10+
-    local proc = vim.system(cmd):wait()
+    local ok, proc = pcall(function() return vim.system(cmd):wait() end)
+    if not ok then
+      -- Command doesn't exist or other error occurred
+      return {}, -1
+    end
     local output = (type(proc.stderr) == "string" and proc.stderr or "")
         .. (type(proc.stdout) == "string" and proc.stdout or "")
     return vim.split(output, "\n", { trimempty = true }), proc.code
