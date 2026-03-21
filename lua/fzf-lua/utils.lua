@@ -1279,11 +1279,13 @@ end
 ---@return integer exit_code (0: success)
 function M.io_systemlist(cmd)
   if vim.system ~= nil then -- nvim 0.10+
-    local ok, proc = pcall(function() return vim.system(cmd):wait() end)
+    local ok, proc_or_err = pcall(vim.system, cmd)
     if not ok then
       -- Command doesn't exist or other error occurred
-      return {}, -1
+      -- Return the error message in the output so callers can display it
+      return { tostring(proc_or_err) }, -1
     end
+    local proc = proc_or_err:wait()
     local output = (type(proc.stderr) == "string" and proc.stderr or "")
         .. (type(proc.stdout) == "string" and proc.stdout or "")
     return vim.split(output, "\n", { trimempty = true }), proc.code
@@ -1297,10 +1299,15 @@ end
 ---@return integer exit_code (0: success)
 function M.io_system(cmd)
   if vim.system ~= nil then -- nvim 0.10+
-    local proc = vim.system(cmd):wait()
-    local output = (type(proc.stderr) == "string" and proc.stderr or "")
-        .. (type(proc.stdout) == "string" and proc.stdout or "")
-    return output, proc.code
+    local ok, proc_or_err = pcall(function() return vim.system(cmd):wait() end)
+    if not ok then
+      -- Command doesn't exist or other error occurred
+      -- Return the error message so callers can display it
+      return tostring(proc_or_err), -1
+    end
+    local output = (type(proc_or_err.stderr) == "string" and proc_or_err.stderr or "")
+        .. (type(proc_or_err.stdout) == "string" and proc_or_err.stdout or "")
+    return output, proc_or_err.code
   else
     return vim.fn.system(cmd), vim.v.shell_error
   end
