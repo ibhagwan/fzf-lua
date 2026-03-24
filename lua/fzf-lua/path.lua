@@ -617,6 +617,28 @@ function M.git_root(opts, noerr)
   return output[1]
 end
 
+---@param opts? table
+---@param noerr? boolean
+---@return boolean
+function M.is_jj_repo(opts, noerr)
+  return not not M.jj_root(opts, noerr)
+end
+
+---@param opts? table
+---@param noerr? boolean
+---@return string?
+function M.jj_root(opts, noerr)
+  local cmd = (opts and opts.cwd)
+      and { "jj", "-R", opts.cwd, "root", "--ignore-working-copy" }
+      or { "jj", "root", "--ignore-working-copy" }
+  local output, err = utils.io_systemlist(cmd)
+  if err ~= 0 then
+    if not noerr then utils.info(table.concat(output, "\n")) end
+    return nil
+  end
+  return output[1]
+end
+
 ---@param str string
 ---@param opts fzf-lua.config.Resolved
 ---@return fzf-lua.path.Entry|fzf-lua.keymap.Entry

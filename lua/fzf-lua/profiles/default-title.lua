@@ -28,6 +28,7 @@ return {
     worktrees = title("Git Worktrees"),
     stash     = title("Git Stash"),
   },
+  jj                   = { files = title("JJ Files") },
   args                 = title("Args"),
   oldfiles             = title("Oldfiles"),
   history              = title("History"),

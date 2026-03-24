@@ -487,4 +487,265 @@ describe("Testing path module", function()
       vim.api.nvim_set_current_win(win)
     end)
   end)
+
+  describe("jj_root", function()
+    local fs_stat = vim.uv.fs_stat
+    local io_systemlist = utils.io_systemlist
+
+    after_each(function()
+      vim.uv.fs_stat = fs_stat
+      utils.io_systemlist = io_systemlist
+    end)
+
+    it("returns nil when no .jj directory exists", function()
+      vim.uv.fs_stat = function(_) return nil end
+      eq(path.jj_root({ cwd = "/some/path/without/jj" }, true), nil)
+    end)
+
+    it("returns nil when .jj exists but jj command fails", function()
+      vim.uv.fs_stat = function(p)
+        if p == "/some/project/.jj" then return { type = "directory" } end
+        return nil
+      end
+      utils.io_systemlist = function(_)
+        return { "error: not a jj repo" }, 1
+      end
+      eq(path.jj_root({ cwd = "/some/project" }, true), nil)
+    end)
+
+    it("returns root when .jj exists and jj command succeeds", function()
+      vim.uv.fs_stat = function(p)
+        if p == "/some/project/.jj" then return { type = "directory" } end
+        return nil
+      end
+      utils.io_systemlist = function(_)
+        return { "/some/project" }, 0
+      end
+      eq(path.jj_root({ cwd = "/some/project" }, true), "/some/project")
+    end)
+
+    it("walks up to find .jj in parent directory", function()
+      vim.uv.fs_stat = function(p)
+        if p == "/some/project/.jj" then return { type = "directory" } end
+        return nil
+      end
+      utils.io_systemlist = function(_)
+        return { "/some/project" }, 0
+      end
+      eq(path.jj_root({ cwd = "/some/project/deep/subdir" }, true), "/some/project")
+    end)
+
+    it("passes -R flag when opts.cwd is set", function()
+      local captured_cmd
+      vim.uv.fs_stat = function(p)
+        if p == "/workspace/.jj" then return { type = "directory" } end
+        return nil
+      end
+      utils.io_systemlist = function(cmd)
+        captured_cmd = cmd
+        return { "/workspace" }, 0
+      end
+      path.jj_root({ cwd = "/workspace" }, true)
+      assert.is.same(captured_cmd, { "jj", "-R", "/workspace", "root", "--ignore-working-copy" })
+    end)
+
+    it("omits -R flag when no opts.cwd", function()
+      -- When opts.cwd is nil, we use uv.cwd() for the walk-up but
+      -- don't pass -R to the jj command
+      local real_cwd = vim.uv.cwd()
+      vim.uv.fs_stat = function(p)
+        if p == real_cwd .. "/.jj" then return { type = "directory" } end
+        -- Walk up parents
+        return nil
+      end
+      utils.io_systemlist = function(cmd)
+        assert.is.same(cmd, { "jj", "root", "--ignore-working-copy" })
+        return { real_cwd }, 0
+      end
+      path.jj_root({}, true)
+    end)
+  end)
+
+  describe("is_jj_repo", function()
+    local fs_stat = vim.uv.fs_stat
+    local io_systemlist = utils.io_systemlist
+
+    after_each(function()
+      vim.uv.fs_stat = fs_stat
+      utils.io_systemlist = io_systemlist
+    end)
+
+    it("returns false when not in a jj repo", function()
+      vim.uv.fs_stat = function(_) return nil end
+      ---@diagnostic disable: redundant-parameter
+      assert.is.False(path.is_jj_repo({ cwd = "/not/a/jj/repo" }, true))
+    end)
+
+    it("returns true when in a jj repo", function()
+      vim.uv.fs_stat = function(p)
+        if p == "/jj/workspace/.jj" then return { type = "directory" } end
+        return nil
+      end
+      utils.io_systemlist = function(_)
+        return { "/jj/workspace" }, 0
+      end
+      ---@diagnostic disable: redundant-parameter
+      assert.is.True(path.is_jj_repo({ cwd = "/jj/workspace" }, true))
+    end)
+  end)
+
+  ---@diagnostic disable: duplicate-set-field
+  describe("vcs_files", function()
+    local files_provider = require("fzf-lua.providers.files")
+    local jj_provider = require("fzf-lua.providers.jj")
+    local git_provider = require("fzf-lua.providers.git")
+
+    local orig_is_jj_repo = path.is_jj_repo
+    local orig_is_git_repo = path.is_git_repo
+    local orig_jj_files = jj_provider.files
+    local orig_git_files = git_provider.files
+    local orig_files = files_provider.files
+
+    after_each(function()
+      path.is_jj_repo = orig_is_jj_repo
+      path.is_git_repo = orig_is_git_repo
+      jj_provider.files = orig_jj_files
+      git_provider.files = orig_git_files
+      files_provider.files = orig_files
+    end)
+
+    it("delegates to jj.files when in a jj repo", function()
+      local called = nil
+      path.is_jj_repo = function() return true end
+      path.is_git_repo = function() return true end -- should not matter
+      jj_provider.files = function() called = "jj" end
+      git_provider.files = function() called = "git" end
+      files_provider.files = function() called = "files" end
+      files_provider.vcs_files({})
+      eq(called, "jj")
+    end)
+
+    it("delegates to git.files when in git repo but not jj", function()
+      local called = nil
+      path.is_jj_repo = function() return false end
+      path.is_git_repo = function() return true end
+      jj_provider.files = function() called = "jj" end
+      git_provider.files = function() called = "git" end
+      files_provider.files = function() called = "files" end
+      files_provider.vcs_files({})
+      eq(called, "git")
+    end)
+
+    it("delegates to files when not in any vcs repo", function()
+      local called = nil
+      path.is_jj_repo = function() return false end
+      path.is_git_repo = function() return false end
+      jj_provider.files = function() called = "jj" end
+      git_provider.files = function() called = "git" end
+      files_provider.files = function() called = "files" end
+      files_provider.vcs_files({})
+      eq(called, "files")
+    end)
+
+    it("prefers jj over git in colocated repos", function()
+      local called = nil
+      path.is_jj_repo = function() return true end
+      path.is_git_repo = function() return true end
+      jj_provider.files = function() called = "jj" end
+      git_provider.files = function() called = "git" end
+      files_provider.vcs_files({})
+      eq(called, "jj")
+    end)
+
+    it("handles nil opts without error", function()
+      local called = nil
+      path.is_jj_repo = function() return false end
+      path.is_git_repo = function() return false end
+      jj_provider.files = function() called = "jj" end
+      git_provider.files = function() called = "git" end
+      files_provider.files = function() called = "files" end
+      files_provider.vcs_files()
+      eq(called, "files")
+    end)
+
+    it("sets winopts.title to 'VCS Files (jj)' in a jj repo", function()
+      local received_opts
+      path.is_jj_repo = function() return true end
+      path.is_git_repo = function() return false end
+      jj_provider.files = function(opts) received_opts = opts end
+      files_provider.vcs_files({})
+      eq(received_opts.winopts.title, " VCS Files (jj) ")
+    end)
+
+    it("sets winopts.title to 'VCS Files (git)' in a git repo", function()
+      local received_opts
+      path.is_jj_repo = function() return false end
+      path.is_git_repo = function() return true end
+      git_provider.files = function(opts) received_opts = opts end
+      files_provider.vcs_files({})
+      eq(received_opts.winopts.title, " VCS Files (git) ")
+    end)
+
+    it("does not set winopts.title when falling back to files", function()
+      local received_opts
+      path.is_jj_repo = function() return false end
+      path.is_git_repo = function() return false end
+      files_provider.files = function(opts) received_opts = opts end
+      files_provider.vcs_files({})
+      eq(received_opts.winopts, nil)
+    end)
+
+    it("does not override user-supplied winopts.title", function()
+      local received_opts
+      path.is_jj_repo = function() return true end
+      path.is_git_repo = function() return false end
+      jj_provider.files = function(opts) received_opts = opts end
+      files_provider.vcs_files({ winopts = { title = " My Title " } })
+      eq(received_opts.winopts.title, " My Title ")
+    end)
+  end)
+
+  describe("git_files quiet failure", function()
+    local orig_git_root = path.git_root
+
+    after_each(function()
+      path.git_root = orig_git_root
+    end)
+
+    it("shows info message and returns nil when not in a git repo", function()
+      local info_msg = nil
+      local orig_info = utils.info
+      utils.info = function(msg) info_msg = msg end
+      -- path.git_root calls utils.info when noerr is falsy
+      path.git_root = function(opts, noerr)
+        if not noerr then
+          utils.info("not a git repository")
+        end
+        return nil
+      end
+      local git_provider = require("fzf-lua.providers.git")
+      local config = require("fzf-lua.config")
+      local orig_normalize = config.normalize_opts
+      config.normalize_opts = function(opts) return opts or {} end
+      local result = git_provider.files({})
+      config.normalize_opts = orig_normalize
+      utils.info = orig_info
+      eq(info_msg, "not a git repository")
+      eq(result, nil)
+    end)
+  end)
+
+  describe("_headers configuration", function()
+    local defaults = require("fzf-lua.defaults").defaults
+
+    it("git.files has cwd in _headers", function()
+      assert.is.True(defaults.git.files._headers ~= nil)
+      assert.is.True(vim.tbl_contains(defaults.git.files._headers, "cwd"))
+    end)
+
+    it("jj.files has cwd in _headers", function()
+      assert.is.True(defaults.jj.files._headers ~= nil)
+      assert.is.True(vim.tbl_contains(defaults.jj.files._headers, "cwd"))
+    end)
+  end)
 end)
