@@ -577,6 +577,7 @@ describe("Testing path module", function()
 
     it("returns false when not in a jj repo", function()
       vim.uv.fs_stat = function(_) return nil end
+      ---@diagnostic disable: redundant-parameter
       assert.is.False(path.is_jj_repo({ cwd = "/not/a/jj/repo" }, true))
     end)
 
@@ -588,6 +589,7 @@ describe("Testing path module", function()
       utils.io_systemlist = function(_)
         return { "/jj/workspace" }, 0
       end
+      ---@diagnostic disable: redundant-parameter
       assert.is.True(path.is_jj_repo({ cwd = "/jj/workspace" }, true))
     end)
   end)
