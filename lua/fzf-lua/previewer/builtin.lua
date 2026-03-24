@@ -35,7 +35,7 @@ local Previewer = {}
 ---@field treesitter table
 ---@field toggle_behavior "default"|"extend"
 ---@field winopts_orig table
----@field extensions { [string]: string[]? }
+---@field extensions { [string]: string|string[]? }
 ---@field ueberzug_scaler "crop"|"distort"|"contain"|"fit_contain"|"cover"|"forced_cover"
 ---@field bcache fzf-lua.Bcache
 ---@field listed_buffers table<integer, boolean?>
@@ -782,6 +782,200 @@ local start_cmd = function(buf, entry, opts)
   obj = vim.system(entry.cmd, sopts, on_exit)
 end
 
+---@param entry fzf-lua.buffer_or_file.Entry
+---@return [integer?, integer?]
+local entry_pos = function(entry)
+  local line = entry.line and entry.line > 0 and entry.line or nil
+  local col = entry.col and entry.col > 0 and entry.col - 1 or nil
+  return { line, col }
+end
+
+---@param data string
+---@return string[]
+local split_file_data = function(data)
+  local lines = vim.split(data, "[\r]?\n")
+  if data:sub(#data, #data) == "\n" or data:sub(#data - 1, #data) == "\r\n" then
+    table.remove(lines)
+  end
+  return lines
+end
+
+---@param entry fzf-lua.buffer_or_file.Entry
+---@param cached fzf-lua.BcacheEntry
+function Previewer.buffer_or_file:_apply_cached_preview(entry, cached)
+  -- same file/buffer as previous entry no need to change preview buf
+  -- (e.g. only lnum changed, or unhide/resume)
+  if cached.bufnr == self.preview_bufnr then
+    if not vim.deep_equal(entry_pos(entry), self.orig_pos) then
+      self.bcache:reset_pos(self.preview_bufnr)
+    end
+  else
+    self:set_preview_buf(cached.bufnr, cached.min_winopts)
+  end
+  self:preview_buf_post(entry, cached.min_winopts)
+end
+
+---@return nil
+function Previewer.buffer_or_file:_stop_preview_job()
+  self.clear_on_redraw = false
+  -- kill previously running terminal jobs
+  -- when using external commands extension map
+  if self._job_id and self._job_id > 0 then
+    fn.jobstop(self._job_id)
+    self._job_id = nil
+  end
+end
+
+---@param tmpbuf integer
+---@param entry fzf-lua.buffer_or_file.Entry
+---@return nil
+function Previewer.buffer_or_file:_populate_loaded_buffer_preview(tmpbuf, entry)
+  -- WE NO LONGER REUSE THE CURRENT BUFFER
+  -- this changes the buffer's 'getbufinfo[1].lastused'
+  -- which messes up our `buffers()` sort
+  entry.filetype = vim.bo[entry.bufnr].filetype
+  local lines = api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
+  vim.bo[tmpbuf].expandtab = vim.bo[entry.bufnr].expandtab
+  vim.bo[tmpbuf].shiftwidth = vim.bo[entry.bufnr].shiftwidth
+  vim.bo[tmpbuf].tabstop = vim.bo[entry.bufnr].tabstop
+  api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+  -- terminal buffers use minimal window style (2nd arg)
+  self:set_preview_buf(tmpbuf, entry.terminal)
+  self:preview_buf_post(entry, entry.terminal)
+end
+
+---@param tmpbuf integer?
+---@param entry fzf-lua.buffer_or_file.Entry
+---@return nil
+function Previewer.buffer_or_file:_populate_location_preview(tmpbuf, entry)
+  -- LSP 'jdt://' entries, see issue #195
+  -- https://github.com/ibhagwan/fzf-lua/issues/195
+  api.nvim_win_call(self.win.preview_winid, function()
+    local loc = { uri = entry.uri, range = entry.range }
+    local ok, res = pcall(utils.jump_to_location, loc, "utf-16", false)
+    if ok then
+      self.preview_bufnr = api.nvim_get_current_buf()
+    else
+      -- in case of an error display the stacktrace in the preview buffer
+      local lines = type(res) == "string" and utils.strsplit(res, "\n") or { "null" }
+      table.insert(lines, 1,
+        string.format("lsp.util.%s failed for '%s':",
+          utils.__HAS_NVIM_011 and "show_document" or "jump_to_location", entry.uri))
+      table.insert(lines, 2, "")
+      tmpbuf = tmpbuf or self:get_tmp_buffer()
+      api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
+      self:set_preview_buf(tmpbuf)
+    end
+  end)
+  self:preview_buf_post(entry)
+end
+
+---@param tmpbuf integer
+---@param entry fzf-lua.buffer_or_file.Entry
+---@param lines (fzf-lua.line|string)[]
+---@return nil
+function Previewer.buffer_or_file:_set_preview_lines(tmpbuf, entry, lines)
+  local textlines, extmarks = parse_rich(lines)
+  extmarks = entry.extmarks or extmarks
+  pcall(api.nvim_buf_set_lines, tmpbuf, 0, -1, false, textlines)
+  if extmarks and #extmarks > 0 then
+    local setmark = vim.F.nil_wrap(api.nvim_buf_set_extmark)
+    local ns = api.nvim_create_namespace("fzf-lua.preview.hl")
+    for _, extmark in ipairs(extmarks) do
+      setmark(tmpbuf, ns, extmark.row, extmark.col,
+        { end_col = extmark.end_col, hl_group = extmark.hl_group })
+    end
+  end
+  if entry.open_term then api.nvim_open_term(tmpbuf, {}) end
+  self:set_preview_buf(tmpbuf)
+  self:preview_buf_post(entry)
+end
+
+---@param tmpbuf integer
+---@param entry fzf-lua.buffer_or_file.Entry
+---@param entry_str string
+---@return nil
+function Previewer.buffer_or_file:_populate_cmd_preview(tmpbuf, entry, entry_str)
+  local opened = false
+  return start_cmd(tmpbuf, entry, {
+    cancel = function() return entry_str ~= self._last_entry end,
+    on_send = function()
+      if opened then return end
+      opened = true
+      self:set_preview_buf(tmpbuf, true)
+    end,
+    on_exit = function()
+      self:preview_buf_post(entry)
+    end,
+  })
+end
+
+---@param tmpbuf integer
+---@param entry fzf-lua.buffer_or_file.Entry
+---@return nil
+function Previewer.buffer_or_file:_populate_file_preview(tmpbuf, entry)
+  utils.read_file_async(entry.path, vim.schedule_wrap(function(data)
+    -- if file ends in new line, don't write an empty string as the last
+    -- line.
+    api.nvim_buf_set_lines(tmpbuf, 0, -1, false, split_file_data(data))
+    -- swap preview buffer with new one
+    self:set_preview_buf(tmpbuf)
+    self:preview_buf_post(entry)
+  end))
+end
+
+---@param tmpbuf integer
+---@param entry fzf-lua.buffer_or_file.Entry
+---@param entry_str string
+---@return nil
+function Previewer.buffer_or_file:_populate_standard_preview(tmpbuf, entry, entry_str)
+  local cmd
+  if entry.path and self.extensions and not utils.tbl_isempty(self.extensions) then
+    local ext = path.extension(entry.path)
+    cmd = ext and self.extensions[ext:lower()] or nil
+  end
+  -- will return 'false' when cmd isn't executable.
+  -- If we get here it means preview was successful
+  -- it can still fail if using wrong command flags
+  -- but the user will be able to see the error in
+  -- the preview win
+  if cmd and self:populate_terminal_cmd(tmpbuf, cmd, entry) then return end
+  if self:attach_snacks_image_buf(tmpbuf, entry) then
+    self:preview_buf_post(entry)
+    return
+  end
+
+  ---@type (fzf-lua.line|string)[]?
+  local lines
+  if entry.debug then
+    lines = { { { entry.debug, "Error" } } }
+  elseif entry.content then
+    lines = entry.content
+  elseif entry.cmd then
+    return self:_populate_cmd_preview(tmpbuf, entry, entry_str)
+  else
+    -- make sure the file is readable (or bad entry.path)
+    local fs_stat = entry.path and uv.fs_stat(entry.path)
+    local is_binary = fs_stat and fs_stat.size > 0 and utils.perl_file_is_binary(entry.path) or false
+    if not fs_stat then
+      lines = { string.format("Unable to stat file %s", entry.path) }
+    elseif is_binary then
+      lines = { "Preview is not supported for binary files." }
+    elseif tonumber(self.limit_b) > 0 and fs_stat.size > self.limit_b then
+      lines = {
+        ("Preview file size limit (>%dMB) reached, file size %dMB.")
+            :format(self.limit_b / (1024 * 1024), fs_stat.size / (1024 * 1024)),
+        -- "(configured via 'previewers.builtin.limit_b')"
+      }
+    end
+    if not lines then
+      return self:_populate_file_preview(tmpbuf, entry)
+    end
+  end
+
+  self:_set_preview_lines(tmpbuf, entry, lines)
+end
+
 ---@async
 ---@param entry_str string
 ---@return false? no preview
@@ -802,152 +996,20 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   local cached, stale = self.bcache:check(entry)
   entry.cached = cached
 
-  -- same file/buffer as previous entry no need to change preview buf
-  -- (e.g. only lnum changed, or unhide/resume)
-  if cached and not stale and cached.bufnr == self.preview_bufnr then
-    local line = entry.line and entry.line > 0 and entry.line or nil
-    local col = entry.col and entry.col > 0 and entry.col - 1 or nil
-    if not vim.deep_equal({ line, col }, self.orig_pos) then
-      self.bcache:reset_pos(self.preview_bufnr)
-    end
-    self:preview_buf_post(entry, cached.min_winopts)
-    return
-  end
   if cached and not stale then
-    self:set_preview_buf(cached.bufnr, cached.min_winopts)
-    self:preview_buf_post(entry, cached.min_winopts)
+    self:_apply_cached_preview(entry, cached)
     return
   end
-  local reuse_buf = (cached or {}).bufnr -- cached must be stale now if exists
-  self.clear_on_redraw = false
-  -- kill previously running terminal jobs
-  -- when using external commands extension map
-  if self._job_id and self._job_id > 0 then
-    fn.jobstop(self._job_id)
-    self._job_id = nil
-  end
-  if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) and vim.bo[entry.bufnr].filetype ~= "image" then
-    -- WE NO LONGER REUSE THE CURRENT BUFFER
-    -- this changes the buffer's 'getbufinfo[1].lastused'
-    -- which messes up our `buffers()` sort
-    entry.filetype = vim.bo[entry.bufnr].filetype
-    local lines = api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
-    local tmpbuf = reuse_buf or self:get_tmp_buffer()
-    vim.bo[tmpbuf].expandtab = vim.bo[entry.bufnr].expandtab
-    vim.bo[tmpbuf].shiftwidth = vim.bo[entry.bufnr].shiftwidth
-    vim.bo[tmpbuf].tabstop = vim.bo[entry.bufnr].tabstop
-    api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
-    -- terminal buffers use minimal window style (2nd arg)
-    self:set_preview_buf(tmpbuf, entry.terminal)
-    self:preview_buf_post(entry, entry.terminal)
-  elseif entry.uri and entry.range then
-    -- LSP 'jdt://' entries, see issue #195
-    -- https://github.com/ibhagwan/fzf-lua/issues/195
-    api.nvim_win_call(self.win.preview_winid, function()
-      local loc = { uri = entry.uri, range = entry.range }
-      local ok, res = pcall(utils.jump_to_location, loc, "utf-16", false)
-      if ok then
-        self.preview_bufnr = api.nvim_get_current_buf()
-      else
-        -- in case of an error display the stacktrace in the preview buffer
-        local lines = type(res) == "string" and utils.strsplit(res, "\n") or { "null" }
-        table.insert(lines, 1,
-          string.format("lsp.util.%s failed for '%s':",
-            utils.__HAS_NVIM_011 and "show_document" or "jump_to_location", entry.uri))
-        table.insert(lines, 2, "")
-        local tmpbuf = reuse_buf or self:get_tmp_buffer()
-        api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
-        self:set_preview_buf(tmpbuf)
-      end
-    end)
-    self:preview_buf_post(entry)
-  else
-    -- not found in cache, attempt to load
-    local tmpbuf = reuse_buf or self:get_tmp_buffer()
-    if entry.path and self.extensions and not utils.tbl_isempty(self.extensions) then
-      local ext = path.extension(entry.path)
-      local cmd = ext and self.extensions[ext:lower()]
-      if cmd and self:populate_terminal_cmd(tmpbuf, cmd, entry) then
-        -- will return 'false' when cmd isn't executable.
-        -- If we get here it means preview was successful
-        -- it can still fail if using wrong command flags
-        -- but the user will be able to see the error in
-        -- the preview win
-        return
-      end
-    end
-    if self:attach_snacks_image_buf(tmpbuf, entry) then
-      self:preview_buf_post(entry)
-      return
-    end
-    do
-      ---@type (fzf-lua.line|string)[]
-      local lines
-      if entry.debug then
-        lines = { { { entry.debug, "Error" } } }
-      elseif entry.content then
-        lines = entry.content
-      elseif entry.cmd then
-        local opened = false
-        return start_cmd(tmpbuf, entry, {
-          cancel = function() return entry_str ~= self._last_entry end,
-          on_send = function()
-            if opened then return end
-            opened = true
-            self:set_preview_buf(tmpbuf, true)
-          end,
-          on_exit = function()
-            self:preview_buf_post(entry)
-          end,
-        })
-      else
-        -- make sure the file is readable (or bad entry.path)
-        local fs_stat = entry.path and uv.fs_stat(entry.path)
-        if not fs_stat then
-          lines = { string.format("Unable to stat file %s", entry.path) }
-        elseif fs_stat.size > 0 and utils.perl_file_is_binary(entry.path) then
-          lines = { "Preview is not supported for binary files." }
-        elseif tonumber(self.limit_b) > 0 and fs_stat.size > self.limit_b then
-          lines = {
-            ("Preview file size limit (>%dMB) reached, file size %dMB.")
-                :format(self.limit_b / (1024 * 1024), fs_stat.size / (1024 * 1024)),
-            -- "(configured via 'previewers.builtin.limit_b')"
-          }
-        end
-      end
-      if lines then
-        local textlines, extmarks = parse_rich(lines)
-        extmarks = entry.extmarks or extmarks
-        pcall(api.nvim_buf_set_lines, tmpbuf, 0, -1, false, textlines)
-        if extmarks and #extmarks > 0 then
-          local setmark = vim.F.nil_wrap(api.nvim_buf_set_extmark)
-          local ns = api.nvim_create_namespace("fzf-lua.preview.hl")
-          for _, extmark in ipairs(extmarks) do
-            setmark(tmpbuf, ns, extmark.row, extmark.col,
-              { end_col = extmark.end_col, hl_group = extmark.hl_group })
-          end
-        end
-        if entry.open_term then api.nvim_open_term(tmpbuf, {}) end
-        -- swap preview buffer with new one
-        self:set_preview_buf(tmpbuf)
-        self:preview_buf_post(entry)
-        return
-      end
-    end
-    -- read the file into the buffer
-    utils.read_file_async(entry.path, vim.schedule_wrap(function(data)
-      local lines = vim.split(data, "[\r]?\n")
 
-      -- if file ends in new line, don't write an empty string as the last
-      -- line.
-      if data:sub(#data, #data) == "\n" or data:sub(#data - 1, #data) == "\r\n" then
-        table.remove(lines)
-      end
-      api.nvim_buf_set_lines(tmpbuf, 0, -1, false, lines)
-      -- swap preview buffer with new one
-      self:set_preview_buf(tmpbuf)
-      self:preview_buf_post(entry)
-    end))
+  local tmpbuf = (cached or {}).bufnr -- cached must be stale now if exists
+  self:_stop_preview_job()
+
+  if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) and vim.bo[entry.bufnr].filetype ~= "image" then
+    self:_populate_loaded_buffer_preview(tmpbuf or self:get_tmp_buffer(), entry)
+  elseif entry.uri and entry.range then
+    self:_populate_location_preview(tmpbuf, entry)
+  else -- not found in cache, attempt to load
+    self:_populate_standard_preview(tmpbuf or self:get_tmp_buffer(), entry, entry_str)
   end
 end
 
