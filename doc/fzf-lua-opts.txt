@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*        For Neovim >= 0.9.0       Last change: 2026 March 18
+*fzf-lua-opts.txt*        For Neovim >= 0.9.0       Last change: 2026 March 25
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -2050,6 +2050,12 @@ Neovim highlight groups.
 history                                                 *fzf-lua-opts-history*
 
 File history including current session.
+
+
+                                                                              
+jj_files                                               *fzf-lua-opts-jj_files*
+
+Jujutsu tracked files.
 
 
                                                                               

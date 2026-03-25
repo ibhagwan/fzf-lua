@@ -1523,6 +1523,10 @@ Neovim highlight groups.
 
 File history including current session.
 
+#### jj_files
+
+Jujutsu tracked files.
+
 #### jumps
 
 Jump list.
