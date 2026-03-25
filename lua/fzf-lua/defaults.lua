@@ -896,12 +896,12 @@ M.defaults.git                   = {
 }
 
 ---Jujutsu pickers parent table.
----@class fzf-lua.config.JJ
----@field files     fzf-lua.config.JJFiles
+---@class fzf-lua.config.Jj
+---@field files     fzf-lua.config.JjFiles
 M.defaults.jj                    = {
   ---Jujutsu tracked files.
   ---@diagnostic disable-next-line: param-type-mismatch
-  ---@class fzf-lua.config.JJFiles: fzf-lua.config.GitFiles
+  ---@class fzf-lua.config.JjFiles: fzf-lua.config.GitFiles
   files = vim.tbl_deep_extend("force", M.defaults.git.files, {
     cmd       = "jj file list --ignore-working-copy",
     git_icons = false,

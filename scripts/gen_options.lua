@@ -453,6 +453,7 @@ local SKIP_KEYS = {
 -- Classes that are containers, not actual pickers
 -- These have sub-pickers but shouldn't appear in docs themselves
 local CONTAINER_CLASSES = {
+  ["fzf-lua.config.Jj"] = true,
   ["fzf-lua.config.Git"] = true,
   ["fzf-lua.config.Dap"] = true,
   ["fzf-lua.config.Tmux"] = true,

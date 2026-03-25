@@ -20,7 +20,7 @@ local function set_jj_cwd_args(opts)
   return opts
 end
 
----@param opts fzf-lua.config.JJFiles|{}?
+---@param opts fzf-lua.config.JjFiles|{}?
 ---@return thread?, string?, table?
 M.files = function(opts)
   opts = config.normalize_opts(opts, "jj.files")
