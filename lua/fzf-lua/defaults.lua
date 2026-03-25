@@ -10,9 +10,10 @@ function M._default_previewer_fn()
   if type(winopts) == "function" then
     winopts = winopts() or {}
     winopts.preview = type(winopts.preview) == "table" and winopts.preview or {}
-    winopts.preview.default = winopts.preview.default or M.defaults.winopts.preview.default
+    winopts.preview.default = winopts.preview.default
+        or utils.map_get(M.defaults, "winopts.preview.default")
   end
-  local previewer = M.globals.default_previewer or winopts.preview.default
+  local previewer = M.globals.default_previewer or utils.map_get(winopts, "preview.default")
   -- the setup function cannot have a custom previewer as deepcopy
   -- fails with stack overflow while trying to copy the custom class
   -- the workaround is to define the previewer as a function instead
@@ -894,11 +895,16 @@ M.defaults.git                   = {
   },
 }
 
+---Jujutsu pickers parent table.
+---@class fzf-lua.config.JJ
+---@field files     fzf-lua.config.JJFiles
 M.defaults.jj                    = {
   ---Jujutsu tracked files.
+  ---@diagnostic disable-next-line: param-type-mismatch
+  ---@class fzf-lua.config.JJFiles: fzf-lua.config.GitFiles
   files = vim.tbl_deep_extend("force", M.defaults.git.files, {
-    cmd               = "jj file list --ignore-working-copy",
-    git_icons         = false,
+    cmd       = "jj file list --ignore-working-copy",
+    git_icons = false,
   }),
 }
 
