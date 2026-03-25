@@ -22,6 +22,7 @@ local M = {}
 ---@field end_line? integer
 ---@field start? "cursor"
 ---@field show_bufname? boolean|integer
+---@field show_bufname_len? integer
 ---@field sort_lastused? boolean
 
 ---@param opts fzf-lua.config.BufferLines|{}
@@ -296,7 +297,7 @@ M.buffer_lines = function(opts)
         longest_bname = math.max(longest_bname, #bname)
         bnames[tostring(b)] = bname
       end
-      local len_bufnames = math.min(15, longest_bname)
+      local len_bufnames = math.min(tonumber(opts.show_bufname_len) or 15, longest_bname)
 
       for _, bufnr in ipairs(buffers) do
         local data = {}
@@ -325,16 +326,17 @@ M.buffer_lines = function(opts)
           local icon, hl = "", nil
           local name = bnames[tostring(bufnr)]
 
-          if #name > len_bufnames + 1 then
-            name = "…" .. name:sub(#name - len_bufnames + 2)
-          end
-
           if opts.file_icons then
             icon, hl = devicons.get_devicon(name)
             if hl and opts.color_icons then
               icon = utils.ansi_from_rgb(hl, icon)
             end
           end
+
+          if #name > len_bufnames + 1 then
+            name = "…" .. name:sub(#name - len_bufnames + 2)
+          end
+
           return name, icon and icon .. utils.nbsp or nil
         end)()
 
