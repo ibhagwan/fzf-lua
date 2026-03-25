@@ -1173,6 +1173,8 @@ M.defaults.tabs                  = {
 ---@class fzf-lua.config.Lines: fzf-lua.config.BufferLines
 ---Show buffer name in results. Set to a number to only show if the window width exceeds this value.
 ---@field show_bufname? boolean|integer
+---Show buffer name max length
+---@field show_bufname_len? integer
 ---Include unloaded (not yet displayed) buffers.
 ---@field show_unloaded? boolean
 ---Include unlisted buffers (`:help unlisted-buffer`).
@@ -1186,6 +1188,7 @@ M.defaults.lines                 = {
   file_icons       = 1, ---@type integer|boolean
   color_icons      = true,
   show_bufname     = 120,
+  show_bufname_len = 15,
   show_unloaded    = true,
   show_unlisted    = false,
   no_term_buffers  = true,
