@@ -1565,6 +1565,12 @@ Type: `boolean|integer`, Default: `120`
 
 Show buffer name in results. Set to a number to only show if the window width exceeds this value.
 
+##### lines.show_bufname_len
+
+Type: `integer`, Default: `15`
+
+Show buffer name max length
+
 ##### lines.show_unloaded
 
 Type: `boolean`, Default: `true`

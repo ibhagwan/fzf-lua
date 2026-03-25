@@ -2106,6 +2106,13 @@ Show buffer name in results. Set to a number to only show if the window width
 exceeds this value.
 
 
+lines.show_bufname_len                   *fzf-lua-opts-lines.show_bufname_len*
+
+Type: `integer`, Default: `15`
+
+Show buffer name max length
+
+
 lines.show_unloaded                         *fzf-lua-opts-lines.show_unloaded*
 
 Type: `boolean`, Default: `true`
