@@ -267,6 +267,7 @@ Fzf-Lua conveniently comes with a VS-Code like picker by default
 | `git_status`    | `git status`             |
 | `git_diff`      | `git diff {ref}`         |
 | `git_hunks`     | `git hunks {ref}`        |
+| `git_reflog`    | `git reflog`             |
 | `git_commits`   | git commit log (project) |
 | `git_bcommits`  | git commit log (buffer)  |
 | `git_blame`     | git blame (buffer)       |

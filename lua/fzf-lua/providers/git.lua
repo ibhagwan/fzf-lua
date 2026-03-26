@@ -185,6 +185,16 @@ M.commits = function(opts)
   return git_cmd(opts)
 end
 
+---@param opts fzf-lua.config.GitReflog|{}?
+---@return thread?, string?, table?
+M.reflog = function(opts)
+  ---@type fzf-lua.config.GitReflog
+  opts = config.normalize_opts(opts, "git.reflog")
+  if not opts then return end
+  opts.preview = git_preview(opts)
+  return git_cmd(opts)
+end
+
 ---@param opts fzf-lua.config.GitBcommits|{}?
 ---@return thread?, string?, table?
 M.bcommits = function(opts)

@@ -257,6 +257,7 @@ local lazyloaded_modules = {
   git_diff = { "fzf-lua.providers.git", "diff" },
   git_hunks = { "fzf-lua.providers.git", "hunks" },
   git_stash = { "fzf-lua.providers.git", "stash" },
+  git_reflog = { "fzf-lua.providers.git", "reflog" },
   git_commits = { "fzf-lua.providers.git", "commits" },
   git_bcommits = { "fzf-lua.providers.git", "bcommits" },
   git_blame = { "fzf-lua.providers.git", "blame" },

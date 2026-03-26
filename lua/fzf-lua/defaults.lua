@@ -613,6 +613,7 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
 ---@field status    fzf-lua.config.GitStatus
 ---@field diff      fzf-lua.config.GitDiff
 ---@field hunks     fzf-lua.config.GitHunks
+---@field reflog    fzf-lua.config.GitReflog
 ---@field commits   fzf-lua.config.GitCommits
 ---@field bcommits  fzf-lua.config.GitBcommits
 ---@field blame     fzf-lua.config.GitBlame
@@ -695,7 +696,8 @@ M.defaults.git                   = {
           FzfLua.git_hunks(o)
         end,
         header = "git hunks",
-        exec_silent = true,
+        reuse = #vim.api.nvim_list_uis() == 0,
+        exec_silent = #vim.api.nvim_list_uis() > 0,
         field_index = "{} $FZF_POS",
       },
       ["ctrl-q"] = {
@@ -732,6 +734,7 @@ M.defaults.git                   = {
       ["--delimiter"] = ":",
       ["--nth"] = "3..",
     },
+    line_field_index  = "{2}",
     _fzf_nth_devicons = true,
     _actions          = function() return M.globals.actions.files end,
     _headers          = { "cwd", "actions" },
@@ -763,7 +766,8 @@ M.defaults.git                   = {
           FzfLua.git_diff(o)
         end,
         header = "git diff",
-        exec_silent = true,
+        reuse = #vim.api.nvim_list_uis() == 0,
+        exec_silent = #vim.api.nvim_list_uis() > 0,
         field_index = "{} $FZF_POS",
       },
     },
@@ -894,6 +898,13 @@ M.defaults.git                   = {
     ["?"] = { icon = "?", color = "magenta" },
   },
 }
+
+---Git reflog.
+---@diagnostic disable-next-line: param-type-mismatch
+---@class fzf-lua.config.GitReflog: fzf-lua.config.GitCommits
+M.defaults.git.reflog            = vim.tbl_deep_extend("force", M.defaults.git.commits, {
+  cmd = [[git reflog --color=always --format="%C(yellow)%h %C(blue)%gD%C(auto)%d %gs"]],
+})
 
 ---Jujutsu pickers parent table.
 ---@class fzf-lua.config.Jj
