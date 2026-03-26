@@ -1893,6 +1893,12 @@ Git reference used as the base for the comparison.
 
 
                                                                               
+git_reflog                                           *fzf-lua-opts-git_reflog*
+
+Git reflog.
+
+
+                                                                              
 git_stash                                             *fzf-lua-opts-git_stash*
 
 Git stashes.

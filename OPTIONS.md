@@ -1403,6 +1403,10 @@ Type: `string`, Default: `nil`
 
 Git reference used as the base for the comparison.
 
+#### git_reflog
+
+Git reflog.
+
 #### git_stash
 
 Git stashes.

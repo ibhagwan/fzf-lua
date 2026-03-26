@@ -1,4 +1,4 @@
-*fzf-lua.txt*          For Neovim >= 0.9.0          Last change: 2026 March 24
+*fzf-lua.txt*          For Neovim >= 0.9.0          Last change: 2026 March 25
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -311,6 +311,7 @@ GIT                                                              *fzf-lua-git*
 | `git_status`    | `git status`             |
 | `git_diff`      | `git diff {ref}`         |
 | `git_hunks`     | `git hunks {ref}`        |
+| `git_reflog`    | `git reflog`             |
 | `git_commits`   | git commit log (project) |
 | `git_bcommits`  | git commit log (buffer)  |
 | `git_blame`     | git blame (buffer)       |
