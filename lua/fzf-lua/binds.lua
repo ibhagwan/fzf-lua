@@ -11,47 +11,47 @@ local M = {}
 -- Known fzf events (not keys) — used to distinguish event binds
 -- from key binds during classification
 local FZF_EVENTS = {
-  ["load"]            = true,
-  ["start"]           = true,
-  ["resize"]          = true,
-  ["change"]          = true,
-  ["zero"]            = true,
-  ["one"]             = true,
-  ["focus"]           = true,
-  ["result"]          = true,
-  ["multi"]           = true,
-  ["click-header"]    = true,
-  ["click-footer"]    = true,
-  ["backward-eof"]    = true,
-  ["jump"]            = true,
-  ["jump-cancel"]     = true,
+  ["load"]         = true,
+  ["start"]        = true,
+  ["resize"]       = true,
+  ["change"]       = true,
+  ["zero"]         = true,
+  ["one"]          = true,
+  ["focus"]        = true,
+  ["result"]       = true,
+  ["multi"]        = true,
+  ["click-header"] = true,
+  ["click-footer"] = true,
+  ["backward-eof"] = true,
+  ["jump"]         = true,
+  ["jump-cancel"]  = true,
 }
 
 -- Known builtin actions that are handled neovim-side (from win.lua)
 -- These go through the transform handler instead of direct fzf binds
 local BUILTIN_ACTIONS = {
-  ["hide"]                       = true,
-  ["toggle-help"]                = true,
-  ["toggle-fullscreen"]          = true,
-  ["toggle-preview"]             = true,
-  ["toggle-preview-cw"]          = true,
-  ["toggle-preview-ccw"]         = true,
-  ["toggle-preview-behavior"]    = true,
-  ["toggle-preview-wrap"]        = true,
-  ["toggle-preview-ts-ctx"]      = true,
-  ["toggle-preview-undo"]        = true,
-  ["preview-ts-ctx-dec"]         = true,
-  ["preview-ts-ctx-inc"]         = true,
-  ["preview-reset"]              = true,
-  ["preview-page-down"]          = true,
-  ["preview-page-up"]            = true,
-  ["preview-half-page-up"]       = true,
-  ["preview-half-page-down"]     = true,
-  ["preview-down"]               = true,
-  ["preview-up"]                 = true,
-  ["preview-top"]                = true,
-  ["preview-bottom"]             = true,
-  ["focus-preview"]              = true,
+  ["hide"]                    = true,
+  ["toggle-help"]             = true,
+  ["toggle-fullscreen"]       = true,
+  ["toggle-preview"]          = true,
+  ["toggle-preview-cw"]       = true,
+  ["toggle-preview-ccw"]      = true,
+  ["toggle-preview-behavior"] = true,
+  ["toggle-preview-wrap"]     = true,
+  ["toggle-preview-ts-ctx"]   = true,
+  ["toggle-preview-undo"]     = true,
+  ["preview-ts-ctx-dec"]      = true,
+  ["preview-ts-ctx-inc"]      = true,
+  ["preview-reset"]           = true,
+  ["preview-page-down"]       = true,
+  ["preview-page-up"]         = true,
+  ["preview-half-page-up"]    = true,
+  ["preview-half-page-down"]  = true,
+  ["preview-down"]            = true,
+  ["preview-up"]              = true,
+  ["preview-top"]             = true,
+  ["preview-bottom"]          = true,
+  ["focus-preview"]           = true,
 }
 
 -- Keys with modifier+special combos that fzf doesn't support.
@@ -312,11 +312,11 @@ function M.build_transform_binds(opts)
   local merged = M.normalize_binds(opts)
 
   -- Classify all binds
-  local direct = {}      -- key -> fzf action string
-  local accept = {}      -- key -> bind entry (for actions.expect)
-  local transform = {}   -- key -> bind entry (keys for consolidated handler)
-  local events = {}      -- event_name -> bind entry
-  local sigwinch = {}    -- key -> bind entry
+  local direct = {}    -- key -> fzf action string
+  local accept = {}    -- key -> bind entry (for actions.expect)
+  local transform = {} -- key -> bind entry (keys for consolidated handler)
+  local events = {}    -- event_name -> bind entry
+  local sigwinch = {}  -- key -> bind entry
 
   for key, entry in pairs(merged) do
     local category = classify_bind(key, entry, opts)
@@ -665,16 +665,16 @@ function M._execute_builtin(builtin_name, opts)
 
   -- Map builtin names to their win.lua implementations
   local builtin_map = {
-    ["hide"] = function()
+    ["hide"]                    = function()
       win.hide()
     end,
-    ["toggle-help"] = function()
+    ["toggle-help"]             = function()
       win.toggle_help()
     end,
-    ["toggle-fullscreen"] = function()
+    ["toggle-fullscreen"]       = function()
       win.toggle_fullscreen()
     end,
-    ["toggle-preview"] = function()
+    ["toggle-preview"]          = function()
       win.toggle_preview()
       local self = winobj()
       if not self then return "" end
@@ -693,11 +693,11 @@ function M._execute_builtin(builtin_name, opts)
           self:normalize_preview_layout().str)
       end
     end,
-    ["toggle-preview-cw"] = function()
+    ["toggle-preview-cw"]       = function()
       win.toggle_preview_cw(1)
       return change_preview_window()
     end,
-    ["toggle-preview-ccw"] = function()
+    ["toggle-preview-ccw"]      = function()
       win.toggle_preview_cw(-1)
       return change_preview_window()
     end,
@@ -739,7 +739,7 @@ function M._create_dispatch_handler(opts)
     local key
     local is_event = false
     if items[1] and type(items[1]) == "string" and items[1]:match("^__evt__") then
-      key = items[1]:sub(8)  -- strip "__evt__" prefix
+      key = items[1]:sub(8) -- strip "__evt__" prefix
       table.remove(items, 1)
       is_event = true
     else
@@ -751,8 +751,8 @@ function M._create_dispatch_handler(opts)
     local custom_fi = is_event and opts.__transform_custom_fi
         and opts.__transform_custom_fi[key]
     if not custom_fi then
-      local match_count = table.remove(items)  -- {n}
-      local query = table.remove(items)         -- {q}
+      local match_count = table.remove(items) -- {n}
+      local query = table.remove(items)       -- {q}
 
       -- Update resume query
       if query then
