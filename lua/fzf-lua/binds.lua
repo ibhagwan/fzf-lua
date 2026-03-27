@@ -54,46 +54,47 @@ local BUILTIN_ACTIONS = {
   ["focus-preview"]              = true,
 }
 
+-- Keys with modifier+special combos that fzf doesn't support.
+-- Used by normalize_key to route these through the SIGWINCH bridge.
+local SPECIAL_NEOVIM_ONLY = {
+  ["ctrl-cr"]     = true,
+  ["ctrl-enter"]  = true,
+  ["ctrl-bs"]     = true,
+  ["shift-cr"]    = true,
+  ["shift-enter"] = true,
+  ["alt-esc"]     = true,
+}
+
 -- Bind categories
-M.DIRECT    = "direct"
-M.ACCEPT    = "accept"
+M.DIRECT = "direct"
+M.ACCEPT = "accept"
 M.TRANSFORM = "transform"
-M.SIGWINCH  = "sigwinch"
-M.DROPPED   = "dropped"
+M.SIGWINCH = "sigwinch"
+M.DROPPED = "dropped"
 
 --- Normalize a key from neovim format to fzf format if needed.
 --- Accepts both styles: `<C-y>` -> `ctrl-y`, `ctrl-y` stays as-is.
+--- Both paths check SPECIAL_NEOVIM_ONLY so raw fzf-style unsupported
+--- keys (e.g. "ctrl-enter") are treated the same as "<C-Enter>".
 ---@param key string
 ---@return string fzf_key
 ---@return boolean is_neovim_only true if key has no fzf equivalent
 local function normalize_key(key)
-  -- Already in fzf format (no angle brackets)
-  if not key:match("^<.*>$") then
-    return key, false
+  local fzf_key
+  if key:match("^<.*>$") then
+    fzf_key = utils.neovim_bind_to_fzf(key)
+    -- Collapse shift-<letter> to uppercase letter in fzf key format.
+    -- neovim_bind_to_fzf produces e.g. "alt-shift-j" from "<M-S-j>"
+    -- but fzf expects "alt-J" (shift+letter = uppercase letter).
+    -- Only applies to single ASCII letters, not special keys like
+    -- shift-down, shift-tab, etc.
+    fzf_key = fzf_key:gsub("shift%-(%a)$", function(letter)
+      return letter:upper()
+    end)
+  else
+    fzf_key = key
   end
-  local fzf_key = utils.neovim_bind_to_fzf(key)
-  -- Collapse shift-<letter> to uppercase letter in fzf key format.
-  -- neovim_bind_to_fzf produces e.g. "alt-shift-j" from "<M-S-j>"
-  -- but fzf expects "alt-J" (shift+letter = uppercase letter).
-  -- Only applies to single ASCII letters, not special keys like
-  -- shift-down, shift-tab, etc.
-  fzf_key = fzf_key:gsub("shift%-(%a)$", function(letter)
-    return letter:upper()
-  end)
-  -- Check if the conversion produces a valid fzf key
-  -- Keys like <C-Enter>, <C-BS> have no fzf equivalent and
-  -- neovim_bind_to_fzf will produce something like "ctrl-enter"
-  -- which fzf doesn't recognize for some modifier+special combos
-  -- For now, keys with shift-/ctrl- + special keys that fzf doesn't support:
-  local special_neovim_only = {
-    ["ctrl-cr"]    = true,
-    ["ctrl-enter"] = true,
-    ["ctrl-bs"]    = true,
-    ["shift-cr"]   = true,
-    ["shift-enter"] = true,
-    ["alt-esc"]    = true,
-  }
-  return fzf_key, special_neovim_only[fzf_key] or false
+  return fzf_key, SPECIAL_NEOVIM_ONLY[fzf_key] or false
 end
 
 --- Normalize a single bind value into the canonical table form.
@@ -101,16 +102,21 @@ end
 ---@param key string the fzf-format key
 ---@param value any the bind value
 ---@param is_event boolean whether the key is an fzf event name
+---@param source string? which table the value came from (e.g. "keymap.fzf")
 ---@return table? normalized bind entry or nil to skip
-local function normalize_value(key, value, is_event)
+local function normalize_value(key, value, is_event, source)
   if value == false or value == nil then
     return nil
   end
 
-  -- Bare function → accept action (events are always transform)
+  -- Bare function — behavior depends on source
   if type(value) == "function" then
     if is_event then
       return { fn = value, event = true }
+    elseif source == "keymap.fzf" then
+      -- Legacy: bare functions in keymap.fzf are execute-silent
+      -- (core.lua create_fzf_binds converts them to execute-silent:...)
+      return { fn = value, exec_silent = true }
     else
       return { fn = value, accept = true }
     end
@@ -137,6 +143,9 @@ local function normalize_value(key, value, is_event)
 
   -- Table with string [1] (help string support: {"first", desc = "Go to first"})
   if type(value) == "table" and type(value[1]) == "string" then
+    if BUILTIN_ACTIONS[value[1]] then
+      return { builtin = value[1], desc = value.desc }
+    end
     return { fzf_action = value[1], desc = value.desc }
   end
 
@@ -173,7 +182,7 @@ function M.normalize_binds(opts)
     for key, value in pairs(opts.keymap.builtin) do
       if type(key) == "string" and value and value ~= true then
         local fzf_key = normalize_key(key)
-        local entry = normalize_value(fzf_key, value, FZF_EVENTS[fzf_key])
+        local entry = normalize_value(fzf_key, value, FZF_EVENTS[fzf_key], "keymap.builtin")
         if entry then
           entry._source = "keymap.builtin"
           entry._nvim_key = key
@@ -187,7 +196,7 @@ function M.normalize_binds(opts)
   if type(opts.keymap) == "table" and type(opts.keymap.fzf) == "table" then
     for key, value in pairs(opts.keymap.fzf) do
       local fzf_key = normalize_key(key)
-      local entry = normalize_value(fzf_key, value, FZF_EVENTS[fzf_key])
+      local entry = normalize_value(fzf_key, value, FZF_EVENTS[fzf_key], "keymap.fzf")
       if entry then
         entry._source = "keymap.fzf"
         entry._nvim_key = key
@@ -202,7 +211,7 @@ function M.normalize_binds(opts)
       -- Internal actions (underscore prefix) are not merged
       if type(key) == "string" and not key:match("^_") then
         local fzf_key = normalize_key(key)
-        local entry = normalize_value(fzf_key, value, FZF_EVENTS[fzf_key])
+        local entry = normalize_value(fzf_key, value, FZF_EVENTS[fzf_key], "actions")
         if entry then
           entry._source = "actions"
           entry._nvim_key = key
@@ -216,14 +225,21 @@ function M.normalize_binds(opts)
   if type(opts.binds) == "table" then
     for key, value in pairs(opts.binds) do
       local fzf_key = normalize_key(key)
-      local entry = normalize_value(fzf_key, value, FZF_EVENTS[fzf_key])
+      local entry = normalize_value(fzf_key, value, FZF_EVENTS[fzf_key], "binds")
       if entry then
         entry._source = "binds"
         entry._nvim_key = key
         merged[fzf_key] = entry
       elseif value == false then
-        -- Explicit false removes the bind
+        -- Explicit false removes the bind and clears legacy tables
+        -- so actions.expect()/create_fzf_binds() can't resurrect it
         merged[fzf_key] = nil
+        if type(opts.actions) == "table" then
+          opts.actions[key] = nil
+        end
+        if type(opts.keymap) == "table" and type(opts.keymap.fzf) == "table" then
+          opts.keymap.fzf[key] = nil
+        end
       end
     end
   end
@@ -346,7 +362,14 @@ function M.build_transform_binds(opts)
         field_index = entry.field_index,
       }
     else
-      action_entry = entry.fn or entry
+      action_entry = {
+        fn = entry.fn or entry,
+        prefix = entry.prefix,
+        postfix = entry.postfix,
+        desc = entry.desc,
+        header = entry.header,
+        field_index = entry.field_index,
+      }
     end
     opts.actions[key] = action_entry
   end
@@ -493,6 +516,16 @@ function M.build_transform_binds(opts)
     else
       opts.keymap.fzf[key] = action
     end
+    -- Also mark action with _ignore so actions.expect() doesn't generate
+    -- a competing print(key)+accept for DIRECT entries (e.g. Windows
+    -- toggle-preview which is classified DIRECT instead of TRANSFORM)
+    if opts.actions[key] then
+      if type(opts.actions[key]) == "table" then
+        opts.actions[key]._ignore = true
+      else
+        opts.actions[key] = { fn = opts.actions[key], _ignore = true }
+      end
+    end
   end
 
   -- Mark actions that were routed to transform as _ignore
@@ -575,8 +608,15 @@ function M._make_handler(key, entry, opts)
       if type(entry.fn) == "function" then
         entry.fn(items, opts)
       end
-      -- exec_silent returns empty string (no fzf UI change)
-      return ""
+      -- Preserve prefix/postfix wrappers (e.g. "select-all+...")
+      local parts = {}
+      if type(entry.prefix) == "string" then
+        table.insert(parts, entry.prefix:gsub("%+$", ""))
+      end
+      if type(entry.postfix) == "string" then
+        table.insert(parts, entry.postfix:gsub("^%+", ""))
+      end
+      return #parts > 0 and table.concat(parts, "+") or ""
     end
   end
 
@@ -746,11 +786,15 @@ function M._create_dispatch_handler(opts)
   end
 end
 
---- Check if unified binds should be used (fzf >= 0.59, not skim)
+--- Check if unified binds should be used (fzf >= 0.59, not skim, not Windows)
+--- On Windows the consolidated transform shell command doesn't work with
+--- cmd.exe; fall back to legacy path which uses execute-silent binds.
 ---@param opts table
 ---@return boolean
 function M.can_unified(opts)
-  return utils.has(opts, "fzf", { 0, 59 }) and not utils.has(opts, "sk")
+  return utils.has(opts, "fzf", { 0, 59 })
+      and not utils.has(opts, "sk")
+      and not utils.__IS_WINDOWS
 end
 
 return M

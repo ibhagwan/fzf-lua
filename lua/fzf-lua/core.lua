@@ -263,7 +263,7 @@ end
 M.fzf_wrap = function(cmd, opts, convert_actions)
   opts = opts or {}
   M.set_header(opts)
-  if convert_actions and type(opts.actions) == "table" then
+  if convert_actions and (binds.can_unified(opts) or type(opts.actions) == "table") then
     if binds.can_unified(opts) then
       -- Store contents for reload cmd before build_transform_binds
       opts._contents = opts._contents or cmd
