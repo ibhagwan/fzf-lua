@@ -271,7 +271,38 @@ local function classify_bind(key, entry, opts)
   end
 
   -- Builtin action → transform
+  -- Preview scroll actions with fzf previewer should be DIRECT so fzf
+  -- can scroll its own preview pane (the neovim-side functions only
+  -- work for the builtin previewer). Only route actions that are valid
+  -- fzf action names; neovim-only preview actions (preview-reset,
+  -- preview-ts-ctx-*, etc.) must stay as TRANSFORM.
   if entry.builtin then
+    if entry.builtin:match("^preview%-") then
+      local p = opts.previewer
+      -- Detect fzf previewer when opts.previewer is not yet resolved:
+      --   opts.previewer is set → check directly (string/function/table = fzf)
+      --   opts.previewer is nil → check opts.preview (fzf --preview command)
+      --     if opts.preview is a string → fzf previewer (e.g. git show)
+      --     if opts.preview is nil → builtin previewer
+      local is_builtin = (p == nil or p == true or p == "hidden" or p == "nohidden")
+          and not opts.preview
+      -- Whitelist of preview actions valid in fzf
+      local fzf_preview_action = ({
+        ["preview-up"]             = true,
+        ["preview-down"]           = true,
+        ["preview-page-up"]        = true,
+        ["preview-page-down"]      = true,
+        ["preview-half-page-up"]   = true,
+        ["preview-half-page-down"] = true,
+        ["preview-top"]            = true,
+        ["preview-bottom"]         = true,
+        ["focus-preview"]          = true,
+      })[entry.builtin]
+      if not is_builtin and fzf_preview_action then
+        entry.fzf_action = entry.builtin
+        return M.DIRECT
+      end
+    end
     return M.TRANSFORM
   end
 
