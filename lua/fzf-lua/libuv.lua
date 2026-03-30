@@ -240,7 +240,10 @@ M.spawn = function(opts, fn_transform, fn_done)
   --- Called with nil to process the leftover data
   ---@param data string?
   local process_data = function(data)
-    data = data or prev_line_content and (prev_line_content .. EOL) or nil
+    if not data and prev_line_content then
+      data = prev_line_content .. EOL
+      prev_line_content = nil
+    end
     if not data then
       -- NOTE: this isn't called when prev_line_content is not nil but that's
       -- not a problem as the write_cb will call finish once the callback is done
