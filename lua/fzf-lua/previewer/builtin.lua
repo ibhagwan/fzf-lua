@@ -1033,6 +1033,14 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     self._job_id = nil
   end
   if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
+    -- For image buffers, use Snacks.image instead of copying buffer lines
+    if vim.bo[entry.bufnr].filetype == "image" then
+      local tmpbuf = reuse_buf or self:get_tmp_buffer()
+      if self:attach_snacks_image_buf(tmpbuf, entry) then
+        self:preview_buf_post(entry)
+        return
+      end
+    end
     -- WE NO LONGER REUSE THE CURRENT BUFFER
     -- this changes the buffer's 'getbufinfo[1].lastused'
     -- which messes up our `buffers()` sort
