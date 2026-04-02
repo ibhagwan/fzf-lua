@@ -1553,7 +1553,7 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
       end
       -- for attach_snacks_image_{inline,buf}
       -- https://github.com/folke/snacks.nvim/pull/1615
-      if vim.b[self.preview_bufnr].snacks_image_attached then
+      if self.preview_bufnr and vim.b[self.preview_bufnr].snacks_image_attached then
         utils.wo[self.win.preview_winid][0].winblend = 0
       end
     end
