@@ -187,25 +187,25 @@ Enable debug mode (output debug prints).
 
 #### globals.file_icons
 
-Type: `boolean|integer|string`, Default: `nil`
+Type: `boolean|string|integer`, Default: `nil`
 
 If available, display file icons. Set to `true` will attempt to use "nvim-web-devicons" and fallback to "mini.icons", other possible values are `devicons` or `mini` which force loading a specific icons plugin, for example: `:FzfLua files file_icons=mini` or `:lua require("fzf-lua").files({ file_icons = "devicons" })`.
 
 #### globals.fn_postprocess
 
-Type: `boolean|string|function`, Default: `nil`
+Type: `function|boolean|string`, Default: `nil`
 
 Postprocess function called after command execution.
 
 #### globals.fn_preprocess
 
-Type: `boolean|string|function`, Default: `nil`
+Type: `function|boolean|string`, Default: `nil`
 
 Preprocess function called before command execution.
 
 #### globals.fn_transform
 
-Type: `boolean|string|function`, Default: `nil`
+Type: `function|boolean|string`, Default: `nil`
 
 Transform function for each entry, can be a function or a string that returns a function.
 
@@ -253,7 +253,7 @@ Header line, set to any string to display a header line, set to `false` to disab
 
 #### globals.multiprocess
 
-Type: `integer|boolean`, Default: `nil`
+Type: `boolean|integer`, Default: `nil`
 
 Use the multiprocess shell wrapper for async file generation, improves performance for large file sets.
 
@@ -277,7 +277,7 @@ Disable resuming for the current picker.
 
 #### globals.preview
 
-Type: `string|function|table`, Default: `nil`
+Type: `table|function|string`, Default: `nil`
 
 Fzf native preview command, can be a string, function or table.
 
@@ -301,7 +301,7 @@ Previewer override, set to `false` to disable the previewer. By default files pi
 
 #### globals.profile
 
-Type: `string|table`, Default: `nil`
+Type: `table|string`, Default: `nil`
 
 Apply a profile on top of the current configuration, can be a string or table.
 
@@ -343,13 +343,13 @@ Do not display an error message when the provider command fails.
 
 #### globals.winopts.backdrop
 
-Type: `number|boolean`, Default: `60`
+Type: `boolean|number`, Default: `60`
 
 Backdrop opacity value, 0 for fully opaque, 100 for fully transparent (i.e. disabled).
 
 #### globals.winopts.border
 
-Type: `string|table`, Default: `"rounded"`
+Type: `table|string`, Default: `"rounded"`
 
 Border of the fzf-lua float, possible values are `none|single|double|rounded|thicc|thiccc|thicccc` or a custom border character array passed as is to `nvim_open_win`.
 
@@ -427,7 +427,7 @@ Preview layout, possible values are `horizontal|vertical|flex`, when set to `fle
 
 #### globals.winopts.preview.scrollbar
 
-Type: `string|boolean`, Default: `"border"`
+Type: `boolean|string`, Default: `"border"`
 
 Scrollbar style in the builtin previewer, set to `false` to disable, possible values are `float|border`.
 
@@ -535,7 +535,7 @@ Screen row where to place the fzf-lua float window, between 0-1 will represent p
 
 #### globals.winopts.split
 
-Type: `string|function|false`, Default: `nil`
+Type: `function|string|false`, Default: `nil`
 
 Neovim split command to use for fzf-lua interface, e.g `belowright new`.
 
@@ -977,7 +977,7 @@ Path to the colorschemes database JSON file.
 
 ##### awesome_colorschemes.packpath
 
-Type: `string|function`, Default: `nil`
+Type: `function|string`, Default: `nil`
 
 Path where downloaded colorschemes will be stored.
 
@@ -1213,7 +1213,7 @@ Filter diagnostics by LSP client ID.
 
 ##### diagnostics.sort
 
-Type: `integer|boolean`, Default: `nil`
+Type: `boolean|integer`, Default: `nil`
 
 Sort diagnostics by severity, set to `false` to disable sorting.
 
@@ -1243,7 +1243,7 @@ Display diagnostic code.
 
 ##### diagnostics.multiline
 
-Type: `integer|boolean`, Default: `2`
+Type: `boolean|integer`, Default: `2`
 
 Enable multiline diagnostics display, set to a number for max lines.
 
@@ -1459,7 +1459,7 @@ Initial search pattern.
 
 ##### grep.no_esc
 
-Type: `integer|boolean`, Default: `nil`
+Type: `boolean|integer`, Default: `nil`
 
 Disable escaping of special characters in the search query, set to `2` to disable escaping and regex mode.
 
@@ -1617,7 +1617,7 @@ LSP references, definitions, etc.
 
 ##### lsp.async_or_timeout
 
-Type: `integer|boolean`, Default: `5000`
+Type: `boolean|integer`, Default: `5000`
 
 Set to `true` for async LSP requests, or timeout (ms) for `vim.lsp.buf_request_sync`.
 
@@ -1809,13 +1809,13 @@ Neovim registers.
 
 ##### registers.filter
 
-Type: `string|function`, Default: `nil`
+Type: `function|string`, Default: `nil`
 
 Lua pattern or function to filter registers.
 
 ##### registers.multiline
 
-Type: `integer|boolean`, Default: `true`
+Type: `boolean|integer`, Default: `true`
 
 Display multiline register contents, set to a number for max lines.
 
