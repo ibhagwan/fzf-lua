@@ -1116,7 +1116,7 @@ previewers = {
       ["--with-nth"]  = '2..',
     },
   },
-  -- `blines` has the same defaults as `lines` aside from prompt and `show_bufname`
+  -- `blines` has the same defaults as `lines` aside from `prompt`, `show_bufname`, and `locate`
   lines = {
     prompt            = 'Lines❯ ',
     file_icons        = true,
@@ -1125,6 +1125,7 @@ previewers = {
     show_unlisted     = false,        -- exclude 'help' buffers
     no_term_buffers   = true,         -- exclude 'term' buffers
     sort_lastused     = true,         -- sort by most recent
+    locate            = false,        -- jump to current line (blines only)
     winopts  = { treesitter = true }, -- enable TS highlights
     fzf_opts = {
       -- do not include bufnr in fuzzy matching
