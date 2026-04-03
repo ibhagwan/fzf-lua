@@ -1140,6 +1140,17 @@ function FzfWin:close_preview(do_not_clear_cache)
   self.preview_winid = nil
 end
 
+---@param winid? integer
+---@param last_winid? integer
+local restore_lastwin = function(winid, last_winid)
+  if winid and last_winid and api.nvim_win_is_valid(last_winid) then
+    utils.eventignore(function()
+      api.nvim_set_current_win(last_winid)
+      api.nvim_set_current_win(winid)
+    end)
+  end
+end
+
 ---@param buf? integer
 local restore_altbuf = function(buf)
   if buf and api.nvim_buf_is_valid(buf) then
@@ -1166,6 +1177,8 @@ function FzfWin:close(fzf_bufnr, hide)
   local ctx = utils.__CTX() or {}
   if ctx.mode == "nt" then vim.cmd "stopinsert" end
   if self.fzf_winid and api.nvim_win_is_valid(self.fzf_winid) then
+    -- restore the original last window
+    restore_lastwin(ctx.winid, ctx.last_winid)
     -- run in a pcall due to potential errors while closing the window
     -- Vim(lua):E5108: Error executing lua
     -- experienced while accessing 'vim.b[]' from my statusline code

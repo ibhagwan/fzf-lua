@@ -11,6 +11,7 @@ local ctx
 ---@field bufnr integer
 ---@field bname string
 ---@field winid integer
+---@field last_winid integer
 ---@field alt_bufnr integer
 ---@field tabnr integer
 ---@field tabh integer
@@ -51,6 +52,7 @@ M.refresh = function(opts)
       bufnr = vim.api.nvim_get_current_buf(),
       bname = vim.api.nvim_buf_get_name(0),
       winid = vim.api.nvim_get_current_win(),
+      last_winid = vim.fn.win_getid(vim.fn.winnr("#")),
       alt_bufnr = vim.fn.bufnr("#"),
       tabnr = vim.fn.tabpagenr(),
       tabh = vim.api.nvim_win_get_tabpage(0),
