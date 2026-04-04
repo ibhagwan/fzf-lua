@@ -155,6 +155,9 @@ T["actions"]["vimcmd"] = new_set({
         -- Wait for previewer to load the LICENSE file entry and title to render
         child.wait_until(function()
           local entry = child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]])
+          print(entry)
+          print(type(entry))
+          vim.print(entry)
           return entry and entry:match("LICENSE") ~= nil
         end)
         vim.uv.sleep(100)  -- Allow async title update to render
