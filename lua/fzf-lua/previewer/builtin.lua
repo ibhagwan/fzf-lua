@@ -1032,7 +1032,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     fn.jobstop(self._job_id)
     self._job_id = nil
   end
-  if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) then
+  if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) and vim.bo[entry.bufnr].filetype ~= "image" then
     -- WE NO LONGER REUSE THE CURRENT BUFFER
     -- this changes the buffer's 'getbufinfo[1].lastused'
     -- which messes up our `buffers()` sort
