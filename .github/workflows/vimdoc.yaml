@@ -30,17 +30,10 @@ jobs:
         run: |
           nvim --headless -l scripts/gen_options.lua
           make gen
-      - name: Setup treesitter
+      - name: Generating vimdoc
         run: |
           mkdir -p ~/.local/share/nvim/site/pack/vendor/start
           git clone --depth 1 https://github.com/ibhagwan/ts-vimdoc.nvim ~/.local/share/nvim/site/pack/vendor/start/ts-vimdoc.nvim
-          git clone --depth 1 https://github.com/nvim-treesitter/nvim-treesitter ~/.local/share/nvim/site/pack/vendor/start/nvim-treesitter
-      - name: Build parser
-        run: |
-          export PACKPATH=$HOME/.local/share/nvim/site
-          nvim --headless -u ~/.local/share/nvim/site/pack/vendor/start/ts-vimdoc.nvim/scripts/init.lua -c "TSUpdateSync markdown" -c "TSUpdateSync markdown_inline" -c "qa"
-      - name: Generating vimdoc
-        run: |
           export PATH="${PWD}/build/:${PATH}"
           export PACKPATH=$HOME/.local/share/nvim/site
           nvim --headless -u ~/.local/share/nvim/site/pack/vendor/start/ts-vimdoc.nvim/scripts/init.lua  -c "lua require('ts-vimdoc').docgen({input_file='README.md', output_file='doc/fzf-lua.txt', project_name='fzf-lua', version='For Neovim >= 0.9.0'})" -c "qa"
