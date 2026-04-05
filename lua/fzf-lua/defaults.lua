@@ -1245,11 +1245,14 @@ M.defaults.lines                 = {
 ---Current buffer lines.
 ---@diagnostic disable-next-line: param-type-mismatch
 ---@class fzf-lua.config.Blines: fzf-lua.config.Lines
+---Jump to the current line.
+---@field locate? boolean
 M.defaults.blines                = vim.tbl_deep_extend("force", M.defaults.lines, {
   show_bufname    = false,
   show_unloaded   = true,
   show_unlisted   = true,
   no_term_buffers = false,
+  locate          = false,
   fzf_opts        = {
     ["--with-nth"] = "4..",
     ["--nth"]      = "2..",

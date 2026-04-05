@@ -21,6 +21,7 @@ local M = {}
 ---@field start_line? integer
 ---@field end_line? integer
 ---@field start? "cursor"
+---@field locate? boolean
 ---@field show_bufname? boolean|integer
 ---@field show_bufname_len? integer
 ---@field sort_lastused? boolean
@@ -259,6 +260,9 @@ M.blines = function(opts)
     if not sel then return end
     opts.start_line = opts.start_line or sel.start.line
     opts.end_line = opts.end_line or sel["end"].line
+  elseif opts.locate then
+    -- capture viewport bounds while the original window is still current
+    opts.__win_bottom = vim.fn.line("w$")
   end
   return M.buffer_lines(opts)
 end
@@ -348,6 +352,15 @@ M.buffer_lines = function(opts)
           if opts.start == "cursor" then
             -- start display from current line and wrap from bottom (#822)
             offset = utils.CTX().cursor[1] - start_line
+          end
+          if opts.locate and opts.__win_bottom then
+            -- position fzf cursor on current line
+            local cursor_pos = utils.CTX().cursor[1] - start_line + 1
+            opts.__locate_pos = math.max(1, math.min(lines, cursor_pos))
+            if opts.__win_bottom then
+              local bottom_pos = opts.__win_bottom - start_line + 1
+              opts.__scroll_pos = math.max(1, math.min(lines, bottom_pos))
+            end
           end
         end
 

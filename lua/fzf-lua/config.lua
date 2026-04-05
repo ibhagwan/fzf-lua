@@ -983,7 +983,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     opts.fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]]
   end
 
-  -- set by git_{commits|diff|hunks} actions
+  -- set by git_{commits|diff|hunks} and blines actions
   if utils.get_info().cmd and opts["__pos_" .. utils.get_info().cmd] then
     opts.locate = opts.locate == nil and true or opts.locate
     opts.__locate_pos = opts.__locate_pos or opts["__pos_" .. utils.get_info().cmd]
@@ -993,7 +993,11 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("load:+transform:"
       .. FzfLua.shell.stringify_data(function(_, _, _)
         if opts.__locate_pos then
-          return string.format("pos(%d)", opts.__locate_pos)
+          local action = string.format("pos(%d)", opts.__locate_pos)
+          if opts.__scroll_pos then
+            action = string.format("pos(%d)+", opts.__scroll_pos) .. action
+          end
+          return action
         end
       end, opts)))
   end
