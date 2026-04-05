@@ -3,6 +3,7 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
+local binds = require "fzf-lua.binds"
 local win = require "fzf-lua.win"
 local libuv = require "fzf-lua.libuv"
 local shell = require "fzf-lua.shell"
@@ -262,9 +263,15 @@ end
 M.fzf_wrap = function(cmd, opts, convert_actions)
   opts = opts or {}
   M.set_header(opts)
-  if convert_actions and type(opts.actions) == "table" then
-    opts = M.convert_reload_actions(cmd, opts)
-    opts = M.convert_exec_silent_actions(opts)
+  if convert_actions and (binds.can_unified(opts) or type(opts.actions) == "table") then
+    if binds.can_unified(opts) then
+      -- Store contents for reload cmd before build_transform_binds
+      opts._contents = opts._contents or cmd
+      opts = binds.build_transform_binds(opts)
+    else
+      opts = M.convert_reload_actions(cmd, opts)
+      opts = M.convert_exec_silent_actions(opts)
+    end
   end
   -- Do not strt fzf, return the stringified contents and opts onlu
   -- used by the "combine" picker to merge inputs

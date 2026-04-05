@@ -218,6 +218,72 @@ function FzfWin:setup_keybinds()
   self.keymap = type(self.keymap) == "table" and self.keymap or {}
   self.keymap.fzf = type(self.keymap.fzf) == "table" and self.keymap.fzf or {}
   self.keymap.builtin = type(self.keymap.builtin) == "table" and self.keymap.builtin or {}
+
+  -- When using unified binds (fzf >= 0.59), builtin actions are routed
+  -- through the consolidated transform handler. We only need to:
+  -- 1. Register SIGWINCH-bridged terminal keymaps (neovim-only keys)
+  -- 2. Handle the Esc keymap fix
+  local binds = require("fzf-lua.binds")
+  if binds.can_unified(self._o) then
+    -- Register SIGWINCH-bridged terminal keymaps (neovim-only keys)
+    if self._o.__sigwinch_triggers and self.fzf_bufnr then
+      for nvim_key, handler_key in pairs(self._o.__sigwinch_triggers) do
+        vim.keymap.set("t", nvim_key, function()
+          -- SIGWINCH() sends the signal and sets __sigwinches to the scopes.
+          -- Pass the handler_key as scope so the resize callback knows
+          -- which handler to invoke.
+          self:SIGWINCH({ handler_key })
+        end, { nowait = true, buffer = self.fzf_bufnr })
+      end
+    end
+
+    -- Register SIGWINCH handler for toggle-preview so that direct calls
+    -- to win.toggle_preview() (e.g. from API/tests) can sync fzf state.
+    -- Only needed for split layouts or fzf-native previewers (not builtin
+    -- previewer without split, where fzf's preview pane is size 0).
+    if not utils.__IS_WINDOWS
+        and (self.winopts.split or not self.previewer_is_builtin) then
+      self.on_SIGWINCH(self._o, "toggle-preview", function(args)
+        if tonumber(args[1]) then
+          return "toggle-preview"
+        else
+          return string.format("change-preview-window(%s)", self:normalize_preview_layout().str)
+        end
+      end)
+      self.on_SIGWINCH(self._o, "toggle-preview-cw", function(args)
+        if not tonumber(args[1]) then return end
+        return string.format("change-preview-window(%s)", self:normalize_preview_layout().str)
+      end)
+      -- Set _fzf_toggle_prev_bind so toggle_preview() can use SIGWINCH
+      self._fzf_toggle_prev_bind = true
+    elseif utils.__IS_WINDOWS
+        and (self.winopts.split or not self.previewer_is_builtin) then
+      -- On Windows, SIGWINCH is not available. Find toggle-preview in
+      -- keymaps and add to keymap.fzf so toggle_preview() can feed the
+      -- key directly to fzf (same as legacy path).
+      self._fzf_toggle_prev_bind = nil
+      for k, v in pairs(self.keymap.builtin) do
+        if v == "toggle-preview" then
+          self.keymap.fzf[utils.neovim_bind_to_fzf(k)] = v
+        end
+      end
+      for k, v in pairs(self.keymap.fzf) do
+        if v == "toggle-preview" then
+          self._fzf_toggle_prev_bind = utils.fzf_bind_to_neovim(k)
+          self.keymap.builtin[self._fzf_toggle_prev_bind] = v
+        end
+      end
+      self._fzf_toggle_prev_bind = self._fzf_toggle_prev_bind or true
+    end
+
+    -- Esc keymap fix
+    if self.actions["esc"] == actions.dummy_abort and not self.keymap.builtin["<esc>"] then
+      vim.keymap.set("t", "<Esc>", "<Esc>", { buffer = self.fzf_bufnr, nowait = true })
+    end
+    return
+  end
+
+  -- Legacy path (fzf < 0.59 or skim)
   local keymap_tbl = {
     ["hide"]                    = { module = "win", fnc = "hide()" },
     ["toggle-help"]             = { module = "win", fnc = "toggle_help()" },
@@ -1256,7 +1322,9 @@ function FzfWin.on_SIGWINCH(opts, event, cb)
       local events = vim.tbl_keys(vim.list_slice(opts.__sigwinch_cb))
       vim.list_extend(events, opts.__sigwinches or {})
       opts.__sigwinches = nil
-      local acts = vim.tbl_map(function(k) return opts.__sigwinch_cb[k](args) end, events)
+      local acts = vim.tbl_map(function(k)
+        return opts.__sigwinch_cb[k] and opts.__sigwinch_cb[k](args) or ""
+      end, events)
       acts = vim.tbl_filter(function(a) return a and #a > 0 end, acts)
       return table.concat(acts, "+")
     end, opts, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")))
