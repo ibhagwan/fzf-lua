@@ -8,7 +8,7 @@ local fn = vim.fn
 
 ---@class fzf-lua.PathShortener
 ---@field _ns integer?
----@field _wins table<integer, { bufnr: integer, shorten_len: integer }>
+---@field _wins table<integer, fzf-lua.PathShortener.WinData>
 local PathShortener = {}
 
 PathShortener._wins = {}
@@ -22,36 +22,38 @@ function PathShortener.setup()
 
   -- Register decoration provider with ephemeral extmarks
   api.nvim_set_decoration_provider(PathShortener._ns, {
-    on_win = function(_, winid, bufnr, _topline, _botline)
+    on_win = function(_, winid, bufnr, topline, _botline)
       -- Only process registered fzf windows
       local win_data = PathShortener._wins[winid]
       if not win_data or win_data.bufnr ~= bufnr then
         return false
       end
+      win_data.topline = topline
+      win_data.winid = winid
       return true -- Continue to on_line callbacks
     end,
     on_line = function(_, winid, bufnr, row)
       local win_data = PathShortener._wins[winid]
       if not win_data then return end
-      PathShortener._apply_line(bufnr, row, win_data.shorten_len)
+      PathShortener._apply_line(bufnr, row, win_data)
     end,
   })
 end
 
----Apply path shortening to a single line using ephemeral extmarks
+---Apply path shortening to a single line using overlay virtual text
+---Uses virt_text_pos="overlay" instead of conceal to preserve line width
+---in terminal buffers, preventing fzf's preview border from shifting
 ---@param buf integer buffer number
 ---@param row integer 0-indexed line number
----@param shorten_len integer number of characters to keep
-function PathShortener._apply_line(buf, row, shorten_len)
+---@param win_data table window data from PathShortener._wins
+function PathShortener._apply_line(buf, row, win_data)
+  local shorten_len = win_data.shorten_len
   local lines = api.nvim_buf_get_lines(buf, row, row + 1, false)
   local line = lines[1]
   if not line or #line == 0 then return end
 
-  -- Find the path portion of the line
-  -- Lines may have prefixes like icons separated by nbsp (U+2002)
-  -- Format: [fzf_pointer] [git_icon nbsp] [file_icon nbsp] path[:line:col:text]
-  -- When file_icons=false, there's no nbsp separator before the path
-  -- The fzf terminal also adds pointer/marker prefix (e.g., "> " or " ")
+  -- Only process selectable entry lines (lines with icon nbsp separator)
+  -- This skips fzf's prompt, header, and info lines which don't have nbsp
   local path_start = 1
   local last_nbsp = line:find(utils.nbsp, 1, true)
   if last_nbsp then
@@ -61,21 +63,27 @@ function PathShortener._apply_line(buf, row, shorten_len)
       last_nbsp = line:find(utils.nbsp, path_start, true)
     until not last_nbsp
   else
-    -- No nbsp means no icons - skip fzf's pointer/marker prefix
-    -- Paths start with: alphanumeric, `/`, `~`, `.`, or drive letter (Windows)
+    -- No nbsp: either file_icons=false entry or a non-entry line (prompt/header)
+    -- Filter out fzf's prompt/info line which contains the match counter (e.g. "281/281 (0)")
+    if line:find("%d+/%d+") then return end
     -- Skip leading whitespace and pointer characters until we hit a path char
     local first_path_char = line:find("[%w/~%.]")
-    if first_path_char then
-      path_start = first_path_char
-    end
+    if not first_path_char then return end
+    path_start = first_path_char
+    -- Reject lines where space appears before the first path separator
+    -- This filters out header lines like "cwd: /path/to/dir"
+    local sub = line:sub(path_start)
+    local first_sep = path.find_next_separator(sub, 1)
+    if not first_sep then return end
+    local first_space = sub:find(" ")
+    if first_space and first_space < first_sep then return end
   end
 
-  -- Find where the path ends (at first colon after path_start, if any)
-  -- But be careful with Windows paths like C:\...
+  -- Find where the path ends
+  -- For grep-like results: path ends at first colon (file:line:col:text)
   local path_end = #line
   local colon_search_start = path_start
   -- On Windows, skip the drive letter colon (e.g., C:)
-  -- Check if char at path_start+1 is colon AND char at path_start+2 is a path separator
   if string.byte(line, path_start + 1) == path.colon_byte
       and path.byte_is_separator(string.byte(line, path_start + 2)) then
     colon_search_start = path_start + 2
@@ -85,68 +93,242 @@ function PathShortener._apply_line(buf, row, shorten_len)
     path_end = colon_pos - 1
   end
 
-  -- Now process the path portion for shortening
-  -- We need to conceal directory components, keeping only `shorten_len` chars
   local path_portion = line:sub(path_start, path_end)
 
-  -- Use path.find_next_separator to iterate through directory components
+  -- Formatters add ANSI escape sequences for coloring (e.g., dirname_first, filename_first)
+  -- We need to strip these for accurate shortening calculations, then let hl_mode="combine"
+  -- inherit the original coloring from the underlying line
+  local fmt_opts = win_data.fmt_opts
+  local has_fmt_hls = fmt_opts and fmt_opts.formatter
+      and fmt_opts.hl_dir and fmt_opts.hl_file
+  
+  -- Save the original path portion for width calculation
+  local original_path_portion = path_portion
+  
+  -- Strip ANSI codes for shortening calculations
+  path_portion = utils.strip_ansi_coloring(path_portion)
+  
+  -- For filename_first formatter, the entry is "filename<sep>parent/dir"
+  -- With --tabstop=1, the tab is rendered as a space in the terminal buffer
+  -- Only shorten the directory part after the separator
+  local filename_first_prefix
+  local filename_first_prefix_width = 0
+  if fmt_opts and fmt_opts.formatter and fmt_opts.formatter:find("filename_first") then
+    -- Try tab first, then fall back to space (fzf renders tab as space with --tabstop=1)
+    local sep_pos = path_portion:find("\t") or path_portion:find(" ")
+    if sep_pos then
+      filename_first_prefix = path_portion:sub(1, sep_pos) -- includes the separator
+      filename_first_prefix_width = fn.strdisplaywidth(filename_first_prefix)
+      path_portion = path_portion:sub(sep_pos + 1)
+      -- Adjust path_start for the extmark col position (stays the same,
+      -- but we'll prepend the prefix to the overlay)
+    end
+  end
+
+  -- Find the last path separator to determine the directory/filename boundary
+  local first_sep = path.find_next_separator(path_portion, 1)
+  if not first_sep then return end
+
+  local last_sep_in_path = nil
+  do
+    local prev_sep = 0
+    local s = first_sep
+    while s do
+      -- Check if the component between prev_sep and s contains whitespace
+      -- (indicates we've left the path and entered fzf status text)
+      if s > prev_sep + 1 then
+        local component = path_portion:sub(prev_sep + 1, s - 1)
+        if component:find("%s") then
+          break
+        end
+      end
+      last_sep_in_path = s
+      prev_sep = s
+      s = path.find_next_separator(path_portion, s + 1)
+    end
+  end
+
+  if not last_sep_in_path then return end
+
+  -- Determine the actual path boundary
+  local actual_path_len
+  if last_sep_in_path == #path_portion
+      or path_portion:find("^%s", last_sep_in_path + 1) then
+    actual_path_len = last_sep_in_path
+  else
+    local filename_start = last_sep_in_path + 1
+    local filename = path_portion:sub(filename_start)
+    local filename_trimmed = filename:match("^(%S+)") or filename
+    actual_path_len = last_sep_in_path + #filename_trimmed
+  end
+  path_portion = path_portion:sub(1, actual_path_len)
+
+  -- Build shortened path: shorten each directory component, keep filename intact
+  local shortened_parts = {}
+  local any_shortened = false
+  -- Track the byte offset of the last separator in the shortened string
+  -- to split dir/file parts for highlight groups
+  local shortened_last_sep_byte = 0
+  local shortened_byte_len = 0
+
   local prev_sep = 0
   local sep_pos = path.find_next_separator(path_portion, 1)
   while sep_pos do
     local component_start = prev_sep + 1
     local component = path_portion:sub(component_start, sep_pos - 1)
-    local component_len = #component
+    local sep_char = path_portion:sub(sep_pos, sep_pos)
 
-    -- Count UTF-8 characters using vim.str_utfindex
-    -- Use "utf-32" to count code points (actual characters), not bytes.
-    -- "utf-8" would give byte positions, "utf-16" gives UTF-16 code units.
+    -- Count UTF-8 characters
     local _, component_charlen = vim.str_utfindex(component, "utf-32")
-    component_charlen = component_charlen or component_len -- fallback to byte length
+    component_charlen = component_charlen or #component
 
-    -- Only conceal if the component has more characters than shorten_len
     if component_charlen > shorten_len then
-      -- Handle special case: component starts with '.' (hidden files/dirs)
       local keep_chars = shorten_len
       if string.byte(component, 1) == DOT_BYTE and component_charlen > shorten_len + 1 then
-        -- Keep the dot plus shorten_len characters
         keep_chars = shorten_len + 1
       end
-
-      -- Bounds check to prevent errors
       keep_chars = math.min(keep_chars, component_charlen)
 
-      -- Convert character count to byte offset using vim.str_byteindex
       local keep_bytes = vim.str_byteindex(component, "utf-32", keep_chars, false)
-      keep_bytes = keep_bytes or keep_chars -- fallback to character count (ASCII approximation)
+      keep_bytes = keep_bytes or keep_chars
 
-      -- Calculate 0-indexed byte positions in the full line for extmark
-      -- path_start is 1-indexed, component_start is 1-indexed within path_portion
-      local line_offset = path_start - 1 + component_start - 1
-      local conceal_start = line_offset + keep_bytes
-      local conceal_end = line_offset + component_len -- end of component (before separator)
-
-      if conceal_end > conceal_start then
-        pcall(api.nvim_buf_set_extmark, buf, PathShortener._ns, row, conceal_start, {
-          end_col = conceal_end,
-          conceal = "",
-          ephemeral = true,
-        })
-      end
+      local short_comp = component:sub(1, keep_bytes)
+      shortened_parts[#shortened_parts + 1] = short_comp
+      shortened_byte_len = shortened_byte_len + #short_comp
+      any_shortened = true
+    else
+      shortened_parts[#shortened_parts + 1] = component
+      shortened_byte_len = shortened_byte_len + #component
     end
+    shortened_parts[#shortened_parts + 1] = sep_char
+    shortened_byte_len = shortened_byte_len + #sep_char
+    shortened_last_sep_byte = shortened_byte_len
+
     prev_sep = sep_pos
     sep_pos = path.find_next_separator(path_portion, sep_pos + 1)
   end
+
+  -- Add the final component
+  -- For filename_first, the part after tab is all directories, so shorten it too
+  -- For dirname_first/normal, this is the filename - never shorten
+  local has_final_component = prev_sep < #path_portion
+  if has_final_component then
+    local final_component = path_portion:sub(prev_sep + 1)
+    if filename_first_prefix then
+      -- In filename_first mode, final component is a directory - shorten it
+      local _, final_charlen = vim.str_utfindex(final_component, "utf-32")
+      final_charlen = final_charlen or #final_component
+      if final_charlen > shorten_len then
+        local keep_chars = shorten_len
+        if string.byte(final_component, 1) == DOT_BYTE and final_charlen > shorten_len + 1 then
+          keep_chars = shorten_len + 1
+        end
+        keep_chars = math.min(keep_chars, final_charlen)
+        local keep_bytes = vim.str_byteindex(final_component, "utf-32", keep_chars, false)
+        keep_bytes = keep_bytes or keep_chars
+        local short_final = final_component:sub(1, keep_bytes)
+        shortened_parts[#shortened_parts + 1] = short_final
+        shortened_byte_len = shortened_byte_len + #short_final
+        any_shortened = true
+        -- Update last_sep_byte to include this shortened component
+        -- so the entire path uses dir highlight in filename_first mode
+        shortened_last_sep_byte = shortened_byte_len
+      else
+        shortened_parts[#shortened_parts + 1] = final_component
+        shortened_byte_len = shortened_byte_len + #final_component
+        shortened_last_sep_byte = shortened_byte_len
+      end
+    else
+      -- Normal mode: filename - don't shorten
+      shortened_parts[#shortened_parts + 1] = final_component
+    end
+  end
+
+  if not any_shortened then return end
+
+  local shortened_path = table.concat(shortened_parts)
+  -- Use original path (with ANSI) for width calculation since that's what we overlay
+  local original_width = fn.strdisplaywidth(utils.strip_ansi_coloring(original_path_portion)) + filename_first_prefix_width
+  local shortened_width = fn.strdisplaywidth(shortened_path) + filename_first_prefix_width
+  local padding = original_width - shortened_width
+
+  -- Build the virt_text tuples with appropriate highlights
+  -- hl_mode="combine" on the extmark merges our fg with the terminal's bg,
+  -- so cursor line bg from fzf is automatically preserved without detection
+  local virt_text = {}
+
+  -- Build virt_text with shortened path and explicit highlights
+  if has_fmt_hls then
+    -- Apply explicit highlights based on path structure
+    -- For filename_first: everything is directories (use dir_part)
+    -- For dirname_first: split at last separator
+    if filename_first_prefix then
+      -- filename_first: filename prefix uses file_part, directories use dir_part
+      virt_text[#virt_text + 1] = { filename_first_prefix, win_data.fmt_opts.hl_file }
+      virt_text[#virt_text + 1] = { shortened_path, win_data.fmt_opts.hl_dir }
+    else
+      -- dirname_first: split at last separator
+      local dir_str = shortened_path:sub(1, shortened_last_sep_byte)
+      local file_str = shortened_path:sub(shortened_last_sep_byte + 1)
+      virt_text[#virt_text + 1] = { dir_str, win_data.fmt_opts.hl_dir }
+      if #file_str > 0 then
+        virt_text[#virt_text + 1] = { file_str, win_data.fmt_opts.hl_file }
+      end
+    end
+  else
+    -- No formatter: single unstyled string
+    virt_text[#virt_text + 1] = { shortened_path }
+  end
+
+  -- Build virt_text with shortened path and explicit highlights
+  -- Use a single virt_text entry to ensure proper overlay behavior
+  local virt_text_str
+  local virt_text_hl
+  
+  if has_fmt_hls then
+    if filename_first_prefix then
+      -- filename_first: combine prefix and path, apply dir highlight to all
+      -- (the filename in the prefix will keep its original ANSI color via combine)
+      virt_text_str = filename_first_prefix .. shortened_path .. (padding > 0 and string.rep(" ", padding) or "")
+      virt_text_hl = win_data.fmt_opts.hl_dir
+    else
+      -- dirname_first: split at last separator for different highlights
+      local dir_str = shortened_path:sub(1, shortened_last_sep_byte)
+      local file_str = shortened_path:sub(shortened_last_sep_byte + 1)
+      virt_text_str = dir_str .. file_str .. (padding > 0 and string.rep(" ", padding) or "")
+      -- Apply dir highlight to the whole string - file part will get its coloring
+      -- from the underlying ANSI codes via hl_mode="combine"
+      virt_text_hl = win_data.fmt_opts.hl_dir
+    end
+  else
+    -- No formatter: plain text with padding
+    virt_text_str = shortened_path .. (padding > 0 and string.rep(" ", padding) or "")
+    virt_text_hl = nil
+  end
+
+  -- Overlay the shortened+padded path on top of the original
+  pcall(api.nvim_buf_set_extmark, buf, PathShortener._ns, row, path_start - 1, {
+    virt_text = { { virt_text_str, virt_text_hl } },
+    virt_text_pos = "overlay",
+    hl_mode = "combine",
+    ephemeral = true,
+  })
 end
 
 ---Register a window for path shortening
 ---@param winid integer window ID
 ---@param bufnr integer buffer number
 ---@param shorten_len integer|boolean number of characters to keep
-function PathShortener.attach(winid, bufnr, shorten_len)
+---@param fmt_opts? { hl_dir?: string, hl_file?: string, formatter?: string }
+function PathShortener.attach(winid, bufnr, shorten_len, fmt_opts)
   if not winid or not bufnr then return end
   PathShortener.setup()
   shorten_len = (shorten_len == true) and 1 or tonumber(shorten_len) or 1
-  PathShortener._wins[winid] = { bufnr = bufnr, shorten_len = shorten_len }
+  PathShortener._wins[winid] = {
+    bufnr = bufnr,
+    shorten_len = shorten_len,
+    fmt_opts = fmt_opts,
+  }
 end
 
 ---Unregister a window from path shortening
@@ -929,22 +1111,18 @@ end
 
 function FzfWin:path_shorten_detach()
   PathShortener.detach(self.fzf_winid)
-  -- Reset conceallevel when path shortening is disabled (e.g., on window reuse)
-  if api.nvim_win_is_valid(self.fzf_winid) then
-    vim.wo[self.fzf_winid].conceallevel = 0
-    vim.wo[self.fzf_winid].concealcursor = ""
-  end
 end
 
 function FzfWin:path_shorten_attach()
   local path_shorten = self._o.winopts.path_shorten
   if not path_shorten then return end
-  -- Enable conceallevel for the fzf window to show concealed text
-  if api.nvim_win_is_valid(self.fzf_winid) then
-    vim.wo[self.fzf_winid].conceallevel = 2
-    vim.wo[self.fzf_winid].concealcursor = "nvic"
-  end
-  PathShortener.attach(self.fzf_winid, self.fzf_bufnr, path_shorten)
+  PathShortener.attach(self.fzf_winid, self.fzf_bufnr, path_shorten, {
+    hl_dir = self._o.hls and self._o.hls.dir_part,
+    hl_file = self._o.hls and self._o.hls.file_part,
+    formatter = self._o.formatter,
+    fmt_to = self._o._fmt and self._o._fmt.to,
+    opts = self._o,
+  })
 end
 
 ---@param buf integer
