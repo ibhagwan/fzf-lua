@@ -24,6 +24,8 @@ local FzfLua = require("fzf-lua")
 ---@field cmd? string[] cmd used to generated content
 ---@field cmd_stream? boolean stream process cmd content
 ---@field cmd_opts? vim.SystemOpts vim.system opts for cmd
+---@field _is_ueberzug? boolean ueberzug cmd
+---@field pty? boolean require pty for cmd
 
 ---@class fzf-lua.buffer_or_file.Entry : fzf-lua.path.Entry, fzf-lua.cmd.Entry,{}
 ---@field do_not_cache? boolean
