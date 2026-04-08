@@ -1262,59 +1262,86 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
 
   ---@diagnostic disable-next-line: unnecessary-assert
   local buf, win, hls = assert(self.preview_bufnr, self.win.preview_winid, self.win.hls)
-  pcall(api.nvim_win_call, win, function()
-    local cached_pos = self.bcache:get_pos(buf)
-    if type(cached_pos) ~= "table" then cached_pos = nil end
-    local lnum, col = entry.line, math.max(1, entry.col or 1)
-    if not lnum or lnum < 1 then
-      -- set win option is slow with bigfile
-      utils.wo.cursorline = false
-      self.orig_pos = { 1, 0 }
-      api.nvim_win_set_cursor(win, cached_pos or self.orig_pos)
-      return
-    end
 
-    self.orig_pos = { lnum, col - 1 }
+  local cached_pos = self.bcache:get_pos(buf)
+  if type(cached_pos) ~= "table" then cached_pos = nil end
+  local lnum, col = entry.line, math.max(1, entry.col or 1)
+
+  if not lnum and regex then
+    -- pcall(fn.clearmatches, self.win.preview_winid)
+    pcall(api.nvim_win_call, win, function()
+      -- start searching at line 1 in case we
+      -- didn't reload the buffer (same file)
+      api.nvim_win_set_cursor(0, { 1, 0 })
+      fn.clearmatches()
+      local ctag = utils.ctag_to_magic(assert(regex))
+      -- test the regex so we can alert the user of the search fail
+      if not utils.vim_regex(ctag, self.opts) then return end
+      fn.search(regex, "W")
+      if hls.search then fn.matchadd(hls.search, regex) end
+      self.orig_pos = api.nvim_win_get_cursor(0)
+      utils.zz()
+    end)
+    return
+  end
+
+  if not lnum or lnum < 1 then
+    -- set win option is slow with bigfile
+    utils.wo.cursorline = false
+    self.orig_pos = { 1, 0 }
     api.nvim_win_set_cursor(win, cached_pos or self.orig_pos)
-    self:maybe_set_cursorline(win, self.orig_pos)
+    return
+  end
 
-    self.ns_previewer = self.ns_previewer or api.nvim_create_namespace("fzf-lua.preview.hl")
-    api.nvim_buf_clear_namespace(buf, self.ns_previewer, 0, -1)
-    local extmark
+  self.orig_pos = { lnum, col - 1 }
+  if not pcall(api.nvim_win_set_cursor, win, cached_pos or self.orig_pos) then
+    return
+  end
+  self:maybe_set_cursorline(win, self.orig_pos)
 
-    -- If regex is available (grep/lgrep), match on current line
-    if regex and hls.search then
-      local regex_start, regex_end
-      local reg = utils.vim_regex(regex, { silent = true })
-      if reg then
-        if regex ~= regex:lower() then
-          regex_start, regex_end = reg:match_line(buf, lnum - 1, col - 1)
-        else
-          local line = api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1] or ""
-          regex_start, regex_end = reg:match_str(line:sub(col):lower())
-        end
+  self.ns_previewer = self.ns_previewer or api.nvim_create_namespace("fzf-lua.preview.hl")
+  api.nvim_buf_clear_namespace(buf, self.ns_previewer, 0, -1)
+  local extmark
+
+  -- If regex is available (grep/lgrep), match on current line
+  if regex and hls.search then
+    local regex_start, regex_end
+    -- vim.regex is always magic, see `:help vim.regex`
+    ---@diagnostic disable-next-line: param-type-mismatch
+    local reg = utils.vim_regex(regex, { silent = true })
+    if reg then
+      if regex ~= regex:lower() then
+        regex_start, regex_end = reg:match_line(buf, lnum - 1, col - 1)
+      else
+        local line = api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1] or ""
+        regex_start, regex_end = reg:match_str(line:sub(col):lower())
       end
-      if regex_start and regex_end then
-        extmark = api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, regex_start + col - 1, {
-          end_line = lnum - 1,
-          end_col = regex_end + col - 1,
-          hl_group = entry.hlgroup or hls.search
-        })
-      end
+    elseif self.opts.silent ~= true then
+      utils.warn(
+        [[Unable to init vim.regex with "%s", %s. . Add 'silent=true' to hide this message.]],
+        regex, reg)
     end
-
-    -- Fallback to cursor hl, only if column exists
-    if not extmark and hls.cursor and entry.col then
-      local end_lnum, end_col = entry.end_line or lnum, entry.end_col or col + 1
-      api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, col - 1, {
-        end_line = end_lnum - 1,
-        end_col = math.max(1, end_col) - 1,
-        hl_group = entry.hlgroup or hls.cursor,
+    if regex_start and regex_end then
+      extmark = api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, regex_start + col - 1, {
+        end_line = lnum - 1,
+        end_col = regex_end + col - 1,
+        hl_group = entry.hlgroup or hls.search
       })
     end
+  end
 
-    utils.zz()
-  end)
+  -- Fallback to cursor hl, only if column exists
+  if not extmark and hls.cursor and entry.col then
+    local end_lnum, end_col = entry.end_line or lnum, entry.end_col or col + 1
+    -- stale line/col can cause out-of-range, e.g. marks
+    vim.F.nil_wrap(api.nvim_buf_set_extmark)(buf, self.ns_previewer, lnum - 1, col - 1, {
+      end_line = end_lnum - 1,
+      end_col = math.max(1, end_col) - 1,
+      hl_group = entry.hlgroup or hls.cursor,
+    })
+  end
+
+  api.nvim_win_call(win, utils.zz)
 end
 
 ---@param entry fzf-lua.buffer_or_file.Entry
@@ -1382,8 +1409,10 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
   self.bcache:set(entry, self.preview_bufnr, min_winopts)
 end
 
+---@class fzf-lua.previewer.Tags : fzf-lua.previewer.BufferOrFile,{}
+Previewer.tags = Previewer.buffer_or_file:extend()
+
 ---@class fzf-lua.previewer.HelpTags : fzf-lua.previewer.BufferOrFile,{}
----@field super fzf-lua.previewer.BufferOrFile
 Previewer.help_tags = Previewer.buffer_or_file:extend()
 
 ---@diagnostic disable-next-line: unused
@@ -1410,7 +1439,7 @@ function Previewer.help_tags:parse_entry(entry_str)
   end)()
   return {
     htag = tag,
-    hregex = hregex,
+    ctag = hregex,
     path = vimdoc,
   }
 end
@@ -1421,25 +1450,6 @@ function Previewer.help_tags:gen_winopts()
     number = false
   }
   return vim.tbl_extend("keep", winopts, self.winopts)
-end
-
----@class fzf-lua.help_tags.Entry: fzf-lua.buffer_or_file.Entry
----@field hregex string
-
----@param entry fzf-lua.help_tags.Entry
-function Previewer.help_tags:set_cursor_hl(entry)
-  pcall(api.nvim_win_call, self.win.preview_winid, function()
-    -- start searching at line 1 in case we
-    -- didn't reload the buffer (same file)
-    api.nvim_win_set_cursor(0, { 1, 0 })
-    fn.clearmatches()
-    fn.search(entry.hregex, "W")
-    if self.win.hls.search then
-      fn.matchadd(self.win.hls.search, entry.hregex)
-    end
-    self.orig_pos = api.nvim_win_get_cursor(0)
-    utils.zz()
-  end)
 end
 
 ---@class fzf-lua.previewer.ManPages : fzf-lua.previewer.BufferOrFile,{}
@@ -1501,12 +1511,7 @@ function Previewer.marks:parse_entry(entry_str)
     filepath = api.nvim_buf_get_name(bufnr)
   end
   if #filepath > 0 then
-    local ok, res = pcall(libuv.expand, filepath)
-    if not ok then
-      filepath = ""
-    else
-      filepath = res
-    end
+    filepath = vim.F.npcall(libuv.expand, filepath) or ""
     filepath = path.relative_to(filepath, utils.cwd())
   end
   return {
@@ -1543,34 +1548,6 @@ function Previewer.jumps:parse_entry(entry_str)
     line  = utils.tointeger(lnum) or 1,
     col   = col and col + 1 or 1,
   }
-end
-
----@class fzf-lua.previewer.Tags : fzf-lua.previewer.BufferOrFile,{}
----@field super fzf-lua.previewer.BufferOrFile,{}
-Previewer.tags = Previewer.buffer_or_file:extend()
-
----@param entry fzf-lua.buffer_or_file.Entry
-function Previewer.tags:set_cursor_hl(entry)
-  if tonumber(entry.line) and entry.line > 0 then
-    Previewer.buffer_or_file.set_cursor_hl(self, entry)
-    return
-  end
-  -- pcall(fn.clearmatches, self.win.preview_winid)
-  pcall(api.nvim_win_call, self.win.preview_winid, function()
-    -- start searching at line 1 in case we
-    -- didn't reload the buffer (same file)
-    api.nvim_win_set_cursor(0, { 1, 0 })
-    fn.clearmatches()
-    local ctag = utils.ctag_to_magic(assert(entry.ctag))
-    -- test the regex so we can alert the user of the search fail
-    if not utils.vim_regex(ctag, self.opts) then return end
-    fn.search(ctag, "W")
-    if self.win.hls.search then
-      fn.matchadd(self.win.hls.search, ctag)
-    end
-    self.orig_pos = api.nvim_win_get_cursor(0)
-    utils.zz()
-  end)
 end
 
 ---@class fzf-lua.previewer.Hightlights : fzf-lua.previewer.BufferOrFile,{}
