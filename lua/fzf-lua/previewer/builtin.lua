@@ -66,12 +66,9 @@ function Previewer.base:new(o, opts)
   self.treesitter = type(o.treesitter) == "table" and o.treesitter or {}
   self.toggle_behavior = o.toggle_behavior
   self.winopts_orig = {}
-  -- convert extension map to lower case
-  if o.extensions then
-    self.extensions = {}
-    for k, v in pairs(o.extensions) do
-      self.extensions[k:lower()] = v
-    end
+  self.extensions = {}
+  for k, v in pairs(o.extensions or {}) do
+    self.extensions[k:lower()] = v
   end
   -- validate the ueberzug image scaler
   local uz_scalers = {
@@ -535,6 +532,24 @@ function Previewer.buffer_or_file:entry_to_file(entry_str)
   return path.entry_to_file(entry_str, self.opts)
 end
 
+-- replace `{file}` placeholder with the filename
+---@param cmd string[]
+---@param filepath string
+---@param placeholder string
+---@return string[]
+local function replace_placeholder(cmd, placeholder, filepath)
+  local append = true
+  for i, arg in ipairs(cmd) do
+    if type(arg) == "string" and arg:match(placeholder) then
+      cmd[i] = arg:gsub(placeholder, filepath)
+      append = false
+    end
+  end
+  -- or add filename as last parameter
+  if append then cmd[#cmd + 1] = filepath end
+  return cmd
+end
+
 ---async result can be return by "_cb(res)"
 ---@param entry_str string
 ---@param _cb? function
@@ -543,15 +558,12 @@ function Previewer.buffer_or_file:parse_entry(entry_str, _cb)
   ---@type fzf-lua.buffer_or_file.Entry
   local entry = self:entry_to_file(entry_str)
   local buf = entry.bufnr
-  local loaded = buf and api.nvim_buf_is_loaded(buf)
-  if loaded then
+  if buf and api.nvim_buf_is_loaded(buf) then
     entry.tick = vim.b[buf].changedtick
-    return entry
-  end
-  -- buffer is not loaded, can happen when calling "lines" with `set nohidden`
-  -- or when starting nvim with an arglist, fix entry.path since it contains
-  -- filename only
-  if buf and api.nvim_buf_is_valid(buf) then
+  elseif buf and api.nvim_buf_is_valid(buf) then
+    -- buffer is not loaded, can happen when calling "lines" with `set nohidden`
+    -- or when starting nvim with an arglist, fix entry.path since it contains
+    -- filename only
     entry.path = path.relative_to(api.nvim_buf_get_name(buf), utils.cwd())
     if entry.path:find("^fugitive://") then
       api.nvim_buf_call(buf, function()
@@ -560,11 +572,23 @@ function Previewer.buffer_or_file:parse_entry(entry_str, _cb)
           pattern = entry.path
         })
       end)
-      return entry
     end
   end
-  if entry.path then
+  if not entry.tick and entry.path then
     entry.tick = vim.tbl_get(uv.fs_stat(entry.path) or {}, "mtime", "nsec")
+  end
+  if entry.path and next(self.extensions) then
+    local ext = path.extension(entry.path)
+    local cmd = ext and self.extensions[ext:lower()] or nil
+    cmd = type(cmd) == "string" and { cmd } or utils.deepcopy(cmd) or {}
+    if cmd[1] then
+      -- special case: we build ueberzug cmd separately
+      entry._is_ueberzug = cmd[1]:match("ueberzug") and true or false
+      if not entry._is_ueberzug and fn.executable(cmd[1]) == 1 then
+        entry.cmd = replace_placeholder(cmd, "[<{]file[}>]", entry.path)
+        entry.pty = true
+      end
+    end
   end
   return entry
 end
@@ -630,13 +654,12 @@ function Previewer.buffer_or_file:stop_ueberzug()
   end
 end
 
+---TODO: now this only handle ueberzug image previews
 ---@param tmpbuf integer
----@param cmd string|string[]
 ---@param entry fzf-lua.buffer_or_file.Entry
----@return boolean
-function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
-  cmd = type(cmd) == "table" and utils.deepcopy(cmd) or { cmd }
-  if not cmd[1] or fn.executable(cmd[1]) ~= 1 then return false end
+---@return boolean?
+function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, entry)
+  if not entry._is_ueberzug then return end
   -- no caching: preview buf must be reattached for
   -- terminal image previews to have the correct size
   entry.do_not_cache = true
@@ -649,59 +672,30 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, cmd, entry)
   self.clear_on_redraw = true
   -- 2nd arg `true`: minimal style window
   self:set_preview_buf(tmpbuf, true)
-  if cmd[1]:match("ueberzug") then
-    local fifo = self:start_ueberzug()
-    if not fifo then return end
-    local wincfg = api.nvim_win_get_config(self.win.preview_winid)
-    local winpos = api.nvim_win_get_position(self.win.preview_winid)
-    local params = {
-      action     = "add",
-      identifier = "preview",
-      x          = winpos[2] + 1,
-      y          = winpos[1] + 2,
-      width      = wincfg.width - 2,
-      height     = wincfg.height - 2,
-      scaler     = self.ueberzug_scaler,
-      path       = path.is_absolute(entry.path) and entry.path or
-          path.join({ self.opts.cwd or utils.cwd(), entry.path }),
-    }
-    local json = vim.json.encode(params)
-    -- both 'fs_open|write|close' and 'fn.system' work.
-    -- We prefer the libuv method as it doesn't rely on the shell
-    -- cmd = { "sh", "-c", ("echo '%s' > %s"):format(json, self._ueberzug_fifo) }
-    -- fn.system(cmd)
-    local fd = uv.fs_open(self._ueberzug_fifo, "a", -1)
-    if fd then
-      uv.fs_write(fd, json .. "\n", nil, function(_)
-        uv.fs_close(fd)
-      end)
-    end
-  else
-    -- replace `{file}` placeholder with the filename
-    local add_file = true
-    for i, arg in ipairs(cmd) do
-      if type(arg) == "string" and arg:match("[<{]file[}>]") then
-        cmd[i] = entry.path
-        add_file = false
-      end
-    end
-    -- or add filename as last parameter
-    if add_file then
-      table.insert(cmd, entry.path)
-    end
-    -- must be modifiable or 'termopen' fails
-    vim.bo[tmpbuf].modifiable = true
-    api.nvim_buf_call(tmpbuf, function()
-      self._job_id = utils.termopen(cmd, {
-        cwd = self.opts.cwd,
-        on_exit = function()
-          -- run post only after terminal job finished
-          if self._job_id then
-            self:preview_buf_post(entry, true)
-            self._job_id = nil
-          end
-        end
-      })
+  local fifo = self:start_ueberzug()
+  if not fifo then return end
+  local wincfg = api.nvim_win_get_config(self.win.preview_winid)
+  local winpos = api.nvim_win_get_position(self.win.preview_winid)
+  local params = {
+    action     = "add",
+    identifier = "preview",
+    x          = winpos[2] + 1,
+    y          = winpos[1] + 2,
+    width      = wincfg.width - 2,
+    height     = wincfg.height - 2,
+    scaler     = self.ueberzug_scaler,
+    path       = entry.path and path.is_absolute(entry.path) and entry.path or
+        path.join({ self.opts.cwd or utils.cwd(), entry.path }),
+  }
+  local json = vim.json.encode(params)
+  -- both 'fs_open|write|close' and 'fn.system' work.
+  -- We prefer the libuv method as it doesn't rely on the shell
+  -- cmd = { "sh", "-c", ("echo '%s' > %s"):format(json, self._ueberzug_fifo) }
+  -- fn.system(cmd)
+  local fd = uv.fs_open(self._ueberzug_fifo, "a", -1)
+  if fd then
+    uv.fs_write(fd, json .. "\n", nil, function(_)
+      uv.fs_close(fd)
     end)
   end
   -- run here so title gets updated
@@ -751,7 +745,7 @@ local start_cmd = function(buf, entry, opts)
       chan = nil
     end
     if obj and not obj:is_closing() then
-      obj:kill(vim.uv.constants.SIGTERM)
+      obj:kill(uv.constants.SIGTERM)
       obj = nil
     end
     if err then error(err) end
@@ -896,6 +890,26 @@ end
 ---@return nil
 function Previewer.buffer_or_file:_populate_cmd_preview(tmpbuf, entry, entry_str)
   local opened = false
+  if entry.pty then
+    self.clear_on_redraw = true -- cache it, but clear on resize
+    self:set_preview_buf(tmpbuf, true)
+    vim.bo[tmpbuf].modifiable = true
+    api.nvim_buf_call(tmpbuf, function()
+      self:set_preview_buf(tmpbuf, true)
+      local job_id
+      job_id = utils.termopen(entry.cmd, {
+        cwd = self.opts.cwd,
+        on_exit = function()
+          -- run post only after terminal job finished
+          if not self._job_id or self._job_id ~= job_id then return end
+          self:preview_buf_post(entry, true)
+          self._job_id = nil
+        end
+      })
+      self._job_id = job_id
+    end)
+    return
+  end
   return start_cmd(tmpbuf, entry, {
     cancel = function() return entry_str ~= self._last_entry end,
     on_send = function()
@@ -928,20 +942,21 @@ end
 ---@param entry_str string
 ---@return nil
 function Previewer.buffer_or_file:_populate_standard_preview(tmpbuf, entry, entry_str)
-  local cmd
-  if entry.path and self.extensions and not utils.tbl_isempty(self.extensions) then
-    local ext = path.extension(entry.path)
-    cmd = ext and self.extensions[ext:lower()] or nil
-  end
   -- will return 'false' when cmd isn't executable.
   -- If we get here it means preview was successful
   -- it can still fail if using wrong command flags
   -- but the user will be able to see the error in
   -- the preview win
-  if cmd and self:populate_terminal_cmd(tmpbuf, cmd, entry) then return end
-  if self:attach_snacks_image_buf(tmpbuf, entry) then
-    self:preview_buf_post(entry)
+  if self:populate_terminal_cmd(tmpbuf, entry) then
     return
+  end
+
+  if entry.cmd then
+    return self:_populate_cmd_preview(tmpbuf, entry, entry_str)
+  end
+
+  if self:attach_snacks_image_buf(tmpbuf, entry) then
+    return self:preview_buf_post(entry)
   end
 
   ---@type (fzf-lua.line|string)[]?
@@ -950,8 +965,6 @@ function Previewer.buffer_or_file:_populate_standard_preview(tmpbuf, entry, entr
     lines = { { { entry.debug, "Error" } } }
   elseif entry.content then
     lines = entry.content
-  elseif entry.cmd then
-    return self:_populate_cmd_preview(tmpbuf, entry, entry_str)
   else
     -- make sure the file is readable (or bad entry.path)
     local fs_stat = entry.path and uv.fs_stat(entry.path)
@@ -982,7 +995,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
   -- stop ueberzug shell job
   self:stop_ueberzug()
-  local co = coroutine.running()
+  local co = assert(coroutine.running())
   -- schedule can avoid "cannot resume running coroutine"
   local entry = self:parse_entry(entry_str,
     vim.schedule_wrap(function(res) assert(coroutine.resume(co, res)) end))
