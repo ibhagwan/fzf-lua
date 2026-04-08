@@ -574,9 +574,6 @@ function Previewer.buffer_or_file:parse_entry(entry_str, _cb)
       end)
     end
   end
-  if not entry.tick and entry.path then
-    entry.tick = vim.tbl_get(uv.fs_stat(entry.path) or {}, "mtime", "nsec")
-  end
   if entry.path and next(self.extensions) then
     local ext = path.extension(entry.path)
     local cmd = ext and self.extensions[ext:lower()] or nil
@@ -589,6 +586,24 @@ function Previewer.buffer_or_file:parse_entry(entry_str, _cb)
         entry.pty = true
       end
     end
+  end
+  local stat = entry.path and not entry.uri and uv.fs_stat(entry.path) or nil
+  entry.tick = entry.tick or vim.tbl_get(stat or {}, "mtime", "nsec")
+  if entry.debug then
+    entry.content = { { { entry.debug, "Error" } } }
+  elseif not stat then
+    entry.content = { { { "Unable to stat file: ", "Error" }, { entry.path or "nil", "DiagnosticInfo" } } }
+    -- TODO: https://github.com/EmmyLuaLs/emmylua-analyzer-rust/issues/1026
+  elseif stat and stat.type == "directory" then
+    entry.cmd = utils._if_win({ "cmd.exe", "/c", "dir", entry.path },
+      { "ls", "-la", entry.path })
+  elseif stat and stat.size > 0 and utils.perl_file_is_binary(entry.path) then
+    entry.content = { { "Preview is not supported for binary files.", "Error" } }
+  elseif stat and stat.size > self.limit_b then
+    entry.content = {
+      { { ("Preview file size limit (>%dMB) reached, file size %dMB.")
+          :format(self.limit_b / (1024 * 1024), stat.size / (1024 * 1024)), "ERROR" } }
+    }
   end
   return entry
 end
@@ -865,10 +880,9 @@ end
 
 ---@param tmpbuf integer
 ---@param entry fzf-lua.buffer_or_file.Entry
----@param lines (fzf-lua.line|string)[]
 ---@return nil
-function Previewer.buffer_or_file:_set_preview_lines(tmpbuf, entry, lines)
-  local textlines, extmarks = parse_rich(lines)
+function Previewer.buffer_or_file:_set_preview_lines(tmpbuf, entry)
+  local textlines, extmarks = parse_rich(entry.content or {})
   extmarks = entry.extmarks or extmarks
   pcall(api.nvim_buf_set_lines, tmpbuf, 0, -1, false, textlines)
   if extmarks and #extmarks > 0 then
@@ -937,57 +951,6 @@ function Previewer.buffer_or_file:_populate_file_preview(tmpbuf, entry)
   end))
 end
 
----@param tmpbuf integer
----@param entry fzf-lua.buffer_or_file.Entry
----@param entry_str string
----@return nil
-function Previewer.buffer_or_file:_populate_standard_preview(tmpbuf, entry, entry_str)
-  -- will return 'false' when cmd isn't executable.
-  -- If we get here it means preview was successful
-  -- it can still fail if using wrong command flags
-  -- but the user will be able to see the error in
-  -- the preview win
-  if self:populate_terminal_cmd(tmpbuf, entry) then
-    return
-  end
-
-  if entry.cmd then
-    return self:_populate_cmd_preview(tmpbuf, entry, entry_str)
-  end
-
-  if self:attach_snacks_image_buf(tmpbuf, entry) then
-    return self:preview_buf_post(entry)
-  end
-
-  ---@type (fzf-lua.line|string)[]?
-  local lines
-  if entry.debug then
-    lines = { { { entry.debug, "Error" } } }
-  elseif entry.content then
-    lines = entry.content
-  else
-    -- make sure the file is readable (or bad entry.path)
-    local fs_stat = entry.path and uv.fs_stat(entry.path)
-    local is_binary = fs_stat and fs_stat.size > 0 and utils.perl_file_is_binary(entry.path) or false
-    if not fs_stat then
-      lines = { string.format("Unable to stat file %s", entry.path) }
-    elseif is_binary then
-      lines = { "Preview is not supported for binary files." }
-    elseif tonumber(self.limit_b) > 0 and fs_stat.size > self.limit_b then
-      lines = {
-        ("Preview file size limit (>%dMB) reached, file size %dMB.")
-            :format(self.limit_b / (1024 * 1024), fs_stat.size / (1024 * 1024)),
-        -- "(configured via 'previewers.builtin.limit_b')"
-      }
-    end
-    if not lines then
-      return self:_populate_file_preview(tmpbuf, entry)
-    end
-  end
-
-  self:_set_preview_lines(tmpbuf, entry, lines)
-end
-
 ---@async
 ---@param entry_str string
 ---@return false? no preview
@@ -1018,11 +981,25 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
 
   if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) and vim.bo[entry.bufnr].filetype ~= "image" then
     self:_populate_loaded_buffer_preview(tmpbuf or self:get_tmp_buffer(), entry)
+    return
   elseif entry.uri and entry.range then
     self:_populate_location_preview(tmpbuf, entry)
-  else -- not found in cache, attempt to load
-    self:_populate_standard_preview(tmpbuf or self:get_tmp_buffer(), entry, entry_str)
+    return
   end
+  tmpbuf = tmpbuf or self:get_tmp_buffer()
+  if self:populate_terminal_cmd(tmpbuf, entry) then
+    return
+  end
+  if entry.cmd then
+    return self:_populate_cmd_preview(tmpbuf, entry, entry_str)
+  end
+  if self:attach_snacks_image_buf(tmpbuf, entry) then
+    return self:preview_buf_post(entry)
+  end
+  if entry.content then
+    return self:_set_preview_lines(tmpbuf, entry)
+  end
+  self:_populate_file_preview(tmpbuf, entry)
 end
 
 -- Attach ts highlighter, neovim >= v0.9
