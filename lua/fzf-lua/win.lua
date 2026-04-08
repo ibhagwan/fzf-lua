@@ -1143,12 +1143,18 @@ end
 ---@param winid? integer
 ---@param last_winid? integer
 local restore_lastwin = function(winid, last_winid)
-  if winid and last_winid and api.nvim_win_is_valid(last_winid) then
-    utils.eventignore(function()
-      api.nvim_set_current_win(last_winid)
-      api.nvim_set_current_win(winid)
-    end)
+  if
+      not winid
+      or not last_winid
+      or not api.nvim_win_is_valid(last_winid)
+      or not api.nvim_win_is_valid(winid)
+  then
+    return
   end
+  utils.eventignore(function()
+    api.nvim_set_current_win(last_winid)
+    api.nvim_set_current_win(winid)
+  end)
 end
 
 ---@param buf? integer
