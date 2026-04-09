@@ -1111,6 +1111,10 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
         local fs_stat = entry.path and uv.fs_stat(entry.path)
         if not fs_stat then
           lines = { string.format("Unable to stat file %s", entry.path) }
+        elseif fs_stat.type == "directory" then
+          local cmd = utils._if_win({ "cmd.exe", "/c", "dir" }, { "ls", "-la" })
+          table.insert(cmd, entry.path)
+          lines, _ = utils.io_systemlist(cmd)
         elseif fs_stat.size > 0 and utils.perl_file_is_binary(entry.path) then
           lines = { "Preview is not supported for binary files." }
         elseif tonumber(self.limit_b) > 0 and fs_stat.size > self.limit_b then
