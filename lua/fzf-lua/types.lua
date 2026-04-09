@@ -37,7 +37,7 @@ local FzfLua = require("fzf-lua")
 ---@field end_col? integer 1-based
 ---@field open_term? boolean open_term for content (cmd always open_term)
 
----@class fzf-lua.keymap.Entry
+---@class fzf-lua.keymap.Entry: fzf-lua.buffer_or_file.Entry
 ---@field vmap string?
 ---@field mode string?
 ---@field key string?

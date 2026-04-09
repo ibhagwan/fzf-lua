@@ -1888,15 +1888,16 @@ end
 ---@field super fzf-lua.previewer.BufferOrFile,{}
 Previewer.keymaps = Previewer.buffer_or_file:extend()
 
+---@diagnostic disable-next-line: unused
 ---@param entry_str string
----@return fzf-lua.buffer_or_file.Entry
+---@return fzf-lua.keymap.Entry
 function Previewer.keymaps:parse_entry(entry_str)
-  local entry = path.keymap_to_entry(entry_str, self.opts)
+  local entry = path.keymap_to_entry(entry_str)
   if not entry.vmap then return entry end
   return {
-    filetype = "vim",
+    filetype = "lua",
     title = string.format("%s:%s", entry.mode, entry.key),
-    content = utils.strsplit(assert(entry.vmap:match("[^%s]+$")), "\n"),
+    content = utils.strsplit(entry.vmap, "\n"),
   }
 end
 

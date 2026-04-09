@@ -666,9 +666,8 @@ function M.jj_root(opts, noerr)
 end
 
 ---@param str string
----@param opts fzf-lua.config.Resolved
----@return fzf-lua.path.Entry|fzf-lua.keymap.Entry
-function M.keymap_to_entry(str, opts)
+---@return fzf-lua.keymap.Entry
+function M.keymap_to_entry(str)
   local valid_modes = {
     n = true,
     i = true,
@@ -680,21 +679,15 @@ function M.keymap_to_entry(str, opts)
   if not mode or not keymap then return {} end
   mode, keymap = vim.trim(mode), vim.trim(keymap)
   mode = valid_modes[mode] and mode or "" -- only valid modes
-  local out ---@type string[]
-  local vmap, cmd = nil, string.format("verbose %smap %s", mode, keymap)
-  -- Run in the context of the originating buffer or keympas might return
-  -- "No mapping found"
-  pcall(vim.api.nvim_buf_call, opts.__CTX.bufnr, function()
-    out = utils.strsplit(vim.fn.execute(cmd), "\n")
-    _, vmap = next(vim.tbl_map(function(x) return #x > 0 and x or nil end, out))
-  end)
-  local entry
-  for i = #out, 1, -1 do
-    if out[i]:match(utils.lua_regex_escape(keymap)) then
-      entry = out[i]:match("<.-:%s+(.*)>")
+  local vmap = vim.fn.maparg(keymap, mode, false, true)
+  if vmap.callback then
+    local info = debug.getinfo(vmap.callback)
+    if info and info.source then
+      return { path = info.source:gsub("^@", ""), line = info.linedefined }
     end
   end
-  return entry and M.entry_to_file(entry, opts) or { mode = mode, key = keymap, vmap = vmap } or {}
+  -- if entry then return M.entry_to_file(entry, opts) end
+  return { mode = mode, key = keymap, vmap = vim.inspect(vmap) }
 end
 
 -- Minimal functionality so we can hijack during `vim.filetype.match`
