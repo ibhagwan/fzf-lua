@@ -585,13 +585,7 @@ local function gen_lsp_contents(opts)
 
         -- When called from another coroutine callback (when using 'finder') will err:
         -- E5560: nvim_exec_autocmds must not be called in a lua loop callback nil
-        if vim.in_fast_event() then
-          vim.schedule(function()
-            async_buf_request()
-          end)
-        else
-          async_buf_request()
-        end
+        vim.schedule(function() async_buf_request() end)
 
         -- process results from all LSP client
         local err, result, context, lspcfg, done
