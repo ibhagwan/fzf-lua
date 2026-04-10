@@ -227,7 +227,7 @@ function Previewer.base:new(o, opts)
   -- since show_document reuses buffers and I couldn't find a better way
   -- to determine if the destination buffer was listed prior to the jump
   local is_listed = function(b) return fn.buflisted(b) == 1 end ---@type fun(b: integer): boolean
-  self.listed_buffers = utils.list_to_map(vim.tbl_map(is_listed, api.nvim_list_bufs()))
+  self.listed_buffers = vim.tbl_map(is_listed, api.nvim_list_bufs())
   return self
 end
 
