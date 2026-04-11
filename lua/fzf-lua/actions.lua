@@ -200,7 +200,7 @@ local can_replace_buf = function(buf)
       or not utils.buffer_is_dirty(buf, true, true)
 end
 
----@param vimcmd string
+---@param vimcmd string?
 ---@param selected string[]
 ---@param opts fzf-lua.config.Resolved|{}
 ---@param bufedit boolean?
@@ -234,19 +234,21 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
         vim.cmd("normal! m`")
       end
       if bufedit then
-        local will_replace_curbuf = #vimcmd == 0 and not is_curbuf(entry.bufnr, fullpath)
-        if will_replace_curbuf and utils.wo.winfixbuf then
+        local layoutcmd = not vimcmd and utils.wo.winfixbuf and "split" or vimcmd
+        if layoutcmd ~= vimcmd then
           utils.warn("'winfixbuf' is set for current window, will open in a split.")
-          vimcmd, will_replace_curbuf = "split", false
         end
-        if will_replace_curbuf and not can_replace_buf(0) then return end
-        if #vimcmd > 0 then vim.cmd(vimcmd) end
+        if layoutcmd then
+          vim.cmd(layoutcmd)
+        elseif not is_curbuf(entry.bufnr, fullpath) and not can_replace_buf(0) then
+          return utils.warn("Unable to add buffer %s", fullpath)
+        end
         -- NOTE: URI entries only execute new buffers (new|vnew|tabnew)
         -- and later use `utils.jump_to_location` to load the buffer
         if not entry.uri and not is_curbuf(entry.bufnr, fullpath) then
           -- error loading buffer or save dialog cancelled
           local buf = entry.bufnr or vim.fn.bufadd(relpath) or 0
-          if buf == 0 or not set_buf(buf, will_replace_curbuf) then
+          if buf == 0 or not set_buf(buf, not layoutcmd) then
             return utils.warn("Unable to add buffer %s", fullpath)
           end
         end
@@ -284,7 +286,7 @@ end
 
 -- file actions
 M.file_edit = function(selected, opts)
-  M.vimcmd_entry("", selected, opts, true)
+  M.vimcmd_entry(nil, selected, opts, true)
 end
 
 M.file_split = function(selected, opts)
