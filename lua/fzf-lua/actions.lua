@@ -154,17 +154,9 @@ end
 ---@param buf? integer
 ---@param fullpath string
 ---@return boolean
-local buf_edited = function(buf, fullpath)
+local is_curbuf = function(buf, fullpath)
   local curbuf = vim.api.nvim_win_get_buf(0)
   return buf == curbuf or path.equals(fullpath, vim.api.nvim_buf_get_name(curbuf))
-end
-
----@param relpath string
----@return integer?
-local load_buf = function(relpath)
-  local bufnr = vim.fn.bufadd(relpath)
-  if bufnr == 0 then return end
-  return bufnr
 end
 
 ---@param bufnr integer
@@ -197,6 +189,15 @@ local set_buf = function(bufnr, will_replace_curbuf)
   end
   vim.bo[bufnr].buflisted = true
   return true
+end
+
+---@return boolean
+local can_replace_buf = function(buf)
+  buf = buf or vim.api.nvim_get_current_buf()
+  return vim.o.hidden
+      or vim.o.confirm
+      or vim.o.autowriteall
+      or not utils.buffer_is_dirty(buf, true, true)
 end
 
 ---@param vimcmd string
@@ -233,38 +234,27 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
         vim.cmd("normal! m`")
       end
       if bufedit then
-        local will_replace_curbuf = #vimcmd == 0 and not buf_edited(entry.bufnr, fullpath)
-        if will_replace_curbuf then
-          if utils.wo.winfixbuf then
-            utils.warn("'winfixbuf' is set for current window, will open in a split.")
-            vimcmd, will_replace_curbuf = "split", false
-          elseif not vim.o.hidden
-              and not vim.o.confirm
-              and not vim.o.autowriteall
-              and utils.buffer_is_dirty(vim.api.nvim_get_current_buf(), true, true) then
-            if not opts.silent then utils.warn("cannot replace modified buffer") end
-            return
-          end
+        local will_replace_curbuf = #vimcmd == 0 and not is_curbuf(entry.bufnr, fullpath)
+        if will_replace_curbuf and utils.wo.winfixbuf then
+          utils.warn("'winfixbuf' is set for current window, will open in a split.")
+          vimcmd, will_replace_curbuf = "split", false
         end
+        if will_replace_curbuf and not can_replace_buf(0) then return end
         if #vimcmd > 0 then vim.cmd(vimcmd) end
         -- NOTE: URI entries only execute new buffers (new|vnew|tabnew)
         -- and later use `utils.jump_to_location` to load the buffer
-        if not entry.uri and not buf_edited(entry.bufnr, fullpath) then
+        if not entry.uri and not is_curbuf(entry.bufnr, fullpath) then
           -- error loading buffer or save dialog cancelled
-          local bufnr = entry.bufnr or load_buf(relpath)
-          if not bufnr then
-            if not opts.silent then utils.warn("Unable to add buffer %s", fullpath) end
-            return
+          local buf = entry.bufnr or vim.fn.bufadd(relpath) or 0
+          if buf == 0 or not set_buf(buf, will_replace_curbuf) then
+            return utils.warn("Unable to add buffer %s", fullpath)
           end
-          if not set_buf(bufnr, will_replace_curbuf) then return end
         end
       else
         vim.cmd(("%s %s"):format(vimcmd, relpath))
       end
       -- Reload actions from fzf's (buf/arg del, etc) window end here
-      if utils.is_term_buffer(0) and vim.bo.ft == "fzf" then
-        return
-      end
+      if vim.bo.ft == "fzf" then return end
       -- Java LSP entries, 'jdt://...' or LSP locations
       if entry.uri and entry.range then
         -- pcall for two failed cases
@@ -278,7 +268,7 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
           vim.api.nvim_win_set_cursor(0, { 1, 0 })
           vim.fn.search(re, "W")
         end
-      elseif not opts.no_action_set_cursor and entry.line > 0 or entry.col > 0 then
+      elseif not opts.no_action_set_cursor and (entry.line > 0 or entry.col > 0) then
         -- Make sure we have valid line/column
         -- e.g. qf lists from files (no line/col), dap_breakpoints
         ---@diagnostic disable-next-line: param-type-mismatch
@@ -319,78 +309,43 @@ local sel_to_qf = function(selected, opts, is_loclist)
   for i = 1, #selected do
     local file = path.entry_to_file(selected[i], opts)
     local text = assert(file.stripped):match(":%d+:%d?%d?%d?%d?:?(.*)$")
-    table.insert(qf_list, {
+    qf_list[#qf_list + 1] = {
       bufnr = file.bufnr,
       filename = file.bufname or file.path or file.uri,
       lnum = file.line or 0,
       valid = 1,
       col = file.col,
       text = text,
-    })
+    }
   end
   table.sort(qf_list, function(a, b)
-    if a.filename == b.filename then
-      if a.lnum == b.lnum then
-        return math.max(0, a.col) < math.max(0, b.col)
-      else
-        return math.max(0, a.lnum) < math.max(0, b.lnum)
-      end
-    else
-      return a.filename < b.filename
-    end
+    if a.filename ~= b.filename then return a.filename < b.filename end
+    if a.lnum ~= b.lnum then return a.lnum < b.lnum end
+    return a.col < b.col
   end)
 
   local cmd = utils.get_info().cmd
   local title = string.format("[FzfLua] %s%s", cmd and cmd .. ": " or "",
     utils.resume_get("query", opts) or "")
   if is_loclist then
-    vim.fn.setloclist(0, {}, " ", {
-      nr = "$",
-      items = qf_list,
-      title = title,
-    })
-    if type(opts.lopen) == "function" then
-      opts.lopen(selected, opts)
-    elseif opts.lopen ~= false then
-      vim.cmd(opts.lopen or "botright lopen")
-    end
+    vim.fn.setloclist(0, {}, " ", { nr = "$", items = qf_list, title = title })
   else
-    -- Set the quickfix title to last query and
-    -- append a new list to end of the stack (#635)
-    vim.fn.setqflist({}, " ", {
-      nr = "$",
-      items = qf_list,
-      title = title,
-      -- nr = nr,
-    })
-    if type(opts.copen) == "function" then
-      opts.copen(selected, opts)
-    elseif opts.copen ~= false then
-      vim.cmd(opts.copen or "botright copen")
-    end
+    vim.fn.setqflist({}, " ", { nr = "$", items = qf_list, title = title })
+  end
+  local opener = opts[is_loclist and "lopen" or "copen"]
+  if type(opener) == "function" then
+    opener(selected, opts)
+  elseif opener ~= false then
+    vim.cmd(opener or (is_loclist and "botright lopen" or "botright copen"))
   end
 end
 
 M.list_del = function(selected, opts)
   local winid = assert(opts.__CTX.winid)
   local list = opts.is_loclist and vim.fn.getloclist(winid) or vim.fn.getqflist()
-
-  local buf_del = (function()
-    local ret = {}
-    for _, s in ipairs(selected) do
-      local b = s:match("%[(%d+)%]")
-      ret[b] = true
-    end
-    return ret
-  end)()
-
-  local newlist = {}
-  for _, l in ipairs(list) do
-    if not buf_del[tostring(l.bufnr)] then
-      table.insert(newlist, l)
-    end
-  end
-
+  local bufs = vim.tbl_map(function(s) return tonumber(s:match("%[(%d+)%]")) end, selected)
+  local buf_del = utils.list_to_map(bufs)
+  local newlist = vim.tbl_filter(function(l) return not buf_del[l.bufnr] end, list)
   if opts.is_loclist then
     vim.fn.setloclist(winid, newlist, "r")
   else
