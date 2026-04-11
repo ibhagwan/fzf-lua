@@ -38,7 +38,6 @@ local Previewer = {}
 ---@field extensions { [string]: string|string[]? }
 ---@field ueberzug_scaler "crop"|"distort"|"contain"|"fit_contain"|"cover"|"forced_cover"
 ---@field bcache fzf-lua.Bcache
----@field listed_buffers table<integer, boolean?>
 ---@field clear_on_redraw boolean?
 ---@field timers? table<string, uv.uv_timer_t?>
 ---@field orig_pos? [integer, integer]
@@ -87,12 +86,6 @@ function Previewer.base:new(o, opts)
   self.bcache = require("fzf-lua.previewer.bcache").new(function(buf)
     self:safe_buf_delete(buf, true)
   end)
-  -- store currently listed buffers, this helps us determine which buffers
-  -- navigated with 'vim.lsp.util.show_document' we can safely unload
-  -- since show_document reuses buffers and I couldn't find a better way
-  -- to determine if the destination buffer was listed prior to the jump
-  local is_listed = function(b) return fn.buflisted(b) == 1 end ---@type fun(b: integer): boolean
-  self.listed_buffers = vim.tbl_map(is_listed, api.nvim_list_bufs())
   return self
 end
 
@@ -168,7 +161,12 @@ function Previewer.base:safe_buf_delete(bufnr, del_cached)
   -- can be nil after closing preview with <F4>
   if not bufnr then return end
   assert(type(bufnr) == "number" and bufnr > 0)
-  if self.listed_buffers[bufnr] then
+  -- store currently listed buffers, this helps us determine which buffers
+  -- navigated with 'vim.lsp.util.show_document' we can safely unload
+  -- since show_document reuses buffers and I couldn't find a better way
+  -- to determine if the destination buffer was listed prior to the jump
+  local buflist = (utils.__CTX() or {}).buflist or utils.CTX({ includeBuflist = true }).buflist or {}
+  if vim.tbl_contains(buflist, bufnr) and fn.buflisted(bufnr) == 1 then
     -- print("safe_buf_delete LISTED", bufnr)
     return
   elseif not api.nvim_buf_is_valid(bufnr) then
