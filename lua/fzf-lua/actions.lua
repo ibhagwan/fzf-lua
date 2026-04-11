@@ -172,6 +172,7 @@ end
 ---@return boolean? success
 local set_buf = function(bufnr, will_replace_curbuf)
   -- wipe unnamed empty buffers (e.g. "new") on switch
+  local bufhidden
   if will_replace_curbuf
       and vim.bo.buftype == ""
       and vim.bo.filetype == ""
@@ -179,6 +180,7 @@ local set_buf = function(bufnr, will_replace_curbuf)
       and vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == ""
       and vim.api.nvim_buf_get_name(0) == ""
   then
+    bufhidden = vim.bo.bufhidden
     vim.bo.bufhidden = "wipe"
   end
   -- NOTE: nvim_set_current_buf will load the buffer if needed
@@ -189,7 +191,10 @@ local set_buf = function(bufnr, will_replace_curbuf)
   -- and confirm with the user when trying to switch from a dirty buffer, if
   -- user cancelles the save dialog pcall will fail with:
   -- Vim:E37: No write since last change (add ! to override)
-  if not ok then return end
+  if not ok then
+    if bufhidden then vim.bo.bufhidden = bufhidden end
+    return
+  end
   vim.bo[bufnr].buflisted = true
   return true
 end
