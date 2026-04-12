@@ -11,8 +11,10 @@ local data = fn.stdpath("data") --[[@as string]]
 for _, plug in ipairs({ "nvim-web-devicons", "mini.nvim" }) do
   local found
   for _, parts in ipairs({
-    { data, "site", "pack", plug, "opt" },
-    { data, "site", "pack", plug, "start" },
+    { data, "site", "pack", "core", "opt",   plug },
+    { data, "site", "pack", "core", "start", plug },
+    { data, "site", "pack", plug,   "opt" },
+    { data, "site", "pack", plug,   "start" },
     { data, "lazy", plug },
     { dir,  "deps", plug }
   }) do
