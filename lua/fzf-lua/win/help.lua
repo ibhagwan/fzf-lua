@@ -72,7 +72,7 @@ function M.toggle(keymap, actions, hls, zindex, preview_keymaps, preview_mode, h
   local get_desc = function(v)
     if type(v) == "table" then
       return v.desc or config.get_action_helpstr(v[1]) or config.get_action_helpstr(v.fn) or
-          tostring(v)
+          v.header or tostring(v)
     elseif v then
       return config.get_action_helpstr(v) or tostring(v)
     end
