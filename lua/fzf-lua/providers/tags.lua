@@ -201,8 +201,8 @@ M.btags = function(opts)
   -- Used as fallback to pipe the tags into fzf from stdout
   opts._btags_cmd = string.format("%s %s %s",
     opts.ctags_bin or "ctags",
-    opts.ctags_args or "-f -",
-    opts.filename)
+    opts.ctags_args or "-f - --excmd=combine",
+    libuv.shellescape(opts.filename))
   if opts.ctags_autogen then
     opts.cmd = opts.cmd or opts._btags_cmd
   end

@@ -1453,6 +1453,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
 
   -- If called from tags previewer, can happen when using ctags cmd
   -- "ctags -R --c++-kinds=+p --fields=+iaS --extras=+q --excmd=combine"
+  -- vim.regex is always magic, see `:help vim.regex`
   regex = regex and #regex > 0 and utils.regex_to_magic(regex)
       or entry.ctag and utils.ctag_to_magic(entry.ctag)
 
@@ -1481,9 +1482,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
     -- If regex is available (grep/lgrep), match on current line
     if regex and hls.search then
       local regex_start, regex_end
-      -- vim.regex is always magic, see `:help vim.regex`
-      ---@diagnostic disable-next-line: param-type-mismatch
-      local reg = vim.F.npcall(vim.regex, regex)
+      local reg = utils.vim_regex(regex, { silent = true })
       if reg then
         if regex ~= regex:lower() then
           regex_start, regex_end = reg:match_line(buf, lnum - 1, col - 1)
@@ -1491,10 +1490,6 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
           local line = api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1] or ""
           regex_start, regex_end = reg:match_str(line:sub(col):lower())
         end
-      elseif self.opts.silent ~= true then
-        utils.warn(
-          [[Unable to init vim.regex with "%s", %s. . Add 'silent=true' to hide this message.]],
-          regex, reg)
       end
       if regex_start and regex_end then
         extmark = api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, regex_start + col - 1, {
@@ -1766,7 +1761,9 @@ function Previewer.tags:set_cursor_hl(entry)
     -- didn't reload the buffer (same file)
     api.nvim_win_set_cursor(0, { 1, 0 })
     fn.clearmatches()
-    local ctag = assert(entry.ctag)
+    local ctag = utils.ctag_to_magic(assert(entry.ctag))
+    -- test the regex so we can alert the user of the search fail
+    if not utils.vim_regex(ctag, self.opts) then return end
     fn.search(ctag, "W")
     if self.win.hls.search then
       fn.matchadd(self.win.hls.search, ctag)

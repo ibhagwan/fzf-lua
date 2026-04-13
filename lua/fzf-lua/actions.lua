@@ -268,8 +268,11 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
         pcall(utils.jump_to_location, { uri = entry.uri, range = entry.range }, "utf-16",
           opts.reuse_win)
       elseif entry.line == 0 and entry.ctag then
-        vim.api.nvim_win_set_cursor(0, { 1, 0 })
-        vim.fn.search(entry.ctag, "W")
+        local re = utils.ctag_to_magic(entry.ctag)
+        if utils.vim_regex(re, opts) then
+          vim.api.nvim_win_set_cursor(0, { 1, 0 })
+          vim.fn.search(re, "W")
+        end
       elseif not opts.no_action_set_cursor and entry.line > 0 or entry.col > 0 then
         -- Make sure we have valid line/column
         -- e.g. qf lists from files (no line/col), dap_breakpoints
