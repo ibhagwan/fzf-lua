@@ -216,6 +216,20 @@ function M.is_darwin()
   return uv.os_uname().sysname == "Darwin"
 end
 
+---@param re string
+---@param opts table
+---@return vim.regex?
+function M.vim_regex(re, opts)
+  local ok, regex = pcall(vim.regex, re)
+  if ok then return regex --[[@as vim.regex]] end
+  if not ok and (not opts or opts.silent ~= true) then
+    M.warn(
+      [[Unable to init vim.regex with "%s", %s. . Add 'silent=true' to hide this message.]],
+      re, regex)
+    return nil
+  end
+end
+
 ---@param str string
 ---@return string
 function M.rg_escape(str)
@@ -230,16 +244,34 @@ function M.rg_escape(str)
   return ret
 end
 
+---@param str string
+---@return string
 function M.regex_to_magic(str)
   -- Convert regex to "very magic" pattern, basically a regex
   -- with special meaning for "%=&<>~", `:help /magic`
-  return [[\v]] .. str:gsub("[%%=&@<>~]", function(x)
-    return "\\" .. x
-  end)
+  return [[\v]] .. str:gsub("([%%=&<>])", [[\%1]])
+      -- searching for @ in very magic needs [@]
+      :gsub("([@])", "[%1]")
 end
 
+---@param str string
+---@return string
+function M.ctag_escape(str)
+  -- unescape already escaped ctags slashes
+  -- '\\' -> '\'
+  -- '\/' -> '/'
+  str = str:gsub([[\\]], [[\]])
+  str = str:gsub([[\/]], [[/]])
+  -- regex escape
+  return (M.rg_escape(str)
+    -- unescape ^$ if were positioned in start/end respectively
+    :gsub([[^\^]], "^"):gsub([[\$$]], "$"))
+end
+
+---@param str string
+---@return string
 function M.ctag_to_magic(str)
-  return [[\v]] .. str:gsub("[=&@<>{%(%)%.%[]", function(x) return [[\]] .. x end)
+  return M.regex_to_magic(M.ctag_escape(str))
 end
 
 function M.sk_escape(str)

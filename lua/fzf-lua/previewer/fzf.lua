@@ -182,34 +182,26 @@ end
 
 local grep_tag = function(file, tag)
   local line = 1
-  local filepath = file
-  local pattern = utils.rg_escape(vim.trim(tag))
-  if not pattern or not filepath then return line end
-  local grep_cmd = vim.fn.executable("rg") == 1
-      and { "rg", "--line-number" }
-      or { "grep", "-n", "-P" }
+  if not tag or not file then return line end
+  local pattern = utils.ctag_escape(tag)
   -- ctags uses '$' at the end of short patterns
   -- 'rg|grep' does not match these properly when
   -- 'fileformat' isn't set to 'unix', when set to
   -- 'dos' we need to prepend '$' with '\r$' with 'rg'
-  -- it is simpler to just ignore it completely.
-  --[[ local ff = fileformat(filepath)
-  if ff == 'dos' then
-    pattern = pattern:gsub("\\%$$", "\\r%$")
-  else
-    pattern = pattern:gsub("\\%$$", "%$")
-  end --]]
   -- equivalent pattern to `rg --crlf`
   -- see discussion in #219
-  pattern = pattern:gsub("\\%$$", "\\r??%$")
+  pattern = pattern:gsub("%$$", "\\r??%$")
+  local grep_cmd = vim.fn.executable("rg") == 1
+      and { "rg", "--line-number" }
+      or { "grep", "-n", "-P" }
   local cmd = utils.tbl_deep_clone(grep_cmd)
   table.insert(cmd, pattern)
-  table.insert(cmd, filepath)
+  table.insert(cmd, file)
   local out, rc = utils.io_system(cmd)
   if rc == 0 then
     line = utils.tointeger(out:match("[^:]+")) or 1
   else
-    utils.warn(("previewer: unable to find pattern '%s' in file '%s'"):format(pattern, file))
+    utils.warn("Unable to match pattern '%s' in file '%s'", pattern, file)
   end
   return line
 end
@@ -228,16 +220,9 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   -- make relative for bat's header display
   local filepath = path.relative_to(entry.bufname or entry.path or "", utils.cwd())
   if self.opts._ctag then
-    -- NOTE: override `entry.ctag` with the unescaped version
-    entry.ctag = path.entry_to_ctag(entry.stripped, true)
-    if not tonumber(entry.line) or tonumber(entry.line) < 1 then
+    if not entry.line or tonumber(entry.line) < 1 then
       -- default tags are without line numbers
-      -- make sure we don't already have line #
-      -- (in the case the line no. is actually 1)
-      local line = entry.stripped:match("[^:]+(%d+):")
-      if not line and entry.ctag then
-        entry.line = grep_tag(filepath, entry.ctag)
-      end
+      entry.line = grep_tag(filepath, entry.ctag)
     end
   end
   local errcmd = nil
@@ -316,7 +301,7 @@ function Previewer.bat_async:cmdline(o)
     local filepath, entry, errcmd = self:parse_entry_and_verify(items[1])
     if not filepath or not entry then return utils.shell_nop() end
     local line_range = ""
-    if entry.ctag and entry.line then
+    if self.opts._ctag and entry.line then
       -- this is a ctag without line numbers, since we can't
       -- provide the preview file offset to fzf via the field
       -- index expression we use '--line-range' instead

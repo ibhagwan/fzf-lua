@@ -42,6 +42,9 @@ function M._man_cmd_fn(bat_pager)
   return string.format("%s %%s 2>/dev/null | %s", cmd, pager)
 end
 
+-- Cross platform extended perl regex grep flag
+local GREP_PERL_REGEXP = utils.is_darwin() and "--extended-regexp" or "--perl-regexp"
+
 ---@class fzf-lua.config.TreesitterWinopts
 ---@field enabled boolean Enable treesitter highlighting in fzf main window.
 ---@field fzf_colors? table<string, string> Treesitter fzf color overrides.
@@ -134,7 +137,7 @@ end
 ---@field dir_icon string Directory icon to display in front of directory entries.
 ---@field __HLS fzf-lua.config.HLS Highlight group configuration.
 ---@field [string] any
-M.defaults        = {
+M.defaults = {
   nbsp          = utils.nbsp,
   winopts       = {
     height     = 0.85,
@@ -509,7 +512,7 @@ M.defaults        = {
 ---@field toggle_hidden_flag? string
 ---Flag passed to the shell command to toggle following symbolic links.
 ---@field toggle_follow_flag? string
-M.defaults.files  = {
+M.defaults.files = {
   previewer              = M._default_previewer_fn,
   multiprocess           = 1, ---@type integer|boolean
   _type                  = "file",
@@ -588,7 +591,7 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
           previewer    = { _ctor = previewers.builtin.tags },
           fn_transform = [[return require("fzf-lua.make_entry").tag]],
           rg_opts      = "--no-heading --color=always --smart-case",
-          grep_opts    = "--color=auto --perl-regexp",
+          grep_opts    = "--color=auto " .. GREP_PERL_REGEXP,
         }
       },
     }
@@ -624,7 +627,7 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
 ---@field icons     fzf-lua.git.icons
 -- Must construct our opts table in stages
 -- so we can reference 'M.globals.files'
-M.defaults.git                   = {
+M.defaults.git = {
   ---Git tracked files.
   ---@class fzf-lua.config.GitFiles: fzf-lua.config.Base
   files = {
@@ -902,14 +905,14 @@ M.defaults.git                   = {
 ---Git reflog.
 ---@diagnostic disable-next-line: param-type-mismatch
 ---@class fzf-lua.config.GitReflog: fzf-lua.config.GitCommits
-M.defaults.git.reflog            = vim.tbl_deep_extend("force", M.defaults.git.commits, {
+M.defaults.git.reflog = vim.tbl_deep_extend("force", M.defaults.git.commits, {
   cmd = [[git reflog --color=always --format="%C(yellow)%h %C(blue)%gD%C(auto)%d %gs"]],
 })
 
 ---Jujutsu pickers parent table.
 ---@class fzf-lua.config.Jj
 ---@field files     fzf-lua.config.JjFiles
-M.defaults.jj                    = {
+M.defaults.jj = {
   ---Jujutsu tracked files.
   ---@diagnostic disable-next-line: param-type-mismatch
   ---@class fzf-lua.config.JjFiles: fzf-lua.config.GitFiles
@@ -951,7 +954,7 @@ M.defaults.jj                    = {
 ---@field glob_separator? string
 ---@field __resume_set? function
 ---@field __resume_get? function
-M.defaults.grep                  = {
+M.defaults.grep = {
   previewer      = M._default_previewer_fn,
   input_prompt   = "Grep For> ",
   multiprocess   = 1, ---@type integer|boolean
@@ -960,11 +963,8 @@ M.defaults.grep                  = {
   color_icons    = true,
   git_icons      = false,
   fzf_opts       = { ["--multi"] = true },
-  grep_opts      = utils.is_darwin()
-      and "--binary-files=without-match --line-number --recursive --color=always "
-      .. "--extended-regexp -e"
-      or "--binary-files=without-match --line-number --recursive --color=always "
-      .. "--perl-regexp -e",
+  grep_opts      = GREP_PERL_REGEXP
+      .. " --binary-files=without-match --line-number --recursive --color=always -e",
   rg_opts        = "--column --line-number --no-heading --color=always --smart-case "
       .. "--max-columns=4096 -e",
   rg_glob        = 1, -- do not display warning if using `grep`
@@ -981,7 +981,7 @@ M.defaults.grep                  = {
 ---@diagnostic disable-next-line: param-type-mismatch
 ---@class fzf-lua.config.GrepCurbuf: fzf-lua.config.Grep,{}
 ---@field filename? string
-M.defaults.grep_curbuf           = vim.tbl_deep_extend("force", M.defaults.grep, {
+M.defaults.grep_curbuf = vim.tbl_deep_extend("force", M.defaults.grep, {
   rg_glob          = false, -- meaningless for single file rg
   exec_empty_query = true,  -- makes sense to display lines immediately
   fzf_opts         = {
@@ -995,7 +995,7 @@ M.defaults.grep_curbuf           = vim.tbl_deep_extend("force", M.defaults.grep,
 ---@class fzf-lua.config.Args: fzf-lua.config.Base
 ---Exclude non-file entries (directories) from the list.
 ---@field files_only? boolean
-M.defaults.args                  = {
+M.defaults.args = {
   previewer         = M._default_previewer_fn,
   files_only        = true, -- Exclude non-file entries (directories).
   file_icons        = 1, ---@type integer|boolean
@@ -1016,7 +1016,7 @@ M.defaults.args                  = {
 ---@field include_current_session? boolean
 ---Exclude the current buffer from the list.
 ---@field ignore_current_buffer? boolean
-M.defaults.oldfiles              = {
+M.defaults.oldfiles = {
   previewer               = M._default_previewer_fn,
   file_icons              = 1, ---@type integer|boolean
   color_icons             = true,
@@ -1033,7 +1033,7 @@ M.defaults.oldfiles              = {
 
 ---File history including current session.
 ---@class fzf-lua.config.History: fzf-lua.config.Oldfiles
-M.defaults.history               = vim.tbl_deep_extend("force", {}, M.defaults.oldfiles, {
+M.defaults.history = vim.tbl_deep_extend("force", {}, M.defaults.oldfiles, {
   include_current_session = true,
   ignore_current_buffer   = false,
 })
@@ -1044,7 +1044,7 @@ M.defaults.history               = vim.tbl_deep_extend("force", {}, M.defaults.o
 ---@field separator string
 ---Only include entries with valid file/line information.
 ---@field valid_only boolean
-M.defaults.quickfix              = {
+M.defaults.quickfix = {
   previewer   = M._default_previewer_fn,
   separator   = "▏",
   file_icons  = 1, ---@type integer|boolean
@@ -1066,7 +1066,7 @@ M.defaults.quickfix              = {
 ---Quickfix list history.
 ---@class fzf-lua.config.QuickfixStack: fzf-lua.config.Base
 ---@field marker string
-M.defaults.quickfix_stack        = {
+M.defaults.quickfix_stack = {
   marker    = ">",
   previewer = { _ctor = previewers.builtin.quickfix, },
   fzf_opts  = { ["--no-multi"] = true },
@@ -1076,7 +1076,7 @@ M.defaults.quickfix_stack        = {
 ---Location list entries.
 ---@class fzf-lua.config.Loclist : fzf-lua.config.Quickfix: fzf-lua.config.Base
 ---@field is_loclist true
-M.defaults.loclist               = {
+M.defaults.loclist = {
   previewer   = M._default_previewer_fn,
   separator   = "▏",
   file_icons  = 1, ---@type integer|boolean
@@ -1098,7 +1098,7 @@ M.defaults.loclist               = {
 ---Location list history.
 ---@class fzf-lua.config.LoclistStack : fzf-lua.config.QuickfixStack: fzf-lua.config.Base
 ---@field is_loclist true
-M.defaults.loclist_stack         = {
+M.defaults.loclist_stack = {
   marker    = ">",
   previewer = { _ctor = previewers.builtin.quickfix, },
   fzf_opts  = { ["--no-multi"] = true },
@@ -1123,7 +1123,7 @@ M.defaults.loclist_stack         = {
 ---@field cwd_only? boolean
 ---Do not set cursor position when switching buffers.
 ---@field no_action_set_cursor? boolean
-M.defaults.buffers               = {
+M.defaults.buffers = {
   _type                 = "file",
   previewer             = M._default_previewer_fn,
   file_icons            = 1, ---@type integer|boolean
@@ -1159,7 +1159,7 @@ M.defaults.buffers               = {
 ---@field tab_marker? string
 ---Jump to the selected buffer's location in the file.
 ---@field locate? boolean
-M.defaults.tabs                  = {
+M.defaults.tabs = {
   _type          = "file",
   previewer      = M._default_previewer_fn,
   tab_title      = "Tab",
@@ -1200,7 +1200,7 @@ M.defaults.tabs                  = {
 ---@field no_term_buffers? boolean
 ---Sort buffers by last used.
 ---@field sort_lastused? boolean
-M.defaults.lines                 = {
+M.defaults.lines = {
   previewer        = M._default_previewer_fn,
   file_icons       = 1, ---@type integer|boolean
   color_icons      = true,
@@ -1245,7 +1245,7 @@ M.defaults.lines                 = {
 ---Current buffer lines.
 ---@diagnostic disable-next-line: param-type-mismatch
 ---@class fzf-lua.config.Blines: fzf-lua.config.Lines
-M.defaults.blines                = vim.tbl_deep_extend("force", M.defaults.lines, {
+M.defaults.blines = vim.tbl_deep_extend("force", M.defaults.lines, {
   show_bufname    = false,
   show_unloaded   = true,
   show_unlisted   = true,
@@ -1262,7 +1262,7 @@ M.defaults.blines                = vim.tbl_deep_extend("force", M.defaults.lines
 ---Buffer number to search, default: current buffer.
 ---@field bufnr? integer
 ---@field node_filter? function
-M.defaults.treesitter            = {
+M.defaults.treesitter = {
   previewer        = M._default_previewer_fn,
   file_icons       = false, ---@type integer|boolean
   color_icons      = false,
@@ -1291,7 +1291,7 @@ M.defaults.treesitter            = {
 ---@field word_separator string
 ---Buffer number to check, default: current buffer.
 ---@field bufnr? integer
-M.defaults.spellcheck            = {
+M.defaults.spellcheck = {
   previewer        = M._default_previewer_fn,
   file_icons       = false,
   color_icons      = false,
@@ -1327,29 +1327,31 @@ M.defaults.spellcheck            = {
 ---Search project ctags.
 ---@class fzf-lua.config.Tags: fzf-lua.config.TagsBase
 ---@class fzf-lua.config.TagsGrep: fzf-lua.config.TagsBase,fzf-lua.config.Grep
-M.defaults.tags                  = {
+M.defaults.tags = {
   previewer     = { _ctor = previewers.builtin.tags },
   input_prompt  = "[tags] Grep For> ",
   rg_opts       = "--no-heading --color=always --smart-case",
-  grep_opts     = "--color=auto --perl-regexp",
+  grep_opts     = "--color=auto " .. GREP_PERL_REGEXP,
   multiprocess  = true, ---@type integer|boolean
   fn_transform  = [[return require("fzf-lua.make_entry").tag]],
   fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]],
   file_icons    = 1, ---@type integer|boolean
   git_icons     = false,
   color_icons   = true,
+  formatter     = false,
   fzf_opts      = {
-    ["--no-multi"]  = true,
-    ["--delimiter"] = string.format("[:%s]", utils.nbsp),
+    ["--delimiter"] = "[\t]",
+    ["--tabstop"]   = "6",
     ["--tiebreak"]  = "begin",
   },
+  -- line_field_index = "{4}",
+  -- field_index_expr = "{}", -- For `_fmt.from` to work with `bat_native`
   _actions      = function() return M.globals.actions.files end,
   actions       = { ["ctrl-g"] = { actions.grep_lgrep } },
-  formatter     = false,
 }
 
 ---Search current buffer ctags.
----@class fzf-lua.config.Btags : fzf-lua.config.TagsBase
+---@class fzf-lua.config.Btags : fzf-lua.config.Tags
 ---@field filename? string
 ---@field _btags_cmd? string
 ---Path to the ctags binary.
@@ -1358,28 +1360,17 @@ M.defaults.tags                  = {
 ---@field ctags_args? string
 ---Auto-generate ctags for the current buffer if no tags file exists.
 ---@field ctags_autogen? boolean
-M.defaults.btags                 = {
-  previewer     = { _ctor = previewers.builtin.tags },
-  ctags_file    = nil, -- auto-detect
-  rg_opts       = "--color=never --no-heading",
-  grep_opts     = "--color=never --perl-regexp",
-  multiprocess  = true, ---@type integer|boolean
-  fn_transform  = [[return require("fzf-lua.make_entry").tag]],
-  fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]],
-  file_icons    = false, ---@type integer|boolean
-  git_icons     = false,
-  color_icons   = true,
-  ctags_autogen = true,
-  fzf_opts      = {
-    ["--no-multi"]  = true,
-    ["--delimiter"] = string.format("[:%s]", utils.nbsp),
-    ["--with-nth"]  = "1,-1",
-    ["--tiebreak"]  = "begin",
-  },
-  _actions      = function() return M.globals.actions.files end,
-  actions       = { ["ctrl-g"] = false },
-  formatter     = false,
-}
+---@diagnostic disable-next-line: param-type-mismatch, assign-type-mismatch
+M.defaults.btags = vim.tbl_deep_extend("force", M.defaults.tags, {
+  ctags_file     = false, -- auto-detect
+  ctags_autogen  = true,
+  rg_opts        = "--color=never --no-heading",
+  grep_opts      = "--color=never " .. GREP_PERL_REGEXP,
+  file_icons     = false, ---@type integer|boolean
+  fzf_opts       = { ["--with-nth"] = "1,3.." },
+  actions        = { ["ctrl-g"] = false },
+  _resume_reload = true,
+})
 
 ---Installed colorschemes.
 ---@class fzf-lua.config.Colorschemes: fzf-lua.config.Base
@@ -1389,7 +1380,7 @@ M.defaults.btags                 = {
 ---@field ignore_patterns string[]
 ---Preview colorschemes as you navigate.
 ---@field live_preview boolean
-M.defaults.colorschemes          = {
+M.defaults.colorschemes = {
   live_preview = true,
   winopts      = { height = 0.55, width = 0.50, backdrop = false },
   fzf_opts     = { ["--no-multi"] = true },
@@ -1399,7 +1390,7 @@ M.defaults.colorschemes          = {
 
 ---Neovim highlight groups.
 ---@class fzf-lua.config.Highlights: fzf-lua.config.Base
-M.defaults.highlights            = {
+M.defaults.highlights = {
   fzf_opts   = { ["--no-multi"] = true },
   fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
   previewer  = { _ctor = previewers.builtin.highlights, },
@@ -1421,7 +1412,7 @@ M.defaults.highlights            = {
 ---@field dbfile string
 ---Path where downloaded colorschemes will be stored.
 ---@field packpath string|function
-M.defaults.awesome_colorschemes  = {
+M.defaults.awesome_colorschemes = {
   winopts      = { row = 0, col = 0.99, width = 0.50, backdrop = false },
   live_preview = true,
   max_threads  = 5,
@@ -1449,7 +1440,7 @@ M.defaults.awesome_colorschemes  = {
 ---@class fzf-lua.config.Helptags: fzf-lua.config.Base
 ---Fallback to searching all help files if no tags match.
 ---@field fallback? boolean
-M.defaults.helptags              = {
+M.defaults.helptags = {
   actions   = {
     ["enter"]  = actions.help,
     ["ctrl-s"] = actions.help,
@@ -1471,7 +1462,7 @@ M.defaults.helptags              = {
 ---@class fzf-lua.config.Manpages: fzf-lua.config.Base
 ---Shell command used to list man pages.
 ---@field cmd string
-M.defaults.manpages              = {
+M.defaults.manpages = {
   cmd       = "man -k .",
   actions   = {
     ["enter"]  = actions.man,
@@ -1504,7 +1495,7 @@ M.defaults.manpages              = {
 ---@field workspace_symbols fzf-lua.config.LspWorkspaceSymbols
 ---@field finder fzf-lua.config.LspFinder
 ---@field code_actions fzf-lua.config.LspCodeActions
-M.defaults.lsp                   = {
+M.defaults.lsp = {
   previewer        = M._default_previewer_fn,
   file_icons       = 1, ---@type integer|boolean
   color_icons      = true,
@@ -1539,7 +1530,7 @@ M.defaults.lsp                   = {
 ---@field parent_postfix? boolean
 ---Jump to the selected symbol location in the file.
 ---@field locate? boolean
-M.defaults.lsp.symbols           = {
+M.defaults.lsp.symbols = {
   previewer        = M._default_previewer_fn,
   locate           = false,
   file_icons       = 1, ---@type integer|boolean
@@ -1614,7 +1605,7 @@ M.defaults.lsp.symbols           = {
 ---@class fzf-lua.config.LspDocumentSymbols: fzf-lua.config.LspSymbols
 ---@field __sym_bufnr? integer
 ---@field __sym_bufname? string
-M.defaults.lsp.document_symbols  = vim.tbl_deep_extend("force", {}, M.defaults.lsp.symbols, {
+M.defaults.lsp.document_symbols = vim.tbl_deep_extend("force", {}, M.defaults.lsp.symbols, {
   git_icons   = false,
   file_icons  = false, ---@type integer|boolean
   fzf_opts    = {
@@ -1658,7 +1649,7 @@ M.defaults.lsp.workspace_symbols = vim.tbl_deep_extend("force", {}, M.defaults.l
 ---@field providers table
 ---Do not automatically close the picker when a single result is found.
 ---@field no_autoclose boolean
-M.defaults.lsp.finder            = {
+M.defaults.lsp.finder = {
   previewer   = M._default_previewer_fn,
   file_icons  = 1, ---@type integer|boolean
   color_icons = true,
@@ -1708,7 +1699,7 @@ M.defaults.lsp.finder            = {
 ---@field filter fun(x: lsp.CodeAction|lsp.Command):boolean
 ---@field _ui_select? { kind: string }
 ---@field _items any[]
-M.defaults.lsp.code_actions      = {
+M.defaults.lsp.code_actions = {
   async_or_timeout = 5000,
   previewer        = "codeaction",
   -- previewer        = "codeaction_native",
@@ -1749,7 +1740,7 @@ M.defaults.lsp.code_actions      = {
 ---@field multiline? integer|boolean
 ---Color the file/buffer headings.
 ---@field color_headings? boolean
-M.defaults.diagnostics           = {
+M.defaults.diagnostics = {
   previewer      = M._default_previewer_fn,
   file_icons     = false, ---@type integer|boolean
   color_icons    = true,
@@ -1778,7 +1769,7 @@ M.defaults.diagnostics           = {
 ---@class fzf-lua.config.Builtin: fzf-lua.config.Base
 ---@field metatable table
 ---@field metatable_exclude table
-M.defaults.builtin               = {
+M.defaults.builtin = {
   no_resume = true,
   winopts   = { height = 0.65, width = 0.50, preview = { hidden = true } },
   fzf_opts  = { ["--no-multi"] = true },
@@ -1792,7 +1783,7 @@ M.defaults.builtin               = {
 ---Fzf-lua configuration profiles.
 ---@class fzf-lua.config.Profiles: fzf-lua.config.Base
 ---@field load fzf-lua.profile
-M.defaults.profiles              = {
+M.defaults.profiles = {
   previewer = M._default_previewer_fn,
   fzf_opts  = {
     ["--delimiter"] = "[:]",
@@ -1809,7 +1800,7 @@ M.defaults.profiles              = {
 ---@field marks? string
 ---Sort marks alphabetically. Set to `false` to maintain original order.
 ---@field sort? boolean
-M.defaults.marks                 = {
+M.defaults.marks = {
   sort        = false,
   fzf_opts    = { ["--no-multi"] = true },
   actions     = {
@@ -1825,7 +1816,7 @@ M.defaults.marks                 = {
 
 ---Change list.
 ---@class fzf-lua.config.Changes: fzf-lua.config.Jumps
-M.defaults.changes               = {
+M.defaults.changes = {
   cmd       = "changes",
   h1        = "change",
   actions   = { ["enter"] = actions.goto_jump },
@@ -1836,7 +1827,7 @@ M.defaults.changes               = {
 ---@class fzf-lua.config.Jumps: fzf-lua.config.Base
 ---@field cmd string
 ---@field h1 string
-M.defaults.jumps                 = {
+M.defaults.jumps = {
   cmd       = "jumps",
   fzf_opts  = { ["--no-multi"] = true },
   actions   = { ["enter"] = actions.goto_jump },
@@ -1845,7 +1836,7 @@ M.defaults.jumps                 = {
 
 ---Tag stack.
 ---@class fzf-lua.config.Tagstack: fzf-lua.config.Base
-M.defaults.tagstack              = {
+M.defaults.tagstack = {
   file_icons  = 1, ---@type integer|boolean
   color_icons = true,
   git_icons   = true,
@@ -1862,7 +1853,7 @@ M.defaults.tagstack              = {
 ---@field include_builtin boolean
 ---Sort commands by last used.
 ---@field sort_lastused boolean
-M.defaults.commands              = {
+M.defaults.commands = {
   actions         = { ["enter"] = actions.ex_run },
   flatten         = {},
   include_builtin = true,
@@ -1873,7 +1864,7 @@ M.defaults.commands              = {
 ---@class fzf-lua.config.Autocmds: fzf-lua.config.Base
 ---Show the description field for autocommands in the list.
 ---@field show_desc boolean
-M.defaults.autocmds              = {
+M.defaults.autocmds = {
   show_desc = true, -- show desc field in fzf list
   previewer = { _ctor = previewers.builtin.autocmds },
   _actions  = function() return M.globals.actions.files end,
@@ -1889,7 +1880,7 @@ M.defaults.autocmds              = {
 ---@field __locate_pos? integer
 ---Jump to the current undo position on picker open.
 ---@field locate boolean
-M.defaults.undotree              = {
+M.defaults.undotree = {
   previewer      = "undotree",
   locate         = true,
   fzf_opts       = { ["--no-multi"] = true },
@@ -1903,7 +1894,7 @@ M.defaults.undotree              = {
 ---@class fzf-lua.config.CommandHistory: fzf-lua.config.Base
 ---Reverse the order of the history list (oldest first).
 ---@field reverse_list? boolean
-M.defaults.command_history       = {
+M.defaults.command_history = {
   fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   render_crlf = true,
   _treesitter = function(line) return "foo.vim", nil, line end,
@@ -1922,7 +1913,7 @@ M.defaults.command_history       = {
 ---@field reverse_list? boolean
 ---Also search in reverse direction.
 ---@field reverse_search? boolean
-M.defaults.search_history        = {
+M.defaults.search_history = {
   fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   render_crlf = true,
   _treesitter = function(line) return "", nil, line, "regex" end,
@@ -1943,7 +1934,7 @@ M.defaults.search_history        = {
 ---@field multiline? integer|boolean
 ---Ignore empty registers.
 ---@field ignore_empty? boolean
-M.defaults.registers             = {
+M.defaults.registers = {
   multiline    = true, ---@type integer|boolean
   ignore_empty = true,
   actions      = { ["enter"] = actions.paste_register },
@@ -1960,7 +1951,7 @@ M.defaults.registers             = {
 ---@field show_details boolean
 ---List of modes to include, e.g. `{ "n", "i", "v" }`.
 ---@field modes string[]
-M.defaults.keymaps               = {
+M.defaults.keymaps = {
   previewer       = { _ctor = previewers.builtin.keymaps },
   winopts         = { preview = { layout = "vertical" } },
   fzf_opts        = { ["--tiebreak"] = "index", ["--no-multi"] = true },
@@ -1981,7 +1972,7 @@ M.defaults.keymaps               = {
 ---@field separator string
 ---Colorize option values.
 ---@field color_values boolean
-M.defaults.nvim_options          = {
+M.defaults.nvim_options = {
   previewer    = { _ctor = previewers.builtin.nvim_options },
   separator    = "│",
   color_values = true,
@@ -2000,7 +1991,7 @@ M.defaults.nvim_options          = {
 ---@class fzf-lua.config.SpellSuggest: fzf-lua.config.Base
 ---The pattern used to match the word under the cursor. Text around the cursor position that matches will be used as the initial query and replaced by a chosen completion. The default matches anything but spaces and single/double quotes.
 ---@field word_pattern? string
-M.defaults.spell_suggest         = {
+M.defaults.spell_suggest = {
   winopts = {
     relative = "cursor",
     row      = 1,
@@ -2016,7 +2007,7 @@ M.defaults.spell_suggest         = {
 ---Neovim server list.
 ---@class fzf-lua.config.Serverlist : fzf-lua.config.Base
 ---@field _screenshot string
-M.defaults.serverlist            = {
+M.defaults.serverlist = {
   _screenshot = vim.fn.tempname(),
   previewer = { _ctor = previewers.fzf.nvim_server },
   _resume_reload = true, -- avoid list contain killed server unhide
@@ -2031,14 +2022,14 @@ M.defaults.serverlist            = {
 
 ---Filetypes.
 ---@class fzf-lua.config.Filetypes : fzf-lua.config.Base
-M.defaults.filetypes         = {
+M.defaults.filetypes = {
   file_icons = false, ---@type integer|boolean
   actions    = { ["enter"] = actions.set_filetype },
 }
 
 ---`:packadd <package>`.
 ---@class fzf-lua.config.Packadd : fzf-lua.config.Base
-M.defaults.packadd           = {
+M.defaults.packadd = {
   actions = {
     ["enter"] = actions.packadd,
   },
@@ -2046,7 +2037,7 @@ M.defaults.packadd           = {
 
 ---Neovim menus.
 ---@class fzf-lua.config.Menus : fzf-lua.config.Base
-M.defaults.menus             = {
+M.defaults.menus = {
   actions = {
     ["enter"] = actions.exec_menu,
   },
@@ -2056,7 +2047,7 @@ M.defaults.menus             = {
 ---@class fzf-lua.config.Tmux
 ---@field buffers fzf-lua.config.TmuxBuffers
 ---@field cmd string
-M.defaults.tmux              = {
+M.defaults.tmux = {
   ---Tmux paste buffers.
   ---@class fzf-lua.config.TmuxBuffers: fzf-lua.config.Base
   buffers = {
@@ -2077,7 +2068,7 @@ M.defaults.tmux              = {
 
 ---DAP pickers parent table.
 ---@class fzf-lua.config.Dap
-M.defaults.dap               = {
+M.defaults.dap = {
   ---DAP builtin commands.
   ---@class fzf-lua.config.DapCommands: fzf-lua.config.DapBase
   commands       = { fzf_opts = { ["--no-multi"] = true }, },
@@ -2113,7 +2104,7 @@ M.defaults.dap               = {
 ---@field cmd? string
 ---Pattern to match the word under cursor for initial query and replacement.
 ---@field word_pattern? string
-M.defaults.complete_path     = {
+M.defaults.complete_path = {
   file_icons        = false, ---@type integer|boolean
   git_icons         = false,
   color_icons       = true,
@@ -2129,7 +2120,7 @@ M.defaults.complete_path     = {
 ---@field cmd? string
 ---Pattern to match the word under cursor for initial query and replacement.
 ---@field word_pattern? string
-M.defaults.complete_file     = {
+M.defaults.complete_file = {
   multiprocess      = 1, ---@type integer|boolean
   _type             = "file",
   file_icons        = 1, ---@type integer|boolean
@@ -2149,7 +2140,7 @@ M.defaults.complete_file     = {
 ---@field scope? string
 ---Change to the git root directory instead of the zoxide path.
 ---@field git_root? boolean
-M.defaults.zoxide            = {
+M.defaults.zoxide = {
   multiprocess  = true, ---@type integer|boolean
   fn_transform  = [[return require("fzf-lua.make_entry").zoxide]],
   fn_preprocess = [[return require("fzf-lua.make_entry").preprocess]],
@@ -2172,7 +2163,7 @@ M.defaults.zoxide            = {
 ---@class fzf-lua.config.CompleteLine: fzf-lua.config.Blines
 ---@field current_buffer_only? boolean
 ---@field complete? (fun(s: string[], _o: fzf-lua.config.Resolved, l: string, c: integer):string?, integer?)|boolean
-M.defaults.complete_line     = vim.tbl_deep_extend("force", M.defaults.blines, {
+M.defaults.complete_line = vim.tbl_deep_extend("force", M.defaults.blines, {
   complete = true,
 })
 
@@ -2181,7 +2172,7 @@ M.defaults.file_icon_padding = ""
 -- No need to sset this, already defaults to `nvim_open_win`
 -- M.help_open_win              = vim.api.nvim_open_win
 
-M.defaults.dir_icon          = ""
+M.defaults.dir_icon = ""
 
 ---@class fzf-lua.config.HLS
 ---Main fzf (terminal) window normal (text/bg) highlight group.
@@ -2261,7 +2252,7 @@ M.defaults.dir_icon          = ""
 ---Highlight group for global commands in `:FzfLua commands`, by default links to `Directory`.
 ---@field cmd_global string
 ---@field fzf fzf-lua.config.fzfHLS
-M.defaults.__HLS             = {
+M.defaults.__HLS = {
   normal         = "FzfLuaNormal",
   border         = "FzfLuaBorder",
   title          = "FzfLuaTitle",
