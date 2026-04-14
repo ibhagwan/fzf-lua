@@ -714,7 +714,7 @@ M.tag = function(x, opts)
     name,
     M.file(file, opts),
     line and utils.ansi_codes.green(tostring(line)) .. ";" or "",
-    tag and utils.ansi_codes.blue(tag) or ""
+    tag or ""
   )
 end
 

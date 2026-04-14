@@ -1319,6 +1319,37 @@ M.defaults.spellcheck = {
   },
 }
 
+---@param line string
+---@param include_file boolean?
+---@return string?, string?, { start_col: integer, end_col: integer, text: string? }?
+local function ctag_line_parser(line, include_file)
+  local start_col, end_col = utils.ctag_match(line)
+  if not start_col or not end_col then return end
+  -- remove tag's wrapping slashes
+  start_col = start_col + 1
+  end_col = end_col - 1
+  local tag = line:sub(start_col, end_col)
+  local text, had_caret, had_dollar = utils.regex_strip_anchors(tag)
+  local file = (function()
+    if not include_file then return "" end
+    -- NOTE: since fzf expands tabs to space(s) we cannot extract the
+    -- file deterministically, we therefore do a "best effort" backwards
+    -- search for "<foo.bar><space(s)>/<tag>/", while this can fail it is
+    -- somewhat acceptable as filenames without extensions are irrelevant
+    -- as treesitter won't be able to determine the filetype anyways
+    -- NOTE: (-2) as we already advanced start_col past the first /
+    return line:sub(1, start_col - 2):match("([^%s]+%.[^%s]+)%s+$")
+  end)()
+  -- include_file was requested but file wasn't found (tags), bail
+  if not file then return end
+  return file, nil, {
+    -- NOTE: ts indexes are zero based
+    start_col = start_col + had_caret - 1,
+    end_col = end_col - had_dollar,
+    text = text
+  }
+end
+
 ---@class fzf-lua.config.TagsBase: fzf-lua.config.Base
 ---Path to the tags file, default: auto-detect.
 ---@field ctags_file? string
@@ -1348,6 +1379,7 @@ M.defaults.tags = {
   -- field_index_expr = "{}", -- For `_fmt.from` to work with `bat_native`
   _actions      = function() return M.globals.actions.files end,
   actions       = { ["ctrl-g"] = { actions.grep_lgrep } },
+  _treesitter   = function(line) return ctag_line_parser(line, true) end,
 }
 
 ---Search current buffer ctags.
@@ -1370,6 +1402,7 @@ M.defaults.btags = vim.tbl_deep_extend("force", M.defaults.tags, {
   fzf_opts       = { ["--with-nth"] = "1,3.." },
   actions        = { ["ctrl-g"] = false },
   _resume_reload = true,
+  _treesitter    = function(line) return ctag_line_parser(line) end,
 })
 
 ---Installed colorschemes.
