@@ -127,13 +127,14 @@ end
 
 ---@param self fzf-lua.Win
 ---@param buf integer
----@param line_parser (fun(line: string):string?,string?,string?,string?)|boolean?
+---@param line_parser (fun(line: string):string?,string?,string|table?,string?)|boolean?
 ---@return function detach
 function M.attach(self, buf, line_parser)
   -- local utf8 = require("fzf-lua.lib.utf8")
   local function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
   ---@type fun(line: string):string?,string?,string?,string?
   local default_line_parser = function(line) return line:match("(.-):?(%d+)[: ](.+)$") end
+  ---@type (fun(line: string):string?,string?,string|table?,string?)
   line_parser = vim.is_callable(line_parser) and line_parser or default_line_parser
   M.cache[buf] = {}
   api.nvim_buf_attach(buf, false, {
@@ -171,13 +172,21 @@ function M.attach(self, buf, line_parser)
           -- file:line:text       (grep_project or missing "--column" flag)
           -- line:col:text        (grep_curbuf)
           -- line<U+00A0>text     (lines|blines)
-          local filepath, _lnum, text, _ft = line_parser(line:sub(min_col))
-          if not text or text == 0 then return end
+          local filepath, _lnum, info, _ft = line_parser(line:sub(min_col + 1))
+
+          -- info can be a string or `{ text = ..., start_col, end_col }`
+          info = type(info) == "table" and info or { text = info }
+
+          -- line_parser can return text with start_col/end_col
+          local text = info.text
+          if not text or #text == 0 then return end
 
           text = text:gsub("^%d+:", "") -- remove col nr if exists
           filepath = trim(filepath)     -- trim spaces
 
           local ft_bufnr = (function()
+            -- we only need this as fallback if _ft is nil
+            if _ft then return nil end
             -- blines|lines: U+00A0 (decimal: 160) follows the lnum
             -- grep_curbuf: formats as line:col:text` thus `#filepath == 0`
             if #filepath == 0 or string.byte(text, 1) == 160 then
@@ -190,6 +199,8 @@ function M.attach(self, buf, line_parser)
             end
           end)()
 
+          -- _ft should nullify ft_bufnr
+          assert(not _ft or not ft_bufnr)
           local ft = _ft or (ft_bufnr and vim.bo[ft_bufnr].ft
             or vim.filetype.match({ filename = path.tail(filepath) }))
           if not ft then return end
@@ -206,13 +217,18 @@ function M.attach(self, buf, line_parser)
           -- we use `max_col` instead (assuming our code isn't unicode)
           local line_idx = i - 1
           local line_len = #line
-          local start_col = math.max(min_col, line_len - #text)
-          local end_col = max_col and math.min(max_col, line_len) or (line_len - trim_right)
+          local start_col = info.start_col and (info.start_col + min_col) or (line_len - #text)
+          local end_col = info.end_col and (info.end_col + min_col) or (line_len - trim_right)
+          -- clamp min/max columns
+          start_col = math.max(min_col, start_col)
+          if max_col then end_col = math.min(max_col, end_col) end
           regions[lang] = regions[lang] or {}
           empty_regions[lang] = empty_regions[lang] or {}
           table.insert(regions[lang], { { line_idx, start_col, line_idx, end_col } })
-          -- print(lang, string.format("%d:%d  [%d] %d:%s",
-          --   start_col, end_col, line_idx, _lnum, line:sub(start_col + 1, end_col)))
+          -- uncomment to debug:
+          -- print(lang, string.format("%d:%d +%d  [%d] %s:%s",
+          --   start_col, end_col, min_col, line_idx, tostring(_lnum),
+          --   line:sub(start_col + 1, end_col)))
         end)()
       end
       attach(bufnr, empty_regions)

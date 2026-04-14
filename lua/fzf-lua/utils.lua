@@ -254,6 +254,63 @@ function M.regex_to_magic(str)
       :gsub("([@])", "[%1]")
 end
 
+---Remove ^ $ regex anchors if they appear at start/end respectively
+-- used with ctags to convert the tag to a valid code block
+---@param s string?
+---@return string?, integer, integer
+function M.regex_strip_anchors(s)
+  local had_caret, had_dollar = 0, 0
+  if not s then return nil, had_caret, had_dollar end
+  ---@format disable
+  if string.byte(s, 1) == 94 then s = s:sub(2); had_caret = 1 end -- remove starting ^
+  -- remove ending $ only if not escaped (none/even number of backslashes)
+  if string.byte(s, #s) == 36 then
+    local bs_count, i = 0, #s - 1
+    while i > 0 and string.byte(s, i) == 92 do
+      bs_count = bs_count + 1
+      i = i - 1
+    end
+    if bs_count % 2 == 0 then
+      s = s:sub(1, #s - 1)
+      had_dollar = 1
+    end
+  end
+  return s, had_caret, had_dollar
+end
+
+---@param str string
+---@return integer?, integer?
+function M.ctag_match(str)
+  ---@param s string
+  ---@param i integer?
+  ---@return integer?
+  local rfind_slash = function(s, i)
+    -- assert(string.byte("/", 1) == 47)
+    -- assert(string.byte([[\]], 1) == 92)
+    local SLASH, BSLASH = 47, 92
+    local len = #s
+    i = i or len
+    while i > 0 do
+      if string.byte(s, i) == SLASH then
+        local bs_count, j = 0, i - 1
+        while j > 0 and string.byte(s, j) == BSLASH do
+          bs_count = bs_count + 1
+          j = j - 1
+        end
+        if bs_count % 2 == 0 then
+          return i
+        end
+      end
+      i = i - 1
+    end
+  end
+  local start_col, end_col = nil, rfind_slash(str)
+  if end_col then
+    start_col = rfind_slash(str, end_col - 1)
+  end
+  if start_col then return start_col, end_col end
+end
+
 ---@param str string
 ---@return string
 function M.ctag_escape(str)
@@ -1298,7 +1355,7 @@ function M.getbufinfo(bufnr)
   if M.__HAS_AUTOLOAD_FNS then
     return vim.fn["fzf_lua#getbufinfo"](bufnr)
   else
-    return vim.fn.getbufinfo(bufnr)[1] or {}
+    return vim.fn.getbufinfo(bufnr)[1] or {} ---@as vim.fn.getbufinfo.ret.item
   end
 end
 

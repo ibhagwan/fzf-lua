@@ -411,7 +411,9 @@ function M.entry_to_ctag(raw, opts)
     ctag = tag,
     line = line or 0,
     col = 0,
-    stripped = string.format("%s:%s %s", file, line and line .. ":" or "", tag or ""),
+    stripped = string.format("%s:%s %s", file, line and line .. ":" or "",
+      -- remove ctag ^$ prefix/postfix so qflist can have ts highlights
+      utils.regex_strip_anchors(tag) or ""),
     debug = opts.debug and raw:match("^%[DEBUG]") and raw or nil,
   } ---@as fzf-lua.path.Entry
 end

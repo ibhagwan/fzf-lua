@@ -135,4 +135,82 @@ describe("Testing utils module", function()
     eq(utils.strsplit(",foo,bar,", ","), { "", "foo", "bar", "" })
     eq(utils.strsplit("foobar", ","), { "foobar" })
   end)
+
+  it("regex_strip_anchors", function()
+    -- nil input
+    eq({ utils.regex_strip_anchors(nil) }, { [2] = 0, [3] = 0 })
+    -- empty string
+    eq({ utils.regex_strip_anchors("") }, { "", 0, 0 })
+    -- no anchors
+    eq({ utils.regex_strip_anchors("foobar") }, { "foobar", 0, 0 })
+    -- only start anchor
+    eq({ utils.regex_strip_anchors("^foobar") }, { "foobar", 1, 0 })
+    -- only end anchor
+    eq({ utils.regex_strip_anchors("foobar$") }, { "foobar", 0, 1 })
+    -- both anchors
+    eq({ utils.regex_strip_anchors("^foobar$") }, { "foobar", 1, 1 })
+    -- anchors in middle (should not be stripped)
+    eq({ utils.regex_strip_anchors("foo^bar$baz") }, { "foo^bar$baz", 0, 0 })
+    -- only anchors
+    eq({ utils.regex_strip_anchors("^") }, { "", 1, 0 })
+    eq({ utils.regex_strip_anchors("$") }, { "", 0, 1 })
+    eq({ utils.regex_strip_anchors("^$") }, { "", 1, 1 })
+    -- single character with anchors
+    eq({ utils.regex_strip_anchors("^x$") }, { "x", 1, 1 })
+    -- should not strip escaped $ (prepended by odd number of backslashes)
+    eq({ utils.regex_strip_anchors([[x\$]]) }, { [[x\$]], 0, 0 })
+    eq({ utils.regex_strip_anchors([[x\\$]]) }, { [[x\\]], 0, 1 })
+    eq({ utils.regex_strip_anchors([[x\\\$]]) }, { [[x\\\$]], 0, 0 })
+  end)
+
+  it("ctag_match", function()
+    -- no slashes
+    eq(utils.ctag_match("foobar"), nil)
+    -- single slash (needs at least 2 slashes)
+    eq(utils.ctag_match("foo/bar"), nil)
+    -- anchored slahes
+    eq({ utils.ctag_match("/foo/") }, { 1, 5 })
+    -- two slashes (finds the two rightmost unescaped slashes)
+    eq({ utils.ctag_match("/foo/bar/baz") }, { 5, 9 })
+    -- escaped slash only (should ignore escaped ones)
+    eq(utils.ctag_match([[/foo\/bar]]), nil)
+    eq(utils.ctag_match([[/foo\\\/bar]]), nil)
+    -- escaped slash backslash before slash
+    eq({ utils.ctag_match([[/foo\\/bar]]) }, { 1, 7 })
+    eq({ utils.ctag_match([[/foo\\\\/bar]]) }, { 1, 9 })
+    -- mixed escaped and unescaped
+    eq({ utils.ctag_match([[foo/bar\/baz/qux]]) }, { 4, 13 })
+    -- reverse search from end
+    eq({ utils.ctag_match("/a/b/c/d") }, { 5, 7 })
+  end)
+
+  it("ctag_escape", function()
+    -- empty string
+    eq(utils.ctag_escape(""), "")
+    -- no special characters
+    eq(utils.ctag_escape("foobar"), "foobar")
+    -- escaped backslash (\\ becomes \, then rg_escape doubles it back)
+    eq(utils.ctag_escape("foo\\bar"), "foo\\\\bar")
+    -- unescape escaped slash (\/ becomes /)
+    eq(utils.ctag_escape("foo\\/bar"), "foo/bar")
+    -- regex escape (rg_escape behavior)
+    eq(utils.ctag_escape("foo.bar"), "foo\\.bar")
+    eq(utils.ctag_escape("foo*bar"), "foo\\*bar")
+    -- ^ at start gets unescaped (was escaped by rg_escape)
+    eq(utils.ctag_escape("^foobar"), "^foobar")
+    -- $ at end gets unescaped (was escaped by rg_escape)
+    eq(utils.ctag_escape("foobar$"), "foobar$")
+    -- already escaped ^ at start stays escaped (rg_escape adds another backslash)
+    eq(utils.ctag_escape("\\^foobar"), "\\\\\\^foobar")
+    -- already escaped $ at end stays escaped
+    eq(utils.ctag_escape("foobar\\$"), "foobar\\\\$")
+    -- ^ in middle stays escaped
+    eq(utils.ctag_escape("foo^bar"), "foo\\^bar")
+    -- $ in middle stays escaped
+    eq(utils.ctag_escape("foo$bar"), "foo\\$bar")
+    -- combination of patterns
+    eq(utils.ctag_escape("^foo.bar$"), "^foo\\.bar$")
+    -- escaped backslash before dot (\. becomes ., then rg_escape escapes both)
+    eq(utils.ctag_escape("foo\\.bar"), "foo\\\\\\.bar")
+  end)
 end)
