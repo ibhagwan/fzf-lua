@@ -1489,7 +1489,7 @@ Ripgrep options passed to the `rg` command.
 
 ##### grep.grep_opts
 
-Type: `string`, Default: `"--binary-files=without-match --line-number --recursive -...`
+Type: `string`, Default: `"--perl-regexp --binary-files=without-match --line-number...`
 
 GNU grep options passed to the `grep` command.
 
