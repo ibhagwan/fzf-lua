@@ -187,7 +187,10 @@ T["api"]["fzf_live"]["rg"]["error"] = new_set({}, {
       -- as no fn_transform or fn_preprocess are present
       multiprocess = multiprocess,
       debug = 1,
-      query = "["
+      query = "[",
+      __after_open = function()
+        child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+      end,
       -- fzf_opts = { ["--wrap"] = true },
     })
   end
@@ -204,6 +207,9 @@ T["api"]["fzf_live"]["rg"]["no error"] = new_set(
         ),
         {
           __expect_lines = true,
+          __after_open = function()
+            child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+          end,
           multiprocess = multiprocess,
           debug = 1,
           query = query,
@@ -215,6 +221,9 @@ T["api"]["fzf_live"]["rg"]["no error"] = new_set(
 T["api"]["fzf_live"]["exec_empty_query"] = function(multiprocess, query)
   helpers.FzfLua.fzf_live(child, "echo <query>", {
     __expect_lines = true,
+    __after_open = function()
+      child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+    end,
     multiprocess = multiprocess,
     debug = 1,
     query = query,

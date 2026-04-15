@@ -3,7 +3,7 @@ name: Lint
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Install libbfd
         run: |
