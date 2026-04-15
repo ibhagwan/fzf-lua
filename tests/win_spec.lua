@@ -154,21 +154,16 @@ T["win"]["keymap"]["no error"] = new_set({
   function(key, _action)
     local builtin = child.lua_get [[FzfLua.defaults.keymap.builtin]]
     for _, event in ipairs({ "start", "load", "result" }) do
-      exec_lua([[
-        FzfLua.files {
-          query = "README.md",
-          winopts = { preview = { wrap = false } },
-          keymap = { true, fzf = { [...] = function() end } },
-        }
-      ]], { event })
-      child.wait_until(function()
-        return child.lua_get([[_G._fzf_load_called]]) == true
-      end)
-      child.type_keys(key)
-      child.type_keys("<c-c>")
-      child.wait_until(function()
-        return child.lua_get([[_G._fzf_load_called]]) == vim.NIL
-      end)
+      helpers.FzfLua.files(child, {
+        __abort_key = key .. "<c-c>",
+        __expect_lines = false,
+        __after_open = function()
+          if helpers.IS_WIN() then vim.uv.sleep(250) end
+        end,
+        query = "README.md",
+        winopts = { preview = { wrap = false } },
+        keymap = { true, fzf = { [event] = function() end } },
+      })
     end
   end })
 

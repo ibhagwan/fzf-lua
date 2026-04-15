@@ -212,7 +212,7 @@ T["files"]["line_query"] = function()
     previewer = "builtin",
     line_query = true,
     query = "lic es :21",
-    __after_open = function() if helpers.IS_WIN() then sleep(250) end end
+    __after_open = function() if not helpers.IS_LINUX() then sleep(250) end end
   }
   helpers.FzfLua.files(child, opts)
   -- child.wait_until(function() return exec_lua([[return _G._fzf_lua_on_create]]) == vim.NIL end)
