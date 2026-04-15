@@ -1329,7 +1329,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   end
 
   -- Fallback to cursor hl, only if column exists
-  if not extmark and hls.cursor and entry.col then
+  if not extmark and hls.cursor and entry.col > 0 then
     local end_lnum, end_col = entry.end_line or lnum, entry.end_col or col + 1
     -- stale line/col can cause out-of-range, e.g. marks
     vim.F.nil_wrap(api.nvim_buf_set_extmark)(buf, self.ns_previewer, lnum - 1, col - 1, {
