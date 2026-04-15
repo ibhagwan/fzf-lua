@@ -99,8 +99,9 @@ M.highlights = function(opts)
 
   local contents = function(cb)
     local _, hl_dir = utils.ansi_from_hl("Directory", "foo")
-    local highlights =
-        utils.strsplit(vim.api.nvim_exec2("highlight", { output = true }).output, "\n")
+    local highlights = utils.with({ o = { verbose = 0 } }, function()
+      return utils.strsplit(vim.api.nvim_exec2("highlight", { output = true }).output, "\n")
+    end)
 
     local function add_entry(line, co)
       local hl = line:match("^[^%s]+")
