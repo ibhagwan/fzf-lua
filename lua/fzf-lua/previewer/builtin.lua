@@ -750,6 +750,7 @@ end
 ---@param buf integer
 ---@param entry fzf-lua.cmd.Entry
 ---@param opts table
+---@return vim.SystemObj
 local start_cmd = function(buf, entry, opts)
   local chan ---@type integer?
   local obj ---@type vim.SystemObj?
@@ -788,7 +789,7 @@ local start_cmd = function(buf, entry, opts)
   end)
   local sopts = entry.cmd_opts or {}
   sopts = vim.tbl_deep_extend("force", sopts, { stdout = stdout, stderr = stdout })
-  obj = vim.system(entry.cmd, sopts, on_exit)
+  return vim.system(entry.cmd, sopts, on_exit)
 end
 
 ---@param entry fzf-lua.buffer_or_file.Entry
@@ -826,12 +827,10 @@ end
 
 ---@return nil
 function Previewer.buffer_or_file:_stop_preview_job()
-  self.clear_on_redraw = false
-  -- kill previously running terminal jobs
-  -- when using external commands extension map
-  if self._job_id and self._job_id > 0 then
-    fn.jobstop(self._job_id)
-    self._job_id = nil
+  self:stop_ueberzug()
+  if self.stop_job then
+    self.stop_job()
+    self.stop_job = nil
   end
 end
 
@@ -903,38 +902,44 @@ end
 ---@param entry_str string
 ---@return nil
 function Previewer.buffer_or_file:_populate_cmd_preview(tmpbuf, entry, entry_str)
-  local opened = false
+  local opened, job = false, nil
   if entry.pty then
     self.clear_on_redraw = true -- cache it, but clear on resize
     self:set_preview_buf(tmpbuf, true)
     vim.bo[tmpbuf].modifiable = true
-    api.nvim_buf_call(tmpbuf, function()
-      self:set_preview_buf(tmpbuf, true)
-      local job_id
-      job_id = utils.termopen(entry.cmd, {
+    job = api.nvim_buf_call(tmpbuf, function()
+      return utils.termopen(entry.cmd, {
         cwd = self.opts.cwd,
-        on_exit = function()
-          -- run post only after terminal job finished
-          if not self._job_id or self._job_id ~= job_id then return end
+        on_exit = function() -- run post only after terminal job finished
+          if not job then return end
           self:preview_buf_post(entry, true)
           self._job_id = nil
         end
       })
-      self._job_id = job_id
     end)
+    self.stop_job = function()
+      self.clear_on_redraw = false
+      fn.jobstop(job)
+      job = nil
+    end
     return
   end
-  return start_cmd(tmpbuf, entry, {
+  job = start_cmd(tmpbuf, entry, {
     cancel = function() return entry_str ~= self._last_entry end,
     on_send = function()
-      if opened then return end
+      if not job or opened then return end
       opened = true
       self:set_preview_buf(tmpbuf, true)
     end,
     on_exit = function()
+      if not job then return end
       self:preview_buf_post(entry)
     end,
   })
+  self.stop_job = function()
+    job:kill(uv.constants.SIGTERM) ---@diagnostic disable-next-line: assign-type-mismatch
+    job = nil
+  end
 end
 
 ---@param tmpbuf integer
@@ -956,8 +961,6 @@ end
 ---@return false? no preview
 function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
-  -- stop ueberzug shell job
-  self:stop_ueberzug()
   local co = assert(coroutine.running())
   -- schedule can avoid "cannot resume running coroutine"
   local entry = self:parse_entry(entry_str,
@@ -966,6 +969,9 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   entry = entry or coroutine.yield()
   if entry_str ~= self._last_entry or not self.win:validate_preview() then return false end
   if utils.tbl_isempty(entry) then return end
+
+  -- kill previously running jobs
+  self:_stop_preview_job()
 
   -- check if cached is update-to-date to be reuse
   local cached, stale = self.bcache:check(entry)
@@ -978,7 +984,6 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
 
   -- if cached exists, must be stale, otherwise alloc a new buffer
   local buf = (cached or {}).bufnr or self:get_tmp_buffer()
-  self:_stop_preview_job()
 
   if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) and vim.bo[entry.bufnr].filetype ~= "image" then
     self:_populate_loaded_buffer_preview(buf, entry)
