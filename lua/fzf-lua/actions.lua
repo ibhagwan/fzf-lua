@@ -160,17 +160,16 @@ local is_curbuf = function(buf, fullpath)
 end
 
 ---@param bufnr integer
----@param will_replace_curbuf boolean
 ---@return boolean? success
-local set_buf = function(bufnr, will_replace_curbuf)
+local set_buf = function(bufnr)
   -- wipe unnamed empty buffers (e.g. "new") on switch
   local bufhidden
-  if will_replace_curbuf
-      and vim.bo.buftype == ""
+  if vim.bo.buftype == ""
       and vim.bo.filetype == ""
       and vim.api.nvim_buf_line_count(0) == 1
       and vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == ""
       and vim.api.nvim_buf_get_name(0) == ""
+      and not vim.bo.modified
   then
     bufhidden = vim.bo.bufhidden
     vim.bo.bufhidden = "wipe"
@@ -248,7 +247,7 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
         if not entry.uri and not is_curbuf(entry.bufnr, fullpath) then
           -- error loading buffer or save dialog cancelled
           local buf = entry.bufnr or vim.fn.bufadd(relpath) or 0
-          if buf == 0 or not set_buf(buf, not layoutcmd) then
+          if buf == 0 or not set_buf(buf) then
             return utils.warn("Unable to add buffer %s", fullpath)
           end
         end
