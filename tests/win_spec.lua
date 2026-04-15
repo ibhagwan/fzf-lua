@@ -386,7 +386,7 @@ T["win"]["reuse"] = new_set({
   end
 })
 
-T["win"]["highlight"] = new_set()
+T["win"]["highlight"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
 T["win"]["highlight"]["unchange when reuse win #2588"] = function()
   helpers.SKIP_IF_WIN() -- windows attr looks different

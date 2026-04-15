@@ -3,7 +3,7 @@ on: [push, delete]
 
 jobs:
   push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: github.repository == 'ibhagwan/fzf-lua'
     steps:
       - uses: actions/checkout@v4
