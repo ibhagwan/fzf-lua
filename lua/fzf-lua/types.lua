@@ -55,6 +55,7 @@ local FzfLua = require("fzf-lua")
 ---@field reload? boolean
 ---@field field_index? string
 ---@field desc? string
+---@field header? string|false
 ---@field prefix? string
 ---@field postfix? string
 ---@field reuse? boolean
