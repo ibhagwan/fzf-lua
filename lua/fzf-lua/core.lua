@@ -1020,7 +1020,7 @@ M.convert_reload_actions = function(reload_cmd, opts)
           M.can_transform(opts) and "transform" or "reload", -- contents is not "cmd" but "reload:cmd"
           reload_cmd,
           type(v.postfix) == "string" and v.postfix or ""),
-        desc = v.desc or config.get_action_helpstr(v.fn)
+        desc = config.get_action_helpstr(v)
       }
     end
   end
@@ -1075,7 +1075,7 @@ M.convert_exec_silent_actions = function(opts)
           or string.format(":%s", cmd),
           -- can't use postfix since we use "execute-silent:..."
           has_fzf036 and type(v.postfix) == "string" and v.postfix or ""),
-        desc = v.desc or config.get_action_helpstr(v.fn)
+        desc = config.get_action_helpstr(v)
       }
     end
   end

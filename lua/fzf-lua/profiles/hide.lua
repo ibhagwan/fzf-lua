@@ -73,7 +73,7 @@ return {
         then
           local fn = act.fn
           act.exec_silent = true
-          act.desc = act.desc or fzf.config.get_action_helpstr(fn)
+          act.desc = act.desc or fzf.config.get_action_helpstr(act)
           act.fn = function(...)
             fzf.hide()
             if fn then fn(...) end

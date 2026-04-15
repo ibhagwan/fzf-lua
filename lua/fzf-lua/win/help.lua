@@ -47,34 +47,17 @@ function M.toggle(keymap, actions, hls, zindex, preview_keymaps, preview_mode, h
   for _, m in ipairs({ "builtin", "fzf" }) do
     for k, v in pairs(keymap[m]) do
       if not keymap_ignore[k] then
-        -- value can be defined as a table with addl properties (help string)
-        if type(v) == "table" then
-          v = v.desc or v[1]
-        end
+        v = config.get_action_helpstr(v)
         -- only add preview keybinds respective of
         -- the current preview mode
-        if v and (not preview_keymaps[v] or m == preview_mode) then
+        if not preview_keymaps[v] or m == preview_mode then
           if m == "builtin" then
             k = utils.neovim_bind_to_fzf(k)
           end
-          v = type(v) == "function" and config.get_action_helpstr(v) or tostring(v)
           table.insert(keymaps,
             format_bind(m, k, v, opts.mode_width, opts.keybind_width, opts.name_width))
         end
       end
-    end
-  end
-
-  ---TODO: we can always parse the action into table to avoid this duplicated logic
-  ---(e.g. profile/hide.lua, config.lua)
-  ---@param v fzf-lua.ActionSpec
-  ---@return string?
-  local get_desc = function(v)
-    if type(v) == "table" then
-      return v.desc or config.get_action_helpstr(v[1]) or config.get_action_helpstr(v.fn) or
-          v.header or tostring(v)
-    elseif v then
-      return config.get_action_helpstr(v) or tostring(v)
     end
   end
 
@@ -83,7 +66,7 @@ function M.toggle(keymap, actions, hls, zindex, preview_keymaps, preview_mode, h
     for k, v in pairs(actions) do
       if v then -- skips 'v == false'
         if k == "default" then k = "enter" end
-        local desc = get_desc(v)
+        local desc = config.get_action_helpstr(v)
         table.insert(keymaps,
           format_bind("action", k,
             ("%s"):format(desc):gsub(" ", ""),
