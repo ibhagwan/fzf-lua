@@ -1865,23 +1865,26 @@ function Previewer.autocmds:gen_winopts()
   local winopts = {
     wrap       = true,
     cursorline = false,
-    number     = false
+    number     = false,
   }
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
 
 function Previewer.autocmds:parse_entry(entry_str)
-  local entry = self.super:parse_entry(entry_str)
-  if not entry.path or entry.path:sub(-6) ~= "<none>" then
-    self._is_vimL_command = false
-    return entry
+  local entry = self.super.parse_entry(self, entry_str)
+  self._is_vimL_command = entry.path and entry.path:sub(-6) == "<none>"
+  if not self._is_vimL_command then return entry end
+  local content = {}
+  local parts = vim.tbl_map(vim.trim, vim.split(entry_str, "│"))
+  local event, pattern, group, code = unpack(parts, 2)
+  content[#content + 1] = "autocmd " .. event .. (pattern ~= "" and (" " .. pattern) or "")
+  content[#content + 1] = "\\ " .. code
+  if group ~= "" then
+    content = vim.tbl_map(function(s) return (" "):rep(fn.shiftwidth()) .. s end, content)
+    table.insert(content, 1, "augroup " .. group)
+    content[#content + 1] = "augroup END"
   end
-  self._is_vimL_command = true
-  return {
-    path = entry_str:match("[^:|]+│"),
-    filetype = "vim",
-    content = vim.split(assert(entry_str:match("[^│]+$")), "\n")
-  }
+  return { cache_key = false, filetype = "vim", content = content }
 end
 
 ---@class fzf-lua.previewer.Keymaps : fzf-lua.previewer.BufferOrFile,{}
