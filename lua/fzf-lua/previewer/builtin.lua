@@ -586,7 +586,8 @@ function Previewer.buffer_or_file:parse_entry(entry_str, _cb)
     end
   end
   local stat = entry.path and not entry.uri and uv.fs_stat(entry.path) or nil
-  entry.tick = entry.tick or vim.tbl_get(stat or {}, "mtime", "nsec")
+  entry.tick = entry.tick or
+      (stat and vim.inspect(stat.mtime, { newline = "", indent = "" }) or nil)
   if entry.debug then
     entry.content = { { { entry.debug, "Error" } } }
   elseif not stat then
