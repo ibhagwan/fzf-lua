@@ -204,8 +204,6 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
     (function()
       -- Lua 5.1 goto compatiblity hack (function wrap)
       local entry = path.entry_to_file(sel, opts, opts._uri)
-      -- "<none>" could be set by `autocmds`
-      if entry.path == "<none>" then return end
       local fullpath = entry.bufname
           or entry.uri and entry.uri:match("^[%a%-]+://(.*)")
           or entry.path
@@ -216,17 +214,19 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
         -- technically we should never get to the `uv.cwd()` fallback
         fullpath = path.join({ opts.cwd or opts._cwd or utils.cwd(), fullpath })
       end
+      -- Always open files relative to the current win/tab cwd (#1854)
+      -- We normalize the path or Windows will fail with directories starting
+      -- with special characters, for example "C:\app\(web)" will be translated
+      -- by neovim to "c:\app(web)" (#1082)
+      local relpath = path.normalize(path.relative_to(fullpath, utils.cwd()))
+      -- "<none>" could be set by `autocmds`
+      if relpath == "<none>" then return end
       -- Can't be called from term window (for example, "reload" actions) due to
       -- nvim_exec2(): Vim(normal):Can't re-enter normal mode from terminal mode
       -- NOTE: we do not use `opts.__CTX.bufnr` as caller might be the fzf term
       if not utils.is_term_buffer(0) then
         vim.cmd("normal! m`")
       end
-      -- Always open files relative to the current win/tab cwd (#1854)
-      -- We normalize the path or Windows will fail with directories starting
-      -- with special characters, for example "C:\app\(web)" will be translated
-      -- by neovim to "c:\app(web)" (#1082)
-      local relpath = path.normalize(path.relative_to(fullpath, utils.cwd()))
       if bufedit then
         local will_replace_curbuf = #vimcmd == 0 and not buf_edited(entry.bufnr, fullpath)
         if will_replace_curbuf then
