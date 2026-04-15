@@ -1879,6 +1879,13 @@ function Previewer.autocmds:parse_entry(entry_str)
   local event, pattern, group, code = unpack(parts, 2)
   content[#content + 1] = "autocmd " .. event .. (pattern ~= "" and (" " .. pattern) or "")
   content[#content + 1] = "\\ " .. code
+  local cmd = ("verb au %s %s %s"):format(group, event, pattern)
+  local output = vim.split(api.nvim_exec2(cmd, { output = true }).output, "\n")
+  local file, lnum = (output[#output] or ""):match("Last set from (.-) line (%d+)")
+  if file and lnum then
+    self._is_vimL_command = false
+    return { path = vim.fs.normalize(file), line = utils.tointeger(lnum) or 1 }
+  end
   if group ~= "" then
     content = vim.tbl_map(function(s) return (" "):rep(fn.shiftwidth()) .. s end, content)
     table.insert(content, 1, "augroup " .. group)

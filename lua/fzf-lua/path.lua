@@ -686,6 +686,10 @@ function M.keymap_to_entry(str)
       return { path = info.source:gsub("^@", ""), line = info.linedefined }
     end
   end
+  local cmd = ("verb %smap %s"):format(mode, keymap)
+  local output = vim.split(vim.api.nvim_exec2(cmd, { output = true }).output, "\n")
+  local file, lnum = (output[#output] or ""):match("Last set from (.-) line (%d+)")
+  if file and lnum then return { path = vim.fs.normalize(file), line = utils.tointeger(lnum) or 1 } end
   -- if entry then return M.entry_to_file(entry, opts) end
   return { mode = mode, key = keymap, vmap = vim.inspect(vmap) }
 end
