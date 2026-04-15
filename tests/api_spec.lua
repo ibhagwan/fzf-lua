@@ -189,7 +189,7 @@ T["api"]["fzf_live"]["rg"]["error"] = new_set({}, {
       debug = 1,
       query = "[",
       __after_open = function()
-        child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+        if not helpers.IS_LINUX() then vim.uv.sleep(250) end
       end,
       -- fzf_opts = { ["--wrap"] = true },
     })
