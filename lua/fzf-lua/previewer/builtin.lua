@@ -942,20 +942,6 @@ function Previewer.buffer_or_file:_populate_cmd_preview(tmpbuf, entry, entry_str
   end
 end
 
----@param tmpbuf integer
----@param entry fzf-lua.buffer_or_file.Entry
----@return nil
-function Previewer.buffer_or_file:_populate_file_preview(tmpbuf, entry)
-  utils.read_file_async(entry.path, vim.schedule_wrap(function(data)
-    -- if file ends in new line, don't write an empty string as the last
-    -- line.
-    api.nvim_buf_set_lines(tmpbuf, 0, -1, false, split_file_data(data))
-    -- swap preview buffer with new one
-    self:set_preview_buf(tmpbuf)
-    self:preview_buf_post(entry)
-  end))
-end
-
 ---@async
 ---@param entry_str string
 ---@return false? no preview
@@ -1004,7 +990,14 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   if entry.content then
     return self:_set_preview_lines(buf, entry)
   end
-  self:_populate_file_preview(buf, entry)
+  utils.read_file_async(entry.path, vim.schedule_wrap(function(data)
+    if entry_str ~= self._last_entry then return end
+    -- if file ends in new line, don't write an empty string as the last line.
+    api.nvim_buf_set_lines(buf, 0, -1, false, split_file_data(data))
+    -- swap preview buffer with new one
+    self:set_preview_buf(buf)
+    self:preview_buf_post(entry)
+  end))
 end
 
 -- Attach ts highlighter, neovim >= v0.9
