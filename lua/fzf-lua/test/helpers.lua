@@ -131,7 +131,7 @@ M.new_child_neovim = function()
   local child_lua = child.lua
   child.lua = function(code, arg)
     if type(code) == "string" then return child_lua(code, arg) end
-    return require("fzf-lua.test.exec_lua").run(child, 2, code, arg)
+    return require("fzf-lua.test.exec_lua").run(child_lua, 2, code, arg)
   end
 
   -- TODO: support "function" upvalue

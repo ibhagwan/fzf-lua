@@ -376,7 +376,7 @@ M.async_spawn = coroutinify(M.spawn)
 ---@param b64? boolean
 ---@return string, boolean -- boolean used for ./scripts/headless_fd.sh
 M.serialize = function(obj, b64)
-  local str = serpent.line(obj, { comment = false, sortkeys = false })
+  local str = serpent.line(obj, { name = "_", comment = false, sortkeys = false })
   str = b64 ~= false and base64.encode(str) or str
   return "return [==[" .. str .. "]==]", (b64 ~= false and true or false)
 end

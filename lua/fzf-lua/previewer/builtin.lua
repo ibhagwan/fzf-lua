@@ -1565,13 +1565,12 @@ end
 
 ---@diagnostic disable-next-line: unused
 function Previewer.highlights:parse_entry(entry_str)
-  local serpent = require "fzf-lua.lib.serpent"
   local hl = entry_str:match("^[^%s]+")
   local hlgroup = hl
   local lines = {}
   repeat
     local hl_def = api.nvim_get_hl(0, { name = hl, link = true })
-    local block = utils.strsplit(serpent.block(hl_def, { comment = false, sortkeys = false }), "\n")
+    local block = utils.strsplit(vim.inspect(hl_def, { indent = (" "):rep(fn.shiftwidth()) }), "\n")
     block[1] = string.format("%s = %s", hl, block[1])
     vim.tbl_map(function(l) table.insert(lines, l) end, block)
     hl = hl_def.link

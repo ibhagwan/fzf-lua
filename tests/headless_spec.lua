@@ -38,12 +38,11 @@ local exec_term = function(c, cmd, args)
   cmd = cmd or {}
   args = args or {}
   args.term = true
-  local serpent = require "fzf-lua.lib.serpent"
-  cmd = serpent.block(cmd, { comment = false, sortkeys = false })
-  args = serpent.block(args, { comment = false, sortkeys = false })
-  local id = c.lua_get(string.format("vim.fn.jobstart(%s, %s)", cmd, args))
-  eq(tonumber(id) > 0, true)
-  c.lua(string.format("vim.fn.jobwait({%s})", tostring(id)))
+  c.lua(function()
+    local id = vim.fn.jobstart(cmd, args)
+    assert(tonumber(id) > 0, true)
+    vim.fn.jobwait({ id })
+  end)
   c.wait_until(function()
     if FzfLua.utils.__HAS_NVIM_012 then
       -- https://github.com/neovim/neovim/pull/37987
@@ -92,7 +91,7 @@ T["headless"]["file_icons"]["server"] = new_set({ parametrize = { { "devicons" }
     local fzf_lua_server = child.lua_get("vim.g.fzf_lua_server")
     eq(#fzf_lua_server > 0, true)
     local new_child = helpers.new_child_neovim()
-    new_child.start()
+    new_child.init()
     new_child.o.statusline = "fzf://"
     exec_term(new_child, {
         vim.fs.abspath("./scripts/headless_fd.sh"),
