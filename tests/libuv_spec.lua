@@ -198,4 +198,17 @@ describe("Testing libuv module", function()
     vim.api.nvim_win_close(splitwin, true)
     FzfLua.utils.send_ctrl_c()
   end)
+
+  it("serialize/deserialize with shared function reference", function()
+    local func = function() return "test" end
+    local obj = { fn1 = func, fn2 = func }
+    local serialized = libuv.serialize(obj, false)
+    local deserialized = libuv.deserialize(serialized, false)
+    eq(type(deserialized.fn1), "function")
+    eq(type(deserialized.fn2), "function")
+    -- also verify both return the same value as original
+    eq(deserialized.fn1, deserialized.fn2)
+    eq(deserialized.fn1(), "test")
+    eq(deserialized.fn2(), "test")
+  end)
 end)

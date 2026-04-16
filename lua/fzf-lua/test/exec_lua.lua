@@ -100,12 +100,12 @@ function M.handler(bytecode, upvalues, ...)
   return ret, new_upvalues, messages
 end
 
---- @param child MiniTest.child
+--- @param exec_lua function
 --- @param lvl integer
 --- @param code function
 --- @param arg table
-function M.run(child, lvl, code, arg)
-  local rv = child.lua(
+function M.run(exec_lua, lvl, code, arg)
+  local rv = exec_lua(
     [[return { require('fzf-lua.test.exec_lua').handler(...) }]],
     { string.dump(code), get_upvalues(code), unpack(arg or {}) })
 
@@ -197,7 +197,7 @@ M.serialize = function(...)
   for _, v in ipairs(args) do
     save_upvalues(v, args)
   end
-  return require("fzf-lua.lib.serpent").block(args, { comment = false, sortkeys = false })
+  return require("fzf-lua.lib.serpent").block(args, { name = "_", comment = false, sortkeys = false })
 end
 
 return M
