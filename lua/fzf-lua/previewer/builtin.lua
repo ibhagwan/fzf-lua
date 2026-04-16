@@ -1265,16 +1265,15 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   if type(cached_pos) ~= "table" then cached_pos = nil end
   local lnum, col = entry.line, math.max(1, entry.col or 1)
 
-  if not lnum and regex then
+  if (not lnum or lnum == 0) and regex then
     -- pcall(fn.clearmatches, self.win.preview_winid)
     pcall(api.nvim_win_call, win, function()
       -- start searching at line 1 in case we
       -- didn't reload the buffer (same file)
       api.nvim_win_set_cursor(0, { 1, 0 })
       fn.clearmatches()
-      local ctag = utils.ctag_to_magic(assert(regex))
       -- test the regex so we can alert the user of the search fail
-      if not utils.vim_regex(ctag, self.opts) then return end
+      if not utils.vim_regex(regex, self.opts) then return end
       fn.search(regex, "W")
       if hls.search then fn.matchadd(hls.search, regex) end
       self.orig_pos = api.nvim_win_get_cursor(0)
@@ -1421,7 +1420,7 @@ function Previewer.help_tags:parse_entry(entry_str)
   end
   local vimdoc = entry_str:match(string.format("[^%s]+$", utils.nbsp))
   assert(vimdoc and #vimdoc > 0, "help_tags entry missing vimdoc path")
-  local hregex = (function()
+  local ctag = (function()
     -- lazy.nvim can generate helptags from markdown
     -- https://github.com/folke/lazy.nvim/blob/56a34a825b55e0e30cd9df0e055e428a13afd4aa/lua/lazy/help.lua#L35
     if package.loaded.lazy and vimdoc:match("%.md$") then
@@ -1433,11 +1432,10 @@ function Previewer.help_tags:parse_entry(entry_str)
         end
       end
     end
-    return ([[\V*%s*]]):format(tag:gsub([[\]], [[\\]]))
+    return tag
   end)()
   return {
-    htag = tag,
-    ctag = hregex,
+    ctag = ctag,
     path = vimdoc,
   }
 end

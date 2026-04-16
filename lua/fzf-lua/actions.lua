@@ -263,7 +263,7 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
         -- (2) save dialog cancellation
         pcall(utils.jump_to_location, { uri = entry.uri, range = entry.range }, "utf-16",
           opts.reuse_win)
-      elseif entry.line == 0 and entry.ctag then
+      elseif (not entry.line or entry.line == 0) and entry.ctag then
         local re = utils.ctag_to_magic(entry.ctag)
         if utils.vim_regex(re, opts) then
           vim.api.nvim_win_set_cursor(0, { 1, 0 })
