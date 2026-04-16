@@ -1507,8 +1507,7 @@ function Previewer.marks:parse_entry(entry_str)
     filepath = api.nvim_buf_get_name(bufnr)
   end
   if #filepath > 0 then
-    filepath = vim.F.npcall(libuv.expand, filepath) or ""
-    filepath = path.relative_to(filepath, utils.cwd())
+    filepath = path.entry_to_file(filepath --[[@as string]], self.opts).path
   end
   return {
     bufnr = bufnr,

@@ -5,6 +5,7 @@ local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 local devicons = require "fzf-lua.devicons"
+local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
@@ -301,10 +302,7 @@ M.marks = function(opts)
     -- global marks
     for _, m in ipairs(vim.fn.getmarklist()) do
       local mark, bufnr, lnum, col, file = m.mark:sub(2, 2), m.pos[1], m.pos[2], m.pos[3], m.file
-      file = path.relative_to(file, utils.cwd())
-      if path.is_absolute(file) then
-        file = path.HOME_to_tilde(file)
-      end
+      file = make_entry.file(file, opts)
       if bufnr == utils.CTX().bufnr then
         local text = vim.api.nvim_buf_get_lines(bufnr, lnum - 1, lnum, false)[1]
         add_mark(mark, lnum, col, utils.ansi_from_hl("Directory", text or "-invalid-"))
