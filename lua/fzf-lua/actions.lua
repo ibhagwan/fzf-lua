@@ -192,7 +192,6 @@ end
 
 ---@return boolean
 local can_replace_buf = function(buf)
-  buf = buf or vim.api.nvim_get_current_buf()
   return vim.o.hidden
       or vim.o.confirm
       or vim.o.autowriteall
@@ -239,7 +238,7 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
         end
         if layoutcmd then
           vim.cmd(layoutcmd)
-        elseif not is_curbuf(entry.bufnr, fullpath) and not can_replace_buf(0) then
+        elseif not is_curbuf(entry.bufnr, fullpath) and not can_replace_buf() then
           return utils.warn("Unable to add buffer %s", fullpath)
         end
         -- NOTE: URI entries only execute new buffers (new|vnew|tabnew)

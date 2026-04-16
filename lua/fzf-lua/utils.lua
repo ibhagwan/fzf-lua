@@ -1116,7 +1116,7 @@ end
 ---@param only_if_last_buffer? boolean
 ---@return boolean
 function M.buffer_is_dirty(bufnr, warn, only_if_last_buffer)
-  bufnr = bufnr or vim.api.nvim_get_current_buf()
+  bufnr = (bufnr == nil or bufnr == 0) and vim.api.nvim_get_current_buf() or bufnr
   local info = bufnr and M.getbufinfo(bufnr)
   if info and info.changed ~= 0 then
     if only_if_last_buffer and 1 < #vim.fn.win_findbuf(bufnr) then
