@@ -36,8 +36,8 @@ local os_detect = {
   },
   MAC = { name = "MacOS", fn = function() return vim.fn.has("mac") == 1 end },
   LINUX = { name = "Linux", fn = function() return vim.fn.has("linux") == 1 end },
-  STABLE = { name = "Neovim stable", fn = function() return M.NVIM_VERSION() == "0.11.6" end },
-  NIGHTLY = { name = "Neovim nightly", fn = function() return vim.fn.has("nvim-0.12") == 1 end },
+  STABLE = { name = "Neovim stable", fn = function() return M.NVIM_VERSION() == "0.12.1" end },
+  NIGHTLY = { name = "Neovim nightly", fn = function() return vim.fn.has("nvim-0.13") == 1 end },
 }
 
 -- Creates M.IS_WIN(), M.IS_NOT_WIN(), M.SKIP_IF_WIN(), etc
