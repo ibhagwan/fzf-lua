@@ -1625,8 +1625,10 @@ end
 ---@return boolean
 function M.jump_to_location(location, offset_encoding, reuse_win)
   if M.__HAS_NVIM_011 then
-    return vim.lsp.util.show_document(location, offset_encoding,
-      { reuse_win = reuse_win, focus = true })
+    return M.with({ o = { verbose = 0 } }, function()
+      return vim.lsp.util.show_document(location, offset_encoding,
+        { reuse_win = reuse_win, focus = true })
+    end)
   else
     ---@diagnostic disable-next-line: deprecated
     return vim.lsp.util.jump_to_location(location, offset_encoding, reuse_win)
