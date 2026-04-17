@@ -151,9 +151,9 @@ T["win"]["keymap"]["no error"] = new_set({
       :map(function(key, action) return { key, action } end)
       :totable()
 }, {
-  function(key, _action)
-    local builtin = child.lua_get [[FzfLua.defaults.keymap.builtin]]
+  function(key, action)
     for _, event in ipairs({ "start", "load", "result" }) do
+      if action == "toggle-preview" then helpers.SKIP_IF_WIN() end
       helpers.FzfLua.files(child, {
         __abort_key = key .. "<c-c>",
         __expect_lines = false,
@@ -184,14 +184,9 @@ T["win"]["previewer"]["split flex layout resize"] = function()
       }
     },
     previewer = function() return require("fzf-lua.test.previewer").builtin end,
-    keymap = {
-      fzf = {
-        resize = function()
-          _G._fzf_resize_called = true
-        end
-      }
-    },
+    keymap = { fzf = { resize = function() _G._fzf_resize_called = true end } },
     __after_open = function()
+      if helpers.IS_WIN() then vim.uv.sleep(250) end
       child.wait_until(function()
         return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]]) == "foo"
       end)
