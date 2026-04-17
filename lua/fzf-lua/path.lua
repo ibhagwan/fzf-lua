@@ -683,9 +683,14 @@ function M.keymap_to_entry(str)
   mode = valid_modes[mode] and mode or "" -- only valid modes
   local vmap = vim.fn.maparg(keymap, mode, false, true)
   if vmap.callback then
-    local info = debug.getinfo(vmap.callback)
-    if info and info.source then
-      return { path = info.source:gsub("^@", ""), line = info.linedefined }
+    local info = debug.getinfo(vmap.callback, "Sl")
+    if info and info.source and info.linedefined and info.linedefined > 0 then
+      local source = info.source:gsub("^@", "")
+      -- https://github.com/neovim/neovim/blob/64d55b74d83d566975e269bed0810d9008119ddf/src/nvim/lua/executor.c#L671-L680
+      if source:match("vim/") and package.preload[source:gsub("%.lua$", ""):gsub("/", ".")] then
+        source = vim.env.VIMRUNTIME .. "/lua/" .. source .. ".lua"
+      end
+      return { path = source, line = info.linedefined }
     end
   end
   local cmd = ("verb %smap %s"):format(mode, keymap)
