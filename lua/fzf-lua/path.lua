@@ -549,7 +549,7 @@ function M.entry_to_file(entry, opts, force_uri)
   if #s > 1 then
     local newfile = file
     for i = 2, #s do
-      newfile = ("%s:%s"):format(newfile, s[i])
+      newfile = ("%s:%s"):format(tostring(newfile), s[i])
       if uv.fs_stat(newfile) then
         file = newfile
         line = s[i + 1]

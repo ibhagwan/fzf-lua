@@ -473,7 +473,7 @@ M.keymaps = function(opts)
       lhs  = keymap.lhs:gsub("%s", "<Space>"),
       -- desc can be a multi-line string, normalize it
       desc = keymap.desc and string.gsub(keymap.desc, "\n%s+", "\r"),
-      rhs  = keymap.rhs or string.format("%s", keymap.callback)
+      rhs  = keymap.rhs or string.format("%s", tostring(keymap.callback))
     })
 
     local k = string.format("[%s:%s:%s]", keymap.buffer, keymap.mode, keymap.lhs)
