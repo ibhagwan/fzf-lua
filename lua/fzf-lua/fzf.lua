@@ -193,7 +193,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- Called from another fzf-win most likely
       utils.feed_keys_termcodes("i")
     else
-      vim.cmd [[startinsert]]
+      -- TODO(#2683):
+      utils.feed_keys_termcodes("i")
+      -- vim.cmd [[startinsert]]
     end
   end
 
