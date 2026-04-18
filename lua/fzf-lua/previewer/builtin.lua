@@ -1273,7 +1273,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
       api.nvim_win_set_cursor(0, { 1, 0 })
       fn.clearmatches()
       -- test the regex so we can alert the user of the search fail
-      if not utils.vim_regex(regex, self.opts) then return end
+      if not utils.vim_regex(regex, { silent = true }) then return end
       fn.search(regex, "W")
       if hls.search then fn.matchadd(hls.search, regex) end
       self.orig_pos = api.nvim_win_get_cursor(0)
@@ -1313,10 +1313,6 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
         local line = api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1] or ""
         regex_start, regex_end = reg:match_str(line:sub(col):lower())
       end
-    elseif self.opts.silent ~= true then
-      utils.warn(
-        [[Unable to init vim.regex with "%s", %s. . Add 'silent=true' to hide this message.]],
-        regex, reg)
     end
     if regex_start and regex_end then
       extmark = api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, regex_start + col - 1, {
