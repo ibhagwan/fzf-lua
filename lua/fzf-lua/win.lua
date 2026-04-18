@@ -1179,7 +1179,7 @@ function FzfWin:close(fzf_bufnr, hide)
   -- switching from a term win to another term win preserves terminal mode
   -- even if the target window was in normal terminal mode (#2054 #2419)
   local ctx = utils.__CTX() or {}
-  if ctx.mode == "nt" then vim.cmd "stopinsert" end
+  if ctx.mode and ctx.mode:match("^n") then vim.cmd "stopinsert" end
   if self.fzf_winid and api.nvim_win_is_valid(self.fzf_winid) then
     -- restore the original last window
     restore_lastwin(ctx.winid, ctx.last_winid)
