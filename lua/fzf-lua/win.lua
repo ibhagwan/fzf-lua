@@ -1175,11 +1175,13 @@ function FzfWin:close(fzf_bufnr, hide)
   -- `fzf_win:close()` within `core.fzf()`. We need to avoid the close in this case.
   if self.closing or (fzf_bufnr and fzf_bufnr ~= self.fzf_bufnr) then return end
   self.closing = true -- prevents race condition
-  -- we restore normal mode before exiting fzf due toma neovim bug? whereas
-  -- switching from a term win to another term win preserves terminal mode
-  -- even if the target window was in normal terminal mode (#2054 #2419)
+  -- restore normal mode before exiting fzf due to a neovim bug where
+  -- switching from a terminal window to another terminal window may preserve
+  -- terminal-job mode, causing the target terminal to close on next keypress
+  -- if its job already exited (#2054 #2419 #2681)
   local ctx = utils.__CTX() or {}
-  if ctx.mode == "nt" then vim.cmd "stopinsert" end
+  local mode = vim.api.nvim_get_mode().mode
+  if mode == "t" or mode == "nt" then vim.cmd "stopinsert" end
   if self.fzf_winid and api.nvim_win_is_valid(self.fzf_winid) then
     -- restore the original last window
     restore_lastwin(ctx.winid, ctx.last_winid)
