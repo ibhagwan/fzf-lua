@@ -238,14 +238,15 @@ end
 -- chunk lines by EOL, and dispatch to worker
 function ProcStream:chunk_loop()
   local stop = 0
-  local EOL = self.EOL_data:byte()
+  local EOL_data = self.EOL_data
+  local EOL = EOL_data:byte()
   local sb = self.sb
   while true do
     local len = sb:__len()
     local ref = sb:ref()
     if self.stdout:is_closing() then
       if len == 0 then return end
-      if ref[len - 1] ~= EOL then sb:put(EOL) end -- make Session.transform happy
+      if ref[len - 1] ~= EOL then sb:put(EOL_data) end -- make Session.transform happy
       return self:queue(sb:get())
     end
     local eol = len
