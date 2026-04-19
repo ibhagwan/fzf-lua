@@ -3,7 +3,6 @@
 local uv = vim.uv or vim.loop
 local utils = require "fzf-lua.utils"
 local path = require "fzf-lua.path"
-local libuv = require "fzf-lua.libuv"
 
 ---@class fzf-lua.actions
 ---@field expect fun(actions: table, opts: fzf-lua.config.Resolved|{}):string[]?, string[]?
@@ -625,7 +624,7 @@ M.goto_jump = function(selected, opts)
     end
   else
     local _, lnum, col, filepath = selected[1]:match("(%d+)%s+(%d+)%s+(%d+)%s+(.*)")
-    local ok, res = pcall(libuv.expand, filepath)
+    local ok, res = pcall(require("fzf-lua.libuv").expand, filepath)
     if not ok then
       filepath = ""
     else
@@ -1338,7 +1337,7 @@ M.serverlist_kill = function(sel)
 end
 
 M.serverlist_spawn = function()
-  libuv.uv_spawn(
+  require("fzf-lua.job").spawn(
     vim.fn.exepath("nvim"), { args = { "--headless" }, env = { NVIM = "" }, detached = true })
 end
 
