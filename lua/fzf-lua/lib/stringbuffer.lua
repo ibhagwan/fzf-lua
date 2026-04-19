@@ -108,7 +108,9 @@ function StrBuffer:__len()
 end
 
 function StrBuffer:ref()
-  return setmetatable({}, { __index = function(t, i) return self.buf[i + 1] end })
+  self:tostring()
+  local s = self.buf[1] or ""
+  return setmetatable({}, { __index = function(_, i) return s:byte(i + 1) end })
 end
 
 function M.new()
