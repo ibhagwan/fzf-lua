@@ -294,20 +294,18 @@ M.stringify = function(contents, opts, fzf_field_index)
   opts.__stringified = true
 
   -- Convert string callbacks to callback functions
-  for _, k in ipairs({ "fn_transform", "fn_preprocess", "fn_postprocess" }) do
-    opts[k] = libuv.load_fn(opts[k]) or opts[k]
-  end
+  local fn_postprocess = libuv.load_fn(opts.fn_postprocess) or opts.fn_postprocess
 
   local cmd, id = M.pipe_wrap_fn(function(pipe, ...)
-    local args, n = { ... }, select("#", ...)
+    local args = vim.F.pack_len(...)
     -- Contents could be dependent or args, e.g. live_grep which
     -- generates a different command based on the typed query
     -- redefine local contents to prevent override on function call
     ---@type fzf-lua.content, table?
     ---@diagnostic disable-next-line: redefined-local, assign-type-mismatch
     local contents, env = (function()
-      local ret = (opts.is_live and type(contents) == "function" and contents(unpack(args), opts))
-          or (opts.__stringify_cmd and type(contents) == "function" and contents(unpack(args, 1, n)))
+      local ret = (opts.is_live and type(contents) == "function" and contents(args[1], opts))
+          or (opts.__stringify_cmd and type(contents) == "function" and contents(vim.F.unpack_len(args)))
           or contents
       if opts.__stringify_cmd and type(ret) == "table" then
         return ret.cmd, (ret.env or opts.env)
@@ -315,129 +313,32 @@ M.stringify = function(contents, opts, fzf_field_index)
         return ret, opts.env
       end
     end)()
-    local write_cb_count = 0
-    local pipe_want_close = false
     local EOL = utils.map_get(opts, "fzf_opts.--read0") and "\0" or "\n"
-    local fn_transform = opts.fn_transform
-    local fn_preprocess = opts.fn_preprocess
-    local fn_postprocess = opts.fn_postprocess
-    local co = coroutine.running()
 
-    -- Run the preprocess function
-    if type(fn_preprocess) == "function" then fn_preprocess(opts) end
-
-    -- local on_finish = function(code, sig, from, pid)
-    -- print("finish", pipe, pipe_want_close, code, sig, from, pid)
-    local on_finish = function(_, _, _, _)
-      if not pipe then return end
-      pipe_want_close = true
-      if write_cb_count == 0 then
-        -- only close if all our uv.write calls are completed
-        uv.close(pipe)
-        pipe = nil
-        -- Run the postprocess function
-        if type(fn_postprocess) == "function" then fn_postprocess(opts) end
-      end
+    -- Terminate previously running command
+    -- TODO: what? code_actions?
+    if opts.PidObject and opts.PidObject.get then
+      libuv.process_kill(opts.PidObject:get())
+      opts.PidObject:set(nil)
     end
-
-    local on_write = function(data, cb)
-      -- pipe can be nil when using a shell command with spawn
-      -- and typing quickly, the process will terminate
-      if not pipe then return end
-      if not data then
-        on_finish(nil, nil, 5)
-        if cb then cb(nil) end
-      else
-        write_cb_count = write_cb_count + 1
-        if type(data) == "table" then
-          -- cb_write_lines was sent instead of cb_lines
-          if fn_transform then
-            -- safely remove items while iterating
-            local i = 1
-            while i <= #data do
-              local v = fn_transform(data[i], opts)
-              if not v then
-                table.remove(data, i)
-              else
-                data[i] = v
-                i = i + 1
-              end
-            end
-          end
-          data = #data > 0 and (table.concat(data, EOL) .. EOL) or ""
-        end
-        uv.write(pipe, tostring(data), function(err)
-          write_cb_count = write_cb_count - 1
-          if cb then cb(err) end
-          if err then
-            -- force close on error
-            write_cb_count = 0
-            on_finish(nil, nil, 2)
-          end
-          if write_cb_count == 0 and pipe_want_close then
-            on_finish(nil, nil, 3)
-          end
-          -- if opts.throttle then uv.sleep(1000) end
-          if opts.throttle then coroutine.resume(co) end
-        end)
-        -- TODO: why does this freeze fzf's UI?
-        -- shouldn't the yield free the UI to update?
-        -- if opts.throttle then uv.sleep(1000) end
-        if opts.throttle then coroutine.yield() end
-      end
-    end
-
-    if type(contents) == "string" then
-      -- Use queue in libuv.spawn by default
-      opts.use_queue = opts.use_queue == nil and true or opts.use_queue
-
-      -- Throttle pipe writes by default
-      -- opts.throttle = opts.throttle == nil and true or opts.throttle
-
-      -- Terminate previously running command
-      if opts.PidObject then
-        libuv.process_kill(opts.PidObject:get())
-        opts.PidObject:set(nil)
-      end
-
+    local session = require("fzf-lua.job").transform({
+      cwd = opts.cwd,
+      content = contents,
+      cb_finish = function()
+        if fn_postprocess then fn_postprocess(opts) end
+      end,
+      env = env,
+      EOL = EOL,
+      opts = opts,
+      output_pipe = pipe,
+      args = args,
+    })
+    if session then
+      -- vim.print(session)
+      if opts.PidObject then opts.PidObject:set(session.pid) end
       if opts.debug then
-        -- coroutinify or we err with "yield across a C-call boundary" with throttle
-        coroutine.wrap(function() on_write("[DEBUG] [st] " .. contents .. EOL) end)()
-      end
-
-      libuv.async_spawn({
-        cwd = opts.cwd,
-        cmd = contents,
-        env = env,
-        cb_finish = on_finish,
-        cb_write_lines = on_write,
-        cb_pid = function(pid) if opts.PidObject then opts.PidObject:set(pid) end end,
-        process1 = opts.process1,
-        profiler = opts.profiler,
-        use_queue = opts.use_queue,
-        EOL = EOL,
-        -- Must send value, 'coroutinify' adds callback as last argument
-        -- which will conflict with the 'fn_transform' argument
-        -- send true to force line processing without transformation
-      }, true)
-    else
-      -- callback with newline
-      local on_write_nl = function(data, cb)
-        data = data and tostring(data) .. EOL or nil
-        return on_write(data, cb)
-      end
-
-      local ok, err = xpcall(function()
-        if type(contents) == "table" then
-          vim.tbl_map(function(x) on_write_nl(x) end, contents)
-          on_finish()
-        elseif type(contents) == "function" then
-          contents(on_write_nl, on_write, unpack(args, 1, n))
-        end
-      end, debug.traceback)
-      if not ok and err then
-        on_finish()
-        error(err)
+        local str = (type(contents) == "string" and contents or vim.inspect(contents))
+        session:write_nl("[DEBUG] [st] " .. str)
       end
     end
   end, fzf_field_index or "", opts.debug)

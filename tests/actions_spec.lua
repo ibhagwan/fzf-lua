@@ -18,7 +18,6 @@ T["actions"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 T["actions"]["ui don't freeze on error"] = function()
   helpers.SKIP_IF_NOT_NIGHTLY()
   helpers.SKIP_IF_WIN()
-  MiniTest.skip("https://github.com/ibhagwan/fzf-lua/issues/2683")
   -- reload({ "hide" })
   local screen_opts = { start_line = 1, end_line = 10, ignore_text = { 28 } }
   -- fix flaky hit enter prompt on windows
