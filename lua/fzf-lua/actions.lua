@@ -204,6 +204,7 @@ end
 ---@param bufedit boolean?
 ---@return string?
 M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
+  vim.api.nvim_set_current_win(vim.bo.bt == "quickfix" and vim.fn.win_getid(vim.fn.winnr("#")) or 0)
   for i, sel in ipairs(selected) do
     (function()
       -- Lua 5.1 goto compatiblity hack (function wrap)
