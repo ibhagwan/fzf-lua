@@ -3,8 +3,6 @@ local uv = vim.uv or vim.loop
 
 local sysname = uv.os_uname().sysname
 local _is_win = sysname:match("Windows") and true or false
-local strbuf = (jit and vim.F.nil_wrap(require)("vim._core.stringbuffer") or
-  require("fzf-lua.lib.stringbuffer"))
 
 local M = {}
 
@@ -103,16 +101,21 @@ ProcStream.__index = ProcStream
 
 ---@param data string a chunk of lines (end with EOL) to transform
 ---@return boolean, string
-local transform_chunk = function(data, optstr, id)
-  ---@diagnostic disable-next-line: return-type-mismatch
-  return select(2, pcall(function()
+local transform_chunk = function(data, optstr, id, devicons_path, devicons_plugin, devicons_state_str,
+                                 eol_data)
+  local ok, res = pcall(function()
     -- io.stderr:write("[DEBUG] worker init")
     if not _G.uuid then
       local __FILE__ = assert(debug.getinfo(1, "S")).source:gsub("^@", "")
-      local lua = vim.fs.dirname(vim.fs.dirname(__FILE__))
+      local lua = vim.fs and vim.fs.dirname(vim.fs.dirname(__FILE__)) or
+          __FILE__:match("(.*)[/\\]"):match("(.*)[/\\]")
       package.path = ("%s/?.lua;"):format(lua) .. package.path
       package.path = ("%s/?/init.lua;"):format(lua) .. package.path
-      vim.fn = {}
+      pcall(require, "vim.filetype")
+      vim.o = {}
+      -- vim.g = {}
+      vim.v = {}
+      vim.fn = { has = function() return 0 end, exists = function() return 0 end }
       -- TODO: serialize a necessary helper module to access vim state
       vim.fn.has = function(feature)
         if feature:match("nvim%-0.12") then return 1 end
@@ -122,22 +125,28 @@ local transform_chunk = function(data, optstr, id)
         return 0
       end
       require("fzf-lua.make_entry")
-      local devicons = vim.fs.normalize("~/lazy/nvim-web-devicons/lua")
-      package.path = ("%s/?.lua;"):format(devicons) .. package.path
-      package.path = ("%s/?/init.lua;"):format(devicons) .. package.path
+      if devicons_path then
+        package.path = ("%s/?.lua;"):format(devicons_path) .. package.path
+        package.path = ("%s/?/init.lua;"):format(devicons_path) .. package.path
+      end
+      if devicons_state_str then
+        local devicons_state = require("fzf-lua.libuv").deserialize(devicons_state_str, false)
+        -- error(devicons_state)
+        require("fzf-lua.devicons").set_state(devicons_plugin, devicons_state)
+      end
       vim.F = require("vim.F")
-      vim.base64 = require("fzf-lua.lib.base64")
-      vim.o = {}
+      vim.base64 = vim.base64 or require("fzf-lua.lib.base64")
       setmetatable(vim.api, { __index = function() return function() end end })
     end
     if id ~= _G.uuid then -- refresh opts
-      local opts = FzfLua.libuv.deserialize(optstr, false)
+      local opts = require("fzf-lua.libuv").deserialize(optstr, false)
       local load_fn = FzfLua.libuv.load_fn
       local fn_preprocess = load_fn(opts.fn_preprocess) or opts.fn_preprocess
       if fn_preprocess then fn_preprocess(opts) end
       _G.trans = load_fn(opts.fn_transform) or opts.fn_transform
       _G.worker_opts = opts
       _G.uuid = id
+      _G.EOL_data = eol_data
     end
 
     local trans = _G.trans
@@ -156,7 +165,15 @@ local transform_chunk = function(data, optstr, id)
     until not nl_idx or start_idx > #data
     ret[#ret + 1] = ""
     return table.concat(ret, _G.EOL or "\n")
-  end))
+  end)
+  if not ok then
+    local f = io.open("/tmp/fzf-lua-worker-err.log", "a")
+    if f then
+      f:write("WORKER ERROR: " .. tostring(res) .. "\n")
+      f:close()
+    end
+  end
+  return res
 end
 
 function ProcStream:can_finish()
@@ -201,7 +218,8 @@ end
 ---@param data string
 function ProcStream:queue(data)
   self.write_cb_count = self.write_cb_count + 1
-  self.work:queue(data, self.optstr, self.uuid)
+  self.work:queue(data, self.optstr, self.uuid, self.devicons_path, self.devicons_plugin,
+    self.devicons_state_str, self.EOL_data)
 end
 
 ---@param data? uv.threadargs
@@ -301,11 +319,18 @@ ProcStream.new = function(cmd, opts)
   self.stdout = assert(uv.new_pipe(false))
   self.stderr = assert(uv.new_pipe(false))
   self.write_cb_count = 0
-  -- TODO: puc lua won't work here
+
+  local strbuf = (jit and vim.F.nil_wrap(require)("vim._core.stringbuffer") or
+    require("fzf-lua.lib.stringbuffer"))
+
   ---@type string.buffer
   self.sb = strbuf.new()
 
   self.uuid = uv.hrtime() -- distinguish two call when use worker pool
+  local devicons = require("fzf-lua.devicons")
+  self.devicons_path = devicons.plugin_path()
+  self.devicons_plugin = devicons.plugin_name()
+  self.devicons_state_str = require("fzf-lua.libuv").serialize(devicons.state(), false)
   local worker_opts = opts.opts or {}
   self.optstr = require("fzf-lua.libuv").serialize(worker_opts, false)
   assert(not not worker_opts.fn_transform ==
