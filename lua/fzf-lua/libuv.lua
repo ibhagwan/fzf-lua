@@ -32,14 +32,14 @@ end
 
 ---@param str string
 ---@param b64? boolean
----@return table
+---@return table|any
 M.deserialize = function(str, b64)
   local res = assert(loadstring(str))()
   if type(res) == "table" then return res --[[@as table]] end -- ./scripts/headless_fd.sh
   res = b64 ~= false and base64.decode(res) or res
   -- safe=false enable call function
-  local _, obj = serpent.load(res, { safe = false })
-  assert(type(obj) == "table", vim.inspect(obj))
+  local ok, obj = serpent.load(res, { safe = false })
+  assert(ok, vim.inspect(obj))
   return obj
 end
 
