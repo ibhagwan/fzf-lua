@@ -174,6 +174,8 @@ local set_buf = function(bufnr)
     bufhidden = vim.bo.bufhidden
     vim.bo.bufhidden = "wipe"
   end
+  -- https://github.com/ibhagwan/fzf-lua/issues/2681#issuecomment-4275010045
+  vim.cmd.stopinsert()
   -- NOTE: nvim_set_current_buf will load the buffer if needed
   -- calling bufload will mess up `BufReadPost` autocmds
   -- vim.fn.bufload(bufnr)
