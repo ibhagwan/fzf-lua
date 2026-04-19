@@ -1245,14 +1245,19 @@ end
 ---@param selected string[]
 ---@param opts fzf-lua.config.Resolved
 M.complete = function(selected, opts)
+  local mode = opts.__CTX.mode
+  local cursor = opts.__CTX.cursor
   if not selected[1] then
-    if opts.__CTX.mode == "i" then
+    if mode == "i" then
       vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
+    elseif mode == "c" then
+      vim.cmd [[noautocmd lua vim.api.nvim_feedkeys(':', 'n', true)]]
+      require("fzf-lua.ctx").set_cursor(mode, cursor)
     end
     return
   end
   -- cusror col is 0-based
-  local col = opts.__CTX.cursor[2] + 1
+  local col = cursor[2] + 1
   local newline, newcol
   if type(opts.complete) == "function" then
     newline, newcol = opts.complete(selected, opts, opts.__CTX.line, col)
@@ -1262,10 +1267,21 @@ M.complete = function(selected, opts)
     newline = line:sub(1, col) .. selected[1] .. after
     newcol = col + #selected[1]
   end
-  vim.api.nvim_set_current_line(newline or opts.__CTX.line)
-  vim.api.nvim_win_set_cursor(0, { opts.__CTX.cursor[1], newcol or col })
-  if opts.__CTX.mode == "i" then
+  if mode ~= "c" then
+    vim.api.nvim_set_current_line(newline or opts.__CTX.line)
+    vim.api.nvim_win_set_cursor(0, { cursor[1], newcol or col })
+  end
+  if mode == "i" then
     vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('a', 'n', true)]]
+  elseif mode == "c" then
+    vim.api.nvim_create_autocmd("CmdlineEnter", {
+      once = true,
+      callback = function()
+        vim.fn.setcmdline(newline or opts.__CTX.line)
+        require("fzf-lua.ctx").set_cursor(mode, { cursor[1], cursor[2] + (newcol or col) - col })
+      end
+    })
+    vim.cmd [[noautocmd lua vim.api.nvim_feedkeys(':', 'n', true)]]
   end
 end
 

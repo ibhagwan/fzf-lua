@@ -47,8 +47,9 @@ M.refresh = function(opts)
       -- not to resume or a different picker, i.e. hide files and open buffers
       or winobj and winobj:hidden()
   then
+    local mode = vim.api.nvim_get_mode().mode
     ctx = {
-      mode = vim.api.nvim_get_mode().mode,
+      mode = mode,
       bufnr = vim.api.nvim_get_current_buf(),
       bname = vim.api.nvim_buf_get_name(0),
       winid = vim.api.nvim_get_current_win(),
@@ -56,8 +57,8 @@ M.refresh = function(opts)
       alt_bufnr = vim.fn.bufnr("#"),
       tabnr = vim.fn.tabpagenr(),
       tabh = vim.api.nvim_win_get_tabpage(0),
-      cursor = vim.api.nvim_win_get_cursor(0),
-      line = vim.api.nvim_get_current_line(),
+      cursor = M.get_cursor(mode),
+      line = M.get_line(mode),
       curtab_wins = (function()
         local ret = {}
         local wins = vim.api.nvim_tabpage_list_wins(0)
@@ -118,6 +119,43 @@ end
 ---@param x fzf-lua.Info
 M.set_info = function(x)
   info = x
+end
+
+-- modified from blink.cmp
+function M.get_mode(mode)
+  mode = mode or vim.api.nvim_get_mode().mode
+  return (mode == "c" and "cmdline")
+      or (mode == "t" and "term")
+      or (vim.fn.getcmdwintype() ~= "" and "cmdwin")
+      or "default"
+end
+
+function M.get_cursor(mode)
+  mode = M.get_mode(mode)
+  return mode == "cmdline" and { 1, vim.fn.getcmdpos() - 1 } or vim.api.nvim_win_get_cursor(0)
+end
+
+function M.set_cursor(mode, cursor)
+  mode = M.get_mode(mode)
+  if vim.tbl_contains({ "default", "term", "cmdwin" }, mode) then
+    return vim.api.nvim_win_set_cursor(0, cursor)
+  end
+
+  assert(mode == "cmdline", "Unsupported mode for setting cursor: " .. mode)
+  assert(cursor[1] == 1, "Cursor must be on the first line in cmdline mode")
+  vim.fn.setcmdpos(cursor[2])
+end
+
+function M.get_line(mode, num)
+  if M.get_mode(mode) == "cmdline" then
+    assert(num == nil or num == 0,
+      "Cannot get line number " .. tostring(num) .. " in cmdline mode. Only 0 is supported")
+    return vim.fn.getcmdline()
+  end
+
+  -- This method works for normal buffers and the terminal prompt
+  if num == nil then num = M.get_cursor()[1] - 1 end
+  return vim.api.nvim_buf_get_lines(0, num, num + 1, false)[1]
 end
 
 return M
