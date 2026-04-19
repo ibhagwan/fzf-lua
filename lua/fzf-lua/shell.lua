@@ -336,7 +336,10 @@ M.stringify = function(contents, opts, fzf_field_index)
     if session then
       -- vim.print(session)
       if opts.PidObject then opts.PidObject:set(session.pid) end
-      if opts.debug then session:write_nl("[DEBUG] [st] " .. vim.inspect(contents)) end
+      if opts.debug then
+        local str = (type(contents) == "string" and contents or vim.inspect(contents))
+        session:write_nl("[DEBUG] [st] " .. str)
+      end
     end
   end, fzf_field_index or "", opts.debug)
 
