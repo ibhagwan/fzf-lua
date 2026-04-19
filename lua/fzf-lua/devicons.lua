@@ -360,6 +360,7 @@ M.plugin_load = function(provider, do_not_lazy_load)
   if provider == nil and M.PLUGIN and M.PLUGIN:loaded() then
     return true
   end
+  provider = "devicons"
   M.PLUGIN = provider == "srv" and M.__SRV
       or provider == "mini" and M.__MINI
       or provider == "devicons" and M.__DEVICONS

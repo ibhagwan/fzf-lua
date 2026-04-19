@@ -77,8 +77,8 @@ local FzfLua = require("fzf-lua")
 ---@field cmd? string|string[]
 ---@field cwd? string
 ---@field cwd_only? boolean
----@field stdout? boolean
----@field stderr? boolean
+---@field stdout? string
+---@field stderr? string|false
 ---@field stderr_to_stdout? boolean
 ---@field formatter? fun(line:string):string|nil
 ---@field multiline? boolean

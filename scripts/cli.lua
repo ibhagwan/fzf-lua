@@ -51,7 +51,7 @@ for _, config_path in ipairs(config_paths) do
 end
 
 _G.fzf_jobstart = function(cmd, opts)
-  FzfLua.libuv.uv_spawn(cmd[1], {
+  require("fzf-lua.job").spawn(cmd[1], {
       cwd = opts.cwd,
       args = vim.list_slice(cmd, 2),
       stdio = { 0, 1, 2 }, -- sk require stderr
