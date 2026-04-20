@@ -34,9 +34,10 @@ local function server_listen(server_socket, server_socket_path)
       if tmpdir and #tmpdir > 0 then uv.fs_rmdir(tmpdir) end
     end
 
-    receive_socket:read_start(function(err, data)
-      assert(not err)
-      if not data then
+    while true do
+      local len = uv.fs_sendfile(1, receive_socket:fileno(), 0, 1024 * 1024)
+      local eof = len == 0
+      if eof then
         uv.close(receive_socket)
         uv.close(server_socket)
         -- on windows: ci fail when use uv.stop()
@@ -44,10 +45,8 @@ local function server_listen(server_socket, server_socket_path)
         -- https://github.com/ibhagwan/fzf-lua/pull/1955#issuecomment-2785474217
         -- uv.stop()
         os.exit(0)
-        return
       end
-      io.write(data)
-    end)
+    end
   end)
 end
 
@@ -97,8 +96,12 @@ local rpc_nvim_exec_lua = function(opts)
     os.exit(1)
   end
 
-  uv.run("once")
-  uv.run() -- noreturn, quit by os.exit
+  -- uv.run("once")
+  -- uv.run() -- noreturn, quit by os.exit
+
+  while true do
+    vim.wait(100)
+  end
 end
 
 local args = vim.deepcopy(_G.arg)
