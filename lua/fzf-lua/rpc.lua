@@ -2,6 +2,7 @@
 local uv = vim.uv or vim.loop
 
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
+local _is_linux = vim.fn.has("linux") == 1
 
 if vim.v.servername and #vim.v.servername > 0 then
   pcall(vim.fn.serverstop, vim.v.servername)
@@ -34,18 +35,27 @@ local function server_listen(server_socket, server_socket_path)
       if tmpdir and #tmpdir > 0 then uv.fs_rmdir(tmpdir) end
     end
 
+    local finish = function()
+      uv.close(receive_socket)
+      uv.close(server_socket)
+      -- on windows: ci fail when use uv.stop()
+      -- on linux: zero event can freeze
+      -- https://github.com/ibhagwan/fzf-lua/pull/1955#issuecomment-2785474217
+      -- uv.stop()
+      os.exit(0)
+    end
+
+    if _is_linux then
+      while true do
+        local len = uv.fs_sendfile(1, receive_socket:fileno(), 0, 1024 * 1024)
+        local eof = len == 0
+        if eof then finish() end
+      end
+    end
+
     receive_socket:read_start(function(err, data)
       assert(not err)
-      if not data then
-        uv.close(receive_socket)
-        uv.close(server_socket)
-        -- on windows: ci fail when use uv.stop()
-        -- on linux: zero event can freeze
-        -- https://github.com/ibhagwan/fzf-lua/pull/1955#issuecomment-2785474217
-        -- uv.stop()
-        os.exit(0)
-        return
-      end
+      if not data then finish() end
       io.write(data)
     end)
   end)
