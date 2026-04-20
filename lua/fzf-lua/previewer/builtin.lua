@@ -1265,7 +1265,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   if type(cached_pos) ~= "table" then cached_pos = nil end
   local lnum, col = entry.line, math.max(1, entry.col or 1)
 
-  if (not lnum or lnum == 0) and regex then
+  if (not lnum or lnum == 0) and entry.ctag and regex then
     -- pcall(fn.clearmatches, self.win.preview_winid)
     pcall(api.nvim_win_call, win, function()
       -- start searching at line 1 in case we
