@@ -515,7 +515,9 @@ end
 M.run_builtin = function(selected)
   if not selected[1] then return end
   local method = selected[1]
-  pcall(require "fzf-lua"[method])
+  local func = vim.F.nil_wrap(require "fzf-lua"[method])
+  if not _G.fzf_lua_stopinsert_hack then return func() end
+  _G.fzf_lua_stopinsert_hack(func)
 end
 
 M.ex_run = function(selected)
