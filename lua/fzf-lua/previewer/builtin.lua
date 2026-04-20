@@ -1428,7 +1428,7 @@ function Previewer.help_tags:parse_entry(entry_str)
         end
       end
     end
-    return tag
+    return ([[*%s*]]):format(tag)
   end)()
   return {
     ctag = ctag,
