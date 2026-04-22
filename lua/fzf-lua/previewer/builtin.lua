@@ -1252,6 +1252,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
     end)()
   end
 
+  local case_sensitive = regex and regex:lower() ~= regex
   -- If called from tags previewer, can happen when using ctags cmd
   -- "ctags -R --c++-kinds=+p --fields=+iaS --extras=+q --excmd=combine"
   -- vim.regex is always magic, see `:help vim.regex`
@@ -1307,7 +1308,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
     ---@diagnostic disable-next-line: param-type-mismatch
     local reg = utils.vim_regex(regex, { silent = true })
     if reg then
-      if regex ~= regex:lower() then
+      if case_sensitive then
         regex_start, regex_end = reg:match_line(buf, lnum - 1, col - 1)
       else
         local line = api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1] or ""
