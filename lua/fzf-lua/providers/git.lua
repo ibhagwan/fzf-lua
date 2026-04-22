@@ -267,12 +267,118 @@ M.blame = function(opts)
   return git_cmd(opts)
 end
 
+---@param line string
+---@return string
+local function highlight_branch_line(line)
+  local u = FzfLua.utils
+  local ansi = u.ansi_codes
+  line = u.strip_ansi_coloring(line)
+  local leader = line:sub(1, 2)
+  local rest = line:sub(3)
+
+  local detached_inner = rest:match("^%(([^)]+)%)")
+  if detached_inner and
+      (detached_inner:match("^HEAD detached") or detached_inner:match("^no branch")) then
+    local head = ansi.grey("(") .. ansi.green(detached_inner) .. ansi.grey(")")
+    local after = rest:sub(#detached_inner + 3)
+    local ws, sha, subject_ws, subject = after:match("^(%s+)(%x%x%x%x%x%x%x+)(%s+)(.*)$")
+    if ws and sha then
+      return leader .. head .. ws .. ansi.yellow(sha) .. subject_ws .. subject
+    end
+    return leader .. head .. after
+  end
+
+  local branch_name, ws_after_name, after = rest:match("^(%S+)(%s+)(.*)$")
+  if not branch_name then return line end
+
+  local colored_branch
+  if leader:sub(1, 1) == "*" then
+    colored_branch = ansi.green(branch_name)
+  elseif leader:sub(1, 1) == "+" then
+    colored_branch = ansi.cyan(branch_name)
+  elseif branch_name:match("^remotes/") then
+    colored_branch = ansi.red(branch_name)
+  else
+    colored_branch = branch_name
+  end
+
+  if after:match("^%->") then
+    return leader .. colored_branch .. ws_after_name .. after
+  end
+
+  local sha, body_ws, body = after:match("^(%x%x%x%x%x%x%x+)(%s+)(.*)$")
+  if not sha then
+    return leader .. colored_branch .. ws_after_name .. after
+  end
+
+  local function color_tracking(content)
+    local ref, suffix = content:match("^([^:]+)(:.*)$")
+    if ref and suffix then
+      return ansi.grey("[") .. ansi.blue(ref) .. ansi.grey(suffix) .. ansi.grey("]")
+    end
+    return ansi.grey("[") .. ansi.blue(content) .. ansi.grey("]")
+  end
+
+  if leader:sub(1, 1) == "+" then
+    local wt_paren, remainder = body:match("^(%b())(.*)$")
+    if wt_paren then
+      local colored_wt = ansi.grey("(") .. ansi.cyan(wt_paren:sub(2, -2)) .. ansi.grey(")")
+      remainder = remainder:gsub("^(%s*)(%[)([^%]]+)(%])", function(ws, _, content, _)
+        return ws .. color_tracking(content)
+      end)
+      body = colored_wt .. remainder
+    end
+  else
+    body = body:gsub("^(%[)([^%]]+)(%])", function(_, content, _)
+      return color_tracking(content)
+    end)
+  end
+
+  return leader .. colored_branch .. ws_after_name .. ansi.yellow(sha) .. body_ws .. body
+end
+
+---@param line string
+---@return string
+local function highlight_worktree_line(line)
+  local ansi = FzfLua.utils.ansi_codes
+  local path_s, padding, rest = line:match("^(%S+)(%s+)(.*)$")
+  if not path_s then return line end
+
+  local sha, sha_ws, body = rest:match("^(%x%x%x%x%x%x%x+)(%s+)(.*)$")
+  if not sha then
+    body = rest
+  end
+
+  body = body:gsub("^(%[)([^%]]+)(%])", function(lb, name, rb)
+    return ansi.grey(lb) .. ansi.green(name) .. ansi.grey(rb)
+  end)
+  body = body:gsub("^(%()(detached HEAD)(%))", function(lp, text, rp)
+    return ansi.grey(lp) .. ansi.green(text) .. ansi.grey(rp)
+  end)
+  body = body:gsub("^(%()(bare)(%))", function(lp, text, rp)
+    return ansi.grey(lp) .. ansi.grey(text) .. ansi.grey(rp)
+  end)
+  body = body:gsub("(%s)(locked)(%s*)$", function(s1, w, s2)
+    return s1 .. ansi.magenta(w) .. s2
+  end)
+  body = body:gsub("(%s)(prunable)(%s*)$", function(s1, w, s2)
+    return s1 .. ansi.red(w) .. s2
+  end)
+
+  local out = ansi.blue(path_s) .. padding
+  if sha then
+    out = out .. ansi.yellow(sha) .. sha_ws
+  end
+  return out .. body
+end
+
 ---@param opts fzf-lua.config.GitBranches|{}?
 ---@return thread?, string?, table?
 M.branches = function(opts)
   ---@type fzf-lua.config.GitBranches
   opts = config.normalize_opts(opts, "git.branches")
   if not opts then return end
+  if opts.fn_transform == nil then opts.fn_transform = highlight_branch_line end
   if opts.preview then
     local preview = path.git_cwd(opts.preview, opts)
     opts.preview = shell.stringify_cmd(function(items)
@@ -301,6 +407,7 @@ M.worktrees = function(opts)
   ---@type fzf-lua.config.GitWorktrees
   opts = config.normalize_opts(opts, "git.worktrees")
   if not opts then return end
+  if opts.fn_transform == nil then opts.fn_transform = highlight_worktree_line end
   if opts.preview then
     local preview_cmd = opts.preview
     opts.preview = shell.stringify_cmd(function(items)
