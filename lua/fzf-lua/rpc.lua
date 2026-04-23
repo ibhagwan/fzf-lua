@@ -2,7 +2,8 @@
 local uv = vim.uv or vim.loop
 
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
-local _is_linux = vim.fn.has("linux") == 1
+local _is_linux = vim.fn.has("linux") == 1 and
+    (vim.fn.has("nvim-0.12") == 1 and vim.fn.has("android") == 0)
 
 if vim.v.servername and #vim.v.servername > 0 then
   pcall(vim.fn.serverstop, vim.v.servername)
