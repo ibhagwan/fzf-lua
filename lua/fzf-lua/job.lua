@@ -320,8 +320,7 @@ ProcStream.new = function(cmd, opts)
   self.stderr = assert(uv.new_pipe(false))
   self.write_cb_count = 0
 
-  local strbuf = (jit and vim.F.nil_wrap(require)("vim._core.stringbuffer") or
-    require("fzf-lua.lib.stringbuffer"))
+  local strbuf = (jit and require("string.buffer") or require("fzf-lua.lib.stringbuffer"))
 
   ---@type string.buffer
   self.sb = strbuf.new()
