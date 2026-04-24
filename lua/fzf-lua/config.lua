@@ -77,6 +77,48 @@ M.globals = setmetatable({}, {
     local function setup_defaults()
       return M._profile_opts and (M._profile_opts.defaults or {}) or M.setup_opts.defaults or {}
     end
+    local special_tbl = function(opts, k)
+      local fzflua_default = utils.map_get(M.defaults, k)
+      local setup_default = utils.map_get(setup_defaults(), k)
+      local setup_value = utils.map_get(setup_opts(), k)
+      -- convert function types
+      if type(opts[k]) == "function" then opts[k] = opts[k](opts) end
+      if type(setup_value) == "function" then setup_value = setup_value(opts) end
+      -- NOTE: maybe we should assert for non-table values?
+      -- return all non table values in this priority
+      -- (1) setup `defaults = { k = ...}` trumps all
+      -- (2) opts.<k>
+      -- (3) setup({ <k> })
+      if setup_default ~= nil and type(setup_default) ~= "table" then return setup_default end
+      if opts[k] ~= nil and type(opts[k]) ~= "table" then return opts[k] end
+      if not setup_default and not opts[k]
+          and setup_value ~= nil and type(setup_value) ~= "table"
+      then
+        return setup_value
+      end
+      opts[k] = opts[k] or {}
+      fzflua_default = fzflua_default or {}
+      setup_default = setup_default or {}
+      setup_value = type(setup_value) == "table" and setup_value or {}
+      -- (1) setup defaults trumps all, e.g. `defaults = { winopts = {...} }`
+      -- (2) merge setup on top, e.g. `setup({ winopts = {...} })`
+      -- (3) merge fzf-lua true defaults on top
+      opts[k] = vim.tbl_deep_extend("force", {}, opts[k], setup_default)
+      opts[k] = vim.tbl_deep_extend("keep", opts[k], setup_value)
+      opts[k] = vim.tbl_deep_extend("keep", opts[k], fzflua_default)
+      local function build_bind_tables(keys)
+        for _, _k in ipairs(keys) do
+          -- TODO: lowercase merge, handle [1] = {true|false|
+          opts[k][_k][1] = nil
+        end
+      end
+      if k == "actions" then
+        build_bind_tables({ "files", "buffers" })
+      elseif k == "keymap" then
+        build_bind_tables({ "fzf", "builtin" })
+      end
+      return opts
+    end
     -- build normalized globals, option priority below:
     --   (1) provider specific globals (post-setup)
     --   (2) generic global-defaults (post-setup), i.e. `setup({ defaults = { ... } })`
@@ -122,16 +164,31 @@ M.globals = setmetatable({}, {
     elseif fzflua_default == nil and setup_value == nil then
       return
     end
+    -- the existence of the `actions` key implies we're dealing with a picker
+    local is_picker =
+        (fzflua_default and (fzflua_default.actions or fzflua_default._actions))
+        or (setup_value and (setup_value.actions or setup_value._actions))
     -- (1) use fzf-lua's true defaults (pre-setup) as our options base
     local ret = utils.tbl_deep_clone(fzflua_default) or {}
-    if (fzflua_default and (fzflua_default.actions or fzflua_default._actions))
-        or (setup_value and (setup_value.actions or setup_value._actions)) then
-      -- (2) the existence of the `actions` key implies we're dealing with a picker
-      -- override global provider defaults supplied by the user's setup `defaults` table
+    if is_picker then
+      -- (2.1) override global picker defaults with the user's setup `defaults` table
       ret = vim.tbl_deep_extend("force", ret, setup_defaults())
+    elseif type(setup_default) == "table" then
+      -- (2.2) index was included in defaults, e.g. `{ defaults = winopts = { ... } }`
+      -- TODO: do we ever get here after the special_tbl change?
+      assert(index)
+      ret = vim.tbl_deep_extend("force", ret, setup_default)
     end
     -- (3) override with the specific provider options from the users's `setup` option
     ret = vim.tbl_deep_extend("force", ret, utils.map_get(setup_opts(), index) or {})
+    -- (4) for pickers, special tables which merge from true globals but can be
+    -- overwritten from setup defaults, e.g. `{ defaults = winopts = { ... } }`
+    if is_picker then
+      for _, k in ipairs({ "winopts", "keymap", "fzf_opts", "fzf_colors", "fzf_tmux_opts", "hls" })
+      do
+        ret = special_tbl(ret, k)
+      end
+    end
     return ret
   end,
   __newindex = function(_, index, _)
@@ -333,53 +390,6 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
 
   -- merge with provider defaults from globals (defaults + setup options)
   opts = vim.tbl_deep_extend("keep", opts, utils.tbl_deep_clone(globals))
-
-  -- Backward compat: merge `winopts` with outputs from `winopts_fn`
-  local winopts_fn = opts.winopts_fn or M.globals.winopts_fn
-  if type(winopts_fn) == "function" then
-    vim.deprecate("winopts_fn", "winopts", "Jan 2026", "FzfLua")
-    local ret = winopts_fn(opts) or {}
-    if not utils.tbl_isempty(ret) and (not opts.winopts or type(opts.winopts) == "table") then
-      opts.winopts = vim.tbl_deep_extend("force", opts.winopts or {}, ret)
-    end
-  end
-
-  local extend_opts = function(m, k)
-    local setup_val = m[k]
-    if type(setup_val) == "function" then
-      setup_val = setup_val(opts)
-      if type(setup_val) == "table" then
-        local default_val = utils.map_get(M.defaults, k)
-        if type(default_val) == "table" then
-          setup_val = vim.tbl_deep_extend("force", {}, default_val, setup_val)
-        end
-      end
-    end
-    if type(setup_val) == "table" then
-      -- must clone or map will be saved as reference
-      -- and then overwritten if found in 'backward_compat'
-      setup_val = utils.tbl_deep_clone(setup_val)
-    end
-    if opts[k] == nil then
-      opts[k] = setup_val
-    else
-      if type(opts[k]) == "function" then
-        opts[k] = opts[k](opts)
-      end
-      if type(opts[k]) == "table" then
-        opts[k] = vim.tbl_deep_extend("keep",
-          opts[k], type(setup_val) == "table" and setup_val or {})
-      end
-    end
-  end
-
-  -- Merge values from globals
-  for _, k in ipairs({
-    "winopts", "keymap", "fzf_opts", "fzf_colors", "fzf_tmux_opts", "hls"
-  }) do
-    extend_opts(globals, k)
-    extend_opts(M.globals, k)
-  end
 
   -- backward compat: no-value flags should be set to `true`, in the past these
   -- would be set to an empty string which would now translate into a shell escaped
