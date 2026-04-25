@@ -71,6 +71,16 @@ M.oldfiles = function(opts, globals)
       local curr_file = vim.api.nvim_buf_get_name(curr_buf)
       local sess_map = {} -- dedup files from current buffers
 
+      -- read the optional shada file
+      if opts.shada_file then
+        local file = vim.fs.normalize(opts.shada_file)
+        if vim.uv.fs_stat(file) then
+          vim.cmd("rshada! " .. vim.fn.fnameescape(file))
+        else
+          utils.warn("shada file '%s' does not exist, ignoring.", opts.shada_file)
+        end
+      end
+
       local function add_entry(x, co, force)
         x = make_entry.file(x,
           force and vim.tbl_deep_extend("force", {}, opts, { cwd_only = false }) or opts)

@@ -1010,6 +1010,8 @@ M.defaults.args = {
 
 ---File history (output of `:oldfiles`).
 ---@class fzf-lua.config.Oldfiles: fzf-lua.config.Base
+---Optional shada file to read, see `:help shada`
+---@field shada_file? string
 ---Only include files that still exist on disk.
 ---@field stat_file? boolean
 ---Include files opened during the current session.
