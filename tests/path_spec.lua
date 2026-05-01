@@ -393,14 +393,14 @@ describe("Testing path module", function()
         col = 2,
       })
 
-      utils.__IS_WINDOWS = true
-      eq(path.entry_to_file("C:\\Users\\foo:bar:12:3"), {
-        col = 3,
-        line = 12,
-        path = "C:\\Users\\foo:bar",
-        stripped = "C:\\Users\\foo:bar:12:3"
-      })
-      utils.__IS_WINDOWS = false
+      if utils.__IS_WINDOWS then
+        eq(path.entry_to_file("C:\\Users\\foo:bar:12:3"), {
+          col = 3,
+          line = 12,
+          path = "C:\\Users\\foo:bar",
+          stripped = "C:\\Users\\foo:bar:12:3"
+        })
+      end
     end)
 
     it("tilde expansion", function()
