@@ -1729,7 +1729,7 @@ M.defaults.lsp.finder = {
 ---Callback to execute after applying a code action.
 ---@field post_action_cb function
 ---Code action context passed to the LSP server.
----@field context lsp.CodeActionContext
+---@field context vim.lsp.buf.code_action.context
 ---Filter function to exclude certain code actions.
 ---@field filter fun(x: lsp.CodeAction|lsp.Command):boolean
 ---@field _ui_select? { kind: string }

@@ -1,5 +1,10 @@
-on: [push, pull_request]
 name: Lint
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: "*"
 
 jobs:
   lint:

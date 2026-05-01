@@ -33,4 +33,8 @@ if filter then
   end
 end
 
+-- https://github.com/neovim/neovim/pull/36557
+local sig = assert(vim.uv.new_signal())
+sig:start(vim.uv.constants.SIGINT, function() MiniTest.stop() end)
+
 MiniTest.run({ collect = { find_files = find_files, filter_cases = filter_cases } })
