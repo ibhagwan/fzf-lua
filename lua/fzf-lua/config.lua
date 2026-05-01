@@ -407,6 +407,10 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     end
   end
 
+  if opts.fzf_opts["--history"] == nil then
+    opts.fzf_opts["--history"] = require("fzf-lua.config.parse").get()["--history"]
+  end
+
   -- Merge arrays from globals|defaults, can't use 'vim.tbl_xxx'
   -- for these as they only work for maps, ie. '{ key = value }'
   for _, k in ipairs({ "file_ignore_patterns" }) do
