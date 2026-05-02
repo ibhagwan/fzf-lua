@@ -11,7 +11,7 @@ local ctx
 ---@field bufnr integer
 ---@field bname string
 ---@field winid integer
----@field last_winid integer
+---@field last_winid integer?
 ---@field alt_bufnr integer
 ---@field tabnr integer
 ---@field tabh integer
@@ -52,7 +52,15 @@ M.refresh = function(opts)
       bufnr = vim.api.nvim_get_current_buf(),
       bname = vim.api.nvim_buf_get_name(0),
       winid = vim.api.nvim_get_current_win(),
-      last_winid = vim.fn.win_getid(vim.fn.winnr("#")),
+      last_winid = (function()
+        local last_winnr = vim.fn.winnr("#")
+        return last_winnr > 0
+            -- we use this to restore the last window
+            -- ignore if both current and last are equal
+            and last_winnr ~= vim.fn.winnr()
+            and vim.fn.win_getid(last_winnr)
+            or nil
+      end)(),
       alt_bufnr = vim.fn.bufnr("#"),
       tabnr = vim.fn.tabpagenr(),
       tabh = vim.api.nvim_win_get_tabpage(0),
