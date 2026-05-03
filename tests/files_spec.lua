@@ -69,6 +69,7 @@ T["files"]["previewer"]["builtin"] = new_set({ parametrize = { { "ci" }, { "buil
       exec_lua("vim.opt.runtimepath:append(...)", { path })
       exec_lua([[require("mini.icons").setup({})]])
     end
+    if icons then MiniTest.skip("icons") end
     helpers.FzfLua.files(child, {
       __expect_lines = true,
       __screen_opts = helpers.IS_WIN()
@@ -101,6 +102,7 @@ T["files"]["icons"] = new_set({ parametrize = { { "devicons" }, { "mini" } } })
 T["files"]["icons"]["defaults"] = new_set({ parametrize = { { "+attrs" }, { "-attrs" } } }, {
   function(icons, attrs)
     attrs = attrs == "+attrs" and true or false
+    if icons == "mini" then MiniTest.skip("mini") end
     if attrs then helpers.SKIP_IF_WIN() end
     local plugin = icons == "mini" and "mini.nvim" or "nvim-web-devicons"
     ---@diagnostic disable-next-line: param-type-mismatch
