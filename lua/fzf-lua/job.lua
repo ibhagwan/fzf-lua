@@ -101,8 +101,7 @@ ProcStream.__index = ProcStream
 
 ---@param data string a chunk of lines (end with EOL) to transform
 ---@return boolean, string
-local transform_chunk = function(data, optstr, id, devicons_path, devicons_plugin, devicons_state_str,
-                                 eol_data)
+local transform_chunk = function(data, optstr, id, eol_data)
   local ok, res = pcall(function()
     -- io.stderr:write("[DEBUG] worker init")
     if not _G.uuid then
@@ -125,21 +124,23 @@ local transform_chunk = function(data, optstr, id, devicons_path, devicons_plugi
         return 0
       end
       require("fzf-lua.make_entry")
-      if devicons_path then
-        package.path = ("%s/?.lua;"):format(devicons_path) .. package.path
-        package.path = ("%s/?/init.lua;"):format(devicons_path) .. package.path
-      end
-      if devicons_state_str then
-        local devicons_state = require("fzf-lua.libuv").deserialize(devicons_state_str, false)
-        -- error(devicons_state)
-        require("fzf-lua.devicons").set_state(devicons_plugin, devicons_state)
-      end
+      -- if devicons_path then
+      --   package.path = ("%s/?.lua;"):format(devicons_path) .. package.path
+      --   package.path = ("%s/?/init.lua;"):format(devicons_path) .. package.path
+      -- end
+      -- if devicons_state_str then
+      --   local devicons_state = require("fzf-lua.libuv").deserialize(devicons_state_str, false)
+      --   -- error(devicons_state)
+      --   require("fzf-lua.devicons").set_state(devicons_plugin, devicons_state)
+      -- end
       vim.F = require("vim.F")
       vim.base64 = vim.base64 or require("fzf-lua.lib.base64")
       setmetatable(vim.api, { __index = function() return function() end end })
     end
     if id ~= _G.uuid then -- refresh opts
       local opts = require("fzf-lua.libuv").deserialize(optstr, false)
+      for k, v in pairs(opts.g or {}) do _G[k] = v end
+      -- _G._devicons_path = opts.g._devicons_path
       local load_fn = FzfLua.libuv.load_fn
       local fn_preprocess = load_fn(opts.fn_preprocess) or opts.fn_preprocess
       if fn_preprocess then fn_preprocess(opts) end
@@ -218,8 +219,7 @@ end
 ---@param data string
 function ProcStream:queue(data)
   self.write_cb_count = self.write_cb_count + 1
-  self.work:queue(data, self.optstr, self.uuid, self.devicons_path, self.devicons_plugin,
-    self.devicons_state_str, self.EOL_data)
+  self.work:queue(data, self.optstr, self.uuid, self.EOL_data)
 end
 
 ---@param data? uv.threadargs
@@ -326,10 +326,10 @@ ProcStream.new = function(cmd, opts)
   self.sb = strbuf.new()
 
   self.uuid = uv.hrtime() -- distinguish two call when use worker pool
-  local devicons = require("fzf-lua.devicons")
-  self.devicons_path = devicons.plugin_path()
-  self.devicons_plugin = devicons.plugin_name()
-  self.devicons_state_str = require("fzf-lua.libuv").serialize(devicons.state(), false)
+  -- local devicons = require("fzf-lua.devicons")
+  -- self.devicons_path = devicons.plugin_path()
+  -- self.devicons_plugin = devicons.plugin_name()
+  -- self.devicons_state_str = require("fzf-lua.libuv").serialize(devicons.state(), false)
   local worker_opts = opts.opts or {}
   self.optstr = require("fzf-lua.libuv").serialize(worker_opts, false)
   assert(not not worker_opts.fn_transform ==
