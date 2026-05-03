@@ -123,6 +123,24 @@ local transform_chunk = function(data, optstr, id, eol_data)
         if feature:match("nvim%-0.9") then return 1 end
         return 0
       end
+      vim.fn.fnamemodify = function(path, mods)
+        if mods:match(":t$") then return path:match("([^/\\]+)$") or path end
+        if mods:match(":h$") then return path:match("^(.*)[/\\]") or "" end
+        if mods:match(":r$") then return path:match("^(.*)%.") or path end
+        if mods:match(":e$") then return path:match("%.([^%.\\/]+)$") or "" end
+        if mods:match(":p$") then return vim.fs and vim.fs.normalize(path) or path end
+        return path
+      end
+      vim.fn.hlID = function() return 0 end
+      vim.fn.synIDtrans = function(id) return id end
+      vim.fn.synIDattr = function(id, what)
+        if what == "fg" then return "None" end
+        if what == "bg" then return "None" end
+        if what == "sp" then return "None" end
+        return ""
+      end
+      vim.api.nvim_get_color_map = function() return {} end
+      vim.filetype = vim.filetype or require("vim.filetype")
       require("fzf-lua.make_entry")
       -- if devicons_path then
       --   package.path = ("%s/?.lua;"):format(devicons_path) .. package.path

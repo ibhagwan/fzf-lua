@@ -37,4 +37,7 @@ end
 local sig = assert(vim.uv.new_signal())
 sig:start(vim.uv.constants.SIGINT, function() MiniTest.stop() end)
 
+-- FzfLua.utils is used in test
+require('fzf-lua')
+
 MiniTest.run({ collect = { find_files = find_files, filter_cases = filter_cases } })
