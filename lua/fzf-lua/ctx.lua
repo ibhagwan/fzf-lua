@@ -45,7 +45,7 @@ M.refresh = function(opts)
       or (not winobj and ctx.bufnr ~= vim.api.nvim_get_current_buf())
       -- we should never get here when fzf process is hidden unless the user requested
       -- not to resume or a different picker, i.e. hide files and open buffers
-      or winobj and winobj:hidden()
+      or winobj and (winobj:hidden() or winobj:was_hidden())
   then
     ctx = {
       mode = vim.api.nvim_get_mode().mode,
