@@ -43,9 +43,11 @@ M.refresh = function(opts)
       -- never cleared. The below condition validates the source window when the
       -- UI is not open (#907)
       or (not winobj and ctx.bufnr ~= vim.api.nvim_get_current_buf())
-      -- we should never get here when fzf process is hidden unless the user requested
-      -- not to resume or a different picker, i.e. hide files and open buffers
-      or winobj and (winobj:hidden() or winobj:was_hidden())
+      -- we don't get here when hidden fzf process is resumed, only when the user
+      -- starts a different picker, i.e. hide files and open buffers, in this case
+      -- we update ctx regardless of hidden buf validity as the underlying fzf 
+      -- job/bufnr may have also been terminated (#2715)
+      or winobj and winobj._hidden_fzf_bufnr
   then
     ctx = {
       mode = vim.api.nvim_get_mode().mode,
