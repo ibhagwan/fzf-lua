@@ -77,6 +77,10 @@ local opts = require("fzf-lua.libuv").deserialize(assert(_G.arg[1]))
 -- setup global vars
 for k, v in pairs(opts.g or {}) do _G[k] = v end
 
+if _G._devicons_path then
+  vim.opt.rtp:append(_G._devicons_path)
+end
+
 -- Requiring make_entry will create the pseudo `_G.FzfLua` global
 -- Must be called after global vars are created or devicons will
 -- err with "fzf-lua fatal: '_G._fzf_lua_server', '_G._devicons_path' both nil"

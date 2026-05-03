@@ -249,8 +249,8 @@ M.stringify_mt = function(contents, opts)
     for k, v in pairs({
       ["_fzf_lua_server"] = vim.g.fzf_lua_server,
       -- [NOTE] No longer needed, we use RPC for icons
-      -- ["_devicons_path"] = devicons.plugin_path(),
-      -- ["_devicons_setup"] = config._devicons_setup,
+      ["_devicons_path"] = require("fzf-lua.devicons").plugin_path(),
+      -- ["_devicons_setup"] = require("fzf-lua.config")._devicons_setup,
       ["_EOL"] = utils.map_get(o, "fzf_opts.--read0") and "\0" or "\n",
       ["_debug"] = o.debug,
     }) do
