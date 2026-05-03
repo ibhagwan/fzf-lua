@@ -1767,5 +1767,22 @@ end
 ---@class fzf-lua.wo: vim.wo,{}
 M.wo = new_win_opt_accessor()
 
+local kind = function()
+  if _G._fzf_lua_is_headless then
+    return "headless"
+  elseif vim.is_thread() then
+    return "thread"
+  else
+    return "main"
+  end
+end
+
+local f
+M.log = function(...)
+  f = assert(f or io.open("/tmp/fzf-lua-worker", "a"))
+  f:write(("%s: "):format(kind()), ...)
+  f:write("\n")
+  f:flush()
+end
 
 return M
