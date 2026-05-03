@@ -1777,10 +1777,31 @@ local kind = function()
   end
 end
 
+---@param ctx? string
+local context = function(ctx)
+  local info = debug.getinfo(3) or {}
+  if info.short_src == "[C]" then info = debug.getinfo(4) or {} end
+  local src, line = info.short_src or "?", info.currentline or "?"
+  if ctx then return ("%s(%s:%s) "):format(ctx, src, line) end
+  return ("%s:%s"):format(src, line)
+end
+
 local f
 M.log = function(...)
   f = assert(f or io.open("/tmp/fzf-lua-worker", "a"))
-  f:write(("%s: "):format(kind()), ...)
+  f:write(string.format("%s (%s): ", M.ansi_codes.blue(kind()), M.ansi_codes.red(context())))
+  local n = select("#", ...)
+  for i = 1, n do
+    local arg = select(i, ...)
+    if type(arg) == "table" then
+      arg = vim.inspect(arg, { newline = "", indent = "" })
+    else
+      arg = tostring(arg)
+    end
+    f:write(arg)
+    if i < n then f:write("\t") end
+  end
+  -- f:write(...)
   f:write("\n")
   f:flush()
 end

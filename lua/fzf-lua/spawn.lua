@@ -77,6 +77,7 @@ local opts = require("fzf-lua.libuv").deserialize(assert(_G.arg[1]))
 -- setup global vars
 for k, v in pairs(opts.g or {}) do _G[k] = v end
 
+require("fzf-lua.utils").log("spawn_stdio opts", vim.inspect(opts))
 if _G._devicons_path then
   vim.opt.rtp:append(_G._devicons_path)
 end

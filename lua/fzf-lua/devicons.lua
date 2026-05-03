@@ -51,6 +51,8 @@ function NvimWebDevicons:load(do_not_lazy_load)
       and (not do_not_lazy_load or package.loaded[self._package_name])
   then
     self._package_loaded, self._package = pcall(require, self._package_name)
+    require("fzf-lua.utils").log("plugin: ", self._package, tostring(self._package),
+      debug.traceback())
     if self._package_loaded then
       ---@diagnostic disable-next-line: param-type-mismatch
       self._package_path = path.parent(path.parent(path.normalize(
@@ -187,6 +189,8 @@ function MiniIcons:load(do_not_lazy_load)
       and (not do_not_lazy_load or package.loaded[self._package_name])
   then
     self._package_loaded, self._package = pcall(require, self._package_name)
+    require("fzf-lua.utils").log("plugin: ", self._package, tostring(self._package),
+      debug.traceback())
     if self._package_loaded then
       ---@diagnostic disable-next-line: param-type-mismatch
       self._package_path = path.parent(path.parent(path.parent(path.normalize(
@@ -360,7 +364,8 @@ M.plugin_load = function(provider, do_not_lazy_load)
   if provider == nil and M.PLUGIN and M.PLUGIN:loaded() then
     return true
   end
-  provider = "devicons"
+  utils.log("Loading devicons provider: ", provider or "auto")
+  -- provider = "devicons"
   M.PLUGIN = provider == "srv" and M.__SRV
       or provider == "mini" and M.__MINI
       or provider == "devicons" and M.__DEVICONS
@@ -391,7 +396,7 @@ M.plugin_load = function(provider, do_not_lazy_load)
         -- Load mini only if `_G.MiniIcons` is present or if using `mock_nvim_web_devicons()`
         -- at which point we would like to replace the mock with first-class MiniIcons (#1358)
         ---@diagnostic disable-next-line: undefined-field
-        if not M.__DEVICONS:load(do_not_lazy_load) and _G.MiniIcons
+        if not M.__DEVICONS:load(do_not_lazy_load) and (_G.MiniIcons or vim.is_thread())
             or M.__DEVICONS:is_mock() and M.__MINI:load(do_not_lazy_load)
         then
           ret = M.__MINI
