@@ -806,24 +806,199 @@ function M.is_hl_cleared(hl)
   end
 end
 
+if jit then
+  require("ffi").cdef [[
+    typedef int32_t char_u;
+    const char *highlight_color(int id, const char *what, int modec);
+    const char *highlight_has_attr(int id, int flag, int modec);
+    const char *get_highlight_name_ext(void *obj, int id, bool skip_default);
+    bool ui_rgb_attached(void);
+    int syn_get_final_id(int hl_id);
+    int syn_name2id(const char *name);
+    typedef struct {
+      char *name;
+      int color;
+    } color_name_table_T;
+    extern color_name_table_T color_name_table[];
+  ]]
+end
+
+local t = {}
+if vim.is_thread() then
+  vim.api.nvim_set_hl = function(_, name, val)
+    M.log("set_hl", _, name, val)
+    t[name] = val
+  end
+end
+
+local nvim_get_color_map = (not jit or not vim.is_thread()) and vim.api.nvim_get_color_map or
+    function()
+      local colors = {}
+      local i = 0
+      local ffi = require("ffi")
+      while true do
+        local entry = ffi.C.color_name_table[i]
+        if entry.name == nil then
+          break
+        end
+        colors[ffi.string(entry.name)] = entry.color
+        i = i + 1
+      end
+      return colors
+    end
+M.nvim_get_color_map = nvim_get_color_map
+
 function M.COLORMAP()
   if not M.__COLORMAP then
-    M.__COLORMAP = vim.api.nvim_get_color_map()
+    M.__COLORMAP = nvim_get_color_map()
   end
   return M.__COLORMAP
 end
 
+local HL_INVERSE        = 0x01
+local HL_BOLD           = 0x02
+local HL_ITALIC         = 0x04
+local HL_UNDERLINE_MASK = 0x38
+local HL_UNDERLINE      = 0x08
+local HL_UNDERCURL      = 0x10
+local HL_UNDERDOUBLE    = 0x18
+local HL_UNDERDOTTED    = 0x20
+local HL_UNDERDASHED    = 0x28
+local HL_STANDOUT       = 0x0040
+local HL_STRIKETHROUGH  = 0x0080
+local HL_ALTFONT        = 0x0100
+local HL_DIM            = 0x0200
+local HL_BLINK          = 0x8000
+local HL_CONCEALED      = 0x10000
+local HL_OVERLINE       = 0x20000
+local HL_NOCOMBINE      = 0x0400
+local HL_BG_INDEXED     = 0x0800
+local HL_FG_INDEXED     = 0x1000
+local HL_DEFAULT        = 0x2000
+local HL_GLOBAL         = 0x4000
+
+local synIDattr0        = vim.fn.synIDattr
+    or jit and function(id, what, mode)
+      id = tonumber(id)
+      what = tostring(what):lower()
+
+      local ffi = require("ffi")
+      local modec
+      if mode then
+        modec = mode:sub(1, 1):lower()
+        if modec ~= "c" and modec ~= "g" then modec = 0 end
+      else
+        modec = ffi.C.ui_rgb_attached() and string.byte("g") or string.byte("c")
+      end
+      if type(modec) == "string" then modec = string.byte(modec) end
+
+      local p = nil
+      local c1 = what:sub(1, 1)
+      local c2 = what:sub(2, 2)
+
+      if c1 == "b" then
+        if c2 == "g" then
+          p = ffi.C.highlight_color(id, what, modec)
+        elseif c2 == "l" then
+          p = ffi.C.highlight_has_attr(id, HL_BLINK, modec)
+        else
+          p = ffi.C.highlight_has_attr(id, HL_BOLD, modec)
+        end
+      elseif c1 == "c" then
+        p = ffi.C.highlight_has_attr(id, HL_CONCEALED, modec)
+      elseif c1 == "d" then
+        p = ffi.C.highlight_has_attr(id, HL_DIM, modec)
+      elseif c1 == "o" then
+        p = ffi.C.highlight_has_attr(id, HL_OVERLINE, modec)
+      elseif c1 == "f" then
+        p = ffi.C.highlight_color(id, what, modec)
+      elseif c1 == "i" then
+        if c2 == "n" then
+          p = ffi.C.highlight_has_attr(id, HL_INVERSE, modec)
+        else
+          p = ffi.C.highlight_has_attr(id, HL_ITALIC, modec)
+        end
+      elseif c1 == "n" then
+        if c2 == "o" then
+          p = ffi.C.highlight_has_attr(id, HL_NOCOMBINE, modec)
+        else
+          p = ffi.C.get_highlight_name_ext(nil, id - 1, false)
+        end
+      elseif c1 == "r" then
+        p = ffi.C.highlight_has_attr(id, HL_INVERSE, modec)
+      elseif c1 == "s" then
+        if c2 == "p" then
+          p = ffi.C.highlight_color(id, what, modec)
+        elseif what:sub(2, 4) == "str" then
+          p = ffi.C.highlight_has_attr(id, HL_STRIKETHROUGH, modec)
+        else
+          p = ffi.C.highlight_has_attr(id, HL_STANDOUT, modec)
+        end
+      elseif c1 == "u" then
+        if #what >= 9 then
+          local c6 = what:sub(6, 6)
+          local c7 = what:sub(7, 7)
+          local c8 = what:sub(8, 8)
+          if c6 == "l" then
+            p = ffi.C.highlight_has_attr(id, HL_UNDERLINE, modec)
+          elseif c6 ~= "d" then
+            p = ffi.C.highlight_has_attr(id, HL_UNDERCURL, modec)
+          elseif c7 ~= "o" then
+            p = ffi.C.highlight_has_attr(id, HL_UNDERDASHED, modec)
+          elseif c8 == "u" then
+            p = ffi.C.highlight_has_attr(id, HL_UNDERDOUBLE, modec)
+          else
+            p = ffi.C.highlight_has_attr(id, HL_UNDERDOTTED, modec)
+          end
+        else
+          p = ffi.C.highlight_color(id, what, modec)
+        end
+      end
+      return p ~= nil and ffi.string(p) or ""
+    end
+    or function(id, what)
+      if what == "fg" then return "None" end
+      if what == "bg" then return "None" end
+      if what == "sp" then return "None" end
+      return ""
+    end
+
+local synIDtrans        = vim.fn.synIDtrans or jit and function(id)
+  id = tonumber(id) or 0
+  if id > 0 then
+    return require("ffi").C.syn_get_final_id(id)
+  end
+  return 0
+end or function(id)
+  return id
+end
+
+local hlID              = vim.fn.hlID or jit and function(name)
+  if name == nil then return 0 end
+  return require("ffi").C.syn_name2id(tostring(name))
+end or function()
+  return 0
+end
+
 local function synIDattr(hl, w, mode)
+  M.log("get_hl", hl, w, mode)
+  if t[hl] then
+    if t[hl].link then return synIDattr(t[hl].link, w, mode) end
+  end
   -- Although help specifies invalid mode returns the active hlgroups
   -- when sending `nil` for mode the return value for "fg" is also nil
   return mode == "cterm" or mode == "gui"
-      and vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl)), w, mode)
-      or vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl)), w)
+      and synIDattr0(synIDtrans(hlID(hl)), w, mode)
+      or synIDattr0(synIDtrans(hlID(hl)), w)
 end
+M.synIDattr = synIDattr
 
 function M.hexcol_from_hl(hlgroup, what, mode)
   if not hlgroup or not what then return end
   local hexcol = synIDattr(hlgroup, what, mode)
+  M.log(string.format("hl=%s what=%s mode=%s hexcol=%s", hlgroup, what, mode or "nil",
+    hexcol or "nil"))
+  M.log(string.format("hlID=%s", require("ffi").C.syn_name2id(tostring(hlgroup))))
   -- Without termguicolors hexcol returns `{ctermfg|ctermbg}` which is
   -- a simple number representing the term ANSI color (e.g. 1-15, etc)
   -- in which case we return the number as is so it can be passed onto

@@ -131,15 +131,16 @@ local transform_chunk = function(data, optstr, id, eol_data)
         if mods:match(":p$") then return vim.fs and vim.fs.normalize(path) or path end
         return path
       end
-      vim.fn.hlID = function() return 0 end
-      vim.fn.synIDtrans = function(id) return id end
-      vim.fn.synIDattr = function(id, what)
-        if what == "fg" then return "None" end
-        if what == "bg" then return "None" end
-        if what == "sp" then return "None" end
-        return ""
-      end
-      vim.api.nvim_get_color_map = function() return {} end
+
+      -- vim.fn.hlID = function() return 0 end
+      -- vim.fn.synIDtrans = function(id) return id end
+      -- vim.fn.synIDattr = function(id, what)
+      --   if what == "fg" then return "None" end
+      --   if what == "bg" then return "None" end
+      --   if what == "sp" then return "None" end
+      --   return ""
+      -- end
+      -- vim.api.nvim_get_color_map = function() return {} end
       vim.filetype = vim.filetype or require("vim.filetype")
       require("fzf-lua.make_entry")
       -- if devicons_path then
@@ -154,6 +155,7 @@ local transform_chunk = function(data, optstr, id, eol_data)
       vim.F = require("vim.F")
       vim.base64 = vim.base64 or require("fzf-lua.lib.base64")
       setmetatable(vim.api, { __index = function() return function() end end })
+      -- vim.api.nvim_set_hl = function() end
     end
     if id ~= _G.uuid then -- refresh opts
       local opts = require("fzf-lua.libuv").deserialize(optstr, false)
