@@ -114,7 +114,8 @@ M.ui_select = function(items, ui_opts, on_choice)
     ["enter"] = { fn = M.accept_item, desc = "accept-item" }
   })
 
-  opts.fn_selected = function(selected, o)
+  -- schedule to avoid our coroutine break external async logic #2719
+  opts.fn_selected = vim.schedule_wrap(function(selected, o)
     local function exec_choice()
       if not selected then
         -- with `actions.dummy_abort` this doesn't get called anymore
@@ -149,7 +150,7 @@ M.ui_select = function(items, ui_opts, on_choice)
     else
       exec_choice()
     end
-  end
+  end)
 
 
   -- ui.select is code actions
