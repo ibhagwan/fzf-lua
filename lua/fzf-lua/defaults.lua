@@ -4,6 +4,7 @@ local utils = require "fzf-lua.utils"
 local actions = require "fzf-lua.actions"
 local previewers = require "fzf-lua.previewer"
 local M = {}
+local uis = #vim.api.nvim_list_uis()
 
 function M._default_previewer_fn()
   local winopts = M.globals.winopts
@@ -699,8 +700,8 @@ M.defaults.git = {
           FzfLua.git_hunks(o)
         end,
         header = "git hunks",
-        reuse = #vim.api.nvim_list_uis() == 0,
-        exec_silent = #vim.api.nvim_list_uis() > 0,
+        reuse = uis == 0,
+        exec_silent = uis > 0,
         field_index = "{} $FZF_POS",
       },
       ["ctrl-q"] = {
@@ -769,8 +770,8 @@ M.defaults.git = {
           FzfLua.git_diff(o)
         end,
         header = "git diff",
-        reuse = #vim.api.nvim_list_uis() == 0,
-        exec_silent = #vim.api.nvim_list_uis() > 0,
+        reuse = uis == 0,
+        exec_silent = uis > 0,
         field_index = "{} $FZF_POS",
       },
     },

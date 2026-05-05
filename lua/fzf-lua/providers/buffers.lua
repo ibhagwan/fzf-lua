@@ -223,7 +223,7 @@ M.buffers = function(opts)
       local buffers = populate_buffer_entries(opts, filtered)
       for _, bufinfo in pairs(buffers) do
         local ok, entry = pcall(gen_buffer_entry, opts, bufinfo, max_bufnr)
-        assert(ok and entry)
+        assert(ok and entry, entry)
         cb(entry)
       end
     end

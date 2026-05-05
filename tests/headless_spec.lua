@@ -82,6 +82,8 @@ T["headless"]["file_icons"]["server"] = new_set({ parametrize = { { "devicons" }
     if icons == "mini" then
       exec_lua("vim.opt.runtimepath:append(...)", { _mini_path })
       exec_lua([[require("mini.icons").setup({})]])
+
+      -- MiniTest.skip("mini")
     else
       exec_lua("vim.opt.runtimepath:append(...)", { _devicons_path })
       exec_lua([[ require("nvim-web-devicons").setup({})]])
