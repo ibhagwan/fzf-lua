@@ -47,7 +47,7 @@ Previewer.base = Object:extend()
 ---@param opts table
 ---@return fzf-lua.previewer.Builtin
 function Previewer.base:new(o, opts)
-  local default = vim.F.if_nil
+  local default = utils.nonnil
   o = o or {}
   self.type = "builtin"
   self.opts = opts
@@ -885,7 +885,7 @@ function Previewer.buffer_or_file:_set_preview_lines(tmpbuf, entry)
   extmarks = entry.extmarks or extmarks
   pcall(api.nvim_buf_set_lines, tmpbuf, 0, -1, false, textlines)
   if extmarks and #extmarks > 0 then
-    local setmark = vim.F.nil_wrap(api.nvim_buf_set_extmark)
+    local setmark = utils.nil_wrap(api.nvim_buf_set_extmark)
     local ns = api.nvim_create_namespace("fzf-lua.preview.hl")
     for _, extmark in ipairs(extmarks) do
       setmark(tmpbuf, ns, extmark.row, extmark.col,
@@ -1333,7 +1333,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   if not extmark and hls.cursor and entry.col and entry.col > 0 then
     local end_lnum, end_col = entry.end_line or lnum, entry.end_col or col + 1
     -- stale line/col can cause out-of-range, e.g. marks
-    vim.F.nil_wrap(api.nvim_buf_set_extmark)(buf, self.ns_previewer, lnum - 1, col - 1, {
+    utils.nil_wrap(api.nvim_buf_set_extmark)(buf, self.ns_previewer, lnum - 1, col - 1, {
       end_line = end_lnum - 1,
       end_col = math.max(1, end_col) - 1,
       hl_group = entry.hlgroup or hls.cursor,

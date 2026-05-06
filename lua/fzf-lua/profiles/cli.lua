@@ -4,8 +4,10 @@ if NVIM_RUNTIME then vim.env.VIMRUNTIME = NVIM_RUNTIME end
 
 ---@diagnostic disable-next-line: deprecated
 local api, uv, fn = vim.api, vim.uv or vim.loop, vim.fn
----@module 'ffi'?
-local ffi = vim.F.npcall(require, "ffi")
+local ffi
+if package.preload.ffi then
+  ffi = package.preload.ffi()
+end
 
 pcall(function()
   ffi.cdef [[
