@@ -723,7 +723,7 @@ function FzfWin.new(o)
   self.preview_hidden = not not o.winopts.preview.hidden -- force boolean
   self.keymap = o.keymap
   self.previewer = o.previewer
-  self:set_autoclose(vim.F.if_nil(o.autoclose, true))
+  self:set_autoclose(utils.nonnil(o.autoclose, true))
   self.winopts = self:normalize_winopts()
   self.on_closes = {}
   _self = self

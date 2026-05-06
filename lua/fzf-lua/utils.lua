@@ -1765,5 +1765,15 @@ end
 ---@class fzf-lua.wo: vim.wo,{}
 M.wo = new_win_opt_accessor()
 
+---@diagnostic disable-next-line: deprecated
+M.nonnil = vim.nonnil or vim.F.if_nil
+
+---@diagnostic disable-next-line: deprecated
+M.npcall = vim.npcall or vim.F.npcall
+
+---@diagnostic disable-next-line: deprecated
+M.nil_wrap = not vim.nonnil and vim.F.nil_wrap or function(fn)
+  return function(...) return M.npcall(fn, ...) end
+end
 
 return M
