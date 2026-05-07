@@ -46,13 +46,13 @@ local function server_listen(server_socket, server_socket_path)
       os.exit(0)
     end
 
-    if _is_linux then
-      while true do
-        local len = uv.fs_sendfile(1, receive_socket:fileno(), 0, 1024 * 1024)
-        local eof = len == 0
-        if eof then finish() end
-      end
-    end
+    -- if _is_linux then
+    --   while true do
+    --     local len = uv.fs_sendfile(1, receive_socket:fileno(), 0, 1024 * 1024)
+    --     local eof = len == 0
+    --     if eof then finish() end
+    --   end
+    -- end
 
     receive_socket:read_start(function(err, data)
       assert(not err)
