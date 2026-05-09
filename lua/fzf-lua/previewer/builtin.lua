@@ -959,6 +959,11 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   -- kill previously running jobs
   self:_stop_preview_job()
 
+  if entry._scratch_buf then
+    self:set_preview_buf(entry._scratch_buf)
+    self:preview_buf_post(entry)
+    return
+  end
   -- check if cached is update-to-date to be reuse
   local cached, stale = self.bcache:check(entry)
   entry.cached = cached

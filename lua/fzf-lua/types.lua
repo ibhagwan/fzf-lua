@@ -39,6 +39,7 @@ local FzfLua = require("fzf-lua")
 ---@field end_col? integer 1-based
 ---@field open_term? boolean open_term for content (cmd always open_term)
 ---@field cache_key? any unique cache key for entry (to reuse preview buffer)
+---@field _scratch_buf? integer "unmanaged" buffer
 
 ---@class fzf-lua.keymap.Entry: fzf-lua.buffer_or_file.Entry
 ---@field vmap string?

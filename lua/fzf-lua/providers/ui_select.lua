@@ -181,7 +181,17 @@ M.ui_select = function(items, ui_opts, on_choice)
       _ctor = function()
         local previewer = require("fzf-lua.previewer.builtin").buffer_or_file:extend()
         ---@diagnostic disable-next-line: unused
-        function previewer:parse_entry(entry_str, cb) return ui_opts.preview_item(entry_str, cb) end
+        function previewer:parse_entry(entry_str, cb)
+          local res = assert(ui_opts.preview_item(entry_str, cb))
+          local pos_start, pos_end = res.pos, res.pos_end
+          return {
+            _scratch_buf = res.buf,
+            line = pos_start and pos_start[1] or 1,
+            col = pos_start and pos_start[2] or 1,
+            end_line = pos_end and pos_end[1] or 1,
+            end_col = pos_end and pos_end[2] or 1,
+          }
+        end
 
         return previewer
       end
