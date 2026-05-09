@@ -78,10 +78,13 @@ M.ui_select = function(items, ui_opts, on_choice)
   local entries = {}
   local num_width = math.ceil(math.log10(#items))
   local num_format_str = "%" .. num_width .. "d"
+  local reverse_lookup = {}
   for i, e in ipairs(items) do
-    table.insert(entries,
-      ("%s. %s"):format(utils.ansi_codes.magenta(num_format_str:format(i)),
-        ui_opts.format_item and ui_opts.format_item(e) or tostring(e)))
+    local entry = ("%s. %s"):format(utils.ansi_codes.magenta(num_format_str:format(i)),
+      ui_opts.format_item and ui_opts.format_item(e) or tostring(e))
+    entries[#entries + 1] = entry
+    -- fzf will to strip all ansi (even in item str), so we store stripped key
+    reverse_lookup[utils.strip_ansi_coloring(entry)] = i
   end
 
   local opts = _OPTS or {}
@@ -182,7 +185,8 @@ M.ui_select = function(items, ui_opts, on_choice)
         local previewer = require("fzf-lua.previewer.builtin").buffer_or_file:extend()
         ---@diagnostic disable-next-line: unused
         function previewer:parse_entry(entry_str, cb)
-          local res = assert(ui_opts.preview_item(entry_str, cb))
+          local str = utils.strip_ansi_coloring(entry_str)
+          local res = assert(ui_opts.preview_item(items[reverse_lookup[str]], cb))
           local pos_start, pos_end = res.pos, res.pos_end
           return {
             _scratch_buf = res.buf,
