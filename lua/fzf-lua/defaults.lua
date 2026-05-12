@@ -1047,22 +1047,23 @@ M.defaults.history = vim.tbl_deep_extend("force", {}, M.defaults.oldfiles, {
 ---Only include entries with valid file/line information.
 ---@field valid_only boolean
 M.defaults.quickfix = {
-  previewer   = M._default_previewer_fn,
-  separator   = "▏",
-  file_icons  = 1, ---@type integer|boolean
-  color_icons = true,
-  git_icons   = false,
-  valid_only  = false,
-  fzf_opts    = {
+  previewer        = M._default_previewer_fn,
+  separator        = "▏",
+  file_icons       = 1, ---@type integer|boolean
+  color_icons      = true,
+  git_icons        = false,
+  valid_only       = false,
+  fzf_opts         = {
     ["--multi"]     = true,
     ["--delimiter"] = "[\\]:]",
     ["--with-nth"]  = "2..",
   },
-  actions     = { ["ctrl-x"] = { fn = actions.list_del, reload = true } },
-  _actions    = function() return M.globals.actions.files end,
-  _treesitter = true,
-  _cached_hls = { "path_colnr", "path_linenr" },
-  _headers    = { "actions", "cwd" },
+  line_field_index = "{3}",
+  actions          = { ["ctrl-x"] = { fn = actions.list_del, reload = true } },
+  _actions         = function() return M.globals.actions.files end,
+  _treesitter      = true,
+  _cached_hls      = { "path_colnr", "path_linenr" },
+  _headers         = { "actions", "cwd" },
 }
 
 ---Quickfix list history.
@@ -1079,22 +1080,23 @@ M.defaults.quickfix_stack = {
 ---@class fzf-lua.config.Loclist : fzf-lua.config.Quickfix: fzf-lua.config.Base
 ---@field is_loclist true
 M.defaults.loclist = {
-  previewer   = M._default_previewer_fn,
-  separator   = "▏",
-  file_icons  = 1, ---@type integer|boolean
-  color_icons = true,
-  git_icons   = false,
-  valid_only  = false,
-  fzf_opts    = {
+  previewer        = M._default_previewer_fn,
+  separator        = "▏",
+  file_icons       = 1, ---@type integer|boolean
+  color_icons      = true,
+  git_icons        = false,
+  valid_only       = false,
+  fzf_opts         = {
     ["--multi"]     = true,
     ["--delimiter"] = "[\\]:]",
     ["--with-nth"]  = "2..",
   },
-  actions     = { ["ctrl-x"] = { fn = actions.list_del, reload = true } },
-  _actions    = function() return M.globals.actions.files end,
-  _treesitter = true,
-  _cached_hls = { "path_colnr", "path_linenr" },
-  _headers    = { "actions", "cwd" },
+  line_field_index = "{3}",
+  actions          = { ["ctrl-x"] = { fn = actions.list_del, reload = true } },
+  _actions         = function() return M.globals.actions.files end,
+  _treesitter      = true,
+  _cached_hls      = { "path_colnr", "path_linenr" },
+  _headers         = { "actions", "cwd" },
 }
 
 ---Location list history.
