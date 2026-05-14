@@ -17,9 +17,14 @@ function M.check()
         warn("'" .. tool .. "' not found")
       end
     else
-      local version = vim.fn.system(tool .. " --version") or ""
-      version = vim.trim(assert(vim.split(version, "\n")[1]))
-      local is_ok = vim.v.shell_error == 0
+      -- Windows built-in tools don't support --version and output non-UTF-8 error messages
+      if is_win and (tool == "find" or tool == "dir") then
+        ok("'" .. tool .. "' (Windows built-in)")
+        return true
+      end
+      local out, rc = utils.io_system({ tool, "--version" })
+      local version = vim.trim(vim.split(out, "\n")[1] or "")
+      local is_ok = rc == 0
       (is_ok and ok or error)("'" .. tool .. "' `" .. version .. "`")
       return true
     end
