@@ -33,6 +33,9 @@ if filter then
   end
 end
 
+-- make _G.FzfLua usable in test (e.g. headless_spec.lua)
+require("fzf-lua")
+
 -- https://github.com/neovim/neovim/pull/36557
 local sig = assert(vim.uv.new_signal())
 sig:start(vim.uv.constants.SIGINT, function() MiniTest.stop() end)
