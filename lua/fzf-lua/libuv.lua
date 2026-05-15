@@ -502,7 +502,7 @@ M.spawn_stdio = function(opts)
 
   local function exit(exit_code, msg)
     if msg then stderr_write(msg) end
-    os.exit(exit_code)
+    vim.cmd.cquit(exit_code)
   end
 
   local function pipe_open(pipename)
