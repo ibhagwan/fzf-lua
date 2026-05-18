@@ -17,6 +17,7 @@ M.__HAS_NVIM_0102 = vim.fn.has("nvim-0.10.2") == 1
 M.__HAS_NVIM_011 = vim.fn.has("nvim-0.11") == 1
 M.__HAS_NVIM_0116 = vim.fn.has("nvim-0.11.6") == 1
 M.__HAS_NVIM_012 = vim.fn.has("nvim-0.12") == 1
+M.__HAS_NVIM_013 = vim.fn.has("nvim-0.13") == 1
 M.__IS_WINDOWS = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 -- `:help shellslash` (for more info see #1055)
 M.__WIN_HAS_SHELLSLASH = M.__IS_WINDOWS and vim.fn.exists("+shellslash") == 1
@@ -1293,6 +1294,8 @@ function M.nvim_open_win(bufnr, enter, config)
 end
 
 function M.nvim_open_win0(bufnr, enter, config)
+  -- TODO: why is nvim_win_call returning nil on nightly (#2732)?
+  if M.__HAS_NVIM_013 then return vim.api.nvim_open_win(bufnr, enter, config) end
   local winid = (M.__CTX() or {}).winid
   if not winid or not vim.api.nvim_win_is_valid(winid) then
     return vim.api.nvim_open_win(bufnr, enter, config)
