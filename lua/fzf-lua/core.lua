@@ -365,6 +365,7 @@ M.fzf = function(contents, opts)
     opts.fzf_opts["--preview-window"] = "hidden:right:0"
   end
 
+  if opts.__CTX.mode == "c" then vim.api.nvim_feedkeys(vim.keycode("<c-c>"), "n", false) end
   -- Create the window before we calculate the preview window layout
   local fzf_bufnr = fzf_win:create()
 
