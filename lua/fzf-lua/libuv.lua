@@ -547,9 +547,9 @@ M.spawn_stdio = function(opts)
   local on_finish = function(code)
     pipe_close(stdout)
     pipe_close(stderr)
-    if vim.in_fast_event() and fn_postprocess then
+    if vim.in_fast_event() then
       vim.schedule(function()
-        fn_postprocess(opts)
+        if fn_postprocess then fn_postprocess(opts) end
         exit(code)
       end)
     else
