@@ -495,12 +495,6 @@ M.treesitter = function(opts)
   opts = config.normalize_opts(opts, "treesitter")
   if not opts then return end
 
-  local __has_ts, _ = pcall(require, "nvim-treesitter")
-  if not __has_ts then
-    utils.info("Treesitter requires 'nvim-treesitter'.")
-    return
-  end
-
   -- Default to current buffer
   local bufnr0 = utils.tointeger(opts.bufnr) or vim.api.nvim_get_current_buf()
   local bufname0 = path.basename(vim.api.nvim_buf_get_name(bufnr0))
