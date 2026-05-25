@@ -567,7 +567,7 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
         "lsp_document_symbols",
         desc = "Symbols (buf)",
         prefix = "@",
-        opts = { no_autoclose = true }
+        opts = { no_autoclose = true, fzf_opts = { ["--with-nth"] = false } }
       } or {
         "btags",
         desc = "Tags (buf)",
