@@ -251,7 +251,7 @@ end
 M.grep_cword = function(opts)
   if not opts then opts = {} end
   opts.no_esc = true
-  opts.search = [[\b]] .. utils.rg_escape(vim.fn.expand("<cword>")) .. [[\b]]
+  opts.search = utils.rg_escape_cword(vim.fn.expand("<cword>"))
   return M.grep(opts)
 end
 

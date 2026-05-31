@@ -266,7 +266,7 @@ M.grep_cword = function(opts)
   opts = opts or {}
   opts.no_esc = true
   -- match whole words only (#968)
-  opts.search = [[\b]] .. utils.rg_escape(vim.fn.expand("<cword>")) .. [[\b]]
+  opts.search = utils.rg_escape_cword(vim.fn.expand("<cword>"))
   return M.grep(opts)
 end
 
