@@ -245,6 +245,17 @@ function M.rg_escape(str)
   return ret
 end
 
+--- Escape a word and wrap it in `\b` word boundaries (#968), but only on edges
+--- that are word characters: a `\b` next to a non-word char (e.g. a cword
+--- ending in `$`) can never match and would yield no results.
+--- @param word string
+--- @return string
+function M.rg_escape_cword(word)
+  local bl = word:match("^[%w_]") and [[\b]] or ""
+  local br = word:match("[%w_]$") and [[\b]] or ""
+  return bl .. M.rg_escape(word) .. br
+end
+
 ---@param str string
 ---@return string
 function M.regex_to_magic(str)
