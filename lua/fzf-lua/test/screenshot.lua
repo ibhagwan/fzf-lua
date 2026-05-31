@@ -47,11 +47,18 @@ end
 
 ---@param s string
 ---@return string[]
-local function string_to_chars(s)
+local function string_to_screenchars(s)
   -- Can't use `vim.split(s, '')` because of multibyte characters
   local res = {}
   for i = 1, vim.fn.strchars(s) do
-    table.insert(res, vim.fn.strcharpart(s, i - 1, 1))
+    local ch = vim.fn.strcharpart(s, i - 1, 1)
+    table.insert(res, ch)
+    -- Not single-width characters are read as a single char, but result into
+    -- `{ ch, '', ... }` when computing observed screenshot (as this is how
+    -- `vim.fn.screenstring()` works)
+    for _ = 1, vim.fn.strdisplaywidth(ch) - 1 do
+      table.insert(res, "")
+    end
   end
   return res
 end
@@ -66,10 +73,7 @@ function M.from_lines(text_lines, opts)
   if opts and opts.normalize_paths then
     text_lines = vim.tbl_map(function(x) return (x:gsub([[\]], [[/]])) end, text_lines)
   end
-  local f = function(x)
-    return string_to_chars(x)
-  end
-  return screenshot_new({ text = vim.tbl_map(f, text_lines) }, opts)
+  return screenshot_new({ text = vim.tbl_map(string_to_screenchars, text_lines) }, opts)
 end
 
 ---@param child MiniTest.child
@@ -109,7 +113,7 @@ local screenshot_read = function(path)
   local lines = vim.fn.readfile(path)
   local text_lines = vim.list_slice(lines, 2, #lines)
 
-  local f = function(x) return H.string_to_chars(x:gsub("^%d+|", "")) end
+  local f = function(x) return string_to_screenchars(x:gsub("^%d+|", "")) end
   return screenshot_new({ text = vim.tbl_map(f, text_lines) }, opts)
 end
 

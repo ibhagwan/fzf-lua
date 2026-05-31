@@ -17,3 +17,6 @@ vim.env.FZF_DEFAULT_OPTS_FILE = nil
 vim.env.FZF_DEFAULT_COMMAND = nil
 vim.env.FZF_API_KEY = nil
 vim.env.LC_ALL = "C"
+
+-- make _G.FzfLua usable in test (e.g. headless_spec.lua)
+require("fzf-lua")
