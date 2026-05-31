@@ -1066,11 +1066,14 @@ function FzfWin:create()
       -- if we're not doing this the result might be all over the place
       local winnrs = vim.tbl_map(api.nvim_win_get_number, api.nvim_tabpage_list_wins(0))
       local parts = vim.split(winrestcmd, "|")
-      local cmd = vim.tbl_map(function(cmd_part)
-        local winnr = tonumber(cmd_part:match("(.)resize"))
-        return utils.tbl_contains(winnrs, winnr) and cmd_part or ""
-      end, parts)
-      vim.cmd(table.concat(cmd, "|"))
+      local cmd = {}
+      for _, cmd_part in ipairs(parts) do
+        local winnr = tonumber(cmd_part:match("(%d+)resize"))
+        if utils.tbl_contains(winnrs, winnr) then
+          table.insert(cmd, cmd_part)
+        end
+      end
+      if #cmd > 0 then vim.cmd(table.concat(cmd, "|")) end
       -- Also restore cmdheight, will be wrong if vim resized (#1462)
       vim.o.cmdheight = cmdheight
     end
