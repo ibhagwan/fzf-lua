@@ -676,10 +676,10 @@ M.defaults.git = {
   ---Git reference used as the base for the comparison.
   ---@field ref1? string
   diff = {
-    cmd               = "git --no-pager diff --name-only {ref1} {ref}",
+    cmd               = "git --no-pager diff --color=always --name-only {ref1} {ref}",
     ref               = nil,
     ref1              = nil,
-    preview           = "git diff {ref1} {ref} {file}",
+    preview           = "git diff --color=always {ref1} {ref} {file}",
     preview_pager     = M._preview_pager_fn,
     multiprocess      = 1, ---@type integer|boolean
     _type             = "file",
