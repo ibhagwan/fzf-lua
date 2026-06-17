@@ -216,6 +216,46 @@ M.bcommits = function(opts)
   end
   local git_root = path.git_root(opts)
   if not git_root then return end
+  -- `follow`: list (and preview) the buffer's history across renames. We resolve
+  -- the filename the buffer had at each commit via `git log --follow --name-only`
+  -- (which prints the per-commit name with no rename-chain bookkeeping), embedding
+  -- it as a hidden fzf field so the preview/actions reference the correct path for
+  -- commits where the file was named differently.
+  if opts.follow and not utils.mode_is_visual() then
+    local display_fmt = opts.cmd:match('%-%-pretty=format:"(.-)"') or "%C(yellow)%h%Creset %s"
+    local relfile = path.relative_to(vim.fn.expand("%:p"), git_root)
+    -- \1 marks a header line; \31 separates the clean sha from the coloured display
+    local logcmd = path.git_cwd({
+      "git", "-c", "core.quotepath=false",
+      "log", "--follow", "--name-only", "--color=always",
+      "--pretty=format:%x01%h%x1f" .. display_fmt, "--", relfile,
+    }, opts)
+    local entries, sha, disp = {}, nil, nil
+    for _, line in ipairs(utils.io_systemlist(logcmd)) do
+      local s, d = line:match("^\1([^\31]*)\31(.*)$")
+      if s then
+        sha, disp = s, d
+      elseif sha and #line > 0 then
+        local fname = line:gsub("\27%[[%d;]*m", "") -- defensive ANSI strip
+        entries[#entries + 1] = string.format("%s\t%s\t%s", sha, fname, disp)
+        sha = nil
+      end
+    end
+    opts.fzf_opts = opts.fzf_opts or {}
+    if opts.fzf_opts["--delimiter"] == nil then opts.fzf_opts["--delimiter"] = "\t" end
+    if opts.fzf_opts["--with-nth"] == nil then opts.fzf_opts["--with-nth"] = "3.." end
+    opts.preview = "git show --color {1} -- {2}"
+    opts.preview = git_preview(opts)
+    ---@class fzf-lua.config.GitBcommitsFollow: fzf-lua.config.GitBcommits
+    ---@field fn_match_commit_hash? fun(line: string, opts: table): string?
+    ---@field fn_match_file? fun(line: string, opts: table): string?
+    ---@cast opts fzf-lua.config.GitBcommitsFollow
+    opts.fn_match_commit_hash = opts.fn_match_commit_hash
+        or function(l) return l:match("^[^\t]+") end
+    opts.fn_match_file = opts.fn_match_file
+        or function(l) return (l:match("^[^\t]+\t([^\t]+)")) end
+    return core.fzf_exec(entries, opts)
+  end
   local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p"), git_root))
   local range
   if utils.mode_is_visual() then
