@@ -1116,7 +1116,10 @@ M.git_buf_edit = function(selected, opts)
   local git_root = assert(path.git_root(opts, true), "not in git directory")
   local win = vim.api.nvim_get_current_win()
   local buffer_filetype = vim.bo.filetype
-  local file = path.relative_to(path.normalize(vim.fn.expand("%:p")), git_root)
+  -- `fn_match_file` lets a provider (e.g. bcommits `follow`) resolve the path the
+  -- buffer had at the selected commit; otherwise fall back to the current name.
+  local file = type(opts.fn_match_file) == "function" and opts.fn_match_file(selected[1], opts)
+      or path.relative_to(path.normalize(vim.fn.expand("%:p")), git_root)
   local commit_hash = match_commit_hash(selected[1], opts)
   table.insert(cmd, commit_hash .. ":" .. file)
   local git_file_contents = utils.io_systemlist(cmd)

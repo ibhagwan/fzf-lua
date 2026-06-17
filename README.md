@@ -936,6 +936,8 @@ previewers = {
     },
     bcommits = {
       prompt        = 'BCommits❯ ',
+      -- follow the buffer's history across renames
+      follow        = false,
       -- default preview shows a git diff vs the previous commit
       -- if you prefer to see the entire commit you can use:
       --   git show --color {1} --rotate-to={file}
