@@ -33,4 +33,5 @@ return {
   btags = { previewer = "bat" },
   lines = { _treesitter = false },
   blines = { _treesitter = false },
+  ui_select = { preview_type = "native" },
 }

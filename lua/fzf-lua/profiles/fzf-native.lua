@@ -21,4 +21,5 @@ return {
   lsp = { code_actions = { previewer = "codeaction_native" } },
   tags = { previewer = "bat" },
   btags = { previewer = "bat" },
+  ui_select = { preview_type = "native" },
 }
