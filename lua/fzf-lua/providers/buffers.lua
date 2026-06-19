@@ -216,7 +216,12 @@ M.buffers = function(opts)
   if not opts then return end
 
   local contents = function(cb)
-    local buflist = assert(utils.CTX().buflist)
+    -- `contents` can run asynchronously via fzf's `reload` action (#2736),
+    -- possibly after the picker was closed or its context was re-created
+    -- without `buflist` (e.g. another picker started). Request the buffer
+    -- list explicitly instead of relying on the context created when the
+    -- picker was opened.
+    local buflist = assert(utils.CTX({ includeBuflist = true }).buflist)
     local filtered, _, max_bufnr = filter_buffers(opts, buflist)
 
     if next(filtered) then
