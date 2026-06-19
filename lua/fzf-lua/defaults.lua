@@ -2204,6 +2204,22 @@ M.defaults.complete_line = vim.tbl_deep_extend("force", M.defaults.blines, {
   complete = true,
 })
 
+
+---@class fzf-lua.config.UISelect: fzf-lua.config.Base
+M.defaults.ui_select = {
+  fzf_opts = { ["--no-multi"] = true },
+  ui_select = { preview_type = "native" },
+  actions = {
+    ["enter"] = {
+      fn = function(...)
+        return require("fzf-lua.providers.ui_select").accept_item(...)
+      end,
+      desc = "accept-item"
+    }
+  }
+}
+
+
 M.defaults.file_icon_padding = ""
 
 -- No need to sset this, already defaults to `nvim_open_win`
