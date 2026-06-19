@@ -53,6 +53,19 @@ M.accept_item = function(selected, o)
   o._on_choice_called = true
 end
 
+local resolve_preview_type = function(ui_opts, opts)
+  local preview_type = ui_opts.preview_type or opts.preview_type
+  if preview_type == nil then
+    local profile = opts.profile or opts[1]
+    local is_tmux_profile = profile == "fzf-tmux"
+        or (type(profile) == "table" and vim.tbl_contains(profile, "fzf-tmux"))
+    preview_type = (is_tmux_profile
+          or (opts.fzf_opts and opts.fzf_opts["--tmux"]))
+        and "native" or "buffer"
+  end
+  return preview_type
+end
+
 M.ui_select = function(items, ui_opts, on_choice)
   --[[
   -- Code Actions
@@ -89,20 +102,13 @@ M.ui_select = function(items, ui_opts, on_choice)
 
   local opts = _OPTS or {}
 
-  -- enables customization per kind (#755)
-  if type(opts) == "function" then
-    opts = opts(ui_opts, items)
-  end
+  opts = config.normalize_opts(opts, "ui_select")
+  if not opts then return end
 
   -- deepcopy register opts so we don't poullute the original tbl ref (#2241)
   if type(opts) == "table" then
     opts = utils.tbl_deep_clone(opts)
   end
-
-  opts.fzf_opts = vim.tbl_extend("keep", opts.fzf_opts or {}, {
-    ["--no-multi"]       = true,
-    ["--preview-window"] = "hidden:right:0",
-  })
 
   -- Force override prompt or it stays cached (#786)
   local prompt = ui_opts.prompt or "Select one of:"
@@ -112,10 +118,6 @@ M.ui_select = function(items, ui_opts, on_choice)
   opts._items = items
   opts._on_choice = on_choice
   opts._ui_select = ui_opts
-
-  opts.actions = vim.tbl_deep_extend("keep", opts.actions or {}, {
-    ["enter"] = { fn = M.accept_item, desc = "accept-item" }
-  })
 
   -- schedule to avoid our coroutine break external async logic #2719
   opts.fn_selected = vim.schedule_wrap(function(selected, o)
@@ -180,26 +182,78 @@ M.ui_select = function(items, ui_opts, on_choice)
   end
 
   if ui_opts.preview_item then
-    opts.previewer = {
-      _ctor = function()
-        local previewer = require("fzf-lua.previewer.builtin").buffer_or_file:extend()
-        ---@diagnostic disable-next-line: unused
-        function previewer:parse_entry(entry_str, cb)
-          local str = utils.strip_ansi_coloring(entry_str)
-          local res = assert(ui_opts.preview_item(items[reverse_lookup[str]], cb))
-          local pos_start, pos_end = res.pos, res.pos_end
-          return {
-            _scratch_buf = res.buf,
-            line = pos_start and pos_start[1] or 1,
-            col = pos_start and pos_start[2] or 1,
-            end_line = pos_end and pos_end[1] or 1,
-            end_col = pos_end and pos_end[2] or 1,
-          }
-        end
+    local preview_type = resolve_preview_type(ui_opts, opts)
+    if preview_type == "native" then
+      local tmpfile = vim.fn.tempname()
+      opts.preview = {
+        fn = function(s)
+          if not s or not s[1] then return utils.shell_nop() end
+          local idx = reverse_lookup[utils.strip_ansi_coloring(s[1])]
+          if not idx or not items[idx] then return utils.shell_nop() end
+          local res = ui_opts.preview_item(items[idx])
+          if type(res) ~= "table" or not res.buf or not vim.api.nvim_buf_is_valid(res.buf) then
+            return utils.shell_nop()
+          end
+          local fd, _ = io.open(tmpfile, "w")
+          if fd then
+            fd:write(table.concat(vim.api.nvim_buf_get_lines(res.buf, 0, -1, false), "\n"))
+            fd:close()
+          end
+          local ft = vim.bo[res.buf].filetype or vim.filetype.match({ buf = res.buf })
+          local cat = utils.__IS_WINDOWS and "type" or "cat"
+          local nul = utils.__IS_WINDOWS and "NUL" or "/dev/null"
+          local tmp_esc = require("fzf-lua.libuv").shellescape(tmpfile)
+          if ft and ft ~= "" then
+            return ("bat --style=numbers,changes --color=always --language=%s %s 2>%s || %s %s")
+                :format(ft, tmp_esc, nul, cat, tmp_esc)
+          end
+          return ("bat --style=numbers,changes --color=always %s 2>%s || %s %s"):format(
+            tmp_esc, nul, cat, tmp_esc)
+        end,
+        type = "cmd",
+      }
 
-        return previewer
+      -- `preview_offset` is a static fzf flag, so we seed it once from
+      -- the first item's `pos`. The user can scroll within fzf for
+      -- per-entry offsets; the common case is one shared buffer.
+      if items[1] then
+        local first = ui_opts.preview_item(items[1])
+        if first and first.pos and first.pos[1] then
+          opts.preview_offset = ("+%d"):format(first.pos[1])
+        end
       end
-    }
+
+      opts.winopts = opts.winopts or {}
+      local prev_on_close = opts.winopts.on_close
+      opts.winopts.on_close = function(...)
+        if prev_on_close then prev_on_close(...) end
+        pcall(os.remove, tmpfile)
+      end
+    else
+      opts.previewer = {
+        _ctor = function()
+          local previewer = require("fzf-lua.previewer.builtin").buffer_or_file:extend()
+          ---@diagnostic disable-next-line: unused
+          function previewer:parse_entry(entry_str, cb)
+            local str = utils.strip_ansi_coloring(entry_str)
+            local res = ui_opts.preview_item(items[reverse_lookup[str]], cb)
+            if type(res) ~= "table" or (not res.buf and not res.pos) then
+              return { content = { { { "No preview available", "Error" } } }, }
+            end
+            local pos_start, pos_end = res.pos, res.pos_end
+            return {
+              _scratch_buf = res.buf,
+              line = pos_start and pos_start[1] or 1,
+              col = pos_start and pos_start[2] or 1,
+              end_line = pos_end and pos_end[1] or 1,
+              end_col = pos_end and pos_end[2] or 1,
+            }
+          end
+
+          return previewer
+        end,
+      }
+    end
   elseif _OPTS_ONCE then
     -- merge and clear the once opts sent from lsp_code_actions.
     -- We also override actions to guarantee a single default
