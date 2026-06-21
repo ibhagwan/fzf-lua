@@ -1327,7 +1327,9 @@ M.undo = function(selected, _opts)
   utils.info("Undo jump to %s.", seq == "0" and "origin" or "change #" .. tostring(seq))
 end
 
-local parse_entry = function(e) return e and e:match("%((.-)%)") or nil end
+local parse_entry = function(e)
+  return e and utils.strip_ansi_coloring(e):match(utils.nbsp .. "(.-)$") or nil
+end
 
 M.serverlist_kill = function(sel)
   vim.iter(sel):map(parse_entry):each(function(addr)

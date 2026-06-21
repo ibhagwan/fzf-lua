@@ -543,7 +543,9 @@ local function make_screenshot(screenshot, addr, lines, columns)
 end
 
 function Previewer.nvim_server:cmdline(_)
-  local function parse_entry(e) return e and e:match("%((.-)%)") or nil end
+  local parse_entry = function(e)
+    return e and utils.strip_ansi_coloring(e):match(utils.nbsp .. "(.-)$") or nil
+  end
   local act = function(items, lines, columns)
     FzfLua.get_info().query = items[2] or ""
     local addr = parse_entry(items[1])

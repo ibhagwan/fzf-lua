@@ -794,15 +794,43 @@ M.serverlist = function(opts)
     return vim.iter(socket_paths):filter(filter)
   end
 
+  -- libuv normalizes `ru_maxrss` to kilobytes on all platforms
+  local function fmt_mem(rusage)
+    if not rusage or not rusage.maxrss then return "?" end
+    local kb = rusage.maxrss
+    if kb < 1024 then return string.format("%dK", kb) end
+    if kb < 1024 * 1024 then return string.format("%.1fM", kb / 1024) end
+    return string.format("%.2fG", kb / (1024 * 1024))
+  end
+
   opts = require("fzf-lua.config").normalize_opts(opts or {}, "serverlist")
 
   local f = function(cb)
-    serverlist():each(function(p) ---@type boolean, string?
-      local ok, cwd = utils.rpcexec(p, "nvim_exec_lua", "return vim.uv.cwd()", {})
-      if not ok or not cwd then return end
+    local entries = {}
+    serverlist():each(function(p)
+      local ok, ret = utils.rpcexec(p, "nvim_exec_lua",
+        "return { vim.uv.cwd(), vim.uv.getrusage() }", {})
+      if not ok or type(ret) ~= "table" then return end
+      local cwd, rusage = ret[1], ret[2]
+      if not cwd then return end
       cwd = FzfLua.path.normalize(cwd)
-      cb(("%s (%s)"):format(cwd, p))
+      entries[#entries + 1] = {
+        cwd = cwd,
+        rusage = rusage,
+        socket = p,
+      }
     end)
+    local max_cwd = 0
+    for _, e in ipairs(entries) do
+      if #e.cwd > max_cwd then max_cwd = #e.cwd end
+    end
+    for _, e in ipairs(entries) do
+      cb(("%-" .. max_cwd .. "s %s%s%s"):format(
+        e.cwd,
+        utils.ansi_codes.cyan(string.format("%7s", fmt_mem(e.rusage))),
+        utils.nbsp,
+        utils.ansi_codes.grey(e.socket)))
+    end
     cb(nil)
   end
   if utils.has(opts, "sk", "3.0.0") then
