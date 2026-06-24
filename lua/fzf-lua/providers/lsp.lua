@@ -166,11 +166,13 @@ local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
   for _, call_hierarchy_call in pairs(result) do
     --- "from" for incoming calls and "to" for outgoing calls
     local call_hierarchy_item = call_hierarchy_call.from or call_hierarchy_call.to
+    local is_outgoing = call_hierarchy_call.to ~= nil
     for _, range in pairs(call_hierarchy_call.fromRanges) do
       local location = {
-        uri = call_hierarchy_item.uri,
+        uri = is_outgoing and vim.uri_from_bufnr(utils.CTX().bufnr) or call_hierarchy_item.uri,
         range = range,
-        filename = vim.uri_to_fname(call_hierarchy_item.uri),
+        filename = is_outgoing and vim.api.nvim_buf_get_name(utils.CTX().bufnr)
+            or vim.uri_to_fname(call_hierarchy_item.uri),
         text = call_hierarchy_item.name,
         lnum = range.start.line + 1,
         col = range.start.character + 1,
