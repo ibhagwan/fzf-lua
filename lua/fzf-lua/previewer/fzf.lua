@@ -331,7 +331,7 @@ Previewer.git_diff = Previewer.base:extend()
 ---@return fzf-lua.previewer.GitDiff
 function Previewer.git_diff:new(o, opts)
   Previewer.git_diff.super.new(self, o, opts)
-  self.cmd_deleted = path.git_cwd(o.cmd_deleted, opts)
+  self.cmd_deleted = o.cmd_deleted and path.git_cwd(o.cmd_deleted, opts) or nil
   self.cmd_modified = path.git_cwd(o.cmd_modified, opts)
   self.cmd_untracked = path.git_cwd(o.cmd_untracked, opts)
   local pager = opts.preview_pager == nil and o.pager or opts.preview_pager
@@ -384,7 +384,7 @@ function Previewer.git_diff:cmdline(o)
     if is_modified then
       cmd = self.cmd_modified
     elseif is_deleted then
-      cmd = self.cmd_deleted
+      cmd = self.cmd_deleted or self.cmd_modified
     elseif is_untracked then
       local stat = entry.path and uv.fs_stat(entry.path)
       ---@diagnostic disable-next-line: undefined-field

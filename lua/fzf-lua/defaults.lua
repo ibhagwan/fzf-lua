@@ -310,12 +310,15 @@ M.defaults = {
     ---@class fzf-lua.config.GitDiffPreviewer: fzf-lua.config.Previewer
     git_diff = {
       pager         = M._preview_pager_fn,
-      cmd_deleted   = "git diff --color HEAD --",
-      cmd_modified  = "git diff --color HEAD",
+      -- NOTE: deleted files are handled by cmd_modified as well since
+      -- `git diff HEAD -- <file>` works for both modified and deleted.
+      -- Users can still override cmd_deleted if they wish.
+      cmd_deleted   = nil,
+      cmd_modified  = "git diff --color HEAD --",
       cmd_untracked = "git diff --color --no-index /dev/null",
       -- TODO: modify previewer code to accept table cmd
       -- cmd_deleted   = { "git", "diff", "--color", "HEAD", "--" },
-      -- cmd_modified  = { "git", "diff", "--color", "HEAD" },
+      -- cmd_modified  = { "git", "diff", "--color", "HEAD", "--" },
       -- cmd_untracked = { "git", "diff", "--color", "--no-index", "/dev/null" },
       _fn_git_icons = function() return M.globals.git.icons end,
       _ctor         = previewers.fzf.git_diff,
