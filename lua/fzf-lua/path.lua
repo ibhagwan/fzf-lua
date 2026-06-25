@@ -648,6 +648,18 @@ function M.git_root(opts, noerr)
     if not noerr then utils.info(table.concat(output, "\n")) end
     return nil
   end
+  -- On Windows, MSYS2's native git package outputs Unix-style paths
+  -- (e.g. /home/user/repo) rather than Windows-style paths. Use cygpath
+  -- to convert when available. Only run cygpath when the path is not
+  -- already a Windows absolute path to avoid unnecessary overhead
+  -- for users of git-for-windows (which already returns C:\... paths).
+  -- Ref: https://github.com/ibhagwan/fzf-lua/issues/2745
+  if utils.__IS_WINDOWS and not M.is_absolute(output[1]) and vim.fn.executable("cygpath") == 1 then
+    local cyg_out, rc = utils.io_systemlist({ "cygpath", "-w", output[1] })
+    if rc == 0 and cyg_out[1] then
+      return cyg_out[1]
+    end
+  end
   return output[1]
 end
 
