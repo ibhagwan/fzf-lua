@@ -120,7 +120,7 @@ local GREP_PERL_REGEXP = utils.is_darwin() and "--extended-regexp" or "--perl-re
 ---@field scrolloff? integer
 ---Debounce time (milliseconds) for displaying the preview buffer in the builtin previewer.
 ---@field delay? integer
----@field winopts fzf-lua.config.PreviewerWinopts Window options for the builtin previewer.
+---@field winopts? fzf-lua.config.PreviewerWinopts Window options for the builtin previewer.
 ---(skim only option), allow preview process run in pty
 ---@field pty? boolean
 
