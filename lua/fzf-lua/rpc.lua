@@ -43,7 +43,7 @@ local function server_listen(server_socket, server_socket_path)
       -- on linux: zero event can freeze
       -- https://github.com/ibhagwan/fzf-lua/pull/1955#issuecomment-2785474217
       -- uv.stop()
-      os.exit(0)
+      vim.schedule_wrap(vim.cmd.cquit)(0)
     end
 
     -- if _is_linux then
@@ -56,7 +56,7 @@ local function server_listen(server_socket, server_socket_path)
 
     receive_socket:read_start(function(err, data)
       assert(not err)
-      if not data then finish() end
+      if not data then return finish() end
       io.write(data)
     end)
   end)
@@ -108,8 +108,9 @@ local rpc_nvim_exec_lua = function(opts)
     os.exit(1)
   end
 
-  uv.run("once")
-  uv.run() -- noreturn, quit by os.exit
+  while true do
+    vim.wait(100)
+  end
 end
 
 local args = vim.deepcopy(_G.arg)
