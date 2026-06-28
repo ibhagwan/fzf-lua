@@ -43,7 +43,7 @@ local function server_listen(server_socket, server_socket_path)
       -- on linux: zero event can freeze
       -- https://github.com/ibhagwan/fzf-lua/pull/1955#issuecomment-2785474217
       -- uv.stop()
-      vim.schedule_wrap(vim.cmd.cquit)(0)
+      vim.schedule_wrap(vim.cmd.cquit)({ count = 0, bang = true })
     end
 
     -- if _is_linux then
