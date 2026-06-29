@@ -168,8 +168,8 @@ return {
     previewer = { _ctor = require("fzf-lua.previewer").fzf.nvim_server },
     actions = {
       ["enter"] = function(s)
-        assert(s[1])
-        local remote = s[1]:match("%((.-)%)")
+        local remote = FzfLua.utils.strip_ansi_coloring(assert(s[1])):match(FzfLua.utils.nbsp ..
+          "(.-)$")
         for _, chan in ipairs(api.nvim_list_chans()) do
           if chan.stream ~= "stderr" then
             fn.chanclose(chan.id)
