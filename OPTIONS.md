@@ -1331,6 +1331,12 @@ Filetypes.
 
 Git commits (buffer).
 
+##### git_bcommits.follow
+
+Type: `boolean`, Default: `false`
+
+Follow the buffer's history across renames.
+
 #### git_blame
 
 Git blame (buffer).

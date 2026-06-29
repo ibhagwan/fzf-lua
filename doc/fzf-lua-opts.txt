@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*        For Neovim >= 0.9.0       Last change: 2026 April 25
+*fzf-lua-opts.txt*         For Neovim >= 0.9.0        Last change: 2026 May 01
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -1798,6 +1798,13 @@ Filetypes.
 git_bcommits                                       *fzf-lua-opts-git_bcommits*
 
 Git commits (buffer).
+
+
+git_bcommits.follow                         *fzf-lua-opts-git_bcommits.follow*
+
+Type: `boolean`, Default: `false`
+
+Follow the buffer's history across renames.
 
 
                                                                               
