@@ -803,42 +803,75 @@ M.serverlist = function(opts)
     return string.format("%.2fG", kb / (1024 * 1024))
   end
 
+  local function cpu_time_us(rusage)
+    if not rusage or not rusage.utime or not rusage.stime then return nil end
+    return (rusage.utime.sec * 1e6 + rusage.utime.usec)
+        + (rusage.stime.sec * 1e6 + rusage.stime.usec)
+  end
+
+  local function fmt_cpu(pct)
+    if not pct then return "  ?" end
+    if pct < 10 then return string.format("%.1f%%", pct) end
+    if pct < 100 then return string.format("%3.0f%%", pct) end
+    return string.format("%4.0f%%", pct)
+  end
+
   opts = require("fzf-lua.config").normalize_opts(opts or {}, "serverlist")
+
+  local SAMPLE_INTERVAL_MS = 50
 
   local f = function(cb)
     local entries = {}
     serverlist():each(function(p)
       local ok, ret = utils.rpcexec(p, "nvim_exec_lua",
-        "return { vim.uv.cwd(), vim.uv.getrusage() }", {})
+        "return { vim.uv.cwd(), vim.uv.getrusage(), vim.uv.hrtime() }", {})
       if not ok or type(ret) ~= "table" then return end
-      local cwd, rusage = ret[1], ret[2]
+      local cwd, rusage, wall_start = ret[1], ret[2], ret[3]
       if not cwd then return end
-      cwd = FzfLua.path.normalize(cwd)
       entries[#entries + 1] = {
-        cwd = cwd,
+        cwd = FzfLua.path.normalize(cwd),
         rusage = rusage,
+        wall_start = wall_start,
         socket = p,
       }
     end)
-    local max_cwd = 0
-    for _, e in ipairs(entries) do
-      if #e.cwd > max_cwd then max_cwd = #e.cwd end
-    end
-    for _, e in ipairs(entries) do
-      cb(("%-" .. max_cwd .. "s %s%s%s"):format(
-        e.cwd,
-        utils.ansi_codes.cyan(string.format("%7s", fmt_mem(e.rusage))),
-        utils.nbsp,
-        utils.ansi_codes.grey(e.socket)))
-    end
-    cb(nil)
+    vim.defer_fn(function()
+      for _, e in ipairs(entries) do
+        local ok, ret = utils.rpcexec(e.socket, "nvim_exec_lua",
+          "return { vim.uv.getrusage(), vim.uv.hrtime() }", {})
+        if ok and type(ret) == "table" then
+          local rusage2, wall_end = ret[1], ret[2]
+          if rusage2 and wall_end and e.wall_start then
+            local cpu1, cpu2 = cpu_time_us(e.rusage), cpu_time_us(rusage2)
+            if cpu1 and cpu2 and wall_end > e.wall_start then
+              e.cpu_pct = (cpu2 - cpu1) / ((wall_end - e.wall_start) / 1000) * 100
+            end
+          end
+        end
+      end
+      local max_cwd = 0
+      for _, e in ipairs(entries) do
+        if #e.cwd > max_cwd then max_cwd = #e.cwd end
+      end
+      for _, e in ipairs(entries) do
+        cb(("%-" .. max_cwd .. "s %s %s%s%s"):format(
+          e.cwd,
+          utils.ansi_codes.cyan(string.format("%7s", fmt_mem(e.rusage))),
+          utils.ansi_codes.yellow(string.format("%5s", fmt_cpu(e.cpu_pct))),
+          utils.nbsp,
+          utils.ansi_codes.grey(e.socket)))
+      end
+      cb(nil)
+    end, SAMPLE_INTERVAL_MS)
   end
   if utils.has(opts, "sk", "3.0.0") then
     opts = vim.tbl_deep_extend("force", opts, { winopts = { preview = { pty = true } } })
   end
-  core.fzf_exec(function(cb)
-    vim.defer_fn(function() f(cb) end, 50) -- wait for spawn/remote_exec?
-  end, opts)
+  if utils.has(opts, "fzf", "0.73.0") then
+    opts.actions             = opts.actions or {}
+    opts.actions["every(2)"] = { fn = function() end, reload = true }
+  end
+  core.fzf_exec(f, opts)
 end
 
 return M
