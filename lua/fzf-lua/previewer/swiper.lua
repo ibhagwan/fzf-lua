@@ -145,16 +145,14 @@ function M.base:highlight_matches()
   if not vim.api.nvim_win_is_valid(fzf_win) or not vim.api.nvim_buf_is_valid(fzf_buf) then
     return
   end
-  local height = vim.api.nvim_win_get_height(fzf_win)
-  local off = vim.o.cmdheight + (vim.o.laststatus and 1 or 0)
-  local lines = vim.o.lines
-  local l_s = lines - height - off + 1
-  local l_e = lines - off - 1
+  local top = vim.fn.line("w0", fzf_win)
+  local bot = vim.fn.line("w$", fzf_win)
+  local top_row = vim.fn.screenpos(fzf_win, top, 1).row
   local max_columns = vim.o.columns
   local buf_lines = vim.api.nvim_buf_get_lines(fzf_buf, 0, -1, false)
-  for r = l_s, l_e do
+  for buf_lnum = top, bot do
     (function()
-      local buf_lnum = r - l_s + 2
+      local r = top_row + (buf_lnum - top)
       local lnum, _, col_valid_idx, col_off = self:parse_lnum_col(assert(buf_lines[buf_lnum]))
       if not lnum or lnum < 1 then return end
       local state = { bytelen = 0 }
