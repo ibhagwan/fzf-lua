@@ -155,7 +155,8 @@ function M.base:highlight_matches()
   for r = l_s, l_e do
     (function()
       local buf_lnum = r - l_s + 2
-      local lnum, _, col_valid_idx, col_off = self:parse_lnum_col(assert(buf_lines[buf_lnum]))
+      if not buf_lines[buf_lnum] then return end
+      local lnum, _, col_valid_idx, col_off = self:parse_lnum_col(buf_lines[buf_lnum])
       if not lnum or lnum < 1 then return end
       local state = { bytelen = 0 }
       for c = 1, max_columns do
