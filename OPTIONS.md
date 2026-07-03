@@ -923,6 +923,7 @@ Type: `string`, Default: `"FzfLuaTitleFlags"`
 
 Main fzf (terminal) window title flags highlight group (hidden, etc).
 
+
 ---
 
 ## Pickers
