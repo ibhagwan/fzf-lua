@@ -1607,8 +1607,20 @@ function M.rpcexec(addr, method, ...)
   ---@type boolean, any
   local ok, chan = pcall(vim.fn.sockconnect, "pipe", addr, { rpc = true })
   if not ok or chan == 0 then return false, "Invalid channel" end
+  local timer = assert(vim.uv.new_timer())
+  local fired = false
+  pcall(function()
+    require("ffi").cdef [[bool channel_close(unsigned long long id, int part, const char **error);]]
+  end)
+  timer:start(200, 0, M.nil_wrap(function()
+    if not timer:is_closing() then timer:close() end
+    fired = true
+    require("ffi").C.channel_close(chan, 3, nil)
+  end))
   ---@cast chan integer
   local ret = { pcall(vim.rpcrequest, chan, method, ...) }
+  if not timer:is_closing() then timer:close() end
+  if fired then return false, "Timeout" end
   vim.fn.chanclose(chan)
   local tonil = function(v) if v == vim.NIL then return nil else return v end end
   return unpack(vim.tbl_map(tonil, ret))
