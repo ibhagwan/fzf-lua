@@ -220,6 +220,10 @@ function M.setup(opts, do_not_reset_defaults)
   M.setup_highlights()
   -- opt-in register ui.select via setup
   if opts.ui_select then
+    if type(opts.ui_select) == "boolean" then -- back compat #2768
+      opts.ui_select = opts.ui_select and {} or nil
+      vim.deprecate("ui_select = true", "ui_select = {}", "Jan 2027", "FzfLua")
+    end
     M.register_ui_select((type(opts.ui_select) == "table" or type(opts.ui_select) == "function")
       and opts.ui_select or nil,
       true) -- silent
