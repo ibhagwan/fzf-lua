@@ -149,4 +149,26 @@ T["ui_select"]["abort via esc"] = function()
   eq(child.lua_get([[_G._ui_select_choice]]), vim.NIL)
 end
 
+T["ui_select"]["registered function opts receive (ui_opts, items) #2770"] = function()
+  reload({ "default" })
+  -- `config.normalize_opts` calls function opts with no args; the wrapper
+  -- in `M.ui_select` must resolve the function with `(ui_opts, items)`
+  -- before normalizing, preserving the documented interface (#755).
+  exec_lua([[
+    FzfLua.register_ui_select(function(fzf_opts, items)
+      _G._ui_select_args = {
+        kind = fzf_opts.kind,
+        prompt = fzf_opts.prompt,
+        nitems = #items,
+      }
+      return {}
+    end)
+  ]])
+  open_picker({ "alpha", "beta" }, { "preview-line-1", "preview-line-2" },
+    { prompt = "Pick (fn):", kind = "codeaction" })
+  close_picker("<esc>")
+  eq(child.lua_get([[_G._ui_select_args]]),
+    { kind = "codeaction", prompt = "Pick (fn):", nitems = 2 })
+end
+
 return T
