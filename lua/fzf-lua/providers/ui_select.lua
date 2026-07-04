@@ -102,6 +102,15 @@ M.ui_select = function(items, ui_opts, on_choice)
 
   local opts = _OPTS or {}
 
+  -- enables customization per kind (#755): the registered opts can be a
+  -- function that returns an opts table based on the `ui_opts` (kind,
+  -- prompt, etc.) and the `items` being selected. `config.normalize_opts`
+  -- calls function opts with no args, so resolve the function here first
+  -- to preserve the historical `opts(ui_opts, items)` signature (#2770).
+  if vim.is_callable(opts) then
+    opts = opts(ui_opts, items)
+  end
+
   opts = config.normalize_opts(opts, "ui_select")
   if not opts then return end
 
