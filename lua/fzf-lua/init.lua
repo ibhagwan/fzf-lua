@@ -219,14 +219,15 @@ function M.setup(opts, do_not_reset_defaults)
   -- setup highlights
   M.setup_highlights()
   -- opt-in register ui.select via setup
-  if opts.ui_select then
-    if type(opts.ui_select) == "boolean" then -- back compat #2768
-      opts.ui_select = opts.ui_select and {} or nil
+  local ui_opts = opts.ui_select
+  opts.ui_select = nil -- function back compat #2770
+  if ui_opts then
+    if type(ui_opts) == "boolean" then -- boolean back compat #2768
+      ui_opts = ui_opts and {} or nil
       vim.deprecate("ui_select = true", "ui_select = {}", "Jan 2027", "FzfLua")
     end
-    M.register_ui_select((type(opts.ui_select) == "table" or type(opts.ui_select) == "function")
-      and opts.ui_select or nil,
-      true) -- silent
+    M.register_ui_select((type(ui_opts) == "table" or type(ui_opts) == "function")
+      and ui_opts or nil, true) -- silent
   end
 end
 
