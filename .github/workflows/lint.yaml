@@ -26,33 +26,25 @@ jobs:
           neovim: true
           version: nightly
 
-      - name: Install lua-language-server
+      # - name: Install lua-language-server
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: |
+      #     cd
+      #     gh release download 3.16.4 -R sumneko/lua-language-server -p '*-linux-x64.tar.gz' -D lua-language-server
+      #     tar xzf lua-language-server/* -C lua-language-server
+      #     echo "${PWD}/lua-language-server/bin" >> $GITHUB_PATH
+      #     export PATH="${PWD}/lua-language-server/bin:${PATH}"
+      #     lua-language-server --version
+
+      - name: Install emmylua_check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd
-          gh release download 3.16.4 -R sumneko/lua-language-server -p '*-linux-x64.tar.gz' -D lua-language-server
-          tar xzf lua-language-server/* -C lua-language-server
-          echo "${PWD}/lua-language-server/bin" >> $GITHUB_PATH
-          export PATH="${PWD}/lua-language-server/bin:${PATH}"
-          lua-language-server --version
-
-      - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-
-      - name: Install emmylua_check
-        uses: baptiste0928/cargo-install@v3
-        with:
-          crate: emmylua_check
-          git: https://github.com/EmmyLuaLs/emmylua-analyzer-rust
-          commit: 7c96abd684c3d840719c0d9d24ada5e5b1b81288
-          cache-key: emmylua-check-v1
+          make deps/emmylua_check
 
       - name: Lint
         run: |
           export XDG_DATA_HOME="$HOME/.local/share"
           make deps
-          make lint
           make emmylua-check
