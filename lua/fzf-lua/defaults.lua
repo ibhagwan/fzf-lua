@@ -1741,14 +1741,17 @@ M.defaults.lsp.finder = {
 ---@field _ui_select? { kind: string }
 ---@field _items any[]
 M.defaults.lsp.code_actions = {
-  async_or_timeout = 5000,
-  previewer        = "codeaction",
   -- previewer        = "codeaction_native",
-  fzf_opts         = { ["--no-multi"] = true },
-  -- NOTE: we don't need an action as code actions are executed by the ui.select
-  -- callback but we setup an empty table to indicate to `globals.__index` that
-  -- we need to inherit from the global defaults (#1232)
-  actions          = {},
+  previewer = "codeaction",
+  fzf_opts  = { ["--no-multi"] = true },
+  actions   = {
+    ["enter"] = {
+      fn = function(...)
+        return require("fzf-lua.providers.ui_select").accept_item(...)
+      end,
+      desc = "accept-item"
+    }
+  }
 }
 
 ---Workspace/document diagnostics.
