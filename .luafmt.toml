@@ -1,0 +1,112 @@
+#
+#  https://github.com/EmmyLuaLs/emmylua-analyzer-rust/blob/main/docs/emmylua_formatter/options_EN.md
+#
+level = "Lua51"
+
+[indent]
+# Use spaces instead of tabs for indentation.
+kind = "Space"
+# Number of spaces per indentation level.
+width = 2
+
+[layout]
+# Maximum line width before breaking. Matches .editorconfig's max_line_length.
+max_line_width = 100
+# Single new line between functions/statements.
+max_blank_lines = 1
+# Auto-expand multiline arrays/tables when they exceed line width.
+# Matches .editorconfig's trailing_table_separator = keep (avoids collapsing).
+table_expand = "Auto"
+# Never auto-expand call arguments into multiple lines.
+# Matches .editorconfig call_arg_parentheses = which keeps them as-is).
+call_args_expand = "Never"
+# Prefer multiline breaking for fluent method chains in statements.
+# Matches .editorconfig style of keeping chain breaks on the tail of a statement.
+prefer_chain_break_on_statement_tail = true
+# Keep existing multiline array/table layout when the source already shows it.
+# Helps avoid collapsing multi-line arrays/tables.
+prefer_table_layout_from_source = true
+
+[spacing]
+# Do NOT add a space before function definition parentheses.
+# Matches .editorconfig's space_before_function_open_parenthesis = false
+# and space_before_closure_open_parenthesis = false.
+space_before_func_paren = false
+# Do NOT add a space before anonymous function/closure parentheses.
+# Matches .editorconfig's space_before_closure_open_parenthesis = false.
+space_before_lambda_func_paren = false
+# Do NOT add a space before method/function call parentheses.
+# Matches .editorconfig's space_before_function_call_open_parenthesis = false.
+space_before_call_paren = false
+# Add a space inside table braces (e.g., `{ a = 1 }`).
+# Matches .editorconfig's space_around_table_field_list = true.
+space_inside_braces = true
+# Do NOT add spaces inside call/list parentheses.
+# Matches .editorconfig's space_inside_function_call_parentheses = false
+# and space_inside_function_param_list_parentheses = false.
+space_inside_parens = false
+# Do NOT add spaces inside square brackets.
+# Matches .editorconfig's space_inside_square_brackets = false.
+space_inside_brackets = false
+# Add spaces around math operators (+, -, *, /, etc.).
+# Matches .editorconfig's space_around_math_operator = true.
+space_around_math_operator = true
+# Add spaces around string concatenation operator (..).
+# Matches .editorconfig's space_around_concat_operator = true.
+space_around_concat_operator = true
+# Add spaces around assignment operators (=, +=, etc.).
+# Matches .editorconfig behavior.
+space_around_assign_operator = true
+
+[comments]
+# Align line comments that appear at the end of lines.
+# Matches .editorconfig's align_continuous_inline_comment = true.
+align_line_comments = true
+# Do NOT align trailing comments in statements.
+align_in_statements = false
+# Align trailing comments in table fields.
+# Matches .editorconfig's align_continuous_rect_table_field = true.
+align_in_table_fields = true
+# Align trailing comments in function parameters.
+# Matches .editorconfig's align_function_params = true.
+align_in_params = true
+# Align trailing comments in call arguments.
+# Matches .editorconfig's align_call_args = true.
+align_in_call_args = true
+# Disable adding a space after the comment dash prefix.
+# This prevents --[[ block comments from being corrupted into
+# -- [[ (which breaks the block comment syntax).  Note that
+# plain comments such as "--comment" will no longer be
+# auto-corrected to "-- comment".
+# space_after_comment_dash = false
+
+[emmy_doc]
+# Disable aligning EmmyLua @param/@return type columns.
+# Old formatting did not align param/return types.
+align_declaration_tags = false
+# Disable aligning all EmmyLua tag columns.
+# Old formatting did not align tag columns.
+align_tag_columns = false
+
+[align]
+# Disable aligning continuous assignment statements.
+# Matches .editorconfig's align_continuous_assign_statement = false
+# (disabled in the new formatter by default, kept explicit here).
+continuous_assign_statement = false
+# Align table fields when the source shows alignment intent.
+# Matches .editorconfig's align_continuous_rect_table_field = true.
+table_field = true
+
+[output]
+# Always use double quotes for short strings (single quotes otherwise).
+# Matches .editorconfig's quote_style = double.
+quote_style = "Double"
+# Keep trailing commas for multiline tables/arrays.
+# Matches .editorconfig's trailing_table_separator = keep.
+trailing_comma = "Multiline"
+# Always keep the final newline.
+# Matches .editorconfig's insert_final_newline = true.
+insert_final_newline = true
+# Keep single-argument call parentheses.
+# Matches .editorconfig's call_arg_parentheses = keep (don't strip them).
+single_arg_call_parens = "Preserve"

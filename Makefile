@@ -57,34 +57,52 @@ deps/fzf-lua:
 	git clone .git $@
 	(cd $@ && git checkout $(SHA))
 
-# Download the emmylua_check linter from upstream if `gh` is
-# available and `emmylua_check` is not already on the system PATH.
-# The binary is extracted into deps/emmylua_check/emmylua_check.
-EMMY_CHECK_DIR=.emmylua
-EMMY_CHECK_BIN=$(EMMY_CHECK_DIR)/emmylua_check
-# Pin the emmylua_check release tag to download. Set to an empty
-# string (EMMY_CHECK_VERSION=) to fetch the latest release instead.
-EMMY_CHECK_VERSION=0.23.1
-# OS arch detection. Falls back to linux-x64 on unknown platforms;
-# override by passing EMMY_CHECK_ASSET=<asset filename> on the make
-# command line.
+# Download the emmylua binaries (emmylua_check + luafmt) from upstream
+# if `gh` is available and they are not already on the system PATH.
+# Binaries are extracted into .emmylua/.
+EMMYLUA_DIR=.emmylua
+EMMY_CHECK_BIN=$(EMMYLUA_DIR)/emmylua_check
+LUA_FMT_BIN=$(EMMYLUA_DIR)/luafmt
+# Pin the emmylua release tag to download. Set to an empty
+# string (EMMYLUA_VERSION=) to fetch the latest release instead.
+EMMYLUA_VERSION=0.23.1
+# OS arch detection for emmylua_check. Falls back to linux-x64 on
+# unknown platforms; override by passing EMMY_CHECK_ASSET=<asset
+# filename> on the make command line.
 EMMY_CHECK_ASSET=$(strip \
 	$(if $(filter Darwin darwin,$(shell uname -s 2>/dev/null)),emmylua_check-darwin-x64.tar.gz,emmylua_check-linux-x64.tar.gz))
-.PHONY: deps/emmylua_check
-deps/emmylua_check:
-	@if [ -x "$(EMMY_CHECK_BIN)" ] || command -v emmylua_check >/dev/null 2>&1; then \
-		: ; \
-	elif command -v gh >/dev/null 2>&1; then \
-		mkdir -p $(EMMY_CHECK_DIR) ; \
-		echo "Downloading emmylua_check $(if $(EMMY_CHECK_VERSION),v$(EMMY_CHECK_VERSION),latest) [$(EMMY_CHECK_ASSET)]..." ; \
+# OS arch detection for luafmt. Falls back to linux-x64 on unknown
+# platforms; override by passing LUA_FMT_ASSET=<asset filename> on
+# the make command line.
+LUA_FMT_ASSET=$(strip \
+	$(if $(filter Darwin darwin,$(shell uname -s 2>/dev/null)),luafmt-darwin-x64.tar.gz,luafmt-linux-x64.tar.gz))
+
+.PHONY: deps/emmylua
+deps/emmylua:
+	@mkdir -p $(EMMYLUA_DIR) ; \
+	if [ ! -x "$(EMMY_CHECK_BIN)" ] && ! command -v emmylua_check >/dev/null 2>&1; then \
+		if ! command -v gh >/dev/null 2>&1; then \
+			echo "gh is required to download emmylua_check" >&2 ; \
+			exit 1 ; \
+		fi ; \
+		echo "Downloading emmylua_check $(if $(EMMYLUA_VERSION),v$(EMMYLUA_VERSION),latest) [$(EMMY_CHECK_ASSET)]..." ; \
 		gh release download -R EmmyLuaLs/emmylua-analyzer-rust \
-			$(if $(EMMY_CHECK_VERSION),"$(EMMY_CHECK_VERSION)") \
-			-p "$(EMMY_CHECK_ASSET)" -D $(EMMY_CHECK_DIR) && \
-		tar xzf "$(EMMY_CHECK_DIR)/$(EMMY_CHECK_ASSET)" -C $(EMMY_CHECK_DIR) && \
-		rm -f "$(EMMY_CHECK_DIR)/$(EMMY_CHECK_ASSET)" ; \
-	else \
-		echo "gh is required to download emmylua_check" >&2 ; \
-		exit 1 ; \
+			$(if $(EMMYLUA_VERSION),"$(EMMYLUA_VERSION)") \
+			-p "$(EMMY_CHECK_ASSET)" -D $(EMMYLUA_DIR) && \
+		tar xzf "$(EMMYLUA_DIR)/$(EMMY_CHECK_ASSET)" -C $(EMMYLUA_DIR) && \
+		rm -f "$(EMMYLUA_DIR)/$(EMMY_CHECK_ASSET)" ; \
+	fi ; \
+	if [ ! -x "$(LUA_FMT_BIN)" ] && ! command -v luafmt >/dev/null 2>&1; then \
+		if ! command -v gh >/dev/null 2>&1; then \
+			echo "gh is required to download luafmt" >&2 ; \
+			exit 1 ; \
+		fi ; \
+		echo "Downloading luafmt $(if $(EMMYLUA_VERSION),v$(EMMYLUA_VERSION),latest) [$(LUA_FMT_ASSET)]..." ; \
+		gh release download -R EmmyLuaLs/emmylua-analyzer-rust \
+			$(if $(EMMYLUA_VERSION),"$(EMMYLUA_VERSION)") \
+			-p "$(LUA_FMT_ASSET)" -D $(EMMYLUA_DIR) && \
+		tar xzf "$(EMMYLUA_DIR)/$(LUA_FMT_ASSET)" -C $(EMMYLUA_DIR) && \
+		rm -f "$(EMMYLUA_DIR)/$(LUA_FMT_ASSET)" ; \
 	fi
 
 .PHONY: lint
@@ -93,7 +111,7 @@ lint:
 		lua-language-server --configpath=../.luarc.jsonc --check=.
 
 .PHONY: emmylua-check
-emmylua-check: | deps/emmylua_check
+emmylua-check: | deps/emmylua
 	@if [ -x "$(EMMY_CHECK_BIN)" ]; then \
 		EMMY="$(EMMY_CHECK_BIN)" ; \
 	else \
@@ -101,6 +119,23 @@ emmylua-check: | deps/emmylua_check
 	fi ; \
 	VIMRUNTIME="$$(nvim --clean --headless +'echo $$VIMRUNTIME' +q 2>&1)" \
 		$$EMMY . --ignore 'deps/**/*' --warnings-as-errors
+
+.PHONY: fmt fmtcheck
+fmt: | deps/emmylua
+	@if [ -x "$(LUA_FMT_BIN)" ]; then \
+		FMT="$(LUA_FMT_BIN)" ; \
+	else \
+		FMT="luafmt" ; \
+	fi ; \
+	$$FMT --config .luafmt.toml --write --recursive ./lua ./tests
+
+fmtcheck: | deps/emmylua
+	@if [ -x "$(LUA_FMT_BIN)" ]; then \
+		FMT="$(LUA_FMT_BIN)" ; \
+	else \
+		FMT="luafmt" ; \
+	fi ; \
+	$$FMT --config .luafmt.toml --check --recursive ./lua ./tests
 
 gen:
 	nvim --clean -l lua/fzf-lua/init.lua
