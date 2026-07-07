@@ -108,6 +108,7 @@ M.ui_select = function(items, ui_opts, on_choice)
   -- calls function opts with no args, so resolve the function here first
   -- to preserve the historical `opts(ui_opts, items)` signature (#2770).
   if vim.is_callable(opts) then
+    ---@diagnostic disable-next-line: call-non-callable
     opts = opts(ui_opts, items)
   end
 
@@ -149,7 +150,9 @@ M.ui_select = function(items, ui_opts, on_choice)
         end
       end
 
+      ---@diagnostic disable-next-line: undefined-field
       if opts.post_action_cb then
+        ---@diagnostic disable-next-line: undefined-field
         opts.post_action_cb()
       end
     end
@@ -271,7 +274,10 @@ M.ui_select = function(items, ui_opts, on_choice)
     local previewer = _OPTS_ONCE.previewer
     _OPTS_ONCE.previewer = nil -- can't copy the previewer object
     ---@diagnostic disable-next-line: param-type-mismatch
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    ---@diagnostic disable-next-line: generic-constraint-mismatch
     opts = vim.tbl_deep_extend(opts_merge_strategy, _OPTS_ONCE, opts)
+    ---@cast opts table
     opts.actions = vim.tbl_deep_extend("force", opts.actions or {},
       { ["enter"] = opts.actions.enter })
     opts.previewer = previewer

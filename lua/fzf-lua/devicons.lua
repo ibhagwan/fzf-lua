@@ -52,9 +52,11 @@ function NvimWebDevicons:load(do_not_lazy_load)
   then
     self._package_loaded, self._package = pcall(require, self._package_name)
     if self._package_loaded then
+      local _info = debug.getinfo(self._package.setup, "S")
+      ---@cast _info {source: string}
       ---@diagnostic disable-next-line: param-type-mismatch
       self._package_path = path.parent(path.parent(path.normalize(
-        debug.getinfo(self._package.setup, "S").source:gsub("^@", ""))))
+        _info.source:gsub("^@", ""))))
     end
   end
   return self._package_loaded
@@ -188,9 +190,11 @@ function MiniIcons:load(do_not_lazy_load)
   then
     self._package_loaded, self._package = pcall(require, self._package_name)
     if self._package_loaded then
+      local _info = debug.getinfo(self._package.setup, "S")
+      ---@cast _info {source: string}
       ---@diagnostic disable-next-line: param-type-mismatch
       self._package_path = path.parent(path.parent(path.parent(path.normalize(
-        debug.getinfo(self._package.setup, "S").source:gsub("^@", "")))))
+        _info.source:gsub("^@", "")))))
     end
   end
   return self._package_loaded
@@ -531,6 +535,7 @@ M.get_devicon = function(filepath, extensionOverride)
 
     if not by_ft then
       -- store default icon in cache to avoid lookup by ft a second time
+      ---@diagnostic disable-next-line: assign-type-mismatch
       by_ft = { icon = STATE.default_icon.icon, color = STATE.default_icon.color }
     end
 

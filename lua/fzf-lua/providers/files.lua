@@ -65,7 +65,7 @@ M.get_files_cmd = function(opts)
           v = [[\! -path '*/.*']]
         end
       end
-      command = utils.toggle_cmd_flag(command, v, toggle, is_find)
+      command = utils.toggle_cmd_flag(command, v --[[@as string]], toggle, is_find)
     end)()
   end
   return command
@@ -116,6 +116,7 @@ M.args = function(opts)
     -- E5560: vimL function must not be called in a lua loop callback
     coroutine.wrap(function()
       local co = coroutine.running()
+      ---@cast co thread
 
       -- local start = os.time(); for _ = 1,10000,1 do
       for i = 0, argc - 1 do

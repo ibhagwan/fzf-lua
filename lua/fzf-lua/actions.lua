@@ -6,8 +6,8 @@ local path = require "fzf-lua.path"
 local libuv = require "fzf-lua.libuv"
 
 ---@class fzf-lua.actions
----@field expect fun(actions: table, opts: fzf-lua.config.Resolved|{}):string[]?, string[]?
----@field [string] fun(items: string[], opts: fzf-lua.config.Resolved|{}):any
+---@field expect fun(actions: table, opts: fzf-lua.config.Resolved):string[]?, string[]?
+---@field [string] fun(items: string[], opts: fzf-lua.config.Resolved):any
 local M = {}
 
 -- return fzf '--expect=' string from actions keyval tbl
@@ -62,13 +62,14 @@ M.expect = function(actions, opts)
 end
 
 ---@param selected string[]
----@param opts fzf-lua.config.Resolved|{}
+---@param opts fzf-lua.config.Resolved
 ---@return string?, string[]?
 M.normalize_selected = function(selected, opts)
   -- The below separates the keybind from the item(s)
   -- and makes sure 'selected' contains only item(s) or {}
   -- so it can always be enumerated safely
   if not selected then return end
+  ---@diagnostic disable-next-line: unnecessary-assert
   local actions = assert(opts.actions)
   -- Backward compat, "default" action trumps "enter"
   if actions.default then actions.enter = actions.default end
@@ -202,7 +203,7 @@ end
 
 ---@param vimcmd string?
 ---@param selected string[]
----@param opts fzf-lua.config.Resolved|{}
+---@param opts fzf-lua.config.Resolved
 ---@param bufedit boolean?
 ---@return string?
 M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
@@ -343,6 +344,7 @@ local sel_to_qf = function(selected, opts, is_loclist)
 end
 
 M.list_del = function(selected, opts)
+  ---@diagnostic disable-next-line: unnecessary-assert
   local winid = assert(opts.__CTX.winid)
   local list = opts.is_loclist and vim.fn.getloclist(winid) or vim.fn.getqflist()
   local bufs = vim.tbl_map(function(s) return tonumber(s:match("%[(%d+)%]")) end, selected)
@@ -561,6 +563,7 @@ end
 ---@param opts fzf-lua.config.CommandHistory|{}
 local hist_del = function(kind, selected, opts)
   if not vim.iter then return end
+  ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
   local iter = opts.reverse_list and vim.iter(selected) or vim.iter(selected):rev()
   iter:each(function(e)
     local idx = assert(utils.tointeger(opts.reverse_list and e or -e - 1))
@@ -631,8 +634,9 @@ M.goto_jump = function(selected, opts)
     if not ok then
       filepath = ""
     else
-      filepath = res
+      filepath = res --[[@as string]]
     end
+    ---@diagnostic disable-next-line: param-type-mismatch, missing-parameter
     if not filepath or not uv.fs_stat(filepath) then
       -- no accessible file
       -- jump is in current
@@ -655,6 +659,7 @@ for _, fname in ipairs({ "edit", "split", "vsplit", "tabedit" }) do
   ---@param opts fzf-lua.config.Resolved
   M["keymap_" .. fname] = function(selected, opts)
     if not selected[1] then return end
+    ---@diagnostic disable-next-line: redundant-parameter
     local entry = path.keymap_to_entry(selected[1], opts)
     if entry.path then
       M["file_" .. fname]({ entry.stripped }, opts)
@@ -753,9 +758,11 @@ local function helptags(s, opts)
     local entry = path.entry_to_file(x, opts)
     if entry and entry.path and package.loaded.lazy then
       -- make sure the plugin is loaded. This won't do anything if already loaded
+      ---@diagnostic disable-next-line: unresolved-require
       local lazyConfig = require("lazy.core.config")
       local _, plugin = path.normalize(entry.path):match("(/([^/]+)/doc/)")
       if plugin and lazyConfig.plugins[plugin] then
+        ---@diagnostic disable-next-line: unresolved-require
         require("lazy").load({ plugins = { plugin } })
       end
     end
@@ -872,6 +879,7 @@ M.git_branch_add = function(selected, opts)
   -- so the prompt input will be found in `selected[1]`
   -- previous fzf versions (or skim) restart the process instead
   -- so the prompt input will be found in `opts.last_query`
+  ---@diagnostic disable-next-line: undefined-field
   local branch = selected[1] or opts.last_query
   if type(branch) ~= "string" or #branch == 0 then
     utils.warn("Branch name cannot be empty, use prompt for input.")
@@ -1119,7 +1127,7 @@ M.git_buf_edit = function(selected, opts)
   -- `fn_match_file` lets a provider (e.g. bcommits `follow`) resolve the path the
   -- buffer had at the selected commit; otherwise fall back to the current name.
   local file = type(opts.fn_match_file) == "function" and opts.fn_match_file(selected[1], opts)
-      or path.relative_to(path.normalize(vim.fn.expand("%:p")), git_root)
+      or path.relative_to(path.normalize(vim.fn.expand("%:p") --[[@as string]]), git_root)
   local commit_hash = match_commit_hash(selected[1], opts)
   table.insert(cmd, commit_hash .. ":" .. file)
   local git_file_contents = utils.io_systemlist(cmd)
@@ -1162,7 +1170,7 @@ M.grep_lgrep = function(_, opts)
     __resume_key = opts.__resume_key,
     rg_glob = opts.rg_glob or opts.__call_opts.rg_glob,
     -- globs always require command processing with 'multiprocess'
-    multiprocess = opts.multiprcess and (opts.rg_glob or opts.__call_opts.rg_glob) and 1,
+    multiprocess = opts.multiprocess and (opts.rg_glob or opts.__call_opts.rg_glob) and 1,
     -- when used with tags pass the resolved ctags_file from tags-option as
     -- `tagfiles()` might not return the correct file called from the float (#700)
     ctags_file = opts.ctags_file,
@@ -1179,13 +1187,14 @@ M.toggle_flag = function(_, opts)
   local o = vim.tbl_deep_extend("keep", {
     -- grep|live_grep sets `opts._cmd` to the original
     -- command without the search argument
+    ---@diagnostic disable-next-line: param-type-mismatch
     cmd = utils.toggle_cmd_flag(assert(opts._cmd or opts.cmd), assert(opts.toggle_flag)),
     resume = true
   }, opts.__call_opts or {})
   opts.__call_fn(o)
 end
 
----@param opts fzf-lua.config.Resolved|{}
+---@param opts fzf-lua.config.Resolved
 ---@param opt_name string
 M.toggle_opt = function(opts, opt_name)
   -- opts.__call_opts[opt_name] = not opts[opt_name]
@@ -1224,7 +1233,7 @@ end
 M.paste_register = function(selected)
   if not selected[1] then return end
   local reg = selected[1]:match("%[(.-)%]")
-  local data = vim.fn.getreg(reg)
+  local data = vim.fn.getreg(reg) --[[@as string]]
   if #data > 0 then vim.api.nvim_paste(data, false, -1) end
 end
 
@@ -1335,6 +1344,7 @@ local parse_entry = function(e)
 end
 
 M.serverlist_kill = function(sel)
+  ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
   vim.iter(sel):map(parse_entry):each(function(addr)
     local ok, err = utils.rpcexec(addr, "nvim_exec2", "qa!", {})
     assert(ok
@@ -1345,8 +1355,9 @@ M.serverlist_kill = function(sel)
 end
 
 M.serverlist_spawn = function()
-  libuv.uv_spawn(
-    vim.fn.exepath("nvim"), { args = { "--headless" }, env = { NVIM = "" }, detached = true })
+  libuv.uv_spawn(vim.fn.exepath("nvim"),
+    ---@diagnostic disable-next-line: missing-parameter, assign-type-mismatch
+    { args = { "--headless" }, env = { NVIM = "" }, detached = true })
 end
 
 M.serverlist_connect = function(sel)

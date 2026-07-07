@@ -117,6 +117,7 @@ local contents_from_arr = function(cont_arr)
     return function(fzf_cb)
       coroutine.wrap(function()
         local co = coroutine.running()
+        ---@cast co thread
         for _, t in ipairs(cont_arr) do
           assert(type(t.contents) == cont_type, "Unable to combine contents of different types")
           local is_async = true
@@ -212,7 +213,9 @@ end
 ---@return thread?, string?, table?
 M.fzf_live = function(contents, opts)
   ---@type fzf-lua.config.Resolved
+  ---@diagnostic disable-next-line: assign-type-mismatch
   opts = opts or {}
+  ---@cast opts fzf-lua.config.Resolved
   opts.is_live = true
   opts = config.normalize_opts(opts, {})
   if not opts then return end
@@ -220,6 +223,7 @@ M.fzf_live = function(contents, opts)
   local cmd ---@type string
   local is_fnc = type(contents) == "function"
   if is_fnc and M.can_transform(opts) then
+    ---@diagnostic disable-next-line: call-non-callable
     cmd = shell.stringify_data(function(items) return contents(items, opts) end, opts,
       fzf_field_index)
   else
@@ -252,6 +256,7 @@ M.fzf_resume = function(opts)
   -- resume a picker when using "hide" and no_resume=true (#2425)
   local query = utils.map_get(opts, opts.is_live and "__call_opts.search" or "__call_opts.query")
   if query and #query > 0 then opts.query = query end
+  ---@diagnostic disable-next-line: unnecessary-assert
   M.fzf_wrap(assert(config.__resume_data.contents), config.__resume_data.opts)
 end
 
@@ -260,11 +265,17 @@ end
 ---@param convert_actions boolean?
 ---@return thread?, string, table
 M.fzf_wrap = function(cmd, opts, convert_actions)
+  ---@diagnostic disable-next-line: assign-type-mismatch
   opts = opts or {}
+  ---@cast opts fzf-lua.config.Resolved
   M.set_header(opts)
   if convert_actions and type(opts.actions) == "table" then
+    ---@diagnostic disable-next-line: assign-type-mismatch
     opts = M.convert_reload_actions(cmd, opts)
+    ---@cast opts fzf-lua.config.Resolved
+    ---@diagnostic disable-next-line: assign-type-mismatch
     opts = M.convert_exec_silent_actions(opts)
+    ---@cast opts fzf-lua.config.Resolved
   end
   -- Do not strt fzf, return the stringified contents and opts onlu
   -- used by the "combine" picker to merge inputs
@@ -272,6 +283,7 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
   local _co, fn_selected
   coroutine.wrap(function()
     _co = coroutine.running()
+    ---@cast _co thread
     -- xpcall to get full traceback https://www.lua.org/pil/8.5.html
     local xpcall = jit and xpcall or
         (utils.__HAS_NVIM_010 and require("coxpcall") or require("fzf-lua.lib.copcall")).xpcall
@@ -298,7 +310,7 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
 end
 
 ---@param contents string?
----@param opts? fzf-lua.config.Resolved|{}
+---@param opts? fzf-lua.config.Resolved
 ---@return string[]?
 ---@return integer? exit_code
 M.fzf = function(contents, opts)
@@ -310,7 +322,9 @@ M.fzf = function(contents, opts)
   end
   -- normalize with globals if not already normalized
   ---@type fzf-lua.config.Resolved
+  ---@diagnostic disable-next-line: assign-type-mismatch
   opts = config.normalize_opts(opts or {}, {})
+  ---@cast opts fzf-lua.config.Resolved
   if not opts then return nil, nil end
   -- Store contents for unhide
   opts._contents = contents
@@ -349,6 +363,7 @@ M.fzf = function(contents, opts)
   -- setup the fzf window and preview layout
   local fzf_win = win.new(opts)
   -- instantiate the previewer
+  ---@diagnostic disable-next-line: param-type-mismatch
   local previewer = require("fzf-lua.previewer").new(opts.previewer, opts)
   if previewer then
     -- Attach the previewer to the windows
@@ -448,7 +463,7 @@ M.fzf = function(contents, opts)
   -- only close the window if autoclose wasn't specified or is 'true'
   -- or if the action wasn't a table or defined with `reload|noclose`
   local do_not_close = type(action) == "table"
-      and (action[1] ~= nil or action.reload or action.noclose or action.reuse)
+      and (action[1] ~= nil or action.reload or action.noclose or action.reuse) ---@diagnostic disable-line: undefined-field
   if (not fzf_win:autoclose() == false) and not do_not_close then
     fzf_win:close(fzf_bufnr)
     -- only clear context if we didn't open a new interface, for example, opening

@@ -553,9 +553,11 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
   line_query        = true,
   pickers           = function()
     local clients = utils.lsp_get_clients({ bufnr = utils.CTX().bufnr })
+    ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
     local doc_sym_supported = vim.iter(clients):any(function(client)
       return client:supports_method("textDocument/documentSymbol")
     end)
+    ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
     local wks_sym_supported = vim.iter(clients):any(function(client)
       return client:supports_method("workspace/symbol")
     end)

@@ -395,6 +395,7 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
     return
   end
   if cs.vim then
+    ---@diagnostic disable-next-line: assign-type-mismatch
     ok, out = pcall(vim.api.nvim_exec2, cs.vim, { output = true })
   elseif cs.lua then ---@diagnostic disable-next-line: need-check-nil
     ok, out = pcall(function() loadstring(cs.lua)() end)
@@ -416,7 +417,7 @@ M.awesome_colorschemes = function(opts)
   local cur_colorscheme = get_current_colorscheme()
   local cur_background = vim.o.background
 
-  local dbfile = vim.fn.expand(opts.dbfile)
+  local dbfile = vim.fn.expand(opts.dbfile) --[[@as string]]
   if not path.is_absolute(dbfile) then
     dbfile = path.normalize(path.join({ vim.g.fzf_lua_directory, opts.dbfile })) or dbfile
   end
@@ -453,6 +454,7 @@ M.awesome_colorschemes = function(opts)
     -- E5560: vimL function must not be called in a lua loop callback
     coroutine.wrap(function()
       local co = coroutine.running()
+      ---@cast co thread
 
       -- make sure our cache is in packpath
       vim.opt.packpath:append(packpath)
@@ -461,6 +463,7 @@ M.awesome_colorschemes = function(opts)
       -- create all sorts of voodoo issues when running resume
       -- HACK: find a better solution (singleton?)
       if config.__resume_data and type(config.__resume_data.opts) == "table" then
+        ---@diagnostic disable-next-line: undefined-field
         config.__resume_data.opts._adm.db = opts._adm.db
       end
 

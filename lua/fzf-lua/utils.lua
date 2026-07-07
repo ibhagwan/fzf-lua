@@ -22,15 +22,31 @@ M.__IS_WINDOWS = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
 -- `:help shellslash` (for more info see #1055)
 M.__WIN_HAS_SHELLSLASH = M.__IS_WINDOWS and vim.fn.exists("+shellslash") == 1
 
-function M.__FILE__() return debug.getinfo(2, "S").source end
+function M.__FILE__()
+  local info = debug.getinfo(2, "S")
+  ---@cast info {source: string}
+  return info.source
+end
 
-function M.__LINE__() return debug.getinfo(2, "l").currentline end
+function M.__LINE__()
+  local info = debug.getinfo(2, "l")
+  ---@cast info {currentline: integer}
+  return info.currentline
+end
 
-function M.__FNC__() return debug.getinfo(2, "n").name end
+function M.__FNC__()
+  local info = debug.getinfo(2, "n")
+  ---@cast info {name: string}
+  return info.name
+end
 
 -- current function ref, since `M.__FNCREF__` is itself a function
 -- we need to go backwards once in stack (i.e. "2")
-function M.__FNCREF__() return debug.getinfo(2, "f").func end
+function M.__FNCREF__()
+  local info = debug.getinfo(2, "f")
+  ---@cast info {func: function}
+  return info.func
+end
 
 -- calling function ref, go backwards in stack twice first
 -- out of `utils.__FNCREF2__`, second out of calling function
@@ -580,6 +596,7 @@ end
 
 function M.tbl_flatten(T)
   if vim.iter then
+    ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
     return vim.iter(T):flatten(math.huge):totable()
   else
     ---@diagnostic disable-next-line: deprecated
@@ -1085,13 +1102,17 @@ function M.load_profiles(profiles, silent)
     if profile == "borderless_full" then profile = "borderless-full" end
     local fname = path.join({ vim.g.fzf_lua_directory, "profiles", profile .. ".lua" })
     local profile_opts = M.load_profile_fname(fname, nil, silent)
+    ---@cast profile_opts table?
     if type(profile_opts) == "table" then
+      ---@cast profile_opts table
       if profile_opts[1] then
         -- profile requires loading base profile(s)
         -- silent = 1, only warn if failed to load
         profile_opts = vim.tbl_deep_extend("keep",
           profile_opts, M.load_profiles(profile_opts[1], 1))
+        ---@cast profile_opts table
       end
+      ---@cast profile_opts table
       if type(profile_opts.fn_load) == "function" then
         profile_opts.fn_load()
         profile_opts.fn_load = nil
@@ -1131,6 +1152,7 @@ function M.buffer_is_dirty(bufnr, warn, only_if_last_buffer)
   bufnr = (bufnr == nil or bufnr == 0) and vim.api.nvim_get_current_buf() or bufnr
   local info = bufnr and M.getbufinfo(bufnr)
   if info and info.changed ~= 0 then
+    ---@diagnostic disable-next-line: param-type-mismatch
     if only_if_last_buffer and 1 < #vim.fn.win_findbuf(bufnr) then
       return false
     end
@@ -1291,6 +1313,7 @@ function M.eventignore(func, scope)
   local ret = { pcall(func) }
   vim.o.eventignore = save_ei
   if not ret[1] then error(ret[2]) end
+  ---@diagnostic disable-next-line: redundant-return-value
   return select(2, unpack(ret))
 end
 
@@ -1429,6 +1452,7 @@ function M.input(prompt, default)
         res = input
       end)
   else
+    ---@diagnostic disable-next-line: param-type-mismatch
     ok, res = pcall(vim.fn.input, { prompt = prompt, default = default, cancelreturn = 3 })
     if res == 3 then
       ok, res = false, nil
@@ -1623,6 +1647,7 @@ function M.rpcexec(addr, method, ...)
   if fired then return false, "Timeout" end
   vim.fn.chanclose(chan)
   local tonil = function(v) if v == vim.NIL then return nil else return v end end
+  ---@diagnostic disable-next-line: missing-return-value
   return unpack(vim.tbl_map(tonil, ret))
 end
 
@@ -1656,7 +1681,7 @@ function M.jump_to_location(location, offset_encoding, reuse_win)
         { reuse_win = reuse_win, focus = true })
     end)
   else
-    ---@diagnostic disable-next-line: deprecated
+    ---@diagnostic disable-next-line: deprecated, undefined-field
     return vim.lsp.util.jump_to_location(location, offset_encoding, reuse_win)
   end
 end
@@ -1763,6 +1788,7 @@ function M.pid_object(key, opts)
 
   function Pid:set(pid) self.opts[self.key] = pid end
 
+  ---@diagnostic disable-next-line: return-type-mismatch
   return Pid:new(key, opts)
 end
 

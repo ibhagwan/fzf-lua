@@ -49,7 +49,7 @@ end
 
 
 ---@param locations lsp.Location[]|lsp.LocationLink[]
----@param enc? 'utf-8'|'utf-16'|'utf-32'
+---@param enc 'utf-8'|'utf-16'|'utf-32'
 ---@return string[]
 local function locations_to_entries(locations, enc)
   local items = vim.lsp.util.locations_to_items(locations, enc)
@@ -514,6 +514,7 @@ local function gen_lsp_contents(opts)
         opts.__contents = function(fzf_cb)
           coroutine.wrap(function()
             local co = coroutine.running()
+            ---@cast co thread
             for _, e in ipairs(results) do
               fzf_cb(e, function() coroutine.resume(co) end)
               coroutine.yield()
@@ -541,6 +542,7 @@ local function gen_lsp_contents(opts)
     opts.__contents = function(fzf_cb)
       coroutine.wrap(function()
         local co = coroutine.running()
+        ---@cast co thread
 
         -- Save no. of attached clients **supporting the capability**
         -- so we can determine if all callbacks were completed (#468)

@@ -212,7 +212,7 @@ M.bcommits = function(opts)
   -- but overall it's not a big deal as it's a pretty cheap call
   -- first 'git_root' call won't print a warning to ':messages'
   if not opts.cwd and not opts.git_dir then
-    opts.cwd = path.git_root({ cwd = vim.fn.expand("%:p:h") }, true)
+    opts.cwd = path.git_root({ cwd = vim.fn.expand("%:p:h") --[[@as string]] }, true)
   end
   local git_root = path.git_root(opts)
   if not git_root then return end
@@ -223,7 +223,7 @@ M.bcommits = function(opts)
   -- commits where the file was named differently.
   if opts.follow and not utils.mode_is_visual() then
     local display_fmt = opts.cmd:match('%-%-pretty=format:"(.-)"') or "%C(yellow)%h%Creset %s"
-    local relfile = path.relative_to(vim.fn.expand("%:p"), git_root)
+    local relfile = path.relative_to(vim.fn.expand("%:p") --[[@as string]], git_root)
     -- \1 marks a header line; \31 separates the clean sha from the coloured display
     local logcmd = path.git_cwd({
       "git", "-c", "core.quotepath=false",
@@ -256,7 +256,7 @@ M.bcommits = function(opts)
         or function(l) return (l:match("^[^\t]+\t([^\t]+)")) end
     return core.fzf_exec(entries, opts)
   end
-  local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p"), git_root))
+  local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p") --[[@as string]], git_root))
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
@@ -287,11 +287,11 @@ M.blame = function(opts)
   end
   -- See "bcommits" for comment
   if not opts.cwd and not opts.git_dir then
-    opts.cwd = path.git_root({ cwd = vim.fn.expand("%:p:h") }, true)
+    opts.cwd = path.git_root({ cwd = vim.fn.expand("%:p:h") --[[@as string]] }, true)
   end
   local git_root = path.git_root(opts)
   if not git_root then return end
-  local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p"), git_root))
+  local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p") --[[@as string]], git_root))
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
@@ -330,6 +330,7 @@ local function highlight_branch_line(line)
 
   local branch_name, ws_after_name, after = rest:match("^(%S+)(%s+)(.*)$")
   if not branch_name then return line end
+  ---@cast after string
 
   local colored_branch
   if leader:sub(1, 1) == "*" then
@@ -350,6 +351,7 @@ local function highlight_branch_line(line)
   if not sha then
     return leader .. colored_branch .. ws_after_name .. after
   end
+  ---@cast body string
 
   local function color_tracking(content)
     local ref, suffix = content:match("^([^:]+)(:.*)$")
@@ -362,6 +364,7 @@ local function highlight_branch_line(line)
   if leader:sub(1, 1) == "+" then
     local wt_paren, remainder = body:match("^(%b())(.*)$")
     if wt_paren then
+      ---@cast remainder string
       local colored_wt = ansi.grey("(") .. ansi.cyan(wt_paren:sub(2, -2)) .. ansi.grey(")")
       remainder = remainder:gsub("^(%s*)(%[)([^%]]+)(%])", function(ws, _, content, _)
         return ws .. color_tracking(content)
@@ -383,11 +386,13 @@ local function highlight_worktree_line(line)
   local ansi = FzfLua.utils.ansi_codes
   local path_s, padding, rest = line:match("^(%S+)(%s+)(.*)$")
   if not path_s then return line end
+  ---@cast rest string
 
   local sha, sha_ws, body = rest:match("^(%x%x%x%x%x%x%x+)(%s+)(.*)$")
   if not sha then
     body = rest
   end
+  ---@cast body string
 
   body = body:gsub("^(%[)([^%]]+)(%])", function(lb, name, rb)
     return ansi.grey(lb) .. ansi.green(name) .. ansi.grey(rb)
@@ -453,6 +458,7 @@ M.worktrees = function(opts)
     opts.preview = shell.stringify_cmd(function(items)
       if not items[1] then return utils.shell_nop() end
       local cwd = items[1]:match("^[^%s]+")
+      ---@cast preview_cmd string
       local cmd = path.git_cwd(preview_cmd, { cwd = cwd })
       return cmd
     end, opts, "{}")

@@ -83,7 +83,10 @@ end
 function M.fromChildBufLines(child, buf, opts)
   opts = opts or {}
   if opts and opts.redraw then child.cmd("redraw") end
-  local lines = child.api.nvim_buf_get_lines(buf or 0, opts.start_line and 0, opts.end_line + 1 or -1,
+  local lines = child.api.nvim_buf_get_lines(
+    buf or 0,
+    opts.start_line and 0,
+    opts.end_line and opts.end_line + 1 or -1,
     true)
   return M.from_lines(lines, opts)
 end

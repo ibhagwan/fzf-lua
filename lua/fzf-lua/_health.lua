@@ -110,7 +110,7 @@ function M.check()
   if vim.env.FZF_DEFAULT_OPTS == nil then
     ok("`FZF_DEFAULT_OPTS` is not set")
   else
-    ok("`$FZF_DEFAULT_OPTS` is set to:\n" .. M.format(vim.env.FZF_DEFAULT_OPTS))
+    ok("`$FZF_DEFAULT_OPTS` is set to:\n" .. M.format(vim.env.FZF_DEFAULT_OPTS --[[@as string]]))
   end
   if vim.env.FZF_DEFAULT_OPTS_FILE == nil then
     ok("`FZF_DEFAULT_OPTS_FILE` is not set")

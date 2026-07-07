@@ -95,6 +95,7 @@ local qfstack_exec = function(opts, cfg)
   local contents = function(cb)
     coroutine.wrap(function()
       local co = coroutine.running()
+      ---@cast co thread
 
       -- Get the list again for accuracy on resume
       opts.__gethist()

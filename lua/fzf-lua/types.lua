@@ -120,7 +120,7 @@ local FzfLua = require("fzf-lua")
 ---generated from the result of `:=FzfLua.config.normalize_opts({}, {})`
 ---@class fzf-lua.config.Base
 ---@field dir_icon? string
----@field enrich? fun(opts: fzf-lua.config.Resolved|{}):fzf-lua.config.Resolved|{}
+---@field enrich? fun(opts: fzf-lua.config.Resolved):fzf-lua.config.Resolved
 ---Path to fzf binary. By default uses fzf found in `$PATH`.
 ---@field fzf_bin? string
 ---Fzf `--color` flag configuration passed to the fzf binary, set `[1]=true` to inherit terminal colorscheme, consult `man fzf` for all available options.
@@ -213,6 +213,17 @@ local FzfLua = require("fzf-lua")
 ---Pager command for shell preview commands (e.g. `delta`).
 ---@field preview_pager? string
 ---@field toggle_flag? string
+---@field reuse_win? boolean
+---@field no_action_set_cursor? boolean
+---@field no_action_zz? boolean
+---@field reverse_search? boolean
+---@field jump_using_norm? boolean
+---@field scope? string
+---@field fn_match_file? function
+---@field fn_match_commit_hash? function
+---@field register? string
+---@field remotes? string
+---@field separator? string
 ---@field _fzf_nth_devicons? boolean
 ---@field _headers? boolean
 
@@ -249,6 +260,14 @@ local FzfLua = require("fzf-lua")
 ---@field _resume_reload? boolean|function
 ---@field _fzf_cli_args string[]
 ---@field _uri? boolean
+---@field is_loclist? boolean
+---@field last_query? string
+---@field cmd_add? string|string[]
+---@field cmd_del? string|string[]
+---@field ctags_file? string
+---@field _cmd? string|string[]
+---@field _is_loclist? boolean
+---@field _apply_awesome_theme? function
 
 ---GENERATED from `make gen`
 

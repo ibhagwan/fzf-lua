@@ -55,6 +55,7 @@ T["codeaction"]["preview does not mutate same-position text edits"] = function()
 
   local ok, err = pcall(function()
     local uri = vim.uri_from_bufnr(bufnr)
+    ---@diagnostic disable-next-line: missing-fields, param-type-mismatch
     codeaction.builtin.preview_action_tuple({
       opts = {
         _items = {

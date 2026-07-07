@@ -53,6 +53,7 @@ local defaults = require("fzf-lua.defaults").defaults
 local res = vim.json.decode(obj.stdout or "") ---@type EmmyDocJson
 
 local tymap = {} ---@type table<string, EmmyDocType?>
+---@diagnostic disable-next-line: redundant-parameter, call-non-callable
 vim.iter(assert(res.types)):each(function(ty) tymap[ty.name] = ty end)
 
 ---@param typ string
@@ -71,6 +72,7 @@ local function fix_typ(typ, default)
   -- Remove outer parentheses from union types for cleaner display
   if typ:match("^%(.*%)$") then
     local ty = typ:sub(2, -2)
+    ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
     local is = vim.iter(vim.split(ty, ",")):all(function(t)
       return t:match([[".-"]])
     end)
@@ -390,6 +392,7 @@ local function generate_globals()
 
   -- Then add Defaults type options
   local ty = assert(tymap["fzf-lua.config.Defaults"], "fzf-lua.config.Defaults type not found")
+  ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
   vim.iter(ty.members)
       :each(function(member)
         -- Skip excluded fields

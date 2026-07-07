@@ -7,7 +7,7 @@ local utils = require "fzf-lua.utils"
 ---@field name? 'fzf'|'prev'
 ---@field nwin? integer
 ---@field layout? fzf-lua.win.previewPos
----@field opts? fzf-lua.config.Resolved|{}
+---@field opts? fzf-lua.config.Resolved
 
 ---@alias fzf-lua.winborder string[]|"none"|"single"|"double"|"rounded"|"solid"|"shadow"
 

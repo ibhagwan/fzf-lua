@@ -40,7 +40,7 @@ M.commands = function(opts)
 
   opts.actions = {
     ["enter"] = function(selected, _)
-      _dap[selected[1]]()
+      _dap[selected[1]]() ---@diagnostic disable-line: call-non-callable
     end,
   }
 
@@ -104,6 +104,7 @@ M.breakpoints = function(opts)
   local contents = function(cb)
     coroutine.wrap(function()
       local co = coroutine.running()
+      ---@cast co thread
       local bps = dap_bps.to_qf_list(dap_bps.get())
       for _, b in ipairs(bps) do
         vim.schedule(function()

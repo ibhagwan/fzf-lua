@@ -170,6 +170,7 @@ M.diagnostics = function(opts)
   local contents = function(fzf_cb)
     coroutine.wrap(function()
       local co = coroutine.running()
+      ---@cast co thread
 
       ---@param diags vim.Diagnostic[]
       local function process_diagnostics(diags)

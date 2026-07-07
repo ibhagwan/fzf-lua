@@ -292,6 +292,7 @@ function M.native:new(o, opts)
   setmetatable(self, M.native)
   local pager = opts.preview_pager == nil and o.pager or opts.preview_pager
   if type(pager) == "function" then pager = pager() end
+  ---@cast pager string
   local cmd = pager and pager:match("[^%s]+") or nil
   if cmd and vim.fn.executable(cmd) == 1 then self.pager = pager end
   self.diff_opts = o.diff_opts
@@ -306,6 +307,7 @@ end
 function M.native:cmdline(o)
   o = o or {}
   local act = shell.stringify_data(function(entries, _, _)
+    ---@diagnostic disable-next-line: undefined-field
     if not entries[1] then return shell.nop() end
     local idx = utils.tointeger(entries[1]:match("^%s*%d+%."))
     assert(idx)

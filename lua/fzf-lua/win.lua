@@ -126,6 +126,7 @@ function PathShortener._apply_line(buf, row, shorten_len)
       local conceal_end = line_offset + component_len -- end of component (before separator)
 
       if conceal_end > conceal_start then
+        ---@diagnostic disable-next-line: param-type-mismatch
         pcall(api.nvim_buf_set_extmark, buf, PathShortener._ns, row, conceal_start, {
           end_col = conceal_end,
           conceal = "",
@@ -145,7 +146,9 @@ end
 function PathShortener.attach(winid, bufnr, shorten_len)
   if not winid or not bufnr then return end
   PathShortener.setup()
+  ---@diagnostic disable-next-line: assign-type-mismatch
   shorten_len = (shorten_len == true) and 1 or tonumber(shorten_len) or 1
+  ---@diagnostic disable-next-line: assign-type-mismatch
   PathShortener._wins[winid] = { bufnr = bufnr, shorten_len = shorten_len }
 end
 
@@ -409,6 +412,8 @@ function FzfWin:generate_layout()
   local pwopts
   local row, col = winopts.row, winopts.col
   local height, width = winopts.height, winopts.width
+  ---@cast height integer
+  ---@cast width integer
   local preview_pos, preview_size = layout.pos, layout.size
   local pborder, ph, pw = self:normalize_border(self._o.winopts.preview.border,
     { type = "nvim", name = "prev", layout = preview and layout.pos, nwin = nwin, opts = self._o })
@@ -777,6 +782,7 @@ function FzfWin:attach_previewer(previewer)
     -- won't be closed properly and remain lingering (visible in `:ls!`)
     -- make sure the previewer is aware of this buffer
     if not self._previewer.preview_bufnr and self:validate_preview() then
+      ---@diagnostic disable-next-line: inject-field
       self._previewer.preview_bufnr = api.nvim_win_get_buf(self.preview_winid)
     end
     if self.on_closes.preview then self.on_closes.preview() end
@@ -1282,6 +1288,7 @@ function FzfWin.on_SIGWINCH(opts, event, cb)
       local events = vim.tbl_keys(vim.list_slice(opts.__sigwinch_cb))
       vim.list_extend(events, opts.__sigwinches or {})
       opts.__sigwinches = nil
+      ---@diagnostic disable-next-line: undefined-field
       local acts = vim.tbl_map(function(k) return opts.__sigwinch_cb[k](args) end, events)
       acts = vim.tbl_filter(function(a) return a and #a > 0 end, acts)
       return table.concat(acts, "+")

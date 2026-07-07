@@ -628,7 +628,9 @@ function M.git_cwd(cmd, opts)
     for _, a in ipairs(git_args) do
       if o[a[1]] then
         o[a[1]] = a.noexpand and o[a[1]] or libuv.expand(o[a[1]])
+        ---@diagnostic disable-next-line: param-type-mismatch, redundant-parameter
         table.insert(cmd, idx, a[2])
+        ---@diagnostic disable-next-line: param-type-mismatch, redundant-parameter
         table.insert(cmd, idx + 1, o[a[1]])
         idx = idx + 2
       end
@@ -654,6 +656,7 @@ function M.git_root(opts, noerr)
   -- already a Windows absolute path to avoid unnecessary overhead
   -- for users of git-for-windows (which already returns C:\... paths).
   -- Ref: https://github.com/ibhagwan/fzf-lua/issues/2745
+  ---@diagnostic disable-next-line: param-type-mismatch
   if utils.__IS_WINDOWS and not M.is_absolute(output[1]) and vim.fn.executable("cygpath") == 1 then
     local cyg_out, rc = utils.io_systemlist({ "cygpath", "-w", output[1] })
     if rc == 0 and cyg_out[1] then
@@ -773,6 +776,7 @@ end
 
 function M.ft_match_fast_event(args)
   local co = coroutine.running()
+  ---@cast co thread
   if co and vim.in_fast_event() then
     local ft
     vim.schedule(function()

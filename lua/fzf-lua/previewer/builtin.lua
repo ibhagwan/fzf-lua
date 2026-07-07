@@ -468,6 +468,7 @@ local copy_extmarks = function(src_buf, buf, win, topline, botline, ns)
     if not ignore[details.ns_id] then
       details.ns_id = nil
       if no_virt_text and details.virt_text then details.virt_text = nil end
+      ---@diagnostic disable-next-line: param-type-mismatch
       pcall(api.nvim_buf_set_extmark, buf, ns, row, col, details)
     end
   end
@@ -576,10 +577,11 @@ function Previewer.buffer_or_file:parse_entry(entry_str, _cb)
     local ext = path.extension(entry.path)
     local cmd = ext and self.extensions[ext:lower()] or nil
     cmd = type(cmd) == "string" and { cmd } or utils.deepcopy(cmd) or {}
+    ---@cast cmd string[]
     if cmd[1] then
       -- special case: we build ueberzug cmd separately
-      entry._is_ueberzug = cmd[1]:match("ueberzug") and true or false
-      if not entry._is_ueberzug and fn.executable(cmd[1]) == 1 then
+      entry._is_ueberzug = (cmd[1] --[[@as string]]):match("ueberzug") and true or false
+      if not entry._is_ueberzug and fn.executable(cmd[1] --[[@as string]]) == 1 then
         entry.cmd = replace_placeholder(cmd, "[<{]file[}>]", entry.path)
         entry.pty = true
       end
@@ -789,6 +791,8 @@ local start_cmd = function(buf, entry, opts)
   end)
   local sopts = entry.cmd_opts or {}
   sopts = vim.tbl_deep_extend("force", sopts, { stdout = stdout, stderr = stdout })
+  ---@diagnostic disable-next-line: param-type-mismatch
+  ---@diagnostic disable-next-line: redundant-parameter
   return vim.system(entry.cmd, sopts, on_exit)
 end
 
@@ -842,6 +846,7 @@ function Previewer.buffer_or_file:_populate_loaded_buffer_preview(tmpbuf, entry)
   -- this changes the buffer's 'getbufinfo[1].lastused'
   -- which messes up our `buffers()` sort
   entry.filetype = vim.bo[entry.bufnr].filetype
+  ---@diagnostic disable-next-line: param-type-mismatch
   local lines = api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
   vim.bo[tmpbuf].expandtab = vim.bo[entry.bufnr].expandtab
   vim.bo[tmpbuf].shiftwidth = vim.bo[entry.bufnr].shiftwidth
@@ -860,6 +865,7 @@ function Previewer.buffer_or_file:_populate_location_preview(tmpbuf, entry)
   local loc = { uri = entry.uri, range = entry.range }
   local win = self.win.preview_winid
   local ok, res = api.nvim_win_call(win, function()
+    ---@diagnostic disable-next-line: param-type-mismatch
     return pcall(utils.jump_to_location, loc, "utf-16", false)
   end)
   if ok then
@@ -1052,6 +1058,7 @@ function Previewer.base:update_render_markdown()
     return
   end
   if package.loaded["render-markdown"] then
+    ---@diagnostic disable-next-line: unresolved-require
     require("render-markdown").render({ buf = bufnr, event = "FzfLua" })
   elseif package.loaded["markview"] then
     --- Render strictly to save performance.
@@ -1059,6 +1066,7 @@ function Previewer.base:update_render_markdown()
     --- Use `strict:render(bufnr, 1000)` to stop rendering if
     --- line count >= 1000.
     local strict = package.loaded["markview"].strict_render;
+    ---@diagnostic disable-next-line: undefined-field
     if strict then strict:render(bufnr); end
   end
 end
@@ -1302,6 +1310,7 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
   end
 
   self.orig_pos = { lnum, col - 1 }
+  ---@diagnostic disable-next-line: param-type-mismatch
   if not pcall(api.nvim_win_set_cursor, win, cached_pos or self.orig_pos) then
     return
   end
@@ -1485,6 +1494,7 @@ function Previewer.man_pages:parse_entry(entry_str)
   local entry = require("fzf-lua.providers.manpages").manpage_sh_arg(entry_str)
   local cmd = self.cmd:format(entry) ---@type string|string[]
   if type(cmd) == "string" then cmd = { "sh", "-c", cmd } end
+  ---@cast cmd string[]
   local output, _ = utils.io_systemlist(cmd)
   return { filetype = "man", content = output }
 end
@@ -1532,7 +1542,7 @@ function Previewer.jumps:parse_entry(entry_str)
   if filepath then
     local ok, res = pcall(libuv.expand, filepath)
     if ok then
-      filepath = path.relative_to(res, utils.cwd())
+      filepath = path.relative_to(res --[[@as string]], utils.cwd())
     end
     if not uv.fs_stat(filepath) then
       -- file is not accessible,
@@ -1771,8 +1781,10 @@ function Previewer.vterm:parse_entry(entry_str)
   local entry = Previewer.vterm.super.parse_entry(self, entry_str)
   local spec = self.previewer:cmdline() ---@type fzf-lua.preview.spec
   assert(type(spec) == "table" and spec.fn, "invalid vterm previewer spec")
+  ---@diagnostic disable-next-line: need-check-nil
   local preview = assert(self.win.layout.preview)
   -- usually `{} {q}` is used as most common field index
+  ---@diagnostic disable-next-line: param-type-mismatch
   local res = spec.fn({ entry_str, FzfLua.get_info().query }, preview.height, preview.width)
   if spec.type == "cmd" then
     local cmdspec = type(res) == "table" and res or { cmd = { "sh", "-c", res }, env = nil }
@@ -1780,6 +1792,7 @@ function Previewer.vterm:parse_entry(entry_str)
     return { cmd = cmd, cmd_opts = { env = cmdspec.env }, line = entry.line, col = entry.col }
   else
     assert(type(res) == "table", res)
+    ---@diagnostic disable-next-line: assign-type-mismatch
     return { content = res, open_term = true, line = entry.line, col = entry.col }
   end
 end

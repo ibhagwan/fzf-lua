@@ -144,6 +144,7 @@ do
   -- used by M.globals.__index and M.defaults.<provider>._actions
   local m = require("fzf-lua.defaults")
   M.defaults = m.defaults
+  ---@diagnostic disable-next-line: inject-field
   m.globals = M.globals
 end
 

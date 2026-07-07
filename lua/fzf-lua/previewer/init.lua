@@ -105,6 +105,7 @@ Previewer.normalize_spec = function(preview, opts)
     local field_index = preview.field_index or "{}"
     local stringify = preview.type == "cmd" and FzfLua.shell.stringify_cmd
         or FzfLua.shell.stringify_data
+    ---@cast func fzf-lua.shell.cmd
     return (stringify(func, opts, field_index))
   else
     return preview

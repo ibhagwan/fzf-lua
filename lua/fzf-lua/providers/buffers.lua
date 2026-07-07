@@ -277,6 +277,7 @@ M.buffer_lines = function(opts)
 
     coroutine.wrap(function()
       local co = coroutine.running()
+      ---@cast co thread
 
       local buffers = filter_buffers(opts,
         opts.current_buffer_only and { utils.CTX().bufnr } or utils.CTX().buflist or {})
@@ -298,6 +299,7 @@ M.buffer_lines = function(opts)
         bnames[tostring(b)] = bname
       end
       local len_bufnames = math.min(tonumber(opts.show_bufname_len) or 15, longest_bname)
+      ---@cast len_bufnames integer
 
       for _, bufnr in ipairs(buffers) do
         local data = {}
@@ -537,6 +539,7 @@ M.treesitter = function(opts)
       local scope = "local" ---@type string
       ---@diagnostic disable-next-line: param-type-mismatch
       for k, v in pairs(metadata) do
+        ---@cast k string
         if k and vim.endswith(k, "local.scope") and type(v) == "string" then
           scope = v
         end
@@ -585,6 +588,7 @@ M.treesitter = function(opts)
   local contents = function(cb)
     coroutine.wrap(function()
       local co = coroutine.running()
+      ---@cast co thread
       for _, definition in ipairs(get(bufnr0)) do
         local nodes = get_local_nodes(definition)
         for _, node in ipairs(nodes) do
@@ -649,6 +653,7 @@ M.spellcheck = function(opts)
   local contents = function(cb)
     coroutine.wrap(function()
       local co = coroutine.running()
+      ---@cast co thread
       local data = {}
 
       -- Use vim.schedule to avoid

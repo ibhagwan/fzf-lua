@@ -123,6 +123,7 @@ function M.run(exec_lua, lvl, code, arg)
   -- Update upvalues
   if next(upvalues) then
     local caller = debug.getinfo(lvl)
+    ---@cast caller {func: function}
     local i = 0
 
     -- On PUC-Lua, if the function is a tail call, then func will be nil.

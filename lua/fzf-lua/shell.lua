@@ -5,7 +5,9 @@ local path = require "fzf-lua.path"
 local libuv = require "fzf-lua.libuv"
 
 -- path to current file
-local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
+local _info = debug.getinfo(1, "S")
+---@cast _info {source: string}
+local __FILE__ = _info.source:gsub("^@", "")
 
 ---@class fzf-lua.lru
 ---@field max_size integer
@@ -283,6 +285,7 @@ end
 ---@param fzf_field_index string? Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
 ---@return string, integer?
 M.stringify = function(contents, opts, fzf_field_index)
+  ---@cast opts fzf-lua.config.Resolved
   -- TODO: should we let this assert?
   -- are there any conditions in which stringify is called subsequently?
   if opts.__stringified then ---@cast contents string
@@ -306,10 +309,13 @@ M.stringify = function(contents, opts, fzf_field_index)
     ---@type fzf-lua.content, table?
     ---@diagnostic disable-next-line: redefined-local, assign-type-mismatch
     local contents, env = (function()
+      ---@diagnostic disable-next-line: param-type-mismatch
       local ret = (opts.is_live and type(contents) == "function" and contents(unpack(args), opts))
+          ---@diagnostic disable-next-line: param-type-mismatch
           or (opts.__stringify_cmd and type(contents) == "function" and contents(unpack(args, 1, n)))
           or contents
       if opts.__stringify_cmd and type(ret) == "table" then
+        ---@diagnostic disable-next-line: undefined-field
         return ret.cmd, (ret.env or opts.env)
       else
         return ret, opts.env
@@ -322,6 +328,7 @@ M.stringify = function(contents, opts, fzf_field_index)
     local fn_preprocess = opts.fn_preprocess
     local fn_postprocess = opts.fn_postprocess
     local co = coroutine.running()
+    ---@cast co thread
 
     -- Run the preprocess function
     if type(fn_preprocess) == "function" then fn_preprocess(opts) end
@@ -355,6 +362,7 @@ M.stringify = function(contents, opts, fzf_field_index)
             -- safely remove items while iterating
             local i = 1
             while i <= #data do
+              ---@diagnostic disable-next-line: call-non-callable
               local v = fn_transform(data[i], opts)
               if not v then
                 table.remove(data, i)
@@ -448,7 +456,7 @@ end
 ---@alias fzf-lua.shell.cmdSpec string|{ cmd: string|string[], env: table? }?
 ---@alias fzf-lua.shell.cmd fun(items: string[], fzf_lines: integer, fzf_columns: integer, ctx?: fzf-lua.rpc.Ctx): fzf-lua.shell.cmdSpec
 ---@alias fzf-lua.shell.data fun(items: string[], fzf_lines: integer, fzf_columns: integer, ctx?: fzf-lua.rpc.Ctx): fzf-lua.content?
----@alias fzf-lua.shell.data2 fun(items: string[], opts: fzf-lua.config.Resolved|{}, ctx?: fzf-lua.rpc.Ctx): fzf-lua.content?
+---@alias fzf-lua.shell.data2 fun(items: string[], opts: fzf-lua.config.Resolved, ctx?: fzf-lua.rpc.Ctx): fzf-lua.content?
 
 ---@param fn fzf-lua.shell.cmd
 ---@param opts table
