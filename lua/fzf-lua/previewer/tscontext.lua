@@ -19,6 +19,7 @@ function M.setup(opts)
   for k, v in pairs(opts) do
     M._setup_opts[k] = { v }
   end
+  ---@diagnostic disable-next-line: unresolved-require
   local config = require("treesitter-context.config")
   M._config = utils.tbl_deep_clone(config)
   for k, v in pairs(M._setup_opts) do
@@ -35,6 +36,7 @@ function M.deregister()
   for winid, _ in pairs(M._winids) do
     M.close(winid)
   end
+  ---@diagnostic disable-next-line: unresolved-require
   local config = require("treesitter-context.config")
   for k, v in pairs(M._setup_opts) do
     config[k] = v[2]
@@ -54,6 +56,7 @@ end
 ---@param winid integer
 function M.close(winid)
   if not M._setup then return end
+  ---@diagnostic disable-next-line: unresolved-require
   require("treesitter-context.render").close(winid)
   M._winids[winid] = nil
 end
@@ -73,6 +76,7 @@ function M.inc_dec_maxlines(num, winid, bufnr)
   if not M._setup then return end
   local n = tonumber(num)
   if not n then return end
+  ---@diagnostic disable-next-line: unresolved-require
   local config = require("treesitter-context.config")
   local max_lines = config.max_lines or 0
   config.max_lines = math.max(0, max_lines + n)
@@ -105,7 +109,9 @@ function M.update(winid, bufnr, opts)
   opts = opts or {}
   if not M.setup(opts) then return end
   assert(not api.nvim_win_is_valid(winid) or bufnr == api.nvim_win_get_buf(winid))
+  ---@diagnostic disable-next-line: unresolved-require
   local render = require("treesitter-context.render")
+  ---@diagnostic disable-next-line: unresolved-require
   local context_ranges, context_lines = require("treesitter-context.context").get(winid)
   if not context_ranges or #context_ranges == 0 then
     M.close(winid)

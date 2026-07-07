@@ -66,6 +66,7 @@ M.oldfiles = function(opts, globals)
     -- run in a coroutine for async progress indication
     coroutine.wrap(function()
       local co = coroutine.running()
+      ---@cast co thread
 
       local curr_buf = utils.CTX().bufnr
       local curr_file = vim.api.nvim_buf_get_name(curr_buf)
@@ -81,6 +82,7 @@ M.oldfiles = function(opts, globals)
         end
       end
 
+      ---@diagnostic disable-next-line: redefined-local
       local function add_entry(x, co, force)
         x = make_entry.file(x,
           force and vim.tbl_deep_extend("force", {}, opts, { cwd_only = false }) or opts)

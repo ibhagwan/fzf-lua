@@ -104,6 +104,7 @@ describe("Testing cache module", function()
   it("size set: err", function()
     local ok, err = pcall(cache.set_size, cache, 10)
     assert.is.False(ok)
+    ---@diagnostic disable-next-line: param-type-mismatch, need-check-nil
     assert.is.True(err and err:match("cannot be smaller than current length") ~= nil)
   end)
 

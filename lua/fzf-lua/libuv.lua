@@ -22,6 +22,7 @@ end
 
 local function coroutine_callback(fn)
   local co = coroutine.running()
+  ---@cast co thread
   local callback = function(...)
     if coroutine.status(co) == "suspended" then
       coroutine.resume(co, ...)
@@ -65,7 +66,7 @@ M.uv_spawn = function(cmd, opts, on_exit)
       renv[#renv + 1] = string.format("%s=%s", k, tostring(v))
     end
     return renv
-  end)() ---@diagnostic disable-next-line: unnecessary-assert, return-type-mismatch
+  end)() ---@diagnostic disable-next-line: unnecessary-assert, return-type-mismatch, redundant-return-value
   return assert(uv.spawn(cmd, opts, on_exit))
 end
 
@@ -109,6 +110,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   local prev_line_content ---@type string?
   local handle, pid ---@type uv.uv_process_t, integer
   local co = coroutine.running()
+  ---@cast co thread
   local queue = require("fzf-lua.lib.queue").new()
   local work_ctx
 
@@ -188,6 +190,7 @@ M.spawn = function(opts, fn_transform, fn_done)
 
   local function write_cb(data)
     write_cb_count = write_cb_count + 1
+    ---@diagnostic disable-next-line: need-check-nil
     opts.cb_write(data, function(err)
       write_cb_count = write_cb_count - 1
       if err then
@@ -472,6 +475,7 @@ M.spawn_stdio = function(opts)
   end
 
   -- run the preprocessing fn
+  ---@diagnostic disable-next-line: call-non-callable
   if fn_preprocess then fn_preprocess(opts) end
 
   ---@type fzf-lua.content|fzf-lua.shell.data2?
@@ -549,10 +553,12 @@ M.spawn_stdio = function(opts)
     pipe_close(stderr)
     if vim.in_fast_event() then
       vim.schedule(function()
+        ---@diagnostic disable-next-line: call-non-callable
         if fn_postprocess then fn_postprocess(opts) end
         exit(code)
       end)
     else
+      ---@diagnostic disable-next-line: call-non-callable
       if fn_postprocess then fn_postprocess(opts) end
       exit(code)
     end
@@ -599,9 +605,12 @@ M.spawn_stdio = function(opts)
     cmd = content
   else
     local f = fn_transform or function(x) return x end
+    ---@diagnostic disable-next-line: call-non-callable, missing-parameter
     local w = function(s) if s then io.stdout:write(f(s) .. EOL) else on_finish(0) end end
+    ---@diagnostic disable-next-line: call-non-callable, missing-parameter, param-type-mismatch
     local wn = function(s) if s then return io.stdout:write(f(s)) else on_finish(0) end end
     if opts.is_live then ---@cast content fzf-lua.shell.data2
+      ---@diagnostic disable-next-line: param-type-mismatch
       local res = content(args(), opts)
       if not res then return on_finish(0), nil end ---@cast res-?
       content = res
@@ -634,6 +643,7 @@ M.spawn_stdio = function(opts)
       EOL = EOL,
     },
     fn_transform and function(x)
+      ---@diagnostic disable-next-line: call-non-callable
       return fn_transform(x, opts)
     end)
 end

@@ -23,7 +23,7 @@ for _, v in vim.spairs(exported_modules) do
 end
 write("\n")
 for k, v in vim.spairs(lazyloaded_modules) do
-  write(([[FzfLua.%s = require(%q).%s]] .. "\n"):format(k, v[1], v[2]))
+  write(([[FzfLua.%s = require(%q).%s]] .. "\n"):format(k, v[1], v[2])) ---@diagnostic disable-line: undefined-field
 end
 write("\n")
 
@@ -40,12 +40,14 @@ local write_member = function(m)
   write("---@field " .. m.name .. " ")
   write(m.is_async and "async" or "")
   write("fun(")
+  ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
   local params = vim.iter(m.params)
   local p1 = params:next()
   if p1 then write(("%s: %s"):format(p1.name, p1.typ)) end
   params:each(function(p) write((", %s: %s"):format(p.name, p.typ)) end)
   write(")")
 
+  ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
   local returns = vim.iter(m.returns)
   local r1 = returns:next()
   if r1 then write((": " .. r1.typ)) end
@@ -54,6 +56,7 @@ local write_member = function(m)
 end
 
 write("---@class fzf-lua.win.api: fzf-lua.Win\n")
+---@diagnostic disable-next-line: redundant-parameter, call-non-callable
 vim.iter(res.members):each(write_member)
 
 flush()

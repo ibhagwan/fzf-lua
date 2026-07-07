@@ -124,7 +124,9 @@ local function draw_tree(opts, cb, tree, nodes, reverse, parents, prefix)
   for i, n in ipairs(nodes) do
     local v = tree[n]
     local is_last = i == #nodes
+    ---@diagnostic disable-next-line: undefined-field
     assert(not v.traversed)
+    ---@diagnostic disable-next-line: inject-field
     v.traversed = true
     -- TODO: IMHO the latter (flattened single) is nicer
     -- local is_single = #parents == 1 and #nodes == 1
@@ -151,6 +153,7 @@ M.undotree = function(opts)
   local contents = function(cb)
     coroutine.wrap(function()
       local co = coroutine.running()
+      ---@cast co thread
       local entries, curseq = get_undotree_entries(utils.CTX().bufnr)
       local tree = treefy(entries)
       local count = 0
@@ -360,6 +363,7 @@ function M.native:new(o, opts)
   self.buf = utils.CTX().bufnr
   local pager = opts.preview_pager == nil and o.pager or opts.preview_pager
   if type(pager) == "function" then pager = pager() end
+  ---@cast pager string
   local cmd = pager and pager:match("[^%s]+") or nil
   if cmd and vim.fn.executable(cmd) == 1 then self.pager = pager end
   self.diff_opts = o.diff_opts
@@ -374,6 +378,7 @@ end
 function M.native:cmdline(o)
   o = o or {}
   local act = shell.stringify_data(function(entries, _, _)
+    ---@diagnostic disable-next-line: undefined-field
     if not entries[1] then return shell.nop() end
     local seq = assert(utils.tointeger(entries[1]:match("%d+")))
     local lines = undo_diff(self.buf, seq, self.diff_opts)

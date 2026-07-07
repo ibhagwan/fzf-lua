@@ -23,8 +23,8 @@ local function find_toplevel_cwd(maybe_cwd, postfix, orig_cwd)
   if not orig_cwd then
     orig_cwd = maybe_cwd
   end
-  if vim.fn.isdirectory(libuv.expand(maybe_cwd)) == 1 then
-    local disp_cwd, cwd = maybe_cwd, libuv.expand(maybe_cwd)
+  if vim.fn.isdirectory(libuv.expand(maybe_cwd) --[[@as string]]) == 1 then
+    local disp_cwd, cwd = maybe_cwd, libuv.expand(maybe_cwd) --[[@as string]]
     -- returned cwd must be full path
     if path.has_cwd_prefix(cwd) then
       cwd = utils.cwd() .. (#cwd > 1 and cwd:sub(2) or "")

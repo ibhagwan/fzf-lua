@@ -51,6 +51,7 @@ end
 -- boundary). `pcall` traps any synchronous crash from the native
 -- preview fn (#2743).
 local function open_picker(items, preview_lines, ui_opts)
+  ---@diagnostic disable-next-line: redefined-local
   exec_lua(function(items, preview_lines, ui_opts)
     _G._ui_select_choice = nil
     _G._ui_select_errors = nil

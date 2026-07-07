@@ -36,6 +36,7 @@ T["api"]["fzf_exec"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
       helpers.FzfLua.fzf_exec(child, function(fzf_cb)
           coroutine.wrap(function()
             local co = coroutine.running()
+            ---@cast co thread
             for i = 1, 1000 do
               fzf_cb(tostring(i), function() coroutine.resume(co) end)
               coroutine.yield()
@@ -150,6 +151,7 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
           local q = args[1]
           return coroutine.wrap(function(fzf_cb)
             local co = coroutine.running()
+            ---@cast co thread
             if not tonumber(q) then
               fzf_cb("Invalid number: " .. tostring(q), function() coroutine.resume(co) end)
               coroutine.yield()

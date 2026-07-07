@@ -80,6 +80,7 @@ end
 
 function M._candidates(line, cmp_items)
   local function to_cmp_items(t, data)
+    ---@diagnostic disable-next-line: unresolved-require
     local cmp = require("cmp")
     return vim.tbl_map(function(v)
       return {

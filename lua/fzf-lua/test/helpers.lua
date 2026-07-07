@@ -1,11 +1,34 @@
 ---@diagnostic disable: inject-field
 -- lcd so we can run current file even if cwd isn't fzf-lua
-local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
+local _info = debug.getinfo(1, "S")
+---@cast _info {source: string}
+local __FILE__ = _info.source:gsub("^@", "")
 vim.cmd.lcd(vim.fn.fnamemodify(__FILE__, ":p:h:h:h:h"))
 
 local MiniTest = require("mini.test")
 local screenshot = require("fzf-lua.test.screenshot")
 
+---@class fzf-lua.test.helpers
+---@field IS_WIN fun(): boolean
+---@field IS_NOT_WIN fun(): boolean
+---@field SKIP_IF_WIN fun(msg?: string): nil
+---@field SKIP_IF_NOT_WIN fun(msg?: string): nil
+---@field IS_LINUX fun(): boolean
+---@field IS_NOT_LINUX fun(): boolean
+---@field SKIP_IF_LINUX fun(msg?: string): nil
+---@field SKIP_IF_NOT_LINUX fun(msg?: string): nil
+---@field IS_MAC fun(): boolean
+---@field IS_NOT_MAC fun(): boolean
+---@field SKIP_IF_MAC fun(msg?: string): nil
+---@field SKIP_IF_NOT_MAC fun(msg?: string): nil
+---@field IS_STABLE fun(): boolean
+---@field IS_NOT_STABLE fun(): boolean
+---@field SKIP_IF_STABLE fun(msg?: string): nil
+---@field SKIP_IF_NOT_STABLE fun(msg?: string): nil
+---@field IS_NIGHTLY fun(): boolean
+---@field IS_NOT_NIGHTLY fun(): boolean
+---@field SKIP_IF_NIGHTLY fun(msg?: string): nil
+---@field SKIP_IF_NOT_NIGHTLY fun(msg?: string): nil
 local M = {}
 
 -- Busted like expectations
@@ -47,6 +70,7 @@ for k, v in pairs(os_detect) do
     if M[var] == nil then ---@diagnostic disable-next-line: assign-type-mismatch
       M[var] = v.fn()
     end
+    ---@diagnostic disable-next-line: undefined-field
     return M[var]
   end
   M["IS_NOT_" .. k] = function()
@@ -458,6 +482,7 @@ M.FzfLua = setmetatable({}, {
       -- on MacOs but I actually like it that we're testing `fn_postprocess` as well as
       -- RPC connection from child to main instance using with `_G._fzf_lua_server`
       if ci_opts.__postprocess_wait then
+        ---@diagnostic disable-next-line: undefined-field
         opts.fn_postprocess = opts.multiprocess
             and [[return function(opts)
               local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })

@@ -73,6 +73,7 @@ M.helptags = function(opts)
 
     coroutine.wrap(function()
       local co = coroutine.running()
+      ---@cast co thread
       local tags_map = {}
       local delimiter = string.char(9)
       for _, lang in ipairs(langs) do

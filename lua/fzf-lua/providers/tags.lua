@@ -83,10 +83,14 @@ local function tags(opts)
 
   -- tags file should always resolve to an absolute path, already "expanded" by
   -- `get_ctags_file` we take care of the case where `opts.ctags_file = "tags"`
+  ---@diagnostic disable-next-line: param-type-mismatch
   if not path.is_absolute(opts._ctags_file) then
+    ---@diagnostic disable-next-line: assign-type-mismatch
     opts._ctags_file = path.join({ opts.cwd or utils.cwd(), opts.ctags_file })
   end
 
+  ---@diagnostic disable-next-line: param-type-mismatch
+  ---@diagnostic disable-next-line: missing-parameter
   if not opts.ctags_autogen and not uv.fs_stat(opts._ctags_file) then
     -- are we using btags and have the `ctags` binary?
     -- btags with no tag file, try to autogen using `ctags`
@@ -118,6 +122,7 @@ local function tags(opts)
     if M._TAGS2CWD[opts._ctags_file] then
       opts.cwd = opts.cwd or M._TAGS2CWD[opts._ctags_file]
     else
+      ---@diagnostic disable-next-line: param-type-mismatch
       opts.cwd = opts.cwd or get_ctags_cwd(opts._ctags_file) or path.parent(opts.ctags_file)
       M._TAGS2CWD[opts._ctags_file] = opts.cwd
     end
@@ -154,6 +159,7 @@ local function tags(opts)
     opts.rg_glob = false
     -- tags has its own formatter
     opts.formatter, opts._fmt = false, { _to = false, to = false, from = false }
+    ---@diagnostic disable-next-line: param-type-mismatch
     opts.filespec = libuv.shellescape(opts._ctags_file)
     return require "fzf-lua.providers.grep".live_grep(opts)
   else
@@ -251,7 +257,7 @@ end
 M.grep_cword = function(opts)
   if not opts then opts = {} end
   opts.no_esc = true
-  opts.search = utils.rg_escape_cword(vim.fn.expand("<cword>"))
+  opts.search = utils.rg_escape_cword(vim.fn.expand("<cword>") --[[@as string]])
   return M.grep(opts)
 end
 
@@ -259,7 +265,7 @@ M.grep_cWORD = function(opts)
   if not opts then opts = {} end
   opts.no_esc = true
   -- since we're searching a tags file also search for surrounding literals ^ $
-  opts.search = [[(^|\^|\s)]] .. utils.rg_escape(vim.fn.expand("<cWORD>")) .. [[($|\$|\s)]]
+  opts.search = [[(^|\^|\s)]] .. utils.rg_escape(vim.fn.expand("<cWORD>") --[[@as string]]) .. [[($|\$|\s)]]
   return M.grep(opts)
 end
 

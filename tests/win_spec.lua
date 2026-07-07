@@ -147,6 +147,7 @@ end
 T["win"]["keymap"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
 T["win"]["keymap"]["no error"] = new_set({
+  ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
   parametrize = vim.iter(require("fzf-lua.defaults").defaults.keymap.builtin)
       :map(function(key, action) return { key, action } end)
       :totable()

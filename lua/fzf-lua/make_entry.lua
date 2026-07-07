@@ -248,6 +248,7 @@ local glob_filter = function(paths, globs)
   return vim.tbl_filter(function(p)
     local stat = vim.uv.fs_stat(p) -- "--iglob" can filter directory correctly
     return (stat and stat.type == "directory") or
+        ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
         vim.iter(matchers):all(function(m) return m:match_str(p) end)
   end, paths)
 end
@@ -521,11 +522,14 @@ M.preprocess = function(opts)
   -- formatter `to` function
   if opts.formatter and not opts._fmt then
     opts._fmt = opts._fmt or {}
+    ---@diagnostic disable-next-line: inject-field, undefined-field
     opts._fmt.to = opts2._fmt.to
     -- Attempt to load from string value `_to`
+    ---@diagnostic disable-next-line: undefined-field
     if not opts._fmt.to then
       local _to = opts2._fmt._to
       if type(_to) == "string" then
+        ---@diagnostic disable-next-line: inject-field
         opts._fmt.to = assert(loadstring(_to))()
       end
     end
@@ -594,6 +598,7 @@ M.file = function(x, opts)
   end)()
   ---@cast stripped_filepath-?
   local filepath = stripped_filepath
+  ---@cast filepath string
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
   -- the './' prefix, will not work with '--color=always'
   -- https://github.com/sharkdp/fd/blob/master/CHANGELOG.md

@@ -669,7 +669,7 @@ describe("Testing path module", function()
     end)
 
     it("sets winopts.title to 'VCS Files (jj)' in a jj repo", function()
-      local received_opts
+      local received_opts ---@cast received_opts table
       path.is_jj_repo = function() return true end
       path.is_git_repo = function() return false end
       jj_provider.files = function(opts) received_opts = opts end
@@ -678,7 +678,7 @@ describe("Testing path module", function()
     end)
 
     it("sets winopts.title to 'VCS Files (git)' in a git repo", function()
-      local received_opts
+      local received_opts ---@cast received_opts table
       path.is_jj_repo = function() return false end
       path.is_git_repo = function() return true end
       git_provider.files = function(opts) received_opts = opts end
@@ -687,7 +687,7 @@ describe("Testing path module", function()
     end)
 
     it("does not set winopts.title when falling back to files", function()
-      local received_opts
+      local received_opts ---@cast received_opts table
       path.is_jj_repo = function() return false end
       path.is_git_repo = function() return false end
       files_provider.files = function(opts) received_opts = opts end
@@ -696,7 +696,7 @@ describe("Testing path module", function()
     end)
 
     it("does not override user-supplied winopts.title", function()
-      local received_opts
+      local received_opts ---@cast received_opts table
       path.is_jj_repo = function() return true end
       path.is_git_repo = function() return false end
       jj_provider.files = function(opts) received_opts = opts end
@@ -717,7 +717,7 @@ describe("Testing path module", function()
       local orig_info = utils.info
       utils.info = function(msg) info_msg = msg end
       -- path.git_root calls utils.info when noerr is falsy
-      path.git_root = function(opts, noerr)
+      path.git_root = function(_opts, noerr)
         if not noerr then
           utils.info("not a git repository")
         end

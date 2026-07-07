@@ -1,7 +1,9 @@
 ---@diagnostic disable-next-line: deprecated
 local api, uv, fn = vim.api, vim.uv or vim.loop, vim.fn
 assert(#api.nvim_list_uis() == 0)
-local __FILE__ = debug.getinfo(1, "S").source:gsub("^@", "")
+local _info = debug.getinfo(1, "S")
+---@cast _info {source: string}
+local __FILE__ = _info.source:gsub("^@", "")
 local dir = fn.fnamemodify(fn.resolve(__FILE__), ":h:h:p")
 vim.opt.rtp:append(dir)
 vim.cmd.runtime("plugin/fzf-lua.lua")
@@ -65,7 +67,9 @@ _G.fzf_jobstart = function(cmd, opts)
     end))
 end
 
-require("fzf-lua.cmd").run_command(unpack(_G.arg))
+local _cli_args = _G.arg
+---@cast _cli_args string[]
+require("fzf-lua.cmd").run_command(unpack(_cli_args) --[[@as string]])
 
 while true do
   vim.wait(100)

@@ -23,6 +23,7 @@ return {
         return opts
       end
       opts.actions = opts.actions or {}
+      ---@diagnostic disable-next-line: unnecessary-assert
       assert(opts.keymap)
       assert(opts.keymap.builtin)
       if fzf.utils.has(opts, "sk") and not fzf.utils.has(opts, "sk", { 1, 5, 3 }) then
@@ -63,6 +64,7 @@ return {
         act = type(act) == "table" and type(act[1]) == "function"
             and { fn = act[1], reuse = true } or act
         assert(type(act) == "table" and type(act.fn) == "function" or not act)
+        ---@cast act table
         if type(act) == "table" and
             not act.exec_silent
             and not act.reload
