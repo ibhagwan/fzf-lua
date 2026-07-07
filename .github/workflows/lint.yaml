@@ -37,11 +37,11 @@ jobs:
       #     export PATH="${PWD}/lua-language-server/bin:${PATH}"
       #     lua-language-server --version
 
-      - name: Install emmylua_check
+      - name: Install Emmylua
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          make deps/emmylua_check
+          make deps/emmylua
 
       - name: Lint
         run: |
