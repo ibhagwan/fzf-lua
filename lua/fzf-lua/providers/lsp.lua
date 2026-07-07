@@ -963,8 +963,6 @@ M.code_actions = function(opts)
       " to hide this message or register globally using ':FzfLua register_ui_select'.")
   end
 
-  opts.actions = opts.actions or {}
-  opts.actions.enter = nil
   -- only dereg if we aren't registered
   if not registered then
     opts.post_action_cb = function()
