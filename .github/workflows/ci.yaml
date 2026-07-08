@@ -36,7 +36,8 @@ jobs:
           - os: ubuntu-latest
             install-deps: |
               sudo apt-get update && sudo apt-get install -y ripgrep fd-find
-              wget -O - https://github.com/junegunn/fzf/releases/download/v0.74.0/fzf-0.74.0-linux_amd64.tar.gz | tar zxfv -
+              gh release download -R junegunn/fzf --pattern '*-linux_amd64.tar.gz'
+              tar xvfz *.tar.gz
               sudo mv ./fzf /bin
 
     steps:
@@ -67,6 +68,8 @@ jobs:
 
       - name: Install Dependencies
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ${{ matrix.install-deps }}
           fzf --version
