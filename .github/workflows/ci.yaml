@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        rev: [nightly, v0.12.2, puc-lua]
+        rev: [nightly, stable, puc-lua]
         exclude:
           - os: macos-latest
             rev: puc-lua
@@ -36,11 +36,11 @@ jobs:
           - os: ubuntu-latest
             install-deps: |
               sudo apt-get update && sudo apt-get install -y ripgrep fd-find
-              wget -O - https://github.com/junegunn/fzf/releases/download/v0.67.0/fzf-0.67.0-linux_amd64.tar.gz | tar zxfv -
+              wget -O - https://github.com/junegunn/fzf/releases/download/v0.74.0/fzf-0.74.0-linux_amd64.tar.gz | tar zxfv -
               sudo mv ./fzf /bin
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # full clone to test on pinned sha
 
