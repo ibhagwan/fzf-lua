@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-slim
     if: github.repository == 'ibhagwan/fzf-lua'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Sync remote repositories
