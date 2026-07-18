@@ -77,7 +77,9 @@ Options:
       ---@cast raw integer?
       opts.jobs = raw or 1
     elseif jit and jit.os == "Windows" then
-      opts.jobs = 4
+      -- mini.test does not support parallel child Neovim on Windows;
+      -- default to one worker unless --jobs is explicitly passed.
+      opts.jobs = 1
     else
       local count = 0
       local f = io.open("/proc/cpuinfo", "r")

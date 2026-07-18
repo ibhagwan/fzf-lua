@@ -7,7 +7,16 @@ nvim ?= nvim
 #   JOBS=N               -> parallelism factor (defaults to nproc).
 #
 PARALLEL ?= 1
+# mini.test does not support parallel child Neovim processes on Windows
+# (see https://nvim-mini.org/mini.nvim/readmes/mini-test). Multiple
+# workers trigger `\\.\pipe\mininvim` collisions and "ch N was closed by
+# the peer" RPC errors. Default to a single worker there so the suite
+# stays correct; explicit `JOBS=N` still wins.
+ifeq ($(OS),Windows_NT)
+JOBS    ?= 1
+else
 JOBS    ?= $(shell nproc 2>/dev/null || echo 4)
+endif
 
 #
 # Run all tests or specic module tests
