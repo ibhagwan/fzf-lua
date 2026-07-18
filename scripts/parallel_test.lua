@@ -10,9 +10,18 @@
 -- every requested nvim binary, so CI correctly fails when any spec
 -- fails.
 
-local fn = vim.fn
+---@class parallel_test.worker
+---@field id integer
+---@field spec string
+---@field cmd string[]
+---@field env table<string, string>
+---@field buf string[]
+---@field started boolean
+---@field finished boolean
+---@field code integer
+---@field signal integer
 
----@class parallel_test_opts
+---@class parallel_test.opts
 ---@field jobs integer
 ---@field glob? string
 ---@field filter? string
@@ -20,15 +29,18 @@ local fn = vim.fn
 ---@field nvim_execs string[]
 
 ---@param args string[]
----@return parallel_test_opts
+---@return parallel_test.opts
 local function parse_args(args)
+  ---@type parallel_test.opts
   local opts = { jobs = 0, serial = false, nvim_execs = {} }
   local i = 1
   while i <= #args do
     local a = args[i]
     if a == "--jobs" or a == "-j" then
       i = i + 1
-      opts.jobs = tonumber(args[i]) or 0
+      local raw = args[i] and tonumber(args[i]) or nil
+      ---@cast raw integer?
+      opts.jobs = raw or 0
     elseif a == "--glob" then
       i = i + 1
       opts.glob = args[i]
@@ -49,34 +61,38 @@ Options:
   --help, -h       Show this help
 ]])
       os.exit(0)
-    elseif a:sub(1, 1) == "-" then
+    elseif type(a) == "string" and a:sub(1, 1) == "-" then
       io.stderr:write("parallel_test: unknown option: " .. a .. "\n")
       os.exit(2)
-    else
+    elseif type(a) == "string" then
       table.insert(opts.nvim_execs, a)
     end
     i = i + 1
   end
 
   if opts.jobs <= 0 then
-    if vim.uv and vim.uv.os_getenv("NUMBER_OF_PROCESSORS") then
-      opts.jobs = tonumber(vim.uv.os_getenv("NUMBER_OF_PROCESSORS")) or 1
+    local env = vim.uv and vim.uv.os_getenv("NUMBER_OF_PROCESSORS") or nil
+    if env then
+      local raw = tonumber(env)
+      ---@cast raw integer?
+      opts.jobs = raw or 1
     elseif jit and jit.os == "Windows" then
-      opts.jobs = tonumber(vim.uv.os_getenv("NUMBER_OF_PROCESSORS")) or 4
+      opts.jobs = 4
     else
-      -- POSIX fallback: count online processors.
-      local n = 0
+      local count = 0
       local f = io.open("/proc/cpuinfo", "r")
       if f then
         for line in f:lines() do
-          if line:match("^processor%s*:") then n = n + 1 end
+          if type(line) == "string" and line:match("^processor%s*:") then
+            count = count + 1
+          end
         end
         f:close()
       end
-      opts.jobs = n > 0 and n or 4
+      opts.jobs = count > 0 and count or 4
     end
   end
-  opts.jobs = math.max(1, opts.jobs)
+  if opts.jobs < 1 then opts.jobs = 1 end
   return opts
 end
 
@@ -95,9 +111,8 @@ local function list_specs(root, pattern)
 end
 
 ---@param nvim_exec string
----@param spec string
 ---@return string[]
-local function build_cmd(nvim_exec, spec)
+local function build_cmd(nvim_exec)
   return {
     nvim_exec, "--headless", "--noplugin",
     "-u", "./scripts/minimal_init.lua",
@@ -105,18 +120,7 @@ local function build_cmd(nvim_exec, spec)
   }
 end
 
----@class worker
----@field id integer
----@field spec string
----@field cmd string[]
----@field env table<string, string>
----@field buf string[]
----@field started boolean
----@field finished boolean
----@field code integer
----@field signal integer
-
----@param w worker
+---@param w parallel_test.worker
 ---@return fun(_err: string?, data: string?)
 local function make_data_cb(w)
   return function(_err, data)
@@ -124,7 +128,7 @@ local function make_data_cb(w)
   end
 end
 
----@param w worker
+---@param w parallel_test.worker
 ---@return fun(obj: vim.SystemCompleted)
 local function make_exit_cb(w)
   return vim.schedule_wrap(function(obj)
@@ -134,7 +138,7 @@ local function make_exit_cb(w)
   end)
 end
 
----@param workers worker[]
+---@param workers parallel_test.worker[]
 ---@param jobs integer
 local function drive(workers, jobs)
   local next_idx = 1
@@ -143,21 +147,25 @@ local function drive(workers, jobs)
   local function spawn_one()
     while in_flight < jobs and next_idx <= #workers do
       local w = workers[next_idx]
-      next_idx = next_idx + 1
-      in_flight = in_flight + 1
-      w.started = true
-      vim.system(w.cmd, {
-        cwd = ".",
-        text = true,
-        env = w.env,
-        stdout = make_data_cb(w),
-        stderr = make_data_cb(w),
-      }, vim.schedule_wrap(function(obj)
-        w.finished = true
-        w.code = obj.code
-        w.signal = obj.signal
-        in_flight = in_flight - 1
-      end))
+      if w then
+        next_idx = next_idx + 1
+        in_flight = in_flight + 1
+        w.started = true
+        vim.system(w.cmd, {
+          cwd = ".",
+          text = true,
+          env = w.env,
+          stdout = make_data_cb(w),
+          stderr = make_data_cb(w),
+        }, vim.schedule_wrap(function(obj)
+          w.finished = true
+          w.code = obj.code
+          w.signal = obj.signal
+          in_flight = in_flight - 1
+        end))
+      else
+        next_idx = next_idx + 1
+      end
     end
   end
 
@@ -168,12 +176,12 @@ local function drive(workers, jobs)
   while true do
     local all_done = true
     for _, w in ipairs(workers) do
-      if not w.finished then all_done = false; break end
+      if w and not w.finished then all_done = false; break end
     end
     if all_done then break end
     vim.wait(200, function()
       for _, w in ipairs(workers) do
-        if not w.finished then return false end
+        if w and not w.finished then return false end
       end
       return true
     end)
@@ -182,10 +190,9 @@ local function drive(workers, jobs)
   vim.wait(50)
 end
 
----@param workers worker[]
----@param opts parallel_test_opts
+---@param workers parallel_test.worker[]
 ---@return integer fails
-local function print_and_collect(workers, opts)
+local function print_and_collect(workers)
   local fails = 0
   for _, w in ipairs(workers) do
     io.write(string.format("\n----- %s -----\n", w.spec))
@@ -204,7 +211,7 @@ local function print_and_collect(workers, opts)
   return fails
 end
 
----@param opts parallel_test_opts
+---@param opts parallel_test.opts
 ---@param nvim_exec string
 ---@return integer fails
 local function run_one_nvim(opts, nvim_exec)
@@ -219,7 +226,7 @@ local function run_one_nvim(opts, nvim_exec)
   io.write(string.format("Found %d spec file(s) (jobs=%d)\n", #specs, opts.jobs))
   io.flush()
 
-  ---@type worker[]
+  ---@type parallel_test.worker[]
   local workers = {}
   for i, spec in ipairs(specs) do
     -- Derive the per-spec `glob` (a basename prefix consumed by
@@ -234,7 +241,7 @@ local function run_one_nvim(opts, nvim_exec)
     workers[i] = {
       id = i,
       spec = spec,
-      cmd = build_cmd(nvim_exec, spec),
+      cmd = build_cmd(nvim_exec),
       env = env,
       buf = {},
       started = false,
@@ -260,10 +267,27 @@ local function run_one_nvim(opts, nvim_exec)
     drive(workers, opts.jobs)
   end
 
-  local fails = print_and_collect(workers, opts)
+  local fails = print_and_collect(workers)
   io.write(string.format("\n[parallel_test] fails=%d/%d\n", fails, #workers))
   io.flush()
   return fails
+end
+
+---@param opts parallel_test.opts
+local function main(opts)
+  local total_fails = 0
+  for _, nvim_exec in ipairs(opts.nvim_execs) do
+    io.write(string.format("\n====== %s ======\n",
+      vim.fn.system({ nvim_exec, "--version" }):gsub("\n.*$", "")))
+    io.flush()
+    total_fails = total_fails + run_one_nvim(opts, nvim_exec)
+  end
+
+  if total_fails > 0 then
+    io.write(string.format("FAIL: %d spec file(s) failed\n", total_fails))
+    os.exit(1)
+  end
+  io.write("PASS: all spec files green\n")
 end
 
 local opts = parse_args(_G.arg)
@@ -271,17 +295,4 @@ if #opts.nvim_execs == 0 then
   io.stderr:write("parallel_test: at least one NVIM_EXEC is required\n")
   os.exit(2)
 end
-
-local total_fails = 0
-for _, nvim_exec in ipairs(opts.nvim_execs) do
-  io.write(string.format("\n====== %s ======\n",
-    fn.system({ nvim_exec, "--version" }):gsub("\n.*$", "")))
-  io.flush()
-  total_fails = total_fails + run_one_nvim(opts, nvim_exec)
-end
-
-if total_fails > 0 then
-  io.write(string.format("FAIL: %d spec file(s) failed\n", total_fails))
-  os.exit(1)
-end
-io.write("PASS: all spec files green\n")
+main(opts)
