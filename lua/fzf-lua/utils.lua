@@ -1570,6 +1570,15 @@ function M.git_version()
   return tonumber(out:match("(%d+.%d+)."))
 end
 
+  ---@param binary string?
+  ---@return boolean? is universal ctags
+  ---@return number? version
+function M.ctags_is_universal(binary)
+  local out, rc = M.io_system({ binary or "ctags", "--version" })
+  if rc ~= 0 then return end
+  return out:match("Universal") ~= nil, tonumber(out:match("(%d+.%d+).")) 
+end
+
 function M.create_user_command_callback(provider, arg, altmap)
   ---@param o vim.api.keyset.create_user_command.command_args
   ---@return table
