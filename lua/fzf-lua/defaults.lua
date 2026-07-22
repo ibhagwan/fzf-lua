@@ -830,7 +830,7 @@ M.defaults.git = {
   ---@field cmd_del? string[]
   branches = {
     cmd        = [[git branch --all --color -vv ]]
-        .. [[--sort=-'committerdate' --sort='refname:rstrip=-2' --sort=-'HEAD']],
+        .. [[--sort=-committerdate --sort=refname:rstrip=-2 --sort=-HEAD]],
     preview    = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
     remotes    = "local",
     actions    = {
