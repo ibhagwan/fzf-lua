@@ -1,4 +1,22 @@
 nvim ?= nvim
+#
+# Parallel test runner configuration:
+#   PARALLEL=1 (default) -> dispatch one nvim per spec file via
+#                           scripts/parallel_test.lua up to JOBS workers.
+#   PARALLEL=0           -> legacy serial runner (one nvim for all files).
+#   JOBS=N               -> parallelism factor (defaults to nproc).
+#
+PARALLEL ?= 1
+# mini.test does not support parallel child Neovim processes on Windows
+# (see https://nvim-mini.org/mini.nvim/readmes/mini-test). Multiple
+# workers trigger `\\.\pipe\mininvim` collisions and "ch N was closed by
+# the peer" RPC errors. Default to a single worker there so the suite
+# stays correct; explicit `JOBS=N` still wins.
+ifeq ($(OS),Windows_NT)
+JOBS    ?= 1
+else
+JOBS    ?= $(shell nproc 2>/dev/null || echo 4)
+endif
 
 #
 # Run all tests or specic module tests
@@ -12,12 +30,28 @@ nvim ?= nvim
 #
 .PHONY: test
 test:
-	for nvim_exec in $(nvim); do \
-		printf "\n======\n\n" ; \
-		$$nvim_exec --version | head -n 1 && echo '' ; \
-		$$nvim_exec --headless --noplugin -u ./scripts/minimal_init.lua \
-			-l ./scripts/make_cli.lua ; \
-	done
+	@if [ "$(PARALLEL)" = "1" ]; then \
+		echo "PARALLEL test run ($(JOBS) workers)"; \
+		runner_args="--jobs $(JOBS)"; \
+		[ -n "$(glob)" ]   && runner_args="$$runner_args --glob $(glob)"; \
+		[ -n "$(filter)" ] && runner_args="$$runner_args --filter $(filter)"; \
+		failed=0; \
+		for nvim_exec in $(nvim); do \
+			$$nvim_exec --headless -l ./scripts/parallel_test.lua \
+				$$runner_args "$$nvim_exec" || failed=$$((failed + 1)); \
+		done; \
+		if [ $$failed -ne 0 ]; then \
+			echo "FAIL: $$failed nvim binary/ies reported failing specs"; \
+			exit 1; \
+		fi; \
+	else \
+		for nvim_exec in $(nvim); do \
+			printf "\n======\n\n" ; \
+			$$nvim_exec --version | head -n 1 && echo '' ; \
+			$$nvim_exec --headless --noplugin -u ./scripts/minimal_init.lua \
+				-l ./scripts/make_cli.lua ; \
+		done; \
+	fi
 
 # clean / update all screenshots
 .PHONY: screenshots
