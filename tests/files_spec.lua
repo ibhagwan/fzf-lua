@@ -190,6 +190,24 @@ T["files"]["preview should work after chdir #1864"] = function()
   })
 end
 
+T["files"]["ignore_current_file without icons #2788"] = function()
+  exec_lua([[vim.cmd.edit("LICENSE")]])
+  helpers.FzfLua.files(child, {
+    __expect_lines = true,
+    __screen_opts = { ignore_text = { 6, 28 } },
+    debug = 1,
+    hidden = false,
+    file_icons = false,
+    git_icons = false,
+    ignore_current_file = true,
+    previewer = false,
+    cwd_prompt = false,
+    multiprocess = true,
+    cmd = "rg --files --sort=path -g !tests/**",
+    query = "LICENSE",
+  })
+end
+
 T["files"]["nop on nothing match"] = function()
   reload({ "hide" })
   local ctx = exec_lua([[return FzfLua.utils.CTX()]])
