@@ -947,7 +947,7 @@ function M.strip_ansi_coloring(str)
   -- NOTE: didn't work with grep's "^[[K"
   -- return str:gsub("%[[%d;]-m", "")
   -- https://stackoverflow.com/a/49209650/368691
-  return str:gsub("[\27\155][][()#;?%d]*[A-PRZcf-ntqry=><~]", "")
+  return str:gsub("[\27\155][%[%]][()#;?%d]*[A-PRZcf-ntqry=><~]", "")
 end
 
 function M.ansi_escseq_len(str)
