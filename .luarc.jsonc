@@ -50,8 +50,8 @@
     "preloadFileSize": 1000,
     "ignoreDir": [
       "lua/fzf-lua/actions.lua",
-      // Vendored upstream modules (intentionally not linted)
-      "lua/fzf-lua/test/vendor"
+      // Vendored upstream module (intentionally not linted to keep lua-language-server fast)
+      "lua/fzf-lua/test/_mini_test.lua"
     ],
   },
   "type": {

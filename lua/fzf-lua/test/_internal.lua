@@ -6,15 +6,12 @@
 --- it out of the module's closures via `debug.getupvalue`. Doing that in more
 --- than one place makes the harness fragile: any upstream refactor that moves
 --- `H` to a different upvalue slot or wraps the relevant functions in another
---- closure silently breaks `screenshot.lua` and friends.
+--- closure silently breaks the screenshot helpers.
 ---
 --- This module is the single scrape site. It reads `H` once at load time,
 --- caches it, and re-exports the four entry points the harness actually
 --- touches as a documented, version-stable API. If upstream moves things
 --- around, only this file needs to change.
----
---- Required side effects on first load:
----   * `require("mini.test")` so `H` exists.
 
 local M = {}
 
@@ -24,12 +21,10 @@ local _h ---@type table|nil cached H table from vendored mini.test
 local function get_h()
   if _h ~= nil then return _h end
 
-  -- Prefer grabbing `H` from `MiniTest.expect.reference_screenshot` because
-  -- that is the exact same upvalue chain `screenshot.lua` used historically,
-  -- so behavior is unchanged. If upstream ever stops exposing that function
-  -- we fall back to any other exported `MiniTest.*` closure, then ultimately
-  -- to a direct `debug.getlocal` walk over the file's main chunk.
-  local MiniTest = require("mini.test")
+  -- Probe an ordered list of well-known exported closures for an upvalue
+  -- literally named `H`. If upstream ever drops one of these or wraps it in
+  -- another closure, fall through to the next probe.
+  local MiniTest = require("fzf-lua.test._mini_test")
 
   ---@type fun(...): any
   local probes = {
@@ -53,24 +48,7 @@ local function get_h()
     end
   end
 
-  -- Last resort: walk locals of the file's main chunk via the cache entry
-  -- mini.test leaves in `debug.getinfo` of any function defined inside it.
-  -- This path is intentionally conservative; in practice the upvalue probe
-  -- above always succeeds.
-  for _, source in ipairs({
-    MiniTest.expect and MiniTest.expect.reference_screenshot,
-    MiniTest.new_set,
-  }) do
-    if type(source) == "function" then
-      local info = debug.getinfo(source, "S")
-      if info and info.source then
-        -- The H table is also reachable through package.loaded if upstream
-        -- ever starts exporting it under a stable key. We don't rely on that.
-      end
-    end
-  end
-
-  error("fzf-lua.test.vendor.mini.internal: failed to locate `H` in vendored mini.test")
+  error("fzf-lua.test._internal: failed to locate `H` in vendored mini.test")
 end
 
 -- Force the H lookup to happen during the first require, so any failure

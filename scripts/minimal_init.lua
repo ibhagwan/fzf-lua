@@ -4,19 +4,12 @@ local dir = vim.fn.fnamemodify(vim.fn.resolve(__FILE__), ":h:h:p")
 -- Add current directory to 'runtimepath' to be able to use 'lua' files
 vim.opt.runtimepath:append(dir)
 
--- Vendored 'mini.test' lives under fzf-lua's own source tree. Prepend its
--- root to runtimepath AND `package.path` so that `require('mini.test')` resolves
--- to the copy we ship in-tree instead of any external installation. Both
--- channels are needed because a `-u` script cannot trigger Neovim's startup
--- `runtimepath` -> `package.path` rebuild.
-local vendor_root = vim.fs.joinpath(dir, "lua", "fzf-lua", "test", "vendor")
-vim.opt.runtimepath:prepend(vendor_root)
-package.path = vendor_root .. "/?.lua;" .. vendor_root .. "/?/init.lua;" .. package.path
-
 -- 'mini.nvim' is still cloned into `deps/mini.nvim` by `make deps`. We append
--- (rather than prepend) so the vendored 'mini.test' above still wins for
--- `require('mini.test')`. The clone exists to provide `mini.icons` for the
--- icons-aware specs (`files_spec`, `headless_spec`, `minicons_spec`).
+-- it to runtimepath purely to make `mini.icons` available for the icons-aware
+-- specs (`files_spec`, `headless_spec`, `minicons_spec`). The harness's own
+-- vendored `mini.test` lives under `lua/fzf-lua/test/_mini_test.lua` and is
+-- loaded as `fzf-lua.test._mini_test` from fzf-lua's own runtimepath, which
+-- is searched before the deps clone.
 vim.opt.runtimepath:append(vim.fs.joinpath(dir, "deps", "mini.nvim"))
 vim.opt.runtimepath:append(vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim"))
 

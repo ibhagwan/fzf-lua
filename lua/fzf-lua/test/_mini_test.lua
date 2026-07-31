@@ -3,15 +3,10 @@
 --- VENDORED FILE -- DO NOT EDIT LOCALLY
 ---
 --- Vendored from <https://github.com/nvim-mini/mini.nvim> as part of the
---- fzf-lua test harness migration. Pinned at the exact upstream commit that
---- the fzf-lua `make deps` target cloned into `deps/mini.nvim`:
----
----   SHA:    venv: see scripts/ci/Makefile-update-mini or README-VENDORING.md
----   Source: lua/mini/test.lua
----
---- Modifications: none. Re-vendor by running the upgrade script and
---- replacing this file byte-for-byte. Diff against upstream before each
---- bump; never hand-edit this file.
+--- fzf-lua test harness. Lives under `lua/fzf-lua/test/` (unprefixed as the
+--- private harness backend) and is consumed only via
+--- `fzf-lua.test.harness`. Diff against upstream before each bump; never
+--- hand-edit this file.
 ---
 --- MIT License Copyright (c) 2022 Evgeni Chasnovski
 

@@ -13,11 +13,11 @@
 --- stay put.
 ---
 --- To extend, add the new entry to `M` and import it where used. Never add
---- `require("mini.test")` outside this file.
+--- `require("fzf-lua.test._mini_test")` outside this file.
 
-local MiniTest = require("mini.test")
----@type fzf-lua.test.vendor.mini.internal
-local bridge = require("fzf-lua.test.vendor.mini.internal")
+local MiniTest = require("fzf-lua.test._mini_test")
+---@type fzf-lua.test._internal
+local bridge = require("fzf-lua.test._internal")
 
 ---@class fzf-lua.test.harness
 local M = {}

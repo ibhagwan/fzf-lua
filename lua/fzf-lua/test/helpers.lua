@@ -6,7 +6,7 @@ local __FILE__ = _info.source:gsub("^@", "")
 vim.cmd.lcd(vim.fn.fnamemodify(__FILE__, ":p:h:h:h:h"))
 
 local MiniTest = require("fzf-lua.test.harness")
-local screenshot = require("fzf-lua.test.screenshot")
+local screenshot = require("fzf-lua.test._screenshot")
 
 ---@class fzf-lua.test.helpers
 ---@field IS_WIN fun(): boolean

@@ -5,10 +5,10 @@ local M = {}
 ---@diagnostic disable: undefined-field, undefined-global
 
 local MiniTest = require("fzf-lua.test.harness")
--- `internal` is the single scrape site for the vendored mini.test's private
+-- `_internal` is the single scrape site for the vendored mini.test's private
 -- `H` table. All access to `H.*` goes through it so upstream refactors only
 -- touch one place.
-local internal = require("fzf-lua.test.vendor.mini.internal")
+local internal = require("fzf-lua.test._internal")
 
 -- `H` is a thin facade over the bridge. Only `cache.n_screenshots` is
 -- mutable state; the rest are forwarders.
