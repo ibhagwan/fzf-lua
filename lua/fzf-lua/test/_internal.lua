@@ -1,29 +1,64 @@
 ---@diagnostic disable: undefined-field
---- Stable bridge over private internals of the vendored `mini.test`.
+--- Bridge over private internals of the vendored `mini.test`.
 ---
---- The upstream `lua/mini/test.lua` exposes everything we need as part of a
---- module-local table `H`. Because `H` is not exported, callers have to dig
---- it out of the module's closures via `debug.getupvalue`. Doing that in more
---- than one place makes the harness fragile: any upstream refactor that moves
---- `H` to a different upvalue slot or wraps the relevant functions in another
---- closure silently breaks the screenshot helpers.
+--- Why this module exists
+--- ----------------------
+--- The vendored `_mini_test.lua` keeps its helpers in a module-local `H`
+--- table that is never exported. Reaching into it without going through a
+--- single dedicated site would mean every consumer duplicates
+--- `debug.getupvalue(MiniTest.expect.equality, ...)` and tries to find `H`,
+--- which is brittle: any upstream refactor that moves `H` to a different
+--- upvalue slot, wraps the relevant functions in another closure, or stops
+--- exporting the function we picked as a probe silently breaks the harness.
 ---
---- This module is the single scrape site. It reads `H` once at load time,
---- caches it, and re-exports the four entry points the harness actually
---- touches as a documented, version-stable API. If upstream moves things
---- around, only this file needs to change.
+--- Why we use `debug.getupvalue` instead of globals / vendored modifications
+--- ----------------------------------------------------------------------
+--- Two natural alternatives were considered and rejected:
+---  1. Adding `MiniTest._internals = H` (or similar) to the vendored file:
+---     breaks the byte-for-byte vendor promise; every bump upstream needs a
+---     re-touch.
+---  2. Setting `_G._fzf_lua_mini_test_h = H` after require: pollutes `_G`,
+---     which leaks to the rest of the user's Neovim session during
+---     interactive runs and makes the bridge visible to unrelated code.
+---
+--- `debug.getupvalue` is the only option that touches neither vendored code
+--- nor `_G`. The lookup is cached after the first successful resolution so
+--- the cost is paid exactly once per process. All upstream probe failures
+--- surface as a single import-time error rather than mid-test failures.
+---
+--- When to update this file
+--- ------------------------
+--- If upstream `mini.test` reorganizes its upvalue layout (reorders locals,
+--- wraps `MiniTest.expect.equality` in another closure, etc.) only the
+--- probe list and the read sites need updating. Callers stay put.
+---
+--- What this module exposes
+--- -------------------------
+--- Curated, version-stable forwards over the handful of `H` entry points the
+--- fzf-lua test harness actually needs:
+---   * `bump_screenshot_counter`, `get_screenshot_counter` - per-case count
+---   * `case_to_stringid` - sanitize a case into a filename-safe id
+---   * `read_screenshot`, `write_screenshot` - reference image persistence
+---   * `string_to_screenchars` - widen one display column into screen chars
+---   * `fail_with_emphasis` - assertion failure renderer
+---
+--- Anything else in `H` is intentionally NOT re-exported; add to this list
+--- only after a concrete call site exists, so the surface stays small.
 
 local M = {}
 
-local _h ---@type table|nil cached H table from vendored mini.test
+---@type table|nil cached H table from vendored mini.test
+local _h
 
 ---@return table the H table from vendored mini.test
 local function get_h()
   if _h ~= nil then return _h end
 
-  -- Probe an ordered list of well-known exported closures for an upvalue
-  -- literally named `H`. If upstream ever drops one of these or wraps it in
-  -- another closure, fall through to the next probe.
+  -- Ordered list of well-known exported closures, each expected to capture
+  -- `H` as an upvalue. Earlier entries are preferred because they were the
+  -- historically stable shape of the upstream module; later entries are
+  -- fallbacks for hypothetical refactors that wrap the original probe in
+  -- another closure (in which case the inner probe still has `H`).
   local MiniTest = require("fzf-lua.test._mini_test")
 
   ---@type fun(...): any
@@ -66,8 +101,7 @@ end
 
 ---@return integer current value of `H.cache.n_screenshots` (without mutating)
 function M.get_screenshot_counter()
-  local h = get_h()
-  return h.cache.n_screenshots or 0
+  return get_h().cache.n_screenshots or 0
 end
 
 --- Build a stable string id for a test case.
@@ -82,6 +116,22 @@ end
 ---@param path string
 function M.write_screenshot(screenshot, path)
   get_h().screenshot_write(screenshot, path)
+end
+
+--- Read a reference screenshot from `path` and return it as a fresh
+--- `MiniTestScreenshot` value (with both `text` and `attr` populated).
+---@param path string
+---@return table
+function M.read_screenshot(path)
+  return get_h().screenshot_read(path)
+end
+
+--- Widen a one-line display string into an array of per-column screen chars.
+--- Used by `_screenshot.lua` to build MiniTestScreenshot.text entries.
+---@param s string
+---@return string[]
+function M.string_to_screenchars(s)
+  return get_h().string_to_screenchars(s)
 end
 
 --- Raise an assertion failure with a coloured, framed subject line.

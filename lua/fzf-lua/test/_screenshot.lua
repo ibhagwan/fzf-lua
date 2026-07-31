@@ -1,28 +1,36 @@
 -- Borrowed from grug-far.nvim
 -- Used to compare screenshots without "attrs" (highlights)
+--
+-- This module is the fzf-lua customization on top of vendored `mini.test`.
+-- The upstream `H.screenshot_*` helpers in `_mini_test.lua` expect a file
+-- format with both `text` and `attr` halves plus separator lines; the
+-- fzf-lua reference screenshots we compare against only carry a `text`
+-- half, so most of the screenshot machinery stays local. The pieces that
+-- are byte-for-byte identical to upstream (`string_to_screenchars`) are
+-- delegated through `fzf-lua.test._internal` to keep a single source of
+-- truth.
 local M = {}
 
 ---@diagnostic disable: undefined-field, undefined-global
 
 local MiniTest = require("fzf-lua.test.harness")
--- `_internal` is the single scrape site for the vendored mini.test's private
--- `H` table. All access to `H.*` goes through it so upstream refactors only
--- touch one place.
+-- `_internal` is the single scrape site for the vendored mini.test's
+-- private `H` table. All access to upstream internals goes through it so
+-- upstream refactors only touch one place.
 local internal = require("fzf-lua.test._internal")
-
--- `H` is a thin facade over the bridge. Only `cache.n_screenshots` is
--- mutable state; the rest are forwarders.
-local H = {
-  cache = { n_screenshots = internal.get_screenshot_counter() },
-  case_to_stringid = internal.case_to_stringid,
-  screenshot_write = internal.write_screenshot,
-  error_with_emphasis = internal.fail_with_emphasis,
-}
+local bump_screenshot_counter = internal.bump_screenshot_counter
+local case_to_stringid = internal.case_to_stringid
+local write_screenshot = internal.write_screenshot
+local fail_with_emphasis = internal.fail_with_emphasis
+local string_to_screenchars = internal.string_to_screenchars
 
 ---@class MiniTestScreenshot
 
---- copied over from mini.test
----@param t { text?: string[], attr?: string[] }
+--- modified version of `H.screenshot_new` from vendored mini.test: only
+--- carries `text` (no `attr`), and `__tostring` only renders the text
+--- block. The line-numbering and ruler layout match upstream so terminal
+--- captures line up regardless of which format the reference uses.
+---@param t { text?: string[] }
 ---@param opts test.ScreenOpts?
 ---@return MiniTestScreenshot
 local function screenshot_new(t, opts)
@@ -53,24 +61,6 @@ local function screenshot_new(t, opts)
       return string.format("%s", process_screen(x.text))
     end,
   })
-end
-
----@param s string
----@return string[]
-local function string_to_screenchars(s)
-  -- Can't use `vim.split(s, '')` because of multibyte characters
-  local res = {}
-  for i = 1, vim.fn.strchars(s) do
-    local ch = vim.fn.strcharpart(s, i - 1, 1)
-    table.insert(res, ch)
-    -- Not single-width characters are read as a single char, but result into
-    -- `{ ch, '', ... }` when computing observed screenshot (as this is how
-    -- `vim.fn.screenstring()` works)
-    for _ = 1, vim.fn.strdisplaywidth(ch) - 1 do
-      table.insert(res, "")
-    end
-  end
-  return res
 end
 
 --- gets a screenshot from given text lines and attrs
@@ -121,7 +111,10 @@ function M.fromChildScreen(child, opts)
   return M.from_lines(lines, opts)
 end
 
--- modified version (no attr)
+-- modified version (no attr). Reads the fzf-lua text-only file format:
+-- every line is `NN|<text>`, the first line is a ruler. Upstream
+-- `H.screenshot_read` expects a richer layout (text + attr halves) so it
+-- can't be reused here.
 local screenshot_read = function(path)
   local lines = vim.fn.readfile(path)
   local text_lines = vim.list_slice(lines, 2, #lines)
@@ -131,7 +124,12 @@ local screenshot_read = function(path)
 end
 
 
--- modified version (no attr)
+-- modified version of `H.screenshot_compare_part` from vendored mini.test:
+-- text-only (no attr), and after the per-cell check it auto-pads any
+-- extra trailing whitespace the observed screenshot has beyond the
+-- reference. That second pass is the fzf-lua-specific tweak that lets
+-- references written at narrower terminal widths keep matching when the
+-- test runs in a wider one.
 local screenshot_compare = function(screen_ref, screen_obs, opts)
   local compare = function(x, y, desc)
     if x ~= y then
@@ -182,7 +180,7 @@ M.reference_screenshot = function(screenshot, path, opts)
   opts = vim.tbl_extend("force",
     { force = false, ignore_text = {}, directory = "tests/screenshots" }, opts or {})
 
-  H.cache.n_screenshots = internal.bump_screenshot_counter()
+  local n_screenshot = bump_screenshot_counter()
 
   if path == nil then
     -- Sanitize path. Replace any control characters, whitespace, OS specific
@@ -192,7 +190,7 @@ M.reference_screenshot = function(screenshot, path, opts)
     local pattern = string.format("[%%c%%s%s%s]", vim.pesc(linux_forbidden),
       vim.pesc(windows_forbidden))
     local replacements = setmetatable({ ['"'] = "'" }, { __index = function() return "-" end })
-    local name = H.case_to_stringid(MiniTest.current.case):gsub(pattern, replacements)
+    local name = case_to_stringid(MiniTest.current.case):gsub(pattern, replacements)
 
     -- Don't end with whitespace or dot (forbidden on Windows)
     name = name:gsub("[%s%.]$", "-")
@@ -201,14 +199,14 @@ M.reference_screenshot = function(screenshot, path, opts)
     path = vim.fs.normalize(opts.directory):gsub("/$", "") .. "/" .. name
 
     -- Deal with multiple screenshots
-    if H.cache.n_screenshots > 1 then path = path .. string.format("-%03d", H.cache.n_screenshots) end
+    if n_screenshot > 1 then path = path .. string.format("-%03d", n_screenshot) end
   end
 
   -- If there is no readable screenshot file, create it. Pass with note.
   if opts.force or vim.fn.filereadable(path) == 0 then
     local dir_path = vim.fn.fnamemodify(path, ":p:h")
     vim.fn.mkdir(dir_path, "p")
-    H.screenshot_write(screenshot, path)
+    write_screenshot(screenshot, path)
 
     MiniTest.add_note("Created reference screenshot at path " .. vim.inspect(path))
     return true
@@ -224,10 +222,13 @@ M.reference_screenshot = function(screenshot, path, opts)
   local subject = "screenshot equality to reference at " .. vim.inspect(path)
   local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause, tostring(reference),
     tostring(screenshot))
-  H.error_with_emphasis(subject, context)
+  fail_with_emphasis(subject, context)
 end
 
--- modified version (no attr, trim trailing whitespace)
+-- modified version (no attr, trim trailing whitespace). Mirrors the
+-- internal path of `M.reference_screenshot` but takes the reference
+-- screenshot as a direct argument so callers can compare two in-memory
+-- captures without going through disk.
 M.compare = function(reference, screenshot, opts)
   opts = opts or {}
   -- Compare
@@ -250,7 +251,7 @@ M.compare = function(reference, screenshot, opts)
   local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause,
     ruler .. tostring(reference),
     ruler .. tostring(screenshot))
-  H.error_with_emphasis(subject, context)
+  fail_with_emphasis(subject, context)
 end
 
 return M
