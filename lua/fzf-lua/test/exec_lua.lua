@@ -149,7 +149,6 @@ local function save_upvalues(v, t)
     -- TODO: support function upv?
     local upvalues = get_upvalues(v)
     if not vim.tbl_isempty(upvalues) then
-      -- print("save", vim.fn.sha256(vim.base64.encode(bytecode)), vim.inspect(upvalues))
       t[bytecode] = upvalues
     end
   elseif type(v) == "table" then
@@ -166,7 +165,6 @@ local function load_upvalues(v, t)
     local upvalues = t[bytecode]
     -- this don't seem work for headless wrapper?
     if upvalues then
-      -- print("load", vim.fn.sha256(vim.base64.encode(bytecode)), vim.inspect(upvalues))
       return function(...)
         return unpack((M.handler(bytecode, upvalues, ...)))
       end
