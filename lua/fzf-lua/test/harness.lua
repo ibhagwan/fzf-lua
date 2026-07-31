@@ -48,7 +48,7 @@ M.expect = MiniTest.expect
 M.current = MiniTest.current
 
 -- Bridge functions: the only stable accessor for the vendored mini.test's
--- private `H` table. Documented in `vendor/mini/internal.lua`.
+-- private `H` table. Documented in `test/_internal.lua`.
 M.bump_screenshot_counter = bridge.bump_screenshot_counter
 M.get_screenshot_counter = bridge.get_screenshot_counter
 M.case_to_stringid = bridge.case_to_stringid
