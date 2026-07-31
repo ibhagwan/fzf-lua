@@ -1,9 +1,9 @@
 ---@diagnostic disable: unused-local, unused-function, unused
-local MiniTest = require("mini.test")
+local harness = require("fzf-lua.test.harness")
 local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
 local eq = helpers.expect.equality
-local new_set = MiniTest.new_set
+local new_set = harness.new_set
 
 ---@format disable-next
 local reload = function(config) child.unload(); child.setup(config) end

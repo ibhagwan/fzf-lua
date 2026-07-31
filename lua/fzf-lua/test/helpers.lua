@@ -5,7 +5,7 @@ local _info = debug.getinfo(1, "S")
 local __FILE__ = _info.source:gsub("^@", "")
 vim.cmd.lcd(vim.fn.fnamemodify(__FILE__, ":p:h:h:h:h"))
 
-local MiniTest = require("mini.test")
+local MiniTest = require("fzf-lua.test.harness")
 local screenshot = require("fzf-lua.test.screenshot")
 
 ---@class fzf-lua.test.helpers

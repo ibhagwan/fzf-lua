@@ -1,5 +1,5 @@
 -- NOTE: this script is called with `:help -l`
-local MiniTest = require("mini.test")
+local MiniTest = require("fzf-lua.test.harness")
 local glob, filter = vim.env.glob, vim.env.filter
 local find_files, filter_cases
 
