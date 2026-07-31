@@ -4,13 +4,14 @@ local dir = vim.fn.fnamemodify(vim.fn.resolve(__FILE__), ":h:h:p")
 -- Add current directory to 'runtimepath' to be able to use 'lua' files
 vim.opt.runtimepath:append(dir)
 
--- Set up 'mini.test' only when calling headless Neovim (like with `make test`)
-if #vim.api.nvim_list_uis() == 0 then
-  -- Add 'mini.nvim' to 'runtimepath' to be able to use 'mini.test'
-  -- Assumed that 'mini.nvim' is downloaded by 'lazy.nvim'
-  vim.opt.runtimepath:append(vim.fs.joinpath(dir, "deps", "mini.nvim"))
-  vim.opt.runtimepath:append(vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim"))
-end
+-- Vendored 'mini.test' lives under fzf-lua's own source tree. Prepend its
+-- root to runtimepath AND `package.path` so that `require('mini.test')` resolves
+-- to the copy we ship in-tree instead of any external installation. Both
+-- channels are needed because a `-u` script cannot trigger Neovim's startup
+-- `runtimepath` -> `package.path` rebuild.
+local vendor_root = vim.fs.joinpath(dir, "lua", "fzf-lua", "test", "vendor")
+vim.opt.runtimepath:prepend(vendor_root)
+package.path = vendor_root .. "/?.lua;" .. vendor_root .. "/?/init.lua;" .. package.path
 
 vim.env.FZF_DEFAULT_OPTS = nil
 vim.env.FZF_DEFAULT_OPTS_FILE = nil

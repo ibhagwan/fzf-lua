@@ -49,7 +49,9 @@
     "maxPreload": 2000,
     "preloadFileSize": 1000,
     "ignoreDir": [
-      "lua/fzf-lua/actions.lua"
+      "lua/fzf-lua/actions.lua",
+      // Vendored upstream modules (intentionally not linted)
+      "lua/fzf-lua/test/vendor"
     ],
   },
   "type": {
