@@ -85,8 +85,10 @@ MiniTest.run = function(opts)
 
   local jobs = tonumber(opts.jobs) or 1
   if jobs > 1 then
-    -- Parallel mode: run cases inside `jobs` worker nvim processes
-    return run_parallel(opts.collect, jobs)
+    -- Parallel mode: run cases inside `jobs` worker nvim processes. Pass the
+    -- collect function so the orchestrator can bucket cases by global index
+    -- without a cyclic require (parallel.lua loads before this module is done).
+    return run_parallel(MiniTest.collect, opts.collect, jobs)
   end
 
   local cases = MiniTest.collect(opts.collect)

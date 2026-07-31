@@ -1,11 +1,14 @@
 --- Parallel orchestrator: spawn `jobs` worker nvim processes, each running a
---- subset of the collected spec files, and stream their results live.
+--- subset of the collected test cases, and stream their results live.
 ---
---- Called from `MiniTest.run()` when `config.jobs > 1`. Workers run
---- `scripts/make_cli.lua` in worker mode (`FZF_LUA_TEST_WORKER=1`), where
---- `find_files` reads `FZF_LUA_TEST_FILES` so each worker executes only its
---- assigned bucket. Results arrive as one flushed, tab-separated JSON line per
---- case (`CASE`) plus a final `DONE` summary (`mini/reporter.lua`).
+--- Called from `MiniTest.run()` when `config.jobs > 1`. Distribution is per
+--- test case, not per file: the orchestrator collects the full case array
+--- (deterministic for a given file list and options), assigns each case a
+--- global index, and buckets indices round-robin across workers. Workers run
+--- `scripts/make_cli.lua` in worker mode (`FZF_LUA_TEST_WORKER=1`), re-collect
+--- the same cases (from `FZF_LUA_TEST_FILES`), and keep only the indices in
+--- `FZF_LUA_TEST_CASES`. Results arrive as one flushed, tab-separated JSON
+--- line per case (`CASE`) plus a final `DONE` summary (`mini/reporter.lua`).
 
 local H = require("fzf-lua.test.mini.util")
 
@@ -79,20 +82,38 @@ local function handle_line(worker, line, total)
   end
 end
 
---- Execute `collect`'s spec files across `jobs` worker nvim processes,
+--- Execute `collect`'s test cases across `jobs` worker nvim processes,
 --- rendering each case's result (including fail details) live as it completes.
+---@param collect_fn function collects cases from a `collect` options table
 ---@param collect table `collect` options as for `MiniTest.run`
 ---@param jobs integer number of parallel workers
 ---@return integer exit code (0 = success, 1 = failure)
-local function run_parallel(collect, jobs)
+local function run_parallel(collect_fn, collect, jobs)
   local specs = collect.find_files()
   if #specs == 0 then return 0 end
 
-  -- Round-robin spec files across workers for load balance
+  -- Collect cases in the orchestrator: ordering is deterministic (same file
+  -- list, same options), so a worker re-collecting the same files reproduces
+  -- this array and can select cases by global index.
+  local cases = collect_fn(collect)
+  if #cases == 0 then return 0 end
+
+  -- Round-robin case indices across workers for load balance (adjacent cases
+  -- of one file land on different workers, spreading the costly ones).
   local buckets = {}
   for i = 1, jobs do buckets[i] = {} end
-  for i, f in ipairs(specs) do
-    table.insert(buckets[((i - 1) % jobs) + 1], f)
+  for i = 1, #cases do
+    table.insert(buckets[((i - 1) % jobs) + 1], i)
+  end
+
+  -- Groups = unique file prefixes (`group_depth = 1` semantics of the
+  -- overview reporter), counted from the collected cases.
+  local n_groups, groups = 0, {}
+  for _, c in ipairs(cases) do
+    if not groups[c.desc[1]] then
+      groups[c.desc[1]] = true
+      n_groups = n_groups + 1
+    end
   end
 
   local total = { n_cases = 0, n_fails = 0, n_notes = 0 }
@@ -106,13 +127,19 @@ local function run_parallel(collect, jobs)
 
   for w, bucket in ipairs(buckets) do
     if #bucket > 0 then
-      local names = vim.tbl_map(basename, bucket)
-      write(string.format("--- worker %d (%d files: %s) ---", w, #bucket, table.concat(names, ", ")))
+      write(string.format("--- worker %d (%d cases) ---", w, #bucket))
       local job_id = vim.fn.jobstart({
         nvim_executable(), "--headless", "--noplugin", "-u", "scripts/minimal_init.lua",
         "-l", "scripts/make_cli.lua",
       }, {
-        env = { FZF_LUA_TEST_WORKER = "1", FZF_LUA_TEST_FILES = table.concat(bucket, "\n") },
+        env = {
+          FZF_LUA_TEST_WORKER = "1",
+          -- Full resolved file list, so the worker re-collects the identical
+          -- case array (glob/filter are already applied here)
+          FZF_LUA_TEST_FILES = table.concat(specs, "\n"),
+          -- Comma-separated global case indices this worker should execute
+          FZF_LUA_TEST_CASES = table.concat(bucket, ","),
+        },
         -- nvim delivers complete lines (trailing newlines stripped, empty
         -- elements as separators); handle each non-empty element as one line
         on_stdout = function(_, data)
@@ -154,7 +181,7 @@ local function run_parallel(collect, jobs)
 
   write("")
   write(string.format("Total number of cases: %d", total.n_cases))
-  write(string.format("Total number of groups: %d", #specs))
+  write(string.format("Total number of groups: %d", n_groups))
   write("")
   write(string.format("Fails (%d) and Notes (%d)", total.n_fails, total.n_notes))
 

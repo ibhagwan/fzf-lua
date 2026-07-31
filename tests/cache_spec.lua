@@ -9,6 +9,28 @@ describe("Testing cache module", function()
   local cache
   local cached_fun = function(id) return function() return "CACHED" .. tostring(id) end end
 
+  -- The cases of this spec share one LRU instance through the `cache`
+  -- upvalue and each builds on the state left by the previous one. Replaying
+  -- the prefix of state-building operations keeps every case self-contained
+  -- so cases stay correct when distributed across parallel workers.
+  local build = function(n_steps)
+    cache = LRU:new(50)
+    local set_anon = function() cache:set(function() end) end
+    local steps = {
+      function() cache:set(cached_fun(1)) end, -- "first"
+      function() for _ = 1, 12 do set_anon() end end, -- "half store bubble"
+      function() cache:set(cached_fun(14)) end, -- "half store bubble"
+      function() for _ = 1, 11 do set_anon() end end, -- "half store bubble"
+      function() cache:get(14) end, -- bubble, end of "half store bubble"
+      function() for _ = 1, 25 do set_anon() end end, -- "full store"
+      function() cache:get(14) end, -- bubble, "full store bubble"
+      function() cache:get(1) end, -- bubble, "full store bubble"
+      function() cache:set(cached_fun(51)) end, -- "eviction"
+      function() cache:get(14) end, -- bubble, "yet another bubble"
+    }
+    for i = 1, n_steps do steps[i]() end
+  end
+
   it("new", function()
     local size = 50
     cache = LRU:new(size)
@@ -16,12 +38,14 @@ describe("Testing cache module", function()
   end)
 
   it("first", function()
+    build(0)
     local id = cache:set(cached_fun(1))
     assert.is.same(id, 1)
     assert.is.same(cache:get(1)(), "CACHED1")
   end)
 
   it("half store bubble", function()
+    build(1)
     for _ = 1, 12 do cache:set(function() end) end
     cache:set(cached_fun(14))
     for _ = 1, 11 do cache:set(function() end) end
@@ -47,6 +71,7 @@ describe("Testing cache module", function()
   end)
 
   it("full store", function()
+    build(5)
     -- Fill in the remaining 25 items
     for _ = 1, 25 do cache:set(function() end) end
     assert.is.same(cache:len(), 50)
@@ -65,6 +90,7 @@ describe("Testing cache module", function()
   end)
 
   it("full store bubble", function()
+    build(6)
     -- Calling `:get()` bubbles the item in the MRU
     assert.is.same(cache:get(14)(), "CACHED14")
     assert.is.same(cache:len(), #cache.mru)
@@ -79,6 +105,7 @@ describe("Testing cache module", function()
   end)
 
   it("eviction", function()
+    build(8)
     -- Store a new function, should have an incremental id
     -- func2 is evicted as it's at the bottom of the MRU
     local id, evicted_id = cache:set(cached_fun(51))
@@ -93,6 +120,7 @@ describe("Testing cache module", function()
   end)
 
   it("yet another bubble", function()
+    build(9)
     assert.is.same(cache:get(14)(), "CACHED14")
     assert.is.same(cache:len(), #cache.mru)
     assert.is.same(cache.mru[1], 14)
@@ -102,6 +130,7 @@ describe("Testing cache module", function()
   end)
 
   it("size set: err", function()
+    build(10)
     local ok, err = pcall(cache.set_size, cache, 10)
     assert.is.False(ok)
     ---@diagnostic disable-next-line: param-type-mismatch, need-check-nil
@@ -109,6 +138,7 @@ describe("Testing cache module", function()
   end)
 
   it("size set: ok", function()
+    build(10)
     cache:set_size(50) -- should not err, same size
     cache:set_size(51)
     local id, evicted_id = cache:set(cached_fun(52))
