@@ -21,6 +21,12 @@ M.add_note = MiniTest.add_note
 M.new_set = MiniTest.new_set
 M.new_child_neovim = MiniTest.new_child_neovim
 M.new_expectation = MiniTest.new_expectation
+-- Used by `scripts/make_cli.lua` worker mode to wait for run completion
+M.is_executing = MiniTest.is_executing
+
+-- Parallel runner: executes cases across worker nvim processes, streaming
+-- each result live. Used by `scripts/make_cli.lua` when `JOBS>1`.
+M.run_parallel = require("fzf-lua.test.parallel").run
 
 -- `MiniTest.expect` is a mutable table that callers (notably helpers.lua)
 -- `vim.deepcopy` and extend. Re-export by reference keeps copies observing

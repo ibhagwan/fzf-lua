@@ -11,9 +11,15 @@ nvim ?= nvim
 # `make test glob=f`
 #
 # Run spec files across parallel workers with `make test JOBS=4` (default 1)
+JOBS ?= 1
 .PHONY: test
 test:
-	./scripts/run_tests.sh $(nvim)
+	for nvim_exec in $(nvim); do \
+		printf "\n======\n\n" ; \
+		$$nvim_exec --version | head -n 1 && echo '' ; \
+		$$nvim_exec --headless --noplugin -u ./scripts/minimal_init.lua \
+			-l ./scripts/make_cli.lua ; \
+	done
 
 # clean / update all screenshots
 .PHONY: screenshots
