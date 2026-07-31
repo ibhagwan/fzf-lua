@@ -1,22 +1,15 @@
---- Parallel test runner: spawn `jobs` worker nvim processes, each running a
+--- Parallel orchestrator: spawn `jobs` worker nvim processes, each running a
 --- subset of the collected spec files, and stream their results live.
 ---
---- Called from `scripts/make_cli.lua` when `JOBS>1`; the default single
---- process path executes cases directly via `MiniTest.run`. Workers run
---- `scripts/make_cli.lua` in worker mode (`FZF_LUA_TEST_WORKER`), which
---- emits one flushed, tab-separated line per case plus a final `DONE` line.
+--- Called from `MiniTest.run()` when `config.jobs > 1`. Workers run
+--- `scripts/make_cli.lua` in worker mode (`FZF_LUA_TEST_WORKER=1`), where
+--- `find_files` reads `FZF_LUA_TEST_FILES` so each worker executes only its
+--- assigned bucket. Results arrive as one flushed, tab-separated JSON line per
+--- case (`CASE`) plus a final `DONE` summary (`mini/reporter.lua`).
 
-local M = {}
+local H = require("fzf-lua.test.mini.util")
 
--- ANSI codes matching mini.test's reporter symbols
-local symbols = {
-  ["Pass"] = "\27[1;32mo\27[0m",
-  ["Pass with notes"] = "\27[1;32mO\27[0m",
-  ["Fail"] = "\27[1;31mx\27[0m",
-  ["Fail with notes"] = "\27[1;31mX\27[0m",
-}
-
-local function write(text)
+local write = function(text)
   io.stdout:write(text, "\n")
   io.stdout:flush()
 end
@@ -34,22 +27,64 @@ local function nvim_executable()
   return vim.v.progpath
 end
 
--- Kill a process and its whole descendant tree (used on worker timeout).
+-- Kill a process and its whole descendant tree (used on worker timeout);
+-- `jobstop` alone would orphan the worker's child nvim instances and their
+-- fzf processes.
 local function kill_tree(pid)
   local children = vim.fn.system("pgrep -P " .. pid)
-  for child in children:gmatch("%d+") do kill_tree(child) end
-  vim.fn.system("kill -TERM " .. pid)
+  for child in children:gmatch("%d+") do kill_tree(tonumber(child)) end
+  vim.uv.kill(pid, vim.uv.constants.SIGTERM)
 end
 
---- Execute the collected spec files across `jobs` worker nvim processes.
----
---- Mirrors `MiniTest.run`'s collect-then-execute flow, but runs the cases
---- inside `jobs` child nvim instances and renders each case's result live as
---- it completes.
+--- Render one worker event line. `CASE` lines carry JSON with
+--- `file`/`name`/`state` plus `fails`/`notes` detail arrays; `DONE` lines
+--- carry the worker totals.
+local function handle_line(worker, line, total)
+  local kind, rest = line:match("^(%u+)\t(.*)$")
+  if not kind then return end
+  local ok, data = pcall(vim.json.decode, rest)
+  if not ok or type(data) ~= "table" then return end
+
+  if kind == "CASE" then
+    local symbol = H.reporter_symbols[data.state] or "?"
+    local short_file = basename(data.file)
+    write(string.format("[%s] %s %s", short_file, symbol, data.name))
+
+    local n_fails = #(data.fails or {})
+    local n_notes = #(data.notes or {})
+    if n_fails > 0 then
+      local stringid = ("%s | %s"):format(short_file, data.name)
+      write("  " .. H.add_style("FAIL in " .. stringid .. ":", "fail"))
+      for _, fail in ipairs(data.fails) do
+        for fail_line in fail:gmatch("[^\n]+") do
+          write("    " .. fail_line)
+        end
+      end
+    end
+    if n_notes > 0 then
+      local stringid = ("%s | %s"):format(short_file, data.name)
+      write("  " .. H.add_style("NOTE in " .. stringid .. ":", n_fails > 0 and "fail" or "pass"))
+      for _, note in ipairs(data.notes) do
+        for note_line in note:gmatch("[^\n]+") do
+          write("    " .. note_line)
+        end
+      end
+    end
+  elseif kind == "DONE" then
+    total.n_cases = total.n_cases + (tonumber(data.n_cases) or 0)
+    total.n_fails = total.n_fails + (tonumber(data.n_fails) or 0)
+    total.n_notes = total.n_notes + (tonumber(data.n_notes) or 0)
+    write(string.format("worker %d done: %s cases, %s fails, %s notes", worker,
+      data.n_cases, data.n_fails, data.n_notes))
+  end
+end
+
+--- Execute `collect`'s spec files across `jobs` worker nvim processes,
+--- rendering each case's result (including fail details) live as it completes.
 ---@param collect table `collect` options as for `MiniTest.run`
 ---@param jobs integer number of parallel workers
 ---@return integer exit code (0 = success, 1 = failure)
-function M.run(collect, jobs)
+local function run_parallel(collect, jobs)
   local specs = collect.find_files()
   if #specs == 0 then return 0 end
 
@@ -60,23 +95,7 @@ function M.run(collect, jobs)
     table.insert(buckets[((i - 1) % jobs) + 1], f)
   end
 
-  local total_cases, total_fails, total_notes = 0, 0, 0
-
-  local function handle_line(worker, line)
-    local kind, rest = line:match("^(%u+)\t(.*)$")
-    if not kind then return end
-    local parts = vim.split(rest, "\t", { plain = true })
-    if kind == "CASE" and #parts >= 3 then
-      local symbol = symbols[parts[1]] or "?"
-      write(string.format("[%s] %s %s", basename(parts[2]), symbol, parts[3]))
-    elseif kind == "DONE" and #parts >= 3 then
-      total_cases = total_cases + (tonumber(parts[1]) or 0)
-      total_fails = total_fails + (tonumber(parts[2]) or 0)
-      total_notes = total_notes + (tonumber(parts[3]) or 0)
-      write(string.format("worker %d done: %s cases, %s fails, %s notes", worker,
-        parts[1], parts[2], parts[3]))
-    end
-  end
+  local total = { n_cases = 0, n_fails = 0, n_notes = 0 }
 
   local job_ids, worker_of_job = {}, {}
   local exit_codes, n_exited = {}, 0
@@ -84,6 +103,7 @@ function M.run(collect, jobs)
     exit_codes[job_id] = code
     n_exited = n_exited + 1
   end
+
   for w, bucket in ipairs(buckets) do
     if #bucket > 0 then
       local names = vim.tbl_map(basename, bucket)
@@ -97,7 +117,7 @@ function M.run(collect, jobs)
         -- elements as separators); handle each non-empty element as one line
         on_stdout = function(_, data)
           for _, line in ipairs(data) do
-            if line ~= "" then handle_line(w, line) end
+            if line ~= "" then handle_line(w, line, total) end
           end
         end,
         on_exit = on_exit,
@@ -110,8 +130,7 @@ function M.run(collect, jobs)
 
   -- Wait for all workers to exit (`jobwait` returns as soon as the first job
   -- exits, so track completion via `on_exit` instead). On timeout, kill the
-  -- whole process tree of any still-running worker; `jobstop` alone would
-  -- orphan the worker's child nvim instances and their fzf processes.
+  -- whole process tree of any still-running worker.
   local timeout = tonumber(vim.env.FZF_LUA_TEST_TIMEOUT) or 900000
   local done = vim.wait(timeout, function() return n_exited >= #job_ids end)
   local failed = false
@@ -134,12 +153,12 @@ function M.run(collect, jobs)
   end
 
   write("")
-  write(string.format("Total number of cases: %d", total_cases))
+  write(string.format("Total number of cases: %d", total.n_cases))
   write(string.format("Total number of groups: %d", #specs))
   write("")
-  write(string.format("Fails (%d) and Notes (%d)", total_fails, total_notes))
+  write(string.format("Fails (%d) and Notes (%d)", total.n_fails, total.n_notes))
 
-  return (failed or total_fails > 0) and 1 or 0
+  return (failed or total.n_fails > 0) and 1 or 0
 end
 
-return M
+return run_parallel

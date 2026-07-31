@@ -1,23 +1,21 @@
 -- Borrowed from grug-far.nvim
 -- Compare screenshots without "attrs" (highlights)
 --
--- The fzf-lua customization on top of vendored `mini.test`: upstream
+-- The fzf-lua customization on top of the test framework: the framework's
 -- `H.screenshot_*` helpers expect a file format with both `text` and `attr`
 -- halves, while fzf-lua references only carry `text`, so the screenshot
--- machinery stays local. Pieces byte-for-byte identical to upstream
--- (`string_to_screenchars`) are delegated through `test._internal`.
+-- machinery stays local. Shared primitives are delegated through the harness
+-- (`fzf-lua.test.harness`) bridge.
 local M = {}
 
 ---@diagnostic disable: undefined-field, undefined-global
 
 local MiniTest = require("fzf-lua.test.harness")
--- Single scrape site for the vendored mini.test's private `H` table.
-local internal = require("fzf-lua.test._internal")
-local bump_screenshot_counter = internal.bump_screenshot_counter
-local case_to_stringid = internal.case_to_stringid
-local write_screenshot = internal.write_screenshot
-local fail_with_emphasis = internal.fail_with_emphasis
-local string_to_screenchars = internal.string_to_screenchars
+local bump_screenshot_counter = MiniTest.bump_screenshot_counter
+local case_to_stringid = MiniTest.case_to_stringid
+local write_screenshot = MiniTest.write_screenshot
+local fail_with_emphasis = MiniTest.fail_with_emphasis
+local string_to_screenchars = MiniTest.string_to_screenchars
 
 ---@class MiniTestScreenshot
 
