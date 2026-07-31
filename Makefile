@@ -10,14 +10,10 @@ nvim ?= nvim
 # NOTE: glob is resolved using `vim.fn.globpath` so we can also run:
 # `make test glob=f`
 #
+# Run spec files across parallel workers with `make test JOBS=4` (default 1)
 .PHONY: test
 test:
-	for nvim_exec in $(nvim); do \
-		printf "\n======\n\n" ; \
-		$$nvim_exec --version | head -n 1 && echo '' ; \
-		$$nvim_exec --headless --noplugin -u ./scripts/minimal_init.lua \
-			-l ./scripts/make_cli.lua ; \
-	done
+	./scripts/run_tests.sh $(nvim)
 
 # clean / update all screenshots
 .PHONY: screenshots

@@ -1,6 +1,7 @@
 -- NOTE: this script is called with `:help -l`
 local MiniTest = require("fzf-lua.test.harness")
 local glob, filter = vim.env.glob, vim.env.filter
+local files = vim.env.FZF_LUA_TEST_FILES
 local find_files, filter_cases
 
 
@@ -12,6 +13,11 @@ if glob then
       table.insert(ret, f)
     end
     return ret
+  end
+elseif files then
+  -- Explicit spec list set by `scripts/run_tests.sh` parallel workers
+  find_files = function()
+    return vim.split(files, "\n", { plain = true, trimempty = true })
   end
 else
   -- All test files
