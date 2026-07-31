@@ -5,9 +5,19 @@ local M = {}
 ---@diagnostic disable: undefined-field, undefined-global
 
 local MiniTest = require("mini.test")
+-- `internal` is the single scrape site for the vendored mini.test's private
+-- `H` table. All access to `H.*` goes through it so upstream refactors only
+-- touch one place.
+local internal = require("fzf-lua.test.vendor.mini.internal")
 
--- get helper module from upvalues
-local _, H = debug.getupvalue(MiniTest.expect.reference_screenshot, 1)
+-- `H` is a thin facade over the bridge. Only `cache.n_screenshots` is
+-- mutable state; the rest are forwarders.
+local H = {
+  cache = { n_screenshots = internal.get_screenshot_counter() },
+  case_to_stringid = internal.case_to_stringid,
+  screenshot_write = internal.write_screenshot,
+  error_with_emphasis = internal.fail_with_emphasis,
+}
 
 ---@class MiniTestScreenshot
 
@@ -172,7 +182,7 @@ M.reference_screenshot = function(screenshot, path, opts)
   opts = vim.tbl_extend("force",
     { force = false, ignore_text = {}, directory = "tests/screenshots" }, opts or {})
 
-  H.cache.n_screenshots = H.cache.n_screenshots + 1
+  H.cache.n_screenshots = internal.bump_screenshot_counter()
 
   if path == nil then
     -- Sanitize path. Replace any control characters, whitespace, OS specific

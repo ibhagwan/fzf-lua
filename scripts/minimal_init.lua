@@ -13,6 +13,13 @@ local vendor_root = vim.fs.joinpath(dir, "lua", "fzf-lua", "test", "vendor")
 vim.opt.runtimepath:prepend(vendor_root)
 package.path = vendor_root .. "/?.lua;" .. vendor_root .. "/?/init.lua;" .. package.path
 
+-- 'mini.nvim' is still cloned into `deps/mini.nvim` by `make deps`. We append
+-- (rather than prepend) so the vendored 'mini.test' above still wins for
+-- `require('mini.test')`. The clone exists to provide `mini.icons` for the
+-- icons-aware specs (`files_spec`, `headless_spec`, `minicons_spec`).
+vim.opt.runtimepath:append(vim.fs.joinpath(dir, "deps", "mini.nvim"))
+vim.opt.runtimepath:append(vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim"))
+
 vim.env.FZF_DEFAULT_OPTS = nil
 vim.env.FZF_DEFAULT_OPTS_FILE = nil
 vim.env.FZF_DEFAULT_COMMAND = nil
