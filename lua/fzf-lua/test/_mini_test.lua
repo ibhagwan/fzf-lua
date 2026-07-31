@@ -1,12 +1,13 @@
 --- *mini.test* Test Neovim plugins
 ---
---- VENDORED FILE -- DO NOT EDIT LOCALLY
+--- VENDORED FILE -- ONLY TWO FZF-LUA ADDITIONS
 ---
 --- Vendored from <https://github.com/nvim-mini/mini.nvim> as part of the
 --- fzf-lua test harness. Lives under `lua/fzf-lua/test/` (unprefixed as the
 --- private harness backend) and is consumed only via
---- `fzf-lua.test.harness`. Diff against upstream before each bump; never
---- hand-edit this file.
+--- `fzf-lua.test.harness`. Diff against upstream before each bump and
+--- re-apply the only two fzf-lua additions: this banner and the
+--- `MiniTest._internals` export just before `return MiniTest`.
 ---
 --- MIT License Copyright (c) 2022 Evgeni Chasnovski
 
@@ -2507,5 +2508,9 @@ H.tbl_flatten = function(x) return vim.iter(x):flatten(math.huge):totable() end
 -- TODO: Remove after compatibility with Neovim=0.10 is dropped
 H.highlight_range = function(...) vim.hl.range(...) end
 if vim.fn.has('nvim-0.11') == 0 then H.highlight_range = function(...) vim.highlight.range(...) end end
+
+-- fzf-lua addition: expose module-local helpers for the harness bridge
+-- (`fzf-lua.test._internal`). Re-apply after bumping upstream.
+MiniTest._internals = H
 
 return MiniTest
