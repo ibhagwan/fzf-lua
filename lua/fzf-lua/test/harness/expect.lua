@@ -1,8 +1,10 @@
 --- Expectations (`assert`-like functions throwing informative errors).
 
-local H = require("fzf-lua.test.mini.util")
+local state = require("fzf-lua.test.harness.state")
+local util = require("fzf-lua.test.harness.util")
+local screenshot_mod = require("fzf-lua.test.harness.screenshot")
 
-H.normalize_reason = function(reason, fallback, ...)
+local function normalize_reason(reason, fallback, ...)
   if vim.is_callable(reason) then reason = reason(...) end
   if type(reason) ~= "string" then reason = fallback end
   return reason
@@ -10,12 +12,12 @@ end
 
 --- Raise an expectation failure with an emphasised subject line. Always
 --- throws; callers rely on this to terminate the failing path.
-H.error_with_emphasis = function(msg, context)
-  local lines = { "", H.add_style(msg, "emphasis"), context }
+local error_with_emphasis = function(msg, context)
+  local lines = { "", util.add_style(msg, "emphasis"), context }
   error(table.concat(lines, "\n"), 0)
 end
 
-H.compute_no_equality_cause = function(left, right)
+local function compute_no_equality_cause(left, right)
   if type(left) ~= type(right) then return "different types" end
 
   if type(left) == "string" then
@@ -67,9 +69,10 @@ end
 --- <fail_reason> `(string|function)` - reason for failing expectation. A
 --- function is called with expectation input and should return a string.
 --- Default: `nil` for default reason like "Failed expectation for ...".
----@alias __test_expect_fail_reason string|function|nil
 
-H.expect = {}
+local M = {}
+
+M.expect = {}
 
 --- Expect equality of two objects.
 ---
@@ -81,15 +84,15 @@ H.expect = {}
 ---@param opts table|nil Options. Possible fields:
 ---   __test_expect_fail_reason
 ---@return true when the objects are equal
-H.expect.equality = function(left, right, opts)
+M.expect.equality = function(left, right, opts)
   if vim.deep_equal(left, right) then return true end
 
   opts = opts or {}
-  local fail_reason = H.normalize_reason(opts.fail_reason, "Failed expectation for equality", left, right)
-  local cause = H.compute_no_equality_cause(left, right)
+  local fail_reason = normalize_reason(opts.fail_reason, "Failed expectation for equality", left, right)
+  local cause = compute_no_equality_cause(left, right)
   local context = string.format("Cause: %s\nLeft:  %s\nRight: %s", cause, vim.inspect(left), vim.inspect(right))
   ---@diagnostic disable-next-line: missing-return
-  H.error_with_emphasis(fail_reason, context)
+  error_with_emphasis(fail_reason, context)
 end
 
 --- Expect no equality of two objects.
@@ -98,14 +101,14 @@ end
 ---@param opts table|nil Options. Possible fields:
 ---   __test_expect_fail_reason
 ---@return true when the objects are not equal
-H.expect.no_equality = function(left, right, opts)
+M.expect.no_equality = function(left, right, opts)
   if not vim.deep_equal(left, right) then return true end
 
   opts = opts or {}
-  local fail_reason = H.normalize_reason(opts.fail_reason, "Failed expectation for *no* equality", left, right)
+  local fail_reason = normalize_reason(opts.fail_reason, "Failed expectation for *no* equality", left, right)
   local context = string.format("Object: %s", vim.inspect(left))
   ---@diagnostic disable-next-line: missing-return
-  H.error_with_emphasis(fail_reason, context)
+  error_with_emphasis(fail_reason, context)
 end
 
 --- Expect function call to raise error.
@@ -115,8 +118,8 @@ end
 ---@param opts table|nil Options. Possible fields:
 ---   __test_expect_fail_reason
 ---@return true when the call raises a matching error
-H.expect.error = function(f, pattern, opts)
-  H.check_type("pattern", pattern, "string", true)
+M.expect.error = function(f, pattern, opts)
+  util.check_type("pattern", pattern, "string", true)
 
   local ok, err = pcall(f)
   err = tostring(err)
@@ -125,10 +128,10 @@ H.expect.error = function(f, pattern, opts)
 
   opts = opts or {}
   local pattern_suffix = pattern == nil and "" or (" matching pattern " .. vim.inspect(pattern))
-  local fail_reason = H.normalize_reason(opts.fail_reason, "Failed expectation for error" .. pattern_suffix, f, pattern)
+  local fail_reason = normalize_reason(opts.fail_reason, "Failed expectation for error" .. pattern_suffix, f, pattern)
   local context = ok and "Observed no error" or ("Observed error: " .. err)
   ---@diagnostic disable-next-line: missing-return
-  H.error_with_emphasis(fail_reason, context)
+  error_with_emphasis(fail_reason, context)
 end
 
 --- Expect function call to not raise error.
@@ -136,14 +139,14 @@ end
 ---@param opts table|nil Options. Possible fields:
 ---   __test_expect_fail_reason
 ---@return true when the call does not raise
-H.expect.no_error = function(f, opts)
+M.expect.no_error = function(f, opts)
   local ok, err = pcall(f)
   if ok then return true end
 
   opts = opts or {}
-  local fail_reason = H.normalize_reason(opts.fail_reason, "Failed expectation for *no* error", f)
+  local fail_reason = normalize_reason(opts.fail_reason, "Failed expectation for *no* error", f)
   ---@diagnostic disable-next-line: missing-return
-  H.error_with_emphasis(fail_reason, "Observed error: " .. tostring(err))
+  error_with_emphasis(fail_reason, "Observed error: " .. tostring(err))
 end
 
 --- Expect equality to reference screenshot.
@@ -167,13 +170,13 @@ end
 ---     is located. Default: "tests/screenshots".
 ---   __test_expect_fail_reason
 ---@return true when the screenshot matches the reference
-H.expect.reference_screenshot = function(screenshot, path, opts)
+M.expect.reference_screenshot = function(screenshot, path, opts)
   if screenshot == nil then return true end
 
   local default_opts = { force = false, ignore_text = false, ignore_attr = false, directory = "tests/screenshots" }
   opts = vim.tbl_extend("force", default_opts, opts or {})
 
-  H.cache.n_screenshots = H.cache.n_screenshots + 1
+  state.cache.n_screenshots = state.cache.n_screenshots + 1
 
   if path == nil then
     -- Sanitize path. Replace any control characters, whitespace, OS specific
@@ -182,39 +185,39 @@ H.expect.reference_screenshot = function(screenshot, path, opts)
     local windows_forbidden = [[<>:"/\|?*]]
     local pattern = string.format("[%%c%%s%s%s]", vim.pesc(linux_forbidden), vim.pesc(windows_forbidden))
     local replacements = setmetatable({ ['"'] = "'" }, { __index = function() return "-" end })
-    local name = H.case_to_stringid(H.current.case):gsub(pattern, replacements)
+    local name = util.case_to_stringid(state.current.case):gsub(pattern, replacements)
 
     -- Don't end with whitespace or dot (forbidden on Windows)
     name = name:gsub("[%s%.]$", "-")
     path = vim.fs.normalize(opts.directory) .. "/" .. name
 
     -- Deal with multiple screenshots
-    if H.cache.n_screenshots > 1 then path = path .. string.format("-%03d", H.cache.n_screenshots) end
+    if state.cache.n_screenshots > 1 then path = path .. string.format("-%03d", state.cache.n_screenshots) end
   end
 
   -- If there is no readable screenshot file, create it. Pass with note.
   if opts.force or vim.fn.filereadable(path) == 0 then
     local dir_path = vim.fn.fnamemodify(path, ":p:h")
     vim.fn.mkdir(dir_path, "p")
-    H.screenshot_write(screenshot, path)
+    screenshot_mod.write(screenshot, path)
 
-    H.add_note("Created reference screenshot at path " .. vim.inspect(path))
+    state.add_note("Created reference screenshot at path " .. vim.inspect(path))
     return true
   end
 
-  local reference = H.screenshot_read(path)
+  local reference = screenshot_mod.read_attr(path)
 
   -- Compare
-  local same_text, cause_text = H.screenshot_compare_part("text", reference, screenshot, opts)
-  local same_attr, cause_attr = H.screenshot_compare_part("attr", reference, screenshot, opts)
+  local same_text, cause_text = screenshot_mod.compare_attr_part("text", reference, screenshot, opts)
+  local same_attr, cause_attr = screenshot_mod.compare_attr_part("attr", reference, screenshot, opts)
   if same_text and same_attr then return true end
 
   local fail_reason_fallback = "Failed expectation for screenshot equality to reference at " .. vim.inspect(path)
-  local fail_reason = H.normalize_reason(opts.fail_reason, fail_reason_fallback, screenshot, path)
+  local fail_reason = normalize_reason(opts.fail_reason, fail_reason_fallback, screenshot, path)
   local cause = same_text and cause_attr or cause_text
   local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause, tostring(reference), tostring(screenshot))
   ---@diagnostic disable-next-line: missing-return
-  H.error_with_emphasis(fail_reason, context)
+  error_with_emphasis(fail_reason, context)
 end
 
 --- Create new expectation function.
@@ -228,14 +231,14 @@ end
 ---@param fail_context string|function|table Information about fail. If callable,
 ---   called with expectation input arguments to produce string value.
 ---@return function Expectation function.
-H.new_expectation = function(subject, predicate, fail_context)
+M.new_expectation = function(subject, predicate, fail_context)
   return function(...)
     if predicate(...) then return true end
 
     local cur_subject = vim.is_callable(subject) and subject(...) or subject
     local cur_context = vim.is_callable(fail_context) and fail_context(...) or fail_context
-    H.error_with_emphasis("Failed expectation for " .. cur_subject, cur_context)
+    error_with_emphasis("Failed expectation for " .. cur_subject, cur_context)
   end
 end
 
-return H
+return M

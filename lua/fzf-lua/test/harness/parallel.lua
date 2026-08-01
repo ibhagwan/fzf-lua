@@ -8,9 +8,9 @@
 --- `scripts/make_cli.lua` in worker mode (`FZF_LUA_TEST_WORKER=1`), re-collect
 --- the same cases (from `FZF_LUA_TEST_FILES`), and keep only the indices in
 --- `FZF_LUA_TEST_CASES`. Results arrive as one flushed, tab-separated JSON
---- line per case (`CASE`) plus a final `DONE` summary (`mini/reporter.lua`).
+--- line per case (`CASE`) plus a final `DONE` summary (`harness/reporter.lua`).
 
-local H = require("fzf-lua.test.mini.util")
+local util = require("fzf-lua.test.harness.util")
 
 local write = function(text)
   io.stdout:write(text, "\n")
@@ -49,7 +49,7 @@ local function handle_line(worker, line, total)
   if not ok or type(data) ~= "table" then return end
 
   if kind == "CASE" then
-    local symbol = H.reporter_symbols[data.state] or "?"
+    local symbol = util.reporter_symbols[data.state] or "?"
     local short_file = basename(data.file)
     write(string.format("[%s] %s %s", short_file, symbol, data.name))
 
@@ -57,7 +57,7 @@ local function handle_line(worker, line, total)
     local n_notes = #(data.notes or {})
     if n_fails > 0 then
       local stringid = ("%s | %s"):format(short_file, data.name)
-      write("  " .. H.add_style("FAIL in " .. stringid .. ":", "fail"))
+      write("  " .. util.add_style("FAIL in " .. stringid .. ":", "fail"))
       for _, fail in ipairs(data.fails) do
         for fail_line in fail:gmatch("[^\n]+") do
           write("    " .. fail_line)
@@ -66,7 +66,7 @@ local function handle_line(worker, line, total)
     end
     if n_notes > 0 then
       local stringid = ("%s | %s"):format(short_file, data.name)
-      write("  " .. H.add_style("NOTE in " .. stringid .. ":", n_fails > 0 and "fail" or "pass"))
+      write("  " .. util.add_style("NOTE in " .. stringid .. ":", n_fails > 0 and "fail" or "pass"))
       for _, note in ipairs(data.notes) do
         for note_line in note:gmatch("[^\n]+") do
           write("    " .. note_line)

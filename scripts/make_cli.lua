@@ -2,7 +2,7 @@
 local MiniTest = require("fzf-lua.test.harness")
 local files = vim.env.FZF_LUA_TEST_FILES
 
--- Parallel worker mode (`mini/parallel.lua`): find_files reads the full
+-- Parallel worker mode (`harness/parallel.lua`): find_files reads the full
 -- resolved spec list the orchestrator assigned via `FZF_LUA_TEST_FILES`, so
 -- the worker re-collects the identical case array. Must take precedence over
 -- `glob`/`filter`, which are inherited from the orchestrator environment.

@@ -7,7 +7,7 @@ vim.opt.runtimepath:append(dir)
 -- 'mini.nvim' is still cloned into `deps/mini.nvim` by `make deps`. We append
 -- it to runtimepath purely to make `mini.icons` available for the icons-aware
 -- specs (`files_spec`, `headless_spec`, `minicons_spec`). The harness's own
--- test framework lives under `lua/fzf-lua/test/mini/` and is loaded from
+-- test framework lives under `lua/fzf-lua/test/harness/` and is loaded from
 -- fzf-lua's own runtimepath, which is searched before the deps clone.
 vim.opt.runtimepath:append(vim.fs.joinpath(dir, "deps", "mini.nvim"))
 vim.opt.runtimepath:append(vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "mini.nvim"))

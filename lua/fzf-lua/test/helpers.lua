@@ -6,7 +6,7 @@ local __FILE__ = _info.source:gsub("^@", "")
 vim.cmd.lcd(vim.fn.fnamemodify(__FILE__, ":p:h:h:h:h"))
 
 local MiniTest = require("fzf-lua.test.harness")
-local screenshot = require("fzf-lua.test._screenshot")
+local screenshot = require("fzf-lua.test.harness.screenshot")
 
 ---@class fzf-lua.test.helpers
 ---@field IS_WIN fun(): boolean
@@ -253,7 +253,7 @@ M.new_child_neovim = function()
   ---@param opts test.ScreenOpts
   ---@return MiniTestScreenshot
   child.get_screen_lines = function(opts)
-    return screenshot.fromChildScreen(child, opts)
+    return screenshot.from_child_screen(child, opts)
   end
 
   -- Expect screenshot without the "attrs" (highlights)
@@ -269,7 +269,7 @@ M.new_child_neovim = function()
     }
     opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
-    screenshot.reference_screenshot(child.get_screen_lines(screenshot_opts), path, opts)
+    screenshot.reference_text(child.get_screen_lines(screenshot_opts), path, opts)
   end
 
   local wait_timeout = (M.IS_LINUX() and 2000 or 5000)

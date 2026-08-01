@@ -5,30 +5,34 @@
 --- `vim.*` tables (`child.api`, `child.fn`, `child.o`, ...) so specs read like
 --- ordinary plugin code.
 
-local H = require("fzf-lua.test.mini.util")
+local state = require("fzf-lua.test.harness.state")
+local util = require("fzf-lua.test.harness.util")
+local screenshot = require("fzf-lua.test.harness.screenshot")
+
+local M = {}
 
 --- Create child Neovim process.
 ---@return MiniTest.child Object of |MiniTest-child-neovim|.
-H.new_child_neovim = function()
+M.new_child_neovim = function()
   local child = {}
   local start_args, start_opts
 
   local ensure_running = function()
     if child.is_running() then return end
-    H.error("Child process is not running. Did you call `child.start()`?")
+    util.error("Child process is not running. Did you call `child.start()`?")
   end
 
   local prevent_hanging = function(method)
     if not child.is_blocked() then return end
 
     local msg = string.format("Can not use `child.%s` because child process is blocked.", method)
-    H.error_with_emphasis(msg)
+    util.error_with_emphasis(msg)
   end
 
   -- Start headless Neovim instance
   child.start = function(args, opts)
     if child.is_running() then
-      H.message("Child process is already running. Use `child.restart()`.")
+      util.message("Child process is already running. Use `child.restart()`.")
       return
     end
 
@@ -71,7 +75,7 @@ H.new_child_neovim = function()
 
     if not connected then
       local err = "  " .. job.channel:gsub("\n", "\n  ")
-      H.error("Failed to make connection to child Neovim with the following error:\n" .. err)
+      util.error("Failed to make connection to child Neovim with the following error:\n" .. err)
       child.stop()
     end
 
@@ -192,7 +196,7 @@ H.new_child_neovim = function()
 
     local has_wait = type(wait) == "number"
     local keys = has_wait and { ... } or { wait, ... }
-    keys = H.tbl_flatten(keys)
+    keys = util.tbl_flatten(keys)
 
     -- From `nvim_input` docs: "On execution error: does not fail, but
     -- updates v:errmsg.". So capture it manually. NOTE: Have it global to
@@ -287,7 +291,7 @@ H.new_child_neovim = function()
 
     if opts.redraw then child.cmd("redraw") end
 
-    local res = child.lua([[
+    local res = child.lua(([[
       local text, attr = {}, {}
       for i = 1, vim.o.lines do
         local text_line, attr_line = {}, {}
@@ -299,16 +303,24 @@ H.new_child_neovim = function()
         table.insert(attr, attr_line)
       end
       return { text = text, attr = attr }
-    ]])
-    res.attr = H.screenshot_encode_attr(res.attr)
+    ]]))
+    res.attr = screenshot.encode_attr(res.attr)
 
-    return H.screenshot_new(res)
+    return screenshot.new_attr(res)
   end
 
   -- Register `child` for automatic stop in case of emergency
-  table.insert(H.child_neovim_registry, child)
+  table.insert(state.child_neovim_registry, child)
 
   return child
 end
 
-return H
+--- Stop every registered child Neovim and clear the registry.
+M.stop_all = function()
+  for _, child in ipairs(state.child_neovim_registry) do
+    pcall(child.stop)
+  end
+  state.child_neovim_registry = {}
+end
+
+return M
