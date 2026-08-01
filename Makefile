@@ -10,8 +10,10 @@ nvim ?= nvim
 # NOTE: glob is resolved using `vim.fn.globpath` so we can also run:
 # `make test glob=f`
 #
-# Run spec files across parallel workers with `make test JOBS=4` (default 1)
-JOBS ?= 4
+# Run spec files across parallel workers with `make test JOBS=4` (default 4)
+# `export` so the value reaches `vim.env.JOBS` in `scripts/make_cli.lua` even
+# when set only by this default (makefile variables are not exported otherwise)
+export JOBS ?= 4
 .PHONY: test
 test:
 	for nvim_exec in $(nvim); do \
