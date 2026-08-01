@@ -11,7 +11,7 @@ nvim ?= nvim
 # `make test glob=f`
 #
 # Run spec files across parallel workers with `make test JOBS=4` (default 1)
-JOBS ?= 1
+JOBS ?= 4
 .PHONY: test
 test:
 	for nvim_exec in $(nvim); do \
