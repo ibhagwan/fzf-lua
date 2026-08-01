@@ -21,10 +21,12 @@ local function basename(f)
   return f:gsub("^.*/", ""):gsub("_spec%.lua$", "")
 end
 
--- Resolve the real nvim binary. `vim.v.progpath` may point to a wrapper
--- script (e.g. `~/.bin/nvim`) that injects extra startup args into every
--- spawned instance; workers must run the actual binary instead.
+-- Resolve the real nvim binary. On POSIX `vim.v.progpath` may point to a
+-- wrapper script (e.g. `~/.bin/nvim`) that injects extra startup args into
+-- every spawned instance, so workers resolve the actual binary. Windows has
+-- no `/proc/self/exe`; `vim.v.progpath` is the real binary there.
 local function nvim_executable()
+  if vim.fn.has("win32") == 1 then return vim.v.progpath end
   local exe = vim.fn.resolve("/proc/self/exe")
   if vim.loop.fs_stat(exe) then return exe end
   return vim.v.progpath
@@ -32,8 +34,12 @@ end
 
 -- Kill a process and its whole descendant tree (used on worker timeout);
 -- `jobstop` alone would orphan the worker's child nvim instances and their
--- fzf processes.
+-- fzf processes. Windows has no `pgrep`; `taskkill /T` kills the tree.
 local function kill_tree(pid)
+  if vim.fn.has("win32") == 1 then
+    vim.fn.system("taskkill /T /F /PID " .. pid)
+    return
+  end
   local children = vim.fn.system("pgrep -P " .. pid)
   for child in children:gmatch("%d+") do kill_tree(tonumber(child)) end
   vim.uv.kill(pid, vim.uv.constants.SIGTERM)
