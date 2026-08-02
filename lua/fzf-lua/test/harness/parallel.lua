@@ -138,6 +138,9 @@ local function run_parallel(collect_fn, collect, jobs)
         nvim_executable(), "--headless", "--noplugin", "-u", "scripts/minimal_init.lua",
         "-l", "scripts/make_cli.lua",
       }, {
+        -- Ensure workers inherit the orchestrator's cwd; on Windows it is not
+        -- guaranteed and child processes then fail `cd deps/fzf-lua`.
+        cwd = vim.fn.getcwd(),
         env = {
           FZF_LUA_TEST_WORKER = "1",
           -- Full resolved file list, so the worker re-collects the identical
