@@ -143,6 +143,9 @@ local function run_parallel(collect_fn, collect, jobs)
         cwd = vim.fn.getcwd(),
         env = {
           FZF_LUA_TEST_WORKER = "1",
+          -- Absolute repo root so child.init() can `cd` via absolute path;
+          -- relative cwd is unreliable on Windows CI.
+          FZF_LUA_TEST_ROOT = vim.fn.getcwd(),
           -- Full resolved file list, so the worker re-collects the identical
           -- case array (glob/filter are already applied here)
           FZF_LUA_TEST_FILES = table.concat(specs, "\n"),

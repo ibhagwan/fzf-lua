@@ -121,7 +121,11 @@ M.new_child_neovim = function()
 
   child.init = function()
     child.restart({ "-u", "scripts/minimal_init.lua" })
-    child.cmd("cd deps/fzf-lua")
+    -- Use absolute path via env when available (parallel workers on Windows
+    -- don't reliably inherit cwd); fall back to relative for local runs.
+    local root = vim.env.FZF_LUA_TEST_ROOT or ""
+    local deps = root ~= "" and vim.fs.joinpath(root, "deps", "fzf-lua") or "deps/fzf-lua"
+    child.cmd("cd " .. vim.fn.fnameescape(deps))
 
     -- Change initial buffer to be readonly. This not only increases execution
     -- speed, but more closely resembles manually opened Neovim.
