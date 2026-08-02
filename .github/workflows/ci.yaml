@@ -86,5 +86,10 @@ jobs:
           make deps
 
       - name: Run tests
+        env:
+          # Windows runs fewer parallel workers; 4 workers × multiple child nvim
+          # processes overloads the windows runner and causes "Invalid channel"
+          # RPC failures. Linux/macOS have ample headroom.
+          JOBS: ${{ runner.os == 'Windows' && '2' || '4' }}
         run: |
           make test
