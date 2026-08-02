@@ -63,7 +63,7 @@ M.new_child_neovim = function()
     -- - Using `vim.loop.spawn()` is doable, but has some issues:
     --     - https://github.com/neovim/neovim/issues/21630
     --     - https://github.com/neovim/neovim/issues/21886
-    job.id = vim.fn.jobstart(full_args)
+    job.id = vim.fn.jobstart(full_args, { cwd = vim.fn.getcwd() })
 
     local step = 10
     local connected, i, max_tries = nil, 0, math.floor(opts.connection_timeout / step)
