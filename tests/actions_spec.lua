@@ -142,7 +142,7 @@ T["actions"]["vimcmd"] = new_set({
     local screen_opts = {
       -- windows / -> \
       -- windows tabline is cmd.exe
-      ignore_text = helpers.IS_WIN() and { 1, 3, 4, 24 } or { 24 },
+      ignore_text = helpers.IS_WIN() and { 1, 3, 4, 24, 28 } or { 24, 28 },
       normalize_paths = helpers.IS_WIN(),
     }
     child.o.tabline = "%{%nvim_list_tabpages()->len()%} %{%expand('%:t')%}"
