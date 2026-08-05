@@ -127,14 +127,14 @@ end
 
 ---@param self fzf-lua.Win
 ---@param buf integer
----@param line_parser (fun(line: string):string?,string?,string|table?,string?)|boolean?
+---@param line_parser? fzf-lua.treesitter.lineParser
 ---@return function detach
 function M.attach(self, buf, line_parser)
   -- local utf8 = require("fzf-lua.lib.utf8")
   local function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
   ---@type fun(line: string):string?,string?,string?,string?
-  local default_line_parser = function(line) return line:match("(.-):?(%d+)[: ](.+)$") end
-  ---@type (fun(line: string):string?,string?,string|table?,string?)
+  local default_line_parser = function(line, _) return line:match("(.-):?(%d+)[: ](.+)$") end
+  ---@type fzf-lua.treesitter.lineParser
   line_parser = vim.is_callable(line_parser) and line_parser or default_line_parser
   M.cache[buf] = {}
   api.nvim_buf_attach(buf, false, {
@@ -172,7 +172,7 @@ function M.attach(self, buf, line_parser)
           -- file:line:text       (grep_project or missing "--column" flag)
           -- line:col:text        (grep_curbuf)
           -- line<U+00A0>text     (lines|blines)
-          local filepath, _lnum, info, _ft = line_parser(line:sub(min_col + 1))
+          local filepath, _lnum, info, _ft = line_parser(line:sub(min_col + 1), i)
 
           -- info can be a string or `{ text = ..., start_col, end_col }`
           info = type(info) == "table" and info or { text = info }
