@@ -3,8 +3,11 @@ nvim ?= nvim
 #
 # Run all tests or specic module tests
 #
-# Test both stable and nightly (assuming `nv` is linked to nightly):
-# `make test nvim=nv` or `make test nvim="nvim nv"` (for both)
+# Test nightly:
+# `make test nvim=/home/bhagwan/Sources/nvim/neovim/build/bin/nvim
+#
+# Test both stable and nightly:
+# `make test nvim="nvim /home/bhagwan/Sources/nvim/neovim/build/bin/nvim"`
 #
 # Test specific module(s) with `make test glob=file`
 # NOTE: glob is resolved using `vim.fn.globpath` so we can also run:
@@ -15,7 +18,13 @@ test:
 	for nvim_exec in $(nvim); do \
 		printf "\n======\n\n" ; \
 		$$nvim_exec --version | head -n 1 && echo '' ; \
-		$$nvim_exec --headless --noplugin -u ./scripts/minimal_init.lua \
+		VIMRUNTIME="$$($$nvim_exec --clean --headless +'echo $$VIMRUNTIME' +q 2>/dev/null)" ; \
+		if [ -z "$$VIMRUNTIME" ] || [ ! -d "$$VIMRUNTIME" ]; then \
+			VIMRUNTIME="$$(realpath "$$(dirname "$$nvim_exec")/../../runtime")" ; \
+			[ -d "$$VIMRUNTIME" ] || unset VIMRUNTIME ; \
+		fi ; \
+		VIMRUNTIME="$$VIMRUNTIME" FZF_LUA_NVIM_RUNTIME="$$VIMRUNTIME" \
+			$$nvim_exec --headless --noplugin -u ./scripts/minimal_init.lua \
 			-l ./scripts/make_cli.lua ; \
 	done
 
