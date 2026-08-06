@@ -1943,7 +1943,6 @@ M.defaults.undotree = {
 M.defaults.command_history = {
   fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   render_crlf = true,
-  _treesitter = function(line) return "foo.vim", nil, line end,
   fzf_colors  = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
   actions     = {
     ["enter"]  = actions.ex_run_cr,
@@ -1951,6 +1950,18 @@ M.defaults.command_history = {
     ["ctrl-x"] = { fn = actions.ex_del, field_index = "{+n}", reload = true }
   },
   _headers    = { "actions" },
+  _treesitter = function(line, lnum)
+    -- Recorded commands begin on line 4
+    if lnum <= 3 then return end
+
+    -- Example line: "▌ vim command"
+    -- The first character (the item selection indicator) may throw off
+    -- the vim treesitter parser, so skip it. There should always be at
+    -- least one space after the item indicator.
+    local start_col = line:find("%s")
+
+    return "foo.vim", nil, { text = line, start_col = start_col }
+  end
 }
 
 ---Search history.
