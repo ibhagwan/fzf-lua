@@ -195,6 +195,24 @@ T["ui_select"]["lsp_code_actions no_resume honored #2795"] = function()
   -- picker must not have been stored as resume data
   eq(child.lua_get(
     [[(require("fzf-lua.config").__resume_data or {}).contents]]), vim.NIL)
+  -- explicit `no_hide = false` sent via once-opts must be respected
+  -- (not replaced by the implicit code-action `no_hide = true` default)
+  exec_lua(function()
+    local ui_select = require("fzf-lua.providers.ui_select")
+    local opts_once = require("fzf-lua.config").normalize_opts(
+      { no_hide = false, previewer = false }, "lsp.code_actions")
+    ui_select.register(nil, true, opts_once)
+    vim.ui.select({ "alpha", "beta" }, {
+      prompt = "Code actions:",
+      kind = "codeaction",
+      format_item = function(item) return tostring(item) end,
+    }, function() end)
+  end)
+  child.wait_until(function()
+    return child.lua_get([[_G._fzf_lua_on_create]]) == true
+  end, 5000)
+  eq(child.lua_get([[_G._fzf_exec_opts.no_hide]]), false)
+  close_picker("<esc>")
 end
 
 T["ui_select"]["once opts merged with preview_item #2795"] = function()
