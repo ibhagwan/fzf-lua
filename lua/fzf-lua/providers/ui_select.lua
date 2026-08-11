@@ -112,6 +112,66 @@ M.ui_select = function(items, ui_opts, on_choice)
     opts = opts(ui_opts, items)
   end
 
+  -- ui.select is code actions
+  -- inherit from defaults if not triggered by lsp_code_actions
+  ---@type 'error'|'keep'|'force'
+  local opts_merge_strategy = "keep"
+
+  -- fix error when vim.lsp.buf.code_action() called but didn't triggers vim.ui.select
+  -- _OPTS_ONCE also means pending deregister
+  -- since we only use it to custom codeaction preview now
+  if _OPTS_ONCE and ui_opts.kind ~= "codeaction" then
+    M.deregister({}, true, true)
+    _OPTS_ONCE = nil
+    return vim.ui.select(items, ui_opts, on_choice)
+  end
+
+  if not _OPTS_ONCE and ui_opts.kind == "codeaction" then
+    ---@type fzf-lua.config.LspCodeActions
+    _OPTS_ONCE = config.normalize_opts({}, "lsp.code_actions")
+    if not _OPTS_ONCE then return end
+    -- auto-detected code actions, prioritize the ui_select
+    -- options over `lsp.code_actions` (#999)
+    opts_merge_strategy = "force"
+  end
+
+  if _OPTS_ONCE then
+    -- merge and clear the once opts sent from lsp_code_actions **before**
+    -- normalize so the merge result (e.g. `no_resume`) is visible to the
+    -- profile enrich functions (e.g. "hide" profile skips when
+    -- `no_resume|no_hide` are set) (#2795)
+    local opts_once = _OPTS_ONCE
+    local previewer = opts_once.previewer
+    opts_once.previewer = nil -- can't copy the previewer object
+    ---@diagnostic disable-next-line: param-type-mismatch
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    ---@diagnostic disable-next-line: generic-constraint-mismatch
+    opts = vim.tbl_deep_extend(opts_merge_strategy, opts_once, opts)
+    ---@cast opts table
+    -- We also override actions to guarantee a single default
+    -- action, otherwise selected[1] will be empty due to
+    -- multiple keybinds trigger, sending `--expect` to fzf
+    opts.actions = vim.tbl_deep_extend("force", opts.actions or {},
+      { ["enter"] = opts.actions and opts.actions.enter or nil })
+    opts.previewer = previewer
+    -- Callback to set the coroutine so we know if the interface
+    -- was opened or not (e.g. when no code actions are present)
+    opts.cb_co = function(co)
+      ---@diagnostic disable-next-line: inject-field
+      opts_once._co = co
+    end
+    _OPTS_ONCE = nil
+  end
+
+  -- disable hide profile unless specifically requested, must be set
+  -- prior to `normalize_opts` as the "hide" profile's `enrich` needs
+  -- this to skip setting `<Esc>` to hide (post-merge so that an
+  -- explicit `no_hide=false` sent via `_OPTS_ONCE` is respected)
+  if ui_opts.kind == "codeaction" then
+    -- casues issues with abort as on_choice(nil) won't be called (#2439)
+    opts.no_hide = opts.no_hide == nil and true or opts.no_hide
+  end
+
   opts = config.normalize_opts(opts, "ui_select")
   if not opts then return end
 
@@ -169,29 +229,6 @@ M.ui_select = function(items, ui_opts, on_choice)
     end
   end)
 
-
-  -- ui.select is code actions
-  -- inherit from defaults if not triggered by lsp_code_actions
-  ---@type 'error'|'keep'|'force'
-  local opts_merge_strategy = "keep"
-
-  -- fix error when vim.lsp.buf.code_action() called but didn't triggers vim.ui.select
-  -- _OPTS_ONCE also means pending deregister
-  -- since we only use it to custom codeaction preview now
-  if _OPTS_ONCE and ui_opts.kind ~= "codeaction" then
-    M.deregister({}, true, true)
-    _OPTS_ONCE = nil
-    return vim.ui.select(items, ui_opts, on_choice)
-  end
-
-  if not _OPTS_ONCE and ui_opts.kind == "codeaction" then
-    ---@type fzf-lua.config.LspCodeActions
-    _OPTS_ONCE = config.normalize_opts({}, "lsp.code_actions")
-    if not _OPTS_ONCE then return end
-    -- auto-detected code actions, prioritize the ui_select
-    -- options over `lsp.code_actions` (#999)
-    opts_merge_strategy = "force"
-  end
 
   if ui_opts.preview_item then
     local preview_type = resolve_preview_type(ui_opts, opts)
@@ -266,35 +303,7 @@ M.ui_select = function(items, ui_opts, on_choice)
         end,
       }
     end
-  elseif _OPTS_ONCE then
-    -- merge and clear the once opts sent from lsp_code_actions.
-    -- We also override actions to guarantee a single default
-    -- action, otherwise selected[1] will be empty due to
-    -- multiple keybinds trigger, sending `--expect` to fzf
-    local previewer = _OPTS_ONCE.previewer
-    _OPTS_ONCE.previewer = nil -- can't copy the previewer object
-    ---@diagnostic disable-next-line: param-type-mismatch
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    ---@diagnostic disable-next-line: generic-constraint-mismatch
-    opts = vim.tbl_deep_extend(opts_merge_strategy, _OPTS_ONCE, opts)
-    ---@cast opts table
-    opts.actions = vim.tbl_deep_extend("force", opts.actions or {},
-      { ["enter"] = opts.actions.enter })
-    opts.previewer = previewer
-    -- Callback to set the coroutine so we know if the interface
-    -- was opened or not (e.g. when no code actions are present)
-    opts.cb_co = (function()
-      -- NOTE: use clojure  as `_OPTS_ONCE` is otherwise nullified
-      local opts_once_ref = _OPTS_ONCE
-      ---@diagnostic disable-next-line: inject-field
-      return function(co) opts_once_ref._co = co end
-    end)()
-    _OPTS_ONCE = nil
   end
-
-  -- disable hide profile unless specifically requested
-  -- casues issues with abort as on_choice(nil) won't be called (#2439)
-  opts.no_hide = opts.no_hide == nil and true or opts.no_hide
 
   core.fzf_exec(entries, opts)
 end
