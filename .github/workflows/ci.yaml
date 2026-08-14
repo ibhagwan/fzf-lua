@@ -86,5 +86,10 @@ jobs:
           make deps
 
       - name: Run tests
+        env:
+          # Windows falls back to sequential; parallel workers overload the
+          # runner and collapse child nvim RPC channels ("Invalid channel").
+          # Linux/macOS keep 4 workers (14s vs sequential ~35s).
+          JOBS: ${{ runner.os == 'Windows' && '1' || '4' }}
         run: |
           make test

@@ -1570,9 +1570,9 @@ function M.git_version()
   return tonumber(out:match("(%d+.%d+)."))
 end
 
-  ---@param binary string?
-  ---@return boolean? is universal ctags
-  ---@return number? version
+---@param binary string?
+---@return boolean? is universal ctags
+---@return number? version
 function M.ctags_is_universal(binary)
   local out, rc = M.io_system({ binary or "ctags", "--version" })
   if rc ~= 0 then return end

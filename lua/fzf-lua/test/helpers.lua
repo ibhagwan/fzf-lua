@@ -5,8 +5,8 @@ local _info = debug.getinfo(1, "S")
 local __FILE__ = _info.source:gsub("^@", "")
 vim.cmd.lcd(vim.fn.fnamemodify(__FILE__, ":p:h:h:h:h"))
 
-local MiniTest = require("mini.test")
-local screenshot = require("fzf-lua.test.screenshot")
+local MiniTest = require("fzf-lua.test.harness")
+local screenshot = require("fzf-lua.test.harness.screenshot")
 
 ---@class fzf-lua.test.helpers
 ---@field IS_WIN fun(): boolean
@@ -107,30 +107,6 @@ M.expect.no_match = MiniTest.new_expectation(
   end
 )
 
-M.make_partial_tbl = function(tbl, ref)
-  local res = {}
-  for k, v in pairs(ref) do
-    res[k] = (type(tbl[k]) == "table" and type(v) == "table") and M.make_partial_tbl(tbl[k], v) or
-        tbl[k]
-  end
-  for i = 1, #tbl do
-    if ref[i] == nil then res[i] = tbl[i] end
-  end
-  return res
-end
-
-M.expect.equality_partial_tbl = MiniTest.new_expectation(
-  "equality of tables only in reference fields",
-  function(x, y)
-    if type(x) == "table" and type(y) == "table" then x = M.make_partial_tbl(x, y) end
-    return vim.deep_equal(x, y)
-  end,
-  function(x, y)
-    return string.format("Left: %s\nRight: %s", vim.inspect(M.make_partial_tbl(x, y)),
-      vim.inspect(y))
-  end
-)
-
 -- Monkey-patch `MiniTest.new_child_neovim` with helpful wrappers
 M.new_child_neovim = function()
   ---@class fzf-lua.test.chlid: MiniTest.child
@@ -145,7 +121,11 @@ M.new_child_neovim = function()
 
   child.init = function()
     child.restart({ "-u", "scripts/minimal_init.lua" })
-    child.cmd("cd deps/fzf-lua")
+    -- Use absolute path via env when available (parallel workers on Windows
+    -- don't reliably inherit cwd); fall back to relative for local runs.
+    local root = vim.env.FZF_LUA_TEST_ROOT or ""
+    local deps = root ~= "" and vim.fs.joinpath(root, "deps", "fzf-lua") or "deps/fzf-lua"
+    child.cmd("cd " .. vim.fn.fnameescape(deps))
 
     -- Change initial buffer to be readonly. This not only increases execution
     -- speed, but more closely resembles manually opened Neovim.
@@ -264,29 +244,6 @@ M.new_child_neovim = function()
     if type(columns) == "number" then child.o.columns = columns end
   end
 
-  child.get_size = function()
-    prevent_hanging("get_size")
-
-    return { child.o.lines, child.o.columns }
-  end
-
-  --- Assert visual marks
-  ---
-  --- Useful to validate visual selection
-  ---
-  ---@param first number|table Table with start position or number to check linewise.
-  ---@param last number|table Table with finish position or number to check linewise.
-  ---@private
-  child.expect_visual_marks = function(first, last)
-    child.ensure_normal_mode()
-
-    first = type(first) == "number" and { first, 0 } or first
-    last = type(last) == "number" and { last, 2147483647 } or last
-
-    MiniTest.expect.equality(child.api.nvim_buf_get_mark(0, "<"), first)
-    MiniTest.expect.equality(child.api.nvim_buf_get_mark(0, ">"), last)
-  end
-
   child.expect_screenshot = function(opts, path)
     opts = opts or {}
     local screenshot_opts = { redraw = opts.redraw }
@@ -300,7 +257,7 @@ M.new_child_neovim = function()
   ---@param opts test.ScreenOpts
   ---@return MiniTestScreenshot
   child.get_screen_lines = function(opts)
-    return screenshot.fromChildScreen(child, opts)
+    return screenshot.from_child_screen(child, opts)
   end
 
   -- Expect screenshot without the "attrs" (highlights)
@@ -316,42 +273,7 @@ M.new_child_neovim = function()
     }
     opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
-    screenshot.reference_screenshot(child.get_screen_lines(screenshot_opts), path, opts)
-  end
-
-  ---@param opts test.ScreenOpts
-  ---@param buf integer
-  ---@return MiniTestScreenshot
-  child.get_buf_lines = function(buf, opts)
-    return screenshot.fromChildBufLines(child, buf, opts)
-  end
-
-  child.expect_buflines = function(buf, opts, path)
-    opts = opts or {}
-    ---@type test.ScreenOpts
-    local screenshot_opts = {
-      redraw = opts.redraw,
-      normalize_paths = opts.normalize_paths,
-      start_line = opts.start_line,
-      end_line = opts.end_line,
-      no_ruler = opts.no_ruler,
-    }
-    opts.redraw = nil
-    opts.force = not not vim.env["update_screenshots"]
-    screenshot.reference_screenshot(child.get_buf_lines(buf, screenshot_opts), path, opts)
-  end
-
-  ---@param str string
-  ---@param opts test.ScreenOpts
-  child.assert_screen_lines = function(str, opts)
-    opts = opts or {}
-    -- we don't need this if we compare inline
-    opts.no_ruler = true
-    local lines = str and vim.split(str, "\n") or { "" }
-    if #lines > 1 then lines[#lines] = nil end
-    local screen_ref = screenshot.from_lines(lines, opts)
-    local screen_obs = child.get_screen_lines(opts)
-    screenshot.compare(screen_ref, screen_obs, opts)
+    screenshot.reference_text(child.get_screen_lines(screenshot_opts), path, opts)
   end
 
   local wait_timeout = (M.IS_LINUX() and 2000 or 5000)
@@ -376,15 +298,6 @@ M.new_child_neovim = function()
       tostring(child.cmd_capture("messages")),
       tostring(child.get_screenshot())
     ))
-  end
-
-  --- waits until child screenshot contains text
-  ---@param text string
-  child.wait_until_screenshot_text_match = function(text)
-    child.wait_until(function()
-      local screenshotText = tostring(child.get_screenshot())
-      return string.find(screenshotText, text, 1, true) ~= nil
-    end)
   end
 
   -- Poke child's event loop to make it up to date

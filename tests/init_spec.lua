@@ -1,10 +1,10 @@
 ---@diagnostic disable: unused-local, unused-function
-local MiniTest = require("mini.test")
+local harness = require("fzf-lua.test.harness")
 local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
 local expect = helpers.expect
 local eq = expect.equality
-local new_set = MiniTest.new_set
+local new_set = harness.new_set
 
 local T = helpers.new_set_with_child(child, nil, { winopts = { col = 0, row = 1 } })
 
