@@ -711,7 +711,11 @@ function M.keymap_to_entry(str)
       if source:match("vim/") and package.preload[source:gsub("%.lua$", ""):gsub("/", ".")] then
         source = vim.env.VIMRUNTIME .. "/lua/" .. source .. ".lua"
       end
-      return { path = source, line = info.linedefined }
+      return {
+        stripped = source ..':' .. info.linedefined,
+        path = source,
+        line = info.linedefined,
+      }
     end
   end
   local cmd = ("verb %smap %s"):format(mode, keymap)
