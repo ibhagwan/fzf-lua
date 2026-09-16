@@ -457,7 +457,7 @@ M.awesome_colorschemes = function(opts)
       ---@cast co thread
 
       -- make sure our cache is in packpath
-      vim.opt.packpath:append(packpath)
+      vim.opt.packpath:append(packpath --[[@as string]])
 
       -- since resume uses deepcopy having multiple db's is going to
       -- create all sorts of voodoo issues when running resume

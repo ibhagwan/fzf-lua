@@ -146,12 +146,11 @@ end
 
 T["win"]["keymap"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
-T["win"]["keymap"]["no error"] = new_set({
-  ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
-  parametrize = vim.iter(require("fzf-lua.defaults").defaults.keymap.builtin)
-      :map(function(key, action) return { key, action } end)
-      :totable()
-}, {
+T["win"]["keymap"]["no error"] = new_set({ parametrize = (function()
+  local builtin = require("fzf-lua.defaults").defaults.keymap.builtin
+  ---@cast builtin table
+  return vim.iter(builtin):map(function(key, action) return { key, action } end --[[@as any]]):totable()
+end)() }, {
   function(key, action)
     for _, event in ipairs({ "start", "load", "result" }) do
       if action == "toggle-preview" then helpers.SKIP_IF_WIN() end
@@ -287,9 +286,11 @@ T["win"]["toggle"][""] = new_set(
           if helpers.IS_WIN() then vim.uv.sleep(250) end
         end,
       }
+      ---@diagnostic disable-next-line: assign-type-mismatch
       opts = vim.tbl_deep_extend("force", opts, o)
       -- don't modify o directly, otherwise it will change screenshots name
       if a:match("E") then
+        ---@diagnostic disable-next-line: assign-type-mismatch
         opts = vim.tbl_deep_extend("force", opts, { winopts = { toggle_behavior = "extend" } })
       end
       if a:match("B") then
@@ -356,6 +357,7 @@ T["win"]["reuse"] = new_set({
         if helpers.IS_WIN() then vim.uv.sleep(250) end
       end,
     }
+    ---@diagnostic disable-next-line: assign-type-mismatch
     opts = vim.tbl_deep_extend("force", opts, o)
     helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
     -- change to fzf preview

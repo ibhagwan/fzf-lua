@@ -323,7 +323,7 @@ M.grep_curbuf = function(opts, lgrep)
 
   -- Persist call options so we don't revert to global grep on `grep_lgrep`
   opts.__call_opts = vim.tbl_deep_extend("keep",
-    opts.__call_opts or {}, config.globals.grep_curbuf)
+    opts.__call_opts or {}, config.globals.grep_curbuf) --[[@as table]]
   opts.__call_opts.filename = opts.filename
 
   if lgrep then

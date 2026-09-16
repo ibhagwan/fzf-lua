@@ -74,7 +74,7 @@ EMMY_CHECK_BIN=$(EMMYLUA_DIR)/emmylua_check
 LUA_FMT_BIN=$(EMMYLUA_DIR)/luafmt
 # Pin the emmylua release tag to download. Set to an empty
 # string (EMMYLUA_VERSION=) to fetch the latest release instead.
-EMMYLUA_VERSION=0.23.1
+EMMYLUA_VERSION=0.25.1
 # OS arch detection for emmylua_check. Falls back to linux-x64 on
 # unknown platforms; override by passing EMMY_CHECK_ASSET=<asset
 # filename> on the make command line.

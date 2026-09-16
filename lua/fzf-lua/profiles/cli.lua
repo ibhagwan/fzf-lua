@@ -69,6 +69,7 @@ local function posix_exec(cmd, ...)
   table.insert(args, string.byte("\0"))
   ffi.C.execl(cmd, cmd, unpack(args))
   -- if `execl` succeeds we should never get here
+  ---@diagnostic disable-next-line: undefined-field
   error(string.format([[execl("%s",...) failed with error %d]], cmd, ffi.errno()))
 end
 
@@ -91,6 +92,7 @@ local enable_stdio_inheritance = function()
     repeat
       ---@diagnostic disable-next-line: need-check-nil
       res = ffi.C.fcntl(fd, F_SETFD, 1)
+      ---@diagnostic disable-next-line: need-check-nil
     until not (res == -1 and ffi.errno() == EINTR)
     return res ~= -1
   end

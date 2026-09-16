@@ -56,9 +56,8 @@ end
 function M.resume_opts(opts)
   assert(opts.resume and opts.__call_opts)
   local __call_opts = M.resume_get(nil, opts)
-  opts = vim.tbl_deep_extend("keep", opts, __call_opts or {})
-  opts.__call_opts = vim.tbl_deep_extend("keep", opts.__call_opts, __call_opts or {})
-  -- _G.dump("__call_opts", opts.__call_opts)
+  opts = vim.tbl_deep_extend("keep", opts, __call_opts or {}) --[[@as { resume: boolean, __call_opts: table }]]
+  opts.__call_opts = vim.tbl_deep_extend("keep", opts.__call_opts, __call_opts or {}) --[[@as table]]
   return opts
 end
 
@@ -128,10 +127,11 @@ M.globals = setmetatable({}, {
         or (setup_value and (setup_value.actions or setup_value._actions)) then
       -- (2) the existence of the `actions` key implies we're dealing with a picker
       -- override global provider defaults supplied by the user's setup `defaults` table
-      ret = vim.tbl_deep_extend("force", ret, setup_defaults())
+      ret = (vim.tbl_deep_extend("force", ret, setup_defaults()) --[[@as fzf-lua.config.Defaults]])
     end
     -- (3) override with the specific provider options from the users's `setup` option
-    ret = vim.tbl_deep_extend("force", ret, utils.map_get(setup_opts(), index) or {})
+    ret = (vim.tbl_deep_extend("force", ret, utils.map_get(setup_opts(), index) or {})
+      --[[@as fzf-lua.config.Defaults]])
     return ret
   end,
   __newindex = function(_, index, _)

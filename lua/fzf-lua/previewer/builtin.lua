@@ -41,6 +41,10 @@ local Previewer = {}
 ---@field clear_on_redraw boolean?
 ---@field timers? table<string, uv.uv_timer_t?>
 ---@field orig_pos? [integer, integer]
+-- Methods are added to `Previewer.base`/`buffer_or_file` via `Object:extend()`'s
+-- `__index` chain; emmylua 0.25.x can't see through this, so `self:method()` and
+-- undeclared fields show as `never` / undefined. Real type errors are fixed inline.
+---@diagnostic disable: call-non-callable, undefined-field
 Previewer.base = Object:extend()
 
 ---@param o table
@@ -189,6 +193,7 @@ end
 ---@param min_winopts boolean?
 ---@param no_wipe boolean?
 function Previewer.base:set_preview_buf(newbuf, min_winopts, no_wipe)
+  ---@cast self fzf-lua.previewer.Builtin
   if not self.win or not self.win:validate_preview() then return end
   -- Set the preview window to the new buffer
   local curbuf = api.nvim_win_get_buf(self.win.preview_winid)
@@ -305,7 +310,7 @@ function Previewer.base:display_entry(entry_str)
     if not self.win or not self.win:validate_preview() then return end
 
     -- specialized previewer populate function
-    ---@cast self fzf-lua.previewer.BufferOrFile base class def don't make sense here
+    ---@cast self fzf-lua.previewer.BufferOrFile
     if self:populate_preview_buf(entry_str_) == false then return end
 
     -- reset the preview window highlights
@@ -512,6 +517,7 @@ end
 
 ---@class fzf-lua.previewer.BufferOrFile : fzf-lua.previewer.Builtin,{}
 ---@field match_id? integer
+---@field loaded_entry? fzf-lua.buffer_or_file.Entry
 ---@field super fzf-lua.previewer.Builtin
 Previewer.buffer_or_file = Previewer.base:extend()
 
@@ -952,13 +958,14 @@ end
 ---@param entry_str string
 ---@return false? no preview
 function Previewer.buffer_or_file:populate_preview_buf(entry_str)
+  ---@cast self fzf-lua.previewer.BufferOrFile
   if not self.win or not self.win:validate_preview() then return end
   local co = assert(coroutine.running())
   -- schedule can avoid "cannot resume running coroutine"
   local entry = self:parse_entry(entry_str,
     vim.schedule_wrap(function(res) assert(coroutine.resume(co, res)) end))
   self._last_entry = entry_str
-  entry = entry or coroutine.yield()
+  entry = entry or coroutine.yield() ---@cast entry fzf-lua.buffer_or_file.Entry
   if entry_str ~= self._last_entry or not self.win:validate_preview() then return false end
   if utils.tbl_isempty(entry) then return end
 
@@ -971,7 +978,7 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     return
   end
   -- check if cached is update-to-date to be reuse
-  local cached, stale = self.bcache:check(entry)
+  local cached, stale = self.bcache:check(entry) ---@cast cached fzf-lua.BcacheEntry?
   entry.cached = cached
 
   if cached and not stale then
@@ -980,7 +987,8 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
   end
 
   -- if cached exists, must be stale, otherwise alloc a new buffer
-  local buf = (cached or {}).bufnr or self:get_tmp_buffer()
+  local buf ---@type integer
+  if cached then buf = cached.bufnr else buf = self:get_tmp_buffer() end
 
   if entry.bufnr and api.nvim_buf_is_loaded(entry.bufnr) and vim.bo[entry.bufnr].filetype ~= "image" then
     self:_populate_loaded_buffer_preview(buf, entry)
@@ -1380,6 +1388,7 @@ end
 ---@param entry fzf-lua.buffer_or_file.Entry
 ---@param min_winopts boolean?
 function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
+  ---@cast self fzf-lua.previewer.BufferOrFile
   if not self.win or not self.win:validate_preview() then return end
 
   -- set cursor highlights for line|col or tag
@@ -1413,7 +1422,7 @@ function Previewer.buffer_or_file:preview_buf_post(entry, min_winopts)
   -- save the loaded entry so we can compare
   -- bufnr|path with the next entry. If equal
   -- we can skip loading the buffer again
-  self.loaded_entry = entry
+  self.loaded_entry = entry --[[@as fzf-lua.buffer_or_file.Entry]]
 
   -- Should we cache the current preview buffer?
   -- we cache only named buffers with valid path/uri
