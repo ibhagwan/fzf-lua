@@ -377,6 +377,18 @@ Type: `number`, Default: `0.85`
 
 Height of the fzf-lua float, between 0-1 will represent percentage of `vim.o.lines` (1: max height), if >= 1 will use fixed number of lines.
 
+#### globals.winopts.on_close
+
+Type: `fun()`, Default: `nil`
+
+Callback after closing the fzf-lua window.
+
+#### globals.winopts.on_create
+
+Type: `fun(e: { bufnr: integer?, winid: integer? })`, Default: `nil`
+
+Callback after the creation of the fzf-lua main terminal window.
+
 #### globals.winopts.path_shorten
 
 Type: `boolean|integer`, Default: `nil`
@@ -1446,6 +1458,12 @@ Type: `boolean|integer`, Default: `1`
 
 Use `rg` glob parsing, e.g. `foo -- -g*.md` will only match markdown files containing `foo`.
 
+##### grep.rg_glob_fn
+
+Type: `fun(query: string, opts: table) -> (string,string)`, Default: `nil`
+
+Custom glob parsing function, returns the search query and the glob filter.
+
 ##### grep.raw_cmd
 
 Type: `string`, Default: `nil`
@@ -1644,6 +1662,12 @@ Type: `vim.lsp.buf.code_action.context`, Default: `nil`
 
 Code action context passed to the LSP server.
 
+##### lsp_code_actions.filter
+
+Type: `fun(x: (lsp.CodeAction|lsp.Command)) -> boolean`, Default: `nil`
+
+Filter function to exclude certain code actions.
+
 #### lsp_document_symbols
 
 LSP document symbols.
@@ -1685,6 +1709,18 @@ LSP symbols (shared config).
 Type: `string`, Default: `nil`
 
 Initial query to filter symbols.
+
+##### lsp_symbols.symbol_hl
+
+Type: `fun(s: string) -> string`, Default: `nil`
+
+Custom highlight function for symbol kinds.
+
+##### lsp_symbols.symbol_fmt
+
+Type: `fun(s: string, ...) -> string`, Default: `nil`
+
+Custom format function for symbol display.
 
 ##### lsp_symbols.symbol_style
 
