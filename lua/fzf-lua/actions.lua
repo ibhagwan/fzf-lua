@@ -274,8 +274,9 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
       elseif not opts.no_action_set_cursor and (entry.line > 0 or entry.col > 0) then
         -- Make sure we have valid line/column
         -- e.g. qf lists from files (no line/col), dap_breakpoints
-        ---@diagnostic disable-next-line: param-type-mismatch
-        pcall(vim.api.nvim_win_set_cursor, 0, { math.max(1, entry.line), math.max(1, entry.col) - 1 })
+        pcall(vim.api.nvim_win_set_cursor, 0, {
+          (math.max(1, entry.line --[[@as integer]]) --[[@as integer]]),
+          (math.max(1, entry.col --[[@as integer]]) - 1 --[[@as integer]]) })
       end
       -- Only "zz" after the last entry is loaded into the origin buffer
       if i == #selected and not opts.no_action_zz and not utils.is_term_buffer(0) then
@@ -405,8 +406,10 @@ M.file_switch = function(selected, opts)
   winid = utils.winid_from_tabh(0, entry.bufnr)
   if not winid then return false end
   vim.api.nvim_set_current_win(winid)
-  if entry.line > 0 or entry.col > 0 then ---@diagnostic disable-next-line: param-type-mismatch
-    pcall(vim.api.nvim_win_set_cursor, 0, { math.max(1, entry.line), math.max(1, entry.col) - 1 })
+  if entry.line > 0 or entry.col > 0 then
+    pcall(vim.api.nvim_win_set_cursor, 0, {
+      (math.max(1, entry.line --[[@as integer]]) --[[@as integer]]),
+      (math.max(1, entry.col --[[@as integer]]) - 1 --[[@as integer]]) })
   end
   if not utils.is_term_buffer(0) and not opts.no_action_zz then vim.cmd("norm! zvzz") end
   return true

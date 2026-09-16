@@ -697,7 +697,7 @@ describe("Testing path module", function()
       local received_opts ---@cast received_opts table
       path.is_jj_repo = function() return true end
       path.is_git_repo = function() return false end
-      jj_provider.files = function(opts) received_opts = opts end
+      jj_provider.files = (function(opts) received_opts = opts end --[[@as any]])
       files_provider.vcs_files({})
       eq(received_opts.winopts.title, " VCS Files (jj) ")
     end)
@@ -706,7 +706,7 @@ describe("Testing path module", function()
       local received_opts ---@cast received_opts table
       path.is_jj_repo = function() return false end
       path.is_git_repo = function() return true end
-      git_provider.files = function(opts) received_opts = opts end
+      git_provider.files = (function(opts) received_opts = opts end --[[@as any]])
       files_provider.vcs_files({})
       eq(received_opts.winopts.title, " VCS Files (git) ")
     end)
@@ -715,7 +715,7 @@ describe("Testing path module", function()
       local received_opts ---@cast received_opts table
       path.is_jj_repo = function() return false end
       path.is_git_repo = function() return false end
-      files_provider.files = function(opts) received_opts = opts end
+      files_provider.files = (function(opts) received_opts = opts end --[[@as any]])
       files_provider.vcs_files({})
       eq(received_opts.winopts, nil)
     end)
@@ -724,7 +724,7 @@ describe("Testing path module", function()
       local received_opts ---@cast received_opts table
       path.is_jj_repo = function() return true end
       path.is_git_repo = function() return false end
-      jj_provider.files = function(opts) received_opts = opts end
+      jj_provider.files = (function(opts) received_opts = opts end --[[@as any]])
       files_provider.vcs_files({ winopts = { title = " My Title " } })
       eq(received_opts.winopts.title, " My Title ")
     end)

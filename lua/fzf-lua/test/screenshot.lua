@@ -12,7 +12,7 @@ local _, H = debug.getupvalue(MiniTest.expect.reference_screenshot, 1)
 ---@class MiniTestScreenshot
 
 --- copied over from mini.test
----@param t { text?: string[], attr?: string[] }
+---@param t { text?: string[][], attr?: string[] }
 ---@param opts test.ScreenOpts?
 ---@return MiniTestScreenshot
 local function screenshot_new(t, opts)

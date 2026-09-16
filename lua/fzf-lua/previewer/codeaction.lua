@@ -167,7 +167,7 @@ local function preview_action_tuple(self, idx, callback)
   -- the error (we already alerted the user about it in `handle_resolved_response`)
   -- and display the default "unsupported" message from the original action
   if self._resolved_actions[idx] then
-    local resolved = assert(self._resolved_actions[idx])
+    local resolved = self._resolved_actions[idx]
     return diff_tuple(nil, not resolved.err and resolved.tuple or tuple, self.diff_opts)
   end
   -- Not found in cache, check if the client supports code action resolving
@@ -234,6 +234,7 @@ end
 ---@class fzf-lua.previewer.CodeActionBuiltin: fzf-lua.previewer.Builtin,{}
 ---@field super fzf-lua.previewer.Builtin
 ---@field diff_opts vim.text.diff.Opts
+---@field _resolved_actions table<integer, (false|{ err: any, tuple: any? })?>
 M.builtin = builtin.base:extend()
 M.builtin.preview_action_tuple = preview_action_tuple
 

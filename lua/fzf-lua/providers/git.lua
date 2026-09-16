@@ -86,6 +86,7 @@ local function git_preview(opts, file)
   if vim.o.shell and vim.o.shell:match("fish$") then
     -- TODO: why does fish shell refuse to pass along $COLUMNS
     -- to delta while the same exact commands works with bcommits?
+    ---@cast opts.preview string
     opts.preview = "sh -c " .. libuv.shellescape(opts.preview)
   end
   return opts.preview
@@ -425,7 +426,7 @@ M.branches = function(opts)
   if not opts then return end
   if opts.fn_transform == nil then opts.fn_transform = highlight_branch_line end
   if opts.preview then
-    local preview = path.git_cwd(opts.preview, opts)
+    local preview = path.git_cwd(opts.preview, opts) --[[@as string]]
     opts.preview = shell.stringify_cmd(function(items)
       -- The beginning of the selected line looks like the below,
       -- but we only want the string containing the branch name,

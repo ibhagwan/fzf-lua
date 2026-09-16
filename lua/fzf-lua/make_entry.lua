@@ -22,8 +22,7 @@ local function load_config()
   local ok, res = utils.rpcexec(_G._fzf_lua_server, "nvim_exec_lua",
     [[return FzfLua.libuv.serialize(FzfLua.config)]], {})
   if not ok then error(res) end ---@cast res string
-  res = libuv.deserialize(res --[[@as string]])
-  return res
+  return libuv.deserialize(res --[[@as string]])
 end
 
 local function load_config_section(s, datatype, optional)
@@ -242,7 +241,8 @@ local glob_filter = function(paths, globs)
   local matchers
   if not globs or not vim.regex then return paths end
   local pats = vim.tbl_map(utils.nil_wrap(vim.fn.glob2regpat), globs)
-  matchers = vim.tbl_map(utils.nil_wrap(vim.regex), pats)
+  ---@cast pats string[]
+  matchers = vim.tbl_map(utils.nil_wrap(vim.regex) --[[@as fun(s: string): vim.regex]], pats)
   -- matchers = vim.tbl_map(vim.F.nil_wrap(vim.glob.to_lpeg), globs)
   if #matchers == 0 then return paths end
   return vim.tbl_filter(function(p)

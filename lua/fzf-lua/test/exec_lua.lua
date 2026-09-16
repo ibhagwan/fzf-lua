@@ -130,7 +130,7 @@ function M.run(exec_lua, lvl, code, arg)
     -- In this case we need to use the caller.
     while not caller.func do
       i = i + 1
-      caller = debug.getinfo(lvl + i)
+      caller = debug.getinfo(lvl + i) --[[@as { func: function }]]
     end
     set_upvalues(caller.func, upvalues)
   end

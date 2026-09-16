@@ -504,7 +504,11 @@ M.spawn_stdio = function(opts)
     end
   end
 
-  local function exit(exit_code, msg)
+  -- Exit the fzf-lua spawn process; `vim.cmd.cquit` is typed `never` in
+  -- emmylua's stubs which makes `exit` itself uncallable from a `local
+  -- function` declaration, so wrap it as an annotated module-level alias.
+  ---@type fun(exit_code?: integer, msg?: string)
+  local exit = function(exit_code, msg)
     if msg then stderr_write(msg) end
     vim.cmd.cquit({ count = exit_code })
   end
@@ -555,6 +559,7 @@ M.spawn_stdio = function(opts)
       vim.schedule(function()
         ---@diagnostic disable-next-line: call-non-callable
         if fn_postprocess then fn_postprocess(opts) end
+        ---@diagnostic disable-next-line: call-non-callable
         exit(code)
       end)
     else
@@ -610,9 +615,10 @@ M.spawn_stdio = function(opts)
     ---@diagnostic disable-next-line: call-non-callable, missing-parameter, param-type-mismatch
     local wn = function(s) if s then return io.stdout:write(f(s)) else on_finish(0) end end
     if opts.is_live then ---@cast content fzf-lua.shell.data2
-      ---@diagnostic disable-next-line: param-type-mismatch
+      ---@diagnostic disable-next-line: param-type-mismatch, assign-type-mismatch
       local res = content(args(), opts)
-      if not res then return on_finish(0), nil end ---@cast res-?
+      if not res then return on_finish(0), nil end
+      ---@cast res fzf-lua.shell.data2
       content = res
     end
     if type(content) == "function" then content(w, wn) end

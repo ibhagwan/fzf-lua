@@ -191,8 +191,8 @@ function M.setup(opts, do_not_reset_defaults)
   end
   if do_not_reset_defaults then
     -- no defaults reset requested, merge with previous setup options
-    ---@diagnostic disable-next-line: generic-constraint-mismatch
-    opts = vim.tbl_deep_extend("keep", opts, config.setup_opts or {})
+    ---@diagnostic disable-next-line: param-type-mismatch
+    opts = vim.tbl_deep_extend("keep", opts, config.setup_opts or {}) --[[@as fzf-lua.Config]]
   end
   -- backward compat `global_{git|gile|color}_icons`
   -- converts `global_file_icons` to `defaults.file_icons`, etc

@@ -300,7 +300,7 @@ function FzfWin:setup_keybinds()
   end
   if self.previewer_is_builtin then
     -- These maps are only valid for the builtin previewer
-    keymap_tbl = vim.tbl_deep_extend("keep", keymap_tbl, _preview_keymaps)
+    keymap_tbl = vim.tbl_deep_extend("keep", keymap_tbl, _preview_keymaps) --[[@as table]]
   end
   local function funcref_str(keymap)
     return ([[<Cmd>lua require('fzf-lua.%s').%s<CR>]]):format(keymap.module, keymap.fnc)

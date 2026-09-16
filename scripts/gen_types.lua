@@ -41,22 +41,26 @@ local write_member = function(m)
   write(m.is_async and "async" or "")
   write("fun(")
   ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
-  local params = vim.iter(m.params)
+  local params = vim.iter(m.params --[[@as table<integer, EmmyDocParam>]])
+  ---@diagnostic disable-next-line: access-invisible
   local p1 = params:next()
   if p1 then write(("%s: %s"):format(p1.name, p1.typ)) end
+  ---@diagnostic disable-next-line: access-invisible
   params:each(function(p) write((", %s: %s"):format(p.name, p.typ)) end)
   write(")")
 
   ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
-  local returns = vim.iter(m.returns)
+  local returns = vim.iter(m.returns --[[@as table<integer, EmmyDocReturn>]])
+  ---@diagnostic disable-next-line: access-invisible
   local r1 = returns:next()
   if r1 then write((": " .. r1.typ)) end
+  ---@diagnostic disable-next-line: access-invisible
   returns:each(function(r) write(", " .. r.typ) end)
   write("\n")
 end
 
 write("---@class fzf-lua.win.api: fzf-lua.Win\n")
----@diagnostic disable-next-line: redundant-parameter, call-non-callable
+---@diagnostic disable-next-line: redundant-parameter, call-non-callable, access-invisible
 vim.iter(res.members):each(write_member)
 
 flush()

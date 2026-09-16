@@ -875,7 +875,7 @@ M.serverlist = function(opts)
   end
   ---@cast opts table
   if utils.has(opts, "sk", "3.0.0") then
-    opts = vim.tbl_deep_extend("force", opts, { winopts = { preview = { pty = true } } })
+    opts = vim.tbl_deep_extend("force", opts, { winopts = { preview = { pty = true } } }) --[[@as table]]
   end
   ---@diagnostic disable-next-line: need-check-nil
   if utils.has(opts, "fzf", "0.73.0") then

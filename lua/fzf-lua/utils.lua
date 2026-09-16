@@ -597,7 +597,7 @@ end
 function M.tbl_flatten(T)
   if vim.iter then
     ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
-    return vim.iter(T):flatten(math.huge):totable()
+    return vim.iter(T --[[@as table]]):flatten(math.huge --[[@as integer]]):totable()
   else
     ---@diagnostic disable-next-line: deprecated
     return vim.tbl_flatten(T)
@@ -1109,15 +1109,14 @@ function M.load_profiles(profiles, silent)
         -- profile requires loading base profile(s)
         -- silent = 1, only warn if failed to load
         profile_opts = vim.tbl_deep_extend("keep",
-          profile_opts, M.load_profiles(profile_opts[1], 1))
-        ---@cast profile_opts table
+          profile_opts, M.load_profiles(profile_opts[1], 1)) --[[@as table]]
       end
       ---@cast profile_opts table
       if type(profile_opts.fn_load) == "function" then
         profile_opts.fn_load()
         profile_opts.fn_load = nil
       end
-      ret = vim.tbl_deep_extend("force", ret, profile_opts)
+      ret = (vim.tbl_deep_extend("force", ret, profile_opts) --[[@as table]])
     end
   end
   return ret
@@ -1618,7 +1617,7 @@ function M.create_user_command_callback(provider, arg, altmap)
 end
 
 -- setmetatable wrapper support `__gc`
----@generic T
+---@generic T : table
 ---@param t T
 ---@param mt table
 ---@return T

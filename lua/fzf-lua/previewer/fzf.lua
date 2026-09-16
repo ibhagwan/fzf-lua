@@ -506,7 +506,7 @@ Previewer.nvim_server = Previewer.cmd_async:extend()
 ---@return string|any, ...any error
 local function make_screenshot(screenshot, addr, lines, columns)
   local closing = false
-  local ok, uis = utils.rpcexec(addr, "nvim_list_uis")
+  local ok, uis = utils.rpcexec(addr, "nvim_list_uis") --[[@as boolean, { stdout_tty: boolean }[]?]]
   vim.fn.writefile({}, screenshot)
   if not ok then -- instance seems died, signal to reload the list
     local winobj = FzfLua.utils.fzf_winobj()
@@ -514,8 +514,7 @@ local function make_screenshot(screenshot, addr, lines, columns)
     ---@diagnostic disable-next-line: missing-return-value
     return
   end
-  ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
-  local has_tui = vim.iter(uis):find(function(info) return info.stdout_tty end)
+  local has_tui = vim.iter(uis or {}):find(function(info) return info.stdout_tty end)
   if has_tui then
     if vim.env.NVIM == addr then -- parent instance
       return utils.rpcexec(addr, "nvim__screenshot", screenshot)
