@@ -450,6 +450,67 @@ M.file_is_readable = function(filepath)
   return false
 end
 
+-- Runs an async libuv fs request (e.g. `uv.fs_stat`, `uv.fs_open`) with
+-- a timeout, when the request fails to complete within `timeout` ms an
+-- attempt is made to cancel it using `uv.cancel` and the callback is
+-- called with `err` set. Cancellation is best-effort, a request already
+-- hung on the threadpool (e.g. stale network mount) can't be cancelled
+-- mid-syscall, its callback is then ignored once (if) it fires (#2793).
+---@param fn function async libuv fs function (e.g. `uv.fs_stat`)
+---@param timeout integer timeout in milliseconds
+---@param cb fun(err?: string, ...: any) called with the request results
+---@param ... any request arguments (i.e. path, flags, mode)
+M.fs_request_timeout = function(fn, timeout, cb, ...)
+  local done = false
+  local timer = assert(uv.new_timer())
+  local finish = function(err, ...)
+    if done then return end
+    done = true
+    timer:stop()
+    timer:close()
+    cb(err, ...)
+  end
+  local argv = { n = select("#", ...), ... }
+  argv[argv.n + 1] = finish
+  local req = fn(unpack(argv, 1, argv.n + 1))
+  if not req then
+    -- failed to queue the request, keep the callback async
+    timer:start(0, 0, function() finish("ECANCELED: failed to queue fs request") end)
+    return
+  end
+  timer:start(timeout, 0, function()
+    -- NOTE: when cancel succeeds the fs callback is still invoked with
+    -- "ECANCELED", when it fails (already executing) the fs callback is
+    -- eventually invoked with the result, both are ignored via `done`
+    if uv.cancel then pcall(uv.cancel, req) end
+    finish("ECANCELED: fs request timed out")
+  end)
+end
+
+--- Async `uv.fs_stat` with a timeout, calls `cb(nil)` when the request
+--- fails or does not complete within `timeout` milliseconds (#2793).
+---@param path string
+---@param timeout integer timeout in milliseconds
+---@param cb fun(stat: table?)
+M.fs_stat_async = function(path, timeout, cb)
+  M.fs_request_timeout(uv.fs_stat, timeout, function(err, stat)
+    cb(not err and stat or nil)
+  end, path)
+end
+
+--- Async `file_is_readable` with a timeout, calls `cb(false)` when the
+--- request fails or does not complete within `timeout` ms (#2793).
+---@param path string
+---@param timeout integer timeout in milliseconds
+---@param cb fun(readable: boolean)
+M.file_is_readable_async = function(path, timeout, cb)
+  M.fs_request_timeout(uv.fs_open, timeout, function(_err, fd)
+    if not fd then return cb(false) end
+    uv.fs_close(fd, function() end)
+    cb(true)
+  end, path, "r", 438)
+end
+
 M.perl_file_is_binary = function(filepath)
   filepath = M.pcall_expand(filepath)
   if vim.fn.executable("perl") ~= 1 or

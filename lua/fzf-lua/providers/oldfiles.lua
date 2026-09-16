@@ -20,23 +20,58 @@ M.oldfiles = function(opts, globals)
     opts.cwd_only = true
   end
 
+  -- `fs_stat` can hang indefinitely on broken files/links, stale network
+  -- mounts, etc. When running inside the contents coroutine use the async
+  -- variant with a per-file timeout so such files are skipped instead of
+  -- hanging the picker, disable by setting `stat_timeout=0` (#2793)
   local stat_fn = not opts.stat_file and function(_) return true end
       or type(opts.stat_file) == "function" and opts.stat_file
-      or function(file)
-        local stat = uv.fs_stat(file)
-        return (not utils.path_is_directory(file, stat)
-          -- FIFO blocks `fs_open` indefinitely (#908)
-          and not utils.file_is_fifo(file, stat)
-          and utils.file_is_readable(file))
+      or function(file, co)
+        -- outside of a coroutine context (e.g. the header line) we have
+        -- no choice but to use the blocking sync variant
+        if not co or not opts.stat_timeout or opts.stat_timeout <= 0 then
+          local stat = uv.fs_stat(file)
+          return (not utils.path_is_directory(file, stat)
+            -- FIFO blocks `fs_open` indefinitely (#908)
+            and not utils.file_is_fifo(file, stat)
+            and utils.file_is_readable(file))
+        end
+        -- schedule the resume as the fs/timer callbacks run in fast-event
+        -- context where most `vim.api` calls in the loop are not allowed
+        local resume = function(...)
+          local argv = { n = select("#", ...), ... }
+          vim.schedule(function()
+            if coroutine.status(co) == "suspended" then
+              coroutine.resume(co, unpack(argv, 1, argv.n))
+            end
+          end)
+        end
+        utils.fs_stat_async(file, opts.stat_timeout, function(stat)
+          if not stat
+              or utils.path_is_directory(file, stat)
+              -- FIFO blocks `fs_open` indefinitely (#908)
+              or utils.file_is_fifo(file, stat)
+          then
+            return resume(false)
+          end
+          -- a stale mount can hang `fs_open` as well (#2793)
+          utils.file_is_readable_async(file, opts.stat_timeout, resume)
+        end)
+        -- resumed with the result by the callbacks above
+        return coroutine.yield()
       end
 
-  local sorted_named_buffers = function()
+  ---@param co thread? contents coroutine, enables async stat (#2793)
+  local sorted_named_buffers = function(co)
     local bufnrs = {}
+    -- capture the current buffer once, the context can change while
+    -- waiting on async stat results (e.g. fzf's window opens)
+    local curr_buf = utils.CTX().bufnr
     for _, bufnr in ipairs(require("fzf-lua.providers.buffers").list_bufs_sorted()) do
       local file = vim.api.nvim_buf_get_name(bufnr)
-      local fs_stat = #file > 0 and stat_fn(file)
+      local fs_stat = #file > 0 and stat_fn(file, co)
       if fs_stat then
-        table.insert(bufnrs, { bufnr = bufnr, file = file, curbuf = bufnr == utils.CTX().bufnr })
+        table.insert(bufnrs, { bufnr = bufnr, file = file, curbuf = bufnr == curr_buf })
       end
     end
     return bufnrs
@@ -99,7 +134,7 @@ M.oldfiles = function(opts, globals)
       end
 
       if opts.include_current_session then
-        for _, buf in ipairs(sorted_named_buffers()) do
+        for _, buf in ipairs(sorted_named_buffers(co)) do
           if not opts.ignore_current_buffer or buf.bufnr ~= curr_buf then
             sess_map[buf.file] = true
             -- 3rd arg forces addition of current buffer with cwd_only
@@ -110,7 +145,7 @@ M.oldfiles = function(opts, globals)
 
       -- local start = os.time(); for _ = 1,10000,1 do
       for _, file in ipairs(vim.v.oldfiles) do
-        local fs_stat = stat_fn(file)
+        local fs_stat = stat_fn(file, co)
         if fs_stat and file ~= curr_file and not sess_map[file] then
           add_entry(file, co)
         end
