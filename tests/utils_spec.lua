@@ -213,4 +213,115 @@ describe("Testing utils module", function()
     -- escaped backslash before dot (\. becomes ., then rg_escape escapes both)
     eq(utils.ctag_escape("foo\\.bar"), "foo\\\\\\.bar")
   end)
+
+  it("fs_stat_async", function()
+    -- stat an existing path
+    local dir = vim.fn.tempname()
+    vim.fn.mkdir(dir, "p")
+    local done, result = false, nil
+    utils.fs_stat_async(dir, 1000, function(stat)
+      done, result = true, stat
+    end)
+    eq(vim.wait(5000, function() return done end, 10), true)
+    eq(result and result.type, "directory")
+    vim.fn.delete(dir, "rf")
+
+    -- stat a non-existent path
+    local nonexistent = dir .. "-nonexistent"
+    done, result = false, "unexpected"
+    utils.fs_stat_async(nonexistent, 1000, function(stat)
+      done, result = true, stat
+    end)
+    eq(vim.wait(5000, function() return done end, 10), true)
+    eq(result, nil)
+  end)
+
+  it("file_is_readable_async", function()
+    -- readable file
+    local file = vim.fn.tempname()
+    local fd = io.open(file, "w")
+    eq(fd ~= nil, true)
+    if fd then
+      fd:write("test")
+      fd:close()
+    end
+    local done, result = false, nil
+    utils.file_is_readable_async(file, 1000, function(readable)
+      done, result = true, readable
+    end)
+    eq(vim.wait(5000, function() return done end, 10), true)
+    eq(result, true)
+    os.remove(file)
+
+    -- non-existent file
+    local nonexistent = vim.fn.tempname() .. "-nonexistent"
+    done, result = false, true
+    utils.file_is_readable_async(nonexistent, 1000, function(readable)
+      done, result = true, readable
+    end)
+    eq(vim.wait(5000, function() return done end, 10), true)
+    eq(result, false)
+  end)
+
+  it("fs_request_timeout times out", function()
+    helpers.SKIP_IF_WIN("requires mkfifo")
+    -- `fs_open` on a fifo with no writer blocks indefinitely (#908),
+    -- simulates a hung fs request on a stale mount (#2793)
+    local fifo = vim.fn.tempname()
+    vim.fn.system({ "mkfifo", fifo })
+    eq(vim.v.shell_error, 0)
+    local done, result = false, nil
+    utils.file_is_readable_async(fifo, 50, function(readable)
+      done, result = true, readable
+    end)
+    -- capture the results, unblock the stuck `fs_open` request (cancel
+    -- fails with EBUSY when the request is already executing on the
+    -- threadpool) and only then assert, so the cleanup always runs --
+    -- a request stuck on the threadpool hangs the test process at exit
+    local waited = vim.wait(5000, function() return done end, 10)
+    -- open as read-write so we don't block waiting for a peer
+    local f = io.open(fifo, "r+")
+    -- give the stuck request a chance to complete
+    vim.wait(200, function() return false end, 10)
+    if f then f:close() end
+    os.remove(fifo)
+    eq(waited, true)
+    eq(result, false)
+  end)
+
+  it("fs_stat_async times out", function()
+    helpers.SKIP_IF_WIN("requires mkfifo")
+    -- occupy the entire threadpool with blocking fifo opens so the
+    -- stat request stays queued and times out (#2793)
+    local fifo = vim.fn.tempname()
+    vim.fn.system({ "mkfifo", fifo })
+    eq(vim.v.shell_error, 0)
+    local open_cbs = 0
+    for _ = 1, 32 do
+      vim.uv.fs_open(fifo, "r", 438, function(_, fd)
+        open_cbs = open_cbs + 1
+        if fd then vim.uv.fs_close(fd) end
+      end)
+    end
+    local done = false
+    ---@type table?
+    local result
+    utils.fs_stat_async(fifo, 50, function(stat)
+      done, result = true, stat
+    end)
+    -- capture the results, unblock the stuck `fs_open` requests and only
+    -- then assert, so the cleanup always runs -- a request stuck on the
+    -- threadpool hangs the test process at exit
+    local waited = vim.wait(5000, function() return done end, 10)
+    -- keep the writer open until all requests complete or the queued
+    -- opens will block again once the writer is gone
+    local f = io.open(fifo, "r+")
+    local drained = vim.wait(5000, function() return open_cbs == 32 end, 10)
+    if f then f:close() end
+    os.remove(fifo)
+    eq(waited, true)
+    eq(result, nil)
+    eq(drained, true)
+    eq(open_cbs, 32)
+  end)
 end)

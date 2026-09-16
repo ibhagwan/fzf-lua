@@ -1020,6 +1020,11 @@ M.defaults.args = {
 ---@field shada_file? string
 ---Only include files that still exist on disk.
 ---@field stat_file? boolean
+---Timeout in ms for the per-file stat checks, files whose stat does not
+---complete within the timeout are skipped, protects against hangs caused
+---by `fs_stat` on stale network mounts, broken links, etc. Set to `0` to
+---disable and use blocking stat calls. Requires `stat_file`.
+---@field stat_timeout? integer
 ---Include files opened during the current session.
 ---@field include_current_session? boolean
 ---Exclude the current buffer from the list.
@@ -1030,6 +1035,7 @@ M.defaults.oldfiles = {
   color_icons             = true,
   git_icons               = false,
   stat_file               = true,
+  stat_timeout            = 100,
   include_current_session = false,
   ignore_current_buffer   = true,
   fzf_opts                = { ["--tiebreak"] = "index", ["--multi"] = true },
