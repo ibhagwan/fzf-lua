@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*        For Neovim >= 0.9.0        Last change: 2026 July 03
+*fzf-lua-opts.txt*      For Neovim >= 0.9.0     Last change: 2026 September 16
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -2417,6 +2417,16 @@ oldfiles.stat_file                           *fzf-lua-opts-oldfiles.stat_file*
 Type: `boolean`, Default: `true`
 
 Only include files that still exist on disk.
+
+
+oldfiles.stat_timeout                     *fzf-lua-opts-oldfiles.stat_timeout*
+
+Type: `integer`, Default: `100`
+
+Timeout in ms for the per-file stat checks, files whose stat does not complete
+within the timeout are skipped, protects against hangs caused by `fs_stat` on
+stale network mounts, broken links, etc. Set to `0` to disable and use
+blocking stat calls. Requires `stat_file`.
 
 
 oldfiles.include_current_session*fzf-lua-opts-oldfiles.include_current_session*

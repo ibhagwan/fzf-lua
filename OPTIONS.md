@@ -1812,6 +1812,15 @@ Type: `boolean`, Default: `true`
 
 Only include files that still exist on disk.
 
+##### oldfiles.stat_timeout
+
+Type: `integer`, Default: `100`
+
+Timeout in ms for the per-file stat checks, files whose stat does not
+complete within the timeout are skipped, protects against hangs caused
+by `fs_stat` on stale network mounts, broken links, etc. Set to `0` to
+disable and use blocking stat calls. Requires `stat_file`.
+
 ##### oldfiles.include_current_session
 
 Type: `boolean`, Default: `false`
