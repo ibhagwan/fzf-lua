@@ -1158,10 +1158,8 @@ local restore_lastwin = function(winid, last_winid)
   then
     return
   end
-  utils.eventignore(function()
-    api.nvim_set_current_win(last_winid)
-    api.nvim_set_current_win(winid)
-  end)
+  api.nvim_set_current_win(last_winid)
+  api.nvim_set_current_win(winid)
 end
 
 ---@param buf? integer
