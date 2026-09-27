@@ -1632,6 +1632,7 @@ function Previewer.quickfix:parse_entry(entry_str)
   if not nr or tonumber(nr) <= 0 then return {} end
   local qf_list = self.opts.is_loclist and
       fn.getloclist(self.win.src_winid, { all = "", nr = tonumber(nr) })
+      ---@diagnostic disable-next-line: assign-type-mismatch
       or fn.getqflist({ all = "", nr = tonumber(nr) })
   if utils.tbl_isempty(qf_list) or utils.tbl_isempty(qf_list.items) then return {} end
   local lines = {}
