@@ -108,13 +108,206 @@ end
 --- @class (partial) vim.undotree.tree.entry
 --- @field traversed? boolean
 
---- @param opts fzf-lua.config.Undotree
+--- @class (private) fzf-lua.providers.undotree.GraphLineBase
+--- @field index integer
+--- @field node_count integer
+
+--- @class (private) fzf-lua.providers.undotree.GraphLineNode: fzf-lua.providers.undotree.GraphLineBase
+--- @field kind 'node'|'remove'|'nochange_remove'
+--- @field node integer
+
+--- @class (private) fzf-lua.providers.undotree.GraphLineBranch: fzf-lua.providers.undotree.GraphLineBase
+--- @field kind 'branch'
+--- @field node integer[]
+
+--- @class (private) fzf-lua.providers.undotree.GraphLineRemoveBranch: fzf-lua.providers.undotree.GraphLineBase
+--- @field kind 'remove+branch'
+--- @field node integer
+--- @field index2 integer
+
+--- @alias fzf-lua.providers.undotree.GraphLine
+--- | fzf-lua.providers.undotree.GraphLineNode
+--- | fzf-lua.providers.undotree.GraphLineBranch
+--- | fzf-lua.providers.undotree.GraphLineRemoveBranch
+
+--- Ported from neovim/runtime/pack/dist/opt/nvim.undotree/lua/undotree.lua
+--- @param tree vim.undotree.tree
+--- @return fzf-lua.providers.undotree.GraphLine[]
+local function tree_to_graph_lines(tree)
+  --- @type fzf-lua.providers.undotree.GraphLine[]
+  local graph_lines = {}
+
+  ---@diagnostic disable-next-line: unnecessary-assert
+  assert(tree[0], "tree doesn't have 0-th node")
+  --- @type (integer[]|integer)[]
+  local nodes = { 0 }
+
+  while #nodes > 0 do
+    local minseq = math.huge
+    --- @type integer
+    local index
+    --- @type integer
+    local node_index
+
+    for k, v in ipairs(nodes) do
+      if type(v) == 'table' then
+        for i, j in ipairs(v) do
+          if j < minseq then
+            minseq = j
+            index = k
+            node_index = i
+          end
+        end
+      elseif v < minseq then
+        assert(type(v) == 'number')
+        minseq = v
+        index = k
+      end
+    end
+
+    local node = nodes[index]
+
+    --- @param kind 'node'|'remove'|'branch'|'nochange_remove'
+    local function add_graph_line(kind)
+      table.insert(graph_lines, { kind = kind, index = index, node_count = #nodes, node = node })
+    end
+
+    if type(node) == 'number' then
+      add_graph_line('node')
+
+      local child = tree[node].child
+      if #child == 0 then
+        if index ~= #nodes then
+          add_graph_line('remove')
+        else
+          add_graph_line('nochange_remove')
+        end
+
+        table.remove(nodes, index)
+      elseif #child == 1 then
+        nodes[index] = child[1]
+      else
+        nodes[index] = child
+      end
+    else
+      assert(type(node) == 'table')
+
+      add_graph_line('branch')
+
+      table.remove(nodes, index)
+      if #node == 2 then
+        ---@diagnostic disable-next-line: param-type-mismatch
+        table.insert(nodes, index, math.min(unpack(node)))
+        ---@diagnostic disable-next-line: param-type-mismatch
+        table.insert(nodes, index, math.max(unpack(node)))
+      elseif #node > 2 then
+        table.insert(nodes, index, node[node_index])
+        table.insert(nodes, index, node)
+        table.remove(node, node_index)
+      end
+    end
+  end
+
+  for k, v in ipairs(graph_lines) do
+    local next_line = graph_lines[k + 1]
+    if v.kind == 'remove' and next_line and next_line.kind == 'branch' then
+      v.kind = 'remove+branch'
+      v.index2 = next_line.index
+      table.remove(graph_lines, k + 1)
+    end
+  end
+
+  return graph_lines
+end
+
+---@param _opts { hls: { dir_part: string, buf_name: string, path_linenr: string } }
+---@param tree vim.undotree.tree
+---@param v fzf-lua.providers.undotree.GraphLine
+---@param reverse boolean
+---@return string?
+local function format_graph_line(_opts, tree, v, reverse)
+  -- Use Unicode box-drawing glyphs instead of ASCII so the tree stays upright
+  -- even when the highlight group (e.g. Comment) is italicized.
+  local PIPE       = "│"
+  local STAR       = "●"
+  local SLASH      = "╱"
+  local BACKSLASH  = "╲"
+  if reverse then
+    SLASH, BACKSLASH = BACKSLASH, SLASH
+  end
+  if v.kind == 'node' then
+    local seq = v.node --[[@as integer]]
+    return (PIPE .. ' '):rep(v.index - 1)
+      .. STAR
+      .. (' ' .. PIPE):rep(v.node_count - v.index)
+      .. '    '
+      .. seq
+      .. '    ('
+      .. reltime(tree[seq].time)
+      .. ')'
+  elseif v.kind == 'remove' then
+    return (PIPE .. ' '):rep(v.index - 1) .. (' ' .. SLASH):rep(v.node_count - v.index)
+  elseif v.kind == 'branch' then
+    return (PIPE .. ' '):rep(v.index - 1)
+      .. PIPE .. BACKSLASH
+      .. (' ' .. BACKSLASH):rep(v.node_count - v.index)
+  elseif v.kind == 'remove+branch' then
+    local index2 = assert(v.index2)
+    if index2 < v.index then
+      return (PIPE .. ' '):rep(index2 - 1)
+        .. PIPE .. BACKSLASH
+        .. (' ' .. BACKSLASH):rep(v.index - index2 - 1)
+        .. ' '
+        .. (' ' .. PIPE):rep(v.node_count - v.index)
+    else
+      return (PIPE .. ' '):rep(v.index - 1)
+        .. (' ' .. SLASH):rep(index2 - v.index)
+        .. ' ' .. SLASH .. PIPE
+        .. (' ' .. PIPE):rep(v.node_count - index2 - 1)
+    end
+  elseif v.kind == 'nochange_remove' then
+    return nil
+  end
+  error('unreachable')
+end
+
+---@param opts { hls: { dir_part: string, buf_name: string, path_linenr: string } }
+---@param cb fun(seq: integer?, line: string)
+---@param tree vim.undotree.tree
+---@param _curseq integer
+---@param reverse boolean
+local function draw_graph(opts, cb, tree, _curseq, reverse)
+  local graph_lines = tree_to_graph_lines(tree)
+
+  local hl_dir = utils.ansi_codes[opts.hls.dir_part]
+  local hl_seq = utils.ansi_codes[opts.hls.buf_name]
+  local hl_time = utils.ansi_codes[opts.hls.path_linenr]
+
+  for _, v in ipairs(graph_lines) do
+    (function()
+      local line = format_graph_line(opts, tree, v, reverse)
+      if not line then return end
+      if v.kind == 'node' then
+        local seq = v.node --[[@as integer]]
+        local graph_part, seq_num, time_str = line:match('^(.-)    (%d+)    %(([^)]+)%)$')
+        assert(graph_part and seq_num and time_str)
+        cb(seq, hl_dir(graph_part)
+          .. '    ' .. hl_seq(seq_num)
+          .. '    (' .. hl_time(time_str) .. ')')
+      else
+        cb(nil, hl_dir(line))
+      end
+    end)()
+  end
+end
+
+--- @param opts { hls: { dir_part: string, buf_name: string, path_linenr: string } }
 --- @param cb function
 --- @param tree vim.undotree.tree
---- @param nodes integer[]?
+--- @param nodes integer[]
 --- @param reverse boolean
---- @param parents integer[]?
---- @param prefix string?
+--- @param parents? integer[]
+--- @param prefix? string
 local function draw_tree(opts, cb, tree, nodes, reverse, parents, prefix)
   if not nodes or #nodes == 0 then return end
   local is_root = nodes[1] == 0
@@ -170,8 +363,13 @@ M.undotree = function(opts)
         coroutine.yield()
       end
 
+      local tree_style = opts.tree_style or "tree"
       local reverse = utils.map_get(opts, "fzf_opts.--layout") == "default"
-      draw_tree(opts, add_entry, tree, { 0 }, reverse)
+      if tree_style == "graph" then
+        draw_graph(opts, add_entry, tree, curseq, reverse)
+      else
+        draw_tree(opts, add_entry, tree, { 0 }, reverse)
+      end
 
       cb(nil) -- EOF
     end)()
@@ -324,7 +522,9 @@ function M.builtin:toggle_undo_diff()
 end
 
 function M.builtin:populate_preview_buf(entry_str)
-  local seq = assert(tonumber(entry_str:match("%d+")))
+  local seq_str = utils.strip_ansi_coloring(entry_str):match("%d+")
+  if not seq_str then return end
+  local seq = assert(utils.tointeger(seq_str))
   local lines, buf = undo_diff(self.buf, seq, self.diff_opts)
   if seq > 0 and not self.show_buf then
     if not self.diff_buf or not vim.api.nvim_buf_is_valid(self.diff_buf) then
@@ -378,9 +578,10 @@ end
 function M.native:cmdline(o)
   o = o or {}
   local act = shell.stringify_data(function(entries, _, _)
-    ---@diagnostic disable-next-line: undefined-field
-    if not entries[1] then return shell.nop() end
-    local seq = assert(utils.tointeger(entries[1]:match("%d+")))
+    if not entries[1] then return utils.shell_nop() end
+    local seq_str = utils.strip_ansi_coloring(entries[1]):match("%d+")
+    if not seq_str then return utils.shell_nop() end
+    local seq = assert(utils.tointeger(seq_str))
     local lines = undo_diff(self.buf, seq, self.diff_opts)
     return table.concat(lines, "\r\n")
   end, self.opts, "{}")
@@ -389,5 +590,9 @@ function M.native:cmdline(o)
   end
   return act
 end
+
+-- Exposed for tests.
+M._draw_tree = draw_tree
+M._draw_graph = draw_graph
 
 return M

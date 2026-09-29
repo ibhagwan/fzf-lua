@@ -1932,9 +1932,12 @@ M.defaults.autocmds = {
 ---@field __locate_pos? integer
 ---Jump to the current undo position on picker open.
 ---@field locate boolean
+---Undo tree draw style, `tree` for the existing box-drawing layout or `graph` for the `:Undotree` ASCII graph layout.
+---@field tree_style "tree"|"graph"
 M.defaults.undotree = {
   previewer      = "undotree",
   locate         = true,
+  tree_style     = "tree",
   fzf_opts       = { ["--no-multi"] = true },
   actions        = { ["enter"] = actions.undo },
   _cached_hls    = { "buf_linenr", "buf_name", "path_linenr", "dir_part" },
