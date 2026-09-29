@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*      For Neovim >= 0.9.0     Last change: 2026 September 16
+*fzf-lua-opts.txt*      For Neovim >= 0.9.0     Last change: 2026 September 20
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -2653,6 +2653,14 @@ undotree.locate                                 *fzf-lua-opts-undotree.locate*
 Type: `boolean`, Default: `true`
 
 Jump to the current undo position on picker open.
+
+
+undotree.tree_style                         *fzf-lua-opts-undotree.tree_style*
+
+Type: `string[]`, Default: `"tree"`
+
+Undo tree draw style, `tree` for the existing box-drawing layout or `graph`
+for the `:Undotree` ASCII graph layout.
 
 
                                                                               

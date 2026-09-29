@@ -1995,6 +1995,12 @@ Type: `boolean`, Default: `true`
 
 Jump to the current undo position on picker open.
 
+##### undotree.tree_style
+
+Type: `string[]`, Default: `"tree"`
+
+Undo tree draw style, `tree` for the existing box-drawing layout or `graph` for the `:Undotree` ASCII graph layout.
+
 #### zoxide
 
 Zoxide recent directories.
