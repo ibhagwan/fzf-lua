@@ -1631,11 +1631,13 @@ function Previewer.quickfix:parse_entry(entry_str)
   local nr = entry_str:match("[(%d+)]")
   if not nr or tonumber(nr) <= 0 then return {} end
   local qf_list = self.opts.is_loclist and
+      ---@diagnostic disable-next-line: assign-type-mismatch
       fn.getloclist(self.win.src_winid, { all = "", nr = tonumber(nr) })
       ---@diagnostic disable-next-line: assign-type-mismatch
       or fn.getqflist({ all = "", nr = tonumber(nr) })
   if utils.tbl_isempty(qf_list) or utils.tbl_isempty(qf_list.items) then return {} end
   local lines = {}
+      ---@diagnostic disable-next-line: param-type-mismatch
   for _, e in ipairs(qf_list.items) do
     table.insert(lines, string.format("%s|%d col %d|%s",
       path.HOME_to_tilde(path.relative_to(
