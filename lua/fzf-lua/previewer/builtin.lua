@@ -1335,12 +1335,16 @@ function Previewer.buffer_or_file:set_cursor_hl(entry)
     ---@diagnostic disable-next-line: param-type-mismatch
     local reg = utils.vim_regex(regex, { silent = true })
     if reg then
-      if case_sensitive then
-        regex_start, regex_end = reg:match_line(buf, lnum - 1, col - 1)
-      else
-        local line = api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1] or ""
-        regex_start, regex_end = reg:match_str(line:sub(col):lower())
-      end
+      regex_start, regex_end = utils.npcall(function()
+        if case_sensitive then
+          ---@diagnostic disable-next-line: redundant-return-value
+          return reg:match_line(buf, lnum - 1, col - 1)
+        else
+          local line = api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1] or ""
+          ---@diagnostic disable-next-line: redundant-return-value
+          return reg:match_str(line:sub(col):lower())
+        end
+      end)
     end
     if regex_start and regex_end then
       extmark = api.nvim_buf_set_extmark(buf, self.ns_previewer, lnum - 1, regex_start + col - 1, {
