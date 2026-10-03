@@ -216,7 +216,7 @@ M.buffers = function(opts)
   if not opts then return end
 
   local contents = function(cb)
-    local buflist = assert(utils.CTX().buflist)
+    local buflist = utils.CTX({ includeBuflist = true }).buflist
     local filtered, _, max_bufnr = filter_buffers(opts, buflist)
 
     if next(filtered) then
