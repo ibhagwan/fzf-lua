@@ -74,6 +74,7 @@ local function fix_typ(typ, default)
     local ty = typ:sub(2, -2)
     ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
     local is = vim.iter(vim.split(ty, ",")):all(function(t)
+    ---@diagnostic disable-next-line: return-type-mismatch
       return t:match([[".-"]])
     end)
     if is then

@@ -1350,6 +1350,7 @@ end
 M.serverlist_kill = function(sel)
   ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
   vim.iter(sel):map(parse_entry):each(function(addr)
+    ---@cast addr string
     local ok, err = utils.rpcexec(addr, "nvim_exec2", "qa!", {})
     assert(ok
       or tostring(err):match("Invalid channel")
