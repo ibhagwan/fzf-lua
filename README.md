@@ -37,6 +37,14 @@ sh -c "$(curl -s https://raw.githubusercontent.com/ibhagwan/fzf-lua/main/scripts
 
 [![LuaRocks](https://img.shields.io/luarocks/v/ibhagwan/fzf-lua?logo=lua&color=purple)](https://luarocks.org/modules/ibhagwan/fzf-lua)
 
+Using [vim.pack](https://neovim.io/doc/user/pack/) and Neovim 0.12+
+
+```lua
+vim.pack.add({
+    { src = "https://github.com/ibhagwan/fzf-lua" },
+})
+```
+
 Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 
 ```lua
