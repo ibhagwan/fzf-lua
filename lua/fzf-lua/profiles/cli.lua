@@ -25,6 +25,7 @@ pcall(function()
     int fork(void);
     int isatty(int fd);
     int fileno(void *stream);
+    void _exit(int status);
   ]]
 end)
 
@@ -56,8 +57,17 @@ local function fork(cmd, ...)
     "sleep 0.05; %s %s </dev/tty >/dev/tty 2>/dev/tty", cmd,
     table.concat(vim.tbl_map(function(x) return FzfLua.libuv.shellescape(x) end, { ... }), " ")
   )
-  os.execute(shell_cmd)
-  os.exit(0)
+  -- Replace the post-fork child with `/bin/sh` immediately: continuing to
+  -- run Neovim code (and especially Neovim's teardown via `os.exit()`) on
+  -- the libuv state copied by `fork()` is undefined without
+  -- `uv_loop_fork()` and can leave a 100%-CPU spinning process behind
+  -- (observed on macOS with nvim 0.13-dev, #2823). `os.execute()` uses
+  -- `/bin/sh -c` as well, so this is behavior-preserving.
+  ---@diagnostic disable-next-line: call-non-callable, need-check-nil
+  ffi.C.execl("/bin/sh", "sh", "-c", shell_cmd, nil)
+  -- `execl` only returns on failure, exit raw (no atexit handlers/Lua GC)
+  ---@diagnostic disable-next-line: call-non-callable, need-check-nil
+  ffi.C._exit(127)
 end
 
 local function posix_exec(cmd, ...)
