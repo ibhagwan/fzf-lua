@@ -121,8 +121,9 @@ function M.update(winid, bufnr, opts)
       if api.nvim_buf_is_valid(bufnr) and api.nvim_win_is_valid(winid) then
         api.nvim_win_call(winid, function()
           render.open(winid, context_ranges, context_lines)
-          M.window_contexts = M.window_contexts or
-              utils.upvfind(render.open, "window_contexts")
+          M.window_contexts = M.window_contexts or utils.upvfind(render.open, "window_contexts")
+          -- https://github.com/nvim-treesitter/nvim-treesitter-context/pull/680
+            or utils.upvfind(utils.upvfind(render.open, "open") or print, "window_contexts")
           if not M.window_contexts then return end
           local window_context = M.window_contexts[winid]
           if not window_context or not M.zindex then return end
