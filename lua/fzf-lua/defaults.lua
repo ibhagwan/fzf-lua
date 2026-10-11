@@ -1569,8 +1569,8 @@ M.defaults.lsp = {
 ---@field symbol_hl? fun(s:string):string
 ---Custom format function for symbol display.
 ---@field symbol_fmt? fun(s:string, ...):string
----Display style for symbol icons, `1` for icon only, `2` for icon+name, `3` for icon+name(colored).
----@field symbol_style? integer
+---Display style for symbol kinds, `1` for icon+kind, `2` for icon only, `3` for kind only.
+---@field symbol_style? integer|false
 ---Icons for each symbol kind.
 ---@field symbol_icons? table<string, string>
 ---Display child prefix (indentation) for nested symbols.
