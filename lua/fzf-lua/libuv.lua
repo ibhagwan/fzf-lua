@@ -853,6 +853,19 @@ M.escape_cli = function(elements, shell, win_style)
   return argv
 end
 
+-- Marker for `_fzf_cli_args` entries that carry a raw (unescaped) value
+-- alongside the escaped string form. `build_fzf_cli` consumes these to emit
+-- BOTH the legacy escaped string (for cmd/posix, byte-identical) and a raw
+-- CliElement segment list (used to rebuild the command for the PowerShell
+-- fallback when the cmd line exceeds 8191 chars). `prefix` is the literal,
+-- never-escaped flag text (e.g. "--bind=" or "--interactive --cmd ").
+---@param prefix string literal flag prefix (e.g. "--bind=")
+---@param value string raw (unescaped) value
+---@return table marker
+M.cli_raw_arg = function(prefix, value)
+  return { __raw_cli = true, prefix = prefix, value = value }
+end
+
 -- Windows fzf oddities, fzf's {q} will send escaped blackslahes,
 -- but only when the backslash prefixes another character which
 -- isn't a backslash, test with:

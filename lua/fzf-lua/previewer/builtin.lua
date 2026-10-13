@@ -102,7 +102,7 @@ function Previewer.base:setup_opts(opts)
   -- fzf 0.40 added 'zero' event for when there's no match
   -- clears the preview when there are no matching entries
   if utils.has(opts, "fzf", { 0, 40 }) then
-    table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("zero:+" .. self:zero()))
+    table.insert(opts._fzf_cli_args, libuv.cli_raw_arg("--bind=", "zero:+" .. self:zero()))
   end
   return opts
 end
