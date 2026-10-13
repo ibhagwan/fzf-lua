@@ -543,7 +543,10 @@ end
 M.exec_menu = function(selected)
   if not selected[1] then return end
   local cmd = selected[1]
-  vim.cmd(string.format("emenu %s %s", utils.__CTX().mode, cmd))
+  local mode = utils.__CTX().mode
+  -- Terminal-mode menus are not defined for ordinary popup menu entries.
+  if mode == "t" then mode = "n" end
+  vim.cmd(string.format("emenu %s %s", mode, cmd))
 end
 
 

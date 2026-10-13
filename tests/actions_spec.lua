@@ -15,6 +15,21 @@ local T = helpers.new_set_with_child(child)
 
 T["actions"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
+T["actions"]["exec menu from terminal mode"] = function()
+  local actions = require("fzf-lua.actions")
+  local utils = require("fzf-lua.utils")
+  local original_ctx, original_cmd = utils.__CTX, vim.cmd
+  local invoked
+  utils.__CTX = function() return { mode = "t" } end
+  vim.cmd = function(command) invoked = command end
+  local ok, err = xpcall(function()
+    actions.exec_menu({ "PopUp.Inspect" })
+  end, debug.traceback)
+  utils.__CTX, vim.cmd = original_ctx, original_cmd
+  if not ok then error(err) end
+  eq("emenu n PopUp.Inspect", invoked)
+end
+
 T["actions"]["ui don't freeze on error"] = function()
   helpers.SKIP_IF_NOT_NIGHTLY()
   helpers.SKIP_IF_WIN()
