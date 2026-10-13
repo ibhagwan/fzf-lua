@@ -796,7 +796,7 @@ M.serverlist = function(opts)
     local filter = function(socket)
       if found[socket] or socket:match("fzf%-lua") then return false end
       found[socket] = true
-      local ok, info = utils.rpcexec(socket, "nvim_get_chan_info", 0)
+      local ok, info = utils.rpcexec_timed(socket, "nvim_get_chan_info", 0)
       return ok and info.id
     end
     ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
@@ -832,7 +832,7 @@ M.serverlist = function(opts)
   local f = function(cb)
     local entries = {}
     serverlist():each(function(p)
-      local ok, ret = utils.rpcexec(p, "nvim_exec_lua",
+      local ok, ret = utils.rpcexec_timed(p, "nvim_exec_lua",
         "return { vim.uv.cwd(), vim.uv.getrusage(), vim.uv.hrtime() }", {})
       if not ok or type(ret) ~= "table" then return end
       local cwd, rusage, wall_start = ret[1], ret[2], ret[3]
@@ -846,7 +846,7 @@ M.serverlist = function(opts)
     end)
     vim.defer_fn(function()
       for _, e in ipairs(entries) do
-        local ok, ret = utils.rpcexec(e.socket, "nvim_exec_lua",
+        local ok, ret = utils.rpcexec_timed(e.socket, "nvim_exec_lua",
           "return { vim.uv.getrusage(), vim.uv.hrtime() }", {})
         if ok and type(ret) == "table" then
           local rusage2, wall_end = ret[1], ret[2]

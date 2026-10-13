@@ -1691,33 +1691,58 @@ function M.setmetatable(t, mt)
   return setmetatable(t, mt)
 end
 
+local RPC_TIMEOUT = 200
+
 ---always ensure chan is closed on error
 ---@param addr string
+---@param timeout integer? ms to wait before force-closing the channel, `nil` waits indefinitely
 ---@param method string
 ---@param ... any
 ---@return boolean, string|any, ...any
-function M.rpcexec(addr, method, ...)
+local function rpcexec(addr, timeout, method, ...)
   ---@type boolean, any
   local ok, chan = pcall(vim.fn.sockconnect, "pipe", addr, { rpc = true })
   if not ok or chan == 0 then return false, "Invalid channel" end
-  local timer = assert(vim.uv.new_timer())
+  ---@type uv.uv_timer_t?
+  local timer
   local fired = false
-  pcall(function()
-    require("ffi").cdef [[bool channel_close(unsigned long long id, int part, const char **error);]]
-  end)
-  timer:start(200, 0, M.nil_wrap(function()
-    if not timer:is_closing() then timer:close() end
-    fired = true
-    require("ffi").C.channel_close(chan, 3, nil)
-  end))
+  if timeout then
+    local t = assert(vim.uv.new_timer())
+    timer = t
+    pcall(function()
+      require("ffi").cdef [[bool channel_close(unsigned long long id, int part, const char **error);]]
+    end)
+    t:start(timeout, 0, M.nil_wrap(function()
+      if not t:is_closing() then t:close() end
+      fired = true
+      require("ffi").C.channel_close(chan, 3, nil)
+    end))
+  end
   ---@cast chan integer
   local ret = { pcall(vim.rpcrequest, chan, method, ...) }
-  if not timer:is_closing() then timer:close() end
+  if timer and not timer:is_closing() then timer:close() end
   if fired then return false, "Timeout" end
   vim.fn.chanclose(chan)
   local tonil = function(v) if v == vim.NIL then return nil else return v end end
   ---@diagnostic disable-next-line: missing-return-value
   return unpack(vim.tbl_map(tonil, ret))
+end
+
+---Blocking RPC: waits indefinitely for the peer to reply.
+---@param addr string
+---@param method string
+---@param ... any
+---@return boolean, string|any, ...any
+function M.rpcexec(addr, method, ...)
+  return rpcexec(addr, nil, method, ...)
+end
+
+---@param addr string
+---@param method string
+---@param ... any
+---@return boolean, string|any, ...any
+function M.rpcexec_timed(addr, method, ...)
+  return rpcexec(addr, RPC_TIMEOUT, method, ...)
 end
 
 --- Checks if treesitter parser for language is installed
