@@ -996,7 +996,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
   end
 
   if opts.locate and utils.has(opts, "fzf", { 0, 36 }) then
-    table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("load:+transform:"
+    table.insert(opts._fzf_cli_args, libuv.cli_raw_arg("--bind=", "load:+transform:"
       .. FzfLua.shell.stringify_data(function(_, _, _)
         if opts.__locate_pos then
           return string.format("pos(%d)", opts.__locate_pos)
@@ -1015,7 +1015,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
           return lnum, (subs > 0 and new_q or nil)
         end
     utils.map_set(opts, "winopts.preview.winopts.cursorline", true)
-    table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("start,change:+transform:"
+    table.insert(opts._fzf_cli_args, libuv.cli_raw_arg("--bind=", "start,change:+transform:"
       .. FzfLua.shell.stringify_data(function(q, _, _)
         local lnum, new_q = opts.line_query(q[1])
         if not new_q then return end

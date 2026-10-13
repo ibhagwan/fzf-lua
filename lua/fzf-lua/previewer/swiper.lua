@@ -49,7 +49,7 @@ function M.base:setup_opts(opts)
   opts.winopts.preview.horizontal = "right:0%"
   opts.fzf_opts["--preview-window"] = "nohidden:right:0"
   opts.preview = self:preview_cmd()
-  table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("result:+" .. self:result_cmd()))
+  table.insert(opts._fzf_cli_args, libuv.cli_raw_arg("--bind=", "result:+" .. self:result_cmd()))
   -- NOTE: I don't feel we need the zero event, we just leave the cursor where it's at instead
   -- if utils.has(opts, "fzf", { 0, 40 }) then
   --   table.insert(opts._fzf_cli_args, "--bind=" .. libuv.shellescape("zero:+" .. self:zero_cmd()))

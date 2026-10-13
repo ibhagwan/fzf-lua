@@ -278,11 +278,11 @@ M.global = function(opts)
 
   opts._fzf_cli_args = opts._fzf_cli_args or {}
   -- Insert at the start of the args table so `line_query` callback is first
-  table.insert(opts._fzf_cli_args, 1, "--bind="
-    .. libuv.shellescape("start:+transform:" .. transform_picker(true)))
+  table.insert(opts._fzf_cli_args, 1,
+    libuv.cli_raw_arg("--bind=", "start:+transform:" .. transform_picker(true)))
 
-  table.insert(opts._fzf_cli_args, 2, "--bind="
-    .. libuv.shellescape("change:+transform:" .. transform_picker(false)))
+  table.insert(opts._fzf_cli_args, 2,
+    libuv.cli_raw_arg("--bind=", "change:+transform:" .. transform_picker(false)))
 
   if opts.header ~= false then
     local header = {}

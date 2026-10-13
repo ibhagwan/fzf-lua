@@ -3,6 +3,7 @@ local assert = helpers.assert
 
 local libuv = require("fzf-lua.libuv")
 local eq = assert.are.equal
+local same = assert.are.same
 
 describe("Testing libuv module", function()
   it("is_escaped (posix)", function()
@@ -124,6 +125,23 @@ describe("Testing libuv module", function()
     local posix = libuv.escape_cli(elems, "posix")
     eq(posix[1], "--bind=" .. libuv.shellescape("ctrl-r:reload(a b)"))
     eq(posix[3], libuv.shellescape("it's"))
+  end)
+
+  it("build_fzf_cli raw segments round-trip to the escaped cli_args", function()
+    -- the sync invariant: the raw `segments` second return value must, when
+    -- escaped for the *current* shell, reproduce the legacy escaped `cli_args`
+    -- byte-for-byte. This guards the defer-escape refactor against drift.
+    local core = require("fzf-lua.core")
+    local config = require("fzf-lua.config")
+    local defaults = require("fzf-lua.defaults").defaults
+    local opts = config.normalize_opts({ cwd = vim.fn.getcwd() }, defaults.files)
+    local cli_args, segments = core.build_fzf_cli(opts)
+    eq(#cli_args, #segments)
+    -- no marker tables leak into the escaped string form
+    for _, a in ipairs(cli_args) do eq(type(a), "string") end
+    -- re-escaping the raw segments for the current shell reproduces cli_args
+    local shell = helpers.IS_WIN() and "cmd" or "posix"
+    same(libuv.escape_cli(segments, shell), cli_args)
   end)
 
   it("escape {q} (win, fzf v0.50)", function()

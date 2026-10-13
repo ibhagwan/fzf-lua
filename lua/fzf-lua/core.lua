@@ -418,8 +418,9 @@ M.fzf = function(contents, opts)
   end)
 
   -- live command may contain field index {q}, cannot be used as FZF_DEFAULT_COMMAND
+  local fzf_cli_args, fzf_cli_segments = M.build_fzf_cli(opts)
   local selected, exit_code = fzf.raw_fzf(opts.is_live and utils.shell_nop() or contents,
-    M.build_fzf_cli(opts),
+    fzf_cli_args,
     {
       fzf_bin = opts.fzf_bin,
       cwd = opts.cwd,
@@ -428,6 +429,7 @@ M.fzf = function(contents, opts)
       is_fzf_tmux = opts._is_fzf_tmux,
       debug = opts.debug,
       RIPGREP_CONFIG_PATH = opts.RIPGREP_CONFIG_PATH,
+      _cli_segments = fzf_cli_segments,
     })
   -- kill fzf piped process PID
   -- NOTE: might be an overkill since we're using $FZF_DEFAULT_COMMAND
@@ -639,7 +641,8 @@ M.create_fzf_binds = function(opts)
 end
 
 ---@param opts table
----@return string[]
+---@return string[] cli_args escaped argv (legacy form, for cmd/posix)
+---@return fzf-lua.CliElement[] segments raw argv (for the PowerShell fallback)
 M.build_fzf_cli = function(opts)
   -- below options can be specified directly in opts and will be
   -- prioritized: opts.<name> is prioritized over fzf_opts["--name"]
@@ -666,12 +669,17 @@ M.build_fzf_cli = function(opts)
   end
   -- build the cli args
   local cli_args = {}
+  -- parallel raw (unescaped) segment list, used only by the PowerShell fallback
+  ---@type fzf-lua.CliElement[]
+  local segments = {}
   -- fzf-tmux args must be included first
   if opts._is_fzf_tmux == 1 then
     for k, v in pairs(opts.fzf_tmux_opts or {}) do
       table.insert(cli_args, k)
+      table.insert(segments, { { text = k, escape = false } })
       if type(v) == "string" and #v > 0 then
         table.insert(cli_args, v)
+        table.insert(segments, { { text = v, escape = false } })
       end
     end
   elseif opts._is_fzf_tmux == 2 and utils.has(opts, "fzf") then
@@ -687,8 +695,12 @@ M.build_fzf_cli = function(opts)
         -- flag can be set to `false` to negate a default
         if not v then return end
         local opt_v
+        -- raw value recorded for the PowerShell fallback segments
+        local raw_v
+        local escape_v = true
         if type(v) == "string" or type(v) == "number" then
           v = tostring(v) -- convert number type to string
+          raw_v = v
           if k == "--query" then
             opt_v = libuv.shellescape(v)
           else
@@ -696,12 +708,15 @@ M.build_fzf_cli = function(opts)
               -- replace single quote shellescape
               -- TODO: replace all so we never get here
               v = [["]] .. v:sub(2, #v - 1) .. [["]]
+              raw_v = v
             end
             if libuv.is_escaped(v) then
               utils.warn("`fzf_opts` are automatically shellescaped."
                 .. " Please remove surrounding quotes from %s=%s", k, v)
             end
             opt_v = libuv.is_escaped(v) and v or libuv.shellescape(v)
+            -- already-escaped values pass through verbatim in all shells
+            escape_v = not libuv.is_escaped(v)
           end
         end
         if utils.has(opts, "sk") then
@@ -710,9 +725,15 @@ M.build_fzf_cli = function(opts)
           -- skim has a bug with flag values that start with `-`, for example
           -- specifying `--nth "-1.."` will fail but `--nth="-1.."` works (#1085)
           table.insert(cli_args, not opt_v and k or string.format("%s=%s", k, opt_v))
+          table.insert(segments, not opt_v and { { text = k, escape = false } }
+            or { { text = k .. "=", escape = false }, { text = raw_v, escape = escape_v } })
         else
           table.insert(cli_args, k)
-          if opt_v then table.insert(cli_args, opt_v) end
+          table.insert(segments, { { text = k, escape = false } })
+          if opt_v then
+            table.insert(cli_args, opt_v)
+            table.insert(segments, { { text = raw_v, escape = escape_v } })
+          end
         end
       end)()
     end
@@ -724,11 +745,20 @@ M.build_fzf_cli = function(opts)
         args = { tostring(args) }
       end
       for _, arg in ipairs(args) do
-        table.insert(cli_args, arg)
+        if type(arg) == "table" and arg.__raw_cli then
+          -- internal producer carrying a raw value: emit the escaped string form
+          -- for cli_args (byte-identical to before) and the raw segment form
+          table.insert(cli_args, arg.prefix .. libuv.shellescape(arg.value))
+          table.insert(segments,
+            { { text = arg.prefix, escape = false }, { text = arg.value, escape = true } })
+        else
+          table.insert(cli_args, arg)
+          table.insert(segments, { { text = tostring(arg), escape = false } })
+        end
       end
     end
   end
-  return cli_args
+  return cli_args, segments
 end
 
 -- given the default delimiter ':' this is the
@@ -1042,7 +1072,7 @@ M.convert_reload_actions = function(reload_cmd, opts)
 
   if rebind then
     table.insert(opts._fzf_cli_args,
-      "--bind=" .. libuv.shellescape(string.format("load:+%s", rebind)))
+      libuv.cli_raw_arg("--bind=", string.format("load:+%s", rebind)))
   end
   return opts
 end
@@ -1142,8 +1172,8 @@ M.setup_fzf_live_flags = function(command, bind_start, opts)
     opts.fzf_opts["--cmd-history"] = opts.fzf_opts["--history"]
     opts.fzf_opts["--history"] = nil
     -- setup as interactive
-    table.insert(opts._fzf_cli_args, string.format("--interactive --cmd %s",
-      libuv.shellescape(reload_command)))
+    table.insert(opts._fzf_cli_args,
+      libuv.cli_raw_arg("--interactive --cmd ", reload_command))
   else
     opts.fzf_opts["--disabled"] = true
     opts.fzf_opts["--query"] = opts.query
@@ -1152,11 +1182,11 @@ M.setup_fzf_live_flags = function(command, bind_start, opts)
       reload_command = reload_command .. " || " .. utils.shell_nop()
     end
     local action = M.can_transform(opts) and "transform" or "reload"
-    table.insert(opts._fzf_cli_args, "--bind="
-      .. libuv.shellescape(string.format("change:+%s:%s", action, reload_command)))
+    table.insert(opts._fzf_cli_args,
+      libuv.cli_raw_arg("--bind=", string.format("change:+%s:%s", action, reload_command)))
     if bind_start or opts.exec_empty_query or #opts.query > 0 then
-      table.insert(opts._fzf_cli_args, "--bind="
-        .. libuv.shellescape(string.format("start:+%s:%s", action, reload_command)))
+      table.insert(opts._fzf_cli_args,
+        libuv.cli_raw_arg("--bind=", string.format("start:+%s:%s", action, reload_command)))
     end
   end
 end
