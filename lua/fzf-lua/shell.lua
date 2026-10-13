@@ -494,7 +494,7 @@ end
 -- Use both {q} and {+} as field indexes so we can update last query when
 -- executing the action, without this we lose the last query on "hide" as
 -- the process never terminates and `--print-query` isn't being printed
--- When no entry selected (with {q} {+}), {+} will be forced expand to ''
+-- When no entry selected (with {n} {+}), {+} will be forced expand to ''
 -- Use {n} to know if we really select an empty string, or there's just no selected
 ---@param fn fzf-lua.shell.data2
 ---@param opts table
@@ -502,22 +502,22 @@ end
 ---@return string
 M.stringify_data2 = function(fn, opts, field_index)
   local did_override = false
-  if not field_index:match("{q} {n}$") then
-    field_index = field_index .. " {q} {n}"
+  if not field_index:match("{n} {q}$") then
+    field_index = field_index .. " {n} {q}"
     did_override = true
   end
   -- replace the action with shell cmd proxy to the original action
   return (M.stringify_data(function(items, _, _)
-    local query, idx = items[#items - 1], items[#items]
+    local idx, query = items[#items - 1], items[#items]
     FzfLua.config.resume_set("query", query, opts)
     if did_override then
       table.remove(items)
       table.remove(items)
     end
-    -- fix side effect of "{q} {+}": {+} is forced expanded to ""
+    -- fix side effect of "{n} {+}": {+} is forced expanded to ""
     -- only when field_index is empty (otherwise it can be complex/unpredictable)
     -- {n} used to determine if "zero-selected && zero-match", then patch: "" -> nil
-    if field_index == "{+} {q} {n}" then
+    if field_index == "{+} {n} {q}" then
       -- When no item is matching (empty list or non-matching query)
       -- both {n} and {+} are expanded to "".
       -- NOTE1: older versions of fzf don't expand {n} to "" (without match)
