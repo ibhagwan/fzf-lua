@@ -326,7 +326,7 @@ end
 function Previewer.base:cmdline(_)
   local act = shell.stringify_data(function(items, _, _)
     ---@type string?, string?, string?
-    local entry, query, idx = unpack(items, 1, 3)
+    local entry, idx, query = unpack(items, 1, 3)
     -- NOTE: see comment regarding {n} in `core.convert_exec_silent_actions`
     -- convert empty string to nil
     if not tonumber(idx) then entry = nil end
@@ -338,7 +338,7 @@ function Previewer.base:cmdline(_)
     -- save last entry even if we don't display
     self.last_entry = entry
     return ""
-  end, self.opts, "{} {q} {n}")
+  end, self.opts, "{} {n} {q}")
   return act
 end
 
