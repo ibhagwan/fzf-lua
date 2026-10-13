@@ -543,7 +543,7 @@ end
 M.exec_menu = function(selected)
   if not selected[1] then return end
   local cmd = selected[1]
-  vim.cmd("emenu " .. cmd)
+  vim.cmd(string.format("emenu %s %s", utils.__CTX().mode, cmd))
 end
 
 
