@@ -97,28 +97,71 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     -- })
   end
 
+  -- Windows PowerShell fallback when the assembled fzf launcher command line
+  -- exceeds cmd.exe's 8191-char limit. Rebuild from raw segments so values are
+  -- PowerShell-escaped; nested `nvim -l` action payloads stay on fast cmd.exe
+  -- via SHELL=cmd.exe.
+  local use_powershell = false
+  local ps_command ---@type string?
+  if utils.__IS_WINDOWS and not opts.is_fzf_tmux and not opts.pipe_cmd
+      and opts._cli_segments and #opts._cli_segments > 0
+      and #table.concat(cmd, " ") > 8000 then
+    use_powershell = true
+    -- Reconstruct the raw argv strings from the segments, encode each one with
+    -- Windows CommandLineToArgvW quoting rules, and pass the joined command
+    -- line as a single string to Start-Process. This keeps empty arguments as
+    -- "" and correctly escapes embedded quotes/backslashes while avoiding both
+    -- cmd.exe's 8191-char limit and Start-Process array-literal edge cases.
+    local raw_args = {}
+    for _, elem in ipairs(opts._cli_segments) do
+      local arg = {}
+      for _, seg in ipairs(elem) do
+        table.insert(arg, seg.text)
+      end
+      table.insert(raw_args, table.concat(arg))
+    end
+    local ps_fzf_bin = libuv.ps_escape(cmd[1])
+    local ps_outfile = libuv.ps_escape(outputtmpname)
+    local argline = table.concat(vim.tbl_map(function(a)
+      return libuv.shellescape(a, 1)
+    end, raw_args), " ")
+    ps_command = string.format(
+      "$proc = Start-Process -FilePath %s -ArgumentList %s -RedirectStandardOutput %s -Wait -NoNewWindow -PassThru -ErrorAction Stop; if ($null -eq $proc) { exit 1 }; exit $proc.ExitCode",
+      ps_fzf_bin, libuv.ps_escape(argline), ps_outfile)
+  end
+
   if opts.debug and type(opts.debug) ~= "number" then
     utils.info("FZF_DEFAULT_COMMAND: %s", tostring(FZF_DEFAULT_COMMAND))
-    utils.info("fzf cmd: %s", table.concat(cmd, " "))
+    if use_powershell then
+      utils.info("fzf cmd [powershell]: %s", ps_command)
+    else
+      utils.info("fzf cmd [%s]: %s",
+        utils.__IS_WINDOWS and "cmd.exe" or "sh", table.concat(cmd, " "))
+    end
   end
 
   local co = coroutine.running()
   ---@cast co thread
   local jobstart = _G.fzf_jobstart or opts.is_fzf_tmux and vim.fn.jobstart or utils.termopen
-  local shell_cmd = utils.__IS_WINDOWS
-      -- MSYS2 comes with "/usr/bin/cmd" that precedes "cmd.exe" (#1396)
-      and { "cmd.exe", "/d", "/e:off", "/f:off", "/v:off", "/c" }
-      or { "sh", "-c" }
-  if opts.pipe_cmd then
-    if FZF_DEFAULT_COMMAND then
-      table.insert(cmd, 1, string.format("(%s) | ", FZF_DEFAULT_COMMAND))
-      FZF_DEFAULT_COMMAND = nil
-    end
-    table.insert(shell_cmd, table.concat(cmd, " "))
-  elseif utils.__IS_WINDOWS then
-    utils.tbl_join(shell_cmd, cmd)
+  local shell_cmd
+  if use_powershell then
+    shell_cmd = { "powershell.exe", "-NoProfile", "-NonInteractive", "-Command", ps_command }
   else
-    table.insert(shell_cmd, table.concat(cmd, " "))
+    shell_cmd = utils.__IS_WINDOWS
+        -- MSYS2 comes with "/usr/bin/cmd" that precedes "cmd.exe" (#1396)
+        and { "cmd.exe", "/d", "/e:off", "/f:off", "/v:off", "/c" }
+        or { "sh", "-c" }
+    if opts.pipe_cmd then
+      if FZF_DEFAULT_COMMAND then
+        table.insert(cmd, 1, string.format("(%s) | ", FZF_DEFAULT_COMMAND))
+        FZF_DEFAULT_COMMAND = nil
+      end
+      table.insert(shell_cmd, table.concat(cmd, " "))
+    elseif utils.__IS_WINDOWS then
+      utils.tbl_join(shell_cmd, cmd)
+    else
+      table.insert(shell_cmd, table.concat(cmd, " "))
+    end
   end
   -- This obscure option makes jobstart fail with: "The syntax of the command is incorrect"
   -- temporarily set to `false`, for more info see `:help shellslash` (#1055)
@@ -128,7 +171,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     cwd = opts.cwd,
     pty = true,
     env = {
-      ["SHELL"] = shell_cmd[1],
+      ["SHELL"] = use_powershell and "cmd.exe" or shell_cmd[1],
       -- Nullify "NVIM_LISTEN_ADDRESS", will cause issues if already in use (#2253)
       ["NVIM_LISTEN_ADDRESS"] = "",
       ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
@@ -165,10 +208,17 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       local output = nil ---@type string[]?
       local f = io.open(outputtmpname)
       if f then
-        output = vim.split(f:read("*a"), printEOL)
+        local text = f:read("*a")
+        f:close()
+        -- Redirected stdout from the PowerShell fallback may begin with an
+        -- optional leading UTF-8 BOM in some PowerShell versions; strip it
+        -- before splitting so selected lines stay clean.
+        if use_powershell then
+          text = text:gsub("^\239\187\191", "")
+        end
+        output = vim.split(text, printEOL)
         -- `file:read("*a")` appends an empty string on EOL
         output[#output] = nil
-        f:close()
       end
       -- Windows only, restore `shellslash` if was true before `jobstart`
       if nvim_opt_shellslash then vim.o.shellslash = nvim_opt_shellslash end

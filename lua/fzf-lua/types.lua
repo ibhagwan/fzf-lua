@@ -194,7 +194,7 @@ local FzfLua = require("fzf-lua")
 ---@field render_crlf? boolean
 ---Custom path formatter, can be defined under `setup.formatters`, fzf-lua comes with a builtin vscode-like formatter, displaying the filename first followed by the folder. Try it out with `:FzfLua files formatter=path.filename_first` or `:FzfLua live_grep formatter=path.filename_first`. For permanency: `require("fzf-lua").setup({ files = { formatter = "path.filename_first" } })`.
 ---@field formatter? string
----@field _fzf_cli_args? string[]
+---@field _fzf_cli_args? (string|table)[]
 ---@field __INFO fzf-lua.Info
 ---@field __CTX fzf-lua.Ctx
 ---@field _normalized? boolean
@@ -260,7 +260,7 @@ local FzfLua = require("fzf-lua")
 ---@field keymap fzf-lua.config.Keymap
 ---@field fzf_opts table<string, any>
 ---@field _resume_reload? boolean|function
----@field _fzf_cli_args string[]
+---@field _fzf_cli_args (string|table)[]
 ---@field _uri? boolean
 ---@field is_loclist? boolean
 ---@field last_query? string

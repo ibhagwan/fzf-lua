@@ -5,6 +5,7 @@ local config = require "fzf-lua.config"
 local actions = require "fzf-lua.actions"
 local win = require "fzf-lua.win"
 local libuv = require "fzf-lua.libuv"
+local shellparse = require("fzf-lua.config.parse").shellparse
 local shell = require "fzf-lua.shell"
 
 local M = {}
@@ -710,13 +711,21 @@ M.build_fzf_cli = function(opts)
               v = [["]] .. v:sub(2, #v - 1) .. [["]]
               raw_v = v
             end
-            if libuv.is_escaped(v) then
+            local is_escaped_v = libuv.is_escaped(v)
+            if is_escaped_v then
               utils.warn("`fzf_opts` are automatically shellescaped."
                 .. " Please remove surrounding quotes from %s=%s", k, v)
+              -- For native (PowerShell) argument handling, record the unquoted
+              -- value so it can be re-quoted by the target shell.
+              if utils.__IS_WINDOWS and v:match([[^%^".*%^"$]]) then
+                raw_v = v:sub(3, #v - 2)
+              else
+                raw_v = v:sub(2, #v - 1)
+              end
             end
-            opt_v = libuv.is_escaped(v) and v or libuv.shellescape(v)
+            opt_v = is_escaped_v and v or libuv.shellescape(v)
             -- already-escaped values pass through verbatim in all shells
-            escape_v = not libuv.is_escaped(v)
+            escape_v = not is_escaped_v
           end
         end
         if utils.has(opts, "sk") then
@@ -747,13 +756,34 @@ M.build_fzf_cli = function(opts)
       for _, arg in ipairs(args) do
         if type(arg) == "table" and arg.__raw_cli then
           -- internal producer carrying a raw value: emit the escaped string form
-          -- for cli_args (byte-identical to before) and the raw segment form
+          -- for cli_args (byte-identical to before) and the raw segment form.
+          -- Compound literal prefixes (e.g. "--interactive --cmd ") are split
+          -- into separate CliElements so native (PowerShell) quoting applies per
+          -- argv token; simple fused prefixes (e.g. "--bind=") stay joined to
+          -- their value to preserve the byte-identical round-trip invariant.
           table.insert(cli_args, arg.prefix .. libuv.shellescape(arg.value))
-          table.insert(segments,
-            { { text = arg.prefix, escape = false }, { text = arg.value, escape = true } })
+          if arg.prefix:find("%s") then
+            local prefix_tokens = shellparse(arg.prefix)
+            if type(prefix_tokens) ~= "table" then prefix_tokens = { arg.prefix } end
+            ---@cast prefix_tokens string[]
+            for _, tok in ipairs(prefix_tokens) do
+              table.insert(segments, { { text = tok, escape = false } })
+            end
+            table.insert(segments, { { text = arg.value, escape = true } })
+          else
+            table.insert(segments,
+              { { text = arg.prefix, escape = false }, { text = arg.value, escape = true } })
+          end
         else
           table.insert(cli_args, arg)
-          table.insert(segments, { { text = tostring(arg), escape = false } })
+          -- Split raw user argument strings (e.g. fzf_args entries with spaces)
+          -- into separate argument elements for native quoting.
+          local tokens = shellparse(tostring(arg))
+          if type(tokens) ~= "table" then tokens = { tostring(arg) } end
+          ---@cast tokens string[]
+          for _, tok in ipairs(tokens) do
+            table.insert(segments, { { text = tok, escape = false } })
+          end
         end
       end
     end
