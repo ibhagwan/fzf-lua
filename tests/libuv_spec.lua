@@ -104,6 +104,28 @@ describe("Testing libuv module", function()
     eq(libuv.ps_escape([[a b]]), [['a b']])
   end)
 
+  it("escape_cli escapes value segments per shell, keeps literal segments", function()
+    local elems = {
+      { { text = "--bind=", escape = false }, { text = "ctrl-r:reload(a b)", escape = true } },
+      { { text = "--query", escape = false } },
+      { { text = "it's", escape = true } },
+    }
+    -- cmd: value segments via shellescape, flags literal, element re-fused
+    local cmd = libuv.escape_cli(elems, "cmd")
+    eq(cmd[1], "--bind=" .. libuv.shellescape("ctrl-r:reload(a b)"))
+    eq(cmd[2], "--query")
+    eq(cmd[3], libuv.shellescape("it's"))
+    -- powershell: value segments via ps_escape
+    local ps = libuv.escape_cli(elems, "powershell")
+    eq(ps[1], "--bind='ctrl-r:reload(a b)'")
+    eq(ps[2], "--query")
+    eq(ps[3], "'it''s'")
+    -- posix: value segments via posix shellescape
+    local posix = libuv.escape_cli(elems, "posix")
+    eq(posix[1], "--bind=" .. libuv.shellescape("ctrl-r:reload(a b)"))
+    eq(posix[3], libuv.shellescape("it's"))
+  end)
+
   it("escape {q} (win, fzf v0.50)", function()
     eq(libuv.escape_fzf([[]], 0.50, true), [[]])
     eq(libuv.escape_fzf([[\]], 0.50, true), [[\]])

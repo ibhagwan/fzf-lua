@@ -821,6 +821,38 @@ end
 ---@return string
 M.ps_escape = function(s) return "'" .. s:gsub("'", "''") .. "'" end
 
+---@class fzf-lua.CliSegment
+---@field text string    -- raw (unescaped) text
+---@field escape boolean -- true = escape this text for the target shell
+
+-- One argv element is a list of segments (usually 1; 2 for a fused "flag=value"
+-- or "--bind=<value>" string where the flag prefix is literal and the value is
+-- escaped). This lets a single final pass escape only the value segments,
+-- per target shell, without double-escaping literal flag text.
+---@alias fzf-lua.CliElement fzf-lua.CliSegment[]
+
+-- Escape a list of CLI elements for the given shell, re-fusing each element's
+-- segments into a single string. "posix"/"cmd" reuse `shellescape` (cmd uses
+-- the caret/win_style variant), "powershell" uses `ps_escape`. Literal segments
+-- (`escape=false`) are emitted verbatim in all shells.
+---@param elements fzf-lua.CliElement[]
+---@param shell "posix"|"cmd"|"powershell"
+---@param win_style integer|string? forwarded to shellescape for "cmd"
+---@return string[]
+M.escape_cli = function(elements, shell, win_style)
+  local escapefn = shell == "powershell" and M.ps_escape
+    or function(s) return M.shellescape(s, shell == "cmd" and win_style or nil) end
+  local argv = {}
+  for _, elem in ipairs(elements) do
+    local buf = {}
+    for _, seg in ipairs(elem) do
+      table.insert(buf, seg.escape and escapefn(seg.text) or seg.text)
+    end
+    table.insert(argv, table.concat(buf))
+  end
+  return argv
+end
+
 -- Windows fzf oddities, fzf's {q} will send escaped blackslahes,
 -- but only when the backslash prefixes another character which
 -- isn't a backslash, test with:
