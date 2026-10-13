@@ -93,6 +93,17 @@ describe("Testing libuv module", function()
     eq(libuv.shellescape([[foo\\\^^^"]], 2), [[^"foo\\\^^^^^^\^"^"]])
   end)
 
+  it("ps_escape", function()
+    -- PowerShell single-quoted strings: everything literal except '' (escaped ')
+    eq(libuv.ps_escape([[plain]]), [['plain']])
+    eq(libuv.ps_escape([[it's]]), [['it''s']])
+    eq(libuv.ps_escape([['quoted']]), [['''quoted''']])
+    -- metacharacters ($, backtick, ", (), &, |) stay literal inside single quotes
+    eq(libuv.ps_escape([[$(x) `" & | ; ( )]]), [['$(x) `" & | ; ( )']])
+    eq(libuv.ps_escape([[]]), [['']])
+    eq(libuv.ps_escape([[a b]]), [['a b']])
+  end)
+
   it("escape {q} (win, fzf v0.50)", function()
     eq(libuv.escape_fzf([[]], 0.50, true), [[]])
     eq(libuv.escape_fzf([[\]], 0.50, true), [[\]])

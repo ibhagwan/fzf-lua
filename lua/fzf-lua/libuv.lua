@@ -812,6 +812,15 @@ M.shellescape = function(s, win_style)
   end
 end
 
+-- PowerShell escaping for the fzf launcher on Windows when the command line
+-- exceeds cmd.exe's 8191-char limit (see `fzf.raw_fzf`). A single-quoted
+-- PowerShell string treats every character literally except a single quote,
+-- which is escaped by doubling it (''), no caret/backslash/metachar handling
+-- needed (our internal `nvim -l` payloads are already base64-encoded).
+---@param s string
+---@return string
+M.ps_escape = function(s) return "'" .. s:gsub("'", "''") .. "'" end
+
 -- Windows fzf oddities, fzf's {q} will send escaped blackslahes,
 -- but only when the backslash prefixes another character which
 -- isn't a backslash, test with:
