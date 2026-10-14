@@ -176,6 +176,18 @@ M.new_child_neovim = function()
     -- using "FZF_DEFAULT_OPTS" hangs the command on the
     -- child process and the loading indicator never stops
     local defaults = { fzf_opts = { ["--gutter"] = " " } }
+    -- Windows: $FZF_DEFAULT_COMMAND is only honored when fzf's stdin is a tty
+    -- (`FZF_DEFAULT_COMMAND - Default command to use when input is tty`, see
+    -- src/util/util_windows.go Executor with `/s/c`). Inside mini.test child
+    -- processes (headless nvim started via jobstart without pty, nested
+    -- termopen pty on Windows) fzf's IsTty() is false, so it ignores the env
+    -- and blocks waiting for stdin EOF that never arrives: the headless
+    -- `nvim -l spawn.lua` never even starts (no spawn log/marker), fzf shows
+    -- `0/0` with loading spinner forever, `load` never fires and `wait_until`
+    -- timeout+retries (5x on Windows) make the suite appear hung. Piping via
+    -- `cmd.exe /c "(cmd) | fzf"` uses a stdin pipe (which closes) and works
+    -- regardless of tty detection, so default to pipe for headless (tests, cli)
+    -- on Windows. GUI sessions keep env (better exit kill + powershell fallback).
     if M.IS_WIN() then defaults.pipe_cmd = true end
     child.lua(function(...)
       require("fzf-lua").setup(vim.tbl_deep_extend("keep", ..., {
