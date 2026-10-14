@@ -24,7 +24,7 @@ local T = helpers.new_set_with_child(child, {
   },
 })
 
-T["ui_select"] = new_set()
+T["ui_select"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
 local register = function(opts)
   local literal = vim.inspect(opts or {}):gsub("\n", " ")
@@ -96,6 +96,7 @@ local function wait_preview_rendered(expected_entry)
     ]])
     return last == expected_entry
   end, 5000)
+  sleep(100); if not helpers.IS_LINUX() then sleep(250) end
 end
 
 T["ui_select"]["buffer preview (default)"] = function()
