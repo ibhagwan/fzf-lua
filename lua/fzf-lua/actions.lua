@@ -530,20 +530,24 @@ M.ex_run = function(selected)
   local cmd = selected[1]
   vim.cmd("stopinsert")
   vim.fn.feedkeys(string.format(":%s", cmd), "nt")
-  return cmd
 end
 
 M.ex_run_cr = function(selected)
   if not selected[1] then return end
   local cmd = selected[1]
-  vim.cmd(cmd)
+  local keys = string.format("<Cmd>%s<CR>", cmd:gsub("<", "<lt>"))
+  keys = vim.api.nvim_replace_termcodes(keys, true, true, true)
+  vim.api.nvim_feedkeys(keys, 'nt', false)
   vim.fn.histadd("cmd", cmd)
 end
 
 M.exec_menu = function(selected)
   if not selected[1] then return end
-  local cmd = selected[1]
-  vim.cmd(string.format("emenu %s %s", utils.__CTX().mode, cmd))
+  local menu = selected[1]
+  local k_cmd = vim.api.nvim_replace_termcodes("<Cmd>", true, false, true)
+  local cmd = vim.fn.json_encode("emenu " .. vim.fn.escape(menu, "\\ |"))
+  local keys = string.format("%sexecute %s\r", k_cmd, cmd)
+  vim.api.nvim_feedkeys(keys, 'nt', false)
 end
 
 
