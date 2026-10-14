@@ -4,6 +4,7 @@ local helpers = require("fzf-lua.test.helpers")
 local child = helpers.new_child_neovim()
 local eq = helpers.expect.equality
 local new_set = MiniTest.new_set
+local sleep = function(ms) helpers.sleep(ms, child) end
 
 local T = helpers.new_set_with_child(child)
 
@@ -111,6 +112,9 @@ T["api"]["fzf_live"]["table"] = function(multiprocess)
       __postprocess_wait = true,
       __after_open = function()
         child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+        -- Allow fzf's load event (pos(-1)) to finish updating the UI
+        -- before the screenshot is taken.
+        sleep(100); if not helpers.IS_LINUX() then sleep(250) end
       end,
       query = 100,
       keymap = { fzf = { load = "pos(-1)" } },
@@ -141,6 +145,9 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
           __postprocess_wait = true,
           __after_open = function()
             child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+            -- Allow fzf's load event (pos(-1)) to finish updating the UI
+            -- before the screenshot is taken.
+            sleep(100); if not helpers.IS_LINUX() then sleep(250) end
           end,
           query = 100,
           keymap = { fzf = { load = "pos(-1)" } },
@@ -171,6 +178,9 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
           __postprocess_wait = true,
           __after_open = function()
             child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+            -- Allow fzf's load event (pos(-1)) to finish updating the UI
+            -- before the screenshot is taken.
+            sleep(100); if not helpers.IS_LINUX() then sleep(250) end
           end,
           query = 100,
           keymap = { fzf = { load = "pos(-1)" } },
