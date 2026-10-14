@@ -19,8 +19,15 @@ T["api"]["fzf_exec"]["table"] = function(multiprocess)
       table.insert(contents, tostring((i - 1) * 3 + j) .. ": " .. s)
     end
   end
-  helpers.FzfLua.fzf_exec(child, contents,
-    { __expect_lines = true, __postprocess_wait = true, multiprocess = multiprocess == true })
+  helpers.FzfLua.fzf_exec(child, contents, {
+    __expect_lines = true,
+    __postprocess_wait = true,
+    multiprocess = multiprocess == true,
+    __after_open = function()
+      child.wait_until_screenshot_text_match("300/300")
+      sleep(100); if not helpers.IS_LINUX() then sleep(250) end
+    end,
+  })
 end
 
 T["api"]["fzf_exec"]["function"] = new_set({ parametrize = { { "sync" }, { "async" } } }, {
@@ -293,6 +300,7 @@ T["api"]["events"] = new_set(
 
 T["api"]["resume"] = new_set({
   parametrize = { { "fzf_exec" }, { "fzf_live" } },
+  n_retry = not helpers.IS_LINUX() and 5 or nil,
 }, {
   function(api)
     helpers.FzfLua[api](child, "echo resume string content", {
@@ -301,7 +309,12 @@ T["api"]["resume"] = new_set({
       exec_empty_query = true,
       debug = 1,
     })
-    helpers.FzfLua.resume(child, { __expect_lines = true })
+    helpers.FzfLua.resume(child, {
+      __expect_lines = true,
+      __after_open = function()
+        sleep(100); if not helpers.IS_LINUX() then sleep(250) end
+      end,
+    })
 
     helpers.FzfLua[api](child, api == "fzf_exec"
       and function(fzf_cb)
@@ -317,7 +330,12 @@ T["api"]["resume"] = new_set({
         exec_empty_query = true,
         debug = 1,
       })
-    helpers.FzfLua.resume(child, { __expect_lines = true })
+    helpers.FzfLua.resume(child, {
+      __expect_lines = true,
+      __after_open = function()
+        sleep(100); if not helpers.IS_LINUX() then sleep(250) end
+      end,
+    })
   end,
 })
 

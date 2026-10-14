@@ -1,6 +1,22 @@
 nvim ?= nvim
 
 #
+# Run under git-bash on Windows (requires: scoop install make git)
+#
+ifeq ($(OS),Windows_NT)
+  ifneq ($(MSYSTEM),)
+  else
+    BASH_DIR := C:/Users/$(USERNAME)/scoop/apps/git/current/usr/bin
+    ifneq ($(shell [ -f "$(BASH_DIR)/bash.exe" ] && echo 1),)
+      $(info Using git-bash "$(BASH_DIR)/bash.exe")
+      export PATH := $(BASH_DIR):$(PATH)
+      SHELL := bash
+      .SHELLFLAGS := -c
+    endif
+  endif
+endif
+
+#
 # Run all tests or specic module tests
 #
 # Test nightly:
