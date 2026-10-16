@@ -1347,20 +1347,59 @@ M.undo = function(selected, _opts)
   utils.info("Undo jump to %s.", seq == "0" and "origin" or "change #" .. tostring(seq))
 end
 
-local parse_entry = function(e)
-  return e and utils.strip_ansi_coloring(e):match(utils.nbsp .. "(.-)$") or nil
-end
+-- Serverlist actions (`<cwd> <mem> <cpu><nbsp><address>` entries).
+-- Action errors run over RPC where stderr is invisible, so every outcome
+-- below is reported with `utils.info|warn` instead of `assert`, and all RPC
+-- is timed so a hung server can't freeze the picker.
+local parse_entry = utils.serverlist_parse_entry
 
 M.serverlist_kill = function(sel)
+  -- NOTE: do not `assert` here, action errors are executed over RPC and
+  -- surface nowhere visible; report outcomes explicitly instead. Timed RPC
+  -- so a hung server can't freeze the picker indefinitely.
+  if not sel or #sel == 0 then
+    -- Loud (not silent): distinguishes "key never delivered a selection"
+    -- from "selection didn't parse" (reported below as noaddr).
+    utils.warn("serverlist kill: no selection.")
+    return
+  end
+  local killed, gone, noaddr, failures = 0, 0, 0, {} ---@type integer, integer, integer, string[]
   ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
-  vim.iter(sel):map(parse_entry):each(function(addr)
-    ---@cast addr string
-    local ok, err = utils.rpcexec(addr, "nvim_exec2", "qa!", {})
-    assert(ok
-      or tostring(err):match("Invalid channel")
-      or tostring(err):match("ch %d+ was closed by the peer"),
-      err)
+  vim.iter(sel):each(function(entry)
+    -- parse inside `:each()`: `map()` drops nil results, which would hide
+    -- unparseable selections from the `noaddr` count below
+    local addr = parse_entry(entry)
+    if not addr then
+      noaddr = noaddr + 1
+      return
+    end
+    local ok, err = utils.rpcexec_timed(addr, "nvim_exec2", "qa!", {})
+    if ok or tostring(err):match("ch %d+ was closed by the peer") then
+      -- target quit; the channel closing under us is the expected outcome
+      killed = killed + 1
+    elseif tostring(err):match("Invalid channel") then
+      -- never reached: died between listing and kill (or bad address),
+      -- do NOT report as killed
+      gone = gone + 1
+    else
+      failures[#failures + 1] = ("%s: %s"):format(
+        utils.escape_invisible(addr), tostring(err))
+    end
   end)
+  -- report every non-empty outcome independently so mixed results
+  -- (e.g. one killed, one failed) show both
+  if #failures > 0 then
+    utils.warn("serverlist kill failed: %s", table.concat(failures, "; "))
+  end
+  if killed > 0 then
+    utils.info("Killed %d server(s).", killed)
+  end
+  if gone > 0 then
+    utils.info("Server already exited.")
+  end
+  if noaddr > 0 then
+    utils.warn("serverlist kill: no server address in selection.")
+  end
 end
 
 M.serverlist_spawn = function()
@@ -1370,8 +1409,25 @@ M.serverlist_spawn = function()
 end
 
 M.serverlist_connect = function(sel)
+  if not sel then return end
   local addr = parse_entry(sel[1])
   if not addr then return end
+  local self_bs, self_fs = vim.v.servername or "", (vim.v.servername or ""):gsub("\\", "/")
+  if addr == self_bs or (utils.__IS_WINDOWS and addr == self_fs) then
+    -- connecting to self detaches the UI (same as `:detach`), never useful
+    utils.info("Already attached to %s.", addr)
+    return
+  end
+  -- Pre-flight: `:connect` abandons our current session, so never detach
+  -- into the void when the target died (or the address is stale).
+  local alive, detail = utils.server_probe(addr)
+  if not alive then
+    -- byte-escape invisible junk (\r, ANSI, ...) so a mangled address
+    -- can't hide behind an identical-looking message (pipes are clean)
+    utils.warn("serverlist connect: %s is unreachable (%s).",
+      utils.escape_invisible(addr), tostring(detail))
+    return
+  end
   vim.cmd.connect(addr)
 end
 
