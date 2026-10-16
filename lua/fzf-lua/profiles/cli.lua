@@ -4,8 +4,12 @@ if NVIM_RUNTIME then vim.env.VIMRUNTIME = NVIM_RUNTIME end
 
 ---@diagnostic disable-next-line: deprecated
 local api, uv, fn = vim.api, vim.uv or vim.loop, vim.fn
+local _is_win = fn.has("win32") == 1 or fn.has("win64") == 1
+-- POSIX-only ffi: `ioctl`, `fcntl`, `fork`, `execl`, etc. do not exist on
+-- Windows (calling them errors with "cannot resolve symbol"). Keep `ffi`
+-- nil on Windows so all helpers below take their portable fallbacks.
 local ffi
-if package.preload.ffi then
+if not _is_win and package.preload.ffi then
   ffi = package.preload.ffi()
 end
 
@@ -71,7 +75,6 @@ local function fork(cmd, ...)
 end
 
 local function posix_exec(cmd, ...)
-  local _is_win = fn.has("win32") == 1 or fn.has("win64") == 1
   if type(cmd) ~= "string" or _is_win or not ffi then return end
   if not isatty(io.stdout) then return fork(cmd, ...) end
   local args = { ... }
@@ -84,7 +87,22 @@ local function posix_exec(cmd, ...)
 end
 
 _G.fzf_tty_get_width = function()
-  if not ffi then return (assert(uv.new_tty(0, false)):get_winsize()) end
+  if _is_win or not ffi then
+    -- Windows (or no ffi): `ioctl(TIOCGWINSZ)` does not exist. Try libuv
+    -- tty first, then $COLUMNS, then `vim.o.columns` (80 in headless).
+    -- Return nil only if nothing yields a usable width so callers can
+    -- fall back to their default layout.
+    local ok, tty = pcall(uv.new_tty, 0, false)
+    if ok and tty then
+      local ok2, w = pcall(function() return tty:get_winsize() end)
+      pcall(function() tty:close() end)
+      if ok2 and type(w) == "number" and w > 0 then return w end
+    end
+    local cols = tonumber(os.getenv("COLUMNS"))
+    if cols and cols > 0 then return cols end
+    if vim.o.columns and vim.o.columns > 0 then return vim.o.columns end
+    return nil
+  end
   local TIOCGWINSZ = 0x5413
   ---@diagnostic disable-next-line: assign-type-mismatch
   local ws = ffi.new("struct winsize[1]") ---@type [{ ws_row: integer, ws_col: integer }]
@@ -95,6 +113,9 @@ end
 
 -- https://github.com/libuv/libuv/blob/04fc1580d48c1f7aa339b6ccf91f1f815bc08b45/src/unix/core.c#L800
 local enable_stdio_inheritance = function()
+  -- No-op on Windows (no `fcntl`/CLOEXEC): `uv.spawn` stdio inheritance
+  -- is handled by libuv/Neovim, and `posix_exec` is a no-op on Windows.
+  if _is_win or not ffi then return end
   local function clear_cloexec(fd)
     local F_SETFD = 2
     local EINTR = 4
@@ -118,6 +139,12 @@ return {
   -- nullify "--tmux" in `fzf_opts` if tmux isn't detected
   { "fzf-tmux" },
   desc = "run in shell cmdline",
+  -- NOTE: on Windows pipe items into fzf (`(cmd) | fzf`) instead of
+  -- $FZF_DEFAULT_COMMAND: fzf only honors the env when stdin is a tty and
+  -- headless-spawned fzf isn't (IsTty()=false), so it ignores the env and
+  -- blocks on stdin EOF forever (same reason tests force `pipe_cmd`).
+  -- `defaults` (not top-level) is what `normalize_opts` merges per-picker.
+  defaults = { pipe_cmd = _is_win or nil },
   fzf_opts = {
     ["--height"] = "50%",
     ["--border"] = HAS_TMUX and "rounded" or "top",
