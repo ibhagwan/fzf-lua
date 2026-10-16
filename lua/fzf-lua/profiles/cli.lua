@@ -86,6 +86,27 @@ local function posix_exec(cmd, ...)
   error(string.format([[execl("%s",...) failed with error %d]], cmd, ffi.errno()))
 end
 
+-- Windows replacement for `posix_exec`: Windows has no `fork`/`execl`, so
+-- start the new nvim as a child on the same console (inherited stdio) and
+-- wait for it to exit before returning; quitting first would kill the
+-- child since Neovim terminates its spawned children on exit. The caller
+-- then quits the headless parent (same-window takeover like `execl`).
+-- Unlike the `cmd.exe /c` launcher the binary starts directly (no shell),
+-- so a plain argv list with libuv's default quoting is correct, even with
+-- spaces or quotes in paths. Optional trailing args may be nil (no lnum
+-- or col) and are filtered out since `uv.spawn` needs a dense argv.
+local function win_exec(cmd, ...)
+  if type(cmd) ~= "string" or not _is_win then return end
+  local args = vim.tbl_filter(function(a) return a ~= nil end, { ... })
+  local done = false
+  FzfLua.libuv.uv_spawn(cmd, {
+      args = args,
+      stdio = { 0, 1, 2 },
+    },
+    function() done = true end)
+  vim.wait(2147483647, function() return done end)
+end
+
 _G.fzf_tty_get_width = function()
   if _is_win or not ffi then
     -- Windows (or no ffi): `ioctl(TIOCGWINSZ)` does not exist. Try libuv
@@ -169,13 +190,14 @@ return {
       end,
       ["ctrl-q"] = function(s, o)
         local entries = parse_entries(s, o)
-        if ffi and #entries == 1 then
+        local exec = _is_win and win_exec or posix_exec
+        if (_is_win or ffi) and #entries == 1 then
           local lnum = entries[1].line > 0 and entries[1].line or nil
           local col = entries[1].col > 0 and entries[1].col or nil
-          posix_exec(NVIM_BIN, entries[1].path,
+          exec(NVIM_BIN, entries[1].path,
             lnum and ("+" .. entries[1].line) or nil,
             col and ("+norm! %s|"):format(col) or nil)
-        elseif ffi and #entries > 1 then
+        elseif (_is_win or ffi) and #entries > 1 then
           local qf_items = {}
           for _, e in ipairs(entries) do
             local text = e.stripped:match(":%d+:%d?%d?%d?%d?:?(.*)$") or ""
@@ -188,7 +210,7 @@ return {
             })
           end
           local qf_str = vim.inspect(qf_items):gsub("\n%s*", " ")
-          posix_exec(NVIM_BIN, "-c", string.format(
+          exec(NVIM_BIN, "-c", string.format(
             "lua vim.o.hidden=false; vim.fn.setqflist(%s); vim.cmd('cfirst | set hidden&')",
             qf_str))
         end
@@ -220,7 +242,14 @@ return {
           vim.uv.kill(pid, vim.uv.constants.SIGTERM)
         end
         enable_stdio_inheritance()
-        posix_exec(NVIM_BIN, "--remote-ui", "--server", remote)
+        if _is_win then
+          -- no `execl` replacement on Windows: `win_exec` returns and the
+          -- picker must quit explicitly to hand the console over
+          win_exec(NVIM_BIN, "--remote-ui", "--server", remote)
+          quit()
+        else
+          posix_exec(NVIM_BIN, "--remote-ui", "--server", remote)
+        end
       end
     }
   }
