@@ -784,25 +784,87 @@ M.autocmds = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
+---Scan the platform listener namespace for candidate servers (`nvim*`
+---sockets under `stdpath("run")/..` on unix, `\\.\pipe\nvim*` named pipes
+---via glob on Windows). Same role on both platforms; `serverlist()` only
+---ever reports this process, so the scan is what finds peers (including
+---detached servers, which keep their listener).
+---@return string[] listener paths
+local function scan_listeners()
+  if utils.__IS_WINDOWS then
+    return vim.fn.glob([[\\.\pipe\nvim*]], false, true)
+  end
+  local root = vim.fs.normalize(vim.fn.stdpath("run") .. "/..")
+  local found = vim.fs.find(function(name, _)
+    return name:match("nvim.*")
+  end, { path = root, type = "socket", limit = math.huge })
+  return found
+end
+
+---Discover running Neovim servers: the listener scan plus, on unix,
+---`vim.fn.serverlist()` (which adds servers with no socket file, e.g. TCP
+---`--listen` addresses). On Windows the scan alone is authoritative:
+---`serverlist()` can only ever report this process (self plus own infra,
+---both filtered below), so it is not consulted. Entries failing an RPC
+---probe, ourselves and our own `fzf-lua*` infra are skipped everywhere;
+---every other responsive listener is listed, including UI-less `--embed`
+---backends (indistinguishable from detached user sessions). Addresses
+---stay in native
+---form; `utils.serverlist_parse_entry` repairs the single backslash
+---fzf/cmd eats from `\\.\pipe\...` on the way back.
+---Returns an iterator of responsive server addresses.
+---@param listed string[]? explicit candidates (tests), defaults per platform
+local function discover_servers(listed)
+  local servers ---@type string[]
+  if listed then
+    servers = vim.list_extend({}, listed)
+  elseif utils.__IS_WINDOWS then
+    servers = {}
+  else
+    servers = vim.list_extend({}, vim.fn.serverlist())
+  end
+  local seen = utils.list_to_map(servers)
+  for _, s in ipairs(scan_listeners()) do
+    if not seen[s] then
+      servers[#servers + 1] = s
+      seen[s] = true
+    end
+  end
+  local dedup = {}
+  local self_bs, self_fs = vim.v.servername or "", (vim.v.servername or ""):gsub("\\", "/")
+  local filter = function(socket)
+    -- `fzf-lua*` is our own picker infrastructure; never list ourselves
+    -- (swap/kill/preview of self is meaningless at best). `nvim-term-*`
+    -- pty pipes are windows-only: on `\\.\pipe\` probing them stalls until
+    -- timeout, elsewhere they are probed like any other listener.
+    -- Self is compared in both slash forms: runtimes disagree on the
+    -- reported separator and a miss here lists (or kills!) ourselves.
+    if dedup[socket]
+        or socket == self_bs
+        or (utils.__IS_WINDOWS and socket == self_fs)
+        or (utils.__IS_WINDOWS and socket:match("nvim%-term%-"))
+        or socket:match("fzf%-lua") then
+      return false
+    end
+    dedup[socket] = true
+    if not utils.server_probe(socket) then return false end
+    -- Deliberately no `--embed`/UI filtering: an `--embed` backend with
+    -- no UI is indistinguishable from a detached user session (same argv,
+    -- same empty UI list), and hiding them emptied the picker for
+    -- embed-based workflows.
+    return true
+  end
+  ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
+  return vim.iter(servers):filter(filter)
+end
+
+-- Test seam (cf. `undotree._draw_tree`): exercise discovery without UI.
+M._discover_servers = discover_servers
+
+---List, preview, kill and attach to running Neovim servers.
 ---@param opts fzf-lua.config.Serverlist|{}?
 ---@return thread?, string?, table?
 M.serverlist = function(opts)
-  local function serverlist(listed)
-    local root = vim.fs.normalize(vim.fn.stdpath("run") .. "/..")
-    local socket_paths = vim.fs.find(function(name, _)
-      return name:match("nvim.*")
-    end, { path = root, type = "socket", limit = math.huge })
-    local found = utils.list_to_map(listed or vim.fn.serverlist())
-    local filter = function(socket)
-      if found[socket] or socket:match("fzf%-lua") then return false end
-      found[socket] = true
-      local ok, info = utils.rpcexec_timed(socket, "nvim_get_chan_info", 0)
-      return ok and info.id
-    end
-    ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
-    return vim.iter(socket_paths):filter(filter)
-  end
-
   -- libuv normalizes `ru_maxrss` to kilobytes on all platforms
   local function fmt_mem(rusage)
     if not rusage or not rusage.maxrss then return "?" end
@@ -831,7 +893,7 @@ M.serverlist = function(opts)
 
   local f = function(cb)
     local entries = {}
-    serverlist():each(function(p)
+    discover_servers():each(function(p)
       local ok, ret = utils.rpcexec_timed(p, "nvim_exec_lua",
         "return { vim.uv.cwd(), vim.uv.getrusage(), vim.uv.hrtime() }", {})
       if not ok or type(ret) ~= "table" then return end
