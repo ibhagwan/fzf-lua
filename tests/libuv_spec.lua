@@ -270,7 +270,7 @@ describe("Testing libuv module", function()
 
   --- Spawn a headless nvim that reports the handle type of its stderr and
   --- return that string ("tty" when the child sees a real console).
-  ---@param stdio { integer, integer, integer }
+  ---@param stdio integer[]
   local function probe_stderr_handle(stdio)
     local file = vim.fn.tempname()
     local probe = vim.fn.tempname() .. ".lua"
@@ -292,7 +292,7 @@ describe("Testing libuv module", function()
 
   it("win_console_stdio reopens the console (win)", function()
     helpers.SKIP_IF_NOT_WIN()
-    local fds = libuv.win_console_stdio()
+    local fds = libuv.win_console_stdio() --[[@as integer[] ]]
     eq({ "table", "number", "number", "number" },
       { type(fds), type(fds[1]), type(fds[2]), type(fds[3]) })
     eq(fds[2], fds[3])

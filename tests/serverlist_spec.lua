@@ -33,7 +33,7 @@ local function spawn_sibling(extra, name)
     else
       -- on unix only `nvim*` listeners under the run dir are discovered
       -- (`serverlist()` is not authoritative), so listen there
-      local rundir = vim.fn.stdpath("run")
+      local rundir = vim.fn.stdpath("run") --[[@as string]]
       vim.fn.mkdir(rundir, "p")
       addr = ("%s/nvim-srv-test-%d-%d.sock"):format(rundir, vim.fn.getpid(), sibling_seq)
     end
@@ -201,7 +201,7 @@ describe("serverlist discovery", function()
   it("unix: lists responsive nvim-term- sockets", function()
     if utils.__IS_WINDOWS then return end
     sibling_seq = sibling_seq + 1
-    local rundir = vim.fn.stdpath("run")
+    local rundir = vim.fn.stdpath("run") --[[@as string]]
     vim.fn.mkdir(rundir, "p")
     local addr = ("%s/nvim-term-test-%d-%d.sock"):format(rundir, vim.fn.getpid(), sibling_seq)
     with_sibling(nil, addr, function()

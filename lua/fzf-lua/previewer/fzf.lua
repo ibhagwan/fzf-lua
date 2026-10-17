@@ -537,7 +537,11 @@ local function make_screenshot(screenshot, addr, lines, columns)
     ---@diagnostic disable-next-line: missing-return-value
     return nil, uis
   end
-  local has_tui = vim.iter(uis or {}):find(function(info) return info.stdout_tty end)
+  local uis_list = uis or {} ---@type { stdout_tty: boolean }[]
+  local has_tui = false
+  for _, info in ipairs(uis_list) do
+    if info.stdout_tty then has_tui = true break end
+  end
   if has_tui then
     -- deliberately untimed below: the target just proved responsive via
     -- the timed gatekeeper above, and a slow dump-ack must still complete
