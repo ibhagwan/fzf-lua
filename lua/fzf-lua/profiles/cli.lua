@@ -103,53 +103,12 @@ end
 -- piped as well (PowerShell's PSReadLine key handler captures both), no
 -- console handle is left to inherit at all: reopen `CONIN$`/`CONOUT$` as
 -- inheritable CRT fds and pass those to the child.
-local win_console_fds
-local function win_console_stdio()
-  if win_console_fds ~= nil then return win_console_fds end
-  local ok = pcall(function()
-    local winffi = package.preload.ffi()
-    pcall(winffi.cdef, [[
-      void* CreateFileW(const unsigned short*, unsigned long,
-        unsigned long, void*, unsigned long, unsigned long, void*);
-      int _open_osfhandle(long long, int);
-      typedef struct {
-        unsigned long nLength;
-        void* lpSecurityDescriptor;
-        int bInheritHandle;
-      } FzfSA;
-    ]])
-    local function wsz(s)
-      local b = winffi.new("unsigned short[?]", #s + 1)
-      for i = 1, #s do b[i - 1] = s:byte(i) end
-      return b
-    end
-    local sa = winffi.new("FzfSA")
-    sa.nLength = winffi.sizeof(sa)
-    sa.bInheritHandle = 1
-    -- The handles must allow *write* access, not just read: nvim's TUI
-    -- calls `SetConsoleMode` on stdin (needs `GENERIC_WRITE`) and hangs
-    -- before rendering anything if that fails.
-    local GENERIC_RW, SHARE_RW, OPEN_EXISTING = 0xC0000000, 3, 3
-    local hi = winffi.C.CreateFileW(wsz("CONIN$"), GENERIC_RW, SHARE_RW, sa, OPEN_EXISTING, 0, nil)
-    local ho = winffi.C.CreateFileW(wsz("CONOUT$"), GENERIC_RW, SHARE_RW, sa, OPEN_EXISTING, 0, nil)
-    local vi = tonumber(winffi.cast("intptr_t", hi))
-    local vo = tonumber(winffi.cast("intptr_t", ho))
-    if vi == -1 or vo == -1 then error("CreateFileW failed") end
-    local conin = winffi.C._open_osfhandle(winffi.cast("long long", hi), 0)
-    local conout = winffi.C._open_osfhandle(winffi.cast("long long", ho), 0)
-    if conin < 0 or conout < 0 then error("_open_osfhandle failed") end
-    win_console_fds = { conin, conout, conout }
-  end)
-  if not ok then win_console_fds = false end
-  return win_console_fds or nil
-end
-
 local function win_stdio()
   local okout, hout = pcall(uv.guess_handle, 1)
   if okout and hout == "tty" then return { 0, 1, 2 } end
   local okerr, herr = pcall(uv.guess_handle, 2)
   if okerr and herr == "tty" then return { 0, 2, 2 } end
-  return win_console_stdio() or { 0, 1, 2 }
+  return FzfLua.libuv.win_console_stdio() or { 0, 1, 2 }
 end
 
 local function win_exec(cmd, ...)
