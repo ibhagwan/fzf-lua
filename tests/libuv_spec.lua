@@ -1,6 +1,7 @@
 local helpers = require("fzf-lua.test.helpers")
 local assert = helpers.assert
 
+local MiniTest = require("mini.test")
 local libuv = require("fzf-lua.libuv")
 local eq = assert.are.equal
 local same = assert.are.same
@@ -292,7 +293,12 @@ describe("Testing libuv module", function()
 
   it("win_console_stdio reopens the console (win)", function()
     helpers.SKIP_IF_NOT_WIN()
-    local fds = libuv.win_console_stdio() --[[@as integer[] ]]
+    local fds = libuv.win_console_stdio()
+    if fds == nil then
+      -- no console attached (e.g. CI): nil is the documented result and a
+      -- spawned probe child can't see a console either, nothing to assert
+      return MiniTest.skip("no console attached")
+    end
     eq({ "table", "number", "number", "number" },
       { type(fds), type(fds[1]), type(fds[2]), type(fds[3]) })
     eq(fds[2], fds[3])

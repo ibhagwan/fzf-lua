@@ -103,7 +103,6 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- via SHELL=cmd.exe.
   local use_powershell = false
   local ps_command ---@type string?
-  local pipe_itemsfile ---@type string?
   local cmd_len = #table.concat(cmd, " ")
   if opts.pipe_cmd and FZF_DEFAULT_COMMAND then
     -- the non-powershell branch below prepends the item command as
@@ -134,32 +133,39 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     end, raw_args), " ")
     local ps_parts = {}
     if opts.pipe_cmd and FZF_DEFAULT_COMMAND then
-      -- `(item) | fzf` can't be used in pipe mode: the item command is
-      -- prepended to the same command line, so we run it through cmd.exe with
-      -- its output redirected to a temp file (cmd does the redirect so the
-      -- item bytes are not re-encoded), then feed that file to fzf's stdin.
-      -- Start-Process `-ArgumentList` strings are passed verbatim (no
-      -- CommandLineToArgvW re-quoting), so the parenthesized command and the
-      -- quoted redirect target reach cmd.exe intact.
-      pipe_itemsfile = utils.tempname()
+      -- `(item) | fzf` can't be used in pipe mode: the item command would be
+      -- prepended to the same command line, which cmd.exe rejects past 8191
+      -- chars. Start-Process can't chain two processes either, so launch both
+      -- through ProcessStartInfo (its `Arguments` string is passed verbatim,
+      -- no CommandLineToArgvW re-quoting) and pump the item command's stdout
+      -- into fzf's stdin from this script. fzf reads stdin in the background,
+      -- so the picker starts immediately while items stream in, matching the
+      -- concurrency of the `(item) | fzf` cmd.exe branch.
       table.insert(ps_parts, string.format(
-        "Start-Process -FilePath 'cmd.exe' -ArgumentList ('/d /e:off /f:off /v:off /c (' + %s + ') > \"' + %s + '\"') -Wait -NoNewWindow -ErrorAction Stop;",
-        libuv.ps_escape(FZF_DEFAULT_COMMAND), libuv.ps_escape(pipe_itemsfile)))
+        "$ipsi = New-Object System.Diagnostics.ProcessStartInfo; $ipsi.FileName = 'cmd.exe'; $ipsi.Arguments = %s; $ipsi.UseShellExecute = $false; $ipsi.RedirectStandardOutput = $true; $iproc = [System.Diagnostics.Process]::Start($ipsi);",
+        libuv.ps_escape("/d /e:off /f:off /v:off /c (" .. FZF_DEFAULT_COMMAND .. ")")))
+      table.insert(ps_parts, string.format(
+        "$fpsi = New-Object System.Diagnostics.ProcessStartInfo; $fpsi.FileName = %s; $fpsi.Arguments = %s; $fpsi.UseShellExecute = $false; $fpsi.RedirectStandardInput = $true; $fpsi.RedirectStandardOutput = $true; $fproc = [System.Diagnostics.Process]::Start($fpsi);",
+        ps_fzf_bin, libuv.ps_escape(argline)))
+      -- drain fzf's stdout into the result file asynchronously while the pump
+      -- runs: the selection is written at exit and can exceed the pipe buffer,
+      -- and fzf stops reading stdin by then, so draining only after the pump
+      -- would block fzf on stdout and the pump on fzf's stdin at the same time
+      table.insert(ps_parts, string.format(
+        "$ofs = [System.IO.File]::Create(%s); $drain = $fproc.StandardOutput.BaseStream.CopyToAsync($ofs);",
+        ps_outfile))
+      -- fzf exiting early (item selected, <Esc>) breaks the pump, ignore it
+      table.insert(ps_parts,
+        "try { $iproc.StandardOutput.BaseStream.CopyTo($fproc.StandardInput.BaseStream) } catch {}; try { $fproc.StandardInput.Close() } catch {}")
+      table.insert(ps_parts,
+        "$fproc.WaitForExit(); $code = $fproc.ExitCode; if (-not $iproc.HasExited) { $iproc.Kill(); $iproc.WaitForExit() }; $drain.Wait(); $ofs.Close(); exit $code")
       FZF_DEFAULT_COMMAND = nil
-    end
-    table.insert(ps_parts, string.format(
-      "$proc = Start-Process -FilePath %s -ArgumentList %s%s -RedirectStandardOutput %s -Wait -NoNewWindow -PassThru -ErrorAction Stop;",
-      ps_fzf_bin, libuv.ps_escape(argline),
-      pipe_itemsfile
-          and string.format(" -RedirectStandardInput %s", libuv.ps_escape(pipe_itemsfile))
-          or "",
-      ps_outfile))
-    if pipe_itemsfile then
+    else
       table.insert(ps_parts, string.format(
-        "Remove-Item -LiteralPath %s -ErrorAction SilentlyContinue;",
-        libuv.ps_escape(pipe_itemsfile)))
+        "$proc = Start-Process -FilePath %s -ArgumentList %s -RedirectStandardOutput %s -Wait -NoNewWindow -PassThru -ErrorAction Stop;",
+        ps_fzf_bin, libuv.ps_escape(argline), ps_outfile))
+      table.insert(ps_parts, "if ($null -eq $proc) { exit 1 }; exit $proc.ExitCode")
     end
-    table.insert(ps_parts, "if ($null -eq $proc) { exit 1 }; exit $proc.ExitCode")
     ps_command = table.concat(ps_parts, " ")
   end
 
@@ -256,9 +262,6 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- Windows only, restore `shellslash` if was true before `jobstart`
       if nvim_opt_shellslash then vim.o.shellslash = nvim_opt_shellslash end
       vim.fn.delete(outputtmpname)
-      -- normally removed by the powershell fallback itself, cleans up if the
-      -- powershell process was interrupted before reaching Remove-Item
-      if pipe_itemsfile then vim.fn.delete(pipe_itemsfile) end
       if output and #output == 0 then output = nil end
       coroutine.resume(co, output, rc)
     end

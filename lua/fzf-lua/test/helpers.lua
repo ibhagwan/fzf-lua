@@ -230,7 +230,11 @@ M.new_child_neovim = function()
     pcall(child.api_notify.nvim_command, "silent! 0cquit")
     if vim.fn.jobwait({ job_id }, 1000)[1] == -1 then
       pcall(vim.fn.jobstop, job_id)
-      vim.fn.jobwait({ job_id }, 1000)
+      if vim.fn.jobwait({ job_id }, 1000)[1] == -1 then
+        -- still running after jobstop: keep `child.job` so a later `stop` can
+        -- retry instead of deleting the address of a live process
+        return
+      end
     end
 
     -- Close all used channels. Prevents `too many open files` type of errors.
