@@ -111,7 +111,10 @@ T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
   -- can :wqa when there're hide job #1817
   pcall(child.cmd, [[wqa]])
   -- child.is_running() didn't work as expected
-  local res = vim.fn.jobwait({ assert(child.job).id }, 1000)[1]
+  local job = child.job
+  if not job then error("child.job is nil after :wqa") end
+  local job_id = job.id --[[@as integer]]
+  local res = vim.fn.jobwait({ job_id }, 1000)[1]
   -- 0 = normal exit, -3 = already exited/invalid (acceptable race)
   local valid_res = { [0] = true, [-3] = true }
   eq(valid_res[res] or res, true) -- HACK: show the res code in the assert
@@ -149,7 +152,9 @@ T["win"]["keymap"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 T["win"]["keymap"]["no error"] = new_set({ parametrize = (function()
   local builtin = require("fzf-lua.defaults").defaults.keymap.builtin
   ---@cast builtin table
-  return vim.iter(builtin):map(function(key, action) return { key, action } end --[[@as any]]):totable()
+  local out = {}
+  for key, action in pairs(builtin) do out[#out + 1] = { key, action } end
+  return out
 end)() }, {
   function(key, action)
     for _, event in ipairs({ "start", "load", "result" }) do
