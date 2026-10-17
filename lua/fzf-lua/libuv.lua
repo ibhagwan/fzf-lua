@@ -112,7 +112,7 @@ M.win_console_stdio = function()
     local conin = ffi.C._open_osfhandle(ffi.cast("long long", hi), 0)
     local conout = ffi.C._open_osfhandle(ffi.cast("long long", ho), 0)
     if conin < 0 or conout < 0 then error("_open_osfhandle failed") end
-    M._win_console_fds = { conin, conout, conout }
+    M._win_console_fds = { conin, conout, conout } ---@type integer[]|false
   end)
   if not ok then M._win_console_fds = false end
   return M._win_console_fds or nil

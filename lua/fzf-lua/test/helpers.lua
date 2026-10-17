@@ -221,21 +221,25 @@ M.new_child_neovim = function()
   --- (peer exits before the response, named pipe close not always detected).
   --- Use `rpcnotify` (fire-and-forget) and terminate if it doesn't exit.
   child.stop = function()
-    if not child.is_running() then return end
+    local job = child.job ---@type table|nil
+    if not job then return end
+    local job_id = job.id ---@type integer
+    local job_channel = job.channel ---@type integer
+    local job_address = job.address ---@type string
 
     pcall(child.api_notify.nvim_command, "silent! 0cquit")
-    if vim.fn.jobwait({ child.job.id }, 1000)[1] == -1 then
-      pcall(vim.fn.jobstop, child.job.id)
-      vim.fn.jobwait({ child.job.id }, 1000)
+    if vim.fn.jobwait({ job_id }, 1000)[1] == -1 then
+      pcall(vim.fn.jobstop, job_id)
+      vim.fn.jobwait({ job_id }, 1000)
     end
 
     -- Close all used channels. Prevents `too many open files` type of errors.
-    pcall(vim.fn.chanclose, child.job.channel)
-    pcall(vim.fn.chanclose, child.job.id)
+    pcall(vim.fn.chanclose, job_channel)
+    pcall(vim.fn.chanclose, job_id)
 
     -- Remove file for address to reduce chance of "can't open file" errors, as
     -- address uses temporary unique files
-    pcall(vim.fn.delete, child.job.address)
+    pcall(vim.fn.delete, job_address)
 
     child.job = nil
   end
