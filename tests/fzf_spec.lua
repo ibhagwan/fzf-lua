@@ -144,6 +144,40 @@ describe("Testing fzf launcher", function()
     eq(captured.env.SHELL, "cmd.exe")
   end)
 
+  it("uses powershell for pipe_cmd above threshold with items file", function()
+    utils.__IS_WINDOWS = true
+    local val = string.rep("a", 8100)
+    local raw_bind = "ctrl-t:" .. val
+    local fzf_cli_args = { "--bind=" .. libuv.shellescape(raw_bind) }
+    local segments = {
+      { { text = "--bind=", escape = false }, { text = raw_bind, escape = true } },
+    }
+    local captured = mock_run(fzf_cli_args, { pipe_cmd = true, _cli_segments = segments })
+    eq(captured.shell_cmd[1], "powershell.exe")
+    eq(captured.env.SHELL, "cmd.exe")
+    eq(captured.env.FZF_DEFAULT_COMMAND, nil)
+    local fused = captured.shell_cmd[5]
+    -- item command runs through cmd.exe with cmd doing the redirect
+    assert.is.True(fused:find("%-FilePath%s+'cmd%.exe'") ~= nil)
+    assert.is.True(fused:find("'echo foo || break'", 1, true) ~= nil)
+    -- fzf reads items from the temp file via redirected stdin
+    assert.is.True(fused:find("%-RedirectStandardInput%s+'.-'") ~= nil)
+    assert.is.True(fused:find("%-RedirectStandardOutput%s+'.-'") ~= nil)
+    assert.is.True(fused:find("exit $proc%.ExitCode$") ~= nil)
+    -- the long argument line still uses CommandLineToArgvW quoting
+    local expected = libuv.shellescape("--bind=" .. raw_bind, 1)
+    assert.is.True(fused:find(expected, 1, true) ~= nil)
+  end)
+
+  it("uses cmd.exe for pipe_cmd below threshold", function()
+    utils.__IS_WINDOWS = true
+    local fzf_cli_args = { "--bind=" .. libuv.shellescape("ctrl-t:execute(echo hi)") }
+    local captured = mock_run(fzf_cli_args, { pipe_cmd = true })
+    eq(captured.shell_cmd[1], "cmd.exe")
+    eq(captured.env.FZF_DEFAULT_COMMAND, nil)
+    assert.is.True(captured.shell_cmd[7]:find("echo foo", 1, true) ~= nil)
+  end)
+
   it("strips UTF-8 BOM from powershell output", function()
     utils.__IS_WINDOWS = true
     local val = string.rep("a", 8100)
