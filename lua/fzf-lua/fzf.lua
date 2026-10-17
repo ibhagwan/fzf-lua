@@ -103,9 +103,16 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- via SHELL=cmd.exe.
   local use_powershell = false
   local ps_command ---@type string?
-  if utils.__IS_WINDOWS and not opts.is_fzf_tmux and not opts.pipe_cmd
+  local pipe_itemsfile ---@type string?
+  local cmd_len = #table.concat(cmd, " ")
+  if opts.pipe_cmd and FZF_DEFAULT_COMMAND then
+    -- the non-powershell branch below prepends the item command as
+    -- `(FZF_DEFAULT_COMMAND) | ` to the same cmd.exe command line
+    cmd_len = cmd_len + #FZF_DEFAULT_COMMAND + 8
+  end
+  if utils.__IS_WINDOWS and not opts.is_fzf_tmux
       and opts._cli_segments and #opts._cli_segments > 0
-      and #table.concat(cmd, " ") > 8000 then
+      and cmd_len > 8000 then
     use_powershell = true
     -- Reconstruct the raw argv strings from the segments, encode each one with
     -- Windows CommandLineToArgvW quoting rules, and pass the joined command
@@ -125,9 +132,35 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     local argline = table.concat(vim.tbl_map(function(a)
       return libuv.shellescape(a, 1)
     end, raw_args), " ")
-    ps_command = string.format(
-      "$proc = Start-Process -FilePath %s -ArgumentList %s -RedirectStandardOutput %s -Wait -NoNewWindow -PassThru -ErrorAction Stop; if ($null -eq $proc) { exit 1 }; exit $proc.ExitCode",
-      ps_fzf_bin, libuv.ps_escape(argline), ps_outfile)
+    local ps_parts = {}
+    if opts.pipe_cmd and FZF_DEFAULT_COMMAND then
+      -- `(item) | fzf` can't be used in pipe mode: the item command is
+      -- prepended to the same command line, so we run it through cmd.exe with
+      -- its output redirected to a temp file (cmd does the redirect so the
+      -- item bytes are not re-encoded), then feed that file to fzf's stdin.
+      -- Start-Process `-ArgumentList` strings are passed verbatim (no
+      -- CommandLineToArgvW re-quoting), so the parenthesized command and the
+      -- quoted redirect target reach cmd.exe intact.
+      pipe_itemsfile = utils.tempname()
+      table.insert(ps_parts, string.format(
+        "Start-Process -FilePath 'cmd.exe' -ArgumentList ('/d /e:off /f:off /v:off /c (' + %s + ') > \"' + %s + '\"') -Wait -NoNewWindow -ErrorAction Stop;",
+        libuv.ps_escape(FZF_DEFAULT_COMMAND), libuv.ps_escape(pipe_itemsfile)))
+      FZF_DEFAULT_COMMAND = nil
+    end
+    table.insert(ps_parts, string.format(
+      "$proc = Start-Process -FilePath %s -ArgumentList %s%s -RedirectStandardOutput %s -Wait -NoNewWindow -PassThru -ErrorAction Stop;",
+      ps_fzf_bin, libuv.ps_escape(argline),
+      pipe_itemsfile
+          and string.format(" -RedirectStandardInput %s", libuv.ps_escape(pipe_itemsfile))
+          or "",
+      ps_outfile))
+    if pipe_itemsfile then
+      table.insert(ps_parts, string.format(
+        "Remove-Item -LiteralPath %s -ErrorAction SilentlyContinue;",
+        libuv.ps_escape(pipe_itemsfile)))
+    end
+    table.insert(ps_parts, "if ($null -eq $proc) { exit 1 }; exit $proc.ExitCode")
+    ps_command = table.concat(ps_parts, " ")
   end
 
   if opts.debug and type(opts.debug) ~= "number" then
@@ -223,6 +256,9 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       -- Windows only, restore `shellslash` if was true before `jobstart`
       if nvim_opt_shellslash then vim.o.shellslash = nvim_opt_shellslash end
       vim.fn.delete(outputtmpname)
+      -- normally removed by the powershell fallback itself, cleans up if the
+      -- powershell process was interrupted before reaching Remove-Item
+      if pipe_itemsfile then vim.fn.delete(pipe_itemsfile) end
       if output and #output == 0 then output = nil end
       coroutine.resume(co, output, rc)
     end
