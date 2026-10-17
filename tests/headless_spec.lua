@@ -67,7 +67,7 @@ T["headless"]["file_icons"]["devicons - manual"] = new_set({ parametrize = { { f
       -- helpers.SKIP_IF_NOT_LINUX()
       exec_term(child, {
         vim.fs.abspath("./scripts/headless_fd.sh"),
-        "-c", vim.fs.joinpath(child.loop.cwd(), "scripts"),
+        "-c", vim.fs.joinpath(child.uv.cwd(), "scripts"),
         "-x", "rg --files --sort=path",
         "-f", tostring(icons),
       })
@@ -95,7 +95,7 @@ T["headless"]["file_icons"]["server"] = new_set({ parametrize = { { "devicons" }
     new_child.o.statusline = "fzf://"
     exec_term(new_child, {
         vim.fs.abspath("./scripts/headless_fd.sh"),
-        "-c", vim.fs.joinpath(child.loop.cwd(), "scripts"),
+        "-c", vim.fs.joinpath(child.uv.cwd(), "scripts"),
         "-x", "rg --files --sort=path",
         "-f", icons,
       },
