@@ -358,8 +358,15 @@ function Previewer.base:zero(_)
     shell.stringify_data(function(_, _, _)
       -- upvalue incase previewer was detached/re-attached (global picker)
       self = self.win._previewer or self ---@type fzf-lua.previewer.Builtin
+      -- capture the entry displayed at zero-event time; if a different entry
+      -- is displayed before the deferred callback runs (e.g. the list was
+      -- still loading on Windows) the preview belongs to that newer entry
+      local entry_at_zero = self.last_entry
       vim.defer_fn(function()
-        if self.win:validate_preview() then
+        -- a new entry may have been displayed after the zero event, don't
+        -- clear its preview (only clear when the entry is unchanged)
+        local cur_entry = self.last_entry
+        if cur_entry == entry_at_zero and self.win:validate_preview() then
           self:clear_preview_buf(true)
           TSContext.close(self.win.preview_winid)
           self.win:update_preview_title("")
