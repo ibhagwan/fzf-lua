@@ -217,6 +217,36 @@ M.reference_screenshot = function(screenshot, path, opts)
   H.error_with_emphasis(subject, context)
 end
 
+--- Retry-friendly variant of the reference compare: `capture()` is called
+--- before every attempt so the child UI can settle (fzf/terminal grid updates
+--- are asynchronous and slow machines are prone to capturing partial renders).
+--- The reference file path is kept stable across attempts by restoring
+--- `n_screenshots` (its value defines the "-%03d" suffix).
+---@param compare fun(screenshot: MiniTestScreenshot, path?: string, opts?: table): boolean
+---@param capture fun(): MiniTestScreenshot
+---@param path? string
+---@param opts? table
+M.with_retry = function(compare, capture, path, opts)
+  opts = opts or {}
+  if opts.force then return compare(capture(), path, opts) end
+
+  -- Non-Linux environments are more prone to partial renders (and nested
+  -- process spawns like the `line_query` transform can take >10s on loaded
+  -- Windows machines before the preview renders)
+  local attempts = opts.retry_attempts or (vim.fn.has("linux") == 1 and 4 or 20)
+  local interval = opts.retry_interval or (vim.fn.has("linux") == 1 and 250 or 500)
+  local n_before = H.cache.n_screenshots
+  local last_err
+  for attempt = 1, attempts do
+    H.cache.n_screenshots = n_before
+    local ok, err = pcall(compare, capture(), path, opts)
+    if ok then return true end
+    last_err = err
+    if attempt < attempts then vim.uv.sleep(interval) end
+  end
+  error(last_err, 0)
+end
+
 -- modified version (no attr, trim trailing whitespace)
 M.compare = function(reference, screenshot, opts)
   opts = opts or {}
