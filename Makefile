@@ -86,21 +86,33 @@ deps/fzf-lua:
 # if `gh` is available and they are not already on the system PATH.
 # Binaries are extracted into .emmylua/.
 EMMYLUA_DIR=.emmylua
-EMMY_CHECK_BIN=$(EMMYLUA_DIR)/emmylua_check
-LUA_FMT_BIN=$(EMMYLUA_DIR)/luafmt
 # Pin the emmylua release tag to download. Set to an empty
 # string (EMMYLUA_VERSION=) to fetch the latest release instead.
 EMMYLUA_VERSION=0.25.1
-# OS arch detection for emmylua_check. Falls back to linux-x64 on
-# unknown platforms; override by passing EMMY_CHECK_ASSET=<asset
-# filename> on the make command line.
-EMMY_CHECK_ASSET=$(strip \
-	$(if $(filter Darwin darwin,$(shell uname -s 2>/dev/null)),emmylua_check-darwin-x64.tar.gz,emmylua_check-linux-x64.tar.gz))
-# OS arch detection for luafmt. Falls back to linux-x64 on unknown
-# platforms; override by passing LUA_FMT_ASSET=<asset filename> on
-# the make command line.
-LUA_FMT_ASSET=$(strip \
-	$(if $(filter Darwin darwin,$(shell uname -s 2>/dev/null)),luafmt-darwin-x64.tar.gz,luafmt-linux-x64.tar.gz))
+# OS arch detection for the emmylua binaries (Darwin/Linux/Windows,
+# x64/arm64). Falls back to linux-x64 on unknown platforms; override
+# by passing EMMY_CHECK_ASSET=<asset filename> or LUA_FMT_ASSET=<asset
+# filename> on the make command line. Windows releases are shipped as
+# `.zip` under the `win32-*` asset names.
+EMMY_UNAME_S=$(shell uname -s 2>/dev/null)
+EMMY_UNAME_M=$(shell uname -m 2>/dev/null)
+EMMY_ARCH=$(if $(filter aarch64% arm64%,$(EMMY_UNAME_M)),arm64,x64)
+ifeq ($(filter MINGW% MSYS% CYGWIN% Windows_NT,$(EMMY_UNAME_S)),)
+  EMMY_OS=$(if $(filter Darwin darwin,$(EMMY_UNAME_S)),darwin,linux)
+  EMMY_EXT:=
+  EMMY_EXT_ARCHIVE:=.tar.gz
+else
+  EMMY_OS:=win32
+  EMMY_EXT:=.exe
+  EMMY_EXT_ARCHIVE:=.zip
+endif
+# Linux arm64 release assets are published with the "aarch64-glibc.2.17"
+# suffix; darwin/win32 use the plain "arm64" suffix.
+EMMY_ARCH_ASSET=$(if $(and $(filter linux,$(EMMY_OS)),$(filter arm64,$(EMMY_ARCH))),aarch64-glibc.2.17,$(EMMY_ARCH))
+EMMY_CHECK_ASSET=emmylua_check-$(EMMY_OS)-$(EMMY_ARCH_ASSET)$(EMMY_EXT_ARCHIVE)
+LUA_FMT_ASSET=luafmt-$(EMMY_OS)-$(EMMY_ARCH_ASSET)$(EMMY_EXT_ARCHIVE)
+EMMY_CHECK_BIN=$(EMMYLUA_DIR)/emmylua_check$(EMMY_EXT)
+LUA_FMT_BIN=$(EMMYLUA_DIR)/luafmt$(EMMY_EXT)
 
 .PHONY: deps/emmylua
 deps/emmylua:
@@ -111,10 +123,14 @@ deps/emmylua:
 			exit 1 ; \
 		fi ; \
 		echo "Downloading emmylua_check $(if $(EMMYLUA_VERSION),v$(EMMYLUA_VERSION),latest) [$(EMMY_CHECK_ASSET)]..." ; \
-		gh release download -R EmmyLuaLs/emmylua-analyzer-rust \
+		gh release download --clobber -R EmmyLuaLs/emmylua-analyzer-rust \
 			$(if $(EMMYLUA_VERSION),"$(EMMYLUA_VERSION)") \
 			-p "$(EMMY_CHECK_ASSET)" -D $(EMMYLUA_DIR) && \
-		tar xzf "$(EMMYLUA_DIR)/$(EMMY_CHECK_ASSET)" -C $(EMMYLUA_DIR) && \
+		case "$(EMMY_CHECK_ASSET)" in \
+			*.zip) unzip -o "$(EMMYLUA_DIR)/$(EMMY_CHECK_ASSET)" -d $(EMMYLUA_DIR) 2>/dev/null || \
+				powershell -NoProfile -Command "Expand-Archive -Force -LiteralPath '$(EMMYLUA_DIR)/$(EMMY_CHECK_ASSET)' -DestinationPath '$(EMMYLUA_DIR)'" ;; \
+			*) tar xzf "$(EMMYLUA_DIR)/$(EMMY_CHECK_ASSET)" -C $(EMMYLUA_DIR) ;; \
+		esac && \
 		rm -f "$(EMMYLUA_DIR)/$(EMMY_CHECK_ASSET)" ; \
 	fi ; \
 	if [ ! -x "$(LUA_FMT_BIN)" ] && ! command -v luafmt >/dev/null 2>&1; then \
@@ -123,17 +139,19 @@ deps/emmylua:
 			exit 1 ; \
 		fi ; \
 		echo "Downloading luafmt $(if $(EMMYLUA_VERSION),v$(EMMYLUA_VERSION),latest) [$(LUA_FMT_ASSET)]..." ; \
-		gh release download -R EmmyLuaLs/emmylua-analyzer-rust \
+		gh release download --clobber -R EmmyLuaLs/emmylua-analyzer-rust \
 			$(if $(EMMYLUA_VERSION),"$(EMMYLUA_VERSION)") \
 			-p "$(LUA_FMT_ASSET)" -D $(EMMYLUA_DIR) && \
-		tar xzf "$(EMMYLUA_DIR)/$(LUA_FMT_ASSET)" -C $(EMMYLUA_DIR) && \
+		case "$(LUA_FMT_ASSET)" in \
+			*.zip) unzip -o "$(EMMYLUA_DIR)/$(LUA_FMT_ASSET)" -d $(EMMYLUA_DIR) 2>/dev/null || \
+				powershell -NoProfile -Command "Expand-Archive -Force -LiteralPath '$(EMMYLUA_DIR)/$(LUA_FMT_ASSET)' -DestinationPath '$(EMMYLUA_DIR)'" ;; \
+			*) tar xzf "$(EMMYLUA_DIR)/$(LUA_FMT_ASSET)" -C $(EMMYLUA_DIR) ;; \
+		esac && \
 		rm -f "$(EMMYLUA_DIR)/$(LUA_FMT_ASSET)" ; \
 	fi
 
 .PHONY: lint
-lint:
-	VIMRUNTIME="$$(nvim --clean --headless +'echo $$VIMRUNTIME' +q 2>&1)" \
-		lua-language-server --configpath=../.luarc.jsonc --check=.
+lint: emmylua-check
 
 .PHONY: emmylua-check
 emmylua-check: | deps/emmylua

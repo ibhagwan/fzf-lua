@@ -496,6 +496,27 @@ end
 
 Previewer.nvim_server = Previewer.cmd_async:extend()
 
+-- Block (bounded) until a screenshot dump stops growing: the dump
+-- streams in after the screenshot rpc acks, so a mere size>0 can catch a
+-- partial file. Requires two consecutive stable non-empty sizes; `vim.wait`
+-- pumps the event loop so deferred writes run.
+---@param screenshot string
+---@param timeout_ms integer? max wait, defaults to 2000
+---@return boolean settled
+local function wait_screenshot_settled(screenshot, timeout_ms)
+  local last_size, stable = -1, 0
+  local settled = vim.wait(timeout_ms or 2000, function()
+    local size = vim.fn.getfsize(screenshot)
+    if size > 0 and size == last_size then
+      stable = stable + 1
+      return stable >= 2
+    end
+    last_size, stable = size, 0
+    return false
+  end, 25)
+  return settled
+end
+
 -- generate screenshot
 -- spawn a temporary tui for non-tui/headless client
 ---@param screenshot string
@@ -506,18 +527,34 @@ Previewer.nvim_server = Previewer.cmd_async:extend()
 ---@return string|any, ...any error
 local function make_screenshot(screenshot, addr, lines, columns)
   local closing = false
-  local ok, uis = utils.rpcexec(addr, "nvim_list_uis") --[[@as boolean, { stdout_tty: boolean }[]?]]
+  -- timed: a wedged target must fail here, not freeze the picker forever
+  local ok, uis = utils.rpcexec_timed(addr, "nvim_list_uis") --[[@as boolean, { stdout_tty: boolean }[]?]]
   vim.fn.writefile({}, screenshot)
   if not ok then -- instance seems died, signal to reload the list
     local winobj = FzfLua.utils.fzf_winobj()
     if winobj then winobj:SIGWINCH({ "win.unhide" }) end
+    -- propagate the raw rpc error so the preview shows WHY (uis holds it)
     ---@diagnostic disable-next-line: missing-return-value
-    return
+    return nil, uis
   end
-  local has_tui = vim.iter(uis or {}):find(function(info) return info.stdout_tty end)
+  local uis_list = uis or {} ---@type { stdout_tty: boolean }[]
+  local has_tui = false
+  for _, info in ipairs(uis_list) do
+    if info.stdout_tty then has_tui = true break end
+  end
   if has_tui then
+    -- deliberately untimed below: the target just proved responsive via
+    -- the timed gatekeeper above, and a slow dump-ack must still complete
+    -- (a timeout here would abort an otherwise healthy screenshot)
     if vim.env.NVIM == addr then -- parent instance
       return utils.rpcexec(addr, "nvim__screenshot", screenshot)
+    end
+    if utils.__IS_WINDOWS then
+      -- Screenshot at native size: `vim._with({ o = { lines, columns }})`
+      -- resizes the TARGET's UI (and every grid on it) which wedges
+      -- remote/tmux terminals; fzf crops/scrolls oversized dumps itself.
+      return utils.rpcexec(addr, "nvim_exec_lua",
+        "return vim.api.nvim__screenshot(...)", { screenshot })
     end
     return utils.rpcexec(addr, "nvim_exec_lua", [[
       local lines, columns, screenshot = ...
@@ -528,7 +565,9 @@ local function make_screenshot(screenshot, addr, lines, columns)
   end
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   local chan = vim.fn.jobstart({ nvim_bin, "--server", addr, "--remote-ui" }, {
-    pty = true,
+    -- No pty on Windows: the ConPTY client exits(1) and its escape
+    -- sequences leak to our stdout; plain pipes attach and dump fine.
+    pty = not utils.__IS_WINDOWS,
     height = lines,
     width = columns,
     env = {
@@ -538,34 +577,98 @@ local function make_screenshot(screenshot, addr, lines, columns)
     on_stdout = function(chan0)
       if closing then return end
       closing = true
+      -- deliberately untimed: the timed gatekeeper above already proved
+      -- the target responsive, and capping this would drop slow-but-healthy
+      -- dumps (the settle waiter and pager fallback bound the total wait)
       vim.defer_fn(function() utils.rpcexec(addr, "nvim__screenshot", screenshot) end, 10)
-      vim.defer_fn(function() vim.fn.jobstop(chan0) end, 20)
+      vim.defer_fn(function()
+        if utils.__IS_WINDOWS then
+          -- The dump lands async after the rpc returns; killing the
+          -- client at a fixed delay aborts it (permanently empty file).
+          -- Wait for the settled dump first, same condition the pager
+          -- side uses below.
+          wait_screenshot_settled(screenshot, 2000)
+        end
+        vim.fn.jobstop(chan0)
+      end, 20)
     end,
   })
+  -- `jobpid` throws when the spawn failed (bad binary, no pty, ...);
+  -- surface it as a preview error instead of a silent action failure.
+  local ok_job, pid_or_err = pcall(vim.fn.jobpid, chan)
+  if not ok_job then return nil, pid_or_err end
   ---@diagnostic disable-next-line: missing-return-value
-  return vim.fn.jobpid(chan)
+  return pid_or_err
 end
 
+-- Server screenshot preview. On Windows the dump file is converted to plain
+-- `\n` rows by `utils.screenshot_to_plaintext` (the raw dump is a terminal
+-- script that does not render in every preview terminal) and paged with
+-- `cat`/`type`; the target's own window size is never touched. Elsewhere
+-- the raw dump is streamed with `tail`/`cat` after a `sleep`/`waitpid`
+-- settle delay.
 function Previewer.nvim_server:cmdline(_)
-  local parse_entry = function(e)
-    return e and utils.strip_ansi_coloring(e):match(utils.nbsp .. "(.-)$") or nil
-  end
+  local parse_entry = utils.serverlist_parse_entry
   local act = function(items, lines, columns)
     FzfLua.get_info().query = items[2] or ""
     local addr = parse_entry(items[1])
-    if not addr then return "true" end
+    if not addr then return utils.shell_nop() end
     local screenshot = assert(self.opts._screenshot) ---@type string
     local pid, err = make_screenshot(screenshot, addr, lines, columns)
     if err then
       return "echo " .. FzfLua.libuv.shellescape(string.format(
         "make_screenshot failed with error: %s", tostring(err)))
     end
-    local wait = tonumber(pid)
-        and vim.fn.executable("waitpid") == 1
-        and ("waitpid %s;"):format(pid)
-        or ("sleep %s;"):format(50 / 1000)
-    local pager = vim.fn.executable("tail") == 1 and "tail -n+2 %s" or "cat %s"
-    return wait .. pager:format(screenshot)
+    -- NOTE: preview runs under `cmd.exe /c` on Windows where `;` is not a
+    -- command separator (`&` is) and coreutils may be absent, so only emit
+    -- a wait prefix when the tool is actually executable and prefer pagers
+    -- accordingly (`cat`, then builtin `type`, `tail` only as last resort
+    -- since the header it would skip is already gone).
+    local is_async = tonumber(pid) ~= nil
+    local sep = utils._if_win("&", ";")
+    local wait = ""
+    if not utils.__IS_WINDOWS then
+      if is_async and vim.fn.executable("waitpid") == 1 then
+        wait = ("waitpid %s%s "):format(pid, sep)
+      elseif vim.fn.executable("sleep") == 1 then
+        wait = ("sleep %s%s "):format(50 / 1000, sep)
+      end
+    else
+      -- No `sleep` under cmd.exe: wait in-process so the pager never reads
+      -- an empty file. Needed on BOTH paths: `nvim__screenshot` only acks
+      -- the rpc while the dump itself lands async (also after a cold
+      -- `--remote-ui` client spawn, ~1s), and the client case additionally
+      -- defers the shot. Settle (not just non-empty) so conversion never
+      -- reads a partial dump. Generous cap for cold client spawns on
+      -- loaded machines (the teardown waiter below runs independently and
+      -- the next preview refresh retries); dead targets return early
+      -- through the error path above (no stall).
+      wait_screenshot_settled(screenshot, 3000)
+      -- Render-safe rows (see `utils.screenshot_to_plaintext`); best
+      -- effort, a failed conversion still leaves the raw dump for the pager.
+      pcall(utils.screenshot_to_plaintext, screenshot)
+    end
+    local shot = libuv.shellescape(screenshot)
+    local pager
+    if not utils.__IS_WINDOWS and vim.fn.executable("tail") == 1 then
+      pager = "tail -n+2 %s"
+    elseif vim.fn.executable("cat") == 1 then
+      pager = "cat %s"
+    elseif utils.__IS_WINDOWS then
+      pager = "type %s"
+    else
+      -- No `tail`/`cat`: `tail` would still dump (minus its assumed header
+      -- line), better than nothing. Unreachable on Windows (`type` above).
+      pager = "tail -n+2 %s"
+    end
+    if utils.__IS_WINDOWS and vim.fn.getfsize(screenshot) <= 0 then
+      -- Visible failure beats a silently empty preview pane; show the
+      -- target address byte-escaped so invisible junk (\r, ANSI, ...) can't
+      -- hide (pipe names never contain such bytes).
+      return "echo " .. libuv.shellescape("screenshot not ready: "
+        .. utils.escape_invisible(addr) .. " -> " .. screenshot)
+    end
+    return wait .. pager:format(shot)
   end
   return { fn = act, type = "cmd", field_index = "{} {q}" }
 end

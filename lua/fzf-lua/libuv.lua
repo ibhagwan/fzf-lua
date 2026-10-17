@@ -70,6 +70,66 @@ M.uv_spawn = function(cmd, opts, on_exit)
   return assert(uv.spawn(cmd, opts, on_exit))
 end
 
+-- Reopen the Windows console (`CONIN$`/`CONOUT$`) as inheritable CRT fds.
+-- When the shell widgets capture both output streams (e.g. a PSReadLine key
+-- handler piping stdout and stderr), spawned children have no console handle
+-- left to inherit: nvim's TUI hangs without one and fzf silently ignores
+-- `--height` (the light renderer writes the UI to a console stderr and falls
+-- back to fullscreen without one). Returns `{ stdin, stdout, stderr }` fds,
+-- or nil when the console cannot be reopened (or on other platforms).
+M.win_console_stdio = function()
+  if not _is_win then return end
+  if M._win_console_fds ~= nil then return M._win_console_fds or nil end
+  local ok = pcall(function()
+    local ffi = package.preload.ffi()
+    pcall(ffi.cdef, [[
+      void* CreateFileW(const unsigned short*, unsigned long,
+        unsigned long, void*, unsigned long, unsigned long, void*);
+      int _open_osfhandle(long long, int);
+      typedef struct {
+        unsigned long nLength;
+        void* lpSecurityDescriptor;
+        int bInheritHandle;
+      } FzfSA;
+    ]])
+    local function wsz(s)
+      local b = ffi.new("unsigned short[?]", #s + 1)
+      for i = 1, #s do b[i - 1] = s:byte(i) end
+      return b
+    end
+    local sa = ffi.new("FzfSA")
+    sa.nLength = ffi.sizeof(sa)
+    sa.bInheritHandle = 1
+    -- The handles must allow *write* access, not just read: nvim's TUI
+    -- calls `SetConsoleMode` on stdin (needs `GENERIC_WRITE`) and hangs
+    -- before rendering anything if that fails.
+    local GENERIC_RW, SHARE_RW, OPEN_EXISTING = 0xC0000000, 3, 3
+    local hi = ffi.C.CreateFileW(wsz("CONIN$"), GENERIC_RW, SHARE_RW, sa, OPEN_EXISTING, 0, nil)
+    local ho = ffi.C.CreateFileW(wsz("CONOUT$"), GENERIC_RW, SHARE_RW, sa, OPEN_EXISTING, 0, nil)
+    local vi = tonumber(ffi.cast("intptr_t", hi))
+    local vo = tonumber(ffi.cast("intptr_t", ho))
+    if vi == -1 or vo == -1 then error("CreateFileW failed") end
+    local conin = ffi.C._open_osfhandle(ffi.cast("long long", hi), 0)
+    local conout = ffi.C._open_osfhandle(ffi.cast("long long", ho), 0)
+    if conin < 0 or conout < 0 then error("_open_osfhandle failed") end
+    M._win_console_fds = { conin, conout, conout } ---@type integer[]|false
+  end)
+  if not ok then M._win_console_fds = false end
+  return M._win_console_fds or nil
+end
+
+-- Returns the stderr fd to pass to `uv.spawn` so the child sees a console:
+-- fd 2 is reused when it already is a tty, otherwise `CONOUT$` is reopened
+-- (see `win_console_stdio`); falls back to fd 2 when neither is possible.
+-- Always 2 on non-Windows platforms.
+M.win_stderr_fd = function()
+  if not _is_win then return 2 end
+  local ok, tty = pcall(uv.guess_handle, 2)
+  if ok and tty == "tty" then return 2 end
+  local console = M.win_console_stdio()
+  return console and console[3] or 2
+end
+
 
 ---@class fzf-lua.SpawnOpts
 ---@field cwd? string

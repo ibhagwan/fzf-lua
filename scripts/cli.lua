@@ -53,6 +53,34 @@ for _, config_path in ipairs(config_paths) do
 end
 
 _G.fzf_jobstart = function(cmd, opts)
+  if fn.has("win32") == 1 or fn.has("win64") == 1 then
+    -- Inherit stdio like bare `fzf` (works on any terminal: conhost,
+    -- Windows Terminal, tmux pane). Join argv verbatim for the `cmd.exe`
+    -- launcher: the caret-escaped args from `fzf.raw_fzf` are built for
+    -- raw `cmd /c` parsing and libuv quoting corrupts them ("...syntax
+    -- is incorrect"). The PowerShell fallback (>8000 chars) keeps
+    -- default quoting.
+    -- stderr: fzf's light renderer (`--height`) requires a console on
+    -- stderr (it draws the UI there and falls back to fullscreen without
+    -- one, see `IsLightRendererSupported` in src/tui/light_windows.go).
+    -- When the CLI's stderr is piped (e.g. shell widgets run through a
+    -- PSReadLine key handler), reopen `CONOUT$` so the picker renders the
+    -- same `--height` UI as when run directly from the prompt.
+    FzfLua.libuv.uv_spawn(cmd[1], {
+        cwd = opts.cwd,
+        args = vim.list_slice(cmd, 2),
+        stdio = { 0, 1, FzfLua.libuv.win_stderr_fd() },
+        env = opts.env,
+        verbatim = cmd[1] == "cmd.exe",
+      },
+      vim.schedule_wrap(function(rc)
+        opts.on_exit(nil, rc, nil)
+        if not opts.no_quit and #api.nvim_get_proc_children(fn.getpid()) == 0 then
+          vim.cmd.cquit { count = rc, bang = true }
+        end
+      end))
+    return
+  end
   FzfLua.libuv.uv_spawn(cmd[1], {
       cwd = opts.cwd,
       args = vim.list_slice(cmd, 2),

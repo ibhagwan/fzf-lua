@@ -216,6 +216,38 @@ M.new_child_neovim = function()
     end, { config or {} })
   end
 
+  --- Override `child.stop` (mini.test): avoid `rpcrequest`-ing `0cquit` to a
+  --- process that exits mid-request. On Windows this can hang indefinitely
+  --- (peer exits before the response, named pipe close not always detected).
+  --- Use `rpcnotify` (fire-and-forget) and terminate if it doesn't exit.
+  child.stop = function()
+    local job = child.job ---@type table|nil
+    if not job then return end
+    local job_id = job.id ---@type integer
+    local job_channel = job.channel ---@type integer
+    local job_address = job.address ---@type string
+
+    pcall(child.api_notify.nvim_command, "silent! 0cquit")
+    if vim.fn.jobwait({ job_id }, 1000)[1] == -1 then
+      pcall(vim.fn.jobstop, job_id)
+      if vim.fn.jobwait({ job_id }, 1000)[1] == -1 then
+        -- still running after jobstop: keep `child.job` so a later `stop` can
+        -- retry instead of deleting the address of a live process
+        return
+      end
+    end
+
+    -- Close all used channels. Prevents `too many open files` type of errors.
+    pcall(vim.fn.chanclose, job_channel)
+    pcall(vim.fn.chanclose, job_id)
+
+    -- Remove file for address to reduce chance of "can't open file" errors, as
+    -- address uses temporary unique files
+    pcall(vim.fn.delete, job_address)
+
+    child.job = nil
+  end
+
   --- Unload fzf-lua and side effects
   child.unload = function()
     child.o.tabline = ""
@@ -304,7 +336,10 @@ M.new_child_neovim = function()
     local screenshot_opts = { redraw = opts.redraw }
     opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
-    MiniTest.expect.reference_screenshot(child.get_screenshot(screenshot_opts), path, opts)
+    child.wait_screen_stable()
+    child.screen_invalidate()
+    screenshot.with_retry(MiniTest.expect.reference_screenshot,
+      function() return child.get_screenshot(screenshot_opts) end, path, opts)
   end
 
   ---@alias test.ScreenOpts { start_line: integer?, end_line: integer?, no_ruler: boolean?,
@@ -328,7 +363,10 @@ M.new_child_neovim = function()
     }
     opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
-    screenshot.reference_screenshot(child.get_screen_lines(screenshot_opts), path, opts)
+    child.wait_screen_stable()
+    child.screen_invalidate()
+    screenshot.with_retry(screenshot.reference_screenshot,
+      function() return child.get_screen_lines(screenshot_opts) end, path, opts)
   end
 
   ---@param opts test.ScreenOpts
@@ -350,7 +388,8 @@ M.new_child_neovim = function()
     }
     opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
-    screenshot.reference_screenshot(child.get_buf_lines(buf, screenshot_opts), path, opts)
+    screenshot.with_retry(screenshot.reference_screenshot,
+      function() return child.get_buf_lines(buf, screenshot_opts) end, path, opts)
   end
 
   ---@param str string
@@ -388,6 +427,36 @@ M.new_child_neovim = function()
       tostring(child.cmd_capture("messages")),
       tostring(child.get_screenshot())
     ))
+  end
+
+  --- Wait until consecutive child screenshots are identical, e.g. the UI
+  --- finished rendering (fzf previews spawn nested processes and resize
+  --- windows asynchronously, fixed sleeps are not enough on slow machines).
+  --- No-op on Linux where screenshots are not flakey and this only adds time.
+  ---@param opts? { timeout?: integer, interval?: integer }
+  child.wait_screen_stable = function(opts)
+    if M.IS_LINUX() then return end
+    opts = opts or {}
+    local timeout, interval = opts.timeout or 2500, opts.interval or 200
+    local prev = tostring(child.get_screen_lines({}))
+    for _ = interval, timeout, interval do
+      vim.uv.sleep(interval)
+      local cur = tostring(child.get_screen_lines({}))
+      if cur == prev then return end
+      prev = cur
+    end
+  end
+
+  --- On Windows, moving/closing floating windows can leave previously
+  --- composited cells behind (the vacated region is not always redrawn),
+  --- e.g. the fzf term float moving from its initial fullscreen position
+  --- to the picker's final layout, or the preview scrollbar thumb moving
+  --- over the preview border. Plain `:redraw` skips cells it deems valid,
+  --- so invalidate the whole screen to refetch every cell from the current
+  --- window layout (no-op on Linux where this is not needed).
+  child.screen_invalidate = function()
+    if M.IS_LINUX() then return end
+    child.api.nvim__redraw({ valid = false, flush = true })
   end
 
   --- waits until child screenshot contains text

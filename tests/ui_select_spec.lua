@@ -70,7 +70,7 @@ local function open_picker(items, preview_lines, ui_opts)
   end, { items, preview_lines, ui_opts or {} })
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
-        or child.lua_get([[_G._ui_select_errors]]) ~= nil
+        or child.lua_get([[_G._ui_select_errors]]) ~= vim.NIL
   end, 5000)
   local errs = child.lua_get([[_G._ui_select_errors]])
   eq(errs, vim.NIL, { fail_reason = "vim.ui.select errored: " .. tostring(errs) })
@@ -119,6 +119,11 @@ T["ui_select"]["native via fzf-tmux profile #2743"] = function()
   -- explicit opt (in real tmux the picker runs in a tmux popup; here
   -- without tmux it degrades to a regular fzf run with the same opts).
   cleanup_stale_tmpfiles()
+  -- hermetic environment: when the suite runs inside tmux (developer
+  -- machines) `$TMUX` is inherited by the child and the profile's
+  -- `--tmux` flag is kept, fzf spawns a real popup which cannot open
+  -- in the headless test child (fzf exits immediately, no error)
+  exec_lua([[vim.env.TMUX = nil]])
   reload({ "fzf-tmux" })
   register()
   open_picker({ "alpha", "beta" }, { "tmux-line" })

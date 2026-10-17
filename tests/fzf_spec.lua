@@ -144,6 +144,51 @@ describe("Testing fzf launcher", function()
     eq(captured.env.SHELL, "cmd.exe")
   end)
 
+  it("streams pipe_cmd items into fzf above threshold (win)", function()
+    utils.__IS_WINDOWS = true
+    local val = string.rep("a", 8100)
+    local raw_bind = "ctrl-t:" .. val
+    local fzf_cli_args = { "--bind=" .. libuv.shellescape(raw_bind) }
+    local segments = {
+      { { text = "--bind=", escape = false }, { text = raw_bind, escape = true } },
+    }
+    local captured = mock_run(fzf_cli_args, { pipe_cmd = true, _cli_segments = segments })
+    eq(captured.shell_cmd[1], "powershell.exe")
+    eq(captured.env.SHELL, "cmd.exe")
+    eq(captured.env.FZF_DEFAULT_COMMAND, nil)
+    local fused = captured.shell_cmd[5]
+    -- both processes start through ProcessStartInfo (verbatim `Arguments`),
+    -- no Start-Process and no blocking wait on the item producer
+    assert.is.True(fused:find("New%-Object System%.Diagnostics%.ProcessStartInfo") ~= nil)
+    assert.is.False(fused:find("Start%-Process") ~= nil)
+    -- item command runs through cmd.exe without a redirect; its stdout is
+    -- pumped into fzf's stdin so items stream in while fzf is already up
+    assert.is.True(fused:find(
+      "$ipsi.Arguments = '/d /e:off /f:off /v:off /c (echo foo || break)'", 1, true) ~= nil)
+    assert.is.True(fused:find(
+      "$iproc.StandardOutput.BaseStream.CopyTo($fproc.StandardInput.BaseStream)", 1, true) ~= nil)
+    -- fzf receives the long argument line through the verbatim Arguments string
+    assert.is.True(fused:find("$fpsi.Arguments = ", 1, true) ~= nil)
+    local expected = libuv.shellescape("--bind=" .. raw_bind, 1)
+    assert.is.True(fused:find(expected, 1, true) ~= nil)
+    -- fzf's stdout is drained into the output temp file for on_exit
+    -- asynchronously (before the pump, so a large selection can't dead-lock
+    -- against the still-running item producer) and the fzf exit code is
+    -- propagated after both finish
+    assert.is.True(fused:find("$drain = $fproc.StandardOutput.BaseStream.CopyToAsync($ofs)", 1, true) ~= nil)
+    assert.is.True(fused:find("$drain.Wait(); $ofs.Close()", 1, true) ~= nil)
+    assert.is.True(fused:find("exit $code", 1, true) ~= nil)
+  end)
+
+  it("uses cmd.exe for pipe_cmd below threshold", function()
+    utils.__IS_WINDOWS = true
+    local fzf_cli_args = { "--bind=" .. libuv.shellescape("ctrl-t:execute(echo hi)") }
+    local captured = mock_run(fzf_cli_args, { pipe_cmd = true })
+    eq(captured.shell_cmd[1], "cmd.exe")
+    eq(captured.env.FZF_DEFAULT_COMMAND, nil)
+    assert.is.True(captured.shell_cmd[7]:find("echo foo", 1, true) ~= nil)
+  end)
+
   it("strips UTF-8 BOM from powershell output", function()
     utils.__IS_WINDOWS = true
     local val = string.rep("a", 8100)

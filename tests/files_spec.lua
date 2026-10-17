@@ -138,6 +138,11 @@ T["files"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find
       exclude = [[{ "fd", "fdfind" }]]
       opts = { rg_opts = '--files -g "!.git" --sort=path -g !tests/**' }
     else
+      -- `dir /s/b` emits absolute paths (`<cwd>\file`), the cwd here is
+      -- `deps/fzf-lua` so the `findstr` filters can't reproduce the relative
+      -- `find` listing of the Linux reference (attribute and symlink
+      -- differences change the entry count as well)
+      helpers.SKIP_IF_WIN("`dir` output cannot match the linux `find` reference")
       exclude = [[{ "fd", "fdfind", "rg" }]]
       opts = {
         find_opts =

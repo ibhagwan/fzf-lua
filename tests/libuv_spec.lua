@@ -1,6 +1,7 @@
 local helpers = require("fzf-lua.test.helpers")
 local assert = helpers.assert
 
+local MiniTest = require("mini.test")
 local libuv = require("fzf-lua.libuv")
 local eq = assert.are.equal
 local same = assert.are.same
@@ -261,5 +262,65 @@ describe("Testing libuv module", function()
     eq(deserialized.fn1, deserialized.fn2)
     eq(deserialized.fn1(), "test")
     eq(deserialized.fn2(), "test")
+  end)
+
+  it("win_console_stdio (posix)", function()
+    helpers.SKIP_IF_WIN()
+    eq(nil, libuv.win_console_stdio())
+  end)
+
+  --- Spawn a headless nvim that reports the handle type of its stderr and
+  --- return that string ("tty" when the child sees a real console).
+  ---@param stdio integer[]
+  local function probe_stderr_handle(stdio)
+    local file = vim.fn.tempname()
+    local probe = vim.fn.tempname() .. ".lua"
+    vim.fn.writefile({
+      ("vim.fn.writefile({ tostring(vim.uv.guess_handle(2)) }, %s)")
+          :format(vim.inspect(file)),
+    }, probe)
+    local done = false
+    libuv.uv_spawn(vim.v.progpath, {
+      args = { "--headless", "--clean", "-l", probe },
+      stdio = stdio,
+    }, function() done = true end)
+    eq(true, vim.wait(10000, function() return done end))
+    local got = vim.fn.readfile(file)[1]
+    vim.fn.delete(file)
+    vim.fn.delete(probe)
+    return got
+  end
+
+  it("win_console_stdio reopens the console (win)", function()
+    helpers.SKIP_IF_NOT_WIN()
+    local fds = libuv.win_console_stdio()
+    if fds == nil then
+      -- no console attached (e.g. CI): nil is the documented result and a
+      -- spawned probe child can't see a console either, nothing to assert
+      return MiniTest.skip("no console attached")
+    end
+    eq({ "table", "number", "number", "number" },
+      { type(fds), type(fds[1]), type(fds[2]), type(fds[3]) })
+    eq(fds[2], fds[3])
+    -- a child spawned with these fds must see a console on stderr
+    eq("tty", probe_stderr_handle(fds))
+  end)
+
+  it("win_stderr_fd (posix)", function()
+    helpers.SKIP_IF_WIN()
+    eq(2, libuv.win_stderr_fd())
+  end)
+
+  it("win_stderr_fd gives a spawned child a console stderr (win)", function()
+    helpers.SKIP_IF_NOT_WIN()
+    local fd = libuv.win_stderr_fd()
+    eq("number", type(fd))
+    -- with a console available the child must see one; otherwise the only
+    -- possible correct result is the fallback to the inherited fd 2
+    if libuv.win_console_stdio() then
+      eq("tty", probe_stderr_handle({ 0, 1, fd }))
+    else
+      eq(2, fd)
+    end
   end)
 end)

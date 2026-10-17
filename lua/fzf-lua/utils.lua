@@ -119,6 +119,69 @@ M.shell_nop = function()
   return M._if_win("break", "true")
 end
 
+---Byte-escape control/high bytes for diagnostics (`<0D>` for `\r`, ...).
+---Pipe/server addresses never contain such bytes, so an escaped address in
+---a message proves invisible junk rather than an identical-looking string.
+---@param s string
+---@return string
+M.escape_invisible = function(s)
+  return (s:gsub("[%z\1-\31\127-\255]",
+    function(c) return ("<%02X>"):format(c:byte()) end))
+end
+
+---Parse a serverlist entry (`<cwd> <mem> <cpu><nbsp><address>`) back into
+---a dialable server address. Trims surrounding whitespace/CR (fzf output
+---carries `\r\n` on Windows) and, on Windows, repairs the `\\.\pipe\...`
+---prefix (the fzf/cmd round trip eats one leading backslash, yielding an
+---unusable address that looks identical in the UI).
+---@param e string?
+---@return string?
+M.serverlist_parse_entry = function(e)
+  if not e then return nil end
+  local addr = M.strip_ansi_coloring(e):match(M.nbsp .. "(.-)$")
+  addr = addr and addr:match("^%s*(.-)%s*$") or nil
+  if addr and M.__IS_WINDOWS and addr:match("^\\%.\\pipe") then
+    addr = "\\" .. addr
+  end
+  return addr
+end
+
+---Convert an `nvim__screenshot` dump into plain `\n`-separated rows. The
+---dump is a terminal script (`LINES,COLS` header, CR + cursor-motion row
+---separators) which does not render reliably in every preview terminal.
+---SGR colors are kept, all cursor motion, erasing and queries are removed.
+---Row padding is preserved as-is so rows keep their full width and fill
+---the preview pane (fzf clips, never wraps, over-wide rows).
+---@param screenshot string path to the dump file (rewritten in place)
+---@return boolean ok
+M.screenshot_to_plaintext = function(screenshot)
+  local fd = io.open(screenshot, "rb")
+  if not fd then return false end
+  local data = fd:read("*a")
+  fd:close()
+  if not data or #data == 0 then return false end
+  -- drop the "LINES,COLS" header line
+  data = data:gsub("^%d+,%d+\r?\n", "")
+  -- strip vt sequences except SGR colors (`...m`): cursor motion, erase,
+  -- modes, queries, charset selects, OSC
+  data = data:gsub("\27%[(%??[%d;]*)([A-Za-z])", function(mods, term)
+    if term == "m" then return "\27[" .. mods .. "m" end
+    return ""
+  end)
+  data = data:gsub("\27%([%dA-Z0]", "")
+  data = data:gsub("\27%][^\7\27]*\7", "")
+  data = data:gsub("\27%][^\7\27]*\27\\", "")
+  -- rows are CR-separated: normalize to LF (collapse CRLF first so no
+  -- doubling). Padding is kept so rows fill the preview width.
+  data = data:gsub("\r\n", "\n"):gsub("\r", "\n")
+  if #data == 0 then return false end
+  local out = io.open(screenshot, "wb")
+  if not out then return false end
+  out:write(data)
+  out:close()
+  return true
+end
+
 ---@param vars table
 ---@return table
 M.shell_setenv_str = function(vars)
@@ -1743,6 +1806,16 @@ end
 ---@return boolean, string|any, ...any
 function M.rpcexec_timed(addr, method, ...)
   return rpcexec(addr, RPC_TIMEOUT, method, ...)
+end
+
+---Timed server liveness probe: open a channel and query it. Nil-safe
+---(`chan_info` without an id counts as dead instead of raising).
+---@param addr string server address (pipe path or socket)
+---@return boolean alive, any detail (info table on success, error on failure)
+function M.server_probe(addr)
+  local ok, info = M.rpcexec_timed(addr, "nvim_get_chan_info", 0)
+  if ok and info and info.id ~= nil then return true, info end
+  return false, info or "no chan id"
 end
 
 --- Checks if treesitter parser for language is installed

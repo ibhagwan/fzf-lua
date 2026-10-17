@@ -4,8 +4,12 @@ if NVIM_RUNTIME then vim.env.VIMRUNTIME = NVIM_RUNTIME end
 
 ---@diagnostic disable-next-line: deprecated
 local api, uv, fn = vim.api, vim.uv or vim.loop, vim.fn
+local _is_win = fn.has("win32") == 1 or fn.has("win64") == 1
+-- POSIX-only ffi: `ioctl`, `fcntl`, `fork`, `execl`, etc. do not exist on
+-- Windows (calling them errors with "cannot resolve symbol"). Keep `ffi`
+-- nil on Windows so all helpers below take their portable fallbacks.
 local ffi
-if package.preload.ffi then
+if not _is_win and package.preload.ffi then
   ffi = package.preload.ffi()
 end
 
@@ -71,7 +75,6 @@ local function fork(cmd, ...)
 end
 
 local function posix_exec(cmd, ...)
-  local _is_win = fn.has("win32") == 1 or fn.has("win64") == 1
   if type(cmd) ~= "string" or _is_win or not ffi then return end
   if not isatty(io.stdout) then return fork(cmd, ...) end
   local args = { ... }
@@ -83,8 +86,60 @@ local function posix_exec(cmd, ...)
   error(string.format([[execl("%s",...) failed with error %d]], cmd, ffi.errno()))
 end
 
+-- Windows replacement for `posix_exec`: Windows has no `fork`/`execl`, so
+-- start the new nvim as a child on the same console (inherited stdio) and
+-- wait for it to exit before returning; quitting first would kill the
+-- child since Neovim terminates its spawned children on exit. The caller
+-- then quits the headless parent (same-window takeover like `execl`).
+-- Unlike the `cmd.exe /c` launcher the binary starts directly (no shell),
+-- so a plain argv list with libuv's default quoting is correct, even with
+-- spaces or quotes in paths. Optional trailing args may be nil (no lnum
+-- or col) and are filtered out since `uv.spawn` needs a dense argv.
+-- When the parent's stdout is not a console (e.g. PowerShell captures the
+-- picker output through a pipe, as the shell widgets do), `{ 0, 1, 2 }`
+-- would give the child a stdout it cannot render a TUI on and the CLI
+-- would hang waiting for it to exit. stdin/stderr usually remain attached
+-- to the console in that case, so inherit stderr for both. When stderr is
+-- piped as well (PowerShell's PSReadLine key handler captures both), no
+-- console handle is left to inherit at all: reopen `CONIN$`/`CONOUT$` as
+-- inheritable CRT fds and pass those to the child.
+local function win_stdio()
+  local okout, hout = pcall(uv.guess_handle, 1)
+  if okout and hout == "tty" then return { 0, 1, 2 } end
+  local okerr, herr = pcall(uv.guess_handle, 2)
+  if okerr and herr == "tty" then return { 0, 2, 2 } end
+  return FzfLua.libuv.win_console_stdio() or { 0, 1, 2 }
+end
+
+local function win_exec(cmd, ...)
+  if type(cmd) ~= "string" or not _is_win then return end
+  local args = vim.tbl_filter(function(a) return a ~= nil end, { ... })
+  local done = false
+  FzfLua.libuv.uv_spawn(cmd, {
+      args = args,
+      stdio = win_stdio(),
+    },
+    function() done = true end)
+  vim.wait(2147483647, function() return done end)
+end
+
 _G.fzf_tty_get_width = function()
-  if not ffi then return (assert(uv.new_tty(0, false)):get_winsize()) end
+  if _is_win or not ffi then
+    -- Windows (or no ffi): `ioctl(TIOCGWINSZ)` does not exist. Try libuv
+    -- tty first, then $COLUMNS, then `vim.o.columns` (80 in headless).
+    -- Return nil only if nothing yields a usable width so callers can
+    -- fall back to their default layout.
+    local ok, tty = pcall(uv.new_tty, 0, false)
+    if ok and tty then
+      local ok2, w = pcall(function() return tty:get_winsize() end)
+      pcall(function() tty:close() end)
+      if ok2 and type(w) == "number" and w > 0 then return w end
+    end
+    local cols = tonumber(os.getenv("COLUMNS"))
+    if cols and cols > 0 then return cols end
+    if vim.o.columns and vim.o.columns > 0 then return vim.o.columns end
+    return nil
+  end
   local TIOCGWINSZ = 0x5413
   ---@diagnostic disable-next-line: assign-type-mismatch
   local ws = ffi.new("struct winsize[1]") ---@type [{ ws_row: integer, ws_col: integer }]
@@ -95,6 +150,9 @@ end
 
 -- https://github.com/libuv/libuv/blob/04fc1580d48c1f7aa339b6ccf91f1f815bc08b45/src/unix/core.c#L800
 local enable_stdio_inheritance = function()
+  -- No-op on Windows (no `fcntl`/CLOEXEC): `uv.spawn` stdio inheritance
+  -- is handled by libuv/Neovim, and `posix_exec` is a no-op on Windows.
+  if _is_win or not ffi then return end
   local function clear_cloexec(fd)
     local F_SETFD = 2
     local EINTR = 4
@@ -118,6 +176,12 @@ return {
   -- nullify "--tmux" in `fzf_opts` if tmux isn't detected
   { "fzf-tmux" },
   desc = "run in shell cmdline",
+  -- NOTE: on Windows pipe items into fzf (`(cmd) | fzf`) instead of
+  -- $FZF_DEFAULT_COMMAND: fzf only honors the env when stdin is a tty and
+  -- headless-spawned fzf isn't (IsTty()=false), so it ignores the env and
+  -- blocks on stdin EOF forever (same reason tests force `pipe_cmd`).
+  -- `defaults` (not top-level) is what `normalize_opts` merges per-picker.
+  defaults = { pipe_cmd = _is_win or nil },
   fzf_opts = {
     ["--height"] = "50%",
     ["--border"] = HAS_TMUX and "rounded" or "top",
@@ -142,13 +206,14 @@ return {
       end,
       ["ctrl-q"] = function(s, o)
         local entries = parse_entries(s, o)
-        if ffi and #entries == 1 then
+        local exec = _is_win and win_exec or posix_exec
+        if (_is_win or ffi) and #entries == 1 then
           local lnum = entries[1].line > 0 and entries[1].line or nil
           local col = entries[1].col > 0 and entries[1].col or nil
-          posix_exec(NVIM_BIN, entries[1].path,
+          exec(NVIM_BIN, entries[1].path,
             lnum and ("+" .. entries[1].line) or nil,
             col and ("+norm! %s|"):format(col) or nil)
-        elseif ffi and #entries > 1 then
+        elseif (_is_win or ffi) and #entries > 1 then
           local qf_items = {}
           for _, e in ipairs(entries) do
             local text = e.stripped:match(":%d+:%d?%d?%d?%d?:?(.*)$") or ""
@@ -161,7 +226,7 @@ return {
             })
           end
           local qf_str = vim.inspect(qf_items):gsub("\n%s*", " ")
-          posix_exec(NVIM_BIN, "-c", string.format(
+          exec(NVIM_BIN, "-c", string.format(
             "lua vim.o.hidden=false; vim.fn.setqflist(%s); vim.cmd('cfirst | set hidden&')",
             qf_str))
         end
@@ -183,8 +248,7 @@ return {
     previewer = { _ctor = require("fzf-lua.previewer").fzf.nvim_server },
     actions = {
       ["enter"] = function(s)
-        local remote = FzfLua.utils.strip_ansi_coloring(assert(s[1])):match(FzfLua.utils.nbsp ..
-          "(.-)$")
+        local remote = FzfLua.utils.serverlist_parse_entry(assert(s[1]))
         for _, chan in ipairs(api.nvim_list_chans()) do
           if chan.stream ~= "stderr" then
             fn.chanclose(chan.id)
@@ -194,7 +258,14 @@ return {
           vim.uv.kill(pid, vim.uv.constants.SIGTERM)
         end
         enable_stdio_inheritance()
-        posix_exec(NVIM_BIN, "--remote-ui", "--server", remote)
+        if _is_win then
+          -- no `execl` replacement on Windows: `win_exec` returns and the
+          -- picker must quit explicitly to hand the console over
+          win_exec(NVIM_BIN, "--remote-ui", "--server", remote)
+          quit()
+        else
+          posix_exec(NVIM_BIN, "--remote-ui", "--server", remote)
+        end
       end
     }
   }
