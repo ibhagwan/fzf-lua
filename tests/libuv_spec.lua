@@ -132,6 +132,16 @@ describe("Testing libuv module", function()
     same(libuv.cmd_argv([["x^^y"]]), { "x^^y" })
     same(libuv.cmd_argv([["a^"b"]]), { "a^b" })
     same(libuv.cmd_argv([["A ^" B"]]), { "A ^", "B" })
+    -- a doubled `""` inside quotes is one literal quote, the pair is consumed
+    -- and the quote state toggles once (Go runtime `os/exec_windows.go`
+    -- "Prior to 2008" rule; verified against `fzf.exe` driven through
+    -- `cmd.exe`, e.g. fzf's own `--query` parser)
+    same(libuv.cmd_argv([[--header="say ""hi"""]]), { [[--header=say "hi"]] })
+    same(libuv.cmd_argv([["a""b"]]), { [[a"b]] })
+    -- the state toggles after the pair: the space is not quoted anymore
+    same(libuv.cmd_argv([["say ""hi"" tail"]]), { [[say "hi]], "tail" })
+    -- caret inside quotes stays literal (`cmd.exe` pass), pair still collapses
+    same(libuv.cmd_argv([["a^""b"]]), { [[a^"b]] })
     -- dangling caret: dropped outside quotes, literal inside quotes
     same(libuv.cmd_argv([["abc^"]]), { "abc^" })
     same(libuv.cmd_argv("^^"), { "^" })

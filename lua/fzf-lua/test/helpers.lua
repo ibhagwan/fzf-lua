@@ -144,6 +144,9 @@ M.new_child_neovim = function()
   end
 
   child.init = function()
+    -- `child.stop` raises when the old job survives `jobstop`; that must
+    -- abort `restart` before mini.test's `start`, which no-ops while a job
+    -- is running and would silently run this case against the stale child
     child.restart({ "-u", "scripts/minimal_init.lua" })
     child.cmd("cd deps/fzf-lua")
 
@@ -233,12 +236,16 @@ M.new_child_neovim = function()
       pcall(vim.fn.jobstop, job_id)
       if vim.fn.jobwait({ job_id }, 1000)[1] == -1 then
         -- still running after jobstop: keep `child.job` so a later `stop` can
-        -- retry instead of deleting the address of a live process, but report
-        -- it (`error()` would not surface: callers `pcall(child.stop)`)
-        vim.notify(string.format(
+        -- retry instead of deleting the address of a live process, and raise
+        -- so `restart`/`init` abort instead of `start` silently no-oping
+        -- (`is_running()`) and running the next case against the stale child.
+        -- `vim.notify` keeps it visible to callers that `pcall(child.stop)`
+        -- (post_once)
+        local msg = string.format(
           "child.stop: job %d still alive after `jobstop`, kept for a retry",
-          job_id), vim.log.levels.WARN)
-        return
+          job_id)
+        vim.notify(msg, vim.log.levels.WARN)
+        error(msg, 0)
       end
     end
 

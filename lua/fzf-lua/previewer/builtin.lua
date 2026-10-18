@@ -371,7 +371,13 @@ function Previewer.base:zero(_)
           TSContext.close(self.win.preview_winid)
           self.win:update_preview_title("")
         end
-        if self.loaded_entry then self.last_entry = nil end
+        -- only reset when `last_entry` still refers to the zero-event entry:
+        -- a newer entry set by `display_entry` (whose preview was kept above)
+        -- stays so `display_last_entry` can restore it, e.g. when the
+        -- preview window is toggled back on
+        if self.loaded_entry and cur_entry == entry_at_zero then
+          self.last_entry = nil
+        end
         fn.delete(self._zero_lock, "d")
       end, self.delay)
     end, self.opts, ""))

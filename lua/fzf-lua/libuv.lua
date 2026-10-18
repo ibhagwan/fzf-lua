@@ -1137,8 +1137,11 @@ end
 --      makes the `^"...^"` shellescape form safe: the escaped surrounding
 --      quotes are emitted literally and never enter the quoted state, so
 --      the inner caret escapes still apply)
---   2. Win32 argv parsing: quotes toggle and are dropped, backslash runs
---      before quotes collapse per CommandLineToArgvW rules (`2n` backslashes
+--   2. Win32 argv parsing as implemented by the Go runtime
+--      (`os/exec_windows.go`; fzf is a Go binary): quotes toggle and are
+--      dropped, a doubled `""` inside a quoted section is one literal quote
+--      ("Prior to 2008" rule; the pair is consumed and the quote state
+--      toggles once), backslash runs before quotes collapse (`2n` backslashes
 --      followed by a quote -> `n` backslashes + toggle quote mode, `2n+1` ->
 --      `n` backslashes + literal quote), unquoted whitespace splits args
 ---@param s string cmd.exe command line fragment
@@ -1185,17 +1188,27 @@ M.cmd_argv = function(s)
             buf[#buf + 1] = string.rep("\\", math.floor(nback / 2))
             if nback % 2 == 1 then
               buf[#buf + 1] = '"'
+              j = k + 1
             else
-              in_quotes = not in_quotes
+              -- even run: emit backslashes, let the quote branch below apply
+              -- the doubling rule / toggle for the quote itself
+              j = k
             end
-            j = k + 1
           else
             buf[#buf + 1] = string.rep("\\", nback)
             j = k
           end
         elseif c == '"' then
+          -- Go runtime `os/exec_windows.go`: a `""` inside a quoted section
+          -- is one literal quote ("Prior to 2008" rule); the pair is consumed
+          -- and the quote state toggles once (matches `fzf.exe` via `cmd.exe`)
+          if in_quotes and s:sub(j + 1, j + 1) == '"' then
+            buf[#buf + 1] = '"'
+            j = j + 2
+          else
+            j = j + 1
+          end
           in_quotes = not in_quotes
-          j = j + 1
         elseif not in_quotes and (c == " " or c == "\t") then
           break
         else
