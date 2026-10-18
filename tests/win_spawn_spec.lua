@@ -28,6 +28,15 @@ local function read_file(path)
   return content
 end
 
+--- `cmd.exe` builtins (eg. `type`) reject '/'-separated paths; nightly neovim
+--- returns forward-slash `vim.fn.tempname()` values on Windows, so convert to
+--- native separators before embedding paths into cmd-syntax producer items
+---@param p string
+---@return string
+local function cmd_path(p)
+  return (p:gsub("/", "\\"))
+end
+
 describe("Testing win_spawn (Windows one route)", function()
   --- Run one full `libuv.win_spawn` cycle (item producer -> pump -> result
   --- file) and return fzf's exit code and the result file contents
@@ -57,7 +66,7 @@ describe("Testing win_spawn (Windows one route)", function()
     local infile = utils.tempname()
     local lines = { "ab c", [[E"f G]], [[H\I]], "汉 é" }
     write_file(infile, table.concat(lines, "\n") .. "\n")
-    local item = string.format('type "%s"', infile)
+    local item = string.format('type "%s"', cmd_path(infile))
     -- filter arguments with a space (single argv token), quotes, a trailing
     -- backslash and multi-byte characters survive the uv quoting + pump
     for _, case in ipairs({
@@ -101,7 +110,7 @@ describe("Testing win_spawn (Windows one route)", function()
     f:close()
     -- ~4.8MB (> the 4MB high watermark): exercises the pump across many
     -- chunks with the producer paused by the write queue backpressure
-    local rc, out = win_run(string.format('type "%s"', infile),
+    local rc, out = win_run(string.format('type "%s"', cmd_path(infile)),
       { "--filter=line 399999" })
     eq(rc, 0)
     eq(out, "line 399999\n")
@@ -134,7 +143,7 @@ describe("Testing win_spawn (Windows one route)", function()
     assert.is.False(ping_running())
     -- fzf exits immediately with an invalid option while the producer is still
     -- alive (output to NUL so only the tree-kill can stop it)
-    local rc = win_run(string.format('"%s" -n 60 127.0.0.1 >NUL', exe),
+    local rc = win_run(string.format('"%s" -n 60 127.0.0.1 >NUL', cmd_path(exe)),
       { "--fzflua-bad-option" })
     eq(rc, 2)
     assert.is.False(ping_running())
@@ -181,7 +190,7 @@ describe("Testing win_spawn (Windows one route)", function()
 
     local infile = utils.tempname()
     write_file(infile, "abc\n")
-    local item = string.format('type "%s"', infile)
+    local item = string.format('type "%s"', cmd_path(infile))
     -- fzf's exit code becomes the mediator script's exit code
     local rc, out = run_mediator(item, "abc")
     eq(rc, 0)
