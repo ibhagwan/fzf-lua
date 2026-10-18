@@ -1,5 +1,7 @@
 -- slimmed down version of nvim-fzf's 'raw_fzf', changes include:
--- DOES NOT SUPPORT WINDOWS
+-- Windows runs a single managed route: `uv.spawn` with raw argv and the
+-- result file as stdio, mediated by `libuv.win_spawn` (CLI) or the
+-- `win_spawn.lua` script nvim attached to the terminal buffer (TUI).
 -- does not close the pipe before all writes are complete
 -- option to not add '\n' on content function callbacks
 -- https://github.com/vijaymarupudi/nvim-fzf/blob/master/lua/fzf.lua
@@ -8,6 +10,11 @@ local utils = require "fzf-lua.utils"
 local libuv = require "fzf-lua.libuv"
 
 local M = {}
+
+-- used to locate `win_spawn.lua` (the TUI mediator) next to this file
+local _info = debug.getinfo(1, "S")
+---@cast _info {source: string}
+local __FILE__ = _info.source:gsub("^@", "")
 
 -- contents can be either a table with tostring()able items, or a function that
 -- can be called repeatedly for values. The latter can use coroutines for async
@@ -58,8 +65,35 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- local readEOL = get_EOL("read0")
   local printEOL = get_EOL("print0")
 
-  table.insert(cmd, ">")
-  table.insert(cmd, libuv.shellescape(outputtmpname))
+  -- Windows direct spawn (CLI + TUI mediator), see `libuv.win_spawn`:
+  -- raw argv rebuilt from the CLI segments, fzf's stdout is redirected via
+  -- the result file descriptor (no `>`/PowerShell), no shell escaping and
+  -- no cmd.exe 8191-char command line limit
+  local win_spec = nil ---@type fzf-lua.WinSpawnSpec?
+  if utils.__IS_WINDOWS and not opts.is_fzf_tmux
+      and opts._cli_segments and #opts._cli_segments > 0 then
+    local raw_args = {}
+    for _, elem in ipairs(opts._cli_segments) do
+      local arg = {}
+      for _, seg in ipairs(elem) do
+        table.insert(arg, seg.text)
+      end
+      table.insert(raw_args, table.concat(arg))
+    end
+    local item = opts.pipe_cmd and FZF_DEFAULT_COMMAND or nil
+    if item then FZF_DEFAULT_COMMAND = nil end
+    win_spec = {
+      bin = cmd[1],
+      args = raw_args,
+      item = item,
+      outfile = outputtmpname,
+      cwd = opts.cwd,
+    }
+  else
+    -- legacy shell route: redirect fzf's stdout to the result file
+    table.insert(cmd, ">")
+    table.insert(cmd, libuv.shellescape(outputtmpname))
+  end
 
   if not opts.is_fzf_tmux then
     utils.eventignore(function() vim.bo.filetype = "fzf" end)
@@ -97,87 +131,14 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     -- })
   end
 
-  -- Windows PowerShell fallback when the assembled fzf launcher command line
-  -- exceeds cmd.exe's 8191-char limit. Rebuild from raw segments so values are
-  -- PowerShell-escaped; nested `nvim -l` action payloads stay on fast cmd.exe
-  -- via SHELL=cmd.exe.
-  local use_powershell = false
-  local ps_command ---@type string?
-  local cmd_len = #table.concat(cmd, " ")
-  if opts.pipe_cmd and FZF_DEFAULT_COMMAND then
-    -- the non-powershell branch below prepends the item command as
-    -- `(FZF_DEFAULT_COMMAND) | ` to the same cmd.exe command line
-    cmd_len = cmd_len + #FZF_DEFAULT_COMMAND + 8
-  end
-  if utils.__IS_WINDOWS and not opts.is_fzf_tmux
-      and opts._cli_segments and #opts._cli_segments > 0
-      and cmd_len > 8000 then
-    use_powershell = true
-    -- Reconstruct the raw argv strings from the segments, encode each one with
-    -- Windows CommandLineToArgvW quoting rules, and pass the joined command
-    -- line as a single string to Start-Process. This keeps empty arguments as
-    -- "" and correctly escapes embedded quotes/backslashes while avoiding both
-    -- cmd.exe's 8191-char limit and Start-Process array-literal edge cases.
-    local raw_args = {}
-    for _, elem in ipairs(opts._cli_segments) do
-      local arg = {}
-      for _, seg in ipairs(elem) do
-        table.insert(arg, seg.text)
-      end
-      table.insert(raw_args, table.concat(arg))
-    end
-    local ps_fzf_bin = libuv.ps_escape(cmd[1])
-    local ps_outfile = libuv.ps_escape(outputtmpname)
-    local argline = table.concat(vim.tbl_map(function(a)
-      return libuv.shellescape(a, 1)
-    end, raw_args), " ")
-    local ps_parts = {}
-    if opts.pipe_cmd and FZF_DEFAULT_COMMAND then
-      -- `(item) | fzf` can't be used in pipe mode: the item command would be
-      -- prepended to the same command line, which cmd.exe rejects past 8191
-      -- chars. Start-Process can't chain two processes either, so launch both
-      -- through ProcessStartInfo (its `Arguments` string is passed verbatim,
-      -- no CommandLineToArgvW re-quoting) and pump the item command's stdout
-      -- into fzf's stdin from this script. fzf reads stdin in the background,
-      -- so the picker starts immediately while items stream in, matching the
-      -- concurrency of the `(item) | fzf` cmd.exe branch.
-      table.insert(ps_parts, string.format(
-        "$ipsi = New-Object System.Diagnostics.ProcessStartInfo; $ipsi.FileName = 'cmd.exe'; $ipsi.Arguments = %s; $ipsi.UseShellExecute = $false; $ipsi.RedirectStandardOutput = $true; $iproc = [System.Diagnostics.Process]::Start($ipsi);",
-        libuv.ps_escape("/d /e:off /f:off /v:off /c (" .. FZF_DEFAULT_COMMAND .. ")")))
-      table.insert(ps_parts, string.format(
-        "$fpsi = New-Object System.Diagnostics.ProcessStartInfo; $fpsi.FileName = %s; $fpsi.Arguments = %s; $fpsi.UseShellExecute = $false; $fpsi.RedirectStandardInput = $true; $fpsi.RedirectStandardOutput = $true; $fproc = [System.Diagnostics.Process]::Start($fpsi);",
-        ps_fzf_bin, libuv.ps_escape(argline)))
-      -- drain fzf's stdout into the result file asynchronously while the pump
-      -- runs: the selection is written at exit and can exceed the pipe buffer,
-      -- and fzf stops reading stdin by then, so draining only after the pump
-      -- would block fzf on stdout and the pump on fzf's stdin at the same time
-      table.insert(ps_parts, string.format(
-        "$ofs = [System.IO.File]::Create(%s); $drain = $fproc.StandardOutput.BaseStream.CopyToAsync($ofs);",
-        ps_outfile))
-      -- the pump runs async so fzf's exit is noticed while it still streams;
-      -- the producer is killed as soon as fzf is gone, even when it is
-      -- blocked without producing output (a sync pump would sit in Read
-      -- until the producer yields); the kill must take the whole tree:
-      -- `$iproc` is only the wrapper `cmd.exe`, a plain `Kill()` orphans
-      -- the actual producer, whose stdout handle keeps the pump reading
-      -- until it exits on its own; stdin is closed once the pump finishes
-      -- (producer EOF), since fzf may need that EOF to finish (--select-1)
-      table.insert(ps_parts,
-        "$pump = $iproc.StandardOutput.BaseStream.CopyToAsync($fproc.StandardInput.BaseStream); $pumpDone = $false; while (-not $fproc.WaitForExit(200)) { if (-not $pumpDone -and $pump.IsCompleted) { $pumpDone = $true; try { $fproc.StandardInput.Close() } catch {} } }; $code = $fproc.ExitCode; if (-not $iproc.HasExited) { & taskkill.exe /PID $iproc.Id /T /F 2>$null | Out-Null; $iproc.WaitForExit() }; try { $null = $pump.Wait(2000) } catch {}; if (-not $pumpDone) { try { $fproc.StandardInput.Close() } catch {} }; $drain.Wait(); $ofs.Close(); exit $code")
-      FZF_DEFAULT_COMMAND = nil
-    else
-      table.insert(ps_parts, string.format(
-        "$proc = Start-Process -FilePath %s -ArgumentList %s -RedirectStandardOutput %s -Wait -NoNewWindow -PassThru -ErrorAction Stop;",
-        ps_fzf_bin, libuv.ps_escape(argline), ps_outfile))
-      table.insert(ps_parts, "if ($null -eq $proc) { exit 1 }; exit $proc.ExitCode")
-    end
-    ps_command = table.concat(ps_parts, " ")
-  end
-
   if opts.debug and type(opts.debug) ~= "number" then
     utils.info("FZF_DEFAULT_COMMAND: %s", tostring(FZF_DEFAULT_COMMAND))
-    if use_powershell then
-      utils.info("fzf cmd [powershell]: %s", ps_command)
+    if win_spec then
+      utils.info("fzf cmd [nvim/uv]: %s %s",
+        win_spec.bin, table.concat(win_spec.args, " "))
+      if win_spec.item then
+        utils.info("fzf item [cmd.exe]: %s", win_spec.item)
+      end
     else
       utils.info("fzf cmd [%s]: %s",
         utils.__IS_WINDOWS and "cmd.exe" or "sh", table.concat(cmd, " "))
@@ -186,11 +147,31 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
 
   local co = coroutine.running()
   ---@cast co thread
-  local jobstart = _G.fzf_jobstart or opts.is_fzf_tmux and vim.fn.jobstart or utils.termopen
-  local shell_cmd
-  if use_powershell then
-    shell_cmd = { "powershell.exe", "-NoProfile", "-NonInteractive", "-Command", ps_command }
+  local jobstart ---@type fun(cmd: any, opts: table): any
+  local shell_cmd ---@type table
+  -- TUI mediator spec file path (written below, once the environment is
+  -- assembled, and deleted by `win_spawn.lua` right after reading)
+  local win_spec_path ---@type string?
+  if win_spec then
+    if _G.fzf_jobstart then
+      -- CLI: the current process hosts the spawn (`libuv.win_spawn`)
+      shell_cmd = { __win_spawn = win_spec }
+      jobstart = _G.fzf_jobstart
+    else
+      -- TUI: fzf must own this terminal buffer's pty, run the same spawn
+      -- route from a mediator script nvim attached to the pty (`-u NONE -l`,
+      -- like `spawn.lua` producers); the spec travels via a temp file
+      local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
+      win_spec_path = utils.tempname()
+      shell_cmd = {
+        nvim_bin, "-u", "NONE", "-l",
+        vim.fn.fnamemodify(__FILE__, ":h") .. "/win_spawn.lua",
+        win_spec_path,
+      }
+      jobstart = utils.termopen
+    end
   else
+    jobstart = _G.fzf_jobstart or opts.is_fzf_tmux and vim.fn.jobstart or utils.termopen
     shell_cmd = utils.__IS_WINDOWS
         -- MSYS2 comes with "/usr/bin/cmd" that precedes "cmd.exe" (#1396)
         and { "cmd.exe", "/d", "/e:off", "/f:off", "/v:off", "/c" }
@@ -209,57 +190,64 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   end
   -- This obscure option makes jobstart fail with: "The syntax of the command is incorrect"
   -- temporarily set to `false`, for more info see `:help shellslash` (#1055)
-  local nvim_opt_shellslash = utils.__WIN_HAS_SHELLSLASH and vim.o.shellslash
+  -- (only affects the legacy cmd.exe launcher, not the direct route)
+  local nvim_opt_shellslash = not win_spec
+      and utils.__WIN_HAS_SHELLSLASH and vim.o.shellslash
   if nvim_opt_shellslash then vim.o.shellslash = false end
+  local job_env = {
+    ["SHELL"] = win_spec and "cmd.exe" or shell_cmd[1],
+    -- Nullify "NVIM_LISTEN_ADDRESS", will cause issues if already in use (#2253)
+    ["NVIM_LISTEN_ADDRESS"] = "",
+    ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
+    ["SKIM_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
+    ["FZF_LUA_SERVER"] = vim.g.fzf_lua_server,
+    -- sk --tmux didn't pass all environemnt variable (https://github.com/skim-rs/skim/issues/732)
+    ["SKIM_FZF_LUA_SERVER"] = vim.g.fzf_lua_server,
+    ["VIMRUNTIME"] = vim.env.VIMRUNTIME,
+    ["FZF_DEFAULT_OPTS"] = (function()
+      -- Newer style `--preview-window` options in FZF_DEFAULT_OPTS such as:
+      --   --preview-window "right,50%,hidden,<60(up,70%,hidden)"
+      -- prevents our previewer from working properly, since there is never
+      -- a reason to inherit `preview-window` options it can be safely stripped
+      -- from FZF_DEFAULT_OPTS (#1107)
+      local default_opts = os.getenv("FZF_DEFAULT_OPTS")
+      if not default_opts then return end
+      local patterns = { "--preview-window" }
+      for _, p in ipairs(patterns) do
+        -- remove flag end of string
+        default_opts = default_opts:gsub(utils.lua_regex_escape(p) .. "[=%s]+[^%-]+%s-$", "")
+        -- remove flag start/mid of string
+        default_opts = default_opts:gsub(utils.lua_regex_escape(p) .. "[=%s]+.-%s+%-%-", " --")
+      end
+      return default_opts
+    end)(),
+    -- Nullify user's RG config as this can cause conflicts
+    -- with fzf-lua's rg opts (#1266)
+    ["RIPGREP_CONFIG_PATH"] = type(opts.RIPGREP_CONFIG_PATH) == "string"
+        and libuv.expand(opts.RIPGREP_CONFIG_PATH) or "",
+    -- Prevents spamming rust logs with skim (#1959)
+    ["RUST_LOG"] = "",
+  }
+  -- the direct route (`win_spawn`) receives the same environment in its spec
+  -- (used in-process by the CLI host and serialized for the TUI mediator)
+  if win_spec then win_spec.env = job_env end
+  -- write the mediator spec file now that it carries the full environment
+  if win_spec and win_spec_path then
+    local payload = libuv.serialize(win_spec, true)
+    local f = assert(io.open(win_spec_path, "w"))
+    f:write(payload)
+    f:close()
+  end
   jobstart(shell_cmd, {
     cwd = opts.cwd,
     pty = true,
-    env = {
-      ["SHELL"] = use_powershell and "cmd.exe" or shell_cmd[1],
-      -- Nullify "NVIM_LISTEN_ADDRESS", will cause issues if already in use (#2253)
-      ["NVIM_LISTEN_ADDRESS"] = "",
-      ["FZF_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
-      ["SKIM_DEFAULT_COMMAND"] = FZF_DEFAULT_COMMAND,
-      ["FZF_LUA_SERVER"] = vim.g.fzf_lua_server,
-      -- sk --tmux didn't pass all environemnt variable (https://github.com/skim-rs/skim/issues/732)
-      ["SKIM_FZF_LUA_SERVER"] = vim.g.fzf_lua_server,
-      ["VIMRUNTIME"] = vim.env.VIMRUNTIME,
-      ["FZF_DEFAULT_OPTS"] = (function()
-        -- Newer style `--preview-window` options in FZF_DEFAULT_OPTS such as:
-        --   --preview-window "right,50%,hidden,<60(up,70%,hidden)"
-        -- prevents our previewer from working properly, since there is never
-        -- a reason to inherit `preview-window` options it can be safely stripped
-        -- from FZF_DEFAULT_OPTS (#1107)
-        local default_opts = os.getenv("FZF_DEFAULT_OPTS")
-        if not default_opts then return end
-        local patterns = { "--preview-window" }
-        for _, p in ipairs(patterns) do
-          -- remove flag end of string
-          default_opts = default_opts:gsub(utils.lua_regex_escape(p) .. "[=%s]+[^%-]+%s-$", "")
-          -- remove flag start/mid of string
-          default_opts = default_opts:gsub(utils.lua_regex_escape(p) .. "[=%s]+.-%s+%-%-", " --")
-        end
-        return default_opts
-      end)(),
-      -- Nullify user's RG config as this can cause conflicts
-      -- with fzf-lua's rg opts (#1266)
-      ["RIPGREP_CONFIG_PATH"] = type(opts.RIPGREP_CONFIG_PATH) == "string"
-          and libuv.expand(opts.RIPGREP_CONFIG_PATH) or "",
-      -- Prevents spamming rust logs with skim (#1959)
-      ["RUST_LOG"] = "",
-    },
+    env = job_env,
     on_exit = function(_, rc, _)
       local output = nil ---@type string[]?
       local f = io.open(outputtmpname)
       if f then
         local text = f:read("*a")
         f:close()
-        -- Redirected stdout from the PowerShell fallback may begin with an
-        -- optional leading UTF-8 BOM in some PowerShell versions; strip it
-        -- before splitting so selected lines stay clean.
-        if use_powershell then
-          text = text:gsub("^\239\187\191", "")
-        end
         output = vim.split(text, printEOL)
         -- `file:read("*a")` appends an empty string on EOL
         output[#output] = nil
