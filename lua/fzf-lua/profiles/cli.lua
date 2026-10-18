@@ -95,6 +95,10 @@ end
 -- so a plain argv list with libuv's default quoting is correct, even with
 -- spaces or quotes in paths. Optional trailing args may be nil (no lnum
 -- or col) and are filtered out since `uv.spawn` needs a dense argv.
+-- Spawn failures are reported via `utils.warn` and returned as `false`; the
+-- wrapper never raises, so callers must check the return and skip their
+-- takeover `quit()` when the launch failed, otherwise the picker exits
+-- without anything taking the console over.
 -- When the parent's stdout is not a console (e.g. PowerShell captures the
 -- picker output through a pipe, as the shell widgets do), `{ 0, 1, 2 }`
 -- would give the child a stdout it cannot render a TUI on and the CLI
@@ -111,8 +115,9 @@ local function win_stdio()
   return FzfLua.libuv.win_console_stdio() or { 0, 1, 2 }
 end
 
+---@return boolean success
 local function win_exec(cmd, ...)
-  if type(cmd) ~= "string" or not _is_win then return end
+  if type(cmd) ~= "string" or not _is_win then return false end
   local args = vim.tbl_filter(function(a) return a ~= nil end, { ... })
   local done = false
   local stdio = win_stdio()
@@ -124,13 +129,21 @@ local function win_exec(cmd, ...)
   -- write end open forever, hanging the shell's pipeline reader. Hide the
   -- unused stdio fds for the duration of the spawn.
   local restore = FzfLua.libuv.win_stdio_no_inherit(stdio)
-  FzfLua.libuv.uv_spawn(cmd, {
+  local ok, err = pcall(FzfLua.libuv.uv_spawn, cmd, {
       args = args,
       stdio = stdio,
     },
     function() done = true end)
   if restore then restore() end
+  if not ok then
+    -- a non-throwing report: `utils.error` re-raises ERROR notifies when the
+    -- CLI runs headless (see `utils.notify`), which would abort the action
+    -- instead of letting the caller react to the failed launch
+    FzfLua.utils.warn("failed to launch %s: %s", cmd, err)
+    return false
+  end
   vim.wait(2147483647, function() return done end)
+  return true
 end
 
 _G.fzf_tty_get_width = function()
@@ -270,9 +283,11 @@ return {
         enable_stdio_inheritance()
         if _is_win then
           -- no `execl` replacement on Windows: `win_exec` returns and the
-          -- picker must quit explicitly to hand the console over
-          win_exec(NVIM_BIN, "--remote-ui", "--server", remote)
-          quit()
+          -- picker must quit explicitly to hand the console over; a failed
+          -- launch (reported by `win_exec`) keeps this picker alive
+          if win_exec(NVIM_BIN, "--remote-ui", "--server", remote) then
+            quit()
+          end
         else
           posix_exec(NVIM_BIN, "--remote-ui", "--server", remote)
         end
