@@ -115,11 +115,21 @@ local function win_exec(cmd, ...)
   if type(cmd) ~= "string" or not _is_win then return end
   local args = vim.tbl_filter(function(a) return a ~= nil end, { ... })
   local done = false
+  local stdio = win_stdio()
+  -- libuv (<= 1.52) leaks every inheritable handle of this process into the
+  -- child (`CreateProcess(bInheritHandles=TRUE)`, no handle list), even the
+  -- ones not part of `stdio`. When the shell integration captures the
+  -- picker output through pipes, the spawned nvim inherits them and the
+  -- `--embed` server left running by a later `:detach` keeps the pipes'
+  -- write end open forever, hanging the shell's pipeline reader. Hide the
+  -- unused stdio fds for the duration of the spawn.
+  local restore = FzfLua.libuv.win_stdio_no_inherit(stdio)
   FzfLua.libuv.uv_spawn(cmd, {
       args = args,
-      stdio = win_stdio(),
+      stdio = stdio,
     },
     function() done = true end)
+  if restore then restore() end
   vim.wait(2147483647, function() return done end)
 end
 

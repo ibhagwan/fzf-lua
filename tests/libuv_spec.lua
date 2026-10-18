@@ -323,4 +323,51 @@ describe("Testing libuv module", function()
       eq(2, fd)
     end
   end)
+
+  --- Read the handle flags of stdio `fd`; nil when it has no valid handle.
+  --- Reuses the declarations made by `libuv.win_stdio_no_inherit`:
+  --- `require("ffi")` returns the same cached FFI table (sharing the CType
+  --- state), while `package.preload.ffi()` would re-initialize it and drop
+  --- the declarations (see `win_ffi_init` in libuv.lua).
+  ---@param fd integer
+  ---@return integer? flags
+  local function stdio_handle_flags(fd)
+    local ffi = require("ffi")
+    -- STD_INPUT_HANDLE/STD_OUTPUT_HANDLE/STD_ERROR_HANDLE
+    local STD_HANDLES = { 0xFFFFFFF6, 0xFFFFFFF5, 0xFFFFFFF4 }
+    local k32 = ffi.load("kernel32")
+    local flags = ffi.new("unsigned long[1]")
+    if k32.GetHandleInformation(k32.GetStdHandle(STD_HANDLES[fd + 1]), flags) == 0 then
+      return
+    end
+    ---@diagnostic disable-next-line: undefined-field
+    return flags[0]
+  end
+
+  it("win_stdio_no_inherit (posix)", function()
+    helpers.SKIP_IF_WIN()
+    eq(nil, libuv.win_stdio_no_inherit({ 3, 4, 4 }))
+  end)
+
+  it("win_stdio_no_inherit clears and restores the flag (win)", function()
+    helpers.SKIP_IF_NOT_WIN()
+    if not package.preload.ffi then return MiniTest.skip("no ffi") end
+    -- no-op call to trigger the module's one-time FFI declarations
+    eq(nil, libuv.win_stdio_no_inherit({ 0, 1, 2 }))
+    local before = stdio_handle_flags(1)
+    if not before then return MiniTest.skip("no valid stdio handle") end
+    -- fds 0-2 are not part of the child's stdio: their inherit flag must be
+    -- cleared for the spawn and restored afterwards (libuv <= 1.52 leaks
+    -- every inheritable handle to the child regardless of `stdio`)
+    local restore = libuv.win_stdio_no_inherit({ 3, 4, 4 })
+    eq("function", type(restore))
+    ---@cast restore fun()
+    local hidden = stdio_handle_flags(1)
+    ---@cast hidden integer
+    eq(0, hidden % 2)
+    restore()
+    eq(before, stdio_handle_flags(1))
+    -- all stdio fds in use: nothing to hide
+    eq(nil, libuv.win_stdio_no_inherit({ 0, 1, 2 }))
+  end)
 end)
