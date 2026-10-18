@@ -648,7 +648,13 @@ function Previewer.nvim_server:cmdline(_)
       -- effort, a failed conversion still leaves the raw dump for the pager.
       pcall(utils.screenshot_to_plaintext, screenshot)
     end
-    local shot = libuv.shellescape(screenshot)
+    local shot_path = screenshot
+    if utils.__IS_WINDOWS then
+      -- nightly neovim returns '/'-separated `tempname()` values on Windows
+      -- and cmd.exe's `type` builtin rejects them; the pager runs cmd syntax
+      shot_path = shot_path:gsub("/", "\\")
+    end
+    local shot = libuv.shellescape(shot_path)
     local pager
     if not utils.__IS_WINDOWS and vim.fn.executable("tail") == 1 then
       pager = "tail -n+2 %s"
