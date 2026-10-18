@@ -154,11 +154,13 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       table.insert(ps_parts, string.format(
         "$ofs = [System.IO.File]::Create(%s); $drain = $fproc.StandardOutput.BaseStream.CopyToAsync($ofs);",
         ps_outfile))
-      -- fzf exiting early (item selected, <Esc>) breaks the pump, ignore it
+      -- the pump runs async so fzf's exit is noticed while it still streams;
+      -- the producer is killed as soon as fzf is gone, even when it is
+      -- blocked without producing output (a sync pump would sit in Read
+      -- until the producer yields); stdin is closed once the pump finishes
+      -- (producer EOF), since fzf may need that EOF to finish (--select-1)
       table.insert(ps_parts,
-        "try { $iproc.StandardOutput.BaseStream.CopyTo($fproc.StandardInput.BaseStream) } catch {}; try { $fproc.StandardInput.Close() } catch {}")
-      table.insert(ps_parts,
-        "$fproc.WaitForExit(); $code = $fproc.ExitCode; if (-not $iproc.HasExited) { $iproc.Kill(); $iproc.WaitForExit() }; $drain.Wait(); $ofs.Close(); exit $code")
+        "$pump = $iproc.StandardOutput.BaseStream.CopyToAsync($fproc.StandardInput.BaseStream); $pumpDone = $false; while (-not $fproc.WaitForExit(200)) { if (-not $pumpDone -and $pump.IsCompleted) { $pumpDone = $true; try { $fproc.StandardInput.Close() } catch {} } }; $code = $fproc.ExitCode; if (-not $iproc.HasExited) { $iproc.Kill(); $iproc.WaitForExit() }; try { $null = $pump.Wait(2000) } catch {}; if (-not $pumpDone) { try { $fproc.StandardInput.Close() } catch {} }; $drain.Wait(); $ofs.Close(); exit $code")
       FZF_DEFAULT_COMMAND = nil
     else
       table.insert(ps_parts, string.format(

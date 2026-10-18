@@ -801,15 +801,15 @@ local function scan_listeners()
   return found
 end
 
----Discover running Neovim servers: the listener scan plus, on unix,
----`vim.fn.serverlist()` (which adds servers with no socket file, e.g. TCP
----`--listen` addresses). On Windows the scan alone is authoritative:
----`serverlist()` can only ever report this process (self plus own infra,
----both filtered below), so it is not consulted. Entries failing an RPC
----probe, ourselves and our own `fzf-lua*` infra are skipped everywhere;
----every other responsive listener is listed, including UI-less `--embed`
----backends (indistinguishable from detached user sessions). Addresses
----stay in native
+---Discover running Neovim servers: the listener scan, authoritative on both
+---platforms. `vim.fn.serverlist()` only ever reports this process (the
+---`--listen`/default address plus any `serverstart()` listeners), so it adds
+---no peer candidates; every address it reports is instead excluded below in
+---all slash forms, so none of our own sockets/pipes can be listed. Entries
+---failing an RPC probe, ourselves and our own `fzf-lua*` infra are skipped
+---everywhere; every other responsive listener is listed, including
+---UI-less `--embed` backends (indistinguishable from detached user
+---sessions). Addresses stay in native
 ---form; `utils.serverlist_parse_entry` repairs the single backslash
 ---fzf/cmd eats from `\\.\pipe\...` on the way back.
 ---Returns an iterator of responsive server addresses.
@@ -818,10 +818,10 @@ local function discover_servers(listed)
   local servers ---@type string[]
   if listed then
     servers = vim.list_extend({}, listed)
-  elseif utils.__IS_WINDOWS then
-    servers = {}
   else
-    servers = vim.list_extend({}, vim.fn.serverlist())
+    -- peers come from the listener scan alone; `serverlist()` is used only
+    -- to exclude our own addresses further down, never to populate candidates
+    servers = {}
   end
   local seen = utils.list_to_map(servers)
   for _, s in ipairs(scan_listeners()) do
@@ -832,6 +832,18 @@ local function discover_servers(listed)
   end
   local dedup = {}
   local self_bs, self_fs = vim.v.servername or "", (vim.v.servername or ""):gsub("\\", "/")
+  -- every address this process owns: `vim.v.servername` is only the
+  -- `--listen`/default one, while `serverlist()` also reports extra
+  -- `serverstart()` listeners; add each in all slash forms (runtimes
+  -- disagree on the reported separator)
+  local own = {}
+  for _, s in ipairs(vim.fn.serverlist()) do
+    own[s] = true
+    if utils.__IS_WINDOWS then
+      own[(s:gsub("\\", "/"))] = true
+      own[(s:gsub("/", "\\"))] = true
+    end
+  end
   local filter = function(socket)
     -- `fzf-lua*` is our own picker infrastructure; never list ourselves
     -- (swap/kill/preview of self is meaningless at best). `nvim-term-*`
@@ -842,6 +854,7 @@ local function discover_servers(listed)
     if dedup[socket]
         or socket == self_bs
         or (utils.__IS_WINDOWS and socket == self_fs)
+        or own[socket]
         or (utils.__IS_WINDOWS and socket:match("nvim%-term%-"))
         or socket:match("fzf%-lua") then
       return false

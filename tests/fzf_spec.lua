@@ -162,11 +162,13 @@ describe("Testing fzf launcher", function()
     assert.is.True(fused:find("New%-Object System%.Diagnostics%.ProcessStartInfo") ~= nil)
     assert.is.False(fused:find("Start%-Process") ~= nil)
     -- item command runs through cmd.exe without a redirect; its stdout is
-    -- pumped into fzf's stdin so items stream in while fzf is already up
+    -- pumped into fzf's stdin asynchronously so items stream in while fzf
+    -- is already up and fzf's exit is observed while the pump still runs
     assert.is.True(fused:find(
       "$ipsi.Arguments = '/d /e:off /f:off /v:off /c (echo foo || break)'", 1, true) ~= nil)
     assert.is.True(fused:find(
-      "$iproc.StandardOutput.BaseStream.CopyTo($fproc.StandardInput.BaseStream)", 1, true) ~= nil)
+      "$pump = $iproc.StandardOutput.BaseStream.CopyToAsync($fproc.StandardInput.BaseStream)", 1, true) ~= nil)
+    assert.is.True(fused:find("$fproc.WaitForExit(200)", 1, true) ~= nil)
     -- fzf receives the long argument line through the verbatim Arguments string
     assert.is.True(fused:find("$fpsi.Arguments = ", 1, true) ~= nil)
     local expected = libuv.shellescape("--bind=" .. raw_bind, 1)
