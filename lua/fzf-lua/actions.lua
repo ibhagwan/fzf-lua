@@ -1353,6 +1353,21 @@ end
 -- is timed so a hung server can't freeze the picker.
 local parse_entry = utils.serverlist_parse_entry
 
+-- A `qa!` sent over a timed RPC can time out when the target exits before
+-- the response arrives (the channel dies mid-request); poll the liveness
+-- probe briefly to distinguish that from a genuinely unserved request.
+-- Probes return fast while the peer responds and cost the RPC timeout only
+-- when it does not (in which case the loop exits right away).
+---@param addr string
+---@return boolean exited
+local function server_exited(addr)
+  for _ = 1, 5 do
+    if not utils.server_probe(addr) then return true end
+    vim.wait(100)
+  end
+  return false
+end
+
 M.serverlist_kill = function(sel)
   -- NOTE: do not `assert` here, action errors are executed over RPC and
   -- surface nowhere visible; report outcomes explicitly instead. Timed RPC
@@ -1381,6 +1396,11 @@ M.serverlist_kill = function(sel)
       -- never reached: died between listing and kill (or bad address),
       -- do NOT report as killed
       gone = gone + 1
+    elseif tostring(err) == "Timeout" and server_exited(addr) then
+      -- `qa!` was delivered but the response was lost when the target exited
+      -- mid-request; the probe confirmed it is gone, count as killed (still
+      -- reachable -> falls through to the failure report below)
+      killed = killed + 1
     else
       failures[#failures + 1] = ("%s: %s"):format(
         utils.escape_invisible(addr), tostring(err))
