@@ -230,7 +230,15 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   }
   -- the direct route (`win_spawn`) receives the same environment in its spec
   -- (used in-process by the CLI host and serialized for the TUI mediator)
-  if win_spec then win_spec.env = job_env end
+  if win_spec then
+    -- pin `NVIM` to this instance: `libuv.uv_spawn` fills missing variables
+    -- from the process that spawns fzf, so without this the TUI mediator's
+    -- spawns would expose the mediator's own server address to fzf's children
+    -- (`nvim --server $NVIM`, nvim_server previewer, item commands) instead
+    -- of the editor that owns the picker
+    job_env["NVIM"] = vim.v.servername
+    win_spec.env = job_env
+  end
   -- write the mediator spec file now that it carries the full environment
   if win_spec and win_spec_path then
     local payload = libuv.serialize(win_spec, true)

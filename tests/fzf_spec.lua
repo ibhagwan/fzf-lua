@@ -101,6 +101,9 @@ describe("Testing fzf launcher", function()
     assert.is.True(#spec.outfile > 0)
     eq(captured.env.SHELL, "cmd.exe")
     eq(captured.env.FZF_DEFAULT_COMMAND, "echo foo || break")
+    -- `NVIM` is pinned to this instance (the spec env is also consumed by the
+    -- TUI mediator's spawns, see `fzf.raw_fzf`)
+    eq(captured.env.NVIM, vim.v.servername)
   end)
 
   it("has no cmd.exe/PowerShell length limit for long arguments", function()
