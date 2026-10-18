@@ -7,6 +7,7 @@ local utils = fzf.utils
 
 describe("Testing utils module", function()
   it("separator", function()
+    local is_windows = utils.__IS_WINDOWS
     utils.__IS_WINDOWS = false
     eq(utils._if_win_normalize_vars("--w=$COLUMNS"), "--w=$COLUMNS")
 
@@ -17,7 +18,8 @@ describe("Testing utils module", function()
     eq(utils._if_win_normalize_vars("--w=$COLUMNS", 2), "--w=!COLUMNS!")
     eq(utils._if_win_normalize_vars("--w=%COLUMNS%", 2), "--w=!COLUMNS!")
     eq(utils._if_win_normalize_vars("-w=$C -l=$L", 2), "-w=!C! -l=!L!")
-    utils.__IS_WINDOWS = nil
+    -- restore the module flag, other specs depend on it
+    utils.__IS_WINDOWS = is_windows
   end)
 
   it("version formatter", function()
