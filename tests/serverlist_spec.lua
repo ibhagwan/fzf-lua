@@ -223,6 +223,21 @@ describe("serverlist discovery", function()
     providers._discover_servers({ stale }):each(function(p) res[#res + 1] = p end)
     eq(list_has_addr(res, stale), false)
   end)
+  it("excludes own extra listeners (all slash forms)", function()
+    -- `serverlist()` reports more than `v:servername` when the process owns
+    -- extra `serverstart()` listeners; they are dialable, so only the
+    -- own-address exclusion can keep them out of the picker
+    local addr = vim.fn.serverstart() --[[@as string]]
+    eq(utils.server_probe(addr), true)
+    local function found(listed)
+      local res = {}
+      providers._discover_servers(listed):each(function(p) res[#res + 1] = p end)
+      return res
+    end
+    eq(list_has_addr(found({ addr }), addr), false)
+    eq(list_has_addr(found({ (addr:gsub("\\", "/")) }), addr), false)
+    pcall(vim.fn.serverstop, addr)
+  end)
 end)
 
 describe("serverlist preview", function()
