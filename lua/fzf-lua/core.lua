@@ -778,7 +778,17 @@ M.build_fzf_cli = function(opts)
           table.insert(cli_args, arg)
           -- Split raw user argument strings (e.g. fzf_args entries with spaces)
           -- into separate argument elements for native quoting.
-          local tokens = shellparse(tostring(arg))
+          -- On Windows these strings are `cmd.exe` command line fragments
+          -- (typically pre-escaped with `libuv.shellescape`): recover the raw
+          -- argv values `cmd.exe` + the Win32 argv parser would deliver so
+          -- the shell-less spawn route (`libuv.win_spawn`) gets identical
+          -- values (`libuv.cmd_argv`); posix uses the shellwords parser.
+          local tokens
+          if utils.__IS_WINDOWS then
+            tokens = libuv.cmd_argv(tostring(arg))
+          else
+            tokens = shellparse(tostring(arg))
+          end
           if type(tokens) ~= "table" then tokens = { tostring(arg) } end
           ---@cast tokens string[]
           for _, tok in ipairs(tokens) do

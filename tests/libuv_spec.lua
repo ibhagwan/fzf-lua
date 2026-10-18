@@ -95,15 +95,43 @@ describe("Testing libuv module", function()
     eq(libuv.shellescape([[foo\\\^^^"]], 2), [[^"foo\\\^^^^^^\^"^"]])
   end)
 
-  it("ps_escape", function()
-    -- PowerShell single-quoted strings: everything literal except '' (escaped ')
-    eq(libuv.ps_escape([[plain]]), [['plain']])
-    eq(libuv.ps_escape([[it's]]), [['it''s']])
-    eq(libuv.ps_escape([['quoted']]), [['''quoted''']])
-    -- metacharacters ($, backtick, ", (), &, |) stay literal inside single quotes
-    eq(libuv.ps_escape([[$(x) `" & | ; ( )]]), [['$(x) `" & | ; ( )']])
-    eq(libuv.ps_escape([[]]), [['']])
-    eq(libuv.ps_escape([[a b]]), [['a b']])
+  it("cmd_argv round-trips shellescape (cmd style)", function()
+    -- `win_style = true` forces the `cmd.exe` caret escaping (the default
+    -- on Windows), also runs on posix CI
+    local values = {
+      "foo", "a b", "x^y", "a^^b", "p%q", "a&b", "it's", [["q"]], [[E\f]],
+      "汉 é", "bang!x", "eq=a", "semi;x", "lt<x", "pipe|x", "paren(x)",
+      "amp&pipe|semi;", "trailback\\", " caret^ leading", "^caret",
+      "trailcaret^", [[a"b]], [[a\"b]], "two  spaces", "10%%", "a!b",
+      "%TEMP%", "a(b)c", "cur|pipe", "d>e", "a<b",
+      "load:+execute-silent:echo hi",
+    }
+    for _, v in ipairs(values) do
+      same(libuv.cmd_argv(libuv.shellescape(v, true)), { v })
+    end
+    -- the pre-escaped user fragment pattern, e.g. test harness
+    -- `"--bind=" .. shellescape("load:+execute-silent:...")`
+    same(libuv.cmd_argv("--bind=" .. libuv.shellescape("load:+execute-silent:echo hi", true)),
+      { "--bind=load:+execute-silent:echo hi" })
+  end)
+
+  it("cmd_argv parses cmd fragments", function()
+    same(libuv.cmd_argv(""), {})
+    same(libuv.cmd_argv("   "), {})
+    same(libuv.cmd_argv("--no-multi --layout=reverse"), { "--no-multi", "--layout=reverse" })
+    same(libuv.cmd_argv([[--header="a b" --no-multi]]), { "--header=a b", "--no-multi" })
+    same(libuv.cmd_argv("--bind=ctrl-a:first --expect=ctrl-e"),
+      { "--bind=ctrl-a:first", "--expect=ctrl-e" })
+    -- caret escaping quotes/spaces (user args are cmd fragments)
+    same(libuv.cmd_argv([[--header=^"a b^"]]), { "--header=a b" })
+    same(libuv.cmd_argv([[--bind=^"load:+execute-silent:echo^ hi^"]]),
+      { "--bind=load:+execute-silent:echo hi" })
+    same(libuv.cmd_argv("^^"), { "^" })
+    -- backslashes: literal unless collapsing before a quote (2n/2n+1 rules)
+    same(libuv.cmd_argv([[C:\dir\sub]]), { [[C:\dir\sub]] })
+    same(libuv.cmd_argv([[a\"b]]), { [[a"b]] })
+    same(libuv.cmd_argv([[trailback\\]]), { [[trailback\\]] })
+    same(libuv.cmd_argv([[\^^]]), { [[\^]] })
   end)
 
   it("escape_cli escapes value segments per shell, keeps literal segments", function()
@@ -117,11 +145,6 @@ describe("Testing libuv module", function()
     eq(cmd[1], "--bind=" .. libuv.shellescape("ctrl-r:reload(a b)"))
     eq(cmd[2], "--query")
     eq(cmd[3], libuv.shellescape("it's"))
-    -- powershell: value segments via ps_escape
-    local ps = libuv.escape_cli(elems, "powershell")
-    eq(ps[1], "--bind='ctrl-r:reload(a b)'")
-    eq(ps[2], "--query")
-    eq(ps[3], "'it''s'")
     -- posix: value segments via posix shellescape
     local posix = libuv.escape_cli(elems, "posix")
     eq(posix[1], "--bind=" .. libuv.shellescape("ctrl-r:reload(a b)"))

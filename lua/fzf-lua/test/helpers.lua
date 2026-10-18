@@ -187,7 +187,8 @@ M.new_child_neovim = function()
     -- timeout+retries (5x on Windows) make the suite appear hung. Piping via
     -- `cmd.exe /c "(cmd) | fzf"` uses a stdin pipe (which closes) and works
     -- regardless of tty detection, so default to pipe for headless (tests, cli)
-    -- on Windows. GUI sessions keep env (better exit kill + powershell fallback).
+    -- on Windows. GUI sessions keep env (fzf kills its own default command on
+    -- exit; `pipe_cmd` routes the command through the `win_spawn` item pump).
     if M.IS_WIN() then defaults.pipe_cmd = true end
     child.lua(function(...)
       require("fzf-lua").setup(vim.tbl_deep_extend("keep", ..., {
