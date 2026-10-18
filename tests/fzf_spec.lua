@@ -169,6 +169,14 @@ describe("Testing fzf launcher", function()
     assert.is.True(fused:find(
       "$pump = $iproc.StandardOutput.BaseStream.CopyToAsync($fproc.StandardInput.BaseStream)", 1, true) ~= nil)
     assert.is.True(fused:find("$fproc.WaitForExit(200)", 1, true) ~= nil)
+    -- the producer is killed as a whole process tree: `$iproc` is only the
+    -- wrapper cmd.exe, a plain `Process.Kill()` would orphan the actual
+    -- producer still holding the stdout pipe (the pump would stay blocked
+    -- until its natural exit); `$iproc` is then reaped before the pump is
+    -- awaited and its exit code is propagated
+    assert.is.True(fused:find(
+      "& taskkill.exe /PID $iproc.Id /T /F 2>$null | Out-Null; $iproc.WaitForExit()", 1, true) ~= nil)
+    assert.is.False(fused:find("$iproc.Kill()", 1, true) ~= nil)
     -- fzf receives the long argument line through the verbatim Arguments string
     assert.is.True(fused:find("$fpsi.Arguments = ", 1, true) ~= nil)
     local expected = libuv.shellescape("--bind=" .. raw_bind, 1)
