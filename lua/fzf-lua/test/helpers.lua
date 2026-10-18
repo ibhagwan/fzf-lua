@@ -233,7 +233,11 @@ M.new_child_neovim = function()
       pcall(vim.fn.jobstop, job_id)
       if vim.fn.jobwait({ job_id }, 1000)[1] == -1 then
         -- still running after jobstop: keep `child.job` so a later `stop` can
-        -- retry instead of deleting the address of a live process
+        -- retry instead of deleting the address of a live process, but report
+        -- it (`error()` would not surface: callers `pcall(child.stop)`)
+        vim.notify(string.format(
+          "child.stop: job %d still alive after `jobstop`, kept for a retry",
+          job_id), vim.log.levels.WARN)
         return
       end
     end

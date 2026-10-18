@@ -96,9 +96,9 @@ end
 -- spaces or quotes in paths. Optional trailing args may be nil (no lnum
 -- or col) and are filtered out since `uv.spawn` needs a dense argv.
 -- Spawn failures are reported via `utils.warn` and returned as `false`; the
--- wrapper never raises, so callers must check the return and skip their
--- takeover `quit()` when the launch failed, otherwise the picker exits
--- without anything taking the console over.
+-- wrapper never raises. Callers quit afterwards either way: a failed launch
+-- only means nothing takes the console over, and leaving the dead picker
+-- process around would hang the console instead of returning to the shell.
 -- When the parent's stdout is not a console (e.g. PowerShell captures the
 -- picker output through a pipe, as the shell widgets do), `{ 0, 1, 2 }`
 -- would give the child a stdout it cannot render a TUI on and the CLI
@@ -283,11 +283,12 @@ return {
         enable_stdio_inheritance()
         if _is_win then
           -- no `execl` replacement on Windows: `win_exec` returns and the
-          -- picker must quit explicitly to hand the console over; a failed
-          -- launch (reported by `win_exec`) keeps this picker alive
-          if win_exec(NVIM_BIN, "--remote-ui", "--server", remote) then
-            quit()
-          end
+          -- picker must quit explicitly to hand the console over. Quit even
+          -- on a failed launch (reported by `win_exec`): the channels and
+          -- children above are already torn down, the picker cannot continue
+          -- and a leftover CLI would hang the console
+          win_exec(NVIM_BIN, "--remote-ui", "--server", remote)
+          quit()
         else
           posix_exec(NVIM_BIN, "--remote-ui", "--server", remote)
         end
