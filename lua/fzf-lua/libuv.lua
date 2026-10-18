@@ -70,6 +70,40 @@ M.uv_spawn = function(cmd, opts, on_exit)
   return assert(uv.spawn(cmd, opts, on_exit))
 end
 
+-- The FFI table must be obtained via `require("ffi")`: it is cached in
+-- `package.loaded`, so all code shares a single CType state. Calling the
+-- library constructor directly (`package.preload.ffi()`) re-runs
+-- `luaopen_ffi`, which re-initializes the CType state: every previous
+-- `cdef` is dropped and already-resolved symbols start resolving to
+-- unrelated types (calling them fails with e.g. `'short' is not callable`).
+-- All Windows APIs used by this module are declared in a single `cdef`.
+local win_ffi = nil ---@type table|false|nil
+
+---@return { ffi: table, k32: table }?
+local function win_ffi_init()
+  if win_ffi ~= nil then return win_ffi or nil end
+  local ok, res = pcall(function()
+    local ffi = require("ffi")
+    ffi.cdef([[
+      void* CreateFileW(const unsigned short*, unsigned long,
+        unsigned long, void*, unsigned long, unsigned long, void*);
+      int _open_osfhandle(long long, int);
+      void* GetStdHandle(unsigned long nStdHandle);
+      int GetHandleInformation(void* hObject, unsigned long* lpdwFlags);
+      int SetHandleInformation(void* hObject, unsigned long dwMask,
+        unsigned long dwFlags);
+      typedef struct {
+        unsigned long nLength;
+        void* lpSecurityDescriptor;
+        int bInheritHandle;
+      } FzfSA;
+    ]])
+    return { ffi = ffi, k32 = ffi.load("kernel32") }
+  end)
+  win_ffi = (ok and res) or false
+  return win_ffi or nil
+end
+
 -- Reopen the Windows console (`CONIN$`/`CONOUT$`) as inheritable CRT fds.
 -- When the shell widgets capture both output streams (e.g. a PSReadLine key
 -- handler piping stdout and stderr), spawned children have no console handle
@@ -81,17 +115,8 @@ M.win_console_stdio = function()
   if not _is_win then return end
   if M._win_console_fds ~= nil then return M._win_console_fds or nil end
   local ok = pcall(function()
-    local ffi = package.preload.ffi()
-    pcall(ffi.cdef, [[
-      void* CreateFileW(const unsigned short*, unsigned long,
-        unsigned long, void*, unsigned long, unsigned long, void*);
-      int _open_osfhandle(long long, int);
-      typedef struct {
-        unsigned long nLength;
-        void* lpSecurityDescriptor;
-        int bInheritHandle;
-      } FzfSA;
-    ]])
+    local win = win_ffi_init()
+    local ffi = assert(win and win.ffi)
     local function wsz(s)
       local b = ffi.new("unsigned short[?]", #s + 1)
       for i = 1, #s do b[i - 1] = s:byte(i) end
@@ -128,6 +153,56 @@ M.win_stderr_fd = function()
   if ok and tty == "tty" then return 2 end
   local console = M.win_console_stdio()
   return console and console[3] or 2
+end
+
+--- libuv as bundled with Neovim (<= 1.52) spawns children with
+--- `CreateProcess(bInheritHandles=TRUE)` and no
+--- `PROC_THREAD_ATTRIBUTE_HANDLE_LIST`, so *every* inheritable handle of
+--- this process leaks into the child even when it isn't part of `stdio`.
+--- When a shell integration captures the picker output (stdout/stderr are
+--- pipes), those pipes would end up in the spawned process tree; an nvim
+--- `--embed` server left running by `:detach` would then keep the pipes'
+--- write end open forever and the shell's pipeline reader would never see
+--- EOF (stuck shell/key handler).
+---
+--- Temporarily clears `HANDLE_FLAG_INHERIT` on the stdio fds (`0`, `1`,
+--- `2`) that are not referenced by `stdio`. Returns a function restoring
+--- the original flags; call it right after `uv.spawn` returns (the
+--- child's handle table is fixed at `CreateProcess` time).
+---@param stdio table stdio table as passed to `uv.spawn`
+---@return fun()|nil restore
+M.win_stdio_no_inherit = function(stdio)
+  if not _is_win then return end
+  local win = win_ffi_init()
+  if not win then return end
+  local ffi, k32 = win.ffi, win.k32
+  local in_use = {} ---@type table<integer, boolean>
+  for _, std in ipairs(stdio) do
+    if type(std) == "number" then
+      ---@cast std integer
+      in_use[std] = true
+    end
+  end
+  local HANDLE_FLAG_INHERIT = 1
+  -- STD_INPUT_HANDLE/STD_OUTPUT_HANDLE/STD_ERROR_HANDLE (fds 0/1/2)
+  local STD_HANDLES = { 0xFFFFFFF6, 0xFFFFFFF5, 0xFFFFFFF4 }
+  local saved = {} ---@type { h: any, flags: integer }[]
+  for fd = 0, 2 do
+    if not in_use[fd] then
+      local h = k32.GetStdHandle(STD_HANDLES[fd + 1])
+      local flags = ffi.new("unsigned long[1]")
+      if k32.GetHandleInformation(h, flags) ~= 0
+          and k32.SetHandleInformation(h, HANDLE_FLAG_INHERIT, 0) ~= 0 then
+        saved[#saved + 1] = { h = h, flags = flags[0] }
+      end
+    end
+  end
+  if #saved == 0 then return end
+  return function()
+    for _, s in ipairs(saved) do
+      k32.SetHandleInformation(s.h, HANDLE_FLAG_INHERIT, s.flags)
+    end
+  end
 end
 
 
