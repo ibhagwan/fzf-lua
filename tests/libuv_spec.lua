@@ -126,6 +126,14 @@ describe("Testing libuv module", function()
     same(libuv.cmd_argv([[--header=^"a b^"]]), { "--header=a b" })
     same(libuv.cmd_argv([[--bind=^"load:+execute-silent:echo^ hi^"]]),
       { "--bind=load:+execute-silent:echo hi" })
+    -- carets are only special outside of double quotes (cmd.exe): inside a
+    -- quoted fragment a caret is literal and only the quote toggles state
+    same(libuv.cmd_argv([["x^y"]]), { "x^y" })
+    same(libuv.cmd_argv([["x^^y"]]), { "x^^y" })
+    same(libuv.cmd_argv([["a^"b"]]), { "a^b" })
+    same(libuv.cmd_argv([["A ^" B"]]), { "A ^", "B" })
+    -- dangling caret: dropped outside quotes, literal inside quotes
+    same(libuv.cmd_argv([["abc^"]]), { "abc^" })
     same(libuv.cmd_argv("^^"), { "^" })
     -- backslashes: literal unless collapsing before a quote (2n/2n+1 rules)
     same(libuv.cmd_argv([[C:\dir\sub]]), { [[C:\dir\sub]] })

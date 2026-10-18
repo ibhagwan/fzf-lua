@@ -29,6 +29,41 @@ describe("Testing core cli construction", function()
     assert.is.True(found_raw)
   end)
 
+  it("decodes pre-escaped fzf_opts values for the win raw argv", function()
+    local core = require("fzf-lua.core")
+    local config = require("fzf-lua.config")
+    local utils = require("fzf-lua.utils")
+    local defaults = require("fzf-lua.defaults").defaults
+    -- a pre-escaped value with an inner escaped quote (recognized as escaped
+    -- on all platforms), e.g. a user pre-escaping `--header "say \"hi\""`
+    local escaped = [["say \"hi\""]]
+    local opts = config.normalize_opts({
+      cwd = vim.fn.getcwd(),
+      fzf_opts = { ["--header"] = escaped },
+    }, defaults.files)
+    local old = utils.__IS_WINDOWS
+    utils.__IS_WINDOWS = true
+    local ok, cli_args, segments = pcall(core.build_fzf_cli, opts)
+    utils.__IS_WINDOWS = old
+    if not ok then error(cli_args) end
+    -- cli_args keeps the user-escaped string unchanged
+    local found_escaped = false
+    for _, a in ipairs(cli_args) do
+      if a == escaped then found_escaped = true end
+    end
+    assert.is.True(found_escaped)
+    -- the shell-less raw argv must receive the decoded value: `cmd.exe` +
+    -- argv parsing drops the quotes and collapses `\"` to a literal `"`,
+    -- while stripping only the outer quotes leaves `say \"hi\"` behind
+    local found_raw = false
+    for _, elem in ipairs(segments) do
+      if #elem == 1 and elem[1].text == 'say "hi"' and elem[1].escape == false then
+        found_raw = true
+      end
+    end
+    assert.is.True(found_raw)
+  end)
+
   it("splits fzf_cli_args with spaces into separate segment elements", function()
     local core = require("fzf-lua.core")
     local config = require("fzf-lua.config")

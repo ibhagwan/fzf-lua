@@ -696,7 +696,7 @@ M.build_fzf_cli = function(opts)
         -- flag can be set to `false` to negate a default
         if not v then return end
         local opt_v
-        -- raw value recorded for the PowerShell fallback segments
+        -- raw value recorded for the win_spawn raw argv segments
         local raw_v
         local escape_v = true
         if type(v) == "string" or type(v) == "number" then
@@ -715,11 +715,17 @@ M.build_fzf_cli = function(opts)
             if is_escaped_v then
               utils.warn("`fzf_opts` are automatically shellescaped."
                 .. " Please remove surrounding quotes from %s=%s", k, v)
-              -- For native (PowerShell) argument handling, record the unquoted
-              -- value so it can be re-quoted by the target shell.
-              if utils.__IS_WINDOWS and v:match([[^%^".*%^"$]]) then
-                raw_v = v:sub(3, #v - 2)
+              -- Record the raw value for the shell-less win spawn route
+              -- (`_cli_segments` -> raw argv): decode the pre-escaped
+              -- fragment exactly as `cmd.exe` + the Win32 argv parser would
+              -- deliver it (caret escapes as well as `\"` and backslash runs
+              -- included, see `libuv.cmd_argv`). Stripping only the outer
+              -- quotes would leave the inner escapes in the argv.
+              if utils.__IS_WINDOWS then
+                raw_v = libuv.cmd_argv(v)[1]
               else
+                -- posix: strip the surrounding quotes only (`shellescape`
+                -- output has no nested escapes to decode)
                 raw_v = v:sub(2, #v - 1)
               end
             end

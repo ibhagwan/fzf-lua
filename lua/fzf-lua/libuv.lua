@@ -1131,7 +1131,12 @@ end
 -- fragments, typically pre-escaped with `shellescape` (caret style). The
 -- Windows direct spawn route (`libuv.win_spawn`) passes the raw argv to
 -- `uv.spawn` with no shell, so this reverses the two parsing passes:
---   1. cmd.exe caret consumption: `^X` -> `X` (and thus `^^` -> `^`)
+--   1. cmd.exe caret consumption: `^X` -> `X` (and thus `^^` -> `^`); a
+--      caret is only special outside of double quotes, inside quotes it is
+--      literal and an unescaped `"` toggles the quoted state (this is what
+--      makes the `^"...^"` shellescape form safe: the escaped surrounding
+--      quotes are emitted literally and never enter the quoted state, so
+--      the inner caret escapes still apply)
 --   2. Win32 argv parsing: quotes toggle and are dropped, backslash runs
 --      before quotes collapse per CommandLineToArgvW rules (`2n` backslashes
 --      followed by a quote -> `n` backslashes + toggle quote mode, `2n+1` ->
@@ -1140,16 +1145,21 @@ end
 ---@return string[] argv
 M.cmd_argv = function(s)
   if not s or s == "" then return {} end
-  -- (1) consume cmd.exe caret escapes
+  -- (1) consume cmd.exe caret escapes; a caret is only special outside of
+  -- double quotes. An unescaped `"` toggles the quoted state, while a caret
+  -- escaped `^"` is emitted literally and does not toggle it (the emitted
+  -- quote is re-interpreted by the argv pass below)
   local parts = {}
   local i, len = 1, #s
+  local quoted = false
   while i <= len do
     local c = s:sub(i, i)
-    if c == "^" then
+    if c == "^" and not quoted then
       if i == len then break end -- dangling caret is dropped by cmd.exe
       parts[#parts + 1] = s:sub(i + 1, i + 1)
       i = i + 2
     else
+      if c == [["]] then quoted = not quoted end
       parts[#parts + 1] = c
       i = i + 1
     end
