@@ -1130,14 +1130,22 @@ end
 -- etc.) are written for the platform shell: on Windows they are cmd.exe
 -- fragments, typically pre-escaped with `shellescape` (caret style). The
 -- Windows direct spawn route (`libuv.win_spawn`) passes the raw argv to
--- `uv.spawn` with no shell, so this reverses the two parsing passes:
---   1. cmd.exe caret consumption: `^X` -> `X` (and thus `^^` -> `^`); a
+-- `uv.spawn` with no shell, so this reverses the parsing passes:
+--   1. `%NAME%` expansion (cmd.exe semantics; differs from batch scripts):
+--      a defined name (case-insensitive) expands to its value, which is
+--      not rescanned; an undefined name is left as text and the scan
+--      resumes one char later, so a later `%` may still pair (`%%TEMP%%`
+--      -> `%TEMP%`). A `shellescape`-escaped value carries a caret inside
+--      the scanned name (`^%NAME^%`), never matches and survives for the
+--      caret pass below. Not modelled: `%VAR:~x,y%` substitutions and
+--      cmd's pseudo vars (`%CD%` etc.); verified against `cmd.exe`
+--   2. cmd.exe caret consumption: `^X` -> `X` (and thus `^^` -> `^`); a
 --      caret is only special outside of double quotes, inside quotes it is
 --      literal and an unescaped `"` toggles the quoted state (this is what
 --      makes the `^"...^"` shellescape form safe: the escaped surrounding
 --      quotes are emitted literally and never enter the quoted state, so
 --      the inner caret escapes still apply)
---   2. Win32 argv parsing as implemented by the Go runtime
+--   3. Win32 argv parsing as implemented by the Go runtime
 --      (`os/exec_windows.go`; fzf is a Go binary): quotes toggle and are
 --      dropped, a doubled `""` inside a quoted section is one literal quote
 --      ("Prior to 2008" rule; the pair is consumed and the quote state
@@ -1145,10 +1153,49 @@ end
 --      followed by a quote -> `n` backslashes + toggle quote mode, `2n+1` ->
 --      `n` backslashes + literal quote), unquoted whitespace splits args
 ---@param s string cmd.exe command line fragment
+---@param env table<string,string>? variable environment (defaults to
+---  `vim.fn.environ()`, the environment `cmd.exe` would be spawned with)
 ---@return string[] argv
-M.cmd_argv = function(s)
+M.cmd_argv = function(s, env)
   if not s or s == "" then return {} end
-  -- (1) consume cmd.exe caret escapes; a caret is only special outside of
+  -- (1) expand defined `%NAME%` variables (`cmd.exe` performs this before
+  -- everything else; env lookups are case-insensitive on Windows)
+  env = env or vim.fn.environ()
+  local lookup = function(name)
+    if name == "" then return nil end
+    if env[name] ~= nil then return env[name] end
+    name = name:lower()
+    for k, v in pairs(env) do
+      if k:lower() == name then return v end
+    end
+    return nil
+  end
+  do
+    local out, i, slen = {}, 1, #s
+    while i <= slen do
+      if s:sub(i, i) == "%" then
+        local j = s:find("%", i + 1, true)
+        local val = j and lookup(s:sub(i + 1, j - 1)) or nil
+        if j and val then
+          out[#out + 1] = val
+          i = j + 1
+        elseif j then
+          -- undefined: leave this `%` for the next scan step (the closing
+          -- `%` can pair with a later one, as `cmd.exe` does with `%%X%%`)
+          out[#out + 1] = "%"
+          i = i + 1
+        else
+          out[#out + 1] = s:sub(i)
+          i = slen + 1
+        end
+      else
+        out[#out + 1] = s:sub(i, i)
+        i = i + 1
+      end
+    end
+    s = table.concat(out)
+  end
+  -- (2) consume cmd.exe caret escapes; a caret is only special outside of
   -- double quotes. An unescaped `"` toggles the quoted state, while a caret
   -- escaped `^"` is emitted literally and does not toggle it (the emitted
   -- quote is re-interpreted by the argv pass below)
@@ -1168,7 +1215,7 @@ M.cmd_argv = function(s)
     end
   end
   s = table.concat(parts)
-  -- (2) parse the unescaped command line into argv values
+  -- (3) parse the unescaped command line into argv values
   local argv = {}
   local j = 1
   len = #s

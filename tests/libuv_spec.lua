@@ -152,6 +152,41 @@ describe("Testing libuv module", function()
     same(libuv.cmd_argv([[\^^]]), { [[\^]] })
   end)
 
+  it("cmd_argv expands defined %NAME% variables (cmd /c semantics)", function()
+    -- `cmd.exe` expands defined `%NAME%` before any other processing
+    -- (case-insensitive); an undefined name is left as text and the scan
+    -- resumes one char later, expanded values are not rescanned. All of
+    -- this was verified against `cmd.exe /d /e:off /f:off /v:off /c ..`
+    -- (the legacy launcher route) + `fzf.exe`
+    local env = {
+      MYTEST = "abc", SPACED = "hello world",
+      REC = "%MYTEST%", TEMP = [[C:\Temp]],
+    }
+    same(libuv.cmd_argv("--query=%MYTEST%", env), { "--query=abc" })
+    -- env lookups are case-insensitive
+    same(libuv.cmd_argv("--query=%mytest%", env), { "--query=abc" })
+    -- undefined and unpaired `%` are preserved
+    same(libuv.cmd_argv("--query=%NO_SUCH%", env), { "--query=%NO_SUCH%" })
+    same(libuv.cmd_argv("--query=%MYTEST", env), { "--query=%MYTEST" })
+    -- undefined pair: the closing `%` pairs with a later one (`cmd.exe`)
+    same(libuv.cmd_argv("--query=%%MYTEST%%", env), { "--query=%abc%" })
+    -- expanded values are not rescanned
+    same(libuv.cmd_argv("--query=%REC%", env), { "--query=%MYTEST%" })
+    -- expansion happens before tokenization: value spaces split the argv
+    same(libuv.cmd_argv("--query=%SPACED%", env), { "--query=hello", "world" })
+    same(libuv.cmd_argv([[--query="%SPACED%"]], env), { "--query=hello world" })
+    -- caret-protected (shellescape style) names never match: `MYTEST^`
+    same(libuv.cmd_argv([[--query=^%MYTEST^%]], env), { "--query=%MYTEST%" })
+    -- the `shellescape` round-trip holds even when the variable is defined
+    same(libuv.cmd_argv(libuv.shellescape("x %TEMP% y", true), env),
+      { "x %TEMP% y" })
+    same(libuv.cmd_argv(libuv.shellescape("100%%", true), env), { "100%%" })
+    -- the default env is the nvim process environment
+    vim.env.FZF_LUA_CMDARGV_TEST = "xyz"
+    same(libuv.cmd_argv("--query=%FZF_LUA_CMDARGV_TEST%"), { "--query=xyz" })
+    vim.env.FZF_LUA_CMDARGV_TEST = nil
+  end)
+
   it("escape_cli escapes value segments per shell, keeps literal segments", function()
     local elems = {
       { { text = "--bind=", escape = false }, { text = "ctrl-r:reload(a b)", escape = true } },
