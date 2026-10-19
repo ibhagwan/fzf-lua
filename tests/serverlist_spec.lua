@@ -307,6 +307,17 @@ describe("serverlist actions", function()
     capture_off()
     if not ok then error(err) end
   end
+  -- swap `utils.rpcexec_timed`/`utils.server_probe` for the duration of fn,
+  -- always restoring: a failing case must not leak stubs into later specs
+  ---@param rpcexec fun(addr: string, method: string, ...: any): boolean, any
+  ---@param probe fun(addr: string): boolean, any
+  local function with_stubs(rpcexec, probe, fn)
+    local orig_rpcexec, orig_probe = utils.rpcexec_timed, utils.server_probe
+    utils.rpcexec_timed, utils.server_probe = rpcexec, probe
+    local ok, err = pcall(fn)
+    utils.rpcexec_timed, utils.server_probe = orig_rpcexec, orig_probe
+    if not ok then error(err) end
+  end
   it("kill terminates a live sibling, tolerates stale entries", function()
     with_notes(function()
       with_sibling(nil, nil, function(_, addr)
@@ -338,6 +349,48 @@ describe("serverlist actions", function()
         assert(noted("Killed 1 server"), "missing kill confirmation in mixed run")
         assert(noted("already exited"), "missing already-exited note in mixed run")
       end)
+    end)
+  end)
+  -- after a `qa!` timeout, only channel-gone evidence proves the exit: a
+  -- probe that merely times out shows the peer is reachable but unresponsive
+  it("kill treats an unresponsive probe as a failure, not an exit", function()
+    with_notes(function()
+      local addr = utils.__IS_WINDOWS and [[\\.\pipe\nvim-srv-test-hung]]
+          or (vim.fn.tempname() .. "-nvim-srv-test-hung.sock")
+      with_stubs(function() return false, "Timeout" end,
+        function() return false, "Timeout" end, function()
+          actions.serverlist_kill({ serverlist_entry(addr) })
+          assert(noted("kill failed"), "probe timeout must remain a kill failure")
+          assert(not noted("Killed"), "unconfirmed exit must not report killed")
+          assert(not noted("already exited"), "timeout must not report as exited")
+        end)
+    end)
+  end)
+  it("kill counts a probe channel closed by the peer as an exit", function()
+    with_notes(function()
+      local addr = utils.__IS_WINDOWS and [[\\.\pipe\nvim-srv-test-died]]
+          or (vim.fn.tempname() .. "-nvim-srv-test-died.sock")
+      -- the peer accepted the probe and died while the request was in
+      -- flight: the lost `qa!` response is confirmed as an exit
+      with_stubs(function() return false, "Timeout" end,
+        function() return false, "ch 7 was closed by the peer" end, function()
+          actions.serverlist_kill({ serverlist_entry(addr) })
+          assert(noted("Killed 1 server"), "probe-confirmed exit must count as killed")
+          assert(not noted("kill failed"), "probe-confirmed exit must not fail")
+        end)
+    end)
+  end)
+  it("kill counts a probe with no listener as an exit", function()
+    with_notes(function()
+      local addr = utils.__IS_WINDOWS and [[\\.\pipe\nvim-srv-test-gone]]
+          or (vim.fn.tempname() .. "-nvim-srv-test-gone.sock")
+      -- `sockconnect` failing means nothing listens at the address anymore
+      with_stubs(function() return false, "Timeout" end,
+        function() return false, "Invalid channel" end, function()
+          actions.serverlist_kill({ serverlist_entry(addr) })
+          assert(noted("Killed 1 server"), "dead socket must count as killed")
+          assert(not noted("kill failed"), "dead socket must not fail")
+        end)
     end)
   end)
   it("connect guards unreachable and self targets", function()
