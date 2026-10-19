@@ -1356,13 +1356,21 @@ local parse_entry = utils.serverlist_parse_entry
 -- A `qa!` sent over a timed RPC can time out when the target exits before
 -- the response arrives (the channel dies mid-request); poll the liveness
 -- probe briefly to distinguish that from a genuinely unserved request.
--- Probes return fast while the peer responds and cost the RPC timeout only
--- when it does not (in which case the loop exits right away).
+-- Only channel-gone evidence counts as exit: "Invalid channel" (nothing
+-- listens at `addr`) or "closed by the peer" (the process died while the
+-- probe was in flight). A probe timeout only proves the peer is reachable
+-- but not answering, so it keeps polling (fast while the peer responds,
+-- one RPC timeout per stuck probe) until the bounded window is exhausted.
 ---@param addr string
 ---@return boolean exited
 local function server_exited(addr)
   for _ = 1, 5 do
-    if not utils.server_probe(addr) then return true end
+    local alive, detail = utils.server_probe(addr)
+    if not alive and type(detail) == "string" and
+        (detail:match("Invalid channel")
+          or detail:match("ch %d+ was closed by the peer")) then
+      return true
+    end
     vim.wait(100)
   end
   return false
