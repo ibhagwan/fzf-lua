@@ -352,7 +352,8 @@ T["win"]["reuse"] = new_set({
     { {} },
     { { winopts = { split = "enew", } } },
     { { winopts = { split = "botright new", preview = { layout = "horizontal" } } } },
-  }
+  },
+  n_retry = not helpers.IS_LINUX() and 5 or nil
 }, {
   function(o)
     -- Ignore terminal command line with process number
