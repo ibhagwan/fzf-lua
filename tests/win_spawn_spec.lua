@@ -200,4 +200,51 @@ describe("Testing win_spawn (Windows one route)", function()
     eq(out, "")
     vim.fn.delete(infile)
   end)
+
+  it("mediator does not leave a default listener (serverlist pollution)", function()
+    helpers.SKIP_IF_NOT_WIN()
+    ---@diagnostic disable-next-line: deprecated
+    local _info = debug.getinfo(1, "S")
+    ---@cast _info {source: string}
+    local root = vim.fn.fnamemodify(_info.source:gsub("^@", ""), ":h:h")
+    local script = (root .. "/lua/fzf-lua/win_spawn.lua"):gsub("\\", "/")
+
+    local outfile = utils.tempname()
+    local spec_path = utils.tempname()
+    -- `ping` keeps the mediator alive for a few seconds (fzf exits too fast
+    -- to sample the pipe namespace reliably)
+    write_file(spec_path, libuv.serialize({
+      bin = vim.fn.exepath("ping"),
+      args = { "-n", "6", "127.0.0.1" },
+      outfile = outfile,
+      env = { SHELL = "cmd.exe" },
+    }, true))
+
+    local seen = utils.list_to_map(vim.fn.glob([[\\.\pipe\nvim*]], false, true))
+    local rc ---@type integer?
+    local handle = uv.spawn((vim.v.progpath):gsub("\\", "/"), {
+      args = { "-u", "NONE", "-l", script, (spec_path:gsub("\\", "/")) },
+      stdio = { nil, nil, nil },
+    }, function(code, _)
+      rc = code
+    end)
+    assert.is.True(handle ~= nil)
+    -- sample while the mediator runs: every Windows nvim listens by default
+    -- on `\\.\pipe\nvim.<pid>.<n>`, so without a `serverstop` guard the
+    -- mediator registers a listener and the `serverlist` picker lists it
+    -- (`providers/nvim.lua` discovery globs this namespace)
+    local leaked = {}
+    for _ = 1, 3 do
+      vim.wait(900)
+      for _, p in ipairs(vim.fn.glob([[\\.\pipe\nvim*]], false, true)) do
+        if not seen[p] then leaked[#leaked + 1] = p end
+      end
+    end
+    vim.wait(30000, function() return rc ~= nil end)
+    vim.fn.delete(outfile)
+    eq(rc, 0)
+    if #leaked > 0 then
+      error("mediator left a listener: " .. table.concat(leaked, ", "))
+    end
+  end)
 end)

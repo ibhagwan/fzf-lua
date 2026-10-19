@@ -8,6 +8,15 @@
 -- the terminal job's exit code (see `fzf.raw_fzf`).
 assert(#vim.api.nvim_list_uis() == 0)
 
+-- every Windows nvim listens by default (`\\.\pipe\nvim.<pid>.<n>`); the
+-- mediator doesn't need the server and its pipe would be listed as a
+-- server in the `serverlist` picker (`providers/nvim.lua` discovery globs
+-- that namespace), stopping the server removes the pipe (same as
+-- `spawn.lua`/`rpc.lua`/`scripts/cli.lua`)
+if vim.v.servername and #vim.v.servername > 0 then
+  pcall(vim.fn.serverstop, vim.v.servername)
+end
+
 -- path to this file
 local _info = debug.getinfo(1, "S")
 ---@cast _info {source: string}
