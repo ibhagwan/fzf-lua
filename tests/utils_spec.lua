@@ -84,6 +84,114 @@ describe("Testing utils module", function()
     eq(utils.has({ __FZF_VERSION = { 2, 5, 5 } }, "fzf", "2.5.6"), false)
   end)
 
+  it("fzf_tty_get_width probe order (ConPTY stdout before stdin)", function()
+    helpers.SKIP_IF_NOT_WIN()
+    local libuv = require("fzf-lua.libuv")
+    local orig_console_width = libuv.win_console_width
+    local orig = {}
+    local sizes = {} ---@type table<integer, integer|false>
+    ---@return function restore
+    local function stub_new_tty()
+      ---@diagnostic disable-next-line: deprecated
+      local t = vim.uv or vim.loop
+      if t and not orig[t] then
+        orig[t] = t.new_tty
+        t.new_tty = function(fd, _)
+          if sizes[fd] == false then error("UV_ENOTTY", 0) end
+          return {
+            get_winsize = function() return sizes[fd] end,
+            close = function() end,
+          }
+        end
+      end
+      return function()
+        for tt, o in pairs(orig) do tt.new_tty = o end
+      end
+    end
+    local restore = stub_new_tty()
+    local ok, err = pcall(function()
+      -- stdin tty reports no size under ConPTY (psmux): stdout must win
+      sizes = { [1] = 226 }
+      eq(utils.fzf_tty_get_width(), 226)
+      -- stdout/stderr unusable, stdin is the console (previous behavior)
+      sizes = { [0] = 120 }
+      eq(utils.fzf_tty_get_width(), 120)
+      -- all std handles redirected (pwsh PSReadLine key handlers):
+      -- `uv.new_tty` fails on both pipes, the console device is queried
+      sizes = { [1] = false, [2] = false, [0] = false }
+      libuv.win_console_width = function() return 172 end
+      eq(utils.fzf_tty_get_width(), 172)
+      -- console unavailable: `$COLUMNS` is the last resort before o.columns
+      libuv.win_console_width = function() return nil end
+      local prev = vim.env.COLUMNS
+      vim.env.COLUMNS = "222"
+      eq(utils.fzf_tty_get_width(), 222)
+      vim.env.COLUMNS = prev
+    end)
+    libuv.win_console_width = orig_console_width
+    restore()
+    if not ok then error(err) end
+  end)
+
+  it("fzf_tty_get_width ioctl request per platform", function()
+    eq(utils._tty_ioctl_request("Linux"), 0x5413)
+    eq(utils._tty_ioctl_request("OSX"), 0x40087468)
+    eq(utils._tty_ioctl_request("BSD"), 0x40087468)
+    eq(utils._tty_ioctl_request("Windows"), nil)
+    eq(utils._tty_ioctl_request("POSIX"), nil)
+  end)
+
+  it("fzf_tty_get_width fallbacks", function()
+    local libuv = require("fzf-lua.libuv")
+    local orig_posix = utils._posix_tty_width
+    local orig_console = libuv.win_console_width
+    ---@diagnostic disable-next-line: deprecated
+    local tty = vim.uv or vim.loop
+    local orig_new_tty = tty.new_tty
+    if helpers.IS_WIN() then
+      -- force the std handle probes to fail so the stubs below are used
+      tty.new_tty = function() return nil end
+    end
+    local prev_columns = vim.env.COLUMNS
+    local ok, err = pcall(function()
+      -- a successful probe wins
+      utils._posix_tty_width = function() return 172 end
+      libuv.win_console_width = function() return 172 end
+      eq(utils.fzf_tty_get_width(), 172)
+      -- failed probes fall through to `$COLUMNS`
+      utils._posix_tty_width = function() return nil end
+      libuv.win_console_width = function() return nil end
+      vim.env.COLUMNS = "222"
+      eq(utils.fzf_tty_get_width(), 222)
+      -- then to `o.columns`
+      vim.env.COLUMNS = nil
+      eq(utils.fzf_tty_get_width(), vim.o.columns)
+    end)
+    utils._posix_tty_width = orig_posix
+    libuv.win_console_width = orig_console
+    tty.new_tty = orig_new_tty
+    vim.env.COLUMNS = prev_columns
+    if not ok then error(err) end
+  end)
+
+  it("fzf_tty_get_width without ffi (PUC Lua)", function()
+    helpers.SKIP_IF_WIN()
+    local saved_preload = package.preload.ffi
+    local saved_loaded = package.loaded.ffi
+    package.preload.ffi = nil
+    package.loaded.ffi = nil
+    local prev_columns = vim.env.COLUMNS
+    local ok, err = pcall(function()
+      vim.env.COLUMNS = "222"
+      -- must not raise and must fall through to `$COLUMNS`
+      eq(utils.fzf_tty_get_width(), 222)
+    end)
+    package.preload.ffi = saved_preload
+    package.loaded.ffi = saved_loaded
+    vim.env.COLUMNS = prev_columns
+    if not ok then error(err) end
+  end)
+
   it("setmetatable with gc", function()
     local gc_called = nil
     local _obj = utils.setmetatable({}, { __gc = function() gc_called = true end })

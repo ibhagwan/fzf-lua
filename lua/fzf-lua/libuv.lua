@@ -85,8 +85,19 @@ local function win_ffi_init()
   local ok, res = pcall(function()
     local ffi = require("ffi")
     ffi.cdef([[
+      typedef struct { short x; short y; } FzfCOORD;
+      typedef struct { short left; short top; short right; short bottom; } FzfSMALL;
+      typedef struct {
+        FzfCOORD dwSize;
+        FzfCOORD dwCursorPosition;
+        unsigned short wAttributes;
+        FzfSMALL srWindow;
+        FzfCOORD dwMaximumWindowSize;
+      } FzfCSBI;
       void* CreateFileW(const unsigned short*, unsigned long,
         unsigned long, void*, unsigned long, unsigned long, void*);
+      int CloseHandle(void* hObject);
+      int GetConsoleScreenBufferInfo(void* hConsoleOutput, FzfCSBI* info);
       int _open_osfhandle(long long, int);
       void* GetStdHandle(unsigned long nStdHandle);
       int GetHandleInformation(void* hObject, unsigned long* lpdwFlags);
@@ -153,6 +164,42 @@ M.win_stderr_fd = function()
   if ok and tty == "tty" then return 2 end
   local console = M.win_console_stdio()
   return console and console[3] or 2
+end
+
+--- Width of the Windows console screen buffer (`srWindow`), `nil` when not
+--- attached to a console or on other platforms. The std handles cannot be
+--- trusted for this: the pwsh PSReadLine key handlers pipe both stdout and
+--- stderr (`uv.new_tty` fails on the pipes) and a ConPTY stdin tty reports
+--- no size, so the console device is opened directly (`CONOUT$`/`CONIN$`,
+--- same rationale as `win_console_stdio`).
+---@return integer?
+M.win_console_width = function()
+  if not _is_win then return nil end
+  local width
+  pcall(function()
+    local win = win_ffi_init()
+    local ffi = assert(win and win.ffi)
+    local function wsz(s)
+      local b = ffi.new("unsigned short[?]", #s + 1)
+      for i = 1, #s do b[i - 1] = s:byte(i) end
+      return b
+    end
+    local GENERIC_RW, SHARE_RW, OPEN_EXISTING = 0xC0000000, 3, 3
+    local info = ffi.new("FzfCSBI")
+    for _, dev in ipairs({ "CONOUT$", "CONIN$" }) do
+      local h = ffi.C.CreateFileW(wsz(dev), GENERIC_RW, SHARE_RW, nil, OPEN_EXISTING, 0, nil)
+      local hv = tonumber(ffi.cast("intptr_t", h))
+      if hv ~= -1 then
+        if ffi.C.GetConsoleScreenBufferInfo(h, info) ~= 0 then
+          local w = info.srWindow.right - info.srWindow.left + 1
+          if w > 0 then width = w end
+        end
+        ffi.C.CloseHandle(h)
+        if width then break end
+      end
+    end
+  end)
+  return width
 end
 
 --- libuv as bundled with Neovim (<= 1.52) spawns children with
