@@ -1872,6 +1872,106 @@ function M.termopen(cmd, opts)
   end
 end
 
+--- `TIOCGWINSZ` is `_IOR('t', 104, struct winsize)`: 0x40087468 on
+--- macOS/BSD, 0x5413 on Linux. `nil` on other platforms (fallbacks used).
+---@param os string? `ffi.os`
+---@return integer?
+M._tty_ioctl_request = function(os)
+  if os == "Linux" then return 0x5413 end
+  if os == "OSX" or os == "BSD" then return 0x40087468 end
+end
+
+--- Terminal width via `ioctl(TIOCGWINSZ)` on fds 1, 2, 0, `nil` when
+--- unknown, on Windows, or when FFI is unavailable (PUC Lua builds).
+--- `uv.new_tty` is deliberately not used on POSIX: libuv reopens tty fds
+--- (setting `O_NONBLOCK` on the shared description) and accepts
+--- pipes/sockets, which `uv_close` would close - mutating the process's
+--- std handles. `ioctl` has no such side effects.
+---@return integer?
+M._posix_tty_width = function()
+  if M.__IS_WINDOWS then return nil end
+  local width
+  pcall(function()
+    local ffi = require("ffi")
+    if not M._tty_cdef_done then
+      M._tty_cdef_done = true
+      -- identical declaration to `profiles/cli.lua`, re-`cdef` is a no-op
+      pcall(function()
+        ---@diagnostic disable-next-line: call-non-callable
+        ffi.cdef [[
+          struct winsize {
+            unsigned short ws_row;
+            unsigned short ws_col;
+            unsigned short ws_xpixel;
+            unsigned short ws_ypixel;
+          };
+          int ioctl(int fd, unsigned long request, ...);
+        ]]
+      end)
+    end
+    local request = M._tty_ioctl_request(ffi.os)
+    if not request then return end
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    local ws = ffi.new("struct winsize[1]") ---@type [{ ws_row: integer, ws_col: integer }]
+    for _, fd in ipairs({ 1, 2, 0 }) do
+      if ffi.C.ioctl(fd, request, ws) == 0 and ws[0].ws_col > 0 then
+        width = ws[0].ws_col
+        return
+      end
+    end
+  end)
+  return width
+end
+
+--- Width of the terminal the (headless) instance is attached to, `nil`
+--- when unknown. Used by the CLI (`_G.fzf_tty_get_width`, see
+--- `profiles/cli.lua`) so the flex preview layout compares against the
+--- real terminal width instead of `vim.o.columns` (80 in a UI-less
+--- process).
+---
+--- The std handles are probed in `1, 2, 0` order: on Windows/ConPTY
+--- (psmux, Windows Terminal) stdout/stderr resolve to the tty with the
+--- real size while a redirected stdin tty reports none
+--- (`uv.new_tty(0):get_winsize()` is nil). When every std handle is piped
+--- (pwsh PSReadLine key handlers) the console device is queried directly
+--- (`libuv.win_console_width`). POSIX probes the same fd order with
+--- `ioctl` (`_posix_tty_width`). `$COLUMNS` then `o.columns` are the final
+--- fallbacks on every platform.
+---@return integer? width
+M.fzf_tty_get_width = function()
+  local width
+  if M.__IS_WINDOWS then
+    for _, fd in ipairs({ 1, 2, 0 }) do
+      local ok, tty = pcall(uv.new_tty, fd, false)
+      if ok and tty then
+        local ok2, w = pcall(function() return tty:get_winsize() end)
+        pcall(function() tty:close() end)
+        if ok2 and type(w) == "number" and w > 0 then
+          width = w
+          break
+        end
+      end
+    end
+    if not width then
+      -- the pwsh PSReadLine key handlers pipe both stdout and stderr
+      -- (`uv.new_tty` fails on the pipes) and a ConPTY stdin tty reports
+      -- no size, leaving no std handle that can report the terminal size:
+      -- open the console device itself (same rationale as
+      -- `libuv.win_console_stdio`)
+      local w = require("fzf-lua.libuv").win_console_width()
+      if w and w > 0 then width = w end
+    end
+  else
+    -- `_posix_tty_width` returns nil when FFI is unavailable (PUC Lua)
+    width = M._posix_tty_width()
+  end
+  if width and width > 0 then return width end
+  local cols = tonumber(os.getenv("COLUMNS"))
+  if cols and cols > 0 then return math.floor(cols) end
+  if vim.o.columns and vim.o.columns > 0 then return vim.o.columns end
+  return nil
+end
+
 --- workaround to a potential 'tempname' bug? (#222)
 --- neovim doesn't guarantee the existence of the
 --- parent temp dir potentially failing `mkfifo`
