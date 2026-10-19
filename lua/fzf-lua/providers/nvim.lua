@@ -807,7 +807,10 @@ end
 ---no peer candidates; every address it reports is instead excluded below in
 ---all slash forms, so none of our own sockets/pipes can be listed. Entries
 ---failing an RPC probe, ourselves and our own `fzf-lua*` infra are skipped
----everywhere; every other responsive listener is listed, including
+---everywhere; our headless spawns (`scripts/cli.lua`, `spawn.lua`,
+---`rpc.lua`, `win_spawn.lua`) additionally stop their default listener
+---(`serverstop`), so they never register a pipe at all (every Windows nvim
+---listens by default); every other responsive listener is listed, including
 ---UI-less `--embed` backends (indistinguishable from detached user
 ---sessions). Addresses stay in native
 ---form; `utils.serverlist_parse_entry` repairs the single backslash
