@@ -258,11 +258,16 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
 
   -- enforce fzf minimum requirements
   vim.g.fzf_lua_fzf_version = nil
-  if opts.fzf_bin:match("sk$") then
+  if vim.fs.basename(opts.fzf_bin):match("^sk") then
     local SK_VERSION, rc, err = utils.sk_version(opts)
     opts.__SK_VERSION = SK_VERSION
     if not opts.__SK_VERSION then
       utils.error("'sk --version' failed with error %s: %s", rc, err)
+      return nil
+    elseif utils.__IS_WINDOWS and not utils.has(opts, "sk", { 5, 8, 0 }) then
+      -- Windows minimum: older skim releases are unsupported on this platform
+      utils.error("skim version %s is lower than minimum (5.8.0) on Windows, aborting.",
+        utils.ver2str(opts.__SK_VERSION))
       return nil
     end
   else
