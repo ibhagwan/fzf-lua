@@ -49,7 +49,7 @@ local T = helpers.new_set_with_child(child, {
 
 T["git_status"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
-T["git_status"]["stage unstage reset"] = function()
+local modify_tracked = function()
   -- Modify a tracked file so git_status shows an unstaged change.
   exec_lua([[
     local file = vim.fn.getcwd() .. "/tracked.txt"
@@ -57,6 +57,27 @@ T["git_status"]["stage unstage reset"] = function()
     fd:write("-- useless comment\n")
     fd:close()
   ]])
+end
+
+local porcelain = function()
+  return exec_lua([[
+    return vim.fn.system({ "git", "-C", vim.fn.getcwd(), "status", "--porcelain" })
+      :gsub("%s+$", "")
+  ]])
+end
+
+-- Trigger an action and wait for the picker reload (native fzf `reload` or
+-- the "resume" fallback used by skim/old fzf which restarts the picker).
+local action_and_wait = function(keys)
+  exec_lua([[_G._fzf_load_called = nil]])
+  child.type_keys(keys)
+  sleep(100)
+  if helpers.IS_WIN() then sleep(250) end
+  child.wait_until(function() return exec_lua([[return _G._fzf_load_called]]) == true end)
+end
+
+T["git_status"]["stage unstage reset"] = function()
+  modify_tracked()
 
   -- Auto-confirm the reset dialog so the headless test does not block.
   exec_lua([[FzfLua.utils.confirm = function() return 1 end]])
@@ -75,27 +96,15 @@ T["git_status"]["stage unstage reset"] = function()
       child.expect_screen_lines({ ignore_text = { 28 } })
 
       -- Stage with left: M should move to the staged (left) column.
-      exec_lua([[_G._fzf_load_called = nil]])
-      child.type_keys("<Left>")
-      sleep(100)
-      if helpers.IS_WIN() then sleep(250) end
-      child.wait_until(function() return exec_lua([[return _G._fzf_load_called]]) == true end)
+      action_and_wait("<Left>")
       child.expect_screen_lines({ ignore_text = { 28 } })
 
       -- Unstage with right: M should return to the unstaged (right) column.
-      exec_lua([[_G._fzf_load_called = nil]])
-      child.type_keys("<Right>")
-      sleep(100)
-      if helpers.IS_WIN() then sleep(250) end
-      child.wait_until(function() return exec_lua([[return _G._fzf_load_called]]) == true end)
+      action_and_wait("<Right>")
       child.expect_screen_lines({ ignore_text = { 28 } })
 
       -- Reset with ctrl-x: file is restored and the picker reloads empty.
-      exec_lua([[_G._fzf_load_called = nil]])
-      child.type_keys("<c-x>")
-      sleep(100)
-      if helpers.IS_WIN() then sleep(250) end
-      child.wait_until(function() return exec_lua([[return _G._fzf_load_called]]) == true end)
+      action_and_wait("<c-x>")
     end,
   })
 
@@ -104,10 +113,61 @@ T["git_status"]["stage unstage reset"] = function()
   child.wait_until(function() return exec_lua([[return _G._fzf_lua_on_create]]) == vim.NIL end)
 
   -- Verify the working tree is clean after reset.
-  eq("", exec_lua([[
-    return vim.fn.system({ "git", "-C", vim.fn.getcwd(), "status", "--porcelain" })
-      :gsub("%s+$", "")
-  ]]))
+  eq("", porcelain())
+
+  -- Commit the clean state, ignoring any SSH/GPG signing configuration.
+  exec_lua([[
+    vim.fn.system({
+      "git", "-C", vim.fn.getcwd(), "commit", "--allow-empty", "--no-gpg-sign",
+      "-m", "git_status test end",
+    })
+  ]])
+end
+
+-- Regression test for the "resume" fallback used by skim (skim supports
+-- `reload` but not `rebind`, which leaves the action keys unbound after the
+-- first reload). The fallback restarts the picker, so make sure multiple
+-- actions can still be triggered in sequence.
+T["git_status"]["stage unstage reset with reload fallback"] = function()
+  modify_tracked()
+
+  -- Auto-confirm the reset dialog so the headless test does not block.
+  exec_lua([[FzfLua.utils.confirm = function() return 1 end]])
+
+  helpers.FzfLua.git_status(child, {
+    __no_abort = true,
+    __expect_lines = false,
+    -- force the skim/old-fzf restart mechanism, independent of the installed
+    -- binary (tests must not rely on skim or an old fzf version)
+    _reload_fallback = true,
+    previewer = false,
+    headers = false,
+    multiprocess = false,
+    __after_open = function()
+      sleep(100)
+
+      -- Multiple consecutive actions must all survive the picker restart.
+      action_and_wait("<Left>")
+      eq("M  tracked.txt", porcelain())
+
+      action_and_wait("<Right>")
+      eq(" M tracked.txt", porcelain())
+
+      action_and_wait("<Left>")
+      eq("M  tracked.txt", porcelain())
+
+      -- Reset with ctrl-x: file is restored and the picker reloads empty.
+      action_and_wait("<c-x>")
+      eq("", porcelain())
+    end,
+  })
+
+  -- Close the picker.
+  child.type_keys("<c-c>")
+  child.wait_until(function() return exec_lua([[return _G._fzf_lua_on_create]]) == vim.NIL end)
+
+  -- Verify the working tree is clean after reset.
+  eq("", porcelain())
 
   -- Commit the clean state, ignoring any SSH/GPG signing configuration.
   exec_lua([[

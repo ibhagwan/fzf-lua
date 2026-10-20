@@ -260,6 +260,7 @@ local FzfLua = require("fzf-lua")
 ---@field keymap fzf-lua.config.Keymap
 ---@field fzf_opts table<string, any>
 ---@field _resume_reload? boolean|function
+---@field _reload_fallback? boolean
 ---@field _fzf_cli_args (string|table)[]
 ---@field _uri? boolean
 ---@field is_loclist? boolean

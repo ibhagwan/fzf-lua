@@ -142,4 +142,22 @@ describe("Testing core cli construction", function()
     end
     assert.is.True(found)
   end)
+
+  it("selects the resume fallback for skim and forced fallback", function()
+    local core = require("fzf-lua.core")
+    local actions = require("fzf-lua.actions")
+    local assert_fallback = function(opts)
+      opts.actions = { ["ctrl-x"] = { fn = function() end, reload = true } }
+      opts.keymap = { fzf = {} }
+      opts = core.convert_reload_actions("true", opts)
+      -- old-style action: { <fn>, actions.resume } restarts the picker
+      assert.is.True(type(opts.actions["ctrl-x"]) == "table")
+      assert.is.True(type(opts.actions["ctrl-x"][1]) == "function")
+      assert.is.True(opts.actions["ctrl-x"][2] == actions.resume)
+    end
+    -- skim supports `reload` but not `rebind`, so it must use the fallback
+    assert_fallback({ __SK_VERSION = { 5, 6, 6 } })
+    -- internal override used by tests to exercise the fallback on fzf
+    assert_fallback({ __FZF_VERSION = { 0, 74, 5 }, _reload_fallback = true })
+  end)
 end)

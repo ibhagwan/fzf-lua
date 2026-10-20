@@ -1045,11 +1045,18 @@ M.convert_reload_actions = function(reload_cmd, opts)
   local fallback ---@type boolean?
   -- Does not work with fzf version < 0.36, fzf fails with
   -- "error 2: bind action not specified:" (#735)
-  -- skim require 0.12+ https://github.com/skim-rs/skim/pull/604
-  if (not utils.has(opts, "fzf", { 0, 36 }) and not utils.has(opts, "sk", { 0, 12, 0 }))
+  -- Skim supports `reload` but not `rebind`, so after the first action
+  -- its key binds stay unbound (the `load` event fires, `rebind` is a
+  -- no-op). Use the old "resume" fallback which fully restarts the
+  -- picker and keeps the key binds working.
+  if utils.has(opts, "sk")
+      or not utils.has(opts, "fzf", { 0, 36 })
       or not reload_cmd then
     fallback = true
   end
+  -- force the "resume" fallback (used by tests to exercise the old
+  -- restart mechanism without requiring skim or an old fzf binary)
+  if opts._reload_fallback then fallback = true end
   -- Two types of action as table:
   --   (1) map containing action properties (reload, noclose, etc)
   --   (2) array of actions to be executed serially
