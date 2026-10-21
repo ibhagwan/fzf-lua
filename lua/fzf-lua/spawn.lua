@@ -18,11 +18,20 @@ package.path = ("%s/?.lua;"):format(vim.fn.fnamemodify(__FILE__, ":h:h")) .. pac
 -- NOTE: opted to delete the temp dir at the start due to:
 --   (1) spawn_stdio doesn't need a temp directory
 --   (2) avoid dangling temp dirs on process kill (i.e. live_grep)
-local tmpdir = vim.fn.fnamemodify(vim.fn.tempname(), ":h")
-if tmpdir and #tmpdir > 0 then
-  -- io.stdout:write(string.format("[DEBUG] tmpdir=%s\n", tmpdir))
-  -- _G.dump(vim.uv.fs_stat(tmpdir))
-  vim.fn.delete(tmpdir, "rf")
+-- `vim_tempname()` returns NULL when Neovim fails to create its tempdir
+-- (e.g. disk full), which is converted to an empty string in Lua. In that
+-- case `fnamemodify("", ":h")` returns "." and deleting it recursively
+-- would wipe the current working directory (#2838). Successful tempnames
+-- are always absolute (`vim_settempdir` expands them), so only the empty
+-- string needs guarding.
+local tmpname = vim.fn.tempname()
+if type(tmpname) == "string" and #tmpname > 0 then
+  local tmpdir = vim.fn.fnamemodify(tmpname, ":h")
+  if #tmpdir > 0 then
+    -- io.stdout:write(string.format("[DEBUG] tmpdir=%s\n", tmpdir))
+    -- _G.dump(vim.uv.fs_stat(tmpdir))
+    vim.fn.delete(tmpdir, "rf")
+  end
 end
 
 -- neovim might also automatically start the RPC server which will
