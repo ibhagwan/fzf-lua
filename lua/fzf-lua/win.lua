@@ -1158,7 +1158,18 @@ local restore_lastwin = function(winid, last_winid)
   then
     return
   end
-  api.nvim_set_current_win(last_winid)
+  -- switching to `last_winid` only restores the `CTRL-W p` history. Floats
+  -- may use `WinEnter` autoclose handlers (e.g. Mason), don't let them see
+  -- the intermediate window. The events of the switch back to `winid` are
+  -- the real focus restore and must keep firing (#2812).
+  ---@param w integer
+  ---@return boolean
+  local is_float = function(w) return (api.nvim_win_get_config(w).relative or "") ~= "" end
+  if is_float(winid) or is_float(last_winid) then
+    utils.eventignore(function() api.nvim_set_current_win(last_winid) end)
+  else
+    api.nvim_set_current_win(last_winid)
+  end
   api.nvim_set_current_win(winid)
 end
 
