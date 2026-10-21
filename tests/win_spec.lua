@@ -410,4 +410,69 @@ T["win"]["highlight"]["unchange when reuse win #2588"] = function()
   helpers.FzfLua.files(child, opts)
 end
 
+T["win"]["restore last window"] = new_set()
+
+T["win"]["restore last window"]["does not trigger float autoclose (#2837)"] = function()
+  exec_lua([[
+    _G._float_win = vim.api.nvim_open_win(vim.api.nvim_create_buf(false, true), true, {
+      relative = "editor",
+      width = 20,
+      height = 5,
+      row = 1,
+      col = 1,
+    })
+    vim.bo[vim.api.nvim_win_get_buf(_G._float_win)].buftype = "nofile"
+    -- mimic Mason's autoclose handler: close the float when a regular
+    -- buffer is entered
+    vim.api.nvim_create_autocmd("WinEnter", {
+      callback = function()
+        local buftype = vim.bo.buftype
+        if buftype ~= "prompt" and buftype ~= "nofile" then
+          vim.schedule(function()
+            if vim.api.nvim_win_is_valid(_G._float_win) then
+              vim.api.nvim_win_close(_G._float_win, true)
+            end
+          end)
+        end
+      end,
+    })
+  ]])
+  exec_lua([[FzfLua.files{ query = "README.md" }]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+  child.type_keys("<esc>")
+  child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
+  sleep(100)
+  eq(true, child.lua_get([[vim.api.nvim_win_is_valid(_G._float_win)]]))
+  exec_lua([[if vim.api.nvim_win_is_valid(_G._float_win) then vim.api.nvim_win_close(_G._float_win, true) end]])
+end
+
+T["win"]["restore last window"]["keeps events for regular windows (#2812)"] = function()
+  exec_lua([[
+    -- Keep the original window as the intermediate target.
+    vim.cmd("split")
+    vim.cmd("enew")
+    _G._src_win = vim.api.nvim_get_current_win()
+    _G._src_win_enter = 0
+    _G._src_buf_enter = 0
+    vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
+      callback = function(args)
+        if vim.api.nvim_get_current_win() ~= _G._src_win then return end
+        if args.event == "WinEnter" then
+          _G._src_win_enter = _G._src_win_enter + 1
+        else
+          _G._src_buf_enter = _G._src_buf_enter + 1
+        end
+      end,
+    })
+  ]])
+  exec_lua([[FzfLua.files{ query = "README.md" }]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+  -- only count the events fired while closing, not the ones from opening fzf
+  exec_lua([[_G._src_win_enter = 0; _G._src_buf_enter = 0]])
+  child.type_keys("<esc>")
+  child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
+  eq(true, child.lua_get([[_G._src_win_enter > 0]]))
+  eq(true, child.lua_get([[_G._src_buf_enter > 0]]))
+end
+
 return T
