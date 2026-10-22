@@ -130,6 +130,7 @@ local history = function(opts, str)
           local index = i + j
           if dr > 0 and index <= to or dr < 0 and index >= to then
             -- removed duplicates leave empty slots in the history, skip them
+            -- but still call `done()` so the batched producer keeps moving
             local entry = vim.fn.histget(str, index)
             local done = function()
               count = count - 1

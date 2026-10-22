@@ -483,16 +483,22 @@ T["win"]["treesitter"]["short lines do not break highlight parsing"] = function(
   exec_lua([[
     local tsinjector = require("fzf-lua.win.tsinjector")
     _G._ts_buf = vim.api.nvim_create_buf(false, true)
-    vim.bo[_G._ts_buf].filetype = "vim"
     _G._ts_detach = tsinjector.attach({ winopts = {}, preview_hidden = true }, _G._ts_buf,
       function(line) return "foo.vim", nil, line end)
     vim.api.nvim_buf_set_lines(_G._ts_buf, 0, -1, false,
       { "FzfLua command_history", "> " })
   ]])
-  eq(true, child.lua_get([[(pcall(function()
-    local h = require("fzf-lua.win.tsinjector").cache[_G._ts_buf].vim.highlighter
-    h.tree:parse({ 0, 3 })
-  end))]]))
+  eq(true, child.lua_get([[(function()
+    local tsinjector = require("fzf-lua.win.tsinjector")
+    local ok = pcall(function()
+      tsinjector.cache[_G._ts_buf].vim.highlighter.tree:parse({ 0, 3 })
+    end)
+    if not ok then return false end
+    -- the valid line must still produce a non-empty region
+    local regions = tsinjector.cache[_G._ts_buf].vim.parser:included_regions()
+    local range = regions[1] and regions[1][1]
+    return #regions == 1 and range and range[5] > range[2]
+  end)()]]))
   exec_lua([[_G._ts_detach()]])
 end
 
