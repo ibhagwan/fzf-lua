@@ -475,4 +475,25 @@ T["win"]["restore last window"]["keeps events for regular windows (#2812)"] = fu
   eq(true, child.lua_get([[_G._src_buf_enter > 0]]))
 end
 
+T["win"]["treesitter"] = new_set()
+
+T["win"]["treesitter"]["short lines do not break highlight parsing"] = function()
+  -- Short rows (e.g. the "> " prompt and "  1/1" counter) used to produce
+  -- an `end_col < start_col` region which treesitter rejects on parse
+  exec_lua([[
+    local tsinjector = require("fzf-lua.win.tsinjector")
+    _G._ts_buf = vim.api.nvim_create_buf(false, true)
+    vim.bo[_G._ts_buf].filetype = "vim"
+    _G._ts_detach = tsinjector.attach({ winopts = {}, preview_hidden = true }, _G._ts_buf,
+      function(line) return "foo.vim", nil, line end)
+    vim.api.nvim_buf_set_lines(_G._ts_buf, 0, -1, false,
+      { "FzfLua command_history", "> " })
+  ]])
+  eq(true, child.lua_get([[(pcall(function()
+    local h = require("fzf-lua.win.tsinjector").cache[_G._ts_buf].vim.highlighter
+    h.tree:parse({ 0, 3 })
+  end))]]))
+  exec_lua([[_G._ts_detach()]])
+end
+
 return T

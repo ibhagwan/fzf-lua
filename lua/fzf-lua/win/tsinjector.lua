@@ -222,6 +222,9 @@ function M.attach(self, buf, line_parser)
           -- clamp min/max columns
           start_col = math.max(min_col, start_col)
           if max_col then end_col = math.min(max_col, end_col) end
+          -- short lines (e.g. prompt/counter rows) can yield `end_col < start_col`
+          -- which treesitter rejects with "Range value out of bounds"
+          if end_col <= start_col then return end
           regions[lang] = regions[lang] or {}
           empty_regions[lang] = empty_regions[lang] or {}
           table.insert(regions[lang], { { line_idx, start_col, line_idx, end_col } })
