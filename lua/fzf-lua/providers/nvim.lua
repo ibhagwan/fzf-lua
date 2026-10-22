@@ -129,12 +129,15 @@ local history = function(opts, str)
         for j = 0, delta - dr, dr do
           local index = i + j
           if dr > 0 and index <= to or dr < 0 and index >= to then
-            cb(vim.fn.histget(str, index), function()
+            -- removed duplicates leave empty slots in the history, skip them
+            local entry = vim.fn.histget(str, index)
+            local done = function()
               count = count - 1
               if count == 0 or index == to then
                 coroutine.resume(co)
               end
-            end)
+            end
+            if entry ~= "" then cb(entry, done) else done() end
           end
         end
       end)
