@@ -566,29 +566,53 @@ M.search_cr = function(selected, opts)
 end
 
 ---@param kind ":"|"/"
+---@param pos integer zero-based picker position
+---@param reverse_list? boolean
+---@return integer?
+local hist_index = function(kind, pos, reverse_list)
+  local histnr = vim.fn.histnr(kind)
+  local from = reverse_list and 1 or histnr
+  local to = reverse_list and histnr or 1
+  local step = reverse_list and 1 or -1
+  local n = 0
+  for i = from, to, step do
+    if vim.fn.histget(kind, i) ~= "" then
+      if n == pos then return i end
+      n = n + 1
+    end
+  end
+end
+
+---@param kind ":"|"/"
 ---@param selected string[]
 ---@param opts fzf-lua.config.CommandHistory|{}
 local hist_del = function(kind, selected, opts)
   if not vim.iter then return end
-  ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
-  local iter = opts.reverse_list and vim.iter(selected) or vim.iter(selected):rev()
-  iter:each(function(e)
-    local idx = assert(utils.tointeger(opts.reverse_list and e or -e - 1))
-    local entry = vim.fn.histget(":", idx) -- get before deleted
+  -- Resolve every picker position before deleting anything: deleting an entry
+  -- turns it into a hole and shifts the positions of the entries after it.
+  local indices = vim.tbl_map(function(e)
+    return assert(hist_index(kind, assert(utils.tointeger(e)), opts.reverse_list))
+  end, selected)
+  for _, idx in ipairs(indices) do
+    local entry = vim.fn.histget(kind, idx) -- get before deleted
     local res = vim.fn.histdel(kind, idx)
     local info = res == 1 and "deleted" or "fail to delete"
     local notify = res == 1 and utils.info or utils.warn
     notify("%s: %s", info, entry)
-  end)
+  end
   vim.cmd("wshada!")
 end
 
-M.ex_del = function(...)
-  hist_del(":", ...)
+---@param selected string[]
+---@param opts fzf-lua.config.CommandHistory|{}
+M.ex_del = function(selected, opts)
+  hist_del(":", selected, opts)
 end
 
-M.search_del = function(...)
-  hist_del("/", ...)
+---@param selected string[]
+---@param opts fzf-lua.config.SearchHistory|{}
+M.search_del = function(selected, opts)
+  hist_del("/", selected, opts)
 end
 
 M.goto_mark = function(selected)
