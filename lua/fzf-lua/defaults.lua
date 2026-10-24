@@ -45,6 +45,10 @@ end
 -- Cross platform extended perl regex grep flag
 local GREP_PERL_REGEXP = utils.is_darwin() and "--extended-regexp" or "--perl-regexp"
 
+-- fzf runs bind commands through `cmd.exe` on Windows where environment
+-- variables use `%VAR%` instead of `$VAR`
+local FZF_POS = utils._if_win_normalize_vars("$FZF_POS")
+
 ---@class fzf-lua.config.TreesitterWinopts
 ---@field enabled boolean Enable treesitter highlighting in fzf main window.
 ---@field fzf_colors? table<string, string> Treesitter fzf color overrides.
@@ -703,7 +707,7 @@ M.defaults.git = {
         header = "git hunks",
         reuse = #vim.api.nvim_list_uis() == 0,
         exec_silent = #vim.api.nvim_list_uis() > 0,
-        field_index = "{} $FZF_POS",
+        field_index = "{} " .. FZF_POS,
       },
       ["ctrl-q"] = {
         fn = function(s, _o)
@@ -713,7 +717,7 @@ M.defaults.git = {
         end,
         reuse = true,
         header = "git commits",
-        field_index = "{} $FZF_POS",
+        field_index = "{} " .. FZF_POS,
       },
     },
   },
@@ -774,7 +778,7 @@ M.defaults.git = {
         header = "git diff",
         reuse = #vim.api.nvim_list_uis() == 0,
         exec_silent = #vim.api.nvim_list_uis() > 0,
-        field_index = "{} $FZF_POS",
+        field_index = "{} " .. FZF_POS,
       },
     },
     fzf_opts      = { ["--no-multi"] = true },
