@@ -10,6 +10,35 @@ local libuv = require "fzf-lua.libuv"
 ---@field [string] fun(items: string[], opts: fzf-lua.config.Resolved):any
 local M = {}
 
+---Capture the expanded `field_index` before the action is dispatched.
+---`field_index` was previously only expanded for `exec_silent` actions, so
+---regular actions (e.g. `reuse` in the CLI profile) only received the selected
+---entries and never the extra fields such as `$FZF_POS`.
+---@param key string
+---@param field_index string
+---@param opts table
+---@return string
+local action_fields_recorder = function(key, field_index, opts)
+  return require("fzf-lua.shell").stringify_data2(function(items)
+    opts.__action_fields = opts.__action_fields or {}
+    -- An all-empty capture means the field expression produced no values
+    -- (e.g. no selection), treat it as absent so `actions.act` falls back
+    -- to the entries table instead of passing empty fields to the action.
+    local is_empty = true
+    for _, item in ipairs(items or {}) do
+      if item ~= "" then
+        is_empty = false
+        break
+      end
+    end
+    if is_empty then
+      opts.__action_fields[key] = nil
+    else
+      opts.__action_fields[key] = items
+    end
+  end, opts, field_index)
+end
+
 -- return fzf '--expect=' string from actions keyval tbl
 -- on fzf >= 0.53 add the `prefix` key to the bind flags
 -- https://github.com/junegunn/fzf/issues/3829#issuecomment-2143235993
@@ -35,11 +64,24 @@ M.expect = function(actions, opts)
         -- `print(...)` action was only added with fzf 0.53
         -- NOTE: we can no longer combine `--expect` and `--bind` as this will
         -- print an extra empty line regardless of the pressaed keybind (#1241)
-        table.insert(binds, string.format("%s:print(%s)%s%s+accept",
+        --
+        -- Capture `field_index` for regular actions (e.g. `reuse`) before
+        -- dispatching, mimicking the `exec_silent` conversion which receives
+        -- the expanded fields as its selection. Selection-changing prefixes
+        -- (e.g. `select-all`) must run first so the recorder sees the same
+        -- selection fzf accepts. `execute-silent` blocks until the recorder
+        -- exits, so the fields are available when `actions.act` runs after
+        -- fzf exits.
+        local prefix = v.prefix and v.prefix:gsub("accept$", ""):gsub("%+$", "") or ""
+        local prefix_bind = prefix ~= "" and (prefix .. "+") or ""
+        local recorder = v.field_index and not v.exec_silent
+            and ("execute-silent(%s)+"):format(action_fields_recorder(k, v.field_index, opts))
+            or ""
+        table.insert(binds, string.format("%s:print(%s)+%s%saccept",
           k,
           k,
-          v.prefix and "+" or "",
-          v.prefix and v.prefix:gsub("accept$", ""):gsub("%+$", "") or ""
+          prefix_bind,
+          recorder
         ))
       elseif utils.has(opts, "sk", { 0, 14 }) then
         -- sk 0.14 deprecated `--expect`, instead `accept(<key>)` should be used
@@ -124,7 +166,15 @@ M.act = function(selected, opts)
     --   (1) map containing action properties (reload, noclose, etc)
     --   (2) array of actions to be executed serially
     if action.fn then
-      action.fn(entries, opts)
+      -- Actions with `field_index` receive the expanded fields captured by
+      -- `execute-silent` before fzf accepted, falling back to the entries when
+      -- no capture happened (e.g. custom binds or fzf < 0.53).
+      local fields
+      if action.field_index and opts.__action_fields then
+        fields = opts.__action_fields[keybind]
+        opts.__action_fields[keybind] = nil
+      end
+      action.fn(fields or entries, opts)
     else
       for _, f in ipairs(action) do
         f(entries, opts)

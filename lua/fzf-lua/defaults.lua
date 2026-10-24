@@ -712,7 +712,8 @@ M.defaults.git = {
           FzfLua.git_commits(o)
         end,
         reuse = true,
-        header = "git commits"
+        header = "git commits",
+        field_index = "{} $FZF_POS",
       },
     },
   },
