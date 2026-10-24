@@ -157,8 +157,11 @@ describe("Testing action field capture", function()
     ---@cast ctrl_d_commits fzf-lua.ActionSpec
     ---@cast ctrl_d_diff fzf-lua.ActionSpec
     ---@cast ctrl_q_diff fzf-lua.ActionSpec
-    expect.are.same(ctrl_d_commits.field_index, "{} $FZF_POS")
-    expect.are.same(ctrl_d_diff.field_index, "{} $FZF_POS")
-    expect.are.same(ctrl_q_diff.field_index, "{} $FZF_POS")
+    -- fzf runs bind commands through `cmd.exe` on Windows, which expands
+    -- `%VAR%` (not `$VAR`) in the generated `execute-silent` recorder
+    local pos = helpers.IS_WIN() and "%FZF_POS%" or "$FZF_POS"
+    expect.are.same(ctrl_d_commits.field_index, "{} " .. pos)
+    expect.are.same(ctrl_d_diff.field_index, "{} " .. pos)
+    expect.are.same(ctrl_q_diff.field_index, "{} " .. pos)
   end)
 end)
