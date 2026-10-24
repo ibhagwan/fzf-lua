@@ -247,6 +247,7 @@ local FzfLua = require("fzf-lua")
 ---@field _contents? string
 ---@field _is_fzf_tmux? boolean
 ---@field __stringified? boolean
+---@field __action_fields? table<string, string[]>
 ---@field __stringify_cmd? boolean
 ---@field __sigwinches? string[]
 ---@field __sigwinch_cb table<string, function>
