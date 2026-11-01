@@ -809,8 +809,8 @@ previewers = {
       diff_opts = { ctxlen = 3 },
       -- git-delta is automatically detected as pager, set `pager=false`
       -- to disable, can also be set under 'lsp.code_actions.preview_pager'
-      -- recommended styling for delta
-      --pager = [[delta --width=$COLUMNS --hunk-header-style="omit" --file-style="omit"]],
+      -- recommended styling for delta (use `$COLUMNS` with skim)
+      --pager = [[delta --width=$FZF_PREVIEW_COLUMNS --hunk-header-style="omit" --file-style="omit"]],
     },
 }
 ```

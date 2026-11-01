@@ -77,17 +77,11 @@ local function git_preview(opts, file)
   opts.cwd = path.git_root(opts)
   opts.preview = path.git_cwd(opts.preview, opts)
   if type(opts.preview_pager) == "function" then
-    opts.preview_pager = opts.preview_pager()
+    opts.preview_pager = opts.preview_pager(opts)
   end
   if opts.preview_pager then
     opts.preview = string.format("%s | %s", opts.preview,
       utils._if_win_normalize_vars(opts.preview_pager))
-  end
-  if vim.o.shell and vim.o.shell:match("fish$") then
-    -- TODO: why does fish shell refuse to pass along $COLUMNS
-    -- to delta while the same exact commands works with bcommits?
-    ---@cast opts.preview string
-    opts.preview = "sh -c " .. libuv.shellescape(opts.preview)
   end
   return opts.preview
 end

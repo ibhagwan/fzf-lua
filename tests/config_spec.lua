@@ -146,3 +146,38 @@ describe("Testing config version gate", function()
     eq(err, nil)
   end)
 end)
+
+describe("Testing preview pager", function()
+  local defaults = require("fzf-lua.defaults")
+  local utils = require("fzf-lua.utils")
+
+  local with_delta = function(fn)
+    local executable = vim.fn.executable
+    vim.fn.executable = function(bin)
+      return bin == "delta" and 1 or executable(bin)
+    end
+    local ok, err = pcall(fn)
+    vim.fn.executable = executable
+    if not ok then error(err) end
+  end
+
+  it("uses $COLUMNS for skim", function()
+    with_delta(function()
+      local pager = defaults._preview_pager_fn({ __SK_VERSION = { 5, 6, 6 } })
+      ---@cast pager string
+      eq(type(pager), "string")
+      eq(pager:find(utils._if_win_normalize_vars("$COLUMNS"), 1, true) ~= nil, true)
+      eq(pager:find(utils._if_win_normalize_vars("$FZF_PREVIEW_COLUMNS"), 1, true), nil)
+    end)
+  end)
+
+  it("uses $FZF_PREVIEW_COLUMNS for fzf", function()
+    with_delta(function()
+      local pager = defaults._preview_pager_fn({})
+      ---@cast pager string
+      eq(type(pager), "string")
+      eq(pager:find(utils._if_win_normalize_vars("$FZF_PREVIEW_COLUMNS"), 1, true) ~= nil, true)
+      eq(pager:find(utils._if_win_normalize_vars("$COLUMNS"), 1, true), nil)
+    end)
+  end)
+end)

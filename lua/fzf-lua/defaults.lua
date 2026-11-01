@@ -21,9 +21,14 @@ function M._default_previewer_fn()
   return type(previewer) == "function" and previewer() or previewer
 end
 
-function M._preview_pager_fn()
+---@param opts? table
+---@return string?
+function M._preview_pager_fn(opts)
+  -- fzf exports both variables to preview commands, but fish resets `$COLUMNS`
+  -- (#1023); skim only exports `$COLUMNS` (#2846).
+  local cols = opts and opts.__SK_VERSION and "$COLUMNS" or "$FZF_PREVIEW_COLUMNS"
   return vim.fn.executable("delta") == 1 and
-      ("delta --width=%s --%s"):format(utils._if_win_normalize_vars("$COLUMNS"), vim.o.bg) or
+      ("delta --width=%s --%s"):format(utils._if_win_normalize_vars(cols), vim.o.bg) or
       nil
 end
 
