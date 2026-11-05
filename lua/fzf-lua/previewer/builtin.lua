@@ -356,13 +356,16 @@ function Previewer.base:zero(_)
   local act = string.format("execute-silent(mkdir %s && %s)",
     libuv.shellescape(self._zero_lock),
     shell.stringify_data(function(_, _, _)
+      vim.defer_fn(function()
+        fn.delete(self._zero_lock, "d")
+      end, self.delay)
       -- upvalue incase previewer was detached/re-attached (global picker)
       self = self.win._previewer or self ---@type fzf-lua.previewer.Builtin
       -- capture the entry displayed at zero-event time; if a different entry
       -- is displayed before the deferred callback runs (e.g. the list was
       -- still loading on Windows) the preview belongs to that newer entry
       local entry_at_zero = self.last_entry
-      vim.defer_fn(function()
+      self:debounce("preview", self.delay, function()
         -- a new entry may have been displayed after the zero event, don't
         -- clear its preview (only clear when the entry is unchanged)
         local cur_entry = self.last_entry
@@ -378,8 +381,7 @@ function Previewer.base:zero(_)
         if self.loaded_entry and cur_entry == entry_at_zero then
           self.last_entry = nil
         end
-        fn.delete(self._zero_lock, "d")
-      end, self.delay)
+      end)
     end, self.opts, ""))
   return act
 end
