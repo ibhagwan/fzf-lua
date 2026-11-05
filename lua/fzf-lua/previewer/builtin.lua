@@ -366,7 +366,7 @@ function Previewer.base:zero(_)
         -- a new entry may have been displayed after the zero event, don't
         -- clear its preview (only clear when the entry is unchanged)
         local cur_entry = self.last_entry
-        if cur_entry == entry_at_zero and self.win:validate_preview() then
+        if (not cur_entry or cur_entry == entry_at_zero) and self.win:validate_preview() then
           self:clear_preview_buf(true)
           TSContext.close(self.win.preview_winid)
           self.win:update_preview_title("")
