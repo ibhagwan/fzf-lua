@@ -389,6 +389,9 @@ M.registers = function(opts)
         or reg:gsub("\n", utils.ansi_codes.magenta("\\n"))
   end
 
+  --- Convert a Vim register type to its display representation.
+  ---@param t string
+  ---@return string
   local function convert_regtype(t)
     local first = string.sub(t, 1, 1)
     if first == "v" then
@@ -402,6 +405,8 @@ M.registers = function(opts)
     end
   end
 
+  --- Emit register entries through the fzf-lua content callback.
+  ---@param cb fun(item: string?)
   local contents = function(cb)
     for _, r in ipairs(registers) do
       -- pcall as this could fail with:
