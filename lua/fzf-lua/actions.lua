@@ -665,14 +665,32 @@ M.search_del = function(selected, opts)
   hist_del("/", selected, opts)
 end
 
+--- Clear the register selected in the registers picker.
 ---@param selected string[]
 M.reg_clear = function(selected)
+  if not selected[1] then return end
+
   local reg_name = string.match(selected[1], "^%[([^]][^]]?)%].*")
-  if reg_name == "%" then
-    utils.info("The `%%` register is read-only.\n")
+  if not reg_name then return end
+
+  if reg_name == '"' then
+    -- setreg('"') always writes to register 0, resolve the register the
+    -- unnamed register currently points to so we clear the displayed value.
+    local reg_info = vim.fn.getreginfo('"')
+    local points_to = reg_info.points_to
+    if not points_to or points_to == "" then return end
+    reg_name = points_to
+  end
+
+  if reg_name == "%" or reg_name == ":" or reg_name == "." then
+    utils.info("Register `%s` is read-only.\n", reg_name)
     return
   end
-  vim.fn.setreg(string.lower(reg_name), "")
+
+  local ok, err = pcall(vim.fn.setreg, string.lower(reg_name), "")
+  if not ok then
+    utils.warn("Failed to clear register `%s`: %s", reg_name, err)
+  end
 end
 
 M.goto_mark = function(selected)
