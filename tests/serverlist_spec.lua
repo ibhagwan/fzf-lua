@@ -95,6 +95,110 @@ local function serverlist_entry(addr)
   return ("somecwd 1K 0.0%%%s%s"):format(utils.nbsp, utils.ansi_codes.grey(addr))
 end
 
+describe("serverlist format_entry", function()
+  local format_entry = providers._format_serverlist_entry
+  local now = 1700000000
+  local orig_time
+
+  before_each(function()
+    orig_time = os.time
+    os.time = function() return now end
+  end)
+
+  after_each(function()
+    os.time = orig_time
+  end)
+
+  it("omits activity without v:useractive", function()
+    local line = format_entry({
+      cwd = "/tmp",
+      rusage = { maxrss = 1 },
+      cpu_pct = 0,
+      socket = "/tmp/nvim.1.0",
+    }, 4)
+    eq(utils.strip_ansi_coloring(line):find("ago", 1, true), nil)
+    eq(utils.strip_ansi_coloring(line):find("just now", 1, true), nil)
+    eq(utils.serverlist_parse_entry(line), "/tmp/nvim.1.0")
+  end)
+
+  it("omits activity when v:useractive is zero", function()
+    local line = format_entry({
+      cwd = "/tmp",
+      rusage = { maxrss = 1 },
+      cpu_pct = 0,
+      socket = "/tmp/nvim.1.0",
+      useractive = 0,
+    }, 4)
+    eq(utils.strip_ansi_coloring(line):find("ago", 1, true), nil)
+    eq(utils.strip_ansi_coloring(line):find("just now", 1, true), nil)
+  end)
+
+  it("formats v:useractive as a green relative time", function()
+    local line = format_entry({
+      cwd = "/tmp",
+      rusage = { maxrss = 1 },
+      cpu_pct = 0,
+      socket = "/tmp/nvim.1.0",
+      useractive = (now - 7200) * 1e9,
+    }, 4)
+    eq(line:find(utils.ansi_codes.green("2 hours ago"), 1, true) ~= nil, true)
+    eq(utils.serverlist_parse_entry(line), "/tmp/nvim.1.0")
+  end)
+end)
+
+describe("serverlist useractive", function()
+  it("formats v:useractive when available", function()
+    with_sibling(nil, nil, function(_, addr)
+      ---@diagnostic disable-next-line: undefined-field
+      local has_useractive = vim.v.useractive ~= nil
+      if has_useractive then
+        -- any UI input advances v:useractive in the peer
+        eq(utils.rpcexec_timed(addr, "nvim_input", "<Ignore>"), true)
+        assert(wait_until(function()
+          local ok, active = utils.rpcexec_timed(addr, "nvim_exec_lua",
+            "return vim.v.useractive", {})
+          return ok and type(active) == "number" and active > 0
+        end, 5000), "peer useractive did not advance")
+      end
+
+      local core = require("fzf-lua.core")
+      local orig_fzf_exec = core.fzf_exec
+      local contents
+      core.fzf_exec = function(f) contents = f end
+      local ok, err = pcall(providers.serverlist, {})
+      core.fzf_exec = orig_fzf_exec
+      if not ok then error(err) end
+      assert(type(contents) == "function", "serverlist did not call fzf_exec")
+
+      local entries, done = {}, false
+      contents(function(item)
+        if item then
+          entries[#entries + 1] = item
+        else
+          done = true
+        end
+      end)
+      assert(wait_until(function() return done end, 15000), "serverlist content did not finish")
+
+      local entry
+      for _, line in ipairs(entries) do
+        if utils.serverlist_parse_entry(line) == addr then
+          entry = line
+          break
+        end
+      end
+      if not entry then error("sibling missing from serverlist entries") end
+      if has_useractive then
+        eq(entry:find(utils.ansi_codes.green("just now"), 1, true) ~= nil, true)
+      else
+        local plain = utils.strip_ansi_coloring(entry)
+        eq(plain:find("just now", 1, true), nil)
+        eq(plain:find("ago", 1, true), nil)
+      end
+    end)
+  end)
+end)
+
 describe("serverlist parse_entry", function()
   local orig_is_windows = utils.__IS_WINDOWS
   it("parses plain entries", function()

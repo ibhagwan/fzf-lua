@@ -53,36 +53,6 @@ local function treefy(ent, _tree, _last)
   return tree
 end
 
---- Returns the relative time from a given time
---- as ... ago
----@param time number
----@return string
-function reltime(time)
-  if time == -1 then
-    return "origin"
-  end
-  local delta = os.time() - time
-  local tpl = {
-    { 1,             60,                "just now",     "just now" },
-    { 60,            3600,              "a minute ago", "%d minutes ago" },
-    { 3600,          3600 * 24,         "an hour ago",  "%d hours ago" },
-    { 3600 * 24,     3600 * 24 * 7,     "yesterday",    "%d days ago" },
-    { 3600 * 24 * 7, 3600 * 24 * 7 * 4, "a week ago",   "%d weeks ago" },
-  }
-  for _, v in ipairs(tpl) do
-    if delta < v[2] then
-      local value = math.floor(delta / v[1] + 0.5)
-      return value == 1 and v[3] or v[4]:format(value)
-    end
-  end
-  if os.date("%Y", time) == os.date("%Y") then
-    ---@diagnostic disable-next-line: return-type-mismatch
-    return os.date("%b %d", time) ---@type string
-  end
-  ---@diagnostic disable-next-line: return-type-mismatch
-  return os.date("%b %d, %Y", time) ---@type string
-end
-
 ---@diagnostic disable-next-line: unused
 --- @param time integer
 --- @return string
@@ -243,7 +213,7 @@ local function format_graph_line(_opts, tree, v, reverse)
       .. '    '
       .. seq
       .. '    ('
-      .. reltime(tree[seq].time)
+      .. utils.reltime(tree[seq].time)
       .. ')'
   elseif v.kind == 'remove' then
     return (PIPE .. ' '):rep(v.index - 1) .. (' ' .. SLASH):rep(v.node_count - v.index)
@@ -330,7 +300,7 @@ local function draw_tree(opts, cb, tree, nodes, reverse, parents, prefix)
         .. utils.ansi_codes[opts.hls.buf_name](tostring(n))
     -- local w = 64 + string.len(node) - vim.fn.strwidth(node)
     cb(n, string.format("%s\t\t%s", node,
-      utils.ansi_codes[opts.hls.path_linenr](reltime(v.time))))
+      utils.ansi_codes[opts.hls.path_linenr](utils.reltime(v.time))))
     draw_tree(opts, cb, tree, v.child, reverse, nodes,
       prefix .. ((is_root or is_single) and "" or is_last and "    " or "│   "))
   end
