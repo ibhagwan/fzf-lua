@@ -323,22 +323,12 @@ Fzf-Lua conveniently comes with a VS-Code like picker by default
 
 </details>
 <details>
-<summary>Misc</summary>
+<summary>Neovim</summary>
 
-### Misc
+### Neovim
 
 | Command                | List                                          |
 | ---------------------- | --------------------------------------------- |
-| `resume`               | resume last command/query                     |
-| `builtin`              | fzf-lua builtin commands                      |
-| `combine`              | combine different fzf-lua pickers             |
-| `global`               | global picker for files,buffers and symbols   |
-| `profiles`             | fzf-lua configuration profiles                |
-| `helptags`             | help tags                                     |
-| `manpages`             | man pages                                     |
-| `colorschemes`         | color schemes                                 |
-| `awesome_colorschemes` | Awesome Neovim color schemes                  |
-| `highlights`           | highlight groups                              |
 | `commands`             | neovim commands                               |
 | `command_history`      | command history                               |
 | `search_history`       | search history                                |
@@ -348,27 +338,36 @@ Fzf-Lua conveniently comes with a VS-Code like picker by default
 | `registers`            | :registers                                    |
 | `tagstack`             | :tags                                         |
 | `autocmds`             | :autocmd                                      |
-| `nvim_options`         | neovim options                                |
 | `keymaps`              | key mappings                                  |
 | `filetypes`            | filetypes                                     |
 | `menus`                | menus                                         |
+| `packadd`              | :packadd <package>                            |
+| `colorschemes`         | color schemes                                 |
+| `highlights`           | highlight groups                              |
+| `helptags`             | help tags                                     |
+| `manpages`             | man pages                                     |
 | `spellcheck`           | misspelled words in buffer                    |
 | `spell_suggest`        | spelling suggestions                          |
-| `packadd`              | :packadd <package>                            |
 | `undotree`             | history undo tree                             |
+| `nvim_options`         | neovim options                                |
+| `serverlist`           | neovim servers                                |
+| `register_ui_select`   | register fzf-lua as the UI interface for `vim.ui.select` |
+| `deregister_ui_select` | de-register fzf-lua with `vim.ui.select`                 |
 
 </details>
 <details>
-<summary>Neovim API</summary>
+<summary>Misc</summary>
 
-### Neovim API
+### Misc
 
-> `:help vim.ui.select` for more info
-
-| Command                | List                                                     |
-| ---------------------- | -------------------------------------------------------- |
-| `register_ui_select`   | register fzf-lua as the UI interface for `vim.ui.select` |
-| `deregister_ui_select` | de-register fzf-lua with `vim.ui.select`                 |
+| Command                | List                                          |
+| ---------------------- | --------------------------------------------- |
+| `resume`               | resume last command/query                     |
+| `builtin`              | fzf-lua builtin commands                      |
+| `profiles`             | fzf-lua configuration profiles                |
+| `combine`              | combine different fzf-lua pickers             |
+| `global`               | global picker for files,buffers and symbols   |
+| `awesome_colorschemes` | Awesome Neovim color schemes                  |
 
 </details>
 <details>
