@@ -217,6 +217,35 @@ function M.round(num, limit)
   return math.floor(num)
 end
 
+--- Format a Unix timestamp (seconds) as a relative time.
+---@param time number
+---@return string
+function M.reltime(time)
+  if time == -1 then
+    return "origin"
+  end
+  local delta = os.time() - time
+  local tpl = {
+    { 1,             60,                "just now",     "just now" },
+    { 60,            3600,              "a minute ago", "%d minutes ago" },
+    { 3600,          3600 * 24,         "an hour ago",  "%d hours ago" },
+    { 3600 * 24,     3600 * 24 * 7,     "yesterday",    "%d days ago" },
+    { 3600 * 24 * 7, 3600 * 24 * 7 * 4, "a week ago",   "%d weeks ago" },
+  }
+  for _, v in ipairs(tpl) do
+    if delta < v[2] then
+      local value = math.floor(delta / v[1] + 0.5)
+      return value == 1 and v[3] or v[4]:format(value)
+    end
+  end
+  if os.date("%Y", time) == os.date("%Y") then
+    ---@diagnostic disable-next-line: return-type-mismatch
+    return os.date("%b %d", time) ---@type string
+  end
+  ---@diagnostic disable-next-line: return-type-mismatch
+  return os.date("%b %d, %Y", time) ---@type string
+end
+
 M._notify_header = "LineNr"
 
 --- Fancy notification wrapper, idea borrowed from blink.nvim
