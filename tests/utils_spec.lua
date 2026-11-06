@@ -33,6 +33,32 @@ describe("Testing utils module", function()
     eq(utils.ver2str({ 1, 2, 3 }), "1.2.3")
   end)
 
+  it("reltime", function()
+    local now = os.time()
+    eq(utils.reltime(-1), "origin")
+    eq(utils.reltime(now), "just now")
+    eq(utils.reltime(now - 60), "a minute ago")
+    eq(utils.reltime(now - 120), "2 minutes ago")
+    eq(utils.reltime(now - 3600), "an hour ago")
+    eq(utils.reltime(now - 7200), "2 hours ago")
+    eq(utils.reltime(now - 86400), "yesterday")
+    eq(utils.reltime(now - 86400 * 2), "2 days ago")
+    eq(utils.reltime(now - 86400 * 7), "a week ago")
+    eq(utils.reltime(now - 86400 * 14), "2 weeks ago")
+
+    local year = tonumber(os.date("%Y")) or error("cannot determine current year")
+    local prev_year = os.time({
+      year = year - 1,
+      month = 6,
+      day = 1,
+      hour = 12,
+      min = 0,
+      sec = 0,
+      isdst = false,
+    })
+    eq(utils.reltime(prev_year), os.date("%b %d, %Y", prev_year))
+  end)
+
   it("version parser", function()
     eq(utils.parse_verstr(), nil)      -- Invalid
     eq(utils.parse_verstr(""), nil)    -- Invalid

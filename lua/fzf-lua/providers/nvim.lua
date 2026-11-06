@@ -888,32 +888,60 @@ end
 -- Test seam (cf. `undotree._draw_tree`): exercise discovery without UI.
 M._discover_servers = discover_servers
 
----List, preview, kill and attach to running Neovim servers.
+-- libuv normalizes `ru_maxrss` to kilobytes on all platforms
+---@param rusage table?
+---@return string
+local function fmt_mem(rusage)
+  if not rusage or not rusage.maxrss then return "?" end
+  local kb = rusage.maxrss
+  if kb < 1024 then return string.format("%dK", kb) end
+  if kb < 1024 * 1024 then return string.format("%.1fM", kb / 1024) end
+  return string.format("%.2fG", kb / (1024 * 1024))
+end
+
+---@param rusage table?
+---@return number?
+local function cpu_time_us(rusage)
+  if not rusage or not rusage.utime or not rusage.stime then return nil end
+  return (rusage.utime.sec * 1e6 + rusage.utime.usec)
+      + (rusage.stime.sec * 1e6 + rusage.stime.usec)
+end
+
+---@param pct number?
+---@return string
+local function fmt_cpu(pct)
+  if not pct then return "  ?" end
+  if pct < 10 then return string.format("%.1f%%", pct) end
+  if pct < 100 then return string.format("%3.0f%%", pct) end
+  return string.format("%4.0f%%", pct)
+end
+
+--- Format a serverlist row, adding the last user activity on 0.13+.
+---@param e { cwd: string, rusage: table?, cpu_pct: number?, socket: string, useractive: number? }
+---@param max_cwd integer
+---@return string
+local function format_serverlist_entry(e, max_cwd)
+  local active = ""
+  -- `v:useractive` is nanoseconds; 0 means no user activity since startup
+  if type(e.useractive) == "number" and e.useractive > 0 then
+    active = " " .. utils.ansi_codes.green(
+      utils.reltime(math.floor(e.useractive / 1e9)))
+  end
+  return ("%-" .. max_cwd .. "s %s %s%s%s%s"):format(
+    e.cwd,
+    utils.ansi_codes.cyan(string.format("%7s", fmt_mem(e.rusage))),
+    utils.ansi_codes.yellow(string.format("%5s", fmt_cpu(e.cpu_pct))),
+    active,
+    utils.nbsp,
+    utils.ansi_codes.grey(e.socket))
+end
+
+M._format_serverlist_entry = format_serverlist_entry
+
+--- List, preview, kill and attach to running Neovim servers.
 ---@param opts fzf-lua.config.Serverlist|{}?
 ---@return thread?, string?, table?
 M.serverlist = function(opts)
-  -- libuv normalizes `ru_maxrss` to kilobytes on all platforms
-  local function fmt_mem(rusage)
-    if not rusage or not rusage.maxrss then return "?" end
-    local kb = rusage.maxrss
-    if kb < 1024 then return string.format("%dK", kb) end
-    if kb < 1024 * 1024 then return string.format("%.1fM", kb / 1024) end
-    return string.format("%.2fG", kb / (1024 * 1024))
-  end
-
-  local function cpu_time_us(rusage)
-    if not rusage or not rusage.utime or not rusage.stime then return nil end
-    return (rusage.utime.sec * 1e6 + rusage.utime.usec)
-        + (rusage.stime.sec * 1e6 + rusage.stime.usec)
-  end
-
-  local function fmt_cpu(pct)
-    if not pct then return "  ?" end
-    if pct < 10 then return string.format("%.1f%%", pct) end
-    if pct < 100 then return string.format("%3.0f%%", pct) end
-    return string.format("%4.0f%%", pct)
-  end
-
   opts = require("fzf-lua.config").normalize_opts(opts or {}, "serverlist")
 
   local SAMPLE_INTERVAL_MS = 50
@@ -922,23 +950,25 @@ M.serverlist = function(opts)
     local entries = {}
     discover_servers():each(function(p)
       local ok, ret = utils.rpcexec_timed(p, "nvim_exec_lua",
-        "return { vim.uv.cwd(), vim.uv.getrusage(), vim.uv.hrtime() }", {})
+        "return { vim.uv.cwd(), vim.uv.getrusage(), vim.uv.hrtime(), vim.v.useractive }", {})
       if not ok or type(ret) ~= "table" then return end
-      local cwd, rusage, wall_start = ret[1], ret[2], ret[3]
+      local cwd, rusage, wall_start, useractive = ret[1], ret[2], ret[3], ret[4]
       if not cwd then return end
       entries[#entries + 1] = {
         cwd = FzfLua.path.normalize(cwd),
         rusage = rusage,
         wall_start = wall_start,
         socket = p,
+        useractive = useractive,
       }
     end)
     vim.defer_fn(function()
       for _, e in ipairs(entries) do
         local ok, ret = utils.rpcexec_timed(e.socket, "nvim_exec_lua",
-          "return { vim.uv.getrusage(), vim.uv.hrtime() }", {})
+          "return { vim.uv.getrusage(), vim.uv.hrtime(), vim.v.useractive }", {})
         if ok and type(ret) == "table" then
-          local rusage2, wall_end = ret[1], ret[2]
+          local rusage2, wall_end, useractive = ret[1], ret[2], ret[3]
+          if useractive ~= nil then e.useractive = useractive end
           if rusage2 and wall_end and e.wall_start then
             local cpu1, cpu2 = cpu_time_us(e.rusage), cpu_time_us(rusage2)
             if cpu1 and cpu2 and wall_end > e.wall_start then
@@ -952,12 +982,7 @@ M.serverlist = function(opts)
         if #e.cwd > max_cwd then max_cwd = #e.cwd end
       end
       for _, e in ipairs(entries) do
-        cb(("%-" .. max_cwd .. "s %s %s%s%s"):format(
-          e.cwd,
-          utils.ansi_codes.cyan(string.format("%7s", fmt_mem(e.rusage))),
-          utils.ansi_codes.yellow(string.format("%5s", fmt_cpu(e.cpu_pct))),
-          utils.nbsp,
-          utils.ansi_codes.grey(e.socket)))
+        cb(format_serverlist_entry(e, max_cwd))
       end
       cb(nil)
     end, SAMPLE_INTERVAL_MS)
