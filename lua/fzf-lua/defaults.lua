@@ -2002,7 +2002,13 @@ M.defaults.search_history = {
 M.defaults.registers = {
   multiline    = true, ---@type integer|boolean
   ignore_empty = true,
-  actions      = { ["enter"] = actions.paste_register },
+  actions      = {
+    ["enter"] = actions.paste_register,
+    ["ctrl-x"] = {
+      fn = actions.reg_clear,
+      reload = true,
+    },
+  },
   fzf_opts     = { ["--no-multi"] = true },
 }
 

@@ -665,6 +665,16 @@ M.search_del = function(selected, opts)
   hist_del("/", selected, opts)
 end
 
+---@param selected string[]
+M.reg_clear = function(selected)
+  local reg_name = string.match(selected[1], "^%[([^]][^]]?)%].*")
+  if reg_name == "%" then
+    utils.info("The `%%` register is read-only.\n")
+    return
+  end
+  vim.fn.setreg(string.lower(reg_name), "")
+end
+
 M.goto_mark = function(selected)
   if not selected[1] then return end
   local mark = selected[1]

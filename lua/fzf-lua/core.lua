@@ -91,6 +91,7 @@ M.ACTION_DEFINITIONS = {
   [actions.search]            = { "edit" },
   [actions.search_cr]         = { "search" },
   [actions.search_del]        = { "delete" },
+  [actions.reg_clear]         = { "clear register" },
 }
 
 -- converts contents array sent to `fzf_exec` into a single contents
