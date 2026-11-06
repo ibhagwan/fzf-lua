@@ -389,41 +389,43 @@ M.registers = function(opts)
         or reg:gsub("\n", utils.ansi_codes.magenta("\\n"))
   end
 
-  local entries = {}
-  for _, r in ipairs(registers) do
-    -- pcall as this could fail with:
-    -- E5108: Error executing lua Vim:clipboard:
-    --        provider returned invalid data
-    local _, contents = pcall(vim.fn.getreg, r)
-    contents = register_escape_special(contents, opts.multiline and 2 or 1)
-    if (contents and #contents > 0) or not opts.ignore_empty then
-      local regtype = vim.fn.getregtype(r)
-      local function convert_regtype(t)
-        local first = string.sub(t, 1, 1)
-        if first == "v" then
-          return "c"
-        elseif first == "V" then
-          return "l"
-        elseif first == "\22" then
-          return "b" .. string.sub(t, 2)
-        else
-          return t
-        end
-      end
-
-      local reg_fmt = require("fzf-lua.utils").ansi_codes.yellow(r)
-      local regtype_fmt = require("fzf-lua.utils").ansi_codes.blue(convert_regtype(regtype))
-      entries[#entries + 1] = string.format("[%s] [%s] %s", reg_fmt, regtype_fmt, contents)
+  local function convert_regtype(t)
+    local first = string.sub(t, 1, 1)
+    if first == "v" then
+      return "c"
+    elseif first == "V" then
+      return "l"
+    elseif first == "\22" then
+      return "b" .. string.sub(t, 2)
+    else
+      return t
     end
+  end
+
+  local contents = function(cb)
+    for _, r in ipairs(registers) do
+      -- pcall as this could fail with:
+      -- E5108: Error executing lua Vim:clipboard:
+      --        provider returned invalid data
+      local _, reg_contents = pcall(vim.fn.getreg, r)
+      reg_contents = register_escape_special(reg_contents, opts.multiline and 2 or 1)
+      if (reg_contents and #reg_contents > 0) or not opts.ignore_empty then
+        local regtype = vim.fn.getregtype(r)
+        local reg_fmt = utils.ansi_codes.yellow(r)
+        local regtype_fmt = utils.ansi_codes.blue(convert_regtype(regtype))
+        cb(string.format("[%s] [%s] %s", reg_fmt, regtype_fmt, reg_contents))
+      end
+    end
+    cb(nil)
   end
 
   opts.preview = function(args)
     local r = args[1]:match("%[(.*)%] ")
-    local _, contents = pcall(vim.fn.getreg, r)
-    return contents and register_escape_special(contents) or args[1]
+    local _, reg_contents = pcall(vim.fn.getreg, r)
+    return reg_contents and register_escape_special(reg_contents) or args[1]
   end
 
-  return core.fzf_exec(entries, opts)
+  return core.fzf_exec(contents, opts)
 end
 
 ---@param opts fzf-lua.config.Keymaps|{}?
