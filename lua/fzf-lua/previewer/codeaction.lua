@@ -46,11 +46,17 @@ local function diff_text_edits(text_edits, bufnr, offset_encoding, diff_opts)
   return utils.strsplit(vim.trim(diff), "\r?\n")
 end
 
+
+---@diagnostic disable-next-line: deprecated
+local uri_to_bufnr = vim.uri and vim.uri.to_buf or vim.uri_to_bufnr
+---@diagnostic disable-next-line: deprecated
+local uri_to_fname = vim.uri and vim.uri.to_fname or vim.uri_to_fname
+
 -- based on `vim.lsp.util.apply_text_document_edit`
 -- https://github.com/neovim/neovim/blob/v0.9.2/runtime/lua/vim/lsp/util.lua#L576
 local function diff_text_document_edit(text_document_edit, offset_encoding, diff_opts)
   local text_document = text_document_edit.textDocument
-  local bufnr = vim.uri_to_bufnr(text_document.uri)
+  local bufnr = uri_to_bufnr(text_document.uri)
 
   return diff_text_edits(text_document_edit.edits, bufnr, offset_encoding, diff_opts)
 end
@@ -63,15 +69,15 @@ local function diff_workspace_edit(workspace_edit, offset_encoding, diff_opts)
     for _, change in ipairs(workspace_edit.documentChanges) do
       -- imitate git diff
       if change.kind == "rename" then
-        local old_path = vim.fn.fnamemodify(vim.uri_to_fname(change.oldUri), ":.")
-        local new_path = vim.fn.fnamemodify(vim.uri_to_fname(change.newUri), ":.")
+        local old_path = vim.fn.fnamemodify(uri_to_fname(change.oldUri), ":.")
+        local new_path = vim.fn.fnamemodify(uri_to_fname(change.newUri), ":.")
 
         table.insert(diff, string.format("diff --code-actions a/%s b/%s", old_path, new_path))
         table.insert(diff, string.format("rename from %s", old_path))
         table.insert(diff, string.format("rename to %s", new_path))
         table.insert(diff, "")
       elseif change.kind == "create" then
-        local path = vim.fn.fnamemodify(vim.uri_to_fname(change.uri), ":.")
+        local path = vim.fn.fnamemodify(uri_to_fname(change.uri), ":.")
 
         table.insert(diff, string.format("diff --code-actions a/%s b/%s", path, path))
         -- delta needs file mode
@@ -80,7 +86,7 @@ local function diff_workspace_edit(workspace_edit, offset_encoding, diff_opts)
         table.insert(diff, "index 0000000..fffffff")
         table.insert(diff, "")
       elseif change.kind == "delete" then
-        local path = vim.fn.fnamemodify(vim.uri_to_fname(change.uri), ":.")
+        local path = vim.fn.fnamemodify(uri_to_fname(change.uri), ":.")
 
         table.insert(diff, string.format("diff --code-actions a/%s b/%s", path, path))
         table.insert(diff, string.format("--- a/%s", path))
@@ -89,7 +95,7 @@ local function diff_workspace_edit(workspace_edit, offset_encoding, diff_opts)
       elseif change.kind then
         -- do nothing
       else
-        local path = vim.fn.fnamemodify(vim.uri_to_fname(change.textDocument.uri), ":.")
+        local path = vim.fn.fnamemodify(uri_to_fname(change.textDocument.uri), ":.")
 
         table.insert(diff, string.format("diff --code-actions a/%s b/%s", path, path))
         table.insert(diff, string.format("--- a/%s", path))
@@ -108,8 +114,8 @@ local function diff_workspace_edit(workspace_edit, offset_encoding, diff_opts)
   local all_changes = workspace_edit.changes
   if all_changes and not utils.tbl_isempty(all_changes) then
     for uri, changes in pairs(all_changes) do
-      local path = vim.fn.fnamemodify(vim.uri_to_fname(uri), ":.")
-      local bufnr = vim.uri_to_bufnr(uri)
+      local path = vim.fn.fnamemodify(uri_to_fname(uri), ":.")
+      local bufnr = uri_to_bufnr(uri)
 
       table.insert(diff, string.format("diff --code-actions a/%s b/%s", path, path))
       table.insert(diff, string.format("--- a/%s", path))

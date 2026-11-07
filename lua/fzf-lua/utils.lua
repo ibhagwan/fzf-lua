@@ -1781,6 +1781,7 @@ local function rpcexec(addr, timeout, method, ...)
       require("ffi").C.channel_close(chan, 3, nil)
     end))
   end
+  ---@diagnostic disable-next-line: param-type-mismatch
   ---@cast chan integer
   local ret = { pcall(vim.rpcrequest, chan, method, ...) }
   if timer and not timer:is_closing() then timer:close() end
