@@ -120,7 +120,7 @@ T["registers"]["clear action skips read-only registers"] = function()
     local actions = require("fzf-lua.actions")
     local utils = require("fzf-lua.utils")
     local original_info, original_setreg = utils.info, vim.fn.setreg
-    local results = {}
+    local res = {}
     for _, reg in ipairs({ "%", ":", "." }) do
       local messages, writes = {}, 0
       utils.info = function(msg, ...)
@@ -130,10 +130,10 @@ T["registers"]["clear action skips read-only registers"] = function()
         writes = writes + 1
       end
       actions.reg_clear({ "[" .. reg .. "] [c] value" })
-      results[reg] = { messages = messages, writes = writes }
+      res[reg] = { messages = messages, writes = writes }
     end
     utils.info, vim.fn.setreg = original_info, original_setreg
-    return results
+    return res
   end)
 
   for _, reg in ipairs({ "%", ":", "." }) do
