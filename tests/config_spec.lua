@@ -124,6 +124,28 @@ describe("Testing config version gate", function()
     return res, err
   end
 
+  it("rejects skim < 3.4.0 off Windows", function()
+    local res, err = normalize_sk({ 3, 3, 9 }, false)
+    eq(res, nil)
+    eq(type(err), "string")
+    if type(err) == "string" then
+      eq(err:match("skim version 3%.3%.9") ~= nil, true)
+      eq(err:match("3%.4%.0") ~= nil, true)
+    end
+  end)
+
+  it("accepts skim 3.4.0 off Windows", function()
+    local res, err = normalize_sk({ 3, 4, 0 }, false)
+    assert.is.True(res ~= nil)
+    eq(err, nil)
+  end)
+
+  it("accepts skim 5.7.5 off Windows", function()
+    local res, err = normalize_sk({ 5, 7, 5 }, false)
+    assert.is.True(res ~= nil)
+    eq(err, nil)
+  end)
+
   it("rejects skim < 5.8.0 on Windows", function()
     local res, err = normalize_sk({ 5, 7, 5 }, true)
     eq(res, nil)
@@ -132,12 +154,6 @@ describe("Testing config version gate", function()
       eq(err:match("skim version 5%.7%.5") ~= nil, true)
       eq(err:match("5%.8%.0") ~= nil, true)
     end
-  end)
-
-  it("accepts skim < 5.8.0 off Windows", function()
-    local res, err = normalize_sk({ 5, 7, 5 }, false)
-    assert.is.True(res ~= nil)
-    eq(err, nil)
   end)
 
   it("accepts skim >= 5.8.0 on Windows", function()

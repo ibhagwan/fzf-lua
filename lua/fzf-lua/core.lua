@@ -447,15 +447,7 @@ M.fzf = function(contents, opts)
   -- This was added by 'resume': when '--print-query' is specified
   -- we are guaranteed to have the query in the first line, save&remove it
   if selected and #selected > 0 then
-    -- NOTE: this doesn't get called with 'live_grep' when using skim <v1
-    -- due to a bug where '--print-query --interactive' combo is broken:
-    -- skim always prints an empty line where the typed query should be.
-    if not (opts.is_live
-          and utils.has(opts, "sk")
-          and not utils.has(opts, "sk", { 1, 5, 3 }))
-    then
-      config.resume_set("query", selected[1], opts)
-    end
+    config.resume_set("query", selected[1], opts)
     table.remove(selected, 1)
   end
   fzf_win:check_exit_status(exit_code, fzf_bufnr)
@@ -495,7 +487,7 @@ M.preview_window = function(o, fzf_win)
     border and string.format(":%s", border) or "")
   -- https://github.com/skim-rs/skim/issues/964
   if preview.pty and utils.has(o, "sk") then prefix = "pty:" .. prefix end
-  if utils.has(o, "fzf", { 0, 31 })
+  if utils.has(o, "fzf")
       -- fzf v0.45 added transform, v0.46 added resize event
       -- which we use for changing the layout on resize
       and not utils.has(o, "fzf", { 0, 46 })
@@ -544,8 +536,8 @@ M.create_fzf_colors = function(opts)
     colors.query = { "fg", opts.hls.live_prompt }
   end
 
-  -- Remove non supported colors from skim and older fzf versions
-  if not utils.has(opts, "fzf", { 0, 35 }) or utils.has(opts, "sk") then
+  -- Remove colors not supported by skim and fzf < 0.41
+  if utils.has(opts, "sk") then
     colors.separator = nil
   end
   if not utils.has(opts, "fzf", { 0, 41 }) or utils.has(opts, "sk") then
@@ -1043,21 +1035,14 @@ end
 ---@param opts table
 ---@return table
 M.convert_reload_actions = function(reload_cmd, opts)
-  local fallback ---@type boolean?
-  -- Does not work with fzf version < 0.36, fzf fails with
-  -- "error 2: bind action not specified:" (#735)
-  -- Skim supports `reload` but not `rebind`, so after the first action
-  -- its key binds stay unbound (the `load` event fires, `rebind` is a
-  -- no-op). Use the old "resume" fallback which fully restarts the
-  -- picker and keeps the key binds working.
-  if not utils.has(opts, "sk", { 0, 12, 0 })
-      and not utils.has(opts, "fzf", { 0, 36 })
-      or not reload_cmd then
-    fallback = true
-  end
-  -- force the "resume" fallback (used by tests to exercise the old
-  -- restart mechanism without requiring skim or an old fzf binary)
-  if opts._reload_fallback then fallback = true end
+  -- Skim >= 3.4.0 is enforced in config, so every supported binary has
+  -- `reload`. Skim still does not support `rebind`, so do not unbind/rebind
+  -- its actions (its binds stay active). Its `execute-silent` is asynchronous
+  -- and can race with the following `reload`, so use the synchronous
+  -- `execute` action instead.
+  local is_skim = utils.has(opts, "sk")
+  -- No reload command: leave the actions untouched
+  if not reload_cmd then return opts end
   -- Two types of action as table:
   --   (1) map containing action properties (reload, noclose, etc)
   --   (2) array of actions to be executed serially
@@ -1067,23 +1052,13 @@ M.convert_reload_actions = function(reload_cmd, opts)
       assert(type(v) == "function" or (v.fn and v[1] == nil) or (v[1] and v.fn == nil))
       if type(v) == "table" and v.reload then
         assert(type(v.fn) == "function")
-        -- fallback: we cannot use the `reload` event (old fzf or skim)
-        -- convert to "old-style" interface reload using `resume`
-        if fallback then
-          opts.actions[k] = { v.fn, actions.resume }
-        end
-      elseif not fallback and type(v) == "table"
+      elseif type(v) == "table"
           and type(v[1]) == "function" and v[2] == actions.resume then
-        -- backward compat: we can use the `reload` event but action
-        -- definition is still using the old style using `actions.resume`
-        -- convert to the new style using { fn = <function>, reload = true }
+        -- backward compat: action definition still uses the old style
+        -- using `actions.resume`, convert to { fn = <function>, reload = true }
         opts.actions[k] = { fn = v[1], reload = true }
       end
     end
-  end
-  if fallback then
-    -- for fallback, conversion to "old-style" actions is sufficient
-    return opts
   end
   local reload_binds = {}
   for k, v in pairs(opts.actions) do
@@ -1112,10 +1087,14 @@ M.convert_reload_actions = function(reload_cmd, opts)
         v.postfix = "+" .. v.postfix
       end
       local cmd = shell.stringify_data2(v.fn, opts, v.field_index or "{+}")
+      -- skim's `execute-silent` does not wait for the command to finish;
+      -- `execute` runs synchronously so `reload` sees the updated state
+      local exec = is_skim and "execute" or "execute-silent"
       opts.keymap.fzf[k] = {
-        string.format("%s%sexecute-silent(%s)+%s(%s)%s",
+        string.format("%s%s%s(%s)+%s(%s)%s",
           type(v.prefix) == "string" and v.prefix or "",
           unbind and (unbind .. "+") or "",
+          exec,
           cmd,
           M.can_transform(opts) and "transform" or "reload", -- contents is not "cmd" but "reload:cmd"
           reload_cmd,
@@ -1137,10 +1116,6 @@ end
 ---@param opts table
 ---@return table
 M.convert_exec_silent_actions = function(opts)
-  -- `execute-silent` actions are bugged with skim (can't use quotes)
-  if utils.has(opts, "sk") and not utils.has(opts, "sk", { 1, 5, 3 }) then
-    return opts
-  end
   for k, v in pairs(opts.actions) do
     if type(v) == "table" and v.exec_silent then
       assert(type(v.fn) == "function")
@@ -1152,11 +1127,10 @@ M.convert_exec_silent_actions = function(opts)
       if type(v.postfix) == "string" and not v.postfix:match("^%+") then
         v.postfix = "+" .. v.postfix
       end
-      -- `execute-silent(...)` with fzf version < 0.36, errors with:
-      -- 'error 2: bind action not specified' (due to inner brackets)
+      local cmd = shell.stringify_data2(v.fn, opts, v.field_index or "{+}")
       -- changing to `execute-silent:...` removes the need to care for
       -- brackets within the command with the limitation of not using
-      -- potfix (must be the last part of the arg), from `man fzf`:
+      -- postfix (must be the last part of the arg), from `man fzf`:
       --
       --   action-name:...
       --      The last one is the special form that frees you from parse
@@ -1164,17 +1138,12 @@ M.convert_exec_silent_actions = function(opts)
       --      that it should be the last one in the comma-separated list of
       --      key-action pairs.
       --
-      local has_fzf036 = utils.has(opts, "fzf", { 0, 36 })
-      local cmd = shell.stringify_data2(v.fn, opts, v.field_index or "{+}")
+      local has_postfix = type(v.postfix) == "string"
       opts.keymap.fzf[k] = {
         string.format("%sexecute-silent%s%s",
           type(v.prefix) == "string" and v.prefix or "",
-          -- prefer "execute-silent:..." unless we have postfix
-          has_fzf036 and type(v.postfix) == "string"
-          and string.format("(%s)", cmd)
-          or string.format(":%s", cmd),
-          -- can't use postfix since we use "execute-silent:..."
-          has_fzf036 and type(v.postfix) == "string" and v.postfix or ""),
+          has_postfix and string.format("(%s)", cmd) or string.format(":%s", cmd),
+          has_postfix and v.postfix or ""),
         desc = config.get_action_helpstr(v)
       }
     end
@@ -1213,10 +1182,7 @@ M.setup_fzf_live_flags = function(command, bind_start, opts)
       opts.__prompt = opts.prompt
       opts.prompt = nil
     end
-    opts.fzf_opts["--cmd-query"] = utils.has(opts, "sk", { 1, 5, 3 }) and opts.query
-        -- NOTE: skim <v1, since we surrounded the skim placeholder
-        -- with quotes we need to escape them in the initial query
-        or utils.sk_escape(opts.query)
+    opts.fzf_opts["--cmd-query"] = opts.query
     -- '--query' was set by 'resume()', skim has the option to switch back and
     -- forth between interactive command and fuzzy matching (using 'ctrl-q')
     -- setting both '--query' and '--cmd-query' will use <query> to fuzzy match
@@ -1252,12 +1218,8 @@ M.fzf_query_placeholder = "<query>"
 ---@param opts { field_index?: string }
 ---@return string
 M.fzf_field_index = function(opts)
-  -- fzf already adds single quotes around the placeholder when expanding.
-  -- for skim we surround it with double quotes or single quote searches fail
-  -- skim >= v1.5.3 already escapes the field index
-  return opts and opts.field_index
-      or utils.has(opts, "sk") and not utils.has(opts, "sk", { 1, 5, 3 }) and [["{}"]]
-      or "{q}"
+  -- fzf and skim both quote/escape field index placeholders
+  return opts and opts.field_index or "{q}"
 end
 
 ---@param cmd string

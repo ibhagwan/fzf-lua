@@ -83,8 +83,8 @@ M.expect = function(actions, opts)
           prefix_bind,
           recorder
         ))
-      elseif utils.has(opts, "sk", { 0, 14 }) then
-        -- sk 0.14 deprecated `--expect`, instead `accept(<key>)` should be used
+      elseif utils.has(opts, "sk") then
+        -- skim deprecated `--expect`, instead `accept(<key>)` should be used
         -- skim does not yet support case sensitive alt-shift binds, they are ignored
         -- if k:match("^alt%-%u") then return end
         if type(v.prefix) == "string" and not v.prefix:match("%+$") then
@@ -115,7 +115,7 @@ M.normalize_selected = function(selected, opts)
   local actions = assert(opts.actions)
   -- Backward compat, "default" action trumps "enter"
   if actions.default then actions.enter = actions.default end
-  if utils.has(opts, "fzf", { 0, 53 }) or utils.has(opts, "sk", { 0, 14 }) then
+  if utils.has(opts, "fzf", { 0, 53 }) or utils.has(opts, "sk") then
     -- Using the new `print` action keybind is expected at `selected[1]`
     -- NOTE: if `--select-1|-q` was used we'll be missing the keybind
     -- since `-1` triggers "accept" assume "enter" (#1589)
