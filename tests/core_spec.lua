@@ -143,21 +143,100 @@ describe("Testing core cli construction", function()
     assert.is.True(found)
   end)
 
-  it("selects the resume fallback for skim and forced fallback", function()
+  it("uses reload for supported skim and fzf versions", function()
     local core = require("fzf-lua.core")
-    local actions = require("fzf-lua.actions")
-    local assert_fallback = function(opts)
+    local assert_reload = function(opts, exec)
       opts.actions = { ["ctrl-x"] = { fn = function() end, reload = true } }
       opts.keymap = { fzf = {} }
+      opts._fzf_cli_args = {}
       opts = core.convert_reload_actions("true", opts)
-      -- old-style action: { <fn>, actions.resume } restarts the picker
-      assert.is.True(type(opts.actions["ctrl-x"]) == "table")
-      assert.is.True(type(opts.actions["ctrl-x"][1]) == "function")
-      assert.is.True(opts.actions["ctrl-x"][2] == actions.resume)
+      ---@type table
+      local action = opts.actions["ctrl-x"]
+      assert.is.True(type(action) == "table")
+      assert.is.True(action["reload"] == true)
+      assert.is.True(action["_ignore"] == true)
+      ---@type string
+      local bind = opts.keymap.fzf["ctrl-x"][1]
+      assert.is.True(bind:find(exec, 1, true) ~= nil)
+      assert.is.True(bind:find("+reload(true)", 1, true) ~= nil)
+      return bind, opts
     end
-    -- skim supports `reload` but not `rebind`, so it must use the fallback
-    assert_fallback({ __SK_VERSION = { 0, 6, 6 } })
-    -- internal override used by tests to exercise the fallback on fzf
-    assert_fallback({ __FZF_VERSION = { 0, 74, 5 }, _reload_fallback = true })
+    -- Skim >= 3.4.0 is enforced in config. It supports `reload` but not
+    -- `rebind`. Its `execute-silent` is asynchronous, so use `execute` to
+    -- guarantee the action finished before the list is reloaded.
+    local skim_bind, skim_opts = assert_reload({ __SK_VERSION = { 3, 4, 0 } }, "execute(")
+    assert.is.True(skim_bind:find("execute-silent", 1, true) == nil)
+    assert.is.True(skim_bind:find("unbind", 1, true) == nil)
+    assert.is.True(skim_bind:find("rebind", 1, true) == nil)
+    assert.is.same(skim_opts._fzf_cli_args, {})
+    -- 5.9.0 is the version from the reported issue
+    assert_reload({ __SK_VERSION = { 5, 9, 0 } }, "execute(")
+    -- fzf keeps the silent, non-suspending action and the unbind/rebind pair
+    local fzf_bind, fzf_opts = assert_reload({ __FZF_VERSION = { 0, 74, 5 } }, "execute-silent(")
+    assert.is.True(fzf_bind:find("unbind(ctrl-x)", 1, true) ~= nil)
+    assert.is.True(fzf_opts._fzf_cli_args[1].value == "load:+rebind(ctrl-x)")
+  end)
+
+  it("converts old-style resume actions to reload actions", function()
+    local core = require("fzf-lua.core")
+    local actions = require("fzf-lua.actions")
+    local fn = function() end
+    local opts = {
+      actions = { ["ctrl-x"] = { fn, actions.resume } },
+      keymap = { fzf = {} },
+      _fzf_cli_args = {},
+    }
+    opts = core.convert_reload_actions("true", opts)
+    ---@type table
+    local action = opts.actions["ctrl-x"]
+    assert.is.True(action["reload"] == true)
+    assert.is.True(action["fn"] == fn)
+    assert.is.True(opts.keymap.fzf["ctrl-x"] ~= nil)
+  end)
+
+  it("leaves actions untouched without a reload command", function()
+    local core = require("fzf-lua.core")
+    local fn = function() end
+    local opts = {
+      actions = { ["ctrl-x"] = { fn = fn, reload = true } },
+      keymap = { fzf = {} },
+      _fzf_cli_args = {},
+    }
+    opts = core.convert_reload_actions(nil, opts)
+    ---@type table
+    local action = opts.actions["ctrl-x"]
+    assert.is.True(action["fn"] == fn)
+    assert.is.True(opts.keymap.fzf["ctrl-x"] == nil)
+  end)
+
+  it("converts exec_silent actions for skim and fzf", function()
+    local core = require("fzf-lua.core")
+    local assert_bind = function(version)
+      local opts = {
+        __SK_VERSION = version.__SK_VERSION,
+        __FZF_VERSION = version.__FZF_VERSION,
+        actions = {
+          ["ctrl-y"] = { fn = function() end, exec_silent = true },
+          ["ctrl-u"] = { fn = function() end, exec_silent = true, postfix = "accept" },
+        },
+        keymap = { fzf = {} },
+      }
+      opts = core.convert_exec_silent_actions(opts)
+      ---@type table
+      local action = opts.actions["ctrl-y"]
+      assert.is.True(action["_ignore"] == true)
+      ---@type string
+      local bind = opts.keymap.fzf["ctrl-y"][1]
+      -- no postfix: prefer the colon form
+      assert.is.True(bind:find("execute%-silent:") ~= nil)
+      assert.is.True(bind:find("execute%-silent%(") == nil)
+      ---@type string
+      local postfix_bind = opts.keymap.fzf["ctrl-u"][1]
+      -- postfix requires the parentheses form
+      assert.is.True(postfix_bind:find("execute%-silent%(") ~= nil)
+      assert.is.True(postfix_bind:find("%+accept$") ~= nil)
+    end
+    assert_bind({ __SK_VERSION = { 3, 4, 0 } })
+    assert_bind({ __FZF_VERSION = { 0, 74, 5 } })
   end)
 end)

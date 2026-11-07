@@ -26,13 +26,6 @@ return {
       ---@diagnostic disable-next-line: unnecessary-assert
       assert(opts.keymap)
       assert(opts.keymap.builtin)
-      if fzf.utils.has(opts, "sk") and not fzf.utils.has(opts, "sk", { 1, 5, 3 }) then
-        -- `execute-silent` actions are bugged with skim
-        -- Set esc to hide since we aren't using the custom callback
-        opts.actions["esc"] = false
-        opts.keymap.builtin["<Esc>"] = "hide"
-        return opts
-      end
       local histfile = opts.fzf_opts and opts.fzf_opts["--history"]
       opts.winopts = opts.winopts or {}
       local _on_create = opts.winopts.on_create

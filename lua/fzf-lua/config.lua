@@ -264,6 +264,17 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     if not opts.__SK_VERSION then
       utils.error("'sk --version' failed with error %s: %s", rc, err)
       return nil
+    elseif not utils.has(opts, "sk", { 3, 4, 0 }) then
+      -- Skim < 3.4.0 is unsupported: < 0.12 has no `reload` and required the
+      -- resume fallback, which dropped `field_index` and crashed history
+      -- deletion (#2853); 0.12-3.3 expand `{+n}` to an empty string when
+      -- nothing is selected, so index-based reload actions silently did
+      -- nothing; < 1.5.3 also mishandled quotes in `execute-silent`.
+      -- 3.4.0 is the first release with correct `{+n}` expansion and lets us
+      -- use one reload path for every supported Skim version.
+      utils.error("skim version %s is lower than minimum (3.4.0), aborting.",
+        utils.ver2str(opts.__SK_VERSION))
+      return nil
     elseif utils.__IS_WINDOWS and not utils.has(opts, "sk", { 5, 8, 0 }) then
       -- Windows minimum: older skim releases are unsupported on this platform
       utils.error("skim version %s is lower than minimum (5.8.0) on Windows, aborting.",
@@ -892,8 +903,8 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
         (opts.fzf_bin:match("fzf%-tmux$") or opts.fzf_bin:match("sk%-tmux$")) and 1
         -- fzf v0.53 added native tmux integration
         or utils.has(opts, "fzf", { 0, 53 }) and opts.fzf_opts["--tmux"] and 2
-        -- skim v0.15.5 added native tmux integration
-        or utils.has(opts, "sk", { 0, 15, 5 }) and opts.fzf_opts["--tmux"] and 2
+        -- skim supports native tmux integration
+        or utils.has(opts, "sk") and opts.fzf_opts["--tmux"] and 2
     if is_tmux == 1 then
       -- backward compat when using the `fzf-tmux` script: prioritize fzf-tmux
       -- split pane flags over the popup flag `-p` from fzf-lua defaults (#865)
@@ -1000,7 +1011,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
     opts.__locate_pos = opts.__locate_pos or opts["__pos_" .. utils.get_info().cmd]
   end
 
-  if opts.locate and utils.has(opts, "fzf", { 0, 36 }) then
+  if opts.locate and utils.has(opts, "fzf") then
     table.insert(opts._fzf_cli_args, libuv.cli_raw_arg("--bind=", "load:+transform:"
       .. FzfLua.shell.stringify_data(function(_, _, _)
         if opts.__locate_pos then
