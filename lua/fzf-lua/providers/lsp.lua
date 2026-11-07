@@ -90,6 +90,11 @@ local regex_filter_fn = function(regex_filter)
   return false
 end
 
+---@diagnostic disable-next-line: deprecated
+local uri_to_fname = vim.uri and vim.uri.to_fname or vim.uri_to_fname
+---@diagnostic disable-next-line: deprecated
+local uri_from_bufnr = vim.uri and vim.uri.from_buf or vim.uri_from_bufnr
+
 local function location_handler(opts, cb, _, result, ctx, _)
   local encoding = assert(vim.lsp.get_client_by_id(ctx.client_id)).offset_encoding
   result = utils.tbl_islist(result) and result or { result }
@@ -115,7 +120,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
     result = _result
   end
   if opts.ignore_current_line then
-    local uri = vim.uri_from_bufnr(utils.CTX().bufnr)
+    local uri = uri_from_bufnr(utils.CTX().bufnr)
     local cursor_line = utils.CTX().cursor[1] - 1
     result = vim.tbl_filter(function(l)
       if (l.uri
@@ -169,10 +174,10 @@ local function call_hierarchy_handler(opts, cb, _, result, ctx, _)
     local is_outgoing = call_hierarchy_call.to ~= nil
     for _, range in pairs(call_hierarchy_call.fromRanges) do
       local location = {
-        uri = is_outgoing and vim.uri_from_bufnr(utils.CTX().bufnr) or call_hierarchy_item.uri,
+        uri = is_outgoing and uri_from_bufnr(utils.CTX().bufnr) or call_hierarchy_item.uri,
         range = range,
         filename = is_outgoing and vim.api.nvim_buf_get_name(utils.CTX().bufnr)
-            or vim.uri_to_fname(call_hierarchy_item.uri),
+            or uri_to_fname(call_hierarchy_item.uri),
         text = call_hierarchy_item.name,
         lnum = range.start.line + 1,
         col = range.start.character + 1,
@@ -197,7 +202,7 @@ local function symbols_to_items(opts, symbols, bufnr, child_prefix)
       if symbol.location then -- SymbolInformation type
         local range = symbol.location.range
         table.insert(_items, {
-          filename = vim.uri_to_fname(symbol.location.uri),
+          filename = uri_to_fname(symbol.location.uri),
           lnum = range.start.line + 1,
           col = range.start.character + 1,
           kind = kind,
