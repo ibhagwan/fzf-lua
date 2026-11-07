@@ -156,7 +156,7 @@ describe("Testing core cli construction", function()
       assert.is.True(opts.actions["ctrl-x"][2] == actions.resume)
     end
     -- skim supports `reload` but not `rebind`, so it must use the fallback
-    assert_fallback({ __SK_VERSION = { 5, 6, 6 } })
+    assert_fallback({ __SK_VERSION = { 0, 6, 6 } })
     -- internal override used by tests to exercise the fallback on fzf
     assert_fallback({ __FZF_VERSION = { 0, 74, 5 }, _reload_fallback = true })
   end)

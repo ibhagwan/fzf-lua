@@ -1050,8 +1050,8 @@ M.convert_reload_actions = function(reload_cmd, opts)
   -- its key binds stay unbound (the `load` event fires, `rebind` is a
   -- no-op). Use the old "resume" fallback which fully restarts the
   -- picker and keeps the key binds working.
-  if utils.has(opts, "sk")
-      or not utils.has(opts, "fzf", { 0, 36 })
+  if not utils.has(opts, "sk", { 0, 12, 0 })
+      and not utils.has(opts, "fzf", { 0, 36 })
       or not reload_cmd then
     fallback = true
   end
@@ -1098,8 +1098,9 @@ M.convert_reload_actions = function(reload_cmd, opts)
       return string.format("%s(%s)", act, x)
     end, tbl), "+")
   end
-  local unbind = bind_concat(reload_binds, "unbind")
-  local rebind = bind_concat(reload_binds, "rebind")
+  -- skim syntax: https://github.com/lotabout/skim/commit/ad97bfa7deeee352d743f41ec7cb8bd4b26b4bf6
+  local unbind = utils.has(opts, "fzf") and bind_concat(reload_binds, "unbind")
+  local rebind = utils.has(opts, "fzf") and bind_concat(reload_binds, "rebind")
   for k, v in pairs(opts.actions) do
     if type(v) == "table" and v.reload then
       -- Modified actions should not be considered in `actions.expect`
