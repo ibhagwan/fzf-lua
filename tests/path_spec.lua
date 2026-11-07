@@ -353,7 +353,7 @@ describe("Testing path module", function()
     -- shorten len
     eq(path.shorten([[c:\foo\bar\baz]], 2), [[c:\fo\ba\baz]])
     eq(path.shorten([[c:/foo\bar\baz]], 2), [[c:/fo/ba/baz]])
-    utils.__IS_WINDOWS = nil
+    utils.__IS_WINDOWS = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
   end)
 
   describe("entry_to_file", function()
