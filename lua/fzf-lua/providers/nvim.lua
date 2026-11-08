@@ -927,7 +927,7 @@ local function format_serverlist_entry(e, max_cwd)
     active = " " .. utils.ansi_codes.green(
       utils.reltime(math.floor(e.useractive / 1e9)))
   end
-  return ("%-" .. max_cwd .. "s %s %s%s%s%s"):format(
+  return ("%-" .. math.min(max_cwd, 99) .. "s %s %s%s%s%s"):format(
     e.cwd,
     utils.ansi_codes.cyan(string.format("%7s", fmt_mem(e.rusage))),
     utils.ansi_codes.yellow(string.format("%5s", fmt_cpu(e.cpu_pct))),
