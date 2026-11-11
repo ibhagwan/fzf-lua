@@ -695,6 +695,11 @@ end
 function FzfWin.new(o)
   if not _self then
   elseif _self._hidden_fzf_bufnr then
+    -- the hidden instance is discarded, clear its cached preview buffers,
+    -- otherwise they leak with 'bufhidden=hide' (#2855)
+    if _self._previewer and _self._previewer.bcache then
+      _self._previewer.bcache:clear()
+    end
     _self:close_buf(_self._hidden_fzf_bufnr)
     _self = nil
   elseif not _self:hidden() then

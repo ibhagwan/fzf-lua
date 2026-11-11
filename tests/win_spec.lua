@@ -73,6 +73,202 @@ T["win"]["hide"]["buffer deleted after win hidden (#1783)"] = function()
   end)
 end
 
+T["win"]["hide"]["preview buffers cleared when hidden win replaced (#2855)"] = function()
+  reload({ "hide" })
+  local bcache_size = function()
+    return child.lua_get([[(function()
+      local win = FzfLua.utils.fzf_winobj()
+      local previewer = win and win._previewer
+      return previewer and previewer.bcache and vim.tbl_count(previewer.bcache.entries) or 0
+    end)()]])
+  end
+  local preview_bufs = function()
+    return child.lua_get([[#vim.tbl_filter(function(buf)
+      return vim.bo[buf].buftype == "nofile" and vim.bo[buf].bufhidden == "hide"
+    end, vim.api.nvim_list_bufs())]])
+  end
+  local cycle = function()
+    exec_lua([[FzfLua.files({ previewer = "builtin" })]])
+    child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+    -- cache a preview for each of the first five entries
+    child.wait_until(function() return bcache_size() >= 1 end)
+    for i = 2, 5 do
+      child.type_keys("<c-n>")
+      child.wait_until(function() return bcache_size() >= i end)
+    end
+    exec_lua([[FzfLua.hide()]])
+    child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
+  end
+  -- the hidden picker's cached previews must stay for `:FzfLua resume`
+  cycle()
+  local cached = preview_bufs()
+  eq(cached, 5)
+  -- replacing the hidden picker must delete the previous preview buffers
+  cycle()
+  eq(preview_bufs(), cached)
+  cycle()
+  eq(preview_bufs(), cached)
+end
+
+T["win"]["hide"]["pending preview read is safe after cache clear (#2855)"] = function()
+  reload({ "hide" })
+  exec_lua([[
+    _G._preview_dir = vim.fn.tempname()
+    vim.fn.mkdir(_G._preview_dir, "p")
+    vim.fn.writefile({ "a" }, _G._preview_dir .. "/a.txt")
+    vim.fn.writefile({ "b" }, _G._preview_dir .. "/b.txt")
+    _G._read_file_async = require("fzf-lua.utils").read_file_async
+    _G._pending_reads = {}
+  ]])
+  local bcache_size = function()
+    return child.lua_get([[(function()
+      local win = FzfLua.utils.fzf_winobj()
+      local previewer = win and win._previewer
+      return previewer and previewer.bcache and vim.tbl_count(previewer.bcache.entries) or 0
+    end)()]])
+  end
+  exec_lua([[FzfLua.files({ cwd = _G._preview_dir, previewer = "builtin" })]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+  child.wait_until(function() return bcache_size() == 1 end)
+  child.type_keys("<c-n>")
+  child.wait_until(function() return bcache_size() == 2 end)
+  -- intercept the next read and make both cache entries stale
+  exec_lua([[
+    require("fzf-lua.utils").read_file_async = function(path, cb)
+      table.insert(_G._pending_reads, { path = path, cb = cb })
+    end
+    for _, name in ipairs({ "a.txt", "b.txt" }) do
+      vim.uv.fs_utime(_G._preview_dir .. "/" .. name, 1700000000, 1700000000)
+    end
+  ]])
+  child.type_keys("<c-p>")
+  child.wait_until(function() return child.lua_get([[#_G._pending_reads]]) == 1 end)
+  exec_lua([[FzfLua.hide()]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
+  -- replacing the hidden picker clears the cached preview buffers
+  exec_lua([[
+    require("fzf-lua.utils").read_file_async = _G._read_file_async
+    FzfLua.files({ cwd = _G._preview_dir, previewer = false })
+  ]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+  -- the in-flight read must not write to the deleted cached buffer
+  exec_lua([[
+    _G._async_err = nil
+    local schedule = vim.schedule
+    vim.schedule = function(fn)
+      return schedule(function()
+        local ok, err = pcall(fn)
+        if not ok then _G._async_err = err end
+      end)
+    end
+    for _, pending in ipairs(_G._pending_reads) do
+      pcall(pending.cb, "data")
+    end
+  ]])
+  sleep(100)
+  eq(child.lua_get([[_G._async_err]]), vim.NIL)
+end
+
+T["win"]["hide"]["fresh pending preview read buffer is deleted (#2855)"] = function()
+  reload({ "hide" })
+  exec_lua([[
+    _G._preview_dir = vim.fn.tempname()
+    vim.fn.mkdir(_G._preview_dir, "p")
+    vim.fn.writefile({ "a" }, _G._preview_dir .. "/a.txt")
+    _G._read_file_async = require("fzf-lua.utils").read_file_async
+    _G._pending_reads = {}
+    require("fzf-lua.utils").read_file_async = function(path, cb)
+      table.insert(_G._pending_reads, { path = path, cb = cb })
+      local attached = {}
+      for _, win in ipairs(vim.api.nvim_list_wins()) do
+        attached[vim.api.nvim_win_get_buf(win)] = true
+      end
+      local bufs = vim.tbl_filter(function(buf)
+        return not attached[buf]
+            and vim.bo[buf].buftype == "nofile"
+            and vim.bo[buf].bufhidden == "wipe"
+            and vim.bo[buf].modeline
+      end, vim.api.nvim_list_bufs())
+      _G._pending_buf = bufs[#bufs]
+    end
+  ]])
+  exec_lua([[FzfLua.files({ cwd = _G._preview_dir, previewer = "builtin" })]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+  child.wait_until(function() return child.lua_get([[#_G._pending_reads]]) == 1 end)
+  eq(child.lua_get([[vim.api.nvim_buf_is_valid(_G._pending_buf)]]), true)
+  exec_lua([[FzfLua.hide()]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
+  -- replacing the hidden picker discards the previewer
+  exec_lua([[
+    require("fzf-lua.utils").read_file_async = _G._read_file_async
+    FzfLua.files({ cwd = _G._preview_dir, previewer = false })
+  ]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+  -- the fresh cache-miss buffer can no longer be displayed, delete it
+  exec_lua([[
+    for _, pending in ipairs(_G._pending_reads) do
+      pcall(pending.cb, "data")
+    end
+  ]])
+  sleep(100)
+  eq(child.lua_get([[vim.api.nvim_buf_is_valid(_G._pending_buf)]]), false)
+end
+
+T["win"]["hide"]["superseded pending preview read buffer is deleted (#2855)"] = function()
+  reload({ "hide" })
+  exec_lua([[
+    _G._preview_dir = vim.fn.tempname()
+    vim.fn.mkdir(_G._preview_dir, "p")
+    vim.fn.writefile({ "a" }, _G._preview_dir .. "/a.txt")
+    vim.fn.writefile({ "b" }, _G._preview_dir .. "/b.txt")
+    _G._read_file_async = require("fzf-lua.utils").read_file_async
+    _G._pending_reads = {}
+    require("fzf-lua.utils").read_file_async = function(path, cb)
+      local attached = {}
+      for _, win in ipairs(vim.api.nvim_list_wins()) do
+        attached[vim.api.nvim_win_get_buf(win)] = true
+      end
+      local bufs = vim.tbl_filter(function(buf)
+        return not attached[buf]
+            and vim.bo[buf].buftype == "nofile"
+            and vim.bo[buf].bufhidden == "wipe"
+            and vim.bo[buf].modeline
+      end, vim.api.nvim_list_bufs())
+      table.insert(_G._pending_reads, { path = path, cb = cb, buf = bufs[#bufs] })
+    end
+  ]])
+  local buf_valid = function(bufnr)
+    return child.lua_get(([[vim.api.nvim_buf_is_valid(%d)]]):format(bufnr))
+  end
+  exec_lua([[FzfLua.files({ cwd = _G._preview_dir, previewer = "builtin" })]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+  child.wait_until(function() return child.lua_get([[#_G._pending_reads]]) == 1 end)
+  local first_buf = child.lua_get([[_G._pending_reads[1].buf]])
+  -- select B before A's cache-miss read completes
+  child.type_keys("<c-n>")
+  child.wait_until(function() return child.lua_get([[#_G._pending_reads]]) == 2 end)
+  local second_buf = child.lua_get([[_G._pending_reads[2].buf]])
+  eq(buf_valid(first_buf), true)
+  eq(buf_valid(second_buf), true)
+  exec_lua([[FzfLua.hide()]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
+  -- replacing the hidden picker discards the previewer
+  exec_lua([[
+    require("fzf-lua.utils").read_file_async = _G._read_file_async
+    FzfLua.files({ cwd = _G._preview_dir, previewer = false })
+  ]])
+  child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+  -- both the superseded and current pending read buffers must be cleaned up
+  exec_lua([[
+    for _, pending in ipairs(_G._pending_reads) do
+      pcall(pending.cb, "data")
+    end
+  ]])
+  sleep(100)
+  eq(buf_valid(first_buf), false)
+  eq(buf_valid(second_buf), false)
+end
+
 T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
   eq(child.lua_get([[_G._fzf_lua_on_create]]), vim.NIL)
   child.cmd([[new]])
