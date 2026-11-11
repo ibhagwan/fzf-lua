@@ -785,8 +785,9 @@ M.spawn_stdio = function(opts)
 
   -- redirect 'stderr' to 'stdout' on Macs by default
   -- only takes effect if 'opts.stderr' was not set
-  if opts.stderr_to_stdout == nil and
-      uv.os_uname().sysname == "Darwin" then
+  local uname = uv.os_uname()
+  if opts.stderr_to_stdout == nil and uname and
+      uname.sysname == "Darwin" then
     opts.stderr_to_stdout = true
   end
 
