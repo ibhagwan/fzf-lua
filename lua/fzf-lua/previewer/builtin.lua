@@ -1025,7 +1025,17 @@ function Previewer.buffer_or_file:populate_preview_buf(entry_str)
     return self:_set_preview_lines(buf, entry)
   end
   utils.read_file_async(entry.path, vim.schedule_wrap(function(data)
-    if entry_str ~= self._last_entry then return end
+    -- this read was superseded or its preview window can no longer take
+    -- ownership (e.g. the picker was hidden/discarded); delete the pending
+    -- buffer unless it's still cached or listed (#2855)
+    if entry_str ~= self._last_entry
+        or not self.win
+        or not self.win:validate_preview() then
+      self:safe_buf_delete(buf)
+      return
+    end
+    -- the buffer may have been deleted while the read was in flight
+    if not api.nvim_buf_is_valid(buf) then return end
     -- if file ends in new line, don't write an empty string as the last line.
     api.nvim_buf_set_lines(buf, 0, -1, false, split_file_data(data))
     -- swap preview buffer with new one
