@@ -29,7 +29,7 @@ M.metatable = function(opts)
 end
 
 ---@param dir string
----@param fn fun(fname: string, name: string, type: string)
+---@param fn fun(fname: string, name: string, type: string?)
 local function ls(dir, fn)
   local handle = uv.fs_scandir(dir)
   while handle do

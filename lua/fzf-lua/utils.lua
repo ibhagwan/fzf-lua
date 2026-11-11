@@ -322,7 +322,8 @@ function M.error(...)
 end
 
 function M.is_darwin()
-  return uv.os_uname().sysname == "Darwin"
+  local uname = uv.os_uname()
+  return uname ~= nil and uname.sysname == "Darwin"
 end
 
 ---@param re string
