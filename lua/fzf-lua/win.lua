@@ -686,8 +686,8 @@ end
 function FzfWin:set_backdrop()
   -- No backdrop for split, only floats / tmux
   if self.winopts.split then return end
-  self.on_closes.backdrop = require("fzf-lua.win.backdrop").open(self.winopts.backdrop,
-    self.winopts.zindex - 2, self.hls)
+  local backdrop = require("fzf-lua.win.backdrop")
+  self.on_closes.backdrop = backdrop.open(self.winopts.backdrop, self.winopts.zindex - 2, self.hls)
 end
 
 ---@param o fzf-lua.config.Resolved
@@ -1344,8 +1344,8 @@ end
 
 function FzfWin:update_preview_scrollbar()
   if not self:validate_preview() then return end
-  self.on_closes.scrollbar = require("fzf-lua.win.scrollbar").update(self.preview_winid, self.hls,
-    self.winopts)
+  local scrollbar = require("fzf-lua.win.scrollbar")
+  self.on_closes.scrollbar = scrollbar.update(self.preview_winid, self.hls, self.winopts)
 end
 
 function FzfWin:update_statusline()
@@ -1518,8 +1518,9 @@ end
 function FzfWin:toggle_help()
   local zindex = self.winopts.zindex + 2
   local mode = self.previewer_is_builtin and "builtin" or "fzf"
-  self.on_closes.help = require("fzf-lua.win.help").toggle(self.keymap, self.actions, self.hls,
-    zindex, _preview_keymaps, mode, self._o.help_open_win)
+  local help = require("fzf-lua.win.help")
+  self.on_closes.help = help.toggle(self.keymap, self.actions, self.hls, zindex, _preview_keymaps,
+    mode, self._o.help_open_win)
 end
 
 ---@type fzf-lua.win.api

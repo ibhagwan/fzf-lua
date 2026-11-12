@@ -1533,9 +1533,11 @@ M.serverlist_kill = function(sel)
 end
 
 M.serverlist_spawn = function()
+  -- fmt: off
   libuv.uv_spawn(vim.fn.exepath("nvim"),
     ---@diagnostic disable-next-line: missing-parameter, assign-type-mismatch
     { args = { "--headless" }, env = { NVIM = "" }, detached = true })
+  -- fmt: on
 end
 
 M.serverlist_connect = function(sel)

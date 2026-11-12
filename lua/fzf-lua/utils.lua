@@ -750,8 +750,10 @@ end
 
 function M.tbl_flatten(T)
   if vim.iter then
+    local T_iter = T --[[@as table]]
+    local max = math.huge --[[@as integer]]
     ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
-    return vim.iter(T --[[@as table]]):flatten(math.huge --[[@as integer]]):totable()
+    return vim.iter(T_iter):flatten(max):totable()
   else
     ---@diagnostic disable-next-line: deprecated
     return vim.tbl_flatten(T)
@@ -1352,8 +1354,9 @@ function M.win_is_qf(winid)
   return winty == "quickfix" and 1 or winty == "loclist" and 2 or false
 end
 
+---@alias fzf-lua.Bufinfo vim.fn.getbufinfo.ret.item|vim.fn.getbufinfo.ret.item[]|false|table
 ---@param bufnr integer
----@param bufinfo (vim.fn.getbufinfo.ret.item|vim.fn.getbufinfo.ret.item[]|false|table)?
+---@param bufinfo fzf-lua.Bufinfo?
 ---@return 1|2|false
 function M.buf_is_qf(bufnr, bufinfo)
   bufinfo = bufinfo or (vim.api.nvim_buf_is_valid(bufnr) and M.getbufinfo(bufnr))
@@ -1803,7 +1806,8 @@ local function rpcexec(addr, timeout, method, ...)
     local t = assert(vim.uv.new_timer())
     timer = t
     pcall(function()
-      require("ffi").cdef [[bool channel_close(unsigned long long id, int part, const char **error);]]
+      local ffi = require("ffi")
+      ffi.cdef [[bool channel_close(unsigned long long id, int part, const char **error);]]
     end)
     t:start(timeout, 0, M.nil_wrap(function()
       if not t:is_closing() then t:close() end

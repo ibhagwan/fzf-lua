@@ -192,9 +192,10 @@ function MiniIcons:load(do_not_lazy_load)
     if self._package_loaded then
       local _info = debug.getinfo(self._package.setup, "S")
       ---@cast _info {source: string}
-      ---@diagnostic disable-next-line: param-type-mismatch
+      ---@diagnostic disable: param-type-mismatch
       self._package_path = path.parent(path.parent(path.parent(path.normalize(
         _info.source:gsub("^@", "")))))
+      ---@diagnostic enable: param-type-mismatch
     end
   end
   return self._package_loaded

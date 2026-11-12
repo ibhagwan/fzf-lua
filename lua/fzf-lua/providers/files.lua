@@ -65,7 +65,8 @@ M.get_files_cmd = function(opts)
           v = [[\! -path '*/.*']]
         end
       end
-      command = utils.toggle_cmd_flag(command, v --[[@as string]], toggle, is_find)
+      local v_str = v --[[@as string]]
+      command = utils.toggle_cmd_flag(command, v_str, toggle, is_find)
     end)()
   end
   return command

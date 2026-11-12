@@ -139,6 +139,7 @@ local screenshot_compare = function(screen_ref, screen_obs, opts)
     return true, ""
   end
 
+  -- fmt: off
   --stylua: ignore start
   local ok, cause
   ok, cause = compare(#screen_ref.text, #screen_obs.text, "number of `text` lines")
@@ -170,6 +171,7 @@ local screenshot_compare = function(screen_ref, screen_obs, opts)
     end
   end
   --stylua: ignore end
+  -- fmt: on
 
   return true, ""
 end

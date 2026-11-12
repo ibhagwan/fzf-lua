@@ -742,7 +742,8 @@ function Previewer.buffer_or_file:populate_terminal_cmd(tmpbuf, entry)
 end
 
 ---@alias fzf-lua.line (string|[string,string])[]
----@param content (string|fzf-lua.line)[]
+---@alias fzf-lua.line_or_string string|fzf-lua.line
+---@param content fzf-lua.line_or_string[]
 ---@return string[], table
 local parse_rich = function(content)
   local lines, extmarks = {}, {}
@@ -1560,7 +1561,8 @@ function Previewer.marks:parse_entry(entry_str)
     filepath = api.nvim_buf_get_name(bufnr)
   end
   if #filepath > 0 then
-    filepath = path.entry_to_file(filepath --[[@as string]], self.opts).path
+    local filepath_str = filepath --[[@as string]]
+    filepath = path.entry_to_file(filepath_str, self.opts).path
   end
   return {
     bufnr = bufnr,
@@ -1580,7 +1582,8 @@ function Previewer.jumps:parse_entry(entry_str)
   if filepath then
     local ok, res = pcall(libuv.expand, filepath)
     if ok then
-      filepath = path.relative_to(res --[[@as string]], utils.cwd())
+      local res_str = res --[[@as string]]
+      filepath = path.relative_to(res_str, utils.cwd())
     end
     if not uv.fs_stat(filepath) then
       -- file is not accessible,

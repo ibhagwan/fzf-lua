@@ -976,6 +976,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
 
   -- entry type is file, "optional file processing, only trandform
   -- entries if an option is present which requires a transform
+  -- fmt: off
   if opts._type == "file"
       and (opts.git_icons
         or opts.file_icons
@@ -995,6 +996,7 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
         and [[return require("fzf-lua.make_entry").preprocess]]
         or opts.fn_preprocess
   end
+  -- fmt: on
   -- Must have preprocess to load icon sets, relocate {argvz}, etc
   if opts.fn_transform and opts.fn_preprocess == nil
       and (opts.file_icons
@@ -1061,7 +1063,8 @@ function M.normalize_opts(opts, globals, __resume_key) ---@diagnostic disable
   opts._normalized = true
 
   return opts
-end ---@diagnostic enable
+end
+---@diagnostic enable
 
 M.bytecode = function(s, _)
   local keys = utils.strsplit(s, "%.")

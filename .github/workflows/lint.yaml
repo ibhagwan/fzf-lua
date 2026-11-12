@@ -1,6 +1,9 @@
 name: Lint
 
-on: push
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
 
 jobs:
   lint:
@@ -8,7 +11,7 @@ jobs:
     steps:
       - name: Install libbfd
         run: |
-          sudo apt-get update && sudo apt-get install -y binutils
+          sudo apt-get update && sudo apt-get install -y binutils lua5.1
           sudo ln -s /usr/lib/x86_64-linux-gnu/libbfd-2.42-system.so /usr/lib/x86_64-linux-gnu/libbfd-2.38-system.so
 
       - name: checkout
@@ -27,6 +30,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           make deps/emmylua
+
+      - name: Check formatting
+        run: |
+          make fmtcheck
+
+      - name: Check Lua syntax
+        run: |
+          make syntax-check LUAC=luac5.1
 
       - name: Lint
         run: |

@@ -242,7 +242,8 @@ local glob_filter = function(paths, globs)
   if not globs or not vim.regex then return paths end
   local pats = vim.tbl_map(utils.nil_wrap(vim.fn.glob2regpat), globs)
   ---@cast pats string[]
-  matchers = vim.tbl_map(utils.nil_wrap(vim.regex) --[[@as fun(s: string): vim.regex]], pats)
+  local regex_fn = utils.nil_wrap(vim.regex) --[[@as fun(s: string): vim.regex]]
+  matchers = vim.tbl_map(regex_fn, pats)
   -- matchers = vim.tbl_map(vim.F.nil_wrap(vim.glob.to_lpeg), globs)
   if #matchers == 0 then return paths end
   return vim.tbl_filter(function(p)

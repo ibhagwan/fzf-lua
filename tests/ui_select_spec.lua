@@ -6,12 +6,14 @@ local eq = helpers.expect.equality
 local new_set = MiniTest.new_set
 local exec_lua = child.lua
 
+-- fmt: off
 --stylua: ignore start
 ---@format disable-next
 local reload = function(config) child.unload(); child.setup(config) end
 local type_keys = function(...) return child.type_keys(...) end
 local sleep = function(ms) helpers.sleep(ms, child) end
 --stylua: ignore end
+-- fmt: on
 
 local T = helpers.new_set_with_child(child, {
   hooks = {
@@ -168,7 +170,8 @@ T["ui_select"]["lsp_code_actions no_resume honored #2795"] = function()
     -- emulate `FzfLua.lsp_code_actions({ no_resume = true })` sending
     -- "once" opts to ui_select (normalized, as done by `normalize_lsp_opts`)
     local ui_select = require("fzf-lua.providers.ui_select")
-    local opts_once = require("fzf-lua.config").normalize_opts(
+    local fzf_config = require("fzf-lua.config")
+    local opts_once = fzf_config.normalize_opts(
       { no_resume = true, previewer = false }, "lsp.code_actions")
     ui_select.register(nil, true, opts_once)
     -- capture the final opts passed to `fzf_exec`
@@ -205,7 +208,8 @@ T["ui_select"]["lsp_code_actions no_resume honored #2795"] = function()
   -- (not replaced by the implicit code-action `no_hide = true` default)
   exec_lua(function()
     local ui_select = require("fzf-lua.providers.ui_select")
-    local opts_once = require("fzf-lua.config").normalize_opts(
+    local fzf_config = require("fzf-lua.config")
+    local opts_once = fzf_config.normalize_opts(
       { no_hide = false, previewer = false }, "lsp.code_actions")
     ui_select.register(nil, true, opts_once)
     vim.ui.select({ "alpha", "beta" }, {
@@ -227,7 +231,8 @@ T["ui_select"]["once opts merged with preview_item #2795"] = function()
   register()
   exec_lua(function()
     local ui_select = require("fzf-lua.providers.ui_select")
-    local opts_once = require("fzf-lua.config").normalize_opts(
+    local fzf_config = require("fzf-lua.config")
+    local opts_once = fzf_config.normalize_opts(
       { no_resume = true, previewer = false }, "lsp.code_actions")
     ui_select.register(nil, true, opts_once)
     local core = require("fzf-lua.core")

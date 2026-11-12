@@ -218,7 +218,8 @@ M.bcommits = function(opts)
   -- commits where the file was named differently.
   if opts.follow and not utils.mode_is_visual() then
     local display_fmt = opts.cmd:match('%-%-pretty=format:"(.-)"') or "%C(yellow)%h%Creset %s"
-    local relfile = path.relative_to(vim.fn.expand("%:p") --[[@as string]], git_root)
+    local cfile = vim.fn.expand("%:p") --[[@as string]]
+    local relfile = path.relative_to(cfile, git_root)
     -- \1 marks a header line; \31 separates the clean sha from the coloured display
     local logcmd = path.git_cwd({
       "git", "-c", "core.quotepath=false",
@@ -251,7 +252,8 @@ M.bcommits = function(opts)
         or function(l) return (l:match("^[^\t]+\t([^\t]+)")) end
     return core.fzf_exec(entries, opts)
   end
-  local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p") --[[@as string]], git_root))
+  local cfile = vim.fn.expand("%:p") --[[@as string]]
+  local file = libuv.shellescape(path.relative_to(cfile, git_root))
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
@@ -286,7 +288,8 @@ M.blame = function(opts)
   end
   local git_root = path.git_root(opts)
   if not git_root then return end
-  local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p") --[[@as string]], git_root))
+  local cfile = vim.fn.expand("%:p") --[[@as string]]
+  local file = libuv.shellescape(path.relative_to(cfile, git_root))
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()

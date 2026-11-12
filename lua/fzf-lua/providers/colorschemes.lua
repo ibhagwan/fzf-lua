@@ -368,8 +368,10 @@ function AsyncDownloadManager:update(plugin)
   if self:downloaded(plugin) then
     -- git pull
     self:queue(plugin, {
+      -- fmt: off
       ---@format disable-next
       { "git",          "pull", "--rebase" },
+      -- fmt: on
       { cwd = info.path }
     })
   else
