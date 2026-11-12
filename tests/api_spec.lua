@@ -72,6 +72,7 @@ T["api"]["fzf_exec"]["rg"] = new_set({}, {
 
 T["api"]["fzf_exec"]["fn_transform"] = new_set()
 
+-- fmt: off
 T["api"]["fzf_exec"]["fn_transform"]["filter"] = new_set(
   { parametrize = { { 0 }, { 13 }, { 24 } } }, {
     function(multiprocess, filter)
@@ -96,6 +97,7 @@ T["api"]["fzf_exec"]["fn_transform"]["filter"] = new_set(
         })
     end
   })
+-- fmt: on
 
 
 T["api"]["fzf_live"] = new_set({ parametrize = { { true }, { false }, { 1 } } })
@@ -215,6 +217,7 @@ T["api"]["fzf_live"]["rg"]["error"] = new_set({}, {
   end
 })
 
+-- fmt: off
 T["api"]["fzf_live"]["rg"]["no error"] = new_set(
   { parametrize = { { "[" }, { [[table of cont]] } } },
   {
@@ -236,6 +239,7 @@ T["api"]["fzf_live"]["rg"]["no error"] = new_set(
     end
   }
 )
+-- fmt: on
 
 T["api"]["fzf_live"]["exec_empty_query"] = function(multiprocess, query)
   helpers.FzfLua.fzf_live(child, "echo <query>", {
@@ -249,6 +253,7 @@ T["api"]["fzf_live"]["exec_empty_query"] = function(multiprocess, query)
   })
 end
 
+-- fmt: off
 T["api"]["events"] = new_set(
   { parametrize = { { "fzf_exec" }, { "fzf_live" } } },
   {
@@ -297,6 +302,7 @@ T["api"]["events"] = new_set(
     end
   }
 )
+-- fmt: on
 
 T["api"]["resume"] = new_set({
   parametrize = { { "fzf_exec" }, { "fzf_live" } },

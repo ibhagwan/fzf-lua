@@ -7,6 +7,7 @@ local new_set = MiniTest.new_set
 local exec_lua = child.lua
 
 -- Helpers with child processes
+-- fmt: off
 --stylua: ignore start
 ---@format disable-next
 local reload = function(config) child.unload(); child.setup(config) end
@@ -17,6 +18,7 @@ local get_lines = function(...) return child.get_lines(...) end
 local type_keys = function(...) return child.type_keys(...) end
 local sleep = function(ms) helpers.sleep(ms, child) end
 --stylua: ignore end
+-- fmt: on
 
 local T = helpers.new_set_with_child(child)
 

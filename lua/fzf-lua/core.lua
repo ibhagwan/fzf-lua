@@ -225,8 +225,8 @@ M.fzf_live = function(contents, opts)
   local cmd ---@type string
   local is_fnc = type(contents) == "function"
   if is_fnc and M.can_transform(opts) then
-    ---@diagnostic disable-next-line: call-non-callable
-    cmd = shell.stringify_data(function(items) return contents(items, opts) end, opts,
+    local contents_fnc = contents --[[@as function]]
+    cmd = shell.stringify_data(function(items) return contents_fnc(items, opts) end, opts,
       fzf_field_index)
   else
     contents = add_query_placeholder(contents)
@@ -421,6 +421,7 @@ M.fzf = function(contents, opts)
 
   -- live command may contain field index {q}, cannot be used as FZF_DEFAULT_COMMAND
   local fzf_cli_args, fzf_cli_segments = M.build_fzf_cli(opts)
+  -- fmt: off
   local selected, exit_code = fzf.raw_fzf(opts.is_live and utils.shell_nop() or contents,
     fzf_cli_args,
     {
@@ -433,6 +434,7 @@ M.fzf = function(contents, opts)
       RIPGREP_CONFIG_PATH = opts.RIPGREP_CONFIG_PATH,
       _cli_segments = fzf_cli_segments,
     })
+  -- fmt: on
   -- kill fzf piped process PID
   -- NOTE: might be an overkill since we're using $FZF_DEFAULT_COMMAND
   -- to spawn the piped process and fzf is responsible for termination
@@ -479,7 +481,8 @@ M.preview_window = function(o, fzf_win)
   local preview = o.winopts.preview
   local preview_str = fzf_win:fzf_preview_layout_str()
   local preview_pos = preview_str:match("[^:]+") or "right"
-  local border = require("fzf-lua.win.border").fzf(preview.border,
+  local border_mod = require("fzf-lua.win.border")
+  local border = border_mod.fzf(preview.border,
     { type = "fzf", name = "prev", layout = preview_pos, opts = o })
   local prefix = string.format("%s:%s%s",
     preview.hidden and "hidden" or "nohidden",

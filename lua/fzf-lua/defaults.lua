@@ -551,7 +551,7 @@ M.defaults.files = {
 ---Global multi-picker, combines files, buffers and symbols.
 ---@diagnostic disable-next-line: param-type-mismatch
 ---@class fzf-lua.config.Global : fzf-lua.config.Files
----@field pickers (fun():table)|table
+---@field pickers table|fun():table
 ---@field __alt_opts? boolean
 M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
   silent            = true,

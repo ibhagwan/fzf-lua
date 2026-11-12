@@ -53,8 +53,9 @@ local defaults = require("fzf-lua.defaults").defaults
 local res = vim.json.decode(obj.stdout or "") ---@type EmmyDocJson
 
 local tymap = {} ---@type table<string, EmmyDocType?>
+local types = assert(res.types) --[[@as table<integer, EmmyDocType>]]
 ---@diagnostic disable-next-line: redundant-parameter, call-non-callable, access-invisible
-vim.iter(assert(res.types) --[[@as table<integer, EmmyDocType>]]):each(function(ty) tymap[ty.name] = ty end)
+vim.iter(types):each(function(ty) tymap[ty.name] = ty end)
 
 ---@param typ string
 ---@param default? string
@@ -393,8 +394,9 @@ local function generate_globals()
 
   -- Then add Defaults type options
   local ty = assert(tymap["fzf-lua.config.Defaults"], "fzf-lua.config.Defaults type not found")
+  local members = ty.members --[[@as table<integer, EmmyDocTypeMember>]]
   ---@diagnostic disable-next-line: redundant-parameter, call-non-callable, access-invisible
-  vim.iter(ty.members --[[@as table<integer, EmmyDocTypeMember>]])
+  vim.iter(members)
       ---@diagnostic disable-next-line: access-invisible
       :each(function(member)
         -- Skip excluded fields
@@ -486,27 +488,28 @@ local function collect_picker_keys(tbl, prefix)
   prefix = prefix or ""
   local keys = {}
   for k, v in pairs(tbl) do
-    -- Skip numeric keys (array elements)
-    if type(k) ~= "string" then
-      goto continue
-    end
-    local full_key = prefix ~= "" and (prefix .. "." .. k) or k
-    if SKIP_KEYS[k] or k:match("^_") then
-      -- Skip internal keys
-    elseif type(v) == "table" then
-      -- Check if this table has a corresponding class (i.e., it's a picker)
-      local class_name = key_to_classname(full_key)
-      if tymap[class_name] and not CONTAINER_CLASSES[class_name] then
-        -- It's a picker with its own class (not a container)
-        table.insert(keys, full_key)
+    repeat
+      -- Skip numeric keys (array elements)
+      if type(k) ~= "string" then
+        break
       end
-      -- Always check for sub-pickers (containers have sub-pickers)
-      local sub_keys = collect_picker_keys(v, full_key)
-      if #sub_keys > 0 then
-        vim.list_extend(keys, sub_keys)
+      local full_key = prefix ~= "" and (prefix .. "." .. k) or k
+      if SKIP_KEYS[k] or k:match("^_") then
+        -- Skip internal keys
+      elseif type(v) == "table" then
+        -- Check if this table has a corresponding class (i.e., it's a picker)
+        local class_name = key_to_classname(full_key)
+        if tymap[class_name] and not CONTAINER_CLASSES[class_name] then
+          -- It's a picker with its own class (not a container)
+          table.insert(keys, full_key)
+        end
+        -- Always check for sub-pickers (containers have sub-pickers)
+        local sub_keys = collect_picker_keys(v, full_key)
+        if #sub_keys > 0 then
+          vim.list_extend(keys, sub_keys)
+        end
       end
-    end
-    ::continue::
+    until true
   end
   return keys
 end
