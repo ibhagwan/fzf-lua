@@ -6,8 +6,8 @@ local path = require "fzf-lua.path"
 local libuv = require "fzf-lua.libuv"
 
 ---@class fzf-lua.actions
----@field expect fun(actions: table, opts: fzf-lua.config.Resolved):string[]?, string[]?
----@field [string] fun(items: string[], opts: fzf-lua.config.Resolved):any
+---@field expect fun(actions: table, opts: fzf-lua.config.Resolved): string[]?, string[]?
+---@field [string] fun(items: string[], opts: fzf-lua.config.Resolved): any
 local M = {}
 
 ---Capture the expanded `field_index` before the action is dispatched.
@@ -75,14 +75,9 @@ M.expect = function(actions, opts)
         local prefix = v.prefix and v.prefix:gsub("accept$", ""):gsub("%+$", "") or ""
         local prefix_bind = prefix ~= "" and (prefix .. "+") or ""
         local recorder = v.field_index and not v.exec_silent
-            and ("execute-silent(%s)+"):format(action_fields_recorder(k, v.field_index, opts))
-            or ""
-        table.insert(binds, string.format("%s:print(%s)+%s%saccept",
-          k,
-          k,
-          prefix_bind,
-          recorder
-        ))
+          and ("execute-silent(%s)+"):format(action_fields_recorder(k, v.field_index, opts))
+          or ""
+        table.insert(binds, string.format("%s:print(%s)+%s%saccept", k, k, prefix_bind, recorder))
       elseif utils.has(opts, "sk") then
         -- skim deprecated `--expect`, instead `accept(<key>)` should be used
         -- skim does not yet support case sensitive alt-shift binds, they are ignored
@@ -215,13 +210,9 @@ end
 local set_buf = function(bufnr)
   -- wipe unnamed empty buffers (e.g. "new") on switch
   local bufhidden
-  if vim.bo.buftype == ""
-      and vim.bo.filetype == ""
-      and vim.api.nvim_buf_line_count(0) == 1
-      and vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == ""
-      and vim.api.nvim_buf_get_name(0) == ""
-      and not vim.bo.modified
-  then
+  if vim.bo.buftype == "" and vim.bo.filetype == ""
+    and vim.api.nvim_buf_line_count(0) == 1 and vim.api.nvim_buf_get_lines(0, 0, -1, false)[1] == ""
+    and vim.api.nvim_buf_get_name(0) == "" and not vim.bo.modified then
     bufhidden = vim.bo.bufhidden
     vim.bo.bufhidden = "wipe"
   end
@@ -245,10 +236,8 @@ end
 
 ---@return boolean
 local can_replace_buf = function(buf)
-  return vim.o.hidden
-      or vim.o.confirm
-      or vim.o.autowriteall
-      or not utils.buffer_is_dirty(buf, true, true)
+  return vim.o.hidden or vim.o.confirm
+    or vim.o.autowriteall or not utils.buffer_is_dirty(buf, true, true)
 end
 
 ---@param vimcmd string?
@@ -261,9 +250,8 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
     (function()
       -- Lua 5.1 goto compatiblity hack (function wrap)
       local entry = path.entry_to_file(sel, opts, opts._uri)
-      local fullpath = entry.bufname
-          or entry.uri and entry.uri:match("^[%a%-]+://(.*)")
-          or entry.path
+      local fullpath = entry.bufname or entry.uri and entry.uri:match("^[%a%-]+://(.*)")
+        or entry.path
       -- Something is not right, goto next entry
       if not fullpath then return end
       if not path.is_absolute(fullpath) then
@@ -313,8 +301,9 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
         -- pcall for two failed cases
         -- (1) nvim_exec2(): Vim(normal):Can't re-enter normal mode from terminal mode
         -- (2) save dialog cancellation
-        pcall(utils.jump_to_location, { uri = entry.uri, range = entry.range }, "utf-16",
-          opts.reuse_win)
+        pcall(
+          utils.jump_to_location, { uri = entry.uri, range = entry.range }, "utf-16", opts.reuse_win
+        )
       elseif (not entry.line or entry.line == 0) and entry.ctag then
         local re = utils.ctag_to_magic(entry.ctag)
         if utils.vim_regex(re, opts) then
@@ -326,7 +315,8 @@ M.vimcmd_entry = function(vimcmd, selected, opts, bufedit)
         -- e.g. qf lists from files (no line/col), dap_breakpoints
         pcall(vim.api.nvim_win_set_cursor, 0, {
           (math.max(1, entry.line --[[@as integer]]) --[[@as integer]]),
-          (math.max(1, entry.col --[[@as integer]]) - 1 --[[@as integer]]) })
+          (math.max(1, entry.col --[[@as integer]]) - 1 --[[@as integer]]),
+        })
       end
       -- Only "zz" after the last entry is loaded into the origin buffer
       if i == #selected and not opts.no_action_zz and not utils.is_term_buffer(0) then
@@ -379,8 +369,9 @@ local sel_to_qf = function(selected, opts, is_loclist)
   end)
 
   local cmd = utils.get_info().cmd
-  local title = string.format("[FzfLua] %s%s", cmd and cmd .. ": " or "",
-    utils.resume_get("query", opts) or "")
+  local title = string.format(
+    "[FzfLua] %s%s", cmd and cmd .. ": " or "", utils.resume_get("query", opts) or ""
+  )
   if is_loclist then
     vim.fn.setloclist(0, {}, " ", { nr = "$", items = qf_list, title = title })
   else
@@ -459,7 +450,8 @@ M.file_switch = function(selected, opts)
   if entry.line > 0 or entry.col > 0 then
     pcall(vim.api.nvim_win_set_cursor, 0, {
       (math.max(1, entry.line --[[@as integer]]) --[[@as integer]]),
-      (math.max(1, entry.col --[[@as integer]]) - 1 --[[@as integer]]) })
+      (math.max(1, entry.col --[[@as integer]]) - 1 --[[@as integer]]),
+    })
   end
   if not utils.is_term_buffer(0) and not opts.no_action_zz then vim.cmd("norm! zvzz") end
   return true
@@ -486,10 +478,9 @@ M.buf_del = function(selected, opts)
     local entry = path.entry_to_file(sel, opts)
     if entry.bufnr then
       if not utils.buffer_is_dirty(entry.bufnr, true, false)
-          or vim.api.nvim_buf_call(entry.bufnr, function()
-            return utils.save_dialog(entry.bufnr)
-          end)
-      then
+        or vim.api.nvim_buf_call(entry.bufnr, function()
+          return utils.save_dialog(entry.bufnr)
+        end) then
         vim.api.nvim_buf_delete(entry.bufnr, { force = true })
       end
     end
@@ -533,7 +524,7 @@ M.colorscheme = function(selected, opts)
 end
 
 ---@param selected string[]
----@param opts fzf-lua.config.AwesomeColorschemes|{}
+---@param opts fzf-lua.config.AwesomeColorschemes|{ }
 M.cs_delete = function(selected, opts)
   for _, s in ipairs(selected) do
     local dbkey = s:match("^(.-):%d+:")
@@ -542,7 +533,7 @@ M.cs_delete = function(selected, opts)
 end
 
 ---@param selected string[]
----@param opts fzf-lua.config.AwesomeColorschemes|{}
+---@param opts fzf-lua.config.AwesomeColorschemes|{ }
 M.cs_update = function(selected, opts)
   local dedup = {}
   for _, s in ipairs(selected) do
@@ -587,7 +578,7 @@ M.ex_run_cr = function(selected)
   local cmd = selected[1]
   local keys = string.format("<Cmd>%s<CR>", cmd:gsub("<", "<lt>"))
   keys = vim.api.nvim_replace_termcodes(keys, true, true, true)
-  vim.api.nvim_feedkeys(keys, 'nt', false)
+  vim.api.nvim_feedkeys(keys, "nt", false)
   vim.fn.histadd("cmd", cmd)
 end
 
@@ -597,16 +588,14 @@ M.exec_menu = function(selected)
   local k_cmd = vim.api.nvim_replace_termcodes("<Cmd>", true, false, true)
   local cmd = vim.fn.json_encode("emenu " .. vim.fn.escape(menu, "\\ |"))
   local keys = string.format("%sexecute %s\r", k_cmd, cmd)
-  vim.api.nvim_feedkeys(keys, 'nt', false)
+  vim.api.nvim_feedkeys(keys, "nt", false)
 end
-
 
 M.search = function(selected, opts)
   if not selected[1] then return end
   local query = selected[1]
   vim.cmd("stopinsert")
-  vim.fn.feedkeys(
-    string.format("%s%s", opts.reverse_search and "?" or "/", query), "n")
+  vim.fn.feedkeys(string.format("%s%s", opts.reverse_search and "?" or "/", query), "n")
   return query
 end
 
@@ -635,7 +624,7 @@ end
 
 ---@param kind ":"|"/"
 ---@param selected string[]
----@param opts fzf-lua.config.CommandHistory|{}
+---@param opts fzf-lua.config.CommandHistory|{ }
 local hist_del = function(kind, selected, opts)
   if not vim.iter then return end
   -- Resolve every picker position before deleting anything: deleting an entry
@@ -654,18 +643,18 @@ local hist_del = function(kind, selected, opts)
 end
 
 ---@param selected string[]
----@param opts fzf-lua.config.CommandHistory|{}
+---@param opts fzf-lua.config.CommandHistory|{ }
 M.ex_del = function(selected, opts)
   hist_del(":", selected, opts)
 end
 
 ---@param selected string[]
----@param opts fzf-lua.config.SearchHistory|{}
+---@param opts fzf-lua.config.SearchHistory|{ }
 M.search_del = function(selected, opts)
   hist_del("/", selected, opts)
 end
 
---- Clear the register selected in the registers picker.
+---Clear the register selected in the registers picker.
 ---@param selected string[]
 M.reg_clear = function(selected)
   if not selected[1] then return end
@@ -801,7 +790,8 @@ local nvim_opt_edit = function(selected, opts, scope)
 
   local show_option_value_input = function(option, old, info)
     local updated = utils.input(
-      (scope == "local" and ":setlocal " or ":set ") .. option .. "=", old)
+      (scope == "local" and ":setlocal " or ":set ") .. option .. "=", old
+    )
     if not updated or updated == old then return end
 
     if info.type == "number" then
@@ -982,7 +972,7 @@ M.git_switch = function(selected, opts)
 end
 
 ---@param selected string[]
----@param opts fzf-lua.config.GitBranches|{}
+---@param opts fzf-lua.config.GitBranches|{ }
 M.git_branch_add = function(selected, opts)
   -- "reload" actions (fzf version >= 0.36) use field_index = "{q}"
   -- so the prompt input will be found in `selected[1]`
@@ -1038,8 +1028,9 @@ M.git_worktree_cd = function(selected, opts)
     return
   end
   if uv.fs_stat(cwd) then
-    local cmd = (opts.scope == "local" or opts.scope == "win") and "lcd"
-        or opts.scope == "tab" and "tcd" or "cd"
+    local cmd = (opts.scope == "local" or opts.scope == "win") and "lcd" or opts.scope == "tab"
+      and "tcd"
+      or "cd"
     vim.cmd(cmd .. " " .. cwd)
     utils.info(("cwd set to '%s'"):format(cwd))
   else
@@ -1058,13 +1049,14 @@ M.git_worktree_add = function(selected, opts)
 
     ---@type string[]
     local cmd_branch_check = path.git_cwd(
-      { "git", "show-ref", "--verify", "--quiet", "refs/heads/" .. branch }, opts)
+      { "git", "show-ref", "--verify", "--quiet", "refs/heads/" .. branch }, opts
+    )
     local _, check_rc = utils.io_systemlist(cmd_branch_check)
 
     ---@type string[]
     local cmd_add = check_rc == 0
-        and path.git_cwd({ "git", "worktree", "add", worktree_path, branch }, opts)
-        or path.git_cwd({ "git", "worktree", "add", worktree_path, "-b", branch }, opts)
+      and path.git_cwd({ "git", "worktree", "add", worktree_path, branch }, opts)
+      or path.git_cwd({ "git", "worktree", "add", worktree_path, "-b", branch }, opts)
 
     local output, rc = utils.io_systemlist(cmd_add)
     if rc ~= 0 then
@@ -1079,7 +1071,8 @@ M.git_worktree_del = function(selected, opts)
   if not selected[1] then return end
   local worktree_path = selected[1]:match("^[^%s]+")
   local current_cwd = utils.cwd()
-  if not worktree_path or worktree_path == current_cwd or path.normalize(worktree_path) == path.normalize(current_cwd) then
+  if not worktree_path or worktree_path == current_cwd
+    or path.normalize(worktree_path) == path.normalize(current_cwd) then
     utils.warn("Cannot delete current worktree '%s'", worktree_path)
     return
   end
@@ -1118,7 +1111,7 @@ M.git_yank_commit = function(selected, opts)
     "commit hash ",
     { commit_hash, "DiagnosticVirtualLinesWarn" },
     " copied to register ",
-    { regs[1],     "DiagnosticVirtualLinesHint" },
+    { regs[1], "DiagnosticVirtualLinesHint" },
     ", use '",
     { "p", "DiagnosticVirtualLinesHint" },
     "' to paste.",
@@ -1192,9 +1185,8 @@ M.git_reset = function(selected, opts)
     for _, s in ipairs(selected) do
       s = utils.strip_ansi_coloring(s)
       local is_untracked = s:sub(5, 5) == "?"
-      local cmd = is_untracked
-          and path.git_cwd({ "git", "clean", "-f" }, opts)
-          or path.git_cwd({ "git", "checkout", "HEAD", "--" }, opts)
+      local cmd = is_untracked and path.git_cwd({ "git", "clean", "-f" }, opts)
+        or path.git_cwd({ "git", "checkout", "HEAD", "--" }, opts)
       git_exec({ s }, opts, cmd)
       -- trigger autoread or warn the users buffer(s) was changed
       vim.cmd("checktime")
@@ -1236,7 +1228,9 @@ M.git_buf_edit = function(selected, opts)
   -- `fn_match_file` lets a provider (e.g. bcommits `follow`) resolve the path the
   -- buffer had at the selected commit; otherwise fall back to the current name.
   local file = type(opts.fn_match_file) == "function" and opts.fn_match_file(selected[1], opts)
-      or path.relative_to(path.normalize(vim.fn.expand("%:p") --[[@as string]]), git_root)
+    or path.relative_to(path.normalize(
+        vim.fn.expand("%:p") --[[@as string]]
+      ), git_root)
   local commit_hash = match_commit_hash(selected[1], opts)
   table.insert(cmd, commit_hash .. ":" .. file)
   local git_file_contents = utils.io_systemlist(cmd)
@@ -1298,8 +1292,9 @@ M.toggle_flag = function(_, opts)
     -- command without the search argument
     ---@diagnostic disable-next-line: param-type-mismatch
     cmd = utils.toggle_cmd_flag(assert(opts._cmd or opts.cmd), assert(opts.toggle_flag)),
-    resume = true
-  }, opts.__call_opts or {})
+    resume = true,
+  }, opts.__call_opts or {}
+  )
   opts.__call_fn(o)
 end
 
@@ -1349,8 +1344,7 @@ end
 M.set_qflist = function(selected, opts)
   if not selected[1] then return end
   local nr = selected[1]:match("[(%d+)]")
-  vim.cmd(string.format("%d%s", tonumber(nr),
-    opts._is_loclist and "lhistory" or "chistory"))
+  vim.cmd(string.format("%d%s", tonumber(nr), opts._is_loclist and "lhistory" or "chistory"))
   vim.cmd(opts._is_loclist and "lopen" or "copen")
 end
 
@@ -1358,7 +1352,9 @@ M.apply_profile = function(selected, opts)
   if not selected[1] then return end
   local entry = path.entry_to_file(selected[1])
   local fname = assert(entry.path)
-  local profile = assert(entry.stripped):sub(#fname + 2):match("[^%s]+")
+  local profile = assert(entry.stripped)
+    :sub(#fname + 2)
+    :match("[^%s]+")
   local ok = utils.load_profile_fname(fname, profile, opts.silent)
   if ok then
     require("fzf-lua").setup({ profile })
@@ -1417,7 +1413,7 @@ M.dap_bp_del = function(selected, opts)
 end
 
 ---@param selected string[]
----@param opts fzf-lua.config.Zoxide|{}
+---@param opts fzf-lua.config.Zoxide|{ }
 M.zoxide_cd = function(selected, opts)
   if not selected[1] then return end
   local cwd = selected[1]:match("[^\t]+$") or selected[1]
@@ -1431,8 +1427,9 @@ M.zoxide_cd = function(selected, opts)
     return
   end
   if uv.fs_stat(cwd) then
-    local cmd = (opts.scope == "local" or opts.scope == "win") and "lcd"
-        or opts.scope == "tab" and "tcd" or "cd"
+    local cmd = (opts.scope == "local" or opts.scope == "win") and "lcd" or opts.scope == "tab"
+      and "tcd"
+      or "cd"
     vim.cmd(cmd .. " " .. cwd)
     utils.io_system({ "zoxide", "add", "--", cwd })
     utils.info(("cwd set to %s'%s'"):format(git_root and "git root " or "", cwd))
@@ -1468,9 +1465,8 @@ local parse_entry = utils.serverlist_parse_entry
 local function server_exited(addr)
   for _ = 1, 5 do
     local alive, detail = utils.server_probe(addr)
-    if not alive and type(detail) == "string" and
-        (detail:match("Invalid channel")
-          or detail:match("ch %d+ was closed by the peer")) then
+    if not alive and type(detail) == "string"
+      and (detail:match("Invalid channel") or detail:match("ch %d+ was closed by the peer")) then
       return true
     end
     vim.wait(100)
@@ -1512,8 +1508,7 @@ M.serverlist_kill = function(sel)
       -- reachable -> falls through to the failure report below)
       killed = killed + 1
     else
-      failures[#failures + 1] = ("%s: %s"):format(
-        utils.escape_invisible(addr), tostring(err))
+      failures[#failures + 1] = ("%s: %s"):format(utils.escape_invisible(addr), tostring(err))
     end
   end)
   -- report every non-empty outcome independently so mixed results
@@ -1533,9 +1528,11 @@ M.serverlist_kill = function(sel)
 end
 
 M.serverlist_spawn = function()
+  -- fmt: off
   libuv.uv_spawn(vim.fn.exepath("nvim"),
     ---@diagnostic disable-next-line: missing-parameter, assign-type-mismatch
     { args = { "--headless" }, env = { NVIM = "" }, detached = true })
+  -- fmt: on
 end
 
 M.serverlist_connect = function(sel)
@@ -1554,8 +1551,9 @@ M.serverlist_connect = function(sel)
   if not alive then
     -- byte-escape invisible junk (\r, ANSI, ...) so a mangled address
     -- can't hide behind an identical-looking message (pipes are clean)
-    utils.warn("serverlist connect: %s is unreachable (%s).",
-      utils.escape_invisible(addr), tostring(detail))
+    utils.warn(
+      "serverlist connect: %s is unreachable (%s).", utils.escape_invisible(addr), tostring(detail)
+    )
     return
   end
   vim.cmd.connect(addr)

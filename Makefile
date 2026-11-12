@@ -163,6 +163,24 @@ emmylua-check: | deps/emmylua
 	VIMRUNTIME="$$(nvim --clean --headless +'echo $$VIMRUNTIME' +q 2>&1)" \
 		$$EMMY . --ignore 'deps/**/*' --warnings-as-errors
 
+# Lua sources formatted by `make fmt` / `make fmtcheck`. Editor and
+# generated files are excluded via `.luafmtignore`.
+FMT_DIRS ?= ./lua ./plugin ./scripts ./tests
+
+# luafmt can produce constructs that LuaJIT accepts but PUC Lua 5.1
+# rejects (for example breaking `f("x").y` into `f\n("x")\n.y`).
+# Validate formatted sources with a strict Lua 5.1 parser.
+LUAC ?= luac
+SYNTAX_DIRS ?= $(FMT_DIRS)
+
+.PHONY: syntax-check
+syntax-check:
+	@command -v $(LUAC) >/dev/null 2>&1 || { \
+		echo "$(LUAC) not found" >&2 ; \
+		exit 1 ; \
+	} ; \
+	find $(SYNTAX_DIRS) -name '*.lua' -print0 | xargs -0 -n1 $(LUAC) -p
+
 .PHONY: fmt fmtcheck
 fmt: | deps/emmylua
 	@if [ -x "$(LUA_FMT_BIN)" ]; then \
@@ -170,7 +188,14 @@ fmt: | deps/emmylua
 	else \
 		FMT="luafmt" ; \
 	fi ; \
-	$$FMT --config .luafmt.toml --write --recursive ./lua ./tests
+	$$FMT --config .luafmt.toml --write --recursive $(FMT_DIRS) ; \
+	rc=$$? ; \
+	if [ $$rc -ne 0 ]; then exit $$rc ; fi ; \
+	if command -v $(LUAC) >/dev/null 2>&1; then \
+		$(MAKE) --no-print-directory syntax-check ; \
+	else \
+		echo "warning: $(LUAC) not found, skipping syntax check" >&2 ; \
+	fi
 
 fmtcheck: | deps/emmylua
 	@if [ -x "$(LUA_FMT_BIN)" ]; then \
@@ -178,7 +203,7 @@ fmtcheck: | deps/emmylua
 	else \
 		FMT="luafmt" ; \
 	fi ; \
-	$$FMT --config .luafmt.toml --check --recursive ./lua ./tests
+	$$FMT --config .luafmt.toml --check --recursive $(FMT_DIRS)
 
 gen:
 	nvim --clean -l lua/fzf-lua/init.lua

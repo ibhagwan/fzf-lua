@@ -11,7 +11,7 @@ local _, H = debug.getupvalue(MiniTest.expect.reference_screenshot, 1)
 
 ---@class MiniTestScreenshot
 
---- copied over from mini.test
+---copied over from mini.test
 ---@param t { text?: string[][], attr?: string[] }
 ---@param opts test.ScreenOpts?
 ---@return MiniTestScreenshot
@@ -63,8 +63,8 @@ local function string_to_screenchars(s)
   return res
 end
 
---- gets a screenshot from given text lines and attrs
---- note that length of text lines and length of attrs must match
+---gets a screenshot from given text lines and attrs
+---note that length of text lines and length of attrs must match
 ---@param text_lines string[]
 ---@param opts test.ScreenOpts?
 ---@return MiniTestScreenshot
@@ -92,10 +92,8 @@ function M.fromChildBufLines(child, buf, opts)
   opts = opts or {}
   if opts and opts.redraw then child.cmd("redraw") end
   local lines = child.api.nvim_buf_get_lines(
-    buf or 0,
-    opts.start_line and 0,
-    opts.end_line and opts.end_line + 1 or -1,
-    true)
+    buf or 0, opts.start_line and 0, opts.end_line and opts.end_line + 1 or -1, true
+  )
   return M.from_lines(lines, opts)
 end
 
@@ -105,7 +103,8 @@ end
 function M.fromChildScreen(child, opts)
   opts = opts or {}
   if opts and opts.redraw then child.cmd("redraw") end
-  local lines = child.lua(([[
+  local lines = child.lua(
+    ([[
       local lines = {}
       for i = %s, %s do
         local line_text = {}
@@ -115,7 +114,8 @@ function M.fromChildScreen(child, opts)
         table.insert(lines, table.concat(line_text))
       end
       return lines
-  ]]):format(opts.start_line or 1, opts.end_line or [[vim.o.lines]]))
+  ]]):format(opts.start_line or 1, opts.end_line or [[vim.o.lines]])
+  )
   return M.from_lines(lines, opts)
 end
 
@@ -128,17 +128,17 @@ local screenshot_read = function(path)
   return screenshot_new({ text = vim.tbl_map(f, text_lines) }, opts)
 end
 
-
 -- modified version (no attr)
 local screenshot_compare = function(screen_ref, screen_obs, opts)
   local compare = function(x, y, desc)
     if x ~= y then
       return false,
-          ("Different %s. Reference: %s. Observed: %s."):format(desc, vim.inspect(x), vim.inspect(y))
+        ("Different %s. Reference: %s. Observed: %s."):format(desc, vim.inspect(x), vim.inspect(y))
     end
     return true, ""
   end
 
+  -- fmt: off
   --stylua: ignore start
   local ok, cause
   ok, cause = compare(#screen_ref.text, #screen_obs.text, "number of `text` lines")
@@ -170,6 +170,7 @@ local screenshot_compare = function(screen_ref, screen_obs, opts)
     end
   end
   --stylua: ignore end
+  -- fmt: on
 
   return true, ""
 end
@@ -177,8 +178,9 @@ end
 M.reference_screenshot = function(screenshot, path, opts)
   if screenshot == nil then return true end
 
-  opts = vim.tbl_extend("force",
-    { force = false, ignore_text = {}, directory = "tests/screenshots" }, opts or {})
+  opts = vim.tbl_extend(
+    "force", { force = false, ignore_text = {}, directory = "tests/screenshots" }, opts or {}
+  )
 
   H.cache.n_screenshots = H.cache.n_screenshots + 1
 
@@ -187,8 +189,9 @@ M.reference_screenshot = function(screenshot, path, opts)
     -- forbidden characters with '-' (with some useful exception)
     local linux_forbidden = [[/]]
     local windows_forbidden = [[<>:"/\|?*]]
-    local pattern = string.format("[%%c%%s%s%s]", vim.pesc(linux_forbidden),
-      vim.pesc(windows_forbidden))
+    local pattern = string.format(
+      "[%%c%%s%s%s]", vim.pesc(linux_forbidden), vim.pesc(windows_forbidden)
+    )
     local replacements = setmetatable({ ['"'] = "'" }, { __index = function() return "-" end })
     local name = H.case_to_stringid(MiniTest.current.case):gsub(pattern, replacements)
 
@@ -199,7 +202,9 @@ M.reference_screenshot = function(screenshot, path, opts)
     path = vim.fs.normalize(opts.directory):gsub("/$", "") .. "/" .. name
 
     -- Deal with multiple screenshots
-    if H.cache.n_screenshots > 1 then path = path .. string.format("-%03d", H.cache.n_screenshots) end
+    if H.cache.n_screenshots > 1 then
+      path = path .. string.format("-%03d", H.cache.n_screenshots)
+    end
   end
 
   -- If there is no readable screenshot file, create it. Pass with note.
@@ -220,16 +225,17 @@ M.reference_screenshot = function(screenshot, path, opts)
   if are_same then return true end
 
   local subject = "screenshot equality to reference at " .. vim.inspect(path)
-  local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause, tostring(reference),
-    tostring(screenshot))
+  local context = string.format(
+    "%s\nReference:\n%s\n\nObserved:\n%s", cause, tostring(reference), tostring(screenshot)
+  )
   H.error_with_emphasis(subject, context)
 end
 
---- Retry-friendly variant of the reference compare: `capture()` is called
---- before every attempt so the child UI can settle (fzf/terminal grid updates
---- are asynchronous and slow machines are prone to capturing partial renders).
---- The reference file path is kept stable across attempts by restoring
---- `n_screenshots` (its value defines the "-%03d" suffix).
+---Retry-friendly variant of the reference compare: `capture()` is called
+---before every attempt so the child UI can settle (fzf/terminal grid updates
+---are asynchronous and slow machines are prone to capturing partial renders).
+---The reference file path is kept stable across attempts by restoring
+---`n_screenshots` (its value defines the "-%03d" suffix).
 ---@param compare fun(screenshot: MiniTestScreenshot, path?: string, opts?: table): boolean
 ---@param capture fun(): MiniTestScreenshot
 ---@param path? string
@@ -275,9 +281,10 @@ M.compare = function(reference, screenshot, opts)
   if are_same then return true end
 
   local subject = "screenshot equality to reference at " .. vim.inspect(path)
-  local context = string.format("%s\nReference:\n%s\n\nObserved:\n%s", cause,
-    ruler .. tostring(reference),
-    ruler .. tostring(screenshot))
+  local context = string.format(
+    "%s\nReference:\n%s\n\nObserved:\n%s", cause, ruler .. tostring(reference),
+    ruler .. tostring(screenshot)
+  )
   H.error_with_emphasis(subject, context)
 end
 

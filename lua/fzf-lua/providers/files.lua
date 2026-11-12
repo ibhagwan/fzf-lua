@@ -18,7 +18,7 @@ M.get_files_cmd = function(opts)
   local search_paths = (function()
     -- NOTE: deepcopy to avoid recursive shellescapes with `actions.toggle_ignore`
     local paths = type(opts.search_paths) == "table" and vim.deepcopy(opts.search_paths)
-        or type(opts.search_paths) == "string" and { tostring(opts.search_paths) }
+      or type(opts.search_paths) == "string" and { tostring(opts.search_paths) }
     -- Make paths relative, note this will not work well with resuming if changing
     -- the cwd, this is by design for perf reasons as having to deal with full paths
     -- will result in more code routes taken in `make_entry.file`
@@ -33,19 +33,21 @@ M.get_files_cmd = function(opts)
   if opts.cmd and #opts.cmd > 0 then
     command = opts.cmd
   elseif vim.fn.executable("fdfind") == 1 then
-    command = string.format("fdfind %s%s", opts.fd_opts,
-      search_paths and string.format(" . %s", search_paths) or "")
+    command = string.format(
+      "fdfind %s%s", opts.fd_opts, search_paths and string.format(" . %s", search_paths) or ""
+    )
   elseif vim.fn.executable("fd") == 1 then
-    command = string.format("fd %s%s", opts.fd_opts,
-      search_paths and string.format(" . %s", search_paths) or "")
+    command = string.format(
+      "fd %s%s", opts.fd_opts, search_paths and string.format(" . %s", search_paths) or ""
+    )
   elseif vim.fn.executable("rg") == 1 then
-    command = string.format("rg %s%s", opts.rg_opts,
-      search_paths and string.format(" %s", search_paths) or "")
+    command = string.format(
+      "rg %s%s", opts.rg_opts, search_paths and string.format(" %s", search_paths) or ""
+    )
   elseif utils.__IS_WINDOWS and not os.getenv("CI") then
     command = "dir " .. opts.dir_opts
   else
-    command = string.format("find %s %s",
-      search_paths and search_paths or ".", opts.find_opts)
+    command = string.format("find %s %s", search_paths and search_paths or ".", opts.find_opts)
   end
   for k, v in pairs({
     follow = opts.toggle_follow_flag or "-L",
@@ -65,13 +67,14 @@ M.get_files_cmd = function(opts)
           v = [[\! -path '*/.*']]
         end
       end
-      command = utils.toggle_cmd_flag(command, v --[[@as string]], toggle, is_find)
+      local v_str = v --[[@as string]]
+      command = utils.toggle_cmd_flag(command, v_str, toggle, is_find)
     end)()
   end
   return command
 end
 
----@param opts fzf-lua.config.Files|{}?
+---@param opts fzf-lua.config.Files|{ }?
 ---@return thread?, string?, table?
 M.files = function(opts)
   ---@type fzf-lua.config.Files
@@ -82,8 +85,7 @@ M.files = function(opts)
     if #curbuf > 0 then
       curbuf = path.relative_to(curbuf, opts.cwd or utils.cwd())
       opts.file_ignore_patterns = opts.file_ignore_patterns or {}
-      table.insert(opts.file_ignore_patterns,
-        "^" .. utils.lua_regex_escape(curbuf) .. "$")
+      table.insert(opts.file_ignore_patterns, "^" .. utils.lua_regex_escape(curbuf) .. "$")
     end
   end
   opts.cmd = M.get_files_cmd(opts)
@@ -97,7 +99,7 @@ M.files = function(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
 
----@param opts fzf-lua.config.Args|{}?
+---@param opts fzf-lua.config.Args|{ }?
 ---@return thread?, string?, table?
 M.args = function(opts)
   ---@type fzf-lua.config.Args
@@ -145,7 +147,7 @@ M.args = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
----@param opts fzf-lua.config.Zoxide|{}?
+---@param opts fzf-lua.config.Zoxide|{ }?
 ---@return thread?, string?, table?
 M.zoxide = function(opts)
   ---@type fzf-lua.config.Zoxide
@@ -164,10 +166,11 @@ M.zoxide = function(opts)
   opts.preview = (function()
     if opts.preview then return opts.preview end
     return vim.fn.executable("lsd") == 1
-        and "lsd -la --color=always --icon=always --group-directories-first --literal {2}"
-        or vim.fn.executable("eza") == 1
-        and "eza -la --color=always --icons -g --group-directories-first {2}"
-        or "ls -la {2}"
+      and "lsd -la --color=always --icon=always --group-directories-first --literal {2}" or vim.fn.executable(
+      "eza"
+    ) == 1
+      and "eza -la --color=always --icons -g --group-directories-first {2}"
+      or "ls -la {2}"
   end)()
 
   return core.fzf_exec(opts.cmd, opts)
@@ -175,7 +178,7 @@ end
 
 ---VCS-aware file picker: uses jj_files in jj repos, git_files in git repos,
 ---falls back to the regular files picker otherwise.
----@param opts table|{}?
+---@param opts table|{ }?
 ---@return thread?, string?, table?
 M.vcs_files = function(opts)
   opts = opts or {}

@@ -19,10 +19,13 @@ end
 local function load_config()
   ---@diagnostic disable-next-line: undefined-field
   if not _G._fzf_lua_server then return end
-  local ok, res = utils.rpcexec(_G._fzf_lua_server, "nvim_exec_lua",
-    [[return FzfLua.libuv.serialize(FzfLua.config)]], {})
+  local ok, res = utils.rpcexec(
+    _G._fzf_lua_server, "nvim_exec_lua", [[return FzfLua.libuv.serialize(FzfLua.config)]], {}
+  )
   if not ok then error(res) end ---@cast res string
-  return libuv.deserialize(res --[[@as string]])
+  return libuv.deserialize(
+    res --[[@as string]]
+  )
 end
 
 local function load_config_section(s, datatype, optional)
@@ -55,7 +58,7 @@ local function load_config_section(s, datatype, optional)
     if _G._debug == "v" or _G._debug == 2 then
       ---@diagnostic disable-next-line: undefined-field
       io.stdout:write(("[DEBUG] [load_config] %s = %s" .. (_G._EOL or "\n"))
-        :format(s, not ok and errmsg or res))
+          :format(s, not ok and errmsg or res))
     end
     if not ok and not optional then
       io.stderr:write(("Error loading remote config section '%s': %s\n"):format(s, errmsg))
@@ -65,14 +68,13 @@ local function load_config_section(s, datatype, optional)
   end
 end
 
-
 local opts2 = setmetatable({}, {
   __index = function(_, k)
     if k == "fn_transform_cmd" then
       return load_config_section("__resume_data.opts.fn_transform_cmd", "function", true)
     end
     return utils.map_get(config, "__resume_data.opts." .. k)
-  end
+  end,
 })
 
 if _G._fzf_lua_is_headless then
@@ -80,13 +82,14 @@ if _G._fzf_lua_is_headless then
   ---@diagnostic disable-next-line: missing-fields
   _config.globals = { git = {}, files = {}, grep = {} }
   _config.globals.git.icons = load_config_section("globals.git.icons", "table") or {}
-  _config.globals.files.git_status_cmd =
-      load_config_section("globals.files.git_status_cmd", "table")
-      or { "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" }
+  _config.globals.files.git_status_cmd = load_config_section(
+    "globals.files.git_status_cmd", "table"
+  )
+    or { "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" }
 
   -- prioritize `opts.rg_glob_fn` over globals
-  _config.globals.grep.rg_glob_fn = opts2.rg_glob_fn or
-      load_config_section("globals.grep.rg_glob_fn", "function", true)
+  _config.globals.grep.rg_glob_fn = opts2.rg_glob_fn
+    or load_config_section("globals.grep.rg_glob_fn", "function", true)
 
   _config.globals.nbsp = load_config_section("globals.nbsp", "string")
   if _config.globals.nbsp then utils.nbsp = _config.globals.nbsp end
@@ -115,9 +118,11 @@ M.get_diff_files = function(opts)
   local ok, status, err = pcall(utils.io_systemlist, path.git_cwd(cmd, opts)) ---@cast status string[]
   local seconds = (uv.hrtime() - start) / 1e9
   if seconds >= 0.5 and opts.silent ~= true then
-    local exec_str = string.format([[require"fzf-lua".utils.warn(]] ..
-      [["'git status' took %.2f seconds, consider using `git_icons=false` in this repository or use `silent=true` to supress this message.")]]
-      , seconds)
+    local exec_str = string.format(
+      [[require"fzf-lua".utils.warn(]]
+        .. [["'git status' took %.2f seconds, consider using `git_icons=false` in this repository or use `silent=true` to supress this message.")]],
+      seconds
+    )
     if not _G._fzf_lua_is_headless then
       assert(loadstring(exec_str))()
     else
@@ -176,7 +181,7 @@ end
 M.rg_insert_args = function(cmd, args, relocate_pattern)
   local patterns = {}
   for _, a in ipairs({
-    { "%s+%-e",  "-e" },
+    { "%s+%-e", "-e" },
     { "%s+%-%-", "--" },
   }) do
     -- if pattern was specified search for `-e <pattern>`
@@ -204,7 +209,6 @@ M.rg_insert_args = function(cmd, args, relocate_pattern)
   -- cmd doesn't contain `-e` or `--` or <pattern>, concat args
   return string.format("%s %s", cmd, args)
 end
-
 
 ---@param s string[]
 ---@param opts table
@@ -242,7 +246,8 @@ local glob_filter = function(paths, globs)
   if not globs or not vim.regex then return paths end
   local pats = vim.tbl_map(utils.nil_wrap(vim.fn.glob2regpat), globs)
   ---@cast pats string[]
-  matchers = vim.tbl_map(utils.nil_wrap(vim.regex) --[[@as fun(s: string): vim.regex]], pats)
+  local regex_fn = utils.nil_wrap(vim.regex) --[[@as fun(s: string): vim.regex]]
+  matchers = vim.tbl_map(regex_fn, pats)
   -- matchers = vim.tbl_map(vim.F.nil_wrap(vim.glob.to_lpeg), globs)
   if #matchers == 0 then return paths end
   return vim.tbl_filter(function(p)
@@ -318,8 +323,7 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
       if not (no_esc or opts.no_esc) then
         new_query = utils.rg_escape(new_query)
         opts.no_esc = true
-        opts.search = ("%s%s"):format(new_query,
-          search_query:match(opts.glob_separator .. ".*"))
+        opts.search = ("%s%s"):format(new_query, search_query:match(opts.glob_separator .. ".*"))
       end
       search_query = new_query
       command = M.rg_insert_args(command, glob_args)
@@ -339,7 +343,8 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
   elseif opts.search_paths then
     local search_paths = type(opts.search_paths) == "table"
         -- NOTE: deepcopy to avoid recursive shellescapes with `actions.grep_lgrep`
-        and vim.deepcopy(opts.search_paths) or { tostring(opts.search_paths) }
+        and vim.deepcopy(opts.search_paths)
+      or { tostring(opts.search_paths) }
     -- Make paths relative, note this will not work well with resuming if changing
     -- the cwd, this is by design for perf reasons as having to deal with full paths
     -- will result in more code rouets taken in `make_entry.file`
@@ -374,14 +379,13 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
     local bin = path.tail(command:match("[^%s]+"))
     local bin2flags = {
       grep = { { "--line-number", "-n" }, { "--recursive", "-r" } },
-      rg = { { "--line-number", "-n" }, { "--column" } }
+      rg = { { "--line-number", "-n" }, { "--column" } },
     }
     for _, flags in ipairs(bin2flags[bin] or {}) do
       local has_flag_group
       for _, f in ipairs(flags) do
         if command:match("^" .. utils.lua_regex_escape(f))
-            or command:match("%s+" .. utils.lua_regex_escape(f))
-        then
+          or command:match("%s+" .. utils.lua_regex_escape(f)) then
           has_flag_group = true
         end
       end
@@ -389,7 +393,8 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
         if not opts.silent then
           utils.info(
             "Added missing '%s' flag to '%s'. Add 'silent=true' to hide this message.",
-            table.concat(flags, "|"), bin)
+            table.concat(flags, "|"), bin
+          )
         end
         command = M.rg_insert_args(command, flags[1])
       end
@@ -431,7 +436,6 @@ M.get_grep_cmd = function(opts, search_query, no_esc)
 
   return command
 end
-
 
 M.fix_windows_cmd = function(cmd)
   if not utils.__IS_WINDOWS or type(cmd) ~= "string" or not cmd:match("!") then
@@ -548,19 +552,22 @@ end
 ---@param opts table
 ---@return string
 M.lcol = function(entry, opts)
-  local hl_colnr = utils.tbl_contains(opts._cached_hls or {}, "path_colnr")
-      and opts.hls.path_colnr or "blue"
+  local hl_colnr = utils.tbl_contains(opts._cached_hls or {}, "path_colnr") and opts.hls.path_colnr
+    or "blue"
   local hl_linenr = utils.tbl_contains(opts._cached_hls or {}, "path_linenr")
-      and opts.hls.path_linenr or "green"
+    and opts.hls.path_linenr
+    or "green"
   local filename = entry.filename or vim.api.nvim_buf_get_name(entry.bufnr)
-  return string.format("%s:%s%s%s",
+  return string.format(
+    "%s:%s%s%s",
     -- uncomment to test URIs
     -- "file://" .. filename,
-    filename, --utils.ansi_codes.magenta(filename),
+    filename, -- utils.ansi_codes.magenta(filename),
     tonumber(entry.lnum) == nil and "" or (utils.ansi_codes[hl_linenr](tostring(entry.lnum)) .. ":"),
     tonumber(entry.col) == nil and "" or (utils.ansi_codes[hl_colnr](tostring(entry.col)) .. ":"),
     type(entry.text) ~= "string" and ""
-    or (" " .. (opts and opts.trim_entry and vim.trim(entry.text) or entry.text)))
+      or (" " .. (opts and opts.trim_entry and vim.trim(entry.text) or entry.text))
+  )
 end
 
 ---@param x string
@@ -596,7 +603,7 @@ M.file = function(x, opts)
       return utils.strip_ansi_coloring(file_part)
     end
   end)()
-  ---@cast stripped_filepath-?
+  ---@cast stripped_filepath -?
   local filepath = stripped_filepath
   ---@cast filepath string
   -- fd v8.3 requires adding '--strip-cwd-prefix' to remove
@@ -643,16 +650,19 @@ M.file = function(x, opts)
   -- save a copy for git indicator and icon lookups
   local origpath = filepath
   if opts.path_shorten then
-    filepath = path.shorten(filepath, tonumber(opts.path_shorten),
+    filepath = path.shorten(
+      filepath,
+      tonumber(opts.path_shorten),
       -- On Windows we want to shorten using the separator used by the `cwd` arg
       -- otherwise we might have issues "lenghening" as in the case of git which
       -- uses normalized paths (using /) for `rev-parse --show-toplevel` and `ls-files`
-      utils.__IS_WINDOWS and opts.cwd and path.separator(opts.cwd))
+      utils.__IS_WINDOWS and opts.cwd and path.separator(opts.cwd)
+    )
   end
   if opts.git_icons then
     ---@type [string, true?]
     local diff_info = opts.diff_files
-        and opts.diff_files[utils._if_win(path.normalize(origpath), origpath)]
+      and opts.diff_files[utils._if_win(path.normalize(origpath), origpath)]
     local indicators = diff_info and diff_info[1] or " "
     for i = 1, #indicators do
       icon = indicators:sub(i, i)
@@ -685,7 +695,7 @@ M.file = function(x, opts)
         -- filename is ansi escape colored, replace the inner string (#819)
         -- escape `%` in path, since `string.gsub` also use it in target (#1443)
         and file_part:gsub(utils.lua_regex_escape(stripped_filepath), utils.lua_escape(filepath))
-        or filepath
+      or filepath
   end
   -- multiline is only enabled with grep-like output PATH:LINE:COL:
   if opts.multiline and rest_of_line then
@@ -694,12 +704,9 @@ M.file = function(x, opts)
     -- PATH:LINE:TEXT and PATH:LINE:COL:TEXT
     local ansi_num = "[%[%d;m]"
     local filespec = rest_of_line:match(string.format("^:%s-:%s-:", ansi_num, ansi_num))
-        or rest_of_line:match(string.format("^:%s-:", ansi_num))
+      or rest_of_line:match(string.format("^:%s-:", ansi_num))
     if filespec then
-      rest_of_line = filespec
-          .. "\n"
-          .. string.rep(" ", 4)
-          .. rest_of_line:sub(#filespec + 1)
+      rest_of_line = filespec .. "\n" .. string.rep(" ", 4) .. rest_of_line:sub(#filespec + 1)
     end
   end
   ret[#ret + 1] = rest_of_line
@@ -715,11 +722,9 @@ M.tag = function(x, opts)
   -- from rg/grep output when using `tags_grep_xxx`
   local align = 24
   if utils.has_ansi_coloring(name) then align = align + 17 end
-  return string.format("%-" .. tostring(align) .. "s\t%s\t%s%s",
-    name,
-    M.file(file, opts),
-    line and utils.ansi_codes.green(tostring(line)) .. ";" or "",
-    tag or ""
+  return string.format(
+    "%-" .. tostring(align) .. "s\t%s\t%s%s", name, M.file(file, opts),
+    line and utils.ansi_codes.green(tostring(line)) .. ";" or "", tag or ""
   )
 end
 
@@ -758,7 +763,8 @@ M.git_status = function(x, opts)
   local unstaged = git_iconify(x:sub(2, 2))
   local entry = ("%s%s%s%s%s"):format(
     staged, utils.nbsp, unstaged, utils.nbsp .. utils.nbsp,
-    (f2 and ("%s -> %s"):format(f1, f2) or f1))
+    (f2 and ("%s -> %s"):format(f1, f2) or f1)
+  )
   return entry
 end
 

@@ -22,7 +22,7 @@ local function dap()
   return true
 end
 
----@param opts fzf-lua.config.DapCommands|{}?
+---@param opts fzf-lua.config.DapCommands|{ }?
 ---@return thread?, string?, table?
 M.commands = function(opts)
   if not dap() then return end
@@ -47,7 +47,7 @@ M.commands = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
----@param opts fzf-lua.config.DapConfigurations|{}?
+---@param opts fzf-lua.config.DapConfigurations|{ }?
 ---@return thread?, string?, table?
 M.configurations = function(opts)
   if not dap() then return end
@@ -61,11 +61,12 @@ M.configurations = function(opts)
   for lang, lang_cfgs in pairs(_dap.configurations) do
     for _, cfg in ipairs(lang_cfgs) do
       cfgs[#entries + 1] = cfg
-      table.insert(entries, ("[%s] %s. %s"):format(
-        utils.ansi_codes.green(lang),
-        utils.ansi_codes.magenta(tostring(#entries + 1)),
-        cfg.name
-      ))
+      table.insert(
+        entries,
+        ("[%s] %s. %s"):format(
+          utils.ansi_codes.green(lang), utils.ansi_codes.magenta(tostring(#entries + 1)), cfg.name
+        )
+      )
     end
   end
 
@@ -83,7 +84,7 @@ M.configurations = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
----@param opts fzf-lua.config.DapBreakpoints|{}?
+---@param opts fzf-lua.config.DapBreakpoints|{ }?
 ---@return thread?, string?, table?
 M.breakpoints = function(opts)
   ---@type fzf-lua.config.DapBreakpoints
@@ -109,11 +110,13 @@ M.breakpoints = function(opts)
       for _, b in ipairs(bps) do
         vim.schedule(function()
           local entry = make_entry.lcol(b, opts)
-          entry = string.format("[%s]%s%s",
+          entry = string.format(
+            "[%s]%s%s",
             -- tostring(opts._locations[i].bufnr),
             utils.ansi_codes.yellow(tostring(b.bufnr)),
             utils.nbsp,
-            make_entry.file(entry, opts))
+            make_entry.file(entry, opts)
+          )
           cb(entry, function()
             coroutine.resume(co)
           end)
@@ -128,7 +131,7 @@ M.breakpoints = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
----@param opts fzf-lua.config.DapVariables|{}?
+---@param opts fzf-lua.config.DapVariables|{ }?
 ---@return thread?, string?, table?
 M.variables = function(opts)
   if not dap() then return end
@@ -152,12 +155,15 @@ M.variables = function(opts)
     if s.variables then
       for _, v in pairs(s.variables) do
         if v.type ~= "" and v.value ~= "" then
-          table.insert(entries, ("[%s] %s = %s"):format(
-            utils.ansi_codes.green(v.type),
-            -- utils.ansi_codes.red(v.name),
-            v.name,
-            v.value
-          ))
+          table.insert(
+            entries,
+            ("[%s] %s = %s"):format(
+              utils.ansi_codes.green(v.type),
+              -- utils.ansi_codes.red(v.name),
+              v.name,
+              v.value
+            )
+          )
         end
       end
     end
@@ -166,7 +172,7 @@ M.variables = function(opts)
   return core.fzf_exec(entries, opts)
 end
 
----@param opts fzf-lua.config.DapFrames|{}?
+---@param opts fzf-lua.config.DapFrames|{ }?
 ---@return thread?, string?, table?
 M.frames = function(opts)
   if not dap() then return end
@@ -186,7 +192,11 @@ M.frames = function(opts)
     return
   end
 
-  if not session.threads[session.stopped_thread_id] or not session.threads[session.stopped_thread_id].frames then
+  if not session.threads[session.stopped_thread_id]
+    or not session
+      .threads
+      [session.stopped_thread_id]
+      .frames then
     utils.info("No frame")
     return
   end
@@ -195,7 +205,9 @@ M.frames = function(opts)
 
   opts.previewer = {
     _ctor = function()
-      local p = require("fzf-lua.previewer.builtin").buffer_or_file:extend()
+      local p = require("fzf-lua.previewer.builtin")
+        .buffer_or_file
+        :extend()
       ---@diagnostic disable-next-line: unused
       ---@param entry_str string
       ---@return fzf-lua.buffer_or_file.Entry
@@ -255,12 +267,13 @@ M.frames = function(opts)
 
   local entries = {}
   for i, f in ipairs(frames) do
-    table.insert(entries, ("%s. [%s] %s%s"):format(
-      utils.ansi_codes.magenta(tostring(i)),
-      utils.ansi_codes.green(f.name),
-      f.source and f.source.name or "",
-      f.line and ((":%d"):format(f.line)) or ""
-    ))
+    table.insert(
+      entries,
+      ("%s. [%s] %s%s"):format(
+        utils.ansi_codes.magenta(tostring(i)), utils.ansi_codes.green(f.name),
+        f.source and f.source.name or "", f.line and ((":%d"):format(f.line)) or ""
+      )
+    )
   end
 
   return core.fzf_exec(entries, opts)

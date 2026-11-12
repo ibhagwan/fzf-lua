@@ -5,7 +5,7 @@ local config = require "fzf-lua.config"
 
 local M = {}
 
----@param opts fzf-lua.config.Helptags|{}?
+---@param opts fzf-lua.config.Helptags|{ }?
 ---@return thread?, string?, table?
 M.helptags = function(opts)
   ---@type fzf-lua.config.Helptags
@@ -64,8 +64,9 @@ M.helptags = function(opts)
 
     local add_tag = function(t, fzf_cb, co)
       local w = 80 + string.len(t.tag) - vim.fn.strwidth(t.tag)
-      local tag = string.format("%-" .. w .. "s %s%s%s", hl(t.tag), t.filename, utils.nbsp,
-        t.filepath)
+      local tag = string.format(
+        "%-" .. w .. "s %s%s%s", hl(t.tag), t.filename, utils.nbsp, t.filepath
+      )
       fzf_cb(tag, function()
         coroutine.resume(co)
       end)

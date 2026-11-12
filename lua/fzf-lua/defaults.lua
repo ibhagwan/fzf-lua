@@ -11,7 +11,7 @@ function M._default_previewer_fn()
     winopts = winopts() or {}
     winopts.preview = type(winopts.preview) == "table" and winopts.preview or {}
     winopts.preview.default = winopts.preview.default
-        or utils.map_get(M.defaults, "winopts.preview.default")
+      or utils.map_get(M.defaults, "winopts.preview.default")
   end
   local previewer = M.globals.default_previewer or utils.map_get(winopts, "preview.default")
   -- the setup function cannot have a custom previewer as deepcopy
@@ -27,22 +27,22 @@ function M._preview_pager_fn(opts)
   -- fzf exports both variables to preview commands, but fish resets `$COLUMNS`
   -- (#1023); skim only exports `$COLUMNS` (#2846).
   local cols = opts and opts.__SK_VERSION and "$COLUMNS" or "$FZF_PREVIEW_COLUMNS"
-  return vim.fn.executable("delta") == 1 and
-      ("delta --width=%s --%s"):format(utils._if_win_normalize_vars(cols), vim.o.bg) or
-      nil
+  return vim.fn.executable("delta") == 1
+    and ("delta --width=%s --%s"):format(utils._if_win_normalize_vars(cols), vim.o.bg)
+    or nil
 end
 
 function M._man_cmd_fn(bat_pager)
-  local cmd = utils.is_darwin() and "man -P cat"
-      or vim.fn.executable("mandb") == 1 and "man"
-      or "man -c"
-  local bat_cmd = bat_pager and (function()
-    for _, bin in ipairs({ "batcat", "bat" }) do
-      if vim.fn.executable(bin) == 1 then
-        return string.format("%s --color=always -p -l man", bin)
+  local cmd = utils.is_darwin() and "man -P cat" or vim.fn.executable("mandb") == 1 and "man"
+    or "man -c"
+  local bat_cmd = bat_pager
+    and (function()
+      for _, bin in ipairs({ "batcat", "bat" }) do
+        if vim.fn.executable(bin) == 1 then
+          return string.format("%s --color=always -p -l man", bin)
+        end
       end
-    end
-  end)()
+    end)()
   local pager = bat_cmd or "col -bx"
   return string.format("%s %%s 2>/dev/null | %s", cmd, pager)
 end
@@ -100,7 +100,7 @@ local FZF_POS = utils._if_win_normalize_vars("$FZF_POS")
 ---Highlight the current line in main window.
 ---@field cursorline? boolean
 ---Internal window highlight mappings.
----@field __winhls? { main: [string, string?][], prev: [string, string?][] }
+---@field __winhls? { main:[string, string?][], prev:[string, string?][] }
 
 ---@class fzf-lua.config.PreviewOpts
 ---Default previewer for file pickers, possible values `builtin|bat|cat|head`.
@@ -134,7 +134,7 @@ local FZF_POS = utils._if_win_normalize_vars("$FZF_POS")
 ---@field pty? boolean
 
 ---missing fields are injected later, not sure how to tell luals about it
----@class fzf-lua.config.Defaults: fzf-lua.config.Base,{}
+---@class fzf-lua.config.Defaults: fzf-lua.config.Base, { }
 ---@field nbsp string Special invisible unicode character used as text delimiter.
 ---@field winopts fzf-lua.config.Winopts Window options.
 ---@field keymap fzf-lua.config.Keymap Keymaps for builtin and fzf commands.
@@ -147,8 +147,8 @@ local FZF_POS = utils._if_win_normalize_vars("$FZF_POS")
 ---@field __HLS fzf-lua.config.HLS Highlight group configuration.
 ---@field [string] any
 M.defaults = {
-  nbsp          = utils.nbsp,
-  winopts       = {
+  nbsp    = utils.nbsp,
+  winopts = {
     height     = 0.85,
     width      = 0.80,
     row        = 0.35,
@@ -160,7 +160,7 @@ M.defaults = {
     title_pos  = "center",
     treesitter = {
       enabled    = utils.__HAS_NVIM_010,
-      fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" }
+      fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
     },
     preview    = {
       default      = "builtin",
@@ -177,7 +177,7 @@ M.defaults = {
       scrolloff    = -1,
       -- default preview delay, fzf native previewers has a 100ms delay:
       -- https://github.com/junegunn/fzf/issues/2417#issuecomment-809886535
-      delay        = 20,
+      delay = 20,
       ---@class fzf-lua.config.PreviewerWinopts
       ---Builtin previewer buffer local option, see `:help 'number'`.
       ---@field number boolean
@@ -201,7 +201,7 @@ M.defaults = {
       ---@field scrolloff integer
       ---Builtin previewer window transparency, see `:help 'winblend'`.
       ---@field winblend integer
-      winopts      = {
+      winopts = {
         number         = true,
         relativenumber = false,
         cursorline     = true,
@@ -222,11 +222,11 @@ M.defaults = {
   ---@class fzf-lua.config.Keymap
   ---@field builtin? table<string, string> Keybinds for builtin (Neovim) commands.
   ---@field fzf? table<string, string> Keybinds for fzf commands.
-  keymap        = {
+  keymap  = {
     builtin = {
-      ["<M-Esc>"]    = "hide",
-      ["<F1>"]       = "toggle-help",
-      ["<F2>"]       = "toggle-fullscreen",
+      ["<M-Esc>"] = "hide",
+      ["<F1>"]    = "toggle-help",
+      ["<F2>"]    = "toggle-fullscreen",
       -- Only valid with the 'builtin' previewer
       ["<F3>"]       = "toggle-preview-wrap",
       ["<F4>"]       = "toggle-preview",
@@ -242,15 +242,15 @@ M.defaults = {
       ["<M-S-up>"]   = "preview-up",
     },
     fzf = {
-      ["ctrl-z"]         = "abort",
-      ["ctrl-u"]         = "unix-line-discard",
-      ["ctrl-f"]         = "half-page-down",
-      ["ctrl-b"]         = "half-page-up",
-      ["ctrl-a"]         = "beginning-of-line",
-      ["ctrl-e"]         = "end-of-line",
-      ["alt-a"]          = "toggle-all",
-      ["alt-g"]          = "first",
-      ["alt-G"]          = "last",
+      ["ctrl-z"] = "abort",
+      ["ctrl-u"] = "unix-line-discard",
+      ["ctrl-f"] = "half-page-down",
+      ["ctrl-b"] = "half-page-up",
+      ["ctrl-a"] = "beginning-of-line",
+      ["ctrl-e"] = "end-of-line",
+      ["alt-a"]  = "toggle-all",
+      ["alt-g"]  = "first",
+      ["alt-G"]  = "last",
       -- Only valid with fzf previewers (bat/cat/git/etc)
       ["f3"]             = "toggle-preview-wrap",
       ["f4"]             = "toggle-preview",
@@ -260,7 +260,7 @@ M.defaults = {
       ["alt-shift-up"]   = "preview-up",
     },
   },
-  actions       = {
+  actions = {
     files = {
       ["enter"]  = actions.file_edit_or_qf,
       ["ctrl-s"] = actions.file_split,
@@ -273,9 +273,9 @@ M.defaults = {
       ["alt-f"]  = { fn = actions.toggle_follow, reuse = true, header = false },
     },
   },
-  fzf_bin       = nil, ---@type string? Path to fzf binary.
+  fzf_bin = nil, ---@type string? Path to fzf binary.
   ---Fzf command-line options passed to fzf binary.
-  fzf_opts      = {
+  fzf_opts = {
     ["--ansi"]           = true,
     ["--info"]           = "inline-right",
     ["--height"]         = "100%",
@@ -291,7 +291,7 @@ M.defaults = {
   ---@field builtin fzf-lua.config.BuiltinPreviewer
   ---@field git_diff fzf-lua.config.GitDiffPreviewer
   ---@field [string] fzf-lua.config.Previewer
-  previewers    = {
+  previewers = {
     cat = {
       cmd   = "cat",
       args  = "-n",
@@ -299,14 +299,14 @@ M.defaults = {
     },
     bat = {
       -- reduce startup time by deferring executable check to previewer constructor (#970)
-      cmd   = function() return vim.fn.executable("batcat") == 1 and "batcat" or "bat" end,
+      cmd = function() return vim.fn.executable("batcat") == 1 and "batcat" or "bat" end,
       -- args  = "--color=always --style=default",
       args  = "--color=always --style=numbers,changes",
       _ctor = previewers.fzf.bat_async,
     },
     bat_native = {
-      cmd   = function() return vim.fn.executable("batcat") == 1 and "batcat" or "bat" end,
-      args  = "--color=always --style=numbers,changes",
+      cmd  = function() return vim.fn.executable("batcat") == 1 and "batcat" or "bat" end,
+      args = "--color=always --style=numbers,changes",
       -- NOTE: no support for `bat_native` on Windows, it's a hassle for no real
       -- benefit, native previewers will be removed from the code at one point
       _ctor = utils._if_win(previewers.fzf.bat_async, previewers.fzf.bat),
@@ -345,14 +345,14 @@ M.defaults = {
       syntax            = true,
       syntax_delay      = 0,
       syntax_limit_l    = 0,
-      syntax_limit_b    = 1024 * 1024,      -- 1MB
-      limit_b           = 1024 * 1024 * 10, -- 10MB
+      syntax_limit_b    = 1024 * 1024, -- 1MB
+      limit_b           = 1024 * 1024 * 10,   -- 10MB
       treesitter        = {
         enabled = true,
         disabled = {},
         -- nvim-treesitter-context config options
         -- https://github.com/nvim-treesitter/nvim-treesitter-context
-        context = { max_lines = 1, trim_scope = "inner" }
+        context = { max_lines = 1, trim_scope = "inner" },
       },
       ueberzug_scaler   = "cover",
       title_fnamemodify = function(s) return path.tail(s) end,
@@ -392,7 +392,7 @@ M.defaults = {
       pager     = M._preview_pager_fn,
     },
   },
-  formatters    = {
+  formatters = {
     path = {
       filename_first = {
         -- <Tab> is used as the invisible space between the parent and the file part
@@ -462,7 +462,7 @@ M.defaults = {
           else
             return s
           end
-        end
+        end,
       },
       dirname_first = {
         -- Credit fo @folke :-)
@@ -491,7 +491,7 @@ M.defaults = {
           ]]):format(hl_dir or "", hl_file or "")
         end,
       },
-    }
+    },
   },
 }
 
@@ -534,7 +534,13 @@ M.defaults.files = {
   fzf_opts               = { ["--multi"] = true, ["--scheme"] = "path" },
   _fzf_nth_devicons      = true,
   git_status_cmd         = {
-    "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" },
+    "git",
+    "-c",
+    "color.status=false",
+    "--no-optional-locks",
+    "status",
+    "--porcelain=v1",
+  },
   find_opts              = [[-type f \! -path '*/.git/*' \! -path '*/.jj/*']],
   rg_opts                = [[--color=never --files -g "!.git" -g "!.jj"]],
   fd_opts                = [[--color=never --type f --type l --exclude .git --exclude .jj]],
@@ -550,11 +556,11 @@ M.defaults.files = {
 
 ---Global multi-picker, combines files, buffers and symbols.
 ---@diagnostic disable-next-line: param-type-mismatch
----@class fzf-lua.config.Global : fzf-lua.config.Files
----@field pickers (fun():table)|table
+---@class fzf-lua.config.Global: fzf-lua.config.Files
+---@field pickers table|fun(): table
 ---@field __alt_opts? boolean
 M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
-  silent            = true,
+  silent = true,
   -- TODO: lsp_workspace_symbols locate, not working yet
   -- as opts.__locate_pos is inside the symbols picker opts
   -- locate            = true,
@@ -571,40 +577,43 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
       return client:supports_method("workspace/symbol")
     end)
     return {
-      { "files",   desc = "Files" },
+      { "files", desc = "Files" },
       -- { "blines",  desc = "blines", prefix = "/" },
       { "buffers", desc = "Bufs", prefix = "$" },
-      doc_sym_supported and {
-        "lsp_document_symbols",
-        desc = "Symbols (buf)",
-        prefix = "@",
-        opts = { no_autoclose = true, fzf_opts = { ["--with-nth"] = false } }
-      } or {
-        "btags",
-        desc = "Tags (buf)",
-        prefix = "@",
-        opts = {
-          previewer    = { _ctor = previewers.builtin.tags },
-          fn_transform = [[return require("fzf-lua.make_entry").tag]],
+      doc_sym_supported
+        and {
+          "lsp_document_symbols",
+          desc = "Symbols (buf)",
+          prefix = "@",
+          opts = { no_autoclose = true, fzf_opts = { ["--with-nth"] = false } },
         }
-      },
-      wks_sym_supported and
-      {
-        "lsp_workspace_symbols",
-        desc = "Symbols (project)",
-        prefix = "#",
-        opts = { no_autoclose = true }
-      } or {
-        "tags",
-        desc = "Tags (project)",
-        prefix = "#",
-        opts = {
-          previewer    = { _ctor = previewers.builtin.tags },
-          fn_transform = [[return require("fzf-lua.make_entry").tag]],
-          rg_opts      = "--no-heading --color=always --smart-case",
-          grep_opts    = "--color=auto " .. GREP_PERL_REGEXP,
+        or {
+          "btags",
+          desc = "Tags (buf)",
+          prefix = "@",
+          opts = {
+            previewer    = { _ctor = previewers.builtin.tags },
+            fn_transform = [[return require("fzf-lua.make_entry").tag]],
+          },
+        },
+      wks_sym_supported
+        and {
+          "lsp_workspace_symbols",
+          desc = "Symbols (project)",
+          prefix = "#",
+          opts = { no_autoclose = true },
         }
-      },
+        or {
+          "tags",
+          desc = "Tags (project)",
+          prefix = "#",
+          opts = {
+            previewer    = { _ctor = previewers.builtin.tags },
+            fn_transform = [[return require("fzf-lua.make_entry").tag]],
+            rg_opts      = "--no-heading --color=always --smart-case",
+            grep_opts    = "--color=auto " .. GREP_PERL_REGEXP,
+          },
+        },
     }
   end,
   fzf_opts          = { ["--delimiter"] = "[\t]", ["--with-nth"] = ".." },
@@ -614,7 +623,6 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
   _treesitter       = true,
 })
 
-
 ---@class fzf-lua.config.GitBase: fzf-lua.config.Base
 ---Path to `.git` directory for bare repos or worktrees.
 ---@field git_dir? string
@@ -623,19 +631,19 @@ M.defaults.global = vim.tbl_deep_extend("force", M.defaults.files, {
 
 ---Git pickers parent table.
 ---@class fzf-lua.config.Git
----@field files     fzf-lua.config.GitFiles
----@field status    fzf-lua.config.GitStatus
----@field diff      fzf-lua.config.GitDiff
----@field hunks     fzf-lua.config.GitHunks
----@field reflog    fzf-lua.config.GitReflog
----@field commits   fzf-lua.config.GitCommits
----@field bcommits  fzf-lua.config.GitBcommits
----@field blame     fzf-lua.config.GitBlame
----@field branches  fzf-lua.config.GitBranches
+---@field files fzf-lua.config.GitFiles
+---@field status fzf-lua.config.GitStatus
+---@field diff fzf-lua.config.GitDiff
+---@field hunks fzf-lua.config.GitHunks
+---@field reflog fzf-lua.config.GitReflog
+---@field commits fzf-lua.config.GitCommits
+---@field bcommits fzf-lua.config.GitBcommits
+---@field blame fzf-lua.config.GitBlame
+---@field branches fzf-lua.config.GitBranches
 ---@field worktrees fzf-lua.config.GitWorktrees
----@field tags      fzf-lua.config.GitTags
----@field stash     fzf-lua.config.GitStash
----@field icons     fzf-lua.git.icons
+---@field tags fzf-lua.config.GitTags
+---@field stash fzf-lua.config.GitStash
+---@field icons fzf-lua.git.icons
 -- Must construct our opts table in stages
 -- so we can reference 'M.globals.files'
 M.defaults.git = {
@@ -706,7 +714,8 @@ M.defaults.git = {
           if not s[1] then return FzfLua.utils.fzf_exit() end
           local o = vim.deepcopy(_o.__call_opts)
           o["__pos_" .. FzfLua.get_info().cmd] = tonumber(s[2])
-          o.file = FzfLua.path.entry_to_file(s[1], _o).path
+          o.file = FzfLua.path.entry_to_file(s[1], _o)
+            .path
           FzfLua.git_hunks(o)
         end,
         header = "git hunks",
@@ -757,7 +766,7 @@ M.defaults.git = {
       ["ctrl-q"] = {
         fn = function(_, _o) FzfLua.git_diff(vim.deepcopy(_o.__call_opts)) end,
         reuse = true,
-        header = "git diff"
+        header = "git diff",
       },
     },
   },
@@ -765,7 +774,7 @@ M.defaults.git = {
   ---@class fzf-lua.config.GitCommits: fzf-lua.config.GitBase
   commits = {
     cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
-        .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
+      .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
     preview       = "git show --color {1}",
     preview_pager = M._preview_pager_fn,
     actions       = {
@@ -795,8 +804,8 @@ M.defaults.git = {
   ---Follow the buffer's history across renames.
   ---@field follow? boolean
   bcommits = {
-    cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
-        .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" -- {file}]],
+    cmd = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
+      .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" -- {file}]],
     -- When true, follow the buffer's history across renames.
     follow        = false,
     preview       = "git show --color {1} -- {file}",
@@ -828,7 +837,7 @@ M.defaults.git = {
     fzf_opts      = { ["--no-multi"] = true },
     _multiline    = false,
     -- `winopts.treesitter==true` line match format
-    _treesitter   = function(line) return line:match("(%s+)(%d+)%)(.+)$") end,
+    _treesitter = function(line) return line:match("(%s+)(%d+)%)(.+)$") end,
   },
   ---Git branches.
   ---@class fzf-lua.config.GitBranches: fzf-lua.config.GitBase
@@ -840,7 +849,7 @@ M.defaults.git = {
   ---@field cmd_del? string[]
   branches = {
     cmd        = [[git branch --all --color -vv ]]
-        .. [[--sort=-committerdate --sort=refname:rstrip=-2 --sort=-HEAD]],
+      .. [[--sort=-committerdate --sort=refname:rstrip=-2 --sort=-HEAD]],
     preview    = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
     remotes    = "local",
     actions    = {
@@ -862,7 +871,7 @@ M.defaults.git = {
     scope      = "global", -- cd action scope "local|win|tab"
     cmd        = "git worktree list",
     preview    = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
-        .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
+      .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
     actions    = {
       ["enter"]  = actions.git_worktree_cd,
       ["ctrl-x"] = { fn = actions.git_worktree_del, reload = true },
@@ -875,12 +884,11 @@ M.defaults.git = {
   ---Git tags.
   ---@class fzf-lua.config.GitTags: fzf-lua.config.GitBase
   tags = {
-    cmd        = [[git for-each-ref --color --sort="-taggerdate" --format ]]
-        .. [["%(color:yellow)%(refname:short)%(color:reset) ]]
-        .. [[%(color:green)(%(taggerdate:relative))%(color:reset)]]
-        .. [[ %(subject) %(color:blue)%(taggername)%(color:reset)" refs/tags]],
+    cmd        = [[git for-each-ref --color --sort="-taggerdate" --format ]] .. [["%(color:yellow)%(refname:short)%(color:reset) ]]
+      .. [[%(color:green)(%(taggerdate:relative))%(color:reset)]]
+      .. [[ %(subject) %(color:blue)%(taggername)%(color:reset)" refs/tags]],
     preview    = [[git log --graph --color --pretty=format:"%C(yellow)%h%Creset ]]
-        .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {1}]],
+      .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {1}]],
     actions    = { ["enter"] = actions.git_checkout },
     fzf_opts   = { ["--no-multi"] = true },
     _headers   = { "cwd" },
@@ -927,7 +935,7 @@ M.defaults.git.reflog = vim.tbl_deep_extend("force", M.defaults.git.commits, {
 
 ---Jujutsu pickers parent table.
 ---@class fzf-lua.config.Jj
----@field files     fzf-lua.config.JjFiles
+---@field files fzf-lua.config.JjFiles
 M.defaults.jj = {
   ---Jujutsu tracked files.
   ---@diagnostic disable-next-line: param-type-mismatch
@@ -971,35 +979,35 @@ M.defaults.jj = {
 ---@field __resume_set? function
 ---@field __resume_get? function
 M.defaults.grep = {
-  previewer      = M._default_previewer_fn,
-  input_prompt   = "Grep For> ",
-  multiprocess   = 1, ---@type integer|boolean
-  _type          = "file",
-  file_icons     = 1, ---@type integer|boolean
-  color_icons    = true,
-  git_icons      = false,
-  fzf_opts       = { ["--multi"] = true },
-  grep_opts      = GREP_PERL_REGEXP
-      .. " --binary-files=without-match --line-number --recursive --color=always -e",
-  rg_opts        = "--column --line-number --no-heading --color=always --smart-case "
-      .. "--max-columns=4096 -e",
-  rg_glob        = 1, -- do not display warning if using `grep`
-  _actions       = function() return M.globals.actions.files end,
-  actions        = { ["ctrl-g"] = { actions.grep_lgrep } },
+  previewer    = M._default_previewer_fn,
+  input_prompt = "Grep For> ",
+  multiprocess = 1, ---@type integer|boolean
+  _type        = "file",
+  file_icons   = 1, ---@type integer|boolean
+  color_icons  = true,
+  git_icons    = false,
+  fzf_opts     = { ["--multi"] = true },
+  grep_opts    = GREP_PERL_REGEXP
+    .. " --binary-files=without-match --line-number --recursive --color=always -e",
+  rg_opts      = "--column --line-number --no-heading --color=always --smart-case "
+    .. "--max-columns=4096 -e",
+  rg_glob      = 1, -- do not display warning if using `grep`
+  _actions     = function() return M.globals.actions.files end,
+  actions      = { ["ctrl-g"] = { actions.grep_lgrep } },
   -- live_grep_glob options
-  glob_flag      = "--iglob", -- for case sensitive globs use '--glob'
-  glob_separator = "%s%-%-",  -- query separator pattern (lua): ' --'
-  _treesitter    = 1,         -- auto disable in live grep
+  glob_flag      = "--iglob",     -- for case sensitive globs use '--glob'
+  glob_separator = "%s%-%-", -- query separator pattern (lua): ' --'
+  _treesitter    = 1,           -- auto disable in live grep
   _headers       = { "actions", "cwd" },
 }
 
 ---Grep current buffer only.
 ---@diagnostic disable-next-line: param-type-mismatch
----@class fzf-lua.config.GrepCurbuf: fzf-lua.config.Grep,{}
+---@class fzf-lua.config.GrepCurbuf: fzf-lua.config.Grep, { }
 ---@field filename? string
 M.defaults.grep_curbuf = vim.tbl_deep_extend("force", M.defaults.grep, {
-  rg_glob          = false, -- meaningless for single file rg
-  exec_empty_query = true,  -- makes sense to display lines immediately
+  rg_glob          = false,         -- meaningless for single file rg
+  exec_empty_query = true, -- makes sense to display lines immediately
   fzf_opts         = {
     ["--delimiter"] = "[:]",
     ["--with-nth"]  = "2..",
@@ -1093,13 +1101,13 @@ M.defaults.quickfix = {
 ---@field marker string
 M.defaults.quickfix_stack = {
   marker    = ">",
-  previewer = { _ctor = previewers.builtin.quickfix, },
+  previewer = { _ctor = previewers.builtin.quickfix },
   fzf_opts  = { ["--no-multi"] = true },
-  actions   = { ["enter"] = actions.set_qflist, },
+  actions   = { ["enter"] = actions.set_qflist },
 }
 
 ---Location list entries.
----@class fzf-lua.config.Loclist : fzf-lua.config.Quickfix: fzf-lua.config.Base
+---@class fzf-lua.config.Loclist: fzf-lua.config.Quickfix: fzf-lua.config.Base
 ---@field is_loclist true
 M.defaults.loclist = {
   previewer        = M._default_previewer_fn,
@@ -1122,13 +1130,13 @@ M.defaults.loclist = {
 }
 
 ---Location list history.
----@class fzf-lua.config.LoclistStack : fzf-lua.config.QuickfixStack: fzf-lua.config.Base
+---@class fzf-lua.config.LoclistStack: fzf-lua.config.QuickfixStack: fzf-lua.config.Base
 ---@field is_loclist true
 M.defaults.loclist_stack = {
   marker    = ">",
-  previewer = { _ctor = previewers.builtin.quickfix, },
+  previewer = { _ctor = previewers.builtin.quickfix },
   fzf_opts  = { ["--no-multi"] = true },
-  actions   = { ["enter"] = actions.set_qflist, },
+  actions   = { ["enter"] = actions.set_qflist },
 }
 
 ---Open buffers.
@@ -1206,7 +1214,14 @@ M.defaults.tabs = {
     ["--tabstop"]   = "1",
     ["--with-nth"]  = "5..",
   },
-  _cached_hls    = { "buf_nr", "buf_flag_cur", "buf_flag_alt", "tab_title", "tab_marker", "path_linenr" },
+  _cached_hls    = {
+    "buf_nr",
+    "buf_flag_cur",
+    "buf_flag_alt",
+    "tab_title",
+    "tab_marker",
+    "path_linenr",
+  },
   _headers       = { "actions", "cwd" },
   _ctx           = { includeBuflist = true },
   _resume_reload = true,
@@ -1256,11 +1271,10 @@ M.defaults.lines = {
       local bufnr0, lnum, text = s:match("%[(%d+)%].-(%d+) (.+)$")
       local bufnr = tonumber(bufnr0)
       if not bufnr then return "" end ---@cast bufnr integer
-      return string.format("[%s]%s%s:%s:%s",
-        bufnr, utils.nbsp,
-        path.tail(vim.api.nvim_buf_get_name(bufnr)),
-        lnum, text)
-    end
+      return string.format(
+        "[%s]%s%s:%s:%s", bufnr, utils.nbsp, path.tail(vim.api.nvim_buf_get_name(bufnr)), lnum, text
+      )
+    end,
   },
   _actions         = function()
     return M.globals.actions.buffers or M.globals.actions.files
@@ -1307,7 +1321,7 @@ M.defaults.treesitter = {
     to   = false,
     from = function(s, _)
       return s:gsub("\t\t", ": ")
-    end
+    end,
   },
 }
 
@@ -1333,7 +1347,7 @@ M.defaults.spellcheck = {
     return M.globals.actions.buffers or M.globals.actions.files
   end,
   actions          = {
-    ["ctrl-s"] = { fn = actions.spell_suggest, header = "spell suggest" }
+    ["ctrl-s"] = { fn = actions.spell_suggest, header = "spell suggest" },
   },
   _cached_hls      = { "buf_name", "buf_nr", "buf_linenr", "path_colnr" },
   _headers         = { "actions" },
@@ -1341,7 +1355,7 @@ M.defaults.spellcheck = {
     to   = false,
     from = function(s, _)
       return s:gsub("\t\t", ": ")
-    end
+    end,
   },
 }
 
@@ -1369,11 +1383,11 @@ local function ctag_line_parser(line, include_file)
   -- include_file was requested but file wasn't found (tags), bail
   if not file then return end
   return file, nil, {
-    -- NOTE: ts indexes are zero based
-    start_col = start_col + had_caret - 1,
-    end_col = end_col - had_dollar,
-    text = text
-  }
+      -- NOTE: ts indexes are zero based
+      start_col = start_col + had_caret - 1,
+      end_col = end_col - had_dollar,
+      text = text
+    }
 end
 
 ---@class fzf-lua.config.TagsBase: fzf-lua.config.Base
@@ -1383,7 +1397,7 @@ end
 ---@field cmd? string
 ---Search project ctags.
 ---@class fzf-lua.config.Tags: fzf-lua.config.TagsBase
----@class fzf-lua.config.TagsGrep: fzf-lua.config.TagsBase,fzf-lua.config.Grep
+---@class fzf-lua.config.TagsGrep: fzf-lua.config.TagsBase, fzf-lua.config.Grep
 M.defaults.tags = {
   previewer     = { _ctor = previewers.builtin.tags },
   input_prompt  = "[tags] Grep For> ",
@@ -1403,13 +1417,13 @@ M.defaults.tags = {
   },
   -- line_field_index = "{4}",
   -- field_index_expr = "{}", -- For `_fmt.from` to work with `bat_native`
-  _actions      = function() return M.globals.actions.files end,
-  actions       = { ["ctrl-g"] = { actions.grep_lgrep } },
-  _treesitter   = function(line, _) return ctag_line_parser(line, true) end,
+  _actions    = function() return M.globals.actions.files end,
+  actions     = { ["ctrl-g"] = { actions.grep_lgrep } },
+  _treesitter = function(line, _) return ctag_line_parser(line, true) end,
 }
 
 ---Search current buffer ctags.
----@class fzf-lua.config.Btags : fzf-lua.config.Tags
+---@class fzf-lua.config.Btags: fzf-lua.config.Tags
 ---@field filename? string
 ---@field _btags_cmd? string
 ---Path to the ctags binary.
@@ -1452,8 +1466,8 @@ M.defaults.colorschemes = {
 M.defaults.highlights = {
   fzf_opts   = { ["--no-multi"] = true },
   fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
-  previewer  = { _ctor = previewers.builtin.highlights, },
-  actions    = { ["enter"] = actions.hi }
+  previewer  = { _ctor = previewers.builtin.highlights },
+  actions    = { ["enter"] = actions.hi },
 }
 
 ---Awesome Neovim colorschemes.
@@ -1492,7 +1506,7 @@ M.defaults.awesome_colorschemes = {
     ["ctrl-g"] = { fn = actions.toggle_bg, exec_silent = true },
     ["ctrl-d"] = { fn = actions.cs_update, reload = true },
     ["ctrl-x"] = { fn = actions.cs_delete, reload = true },
-  }
+  },
 }
 
 ---Neovim help tags.
@@ -1567,8 +1581,8 @@ M.defaults.lsp = {
   _cached_hls      = { "path_colnr", "path_linenr" },
   _treesitter      = true,
   -- Signals actions to use uri triggering the use of `lsp.util.show_document`
-  _uri             = true,
-  _headers         = { "actions", "regex_filter" },
+  _uri     = true,
+  _headers = { "actions", "regex_filter" },
 }
 
 ---LSP symbols (shared config).
@@ -1576,9 +1590,9 @@ M.defaults.lsp = {
 ---Initial query to filter symbols.
 ---@field lsp_query? string
 ---Custom highlight function for symbol kinds.
----@field symbol_hl? fun(s:string):string
+---@field symbol_hl? fun(s: string): string
 ---Custom format function for symbol display.
----@field symbol_fmt? fun(s:string, ...):string
+---@field symbol_fmt? fun(s: string, ...): string
 ---Display style for symbol kinds, `1` for icon+kind, `2` for icon only, `3` for kind only.
 ---@field symbol_style? integer|false
 ---Icons for each symbol kind.
@@ -1655,7 +1669,7 @@ M.defaults.lsp.symbols = {
       -- it will fail when the symbol contains "[%d]" (which we use as bufnr)
       local text, file = s:match(string.format("^(.-)%s(.*)", utils.nbsp))
       return string.format("%s %s", file, text)
-    end
+    end,
   },
 }
 
@@ -1678,7 +1692,7 @@ M.defaults.lsp.document_symbols = vim.tbl_deep_extend("force", {}, M.defaults.ls
     _from = function(s)
       -- Remove [<bufnr>] so  entry_to_file can parse as URI
       return s:gsub(".-" .. utils.nbsp, ""):gsub("\t\t", ": ")
-    end
+    end,
   },
   _cached_hls = { "path_colnr", "buf_name", "buf_nr", "buf_linenr" },
   _headers    = { "regex_filter" },
@@ -1718,7 +1732,7 @@ M.defaults.lsp.finder = {
   separator   = "|" .. utils.nbsp,
   _actions    = function() return M.globals.actions.files end,
   -- currently supported providers, defined as map so we can query easily
-  _providers  = {
+  _providers = {
     references      = true,
     definitions     = true,
     declarations    = true,
@@ -1731,15 +1745,15 @@ M.defaults.lsp.finder = {
   },
   -- by default display all supported providers
   providers   = {
-    { "declarations",    prefix = utils.ansi_codes.magenta("decl") },
+    { "declarations", prefix = utils.ansi_codes.magenta("decl") },
     { "implementations", prefix = utils.ansi_codes.green("impl") },
-    { "definitions",     prefix = utils.ansi_codes.green("def ") },
-    { "typedefs",        prefix = utils.ansi_codes.red("tdef") },
-    { "references",      prefix = utils.ansi_codes.blue("ref ") },
-    { "incoming_calls",  prefix = utils.ansi_codes.cyan("in  ") },
-    { "outgoing_calls",  prefix = utils.ansi_codes.yellow("out ") },
-    { "type_sub",        prefix = utils.ansi_codes.cyan("sub ") },
-    { "type_super",      prefix = utils.ansi_codes.yellow("supr") },
+    { "definitions", prefix = utils.ansi_codes.green("def ") },
+    { "typedefs", prefix = utils.ansi_codes.red("tdef") },
+    { "references", prefix = utils.ansi_codes.blue("ref ") },
+    { "incoming_calls", prefix = utils.ansi_codes.cyan("in  ") },
+    { "outgoing_calls", prefix = utils.ansi_codes.yellow("out ") },
+    { "type_sub", prefix = utils.ansi_codes.cyan("sub ") },
+    { "type_super", prefix = utils.ansi_codes.yellow("supr") },
   },
   fzf_opts    = { ["--multi"] = true },
   _treesitter = true,
@@ -1755,7 +1769,7 @@ M.defaults.lsp.finder = {
 ---Code action context passed to the LSP server.
 ---@field context vim.lsp.buf.code_action.context
 ---Filter function to exclude certain code actions.
----@field filter fun(x: lsp.CodeAction|lsp.Command):boolean
+---@field filter fun(x: lsp.CodeAction|lsp.Command): boolean
 ---@field _ui_select? { kind: string }
 ---@field _items any[]
 M.defaults.lsp.code_actions = {
@@ -1767,9 +1781,9 @@ M.defaults.lsp.code_actions = {
       fn = function(...)
         return require("fzf-lua.providers.ui_select").accept_item(...)
       end,
-      desc = "accept-item"
-    }
-  }
+      desc = "accept-item",
+    },
+  },
 }
 
 ---Workspace/document diagnostics.
@@ -1870,7 +1884,7 @@ M.defaults.marks = {
     ["ctrl-s"] = actions.goto_mark_split,
     ["ctrl-v"] = actions.goto_mark_vsplit,
     ["ctrl-t"] = actions.goto_mark_tabedit,
-    ["ctrl-x"] = { fn = actions.mark_del, reload = true }
+    ["ctrl-x"] = { fn = actions.mark_del, reload = true },
   },
   previewer   = { _ctor = previewers.builtin.marks },
   _cached_hls = { "buf_nr", "path_linenr", "path_colnr" },
@@ -1962,18 +1976,20 @@ M.defaults.undotree = {
 M.defaults.command_history = {
   fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   render_crlf = true,
-  _treesitter = function(line) return "foo.vim", nil, line end,
+  _treesitter = function(line)
+    return "foo.vim", nil, line
+  end,
   fzf_colors  = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
   actions     = {
     ["enter"]  = actions.ex_run_cr,
     ["ctrl-e"] = actions.ex_run,
-    ["ctrl-x"] = { fn = actions.ex_del, field_index = "{+n}", reload = true }
+    ["ctrl-x"] = { fn = actions.ex_del, field_index = "{+n}", reload = true },
   },
   _headers    = { "actions" },
 }
 
 ---Search history.
----@class fzf-lua.config.SearchHistory : fzf-lua.config.CommandHistory
+---@class fzf-lua.config.SearchHistory: fzf-lua.config.CommandHistory
 ---Reverse the order of the history list (oldest first).
 ---@field reverse_list? boolean
 ---Also search in reverse direction.
@@ -1981,12 +1997,14 @@ M.defaults.command_history = {
 M.defaults.search_history = {
   fzf_opts    = { ["--tiebreak"] = "index", ["--no-multi"] = true },
   render_crlf = true,
-  _treesitter = function(line) return "", nil, line, "regex" end,
+  _treesitter = function(line)
+    return "", nil, line, "regex"
+  end,
   fzf_colors  = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
   actions     = {
     ["enter"]  = actions.search_cr,
     ["ctrl-e"] = actions.search,
-    ["ctrl-x"] = { fn = actions.search_del, field_index = "{+n}", reload = true }
+    ["ctrl-x"] = { fn = actions.search_del, field_index = "{+n}", reload = true },
   },
   _headers    = { "actions" },
 }
@@ -2076,7 +2094,7 @@ M.defaults.spell_suggest = {
 }
 
 ---Neovim server list.
----@class fzf-lua.config.Serverlist : fzf-lua.config.Base
+---@class fzf-lua.config.Serverlist: fzf-lua.config.Base
 ---@field _screenshot string
 M.defaults.serverlist = {
   _screenshot = vim.fn.tempname(),
@@ -2090,16 +2108,15 @@ M.defaults.serverlist = {
   },
 }
 
-
 ---Filetypes.
----@class fzf-lua.config.Filetypes : fzf-lua.config.Base
+---@class fzf-lua.config.Filetypes: fzf-lua.config.Base
 M.defaults.filetypes = {
   file_icons = false, ---@type integer|boolean
   actions    = { ["enter"] = actions.set_filetype },
 }
 
 ---`:packadd <package>`.
----@class fzf-lua.config.Packadd : fzf-lua.config.Base
+---@class fzf-lua.config.Packadd: fzf-lua.config.Base
 M.defaults.packadd = {
   actions = {
     ["enter"] = actions.packadd,
@@ -2107,7 +2124,7 @@ M.defaults.packadd = {
 }
 
 ---Neovim menus.
----@class fzf-lua.config.Menus : fzf-lua.config.Base
+---@class fzf-lua.config.Menus: fzf-lua.config.Base
 M.defaults.menus = {
   actions = {
     ["enter"] = actions.exec_menu,
@@ -2125,7 +2142,7 @@ M.defaults.tmux = {
     cmd      = "tmux list-buffers",
     register = [["]],
     actions  = { ["enter"] = actions.tmux_buf_set_reg },
-    fzf_opts = { ["--no-multi"] = true, ["--delimiter"] = "[:]" }
+    fzf_opts = { ["--no-multi"] = true, ["--delimiter"] = "[:]" },
   },
 }
 
@@ -2142,19 +2159,19 @@ M.defaults.tmux = {
 M.defaults.dap = {
   ---DAP builtin commands.
   ---@class fzf-lua.config.DapCommands: fzf-lua.config.DapBase
-  commands       = { fzf_opts = { ["--no-multi"] = true }, },
+  commands = { fzf_opts = { ["--no-multi"] = true } },
   ---DAP configurations.
   ---@class fzf-lua.config.DapConfigurations: fzf-lua.config.DapBase
-  configurations = { fzf_opts = { ["--no-multi"] = true }, },
+  configurations = { fzf_opts = { ["--no-multi"] = true } },
   ---DAP active session variables.
   ---@class fzf-lua.config.DapVariables: fzf-lua.config.DapBase
-  variables      = { fzf_opts = { ["--no-multi"] = true }, },
+  variables = { fzf_opts = { ["--no-multi"] = true } },
   ---DAP active session frames.
   ---@class fzf-lua.config.DapFrames: fzf-lua.config.DapBase
-  frames         = { fzf_opts = { ["--no-multi"] = true }, },
+  frames = { fzf_opts = { ["--no-multi"] = true } },
   ---DAP breakpoints.
   ---@class fzf-lua.config.DapBreakpoints: fzf-lua.config.DapBase
-  breakpoints    = {
+  breakpoints = {
     file_icons  = 1, ---@type integer|boolean
     color_icons = true,
     git_icons   = false,
@@ -2227,17 +2244,16 @@ M.defaults.zoxide = {
     ["--nth"]       = "2..",
     ["--no-sort"]   = true, -- sort by score
   },
-  actions       = { enter = actions.zoxide_cd }
+  actions       = { enter = actions.zoxide_cd },
 }
 
 ---Complete line (all open buffers).
 ---@class fzf-lua.config.CompleteLine: fzf-lua.config.Blines
 ---@field current_buffer_only? boolean
----@field complete? (fun(s: string[], _o: fzf-lua.config.Resolved, l: string, c: integer):string?, integer?)|boolean
+---@field complete? (fun(s: string[], _o: fzf-lua.config.Resolved, l: string, c: integer): string?, integer?)|boolean
 M.defaults.complete_line = vim.tbl_deep_extend("force", M.defaults.blines, {
   complete = true,
 })
-
 
 ---@class fzf-lua.config.UISelect: fzf-lua.config.Base
 M.defaults.ui_select = {
@@ -2248,11 +2264,10 @@ M.defaults.ui_select = {
       fn = function(...)
         return require("fzf-lua.providers.ui_select").accept_item(...)
       end,
-      desc = "accept-item"
-    }
-  }
+      desc = "accept-item",
+    },
+  },
 }
-
 
 M.defaults.file_icon_padding = ""
 
@@ -2407,7 +2422,7 @@ M.defaults.__HLS = {
   ---@field prompt string
   ---Highlight group for fzf's `query`, by default links to `FzfLuaNormal` and sets text to `regular` (non-bold).
   ---@field query string
-  fzf            = {
+  fzf = {
     normal     = "FzfLuaFzfNormal",
     cursorline = "FzfLuaFzfCursorLine",
     match      = "FzfLuaFzfMatch",
@@ -2422,7 +2437,7 @@ M.defaults.__HLS = {
     spinner    = "FzfLuaFzfSpinner",
     prompt     = "FzfLuaFzfPrompt",
     query      = "FzfLuaFzfQuery",
-  }
+  },
 }
 
 return M

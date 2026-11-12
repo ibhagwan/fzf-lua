@@ -48,23 +48,20 @@ end
 function NvimWebDevicons:load(do_not_lazy_load)
   if not self._package_loaded
       -- do not trigger lazy loading
-      and (not do_not_lazy_load or package.loaded[self._package_name])
-  then
+      and (not do_not_lazy_load or package.loaded[self._package_name]) then
     self._package_loaded, self._package = pcall(require, self._package_name)
     if self._package_loaded then
       local _info = debug.getinfo(self._package.setup, "S")
-      ---@cast _info {source: string}
+      ---@cast _info { source: string }
       ---@diagnostic disable-next-line: param-type-mismatch
-      self._package_path = path.parent(path.parent(path.normalize(
-        _info.source:gsub("^@", ""))))
+      self._package_path = path.parent(path.parent(path.normalize(_info.source:gsub("^@", ""))))
     end
   end
   return self._package_loaded
 end
 
 function NvimWebDevicons:is_mock()
-  return type(self._package_path) == "string"
-      and self._package_path:match("mini") ~= nil
+  return type(self._package_path) == "string" and self._package_path:match("mini") ~= nil
 end
 
 ---@param opts table
@@ -75,16 +72,15 @@ function NvimWebDevicons:load_icons(opts)
   self._state = vim.tbl_deep_extend("force", self._state or {}, {
     icon_padding = type(opts.icon_padding) == "string" and opts.icon_padding or nil,
     dir_icon = vim.tbl_extend("force", { icon = "", color = nil }, opts.dir_icon or {}),
-    default_icon =
-        vim.tbl_extend("force", { icon = "", color = "#6d8086" }, opts.default_icon or {}),
+    default_icon = vim.tbl_extend(
+      "force", { icon = "", color = "#6d8086" }, opts.default_icon or {}
+    ),
   })
 
   -- test if we have the correct icon set for the current background
   -- if the background changed from light<->dark, refresh the icons (#855)
-  if self._state and self._state.icons
-      and self._state.bg == vim.o.bg
-      and self._state.termguicolors == vim.o.termguicolors
-  then
+  if self._state and self._state.icons and self._state.bg == vim.o.bg
+    and self._state.termguicolors == vim.o.termguicolors then
     return true
   end
   assert(self._state)
@@ -119,9 +115,9 @@ function NvimWebDevicons:load_icons(opts)
   }
   if type(all_devicons[1]) == "table" then
     self._state.default_icon.icon = all_devicons[1].icon or self._state.default_icon.icon
-    self._state.default_icon.color =
-        (self._state.termguicolors and all_devicons[1].color or all_devicons[1].cterm_color) or
-        self._state.default_icon.color
+    self._state.default_icon.color = (self._state.termguicolors and all_devicons[1].color
+      or all_devicons[1].cterm_color)
+      or self._state.default_icon.color
   end
   self._state.icons = {
     by_filename = {},  -- full filename (path.tail) lookup
@@ -130,7 +126,6 @@ function NvimWebDevicons:load_icons(opts)
     -- lookup table to indicate extension has potentially has better match
     -- in the 2part for example, ".js" will send us looking for "test.js"
     ext_has_2part = {},
-
   }
   for k, v in pairs(all_devicons) do
     -- skip all indexed (numeric) entries
@@ -140,15 +135,15 @@ function NvimWebDevicons:load_icons(opts)
         -- name = v.name or k,
         icon = v.icon or "",
         color = (self._state.termguicolors and v.color or v.cterm_color)
-            or (function()
-              -- some devicons customizations remove `info.color`
-              -- retrieve the color from the highlight group (#801)
-              local hlgroup = "DevIcon" .. (v.name or k)
-              local hexcol = utils.hexcol_from_hl(hlgroup, "fg", opts.mode)
-              if hexcol and #hexcol > 0 then
-                return hexcol
-              end
-            end)(),
+          or (function()
+            -- some devicons customizations remove `info.color`
+            -- retrieve the color from the highlight group (#801)
+            local hlgroup = "DevIcon" .. (v.name or k)
+            local hexcol = utils.hexcol_from_hl(hlgroup, "fg", opts.mode)
+            if hexcol and #hexcol > 0 then
+              return hexcol
+            end
+          end)(),
       }
       -- NOTE: entries like "R" can appear in both icons by filename/extension
       if icons.by_filename[k] then
@@ -186,15 +181,16 @@ end
 function MiniIcons:load(do_not_lazy_load)
   if not self._package_loaded
       -- do not trigger lazy loading
-      and (not do_not_lazy_load or package.loaded[self._package_name])
-  then
+      and (not do_not_lazy_load or package.loaded[self._package_name]) then
     self._package_loaded, self._package = pcall(require, self._package_name)
     if self._package_loaded then
       local _info = debug.getinfo(self._package.setup, "S")
-      ---@cast _info {source: string}
-      ---@diagnostic disable-next-line: param-type-mismatch
-      self._package_path = path.parent(path.parent(path.parent(path.normalize(
-        _info.source:gsub("^@", "")))))
+      ---@cast _info { source: string }
+      ---@diagnostic disable: param-type-mismatch
+      self._package_path = path.parent(
+        path.parent(path.parent(path.normalize(_info.source:gsub("^@", ""))))
+      )
+      ---@diagnostic enable: param-type-mismatch
     end
   end
   return self._package_loaded
@@ -250,7 +246,7 @@ function MiniIcons:load_icons(opts)
       -- lookup table to indicate extension has potentially has better match
       -- in the 2part for example, ".js" will send us looking for "test.js"
       ext_has_2part = {},
-    }
+    },
   })
 
   for _, file in ipairs(_G.MiniIcons.list("file")) do
@@ -317,15 +313,15 @@ function FzfLuaServer:load_icons(opts)
   local ok, errmsg = pcall(function()
     local chan_id = vim.fn.sockconnect("pipe", self:path(), { rpc = true })
     self._state = vim.rpcrequest(
-      chan_id,
-      "nvim_exec_lua",
-      "return require'fzf-lua.devicons'.state(...)",
-      { opts and opts.srv_plugin or nil })
+      chan_id, "nvim_exec_lua", "return require'fzf-lua.devicons'.state(...)",
+      { opts and opts.srv_plugin or nil }
+    )
     vim.fn.chanclose(chan_id)
   end)
   if not ok then
-    io.stdout:write(string.format(
-      "RPC error getting fzf_lua:devicons:STATE (%s): %s\n", self:path(), errmsg))
+    io.stdout:write(
+      string.format("RPC error getting fzf_lua:devicons:STATE (%s): %s\n", self:path(), errmsg)
+    )
   end
   return self._state == "table"
 end
@@ -337,14 +333,17 @@ function FzfLuaServer:update_state_mini()
   if not self:path() or type(self._state) ~= "table" then return end
   local ok, errmsg = pcall(function()
     local chan_id = vim.fn.sockconnect("pipe", self:path(), { rpc = true })
-    self._state = vim.rpcrequest(chan_id, "nvim_exec_lua", [[
+    self._state = vim.rpcrequest(
+      chan_id, "nvim_exec_lua", [[
       require"fzf-lua.devicons".set_state(...)
-      ]], { "mini", self._state })
+      ]], { "mini", self._state }
+    )
     vim.fn.chanclose(chan_id)
   end)
   if not ok then
-    io.stdout:write(string.format(
-      "RPC error setting fzf_lua:devicons:STATE (%s): %s\n", self:path(), errmsg))
+    io.stdout:write(
+      string.format("RPC error setting fzf_lua:devicons:STATE (%s): %s\n", self:path(), errmsg)
+    )
   end
 end
 
@@ -364,51 +363,49 @@ M.plugin_load = function(provider, do_not_lazy_load)
   if provider == nil and M.PLUGIN and M.PLUGIN:loaded() then
     return true
   end
-  M.PLUGIN = provider == "srv" and M.__SRV
-      or provider == "mini" and M.__MINI
-      or provider == "devicons" and M.__DEVICONS
-      or (function()
-        if _G._fzf_lua_is_headless then
-          -- headless instance, fzf-lua server exists, attempt
-          -- to load icons from main neovim instance
-          ---@diagnostic disable-next-line: undefined-field
-          if type(_G._fzf_lua_server) == "string" then
-            return M.__SRV
-          end
-          ---@diagnostic disable-next-line: undefined-field
-          if _G._devicons_path then
-            -- headless instance, no fzf-lua server was specified
-            -- but we got devicon's lib path, add to runtime path
-            -- so `load()` can find the library
-            ---@diagnostic disable-next-line: undefined-field
-            vim.opt.runtimepath:append(_G._devicons_path)
-          else
-            -- FATAL: headless but no global vars are defined
-            local errmsg = "fzf-lua fatal: '_G._fzf_lua_server', '_G._devicons_path' both nil\n"
-            io.stderr:write(errmsg)
-            print(errmsg)
-          end
-        end
-        -- Prioritize nvim-web-devicons
-        local ret = M.__DEVICONS
-        -- Load mini only if `_G.MiniIcons` is present or if using `mock_nvim_web_devicons()`
-        -- at which point we would like to replace the mock with first-class MiniIcons (#1358)
+  M.PLUGIN = provider == "srv" and M.__SRV or provider == "mini" and M.__MINI
+    or provider == "devicons" and M.__DEVICONS or (function()
+      if _G._fzf_lua_is_headless then
+        -- headless instance, fzf-lua server exists, attempt
+        -- to load icons from main neovim instance
         ---@diagnostic disable-next-line: undefined-field
-        if not M.__DEVICONS:load(do_not_lazy_load) and _G.MiniIcons
-            or M.__DEVICONS:is_mock() and M.__MINI:load(do_not_lazy_load)
-        then
-          ret = M.__MINI
+        if type(_G._fzf_lua_server) == "string" then
+          return M.__SRV
         end
-        -- Load custom setup file
-        if _G._fzf_lua_is_headless
-            ---@diagnostic disable-next-line: undefined-field
-            and _G._devicons_setup and uv.fs_stat(_G._devicons_setup) then
+        ---@diagnostic disable-next-line: undefined-field
+        if _G._devicons_path then
+          -- headless instance, no fzf-lua server was specified
+          -- but we got devicon's lib path, add to runtime path
+          -- so `load()` can find the library
           ---@diagnostic disable-next-line: undefined-field
-          local file = loadfile(_G._devicons_setup)
-          if file then pcall(file) end
+          vim.opt.runtimepath:append(_G._devicons_path)
+        else
+          -- FATAL: headless but no global vars are defined
+          local errmsg = "fzf-lua fatal: '_G._fzf_lua_server', '_G._devicons_path' both nil\n"
+          io.stderr:write(errmsg)
+          print(errmsg)
         end
-        return ret
-      end)()
+      end
+      -- Prioritize nvim-web-devicons
+      local ret = M.__DEVICONS
+      -- Load mini only if `_G.MiniIcons` is present or if using `mock_nvim_web_devicons()`
+      -- at which point we would like to replace the mock with first-class MiniIcons (#1358)
+      ---@diagnostic disable-next-line: undefined-field
+      if not M.__DEVICONS:load(do_not_lazy_load) and _G.MiniIcons
+        or M.__DEVICONS:is_mock() and M.__MINI:load(do_not_lazy_load) then
+        ret = M.__MINI
+      end
+      -- Load custom setup file
+      if _G._fzf_lua_is_headless
+            ---@diagnostic disable-next-line: undefined-field
+            and _G._devicons_setup
+        and uv.fs_stat(_G._devicons_setup) then
+        ---@diagnostic disable-next-line: undefined-field
+        local file = loadfile(_G._devicons_setup)
+        if file then pcall(file) end
+      end
+      return ret
+    end)()
   return M.PLUGIN:load(do_not_lazy_load)
 end
 
@@ -463,7 +460,6 @@ M.unload = function()
   M.PLUGIN:unload()
 end
 
-
 ---@param filepath string
 ---@param extensionOverride string?
 ---@return string, string?
@@ -483,9 +479,9 @@ M.get_devicon = function(filepath, extensionOverride)
 
   if path.ends_with_separator(filepath) then
     -- path is directory
-    return
-        STATE.dir_icon.icon .. (type(STATE.icon_padding) == "string" and STATE.icon_padding or ""),
-        validate_hl(STATE.dir_icon.color)
+    return STATE.dir_icon.icon
+        .. (type(STATE.icon_padding) == "string" and STATE.icon_padding or ""),
+      validate_hl(STATE.dir_icon.color)
   end
 
   local icon, color
@@ -493,8 +489,9 @@ M.get_devicon = function(filepath, extensionOverride)
   local ext = extensionOverride or path.extension(filename, true)
 
   -- lookup directly by filename
-  local by_filename = STATE.icons.by_filename
-      [STATE.icons.by_filename_case_sensitive and filename or filename:lower()]
+  local by_filename = STATE.icons
+    .by_filename
+    [STATE.icons.by_filename_case_sensitive and filename or filename:lower()]
   if by_filename then
     icon, color = by_filename.icon, by_filename.color
   end
@@ -530,7 +527,7 @@ M.get_devicon = function(filepath, extensionOverride)
     local ft_match = _G._fzf_lua_is_headless and path.ft_match or path.ft_match_fast_event
     local ft = ft_match({ filename = filename })
 
-    ---@type  { icon: string?, color: string? }?
+    ---@type { icon: string?, color: string? }?
     local by_ft = ft and #ft > 0 and STATE.icons.by_filetype[ft]
 
     if not by_ft then

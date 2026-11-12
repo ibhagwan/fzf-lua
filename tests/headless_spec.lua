@@ -60,6 +60,7 @@ local exec_term = function(c, cmd, args)
   end)
 end
 
+-- fmt: off
 T["headless"]["file_icons"]["devicons - manual"] = new_set({ parametrize = { { false }, { true } } },
   {
     function(icons)
@@ -74,6 +75,7 @@ T["headless"]["file_icons"]["devicons - manual"] = new_set({ parametrize = { { f
       child.expect_screenshot({ ignore_text = { 24 }, ignore_attr = { 25 } })
     end,
   })
+-- fmt: on
 
 T["headless"]["file_icons"]["server"] = new_set({ parametrize = { { "devicons" }, { "mini" } } }, {
   function(icons)
@@ -94,12 +96,15 @@ T["headless"]["file_icons"]["server"] = new_set({ parametrize = { { "devicons" }
     new_child.init()
     new_child.o.statusline = "fzf://"
     exec_term(new_child, {
-        vim.fs.abspath("./scripts/headless_fd.sh"),
-        "-c", vim.fs.joinpath(child.uv.cwd(), "scripts"),
-        "-x", "rg --files --sort=path",
-        "-f", icons,
-      },
-      { env = { ["FZF_LUA_SERVER"] = fzf_lua_server } })
+      vim.fs.abspath("./scripts/headless_fd.sh"),
+      "-c",
+      vim.fs.joinpath(child.uv.cwd(), "scripts"),
+      "-x",
+      "rg --files --sort=path",
+      "-f",
+      icons,
+    }, { env = { ["FZF_LUA_SERVER"] = fzf_lua_server } }
+    )
     -- Ignore script path and attr the next line
     new_child.expect_screenshot({ ignore_text = { 23 }, ignore_attr = { 24 } })
   end,

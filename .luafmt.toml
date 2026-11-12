@@ -1,4 +1,8 @@
 #
+# Canonical formatter config for this project. `make fmt` and
+# `make fmtcheck` use this file explicitly; luafmt also discovers it
+# automatically when run from the repository root.
+#
 #  https://github.com/EmmyLuaLs/emmylua-analyzer-rust/blob/main/docs/emmylua_formatter/options_EN.md
 #
 level = "Lua51"
@@ -15,11 +19,9 @@ max_line_width = 100
 # Single new line between functions/statements.
 max_blank_lines = 1
 # Auto-expand multiline arrays/tables when they exceed line width.
-# Matches .editorconfig's trailing_table_separator = keep (avoids collapsing).
 table_expand = "Auto"
-# Never auto-expand call arguments into multiple lines.
-# Matches .editorconfig call_arg_parentheses = which keeps them as-is).
-call_args_expand = "Never"
+# Let the formatter choose flat or expanded call arguments based on width.
+call_args_expand = "Auto"
 # Prefer multiline breaking for fluent method chains in statements.
 # Matches .editorconfig style of keeping chain breaks on the tail of a statement.
 prefer_chain_break_on_statement_tail = true
@@ -87,6 +89,10 @@ align_declaration_tags = false
 # Disable aligning all EmmyLua tag columns.
 # Old formatting did not align tag columns.
 align_tag_columns = false
+# Keep compact union types as used throughout the project (e.g. `string|integer`).
+compact_type_or = true
+# Keep plain doc descriptions unwrapped from the `---` prefix (e.g. `---text`).
+space_after_description_dash = false
 
 [align]
 # Disable aligning continuous assignment statements.

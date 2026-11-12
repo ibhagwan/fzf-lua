@@ -1,5 +1,7 @@
 ---@diagnostic disable: param-type-mismatch
-local __FILE__ = assert(debug.getinfo(1, "S")).source:gsub("^@", "")
+local __FILE__ = assert(debug.getinfo(1, "S"))
+  .source
+  :gsub("^@", "")
 local dir = vim.fn.fnamemodify(vim.fn.resolve(__FILE__), ":h:h:p")
 -- Add current directory to 'runtimepath' to be able to use 'lua' files
 vim.opt.runtimepath:append(dir)

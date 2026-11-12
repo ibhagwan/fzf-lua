@@ -1,3 +1,5 @@
+# Editor defaults. Project formatting is enforced with luafmt; see
+# .luafmt.toml and `make fmt` / `make fmtcheck`.
 # https://github.com/CppCXY/EmmyLuaCodeStyle/blob/master/lua.template.editorconfig
 # see https://github.com/CppCXY/EmmyLuaCodeStyle
 [*.lua]
@@ -80,7 +82,8 @@ align_function_params = true
 
 align_continuous_inline_comment = true
 
-align_continuous_assign_statement = true
+# Disabled to match .luafmt.toml (`align.continuous_assign_statement = false`).
+align_continuous_assign_statement = false
 
 align_continuous_rect_table_field = true
 

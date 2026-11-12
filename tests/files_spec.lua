@@ -7,6 +7,7 @@ local new_set = MiniTest.new_set
 local exec_lua = child.lua
 
 -- Helpers with child processes
+-- fmt: off
 --stylua: ignore start
 ---@format disable-next
 local reload = function(config) child.unload(); child.setup(config) end
@@ -17,6 +18,7 @@ local get_lines = function(...) return child.get_lines(...) end
 local type_keys = function(...) return child.type_keys(...) end
 local sleep = function(ms) helpers.sleep(ms, child) end
 --stylua: ignore end
+-- fmt: on
 
 local T = helpers.new_set_with_child(child)
 
@@ -73,7 +75,8 @@ T["files"]["previewer"]["builtin"] = new_set({ parametrize = { { "ci" }, { "buil
       __expect_lines = true,
       __screen_opts = helpers.IS_WIN()
           -- Ignore debug command due to ^! escape sequence on Win
-          and { ignore_text = { 6, 28 }, normalize_paths = true } or nil,
+          and { ignore_text = { 6, 28 }, normalize_paths = true }
+        or nil,
       debug = 1,
       hidden = false,
       file_icons = icons,
@@ -81,15 +84,14 @@ T["files"]["previewer"]["builtin"] = new_set({ parametrize = { { "ci" }, { "buil
       multiprocess = true,
       cmd = "rg --files --sort=path -g !tests/**",
       winopts = { preview = { scrollbar = false } },
-      previewer = previewer == "builtin"
-          and "builtin"
-          or function() return require("fzf-lua.test.previewer").builtin end,
+      previewer = previewer == "builtin" and "builtin"
+        or function() return require("fzf-lua.test.previewer").builtin end,
       __after_open = function()
         -- Verify previewer "last_entry" was set
         child.type_keys("<c-j>")
         child.wait_until(function()
-          return exec_lua([[return FzfLua.utils.fzf_winobj()._previewer.last_entry]]) ==
-              (icons and " LICENSE" or "LICENSE")
+          return exec_lua([[return FzfLua.utils.fzf_winobj()._previewer.last_entry]])
+            == (icons and " LICENSE" or "LICENSE")
         end)
       end,
     })
@@ -133,7 +135,8 @@ T["files"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find
     if exec == "fd" then
       exclude = "{}"
       opts = {
-        fd_opts = "--color=never --type f --type l --exclude .git --exclude tests | sort" }
+        fd_opts = "--color=never --type f --type l --exclude .git --exclude tests | sort",
+      }
     elseif exec == "rg" then
       exclude = [[{ "fd", "fdfind" }]]
       opts = { rg_opts = '--files -g "!.git" --sort=path -g !tests/**' }
@@ -145,11 +148,9 @@ T["files"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find
       helpers.SKIP_IF_WIN("`dir` output cannot match the linux `find` reference")
       exclude = [[{ "fd", "fdfind", "rg" }]]
       opts = {
-        find_opts =
-        [[-type f ! -path '*/.git/*' ! -path '*/doc/tags' ! -path '*/deps/*' ! -path '*/tests/*'| sort]],
-        dir_opts =
-        [[/s/b/a:-d | findstr -v "\.git\\" | findstr -v "doc\\tags" | findstr -v "deps" | findstr -v "tests" | sort]],
-        strip_cwd_prefix = true
+        find_opts = [[-type f ! -path '*/.git/*' ! -path '*/doc/tags' ! -path '*/deps/*' ! -path '*/tests/*'| sort]],
+        dir_opts = [[/s/b/a:-d | findstr -v "\.git\\" | findstr -v "doc\\tags" | findstr -v "deps" | findstr -v "tests" | sort]],
+        strip_cwd_prefix = true,
       }
     end
     -- sort produces different output on Windows, ignore the mismatch
@@ -158,21 +159,26 @@ T["files"]["executable"] = new_set({ parametrize = { { "fd" }, { "rg" }, { "find
         table.insert(screen_opts.ignore_text, i)
       end
     end
-    exec_lua(([[
+    exec_lua(
+      ([[
       _G._exec = vim.fn.executable
       vim.fn.executable = function(x)
         if vim.tbl_contains(%s, x) then return 0 end
         return _G._exec(x)
       end
-    ]]):format(exclude))
-    helpers.FzfLua.files(child, vim.tbl_deep_extend("keep", opts, {
-      __expect_lines = true,
-      __screen_opts = screen_opts,
-      debug = 1,
-      previewer = false,
-      cwd_prompt = false,
-      multiprocess = true, -- force mp for "[DEBUG]" line
-    }))
+    ]]):format(exclude)
+    )
+    helpers.FzfLua.files(
+      child,
+      vim.tbl_deep_extend("keep", opts, {
+        __expect_lines = true,
+        __screen_opts = screen_opts,
+        debug = 1,
+        previewer = false,
+        cwd_prompt = false,
+        multiprocess = true, -- force mp for "[DEBUG]" line
+      })
+    )
   end,
 })
 
@@ -191,7 +197,7 @@ T["files"]["preview should work after chdir #1864"] = function()
       exec_lua([[vim.cmd.cd("./tests")]])
       child.type_keys([[<c-n>]])
       sleep(100)
-    end
+    end,
   })
 end
 
@@ -235,7 +241,7 @@ T["files"]["line_query"] = function()
     previewer = "builtin",
     line_query = true,
     query = "lic es :21",
-    __after_open = function() if not helpers.IS_LINUX() then sleep(250) end end
+    __after_open = function() if not helpers.IS_LINUX() then sleep(250) end end,
   }
   helpers.FzfLua.files(child, opts)
   -- child.wait_until(function() return exec_lua([[return _G._fzf_lua_on_create]]) == vim.NIL end)

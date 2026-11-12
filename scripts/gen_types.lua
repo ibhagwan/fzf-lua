@@ -27,9 +27,13 @@ for k, v in vim.spairs(lazyloaded_modules) do
 end
 write("\n")
 
-local obj = vim.system({ "sh", "-c", [[
+local obj = vim.system({
+  "sh",
+  "-c",
+  [[
   emmylua_doc_cli lua/fzf-lua/ --output-format json --output stdout | jq '.types[] | select(.name == "fzf-lua.Win")'
-]] }):wait()
+]],
+}):wait()
 
 ---@type EmmyDocTypeClass
 local res = vim.json.decode(obj.stdout or "")
@@ -40,8 +44,9 @@ local write_member = function(m)
   write("---@field " .. m.name .. " ")
   write(m.is_async and "async" or "")
   write("fun(")
+  local params_table = m.params --[[@as table<integer, EmmyDocParam>]]
   ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
-  local params = vim.iter(m.params --[[@as table<integer, EmmyDocParam>]])
+  local params = vim.iter(params_table)
   ---@diagnostic disable-next-line: access-invisible
   local p1 = params:next()
   if p1 then write(("%s: %s"):format(p1.name, p1.typ)) end
@@ -49,8 +54,9 @@ local write_member = function(m)
   params:each(function(p) write((", %s: %s"):format(p.name, p.typ)) end)
   write(")")
 
+  local returns_table = m.returns --[[@as table<integer, EmmyDocReturn>]]
   ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
-  local returns = vim.iter(m.returns --[[@as table<integer, EmmyDocReturn>]])
+  local returns = vim.iter(returns_table)
   ---@diagnostic disable-next-line: access-invisible
   local r1 = returns:next()
   if r1 then write((": " .. r1.typ)) end

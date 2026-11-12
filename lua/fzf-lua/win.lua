@@ -77,7 +77,7 @@ function PathShortener._apply_line(buf, row, shorten_len)
   -- On Windows, skip the drive letter colon (e.g., C:)
   -- Check if char at path_start+1 is colon AND char at path_start+2 is a path separator
   if string.byte(line, path_start + 1) == path.colon_byte
-      and path.byte_is_separator(string.byte(line, path_start + 2)) then
+    and path.byte_is_separator(string.byte(line, path_start + 2)) then
     colon_search_start = path_start + 2
   end
   local colon_pos = line:find(":", colon_search_start)
@@ -172,7 +172,7 @@ end
 
 ---@class fzf-lua.Win
 ---@field winopts fzf-lua.config.WinoptsResolved
----@field actions fzf-lua.config.Actions|{}
+---@field actions fzf-lua.config.Actions|{ }
 ---@field hls fzf-lua.config.HLS
 ---@field fzf_bufnr integer
 ---@field fzf_winid integer
@@ -263,14 +263,16 @@ function FzfWin:setup_keybinds()
     for k, v in pairs(self.keymap.builtin) do
       if type(v) == "string" and v:match("toggle%-preview%-c?cw") then
         k = utils.neovim_bind_to_fzf(k)
-        self.keymap.fzf[k] = "transform:" .. FzfLua.shell.stringify_data(function(args, _, _)
-          -- only set the layout if preview isn't hidden
-          if not tonumber(args[1]) then return end
-          assert(keymap_tbl[v])
-          assert(loadstring(string.format([[require("fzf-lua.%s").%s]],
-            keymap_tbl[v].module, keymap_tbl[v].fnc)))()
-          return string.format("change-preview-window(%s)", self:normalize_preview_layout().str)
-        end, {}, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")
+        self.keymap.fzf[k] = "transform:"
+          .. FzfLua.shell.stringify_data(function(args, _, _)
+            -- only set the layout if preview isn't hidden
+            if not tonumber(args[1]) then return end
+            assert(keymap_tbl[v])
+            assert(loadstring(
+              string.format([[require("fzf-lua.%s").%s]], keymap_tbl[v].module, keymap_tbl[v].fnc)
+            ))()
+            return string.format("change-preview-window(%s)", self:normalize_preview_layout().str)
+          end, {}, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")
       end
     end
   elseif self.winopts.split or not self.previewer_is_builtin then
@@ -330,8 +332,11 @@ function FzfWin:normalize_preview_layout()
   local preview_str, pos ---@type string, fzf-lua.win.previewPos
   if self._preview_pos_force then
     -- Get the correct layout string and size when set from `:toggle_preview_cw`
-    preview_str = assert((self._preview_pos_force == "up" or self._preview_pos_force == "down")
-      and self.winopts.preview.vertical or self.winopts.preview.horizontal)
+    preview_str = assert(
+      (self._preview_pos_force == "up" or self._preview_pos_force == "down")
+        and self.winopts.preview.vertical
+        or self.winopts.preview.horizontal
+    )
     pos = self._preview_pos_force
   else
     preview_str = self:fzf_preview_layout_str()
@@ -343,7 +348,7 @@ function FzfWin:normalize_preview_layout()
   return {
     pos = pos,
     size = abs or (percent / 100),
-    str = string.format("%s:%s", pos, tostring(abs or percent) .. ((not abs) and "%" or ""))
+    str = string.format("%s:%s", pos, tostring(abs or percent) .. ((not abs) and "%" or "")),
   }
 end
 
@@ -353,9 +358,10 @@ function FzfWin:normalize_layout()
   -- 1. no previewer (always)
   -- 2. builtin previewer (hidden and not "extend")
   -- 3. fzf previewer (not "extend" or not hidden)
-  if not self:has_previewer()
-      or (self.previewer_is_builtin and (self.preview_hidden and self.toggle_behavior ~= "extend"))
-      or (not self.previewer_is_builtin and (self.toggle_behavior ~= "extend" or not self.preview_hidden)) then
+  if not self:has_previewer() or (self.previewer_is_builtin
+      and (self.preview_hidden and self.toggle_behavior ~= "extend"))
+    or (not self.previewer_is_builtin
+      and (self.toggle_behavior ~= "extend" or not self.preview_hidden)) then
     return 1, false
   end
   -- has previewer, but when nwin=1, reduce fzf main layout as if the previewer is displayed
@@ -377,7 +383,7 @@ function FzfWin:generate_layout()
     name = "fzf",
     layout = preview and layout.pos or nil,
     nwin = nwin,
-    opts = self._o
+    opts = self._o,
   })
   if not preview then
     return {
@@ -391,13 +397,13 @@ function FzfWin:generate_layout()
         relative = winopts.relative or "editor",
         zindex = winopts.zindex,
         hide = winopts.hide,
-      }
+      },
     }
   end
 
   if self.previewer_is_builtin and winopts.split then
-    local wininfo = utils.__HAS_NVIM_010 and api.nvim_win_get_config(self.fzf_winid) or
-        assert(fn.getwininfo(self.fzf_winid)[1])
+    local wininfo = utils.__HAS_NVIM_010 and api.nvim_win_get_config(self.fzf_winid)
+      or assert(fn.getwininfo(self.fzf_winid)[1])
     -- no signcolumn/number/relativenumber (in set_style_minimal)
     ---@diagnostic disable-next-line: missing-fields
     winopts = {
@@ -415,8 +421,10 @@ function FzfWin:generate_layout()
   ---@cast height integer
   ---@cast width integer
   local preview_pos, preview_size = layout.pos, layout.size
-  local pborder, ph, pw = self:normalize_border(self._o.winopts.preview.border,
-    { type = "nvim", name = "prev", layout = preview and layout.pos, nwin = nwin, opts = self._o })
+  local pborder, ph, pw = self:normalize_border(
+    self._o.winopts.preview.border,
+    { type = "nvim", name = "prev", layout = preview and layout.pos, nwin = nwin, opts = self._o }
+  )
   if winopts.split then
     -- Custom "split"
     pwopts = { relative = "win", anchor = "NW", row = 0, col = 0 }
@@ -442,9 +450,10 @@ function FzfWin:generate_layout()
       -- https://github.com/junegunn/fzf/blob/1afd14381079a35eac0a4c2a5cacb86e2a3f476b/src/terminal.go#L1820
       -- fzf's previewer border is draw inside preview window, so shrink builtin previewer if it have "top border"
       -- to ensure the fzf list height is the same between fzf/builtin
-      local off = (preview_size < 1 and self.previewer_is_builtin and ph > 0) and 1
-          or (preview_size >= 1 and not self.previewer_is_builtin and ph > 0) and -ph
-          or 0
+      local off = (preview_size < 1 and self.previewer_is_builtin and ph > 0) and 1 or (preview_size
+          >= 1 and not self.previewer_is_builtin
+          and ph > 0)
+          and -ph or 0
       pwopts.height = self:normalize_size(preview_size, (height + off)) - off
       height = height - pwopts.height
       if preview_pos == "down" then
@@ -462,9 +471,10 @@ function FzfWin:generate_layout()
     else -- left|right
       pwopts.row = row
       pwopts.height = height
-      local off = (preview_size < 1 and self.previewer_is_builtin and pw > 0) and 1
-          or (preview_size >= 1 and not self.previewer_is_builtin and pw > 0) and -pw
-          or 0
+      local off = (preview_size < 1 and self.previewer_is_builtin and pw > 0) and 1 or (preview_size
+          >= 1 and not self.previewer_is_builtin
+          and pw > 0)
+          and -pw or 0
       pwopts.width = self:normalize_size(preview_size, (width + off)) - off
       width = width - pwopts.width
       if preview_pos == "right" then
@@ -522,8 +532,10 @@ function FzfWin:tmux_columns()
     end
   end)()
   local out = utils.io_system({
-    "tmux", "display-message", "-p",
-    is_popup and "#{window_width}" or "#{pane_width}"
+    "tmux",
+    "display-message",
+    "-p",
+    is_popup and "#{window_width}" or "#{pane_width}",
   })
   local cols = tonumber(out:match("%d+"))
   -- Calc the correct width when using tmux popup or left|right splits
@@ -540,16 +552,15 @@ function FzfWin:columns(no_fullscreen)
   -- in order to get an accurate alternate layout trigger that will also be consistent
   -- when starting with `winopts.fullscreen == true`
   local winopts = no_fullscreen and self._o.winopts or self.winopts
-  return self._o._is_fzf_tmux and self:tmux_columns()
-      or vim.is_callable(_G.fzf_tty_get_width) and _G.fzf_tty_get_width()
-      or winopts.split and api.nvim_win_get_width(self.fzf_winid or 0)
-      or self:normalize_size(winopts.width, vim.o.columns)
+  return self._o._is_fzf_tmux and self:tmux_columns() or vim.is_callable(_G.fzf_tty_get_width)
+      and _G.fzf_tty_get_width() or winopts.split and api.nvim_win_get_width(self.fzf_winid or 0)
+    or self:normalize_size(winopts.width, vim.o.columns)
 end
 
 function FzfWin:fzf_preview_layout_str()
   local columns = self:columns()
   local is_hsplit = self.winopts.preview.layout == "horizontal"
-      or self.winopts.preview.layout == "flex" and columns > self.winopts.preview.flip_columns
+    or self.winopts.preview.layout == "flex" and columns > self.winopts.preview.flip_columns
   return is_hsplit and self._o.winopts.preview.horizontal or self._o.winopts.preview.vertical
 end
 
@@ -589,11 +600,15 @@ function FzfWin:normalize_winopts()
   local nwin, preview = self:normalize_layout()
   local preview_pos = preview and self:normalize_preview_layout().pos or nil
   if preview and self.previewer_is_builtin then nwin = 2 end
-  local _, h, w = self:normalize_border(self._o.winopts.border,
-    { type = "nvim", name = "fzf", layout = preview_pos, nwin = nwin, opts = self._o })
+  local _, h, w = self:normalize_border(
+    self._o.winopts.border,
+    { type = "nvim", name = "fzf", layout = preview_pos, nwin = nwin, opts = self._o }
+  )
   if preview and self.previewer_is_builtin then
-    local _, ph, pw = self:normalize_border(self._o.winopts.preview.border,
-      { type = "nvim", name = "prev", layout = preview_pos, nwin = nwin, opts = self._o })
+    local _, ph, pw = self:normalize_border(
+      self._o.winopts.preview.border,
+      { type = "nvim", name = "prev", layout = preview_pos, nwin = nwin, opts = self._o }
+    )
     if preview_pos == "up" or preview_pos == "down" then
       h, w = h + ph, math.max(w, pw)
     else -- left|right
@@ -646,13 +661,14 @@ end
 function FzfWin:reset_winhl(win, pwinhl)
   -- derive the highlights from the window type
   local hls = self.hls
-  local winhls = pwinhl or {
-    Normal = hls.normal,
-    NormalFloat = hls.normal,
-    FloatBorder = hls.border,
-    CursorLine = hls.cursorline,
-    CursorLineNr = hls.cursorlinenr,
-  }
+  local winhls = pwinhl
+    or {
+      Normal = hls.normal,
+      NormalFloat = hls.normal,
+      FloatBorder = hls.border,
+      CursorLine = hls.cursorline,
+      CursorLineNr = hls.cursorlinenr,
+    }
   (pwinhl and utils.wo[win] or utils.wo[win][0]).winhl = make_winhl(winhls)
 end
 
@@ -686,15 +702,14 @@ end
 function FzfWin:set_backdrop()
   -- No backdrop for split, only floats / tmux
   if self.winopts.split then return end
-  self.on_closes.backdrop = require("fzf-lua.win.backdrop").open(self.winopts.backdrop,
-    self.winopts.zindex - 2, self.hls)
+  local backdrop = require("fzf-lua.win.backdrop")
+  self.on_closes.backdrop = backdrop.open(self.winopts.backdrop, self.winopts.zindex - 2, self.hls)
 end
 
 ---@param o fzf-lua.config.Resolved
 ---@return fzf-lua.Win
 function FzfWin.new(o)
-  if not _self then
-  elseif _self._hidden_fzf_bufnr then
+  if not _self then elseif _self._hidden_fzf_bufnr then
     -- the hidden instance is discarded, clear its cached preview buffers,
     -- otherwise they leak with 'bufhidden=hide' (#2855)
     if _self._previewer and _self._previewer.bcache then
@@ -722,8 +737,10 @@ function FzfWin.new(o)
   end
   o = o or {} ---@type fzf-lua.config.Resolved
   ---@type fzf-lua.Win
-  local self = utils.setmetatable({}, -- gc is unused now, only used to test _self is nullrified
-    { __index = FzfWin, __gc = function() _G._fzf_lua_gc_called = true end })
+  local self = utils.setmetatable(
+    {}, -- gc is unused now, only used to test _self is nullrified
+    { __index = FzfWin, __gc = function() _G._fzf_lua_gc_called = true end }
+  )
   self._o = o
   self.hls = o.hls
   self.actions = o.actions
@@ -741,8 +758,8 @@ function FzfWin.new(o)
 end
 
 ---@param win integer
----@param opts vim.wo|{}
----@return vim.wo|{}
+---@param opts vim.wo|{ }
+---@return vim.wo|{ }
 function FzfWin:get_winopts(win, opts)
   local _ = self
   if not win or not api.nvim_win_is_valid(win) then return {} end
@@ -754,7 +771,7 @@ function FzfWin:get_winopts(win, opts)
 end
 
 ---@param win integer
----@param opts vim.wo|{}
+---@param opts vim.wo|{ }
 ---@param ignore_events boolean?
 ---@param global boolean?
 function FzfWin:set_winopts(win, opts, ignore_events, global)
@@ -803,9 +820,7 @@ function FzfWin:attach_previewer(previewer)
 end
 
 function FzfWin:validate_preview()
-  return not self.closing
-      and self.preview_winid
-      and api.nvim_win_is_valid(self.preview_winid)
+  return not self.closing and self.preview_winid and api.nvim_win_is_valid(self.preview_winid)
 end
 
 function FzfWin:redraw_preview()
@@ -826,8 +841,9 @@ function FzfWin:redraw_preview()
   else
     local tmp_buf = previewer:get_tmp_buffer()
     -- No autocmds, can only be sent with 'nvim_open_win'
-    self.preview_winid = api.nvim_open_win(tmp_buf, false,
-      vim.tbl_extend("force", preview, { noautocmd = true }))
+    self.preview_winid = api.nvim_open_win(
+      tmp_buf, false, vim.tbl_extend("force", preview, { noautocmd = true })
+    )
     -- Add win local var for the preview|border windows
     api.nvim_win_set_var(self.preview_winid, "fzf_lua_preview", true)
   end
@@ -842,8 +858,7 @@ function FzfWin:redraw_preview()
 end
 
 function FzfWin:validate()
-  return self.fzf_winid and self.fzf_winid > 0
-      and api.nvim_win_is_valid(self.fzf_winid)
+  return self.fzf_winid and self.fzf_winid > 0 and api.nvim_win_is_valid(self.fzf_winid)
 end
 
 function FzfWin:redraw()
@@ -861,9 +876,11 @@ end
 ---@param hl? string|false hl will also be used as fallback, if title part don't have hl
 ---@return [string, string][]
 local function make_title(title, hl)
-  if type(title) == "string" then return { { title, type(hl) == "string" and hl or "FloatTitle" } } end
+  if type(title) == "string" then
+    return { { title, type(hl) == "string" and hl or "FloatTitle" } }
+  end
   return type(title) ~= "table" and { { "", hl or "FloatTitle" } }
-      or vim.tbl_map(function(p) return { p[1], p[2] or hl or "FloatTitle" } end, title)
+    or vim.tbl_map(function(p) return { p[1], p[2] or hl or "FloatTitle" } end, title)
 end
 
 function FzfWin:redraw_main()
@@ -874,7 +891,8 @@ function FzfWin:redraw_main()
   local winopts = vim.tbl_extend("keep", {
     title = make_title(self.winopts.title, self.hls.title),
     title_pos = self.winopts.title_pos,
-  }, self.layout.fzf)
+  }, self.layout.fzf
+  )
 
   if self:validate() then
     local prev = self._previewer
@@ -1010,7 +1028,8 @@ function FzfWin:set_style_minimal(winid, global)
     signcolumn = "no",
     foldcolumn = "0",
     colorcolumn = "",
-  }, false, global)
+  }, false, global
+  )
 end
 
 function FzfWin:create()
@@ -1070,7 +1089,7 @@ function FzfWin:create()
       -- window may not always return to the correct source win
       -- depending on the user's split configuration (#397)
       if self.src_winid and api.nvim_win_is_valid(self.src_winid)
-          and self.src_winid ~= api.nvim_get_current_win() then
+        and self.src_winid ~= api.nvim_get_current_win() then
         api.nvim_set_current_win(self.src_winid)
       end
       -- remove all windows from the restore cmd that have been closed in the meantime
@@ -1155,12 +1174,8 @@ end
 ---@param winid? integer
 ---@param last_winid? integer
 local restore_lastwin = function(winid, last_winid)
-  if
-      not winid
-      or not last_winid
-      or not api.nvim_win_is_valid(last_winid)
-      or not api.nvim_win_is_valid(winid)
-  then
+  if not winid or not last_winid or not api.nvim_win_is_valid(last_winid)
+    or not api.nvim_win_is_valid(winid) then
     return
   end
   -- switching to `last_winid` only restores the `CTRL-W p` history. Floats
@@ -1286,7 +1301,7 @@ function FzfWin:was_hidden()
 end
 
 ---SIGWINCH/on_SIGWINCH is nop if fzf < v0.46
----@param opts fzf-lua.config.Resolved|{}
+---@param opts fzf-lua.config.Resolved|{ }
 ---@param event string|integer array part always emit, non-array part only emit on given events
 ---@param cb function
 ---@return boolean?
@@ -1297,16 +1312,22 @@ function FzfWin.on_SIGWINCH(opts, event, cb)
   opts.__sigwinch_cb[event] = cb -- override duplicate keys
   if created then return true end
   opts._fzf_cli_args = opts._fzf_cli_args or {}
-  table.insert(opts._fzf_cli_args,
-    libuv.cli_raw_arg("--bind=", "resize:+transform:" .. FzfLua.shell.stringify_data(function(args)
-      local events = vim.tbl_keys(vim.list_slice(opts.__sigwinch_cb))
-      vim.list_extend(events, opts.__sigwinches or {})
-      opts.__sigwinches = nil
-      ---@diagnostic disable-next-line: undefined-field
-      local acts = vim.tbl_map(function(k) return opts.__sigwinch_cb[k](args) end, events)
-      acts = vim.tbl_filter(function(a) return a and #a > 0 end, acts)
-      return table.concat(acts, "+")
-    end, opts, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")))
+  table.insert(
+    opts._fzf_cli_args,
+    libuv.cli_raw_arg(
+      "--bind=",
+      "resize:+transform:"
+        .. FzfLua.shell.stringify_data(function(args)
+          local events = vim.tbl_keys(vim.list_slice(opts.__sigwinch_cb))
+          vim.list_extend(events, opts.__sigwinches or {})
+          opts.__sigwinches = nil
+          ---@diagnostic disable-next-line: undefined-field
+          local acts = vim.tbl_map(function(k) return opts.__sigwinch_cb[k](args) end, events)
+          acts = vim.tbl_filter(function(a) return a and #a > 0 end, acts)
+          return table.concat(acts, "+")
+        end, opts, utils.__IS_WINDOWS and "%FZF_PREVIEW_LINES%" or "$FZF_PREVIEW_LINES")
+    )
+  )
   return true
 end
 
@@ -1344,8 +1365,8 @@ end
 
 function FzfWin:update_preview_scrollbar()
   if not self:validate_preview() then return end
-  self.on_closes.scrollbar = require("fzf-lua.win.scrollbar").update(self.preview_winid, self.hls,
-    self.winopts)
+  local scrollbar = require("fzf-lua.win.scrollbar")
+  self.on_closes.scrollbar = scrollbar.update(self.preview_winid, self.hls, self.winopts)
 end
 
 function FzfWin:update_statusline()
@@ -1363,14 +1384,12 @@ function FzfWin:update_statusline()
   local parts = vim.tbl_map(function(p) return ("%%#%s#%s%%#fzf3#"):format(p[2], p[1]) end, title)
   local picker = table.remove(parts, 1) or ""
   vim.wo[self.fzf_winid].statusline = "%#fzf1# > %#fzf2#fzf-lua%#fzf3#"
-      .. string.format(" %s %s", picker, table.concat(parts, ""))
+    .. string.format(" %s %s", picker, table.concat(parts, ""))
 end
 
 function FzfWin:update_fzf_border_label()
-  if not utils.has(self._o, "fzf")
-      or not self._o.fzf_opts["--border"]
-      or self._o.fzf_opts["--border-label"] == false
-  then
+  if not utils.has(self._o, "fzf") or not self._o.fzf_opts["--border"]
+    or self._o.fzf_opts["--border-label"] == false then
     return
   end
   local titlestr = self.winopts.title or (" %s "):format(tostring(FzfLua.get_info().cmd))
@@ -1388,8 +1407,8 @@ function FzfWin:update_main_title(title)
   utils.win_set_config(self.fzf_winid, {
     title = make_title(title, self.hls.title),
     title_pos = self.winopts.title_pos,
-    border = not utils.__HAS_NVIM_011
-        and (api.nvim_win_get_config(self.fzf_winid).border or "none") or nil,
+    border = not utils.__HAS_NVIM_011 and (api.nvim_win_get_config(self.fzf_winid).border or "none")
+      or nil,
   })
 end
 
@@ -1400,7 +1419,8 @@ function FzfWin:update_preview_title(title)
     title = make_title(title, self.hls.preview_title),
     title_pos = self.winopts.preview.title_pos,
     border = not utils.__HAS_NVIM_011
-        and (api.nvim_win_get_config(self.preview_winid).border or "none") or nil,
+      and (api.nvim_win_get_config(self.preview_winid).border or "none")
+      or nil,
   })
 end
 
@@ -1478,9 +1498,7 @@ function FzfWin:toggle_preview_behavior()
 end
 
 function FzfWin:toggle_preview_ts_ctx()
-  if self:validate_preview()
-      and self._previewer
-      and self._previewer.ts_ctx_toggle then
+  if self:validate_preview() and self._previewer and self._previewer.ts_ctx_toggle then
     self._previewer:ts_ctx_toggle()
   end
 end
@@ -1497,9 +1515,7 @@ end
 
 ---@param num integer
 function FzfWin:preview_ts_ctx_inc_dec(num)
-  if self:validate_preview()
-      and self._previewer
-      and self._previewer.ts_ctx_inc_dec_maxlines then
+  if self:validate_preview() and self._previewer and self._previewer.ts_ctx_inc_dec_maxlines then
     self._previewer:ts_ctx_inc_dec_maxlines(num)
   end
 end
@@ -1507,9 +1523,7 @@ end
 ---@alias fzf-lua.win.direction "top"|"bottom"|"half-page-up"|"half-page-down"|"page-up"|"page-down"|"line-up"|"line-down"|"reset"
 ---@param direction fzf-lua.win.direction
 function FzfWin:preview_scroll(direction)
-  if self:validate_preview()
-      and self._previewer
-      and self._previewer.scroll then
+  if self:validate_preview() and self._previewer and self._previewer.scroll then
     -- Do not trigger "ModeChanged"
     utils.eventignore(function() self._previewer:scroll(direction) end)
   end
@@ -1518,17 +1532,23 @@ end
 function FzfWin:toggle_help()
   local zindex = self.winopts.zindex + 2
   local mode = self.previewer_is_builtin and "builtin" or "fzf"
-  self.on_closes.help = require("fzf-lua.win.help").toggle(self.keymap, self.actions, self.hls,
-    zindex, _preview_keymaps, mode, self._o.help_open_win)
+  local help = require("fzf-lua.win.help")
+  self.on_closes.help = help.toggle(
+    self.keymap, self.actions, self.hls, zindex, _preview_keymaps, mode, self._o.help_open_win
+  )
 end
 
 ---@type fzf-lua.win.api
 local M = setmetatable({}, {
   __index = function(m, k)
-    rawset(m, k, FzfLua._exported_wapi[k] and function(...)
-      if not _self then return end
-      return _self[k](_self, ...)
-    end or FzfWin[k])
+    rawset(
+      m, k,
+      FzfLua._exported_wapi[k]
+        and function(...)
+          if not _self then return end
+          return _self[k](_self, ...)
+        end or FzfWin[k]
+    )
     return rawget(m, k)
   end,
 })

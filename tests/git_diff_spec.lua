@@ -17,7 +17,8 @@ local T = helpers.new_set_with_child(child, {
       orig_cwd = child.fn.getcwd()
       orig_shell = child.o.shell
       orig_env_shell = child.env.SHELL
-      repo = exec_lua([[
+      repo = exec_lua(
+        [[
         local dir = vim.fn.tempname()
         vim.fn.mkdir(dir .. "/(dir)", "p")
         -- Initialize repo and disable signing so commits work even when the
@@ -38,7 +39,8 @@ local T = helpers.new_set_with_child(child, {
         fd:write("two\n")
         fd:close()
         return dir
-      ]])
+      ]]
+      )
       child.cmd("cd " .. vim.fn.fnameescape(assert(repo)))
     end,
     post_case = function()
@@ -65,13 +67,16 @@ T["git_diff"]["preview with special chars in fish"] = function()
 
   -- Prefer a real fish shell, but CI images do not install fish. A POSIX sh
   -- symlink named "fish" still exercises the fish-only preview wrapping path.
-  local fish = child.fn.executable("fish") == 1 and child.fn.exepath("fish") or exec_lua([[
+  local fish = child.fn.executable("fish") == 1 and child.fn.exepath("fish")
+    or exec_lua(
+      [[
     local dir = vim.fn.tempname()
     vim.fn.mkdir(dir, "p")
     local link = dir .. "/fish"
     assert(vim.uv.fs_symlink(vim.fn.exepath("sh"), link))
     return link
-  ]])
+  ]]
+    )
 
   child.o.shell = fish
   child.env.SHELL = fish

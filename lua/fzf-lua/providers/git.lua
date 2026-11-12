@@ -21,7 +21,7 @@ local function set_git_cwd_args(opts)
   return opts
 end
 
----@param opts fzf-lua.config.GitFiles|{}?
+---@param opts fzf-lua.config.GitFiles|{ }?
 ---@return thread?, string?, table?
 M.files = function(opts)
   ---@type fzf-lua.config.GitFiles
@@ -32,7 +32,7 @@ M.files = function(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
 
----@param opts fzf-lua.config.GitStatus|{}?
+---@param opts fzf-lua.config.GitStatus|{ }?
 ---@return thread?, string?, table?
 M.status = function(opts)
   ---@type fzf-lua.config.GitStatus
@@ -41,7 +41,10 @@ M.status = function(opts)
   opts = set_git_cwd_args(opts)
   if not opts.cwd then return end
   if opts.preview then
-    opts.preview = path.git_cwd(opts.preview --[[@as string]], opts)
+    opts.preview = path.git_cwd(
+      opts.preview, --[[@as string]]
+      opts
+    )
   end
   -- we don't need git icons since we get them
   -- as part of our `git status -s`
@@ -80,18 +83,24 @@ local function git_preview(opts, file)
     opts.preview_pager = opts.preview_pager(opts)
   end
   if opts.preview_pager then
-    opts.preview = string.format("%s | %s", opts.preview,
-      utils._if_win_normalize_vars(opts.preview_pager))
+    opts.preview = string.format(
+      "%s | %s", opts.preview, utils._if_win_normalize_vars(opts.preview_pager)
+    )
   end
   return opts.preview
 end
 
----@param opts fzf-lua.config.GitBase|{}?
+---@param opts fzf-lua.config.GitBase|{ }?
 ---@param ref string
 ---@return boolean
 local git_validate_ref = function(opts, ref)
-  local cmd = path.git_cwd({ "git", "rev-parse", "--verify", ref }, opts --[[@as table]])
-  local _, exit_code = utils.io_systemlist(cmd --[[@as string[] ]])
+  local cmd = path.git_cwd(
+    { "git", "rev-parse", "--verify", ref },
+    opts --[[@as table]]
+  )
+  local _, exit_code = utils.io_systemlist(
+    cmd --[[@as string[] ]]
+  )
   if exit_code ~= 0 then
     utils.warn("Invalid git ref %s", ref)
     return false
@@ -119,8 +128,11 @@ local normalize_diff_opts = function(opts)
   if not opts.ref and not opts.ref1 then
     local cmd = path.git_cwd(
       { "git", "-c", "color.status=false", "--no-optional-locks", "status", "--porcelain=v1" },
-      opts --[[@as table]])
-    local out, exit_code = utils.io_systemlist(cmd --[[@as string[] ]])
+      opts --[[@as table]]
+    )
+    local out, exit_code = utils.io_systemlist(
+      cmd --[[@as string[] ]]
+    )
     if exit_code == 0 and #out == 0 then
       opts.ref = "HEAD^"
     else
@@ -142,7 +154,7 @@ local normalize_diff_opts = function(opts)
   return set_git_cwd_args(opts)
 end
 
----@param opts fzf-lua.config.GitDiff|{}?
+---@param opts fzf-lua.config.GitDiff|{ }?
 ---@return thread?, string?, table?
 M.diff = function(opts)
   ---@type fzf-lua.config.GitDiff
@@ -153,8 +165,7 @@ M.diff = function(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
 
-
----@param opts fzf-lua.config.GitHunks|{}?
+---@param opts fzf-lua.config.GitHunks|{ }?
 ---@return thread?, string?, table?
 M.hunks = function(opts)
   ---@type fzf-lua.config.GitHunks
@@ -170,7 +181,7 @@ M.hunks = function(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
 
----@param opts fzf-lua.config.GitCommits|{}?
+---@param opts fzf-lua.config.GitCommits|{ }?
 ---@return thread?, string?, table?
 M.commits = function(opts)
   ---@type fzf-lua.config.GitCommits
@@ -180,7 +191,7 @@ M.commits = function(opts)
   return git_cmd(opts)
 end
 
----@param opts fzf-lua.config.GitReflog|{}?
+---@param opts fzf-lua.config.GitReflog|{ }?
 ---@return thread?, string?, table?
 M.reflog = function(opts)
   ---@type fzf-lua.config.GitReflog
@@ -190,7 +201,7 @@ M.reflog = function(opts)
   return git_cmd(opts)
 end
 
----@param opts fzf-lua.config.GitBcommits|{}?
+---@param opts fzf-lua.config.GitBcommits|{ }?
 ---@return thread?, string?, table?
 M.bcommits = function(opts)
   ---@type fzf-lua.config.GitBcommits
@@ -207,7 +218,9 @@ M.bcommits = function(opts)
   -- but overall it's not a big deal as it's a pretty cheap call
   -- first 'git_root' call won't print a warning to ':messages'
   if not opts.cwd and not opts.git_dir then
-    opts.cwd = path.git_root({ cwd = vim.fn.expand("%:p:h") --[[@as string]] }, true)
+    opts.cwd = path.git_root({
+      cwd = vim.fn.expand("%:p:h"), --[[@as string]]
+    }, true)
   end
   local git_root = path.git_root(opts)
   if not git_root then return end
@@ -218,12 +231,20 @@ M.bcommits = function(opts)
   -- commits where the file was named differently.
   if opts.follow and not utils.mode_is_visual() then
     local display_fmt = opts.cmd:match('%-%-pretty=format:"(.-)"') or "%C(yellow)%h%Creset %s"
-    local relfile = path.relative_to(vim.fn.expand("%:p") --[[@as string]], git_root)
+    local cfile = vim.fn.expand("%:p") --[[@as string]]
+    local relfile = path.relative_to(cfile, git_root)
     -- \1 marks a header line; \31 separates the clean sha from the coloured display
     local logcmd = path.git_cwd({
-      "git", "-c", "core.quotepath=false",
-      "log", "--follow", "--name-only", "--color=always",
-      "--pretty=format:%x01%h%x1f" .. display_fmt, "--", relfile,
+      "git",
+      "-c",
+      "core.quotepath=false",
+      "log",
+      "--follow",
+      "--name-only",
+      "--color=always",
+      "--pretty=format:%x01%h%x1f" .. display_fmt,
+      "--",
+      relfile,
     }, opts)
     local entries, sha, disp = {}, nil, nil
     for _, line in ipairs(utils.io_systemlist(logcmd)) do
@@ -246,19 +267,20 @@ M.bcommits = function(opts)
     ---@field fn_match_file? fun(line: string, opts: table): string?
     ---@cast opts fzf-lua.config.GitBcommitsFollow
     opts.fn_match_commit_hash = opts.fn_match_commit_hash
-        or function(l) return l:match("^[^\t]+") end
-    opts.fn_match_file = opts.fn_match_file
-        or function(l) return (l:match("^[^\t]+\t([^\t]+)")) end
+      or function(l) return l:match("^[^\t]+") end
+    opts.fn_match_file = opts.fn_match_file or function(l) return (l:match("^[^\t]+\t([^\t]+)")) end
     return core.fzf_exec(entries, opts)
   end
-  local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p") --[[@as string]], git_root))
+  local cfile = vim.fn.expand("%:p") --[[@as string]]
+  local file = libuv.shellescape(path.relative_to(cfile, git_root))
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
     if not sel then return end
     range = string.format("-L %d,%d:%s --no-patch", sel.start.line, sel["end"].line, file)
     -- when range is specified remove "end of options" marker (#2375)
-    opts.cmd = opts.cmd:gsub("%s+%-%-%s-$", " "):gsub("%-%-%s+[<{]file[}>]", " {file}")
+    opts.cmd = opts.cmd:gsub("%s+%-%-%s-$", " ")
+      :gsub("%-%-%s+[<{]file[}>]", " {file}")
   end
   if opts.cmd:match("[<{]file") then
     opts.cmd = opts.cmd:gsub("[<{]file[}>]", range or file)
@@ -269,7 +291,7 @@ M.bcommits = function(opts)
   return git_cmd(opts)
 end
 
----@param opts fzf-lua.config.GitBlame|{}?
+---@param opts fzf-lua.config.GitBlame|{ }?
 ---@return thread?, string?, table?
 M.blame = function(opts)
   ---@type fzf-lua.config.GitBlame
@@ -282,11 +304,14 @@ M.blame = function(opts)
   end
   -- See "bcommits" for comment
   if not opts.cwd and not opts.git_dir then
-    opts.cwd = path.git_root({ cwd = vim.fn.expand("%:p:h") --[[@as string]] }, true)
+    opts.cwd = path.git_root({
+      cwd = vim.fn.expand("%:p:h"), --[[@as string]]
+    }, true)
   end
   local git_root = path.git_root(opts)
   if not git_root then return end
-  local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p") --[[@as string]], git_root))
+  local cfile = vim.fn.expand("%:p") --[[@as string]]
+  local file = libuv.shellescape(path.relative_to(cfile, git_root))
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
@@ -312,8 +337,8 @@ local function highlight_branch_line(line)
   local rest = line:sub(3)
 
   local detached_inner = rest:match("^%(([^)]+)%)")
-  if detached_inner and
-      (detached_inner:match("^HEAD detached") or detached_inner:match("^no branch")) then
+  if detached_inner
+    and (detached_inner:match("^HEAD detached") or detached_inner:match("^no branch")) then
     local head = ansi.grey("(") .. ansi.green(detached_inner) .. ansi.grey(")")
     local after = rest:sub(#detached_inner + 3)
     local ws, sha, subject_ws, subject = after:match("^(%s+)(%x%x%x%x%x%x%x+)(%s+)(.*)$")
@@ -412,7 +437,7 @@ local function highlight_worktree_line(line)
   return out .. body
 end
 
----@param opts fzf-lua.config.GitBranches|{}?
+---@param opts fzf-lua.config.GitBranches|{ }?
 ---@return thread?, string?, table?
 M.branches = function(opts)
   ---@type fzf-lua.config.GitBranches
@@ -441,7 +466,7 @@ M.branches = function(opts)
   return git_cmd(opts)
 end
 
----@param opts fzf-lua.config.GitWorktrees|{}?
+---@param opts fzf-lua.config.GitWorktrees|{ }?
 ---@return thread?, string?, table?
 M.worktrees = function(opts)
   ---@type fzf-lua.config.GitWorktrees
@@ -461,7 +486,7 @@ M.worktrees = function(opts)
   return git_cmd(opts)
 end
 
----@param opts fzf-lua.config.GitTags|{}?
+---@param opts fzf-lua.config.GitTags|{ }?
 ---@return thread?, string?, table?
 M.tags = function(opts)
   ---@type fzf-lua.config.GitTags
@@ -470,7 +495,7 @@ M.tags = function(opts)
   return git_cmd(opts)
 end
 
----@param opts fzf-lua.config.GitStash|{}?
+---@param opts fzf-lua.config.GitStash|{ }?
 ---@return thread?, string?, table?
 M.stash = function(opts)
   ---@type fzf-lua.config.GitStash

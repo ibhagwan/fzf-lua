@@ -45,10 +45,14 @@ local function spawn_sibling(extra, name)
   end
   -- NOTE: `--embed` siblings also get `--listen` so the address is known
   -- and dialable; exclusion below is then proven by filtering (not absence)
-  assert(vim.fn.executable(vim.v.progpath) == 1,
-    "nvim binary not executable: " .. tostring(vim.v.progpath))
+  assert(
+    vim.fn.executable(vim.v.progpath) == 1,
+    "nvim binary not executable: " .. tostring(vim.v.progpath)
+  )
   local cmd = { vim.v.progpath, "--headless", "--clean", "--noplugin", "--listen", addr }
-  for _, a in ipairs(extra or {}) do table.insert(cmd, a) end
+  for _, a in ipairs(extra or {}) do
+    table.insert(cmd, a)
+  end
   local jobid = vim.fn.jobstart(cmd)
   assert(jobid > 0, "spawn sibling failed")
   if not wait_until(function()
@@ -162,21 +166,22 @@ describe("serverlist useractive", function()
         -- any UI input advances v:useractive in the peer
         eq(utils.rpcexec_timed(addr, "nvim_input", "<Ignore>"), true)
         assert(wait_until(function()
-          local ok, active = utils.rpcexec_timed(addr, "nvim_exec_lua",
-            "return vim.v.useractive", {})
-          return ok and type(active) == "number" and active > 0
-        end, 5000), "peer useractive did not advance")
+            local ok, active = utils.rpcexec_timed(
+              addr, "nvim_exec_lua", "return vim.v.useractive", {}
+            )
+            return ok and type(active) == "number" and active > 0
+          end, 5000), "peer useractive did not advance")
       end
 
       -- wait until the same discovery the provider uses sees the peer;
       -- nightly reports Windows pipes slash-normalized (`//./pipe/...`)
       assert(wait_until(function()
-        local found = false
-        providers._discover_servers():each(function(p)
-          if list_has_addr({ p }, addr) then found = true end
-        end)
-        return found
-      end, 20000), "sibling missing from discovery")
+          local found = false
+          providers._discover_servers():each(function(p)
+            if list_has_addr({ p }, addr) then found = true end
+          end)
+          return found
+        end, 20000), "sibling missing from discovery")
 
       local core = require("fzf-lua.core")
       local orig_fzf_exec = core.fzf_exec
@@ -235,17 +240,14 @@ describe("serverlist parse_entry", function()
   end)
   it("windows: keeps healthy pipes, repairs eaten backslash", function()
     utils.__IS_WINDOWS = true
-    eq(utils.serverlist_parse_entry(serverlist_entry([[\\.\pipe\nvim.1.0]])),
-      [[\\.\pipe\nvim.1.0]])
+    eq(utils.serverlist_parse_entry(serverlist_entry([[\\.\pipe\nvim.1.0]])), [[\\.\pipe\nvim.1.0]])
     -- fzf/cmd round trip eats one leading backslash (`\\` -> `\`)
-    eq(utils.serverlist_parse_entry(serverlist_entry([[\.\pipe\nvim.1.0]])),
-      [[\\.\pipe\nvim.1.0]])
+    eq(utils.serverlist_parse_entry(serverlist_entry([[\.\pipe\nvim.1.0]])), [[\\.\pipe\nvim.1.0]])
     utils.__IS_WINDOWS = orig_is_windows
   end)
   it("unix: leaves backslashes untouched", function()
     utils.__IS_WINDOWS = false
-    eq(utils.serverlist_parse_entry(serverlist_entry([[\\.\pipe\nvim.1.0]])),
-      [[\\.\pipe\nvim.1.0]])
+    eq(utils.serverlist_parse_entry(serverlist_entry([[\\.\pipe\nvim.1.0]])), [[\\.\pipe\nvim.1.0]])
     utils.__IS_WINDOWS = orig_is_windows
   end)
 end)
@@ -262,7 +264,9 @@ describe("serverlist screenshot_to_plaintext", function()
   it("converts terminal dumps to plain rows, keeps SGR", function()
     local shot = vim.fn.tempname()
     local fd = assert(io.open(shot, "wb"))
-    fd:write("24,80\r\n\27[?25l\27[H\27[2J\27[0;36mcyan-row\27[0m   \r\27[Bplain   \r\27[B\27[1mbold\27[0m")
+    fd:write(
+      "24,80\r\n\27[?25l\27[H\27[2J\27[0;36mcyan-row\27[0m   \r\27[Bplain   \r\27[B\27[1mbold\27[0m"
+    )
     fd:close()
     eq(utils.screenshot_to_plaintext(shot), true)
     local lines = vim.fn.readfile(shot)
@@ -294,13 +298,18 @@ describe("serverlist discovery", function()
       -- traceback instead of looking like an empty result inside wait_until
       found()
       if not wait_until(function() return list_has_addr(found(), addr) end, 20000) then
-        error(("sibling missing from discovery: %s (nightly=%s, discovered=%s, serverlist=%s %s)"):format(
-          addr, tostring(vim.fn.has("nvim-0.13") == 1),
-          vim.inspect(found()), type(vim.fn.serverlist()), vim.inspect(vim.fn.serverlist())))
+        error(
+          ("sibling missing from discovery: %s (nightly=%s, discovered=%s, serverlist=%s %s)"):format(
+            addr, tostring(vim.fn.has("nvim-0.13") == 1), vim.inspect(found()),
+            type(vim.fn.serverlist()), vim.inspect(vim.fn.serverlist())
+          )
+        )
       end
       quit_sibling(jobid, addr)
-      assert(wait_until(function() return not list_has_addr(found(), addr) end, 20000),
-        "dead sibling still discovered: " .. addr)
+      assert(
+        wait_until(function() return not list_has_addr(found(), addr) end, 20000),
+        "dead sibling still discovered: " .. addr
+      )
     end)
   end)
   it("lists idle --embed backends", function()
@@ -315,8 +324,11 @@ describe("serverlist discovery", function()
       -- sanity: the embed backend is alive and dialable
       eq(utils.server_probe(addr), true)
       if not wait_until(function() return list_has_addr(found(), addr) end, 20000) then
-        error(("embed sibling missing from discovery: %s discovered=%s"):format(
-          addr, vim.inspect(found())))
+        error(
+          ("embed sibling missing from discovery: %s discovered=%s"):format(
+            addr, vim.inspect(found())
+          )
+        )
       end
     end)
   end)
@@ -333,14 +345,17 @@ describe("serverlist discovery", function()
         return res
       end
       if not wait_until(function() return list_has_addr(found(), addr) end, 15000) then
-        error(("nvim-term sibling missing from unix discovery (regression): %s discovered=%s"):format(
-          addr, vim.inspect(found())))
+        error(
+          ("nvim-term sibling missing from unix discovery (regression): %s discovered=%s"):format(
+            addr, vim.inspect(found())
+          )
+        )
       end
     end)
   end)
   it("ignores stale addresses", function()
     local stale = utils.__IS_WINDOWS and [[\\.\pipe\nvim-srv-test-stale]]
-        or (vim.fn.tempname() .. "-nvim-srv-test-stale.sock")
+      or (vim.fn.tempname() .. "-nvim-srv-test-stale.sock")
     local res = {}
     providers._discover_servers({ stale }):each(function(p) res[#res + 1] = p end)
     eq(list_has_addr(res, stale), false)
@@ -365,10 +380,15 @@ end)
 describe("serverlist preview", function()
   it("renders settled multi-row dumps", function()
     with_sibling(nil, nil, function(_, addr)
-      assert(utils.rpcexec_timed(addr, "nvim_exec_lua", [=[
+      assert(
+        utils.rpcexec_timed(
+          addr, "nvim_exec_lua",
+          [=[
         vim.api.nvim_buf_set_lines(0, 0, -1, false, { "AAA-first-row", "BBB-second-row" })
         return true
-      ]=], {}))
+      ]=], {}
+        )
+      )
       local previewer = require("fzf-lua.previewer.fzf")
       local shot = vim.fn.tempname()
       local pv = previewer.nvim_server:new({}, { _screenshot = shot })
@@ -388,16 +408,16 @@ describe("serverlist preview", function()
           and lines[2] and lines[2]:match("^BBB%-second%-row")
       end
       assert(wait_until(function()
-        for _ = 1, 3 do
-          local cmd = pv:cmdline(nil).fn({ serverlist_entry(addr) }, 24, 80)
-          assert(type(cmd) == "string", "preview returned no command")
-          if rows_ok() then return true end
-          -- pumping wait (not sleep): deferred screenshot work runs while
-          -- waiting, then the next act retries like a preview refresh would
-          vim.wait(1000, function() return rows_ok() end, 50)
-        end
-        return rows_ok()
-      end, 30000), "preview rows wrong")
+          for _ = 1, 3 do
+            local cmd = pv:cmdline(nil).fn({ serverlist_entry(addr) }, 24, 80)
+            assert(type(cmd) == "string", "preview returned no command")
+            if rows_ok() then return true end
+            -- pumping wait (not sleep): deferred screenshot work runs while
+            -- waiting, then the next act retries like a preview refresh would
+            vim.wait(1000, function() return rows_ok() end, 50)
+          end
+          return rows_ok()
+        end, 30000), "preview rows wrong")
       vim.fn.delete(shot)
     end)
   end)
@@ -415,7 +435,9 @@ describe("serverlist actions", function()
       notes[#notes + 1] = { lvl = lvl, msg = ok and msg or tostring(select(1, ...)) }
     end
   end
-  local function capture_off() utils.notify = orig_notify end
+  local function capture_off()
+    utils.notify = orig_notify
+  end
   local function noted(pat)
     for _, n in ipairs(assert(notes)) do
       if n.msg:match(pat) then return n end
@@ -444,8 +466,10 @@ describe("serverlist actions", function()
     with_notes(function()
       with_sibling(nil, nil, function(_, addr)
         actions.serverlist_kill({ serverlist_entry(addr) })
-        assert(wait_until(function() return not utils.server_probe(addr) end, 15000),
-          "sibling survived kill: " .. addr)
+        assert(
+          wait_until(function() return not utils.server_probe(addr) end, 15000),
+          "sibling survived kill: " .. addr
+        )
         assert(noted("Killed 1 server"), "missing kill confirmation")
         -- stale entries must not raise (previously a silent assert)
         eq(pcall(actions.serverlist_kill, { serverlist_entry(addr) }), true)
@@ -464,10 +488,12 @@ describe("serverlist actions", function()
     with_notes(function()
       with_sibling(nil, nil, function(_, addr)
         local stale = utils.__IS_WINDOWS and [[\\.\pipe\nvim-srv-test-stale]]
-            or (vim.fn.tempname() .. "-nvim-srv-test-stale.sock")
+          or (vim.fn.tempname() .. "-nvim-srv-test-stale.sock")
         actions.serverlist_kill({ serverlist_entry(addr), serverlist_entry(stale) })
-        assert(wait_until(function() return not utils.server_probe(addr) end, 15000),
-          "sibling survived kill: " .. addr)
+        assert(
+          wait_until(function() return not utils.server_probe(addr) end, 15000),
+          "sibling survived kill: " .. addr
+        )
         assert(noted("Killed 1 server"), "missing kill confirmation in mixed run")
         assert(noted("already exited"), "missing already-exited note in mixed run")
       end)
@@ -478,9 +504,13 @@ describe("serverlist actions", function()
   it("kill treats an unresponsive probe as a failure, not an exit", function()
     with_notes(function()
       local addr = utils.__IS_WINDOWS and [[\\.\pipe\nvim-srv-test-hung]]
-          or (vim.fn.tempname() .. "-nvim-srv-test-hung.sock")
-      with_stubs(function() return false, "Timeout" end,
-        function() return false, "Timeout" end, function()
+        or (vim.fn.tempname() .. "-nvim-srv-test-hung.sock")
+      with_stubs(function()
+        return false, "Timeout"
+      end,
+        function()
+          return false, "Timeout"
+        end, function()
           actions.serverlist_kill({ serverlist_entry(addr) })
           assert(noted("kill failed"), "probe timeout must remain a kill failure")
           assert(not noted("Killed"), "unconfirmed exit must not report killed")
@@ -491,11 +521,15 @@ describe("serverlist actions", function()
   it("kill counts a probe channel closed by the peer as an exit", function()
     with_notes(function()
       local addr = utils.__IS_WINDOWS and [[\\.\pipe\nvim-srv-test-died]]
-          or (vim.fn.tempname() .. "-nvim-srv-test-died.sock")
+        or (vim.fn.tempname() .. "-nvim-srv-test-died.sock")
       -- the peer accepted the probe and died while the request was in
       -- flight: the lost `qa!` response is confirmed as an exit
-      with_stubs(function() return false, "Timeout" end,
-        function() return false, "ch 7 was closed by the peer" end, function()
+      with_stubs(function()
+        return false, "Timeout"
+      end,
+        function()
+          return false, "ch 7 was closed by the peer"
+        end, function()
           actions.serverlist_kill({ serverlist_entry(addr) })
           assert(noted("Killed 1 server"), "probe-confirmed exit must count as killed")
           assert(not noted("kill failed"), "probe-confirmed exit must not fail")
@@ -505,10 +539,14 @@ describe("serverlist actions", function()
   it("kill counts a probe with no listener as an exit", function()
     with_notes(function()
       local addr = utils.__IS_WINDOWS and [[\\.\pipe\nvim-srv-test-gone]]
-          or (vim.fn.tempname() .. "-nvim-srv-test-gone.sock")
+        or (vim.fn.tempname() .. "-nvim-srv-test-gone.sock")
       -- `sockconnect` failing means nothing listens at the address anymore
-      with_stubs(function() return false, "Timeout" end,
-        function() return false, "Invalid channel" end, function()
+      with_stubs(function()
+        return false, "Timeout"
+      end,
+        function()
+          return false, "Invalid channel"
+        end, function()
           actions.serverlist_kill({ serverlist_entry(addr) })
           assert(noted("Killed 1 server"), "dead socket must count as killed")
           assert(not noted("kill failed"), "dead socket must not fail")
@@ -518,7 +556,7 @@ describe("serverlist actions", function()
   it("connect guards unreachable and self targets", function()
     with_notes(function()
       local stale = utils.__IS_WINDOWS and [[\\.\pipe\nvim-srv-test-stale]]
-          or (vim.fn.tempname() .. "-nvim-srv-test-stale.sock")
+        or (vim.fn.tempname() .. "-nvim-srv-test-stale.sock")
       -- must not throw (and must not detach our UI into the void)
       eq(pcall(actions.serverlist_connect, { serverlist_entry(stale) }), true)
       assert(noted("unreachable"), "missing unreachable warning")

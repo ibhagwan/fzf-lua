@@ -8,24 +8,24 @@ local Object = require "fzf-lua.class"
 
 local Previewer = {}
 
----@class fzf-lua.previewer.Fzf: fzf-lua.Object,{}
+---@class fzf-lua.previewer.Fzf: fzf-lua.Object, { }
 ---@field close function
 Previewer.base = Object:extend()
 
 -- Previewer base object
 ---@param o fzf-lua.config.Previewer
----@param opts fzf-lua.config.Resolved|{}
+---@param opts fzf-lua.config.Resolved|{ }
 ---@return fzf-lua.previewer.Fzf
 function Previewer.base:new(o, opts)
   o = o or {}
-  self.type = "cmd";
-  self.cmd = o.cmd;
+  self.type = "cmd"
+  self.cmd = o.cmd
   if type(self.cmd) == "function" then
     self.cmd = self.cmd()
   end
-  self.args = o.args or "";
+  self.args = o.args or ""
   self.preview_offset = o.preview_offset
-  self.opts = opts;
+  self.opts = opts
   return self
 end
 
@@ -93,7 +93,7 @@ function Previewer.base:fzf_delimiter()
 end
 
 -- Generic shell command previewer
----@class fzf-lua.previewer.Cmd : fzf-lua.previewer.Fzf,{}
+---@class fzf-lua.previewer.Cmd: fzf-lua.previewer.Fzf, { }
 ---@field super fzf-lua.previewer.Fzf,{}
 Previewer.cmd = Previewer.base:extend()
 
@@ -104,8 +104,7 @@ end
 
 ---@diagnostic disable-next-line: unused
 function Previewer.cmd:format_cmd(cmd, args, action, extra_args)
-  return string.format([[%s %s %s "$(%s)"]],
-    cmd, args or "", extra_args or "", action)
+  return string.format([[%s %s %s "$(%s)"]], cmd, args or "", extra_args or "", action)
 end
 
 function Previewer.cmd:cmdline(o)
@@ -125,7 +124,7 @@ function Previewer.cmd:action(o)
 end
 
 -- Specialized bat previewer
----@class fzf-lua.previewer.Bat : fzf-lua.previewer.Cmd,{}
+---@class fzf-lua.previewer.Bat: fzf-lua.previewer.Cmd, { }
 ---@field super fzf-lua.previewer.Cmd,{}
 Previewer.bat = Previewer.cmd:extend()
 
@@ -140,8 +139,10 @@ function Previewer.bat:cmdline(o)
   o.action = o.action or self:action(o)
   local extra_args = ""
   if self.theme then
-    extra_args = string.format([[ --theme="%s"]],
-      type(self.theme) == "function" and tostring(self.theme()) or tostring(self.theme))
+    extra_args = string.format(
+      [[ --theme="%s"]],
+      type(self.theme) == "function" and tostring(self.theme()) or tostring(self.theme)
+    )
   end
   if self.opts.line_field_index then
     extra_args = extra_args .. string.format(" --highlight-line=%s", self.opts.line_field_index)
@@ -150,7 +151,7 @@ function Previewer.bat:cmdline(o)
 end
 
 -- Specialized head previewer
----@class fzf-lua.previewer.Head : fzf-lua.previewer.Cmd,{}
+---@class fzf-lua.previewer.Head: fzf-lua.previewer.Cmd, { }
 ---@field super fzf-lua.previewer.Cmd,{}
 Previewer.head = Previewer.cmd:extend()
 
@@ -171,7 +172,7 @@ function Previewer.head:cmdline(o)
 end
 
 -- new async_action from nvim-fzf
----@class fzf-lua.previewer.CmdAsync : fzf-lua.previewer.Cmd,{}
+---@class fzf-lua.previewer.CmdAsync: fzf-lua.previewer.Cmd, { }
 ---@field super fzf-lua.previewer.Cmd,{}
 Previewer.cmd_async = Previewer.base:extend()
 
@@ -191,9 +192,8 @@ local grep_tag = function(file, tag)
   -- equivalent pattern to `rg --crlf`
   -- see discussion in #219
   pattern = pattern:gsub("%$$", "\\r??%$")
-  local grep_cmd = vim.fn.executable("rg") == 1
-      and { "rg", "--line-number" }
-      or { "grep", "-n", "-P" }
+  local grep_cmd = vim.fn.executable("rg") == 1 and { "rg", "--line-number" }
+    or { "grep", "-n", "-P" }
   local cmd = utils.tbl_deep_clone(grep_cmd)
   table.insert(cmd, pattern)
   table.insert(cmd, file)
@@ -209,9 +209,8 @@ end
 function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   -- Handle empty or invalid entries (common on Windows with live_grep)
   if not entrystr or #entrystr == 0 or entrystr == "." or entrystr == ".." then
-    local errmsg = entrystr and #entrystr > 0
-        and string.format("'%s': Invalid entry", entrystr)
-        or "No entry selected"
+    local errmsg = entrystr and #entrystr > 0 and string.format("'%s': Invalid entry", entrystr)
+      or "No entry selected"
     return "", {}, "echo " .. libuv.shellescape(errmsg)
   end
 
@@ -231,9 +230,13 @@ function Previewer.cmd_async:parse_entry_and_verify(entrystr)
   else
     -- verify the file exists on disk and is accessible
     if #filepath == 0 or not uv.fs_stat(filepath) then
-      errcmd = "echo " .. libuv.shellescape(
-        string.format("'%s: NO SUCH FILE OR ACCESS DENIED",
-          filepath and #filepath > 0 and filepath or "<null>"))
+      errcmd = "echo "
+        .. libuv.shellescape(
+          string.format(
+            "'%s: NO SUCH FILE OR ACCESS DENIED",
+            filepath and #filepath > 0 and filepath or "<null>"
+          )
+        )
     end
   end
   return filepath, entry, errcmd
@@ -245,14 +248,13 @@ function Previewer.cmd_async:cmdline(o)
     FzfLua.get_info().query = items[2] or ""
     local filepath, _, errcmd = self:parse_entry_and_verify(items[1])
     if not filepath then return utils.shell_nop() end
-    local cmd = errcmd or ("%s %s %s"):format(
-      self.cmd, self.args, libuv.shellescape(filepath))
+    local cmd = errcmd or ("%s %s %s"):format(self.cmd, self.args, libuv.shellescape(filepath))
     return cmd
   end, self.opts, "{} {q}")
   return act
 end
 
----@class fzf-lua.previewer.BatAsync : fzf-lua.previewer.CmdAsync,{}
+---@class fzf-lua.previewer.BatAsync: fzf-lua.previewer.CmdAsync, { }
 ---@field super fzf-lua.previewer.CmdAsync,{}
 Previewer.bat_async = Previewer.cmd_async:extend()
 
@@ -309,20 +311,24 @@ function Previewer.bat_async:cmdline(o)
       local end_line = start_line + fzf_lines - 1
       line_range = ("--line-range=%d:%d"):format(start_line, end_line)
     end
-    local cmd = errcmd or ("%s %s %s %s %s %s"):format(
-      self.cmd, self.args,
-      self.theme and string.format([[--theme="%s"]],
-        type(self.theme) == "function" and tostring(self.theme()) or tostring(self.theme)) or "",
-      entry.line and entry.line > 0
-      and string.format("--highlight-line=%d", entry.line) or "",
-      line_range,
-      libuv.shellescape(filepath))
+    local cmd = errcmd
+      or ("%s %s %s %s %s %s"):format(
+        self.cmd, self.args,
+        self.theme
+          and string.format(
+            [[--theme="%s"]],
+            type(self.theme) == "function" and tostring(self.theme()) or tostring(self.theme)
+          )
+          or "",
+        entry.line and entry.line > 0 and string.format("--highlight-line=%d", entry.line) or "",
+        line_range, libuv.shellescape(filepath)
+      )
     return cmd
   end
   return { fn = act, type = "cmd", field_index = "{} {q}" }
 end
 
----@class fzf-lua.previewer.GitDiff : fzf-lua.previewer.Fzf,{}
+---@class fzf-lua.previewer.GitDiff: fzf-lua.previewer.Fzf, { }
 ---@field super fzf-lua.previewer.Fzf,{}
 Previewer.git_diff = Previewer.base:extend()
 
@@ -349,9 +355,8 @@ function Previewer.git_diff:new(o, opts)
     local icons_overrides = o._fn_git_icons and o._fn_git_icons()
     self.git_icons = {}
     for _, i in ipairs({ "D", "M", "R", "A", "C", "T", "?" }) do
-      self.git_icons[i] =
-          icons_overrides and icons_overrides[i] and
-          utils.lua_regex_escape(icons_overrides[i].icon) or i
+      self.git_icons[i] = icons_overrides and icons_overrides[i]
+        and utils.lua_regex_escape(icons_overrides[i].icon) or i
     end
   end
   return self
@@ -366,16 +371,13 @@ function Previewer.git_diff:cmdline(o)
     end
     if not items[1] then return utils.shell_nop() end
     local is_deleted = items[1]:match(self.git_icons["D"] .. utils.nbsp) ~= nil
-    local is_modified = items[1]:match("[" ..
-      self.git_icons["M"] ..
-      self.git_icons["R"] ..
-      self.git_icons["A"] ..
-      self.git_icons["T"] ..
-      "]" .. utils.nbsp) ~= nil
-    local is_untracked = items[1]:match("[" ..
-      self.git_icons["?"] ..
-      self.git_icons["C"] ..
-      "]" .. utils.nbsp) ~= nil
+    local is_modified = items[1]:match("[" .. self.git_icons["M"]
+        .. self.git_icons["R"] .. self.git_icons["A"]
+        .. self.git_icons["T"] .. "]"
+        .. utils.nbsp) ~= nil
+    local is_untracked = items[1]:match("[" .. self.git_icons["?"]
+        .. self.git_icons["C"] .. "]"
+        .. utils.nbsp) ~= nil
     local s = items[1]
     if s:match("%s%->%s") then
       -- for renames, we take only the last part (#864)
@@ -430,7 +432,7 @@ function Previewer.git_diff:cmdline(o)
   return { fn = act, type = "cmd", field_index = "{} {q}" }
 end
 
----@class fzf-lua.previewer.fzf.ManPages : fzf-lua.previewer.Fzf,{}
+---@class fzf-lua.previewer.fzf.ManPages: fzf-lua.previewer.Fzf, { }
 ---@field super fzf-lua.previewer.Fzf,{}
 Previewer.man_pages = Previewer.base:extend()
 
@@ -453,7 +455,7 @@ function Previewer.man_pages:cmdline(o)
   return { fn = act, type = "cmd", field_index = "{}" }
 end
 
----@class fzf-lua.previewer.fzf.HelpTags : fzf-lua.previewer.Fzf,{}
+---@class fzf-lua.previewer.fzf.HelpTags: fzf-lua.previewer.Fzf, { }
 ---@field super fzf-lua.previewer.fzf.HelpTags,{}
 Previewer.help_tags = Previewer.base:extend()
 
@@ -463,9 +465,8 @@ end
 
 function Previewer.help_tags:new(o, opts)
   Previewer.help_tags.super.new(self, o, opts)
-  self.cmd = self.cmd or vim.fn.executable("bat") == 1
-      and "bat -p -l help --color=always %s"
-      or "cat %s"
+  self.cmd = self.cmd or vim.fn.executable("bat") == 1 and "bat -p -l help --color=always %s"
+    or "cat %s"
   return self
 end
 
@@ -513,7 +514,8 @@ local function wait_screenshot_settled(screenshot, timeout_ms)
     end
     last_size, stable = size, 0
     return false
-  end, 25)
+  end, 25
+  )
   return settled
 end
 
@@ -537,10 +539,13 @@ local function make_screenshot(screenshot, addr, lines, columns)
     ---@diagnostic disable-next-line: missing-return-value
     return nil, uis
   end
-  local uis_list = uis or {} ---@type { stdout_tty: boolean }[]
+  local uis_list = uis or {} ---@type { stdout_tty: boolean } []
   local has_tui = false
   for _, info in ipairs(uis_list) do
-    if info.stdout_tty then has_tui = true break end
+    if info.stdout_tty then
+      has_tui = true
+      break
+    end
   end
   if has_tui then
     -- deliberately untimed below: the target just proved responsive via
@@ -553,15 +558,19 @@ local function make_screenshot(screenshot, addr, lines, columns)
       -- Screenshot at native size: `vim._with({ o = { lines, columns }})`
       -- resizes the TARGET's UI (and every grid on it) which wedges
       -- remote/tmux terminals; fzf crops/scrolls oversized dumps itself.
-      return utils.rpcexec(addr, "nvim_exec_lua",
-        "return vim.api.nvim__screenshot(...)", { screenshot })
+      return utils.rpcexec(
+        addr, "nvim_exec_lua", "return vim.api.nvim__screenshot(...)", { screenshot }
+      )
     end
-    return utils.rpcexec(addr, "nvim_exec_lua", [[
+    return utils.rpcexec(
+      addr, "nvim_exec_lua",
+      [[
       local lines, columns, screenshot = ...
       return vim._with({ o = { lines = lines, columns = columns } }, function()
         vim.api.nvim__screenshot(screenshot)
       end)
-    ]], { lines, columns, screenshot })
+    ]], { lines, columns, screenshot }
+    )
   end
   local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
   local chan = vim.fn.jobstart({ nvim_bin, "--server", addr, "--remote-ui" }, {
@@ -616,8 +625,10 @@ function Previewer.nvim_server:cmdline(_)
     local screenshot = assert(self.opts._screenshot) ---@type string
     local pid, err = make_screenshot(screenshot, addr, lines, columns)
     if err then
-      return "echo " .. FzfLua.libuv.shellescape(string.format(
-        "make_screenshot failed with error: %s", tostring(err)))
+      return "echo "
+        .. FzfLua.libuv.shellescape(
+          string.format("make_screenshot failed with error: %s", tostring(err))
+        )
     end
     -- NOTE: preview runs under `cmd.exe /c` on Windows where `;` is not a
     -- command separator (`&` is) and coreutils may be absent, so only emit
@@ -671,8 +682,8 @@ function Previewer.nvim_server:cmdline(_)
       -- Visible failure beats a silently empty preview pane; show the
       -- target address byte-escaped so invisible junk (\r, ANSI, ...) can't
       -- hide (pipe names never contain such bytes).
-      return "echo " .. libuv.shellescape("screenshot not ready: "
-        .. utils.escape_invisible(addr) .. " -> " .. screenshot)
+      return "echo " .. libuv.shellescape("screenshot not ready: " .. utils.escape_invisible(addr)
+            .. " -> " .. screenshot)
     end
     return wait .. pager:format(shot)
   end

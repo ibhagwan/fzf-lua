@@ -1,7 +1,7 @@
 local hls = {
   bg    = "PmenuSbar",
   sel   = "PmenuSel",
-  title = "IncSearch"
+  title = "IncSearch",
 }
 return {
   { "default-title" }, -- base profile

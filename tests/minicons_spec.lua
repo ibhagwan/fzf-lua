@@ -31,10 +31,12 @@ local function validate_mini(headless_child)
     assert.are.equal(type(icons.by_filename[k]), "table")
   end
   assert.are.equal(utils.tbl_count(icons.by_filename), utils.tbl_count(by_fname))
-  assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
+  assert.are.equal(
+    utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
     -- +4 extensions that are causing issues in `vim.filetype.match`
     -- https://github.com/ibhagwan/fzf-lua/issues/1358#issuecomment-2254215160
-    utils.tbl_count(MiniIcons.list("extension")) + 4)
+    utils.tbl_count(MiniIcons.list("extension")) + 4
+  )
   assert.is.True(utils.tbl_count(icons.ext_has_2part) == 0)
   assert.is.True(utils.tbl_count(icons.by_ext_2part) == 0)
   mini_are_same("file", "foo", { "󰈔", "" })
@@ -83,11 +85,13 @@ T["setup"]["auto-detect"] = function()
 end
 
 T["setup"]["hlgroup modifications"] = function()
-  exec_lua([[
+  exec_lua(
+    [[
     require("mini.icons").setup({})
     vim.api.nvim_set_hl(0, "MiniIconsGrey", { default = false, link = "Directory" })
     M.devicons.load({ mode = "gui" })
-  ]])
+  ]]
+  )
   local hexcol = child.lua_get([[FzfLua.utils.hexcol_from_hl("Directory", "fg", "gui")]])
   mini_are_same("file", "foo", { "󰈔", hexcol })
   mini_are_same("file", "Makefile", { "󱁤", hexcol })
@@ -98,10 +102,12 @@ T["setup"]["hlgroup modifications"] = function()
 end
 
 T["setup"]["devicons mock"] = function()
-  exec_lua([[
+  exec_lua(
+    [[
     require("mini.icons").mock_nvim_web_devicons()
     M.devicons.load({ mode = "gui" })
-  ]])
+  ]]
+  )
   eq(child.lua_get([[M.devicons.__DEVICONS:is_mock()]]), true)
   eq(child.lua_get([[M.devicons.plugin_name()]]), "mini")
   validate_mini()
@@ -119,13 +125,17 @@ T["setup"]["headless RPC, vim.g.fzf_lua_server"] = function()
   local headless_child = helpers.new_child_neovim()
   headless_child.init()
   ---@diagnostic disable-next-line: preferred-local-alias
-  headless_child.lua(string.format([==[
+  headless_child.lua(
+    string.format(
+      [==[
     _G._fzf_lua_is_headless = true
     _G._devicons_path = nil
     _G._fzf_lua_server = [[%s]]
     M = { devicons = require("fzf-lua.devicons") }
     M.devicons.load({ plugin = "srv", srv_plugin = "mini" })
-  ]==], fzf_lua_server))
+  ]==], fzf_lua_server
+    )
+  )
   eq(headless_child.lua_get([[_G._fzf_lua_server]]), fzf_lua_server)
   eq(headless_child.lua_get([[M.devicons.plugin_name()]]), "srv")
   eq(child.lua_get([[M.devicons.state()]]), headless_child.lua_get([[M.devicons.state()]]))

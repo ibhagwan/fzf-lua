@@ -47,10 +47,10 @@ M.refresh = function(opts)
       -- starts a different picker, i.e. hide files and open buffers, in this case
       -- we update ctx regardless of hidden buf validity as the underlying fzf 
       -- job/bufnr may have also been terminated (#2715)
-      or winobj and winobj._hidden_fzf_bufnr
-  then
+      or winobj and winobj._hidden_fzf_bufnr then
     ctx = {
-      mode = vim.api.nvim_get_mode().mode,
+      mode = vim.api.nvim_get_mode()
+        .mode,
       bufnr = vim.api.nvim_get_current_buf(),
       bname = vim.api.nvim_buf_get_name(0),
       winid = vim.api.nvim_get_current_win(),
@@ -60,8 +60,8 @@ M.refresh = function(opts)
             -- we use this to restore the last window
             -- ignore if both current and last are equal
             and last_winnr ~= vim.fn.winnr()
-            and vim.fn.win_getid(last_winnr)
-            or nil
+          and vim.fn.win_getid(last_winnr)
+          or nil
       end)(),
       alt_bufnr = vim.fn.bufnr("#"),
       tabnr = vim.fn.tabpagenr(),

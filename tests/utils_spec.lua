@@ -60,9 +60,9 @@ describe("Testing utils module", function()
   end)
 
   it("version parser", function()
-    eq(utils.parse_verstr(), nil)      -- Invalid
-    eq(utils.parse_verstr(""), nil)    -- Invalid
-    eq(utils.parse_verstr("0"), nil)   -- Invalid
+    eq(utils.parse_verstr(), nil) -- Invalid
+    eq(utils.parse_verstr(""), nil) -- Invalid
+    eq(utils.parse_verstr("0"), nil) -- Invalid
     eq(utils.parse_verstr("all"), nil) -- Invalid
     eq(utils.parse_verstr("HEAD"), { 100, 0, 0 })
     eq(utils.parse_verstr("0.5"), { 0, 5, 0 })
@@ -131,7 +131,9 @@ describe("Testing utils module", function()
         end
       end
       return function()
-        for tt, o in pairs(orig) do tt.new_tty = o end
+        for tt, o in pairs(orig) do
+          tt.new_tty = o
+        end
       end
     end
     local restore = stub_new_tty()

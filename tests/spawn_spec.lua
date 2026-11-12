@@ -7,7 +7,7 @@ describe("Testing spawn.lua", function()
   it("does not delete the cwd when tempname() fails (#2838)", function()
     ---@diagnostic disable-next-line: deprecated
     local _info = debug.getinfo(1, "S")
-    ---@cast _info {source: string}
+    ---@cast _info { source: string }
     -- must be absolute: the child runs with `cwd` set to a temp directory
     local root = vim.fn.fnamemodify(_info.source:gsub("^@", ""), ":p:h:h")
     local script = (root .. "/lua/fzf-lua/spawn.lua"):gsub("\\", "/")
@@ -33,7 +33,8 @@ describe("Testing spawn.lua", function()
       spec,
     }, { cwd = dir })
     eq(true, jobid > 0)
-    local rc = vim.fn.jobwait({ jobid }, 10000)[1]
+    local rc = vim.fn.jobwait({ jobid }, 10000)
+      [1]
     eq(0, rc)
 
     eq(1, vim.fn.filereadable(sentinel))

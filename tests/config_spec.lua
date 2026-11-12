@@ -111,7 +111,9 @@ describe("Testing config version gate", function()
       is_windows = utils.__IS_WINDOWS,
     }
     local err
-    utils.sk_version = function() return ver, 0, utils.ver2str(ver) end
+    utils.sk_version = function()
+      return ver, 0, utils.ver2str(ver)
+    end
     utils.error = function(fmt, ...)
       err = select("#", ...) > 0 and fmt:format(...) or fmt
     end

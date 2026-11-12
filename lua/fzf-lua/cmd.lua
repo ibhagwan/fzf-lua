@@ -106,7 +106,8 @@ function M._candidates(line, cmp_items)
     local commands = utils.tbl_flatten({ builtin_list })
     table.sort(commands)
 
-    commands = vim.tbl_filter(function(val) ---@diagnostic disable-next-line: param-type-mismatch
+    commands = vim.tbl_filter(function(val)
+      ---@diagnostic disable-next-line: param-type-mismatch
       return vim.startswith(val, l[2])
     end, commands)
 
@@ -119,17 +120,17 @@ function M._candidates(line, cmp_items)
     local cmd2cfg = {
       {
         patterns = { "^git_", "^dap", "^tmux_" },
-        transform = function(c) return c:gsub("_", ".") end
+        transform = function(c) return c:gsub("_", ".") end,
       },
       {
         patterns = { "^lsp_code_actions$" },
-        transform = function(_) return "lsp.code_actions" end
+        transform = function(_) return "lsp.code_actions" end,
       },
       { patterns = { "^lsp_.*_symbols$" }, transform = function(_) return "lsp.symbols" end },
-      { patterns = { "^lsp_" },            transform = function(_) return "lsp" end },
-      { patterns = { "^diagnostics_" },    transform = function(_) return "diagnostics" end },
-      { patterns = { "^tags" },            transform = function(_) return "tags" end },
-      { patterns = { "grep" },             transform = function(_) return "grep" end },
+      { patterns = { "^lsp_" }, transform = function(_) return "lsp" end },
+      { patterns = { "^diagnostics_" }, transform = function(_) return "diagnostics" end },
+      { patterns = { "^tags" }, transform = function(_) return "tags" end },
+      { patterns = { "grep" }, transform = function(_) return "grep" end },
       { patterns = { "^complete_bline$" }, transform = function(_) return "complete_line" end },
     }
     for _, v in pairs(cmd2cfg) do
@@ -155,12 +156,14 @@ function M._candidates(line, cmp_items)
     fzf_opts = false,
     __HLS    = "hls", -- rename prefix
   }) do
-    opts = utils.tbl_flatten({ opts, vim.tbl_filter(function(x)
+    opts = utils.tbl_flatten({
+      opts,
+      vim.tbl_filter(function(x)
         -- Exclude global options that can be specified only during `setup`,
         -- e.g.'`winopts.preview.default` as this might confuse the user
         return not M.options_md()["setup." .. x]
-      end,
-      vim.tbl_keys(utils.map_flatten(defaults[k] or {}, v or k))) })
+      end, vim.tbl_keys(utils.map_flatten(defaults[k] or {}, v or k))),
+    })
   end
 
   -- Add options from docs, so we also have options defaulting to `nil`
@@ -177,7 +180,8 @@ function M._candidates(line, cmp_items)
 
   table.sort(opts)
 
-  opts = vim.tbl_filter(function(val) ---@diagnostic disable-next-line: param-type-mismatch
+  opts = vim.tbl_filter(function(val)
+    ---@diagnostic disable-next-line: param-type-mismatch
     return vim.startswith(val, l[#l])
   end, opts)
 

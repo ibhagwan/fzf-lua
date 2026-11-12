@@ -22,9 +22,13 @@ describe("Testing cache module", function()
   end)
 
   it("half store bubble", function()
-    for _ = 1, 12 do cache:set(function() end) end
+    for _ = 1, 12 do
+      cache:set(function() end)
+    end
     cache:set(cached_fun(14))
-    for _ = 1, 11 do cache:set(function() end) end
+    for _ = 1, 11 do
+      cache:set(function() end)
+    end
     -- After inserting 25 elements the last element should be at the top
     -- so basically the MRU is sorted in reverse order
     assert.is.same(cache:len(), 25)
@@ -48,7 +52,9 @@ describe("Testing cache module", function()
 
   it("full store", function()
     -- Fill in the remaining 25 items
-    for _ = 1, 25 do cache:set(function() end) end
+    for _ = 1, 25 do
+      cache:set(function() end)
+    end
     assert.is.same(cache:len(), 50)
     -- New elements should take the first 25 slots
     -- No element should be evicted at this point

@@ -20,7 +20,7 @@ end
 
 local M = {}
 
----@param opts fzf-lua.config.Colorschemes|{}?
+---@param opts fzf-lua.config.Colorschemes|{ }?
 ---@return thread?, string?, table?
 M.colorschemes = function(opts)
   ---@type fzf-lua.config.Colorschemes
@@ -90,7 +90,7 @@ M.colorschemes = function(opts)
   return core.fzf_exec(colors, opts)
 end
 
----@param opts fzf-lua.config.Highlights|{}?
+---@param opts fzf-lua.config.Highlights|{ }?
 ---@return thread?, string?, table?
 M.highlights = function(opts)
   ---@type fzf-lua.config.Highlights
@@ -139,13 +139,12 @@ M.highlights = function(opts)
         -- E5560: vimL function must not be called in a lua loop callback
         -- and using 'vim.schedule'
         -- attempt to yield across C-call boundary
-        populate(highlights,
-          function(x, co)
-            vim.schedule(function()
-              add_entry(x, co)
-            end)
-          end,
-          coroutine.running())
+        populate(highlights, function(x, co)
+          vim.schedule(function()
+            add_entry(x, co)
+          end)
+        end, coroutine.running()
+        )
         coroutine.yield()
       end)()
     end
@@ -153,7 +152,6 @@ M.highlights = function(opts)
 
   return core.fzf_exec(contents, opts)
 end
-
 
 ---@class fzf-lua.AsyncDownloadManager.Job
 ---@field plugin string
@@ -250,8 +248,7 @@ function AsyncDownloadManager:load_db(db)
   if self.dl_status == 0 or self.dl_status == 1 then
     for k, _ in pairs(self.db or {}) do
       local downloaded = self:downloaded(k)
-      if self.dl_status == 0 and downloaded
-          or self.dl_status == 1 and not downloaded then
+      if self.dl_status == 0 and downloaded or self.dl_status == 1 and not downloaded then
         self.db[k] = nil
       end
     end
@@ -330,23 +327,23 @@ end
 function AsyncDownloadManager:jobstart(plugin, job_args)
   if not plugin then return end
   local info = plugin and self.db[plugin]
-  local msg = string.format("%s %s (%s)",
-    job_args[1][2] == "clone" and "Cloning" or "Updating", info.disp_name, info.dir)
+  local msg = string.format(
+    "%s %s (%s)", job_args[1][2] == "clone" and "Cloning" or "Updating", info.disp_name, info.dir
+  )
   local job_id ---@type integer
-  job_args[2] = vim.tbl_extend("keep", job_args[2] or {},
-    {
-      on_exit = function(_, rc, _)
-        utils.info("%s [job_id:%d] finished with exit code %s", plugin, job_id, rc)
-        if type(info.on_exit) == "function" then
-          -- this calls `coroutine.resume` and resumes fzf's reload input stream
-          info.on_exit(_, rc, _)
-        end
-        self.job_ids[job_id] = nil
-        self.db[plugin].job_id = nil
-        -- dequeue the next job
-        self:dequeue()
+  job_args[2] = vim.tbl_extend("keep", job_args[2] or {}, {
+    on_exit = function(_, rc, _)
+      utils.info("%s [job_id:%d] finished with exit code %s", plugin, job_id, rc)
+      if type(info.on_exit) == "function" then
+        -- this calls `coroutine.resume` and resumes fzf's reload input stream
+        info.on_exit(_, rc, _)
       end
-    })
+      self.job_ids[job_id] = nil
+      self.db[plugin].job_id = nil
+      -- dequeue the next job
+      self:dequeue()
+    end,
+  })
   job_id = vim.fn.jobstart(unpack(job_args))
   if job_id == 0 then
     utils.warn("jobstart: invalid args")
@@ -368,15 +365,17 @@ function AsyncDownloadManager:update(plugin)
   if self:downloaded(plugin) then
     -- git pull
     self:queue(plugin, {
+      -- fmt: off
       ---@format disable-next
-      { "git",          "pull", "--rebase" },
-      { cwd = info.path }
+      { "git", "pull", "--rebase" },
+      -- fmt: on
+      { cwd = info.path },
     })
   else
     -- git clone
     self:queue(plugin, {
       -- { "git", "clone", "--depth=1", info.url, info.dir }  -- shallow clone
-      { "git", "clone", "--filter", "tree:0", info.url, info.path } -- treeless clone
+      { "git", "clone", "--filter", "tree:0", info.url, info.path }, -- treeless clone
     })
   end
 end
@@ -407,7 +406,7 @@ M.apply_awesome_theme = function(dbkey, idx, opts)
   end
 end
 
----@param opts fzf-lua.config.AwesomeColorschemes|{}?
+---@param opts fzf-lua.config.AwesomeColorschemes|{ }?
 ---@return thread?, string?, table?
 M.awesome_colorschemes = function(opts)
   ---@type fzf-lua.config.AwesomeColorschemes
@@ -437,14 +436,13 @@ M.awesome_colorschemes = function(opts)
   -- save a ref for action
   opts._apply_awesome_theme = M.apply_awesome_theme
 
-  local packpath = type(opts.packpath) == "function"
-      and opts.packpath() or tostring(opts.packpath)
+  local packpath = type(opts.packpath) == "function" and opts.packpath() or tostring(opts.packpath)
 
   opts._adm = AsyncDownloadManager:new({
     db = json_db,
     dl_status = opts.dl_status,
     max_threads = opts.max_threads,
-    path = path.join({ packpath, "pack", "fzf-lua", "opt" })
+    path = path.join({ packpath, "pack", "fzf-lua", "opt" }),
   })
   -- Error creating cache directory
   if not opts._adm then return end
@@ -457,7 +455,9 @@ M.awesome_colorschemes = function(opts)
       ---@cast co thread
 
       -- make sure our cache is in packpath
-      vim.opt.packpath:append(packpath --[[@as string]])
+      vim.opt.packpath:append(
+        packpath --[[@as string]]
+      )
 
       -- since resume uses deepcopy having multiple db's is going to
       -- create all sorts of voodoo issues when running resume
@@ -485,13 +485,11 @@ M.awesome_colorschemes = function(opts)
             local icon = not downloaded
                 and opts.icons[1]           -- download icon
                 or i == 1 and opts.icons[2] -- colorscheme (package) icon
-                or opts.icons[3]            -- colorscheme (variant) noicon
-            local entry = string.format("%s:%d:%s  %s %s",
-              dbkey,
-              i,
-              icon,
-              cs.disp_name,
-              i == 1 and string.format("(%s)", info.disp_url) or "")
+                or opts.icons[3] -- colorscheme (variant) noicon
+            local entry = string.format(
+              "%s:%d:%s  %s %s", dbkey, i, icon, cs.disp_name,
+              i == 1 and string.format("(%s)", info.disp_url) or ""
+            )
             cb(entry, function()
               coroutine.resume(co)
             end)

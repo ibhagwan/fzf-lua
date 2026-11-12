@@ -79,7 +79,8 @@ function M.ensure_window(buf_field, win_field, opts, hl)
     M[win_field] = utils.nvim_open_win0(M[buf_field], false, opts)
     utils.wo[M[win_field]].eventignorewin = "WinResized"
     utils.wo[M[win_field]].winhl = ("Normal:%s,NormalNC:%s,NormalFloat:%s,EndOfBuffer:%s"):format(
-      hl, hl, hl, hl)
+      hl, hl, hl, hl
+    )
   end
 end
 
@@ -93,9 +94,11 @@ local function border_compat(hls)
   if fg and #fg > 0 then
     local hlgroup = "FzfLuaScrollBorderBackCompat"
     hls.scrollfloat_f = hlgroup
-    api.nvim_set_hl(0, hlgroup,
+    api.nvim_set_hl(
+      0, hlgroup,
       vim.o.termguicolors and { default = false, fg = bg, bg = fg }
-      or { default = false, ctermfg = utils.tointeger(bg), ctermbg = utils.tointeger(fg) })
+        or { default = false, ctermfg = utils.tointeger(bg), ctermbg = utils.tointeger(fg) }
+    )
   end
 end
 

@@ -7,6 +7,7 @@ local new_set = MiniTest.new_set
 local exec_lua = child.lua
 
 -- Helpers with child processes
+-- fmt: off
 --stylua: ignore start
 ---@format disable-next
 local reload = function(config) child.unload(); child.setup(config) end
@@ -17,6 +18,7 @@ local get_lines = function(...) return child.get_lines(...) end
 local type_keys = function(...) return child.type_keys(...) end
 local sleep = function(ms) helpers.sleep(ms, child) end
 --stylua: ignore end
+-- fmt: on
 
 local T = helpers.new_set_with_child(child)
 
@@ -33,7 +35,8 @@ T["win"]["hide"]["ensure gc called after win hidden (#1782)"] = function()
   child.wait_until(function()
     if helpers.IS_WIN() then
       local hidden_fzf_bufnr = child.lua_get(
-        [[(FzfLua.utils.fzf_winobj() or {})._hidden_fzf_bufnr]])
+        [[(FzfLua.utils.fzf_winobj() or {})._hidden_fzf_bufnr]]
+      )
       if hidden_fzf_bufnr ~= vim.NIL then
         local chan = child.lua_get(([=[vim.bo[%s].channel]=]):format(hidden_fzf_bufnr))
         child.api.nvim_chan_send(chan, vim.keycode("<c-c>"))
@@ -76,16 +79,20 @@ end
 T["win"]["hide"]["preview buffers cleared when hidden win replaced (#2855)"] = function()
   reload({ "hide" })
   local bcache_size = function()
-    return child.lua_get([[(function()
+    return child.lua_get(
+      [[(function()
       local win = FzfLua.utils.fzf_winobj()
       local previewer = win and win._previewer
       return previewer and previewer.bcache and vim.tbl_count(previewer.bcache.entries) or 0
-    end)()]])
+    end)()]]
+    )
   end
   local preview_bufs = function()
-    return child.lua_get([[#vim.tbl_filter(function(buf)
+    return child.lua_get(
+      [[#vim.tbl_filter(function(buf)
       return vim.bo[buf].buftype == "nofile" and vim.bo[buf].bufhidden == "hide"
-    end, vim.api.nvim_list_bufs())]])
+    end, vim.api.nvim_list_bufs())]]
+    )
   end
   local cycle = function()
     exec_lua([[FzfLua.files({ previewer = "builtin" })]])
@@ -112,20 +119,24 @@ end
 
 T["win"]["hide"]["pending preview read is safe after cache clear (#2855)"] = function()
   reload({ "hide" })
-  exec_lua([[
+  exec_lua(
+    [[
     _G._preview_dir = vim.fn.tempname()
     vim.fn.mkdir(_G._preview_dir, "p")
     vim.fn.writefile({ "a" }, _G._preview_dir .. "/a.txt")
     vim.fn.writefile({ "b" }, _G._preview_dir .. "/b.txt")
     _G._read_file_async = require("fzf-lua.utils").read_file_async
     _G._pending_reads = {}
-  ]])
+  ]]
+  )
   local bcache_size = function()
-    return child.lua_get([[(function()
+    return child.lua_get(
+      [[(function()
       local win = FzfLua.utils.fzf_winobj()
       local previewer = win and win._previewer
       return previewer and previewer.bcache and vim.tbl_count(previewer.bcache.entries) or 0
-    end)()]])
+    end)()]]
+    )
   end
   exec_lua([[FzfLua.files({ cwd = _G._preview_dir, previewer = "builtin" })]])
   child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
@@ -133,26 +144,31 @@ T["win"]["hide"]["pending preview read is safe after cache clear (#2855)"] = fun
   child.type_keys("<c-n>")
   child.wait_until(function() return bcache_size() == 2 end)
   -- intercept the next read and make both cache entries stale
-  exec_lua([[
+  exec_lua(
+    [[
     require("fzf-lua.utils").read_file_async = function(path, cb)
       table.insert(_G._pending_reads, { path = path, cb = cb })
     end
     for _, name in ipairs({ "a.txt", "b.txt" }) do
       vim.uv.fs_utime(_G._preview_dir .. "/" .. name, 1700000000, 1700000000)
     end
-  ]])
+  ]]
+  )
   child.type_keys("<c-p>")
   child.wait_until(function() return child.lua_get([[#_G._pending_reads]]) == 1 end)
   exec_lua([[FzfLua.hide()]])
   child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
   -- replacing the hidden picker clears the cached preview buffers
-  exec_lua([[
+  exec_lua(
+    [[
     require("fzf-lua.utils").read_file_async = _G._read_file_async
     FzfLua.files({ cwd = _G._preview_dir, previewer = false })
-  ]])
+  ]]
+  )
   child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
   -- the in-flight read must not write to the deleted cached buffer
-  exec_lua([[
+  exec_lua(
+    [[
     _G._async_err = nil
     local schedule = vim.schedule
     vim.schedule = function(fn)
@@ -164,14 +180,16 @@ T["win"]["hide"]["pending preview read is safe after cache clear (#2855)"] = fun
     for _, pending in ipairs(_G._pending_reads) do
       pcall(pending.cb, "data")
     end
-  ]])
+  ]]
+  )
   sleep(100)
   eq(child.lua_get([[_G._async_err]]), vim.NIL)
 end
 
 T["win"]["hide"]["fresh pending preview read buffer is deleted (#2855)"] = function()
   reload({ "hide" })
-  exec_lua([[
+  exec_lua(
+    [[
     _G._preview_dir = vim.fn.tempname()
     vim.fn.mkdir(_G._preview_dir, "p")
     vim.fn.writefile({ "a" }, _G._preview_dir .. "/a.txt")
@@ -191,7 +209,8 @@ T["win"]["hide"]["fresh pending preview read buffer is deleted (#2855)"] = funct
       end, vim.api.nvim_list_bufs())
       _G._pending_buf = bufs[#bufs]
     end
-  ]])
+  ]]
+  )
   exec_lua([[FzfLua.files({ cwd = _G._preview_dir, previewer = "builtin" })]])
   child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
   child.wait_until(function() return child.lua_get([[#_G._pending_reads]]) == 1 end)
@@ -199,24 +218,29 @@ T["win"]["hide"]["fresh pending preview read buffer is deleted (#2855)"] = funct
   exec_lua([[FzfLua.hide()]])
   child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
   -- replacing the hidden picker discards the previewer
-  exec_lua([[
+  exec_lua(
+    [[
     require("fzf-lua.utils").read_file_async = _G._read_file_async
     FzfLua.files({ cwd = _G._preview_dir, previewer = false })
-  ]])
+  ]]
+  )
   child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
   -- the fresh cache-miss buffer can no longer be displayed, delete it
-  exec_lua([[
+  exec_lua(
+    [[
     for _, pending in ipairs(_G._pending_reads) do
       pcall(pending.cb, "data")
     end
-  ]])
+  ]]
+  )
   sleep(100)
   eq(child.lua_get([[vim.api.nvim_buf_is_valid(_G._pending_buf)]]), false)
 end
 
 T["win"]["hide"]["superseded pending preview read buffer is deleted (#2855)"] = function()
   reload({ "hide" })
-  exec_lua([[
+  exec_lua(
+    [[
     _G._preview_dir = vim.fn.tempname()
     vim.fn.mkdir(_G._preview_dir, "p")
     vim.fn.writefile({ "a" }, _G._preview_dir .. "/a.txt")
@@ -236,7 +260,8 @@ T["win"]["hide"]["superseded pending preview read buffer is deleted (#2855)"] = 
       end, vim.api.nvim_list_bufs())
       table.insert(_G._pending_reads, { path = path, cb = cb, buf = bufs[#bufs] })
     end
-  ]])
+  ]]
+  )
   local buf_valid = function(bufnr)
     return child.lua_get(([[vim.api.nvim_buf_is_valid(%d)]]):format(bufnr))
   end
@@ -253,17 +278,21 @@ T["win"]["hide"]["superseded pending preview read buffer is deleted (#2855)"] = 
   exec_lua([[FzfLua.hide()]])
   child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
   -- replacing the hidden picker discards the previewer
-  exec_lua([[
+  exec_lua(
+    [[
     require("fzf-lua.utils").read_file_async = _G._read_file_async
     FzfLua.files({ cwd = _G._preview_dir, previewer = false })
-  ]])
+  ]]
+  )
   child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
   -- both the superseded and current pending read buffers must be cleaned up
-  exec_lua([[
+  exec_lua(
+    [[
     for _, pending in ipairs(_G._pending_reads) do
       pcall(pending.cb, "data")
     end
-  ]])
+  ]]
+  )
   sleep(100)
   eq(buf_valid(first_buf), false)
   eq(buf_valid(second_buf), false)
@@ -310,7 +339,8 @@ T["win"]["hide"]["can resume after close CTX win (#1936)"] = function()
   local job = child.job
   if not job then error("child.job is nil after :wqa") end
   local job_id = job.id --[[@as integer]]
-  local res = vim.fn.jobwait({ job_id }, 1000)[1]
+  local res = vim.fn.jobwait({ job_id }, 1000)
+    [1]
   -- 0 = normal exit, -3 = already exited/invalid (acceptable race)
   local valid_res = { [0] = true, [-3] = true }
   eq(valid_res[res] or res, true) -- HACK: show the res code in the assert
@@ -318,11 +348,13 @@ end
 
 T["win"]["hide"]["actions on multi-select but zero-match #1961"] = function()
   reload({ "hide" })
-  exec_lua([[FzfLua.files{
+  exec_lua(
+    [[FzfLua.files{
     -- profile = "hide",
     query = "README.md",
     fzf_opts = { ["--multi"] = true },
-  }]])
+  }]]
+  )
   -- not work with `profile = "hide"`?
   child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
   child.type_keys([[<tab>]])
@@ -345,37 +377,47 @@ end
 
 T["win"]["keymap"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
-T["win"]["keymap"]["no error"] = new_set({ parametrize = (function()
-  local builtin = require("fzf-lua.defaults").defaults.keymap.builtin
-  ---@cast builtin table
-  local out = {}
-  for key, action in pairs(builtin) do out[#out + 1] = { key, action } end
-  return out
-end)() }, {
-  function(key, action)
-    for _, event in ipairs({ "start", "load", "result" }) do
-      helpers.FzfLua.files(child, {
-        __no_abort = true,
-        __expect_lines = false,
-        __after_open = function()
-          if helpers.IS_WIN() then vim.uv.sleep(250) end
-          -- Press the key being tested, then give window-affecting actions
-          -- (e.g. toggle-fullscreen) a moment to settle before closing.
-          -- On Windows, sending the action and abort too close together can
-          -- crash the child RPC channel.
-          child.type_keys(key)
-          sleep(100); if helpers.IS_WIN() then sleep(250) end
-          child.type_keys("<c-c>")
-          child.wait_until(function()
-            return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
-          end, 5000)
-        end,
-        query = "README.md",
-        winopts = { preview = { wrap = false } },
-        keymap = { true, fzf = { [event] = function() end } },
-      })
+T["win"]["keymap"]["no error"] = new_set({
+  parametrize = (function()
+    local builtin = require("fzf-lua.defaults")
+      .defaults
+      .keymap
+      .builtin
+    ---@cast builtin table
+    local out = {}
+    for key, action in pairs(builtin) do
+      out[#out + 1] = { key, action }
     end
-  end })
+    return out
+  end)(),
+},
+  {
+    function(key, action)
+      for _, event in ipairs({ "start", "load", "result" }) do
+        helpers.FzfLua.files(child, {
+          __no_abort = true,
+          __expect_lines = false,
+          __after_open = function()
+            if helpers.IS_WIN() then vim.uv.sleep(250) end
+            -- Press the key being tested, then give window-affecting actions
+            -- (e.g. toggle-fullscreen) a moment to settle before closing.
+            -- On Windows, sending the action and abort too close together can
+            -- crash the child RPC channel.
+            child.type_keys(key)
+            sleep(100)
+            if helpers.IS_WIN() then sleep(250) end
+            child.type_keys("<c-c>")
+            child.wait_until(function()
+              return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
+            end, 5000)
+          end,
+          query = "README.md",
+          winopts = { preview = { wrap = false } },
+          keymap = { true, fzf = { [event] = function() end } },
+        })
+      end
+    end,
+  })
 
 T["win"]["previewer"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
@@ -391,7 +433,7 @@ T["win"]["previewer"]["split flex layout resize"] = function()
       preview = {
         -- default test screen size is 28,64
         flip_columns = 64,
-      }
+      },
     },
     previewer = function() return require("fzf-lua.test.previewer").builtin end,
     keymap = { fzf = { resize = function() _G._fzf_resize_called = true end } },
@@ -407,7 +449,8 @@ T["win"]["previewer"]["split flex layout resize"] = function()
   child.wait_until(function()
     return child.lua_get([[_G._fzf_resize_called]]) == true
   end)
-  sleep(100); if not helpers.IS_LINUX() then sleep(250) end
+  sleep(100)
+  if not helpers.IS_LINUX() then sleep(250) end
   child.expect_screen_lines(screen_opts)
   -- abort and wait for winopts.on_close
   child.type_keys("<c-c>")
@@ -451,8 +494,8 @@ T["win"]["previewer"]["split flex hidden"] = function()
         -- default test screen size is 28,64
         flip_columns = 64,
         -- start hidden
-        hidden = true
-      }
+        hidden = true,
+      },
     },
     previewer = function() return require("fzf-lua.test.previewer").builtin end,
     __after_open = function()
@@ -468,21 +511,21 @@ end
 -- E: toggle_behavior=extend, B: builtin previewer, F: "echo {}" preview
 T["win"]["toggle"] = new_set({
   parametrize = { { "EB" }, { "EF" }, { "B" }, { "F" } },
-  n_retry = not helpers.IS_LINUX() and 5 or 2
+  n_retry = not helpers.IS_LINUX() and 5 or 2,
 })
-T["win"]["toggle"][""] = new_set(
+T["win"]["toggle"][""] = new_set({
+  parametrize = {
+    { {} },
+    { { winopts = { split = "enew" } } },
+    { { winopts = { split = "botright new", preview = { layout = "horizontal" } } } },
+    { { profile = "border-fused" } },
+    { { profile = "borderless-full", winopts = { preview = { layout = "horizontal" } } } },
+    { { winopts = { border = false } } },
+    { { winopts = { preview = { vertical = "down:4" } } } },
+    { { winopts = { preview = { border = false } } } },
+  },
+},
   {
-    parametrize = {
-      { {} },
-      { { winopts = { split = "enew", } } },
-      { { winopts = { split = "botright new", preview = { layout = "horizontal" } } } },
-      { { profile = "border-fused" } },
-      { { profile = "borderless-full", winopts = { preview = { layout = "horizontal" } }, } },
-      { { winopts = { border = false } } },
-      { { winopts = { preview = { vertical = "down:4" } } } },
-      { { winopts = { preview = { border = false } } } },
-    }
-  }, {
     -- Ignore terminal command line with process number
     function(a, o)
       local screen_opts = { ignore_text = { 24, 28 }, normalize_paths = helpers.IS_WIN() }
@@ -523,12 +566,13 @@ T["win"]["relative=cursor"] = function()
     __screen_opts = screen_opts,
     winopts = {
       relative = "cursor",
-      preview = { layout = "horizontal", horizontal = "left:50%" }
+      preview = { layout = "horizontal", horizontal = "left:50%" },
     },
     previewer = function() return require("fzf-lua.test.previewer").builtin end,
     __after_open = function()
       child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
-      sleep(100); if not helpers.IS_LINUX() then sleep(250) end
+      sleep(100)
+      if not helpers.IS_LINUX() then sleep(250) end
     end,
   }
   helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
@@ -542,53 +586,56 @@ T["win"]["relative=cursor"] = function()
   child.cmd([[bwipe!]])
 end
 
-
 T["win"]["reuse"] = new_set({
   parametrize = {
     { {} },
-    { { winopts = { split = "enew", } } },
+    { { winopts = { split = "enew" } } },
     { { winopts = { split = "botright new", preview = { layout = "horizontal" } } } },
   },
-  n_retry = not helpers.IS_LINUX() and 5 or nil
-}, {
-  function(o)
-    -- Ignore terminal command line with process number
-    local screen_opts = { ignore_text = { 24, 28 }, normalize_paths = helpers.IS_WIN() }
-    local opts = {
-      __no_abort = true,
-      __expect_lines = false,
-      __screen_opts = screen_opts,
-      winopts = {
-        toggle_behavior = "extend",
-        preview = { hidden = false, delay = 0 },
-      },
-      previewer = function() return require("fzf-lua.test.previewer").builtin end,
-      __after_open = function()
-        child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
-        sleep(100); if not helpers.IS_LINUX() then sleep(250) end
-      end,
-    }
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    opts = vim.tbl_deep_extend("force", opts, o)
-    helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
-    -- change to fzf preview
-    opts.previewer = nil
-    opts.preview = "echo resue windows, change from builtin to fzf preview"
-    opts.__expect_lines = true
-    opts.__no_abort = nil
-    exec_lua([[_G._fzf_lua_on_create = nil]])
-    exec_lua([[_G._fzf_load_called = nil]])
-    helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
+  n_retry = not helpers.IS_LINUX() and 5 or nil,
+},
+  {
+    function(o)
+      -- Ignore terminal command line with process number
+      local screen_opts = { ignore_text = { 24, 28 }, normalize_paths = helpers.IS_WIN() }
+      local opts = {
+        __no_abort = true,
+        __expect_lines = false,
+        __screen_opts = screen_opts,
+        winopts = {
+          toggle_behavior = "extend",
+          preview = { hidden = false, delay = 0 },
+        },
+        previewer = function() return require("fzf-lua.test.previewer").builtin end,
+        __after_open = function()
+          child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
+          sleep(100)
+          if not helpers.IS_LINUX() then sleep(250) end
+        end,
+      }
+      ---@diagnostic disable-next-line: assign-type-mismatch
+      opts = vim.tbl_deep_extend("force", opts, o)
+      helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
+      -- change to fzf preview
+      opts.previewer = nil
+      opts.preview = "echo resue windows, change from builtin to fzf preview"
+      opts.__expect_lines = true
+      opts.__no_abort = nil
+      exec_lua([[_G._fzf_lua_on_create = nil]])
+      exec_lua([[_G._fzf_load_called = nil]])
+      helpers.FzfLua.fzf_exec(child, { "foo", "bar", "baz" }, opts)
 
-    -- toggle_preview on hide profile
-    reload({ "hide" })
-    exec_lua([[
+      -- toggle_preview on hide profile
+      reload({ "hide" })
+      exec_lua(
+        [[
       require('fzf-lua').fzf_exec({ 'a', 'b' },{ preview = "echo builtin" })
       require('fzf-lua').fzf_exec({ 'b', 'c' }, { previewer = require('fzf-lua.test.previewer').builtin })
-    ]])
-    toggle_preview()
-  end
-})
+    ]]
+      )
+      toggle_preview()
+    end,
+  })
 
 T["win"]["highlight"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
@@ -596,7 +643,10 @@ T["win"]["highlight"]["unchange when reuse win #2588"] = function()
   helpers.SKIP_IF_WIN() -- windows attr looks different
   local opts = {
     __no_abort = true,
-    __after_open = function() sleep(100); if not helpers.IS_LINUX() then sleep(250) end end,
+    __after_open = function()
+      sleep(100)
+      if not helpers.IS_LINUX() then sleep(250) end
+    end,
     cwd_prompt = false,
   }
   helpers.FzfLua.files(child, opts)
@@ -609,7 +659,8 @@ end
 T["win"]["restore last window"] = new_set()
 
 T["win"]["restore last window"]["does not trigger float autoclose (#2837)"] = function()
-  exec_lua([[
+  exec_lua(
+    [[
     _G._float_win = vim.api.nvim_open_win(vim.api.nvim_create_buf(false, true), true, {
       relative = "editor",
       width = 20,
@@ -632,18 +683,22 @@ T["win"]["restore last window"]["does not trigger float autoclose (#2837)"] = fu
         end
       end,
     })
-  ]])
+  ]]
+  )
   exec_lua([[FzfLua.files{ query = "README.md" }]])
   child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
   child.type_keys("<esc>")
   child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL end)
   sleep(100)
   eq(true, child.lua_get([[vim.api.nvim_win_is_valid(_G._float_win)]]))
-  exec_lua([[if vim.api.nvim_win_is_valid(_G._float_win) then vim.api.nvim_win_close(_G._float_win, true) end]])
+  exec_lua(
+    [[if vim.api.nvim_win_is_valid(_G._float_win) then vim.api.nvim_win_close(_G._float_win, true) end]]
+  )
 end
 
 T["win"]["restore last window"]["keeps events for regular windows (#2812)"] = function()
-  exec_lua([[
+  exec_lua(
+    [[
     -- Keep the original window as the intermediate target.
     vim.cmd("split")
     vim.cmd("enew")
@@ -660,7 +715,8 @@ T["win"]["restore last window"]["keeps events for regular windows (#2812)"] = fu
         end
       end,
     })
-  ]])
+  ]]
+  )
   exec_lua([[FzfLua.files{ query = "README.md" }]])
   child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
   -- only count the events fired while closing, not the ones from opening fzf
@@ -676,15 +732,20 @@ T["win"]["treesitter"] = new_set()
 T["win"]["treesitter"]["short lines do not break highlight parsing"] = function()
   -- Short rows (e.g. the "> " prompt and "  1/1" counter) used to produce
   -- an `end_col < start_col` region which treesitter rejects on parse
-  exec_lua([[
+  exec_lua(
+    [[
     local tsinjector = require("fzf-lua.win.tsinjector")
     _G._ts_buf = vim.api.nvim_create_buf(false, true)
     _G._ts_detach = tsinjector.attach({ winopts = {}, preview_hidden = true }, _G._ts_buf,
       function(line) return "foo.vim", nil, line end)
     vim.api.nvim_buf_set_lines(_G._ts_buf, 0, -1, false,
       { "FzfLua command_history", "> " })
-  ]])
-  eq(true, child.lua_get([[(function()
+  ]]
+  )
+  eq(
+    true,
+    child.lua_get(
+      [[(function()
     local tsinjector = require("fzf-lua.win.tsinjector")
     local ok = pcall(function()
       tsinjector.cache[_G._ts_buf].vim.highlighter.tree:parse({ 0, 3 })
@@ -694,7 +755,9 @@ T["win"]["treesitter"]["short lines do not break highlight parsing"] = function(
     local regions = tsinjector.cache[_G._ts_buf].vim.parser:included_regions()
     local range = regions[1] and regions[1][1]
     return #regions == 1 and range and range[5] > range[2]
-  end)()]]))
+  end)()]]
+    )
+  )
   exec_lua([[_G._ts_detach()]])
 end
 

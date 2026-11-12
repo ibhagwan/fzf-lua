@@ -15,13 +15,15 @@ T["buffers"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 -- is closed (or its context is otherwise re-created without `buflist`) before
 -- that reload is processed, the old code asserted on `ctx.buflist`.
 T["buffers"]["reload after picker close"] = function()
-  exec_lua([[
+  exec_lua(
+    [[
     for i = 1, 3 do
       vim.cmd.edit(vim.fn.tempname())
       vim.api.nvim_buf_set_lines(0, 0, -1, false, { "buffer " .. i })
     end
     vim.cmd.edit(vim.fn.tempname())
-  ]])
+  ]]
+  )
 
   child.FzfLua.buffers({ previewer = false })
   child.wait_until(function() return child.lua_get([[_G._fzf_lua_on_create]]) == true end)
@@ -36,14 +38,16 @@ T["buffers"]["reload after picker close"] = function()
 
   -- deliver the pending reload, as if it was still in flight when the picker
   -- was closed
-  local job = exec_lua([[
+  local job = exec_lua(
+    [[
     local cmd = ...
     _G._fzf_lua_reload_exit = nil
     return vim.fn.jobstart(cmd, {
       env = { FZF_LUA_SERVER = vim.v.servername },
       on_exit = function(_, code) _G._fzf_lua_reload_exit = code end,
     })
-  ]], { reload_cmd })
+  ]], { reload_cmd }
+  )
   eq(job > 0, true, { fail_reason = "jobstart failed: " .. tostring(job) })
   child.wait_until(function()
     return exec_lua([[return _G._fzf_lua_reload_exit ~= nil]]) == true

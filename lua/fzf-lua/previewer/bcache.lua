@@ -26,10 +26,8 @@ end
 local key_from_entry = function(entry)
   -- entry.do_not_cache -> entry.cache_key=false?
   if entry.do_not_cache then return nil end
-  return entry.cache_key
-      or entry.bufnr and ("bufnr:%d"):format(entry.bufnr)
-      or entry.uri
-      or entry.path
+  return entry.cache_key or entry.bufnr and ("bufnr:%d"):format(entry.bufnr)
+    or entry.uri or entry.path
 end
 
 ---@param entry fzf-lua.buffer_or_file.Entry
