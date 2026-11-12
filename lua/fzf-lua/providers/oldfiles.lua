@@ -7,8 +7,8 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
----@param opts fzf-lua.config.Oldfiles|{}?
----@param globals string|(fzf-lua.Config|{})?
+---@param opts fzf-lua.config.Oldfiles|{ }?
+---@param globals string|(fzf-lua.Config|{ })?
 ---@return thread?, string?, table?
 M.oldfiles = function(opts, globals)
   ---@type fzf-lua.config.Oldfiles
@@ -24,42 +24,41 @@ M.oldfiles = function(opts, globals)
   -- mounts, etc. When running inside the contents coroutine use the async
   -- variant with a per-file timeout so such files are skipped instead of
   -- hanging the picker, disable by setting `stat_timeout=0` (#2793)
-  local stat_fn = not opts.stat_file and function(_) return true end
-      or type(opts.stat_file) == "function" and opts.stat_file
-      or function(file, co)
-        -- outside of a coroutine context (e.g. the header line) we have
-        -- no choice but to use the blocking sync variant
-        if not co or not opts.stat_timeout or opts.stat_timeout <= 0 then
-          local stat = uv.fs_stat(file)
-          return (not utils.path_is_directory(file, stat)
+  local stat_fn = not opts.stat_file and function(_) return true end or type(opts.stat_file)
+      == "function"
+      and opts.stat_file or function(file, co)
+      -- outside of a coroutine context (e.g. the header line) we have
+      -- no choice but to use the blocking sync variant
+      if not co or not opts.stat_timeout or opts.stat_timeout <= 0 then
+        local stat = uv.fs_stat(file)
+        return (not utils.path_is_directory(file, stat)
             -- FIFO blocks `fs_open` indefinitely (#908)
             and not utils.file_is_fifo(file, stat)
-            and utils.file_is_readable(file))
-        end
-        -- schedule the resume as the fs/timer callbacks run in fast-event
-        -- context where most `vim.api` calls in the loop are not allowed
-        local resume = function(...)
-          local argv = { n = select("#", ...), ... }
-          vim.schedule(function()
-            if coroutine.status(co) == "suspended" then
-              coroutine.resume(co, unpack(argv, 1, argv.n))
-            end
-          end)
-        end
-        utils.fs_stat_async(file, opts.stat_timeout, function(stat)
-          if not stat
+          and utils.file_is_readable(file))
+      end
+      -- schedule the resume as the fs/timer callbacks run in fast-event
+      -- context where most `vim.api` calls in the loop are not allowed
+      local resume = function(...)
+        local argv = { n = select("#", ...), ... }
+        vim.schedule(function()
+          if coroutine.status(co) == "suspended" then
+            coroutine.resume(co, unpack(argv, 1, argv.n))
+          end
+        end)
+      end
+      utils.fs_stat_async(file, opts.stat_timeout, function(stat)
+        if not stat
               or utils.path_is_directory(file, stat)
               -- FIFO blocks `fs_open` indefinitely (#908)
-              or utils.file_is_fifo(file, stat)
-          then
-            return resume(false)
-          end
-          -- a stale mount can hang `fs_open` as well (#2793)
-          utils.file_is_readable_async(file, opts.stat_timeout, resume)
-        end)
-        -- resumed with the result by the callbacks above
-        return coroutine.yield()
-      end
+              or utils.file_is_fifo(file, stat) then
+          return resume(false)
+        end
+        -- a stale mount can hang `fs_open` as well (#2793)
+        utils.file_is_readable_async(file, opts.stat_timeout, resume)
+      end)
+      -- resumed with the result by the callbacks above
+      return coroutine.yield()
+    end
 
   ---@param co thread? contents coroutine, enables async stat (#2793)
   local sorted_named_buffers = function(co)
@@ -119,8 +118,9 @@ M.oldfiles = function(opts, globals)
 
       ---@diagnostic disable-next-line: redefined-local
       local function add_entry(x, co, force)
-        x = make_entry.file(x,
-          force and vim.tbl_deep_extend("force", {}, opts, { cwd_only = false }) or opts)
+        x = make_entry.file(
+          x, force and vim.tbl_deep_extend("force", {}, opts, { cwd_only = false }) or opts
+        )
         if not x then return end
         cb(x, function(err)
           coroutine.resume(co)
@@ -162,7 +162,7 @@ M.oldfiles = function(opts, globals)
   return core.fzf_exec(contents, opts)
 end
 
----@param opts fzf-lua.config.History|{}?
+---@param opts fzf-lua.config.History|{ }?
 ---@return thread?, string?, table?
 M.history = function(opts)
   return M.oldfiles(opts, "history")

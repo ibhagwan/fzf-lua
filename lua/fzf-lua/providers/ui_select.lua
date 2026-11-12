@@ -58,10 +58,9 @@ local resolve_preview_type = function(ui_opts, opts)
   if preview_type == nil then
     local profile = opts.profile or opts[1]
     local is_tmux_profile = profile == "fzf-tmux"
-        or (type(profile) == "table" and vim.tbl_contains(profile, "fzf-tmux"))
-    preview_type = (is_tmux_profile
-          or (opts.fzf_opts and opts.fzf_opts["--tmux"]))
-        and "native" or "buffer"
+      or (type(profile) == "table" and vim.tbl_contains(profile, "fzf-tmux"))
+    preview_type = (is_tmux_profile or (opts.fzf_opts and opts.fzf_opts["--tmux"])) and "native"
+      or "buffer"
   end
   return preview_type
 end
@@ -93,8 +92,10 @@ M.ui_select = function(items, ui_opts, on_choice)
   local num_format_str = "%" .. num_width .. "d"
   local reverse_lookup = {}
   for i, e in ipairs(items) do
-    local entry = ("%s. %s"):format(utils.ansi_codes.magenta(num_format_str:format(i)),
-      ui_opts.format_item and ui_opts.format_item(e) or tostring(e))
+    local entry = ("%s. %s"):format(
+      utils.ansi_codes.magenta(num_format_str:format(i)),
+      ui_opts.format_item and ui_opts.format_item(e) or tostring(e)
+    )
     entries[#entries + 1] = entry
     -- fzf will to strip all ansi (even in item str), so we store stripped key
     reverse_lookup[utils.strip_ansi_coloring(entry)] = i
@@ -151,8 +152,9 @@ M.ui_select = function(items, ui_opts, on_choice)
     -- We also override actions to guarantee a single default
     -- action, otherwise selected[1] will be empty due to
     -- multiple keybinds trigger, sending `--expect` to fzf
-    opts.actions = vim.tbl_deep_extend("force", opts.actions or {},
-      { ["enter"] = opts.actions and opts.actions.enter or nil })
+    opts.actions = vim.tbl_deep_extend(
+      "force", opts.actions or {}, { ["enter"] = opts.actions and opts.actions.enter or nil }
+    )
     opts.previewer = previewer
     -- Callback to set the coroutine so we know if the interface
     -- was opened or not (e.g. when no code actions are present)
@@ -222,13 +224,14 @@ M.ui_select = function(items, ui_opts, on_choice)
       -- till **after** the mode is changed (#1572)
       vim.cmd [[noautocmd lua vim.api.nvim_feedkeys('i', 'n', true)]]
       vim.api.nvim_create_autocmd("ModeChanged", {
-        pattern = "*:i*", once = true, callback = exec_choice
+        pattern = "*:i*",
+        once = true,
+        callback = exec_choice,
       })
     else
       exec_choice()
     end
   end)
-
 
   if ui_opts.preview_item then
     local preview_type = resolve_preview_type(ui_opts, opts)
@@ -254,10 +257,11 @@ M.ui_select = function(items, ui_opts, on_choice)
           local tmp_esc = require("fzf-lua.libuv").shellescape(tmpfile)
           if ft and ft ~= "" then
             return ("bat --style=numbers,changes --color=always --language=%s %s 2>%s || %s %s")
-                :format(ft, tmp_esc, nul, cat, tmp_esc)
+              :format(ft, tmp_esc, nul, cat, tmp_esc)
           end
           return ("bat --style=numbers,changes --color=always %s 2>%s || %s %s"):format(
-            tmp_esc, nul, cat, tmp_esc)
+            tmp_esc, nul, cat, tmp_esc
+          )
         end,
         type = "cmd",
       }
@@ -281,13 +285,15 @@ M.ui_select = function(items, ui_opts, on_choice)
     else
       opts.previewer = {
         _ctor = function()
-          local previewer = require("fzf-lua.previewer.builtin").buffer_or_file:extend()
+          local previewer = require("fzf-lua.previewer.builtin")
+            .buffer_or_file
+            :extend()
           ---@diagnostic disable-next-line: unused
           function previewer:parse_entry(entry_str, cb)
             local str = utils.strip_ansi_coloring(entry_str)
             local res = ui_opts.preview_item(items[reverse_lookup[str]], cb)
             if type(res) ~= "table" or (not res.buf and not res.pos) then
-              return { content = { { { "No preview available", "Error" } } }, }
+              return { content = { { { "No preview available", "Error" } } } }
             end
             local pos_start, pos_end = res.pos, res.pos_end
             return {

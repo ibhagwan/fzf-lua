@@ -57,11 +57,11 @@ M.uv_spawn = function(cmd, opts, on_exit)
   opts.env = (function()
     -- uv.spawn will override all env when table provided?
     -- steal from $VIMRUNTIME/lua/vim/_system.lua
-    local env = vim.fn.environ() --- @type table<string,string>
+    local env = vim.fn.environ() ---@type table<string, string>
     env["NVIM"] = vim.v.servername
     env["NVIM_LISTEN_ADDRESS"] = nil
     env = vim.tbl_extend("keep", opts.env or {}, env or {})
-    local renv = {} --- @type string[]
+    local renv = {} ---@type string[]
     for k, v in pairs(env) do
       renv[#renv + 1] = string.format("%s=%s", k, tostring(v))
     end
@@ -84,7 +84,8 @@ local function win_ffi_init()
   if win_ffi ~= nil then return win_ffi or nil end
   local ok, res = pcall(function()
     local ffi = require("ffi")
-    ffi.cdef([[
+    ffi.cdef(
+      [[
       typedef struct { short x; short y; } FzfCOORD;
       typedef struct { short left; short top; short right; short bottom; } FzfSMALL;
       typedef struct {
@@ -108,7 +109,8 @@ local function win_ffi_init()
         void* lpSecurityDescriptor;
         int bInheritHandle;
       } FzfSA;
-    ]])
+    ]]
+    )
     return { ffi = ffi, k32 = ffi.load("kernel32") }
   end)
   win_ffi = (ok and res) or false
@@ -130,7 +132,9 @@ M.win_console_stdio = function()
     local ffi = assert(win and win.ffi)
     local function wsz(s)
       local b = ffi.new("unsigned short[?]", #s + 1)
-      for i = 1, #s do b[i - 1] = s:byte(i) end
+      for i = 1, #s do
+        b[i - 1] = s:byte(i)
+      end
       return b
     end
     local sa = ffi.new("FzfSA")
@@ -166,12 +170,12 @@ M.win_stderr_fd = function()
   return console and console[3] or 2
 end
 
---- Width of the Windows console screen buffer (`srWindow`), `nil` when not
---- attached to a console or on other platforms. The std handles cannot be
---- trusted for this: the pwsh PSReadLine key handlers pipe both stdout and
---- stderr (`uv.new_tty` fails on the pipes) and a ConPTY stdin tty reports
---- no size, so the console device is opened directly (`CONOUT$`/`CONIN$`,
---- same rationale as `win_console_stdio`).
+---Width of the Windows console screen buffer (`srWindow`), `nil` when not
+---attached to a console or on other platforms. The std handles cannot be
+---trusted for this: the pwsh PSReadLine key handlers pipe both stdout and
+---stderr (`uv.new_tty` fails on the pipes) and a ConPTY stdin tty reports
+---no size, so the console device is opened directly (`CONOUT$`/`CONIN$`,
+---same rationale as `win_console_stdio`).
 ---@return integer?
 M.win_console_width = function()
   if not _is_win then return nil end
@@ -181,7 +185,9 @@ M.win_console_width = function()
     local ffi = assert(win and win.ffi)
     local function wsz(s)
       local b = ffi.new("unsigned short[?]", #s + 1)
-      for i = 1, #s do b[i - 1] = s:byte(i) end
+      for i = 1, #s do
+        b[i - 1] = s:byte(i)
+      end
       return b
     end
     local GENERIC_RW, SHARE_RW, OPEN_EXISTING = 0xC0000000, 3, 3
@@ -202,20 +208,20 @@ M.win_console_width = function()
   return width
 end
 
---- libuv as bundled with Neovim (<= 1.52) spawns children with
---- `CreateProcess(bInheritHandles=TRUE)` and no
---- `PROC_THREAD_ATTRIBUTE_HANDLE_LIST`, so *every* inheritable handle of
---- this process leaks into the child even when it isn't part of `stdio`.
---- When a shell integration captures the picker output (stdout/stderr are
---- pipes), those pipes would end up in the spawned process tree; an nvim
---- `--embed` server left running by `:detach` would then keep the pipes'
---- write end open forever and the shell's pipeline reader would never see
---- EOF (stuck shell/key handler).
+---libuv as bundled with Neovim (<= 1.52) spawns children with
+---`CreateProcess(bInheritHandles=TRUE)` and no
+---`PROC_THREAD_ATTRIBUTE_HANDLE_LIST`, so *every* inheritable handle of
+---this process leaks into the child even when it isn't part of `stdio`.
+---When a shell integration captures the picker output (stdout/stderr are
+---pipes), those pipes would end up in the spawned process tree; an nvim
+---`--embed` server left running by `:detach` would then keep the pipes'
+---write end open forever and the shell's pipeline reader would never see
+---EOF (stuck shell/key handler).
 ---
---- Temporarily clears `HANDLE_FLAG_INHERIT` on the stdio fds (`0`, `1`,
---- `2`) that are not referenced by `stdio`. Returns a function restoring
---- the original flags; call it right after `uv.spawn` returns (the
---- child's handle table is fixed at `CreateProcess` time).
+---Temporarily clears `HANDLE_FLAG_INHERIT` on the stdio fds (`0`, `1`,
+---`2`) that are not referenced by `stdio`. Returns a function restoring
+---the original flags; call it right after `uv.spawn` returns (the
+---child's handle table is fixed at `CreateProcess` time).
 ---@param stdio table stdio table as passed to `uv.spawn`
 ---@return fun()|nil restore
 M.win_stdio_no_inherit = function(stdio)
@@ -233,13 +239,13 @@ M.win_stdio_no_inherit = function(stdio)
   local HANDLE_FLAG_INHERIT = 1
   -- STD_INPUT_HANDLE/STD_OUTPUT_HANDLE/STD_ERROR_HANDLE (fds 0/1/2)
   local STD_HANDLES = { 0xFFFFFFF6, 0xFFFFFFF5, 0xFFFFFFF4 }
-  local saved = {} ---@type { h: any, flags: integer }[]
+  local saved = {} ---@type { h: any, flags: integer } []
   for fd = 0, 2 do
     if not in_use[fd] then
       local h = k32.GetStdHandle(STD_HANDLES[fd + 1])
       local flags = ffi.new("unsigned long[1]")
       if k32.GetHandleInformation(h, flags) ~= 0
-          and k32.SetHandleInformation(h, HANDLE_FLAG_INHERIT, 0) ~= 0 then
+        and k32.SetHandleInformation(h, HANDLE_FLAG_INHERIT, 0) ~= 0 then
         saved[#saved + 1] = { h = h, flags = flags[0] }
       end
     end
@@ -257,7 +263,7 @@ end
 ---@field args string[] raw fzf argv (`uv.spawn` prepends `bin` as argv[0])
 ---@field item? string producer command (cmd syntax), piped into fzf stdin
 ---@field outfile string fzf stdout is redirected to this file
----@field env? table<string,any>
+---@field env? table<string, any>
 ---@field cwd? string
 ---@field stdin? integer fzf stdin fd when there is no `item` (default 0)
 ---@field stderr? integer fzf stderr fd (default `win_stderr_fd()`)
@@ -274,7 +280,7 @@ end
 -- (CLI nvim) and `win_spawn.lua` (mediator for TUI terminal buffers).
 ---@param spec fzf-lua.WinSpawnSpec
 ---@param opts { on_exit: fun(rc: integer) } called once fzf and the producer
----  tree exited (the `outfile` is flushed before that)
+---tree exited (the `outfile` is flushed before that)
 ---@return boolean ok false when fzf failed to spawn (on_exit(1) still called)
 M.win_spawn = function(spec, opts)
   assert(_is_win, "win_spawn is Windows only")
@@ -357,62 +363,73 @@ M.win_spawn = function(spec, opts)
 
   -- fzf first: a spawn failure aborts before the producer is started
   local ok, spawn_err = pcall(function()
-    fzf_handle = M.uv_spawn(spec.bin, {
-      cwd = spec.cwd,
-      args = spec.args,
-      stdio = { fzf_in or spec.stdin or 0, out_fd, stderr_fd },
-      env = spec.env,
-    }, function(rc, _)
-      fzf_done, fzf_rc = true, rc
-      close_handle(fzf_handle)
-      if prod_out and not prod_out:is_closing() then
-        prod_out:read_stop()
-      end
-      -- fzf exited while the producer may still be running (e.g. the user
-      -- aborted a `ping`-like producer): luv's `kill` is not a tree kill
-      -- on Windows, `taskkill /T /F` reaps the launcher and its children
-      if not prod_done and prod_pid then
-        kill_done = false
-        local kok = pcall(function()
-          if not kill_null then kill_null = assert(uv.new_pipe(false)) end
-          kill_handle = M.uv_spawn("taskkill.exe", {
-            args = { "/PID", tostring(prod_pid), "/T", "/F" },
-            stdio = { nil, kill_null, kill_null },
-          }, function()
-            kill_done = true
-            close_handle(kill_handle)
-            maybe_finish()
+    fzf_handle = M.uv_spawn(
+      spec.bin,
+      {
+        cwd = spec.cwd,
+        args = spec.args,
+        stdio = { fzf_in or spec.stdin or 0, out_fd, stderr_fd },
+        env = spec.env,
+      },
+      function(rc, _)
+        fzf_done, fzf_rc = true, rc
+        close_handle(fzf_handle)
+        if prod_out and not prod_out:is_closing() then
+          prod_out:read_stop()
+        end
+        -- fzf exited while the producer may still be running (e.g. the user
+        -- aborted a `ping`-like producer): luv's `kill` is not a tree kill
+        -- on Windows, `taskkill /T /F` reaps the launcher and its children
+        if not prod_done and prod_pid then
+          kill_done = false
+          local kok = pcall(function()
+            if not kill_null then kill_null = assert(uv.new_pipe(false)) end
+            kill_handle = M.uv_spawn(
+              "taskkill.exe",
+              {
+                args = { "/PID", tostring(prod_pid), "/T", "/F" },
+                stdio = { nil, kill_null, kill_null },
+              },
+              function()
+                kill_done = true
+                close_handle(kill_handle)
+                maybe_finish()
+              end
+            )
+            close_handle(kill_null)
+            kill_null = nil
           end)
-          close_handle(kill_null)
-          kill_null = nil
-        end)
-        if not kok then kill_done = true end
+          if not kok then kill_done = true end
+        end
+        maybe_finish()
       end
-      maybe_finish()
-    end)
+    )
   end)
   if not ok or not fzf_handle then
-    io.stderr:write(
-      ("[fzf-lua] failed to spawn '%s': %s\n"):format(spec.bin, tostring(spawn_err)))
+    io.stderr:write(("[fzf-lua] failed to spawn '%s': %s\n"):format(spec.bin, tostring(spawn_err)))
     finish(1)
     return false
   end
 
   if item then
     local pok = pcall(function()
-      prod_handle, prod_pid = M.uv_spawn("cmd.exe", {
-        -- pass the producer command verbatim: it is a raw `cmd /c` line,
+      prod_handle, prod_pid = M.uv_spawn(
+        "cmd.exe",
+        {
+          -- pass the producer command verbatim: it is a raw `cmd /c` line,
         -- libuv's quoting would corrupt it (same as the old launcher)
-        args = { "/d", "/e:off", "/f:off", "/v:off", "/c", item },
-        verbatim = true,
-        cwd = spec.cwd,
-        env = spec.env,
-        stdio = { nil, prod_out, stderr_fd },
-      }, function(_, _)
-        prod_done = true
-        close_handle(prod_handle)
-        maybe_finish()
-      end)
+          args = { "/d", "/e:off", "/f:off", "/v:off", "/c", item },
+          verbatim = true,
+          cwd = spec.cwd,
+          env = spec.env,
+          stdio = { nil, prod_out, stderr_fd },
+        },
+        function(_, _)
+          prod_done = true
+          close_handle(prod_handle)
+          maybe_finish()
+        end
+      )
     end)
     if pok and prod_handle and prod_out then
       prod_out:read_start(pump)
@@ -426,7 +443,6 @@ M.win_spawn = function(spec, opts)
   end
   return true
 end
-
 
 ---@class fzf-lua.SpawnOpts
 ---@field cwd? string
@@ -448,7 +464,7 @@ end
 ---@param fn_transform function?
 ---@param fn_done function?
 ---@return uv.uv_process_t proc
----@return integer         pid
+---@return integer pid
 M.spawn = function(opts, fn_transform, fn_done)
   local EOL = opts.EOL or "\n"
   local EOL_data = type(opts.cmd) == "string"
@@ -460,7 +476,8 @@ M.spawn = function(opts, fn_transform, fn_done)
         or opts.cmd:match("%s%-?%-print0") -- -print0|--print0
         or opts.cmd:match("%s%-%-null")
         or opts.cmd:match("%s%-Z"))
-      and "\0" or "\n"
+    and "\0"
+    or "\n"
   local output_pipe = assert(uv.new_pipe(false))
   local error_pipe = assert(uv.new_pipe(false))
   local write_cb_count, read_cb_count = 0, 0
@@ -482,7 +499,7 @@ M.spawn = function(opts, fn_transform, fn_done)
   local can_finish = function()
     if not output_pipe:is_active() -- EOF signalled or process is aborting
         and read_cb_count == 0     -- no outstanding read_cb data processing
-        and write_cb_count == 0    -- no outstanding write callbacks
+        and write_cb_count == 0 -- no outstanding write callbacks
     then
       return true
     end
@@ -525,22 +542,26 @@ M.spawn = function(opts, fn_transform, fn_done)
     table.insert(args, tostring(opts.cmd))
   end
 
-  handle, pid = M.uv_spawn(shell, {
-    args = args,
-    stdio = { nil, output_pipe, error_pipe },
-    cwd = opts.cwd,
-    env = opts.env,
-    verbatim = _is_win,
-  }, function(code, signal)
-    if can_finish() or code ~= 0 then
-      -- Do not call `:read_stop` or `:close` here as we may have data
-      -- reads outstanding on slower Windows machines (#1521), only call
-      -- `finish` if all our `uv.write` calls are completed and the pipe
-      -- is no longer active (i.e. no more read cb's expected)
-      finish(code, signal, "[on_exit]", pid)
+  handle, pid = M.uv_spawn(
+    shell,
+    {
+      args = args,
+      stdio = { nil, output_pipe, error_pipe },
+      cwd = opts.cwd,
+      env = opts.env,
+      verbatim = _is_win,
+    },
+    function(code, signal)
+      if can_finish() or code ~= 0 then
+        -- Do not call `:read_stop` or `:close` here as we may have data
+        -- reads outstanding on slower Windows machines (#1521), only call
+        -- `finish` if all our `uv.write` calls are completed and the pipe
+        -- is no longer active (i.e. no more read cb's expected)
+        finish(code, signal, "[on_exit]", pid)
+      end
+      handle:close()
     end
-    handle:close()
-  end)
+  )
 
   -- save current process pid
   if opts.cb_pid then opts.cb_pid(pid) end
@@ -597,7 +618,7 @@ M.spawn = function(opts, fn_transform, fn_done)
     return ret, prev
   end
 
-  --- Called with nil to process the leftover data
+  ---Called with nil to process the leftover data
   ---@param data string?
   local process_data = function(data)
     if not data and prev_line_content then
@@ -632,9 +653,12 @@ M.spawn = function(opts, fn_transform, fn_done)
         if prev_line_content then uv.queue_work(work_ctx, data, prev_line_content) end
         lines, prev_line_content = coroutine.yield()
       else
-        lines, prev_line_content = split_lines(data, prev_line_content,
+        lines, prev_line_content = split_lines(
+          data,
+          prev_line_content,
           -- NOTE `fn_transform=true` is used to force line split without transformation
-          type(fn_transform) == "function" and fn_transform or nil)
+          type(fn_transform) == "function" and fn_transform or nil
+        )
       end
       nlines = nlines + #lines
       if #lines > 0 then
@@ -654,8 +678,12 @@ M.spawn = function(opts, fn_transform, fn_done)
       end
       if t_st then
         local t_e = vim.uv.hrtime()
-        write_cb(string.format("[DEBUG] finish:%.0f (ns) %d lines took %.0f (ms)" .. EOL,
-          t_e, nlines, (t_e - t_st) / 1e6))
+        write_cb(
+          string.format(
+            "[DEBUG] finish:%.0f (ns) %d lines took %.0f (ms)" .. EOL, t_e, nlines,
+            (t_e - t_st) / 1e6
+          )
+        )
       end
     end
   end
@@ -683,7 +711,11 @@ M.spawn = function(opts, fn_transform, fn_done)
       end
       -- Schedule data processing if we're in fast event
       -- avoids "attempt to yield across C-call boundary" by using vim.schedule
-      if vim.in_fast_event() then vim.schedule(process) else process() end
+      if vim.in_fast_event() then
+        vim.schedule(process)
+      else
+        process()
+      end
     end
   end
 
@@ -734,7 +766,7 @@ M.async_spawn = coroutinify(M.spawn)
 
 ---@param obj table
 ---@param b64? boolean
----@return string, boolean -- boolean used for ./scripts/headless_fd.sh
+---@return string, boolean --boolean used for ./scripts/headless_fd.sh
 M.serialize = function(obj, b64)
   local str = serpent.line(obj, { name = "_", comment = false, sortkeys = false })
   str = b64 ~= false and base64.encode(str) or str
@@ -770,7 +802,9 @@ end
 local posix_exec = function(cmd)
   if type(cmd) ~= "string" or _is_win or not pcall(require, "ffi") then return end
   require("ffi").cdef([[int execl(const char *, const char *, ...);]])
-  require("ffi").C.execl("/bin/sh", "sh", "-c", cmd, nil)
+  require("ffi")
+    .C
+    .execl("/bin/sh", "sh", "-c", cmd, nil)
 end
 
 ---@param opts fzf-lua.SpawnStdioOpts
@@ -786,13 +820,14 @@ M.spawn_stdio = function(opts)
   -- redirect 'stderr' to 'stdout' on Macs by default
   -- only takes effect if 'opts.stderr' was not set
   local uname = uv.os_uname()
-  if opts.stderr_to_stdout == nil and uname and
-      uname.sysname == "Darwin" then
+  if opts.stderr_to_stdout == nil and uname and uname.sysname == "Darwin" then
     opts.stderr_to_stdout = true
   end
 
   -- setup global vars
-  for k, v in pairs(opts.g or {}) do _G[k] = v end
+  for k, v in pairs(opts.g or {}) do
+    _G[k] = v
+  end
 
   ---@diagnostic disable-next-line: undefined-field
   local EOL = _G._EOL or opts.multiline and "\0" or "\n"
@@ -890,17 +925,16 @@ M.spawn_stdio = function(opts)
 
   local function pipe_write(pipe, data, cb)
     if not pipe or pipe:is_closing() then return end
-    pipe:write(data,
-      function(err)
-        -- if the user cancels the call prematurely with
-        -- <C-c>, err will be either EPIPE or ECANCELED
-        -- don't really need to do anything since the
-        -- processes will be killed anyways with os.exit()
-        if err then
-          stderr_write(("pipe:write error: %s" .. EOL):format(err))
-        end
-        if cb then cb(err) end
-      end)
+    pipe:write(data, function(err)
+      -- if the user cancels the call prematurely with
+      -- <C-c>, err will be either EPIPE or ECANCELED
+      -- don't really need to do anything since the
+      -- processes will be killed anyways with os.exit()
+      if err then
+        stderr_write(("pipe:write error: %s" .. EOL):format(err))
+      end
+      if cb then cb(err) end
+    end)
   end
 
   if type(opts.stderr) == "string" then
@@ -980,7 +1014,11 @@ M.spawn_stdio = function(opts)
       content = res
     end
     if type(content) == "function" then content(w, wn) end
-    if type(content) == "table" then for _, v in ipairs(content) do w(v) end end
+    if type(content) == "table" then
+      for _, v in ipairs(content) do
+        w(v)
+      end
+    end
     -- Table/function content was already written to stdout above, the only
     -- content type that requires spawning a child process is a string command.
     -- Without this guard, when `fn_postprocess` is set, `on_finish` defers
@@ -997,21 +1035,21 @@ M.spawn_stdio = function(opts)
   if not fn_transform and not fn_postprocess then posix_exec(content) end
 
   return M.spawn({
-      cwd = opts.cwd,
-      cmd = cmd,
-      cb_finish = on_finish,
-      cb_write = on_write,
-      cb_err = on_err,
-      process1 = opts.process1,
-      profiler = opts.profiler,
-      EOL = EOL,
-    },
-    fn_transform and function(x)
-      ---@diagnostic disable-next-line: call-non-callable
-      return fn_transform(x, opts)
-    end)
+    cwd = opts.cwd,
+    cmd = cmd,
+    cb_finish = on_finish,
+    cb_write = on_write,
+    cb_err = on_err,
+    process1 = opts.process1,
+    profiler = opts.profiler,
+    EOL = EOL,
+  },
+    fn_transform
+      and function(x)
+        ---@diagnostic disable-next-line: call-non-callable
+        return fn_transform(x, opts)
+      end)
 end
-
 
 M.is_escaped = function(s, is_win)
   local m
@@ -1045,8 +1083,8 @@ end
 -- trying to avoid having any 'require' in this file
 ---@param s string
 ---@param win_style integer|string|boolean? force Windows escaping on posix:
----  1 = classic CommandLineToArgvW backslash escape, 2 = caret escape with
----  delayed expansion double-escape, `true`/nil (on Windows) = caret escape
+---1 = classic CommandLineToArgvW backslash escape, 2 = caret escape with
+---delayed expansion double-escape, `true`/nil (on Windows) = caret escape
 ---@return string
 M.shellescape = function(s, win_style)
   if _is_win or win_style then
@@ -1201,8 +1239,8 @@ end
 --      followed by a quote -> `n` backslashes + toggle quote mode, `2n+1` ->
 --      `n` backslashes + literal quote), unquoted whitespace splits args
 ---@param s string cmd.exe command line fragment
----@param env table<string,string>? variable environment (defaults to
----  `vim.fn.environ()`, the environment `cmd.exe` would be spawned with)
+---@param env table<string, string>? variable environment (defaults to
+---`vim.fn.environ()`, the environment `cmd.exe` would be spawned with)
 ---@return string[] argv
 M.cmd_argv = function(s, env)
   if not s or s == "" then return {} end
@@ -1277,7 +1315,9 @@ M.cmd_argv = function(s, env)
         local c = s:sub(j, j)
         if c == "\\" then
           local k = j
-          while k <= len and s:sub(k, k) == "\\" do k = k + 1 end
+          while k <= len and s:sub(k, k) == "\\" do
+            k = k + 1
+          end
           local nback = k - j
           if k <= len and s:sub(k, k) == '"' then
             buf[#buf + 1] = string.rep("\\", math.floor(nback / 2))
@@ -1318,8 +1358,8 @@ M.cmd_argv = function(s, env)
 end
 
 ---@class fzf-lua.CliSegment
----@field text string    -- raw (unescaped) text
----@field escape boolean -- true = escape this text for the target shell
+---@field text string    --raw (unescaped) text
+---@field escape boolean --true = escape this text for the target shell
 
 -- One argv element is a list of segments (usually 1; 2 for a fused "flag=value"
 -- or "--bind=<value>" string where the flag prefix is literal and the value is
@@ -1374,8 +1414,8 @@ M.unescape_fzf = function(s, fzf_version, is_win)
   if tonumber(fzf_version) and tonumber(fzf_version) >= 0.52 then return s end
   local ret = s:gsub("\\+[^\\]", function(x)
     local bslash_num = #x:match([[\+]])
-    return string.rep([[\]],
-      bslash_num == 1 and bslash_num or math.floor(bslash_num / 2)) .. x:sub(-1)
+    return string.rep([[\]], bslash_num == 1 and bslash_num or math.floor(bslash_num / 2))
+      .. x:sub(-1)
   end)
   return ret
 end

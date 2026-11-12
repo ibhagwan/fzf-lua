@@ -3,7 +3,7 @@ local function title(str, opts)
     winopts = {
       -- title = { { " " .. str .. " ", "IncSearch" } },
       title = " " .. str .. " ",
-    }
+    },
   })
 end
 return {

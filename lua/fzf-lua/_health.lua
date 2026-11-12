@@ -47,23 +47,19 @@ function M.check()
       end
     end
     if not found then
-      local str = table.concat(
-        vim.tbl_map(function(tool)
+      local str = table.concat(vim.tbl_map(function(tool)
           return "`" .. tool .. "`"
-        end, reqs),
-        ", "
-      )
+        end, reqs), ", ")
       error("One of " .. str .. " is required")
     end
   end
 
   local run = vim.fn.stdpath("run")
-  ---@cast run -string[]
+  ---@cast run - string[]
   if not uv.fs_access(run, "rwx") then
     error(
-      "Your 'run' directory is invalid `"
-      .. run
-      .. "`.\nPlease make sure `XDG_RUNTIME_DIR` is set correctly."
+      "Your 'run' directory is invalid `" .. run
+        .. "`.\nPlease make sure `XDG_RUNTIME_DIR` is set correctly."
     )
   end
 
@@ -71,11 +67,12 @@ function M.check()
   if srv_ok then
     vim.fn.delete(srv_pipe)
   else
-    error(string.format(
-      "`vim.fn.serverstart()` failed with '%s'\n%s",
-      srv_ok,
-      "Please make sure `XDG_RUNTIME_DIR` is writeable."
-    ))
+    error(
+      string.format(
+        "`vim.fn.serverstart()` failed with '%s'\n%s", srv_ok,
+        "Please make sure `XDG_RUNTIME_DIR` is writeable."
+      )
+    )
   end
 
   if vim.fn.executable("fzf") == 1 then
@@ -110,7 +107,10 @@ function M.check()
   if vim.env.FZF_DEFAULT_OPTS == nil then
     ok("`FZF_DEFAULT_OPTS` is not set")
   else
-    ok("`$FZF_DEFAULT_OPTS` is set to:\n" .. M.format(vim.env.FZF_DEFAULT_OPTS --[[@as string]]))
+    ok("`$FZF_DEFAULT_OPTS` is set to:\n"
+        .. M.format(
+          vim.env.FZF_DEFAULT_OPTS --[[@as string]]
+        ))
   end
   if vim.env.FZF_DEFAULT_OPTS_FILE == nil then
     ok("`FZF_DEFAULT_OPTS_FILE` is not set")

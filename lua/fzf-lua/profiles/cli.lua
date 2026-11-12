@@ -36,11 +36,16 @@ pcall(function()
   ]]
 end)
 
-local function quit() vim.cmd.quit() end
+local function quit()
+  vim.cmd.quit()
+end
 
 local function parse_entries(s, o)
   return vim.tbl_map(function(e)
-    e = FzfLua.path.entry_to_file(e --[[@as string]], o)
+    e = FzfLua.path.entry_to_file(
+      e, --[[@as string]]
+      o
+    )
     e.path = FzfLua.path.relative_to(assert(e.path), FzfLua.utils.cwd())
     return e
   end, s)
@@ -133,10 +138,10 @@ local function win_exec(cmd, ...)
   -- unused stdio fds for the duration of the spawn.
   local restore = FzfLua.libuv.win_stdio_no_inherit(stdio)
   local ok, err = pcall(FzfLua.libuv.uv_spawn, cmd, {
-      args = args,
-      stdio = stdio,
-    },
-    function() done = true end)
+    args = args,
+    stdio = stdio,
+  }, function() done = true end
+  )
   if restore then restore() end
   if not ok then
     -- a non-throwing report: `utils.error` re-raises ERROR notifies when the
@@ -213,9 +218,10 @@ return {
         if (_is_win or ffi) and #entries == 1 then
           local lnum = entries[1].line > 0 and entries[1].line or nil
           local col = entries[1].col > 0 and entries[1].col or nil
-          exec(NVIM_BIN, entries[1].path,
-            lnum and ("+" .. entries[1].line) or nil,
-            col and ("+norm! %s|"):format(col) or nil)
+          exec(
+            NVIM_BIN, entries[1].path, lnum and ("+" .. entries[1].line) or nil,
+            col and ("+norm! %s|"):format(col) or nil
+          )
         elseif (_is_win or ffi) and #entries > 1 then
           local qf_items = {}
           for _, e in ipairs(entries) do
@@ -229,26 +235,34 @@ return {
             })
           end
           local qf_str = vim.inspect(qf_items):gsub("\n%s*", " ")
-          exec(NVIM_BIN, "-c", string.format(
-            "lua vim.o.hidden=false; vim.fn.setqflist(%s); vim.cmd('cfirst | set hidden&')",
-            qf_str))
+          exec(
+            NVIM_BIN, "-c",
+            string.format(
+              "lua vim.o.hidden=false; vim.fn.setqflist(%s); vim.cmd('cfirst | set hidden&')",
+              qf_str
+            )
+          )
         end
         quit()
       end,
       ["ctrl-x"] = function(_, o)
         FzfLua.builtin(vim.tbl_deep_extend("force", o.__call_opts, {
-          actions = {
-            enter = function(s)
-              if not s[1] then quit() end
-              FzfLua[s[1]](o.__call_opts)
-            end
-          },
-        }))
-      end
-    }
+            actions = {
+              enter = function(s)
+                if not s[1] then quit() end
+                FzfLua[s[1]](o.__call_opts)
+              end,
+            },
+          }))
+      end,
+    },
   },
   serverlist = {
-    previewer = { _ctor = require("fzf-lua.previewer").fzf.nvim_server },
+    previewer = {
+      _ctor = require("fzf-lua.previewer")
+        .fzf
+        .nvim_server,
+    },
     actions = {
       ["enter"] = function(s)
         local remote = FzfLua.utils.serverlist_parse_entry(assert(s[1]))
@@ -272,7 +286,7 @@ return {
         else
           posix_exec(NVIM_BIN, "--remote-ui", "--server", remote)
         end
-      end
-    }
-  }
+      end,
+    },
+  },
 }

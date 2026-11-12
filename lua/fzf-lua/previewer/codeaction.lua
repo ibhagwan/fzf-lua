@@ -37,15 +37,13 @@ local function diff_text_edits(text_edits, bufnr, offset_encoding, diff_opts)
   vim.api.nvim_buf_delete(tmpbuf, { force = true })
   ---@diagnostic disable-next-line: deprecated
   local diff = (vim.diff or vim.text.diff)(
-    table.concat(orig_lines, eol) .. eol,
-    table.concat(new_lines, eol) .. eol,
-    diff_opts)
+    table.concat(orig_lines, eol) .. eol, table.concat(new_lines, eol) .. eol, diff_opts
+  )
   ---@cast diff string
   -- Windows: some LSPs use "\n" for EOL (e.g clangd)
   -- remove both "\n" and "\r\n" (#1172)
   return utils.strsplit(vim.trim(diff), "\r?\n")
 end
-
 
 ---@diagnostic disable-next-line: deprecated
 local uri_to_bufnr = vim.uri and vim.uri.to_buf or vim.uri_to_bufnr
@@ -138,7 +136,7 @@ end
 local function diff_tuple(err, tuple, diff_opts)
   if err then
     return {
-      string.format('"codeAction/resolve" failed with error %d: %s', err.code, err.message)
+      string.format('"codeAction/resolve" failed with error %d: %s', err.code, err.message),
     }
   end ---@cast tuple [integer, lsp.CodeAction]
   local action = tuple[2]
@@ -151,8 +149,9 @@ local function diff_tuple(err, tuple, diff_opts)
       string.format(
         "Code action preview is only available for document/workspace edits (%s).",
         command and type(command.command) == "string"
-        and string.format("command:%s", command.command)
-        or string.format("kind:%s", action.kind))
+          and string.format("command:%s", command.command)
+          or string.format("kind:%s", action.kind)
+      ),
     }
   end
 end
@@ -206,7 +205,7 @@ local function preview_action_tuple(self, idx, callback)
         err = err,
         -- Due to a bug in `typescript-tools.nvim` only the first call to `codeAction/resolve`
         -- returns a valid action (non-nil), return nil tuple if the action is nil (#949)
-        tuple = resolved_action and { client_id, resolved_action } or nil
+        tuple = resolved_action and { client_id, resolved_action } or nil,
       }
       self._resolved_actions[idx] = resolved
       -- HACK: due to upstream bug with jdtls calling resolve messes
@@ -237,7 +236,7 @@ local function preview_action_tuple(self, idx, callback)
   end
 end
 
----@class fzf-lua.previewer.CodeActionBuiltin: fzf-lua.previewer.Builtin,{}
+---@class fzf-lua.previewer.CodeActionBuiltin: fzf-lua.previewer.Builtin, { }
 ---@field super fzf-lua.previewer.Builtin
 ---@field diff_opts vim.text.diff.Opts
 ---@field _resolved_actions table<integer, (false|{ err: any, tuple: any? })?>
@@ -260,7 +259,7 @@ function M.builtin:gen_winopts()
   local winopts = {
     wrap       = false,
     cursorline = false,
-    number     = false
+    number     = false,
   }
   return vim.tbl_extend("keep", winopts, self.winopts)
 end
@@ -269,14 +268,17 @@ function M.builtin:populate_preview_buf(entry_str)
   if not self.win or not self.win:validate_preview() then return end
   local idx = tonumber(entry_str:match("^%s*(%d+)%."))
   assert(type(idx) == "number")
-  local lines = self:preview_action_tuple(idx,
+  local lines = self:preview_action_tuple(
+    idx,
     -- use the async version for "codeAction/resolve"
     function(err, resolved_tuple)
       if vim.api.nvim_buf_is_valid(self.tmpbuf) then
-        vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false,
-          diff_tuple(err, resolved_tuple, self.diff_opts))
+        vim.api.nvim_buf_set_lines(
+          self.tmpbuf, 0, -1, false, diff_tuple(err, resolved_tuple, self.diff_opts)
+        )
       end
-    end)
+    end
+  )
   self.tmpbuf = self:get_tmp_buffer()
   vim.api.nvim_buf_set_lines(self.tmpbuf, 0, -1, false, lines)
   vim.bo[self.tmpbuf].filetype = "git"
@@ -285,7 +287,7 @@ function M.builtin:populate_preview_buf(entry_str)
   self.win:update_preview_scrollbar()
 end
 
----@class fzf-lua.previewer.CodeActionNative: fzf-lua.previewer.Fzf,{}
+---@class fzf-lua.previewer.CodeActionNative: fzf-lua.previewer.Fzf, { }
 ---@field super fzf-lua.previewer.Fzf
 M.native = native.base:extend()
 M.native.preview_action_tuple = preview_action_tuple

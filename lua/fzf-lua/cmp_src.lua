@@ -11,7 +11,9 @@ end
 ---Return whether this source is available in the current context or not (optional).
 ---@return boolean
 function Src:is_available()
-  local mode = vim.api.nvim_get_mode().mode:sub(1, 1)
+  local mode = vim.api.nvim_get_mode()
+    .mode
+    :sub(1, 1)
   return mode == "c" and vim.fn.getcmdtype() == ":"
 end
 
@@ -87,7 +89,7 @@ function Src._register_cmdline()
         keyword_length = 1,
         group_index = 1,
         name = "FzfLua",
-        option = {}
+        option = {},
       })
     end
   end
@@ -99,9 +101,9 @@ function Src._complete()
       require("cmp").complete({
         config = {
           sources = {
-            { name = "FzfLua" }
-          }
-        }
+            { name = "FzfLua" },
+          },
+        },
       })
     end)
   end

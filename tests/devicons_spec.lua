@@ -22,8 +22,9 @@ local function validate_devicons(headless_child)
   local icons = state.icons
   local theme = {
     icons_by_filename = child.lua_get([[require("nvim-web-devicons").get_icons_by_filename()]]),
-    icons_by_file_extension =
-        child.lua_get([[require("nvim-web-devicons").get_icons_by_extension()]])
+    icons_by_file_extension = child.lua_get(
+      [[require("nvim-web-devicons").get_icons_by_extension()]]
+    ),
   }
   assert.are.same(state.default_icon, { icon = "", color = "#6d8086" })
   assert.are.same(state.dir_icon, { icon = "", color = nil })
@@ -37,8 +38,10 @@ local function validate_devicons(headless_child)
   --     tests\devicons_spec.lua:30
   --     tests\devicons_spec.lua:69
   -- assert.are.equal(utils.tbl_count(icons.by_filename), utils.tbl_count(theme.icons_by_filename))
-  assert.are.equal(utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
-    utils.tbl_count(theme.icons_by_file_extension))
+  assert.are.equal(
+    utils.tbl_count(icons.by_ext) + utils.tbl_count(icons.by_ext_2part),
+    utils.tbl_count(theme.icons_by_file_extension)
+  )
 end
 
 local function devicons_are_same(name, expected)
@@ -79,12 +82,16 @@ T["setup"]["auto-detect"] = function()
 end
 
 T["setup"]["_G.devicons_path"] = function()
-  exec_lua(string.format([==[
+  exec_lua(
+    string.format(
+      [==[
     _G._devicons_path = [[%s]]
     _G._fzf_lua_server = nil
     _G._fzf_lua_is_headless = true
     M.devicons.load()
-  ]==], _devicons_path))
+  ]==], _devicons_path
+    )
+  )
   eq(child.lua_get([[M.devicons.plugin_name()]]), "devicons")
   validate_devicons()
 end
@@ -98,13 +105,17 @@ T["setup"]["headless RPC, vim.g.fzf_lua_server"] = function()
   local headless_child = helpers.new_child_neovim()
   headless_child.init()
   ---@diagnostic disable-next-line: preferred-local-alias
-  headless_child.lua(string.format([==[
+  headless_child.lua(
+    string.format(
+      [==[
     _G._fzf_lua_is_headless = true
     _G._devicons_path = nil
     _G._fzf_lua_server = [[%s]]
     M = { devicons = require("fzf-lua.devicons") }
     M.devicons.load({ plugin = "srv", srv_plugin = "devicons" })
-  ]==], fzf_lua_server))
+  ]==], fzf_lua_server
+    )
+  )
   eq(headless_child.lua_get([[_G._fzf_lua_server]]), fzf_lua_server)
   eq(headless_child.lua_get([[M.devicons.plugin_name()]]), "srv")
   eq(child.lua_get([[M.devicons.state()]]), headless_child.lua_get([[M.devicons.state()]]))

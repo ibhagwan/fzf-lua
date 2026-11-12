@@ -15,7 +15,7 @@ local M = {}
 ---@field show_unloaded? boolean
 ---@field ignore_current_buffer? boolean
 ---@field no_term_buffers? boolean
----@field filter? fun(...):boolean?
+---@field filter? fun(...): boolean?
 ---@field show_quickfix boolean?
 ---@field current_buffer_only? boolean
 ---@field start_line? integer
@@ -25,8 +25,8 @@ local M = {}
 ---@field show_bufname_len? integer
 ---@field sort_lastused? boolean
 
----@param opts fzf-lua.config.BufferLines|{}
----@param unfiltered integer[]|fun():integer[]
+---@param opts fzf-lua.config.BufferLines|{ }
+---@param unfiltered integer[]|fun(): integer[]
 ---@return integer[], table, integer
 local filter_buffers = function(opts, unfiltered)
   if type(unfiltered) == "function" then
@@ -43,40 +43,40 @@ local filter_buffers = function(opts, unfiltered)
 
   local excluded, max_bufnr = {}, 0
   local bufnrs = type(opts.buffers) == "table"
-      and vim.tbl_map(function(b)
-        max_bufnr = math.max(max_bufnr, b)
-        return b
-      end, opts.buffers)
-      or vim.tbl_filter(function(b)
-        local buf_valid = vim.api.nvim_buf_is_valid(b)
-        if not buf_valid then
-          excluded[b] = true
-        elseif not opts.show_unlisted and b ~= utils.CTX().bufnr and vim.fn.buflisted(b) ~= 1 then
-          excluded[b] = true
-        elseif not opts.show_unloaded and not vim.api.nvim_buf_is_loaded(b) then
-          excluded[b] = true
-        elseif opts.ignore_current_buffer and b == utils.CTX().bufnr then
-          excluded[b] = true
-        elseif opts.current_tab_only and not curtab_bufnrs[b] then
-          excluded[b] = true
-        elseif opts.no_term_buffers and utils.is_term_buffer(b) then
-          excluded[b] = true
-        elseif opts.cwd_only and not path.is_relative_to(vim.api.nvim_buf_get_name(b), utils.cwd()) then
-          excluded[b] = true
-        elseif opts.cwd and not path.is_relative_to(vim.api.nvim_buf_get_name(b), opts.cwd) then
-          excluded[b] = true
-        elseif type(opts.filter) == "function" then
-          -- Custom buffer filter #2162
-          excluded[b] = not opts.filter(b)
-        end
-        if buf_valid and vim.api.nvim_get_option_value("ft", { buf = b }) == "qf" then
-          excluded[b] = not opts.show_quickfix and true or nil
-        end
-        if not excluded[b] and b > max_bufnr then
-          max_bufnr = b
-        end
-        return not excluded[b]
-      end, unfiltered)
+    and vim.tbl_map(function(b)
+      max_bufnr = math.max(max_bufnr, b)
+      return b
+    end, opts.buffers)
+    or vim.tbl_filter(function(b)
+      local buf_valid = vim.api.nvim_buf_is_valid(b)
+      if not buf_valid then
+        excluded[b] = true
+      elseif not opts.show_unlisted and b ~= utils.CTX().bufnr and vim.fn.buflisted(b) ~= 1 then
+        excluded[b] = true
+      elseif not opts.show_unloaded and not vim.api.nvim_buf_is_loaded(b) then
+        excluded[b] = true
+      elseif opts.ignore_current_buffer and b == utils.CTX().bufnr then
+        excluded[b] = true
+      elseif opts.current_tab_only and not curtab_bufnrs[b] then
+        excluded[b] = true
+      elseif opts.no_term_buffers and utils.is_term_buffer(b) then
+        excluded[b] = true
+      elseif opts.cwd_only and not path.is_relative_to(vim.api.nvim_buf_get_name(b), utils.cwd()) then
+        excluded[b] = true
+      elseif opts.cwd and not path.is_relative_to(vim.api.nvim_buf_get_name(b), opts.cwd) then
+        excluded[b] = true
+      elseif type(opts.filter) == "function" then
+        -- Custom buffer filter #2162
+        excluded[b] = not opts.filter(b)
+      end
+      if buf_valid and vim.api.nvim_get_option_value("ft", { buf = b }) == "qf" then
+        excluded[b] = not opts.show_quickfix and true or nil
+      end
+      if not excluded[b] and b > max_bufnr then
+        max_bufnr = b
+      end
+      return not excluded[b]
+    end, unfiltered)
 
   return bufnrs, excluded, max_bufnr
 end
@@ -86,8 +86,7 @@ end
 local getbuf = function(buf)
   return {
     bufnr = buf,
-    flag = (buf == utils.CTX().bufnr and "%")
-        or (buf == utils.CTX().alt_bufnr and "#") or " ",
+    flag = (buf == utils.CTX().bufnr and "%") or (buf == utils.CTX().alt_bufnr and "#") or " ",
     info = utils.getbufinfo(buf),
     readonly = vim.bo[buf].readonly,
     loaded = vim.api.nvim_buf_is_loaded(buf),
@@ -114,7 +113,7 @@ local get_unixtime = function(buf)
   end
 end
 
---- @return integer[] # Sorted list of buffer ids
+---@return integer[] # Sorted list of buffer ids
 M.list_bufs_sorted = function()
   local bufs = vim.api.nvim_list_bufs()
   table.sort(bufs, function(a, b)
@@ -123,7 +122,7 @@ M.list_bufs_sorted = function()
   return bufs
 end
 
----@param opts fzf-lua.config.BufferLines|{}
+---@param opts fzf-lua.config.BufferLines|{ }
 ---@param bufnrs integer[]
 ---@param winid integer?
 ---@return table[]
@@ -151,7 +150,8 @@ local populate_buffer_entries = function(opts, bufnrs, winid)
 
     -- get the correct lnum for tabbed buffers
     if winid then
-      buf.info.lnum = vim.api.nvim_win_get_cursor(winid)[1]
+      buf.info.lnum = vim.api.nvim_win_get_cursor(winid)
+        [1]
     end
 
     table.insert(buffers, buf)
@@ -164,7 +164,6 @@ local populate_buffer_entries = function(opts, bufnrs, winid)
   end
   return buffers
 end
-
 
 local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
   local hidden = buf.info.hidden == 1 and "h" or buf.loaded and "a" or " "
@@ -181,8 +180,9 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
       return path.tail(bname)
     else
       bname = make_entry.lcol({ filename = bname, lnum = buf.info.lnum }, opts):gsub(":$", "")
-      return make_entry.file(bname,
-        vim.tbl_extend("force", opts, { cwd = cwd or opts.cwd or utils.cwd() }))
+      return make_entry.file(
+        bname, vim.tbl_extend("force", opts, { cwd = cwd or opts.cwd or utils.cwd() })
+      )
     end
   end)()
   if buf.flag == "%" then
@@ -192,23 +192,19 @@ local function gen_buffer_entry(opts, buf, max_bufnr, cwd, prefix)
   else
     flags = utils.nbsp .. flags
   end
-  local bufnrstr = string.format("%s%s%s", leftbr,
-    utils.ansi_codes[opts.hls.buf_nr](tostring(buf.bufnr)), rightbr)
+  local bufnrstr = string.format(
+    "%s%s%s", leftbr, utils.ansi_codes[opts.hls.buf_nr](tostring(buf.bufnr)), rightbr
+  )
   local buficon = ""
   local max_bufnr_w = 3 + #tostring(max_bufnr) + utils.ansi_escseq_len(bufnrstr)
-  local item_str = string.format("%s%s%s%s%s%s%s%s",
-    prefix or "",
-    string.format("%-" .. tostring(max_bufnr_w) .. "s", bufnrstr),
-    utils.nbsp,
-    flags,
-    utils.nbsp,
-    buficon,
-    utils.nbsp,
-    bufname)
+  local item_str = string.format(
+    "%s%s%s%s%s%s%s%s", prefix or "", string.format("%-" .. tostring(max_bufnr_w) .. "s", bufnrstr),
+    utils.nbsp, flags, utils.nbsp, buficon, utils.nbsp, bufname
+  )
   return item_str
 end
 
----@param opts fzf-lua.config.Buffers|{}?
+---@param opts fzf-lua.config.Buffers|{ }?
 ---@return thread?, string?, table?
 M.buffers = function(opts)
   ---@type fzf-lua.config.Buffers
@@ -235,15 +231,16 @@ M.buffers = function(opts)
     cb(nil)
   end
 
-  opts.fzf_opts["--header-lines"] = opts.fzf_opts["--header-lines"] == nil
-      and (not opts.ignore_current_buffer and opts.sort_lastused) and "1" or nil
+  opts.fzf_opts["--header-lines"] = opts.fzf_opts["--header-lines"] == nil and (not opts.ignore_current_buffer
+      and opts.sort_lastused) and "1"
+    or nil
 
   opts = opts.filename_only and opts or core.set_fzf_field_index(opts)
 
   return core.fzf_exec(contents, opts)
 end
 
----@param opts fzf-lua.config.Lines|{}?
+---@param opts fzf-lua.config.Lines|{ }?
 ---@return thread?, string?, table?
 M.lines = function(opts)
   ---@type fzf-lua.config.Lines
@@ -252,7 +249,7 @@ M.lines = function(opts)
   return M.buffer_lines(opts)
 end
 
----@param opts fzf-lua.config.Blines|{}?
+---@param opts fzf-lua.config.Blines|{ }?
 ---@return thread?, string?, table?
 M.blines = function(opts)
   ---@type fzf-lua.config.Blines
@@ -284,8 +281,9 @@ M.buffer_lines = function(opts)
       local co = coroutine.running()
       ---@cast co thread
 
-      local buffers = filter_buffers(opts,
-        opts.current_buffer_only and { utils.CTX().bufnr } or utils.CTX().buflist or {})
+      local buffers = filter_buffers(
+        opts, opts.current_buffer_only and { utils.CTX().bufnr } or utils.CTX().buflist or {}
+      )
 
       if opts.sort_lastused and utils.tbl_count(buffers) > 1 then
         table.sort(buffers, function(a, b)
@@ -326,8 +324,7 @@ M.buffer_lines = function(opts)
 
         local bname, bicon = (function()
           if not opts.show_bufname
-              or tonumber(opts.show_bufname) and tonumber(opts.show_bufname) > vim.o.columns
-          then
+            or tonumber(opts.show_bufname) and tonumber(opts.show_bufname) > vim.o.columns then
             return
           end
           local icon, hl = "", nil
@@ -366,18 +363,18 @@ M.buffer_lines = function(opts)
           lnum = lnum + start_line - 1
 
           -- NOTE: Space after `lnum` is U+00A0 (decimal: 160)
-          add_entry(string.format("[%s]\t%s\t%s%s\t%s \t%s",
-            tostring(bufnr),
-            utils.ansi_codes[opts.hls.buf_id](string.format("%3d", bufnr)),
-            bicon or "",
-            not bname and "" or utils.ansi_codes[opts.hls.buf_name](string.format(
-              "%"
-              .. (opts.file_icons and "-" or "")
-              .. tostring(len_bufnames) .. "s",
-              bname)),
-            utils.ansi_codes[opts.hls.buf_linenr](string.format("%5d", lnum)),
-            data[lnum]
-          ), co)
+          add_entry(
+            string.format(
+              "[%s]\t%s\t%s%s\t%s \t%s", tostring(bufnr),
+              utils.ansi_codes[opts.hls.buf_id](string.format("%3d", bufnr)), bicon or "",
+              not bname and ""
+                or utils.ansi_codes[opts.hls.buf_name](
+                  string.format(
+                    "%" .. (opts.file_icons and "-" or "") .. tostring(len_bufnames) .. "s", bname
+                  )
+                ), utils.ansi_codes[opts.hls.buf_linenr](string.format("%5d", lnum)), data[lnum]
+            ), co
+          )
         end
       end
       cb(nil)
@@ -388,7 +385,7 @@ M.buffer_lines = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
----@param opts fzf-lua.config.Tabs|{}?
+---@param opts fzf-lua.config.Tabs|{ }?
 ---@return thread?, string?, table?
 M.tabs = function(opts)
   ---@type fzf-lua.config.Tabs
@@ -408,7 +405,7 @@ M.tabs = function(opts)
       end
       if type(opts[k][2]) == "string" then
         hl = function(s)
-          return utils.ansi_from_hl(opts[k][2], s);
+          return utils.ansi_from_hl(opts[k][2], s)
         end
       end
     elseif type(opts[k]) == "function" then
@@ -451,34 +448,36 @@ M.tabs = function(opts)
 
         local tab_cwd = vim.fn.getcwd(-1, tabnr)
         local tab_cwd_tilde = path.HOME_to_tilde(tab_cwd)
-        local title, fn_title_hl = opt_hl(tabnr, "tab_title",
-          function(s)
-            return string.format("%s%s#%d%s", s, utils.nbsp, tabnr,
-              (utils.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde)))
-          end,
-          utils.ansi_codes[opts.hls.tab_title])
+        local title, fn_title_hl = opt_hl(tabnr, "tab_title", function(s)
+          return string.format(
+            "%s%s#%d%s", s, utils.nbsp, tabnr,
+            (utils.cwd() == tab_cwd and "" or string.format(": %s", tab_cwd_tilde))
+          )
+        end, utils.ansi_codes[opts.hls.tab_title]
+        )
 
-        local marker, fn_marker_hl = opt_hl(tabnr, "tab_marker",
-          function(s) return s end,
-          utils.ansi_codes[opts.hls.tab_marker])
+        local marker, fn_marker_hl = opt_hl(
+          tabnr, "tab_marker", function(s) return s end, utils.ansi_codes[opts.hls.tab_marker]
+        )
 
         local tab_cwd_tilde_base64 = base64.encode(tab_cwd_tilde)
         if not opts.current_tab_only then
-          cb(string.format("%s\t%d\t%d\t0)%s%s  %s",
-            tab_cwd_tilde_base64,
-            tabnr,
-            tabh,
-            utils.nbsp,
-            fn_title_hl(title),
-            (tabh == utils.CTX().tabh) and fn_marker_hl(marker) or ""))
+          cb(
+            string.format(
+              "%s\t%d\t%d\t0)%s%s  %s", tab_cwd_tilde_base64, tabnr, tabh, utils.nbsp,
+              fn_title_hl(title), (tabh == utils.CTX().tabh) and fn_marker_hl(marker) or ""
+            )
+          )
         end
 
         for _, w in ipairs(vim.api.nvim_tabpage_list_wins(tabh)) do
           if tabh ~= utils.CTX().tabh or utils.CTX().curtab_wins[tostring(w)] then
             local b = filter_buffers(opts, { vim.api.nvim_win_get_buf(w) })[1]
             if b then
-              local prefix = string.format("%s\t%d\t%d\t%d)%s%s%s",
-                tab_cwd_tilde_base64, tabnr, tabh, w, utils.nbsp, utils.nbsp, utils.nbsp)
+              local prefix = string.format(
+                "%s\t%d\t%d\t%d)%s%s%s", tab_cwd_tilde_base64, tabnr, tabh, w, utils.nbsp,
+                utils.nbsp, utils.nbsp
+              )
               local bufinfo = populate_buffer_entries({}, { b }, w)[1]
               cb(gen_buffer_entry(opts, bufinfo, max_bufnr, tab_cwd, prefix))
             end
@@ -494,8 +493,7 @@ M.tabs = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
-
----@param opts fzf-lua.config.Treesitter|{}?
+---@param opts fzf-lua.config.Treesitter|{ }?
 ---@return thread?, string?, table?
 M.treesitter = function(opts)
   ---@type fzf-lua.config.Treesitter
@@ -513,7 +511,9 @@ M.treesitter = function(opts)
   local ft = vim.bo[bufnr0].ft
   local lang = ts.language.get_lang(ft) or ft
   if not utils.has_ts_parser(lang, "locals") then
-    utils.info("No treesitter parser or no 'locals.scm' found for '%s' (bufnr=%d)", bufname0, bufnr0)
+    utils.info(
+      "No treesitter parser or no 'locals.scm' found for '%s' (bufnr=%d)", bufname0, bufnr0
+    )
     return
   end
 
@@ -525,7 +525,9 @@ M.treesitter = function(opts)
   local parser = ts.get_parser(bufnr0)
   if not parser then return end
   parser:parse(true)
-  local root = parser:trees()[1]:root()
+  local root = parser:trees()
+    [1]
+    :root()
   if not root then return end
 
   local query = (ts.query.get(lang, "locals"))
@@ -566,8 +568,6 @@ M.treesitter = function(opts)
     return definitions, references, scopes
   end
 
-
-
   local function recurse_local_nodes(local_def, accumulator, full_match, last_match)
     if type(local_def) ~= "table" then
       return
@@ -576,8 +576,9 @@ M.treesitter = function(opts)
       accumulator(local_def, local_def.node, full_match, last_match)
     else
       for match_key, def in pairs(local_def) do
-        recurse_local_nodes(def, accumulator,
-          full_match and (full_match .. "." .. match_key) or match_key, match_key)
+        recurse_local_nodes(
+          def, accumulator, full_match and (full_match .. "." .. match_key) or match_key, match_key
+        )
       end
     end
   end
@@ -605,14 +606,12 @@ M.treesitter = function(opts)
               local node_text = ts.get_node_text(node.node, bufnr0)
               local node_kind = node.kind and utils.ansi_from_hl(kind2hl(node.kind), node.kind)
               local hls = opts.hls
-              local entry = string.format("[%s]%s%s:%s:%s\t\t[%s] %s",
-                utils.ansi_codes[hls.buf_nr](tostring(bufnr0)),
-                utils.nbsp,
-                utils.ansi_codes[hls.buf_name](bufname0),
+              local entry = string.format(
+                "[%s]%s%s:%s:%s\t\t[%s] %s", utils.ansi_codes[hls.buf_nr](tostring(bufnr0)),
+                utils.nbsp, utils.ansi_codes[hls.buf_name](bufname0),
                 utils.ansi_codes[hls.buf_linenr](tostring(lnum + 1)),
-                utils.ansi_codes[hls.path_colnr](tostring(col + 1)),
-                node_kind or "",
-                node_text)
+                utils.ansi_codes[hls.path_colnr](tostring(col + 1)), node_kind or "", node_text
+              )
               cb(entry, function(err)
                 coroutine.resume(co)
                 if err then cb(nil) end
@@ -629,7 +628,7 @@ M.treesitter = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
----@param opts fzf-lua.config.Spellcheck|{}?
+---@param opts fzf-lua.config.Spellcheck|{ }?
 ---@return thread?, string?, table?
 M.spellcheck = function(opts)
   ---@type fzf-lua.config.Spellcheck
@@ -711,18 +710,17 @@ M.spellcheck = function(opts)
               local word = from and string.sub(line, from, to) or ""
               local prefix = from and string.sub(line, from - 1, from - 1) or ""
               local postfix = to and string.sub(line, to + 1, to + 1) or ""
-              local valid_word = word
-                  and (#prefix == 0 or prefix:match("^" .. word_separator))
-                  and (#postfix == 0 or postfix:match(word_separator .. "$"))
+              local valid_word = word and (#prefix == 0 or prefix:match("^" .. word_separator))
+                and (#postfix == 0 or postfix:match(word_separator .. "$"))
               if valid_word then
                 local _, lead = word:find("^" .. word_separator .. "+")
-                local spell = vim.spell.check(trim(word))[1]
+                local spell = vim.spell.check(trim(word))
+                  [1]
                 if spell then
                   local hls = opts.hls
-                  cb(string.format("[%s]%s%s:%s:%-26s\t\t%s",
-                    utils.ansi_codes[hls.buf_nr](tostring(bufnr0)),
-                    utils.nbsp,
-                    utils.ansi_codes[hls.buf_name](bufname0),
+                  cb(string.format(
+                    "[%s]%s%s:%s:%-26s\t\t%s", utils.ansi_codes[hls.buf_nr](tostring(bufnr0)),
+                    utils.nbsp, utils.ansi_codes[hls.buf_name](bufname0),
                     utils.ansi_codes[hls.buf_linenr](tostring(lnum)),
                     utils.ansi_codes[hls.path_colnr](tostring(assert(from) + (lead or 0))),
                     trim(word)

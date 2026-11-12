@@ -46,8 +46,8 @@ describe("Testing fzf launcher", function()
     return captured, output, rc
   end
 
-  --- Same as `mock_run` but for the TUI route (no `_G.fzf_jobstart`, the
-  --- `termopen` mediator is intercepted instead of being executed)
+  ---Same as `mock_run` but for the TUI route (no `_G.fzf_jobstart`, the
+  ---`termopen` mediator is intercepted instead of being executed)
   ---@return table captured
   ---@return table? output
   ---@return integer? rc
@@ -87,8 +87,7 @@ describe("Testing fzf launcher", function()
     local segments = {
       { { text = "--bind=", escape = false }, { text = raw_bind, escape = true } },
     }
-    local captured = mock_run(fzf_cli_args,
-      { _cli_segments = segments, cwd = "C:/some/dir" })
+    local captured = mock_run(fzf_cli_args, { _cli_segments = segments, cwd = "C:/some/dir" })
     -- no shell command line, just the direct spawn spec
     eq(captured.shell_cmd[1], nil)
     local spec = captured.shell_cmd.__win_spawn
@@ -124,8 +123,7 @@ describe("Testing fzf launcher", function()
       { { text = "--query", escape = false } },
       { { text = "", escape = true } },
     }
-    local captured = mock_run({ "--query", libuv.shellescape("") },
-      { _cli_segments = segments })
+    local captured = mock_run({ "--query", libuv.shellescape("") }, { _cli_segments = segments })
     local spec = captured.shell_cmd.__win_spawn
     same(spec.args, { "--query", "" })
   end)
@@ -137,8 +135,9 @@ describe("Testing fzf launcher", function()
       { { text = "--query", escape = false } },
       { { text = tricky, escape = true } },
     }
-    local captured = mock_run({ "--query", libuv.shellescape(tricky) },
-      { _cli_segments = segments })
+    local captured = mock_run(
+      { "--query", libuv.shellescape(tricky) }, { _cli_segments = segments }
+    )
     local spec = captured.shell_cmd.__win_spawn
     same(spec.args, { "--query", tricky })
   end)
@@ -148,8 +147,10 @@ describe("Testing fzf launcher", function()
     local segments = {
       { { text = "--bind=", escape = false }, { text = "ctrl-t:execute(echo hi)", escape = true } },
     }
-    local captured = mock_run({ "--bind=" .. libuv.shellescape("ctrl-t:execute(echo hi)") },
-      { pipe_cmd = true, _cli_segments = segments })
+    local captured = mock_run(
+      { "--bind=" .. libuv.shellescape("ctrl-t:execute(echo hi)") },
+      { pipe_cmd = true, _cli_segments = segments }
+    )
     local spec = captured.shell_cmd.__win_spawn
     eq(spec.item, "echo foo || break")
     eq(spec.args[1], "--bind=ctrl-t:execute(echo hi)")
@@ -164,8 +165,9 @@ describe("Testing fzf launcher", function()
     local segments = {
       { { text = "--bind=", escape = false }, { text = raw_bind, escape = true } },
     }
-    local captured = mock_run_tui({ "--bind=" .. libuv.shellescape(raw_bind) },
-      { _cli_segments = segments })
+    local captured = mock_run_tui(
+      { "--bind=" .. libuv.shellescape(raw_bind) }, { _cli_segments = segments }
+    )
     local shell_cmd = captured.shell_cmd
     ---@cast shell_cmd string[]
     eq(shell_cmd[1], os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath)
@@ -207,7 +209,7 @@ describe("Testing fzf launcher", function()
     eq(captured.shell_cmd[1], "cmd.exe")
     eq(captured.env.FZF_DEFAULT_COMMAND, nil)
     assert.is.True(captured.shell_cmd[7]
-      :find("(echo foo || break) | ", 1, true) ~= nil)
+        :find("(echo foo || break) | ", 1, true) ~= nil)
   end)
 
   it("does not emit --with-shell for skim", function()

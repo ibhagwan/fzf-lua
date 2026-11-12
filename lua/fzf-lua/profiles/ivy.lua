@@ -2,15 +2,15 @@ local M = {
   { "default" }, -- base profile
   desc = "UI at the bottom of the screen",
   winopts = {
-    row       = 1,
-    col       = 0,
-    width     = 1,
-    height    = 1,
+    row    = 1,
+    col    = 0,
+    width  = 1,
+    height = 1,
     -- uncomment to supress cmdline
     -- zindex    = 200,
     -- title_pos = "left",
     toggle_behavior = "extend",
-    border    = function(_, m)
+    border          = function(_, m)
       assert(m.type == "nvim" and m.name == "fzf")
       -- { "╭", "─", "╮", "│", "╯", "─", "╰", "│" }
       local b = { "", "", "", "", "", "", "", "" }
@@ -26,12 +26,12 @@ local M = {
       end
       return b
     end,
-    preview   = {
-      layout    = "vertical",
-      vertical  = "up:60%",
+    preview         = {
+      layout   = "vertical",
+      vertical = "up:60%",
       -- title_pos = "right",
-      winopts   = { signcolumn = "yes" },
-      border    = function(_, m)
+      winopts = { signcolumn = "yes" },
+      border  = function(_, m)
         if m.type == "fzf" then
           return "border-line"
         else
@@ -44,7 +44,7 @@ local M = {
           end
         end
       end,
-    }
+    },
   },
 }
 

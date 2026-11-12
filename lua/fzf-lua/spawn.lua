@@ -5,7 +5,7 @@ assert(#vim.api.nvim_list_uis() == 0)
 
 -- path to this file
 local _info = debug.getinfo(1, "S")
----@cast _info {source: string}
+---@cast _info { source: string }
 local __FILE__ = _info.source:gsub("^@", "")
 
 -- add the current folder to package.path so we can 'require'

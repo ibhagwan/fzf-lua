@@ -3,7 +3,9 @@ local fzf = require("fzf-lua")
 local builtin = require("fzf-lua.previewer.builtin")
 local M = {}
 M.builtin = builtin.base:extend()
-M.fzf = require("fzf-lua.previewer.fzf").base:extend()
+M.fzf = require("fzf-lua.previewer.fzf")
+  .base
+  :extend()
 
 function M.builtin:new(o, opts, fzf_win)
   self.super.new(self, o, opts, fzf_win)
@@ -16,7 +18,7 @@ function M.builtin:populate_preview_buf(entry_str)
   local fname = fzf.path.tail(entry.path)
   local buf = self:get_tmp_buffer()
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
-    string.format("SELECTED FILE: %s", fname)
+    string.format("SELECTED FILE: %s", fname),
   })
   self:set_preview_buf(buf)
   self.win:update_preview_title(fname)

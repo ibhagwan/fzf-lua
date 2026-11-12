@@ -6,7 +6,7 @@ local shell = require "fzf-lua.shell"
 
 local M = {}
 
----@class fzf-lua.previewer.SwiperBase: fzf-lua.Object, {}
+---@class fzf-lua.previewer.SwiperBase: fzf-lua.Object, { }
 ---@field opts table
 ---@field ctx_winid integer
 ---@field ctx_bufnr integer
@@ -21,7 +21,7 @@ M.base = Object:extend()
 ---@return fzf-lua.previewer.SwiperBase?
 function M.base:new(o, opts)
   o = o or {}
-  self.opts = opts;
+  self.opts = opts
   local ctx = opts.__CTX
   self.ctx_winid = ctx.winid
   self.ctx_bufnr = ctx.bufnr
@@ -32,9 +32,13 @@ function M.base:new(o, opts)
   self.ns = vim.api.nvim_create_namespace("fzf-lua.preview.swiper")
   self.picker = FzfLua.get_info().cmd
   if not utils.tbl_contains({
-        "blines", "grep_curbuf", "lgrep_curbuf", "git_blame", "treesitter", "lsp_document_symbols"
-      }, self.picker)
-  then
+    "blines",
+    "grep_curbuf",
+    "lgrep_curbuf",
+    "git_blame",
+    "treesitter",
+    "lsp_document_symbols",
+  }, self.picker) then
     utils.warn("swiper previewer is not supported for '%s'", self.picker)
     return
   end
@@ -93,8 +97,9 @@ function M.base:parse_lnum_col(line, is_entry)
   end
   if lnum then
     -- use `vin.fn.strwidth` for proper adjustment of fzf's marker/pointer if unicode
-    return utils.tointeger(lnum), utils.tointeger(col), prefix and vim.fn.strwidth(prefix) or 0,
-        off or 0
+    return utils.tointeger(lnum),
+      utils.tointeger(col), prefix and vim.fn.strwidth(prefix) or 0,
+      off or 0
   end
 end
 
@@ -110,16 +115,20 @@ function M.base:preview_cmd()
     vim.wo[self.ctx_winid].winhl = "CursorLine:" .. self.opts.hls.cursorline
     vim.defer_fn(function() self:highlight_matches() end, 10)
     if col and col > 0 then
-      vim.hl.range(self.ctx_bufnr, self.ns, self.opts.hls.cursor,
-        { lnum - 1, col - 1 }, { lnum - 1, col }, {})
+      vim.hl.range(
+        self.ctx_bufnr, self.ns, self.opts.hls.cursor, { lnum - 1, col - 1 }, { lnum - 1, col }, {}
+      )
     end
   end, self.opts, "{} {n} {q}")
 end
 
 function M.base:result_cmd()
-  return string.format("execute-silent:%s", shell.stringify_data(function(_, _, _)
-    vim.defer_fn(function() self:highlight_matches() end, 10)
-  end, self.opts, "{q}"))
+  return string.format(
+    "execute-silent:%s",
+    shell.stringify_data(function(_, _, _)
+      vim.defer_fn(function() self:highlight_matches() end, 10)
+    end, self.opts, "{q}")
+  )
 end
 
 function M.base:highlight_matches()
@@ -127,8 +136,9 @@ function M.base:highlight_matches()
   -- https://github.com/ibhagwan/fzf-lua/issues/1754#issuecomment-2944053022
   local hl = function(start_row, start_col, end_row, end_col)
     assert(start_col >= 0 and end_col >= 0, "start_col and end_col must be non-negative")
-    vim.hl.range(self.ctx_bufnr, self.ns, "IncSearch",
-      { start_row, start_col }, { end_row, end_col }, {})
+    vim.hl.range(
+      self.ctx_bufnr, self.ns, "IncSearch", { start_row, start_col }, { end_row, end_col }, {}
+    )
   end
   vim.api.nvim_buf_clear_namespace(self.ctx_bufnr, self.ns, 0, -1)
   local hlgroup = self.opts.fzf_colors.hl and self.opts.fzf_colors.hl[2]
@@ -147,7 +157,8 @@ function M.base:highlight_matches()
   end
   local top = vim.fn.line("w0", fzf_win)
   local bot = vim.fn.line("w$", fzf_win)
-  local top_row = vim.fn.screenpos(fzf_win, top, 1).row
+  local top_row = vim.fn.screenpos(fzf_win, top, 1)
+    .row
   local max_columns = vim.o.columns
   local buf_lines = vim.api.nvim_buf_get_lines(fzf_buf, 0, -1, false)
   for buf_lnum = top, bot do
@@ -194,7 +205,7 @@ function M.base:close()
   utils.zz()
 end
 
----@class fzf-lua.previewer.Swiper : fzf-lua.previewer.SwiperBase,{}
+---@class fzf-lua.previewer.Swiper: fzf-lua.previewer.SwiperBase, { }
 ---@field super fzf-lua.previewer.SwiperBase
 M.default = M.base:extend()
 

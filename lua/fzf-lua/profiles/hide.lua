@@ -2,7 +2,7 @@
 local uv = vim.uv or vim.loop
 local fzf = require("fzf-lua")
 
----@type fzf-lua.Config|{}
+---@type fzf-lua.Config|{ }
 return {
   desc     = "hide interface instead of abort",
   keymap   = {
@@ -11,8 +11,8 @@ return {
       -- NOTE: we use a custom <Esc> callback that also sends esc to fzf
       -- so we can store the last query on the execute-silent callback
       -- ["<Esc>"] = "hide",
-      ["<M-Esc>"] = "abort"
-    }
+      ["<M-Esc>"] = "abort",
+    },
   },
   defaults = {
     enrich = function(opts)
@@ -38,7 +38,8 @@ return {
           -- and then send <Esc> directly to the term channel
           fzf.hide()
           vim.api.nvim_chan_send(vim.bo[e.bufnr].channel, "\027")
-        end, { buffer = e.bufnr, nowait = true })
+        end, { buffer = e.bufnr, nowait = true }
+        )
         -- Call the users' on_create?
         if type(_on_create) == "function" then
           _on_create(e)
@@ -54,8 +55,8 @@ return {
       }
       for k, act in pairs(opts.actions) do
         act = type(act) == "function" and { fn = act } or act
-        act = type(act) == "table" and type(act[1]) == "function"
-            and { fn = act[1], reuse = true } or act
+        act = type(act) == "table" and type(act[1]) == "function" and { fn = act[1], reuse = true }
+          or act
         assert(type(act) == "table" and type(act.fn) == "function" or not act)
         ---@cast act table
         if type(act) == "table" and
@@ -64,8 +65,7 @@ return {
             and not act.noclose
             and not act.reuse
             -- ignore `false` actions (#2407)
-            and not k:match("^_")
-        then
+            and not k:match("^_") then
           local fn = act.fn
           act.exec_silent = true
           act.desc = act.desc or fzf.config.get_action_helpstr(act)

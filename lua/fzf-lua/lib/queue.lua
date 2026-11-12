@@ -1,7 +1,7 @@
---- Courtesy of snacks.nvim
---- https://github.com/folke/snacks.nvim/blob/main/lua/snacks/picker/util/queue.lua
---- Efficient queue implementation.
---- Prevents need to shift elements when popping.
+---Courtesy of snacks.nvim
+---https://github.com/folke/snacks.nvim/blob/main/lua/snacks/picker/util/queue.lua
+---Efficient queue implementation.
+---Prevents need to shift elements when popping.
 ---@class fzf-lua.lib.queue
 ---@field queue any[]
 ---@field first number

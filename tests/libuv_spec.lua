@@ -53,27 +53,32 @@ describe("Testing libuv module", function()
     eq(libuv.shellescape([[\^"]], 2), [[^"^^\\\^"^"]])
     eq(libuv.shellescape([[^"^"]], 2), [[^"^^\^"^^\^"^"]])
     eq(libuv.shellescape([[__^^"^"__]], 2), [[^"__^^^^\^"^^\^"__^"]])
-    eq(libuv.shellescape([[__!^^"^"__]], 2),
+    eq(
+      libuv.shellescape([[__!^^"^"__]], 2),
       -- 1st: ^"_^!^^^^\^"^^\^"_^"
       -- 2nd: ^"_^^^!^^^^^^^^^^\\\^"^^^^^^\\\^"_^"
-      [[^"__^^^!^^^^^^^^^^\\\^"^^^^^^\\\^"__^"]])
-    eq(libuv.shellescape([[__^^^^\^"^^\^"__]], 2),
-      [[^"__^^^^^^^^^^\\\^"^^^^^^\\\^"__^"]])
+      [[^"__^^^!^^^^^^^^^^\\\^"^^^^^^\\\^"__^"]]
+    )
+    eq(libuv.shellescape([[__^^^^\^"^^\^"__]], 2), [[^"__^^^^^^^^^^\\\^"^^^^^^\\\^"__^"]])
     eq(libuv.shellescape([[^]], 2), [[^"^^^"]])
     eq(libuv.shellescape([[^^]], 2), [[^"^^^^^"]])
     eq(libuv.shellescape([[^^^]], 2), [[^"^^^^^^^"]])
     eq(libuv.shellescape([[^!^]], 2), [[^"^^^^^^^!^^^^^"]])
-    eq(libuv.shellescape([[!^"]], 2),
+    eq(
+      libuv.shellescape([[!^"]], 2),
       -- 1st inner: ^!^^\^"
       -- 2nd inner: ^^^!^^^^^^\\\^"
-      [[^"^^^!^^^^^^\\\^"^"]])
+      [[^"^^^!^^^^^^\\\^"^"]]
+    )
     eq(libuv.shellescape([[!\"]], 2), [[^"^^^!^^\\\\\\\^"^"]])
     eq(libuv.shellescape([[!\^"]], 2), [[^"^^^!^^^^^^\\\\\\\^"^"]])
     eq(libuv.shellescape([[()%^"<>&|;]], 2), [[^"^(^)^%^^\^"^<^>^&^|^;^"]])
-    eq(libuv.shellescape([[()%^"<>&|;!]], 2),
+    eq(
+      libuv.shellescape([[()%^"<>&|;!]], 2),
       -- 1st inner: ^(^)^%^^\^"^<^>^&^|^!
       -- 2nd inner: ^^^(^^^)^^^%^^^^^^\^"^^^<^^^>^^^&^^^|^^^!
-      [[^"^^^(^^^)^^^%^^^^^^\\\^"^^^<^^^>^^^&^^^|^^^;^^^!^"]])
+      [[^"^^^(^^^)^^^%^^^^^^\\\^"^^^<^^^>^^^&^^^|^^^;^^^!^"]]
+    )
     eq(libuv.shellescape([[foo]], 2), [[^"foo^"]])
     eq(libuv.shellescape([[foo\]], 2), [[^"foo\\^"]])
     eq(libuv.shellescape([[foo^]], 2), [[^"foo^^^"]])
@@ -99,11 +104,37 @@ describe("Testing libuv module", function()
     -- `win_style = true` forces the `cmd.exe` caret escaping (the default
     -- on Windows), also runs on posix CI
     local values = {
-      "foo", "a b", "x^y", "a^^b", "p%q", "a&b", "it's", [["q"]], [[E\f]],
-      "汉 é", "bang!x", "eq=a", "semi;x", "lt<x", "pipe|x", "paren(x)",
-      "amp&pipe|semi;", "trailback\\", " caret^ leading", "^caret",
-      "trailcaret^", [[a"b]], [[a\"b]], "two  spaces", "10%%", "a!b",
-      "%TEMP%", "a(b)c", "cur|pipe", "d>e", "a<b",
+      "foo",
+      "a b",
+      "x^y",
+      "a^^b",
+      "p%q",
+      "a&b",
+      "it's",
+      [["q"]],
+      [[E\f]],
+      "汉 é",
+      "bang!x",
+      "eq=a",
+      "semi;x",
+      "lt<x",
+      "pipe|x",
+      "paren(x)",
+      "amp&pipe|semi;",
+      "trailback\\",
+      " caret^ leading",
+      "^caret",
+      "trailcaret^",
+      [[a"b]],
+      [[a\"b]],
+      "two  spaces",
+      "10%%",
+      "a!b",
+      "%TEMP%",
+      "a(b)c",
+      "cur|pipe",
+      "d>e",
+      "a<b",
       "load:+execute-silent:echo hi",
     }
     for _, v in ipairs(values) do
@@ -111,8 +142,10 @@ describe("Testing libuv module", function()
     end
     -- the pre-escaped user fragment pattern, e.g. test harness
     -- `"--bind=" .. shellescape("load:+execute-silent:...")`
-    same(libuv.cmd_argv("--bind=" .. libuv.shellescape("load:+execute-silent:echo hi", true)),
-      { "--bind=load:+execute-silent:echo hi" })
+    same(
+      libuv.cmd_argv("--bind=" .. libuv.shellescape("load:+execute-silent:echo hi", true)),
+      { "--bind=load:+execute-silent:echo hi" }
+    )
   end)
 
   it("cmd_argv parses cmd fragments", function()
@@ -120,12 +153,16 @@ describe("Testing libuv module", function()
     same(libuv.cmd_argv("   "), {})
     same(libuv.cmd_argv("--no-multi --layout=reverse"), { "--no-multi", "--layout=reverse" })
     same(libuv.cmd_argv([[--header="a b" --no-multi]]), { "--header=a b", "--no-multi" })
-    same(libuv.cmd_argv("--bind=ctrl-a:first --expect=ctrl-e"),
-      { "--bind=ctrl-a:first", "--expect=ctrl-e" })
+    same(
+      libuv.cmd_argv("--bind=ctrl-a:first --expect=ctrl-e"),
+      { "--bind=ctrl-a:first", "--expect=ctrl-e" }
+    )
     -- caret escaping quotes/spaces (user args are cmd fragments)
     same(libuv.cmd_argv([[--header=^"a b^"]]), { "--header=a b" })
-    same(libuv.cmd_argv([[--bind=^"load:+execute-silent:echo^ hi^"]]),
-      { "--bind=load:+execute-silent:echo hi" })
+    same(
+      libuv.cmd_argv([[--bind=^"load:+execute-silent:echo^ hi^"]]),
+      { "--bind=load:+execute-silent:echo hi" }
+    )
     -- carets are only special outside of double quotes (cmd.exe): inside a
     -- quoted fragment a caret is literal and only the quote toggles state
     same(libuv.cmd_argv([["x^y"]]), { "x^y" })
@@ -159,8 +196,10 @@ describe("Testing libuv module", function()
     -- this was verified against `cmd.exe /d /e:off /f:off /v:off /c ..`
     -- (the legacy launcher route) + `fzf.exe`
     local env = {
-      MYTEST = "abc", SPACED = "hello world",
-      REC = "%MYTEST%", TEMP = [[C:\Temp]],
+      MYTEST = "abc",
+      SPACED = "hello world",
+      REC = "%MYTEST%",
+      TEMP = [[C:\Temp]],
     }
     same(libuv.cmd_argv("--query=%MYTEST%", env), { "--query=abc" })
     -- env lookups are case-insensitive
@@ -178,8 +217,7 @@ describe("Testing libuv module", function()
     -- caret-protected (shellescape style) names never match: `MYTEST^`
     same(libuv.cmd_argv([[--query=^%MYTEST^%]], env), { "--query=%MYTEST%" })
     -- the `shellescape` round-trip holds even when the variable is defined
-    same(libuv.cmd_argv(libuv.shellescape("x %TEMP% y", true), env),
-      { "x %TEMP% y" })
+    same(libuv.cmd_argv(libuv.shellescape("x %TEMP% y", true), env), { "x %TEMP% y" })
     same(libuv.cmd_argv(libuv.shellescape("100%%", true), env), { "100%%" })
     -- the default env is the nvim process environment
     vim.env.FZF_LUA_CMDARGV_TEST = "xyz"
@@ -215,7 +253,9 @@ describe("Testing libuv module", function()
     local cli_args, segments = core.build_fzf_cli(opts)
     eq(#cli_args, #segments)
     -- no marker tables leak into the escaped string form
-    for _, a in ipairs(cli_args) do eq(type(a), "string") end
+    for _, a in ipairs(cli_args) do
+      eq(type(a), "string")
+    end
     -- re-escaping the raw segments for the current shell reproduces cli_args
     local shell = helpers.IS_WIN() and "cmd" or "posix"
     same(libuv.escape_cli(segments, shell), cli_args)
@@ -318,9 +358,21 @@ describe("Testing libuv module", function()
     eq({ 0 }, vim.fn.jobwait({ job }))
     eq(0, exit_code)
     eq(selected, {
-      "f", "foo", "foo", "0", "0",
-      "'f'", "'foo'", "'foo'", "0", "0",
-      "f", "foo", "foo", "0", "0",
+      "f",
+      "foo",
+      "foo",
+      "0",
+      "0",
+      "'f'",
+      "'foo'",
+      "'foo'",
+      "0",
+      "0",
+      "f",
+      "foo",
+      "foo",
+      "0",
+      "0",
       -- "f foo foo 0 0",
       "foo",
     })
@@ -347,23 +399,25 @@ describe("Testing libuv module", function()
     eq(nil, libuv.win_console_stdio())
   end)
 
-  --- Spawn a headless nvim that reports the handle type of its stderr and
-  --- return that string ("tty" when the child sees a real console).
+  ---Spawn a headless nvim that reports the handle type of its stderr and
+  ---return that string ("tty" when the child sees a real console).
   ---@param stdio integer[]
   local function probe_stderr_handle(stdio)
     local file = vim.fn.tempname()
     local probe = vim.fn.tempname() .. ".lua"
     vim.fn.writefile({
       ("vim.fn.writefile({ tostring(vim.uv.guess_handle(2)) }, %s)")
-          :format(vim.inspect(file)),
+        :format(vim.inspect(file)),
     }, probe)
     local done = false
     libuv.uv_spawn(vim.v.progpath, {
       args = { "--headless", "--clean", "-l", probe },
       stdio = stdio,
-    }, function() done = true end)
+    }, function() done = true end
+    )
     eq(true, vim.wait(10000, function() return done end))
-    local got = vim.fn.readfile(file)[1]
+    local got = vim.fn.readfile(file)
+      [1]
     vim.fn.delete(file)
     vim.fn.delete(probe)
     return got
@@ -377,8 +431,10 @@ describe("Testing libuv module", function()
       -- spawned probe child can't see a console either, nothing to assert
       return MiniTest.skip("no console attached")
     end
-    eq({ "table", "number", "number", "number" },
-      { type(fds), type(fds[1]), type(fds[2]), type(fds[3]) })
+    eq(
+      { "table", "number", "number", "number" },
+      { type(fds), type(fds[1]), type(fds[2]), type(fds[3]) }
+    )
     eq(fds[2], fds[3])
     -- a child spawned with these fds must see a console on stderr
     eq("tty", probe_stderr_handle(fds))
@@ -402,11 +458,11 @@ describe("Testing libuv module", function()
     end
   end)
 
-  --- Read the handle flags of stdio `fd`; nil when it has no valid handle.
-  --- Reuses the declarations made by `libuv.win_stdio_no_inherit`:
-  --- `require("ffi")` returns the same cached FFI table (sharing the CType
-  --- state), while `package.preload.ffi()` would re-initialize it and drop
-  --- the declarations (see `win_ffi_init` in libuv.lua).
+  ---Read the handle flags of stdio `fd`; nil when it has no valid handle.
+  ---Reuses the declarations made by `libuv.win_stdio_no_inherit`:
+  ---`require("ffi")` returns the same cached FFI table (sharing the CType
+  ---state), while `package.preload.ffi()` would re-initialize it and drop
+  ---the declarations (see `win_ffi_init` in libuv.lua).
   ---@param fd integer
   ---@return integer? flags
   local function stdio_handle_flags(fd)
