@@ -50,13 +50,18 @@ M.manpages = function(opts)
     return
   end
 
-  opts.fn_transform = function(x)
+  -- Reuse the output above instead of running `opts.cmd` a second time
+  local entries = vim.tbl_map(function(x)
     -- split by first occurrence of ' - ' (spaced hyphen)
     local man, desc = x:match("^(.-) %- (.*)$")
     return string.format("%-45s %s", man, desc)
-  end
+  end, vim.split(out, "\n", { trimempty = true }))
 
-  return core.fzf_exec(opts.cmd, opts)
+  -- The entries are already in memory, a separate process would receive
+  -- them serialized on its command line, which can exceed ARG_MAX
+  opts.multiprocess = false
+
+  return core.fzf_exec(entries, opts)
 end
 
 return M
