@@ -48,6 +48,8 @@ M.manpages = function(opts)
   local lines = {}
   local job = vim.fn.jobstart({ "sh", "-c", opts.cmd }, {
     cwd = opts.cwd,
+    env = opts.env,
+    stdin = "null",
     stdout_buffered = true,
     on_stdout = function(_, data) lines = data end,
   })
