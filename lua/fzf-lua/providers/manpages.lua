@@ -44,19 +44,38 @@ M.manpages = function(opts)
     return
   end
 
-  local out = vim.fn.system(opts.cmd)
-  if vim.v.shell_error ~= 0 or vim.trim(out) == "" then
+  -- Run `opts.cmd` once, like `fzf_exec` would: `sh -c` in `opts.cwd`, stdout only
+  local lines = {}
+  ---@diagnostic disable-next-line: undefined-field
+  local env = opts.env
+  local job = vim.fn.jobstart({ "sh", "-c", opts.cmd }, {
+    cwd = opts.cwd,
+    -- jobstart() rejects `{}`, which converts to a list instead of a dict
+    env = env and next(env) and env or nil,
+    stdin = "null",
+    stdout_buffered = true,
+    on_stdout = function(_, data) lines = data end,
+  })
+  local code = vim.fn.jobwait({ job })[1]
+  lines = vim.tbl_filter(function(x) return vim.trim(x) ~= "" end, lines)
+  if code ~= 0 or #lines == 0 then
     utils.warn("'man -k' returned no results, try running 'sudo mandb' to populate the cache.")
     return
   end
 
-  opts.fn_transform = function(x)
+  local entries = vim.tbl_map(function(x)
     -- split by first occurrence of ' - ' (spaced hyphen)
     local man, desc = x:match("^(.-) %- (.*)$")
+    -- keep unexpected lines as-is, PUC Lua's `string.format` errors on nil
+    if not man then return x end
     return string.format("%-45s %s", man, desc)
-  end
+  end, lines)
 
-  return core.fzf_exec(opts.cmd, opts)
+  -- The entries are already in memory, a separate process would receive
+  -- them serialized on its command line, which can exceed ARG_MAX
+  opts.multiprocess = false
+
+  return core.fzf_exec(entries, opts)
 end
 
 return M
