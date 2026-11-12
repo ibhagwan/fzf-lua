@@ -44,18 +44,25 @@ M.manpages = function(opts)
     return
   end
 
-  local out = vim.fn.system(opts.cmd)
-  if vim.v.shell_error ~= 0 or vim.trim(out) == "" then
+  -- Run `opts.cmd` once, like `fzf_exec` would: `sh -c` in `opts.cwd`, stdout only
+  local lines = {}
+  local job = vim.fn.jobstart({ "sh", "-c", opts.cmd }, {
+    cwd = opts.cwd,
+    stdout_buffered = true,
+    on_stdout = function(_, data) lines = data end,
+  })
+  local code = vim.fn.jobwait({ job })[1]
+  lines = vim.tbl_filter(function(x) return vim.trim(x) ~= "" end, lines)
+  if code ~= 0 or #lines == 0 then
     utils.warn("'man -k' returned no results, try running 'sudo mandb' to populate the cache.")
     return
   end
 
-  -- Reuse the output above instead of running `opts.cmd` a second time
   local entries = vim.tbl_map(function(x)
     -- split by first occurrence of ' - ' (spaced hyphen)
     local man, desc = x:match("^(.-) %- (.*)$")
     return string.format("%-45s %s", man, desc)
-  end, vim.split(out, "\n", { trimempty = true }))
+  end, lines)
 
   -- The entries are already in memory, a separate process would receive
   -- them serialized on its command line, which can exceed ARG_MAX
