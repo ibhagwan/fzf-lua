@@ -46,9 +46,12 @@ M.manpages = function(opts)
 
   -- Run `opts.cmd` once, like `fzf_exec` would: `sh -c` in `opts.cwd`, stdout only
   local lines = {}
+  ---@diagnostic disable-next-line: undefined-field
+  local env = opts.env
   local job = vim.fn.jobstart({ "sh", "-c", opts.cmd }, {
     cwd = opts.cwd,
-    env = opts.env,
+    -- jobstart() rejects `{}`, which converts to a list instead of a dict
+    env = env and next(env) and env or nil,
     stdin = "null",
     stdout_buffered = true,
     on_stdout = function(_, data) lines = data end,
@@ -63,6 +66,8 @@ M.manpages = function(opts)
   local entries = vim.tbl_map(function(x)
     -- split by first occurrence of ' - ' (spaced hyphen)
     local man, desc = x:match("^(.-) %- (.*)$")
+    -- keep unexpected lines as-is, PUC Lua's `string.format` errors on nil
+    if not man then return x end
     return string.format("%-45s %s", man, desc)
   end, lines)
 
