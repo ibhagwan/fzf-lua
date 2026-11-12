@@ -281,6 +281,7 @@ describe("Testing libuv module", function()
     local fzf = require("fzf-lua.fzf")
     local selected, exit_code
     coroutine.wrap(function()
+      -- fmt: off
       selected, exit_code = fzf.raw_fzf(
         helpers.IS_WIN() and "echo foo&& echo bar" or "echo foo\nbar",
         {
@@ -309,6 +310,7 @@ describe("Testing libuv module", function()
           -- "--bind result:+select-all",
           "--bind start:+accept",
         }, { is_fzf_tmux = false })
+      -- fmt: on
     end)()
     -- usually new job channel is the last one
     local chans = vim.api.nvim_list_chans()

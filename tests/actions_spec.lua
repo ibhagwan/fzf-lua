@@ -5,11 +5,13 @@ local child = helpers.new_child_neovim()
 local eq = helpers.expect.equality
 local new_set = MiniTest.new_set
 
+-- fmt: off
 ---@format disable-next
 local reload = function(config) child.unload(); child.setup(config) end
 local sleep = function(ms) helpers.sleep(ms, child) end
 local exec_lua = child.lua
 --stylua: ignore end
+-- fmt: on
 
 local T = helpers.new_set_with_child(child)
 

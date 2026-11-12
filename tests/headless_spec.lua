@@ -60,6 +60,7 @@ local exec_term = function(c, cmd, args)
   end)
 end
 
+-- fmt: off
 T["headless"]["file_icons"]["devicons - manual"] = new_set({ parametrize = { { false }, { true } } },
   {
     function(icons)
@@ -74,6 +75,7 @@ T["headless"]["file_icons"]["devicons - manual"] = new_set({ parametrize = { { f
       child.expect_screenshot({ ignore_text = { 24 }, ignore_attr = { 25 } })
     end,
   })
+-- fmt: on
 
 T["headless"]["file_icons"]["server"] = new_set({ parametrize = { { "devicons" }, { "mini" } } }, {
   function(icons)

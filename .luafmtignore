@@ -1,0 +1,19 @@
+# Files excluded from luafmt.
+#
+# Patterns are matched relative to each directory passed to luafmt,
+# so `**/lib/...` covers both `./lua/fzf-lua/lib/...` and direct
+# invocations from inside `lua/`.
+
+# Vendored third-party libraries: keep byte-identical to upstream.
+**/lib/base64.lua
+**/lib/copcall.lua
+**/lib/serpent.lua
+**/lib/utf8.lua
+
+# Generated metatype file (see `make gen`). It also contains EmmyLua
+# doc-tag forms that luafmt 0.25.1 rewrites incorrectly.
+**/fzf-lua/types.lua
+
+# Vendored dependencies / tool downloads if luafmt is run on the repo root.
+deps/**
+.emmylua/**
