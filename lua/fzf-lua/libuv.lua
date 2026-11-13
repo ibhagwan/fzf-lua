@@ -178,7 +178,9 @@ M.spawn = function(opts, fn_transform, fn_done)
       -- reads outstanding on slower Windows machines (#1521), only call
       -- `finish` if all our `uv.write` calls are completed and the pipe
       -- is no longer active (i.e. no more read cb's expected)
-      finish(code, signal, "[on_exit]", pid)
+      vim.schedule(function ()
+        finish(code, signal, "[on_exit]", pid)
+      end)
     end
     handle:close()
   end)
