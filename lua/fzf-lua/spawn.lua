@@ -13,8 +13,8 @@ local __FILE__ = _info.source:gsub("^@", "")
 -- priority over some unknown random module with the same name
 package.path = ("%s/?.lua;"):format(vim.fn.fnamemodify(__FILE__, ":h:h")) .. package.path
 
--- due to 'os.exit' neovim doesn't delete the temporary
--- directory, save it so we can delete prior to exit (#329)
+-- due to the forced exit (`os.exit`/`:cquit`) neovim doesn't delete the
+-- temporary directory, save it so we can delete prior to exit (#329)
 -- NOTE: opted to delete the temp dir at the start due to:
 --   (1) spawn_stdio doesn't need a temp directory
 --   (2) avoid dangling temp dirs on process kill (i.e. live_grep)
@@ -47,15 +47,15 @@ _G._fzf_lua_is_headless = true
 ---@type fzf-lua.SpawnStdioOpts
 local opts = require("fzf-lua.libuv").deserialize(assert(_G.arg[1]))
 local _, pid = require("fzf-lua.libuv").spawn_stdio(opts)
--- while vim.uv.run() do end -- os.exit in spawn_stdio
+-- while vim.uv.run() do end -- :cquit in spawn_stdio
 if pid then
   while uv.os_getpriority(pid) do
     vim.wait(100, function() return uv.os_getpriority(pid) == nil end)
   end
 else
   -- No child process was spawned (content was table/function, not a string command).
-  -- `on_finish` has already scheduled `fn_postprocess` + `os.exit` via `vim.schedule`,
-  -- we need to pump the event loop so the scheduled callback fires.
+  -- When `on_finish` runs in a fast event it schedules `fn_postprocess` +
+  -- `:cquit` via `vim.schedule`, pump the event loop so the callback fires.
   -- Use `vim.wait` to process `vim.schedule` callbacks (unlike `uv.run`).
   vim.wait(10000)
 end

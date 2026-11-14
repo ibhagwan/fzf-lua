@@ -865,6 +865,10 @@ M.spawn_stdio = function(opts)
   -- Exit the fzf-lua spawn process; `vim.cmd.cquit` is typed `never` in
   -- emmylua's stubs which makes `exit` itself uncallable from a `local
   -- function` declaration, so wrap it as an annotated module-level alias.
+  -- `:cquit` runs `nvim_cmd`, which is rejected with E5560 in a fast event
+  -- (libuv callback), so `on_finish` below defers `exit` to the main loop
+  -- whenever it is called from one; `exit` itself must only run outside a
+  -- fast event.
   ---@type fun(exit_code?: integer, msg?: string)
   local exit = function(exit_code, msg)
     if msg then stderr_write(msg) end
@@ -895,7 +899,7 @@ M.spawn_stdio = function(opts)
         -- if the user cancels the call prematurely with
         -- <C-c>, err will be either EPIPE or ECANCELED
         -- don't really need to do anything since the
-        -- processes will be killed anyways with os.exit()
+        -- processes will be killed anyways with :cquit
         if err then
           stderr_write(("pipe:write error: %s" .. EOL):format(err))
         end
@@ -983,8 +987,8 @@ M.spawn_stdio = function(opts)
     if type(content) == "table" then for _, v in ipairs(content) do w(v) end end
     -- Table/function content was already written to stdout above, the only
     -- content type that requires spawning a child process is a string command.
-    -- Without this guard, when `fn_postprocess` is set, `on_finish` defers
-    -- `os.exit` via `vim.schedule` and the code falls through to `M.spawn`
+    -- Without this guard, when `on_finish` runs in a fast event and defers the
+    -- `:cquit` via `vim.schedule`, the code falls through to `M.spawn`
     -- which would attempt to execute the table content as a shell command,
     -- resulting in errors like "sh: 1: 1:: not found" appearing as fzf items.
     if type(content) ~= "string" then return on_finish(0), nil end ---@cast content string
