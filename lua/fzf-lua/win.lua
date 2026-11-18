@@ -941,6 +941,11 @@ function FzfWin:setup_autocmds()
   -- Workaround for using `:wqa` with "hide"
   -- https://github.com/neovim/neovim/issues/14061
   self:on("ExitPre", function() self:close() end, true)
+  self:on("WinScrolled", function()
+    if not vim.v.event[tostring(self.preview_winid)] then return end
+    self:update_preview_scrollbar()
+  end, true
+  )
 end
 
 -- attach/detach treesitter (e.g. `grep_lgrep`)
@@ -1524,8 +1529,9 @@ end
 ---@param direction fzf-lua.win.direction
 function FzfWin:preview_scroll(direction)
   if self:validate_preview() and self._previewer and self._previewer.scroll then
-    -- Do not trigger "ModeChanged"
-    utils.eventignore(function() self._previewer:scroll(direction) end)
+    utils.eventignore(function()
+      self._previewer:scroll(direction)
+    end, "ModeChanged")
   end
 end
 

@@ -469,7 +469,6 @@ function Previewer.base:scroll(direction)
   self.bcache:update_pos(
     self.preview_bufnr, direction == "reset" or api.nvim_win_get_cursor(preview_winid)
   )
-  self.win:update_preview_scrollbar()
   self:update_render_markdown()
   self:update_ts_context()
 end
