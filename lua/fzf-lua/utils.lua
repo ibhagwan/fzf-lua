@@ -1492,6 +1492,9 @@ end
 ---@return ... any
 function M.eventignore(func, scope)
   local save_ei = vim.o.eventignore
+  -- merge `scope` with events the caller already ignores instead of
+  -- replacing them (#2863)
+  if scope and save_ei ~= "" then scope = save_ei .. "," .. scope end
   vim.o.eventignore = scope or "all"
   local ret = { pcall(func) }
   vim.o.eventignore = save_ei
