@@ -26,13 +26,14 @@ Previewer.builtin.quickfix = function() return require "fzf-lua.previewer.builti
 Previewer.builtin.highlights = function() return require "fzf-lua.previewer.builtin".highlights end
 Previewer.builtin.autocmds = function() return require "fzf-lua.previewer.builtin".autocmds end
 Previewer.builtin.keymaps = function() return require "fzf-lua.previewer.builtin".keymaps end
-Previewer.builtin.nvim_options = function() return require "fzf-lua.previewer.builtin".nvim_options end
+Previewer.builtin.nvim_options = function()
+  return require "fzf-lua.previewer.builtin".nvim_options
+end
 Previewer.builtin.codeaction = function() return require "fzf-lua.previewer.codeaction".builtin end
 Previewer.builtin.undotree = function() return require "fzf-lua.providers.undotree".builtin end
 
 Previewer.swiper = {}
 Previewer.swiper.default = function() return require "fzf-lua.previewer.swiper".default end
-
 
 ---@class fzf-lua.config.Previewer
 ---@field new? fun(opts: fzf-lua.config.Previewer, opt: fzf-lua.config.Previewer, o: fzf-lua.config.Resolved)
@@ -43,7 +44,7 @@ Previewer.swiper.default = function() return require "fzf-lua.previewer.swiper".
 ---@field preview_offset? string
 ---@field theme? string
 ---@field pager? string|function
----@field _fn_git_icons? table[]|fun():table?
+---@field _fn_git_icons? table[]|fun(): table?
 ---@field vterm? boolean use builtin terminal buffer (nvim_open_term) for preview
 ---builtin
 ---@field title_fnamemodify? function
@@ -72,7 +73,9 @@ Previewer.new = function(spec, opts)
     previewer = preview_opts._ctor()(preview_opts, opts)
   end
   if preview_opts and preview_opts.vterm then ---@cast previewer fzf-lua.previewer.Fzf
-    return require("fzf-lua.previewer.builtin").vterm:new(preview_opts, opts, previewer)
+    return require("fzf-lua.previewer.builtin")
+      .vterm
+      :new(preview_opts, opts, previewer)
   end
   return previewer
 end
@@ -104,7 +107,7 @@ Previewer.normalize_spec = function(preview, opts)
     -- using "{+}" will send multiple selected items
     local field_index = preview.field_index or "{}"
     local stringify = preview.type == "cmd" and FzfLua.shell.stringify_cmd
-        or FzfLua.shell.stringify_data
+      or FzfLua.shell.stringify_data
     ---@cast func fzf-lua.shell.cmd
     return (stringify(func, opts, field_index))
   else

@@ -5,30 +5,30 @@ local libuv = require "fzf-lua.libuv"
 
 local M = {}
 
---- E.g. mandoc: "perlfork(1, 1p)             - Perl's fork() emulation"                 -> "perlfork, 1"
---- E.g. mandoc: "vsnprintf, vsprintf(3P, 3p) - format output of a stdarg argument list" -> "vsnprintf", "3P"
---- E.g. man-db: "vsnprintf (3p)              - format output of a stdarg argument list" -> "vsnprintf", "3p"
---- @param apropos_line string a selected output line from `man -k`
---- @return string?, string?
+---E.g. mandoc: "perlfork(1, 1p)             - Perl's fork() emulation"                 -> "perlfork, 1"
+---E.g. mandoc: "vsnprintf, vsprintf(3P, 3p) - format output of a stdarg argument list" -> "vsnprintf", "3P"
+---E.g. man-db: "vsnprintf (3p)              - format output of a stdarg argument list" -> "vsnprintf", "3p"
+---@param apropos_line string a selected output line from `man -k`
+---@return string?, string?
 local function parse_apropos(apropos_line)
   return apropos_line:match("^([^, (]+)[^(]*%(([^), ]*)")
 end
---- @param apropos_line string
---- @return string? arg without shellescape, nil for malformed lines
+---@param apropos_line string
+---@return string? arg without shellescape, nil for malformed lines
 M.manpage_vim_arg = function(apropos_line)
   local page, section = parse_apropos(apropos_line)
   if not (page and section) then return end
   return string.format("%s(%s)", page, section)
 end
---- @param apropos_line string
---- @return string? arg with shellescape, nil for malformed lines
+---@param apropos_line string
+---@return string? arg with shellescape, nil for malformed lines
 M.manpage_sh_arg = function(apropos_line)
   local page, section = parse_apropos(apropos_line)
   if not (page and section) then return end
   return libuv.shellescape(section) .. " " .. libuv.shellescape(page)
 end
 
----@param opts fzf-lua.config.Manpages|{}?
+---@param opts fzf-lua.config.Manpages|{ }?
 ---@return thread?, string?, table?
 M.manpages = function(opts)
   ---@type fzf-lua.config.Manpages

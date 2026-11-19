@@ -133,9 +133,8 @@ describe("Testing core cli construction", function()
     local _cli_args, segments = core.build_fzf_cli(opts)
     local found = false
     for _, elem in ipairs(segments) do
-      if #elem == 2
-          and elem[1].text == "--bind=" and elem[1].escape == false
-          and elem[2].text == "ctrl-t:reload:cmd" and elem[2].escape == true then
+      if #elem == 2 and elem[1].text == "--bind=" and elem[1].escape == false
+        and elem[2].text == "ctrl-t:reload:cmd" and elem[2].escape == true then
         found = true
         break
       end

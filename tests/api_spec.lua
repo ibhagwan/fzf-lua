@@ -25,7 +25,8 @@ T["api"]["fzf_exec"]["table"] = function(multiprocess)
     multiprocess = multiprocess == true,
     __after_open = function()
       child.wait_until_screenshot_text_match("300/300")
-      sleep(100); if not helpers.IS_LINUX() then sleep(250) end
+      sleep(100)
+      if not helpers.IS_LINUX() then sleep(250) end
     end,
   })
 end
@@ -34,40 +35,38 @@ T["api"]["fzf_exec"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
   function(multiprocess, type)
     if type == "sync" then
       helpers.FzfLua.fzf_exec(child, function(fzf_cb)
-          for i = 1, 1000 do
-            fzf_cb(tostring(i))
-          end
-          fzf_cb(nil)
-        end,
-        { __expect_lines = true, __postprocess_wait = true })
+        for i = 1, 1000 do
+          fzf_cb(tostring(i))
+        end
+        fzf_cb(nil)
+      end, { __expect_lines = true, __postprocess_wait = true }
+      )
     else
       helpers.FzfLua.fzf_exec(child, function(fzf_cb)
-          coroutine.wrap(function()
-            local co = coroutine.running()
-            ---@cast co thread
-            for i = 1, 1000 do
-              fzf_cb(tostring(i), function() coroutine.resume(co) end)
-              coroutine.yield()
-            end
-            fzf_cb(nil)
-          end)()
-        end,
-        { __expect_lines = true, __postprocess_wait = true })
+        coroutine.wrap(function()
+          local co = coroutine.running()
+          ---@cast co thread
+          for i = 1, 1000 do
+            fzf_cb(tostring(i), function() coroutine.resume(co) end)
+            coroutine.yield()
+          end
+          fzf_cb(nil)
+        end)()
+      end, { __expect_lines = true, __postprocess_wait = true }
+      )
     end
   end,
 })
 
 T["api"]["fzf_exec"]["rg"] = new_set({}, {
   function(multiprocess)
-    helpers.FzfLua.fzf_exec(child,
-      "rg --files -g !.git -g !tests/** --sort=path",
-      {
-        __expect_lines = true,
-        -- __postprocess_wait = multiprocess ~= 1,
-        debug = 1,
-        multiprocess = multiprocess,
-      })
-  end
+    helpers.FzfLua.fzf_exec(child, "rg --files -g !.git -g !tests/** --sort=path", {
+      __expect_lines = true,
+      -- __postprocess_wait = multiprocess ~= 1,
+      debug = 1,
+      multiprocess = multiprocess,
+    })
+  end,
 })
 
 T["api"]["fzf_exec"]["fn_transform"] = new_set()
@@ -99,11 +98,12 @@ T["api"]["fzf_exec"]["fn_transform"]["filter"] = new_set(
   })
 -- fmt: on
 
-
 T["api"]["fzf_live"] = new_set({ parametrize = { { true }, { false }, { 1 } } })
 
 T["api"]["fzf_live"]["table"] = function(multiprocess)
-  helpers.FzfLua.fzf_live(child, function(args)
+  helpers.FzfLua.fzf_live(
+    child,
+    function(args)
       local q = args[1]
       if not tonumber(q) then
         return { "Invalid number: " .. tostring(q) }
@@ -123,18 +123,22 @@ T["api"]["fzf_live"]["table"] = function(multiprocess)
         child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
         -- Allow fzf's load event (pos(-1)) to finish updating the UI
         -- before the screenshot is taken.
-        sleep(100); if not helpers.IS_LINUX() then sleep(250) end
+        sleep(100)
+        if not helpers.IS_LINUX() then sleep(250) end
       end,
       query = 100,
       keymap = { fzf = { load = "pos(-1)" } },
       multiprocess = multiprocess == true,
-    })
+    }
+  )
 end
 
 T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "async" } } }, {
   function(multiprocess, type)
     if type == "sync" then
-      helpers.FzfLua.fzf_live(child, function(args)
+      helpers.FzfLua.fzf_live(
+        child,
+        function(args)
           local q = args[1]
           return function(fzf_cb)
             if not tonumber(q) then
@@ -156,14 +160,18 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
             child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
             -- Allow fzf's load event (pos(-1)) to finish updating the UI
             -- before the screenshot is taken.
-            sleep(100); if not helpers.IS_LINUX() then sleep(250) end
+            sleep(100)
+            if not helpers.IS_LINUX() then sleep(250) end
           end,
           query = 100,
           keymap = { fzf = { load = "pos(-1)" } },
           multiprocess = multiprocess == true,
-        })
+        }
+      )
     else
-      helpers.FzfLua.fzf_live(child, function(args)
+      helpers.FzfLua.fzf_live(
+        child,
+        function(args)
           local q = args[1]
           return coroutine.wrap(function(fzf_cb)
             local co = coroutine.running()
@@ -174,7 +182,9 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
             else
               for i = 1, tonumber(q) do
                 for j, s in ipairs({ "foo", "bar", "baz" }) do
-                  fzf_cb(tostring((i - 1) * 3 + j) .. ": " .. s, function() coroutine.resume(co) end)
+                  fzf_cb(
+                    tostring((i - 1) * 3 + j) .. ": " .. s, function() coroutine.resume(co) end
+                  )
                   coroutine.yield()
                 end
               end
@@ -189,11 +199,13 @@ T["api"]["fzf_live"]["function"] = new_set({ parametrize = { { "sync" }, { "asyn
             child.wait_until(function() return child.lua_get([[_G._fzf_load_called]]) == true end)
             -- Allow fzf's load event (pos(-1)) to finish updating the UI
             -- before the screenshot is taken.
-            sleep(100); if not helpers.IS_LINUX() then sleep(250) end
+            sleep(100)
+            if not helpers.IS_LINUX() then sleep(250) end
           end,
           query = 100,
           keymap = { fzf = { load = "pos(-1)" } },
-        })
+        }
+      )
     end
   end,
 })
@@ -214,7 +226,7 @@ T["api"]["fzf_live"]["rg"]["error"] = new_set({}, {
       end,
       -- fzf_opts = { ["--wrap"] = true },
     })
-  end
+  end,
 })
 
 -- fmt: off
@@ -307,42 +319,46 @@ T["api"]["events"] = new_set(
 T["api"]["resume"] = new_set({
   parametrize = { { "fzf_exec" }, { "fzf_live" } },
   n_retry = not helpers.IS_LINUX() and 5 or nil,
-}, {
-  function(api)
-    helpers.FzfLua[api](child, "echo resume string content", {
-      field_index = helpers.IS_WIN() and "" or nil,
-      __expect_lines = false,
-      exec_empty_query = true,
-      debug = 1,
-    })
-    helpers.FzfLua.resume(child, {
-      __expect_lines = true,
-      __after_open = function()
-        sleep(100); if not helpers.IS_LINUX() then sleep(250) end
-      end,
-    })
-
-    helpers.FzfLua[api](child, api == "fzf_exec"
-      and function(fzf_cb)
-        fzf_cb("resume function content")
-        fzf_cb(nil)
-      end or function(_)
-        return function(fzf_cb)
-          fzf_cb("resume function content")
-          fzf_cb(nil)
-        end
-      end, {
+},
+  {
+    function(api)
+      helpers.FzfLua[api](child, "echo resume string content", {
+        field_index = helpers.IS_WIN() and "" or nil,
         __expect_lines = false,
         exec_empty_query = true,
         debug = 1,
       })
-    helpers.FzfLua.resume(child, {
-      __expect_lines = true,
-      __after_open = function()
-        sleep(100); if not helpers.IS_LINUX() then sleep(250) end
-      end,
-    })
-  end,
-})
+      helpers.FzfLua.resume(child, {
+        __expect_lines = true,
+        __after_open = function()
+          sleep(100)
+          if not helpers.IS_LINUX() then sleep(250) end
+        end,
+      })
+
+      helpers.FzfLua[api](child, api == "fzf_exec"
+        and function(fzf_cb)
+          fzf_cb("resume function content")
+          fzf_cb(nil)
+        end
+        or function(_)
+          return function(fzf_cb)
+            fzf_cb("resume function content")
+            fzf_cb(nil)
+          end
+        end, {
+        __expect_lines = false,
+        exec_empty_query = true,
+        debug = 1,
+      })
+      helpers.FzfLua.resume(child, {
+        __expect_lines = true,
+        __after_open = function()
+          sleep(100)
+          if not helpers.IS_LINUX() then sleep(250) end
+        end,
+      })
+    end,
+  })
 
 return T

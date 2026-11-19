@@ -2,8 +2,8 @@
 local uv = vim.uv or vim.loop
 
 local _is_win = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
-local _is_linux = vim.fn.has("linux") == 1 and
-    (vim.fn.has("nvim-0.12") == 1 and vim.fn.has("android") == 0)
+local _is_linux = vim.fn.has("linux") == 1
+  and (vim.fn.has("nvim-0.12") == 1 and vim.fn.has("android") == 0)
 
 if vim.v.servername and #vim.v.servername > 0 then
   pcall(vim.fn.serverstop, vim.v.servername)
@@ -86,8 +86,10 @@ local rpc_nvim_exec_lua = function(opts)
   }
   local success, errmsg = pcall(function()
     local chan_id = vim.fn.sockconnect("pipe", opts.fzf_lua_server, { rpc = true })
-    vim.rpcrequest(chan_id, "nvim_exec_lua",
-      [[return require"fzf-lua.shell".get_func((...).function_id)(...)]], { ctx })
+    vim.rpcrequest(
+      chan_id, "nvim_exec_lua", [[return require"fzf-lua.shell".get_func((...).function_id)(...)]],
+      { ctx }
+    )
     vim.fn.chanclose(chan_id)
   end)
 

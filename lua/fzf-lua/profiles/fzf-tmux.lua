@@ -6,7 +6,7 @@ return {
     ["--gutter"] = " ",
     ["--border"] = "rounded",
     ["--border-label-pos"] = "4",
-    ["--tmux"] = "center,80%,60%"
+    ["--tmux"] = "center,80%,60%",
   },
   winopts = {
     preview = {
@@ -18,8 +18,8 @@ return {
         else
           return "border-sharp"
         end
-      end
-    }
+      end,
+    },
   },
   previewers = {
     bat = { args = "--color=always --style=full" },

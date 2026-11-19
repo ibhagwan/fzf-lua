@@ -106,11 +106,13 @@ local contents_from_arr = function(cont_arr)
     local contents = {}
     for _, t in ipairs(cont_arr) do
       assert(type(t.contents) == cont_type, "Unable to combine contents of different types")
-      contents = utils.tbl_join(contents, t.prefix and
-        vim.tbl_map(function(x)
-          return t.prefix .. x
-        end, t.contents)
-        or t.contents)
+      contents = utils.tbl_join(
+        contents,
+        t.prefix
+          and vim.tbl_map(function(x)
+            return t.prefix .. x
+          end, t.contents) or t.contents
+      )
     end
     return contents
   end
@@ -154,7 +156,7 @@ end
 -- Main API, see:
 -- https://github.com/ibhagwan/fzf-lua/wiki/Advanced
 ---@param contents fzf-lua.content
----@param opts? fzf-lua.config.Base|{}
+---@param opts? fzf-lua.config.Base|{ }
 ---@return thread?, string?, table?
 M.fzf_exec = function(contents, opts)
   if not contents then error("must supply contents") end
@@ -164,15 +166,12 @@ M.fzf_exec = function(contents, opts)
   if type(contents) == "table" and type(contents[1]) == "table" then
     contents = contents_from_arr(contents)
   end
-  local cmd = shell.stringify_mt(contents, opts)
-      or shell.stringify(contents, opts, nil)
+  local cmd = shell.stringify_mt(contents, opts) or shell.stringify(contents, opts, nil)
   return M.fzf_wrap(cmd, opts, true)
 end
 
 local nop = function(opts)
-  return not opts.fn_transform
-      and not opts.fn_preprocess
-      and not opts.fn_postprocess
+  return not opts.fn_transform and not opts.fn_preprocess and not opts.fn_postprocess
 end
 
 ---@param opts table
@@ -180,9 +179,7 @@ end
 M.can_transform = function(opts)
   return utils.has(opts, "fzf", { 0, 45 })
       and opts.is_live -- currently only used for "live" picker
-      and opts.rg_glob
-      and not opts.multiprocess
-      and nop(opts)
+      and opts.rg_glob and not opts.multiprocess and nop(opts)
 end
 
 -- Append query placeholder if not found in command
@@ -226,8 +223,9 @@ M.fzf_live = function(contents, opts)
   local is_fnc = type(contents) == "function"
   if is_fnc and M.can_transform(opts) then
     local contents_fnc = contents --[[@as function]]
-    cmd = shell.stringify_data(function(items) return contents_fnc(items, opts) end, opts,
-      fzf_field_index)
+    cmd = shell.stringify_data(
+      function(items) return contents_fnc(items, opts) end, opts, fzf_field_index
+    )
   else
     contents = add_query_placeholder(contents)
     local mtcmd = shell.stringify_mt(contents, opts)
@@ -263,7 +261,7 @@ M.fzf_resume = function(opts)
 end
 
 ---@param cmd string
----@param opts? fzf-lua.config.Resolved|{}
+---@param opts? fzf-lua.config.Resolved|{ }
 ---@param convert_actions boolean?
 ---@return thread?, string, table
 M.fzf_wrap = function(cmd, opts, convert_actions)
@@ -287,8 +285,8 @@ M.fzf_wrap = function(cmd, opts, convert_actions)
     _co = coroutine.running()
     ---@cast _co thread
     -- xpcall to get full traceback https://www.lua.org/pil/8.5.html
-    local xpcall = jit and xpcall or
-        (utils.__HAS_NVIM_010 and require("coxpcall") or require("fzf-lua.lib.copcall")).xpcall
+    local xpcall = jit and xpcall
+      or (utils.__HAS_NVIM_010 and require("coxpcall") or require("fzf-lua.lib.copcall")).xpcall
     local _, err = xpcall(function()
       if type(opts.cb_co) == "function" then opts.cb_co(_co) end
       local selected, exit_code = M.fzf(cmd, opts)
@@ -341,10 +339,8 @@ M.fzf = function(contents, opts)
   opts.actions = opts.actions or {}
   opts.keymap = opts.keymap or {}
   opts.keymap.fzf = opts.keymap.fzf or {}
-  for _, k in ipairs({ "ctrl-c", "esc", "enter", not utils.has(opts, "sk") and "ctrl-q" or nil })
-  do
-    if opts.actions[k] == nil and (opts.keymap.fzf[k] == nil or opts.keymap.fzf[k] == "abort")
-    then
+  for _, k in ipairs({ "ctrl-c", "esc", "enter", not utils.has(opts, "sk") and "ctrl-q" or nil }) do
+    if opts.actions[k] == nil and (opts.keymap.fzf[k] == nil or opts.keymap.fzf[k] == "abort") then
       opts.actions[k] = actions.dummy_abort
     end
   end
@@ -394,8 +390,7 @@ M.fzf = function(contents, opts)
       and opts.winopts.preview.layout == "flex"
       and tonumber(opts.winopts.preview.flip_columns) > 0
       -- Only enable flex layout native rotate if native previewer size > 0
-      and not (opts.fzf_opts["--preview-window"] or ""):match(":0")
-  then
+      and not (opts.fzf_opts["--preview-window"] or ""):match(":0") then
     win.on_SIGWINCH(opts, 1, function(args)
       -- Only set the layout if preview isn't hidden
       if not tonumber(args[1]) then return end
@@ -409,13 +404,13 @@ M.fzf = function(contents, opts)
   -- Hijack the resize event to reload buffer/tab list on unhide
   win.on_SIGWINCH(opts, "win.unhide", function()
     local reload = type(opts._contents) == "string"
-        and (opts._resume_reload == true
+      and (opts._resume_reload == true
           ---@diagnostic disable-next-line: need-check-nil
           or type(opts._resume_reload) == "function" and opts._resume_reload(opts))
     if reload then
-      return string.format("%sreload:%s",
-        type(reload) == "string" and reload .. "+" or "",
-        opts._contents)
+      return string.format(
+        "%sreload:%s", type(reload) == "string" and reload .. "+" or "", opts._contents
+      )
     end
   end)
 
@@ -461,7 +456,7 @@ M.fzf = function(contents, opts)
   -- only close the window if autoclose wasn't specified or is 'true'
   -- or if the action wasn't a table or defined with `reload|noclose`
   local do_not_close = type(action) == "table"
-      and (action[1] ~= nil or action.reload or action.noclose or action.reuse) ---@diagnostic disable-line: undefined-field
+    and (action[1] ~= nil or action.reload or action.noclose or action.reuse) ---@diagnostic disable-line: undefined-field
   if (not fzf_win:autoclose() == false) and not do_not_close then
     fzf_win:close(fzf_bufnr)
     -- only clear context if we didn't open a new interface, for example, opening
@@ -482,22 +477,20 @@ M.preview_window = function(o, fzf_win)
   local preview_str = fzf_win:fzf_preview_layout_str()
   local preview_pos = preview_str:match("[^:]+") or "right"
   local border_mod = require("fzf-lua.win.border")
-  local border = border_mod.fzf(preview.border,
-    { type = "fzf", name = "prev", layout = preview_pos, opts = o })
-  local prefix = string.format("%s:%s%s",
-    preview.hidden and "hidden" or "nohidden",
-    preview.wrap and "wrap" or "nowrap",
-    border and string.format(":%s", border) or "")
+  local border = border_mod.fzf(
+    preview.border, { type = "fzf", name = "prev", layout = preview_pos, opts = o }
+  )
+  local prefix = string.format(
+    "%s:%s%s", preview.hidden and "hidden" or "nohidden", preview.wrap and "wrap" or "nowrap",
+    border and string.format(":%s", border) or ""
+  )
   -- https://github.com/skim-rs/skim/issues/964
   if preview.pty and utils.has(o, "sk") then prefix = "pty:" .. prefix end
   if utils.has(o, "fzf")
       -- fzf v0.45 added transform, v0.46 added resize event
       -- which we use for changing the layout on resize
-      and not utils.has(o, "fzf", { 0, 46 })
-      and preview.layout == "flex"
-      and preview.flip_columns
-      and preview.flip_columns > 0
-  then
+      and not utils.has(o, "fzf", { 0, 46 }) and preview.layout == "flex"
+    and preview.flip_columns and preview.flip_columns > 0 then
     -- Fzf's alternate layout calculates the available preview width in a horizontal split
     -- (left/right), for the "<%d" condition to trigger the width should be test against a
     -- calculated preview width after a horizontal split (and not vs total fzf window width)
@@ -507,16 +500,15 @@ M.preview_window = function(o, fzf_win)
     local columns = fzf_win:columns(true)
     local hor = assert(preview.horizontal)
     local fzf_prev_percent = tonumber(hor:match(":(%d+)%%"))
-    local fzf_prev_width = not fzf_prev_percent and
-        tonumber(hor:match(":(%d+)")) or nil
+    local fzf_prev_width = not fzf_prev_percent and tonumber(hor:match(":(%d+)")) or nil
     fzf_prev_percent = fzf_prev_percent or 50
     local fzf_main_width = fzf_prev_width and (columns - fzf_prev_width)
-        or math.ceil(columns * (100 - fzf_prev_percent) / 100)
+      or math.ceil(columns * (100 - fzf_prev_percent) / 100)
     local horizontal_min_width = preview.flip_columns - fzf_main_width + 1
     if horizontal_min_width > 0 then
-      layout = string.format("%s:%s,<%d(%s:%s)",
-        prefix, hor, horizontal_min_width,
-        prefix, preview.vertical)
+      layout = string.format(
+        "%s:%s,<%d(%s:%s)", prefix, hor, horizontal_min_width, prefix, preview.vertical
+      )
     end
   end
   layout = layout or string.format("%s:%s", prefix, preview_str)
@@ -608,24 +600,18 @@ M.create_fzf_binds = function(opts)
     -- Since we no longer use `--expect` any bind that contains `accept`
     -- should be assumed to "accept" the default action, using `--expect`
     -- that meant printing an empty string for the default enter key
-    if utils.has(opts, "fzf", { 0, 53 })
-        and action:match("accept%s-$")
-        and not action:match("print(.-)%+accept")
-    then
+    if utils.has(opts, "fzf", { 0, 53 }) and action:match("accept%s-$")
+      and not action:match("print(.-)%+accept") then
       action = action:gsub("accept%s-$", "print(enter)+accept")
     end
     local bind = string.format("%s:%s", key, action)
     -- Separate "transform|execute|execute-silent" binds to their own `--bind` argument, this
     -- way we can use `transform:...` and not be forced to use brackets, i.e. `transform(...)`
     -- this enables us to use brackets in the inner actions, e.g. "zero:transform:rebind(...)"
-    if action:match("transform")
-        or action:match("execute")
-        or action:match("reload")
-        or key == "zero"
-        or key == "load"
-        or key == "start"
-        or key == "resize"
-    then
+    if action:match("transform") or action:match("execute")
+      or action:match("reload") or key == "zero"
+      or key == "load" or key == "start"
+      or key == "resize" then
       table.insert(separate, bind)
     else
       table.insert(combine, bind)
@@ -709,8 +695,10 @@ M.build_fzf_cli = function(opts)
             end
             local is_escaped_v = libuv.is_escaped(v)
             if is_escaped_v then
-              utils.warn("`fzf_opts` are automatically shellescaped."
-                .. " Please remove surrounding quotes from %s=%s", k, v)
+              utils.warn(
+                "`fzf_opts` are automatically shellescaped." .. " Please remove surrounding quotes from %s=%s",
+                k, v
+              )
               -- Record the raw value for the shell-less win spawn route
               -- (`_cli_segments` -> raw argv): decode the pre-escaped
               -- fragment exactly as `cmd.exe` + the Win32 argv parser would
@@ -736,8 +724,11 @@ M.build_fzf_cli = function(opts)
           -- skim has a bug with flag values that start with `-`, for example
           -- specifying `--nth "-1.."` will fail but `--nth="-1.."` works (#1085)
           table.insert(cli_args, not opt_v and k or string.format("%s=%s", k, opt_v))
-          table.insert(segments, not opt_v and { { text = k, escape = false } }
-            or { { text = k .. "=", escape = false }, { text = raw_v, escape = escape_v } })
+          table.insert(
+            segments,
+            not opt_v and { { text = k, escape = false } }
+              or { { text = k .. "=", escape = false }, { text = raw_v, escape = escape_v } }
+          )
         else
           table.insert(cli_args, k)
           table.insert(segments, { { text = k, escape = false } })
@@ -766,15 +757,19 @@ M.build_fzf_cli = function(opts)
           table.insert(cli_args, arg.prefix .. libuv.shellescape(arg.value))
           if arg.prefix:find("%s") then
             local prefix_tokens = shellparse(arg.prefix)
-            if type(prefix_tokens) ~= "table" then prefix_tokens = { arg.prefix } end
+            if type(prefix_tokens) ~= "table" then
+              prefix_tokens = { arg.prefix }
+            end
             ---@cast prefix_tokens string[]
             for _, tok in ipairs(prefix_tokens) do
               table.insert(segments, { { text = tok, escape = false } })
             end
             table.insert(segments, { { text = arg.value, escape = true } })
           else
-            table.insert(segments,
-              { { text = arg.prefix, escape = false }, { text = arg.value, escape = true } })
+            table.insert(
+              segments,
+              { { text = arg.prefix, escape = false }, { text = arg.value, escape = true } }
+            )
           end
         else
           table.insert(cli_args, arg)
@@ -791,7 +786,9 @@ M.build_fzf_cli = function(opts)
           else
             tokens = shellparse(tostring(arg))
           end
-          if type(tokens) ~= "table" then tokens = { tostring(arg) } end
+          if type(tokens) ~= "table" then
+            tokens = { tostring(arg) }
+          end
           ---@cast tokens string[]
           for _, tok in ipairs(tokens) do
             table.insert(segments, { { text = tok, escape = false } })
@@ -826,15 +823,22 @@ M.set_title_flags = function(opts, titles)
   -- NOTE: we only support cmd titles ATM
   if not vim.tbl_contains(titles or {}, "cmd") then return opts end
   if opts.winopts.title_flags == false then return opts end
-  local cmd = type(opts.cmd) == "string" and opts.cmd
-      or type(opts._cmd) == "string" and opts._cmd
-      or nil
+  local cmd = type(opts.cmd) == "string" and opts.cmd or type(opts._cmd) == "string" and opts._cmd
+    or nil
   if not cmd then return opts end
   local flags = {}
   local patterns = {
-    { { opts.toggle_hidden_flag and utils.lua_regex_escape(opts.toggle_hidden_flag) or "%-%-hidden" },     "h" },
-    { { opts.toggle_ignore_flag and utils.lua_regex_escape(opts.toggle_ignore_flag) or "%-%-no%-ignore" }, "i" },
-    { { opts.toggle_follow_flag and utils.lua_regex_escape(opts.toggle_follow_flag) or "%-L" },            "f" },
+    {
+      { opts.toggle_hidden_flag and utils.lua_regex_escape(opts.toggle_hidden_flag) or "%-%-hidden" },
+      "h",
+    },
+    {
+      {
+        opts.toggle_ignore_flag and utils.lua_regex_escape(opts.toggle_ignore_flag) or "%-%-no%-ignore",
+      },
+      "i",
+    },
+    { { opts.toggle_follow_flag and utils.lua_regex_escape(opts.toggle_follow_flag) or "%-L" }, "f" },
   }
   for _, def in ipairs(patterns) do
     for _, p in ipairs(def[1]) do
@@ -868,10 +872,8 @@ end
 M.set_header = function(opts)
   opts = opts or {}
   opts._headers = opts._headers == nil and { "actions" } or opts._headers
-  if opts.header ~= nil
-      or opts.headers == false
-      or type(opts._headers) ~= "table"
-      or vim.tbl_isempty(opts._headers) then
+  if opts.header ~= nil or opts.headers == false
+    or type(opts._headers) ~= "table" or vim.tbl_isempty(opts._headers) then
     return opts
   end
 
@@ -889,8 +891,8 @@ M.set_header = function(opts)
 
   if opts.cwd_prompt then
     opts.prompt = normalize_cwd(opts.cwd or utils.cwd())
-    if tonumber(opts.cwd_prompt_shorten_len) and
-        #opts.prompt >= tonumber(opts.cwd_prompt_shorten_len) then
+    if tonumber(opts.cwd_prompt_shorten_len)
+      and #opts.prompt >= tonumber(opts.cwd_prompt_shorten_len) then
       opts.prompt = path.shorten(opts.prompt, tonumber(opts.cwd_prompt_shorten_val) or 1)
     end
     opts.prompt = path.add_trailing(opts.prompt)
@@ -906,14 +908,12 @@ M.set_header = function(opts)
       val = function()
         -- do not display header when we're inside our
         -- cwd unless the caller specifically requested
-        if opts.cwd_header == false or
-            opts.cwd_prompt and opts.cwd_header == nil or
-            opts.cwd_header == nil and
-            (not opts.cwd or path.equals(opts.cwd, utils.cwd())) then
+        if opts.cwd_header == false or opts.cwd_prompt and opts.cwd_header == nil
+          or opts.cwd_header == nil and (not opts.cwd or path.equals(opts.cwd, utils.cwd())) then
           return
         end
         return normalize_cwd(opts.cwd or utils.cwd())
-      end
+      end,
     },
     search = {
       hdr_txt_opt = "grep_header_txt",
@@ -955,9 +955,9 @@ M.set_header = function(opts)
         if type(opts.regex_filter) == "string" then
           return opts.regex_filter
         elseif type(opts.regex_filter) == "table" and type(opts.regex_filter[1]) == "string" then
-          return string.format("%s%s",
-            opts.regex_filter.exclude and "not " or "",
-            opts.regex_filter[1])
+          return string.format(
+            "%s%s", opts.regex_filter.exclude and "not " or "", opts.regex_filter[1]
+          )
         elseif type(opts.regex_filter) == "function" then
           return "<function>"
         end
@@ -986,22 +986,26 @@ M.set_header = function(opts)
               if type(to) == "function" then
                 to = to(o)
               end
-              table.insert(ret, def and def.pos or #ret + 1,
-                string.format("<%s> to %s",
-                  utils.ansi_from_hl(opts.hls.header_bind, k),
-                  utils.ansi_from_hl(opts.hls.header_text, tostring(to))))
+              table.insert(
+                ret, def and def.pos or #ret + 1,
+                string.format(
+                  "<%s> to %s", utils.ansi_from_hl(opts.hls.header_bind, k),
+                  utils.ansi_from_hl(opts.hls.header_text, tostring(to))
+                )
+              )
             end
           end)()
         end
         -- table.concat fails if the table indexes aren't consecutive
-        return not utils.tbl_isempty(ret) and (function()
-          local t = {}
-          for _, i in pairs(ret) do
-            table.insert(t, i)
-          end
-          t[1] = (opts.header_prefix or ":: ") .. t[1]
-          return table.concat(t, opts.header_separator or "|")
-        end)() or nil
+        return not utils.tbl_isempty(ret)
+          and (function()
+            local t = {}
+            for _, i in pairs(ret) do
+              table.insert(t, i)
+            end
+            t[1] = (opts.header_prefix or ":: ") .. t[1]
+            return table.concat(t, opts.header_separator or "|")
+          end)() or nil
       end,
     },
   }
@@ -1021,9 +1025,10 @@ M.set_header = function(opts)
     local txt = def.val(opts)
     if def and txt then
       hdr_str = not hdr_str and "" or (hdr_str .. ", ")
-      hdr_str = ("%s%s%s"):format(hdr_str, def.hdr_txt_str,
-        not def.hdr_txt_col and txt or
-        utils.ansi_from_hl(def.hdr_txt_col, txt))
+      hdr_str = ("%s%s%s"):format(
+        hdr_str, def.hdr_txt_str,
+        not def.hdr_txt_col and txt or utils.ansi_from_hl(def.hdr_txt_col, txt)
+      )
     end
   end
   if hdr_str and #hdr_str > 0 then
@@ -1055,8 +1060,7 @@ M.convert_reload_actions = function(reload_cmd, opts)
       assert(type(v) == "function" or (v.fn and v[1] == nil) or (v[1] and v.fn == nil))
       if type(v) == "table" and v.reload then
         assert(type(v.fn) == "function")
-      elseif type(v) == "table"
-          and type(v[1]) == "function" and v[2] == actions.resume then
+      elseif type(v) == "table" and type(v[1]) == "function" and v[2] == actions.resume then
         -- backward compat: action definition still uses the old style
         -- using `actions.resume`, convert to { fn = <function>, reload = true }
         opts.actions[k] = { fn = v[1], reload = true }
@@ -1073,8 +1077,8 @@ M.convert_reload_actions = function(reload_cmd, opts)
   local bind_concat = function(tbl, act)
     if #tbl == 0 then return nil end
     return table.concat(vim.tbl_map(function(x)
-      return string.format("%s(%s)", act, x)
-    end, tbl), "+")
+        return string.format("%s(%s)", act, x)
+      end, tbl), "+")
   end
   -- skim syntax: https://github.com/lotabout/skim/commit/ad97bfa7deeee352d743f41ec7cb8bd4b26b4bf6
   local unbind = utils.has(opts, "fzf") and bind_concat(reload_binds, "unbind")
@@ -1094,22 +1098,25 @@ M.convert_reload_actions = function(reload_cmd, opts)
       -- `execute` runs synchronously so `reload` sees the updated state
       local exec = is_skim and "execute" or "execute-silent"
       opts.keymap.fzf[k] = {
-        string.format("%s%s%s(%s)+%s(%s)%s",
+        string.format(
+          "%s%s%s(%s)+%s(%s)%s",
           type(v.prefix) == "string" and v.prefix or "",
           unbind and (unbind .. "+") or "",
           exec,
           cmd,
           M.can_transform(opts) and "transform" or "reload", -- contents is not "cmd" but "reload:cmd"
           reload_cmd,
-          type(v.postfix) == "string" and v.postfix or ""),
-        desc = config.get_action_helpstr(v)
+          type(v.postfix) == "string" and v.postfix or ""
+        ),
+        desc = config.get_action_helpstr(v),
       }
     end
   end
 
   if rebind then
-    table.insert(opts._fzf_cli_args,
-      libuv.cli_raw_arg("--bind=", string.format("load:+%s", rebind)))
+    table.insert(
+      opts._fzf_cli_args, libuv.cli_raw_arg("--bind=", string.format("load:+%s", rebind))
+    )
   end
   return opts
 end
@@ -1143,11 +1150,12 @@ M.convert_exec_silent_actions = function(opts)
       --
       local has_postfix = type(v.postfix) == "string"
       opts.keymap.fzf[k] = {
-        string.format("%sexecute-silent%s%s",
-          type(v.prefix) == "string" and v.prefix or "",
+        string.format(
+          "%sexecute-silent%s%s", type(v.prefix) == "string" and v.prefix or "",
           has_postfix and string.format("(%s)", cmd) or string.format(":%s", cmd),
-          has_postfix and v.postfix or ""),
-        desc = config.get_action_helpstr(v)
+          has_postfix and v.postfix or ""
+        ),
+        desc = config.get_action_helpstr(v),
       }
     end
   end
@@ -1196,8 +1204,7 @@ M.setup_fzf_live_flags = function(command, bind_start, opts)
     opts.fzf_opts["--cmd-history"] = opts.fzf_opts["--history"]
     opts.fzf_opts["--history"] = nil
     -- setup as interactive
-    table.insert(opts._fzf_cli_args,
-      libuv.cli_raw_arg("--interactive --cmd ", reload_command))
+    table.insert(opts._fzf_cli_args, libuv.cli_raw_arg("--interactive --cmd ", reload_command))
   else
     opts.fzf_opts["--disabled"] = true
     opts.fzf_opts["--query"] = opts.query
@@ -1206,11 +1213,15 @@ M.setup_fzf_live_flags = function(command, bind_start, opts)
       reload_command = reload_command .. " || " .. utils.shell_nop()
     end
     local action = M.can_transform(opts) and "transform" or "reload"
-    table.insert(opts._fzf_cli_args,
-      libuv.cli_raw_arg("--bind=", string.format("change:+%s:%s", action, reload_command)))
+    table.insert(
+      opts._fzf_cli_args,
+      libuv.cli_raw_arg("--bind=", string.format("change:+%s:%s", action, reload_command))
+    )
     if bind_start or opts.exec_empty_query or #opts.query > 0 then
-      table.insert(opts._fzf_cli_args,
-        libuv.cli_raw_arg("--bind=", string.format("start:+%s:%s", action, reload_command)))
+      table.insert(
+        opts._fzf_cli_args,
+        libuv.cli_raw_arg("--bind=", string.format("start:+%s:%s", action, reload_command))
+      )
     end
   end
 end

@@ -8,7 +8,7 @@ local config = require "fzf-lua.config"
 
 local M = {}
 
----@param opts fzf-lua.config.Builtin|{}
+---@param opts fzf-lua.config.Builtin|{ }
 ---@return thread?, string?, table?
 M.metatable = function(opts)
   if not opts then return end
@@ -47,7 +47,7 @@ local function ls(dir, fn)
   end
 end
 
----@param opts fzf-lua.config.Profiles|{}?
+---@param opts fzf-lua.config.Profiles|{ }?
 ---@return thread?, string?, table?
 M.profiles = function(opts)
   ---@type fzf-lua.config.Profiles
@@ -61,7 +61,7 @@ M.profiles = function(opts)
   end
 
   local dirs = {
-    path.join({ vim.g.fzf_lua_directory, "profiles" })
+    path.join({ vim.g.fzf_lua_directory, "profiles" }),
   }
 
   local contents = function(cb)
@@ -76,8 +76,9 @@ M.profiles = function(opts)
             local profile = name:sub(1, #name - 4)
             local res = utils.load_profile_fname(fname, profile, true)
             if res then
-              local entry = string.format("%s:%-30s%s", fname,
-                utils.ansi_codes.yellow(profile), res.desc or "")
+              local entry = string.format(
+                "%s:%-30s%s", fname, utils.ansi_codes.yellow(profile), res.desc or ""
+              )
               cb(entry, function(err)
                 coroutine.resume(co)
                 if err then cb(nil) end
@@ -148,7 +149,7 @@ M.combine = function(t)
   return core.fzf_wrap(contents, opts)
 end
 
----@param opts fzf-lua.config.Global|{}?
+---@param opts fzf-lua.config.Global|{ }?
 ---@return thread?, string?, table?
 M.global = function(opts)
   -- -@type fzf-lua.config.GlobalStrict
@@ -187,17 +188,18 @@ M.global = function(opts)
       else
         -- Each subsequent picker gets a fresh copy of the original opts
         -- (unmodified by the default picker)
-        def = gen_def(name, t.opts
-          and vim.tbl_deep_extend("force", {}, opts_copy, t.opts)
-          or opts_copy)
+        def = gen_def(
+          name, t.opts and vim.tbl_deep_extend("force", {}, opts_copy, t.opts) or opts_copy
+        )
         pickers[name] = def
       end
       -- HACK: inherit fzf_opts from the normalized picker opts so we have
       -- with-nth for the transform (e.g. for blines)
       -- TODO: we can probably inerit all opts but I'm not sure what would be
       -- the effects of that, this entire picker needs refactoring
-      local picker_opts = config.normalize_opts(t.opts,
-        name:gsub("^lsp_", "lsp."):gsub("^git_", "git."):gsub("^dap_", "dap."))
+      local picker_opts = config.normalize_opts(
+        t.opts, name:gsub("^lsp_", "lsp."):gsub("^git_", "git."):gsub("^dap_", "dap.")
+      )
       if not utils.map_get(def, "opts.fzf_opts") then utils.map_set(def, "opts.fzf_opts", {}) end
       def.opts.fzf_opts = vim.tbl_deep_extend("force", def.opts.fzf_opts, picker_opts.fzf_opts)
       -- Instantiate the previewer, opts isn't guaranteed if the picker
@@ -232,7 +234,6 @@ M.global = function(opts)
     return default_picker, 1
   end
 
-
   local cur_picker, cur_sub
 
   local transform_picker = function(start)
@@ -251,10 +252,7 @@ M.global = function(opts)
         opts.__alt_opts = new_picker.opts
         -- Attach a new previewer if exists
         local win = FzfLua.utils.fzf_winobj()
-        if win
-            and new_picker.previewer
-            and new_picker.previewer ~= cur_picker.previewer
-        then
+        if win and new_picker.previewer and new_picker.previewer ~= cur_picker.previewer then
           win:close_preview()
           win:attach_previewer(new_picker.previewer)
           win:redraw_preview()
@@ -278,18 +276,26 @@ M.global = function(opts)
 
   opts._fzf_cli_args = opts._fzf_cli_args or {}
   -- Insert at the start of the args table so `line_query` callback is first
-  table.insert(opts._fzf_cli_args, 1,
-    libuv.cli_raw_arg("--bind=", "start:+transform:" .. transform_picker(true)))
+  table.insert(
+    opts._fzf_cli_args, 1,
+    libuv.cli_raw_arg("--bind=", "start:+transform:" .. transform_picker(true))
+  )
 
-  table.insert(opts._fzf_cli_args, 2,
-    libuv.cli_raw_arg("--bind=", "change:+transform:" .. transform_picker(false)))
+  table.insert(
+    opts._fzf_cli_args, 2,
+    libuv.cli_raw_arg("--bind=", "change:+transform:" .. transform_picker(false))
+  )
 
   if opts.header ~= false then
     local header = {}
     for _, t in pairs(opts.pickers) do
-      table.insert(header, string.format("<%s> %s",
-        utils.ansi_from_hl(opts.hls.header_bind, t.prefix or "default"),
-        utils.ansi_from_hl(opts.hls.header_text, t.desc or t[1])))
+      table.insert(
+        header,
+        string.format(
+          "<%s> %s", utils.ansi_from_hl(opts.hls.header_bind, t.prefix or "default"),
+          utils.ansi_from_hl(opts.hls.header_text, t.desc or t[1])
+        )
+      )
     end
 
     opts.header = table.concat(header, "|")

@@ -12,7 +12,7 @@ return {
     ["--layout"] = "default",
     ["--marker"] = "+",
     ["--gutter"] = " ",
-    ["--cycle"] = true
+    ["--cycle"] = true,
   },
   winopts    = {
     width   = 0.8,
@@ -37,10 +37,10 @@ return {
     preview_border = hl_validate "TelescopeBorder",
     preview_title  = hl_validate "TelescopePreviewTitle",
     -- builtin preview only
-    cursor         = hl_validate "Cursor",
-    cursorline     = hl_validate "TelescopeSelection",
-    cursorlinenr   = hl_validate "TelescopeSelection",
-    search         = hl_validate "IncSearch",
+    cursor       = hl_validate "Cursor",
+    cursorline   = hl_validate "TelescopeSelection",
+    cursorlinenr = hl_validate "TelescopeSelection",
+    search       = hl_validate "IncSearch",
   },
   fzf_colors = {
     ["fg"] = { "fg", "TelescopeNormal" },

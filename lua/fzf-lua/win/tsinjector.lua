@@ -24,8 +24,8 @@ function M.setup()
   M._setup = true
   M._ns = M._ns or api.nvim_create_namespace("fzf-lua.win.highlighter")
   M._has_on_range = M._has_on_range == nil
-      and pcall(api.nvim_set_decoration_provider, M._ns, { on_range = function() end })
-      or M._has_on_range
+    and pcall(api.nvim_set_decoration_provider, M._ns, { on_range = function() end })
+    or M._has_on_range
 
   local function wrap_ts_hl_callback(name, cb)
     return function(_, win, buf, ...)
@@ -48,20 +48,24 @@ function M.setup()
   end
 
   local on_range = wrap_ts_hl_callback("_on_range")
-  local on_line = M._has_on_range and function(_, win, buf, row)
-    return on_range(_, win, buf, row, 0, row + 1, 0)
-  end or wrap_ts_hl_callback("_on_line")
+  local on_line = M._has_on_range
+    and function(_, win, buf, row)
+      return on_range(_, win, buf, row, 0, row + 1, 0)
+    end
+    or wrap_ts_hl_callback("_on_line")
 
   -- https://github.com/neovim/neovim/issues/36503
-  local on_win_pre = utils.__HAS_NVIM_012 and function(h, buf, topline, botline)
-    if h.parsing then return end
-    h.parsing = nil == h.tree:parse({ topline, botline + 1 }, function(_, trees)
-      if trees and h.parsing then
-        h.parsing = false
-        api.nvim__redraw({ buf = buf, valid = false, flush = false })
-      end
-    end)
-  end or nil
+  local on_win_pre = utils.__HAS_NVIM_012
+    and function(h, buf, topline, botline)
+      if h.parsing then return end
+      h.parsing = nil
+        == h.tree:parse({ topline, botline + 1 }, function(_, trees)
+          if trees and h.parsing then
+            h.parsing = false
+            api.nvim__redraw({ buf = buf, valid = false, flush = false })
+          end
+        end)
+    end or nil
 
   api.nvim_set_decoration_provider(M._ns, {
     on_win = wrap_ts_hl_callback("_on_win", on_win_pre),
@@ -107,7 +111,7 @@ end
 function M._attach_lang(buf, lang, regions)
   if not M.cache[buf][lang] then
     local ok, parser = pcall(ts.languagetree.new, buf, lang)
-    if not ok then return end ---@cast parser -string
+    if not ok then return end ---@cast parser - string
     M.cache[buf][lang] = { parser = parser, highlighter = tsh.new(parser) }
   end
 
@@ -131,8 +135,10 @@ end
 ---@return function detach
 function M.attach(self, buf, line_parser)
   -- local utf8 = require("fzf-lua.lib.utf8")
-  local function trim(s) return (string.gsub(s, "^%s*(.-)%s*$", "%1")) end
-  ---@type fun(line: string):string?,string?,string?,string?
+  local function trim(s)
+    return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
+  end
+  ---@type fun(line: string): string?, string?, string?, string?
   local default_line_parser = function(line, _) return line:match("(.-):?(%d+)[: ](.+)$") end
   ---@type fzf-lua.treesitter.lineParser
   line_parser = vim.is_callable(line_parser) and line_parser or default_line_parser
@@ -150,10 +156,8 @@ function M.attach(self, buf, line_parser)
       -- the native fzf preview window
       local min_col, max_col, trim_right = (function()
         local min, max, tr = 0, nil, 4
-        if not self.preview_hidden
-            and (not self.previewer_is_builtin or self.winopts.split)
-            and api.nvim_win_is_valid(self.fzf_winid)
-        then
+        if not self.preview_hidden and (not self.previewer_is_builtin or self.winopts.split)
+          and api.nvim_win_is_valid(self.fzf_winid) then
           local win_width = api.nvim_win_get_width(self.fzf_winid)
           local layout = self:normalize_preview_layout()
           local prev_width = self:normalize_size(layout.size, win_width)
@@ -191,7 +195,7 @@ function M.attach(self, buf, line_parser)
             -- grep_curbuf: formats as line:col:text` thus `#filepath == 0`
             if #filepath == 0 or string.byte(text, 1) == 160 then
               if string.byte(text, 1) == 160 then text = text:sub(2) end -- remove A0+SPACE
-              if string.byte(text, 1) == 32 then text = text:sub(2) end  -- remove leading SPACE
+              if string.byte(text, 1) == 32 then text = text:sub(2) end -- remove leading SPACE
               -- IMPORTANT: use the `__CTX` version that doesn't trigger a new context
               local __CTX = utils.__CTX()
               local b = utils.tointeger(filepath:match("^%d+") or __CTX and __CTX.bufnr)
@@ -201,8 +205,9 @@ function M.attach(self, buf, line_parser)
 
           -- _ft should nullify ft_bufnr
           assert(not _ft or not ft_bufnr)
-          local ft = _ft or (ft_bufnr and vim.bo[ft_bufnr].ft
-            or vim.filetype.match({ filename = path.tail(filepath) }))
+          local ft = _ft
+            or (ft_bufnr and vim.bo[ft_bufnr].ft
+              or vim.filetype.match({ filename = path.tail(filepath) }))
           if not ft then return end
 
           local lang = ts.language.get_lang(ft)
@@ -236,7 +241,7 @@ function M.attach(self, buf, line_parser)
       end
       attach(bufnr, empty_regions)
       attach(bufnr, regions)
-    end
+    end,
   })
   return function() M.detach(buf) end
 end

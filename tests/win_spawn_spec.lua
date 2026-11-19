@@ -28,9 +28,9 @@ local function read_file(path)
   return content
 end
 
---- `cmd.exe` builtins (eg. `type`) reject '/'-separated paths; nightly neovim
---- returns forward-slash `vim.fn.tempname()` values on Windows, so convert to
---- native separators before embedding paths into cmd-syntax producer items
+---`cmd.exe` builtins (eg. `type`) reject '/'-separated paths; nightly neovim
+---returns forward-slash `vim.fn.tempname()` values on Windows, so convert to
+---native separators before embedding paths into cmd-syntax producer items
 ---@param p string
 ---@return string
 local function cmd_path(p)
@@ -38,8 +38,8 @@ local function cmd_path(p)
 end
 
 describe("Testing win_spawn (Windows one route)", function()
-  --- Run one full `libuv.win_spawn` cycle (item producer -> pump -> result
-  --- file) and return fzf's exit code and the result file contents
+  ---Run one full `libuv.win_spawn` cycle (item producer -> pump -> result
+  ---file) and return fzf's exit code and the result file contents
   ---@param item string producer command (cmd syntax)
   ---@param args string[] raw fzf argv (without the executable)
   ---@return integer? rc
@@ -53,7 +53,8 @@ describe("Testing win_spawn (Windows one route)", function()
       item = item,
       outfile = outfile,
       env = { SHELL = "cmd.exe" },
-    }, { on_exit = function(code) rc = code end })
+    }, { on_exit = function(code) rc = code end }
+    )
     if not ok then error(err) end
     vim.wait(30000, function() return rc ~= nil end)
     local out = read_file(outfile)
@@ -70,7 +71,7 @@ describe("Testing win_spawn (Windows one route)", function()
     -- filter arguments with a space (single argv token), quotes, a trailing
     -- backslash and multi-byte characters survive the uv quoting + pump
     for _, case in ipairs({
-      { filter = "ab c",  match = "ab c" },
+      { filter = "ab c", match = "ab c" },
       { filter = [[E"f G]], match = [[E"f G]] },
       { filter = [[H\I]], match = [[H\I]] },
       { filter = "汉 é", match = "汉 é" },
@@ -110,8 +111,9 @@ describe("Testing win_spawn (Windows one route)", function()
     f:close()
     -- ~4.8MB (> the 4MB high watermark): exercises the pump across many
     -- chunks with the producer paused by the write queue backpressure
-    local rc, out = win_run(string.format('type "%s"', cmd_path(infile)),
-      { "--filter=line 399999" })
+    local rc, out = win_run(
+      string.format('type "%s"', cmd_path(infile)), { "--filter=line 399999" }
+    )
     eq(rc, 0)
     eq(out, "line 399999\n")
     vim.fn.delete(infile)
@@ -143,8 +145,9 @@ describe("Testing win_spawn (Windows one route)", function()
     assert.is.False(ping_running())
     -- fzf exits immediately with an invalid option while the producer is still
     -- alive (output to NUL so only the tree-kill can stop it)
-    local rc = win_run(string.format('"%s" -n 60 127.0.0.1 >NUL', cmd_path(exe)),
-      { "--fzflua-bad-option" })
+    local rc = win_run(
+      string.format('"%s" -n 60 127.0.0.1 >NUL', cmd_path(exe)), { "--fzflua-bad-option" }
+    )
     eq(rc, 2)
     assert.is.False(ping_running())
     vim.fn.delete(tmpdir, "rf")
@@ -154,7 +157,7 @@ describe("Testing win_spawn (Windows one route)", function()
     helpers.SKIP_IF_NOT_WIN()
     ---@diagnostic disable-next-line: deprecated
     local _info = debug.getinfo(1, "S")
-    ---@cast _info {source: string}
+    ---@cast _info { source: string }
     local root = vim.fn.fnamemodify(_info.source:gsub("^@", ""), ":h:h")
     local script = (root .. "/lua/fzf-lua/win_spawn.lua"):gsub("\\", "/")
 
@@ -165,20 +168,27 @@ describe("Testing win_spawn (Windows one route)", function()
     local function run_mediator(item, filter)
       local outfile = utils.tempname()
       local spec_path = utils.tempname()
-      write_file(spec_path, libuv.serialize({
-        bin = fzf_bin,
-        args = { "--filter=" .. filter },
-        item = item,
-        outfile = outfile,
-        env = { SHELL = "cmd.exe" },
-      }, true))
+      write_file(
+        spec_path,
+        libuv.serialize({
+          bin = fzf_bin,
+          args = { "--filter=" .. filter },
+          item = item,
+          outfile = outfile,
+          env = { SHELL = "cmd.exe" },
+        }, true)
+      )
       local rc ---@type integer?
-      local handle = uv.spawn((vim.v.progpath):gsub("\\", "/"), {
-        args = { "-u", "NONE", "-l", script, (spec_path:gsub("\\", "/")) },
-        stdio = { nil, nil, nil },
-      }, function(code, _)
-        rc = code
-      end)
+      local handle = uv.spawn(
+        (vim.v.progpath):gsub("\\", "/"),
+        {
+          args = { "-u", "NONE", "-l", script, (spec_path:gsub("\\", "/")) },
+          stdio = { nil, nil, nil },
+        },
+        function(code, _)
+          rc = code
+        end
+      )
       assert.is.True(handle ~= nil)
       vim.wait(30000, function() return rc ~= nil end)
       local out = read_file(outfile)
@@ -205,7 +215,7 @@ describe("Testing win_spawn (Windows one route)", function()
     helpers.SKIP_IF_NOT_WIN()
     ---@diagnostic disable-next-line: deprecated
     local _info = debug.getinfo(1, "S")
-    ---@cast _info {source: string}
+    ---@cast _info { source: string }
     local root = vim.fn.fnamemodify(_info.source:gsub("^@", ""), ":h:h")
     local script = (root .. "/lua/fzf-lua/win_spawn.lua"):gsub("\\", "/")
 
@@ -213,21 +223,28 @@ describe("Testing win_spawn (Windows one route)", function()
     local spec_path = utils.tempname()
     -- `ping` keeps the mediator alive for a few seconds (fzf exits too fast
     -- to sample the pipe namespace reliably)
-    write_file(spec_path, libuv.serialize({
-      bin = vim.fn.exepath("ping"),
-      args = { "-n", "6", "127.0.0.1" },
-      outfile = outfile,
-      env = { SHELL = "cmd.exe" },
-    }, true))
+    write_file(
+      spec_path,
+      libuv.serialize({
+        bin = vim.fn.exepath("ping"),
+        args = { "-n", "6", "127.0.0.1" },
+        outfile = outfile,
+        env = { SHELL = "cmd.exe" },
+      }, true)
+    )
 
     local seen = utils.list_to_map(vim.fn.glob([[\\.\pipe\nvim*]], false, true))
     local rc ---@type integer?
-    local handle = uv.spawn((vim.v.progpath):gsub("\\", "/"), {
-      args = { "-u", "NONE", "-l", script, (spec_path:gsub("\\", "/")) },
-      stdio = { nil, nil, nil },
-    }, function(code, _)
-      rc = code
-    end)
+    local handle = uv.spawn(
+      (vim.v.progpath):gsub("\\", "/"),
+      {
+        args = { "-u", "NONE", "-l", script, (spec_path:gsub("\\", "/")) },
+        stdio = { nil, nil, nil },
+      },
+      function(code, _)
+        rc = code
+      end
+    )
     assert.is.True(handle ~= nil)
     -- sample while the mediator runs: every Windows nvim listens by default
     -- on `\\.\pipe\nvim.<pid>.<n>`, so without a `serverstop` guard the

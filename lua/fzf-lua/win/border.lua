@@ -12,19 +12,19 @@ local utils = require "fzf-lua.utils"
 ---@alias fzf-lua.winborder string[]|"none"|"single"|"double"|"rounded"|"solid"|"shadow"
 
 local valid_borders = {
-  none                  = "none",
-  single                = "single",
-  double                = "double",
-  rounded               = "rounded",
-  solid                 = "solid",
-  empty                 = "solid",
-  shadow                = "shadow",
-  bold                  = { "┏", "━", "┓", "┃", "┛", "━", "┗", "┃" },
-  block                 = { "▛", "▀", "▜", "▐", "▟", "▄", "▙", "▌" },
-  solidblock            = { "█", "█", "█", "█", "█", "█", "█", "█" },
-  thicc                 = { "┏", "━", "┓", "┃", "┛", "━", "┗", "┃" }, -- bold
-  thiccc                = { "▛", "▀", "▜", "▐", "▟", "▄", "▙", "▌" }, -- block
-  thicccc               = { "█", "█", "█", "█", "█", "█", "█", "█" }, -- solidblock
+  none       = "none",
+  single     = "single",
+  double     = "double",
+  rounded    = "rounded",
+  solid      = "solid",
+  empty      = "solid",
+  shadow     = "shadow",
+  bold       = { "┏", "━", "┓", "┃", "┛", "━", "┗", "┃" },
+  block      = { "▛", "▀", "▜", "▐", "▟", "▄", "▙", "▌" },
+  solidblock = { "█", "█", "█", "█", "█", "█", "█", "█" },
+  thicc      = { "┏", "━", "┓", "┃", "┛", "━", "┗", "┃" }, -- bold
+  thiccc     = { "▛", "▀", "▜", "▐", "▟", "▄", "▙", "▌" }, -- block
+  thicccc    = { "█", "█", "█", "█", "█", "█", "█", "█" }, -- solidblock
   -- empty              = { " ", " ", " ", " ", " ", " ", " ", " " },
   -- fzf preview border styles conversion of  `winopts.preview.border`
   ["border"]            = "rounded",
@@ -40,7 +40,10 @@ local valid_borders = {
   ["border-top"]        = { "─", "─", "─", "", "", "", "", "" },
   ["border-bottom"]     = { "", "", "", "", "─", "─", "─", "" },
   ["border-line"]       = function(_, metadata)
-    return require("fzf-lua.profiles.border-fused").winopts.preview.border(_, metadata)
+    return require("fzf-lua.profiles.border-fused")
+      .winopts
+      .preview
+      .border(_, metadata)
   end,
 }
 

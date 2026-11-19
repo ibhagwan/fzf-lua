@@ -26,18 +26,17 @@ local function get_tags_cmd(opts)
     -- tags use relative paths, by now we should
     -- have the correct cwd from `get_ctags_cwd`
     query = libuv.shellescape(
-      utils.rg_escape(path.relative_to(opts.filename, opts.cwd or utils.cwd())))
+      utils.rg_escape(path.relative_to(opts.filename, opts.cwd or utils.cwd()))
+    )
   elseif opts.search and #opts.search > 0 then
     filter = ([[%s -v "^!"]]):format(bin)
-    query = libuv.shellescape(opts.no_esc and opts.search or
-      utils.rg_escape(opts.search))
+    query = libuv.shellescape(opts.no_esc and opts.search or utils.rg_escape(opts.search))
   else
     query = [[-v "^!_TAG_"]]
   end
   return ("%s %s %s %s"):format(
-    bin, flags, query,
-    opts._ctags_file and libuv.shellescape(opts._ctags_file) or ""
-  ), filter
+      bin, flags, query, opts._ctags_file and libuv.shellescape(opts._ctags_file) or ""
+    ), filter
 end
 
 local get_ctags_file = function(opts)
@@ -98,14 +97,15 @@ local function tags(opts)
       if vim.fn.executable(opts.ctags_bin) == 1 then
         opts.cmd = opts.cmd or opts._btags_cmd
       else
-        utils.info("Unable to locate `ctags` executable, " ..
-          "install `ctags` or supply its path using 'ctags_bin'")
+        utils.info(
+          "Unable to locate `ctags` executable, " .. "install `ctags` or supply its path using 'ctags_bin'"
+        )
         return
       end
     else
       if opts.silent ~= true then
         utils.info(("Tags file ('%s') does not exist. Create one with ctags -R")
-          :format(opts._ctags_file))
+            :format(opts._ctags_file))
       end
       return
     end
@@ -181,7 +181,7 @@ local function tags(opts)
   end
 end
 
----@param opts fzf-lua.config.Tags|{}?
+---@param opts fzf-lua.config.Tags|{ }?
 ---@return thread?, string?, table?
 M.tags = function(opts)
   ---@type fzf-lua.config.Tags
@@ -190,7 +190,7 @@ M.tags = function(opts)
   return tags(opts)
 end
 
----@param opts fzf-lua.config.Btags|{}?
+---@param opts fzf-lua.config.Btags|{ }?
 ---@return thread?, string?, table?
 M.btags = function(opts)
   ---@type fzf-lua.config.Btags
@@ -205,18 +205,20 @@ M.btags = function(opts)
   end
   -- store the autogen command in case tags file doesn't exist.
   -- Used as fallback to pipe the tags into fzf from stdout
-  opts._btags_cmd = string.format("%s %s %s",
-    opts.ctags_bin or "ctags",
-    opts.ctags_args or
-    string.format("-f - %s", utils.ctags_is_universal(opts.ctags_bin) and "--excmd=combine" or ""),
-    libuv.shellescape(opts.filename))
+  opts._btags_cmd = string.format(
+    "%s %s %s", opts.ctags_bin or "ctags",
+    opts.ctags_args
+      or string.format(
+        "-f - %s", utils.ctags_is_universal(opts.ctags_bin) and "--excmd=combine" or ""
+      ), libuv.shellescape(opts.filename)
+  )
   if opts.ctags_autogen then
     opts.cmd = opts.cmd or opts._btags_cmd
   end
   return tags(opts)
 end
 
----@param opts fzf-lua.config.TagsGrep|{}?
+---@param opts fzf-lua.config.TagsGrep|{ }?
 ---@return thread?, string?, table?
 M.grep = function(opts)
   ---@type fzf-lua.config.TagsGrep
@@ -243,7 +245,7 @@ M.grep = function(opts)
   return M.tags(opts)
 end
 
----@param opts fzf-lua.config.TagsGrep|{}?
+---@param opts fzf-lua.config.TagsGrep|{ }?
 ---@return thread?, string?, table?
 M.live_grep = function(opts)
   ---@type fzf-lua.config.TagsGrep
@@ -253,28 +255,37 @@ M.live_grep = function(opts)
   return tags(opts)
 end
 
----@param opts fzf-lua.config.TagsGrep|{}?
+---@param opts fzf-lua.config.TagsGrep|{ }?
 ---@return thread?, string?, table?
 M.grep_cword = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.no_esc = true
-  opts.search = utils.rg_escape_cword(vim.fn.expand("<cword>") --[[@as string]])
+  opts.search = utils.rg_escape_cword(
+    vim.fn.expand("<cword>") --[[@as string]]
+  )
   return M.grep(opts)
 end
 
 M.grep_cWORD = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.no_esc = true
   -- since we're searching a tags file also search for surrounding literals ^ $
-  opts.search = [[(^|\^|\s)]] ..
-      utils.rg_escape(vim.fn.expand("<cWORD>") --[[@as string]]) .. [[($|\$|\s)]]
+  opts.search = [[(^|\^|\s)]] .. utils.rg_escape(
+      vim.fn.expand("<cWORD>") --[[@as string]]
+    ) .. [[($|\$|\s)]]
   return M.grep(opts)
 end
 
----@param opts fzf-lua.config.TagsGrep|{}?
+---@param opts fzf-lua.config.TagsGrep|{ }?
 ---@return thread?, string?, table?
 M.grep_visual = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.search = utils.get_visual_selection()
   return M.grep(opts)
 end

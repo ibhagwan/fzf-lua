@@ -96,12 +96,15 @@ T["headless"]["file_icons"]["server"] = new_set({ parametrize = { { "devicons" }
     new_child.init()
     new_child.o.statusline = "fzf://"
     exec_term(new_child, {
-        vim.fs.abspath("./scripts/headless_fd.sh"),
-        "-c", vim.fs.joinpath(child.uv.cwd(), "scripts"),
-        "-x", "rg --files --sort=path",
-        "-f", icons,
-      },
-      { env = { ["FZF_LUA_SERVER"] = fzf_lua_server } })
+      vim.fs.abspath("./scripts/headless_fd.sh"),
+      "-c",
+      vim.fs.joinpath(child.uv.cwd(), "scripts"),
+      "-x",
+      "rg --files --sort=path",
+      "-f",
+      icons,
+    }, { env = { ["FZF_LUA_SERVER"] = fzf_lua_server } }
+    )
     -- Ignore script path and attr the next line
     new_child.expect_screenshot({ ignore_text = { 23 }, ignore_attr = { 24 } })
   end,

@@ -27,9 +27,13 @@ for k, v in vim.spairs(lazyloaded_modules) do
 end
 write("\n")
 
-local obj = vim.system({ "sh", "-c", [[
+local obj = vim.system({
+  "sh",
+  "-c",
+  [[
   emmylua_doc_cli lua/fzf-lua/ --output-format json --output stdout | jq '.types[] | select(.name == "fzf-lua.Win")'
-]] }):wait()
+]],
+}):wait()
 
 ---@type EmmyDocTypeClass
 local res = vim.json.decode(obj.stdout or "")

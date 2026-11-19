@@ -74,17 +74,14 @@ end
 ---@param path string
 ---@return boolean
 M.is_absolute = function(path)
-  return utils._if_win(
-    string_byte(path, 2) == M.colon_byte,
-    string_byte(path, 1) == M.fslash_byte)
+  return utils._if_win(string_byte(path, 2) == M.colon_byte, string_byte(path, 1) == M.fslash_byte)
 end
 
 ---@param path string
 ---@return boolean
 M.has_cwd_prefix = function(path)
-  return #path > 1
-      and string_byte(path, 1) == M.dot_byte
-      and M.byte_is_separator(string_byte(path, 2))
+  return #path > 1 and string_byte(path, 1) == M.dot_byte
+    and M.byte_is_separator(string_byte(path, 2))
 end
 
 ---@param path string
@@ -274,8 +271,7 @@ end
 ---@param start_idx integer
 ---@return integer?
 function M.find_next_separator(str, start_idx)
-  local SEPARATOR_BYTES = utils._if_win(
-    { M.fslash_byte, M.bslash_byte }, { M.fslash_byte })
+  local SEPARATOR_BYTES = utils._if_win({ M.fslash_byte, M.bslash_byte }, { M.fslash_byte })
   for i = start_idx or 1, #str do
     for _, byte in ipairs(SEPARATOR_BYTES) do
       if string_byte(str, i) == byte then
@@ -321,7 +317,7 @@ local function utf8_sub(s, from, to)
   local byte_i, utf8_i = from, from
   -- Concat utf8 chars until "to" or end of string
   while byte_i <= #s and (not to or utf8_i <= to) do
-    local c_len = M.utf8_char_len(s, byte_i) ---@cast c_len-?
+    local c_len = M.utf8_char_len(s, byte_i) ---@cast c_len -?
     local c = string_sub(s, byte_i, byte_i + c_len - 1)
     ret = ret .. c
     byte_i = byte_i + c_len
@@ -345,7 +341,7 @@ function M.shorten(path, max_len, sep)
   repeat
     local i = M.find_next_separator(path, start_idx)
     local end_idx = i and start_idx + math.min(i - start_idx, max_len) - 1 or nil
-    local part = utf8_sub(path, start_idx, end_idx) ---@cast i-?
+    local part = utf8_sub(path, start_idx, end_idx) ---@cast i -?
     if end_idx and part == "." and i - start_idx > 1 then
       part = utf8_sub(path, start_idx, end_idx + 1)
     end
@@ -388,9 +384,7 @@ function M.parse_ctag_excmd(excmd, do_not_strip_slashes)
   -- adjust for line, position cursor after ;
   if line then excmd = excmd:sub(#line + 2) end
   -- extract ctag
-  local tag = do_not_strip_slashes
-      and excmd:match("/.*/")
-      or excmd:match("/(.*)/")
+  local tag = do_not_strip_slashes and excmd:match("/.*/") or excmd:match("/(.*)/")
   return tonumber(line), tag
 end
 
@@ -411,9 +405,13 @@ function M.entry_to_ctag(raw, opts)
     ctag = tag,
     line = line or 0,
     col = 0,
-    stripped = string.format("%s:%s %s", file, line and line .. ":" or "",
+    stripped = string.format(
+      "%s:%s %s",
+      file,
+      line and line .. ":" or "",
       -- remove ctag ^$ prefix/postfix so qflist can have ts highlights
-      utils.regex_strip_anchors(tag) or ""),
+      utils.regex_strip_anchors(tag) or ""
+    ),
     debug = opts.debug and raw:match("^%[DEBUG]") and raw or nil,
   } ---@as fzf-lua.path.Entry
 end
@@ -441,8 +439,8 @@ function M.entry_to_location(entry, opts)
       ["end"] = {
         line = line - 1,
         character = col - 1,
-      }
-    }
+      },
+    },
   }
 end
 
@@ -456,12 +454,12 @@ end
 
 -- path seps behavior https://github.com/neovim/neovim/pull/37729
 -- luv use `\`, `nvim_buf_get_name` use `/` (on windows, by default)
-local buf_get_name = utils.__IS_WINDOWS and
-    function(buf) return (vim.api.nvim_buf_get_name(buf):gsub([[/]], [[\]])) end
-    or vim.api.nvim_buf_get_name
+local buf_get_name = utils.__IS_WINDOWS
+  and function(buf) return (vim.api.nvim_buf_get_name(buf):gsub([[/]], [[\]])) end
+  or vim.api.nvim_buf_get_name
 
 ---@param entry string
----@param opts fzf-lua.Config|{}?
+---@param opts fzf-lua.Config|{ }?
 ---@param force_uri boolean?
 ---@return fzf-lua.path.Entry
 function M.entry_to_file(entry, opts, force_uri)
@@ -508,8 +506,8 @@ function M.entry_to_file(entry, opts, force_uri)
   if cwd and #cwd > 0 and not isURI and not M.is_absolute(stripped) then
     stripped = M.join({ cwd, stripped })
   end
-  --Force LSP jumps using `vim.lsp.util.show_document` so that LSP entries are
-  --added to the tag stack (see `:help gettagstack`)
+  -- Force LSP jumps using `vim.lsp.util.show_document` so that LSP entries are
+  -- added to the tag stack (see `:help gettagstack`)
   if not isURI and force_uri then
     isURI = true
     stripped = "file://" .. stripped
@@ -584,12 +582,13 @@ function M.entry_to_file(entry, opts, force_uri)
   return {
     stripped = stripped,
     bufnr    = bufnr,
-    bufname  = bufname or (bufnr and vim.api.nvim_buf_is_valid(bufnr)
-      and vim.api.nvim_buf_get_name(bufnr) or nil),
+    bufname  = bufname
+      or (bufnr and vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_get_name(bufnr) or nil),
     terminal = terminal,
     path     = file,
-    line     = utils.tointeger(type(opts.line_query) == "function" and
-      (opts.line_query(FzfLua.get_info().query)) or line) or 0,
+    line     = utils.tointeger(
+      type(opts.line_query) == "function" and (opts.line_query(FzfLua.get_info().query)) or line
+    ) or 0,
     col      = utils.tointeger(col) or 0,
     debug    = opts.debug and entry:match("^%[DEBUG]") and entry or nil,
   }
@@ -602,16 +601,18 @@ end
 ---@return string|string[]
 function M.git_cwd(cmd, opts)
   local git_args = {
-    { "cwd",          "-C" },
-    { "git_dir",      "--git-dir" },
+    { "cwd", "-C" },
+    { "git_dir", "--git-dir" },
     { "git_worktree", "--work-tree" },
-    { "git_config",   "-c",         noexpand = true },
+    { "git_config", "-c", noexpand = true },
   }
   -- NOTE: we copy the opts due to a bug with Windows network drives starting with "\\"
   -- as `vim.fn.expand` would reduce the double slash to a single slash modifying the
   -- original `opts.cwd` ref (#1429)
   local o = {}
-  for _, a in ipairs(git_args) do o[a[1]] = opts[a[1]] end
+  for _, a in ipairs(git_args) do
+    o[a[1]] = opts[a[1]]
+  end
   if type(cmd) == "string" then
     local args = ""
     for _, a in ipairs(git_args) do
@@ -677,9 +678,8 @@ end
 ---@param noerr? boolean
 ---@return string?
 function M.jj_root(opts, noerr)
-  local cmd = (opts and opts.cwd)
-      and { "jj", "-R", opts.cwd, "root", "--ignore-working-copy" }
-      or { "jj", "root", "--ignore-working-copy" }
+  local cmd = (opts and opts.cwd) and { "jj", "-R", opts.cwd, "root", "--ignore-working-copy" }
+    or { "jj", "root", "--ignore-working-copy" }
   local output, err = utils.io_systemlist(cmd)
   if err ~= 0 then
     if not noerr then utils.info(table.concat(output, "\n")) end
@@ -712,7 +712,7 @@ function M.keymap_to_entry(str)
         source = vim.env.VIMRUNTIME .. "/lua/" .. source .. ".lua"
       end
       return {
-        stripped = source ..':' .. info.linedefined,
+        stripped = source .. ":" .. info.linedefined,
         path = source,
         line = info.linedefined,
       }
@@ -721,7 +721,9 @@ function M.keymap_to_entry(str)
   local cmd = ("verb %smap %s"):format(mode, keymap)
   local output = vim.split(vim.api.nvim_exec2(cmd, { output = true }).output, "\n")
   local file, lnum = (output[#output] or ""):match("Last set from (.-) line (%d+)")
-  if file and lnum then return { path = vim.fs.normalize(file), line = utils.tointeger(lnum) or 1 } end
+  if file and lnum then
+    return { path = vim.fs.normalize(file), line = utils.tointeger(lnum) or 1 }
+  end
   -- if entry then return M.entry_to_file(entry, opts) end
   return { mode = mode, key = keymap, vmap = vim.inspect(vmap) }
 end
@@ -745,7 +747,7 @@ end
 M._env = setmetatable({}, {
   __index = function(_, index)
     return os.getenv(index)
-  end
+  end,
 })
 
 M._nvim_buf_get_lines = function() return {} end

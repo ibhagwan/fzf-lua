@@ -18,7 +18,7 @@ T["grep"]["search"]["regex"] = new_set({ parametrize = { { false }, { true }, { 
       -- Ignore prompt containing our search string (different on win)
       -- Debug output command is different on Windows due to ^ escapes
       ignore_text = helpers.IS_WIN() and { 4, 6, 9, 10, 12, 18, 28 } or { 28 },
-      normalize_paths = helpers.IS_WIN()
+      normalize_paths = helpers.IS_WIN(),
     }
     local path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "nvim-web-devicons") ---@diagnostic disable-line: param-type-mismatch
     if not vim.uv.fs_stat(path) then
@@ -43,8 +43,9 @@ T["grep"]["search"]["regex"] = new_set({ parametrize = { { false }, { true }, { 
         child.type_keys("<c-j>")
         child.wait_until(function()
           return child.lua_get([[FzfLua.utils.fzf_winobj()._previewer.last_entry]])
-              :match(string.format(" tests%sgrep_spec.lua:32:21:",
-                helpers.IS_WIN() and [[\]] or [[/]])) ~= nil
+            :match(string.format(
+              " tests%sgrep_spec.lua:32:21:", helpers.IS_WIN() and [[\]] or [[/]]
+            )) ~= nil
         end)
       end,
     })

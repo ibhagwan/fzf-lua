@@ -12,8 +12,8 @@ return {
         else
           return "border-sharp"
         end
-      end
-    }
+      end,
+    },
   },
   manpages = { previewer = "man_native" },
   helptags = { previewer = "help_native" },

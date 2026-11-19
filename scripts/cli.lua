@@ -2,7 +2,7 @@
 local api, uv, fn = vim.api, vim.uv or vim.loop, vim.fn
 assert(#api.nvim_list_uis() == 0)
 local _info = debug.getinfo(1, "S")
----@cast _info {source: string}
+---@cast _info { source: string }
 local __FILE__ = _info.source:gsub("^@", "")
 local dir = fn.fnamemodify(fn.resolve(__FILE__), ":h:h:p")
 vim.opt.rtp:append(dir)
@@ -13,12 +13,12 @@ local data = fn.stdpath("data") --[[@as string]]
 for _, plug in ipairs({ "nvim-web-devicons", "mini.nvim" }) do
   local found
   for _, parts in ipairs({
-    { data, "site", "pack", "core", "opt",   plug },
+    { data, "site", "pack", "core", "opt", plug },
     { data, "site", "pack", "core", "start", plug },
-    { data, "site", "pack", plug,   "opt" },
-    { data, "site", "pack", plug,   "start" },
+    { data, "site", "pack", plug, "opt" },
+    { data, "site", "pack", plug, "start" },
     { data, "lazy", plug },
-    { dir,  "deps", plug }
+    { dir, "deps", plug },
   }) do
     if not found then
       local ppath = path.join(parts)
@@ -81,37 +81,39 @@ _G.fzf_jobstart = function(cmd, opts)
     -- PSReadLine key handler), reopen `CONOUT$` so the picker renders the
     -- same `--height` UI as when run directly from the prompt.
     FzfLua.libuv.uv_spawn(cmd[1], {
-        cwd = opts.cwd,
-        args = vim.list_slice(cmd, 2),
-        stdio = { 0, 1, FzfLua.libuv.win_stderr_fd() },
-        env = opts.env,
-        verbatim = cmd[1] == "cmd.exe",
-      },
-      vim.schedule_wrap(function(rc)
+      cwd = opts.cwd,
+      args = vim.list_slice(cmd, 2),
+      stdio = { 0, 1, FzfLua.libuv.win_stderr_fd() },
+      env = opts.env,
+      verbatim = cmd[1] == "cmd.exe",
+    }, vim.schedule_wrap(function(rc)
         opts.on_exit(nil, rc, nil)
         if not opts.no_quit and #api.nvim_get_proc_children(fn.getpid()) == 0 then
           vim.cmd.cquit { count = rc, bang = true }
         end
-      end))
+      end)
+    )
     return
   end
   FzfLua.libuv.uv_spawn(cmd[1], {
-      cwd = opts.cwd,
-      args = vim.list_slice(cmd, 2),
-      stdio = { 0, 1, 2 }, -- sk require stderr
-      env = opts.env,
-    },
-    vim.schedule_wrap(function(rc)
+    cwd = opts.cwd,
+    args = vim.list_slice(cmd, 2),
+    stdio = { 0, 1, 2 }, -- sk require stderr
+    env = opts.env,
+  }, vim.schedule_wrap(function(rc)
       opts.on_exit(nil, rc, nil)
       if not opts.no_quit and #api.nvim_get_proc_children(fn.getpid()) == 0 then
         vim.cmd.cquit { count = rc, bang = true }
       end
-    end))
+    end)
+  )
 end
 
 local _cli_args = _G.arg
 ---@cast _cli_args string[]
-require("fzf-lua.cmd").run_command(unpack(_cli_args) --[[@as string]])
+require("fzf-lua.cmd").run_command(
+  unpack(_cli_args) --[[@as string]]
+)
 
 while true do
   vim.wait(100)

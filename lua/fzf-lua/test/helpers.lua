@@ -1,7 +1,7 @@
 ---@diagnostic disable: inject-field
 -- lcd so we can run current file even if cwd isn't fzf-lua
 local _info = debug.getinfo(1, "S")
----@cast _info {source: string}
+---@cast _info { source: string }
 local __FILE__ = _info.source:gsub("^@", "")
 vim.cmd.lcd(vim.fn.fnamemodify(__FILE__, ":p:h:h:h:h"))
 
@@ -46,7 +46,8 @@ M.assert = {
 
 M.NVIM_VERSION = function()
   if M._NVIM_VERSION == nil then
-    local output = vim.api.nvim_exec2("version", { output = true }).output
+    local output = vim.api.nvim_exec2("version", { output = true })
+      .output
     M._NVIM_VERSION = output:match("NVIM v(%d+%.%d+%.%d+)")
   end
   return M._NVIM_VERSION
@@ -55,7 +56,7 @@ end
 local os_detect = {
   WIN = {
     name = "Windows",
-    fn = function() return vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 end
+    fn = function() return vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 end,
   },
   MAC = { name = "MacOS", fn = function() return vim.fn.has("mac") == 1 end },
   LINUX = { name = "Linux", fn = function() return vim.fn.has("linux") == 1 end },
@@ -93,7 +94,9 @@ M.expect = vim.deepcopy(MiniTest.expect)
 
 M.expect.match = MiniTest.new_expectation(
   "string matching",
-  function(str, pattern) return str:find(pattern) ~= nil end,
+  function(str, pattern)
+    return str:find(pattern) ~= nil
+  end,
   function(str, pattern)
     return string.format("Pattern: %s\nObserved string: %s", vim.inspect(pattern), str)
   end
@@ -101,7 +104,9 @@ M.expect.match = MiniTest.new_expectation(
 
 M.expect.no_match = MiniTest.new_expectation(
   "no string matching",
-  function(str, pattern) return str:find(pattern) == nil end,
+  function(str, pattern)
+    return str:find(pattern) == nil
+  end,
   function(str, pattern)
     return string.format("Pattern: %s\nObserved string: %s", vim.inspect(pattern), str)
   end
@@ -110,8 +115,8 @@ M.expect.no_match = MiniTest.new_expectation(
 M.make_partial_tbl = function(tbl, ref)
   local res = {}
   for k, v in pairs(ref) do
-    res[k] = (type(tbl[k]) == "table" and type(v) == "table") and M.make_partial_tbl(tbl[k], v) or
-        tbl[k]
+    res[k] = (type(tbl[k]) == "table" and type(v) == "table") and M.make_partial_tbl(tbl[k], v)
+      or tbl[k]
   end
   for i = 1, #tbl do
     if ref[i] == nil then res[i] = tbl[i] end
@@ -126,8 +131,9 @@ M.expect.equality_partial_tbl = MiniTest.new_expectation(
     return vim.deep_equal(x, y)
   end,
   function(x, y)
-    return string.format("Left: %s\nRight: %s", vim.inspect(M.make_partial_tbl(x, y)),
-      vim.inspect(y))
+    return string.format(
+      "Left: %s\nRight: %s", vim.inspect(M.make_partial_tbl(x, y)), vim.inspect(y)
+    )
   end
 )
 
@@ -170,10 +176,10 @@ M.new_child_neovim = function()
           FzfLua[k](unpack(args))
         end, { require("fzf-lua.test.exec_lua").serialize(...) })
       end
-    end
+    end,
   })
 
-  --- Setup fzf-lua
+  ---Setup fzf-lua
   ---@param config? table, config table
   child.setup = function(config)
     -- using "FZF_DEFAULT_OPTS" hangs the command on the
@@ -195,35 +201,38 @@ M.new_child_neovim = function()
     if M.IS_WIN() then defaults.pipe_cmd = true end
     child.lua(function(...)
       require("fzf-lua").setup(vim.tbl_deep_extend("keep", ..., {
-        { "default-title" },
-        defaults = defaults,
-        winopts = {
-          on_create = function(e)
-            _G._fzf_lua_on_create = true
-            if vim.api.nvim_win_get_config(e.winid).relative == "" then
-              vim.wo[e.winid].statusline = "fzf://"
-            end
-          end,
-          on_close = function()
-            _G._fzf_lua_on_create = nil
-            _G._fzf_postprocess_called = nil
-            _G._fzf_load_called = nil
-          end,
-        },
-        -- Using _fzf_cli_args so we can test keymap.fzf.load actions.load (api.events)
+          { "default-title" },
+          defaults = defaults,
+          winopts = {
+            on_create = function(e)
+              _G._fzf_lua_on_create = true
+              if vim.api.nvim_win_get_config(e.winid).relative == "" then
+                vim.wo[e.winid].statusline = "fzf://"
+              end
+            end,
+            on_close = function()
+              _G._fzf_lua_on_create = nil
+              _G._fzf_postprocess_called = nil
+              _G._fzf_load_called = nil
+            end,
+          },
+          -- Using _fzf_cli_args so we can test keymap.fzf.load actions.load (api.events)
         -- keymap = { fzf = { true, load = function() _G._fzf_load_called = true end } }
-        fzf_cli_args = "--bind=" .. FzfLua.libuv.shellescape("load:+execute-silent:"
-          .. FzfLua.shell.stringify_data(function(_, _, _)
-            _G._fzf_load_called = true
-          end, {}))
-      }))
+          fzf_cli_args = "--bind="
+            .. FzfLua.libuv.shellescape(
+              "load:+execute-silent:"
+                .. FzfLua.shell.stringify_data(function(_, _, _)
+                  _G._fzf_load_called = true
+                end, {})
+            ),
+        }))
     end, { config or {} })
   end
 
-  --- Override `child.stop` (mini.test): avoid `rpcrequest`-ing `0cquit` to a
-  --- process that exits mid-request. On Windows this can hang indefinitely
-  --- (peer exits before the response, named pipe close not always detected).
-  --- Use `rpcnotify` (fire-and-forget) and terminate if it doesn't exit.
+  ---Override `child.stop` (mini.test): avoid `rpcrequest`-ing `0cquit` to a
+  ---process that exits mid-request. On Windows this can hang indefinitely
+  ---(peer exits before the response, named pipe close not always detected).
+  ---Use `rpcnotify` (fire-and-forget) and terminate if it doesn't exit.
   child.stop = function()
     local job = child.job ---@type table|nil
     if not job then return end
@@ -242,8 +251,8 @@ M.new_child_neovim = function()
         -- `vim.notify` keeps it visible to callers that `pcall(child.stop)`
         -- (post_once)
         local msg = string.format(
-          "child.stop: job %d still alive after `jobstop`, kept for a retry",
-          job_id)
+          "child.stop: job %d still alive after `jobstop`, kept for a retry", job_id
+        )
         vim.notify(msg, vim.log.levels.WARN)
         error(msg, 0)
       end
@@ -260,7 +269,7 @@ M.new_child_neovim = function()
     child.job = nil
   end
 
-  --- Unload fzf-lua and side effects
+  ---Unload fzf-lua and side effects
   child.unload = function()
     child.o.tabline = ""
     -- Unload Lua module
@@ -326,9 +335,9 @@ M.new_child_neovim = function()
     return { child.o.lines, child.o.columns }
   end
 
-  --- Assert visual marks
+  ---Assert visual marks
   ---
-  --- Useful to validate visual selection
+  ---Useful to validate visual selection
   ---
   ---@param first number|table Table with start position or number to check linewise.
   ---@param last number|table Table with finish position or number to check linewise.
@@ -350,8 +359,10 @@ M.new_child_neovim = function()
     opts.force = not not vim.env["update_screenshots"]
     child.wait_screen_stable()
     child.screen_invalidate()
-    screenshot.with_retry(MiniTest.expect.reference_screenshot,
-      function() return child.get_screenshot(screenshot_opts) end, path, opts)
+    screenshot.with_retry(
+      MiniTest.expect.reference_screenshot,
+      function() return child.get_screenshot(screenshot_opts) end, path, opts
+    )
   end
 
   ---@alias test.ScreenOpts { start_line: integer?, end_line: integer?, no_ruler: boolean?,
@@ -377,8 +388,10 @@ M.new_child_neovim = function()
     opts.force = not not vim.env["update_screenshots"]
     child.wait_screen_stable()
     child.screen_invalidate()
-    screenshot.with_retry(screenshot.reference_screenshot,
-      function() return child.get_screen_lines(screenshot_opts) end, path, opts)
+    screenshot.with_retry(
+      screenshot.reference_screenshot, function() return child.get_screen_lines(screenshot_opts) end,
+      path, opts
+    )
   end
 
   ---@param opts test.ScreenOpts
@@ -400,8 +413,10 @@ M.new_child_neovim = function()
     }
     opts.redraw = nil
     opts.force = not not vim.env["update_screenshots"]
-    screenshot.with_retry(screenshot.reference_screenshot,
-      function() return child.get_buf_lines(buf, screenshot_opts) end, path, opts)
+    screenshot.with_retry(
+      screenshot.reference_screenshot,
+      function() return child.get_buf_lines(buf, screenshot_opts) end, path, opts
+    )
   end
 
   ---@param str string
@@ -419,8 +434,8 @@ M.new_child_neovim = function()
 
   local wait_timeout = (M.IS_LINUX() and 2000 or 5000)
   wait_timeout = os.getenv("CI") and wait_timeout * 3 or wait_timeout
-  --- waits until condition fn evals to true, checking every interval ms
-  --- times out at timeout ms
+  ---waits until condition fn evals to true, checking every interval ms
+  ---times out at timeout ms
   ---@param condition fun(): boolean
   ---@param timeout? integer, defaults to 2000
   ---@param interval? integer, defaults to 100
@@ -435,16 +450,18 @@ M.new_child_neovim = function()
       end
     end
 
-    error(string.format("Timed out waiting for condition after %d ms\n\n%s\n\n%s", max,
-      tostring(child.cmd_capture("messages")),
-      tostring(child.get_screenshot())
-    ))
+    error(
+      string.format(
+        "Timed out waiting for condition after %d ms\n\n%s\n\n%s", max,
+        tostring(child.cmd_capture("messages")), tostring(child.get_screenshot())
+      )
+    )
   end
 
-  --- Wait until consecutive child screenshots are identical, e.g. the UI
-  --- finished rendering (fzf previews spawn nested processes and resize
-  --- windows asynchronously, fixed sleeps are not enough on slow machines).
-  --- No-op on Linux where screenshots are not flakey and this only adds time.
+  ---Wait until consecutive child screenshots are identical, e.g. the UI
+  ---finished rendering (fzf previews spawn nested processes and resize
+  ---windows asynchronously, fixed sleeps are not enough on slow machines).
+  ---No-op on Linux where screenshots are not flakey and this only adds time.
   ---@param opts? { timeout?: integer, interval?: integer }
   child.wait_screen_stable = function(opts)
     if M.IS_LINUX() then return end
@@ -459,19 +476,19 @@ M.new_child_neovim = function()
     end
   end
 
-  --- On Windows, moving/closing floating windows can leave previously
-  --- composited cells behind (the vacated region is not always redrawn),
-  --- e.g. the fzf term float moving from its initial fullscreen position
-  --- to the picker's final layout, or the preview scrollbar thumb moving
-  --- over the preview border. Plain `:redraw` skips cells it deems valid,
-  --- so invalidate the whole screen to refetch every cell from the current
-  --- window layout (no-op on Linux where this is not needed).
+  ---On Windows, moving/closing floating windows can leave previously
+  ---composited cells behind (the vacated region is not always redrawn),
+  ---e.g. the fzf term float moving from its initial fullscreen position
+  ---to the picker's final layout, or the preview scrollbar thumb moving
+  ---over the preview border. Plain `:redraw` skips cells it deems valid,
+  ---so invalidate the whole screen to refetch every cell from the current
+  ---window layout (no-op on Linux where this is not needed).
   child.screen_invalidate = function()
     if M.IS_LINUX() then return end
     child.api.nvim__redraw({ valid = false, flush = true })
   end
 
-  --- waits until child screenshot contains text
+  ---waits until child screenshot contains text
   ---@param text string
   child.wait_until_screenshot_text_match = function(text)
     child.wait_until(function()
@@ -546,8 +563,8 @@ M.sleep = function(ms, child)
   if child ~= nil then child.poke_eventloop() end
 end
 
---- Helper object to run fzf-lua API's via a child process and expect a screenshot
---- e.g. helpers.FzfLua.files({...}) or helpers.FzfLua.fzf_exec(contents, {...})
+---Helper object to run fzf-lua API's via a child process and expect a screenshot
+---e.g. helpers.FzfLua.files({...}) or helpers.FzfLua.fzf_exec(contents, {...})
 M.FzfLua = setmetatable({}, {
   __index = function(_, api)
     return function(child, ...)
@@ -577,12 +594,12 @@ M.FzfLua = setmetatable({}, {
       if ci_opts.__postprocess_wait then
         ---@diagnostic disable-next-line: undefined-field
         opts.fn_postprocess = opts.multiprocess
-            and [[return function(opts)
+          and [[return function(opts)
               local chan_id = vim.fn.sockconnect("pipe", _G._fzf_lua_server, { rpc = true })
               vim.rpcrequest(chan_id, "nvim_exec_lua", "_G._fzf_postprocess_called=true", {})
               vim.fn.chanclose(chan_id)
             end]]
-            or [[return function(_) _G._fzf_postprocess_called = true end]]
+          or [[return function(_) _G._fzf_postprocess_called = true end]]
       end
 
       -- Verify postprocess var is nil before opening fzf-lua
@@ -620,7 +637,7 @@ M.FzfLua = setmetatable({}, {
 
       -- Ignore last "-- TERMINAL --" line and paths on Windows (separator is "\")
       local screen_opts = ci_opts.__screen_opts
-          or { ignore_text = { 28 }, normalize_paths = M.IS_WIN() }
+        or { ignore_text = { 28 }, normalize_paths = M.IS_WIN() }
 
       child.api.nvim__redraw({ valid = true, flush = true })
       child.cmd("redraw")
@@ -643,7 +660,7 @@ M.FzfLua = setmetatable({}, {
         return child.lua_get([[_G._fzf_lua_on_create]]) == vim.NIL
       end)
     end
-  end
+  end,
 })
 
 return M

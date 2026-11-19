@@ -215,49 +215,49 @@ describe("Testing path module", function()
     -- [1]: path
     -- [2]: relative_to
     -- [3]: expected result (bool, relative_path)
-    ---@type ({ [1]: string, [2]: string, [3]: [boolean, string?] })[]
+    ---@type ({ [1]: string, [2]: string, [3]:[boolean, string?] })[]
     local unix = {
-      { "/some/path",          "/some/path",          { true, "." } },
-      { "/some/path",          "/some/path//",        { true, "." } },
-      { "/some/path//",        "/some/path",          { true, "." } },
-      { "/some",               "/somepath",           { false, nil } },
-      { "some",                "somepath",            { false, nil } },
-      { "some",                "some/path",           { false, nil } },
-      { "some/path",           "some",                { true, "path" } },
-      { "some/path/",          "some",                { true, "path/" } },
-      { "some/path//",         "some",                { true, "path//" } },
-      { "some/path/",          [[some\]],             { false, nil } },
-      { [[some\path]],         "some",                { false, nil } },
-      { "/some/path/to",       "/some///",            { true, "path/to" } },
-      { "/SOME/PATH",          "/some",               { false, nil } },
-      { "a///b//////c",        "a//b",                { true, "c" } },
-      { "~",                   path.HOME(),           { true, "." } },
-      { "~/a/b/c",             "~/a",                 { true, "b/c" } },
-      { "~//a/b/c",            path.HOME() .. "/a/b", { true, "c" } },
-      { path.HOME() .. "/a/b", "~/a/",                { true, "b" } },
-      { "/",                   "/some/path",          { false, nil } },
-      { "/some",               "/some/path",          { false, nil } },
+      { "/some/path", "/some/path", { true, "." } },
+      { "/some/path", "/some/path//", { true, "." } },
+      { "/some/path//", "/some/path", { true, "." } },
+      { "/some", "/somepath", { false, nil } },
+      { "some", "somepath", { false, nil } },
+      { "some", "some/path", { false, nil } },
+      { "some/path", "some", { true, "path" } },
+      { "some/path/", "some", { true, "path/" } },
+      { "some/path//", "some", { true, "path//" } },
+      { "some/path/", [[some\]], { false, nil } },
+      { [[some\path]], "some", { false, nil } },
+      { "/some/path/to", "/some///", { true, "path/to" } },
+      { "/SOME/PATH", "/some", { false, nil } },
+      { "a///b//////c", "a//b", { true, "c" } },
+      { "~", path.HOME(), { true, "." } },
+      { "~/a/b/c", "~/a", { true, "b/c" } },
+      { "~//a/b/c", path.HOME() .. "/a/b", { true, "c" } },
+      { path.HOME() .. "/a/b", "~/a/", { true, "b" } },
+      { "/", "/some/path", { false, nil } },
+      { "/some", "/some/path", { false, nil } },
     }
     local win = {
-      { [[\some\path]],      [[\some/path]],     { true, "." } },
-      { [[/some/path]],      [[/some/path\/\/]], { true, "." } },
-      { "/some/path/",       "/some/path",       { true, "." } },
-      { [[\some]],           [[\somepath]],      { false, nil } },
-      { "some/path",         "some",             { true, "path" } },
-      { [[some\path\]],      [[some\/\]],        { true, [[path\]] } },
-      { [[c:\some\path]],    [[c:\some]],        { true, [[path]] } },
-      { [[c:\some\path\]],   [[c:\some]],        { true, [[path\]] } },
-      { [[c:\some\path\\]],  [[c:\some]],        { true, [[path\\]] } },
-      { [[c:\some\path\]],   [[c:\some\\///]],   { true, [[path\]] } },
-      { [[c:\SOME\PATH]],    [[C:\some/\/\]],    { true, [[PATH]] } },
-      { [[~\SOME\PATH\to]],  [[~\some/]],        { true, [[PATH\to]] } },
-      { [[~\SOME\PATH/to]],  [[~\some]],         { true, [[PATH/to]] } },
-      { [[C:\a/\/b///\\\c]], [[c:\/\a\/b]],      { true, "c" } },
-      { [[C:\a/b\c\d\e]],    [[c:\A\/b\]],       { true, [[c\d\e]] } },
-      { [[C:\Users]],        [[c:\]],            { true, [[Users]] } },
-      { [[C:\Users\foo]],    [[c:\]],            { true, [[Users\foo]] } },
-      { [[C:\]],             [[C:\Users]],       { false, nil } },
-      { [[C:]],              [[C:\Users]],       { false, nil } },
+      { [[\some\path]], [[\some/path]], { true, "." } },
+      { [[/some/path]], [[/some/path\/\/]], { true, "." } },
+      { "/some/path/", "/some/path", { true, "." } },
+      { [[\some]], [[\somepath]], { false, nil } },
+      { "some/path", "some", { true, "path" } },
+      { [[some\path\]], [[some\/\]], { true, [[path\]] } },
+      { [[c:\some\path]], [[c:\some]], { true, [[path]] } },
+      { [[c:\some\path\]], [[c:\some]], { true, [[path\]] } },
+      { [[c:\some\path\\]], [[c:\some]], { true, [[path\\]] } },
+      { [[c:\some\path\]], [[c:\some\\///]], { true, [[path\]] } },
+      { [[c:\SOME\PATH]], [[C:\some/\/\]], { true, [[PATH]] } },
+      { [[~\SOME\PATH\to]], [[~\some/]], { true, [[PATH\to]] } },
+      { [[~\SOME\PATH/to]], [[~\some]], { true, [[PATH/to]] } },
+      { [[C:\a/\/b///\\\c]], [[c:\/\a\/b]], { true, "c" } },
+      { [[C:\a/b\c\d\e]], [[c:\A\/b\]], { true, [[c\d\e]] } },
+      { [[C:\Users]], [[c:\]], { true, [[Users]] } },
+      { [[C:\Users\foo]], [[c:\]], { true, [[Users\foo]] } },
+      { [[C:\]], [[C:\Users]], { false, nil } },
+      { [[C:]], [[C:\Users]], { false, nil } },
     }
     utils.__IS_WINDOWS = false
     for _, v in ipairs(unix) do
@@ -362,7 +362,7 @@ describe("Testing path module", function()
       local t = {
         ["/tmp/foo:bar.txt"] = true,
         ["/tmp/test:foo:bar.txt"] = true,
-        ["C:\\Users\\foo:bar"] = true
+        ["C:\\Users\\foo:bar"] = true,
       }
       -- assume these files exists, maybe we can create them
       vim.uv.fs_stat = function(f)
@@ -398,7 +398,7 @@ describe("Testing path module", function()
           col = 3,
           line = 12,
           path = "C:\\Users\\foo:bar",
-          stripped = "C:\\Users\\foo:bar:12:3"
+          stripped = "C:\\Users\\foo:bar:12:3",
         })
       end
     end)
@@ -427,7 +427,7 @@ describe("Testing path module", function()
         line = 42,
         path = bufname,
         stripped = "/tmp/test.txt:42",
-        terminal = false
+        terminal = false,
       })
       vim.api.nvim_buf_delete(buf, { force = true })
     end)
@@ -447,7 +447,7 @@ describe("Testing path module", function()
         line = 42,
         path = "man://ls(1)",
         stripped = "man://ls(1):42:7:",
-        terminal = false
+        terminal = false,
       })
       vim.api.nvim_buf_delete(buf, { force = true })
     end)
@@ -460,7 +460,7 @@ describe("Testing path module", function()
           start = { character = 0, line = 0 },
           ["end"] = { character = 0, line = 0 },
         },
-        stripped = "file:///tmp/test.txt:5:6"
+        stripped = "file:///tmp/test.txt:5:6",
       }
       eq(path.entry_to_file("/tmp/test.txt:5:6", {}, true), r)
       eq(path.entry_to_file("file:///tmp/test.txt:5:6", {}, false), r)
@@ -482,8 +482,8 @@ describe("Testing path module", function()
       eq(utils.strip_ansi_coloring("\27[0m" .. sci .. "\27[0m"), sci)
       -- other multibyte characters whose second byte overlaps the
       -- "final byte" character class of the broken regex
-      eq(utils.strip_ansi_coloring("\195\177"), "\195\177")  -- "ñ"
-      eq(utils.strip_ansi_coloring("\195\184"), "\195\184")  -- "ø"
+      eq(utils.strip_ansi_coloring("\195\177"), "\195\177") -- "ñ"
+      eq(utils.strip_ansi_coloring("\195\184"), "\195\184") -- "ø"
       eq(utils.strip_ansi_coloring("\209\134" .. "x.txt"), "\209\134" .. "x.txt") -- "цx.txt"
       -- entry_to_file must return the path with UTF-8 bytes intact
       local p = "/tmp/" .. sci

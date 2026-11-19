@@ -41,11 +41,13 @@ local function cleanup_stale_tmpfiles()
   for _, f in ipairs(vim.fn.glob("/tmp/fzf-lua-ui-select-*.tmp", true, true)) do
     pcall(os.remove, f)
   end
-  exec_lua(([[
+  exec_lua(
+    ([[
     for _, f in ipairs(vim.fn.glob("/tmp/fzf-lua-ui-select-*.tmp", true, true)) do
       pcall(os.remove, f)
     end
-  ]]))
+  ]])
+  )
 end
 
 -- Open the picker via `vim.ui.select` and wait for it to appear.
@@ -67,12 +69,13 @@ local function open_picker(items, preview_lines, ui_opts)
       _G._ui_select_choice = { item = item, idx = idx }
     end)
     if not ok then
-      _G._ui_select_errors = tostring(err); error(err)
+      _G._ui_select_errors = tostring(err)
+      error(err)
     end
   end, { items, preview_lines, ui_opts or {} })
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
-        or child.lua_get([[_G._ui_select_errors]]) ~= vim.NIL
+      or child.lua_get([[_G._ui_select_errors]]) ~= vim.NIL
   end, 5000)
   local errs = child.lua_get([[_G._ui_select_errors]])
   eq(errs, vim.NIL, { fail_reason = "vim.ui.select errored: " .. tostring(errs) })
@@ -92,26 +95,33 @@ end
 -- prefix produced by ui_select).
 local function wait_preview_rendered(expected_entry)
   child.wait_until(function()
-    local last = child.lua_get([[
+    local last = child.lua_get(
+      [[
       (FzfLua.utils.fzf_winobj() or {})._previewer
         and FzfLua.utils.fzf_winobj()._previewer.last_entry or nil
-    ]])
+    ]]
+    )
     return last == expected_entry
   end, 5000)
-  sleep(100); if not helpers.IS_LINUX() then sleep(250) end
+  sleep(100)
+  if not helpers.IS_LINUX() then sleep(250) end
 end
 
 T["ui_select"]["buffer preview (default)"] = function()
   reload({ "default" })
   register()
-  open_picker({ "alpha", "beta" }, { "preview-line-1", "preview-line-2" },
-    { prompt = "Pick (buffer):" })
+  open_picker(
+    { "alpha", "beta" }, { "preview-line-1", "preview-line-2" }, { prompt = "Pick (buffer):" }
+  )
   wait_preview_rendered("1. alpha")
   local screen = tostring(child.get_screenshot({ redraw = true }))
-  eq(screen:find("alpha", 1, true) ~= nil, true,
-    { fail_reason = "alpha not in screen:\n" .. screen })
-  eq(screen:find("preview-line-1", 1, true) ~= nil, true,
-    { fail_reason = "preview line 1 not in screen:\n" .. screen })
+  eq(
+    screen:find("alpha", 1, true) ~= nil, true, { fail_reason = "alpha not in screen:\n" .. screen }
+  )
+  eq(
+    screen:find("preview-line-1", 1, true) ~= nil, true,
+    { fail_reason = "preview line 1 not in screen:\n" .. screen }
+  )
   close_picker()
 end
 
@@ -141,7 +151,8 @@ T["ui_select"]["async preview_item opens without crash"] = function()
       prompt = "Pick (async):",
       preview_item = function(_) return {} end,
       format_item = function(item) return tostring(item) end,
-    }, function() end)
+    }, function() end
+    )
   end)
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
@@ -172,7 +183,8 @@ T["ui_select"]["lsp_code_actions no_resume honored #2795"] = function()
     local ui_select = require("fzf-lua.providers.ui_select")
     local fzf_config = require("fzf-lua.config")
     local opts_once = fzf_config.normalize_opts(
-      { no_resume = true, previewer = false }, "lsp.code_actions")
+      { no_resume = true, previewer = false }, "lsp.code_actions"
+    )
     ui_select.register(nil, true, opts_once)
     -- capture the final opts passed to `fzf_exec`
     local core = require("fzf-lua.core")
@@ -190,7 +202,8 @@ T["ui_select"]["lsp_code_actions no_resume honored #2795"] = function()
       prompt = "Code actions:",
       kind = "codeaction",
       format_item = function(item) return tostring(item) end,
-    }, function() end)
+    }, function() end
+    )
   end)
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
@@ -202,21 +215,22 @@ T["ui_select"]["lsp_code_actions no_resume honored #2795"] = function()
   eq(captured.esc_action_type, "nil")
   close_picker("<esc>")
   -- picker must not have been stored as resume data
-  eq(child.lua_get(
-    [[(require("fzf-lua.config").__resume_data or {}).contents]]), vim.NIL)
+  eq(child.lua_get([[(require("fzf-lua.config").__resume_data or {}).contents]]), vim.NIL)
   -- explicit `no_hide = false` sent via once-opts must be respected
   -- (not replaced by the implicit code-action `no_hide = true` default)
   exec_lua(function()
     local ui_select = require("fzf-lua.providers.ui_select")
     local fzf_config = require("fzf-lua.config")
     local opts_once = fzf_config.normalize_opts(
-      { no_hide = false, previewer = false }, "lsp.code_actions")
+      { no_hide = false, previewer = false }, "lsp.code_actions"
+    )
     ui_select.register(nil, true, opts_once)
     vim.ui.select({ "alpha", "beta" }, {
       prompt = "Code actions:",
       kind = "codeaction",
       format_item = function(item) return tostring(item) end,
-    }, function() end)
+    }, function() end
+    )
   end)
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
@@ -233,7 +247,8 @@ T["ui_select"]["once opts merged with preview_item #2795"] = function()
     local ui_select = require("fzf-lua.providers.ui_select")
     local fzf_config = require("fzf-lua.config")
     local opts_once = fzf_config.normalize_opts(
-      { no_resume = true, previewer = false }, "lsp.code_actions")
+      { no_resume = true, previewer = false }, "lsp.code_actions"
+    )
     ui_select.register(nil, true, opts_once)
     local core = require("fzf-lua.core")
     local orig_fzf_exec = core.fzf_exec
@@ -255,7 +270,8 @@ T["ui_select"]["once opts merged with preview_item #2795"] = function()
       kind = "codeaction",
       format_item = function(item) return tostring(item) end,
       preview_item = function(_) return { buf = buf } end,
-    }, function() end)
+    }, function() end
+    )
   end)
   child.wait_until(function()
     return child.lua_get([[_G._fzf_lua_on_create]]) == true
@@ -265,8 +281,7 @@ T["ui_select"]["once opts merged with preview_item #2795"] = function()
   eq(captured.no_hide, true)
   eq(captured.esc_action_type, "nil")
   close_picker("<esc>")
-  eq(child.lua_get(
-    [[(require("fzf-lua.config").__resume_data or {}).contents]]), vim.NIL)
+  eq(child.lua_get([[(require("fzf-lua.config").__resume_data or {}).contents]]), vim.NIL)
 end
 
 T["ui_select"]["registered function opts receive (ui_opts, items) #2770"] = function()
@@ -274,7 +289,8 @@ T["ui_select"]["registered function opts receive (ui_opts, items) #2770"] = func
   -- `config.normalize_opts` calls function opts with no args; the wrapper
   -- in `M.ui_select` must resolve the function with `(ui_opts, items)`
   -- before normalizing, preserving the documented interface (#755).
-  exec_lua([[
+  exec_lua(
+    [[
     FzfLua.register_ui_select(function(fzf_opts, items)
       _G._ui_select_args = {
         kind = fzf_opts.kind,
@@ -283,12 +299,17 @@ T["ui_select"]["registered function opts receive (ui_opts, items) #2770"] = func
       }
       return {}
     end)
-  ]])
-  open_picker({ "alpha", "beta" }, { "preview-line-1", "preview-line-2" },
-    { prompt = "Pick (fn):", kind = "codeaction" })
+  ]]
+  )
+  open_picker(
+    { "alpha", "beta" }, { "preview-line-1", "preview-line-2" },
+    { prompt = "Pick (fn):", kind = "codeaction" }
+  )
   close_picker("<esc>")
-  eq(child.lua_get([[_G._ui_select_args]]),
-    { kind = "codeaction", prompt = "Pick (fn):", nitems = 2 })
+  eq(
+    child.lua_get([[_G._ui_select_args]]),
+    { kind = "codeaction", prompt = "Pick (fn):", nitems = 2 }
+  )
 end
 
 return T
