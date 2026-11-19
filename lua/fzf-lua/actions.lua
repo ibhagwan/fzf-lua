@@ -926,18 +926,25 @@ end
 
 M.man = function(selected)
   if not selected[1] then return end
-  vim.cmd("Man " .. mantags(selected)[1])
+  -- nil for malformed lines, e.g. the empty-cache warning (#1208)
+  local arg = mantags(selected)[1]
+  if not arg then return end
+  vim.cmd("Man " .. arg)
 end
 
 M.man_vert = function(selected)
   if not selected[1] then return end
-  vim.cmd("vert Man " .. mantags(selected)[1])
+  local arg = mantags(selected)[1]
+  if not arg then return end
+  vim.cmd("vert Man " .. arg)
 end
 
 M.man_tab = function(selected)
   if not selected[1] then return end
+  local arg = mantags(selected)[1]
+  if not arg then return end
   utils.with({ go = { splitkeep = "cursor" } }, function()
-    vim.cmd("tabnew | setlocal bufhidden=wipe | Man " .. mantags(selected)[1] .. " | only")
+    vim.cmd("tabnew | setlocal bufhidden=wipe | Man " .. arg .. " | only")
   end)
 end
 

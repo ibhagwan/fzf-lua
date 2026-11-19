@@ -14,16 +14,17 @@ local function parse_apropos(apropos_line)
   return apropos_line:match("^([^, (]+)[^(]*%(([^), ]*)")
 end
 --- @param apropos_line string
---- @return string arg without shellescape
+--- @return string? arg without shellescape, nil for malformed lines
 M.manpage_vim_arg = function(apropos_line)
   local page, section = parse_apropos(apropos_line)
+  if not (page and section) then return end
   return string.format("%s(%s)", page, section)
 end
 --- @param apropos_line string
---- @return string arg with shellescape
+--- @return string? arg with shellescape, nil for malformed lines
 M.manpage_sh_arg = function(apropos_line)
   local page, section = parse_apropos(apropos_line)
-  assert(section and page)
+  if not (page and section) then return end
   return libuv.shellescape(section) .. " " .. libuv.shellescape(page)
 end
 
@@ -44,15 +45,24 @@ M.manpages = function(opts)
     return
   end
 
-  local out = vim.fn.system(opts.cmd)
-  if vim.v.shell_error ~= 0 or vim.trim(out) == "" then
-    utils.warn("'man -k' returned no results, try running 'sudo mandb' to populate the cache.")
-    return
+  -- Run `opts.cmd` once, streaming into the picker. If it fails (e.g. empty
+  -- man-db cache, #2572), echo a warning to stderr once the command exits;
+  -- with `stderr_to_stdout` the warning shows up as an entry in the picker.
+  -- This avoids the blocking pre-run added in #2572 (reworked in #2859) while
+  -- keeping the contents a command string, so streaming and the user's
+  -- `multiprocess` choice are left untouched.
+  if opts.stderr_to_stdout then
+    opts.cmd = ("{ %s; rc=$?; if [ $rc -ne 0 ]; then echo %s >&2; fi; }"):format(
+      opts.cmd,
+      libuv.shellescape "'man -k' returned no results, try running 'sudo mandb' to populate the cache."
+    )
   end
 
   opts.fn_transform = function(x)
     -- split by first occurrence of ' - ' (spaced hyphen)
     local man, desc = x:match("^(.-) %- (.*)$")
+    -- keep unexpected lines (e.g. the warning above) as-is
+    if not man then return x end
     return string.format("%-45s %s", man, desc)
   end
 

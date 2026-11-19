@@ -1522,8 +1522,9 @@ M.defaults.helptags = {
 ---Shell command used to list man pages.
 ---@field cmd string
 M.defaults.manpages = {
-  cmd       = "man -k .",
-  actions   = {
+  cmd               = "man -k .",
+  stderr_to_stdout  = true,
+  actions           = {
     ["enter"]  = actions.man,
     ["ctrl-s"] = actions.man,
     ["ctrl-v"] = actions.man_vert,
