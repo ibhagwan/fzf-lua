@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*      For Neovim >= 0.9.0     Last change: 2026 September 29
+*fzf-lua-opts.txt*       For Neovim >= 0.9.0      Last change: 2026 October 12
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -462,6 +462,14 @@ globals.silent_fail                         *fzf-lua-opts-globals.silent_fail*
 Type: `boolean`, Default: `nil`
 
 Do not display an error message when the provider command fails.
+
+
+                                                                              
+globals.stderr_to_stdout               *fzf-lua-opts-globals.stderr_to_stdout*
+
+Type: `boolean`, Default: `nil`
+
+Redirect stderr output to stdout.
 
 
                                                                               

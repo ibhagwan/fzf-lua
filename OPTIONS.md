@@ -341,6 +341,12 @@ Type: `boolean`, Default: `nil`
 
 Do not display an error message when the provider command fails.
 
+#### globals.stderr_to_stdout
+
+Type: `boolean`, Default: `nil`
+
+Redirect stderr output to stdout.
+
 #### globals.winopts.backdrop
 
 Type: `boolean|number`, Default: `60`
