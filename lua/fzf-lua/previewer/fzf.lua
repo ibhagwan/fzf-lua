@@ -447,6 +447,8 @@ function Previewer.man_pages:cmdline(o)
   local act = function(items)
     if not items[1] then return utils.shell_nop() end
     local manpage = require("fzf-lua.providers.manpages").manpage_sh_arg(items[1])
+    -- nil for malformed lines, e.g. the empty-cache warning (#1208)
+    if not manpage then return utils.shell_nop() end
     local cmd = self.cmd:format(manpage)
     return cmd
   end

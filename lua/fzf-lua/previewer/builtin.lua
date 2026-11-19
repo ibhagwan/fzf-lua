@@ -1530,6 +1530,8 @@ end
 ---@diagnostic disable-next-line: unused
 function Previewer.man_pages:parse_entry(entry_str)
   local entry = require("fzf-lua.providers.manpages").manpage_sh_arg(entry_str)
+  -- nil for malformed lines, e.g. the empty-cache warning (#1208): no preview
+  if not entry then return { content = {} } end
   local cmd = self.cmd:format(entry) ---@type string|string[]
   if type(cmd) == "string" then cmd = { "sh", "-c", cmd } end
   ---@cast cmd string[]

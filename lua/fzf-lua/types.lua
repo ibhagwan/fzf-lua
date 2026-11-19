@@ -142,6 +142,8 @@ local FzfLua = require("fzf-lua")
 ---@field prompt? string
 ---Sets the current working directory.
 ---@field cwd? string
+---Redirect stderr output to stdout.
+---@field stderr_to_stdout? boolean
 ---Use the multiprocess shell wrapper for async file generation, improves performance for large file sets.
 ---@field multiprocess? integer|boolean
 ---Transform function for each entry, can be a function or a string that returns a function.
