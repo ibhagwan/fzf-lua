@@ -943,6 +943,11 @@ function FzfWin:setup_autocmds()
   self:on("ExitPre", function() self:close() end, true)
   self:on("WinScrolled", function()
     if not vim.v.event[tostring(self.preview_winid)] then return end
+    -- image/terminal previews hide the scrollbar (entry.no_scrollbar, #2863)
+    local previewer = self._previewer
+    ---@diagnostic disable-next-line: undefined-field
+    local entry = previewer and previewer.loaded_entry
+    if entry and entry.no_scrollbar then return end
     self:update_preview_scrollbar()
   end, true
   )
