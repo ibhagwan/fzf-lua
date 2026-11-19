@@ -6,7 +6,6 @@ local make_entry = require "fzf-lua.make_entry"
 
 local M = {}
 
-
 local convert_diagnostic_type = function(severity)
   -- convert from string to int
   if type(severity) == "string" and not tonumber(severity) then
@@ -30,7 +29,7 @@ local filter_diag_severity = function(opts, severity)
   end
 end
 
----@param opts fzf-lua.config.Diagnostics|{}?
+---@param opts fzf-lua.config.Diagnostics|{ }?
 ---@return (thread|table)?, string?, table?
 M.diagnostics = function(opts)
   ---@type fzf-lua.config.Diagnostics
@@ -52,7 +51,6 @@ M.diagnostics = function(opts)
     ["Hint"]  = { severity = 4, default = "H", name = "DiagnosticSignHint" },
   }
 
-
   ---@class fzf-lua.DiagnosticSign
   ---@field text string
   ---@field texthl string|nil
@@ -64,12 +62,12 @@ M.diagnostics = function(opts)
     -- from vim.diagnostic
     if utils.__HAS_NVIM_010 then
       local sign_confs = type(opts.diag_icons) == "table" and { text = opts.diag_icons }
-          or vim.diagnostic.config().signs
+        or vim.diagnostic.config().signs
       local level = vim.diagnostic.severity[k:upper()]
       if type(sign_confs) ~= "table" or utils.tbl_isempty(sign_confs) then sign_confs = nil end
-      text =
-          (not opts.diag_icons or not sign_confs or not sign_confs.text or not sign_confs.text[level])
-          and v.default or vim.trim(sign_confs.text[level])
+      text = (not opts.diag_icons or not sign_confs
+        or not sign_confs.text or not sign_confs.text[level]) and v.default
+        or vim.trim(sign_confs.text[level])
       texthl = v.name
     else
       ---@type vim.fn.sign_getdefined.ret.item[]?
@@ -77,9 +75,9 @@ M.diagnostics = function(opts)
       -- can be empty when config set to (#480):
       -- vim.diagnostic.config({ signs = false })
       if utils.tbl_isempty(sign_def) then sign_def = nil end
-      text =
-          (not opts.diag_icons or not sign_def or not sign_def[1].text) ---@diagnostic disable-next-line: need-check-nil
-          and v.default or vim.trim(sign_def[1].text)
+      text = (not opts.diag_icons or not sign_def or not sign_def[1].text) ---@diagnostic disable-next-line: need-check-nil
+          and v.default
+        or vim.trim(sign_def[1].text)
       texthl = sign_def and sign_def[1].texthl or nil
     end
     signs0[v.severity] = { text = text, texthl = texthl }
@@ -108,8 +106,9 @@ M.diagnostics = function(opts)
   local diag_opts = { severity = {}, namespace = opts.namespace }
   if opts.severity_only ~= nil then
     if opts.severity_limit ~= nil or opts.severity_bound ~= nil then
-      utils.warn("Invalid severity parameters." ..
-        " Both a specific severity and a limit/bound is not allowed")
+      utils.warn(
+        "Invalid severity parameters." .. " Both a specific severity and a limit/bound is not allowed"
+      )
       return {}
     end
     diag_opts.severity = opts.severity_only
@@ -162,7 +161,7 @@ M.diagnostics = function(opts)
       lnum = diag.lnum + 1,
       col = diag.col + 1,
       text = vim.trim(opts.multiline and diag.message or diag.message:match("^[^\n]+")),
-      type = diag.severity or 1
+      type = diag.severity or 1,
     }
     return buffer_diag
   end
@@ -209,22 +208,25 @@ M.diagnostics = function(opts)
                 end
 
                 if opts.diag_code and diag.code then
-                  entry = entry
-                      .. utils.ansi_from_hl("Comment", " [" .. tostring(diag.code) .. "]")
+                  entry = entry .. utils.ansi_from_hl("Comment", " [" .. tostring(diag.code) .. "]")
                 end
 
-                entry = string.format("%s%s%s",
-                  icon and string.format("%s%s%s", icon, opts.icon_padding or "", utils.nbsp)
-                  or "",
-                  opts.diag_source and utils.ansi_from_hl(
-                    opts.color_headings and sign_def.texthl, string.format(
-                      "%s%s%s%s",
-                      "[", --utils.ansi_codes.bold("["),
-                      diag.source,
-                      "]", --utils.ansi_codes.bold("]"),
-                      utils.nbsp))
-                  or "",
-                  entry)
+                entry = string.format(
+                  "%s%s%s",
+                  icon and string.format("%s%s%s", icon, opts.icon_padding or "", utils.nbsp) or "",
+                  opts.diag_source
+                    and utils.ansi_from_hl(
+                      opts.color_headings and sign_def.texthl,
+                      string.format(
+                        "%s%s%s%s",
+                        "[", -- utils.ansi_codes.bold("["),
+                        diag.source,
+                        "]", -- utils.ansi_codes.bold("]"),
+                        utils.nbsp
+                      )
+                    ) or "",
+                  entry
+                )
                 fzf_cb(entry, function() coroutine.resume(co) end)
               end
             end)
@@ -245,10 +247,12 @@ M.diagnostics = function(opts)
   return core.fzf_exec(contents, opts)
 end
 
----@param opts fzf-lua.config.Diagnostics|{}?
+---@param opts fzf-lua.config.Diagnostics|{ }?
 ---@return (thread|table)?, string?, table?
 M.all = function(opts)
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   opts.diag_all = true
   return M.diagnostics(opts)
 end

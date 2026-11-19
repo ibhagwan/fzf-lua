@@ -8,13 +8,13 @@ local config = require("fzf-lua.config")
 local M = {}
 
 ---@param keymap table
----@param actions fzf-lua.config.Actions|{}
+---@param actions fzf-lua.config.Actions|{ }
 ---@param hls fzf-lua.config.HLS
 ---@param zindex integer
 ---@param preview_keymaps table
 ---@param preview_mode "builtin"|"fzf"
 ---@param help_open_win? fun(buffer: integer, enter: boolean, config: vim.api.keyset.win_config): integer
----@return function? -- close function
+---@return function? --close function
 function M.toggle(keymap, actions, hls, zindex, preview_keymaps, preview_mode, help_open_win)
   if M.win then
     M.close()
@@ -34,8 +34,8 @@ function M.toggle(keymap, actions, hls, zindex, preview_keymaps, preview_mode, h
 
   local function format_bind(m, k, v, ml, kl, vl)
     return ("%s%%-%ds %%-%ds %%-%ds")
-        :format(opts.column_padding, ml, kl, vl)
-        :format("`" .. m .. "`", "|" .. k .. "|", "*" .. v .. "*")
+      :format(opts.column_padding, ml, kl, vl)
+      :format("`" .. m .. "`", "|" .. k .. "|", "*" .. v .. "*")
   end
 
   local keymaps = {}
@@ -54,8 +54,9 @@ function M.toggle(keymap, actions, hls, zindex, preview_keymaps, preview_mode, h
           if m == "builtin" then
             k = utils.neovim_bind_to_fzf(k)
           end
-          table.insert(keymaps,
-            format_bind(m, k, v, opts.mode_width, opts.keybind_width, opts.name_width))
+          table.insert(
+            keymaps, format_bind(m, k, v, opts.mode_width, opts.keybind_width, opts.name_width)
+          )
         end
       end
     end
@@ -67,10 +68,13 @@ function M.toggle(keymap, actions, hls, zindex, preview_keymaps, preview_mode, h
       if v then -- skips 'v == false'
         if k == "default" then k = "enter" end
         local desc = config.get_action_helpstr(v)
-        table.insert(keymaps,
-          format_bind("action", k,
-            ("%s"):format(desc):gsub(" ", ""),
-            opts.mode_width, opts.keybind_width, opts.name_width))
+        table.insert(
+          keymaps,
+          format_bind(
+            "action", k, ("%s"):format(desc):gsub(" ", ""), opts.mode_width, opts.keybind_width,
+            opts.name_width
+          )
+        )
       end
     end
   end
@@ -109,8 +113,7 @@ function M.toggle(keymap, actions, hls, zindex, preview_keymaps, preview_mode, h
   for c = 0, math.floor(vim.o.columns / (opts.column_width + #opts.column_padding)) do
     for i = 1, height do
       local idx = height * c + i
-      lines[i] = c == 0 and keymaps[idx] or
-          lines[i] .. (keymaps[idx] or "")
+      lines[i] = c == 0 and keymaps[idx] or lines[i] .. (keymaps[idx] or "")
     end
   end
 

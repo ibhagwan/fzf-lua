@@ -12,7 +12,6 @@
 local Object = {}
 Object.__index = Object
 
-
 ---@diagnostic disable-next-line: unused-vararg
 function Object:new(...)
   local _ = self

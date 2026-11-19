@@ -7,7 +7,9 @@ local M = {}
 
 local function set_jj_cwd_args(opts)
   if vim.fn.executable("jj") ~= 1 then
-    utils.warn(string.format("'%s' requires jj (https://github.com/jj-vcs/jj).", utils.get_info().cmd))
+    utils.warn(
+      string.format("'%s' requires jj (https://github.com/jj-vcs/jj).", utils.get_info().cmd)
+    )
     return
   end
   -- verify cwd is a jj repo, override user supplied
@@ -20,7 +22,7 @@ local function set_jj_cwd_args(opts)
   return opts
 end
 
----@param opts fzf-lua.config.JjFiles|{}?
+---@param opts fzf-lua.config.JjFiles|{ }?
 ---@return thread?, string?, table?
 M.files = function(opts)
   opts = config.normalize_opts(opts, "jj.files")

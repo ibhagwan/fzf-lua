@@ -41,14 +41,16 @@ local collect_history = function(opts)
 end
 
 local history_entries = function()
-  return child.lua_get([[(function()
+  return child.lua_get(
+    [[(function()
     local entries = {}
     for i = 1, vim.fn.histnr(":") do
       local entry = vim.fn.histget(":", i)
       if entry ~= "" then entries[#entries + 1] = entry end
     end
     return entries
-  end)()]])
+  end)()]]
+  )
 end
 
 local delete_history = function(selected, opts)
@@ -92,10 +94,14 @@ end
 T["registers"] = new_set()
 
 T["registers"]["ctrl-x clears and reloads by default"] = function()
-  eq(child.lua_get([[(function()
+  eq(
+    child.lua_get(
+      [[(function()
     local action = require("fzf-lua.defaults").defaults.registers.actions["ctrl-x"]
     return action.fn == require("fzf-lua.actions").reg_clear and action.reload == true
-  end)()]]), true)
+  end)()]]
+    ), true
+  )
 end
 
 T["registers"]["clear action empties the selected register"] = function()
@@ -107,12 +113,16 @@ T["registers"]["clear action empties the selected register"] = function()
 end
 
 T["registers"]["clear action ignores empty or malformed selections"] = function()
-  eq(child.lua_get([[pcall(function()
+  eq(
+    child.lua_get(
+      [[pcall(function()
     local actions = require("fzf-lua.actions")
     actions.reg_clear({})
     actions.reg_clear({ "not a register row" })
     return true
-  end)]]), true)
+  end)]]
+    ), true
+  )
 end
 
 T["registers"]["clear action skips read-only registers"] = function()
@@ -169,7 +179,8 @@ T["registers"]["provider regenerates entries after a register changes"] = functi
   end)
 
   local collect = function()
-    return child.lua_get([[(function()
+    return child.lua_get(
+      [[(function()
       local entries = {}
       _G._reg_contents(function(item)
         if item then
@@ -177,7 +188,8 @@ T["registers"]["provider regenerates entries after a register changes"] = functi
         end
       end)
       return entries
-    end)()]])
+    end)()]]
+    )
   end
 
   eq(vim.tbl_contains(collect(), "[Z] [c] first"), true)

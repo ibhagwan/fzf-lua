@@ -3,7 +3,6 @@ local MiniTest = require("mini.test")
 local glob, filter = vim.env.glob, vim.env.filter
 local find_files, filter_cases
 
-
 if glob then
   -- Find both "tests/glob**/*_spec.lua" and "test/glob*_spec.lua"
   find_files = function()

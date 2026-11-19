@@ -9,10 +9,10 @@ local argNo = 0
 local argSingle = 1
 local argQuoted = 2
 
---- Parses a shell string into arguments similar to Go's shellwords.
---- @param line string
---- @return string[]? args
---- @return string? err
+---Parses a shell string into arguments similar to Go's shellwords.
+---@param line string
+---@return string[]? args
+---@return string? err
 M.shellparse = function(line)
   if not line or type(line) ~= "string" then
     return {}
@@ -20,8 +20,10 @@ M.shellparse = function(line)
 
   local args = {}
   local buf = ""
-  local escaped, doubleQuoted, singleQuoted, backQuote, dollarQuote, comment =
-      false, false, false, false, false, false
+  local escaped, doubleQuoted, singleQuoted, backQuote, dollarQuote, comment = false,
+    false, false,
+    false, false,
+    false
 
   local got = argNo
 
@@ -164,7 +166,6 @@ M.parse = function(line)
   end
   return args
 end
-
 
 local parsed ---@type fzf-lua.FzfOpts?
 ---@return fzf-lua.FzfOpts

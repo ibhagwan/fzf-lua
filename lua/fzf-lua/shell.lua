@@ -6,7 +6,7 @@ local libuv = require "fzf-lua.libuv"
 
 -- path to current file
 local _info = debug.getinfo(1, "S")
----@cast _info {source: string}
+---@cast _info { source: string }
 local __FILE__ = _info.source:gsub("^@", "")
 
 ---@class fzf-lua.lru
@@ -93,7 +93,9 @@ end
 -- prevents garabage collection from freeing the resources
 -- NOTE: with combine/global the no. of callbacks has increased significantly
 -- so monitor the number of callbacks
-local function new_cache(size) return LRU:new(size or 100) end
+local function new_cache(size)
+  return LRU:new(size or 100)
+end
 local _cache = new_cache()
 
 local M = {}
@@ -102,9 +104,13 @@ local M = {}
 M.LRU = LRU
 
 -- NOTE: CI ONLY - DO NOT USE
-function M.cache_new(size) _cache = new_cache(size) end
+function M.cache_new(size)
+  _cache = new_cache(size)
+end
 
-function M.cache_set_size(size) _cache:set_size(size) end
+function M.cache_set_size(size)
+  _cache:set_size(size)
+end
 
 function M.register_func(fn)
   return (_cache:set(fn))
@@ -165,10 +171,9 @@ function M.pipe_wrap_fn(fn, fzf_field_index, debug)
   -- all args after `-l` will be in `_G.args`
   local action_cmd = ("%s -u NONE -l %s %s %s %s"):format(
     libuv.shellescape(path.normalize(nvim_bin)),
-    libuv.shellescape(path.normalize(path.join { vim.g.fzf_lua_directory, "rpc.lua" })),
-    id,
-    tostring(debug),
-    fzf_field_index)
+    libuv.shellescape(path.normalize(path.join { vim.g.fzf_lua_directory, "rpc.lua" })), id,
+    tostring(debug), fzf_field_index
+  )
 
   return action_cmd, id
 end
@@ -181,14 +186,16 @@ M.check_upvalue = function(v, varname)
   -- TODO: can be replaced with vim.base64 after neovim >= 0.10
   local str = string.format(
     [[return loadstring(require("fzf-lua.lib.base64").decode("%s"))]],
-    require("fzf-lua.lib.base64").encode(string.dump(v, true)))
+    require("fzf-lua.lib.base64").encode(string.dump(v, true))
+  )
   -- Test the function once with nil value (imprefect?)
   -- to see if there's an issue with upvalue refs
   local f = assert(loadstring(str))()
   local ok, err = pcall(f) ---@cast err string
   assert(
     ok or (not err:match("attempt to index upvalue") and not err:match("attempt to call upvalue")),
-    string.format("multiprocess '%s' cannot have upvalue references", varname))
+    string.format("multiprocess '%s' cannot have upvalue references", varname)
+  )
   return str
 end
 
@@ -263,11 +270,8 @@ M.stringify_mt = function(contents, opts)
 
   -- `multiprocess=1` is "optional" if no opt which requires processing
   -- is present we return the command as is to be piped to fzf "natively"
-  if opts.multiprocess ~= true and type(contents) == "string"
-      and not opts.fn_transform
-      and not opts.fn_preprocess
-      and not opts.fn_postprocess
-  then
+  if opts.multiprocess ~= true and type(contents) == "string" and not opts.fn_transform
+    and not opts.fn_preprocess and not opts.fn_postprocess then
     -- command does not require any processing
     return contents
     -- don't use mt for non-string contents unless multiprocess is explictly set to true
@@ -281,7 +285,7 @@ end
 -- Contents sent to fzf can only be nil or a shell command (string)
 -- the API accepts both tables and functions which we "stringify"
 ---@param contents table|string|fzf-lua.content|fzf-lua.shell.cmd|fzf-lua.shell.data|fzf-lua.shell.data2
----@param opts fzf-lua.config.Resolved|{}
+---@param opts fzf-lua.config.Resolved|{ }
 ---@param fzf_field_index string? Fzf field index expression, e.g. "{+}" (selected), "{q}" (query)
 ---@return string, integer?
 M.stringify = function(contents, opts, fzf_field_index)
@@ -313,7 +317,7 @@ M.stringify = function(contents, opts, fzf_field_index)
       local ret = (opts.is_live and type(contents) == "function" and contents(unpack(args), opts))
           ---@diagnostic disable-next-line: param-type-mismatch
           or (opts.__stringify_cmd and type(contents) == "function" and contents(unpack(args, 1, n)))
-          or contents
+        or contents
       if opts.__stringify_cmd and type(ret) == "table" then
         ---@diagnostic disable-next-line: undefined-field
         return ret.cmd, (ret.env or opts.env)
@@ -468,11 +472,12 @@ M.stringify_cmd = function(fn, opts, fzf_field_index)
     __stringify_cmd = true,
     PidObject = utils.pid_object("__stringify_cmd_pid", opts),
     debug = opts.debug,
-  }, fzf_field_index)
+  }, fzf_field_index
+  )
 end
 
 ---@param fn fzf-lua.shell.data
----@param opts fzf-lua.config.Resolved|{}
+---@param opts fzf-lua.config.Resolved|{ }
 ---@param fzf_field_index string?
 ---@return string, integer?
 M.stringify_data = function(fn, opts, fzf_field_index)
@@ -553,11 +558,11 @@ M.wrap_spawn_stdio = function(opts)
     end
   end
   local cmd_str = ("%s%s -u NONE -l %s %s"):format(
-    nvim_runtime,
-    libuv.shellescape(is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
-    libuv.shellescape(vim.fn.fnamemodify(is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") ..
-      "/spawn.lua"),
-    libuv.shellescape((libuv.serialize(opts, true))))
+    nvim_runtime, libuv.shellescape(is_win and vim.fs.normalize(nvim_bin) or nvim_bin),
+    libuv.shellescape(
+      vim.fn.fnamemodify(is_win and vim.fs.normalize(__FILE__) or __FILE__, ":h") .. "/spawn.lua"
+    ), libuv.shellescape((libuv.serialize(opts, true)))
+  )
   return cmd_str
 end
 

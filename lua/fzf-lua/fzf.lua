@@ -13,7 +13,7 @@ local M = {}
 
 -- used to locate `win_spawn.lua` (the TUI mediator) next to this file
 local _info = debug.getinfo(1, "S")
----@cast _info {source: string}
+---@cast _info { source: string }
 local __FILE__ = _info.source:gsub("^@", "")
 
 -- contents can be either a table with tostring()able items, or a function that
@@ -25,13 +25,17 @@ local __FILE__ = _info.source:gsub("^@", "")
 ---@return table selected
 ---@return integer exit_code
 function M.raw_fzf(contents, fzf_cli_args, opts)
-  assert(not contents or type(contents) == "string",
-    "contents must be of type string: " .. tostring(contents))
+  assert(
+    not contents or type(contents) == "string",
+    "contents must be of type string: " .. tostring(contents)
+  )
   if not coroutine.running() then
     error("[Fzf-lua] function must be called inside a coroutine.")
   end
 
-  if not opts then opts = {} end
+  if not opts then
+    opts = {}
+  end
   local cmd = { opts.fzf_bin or "fzf" }
   local outputtmpname = utils.tempname()
 
@@ -70,8 +74,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- the result file descriptor (no `>`/PowerShell), no shell escaping and
   -- no cmd.exe 8191-char command line limit
   local win_spec = nil ---@type fzf-lua.WinSpawnSpec?
-  if utils.__IS_WINDOWS and not opts.is_fzf_tmux
-      and opts._cli_segments and #opts._cli_segments > 0 then
+  if utils.__IS_WINDOWS and not opts.is_fzf_tmux and opts._cli_segments and #opts._cli_segments > 0 then
     local raw_args = {}
     for _, elem in ipairs(opts._cli_segments) do
       local arg = {}
@@ -134,14 +137,14 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   if opts.debug and type(opts.debug) ~= "number" then
     utils.info("FZF_DEFAULT_COMMAND: %s", tostring(FZF_DEFAULT_COMMAND))
     if win_spec then
-      utils.info("fzf cmd [nvim/uv]: %s %s",
-        win_spec.bin, table.concat(win_spec.args, " "))
+      utils.info("fzf cmd [nvim/uv]: %s %s", win_spec.bin, table.concat(win_spec.args, " "))
       if win_spec.item then
         utils.info("fzf item [cmd.exe]: %s", win_spec.item)
       end
     else
-      utils.info("fzf cmd [%s]: %s",
-        utils.__IS_WINDOWS and "cmd.exe" or "sh", table.concat(cmd, " "))
+      utils.info(
+        "fzf cmd [%s]: %s", utils.__IS_WINDOWS and "cmd.exe" or "sh", table.concat(cmd, " ")
+      )
     end
   end
 
@@ -164,7 +167,10 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       local nvim_bin = os.getenv("FZF_LUA_NVIM_BIN") or vim.v.progpath
       win_spec_path = utils.tempname()
       shell_cmd = {
-        nvim_bin, "-u", "NONE", "-l",
+        nvim_bin,
+        "-u",
+        "NONE",
+        "-l",
         vim.fn.fnamemodify(__FILE__, ":h") .. "/win_spawn.lua",
         win_spec_path,
       }
@@ -175,7 +181,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     shell_cmd = utils.__IS_WINDOWS
         -- MSYS2 comes with "/usr/bin/cmd" that precedes "cmd.exe" (#1396)
         and { "cmd.exe", "/d", "/e:off", "/f:off", "/v:off", "/c" }
-        or { "sh", "-c" }
+      or { "sh", "-c" }
     if opts.pipe_cmd then
       if FZF_DEFAULT_COMMAND then
         table.insert(cmd, 1, string.format("(%s) | ", FZF_DEFAULT_COMMAND))
@@ -191,8 +197,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
   -- This obscure option makes jobstart fail with: "The syntax of the command is incorrect"
   -- temporarily set to `false`, for more info see `:help shellslash` (#1055)
   -- (only affects the legacy cmd.exe launcher, not the direct route)
-  local nvim_opt_shellslash = not win_spec
-      and utils.__WIN_HAS_SHELLSLASH and vim.o.shellslash
+  local nvim_opt_shellslash = not win_spec and utils.__WIN_HAS_SHELLSLASH and vim.o.shellslash
   if nvim_opt_shellslash then vim.o.shellslash = false end
   local job_env = {
     ["SHELL"] = win_spec and "cmd.exe" or shell_cmd[1],
@@ -224,7 +229,8 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     -- Nullify user's RG config as this can cause conflicts
     -- with fzf-lua's rg opts (#1266)
     ["RIPGREP_CONFIG_PATH"] = type(opts.RIPGREP_CONFIG_PATH) == "string"
-        and libuv.expand(opts.RIPGREP_CONFIG_PATH) or "",
+      and libuv.expand(opts.RIPGREP_CONFIG_PATH)
+      or "",
     -- Prevents spamming rust logs with skim (#1959)
     ["RUST_LOG"] = "",
   }
@@ -265,7 +271,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
       vim.fn.delete(outputtmpname)
       if output and #output == 0 then output = nil end
       coroutine.resume(co, output, rc)
-    end
+    end,
   })
 
   -- fzf-tmux spawns outside neovim, don't set filetype/insert mode
@@ -278,9 +284,7 @@ function M.raw_fzf(contents, fzf_cli_args, opts)
     -- See note in "ModeChanged" above
     -- NOTE: feedkeys hack not required since
     -- https://github.com/neovim/neovim/commit/3621af9b970c80d2a6ff36569d7495391599c334
-    if not (utils.__HAS_NVIM_012 or utils.__HAS_NVIM_0116)
-        and vim.api.nvim_get_mode().mode == "t"
-    then
+    if not (utils.__HAS_NVIM_012 or utils.__HAS_NVIM_0116) and vim.api.nvim_get_mode().mode == "t" then
       -- Called from another fzf-win most likely
       utils.feed_keys_termcodes("i")
     else

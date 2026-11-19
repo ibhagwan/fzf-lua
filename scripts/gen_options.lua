@@ -1,53 +1,59 @@
 -- Run with: nvim -l scripts/gen_options.lua
 -- Generates OPTIONS.md from EmmyLua annotations in the codebase
 
---- types from https://github.com/lewis6991/gitsigns.nvim/blob/42d6aed4e94e0f0bbced16bbdcc42f57673bd75e/gen_help.lua#L41
---- @alias EmmyDocLoc { file: string, line: integer }
---- @alias EmmyDocParam { name: string, typ: string, desc: string? }
---- @alias EmmyDocReturn { name: string?, typ: string, desc: string? }
---- @alias EmmyDocModule { name: string, members: EmmyDocFn[] }
+---types from https://github.com/lewis6991/gitsigns.nvim/blob/42d6aed4e94e0f0bbced16bbdcc42f57673bd75e/gen_help.lua#L41
+---@alias EmmyDocLoc { file: string, line: integer }
+---@alias EmmyDocParam { name: string, typ: string, desc: string? }
+---@alias EmmyDocReturn { name: string?, typ: string, desc: string? }
+---@alias EmmyDocModule { name: string, members: EmmyDocFn[] }
 
---- @class EmmyDocFn: EmmyDocTypeField
---- @field type 'fn'
---- @field name string
---- @field description string?
---- @field deprecated boolean
---- @field deprecation_reason string?
---- @field loc EmmyDocLoc
---- @field params EmmyDocParam[]
---- @field returns EmmyDocReturn[]
+---@class EmmyDocFn: EmmyDocTypeField
+---@field type 'fn'
+---@field name string
+---@field description string?
+---@field deprecated boolean
+---@field deprecation_reason string?
+---@field loc EmmyDocLoc
+---@field params EmmyDocParam[]
+---@field returns EmmyDocReturn[]
 
---- @class EmmyDocTypeField
---- @field type 'field'
---- @field name string
---- @field description string?
---- @field typ string
---- @field is_async boolean?
+---@class EmmyDocTypeField
+---@field type 'field'
+---@field name string
+---@field description string?
+---@field typ string
+---@field is_async boolean?
 
---- @alias EmmyDocTypeMember EmmyDocTypeField | EmmyDocFn
+---@alias EmmyDocTypeMember EmmyDocTypeField | EmmyDocFn
 
---- @class EmmyDocTypeClass: EmmyDocTypeField
---- @field type 'class'
---- @field name string
---- @field bases string[]?
---- @field members EmmyDocTypeMember[]
+---@class EmmyDocTypeClass: EmmyDocTypeField
+---@field type 'class'
+---@field name string
+---@field bases string[]?
+---@field members EmmyDocTypeMember[]
 
---- @class EmmyDocTypeAlias: EmmyDocTypeField
---- @field type 'alias'
---- @field name string
---- @field members EmmyDocTypeMember[]
+---@class EmmyDocTypeAlias: EmmyDocTypeField
+---@field type 'alias'
+---@field name string
+---@field members EmmyDocTypeMember[]
 
---- @alias EmmyDocType EmmyDocTypeClass | EmmyDocTypeAlias | EmmyDocTypeField
+---@alias EmmyDocType EmmyDocTypeClass | EmmyDocTypeAlias | EmmyDocTypeField
 
---- @class EmmyDocJson
---- @field modules EmmyDocModule[]
---- @field types EmmyDocType[]?
+---@class EmmyDocJson
+---@field modules EmmyDocModule[]
+---@field types EmmyDocType[]?
 
-local obj = vim.system({ "sh", "-c", [[
+local obj = vim.system({
+  "sh",
+  "-c",
+  [[
   emmylua_doc_cli lua/fzf-lua/ --output-format json --output stdout
-]] }):wait()
+]],
+}):wait()
 
-vim.opt.rtp:append(vim.fn.fnamemodify(assert(debug.getinfo(1, "S")).source:gsub("^@", ""), ":h:h:h:p"))
+vim.opt.rtp:append(
+  vim.fn.fnamemodify(assert(debug.getinfo(1, "S")).source:gsub("^@", ""), ":h:h:h:p")
+)
 local defaults = require("fzf-lua.defaults").defaults
 
 local res = vim.json.decode(obj.stdout or "") ---@type EmmyDocJson
@@ -75,7 +81,7 @@ local function fix_typ(typ, default)
     local ty = typ:sub(2, -2)
     ---@diagnostic disable-next-line: redundant-parameter, call-non-callable
     local is = vim.iter(vim.split(ty, ",")):all(function(t)
-    ---@diagnostic disable-next-line: return-type-mismatch
+      ---@diagnostic disable-next-line: return-type-mismatch
       return t:match([[".-"]])
     end)
     if is then
@@ -91,7 +97,9 @@ local function fix_typ(typ, default)
 end
 
 local normalize_classname = function(classname)
-  return classname:gsub("^fzf%-lua%.config%.", ""):gsub("(%l)(%u)", "%1_%2"):lower()
+  return classname:gsub("^fzf%-lua%.config%.", "")
+    :gsub("(%l)(%u)", "%1_%2")
+    :lower()
 end
 
 local literal = function(v)
@@ -326,9 +334,8 @@ end
 local function _member_to_markdown(classname, member, rec, header_level, require_desc)
   header_level = header_level or "####"
   local name = alias[member.name] or member.name or "Unknown"
-  local original_typ = member.typ
-      or (member.returns and member.returns[1] and member.returns[1].typ)
-      or "Unknown"
+  local original_typ = member.typ or (member.returns and member.returns[1] and member.returns[1].typ)
+    or "Unknown"
   local typ = original_typ
   local norm = ("%s.%s"):format(normalize_classname(classname), name)
   -- Build path for default lookup, handling aliases
@@ -397,22 +404,22 @@ local function generate_globals()
   local members = ty.members --[[@as table<integer, EmmyDocTypeMember>]]
   ---@diagnostic disable-next-line: redundant-parameter, call-non-callable, access-invisible
   vim.iter(members)
-      ---@diagnostic disable-next-line: access-invisible
-      :each(function(member)
-        -- Skip excluded fields
-        if EXCLUDE_FROM_GLOBALS[member.name] then
-          return
-        end
-        if (member.name:match("^_")
-              and not member.name:match("__HLS"))
-            or ((defaults[normalize_classname(member.typ:match("fzf%-lua%.config%.(.*)") or "")]
-                or defaults[normalize_classname(member.typ:match("fzf%-lua%.config%.(.-)Base") or "")])
-              and not globals_include[normalize_classname(member.typ:match("fzf%-lua%.config%.(.*)") or "")])
-        then
-          return
-        end
-        table.insert(output, member_to_markdown("globals", member, 1, "####", true))
-      end)
+    ---@diagnostic disable-next-line: access-invisible
+    :each(function(member)
+      -- Skip excluded fields
+      if EXCLUDE_FROM_GLOBALS[member.name] then
+        return
+      end
+      if (member.name:match("^_") and not member.name:match("__HLS"))
+        or ((defaults[normalize_classname(member.typ:match("fzf%-lua%.config%.(.*)") or "")]
+          or defaults[normalize_classname(member.typ:match("fzf%-lua%.config%.(.-)Base") or "")])
+          and not globals_include[normalize_classname(
+            member.typ:match("fzf%-lua%.config%.(.*)") or ""
+          )]) then
+        return
+      end
+      table.insert(output, member_to_markdown("globals", member, 1, "####", true))
+    end)
   return table.concat(output, "")
 end
 
@@ -555,11 +562,7 @@ local function generate_pickers()
         local member_typ = member.typ or ""
         local is_picker_config = member_typ:match("^fzf%-lua%.config%.%u")
         local is_excluded = PICKER_EXCLUDE_FIELDS[member.name]
-        if field_desc
-            and not member.name:match("^_")
-            and not is_picker_config
-            and not is_excluded
-        then
+        if field_desc and not member.name:match("^_") and not is_picker_config and not is_excluded then
           local field_typ, field_default = fix_typ(member.typ)
           -- Get default value from actual defaults table
           local actual_default = default_val and default_val[member.name]

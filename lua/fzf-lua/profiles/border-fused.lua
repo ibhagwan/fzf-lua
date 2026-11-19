@@ -1,6 +1,6 @@
-local _single  = { "┌", "─", "┐", "│", "┘", "─", "└", "│" }
+local _single = { "┌", "─", "┐", "│", "┘", "─", "└", "│" }
 local _rounded = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" }
-local _border  = true and _rounded or _single
+local _border = true and _rounded or _single
 return {
   { "default-title" }, -- base profile
   desc = "Single border around the UI",
@@ -20,7 +20,7 @@ return {
           b[6] = "" -- remove bottom
           b[7] = "├" -- bottom left
         elseif m.layout == "up" then
-          b[1] = "├" --top right
+          b[1] = "├" -- top right
           b[3] = "┤" -- top left
         elseif m.layout == "left" then
           b[1] = "┬" -- top left
@@ -57,7 +57,7 @@ return {
             b[7] = "─"
           elseif m.layout == "left" then
             b[4] = "│"
-          else   -- right
+          else -- right
             b[8] = "│"
           end
           return b
@@ -65,7 +65,7 @@ return {
           assert(m.type == "nvim" and m.name == "prev" and type(m.layout) == "string")
           local b = vim.deepcopy(_border)
           if m.layout == "down" then
-            b[1] = "├" --top right
+            b[1] = "├" -- top right
             b[3] = "┤" -- top left
           elseif m.layout == "up" then
             b[7] = "├" -- bottom left

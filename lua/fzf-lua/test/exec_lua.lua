@@ -1,10 +1,10 @@
---- credit to https://github.com/neovim/neovim/blob/534544cbf7ac92aef44336cc9da1bfc02a441e6e/test/functional/testnvim/exec_lua.lua
+---credit to https://github.com/neovim/neovim/blob/534544cbf7ac92aef44336cc9da1bfc02a441e6e/test/functional/testnvim/exec_lua.lua
 
---- @param f function
---- @return table<string,any>
+---@param f function
+---@return table<string, any>
 local function get_upvalues(f)
   local i = 1
-  local upvalues = {} --- @type table<string,any>
+  local upvalues = {} ---@type table<string, any>
   while true do
     local n, v = debug.getupvalue(f, i)
     if not n then
@@ -16,8 +16,8 @@ local function get_upvalues(f)
   return upvalues
 end
 
---- @param f function
---- @param upvalues table<string,any>
+---@param f function
+---@param upvalues table<string, any>
 local function set_upvalues(f, upvalues)
   local i = 1
   while true do
@@ -32,10 +32,10 @@ local function set_upvalues(f, upvalues)
   end
 end
 
---- @param messages string[]
---- @param ... ...
+---@param messages string[]
+---@param ... ...
 local function add_print(messages, ...)
-  local msg = {} --- @type string[]
+  local msg = {} ---@type string[]
   for i = 1, select("#", ...) do
     msg[#msg + 1] = tostring(select(i, ...))
   end
@@ -48,18 +48,15 @@ local invalid_types = {
   ["userdata"] = true,
 }
 
---- @param r any[]
+---@param r any[]
 local function check_returns(r)
   for k, v in pairs(r) do
     if invalid_types[type(v)] then
       error(
         string.format(
-          "Return index %d with value '%s' of type '%s' cannot be serialized over RPC",
-          k,
-          tostring(v),
-          type(v)
-        ),
-        2
+          "Return index %d with value '%s' of type '%s' cannot be serialized over RPC", k,
+          tostring(v), type(v)
+        ), 2
       )
     end
   end
@@ -67,15 +64,15 @@ end
 
 local M = {}
 
---- This is run in the context of the remote Nvim instance.
---- @param bytecode string
---- @param upvalues table<string,any>
---- @param ... any[]
---- @return any[] result
---- @return table<string,any> upvalues
---- @return string[] messages
+---This is run in the context of the remote Nvim instance.
+---@param bytecode string
+---@param upvalues table<string, any>
+---@param ... any[]
+---@return any[] result
+---@return table<string, any> upvalues
+---@return string[] messages
 function M.handler(bytecode, upvalues, ...)
-  local messages = {} --- @type string[]
+  local messages = {} ---@type string[]
   local orig_print = _G.print
 
   function _G.print(...)
@@ -88,7 +85,7 @@ function M.handler(bytecode, upvalues, ...)
   set_upvalues(f, upvalues)
 
   -- Run in pcall so we can return any print messages
-  local ret = { pcall(f, ...) } --- @type any[]
+  local ret = { pcall(f, ...) } ---@type any[]
 
   _G.print = orig_print
 
@@ -100,16 +97,17 @@ function M.handler(bytecode, upvalues, ...)
   return ret, new_upvalues, messages
 end
 
---- @param exec_lua function
---- @param lvl integer
---- @param code function
---- @param arg table
+---@param exec_lua function
+---@param lvl integer
+---@param code function
+---@param arg table
 function M.run(exec_lua, lvl, code, arg)
   local rv = exec_lua(
     [[return { require('fzf-lua.test.exec_lua').handler(...) }]],
-    { string.dump(code), get_upvalues(code), unpack(arg or {}) })
+    { string.dump(code), get_upvalues(code), unpack(arg or {}) }
+  )
 
-  --- @type any[], table<string,any>, string[]
+  ---@type any[], table<string, any>, string[]
   local ret, upvalues, messages = unpack(rv)
 
   for _, m in ipairs(messages) do
@@ -123,7 +121,7 @@ function M.run(exec_lua, lvl, code, arg)
   -- Update upvalues
   if next(upvalues) then
     local caller = debug.getinfo(lvl)
-    ---@cast caller {func: function}
+    ---@cast caller { func: function }
     local i = 0
 
     -- On PUC-Lua, if the function is a tail call, then func will be nil.
@@ -198,7 +196,11 @@ M.serialize = function(...)
   for _, v in ipairs(args) do
     save_upvalues(v, args)
   end
-  return require("fzf-lua.lib.serpent").block(args, { name = "_", comment = false, sortkeys = false })
+  return require("fzf-lua.lib.serpent").block(args, {
+    name = "_",
+    comment = false,
+    sortkeys = false,
+  })
 end
 
 return M

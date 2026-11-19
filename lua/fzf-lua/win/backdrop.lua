@@ -54,7 +54,9 @@ end
 
 function M.close()
   if M.win and api.nvim_win_is_valid(M.win) then api.nvim_win_close(M.win, true) end
-  if M.buf and api.nvim_buf_is_valid(M.buf) then api.nvim_buf_delete(M.buf, { force = true }) end
+  if M.buf and api.nvim_buf_is_valid(M.buf) then
+    api.nvim_buf_delete(M.buf, { force = true })
+  end
   M.buf = nil
   M.win = nil
   -- vim.cmd("redraw")

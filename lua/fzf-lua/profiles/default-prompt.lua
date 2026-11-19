@@ -2,8 +2,8 @@ local function prompt(str, opts)
   return vim.tbl_deep_extend("keep", opts or {}, { prompt = str .. "> " })
 end
 return {
-  desc                 = "defaults using prompt for picker info",
-  winopts              = { title_pos = "center", preview = { title_pos = "center" } },
+  desc    = "defaults using prompt for picker info",
+  winopts = { title_pos = "center", preview = { title_pos = "center" } },
   -- Uses `cwd_prompt` by default
   -- files                = prompt("Files"),
   global               = prompt("Global"),

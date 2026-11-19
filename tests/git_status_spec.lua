@@ -14,7 +14,8 @@ local T = helpers.new_set_with_child(child, {
   hooks = {
     pre_case = function()
       orig_cwd = child.fn.getcwd()
-      repo = exec_lua([[
+      repo = exec_lua(
+        [[
         local dir = vim.fn.tempname()
         vim.fn.mkdir(dir, "p")
         -- Initialize repo and disable signing so commits work even when the
@@ -31,7 +32,8 @@ local T = helpers.new_set_with_child(child, {
         vim.fn.system({ "git", "-C", dir, "add", "tracked.txt" })
         vim.fn.system({ "git", "-C", dir, "commit", "--no-gpg-sign", "-m", "initial" })
         return dir
-      ]])
+      ]]
+      )
       child.cmd("cd " .. vim.fn.fnameescape(assert(repo)))
     end,
     post_case = function()
@@ -51,19 +53,23 @@ T["git_status"] = new_set({ n_retry = not helpers.IS_LINUX() and 5 or nil })
 
 local modify_tracked = function()
   -- Modify a tracked file so git_status shows an unstaged change.
-  exec_lua([[
+  exec_lua(
+    [[
     local file = vim.fn.getcwd() .. "/tracked.txt"
     local fd = io.open(file, "a")
     fd:write("-- useless comment\n")
     fd:close()
-  ]])
+  ]]
+  )
 end
 
 local porcelain = function()
-  return exec_lua([[
+  return exec_lua(
+    [[
     return vim.fn.system({ "git", "-C", vim.fn.getcwd(), "status", "--porcelain" })
       :gsub("%s+$", "")
-  ]])
+  ]]
+  )
 end
 
 -- Trigger an action and wait for the picker reload.
@@ -115,12 +121,14 @@ T["git_status"]["stage unstage reset"] = function()
   eq("", porcelain())
 
   -- Commit the clean state, ignoring any SSH/GPG signing configuration.
-  exec_lua([[
+  exec_lua(
+    [[
     vim.fn.system({
       "git", "-C", vim.fn.getcwd(), "commit", "--allow-empty", "--no-gpg-sign",
       "-m", "git_status test end",
     })
-  ]])
+  ]]
+  )
 end
 
 return T

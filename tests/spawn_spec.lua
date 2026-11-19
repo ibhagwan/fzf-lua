@@ -7,7 +7,7 @@ describe("Testing spawn.lua", function()
   it("does not delete the cwd when tempname() fails (#2838)", function()
     ---@diagnostic disable-next-line: deprecated
     local _info = debug.getinfo(1, "S")
-    ---@cast _info {source: string}
+    ---@cast _info { source: string }
     -- must be absolute: the child runs with `cwd` set to a temp directory
     local root = vim.fn.fnamemodify(_info.source:gsub("^@", ""), ":p:h:h")
     local script = (root .. "/lua/fzf-lua/spawn.lua"):gsub("\\", "/")
@@ -33,7 +33,8 @@ describe("Testing spawn.lua", function()
       spec,
     }, { cwd = dir })
     eq(true, jobid > 0)
-    local rc = vim.fn.jobwait({ jobid }, 10000)[1]
+    local rc = vim.fn.jobwait({ jobid }, 10000)
+      [1]
     eq(0, rc)
 
     eq(1, vim.fn.filereadable(sentinel))
@@ -43,7 +44,7 @@ describe("Testing spawn.lua", function()
   it("does not exit from a fast event (#2858)", function()
     ---@diagnostic disable-next-line: deprecated
     local _info = debug.getinfo(1, "S")
-    ---@cast _info {source: string}
+    ---@cast _info { source: string }
     local root = vim.fn.fnamemodify(_info.source:gsub("^@", ""), ":p:h:h")
     root = root:gsub("\\", "/")
     local marker = vim.fn.tempname()
@@ -84,7 +85,8 @@ describe("Testing spawn.lua", function()
       script,
     }, { cwd = root })
     eq(true, jobid > 0)
-    local rc = vim.fn.jobwait({ jobid }, 10000)[1]
+    local rc = vim.fn.jobwait({ jobid }, 10000)
+      [1]
     eq(0, rc)
     eq({ "cquit count=0 fast=false" }, vim.fn.readfile(marker))
     vim.fn.delete(script)

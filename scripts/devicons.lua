@@ -4,7 +4,7 @@ require("nvim-web-devicons").setup({
       -- icon = "♦",
       icon = "",
       color = "#a074c4",
-      name = "Sol"
+      name = "Sol",
     },
     sh = {
       icon = "",

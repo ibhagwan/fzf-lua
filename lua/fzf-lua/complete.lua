@@ -23,7 +23,9 @@ local function find_toplevel_cwd(maybe_cwd, postfix, orig_cwd)
   if not orig_cwd then
     orig_cwd = maybe_cwd
   end
-  if vim.fn.isdirectory(libuv.expand(maybe_cwd) --[[@as string]]) == 1 then
+  if vim.fn.isdirectory(
+    libuv.expand(maybe_cwd) --[[@as string]]
+  ) == 1 then
     local disp_cwd, cwd = maybe_cwd, libuv.expand(maybe_cwd) --[[@as string]]
     -- returned cwd must be full path
     if path.has_cwd_prefix(cwd) then
@@ -72,59 +74,62 @@ local set_cmp_opts_path = function(opts)
     local before_path = replace_at > 1 and l:sub(1, replace_at - 1) or ""
     local rest_of_line = #l >= (col + #after) and l:sub(col + #after) or ""
     local resolved_path = opts._cwd and path.join({ opts._cwd, relpath }) or relpath
-    return before_path .. resolved_path .. rest_of_line,
-        -- this goes to `nvim_win_set_cursor` which is 0-based
-        replace_at + #resolved_path - 2
+    return
+    before_path .. resolved_path .. rest_of_line,
+    -- this goes to `nvim_win_set_cursor` which is 0-based
+    replace_at + #resolved_path - 2
   end
   return opts
 end
 
----@param opts fzf-lua.config.CompletePath|{}?
+---@param opts fzf-lua.config.CompletePath|{ }?
 ---@return thread?, string?, table?
 M.path = function(opts)
   ---@type fzf-lua.config.CompletePath
   opts = config.normalize_opts(opts, "complete_path")
   if not opts then return end
-  opts.cmd = opts.cmd or (function()
-    if vim.fn.executable("fdfind") == 1 then
-      return "fdfind --strip-cwd-prefix"
-    elseif vim.fn.executable("fd") == 1 then
-      return "fd --strip-cwd-prefix"
-    elseif utils.__IS_WINDOWS then
-      return "dir /s/b"
-    else
-      return [[find ! -path '.' ! -path '*/\.git/*' -printf '%P\n']]
-    end
-  end)()
+  opts.cmd = opts.cmd
+    or (function()
+      if vim.fn.executable("fdfind") == 1 then
+        return "fdfind --strip-cwd-prefix"
+      elseif vim.fn.executable("fd") == 1 then
+        return "fd --strip-cwd-prefix"
+      elseif utils.__IS_WINDOWS then
+        return "dir /s/b"
+      else
+        return [[find ! -path '.' ! -path '*/\.git/*' -printf '%P\n']]
+      end
+    end)()
   opts = set_cmp_opts_path(opts)
   return core.fzf_exec(opts.cmd, opts)
 end
 
----@param opts fzf-lua.config.CompleteFile|{}?
+---@param opts fzf-lua.config.CompleteFile|{ }?
 ---@return thread?, string?, table?
 M.file = function(opts)
   ---@type fzf-lua.config.CompleteFile
   opts = config.normalize_opts(opts, "complete_file")
   if not opts then return end
-  opts.cmd = opts.cmd or (function()
-    if vim.fn.executable("fdfind") == 1 then
-      return "fdfind --strip-cwd-prefix --type f --exclude .git"
-    elseif vim.fn.executable("fd") == 1 then
-      return "fd --strip-cwd-prefix --type f --exclude .git"
-    elseif vim.fn.executable("rg") == 1 then
-      return "rg --files"
-    elseif utils.__IS_WINDOWS then
-      return "dir /s/b"
-    else
-      return [[find -type f ! -path '*/\.git/*' -printf '%P\n']]
-    end
-  end)()
+  opts.cmd = opts.cmd
+    or (function()
+      if vim.fn.executable("fdfind") == 1 then
+        return "fdfind --strip-cwd-prefix --type f --exclude .git"
+      elseif vim.fn.executable("fd") == 1 then
+        return "fd --strip-cwd-prefix --type f --exclude .git"
+      elseif vim.fn.executable("rg") == 1 then
+        return "rg --files"
+      elseif utils.__IS_WINDOWS then
+        return "dir /s/b"
+      else
+        return [[find -type f ! -path '*/\.git/*' -printf '%P\n']]
+      end
+    end)()
   opts = set_cmp_opts_path(opts)
   ---@diagnostic disable-next-line: param-type-mismatch
   return core.fzf_exec(opts.cmd, opts)
 end
 
----@param opts fzf-lua.config.CompleteLine|{}?
+---@param opts fzf-lua.config.CompleteLine|{ }?
 ---@return thread?, string?, table?
 M.line = function(opts)
   ---@type fzf-lua.config.CompleteLine
@@ -143,7 +148,7 @@ M.line = function(opts)
   return require "fzf-lua.providers.buffers".lines(opts)
 end
 
----@param opts fzf-lua.config.CompleteLine|{}?
+---@param opts fzf-lua.config.CompleteLine|{ }?
 ---@return thread?, string?, table?
 M.bline = function(opts)
   ---@type fzf-lua.config.CompleteLine
