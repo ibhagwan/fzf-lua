@@ -607,7 +607,7 @@ Enable window highlight groups.
 
 #### globals.keymap.builtin
 
-Type: `table<string,string>`, Default: `{ ["<F1>"] = "toggle-help", ["<F2>"] = "toggle-fullscreen...`
+Type: `table<string,string>`, Default: `{ ["<C-/>"] = "toggle-preview", ["<C-\\><C-\\>"] = "toggl...`
 
 Keybinds for builtin (Neovim) commands.
 

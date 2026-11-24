@@ -1,4 +1,4 @@
-*fzf-lua-opts.txt*       For Neovim >= 0.9.0      Last change: 2026 October 12
+*fzf-lua-opts.txt*      For Neovim >= 0.9.0      Last change: 2026 November 19
 
 ==============================================================================
 Table of Contents                             *fzf-lua-opts-table-of-contents*
@@ -852,8 +852,8 @@ Enable window highlight groups.
                                                                               
 globals.keymap.builtin                   *fzf-lua-opts-globals.keymap.builtin*
 
-Type: `table<string,string>`, Default: `{ ["<F1>"] = "toggle-help", ["<F2>"] =
-"toggle-fullscreen...`
+Type: `table<string,string>`, Default: `{ ["<C-/>"] = "toggle-preview",
+["<C-\\><C-\\>"] = "toggl...`
 
 Keybinds for builtin (Neovim) commands.
 
